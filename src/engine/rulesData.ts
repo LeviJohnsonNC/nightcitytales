@@ -5,6 +5,7 @@
 import creationRules from "@/data/rules/creation-rules.json";
 import dvTable from "@/data/rules/dv-table.json";
 import hpTable from "@/data/rules/hp-table.json";
+import lifepathGeneral from "@/data/rules/lifepath-general.json";
 import roleSkillPackages from "@/data/rules/role-skill-packages.json";
 import skillsData from "@/data/rules/skills.json";
 import statTemplates from "@/data/rules/stat-templates.json";
@@ -121,4 +122,5 @@ export const CREATION_RULES = creationRules;
 export const CREATION_METHODS = creationRules.methods;
 export const DV_TABLE_DATA = dvTable;
 export const HP_TABLE_DATA = hpTable;
+export const LIFEPATH_GENERAL = lifepathGeneral;
 export const SKILL_PACKAGE_RULES = roleSkillPackages._rules;
