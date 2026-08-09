@@ -8,12 +8,12 @@ import { sendMagicLink, signInWithPassword, signUpWithPassword } from "@/lib/bac
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign In — Edgerunner Forge" },
+      { title: "Sign In — Night City Tales" },
       {
         name: "description",
         content: "Sign in with email and password or a magic link to reach your character roster.",
       },
-      { property: "og:title", content: "Sign In — Edgerunner Forge" },
+      { property: "og:title", content: "Sign In — Night City Tales" },
       {
         property: "og:description",
         content: "Sign in with email and password or a magic link to reach your character roster.",

@@ -4,9 +4,9 @@ import { RosterList } from "@/features/roster/RosterList";
 export const Route = createFileRoute("/_authenticated/roster")({
   head: () => ({
     meta: [
-      { title: "Your Roster — Edgerunner Forge" },
+      { title: "Your Roster — Night City Tales" },
       { name: "description", content: "Every edgerunner you have created, saved to your account." },
-      { property: "og:title", content: "Your Roster — Edgerunner Forge" },
+      { property: "og:title", content: "Your Roster — Night City Tales" },
       {
         property: "og:description",
         content: "Every edgerunner you have created, saved to your account.",
