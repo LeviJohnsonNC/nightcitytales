@@ -1,0 +1,89 @@
+{
+  "_source": {
+    "book": "Cyberpunk RED Core Rulebook",
+    "publisher": "R. Talsorian Games",
+    "pages": "40-42, 73-80, 86-105"
+  },
+  "methods": {
+    "streetrat": {
+      "label": "Streetrat (Templates)",
+      "statMethod": "roll 1d10, take entire template row",
+      "skillMethod": "fixed",
+      "gearMethod": "fixed package",
+      "freeEurobucks": 500,
+      "unspentKept": true
+    },
+    "edgerunner": {
+      "label": "Edgerunner (Fast and Dirty)",
+      "statMethod": "roll 1d10 per STAT against that STAT's column",
+      "skillMethod": "86 points across the Role's 20 skills",
+      "gearMethod": "fixed package",
+      "freeEurobucks": 500,
+      "unspentKept": true
+    },
+    "completePackage": {
+      "label": "Complete Package (Calculated)",
+      "statPoints": 62,
+      "statMin": 2,
+      "statMax": 8,
+      "skillPoints": 86,
+      "skillMax": 6,
+      "gearEurobucks": 2550,
+      "gearUnspentKept": true,
+      "fashionEurobucks": 800,
+      "fashionUnspentKept": false,
+      "fashionNote": "800eb may ONLY buy Fashion or Fashionware. Anything unspent is lost."
+    }
+  },
+  "statPointsByRank": {
+    "minorSupportingCharacter": 50,
+    "startingCharacter": 62,
+    "majorSupportingCharacter": 70,
+    "minorHero": 75,
+    "majorHero": 80
+  },
+  "roleAbilityStartingRank": 4,
+  "derivedStats": {
+    "hitPoints": "10 + 5 * ceil((BODY + WILL) / 2)",
+    "seriouslyWoundedThreshold": "ceil(HP / 2)",
+    "deathSave": "BODY",
+    "humanity": "EMP * 10",
+    "empFromHumanity": "floor(Humanity / 10) \u2014 EMP drops each time the tens place of Humanity drops"
+  },
+  "woundStates": [
+    {
+      "state": "Lightly Wounded",
+      "threshold": "below full HP",
+      "effect": "none",
+      "stabilizationDV": 10
+    },
+    {
+      "state": "Seriously Wounded",
+      "threshold": "below half HP (round up)",
+      "effect": "-2 to all Actions",
+      "stabilizationDV": 13
+    },
+    {
+      "state": "Mortally Wounded",
+      "threshold": "below 1 HP",
+      "effect": "-4 to all Actions; -6 MOVE (min 1); Death Save at the start of each Turn; suffers a Critical Injury whenever damaged by a Melee or Ranged Attack, and Death Save Penalty increases by 1",
+      "stabilizationDV": 15,
+      "note": "DV15 heals back to 1 HP; Unconscious for 1 minute"
+    },
+    {
+      "state": "Dead",
+      "threshold": "one failed Death Save",
+      "effect": "death",
+      "stabilizationDV": null
+    }
+  ],
+  "startingLifestyle": {
+    "housing": "Rented Cargo Container",
+    "location": [
+      "Overcrowded Suburbs",
+      "Combat Zone"
+    ],
+    "lifestyle": "Kibble",
+    "_UNRESOLVED": "The rules state this applies 'if you aren't an Exec'. The Exec provision has not yet been extracted \u2014 do NOT implement an Exec branch until confirmed."
+  }
+}
