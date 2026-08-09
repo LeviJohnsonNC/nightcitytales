@@ -1,0 +1,51 @@
+{
+  "_source": {
+    "book": "Cyberpunk RED Core Rulebook",
+    "publisher": "R. Talsorian Games",
+    "pages": "130"
+  },
+  "_rules": {
+    "checkFormula": "STAT + Skill + 1d10 vs DV",
+    "criticalSuccess": "Natural 10 on the d10: roll another 1d10 and ADD it to the first roll. A second 10 does NOT trigger another Critical Success \u2014 crits never chain.",
+    "criticalFailure": "Natural 1 on the d10: roll another 1d10 and SUBTRACT it from STAT + Skill + first roll. A second 1 does NOT trigger another Critical Failure \u2014 crits never chain.",
+    "modifiers": "Modifier Values are subtracted from the roll.",
+    "_verified": "Exact wording confirmed against p.130. This resolves the previously-flagged open question about crit chaining: it does not chain, in either direction."
+  },
+  "difficultyValues": [
+    {
+      "name": "Simple",
+      "dv": 9,
+      "description": "Something most people can do without thinking, but which might be hard for a small child."
+    },
+    {
+      "name": "Everyday",
+      "dv": 13,
+      "description": "Something most people can do without a lot of special training."
+    },
+    {
+      "name": "Difficult",
+      "dv": 15,
+      "description": "Difficult to accomplish without training or natural talent."
+    },
+    {
+      "name": "Professional",
+      "dv": 17,
+      "description": "Takes actual training; the user can be considered a professional, skilled in their abilities."
+    },
+    {
+      "name": "Heroic",
+      "dv": 21,
+      "description": "A highly skilled feat; one that only the best of the best can pull off. The level of sports stars and other highly regarded superstars."
+    },
+    {
+      "name": "Incredible",
+      "dv": 24,
+      "description": "A tremendous feat. Pulling this off would rate you among the very best of your class professionally. Truly Olympian mettle."
+    },
+    {
+      "name": "Legendary",
+      "dv": 29,
+      "description": "An awe-inspiring feat. Something people write stories about; spoken of in hushed tones for years to come."
+    }
+  ]
+}
