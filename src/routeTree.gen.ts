@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as StyleRouteImport } from './routes/style'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedRosterRouteImport } from './routes/_authenticated/roster'
 import { Route as AuthenticatedCharacterIdRouteImport } from './routes/_authenticated/character.$id'
@@ -28,6 +29,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StyleRoute = StyleRouteImport.update({
+  id: '/style',
+  path: '/style',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
@@ -50,6 +56,7 @@ const AuthenticatedCharacterIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/style': typeof StyleRoute
   '/create': typeof AuthenticatedCreateRoute
   '/roster': typeof AuthenticatedRosterRoute
   '/character/$id': typeof AuthenticatedCharacterIdRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/style': typeof StyleRoute
   '/create': typeof AuthenticatedCreateRoute
   '/roster': typeof AuthenticatedRosterRoute
   '/character/$id': typeof AuthenticatedCharacterIdRoute
@@ -66,20 +74,23 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/style': typeof StyleRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/roster': typeof AuthenticatedRosterRoute
   '/_authenticated/character/$id': typeof AuthenticatedCharacterIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/create' | '/roster' | '/character/$id'
+  fullPaths:
+    '/' | '/login' | '/style' | '/create' | '/roster' | '/character/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/create' | '/roster' | '/character/$id'
+  to: '/' | '/login' | '/style' | '/create' | '/roster' | '/character/$id'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/style'
     | '/_authenticated/create'
     | '/_authenticated/roster'
     | '/_authenticated/character/$id'
@@ -89,6 +100,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
+  StyleRoute: typeof StyleRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -112,6 +124,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/style': {
+      id: '/style'
+      path: '/style'
+      fullPath: '/style'
+      preLoaderRoute: typeof StyleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/create': {
@@ -157,6 +176,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
+  StyleRoute: StyleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
