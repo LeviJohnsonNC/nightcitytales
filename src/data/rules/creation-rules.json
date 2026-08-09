@@ -85,5 +85,40 @@
     ],
     "lifestyle": "Kibble",
     "_UNRESOLVED": "The rules state this applies 'if you aren't an Exec'. The Exec provision has not yet been extracted \u2014 do NOT implement an Exec branch until confirmed."
+  },
+  "humanity": {
+    "_source": "Cyberpunk RED Core Rulebook p.80 (Humanity STAT), p.230 (Cyberpsychosis)",
+    "humanityFromEmp": "EMP * 10",
+    "empFromHumanity": "floor(Humanity / 10) - EMP drops each time the tens place of Humanity drops (44 HUM = EMP 4; 39 HUM = EMP 3)",
+    "cyberpsychosisThreshold": 0,
+    "cyberpsychosisComparison": "below",
+    "cyberpsychosisNote": "Cyberpsychosis triggers when Humanity drops BELOW zero (HUM < 0). Exactly 0 is not yet cyberpsychosis. There is no intermediate mechanical warning band in RAW; low EMP is described as narratively predisposing but carries no separate threshold.",
+    "humanityLossSources": [
+      "Cyberware installation",
+      "Mental trauma (GM-assigned)"
+    ],
+    "traumaHumanityLoss": [
+      {
+        "type": "Traumatic Physical Incident",
+        "example": "Torture",
+        "loss": "1d6"
+      },
+      {
+        "type": "Traumatic Mental Incident",
+        "example": "Witnessing a particularly horrific death or mutilation",
+        "loss": "1d6"
+      },
+      {
+        "type": "Long-term Mental Stress",
+        "example": "Kidnapping, imprisonment, long-term abuse",
+        "loss": "2d6"
+      },
+      {
+        "type": "Long-term Environmental Stress",
+        "example": "Starvation, war zone, month of constant danger",
+        "loss": "2d6"
+      }
+    ],
+    "_note": "Trauma losses are GM-driven and belong to the play loop, not chargen. Included here so the engine has one authoritative Humanity source."
   }
 }
