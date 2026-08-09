@@ -66,11 +66,17 @@ function LoginPage() {
     });
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
-      <form onSubmit={onSignIn} className="w-full max-w-sm space-y-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">Sign in</h1>
-          <p className="text-sm text-muted-foreground">
+    <main className="flex min-h-screen items-center justify-center px-6 py-16">
+      <form
+        onSubmit={onSignIn}
+        className="w-full max-w-sm space-y-5 border border-hairline bg-surface p-7"
+      >
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-ember">
+            Night City Tales
+          </p>
+          <h1 className="text-2xl text-text">Sign in</h1>
+          <p className="text-sm text-text-muted">
             Email and password, or a magic link if you prefer.
           </p>
         </div>
@@ -98,8 +104,12 @@ function LoginPage() {
           />
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {message && <p className="text-sm text-muted-foreground">{message}</p>}
+        {error && (
+          <p className="border-l-2 border-danger pl-3 text-sm text-text">{error}</p>
+        )}
+        {message && (
+          <p className="border-l-2 border-success pl-3 text-sm text-text-muted">{message}</p>
+        )}
 
         <div className="flex flex-col gap-2">
           <Button type="submit" disabled={busy}>
