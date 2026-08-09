@@ -16,9 +16,14 @@ export const Route = createFileRoute("/_authenticated/create")({
       },
     ],
   }),
-  component: () => (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <ChargenWizard />
-    </main>
-  ),
+  component: CreatePage,
 });
+
+function CreatePage() {
+  const { user } = Route.useRouteContext();
+  return (
+    <main className="mx-auto max-w-6xl px-6 py-10">
+      <ChargenWizard userId={user.id} />
+    </main>
+  );
+}
