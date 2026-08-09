@@ -33,31 +33,52 @@ function Index() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
-      <div className="space-y-3">
-        <h1 className="text-4xl font-semibold tracking-tight">Night City Tales</h1>
-        <p className="max-w-md text-sm text-muted-foreground">
-          A character builder for Cyberpunk RED. Scaffolding is in place — the wizard comes next.
-        </p>
-      </div>
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-6 py-16">
+      <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.35em] text-ember">
+        Cyberpunk RED
+      </p>
+      <h1 className="mt-4 max-w-3xl text-5xl leading-[0.95] tracking-[-0.02em] text-text sm:text-7xl">
+        Night City Tales
+      </h1>
+      <p className="mt-6 max-w-xl text-base leading-relaxed text-text-muted">
+        A character builder for Cyberpunk RED. Roll up an edgerunner step by step, keep the
+        math honest, and keep your whole roster saved to your account.
+      </p>
 
-      {user ? (
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
-          <div className="flex gap-2">
-            <Button asChild>
+      <div className="mt-10 flex flex-wrap items-center gap-3">
+        {user ? (
+          <>
+            <Button asChild size="lg">
               <Link to="/roster">Go to roster</Link>
             </Button>
             <Button variant="ghost" onClick={() => void signOut()}>
               Sign out
             </Button>
+            <span className="font-mono text-xs uppercase tracking-widest text-text-dim">
+              {user.email}
+            </span>
+          </>
+        ) : (
+          <Button asChild size="lg">
+            <Link to="/login">Sign in</Link>
+          </Button>
+        )}
+      </div>
+
+      <dl className="mt-16 grid max-w-2xl grid-cols-3 gap-px border border-hairline bg-hairline">
+        {[
+          { k: "Roles", v: "10" },
+          { k: "Build methods", v: "3" },
+          { k: "Steps", v: "11" },
+        ].map((s) => (
+          <div key={s.k} className="bg-surface px-4 py-5">
+            <dt className="font-mono text-[10px] uppercase tracking-[0.25em] text-text-muted">
+              {s.k}
+            </dt>
+            <dd className="num mt-2 text-3xl font-semibold text-text">{s.v}</dd>
           </div>
-        </div>
-      ) : (
-        <Button asChild>
-          <Link to="/login">Sign in</Link>
-        </Button>
-      )}
+        ))}
+      </dl>
     </main>
   );
 }
