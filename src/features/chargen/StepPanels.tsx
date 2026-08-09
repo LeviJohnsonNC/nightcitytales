@@ -1,61 +1,13 @@
-import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { CREATION_METHODS, CREATION_RULES, STAT_ORDER, deriveStats } from "@/engine";
+import { CREATION_RULES, STAT_ORDER, deriveStats } from "@/engine";
 import type { CreationMethod, StatBlock } from "@/engine";
+import { MethodPanel } from "./MethodPanel";
+import { RolePanel } from "./RolePanel";
 import { useChargenStore, type ChargenState } from "./store";
 import type { ChargenStep } from "./steps";
-
-const ROLES = Object.values(rolesData.roles as Record<string, { id: string; name: string; tagline: string }>);
-
-const METHOD_ORDER: { id: CreationMethod; label: string; detail: string }[] = [
-  {
-    id: "streetrat",
-    label: CREATION_METHODS.streetrat.label,
-    detail: CREATION_METHODS.streetrat.statMethod,
-  },
-  {
-    id: "edgerunner",
-    label: CREATION_METHODS.edgerunner.label,
-    detail: CREATION_METHODS.edgerunner.statMethod,
-  },
-  {
-    id: "complete_package",
-    label: CREATION_METHODS.completePackage.label,
-    detail: `${CREATION_METHODS.completePackage.statPoints} STAT Points, ${CREATION_METHODS.completePackage.skillPoints} Skill Points`,
-  },
-];
-
-function OptionCard({
-  selected,
-  title,
-  detail,
-  onClick,
-}: {
-  selected: boolean;
-  title: string;
-  detail: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={cn(
-        "w-full border border-border bg-card p-4 text-left transition-colors hover:border-accent/60",
-        selected && "border-accent bg-accent/10",
-      )}
-    >
-      <span className="block text-sm font-semibold tracking-tight">{title}</span>
-      <span className="mt-1 block font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-        {detail}
-      </span>
-    </button>
-  );
-}
 
 function Placeholder({ step, note }: { step: string; note: string }) {
   return (
@@ -122,34 +74,10 @@ export function StepPanel({
 
   switch (step) {
     case "method":
-      return (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {METHOD_ORDER.map((method) => (
-            <OptionCard
-              key={method.id}
-              selected={state.method === method.id}
-              title={method.label}
-              detail={method.detail}
-              onClick={() => onRequestMethod(method.id)}
-            />
-          ))}
-        </div>
-      );
+      return <MethodPanel state={state} onRequestMethod={onRequestMethod} />;
 
     case "role":
-      return (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {ROLES.map((role) => (
-            <OptionCard
-              key={role.id}
-              selected={state.roleId === role.id}
-              title={role.name}
-              detail={role.tagline}
-              onClick={() => onRequestRole(role.id)}
-            />
-          ))}
-        </div>
-      );
+      return <RolePanel state={state} onRequestRole={onRequestRole} />;
 
     case "derived":
       return <DerivedPanel state={state} />;
