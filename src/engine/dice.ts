@@ -1,4 +1,5 @@
 import type { RNG } from "./types";
+import { buildRollResult, type RollModifier, type RollResult } from "./rollLog";
 
 export const defaultRng: RNG = () => Math.random();
 
@@ -27,39 +28,60 @@ export const d10 = (rng: RNG = defaultRng) => rollDie(10, rng);
 
 /**
  * Cyberpunk RED exploding/imploding d10 check: a natural 10 adds another d10,
- * a natural 1 subtracts another d10. Only one critical step, per the rules.
+ * a natural 1 subtracts another d10. Only one critical step, per the rules —
+ * a second 10 or 1 on the critical die does NOT chain.
  */
-export type CheckResult = {
+export type CheckResult = RollResult & {
   base: number;
   critical: "success" | "failure" | null;
   criticalDie: number | null;
+  /** Sum of the supplied modifiers, excluding the critical die. */
   modifier: number;
-  total: number;
 };
 
-export function statSkillCheck(modifier: number, rng: RNG = defaultRng): CheckResult {
+export type CheckOptions = {
+  dv?: number | null;
+  now?: () => Date;
+};
+
+export function statSkillCheck(
+  modifier: number | RollModifier[],
+  rng: RNG = defaultRng,
+  options: CheckOptions = {},
+): CheckResult {
+  const supplied: RollModifier[] =
+    typeof modifier === "number"
+      ? modifier === 0
+        ? []
+        : [{ label: "Modifier", value: modifier }]
+      : modifier;
+  const modifierTotal = supplied.reduce((sum, m) => sum + m.value, 0);
+
   const base = d10(rng);
-  if (base === 10) {
-    const criticalDie = d10(rng);
-    return {
-      base,
-      critical: "success",
-      criticalDie,
-      modifier,
-      total: base + criticalDie + modifier,
-    };
+  const rolls = [base];
+  const modifiers = [...supplied];
+  let critical: "success" | "failure" | null = null;
+  let criticalDie: number | null = null;
+
+  if (base === 10 || base === 1) {
+    criticalDie = d10(rng); // single step only — crits never chain
+    critical = base === 10 ? "success" : "failure";
+    rolls.push(criticalDie);
+    modifiers.push({
+      label: critical === "success" ? "Critical Success 1d10" : "Critical Failure 1d10",
+      value: critical === "success" ? criticalDie : -criticalDie,
+    });
   }
-  if (base === 1) {
-    const criticalDie = d10(rng);
-    return {
-      base,
-      critical: "failure",
-      criticalDie,
-      modifier,
-      total: base - criticalDie + modifier,
-    };
-  }
-  return { base, critical: null, criticalDie: null, modifier, total: base + modifier };
+
+  const result = buildRollResult({
+    dice: "1d10",
+    rolls,
+    modifiers,
+    dv: options.dv ?? null,
+    ...(options.now ? { now: options.now } : {}),
+  });
+
+  return { ...result, base, critical, criticalDie, modifier: modifierTotal };
 }
 
 /** Deterministic RNG for tests and reproducible generation (mulberry32). */

@@ -1,0 +1,124 @@
+/**
+ * Typed access to the static rules JSON in /src/data/rules.
+ * The engine never hardcodes a rules value: every constant is read from here.
+ */
+import creationRules from "@/data/rules/creation-rules.json";
+import dvTable from "@/data/rules/dv-table.json";
+import hpTable from "@/data/rules/hp-table.json";
+import roleSkillPackages from "@/data/rules/role-skill-packages.json";
+import skillsData from "@/data/rules/skills.json";
+import statTemplates from "@/data/rules/stat-templates.json";
+import type { StatBlock, StatKey } from "./types";
+
+export type SkillDefinition = {
+  id: string;
+  name: string;
+  category: string;
+  stat: string;
+  doubleCost: boolean;
+  isBasicSkill: boolean;
+};
+
+export const SKILLS: SkillDefinition[] = (skillsData.skills as SkillDefinition[]).map((s) => ({
+  id: s.id,
+  name: s.name,
+  category: s.category,
+  stat: s.stat,
+  doubleCost: s.doubleCost,
+  isBasicSkill: s.isBasicSkill,
+}));
+
+const SKILLS_BY_ID = new Map(SKILLS.map((s) => [s.id, s]));
+const SKILLS_BY_NAME = new Map(SKILLS.map((s) => [s.name.toLowerCase(), s]));
+
+export function getSkill(skillId: string): SkillDefinition {
+  const skill = SKILLS_BY_ID.get(skillId);
+  if (!skill) throw new Error(`Unknown skill id "${skillId}" (src/data/rules/skills.json)`);
+  return skill;
+}
+
+export function findSkillByName(name: string): SkillDefinition | undefined {
+  return SKILLS_BY_NAME.get(name.toLowerCase());
+}
+
+export const SKILL_RULES = skillsData._rules;
+
+/** The 13 Basic Skills, as skill ids, read from skills.json. */
+export const BASIC_SKILL_IDS: string[] = (skillsData.basicSkills as string[]).map((name) => {
+  const skill = findSkillByName(name);
+  if (!skill) throw new Error(`Basic Skill "${name}" has no entry in skills.json skills[]`);
+  return skill.id;
+});
+
+export const STAT_ORDER = statTemplates._statOrder as StatKey[];
+
+type TemplateRows = Record<string, Record<string, number>>;
+const TEMPLATES = statTemplates.templates as unknown as Record<string, { rows: TemplateRows }>;
+
+export function getStatTemplateRows(roleId: string): TemplateRows {
+  const template = TEMPLATES[roleId];
+  if (!template) {
+    throw new Error(`No STAT template for role "${roleId}" (src/data/rules/stat-templates.json)`);
+  }
+  return template.rows;
+}
+
+export function getStatTemplateRow(roleId: string, row: number): StatBlock {
+  const rows = getStatTemplateRows(roleId);
+  const values = rows[String(row)];
+  if (!values) {
+    throw new Error(
+      `STAT template for role "${roleId}" has no row ${row} (src/data/rules/stat-templates.json)`,
+    );
+  }
+  const block = {} as StatBlock;
+  for (const stat of STAT_ORDER) {
+    const value = values[stat];
+    if (value === undefined) {
+      throw new Error(
+        `STAT template ${roleId} row ${row} is missing "${stat}" (src/data/rules/stat-templates.json)`,
+      );
+    }
+    block[stat] = value;
+  }
+  return block;
+}
+
+export type RolePackageSkill = { skill: string; specialization: string | null; level: number };
+
+const ROLE_PACKAGES = roleSkillPackages.roles as unknown as Record<
+  string,
+  { skillCount: number; skills: RolePackageSkill[] }
+>;
+
+export function getRolePackage(roleId: string): {
+  skillCount: number;
+  skills: RolePackageSkill[];
+} {
+  const pkg = ROLE_PACKAGES[roleId];
+  if (!pkg) {
+    throw new Error(
+      `No skill package for role "${roleId}" (src/data/rules/role-skill-packages.json)`,
+    );
+  }
+  return pkg;
+}
+
+/** The skill ids that make up a Role's package. */
+export function getRoleSkillIds(roleId: string): string[] {
+  return getRolePackage(roleId).skills.map((entry) => {
+    const skill = findSkillByName(entry.skill);
+    if (!skill) {
+      throw new Error(
+        `Role package skill "${entry.skill}" has no entry in src/data/rules/skills.json`,
+      );
+    }
+    return skill.id;
+  });
+}
+
+export const CREATION_RULES = creationRules;
+export const CREATION_METHODS = creationRules.methods;
+export const DV_TABLE_DATA = dvTable;
+export const HP_TABLE_DATA = hpTable;
+export const SKILL_PACKAGE_RULES = roleSkillPackages._rules;
