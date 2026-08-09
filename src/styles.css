@@ -19,15 +19,32 @@
  */
 
 @theme inline {
-  --font-sans: "Chakra Petch", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
+  --radius-4xl: 2px;
+
+  /* Painted neon-noir palette, sampled from the key art. */
+  --color-ground: #141013;
+  --color-surface: #1e1a1b;
+  --color-surface-raised: #262020;
+  --color-hairline: #3d3635;
+  --color-text: #f2e9e1;
+  --color-text-muted: #b9a99c;
+  --color-text-dim: #7c6c63;
+  --color-ember: #f08521;
+  --color-ember-deep: #bd6e2d;
+  --color-ember-dim: #95592f;
+  --color-danger: #f3581d;
+  --color-cool: #5c7a8a;
+  --color-success: #7f8b5a;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -64,75 +81,44 @@
 }
 
 :root {
-  /* Neon-noir terminal. Dark base, one hot accent: cyan. Numbers stay high contrast. */
-  --radius: 0.125rem;
-  --background: oklch(0.16 0.015 250);
-  --foreground: oklch(0.97 0.005 240);
-  --card: oklch(0.21 0.018 252);
-  --card-foreground: oklch(0.97 0.005 240);
-  --popover: oklch(0.19 0.018 252);
-  --popover-foreground: oklch(0.97 0.005 240);
-  --primary: oklch(0.82 0.15 197);
-  --primary-foreground: oklch(0.16 0.02 250);
-  --secondary: oklch(0.27 0.02 252);
-  --secondary-foreground: oklch(0.97 0.005 240);
-  --muted: oklch(0.26 0.02 252);
-  --muted-foreground: oklch(0.74 0.02 245);
-  --accent: oklch(0.82 0.15 197);
-  --accent-foreground: oklch(0.16 0.02 250);
-  --destructive: oklch(0.66 0.21 22);
-  --destructive-foreground: oklch(0.98 0.005 240);
-  --border: oklch(0.33 0.025 250);
-  --input: oklch(0.33 0.025 250);
-  --ring: oklch(0.82 0.15 197);
-  --chart-1: oklch(0.82 0.15 197);
-  --chart-2: oklch(0.66 0.21 22);
-  --chart-3: oklch(0.8 0.16 90);
-  --chart-4: oklch(0.7 0.18 320);
-  --chart-5: oklch(0.75 0.14 150);
-  --sidebar: oklch(0.18 0.018 252);
-  --sidebar-foreground: oklch(0.97 0.005 240);
-  --sidebar-primary: oklch(0.82 0.15 197);
-  --sidebar-primary-foreground: oklch(0.16 0.02 250);
-  --sidebar-accent: oklch(0.27 0.02 252);
-  --sidebar-accent-foreground: oklch(0.97 0.005 240);
-  --sidebar-border: oklch(0.33 0.025 250);
-  --sidebar-ring: oklch(0.82 0.15 197);
+  /* Painted neon-noir. Warm near-black grounds, one ember accent. Matte, never glowing. */
+  --radius: 2px;
+  --background: #141013;
+  --foreground: #f2e9e1;
+  --card: #1e1a1b;
+  --card-foreground: #f2e9e1;
+  --popover: #1e1a1b;
+  --popover-foreground: #f2e9e1;
+  --primary: #f08521;
+  --primary-foreground: #141013;
+  --secondary: #262020;
+  --secondary-foreground: #f2e9e1;
+  --muted: #262020;
+  --muted-foreground: #b9a99c;
+  --accent: #f08521;
+  --accent-foreground: #141013;
+  --destructive: #f3581d;
+  --destructive-foreground: #141013;
+  --border: #3d3635;
+  --input: #3d3635;
+  --ring: #f08521;
+  --chart-1: #f08521;
+  --chart-2: #f3581d;
+  --chart-3: #7f8b5a;
+  --chart-4: #5c7a8a;
+  --chart-5: #bd6e2d;
+  --sidebar: #1e1a1b;
+  --sidebar-foreground: #f2e9e1;
+  --sidebar-primary: #f08521;
+  --sidebar-primary-foreground: #141013;
+  --sidebar-accent: #262020;
+  --sidebar-accent-foreground: #f2e9e1;
+  --sidebar-border: #3d3635;
+  --sidebar-ring: #f08521;
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -140,10 +126,70 @@
     border-color: var(--color-border);
   }
 
+  html {
+    background-color: var(--color-ground);
+  }
+
+  /*
+   * Painted ground: a faint warm vertical gradient echoing the sky, plus a
+   * generated grain overlay so flat panels sit inside the art rather than on it.
+   */
+  html::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.045'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, #1a1518 0%, #141013 55%, #100c0f 100%);
+  }
+
   body {
-    background-color: var(--color-background);
+    background-color: transparent;
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "tnum" 1;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Keyboard focus is always ember, always visible. */
+  :focus-visible {
+    outline: 2px solid var(--color-ember);
+    outline-offset: 2px;
+  }
+}
+
+/* Every number on the sheet: mono, tabular, never shifting width. */
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+@layer base {
+  .font-mono,
+  code,
+  kbd,
+  samp,
+  pre {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
