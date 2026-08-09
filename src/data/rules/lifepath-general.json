@@ -1,0 +1,1092 @@
+{
+  "_source": {
+    "book": "Cyberpunk RED Core Rulebook",
+    "publisher": "R. Talsorian Games",
+    "pages": "44-53",
+    "note": "General Lifepath. In-world quote sidebars (typeset with doubled letters), page numbers, and art credits were stripped. Every table verified to contain exactly rolls 1-10 except sweet_revenge, which uses ranges as printed."
+  },
+  "_rules": {
+    "die": "1d10",
+    "allowChoose": true,
+    "chooseNote": "The rules explicitly permit choosing instead of rolling on any table, and re-choosing if a result doesn't fit the Character. Record which path was taken.",
+    "persistenceShape": "{ tableId, value, method: 'rolled'|'chosen', roll: number|null }",
+    "repeatableTables": [
+      "friends",
+      "enemies",
+      "tragic_love"
+    ],
+    "countRoll": "Friends, Enemies, and Tragic Love Affairs each use: roll 1d10 and subtract 7, minimum 0, to determine how many you have. Then roll once per instance.",
+    "enemyNote": "Each enemy is built from four linked rolls: enemy_who, enemy_cause, enemy_throw, plus who was the injured party (a choice, not a roll). Then consult sweet_revenge for what happens when you meet."
+  },
+  "_order": [
+    "cultural_origin",
+    "personality",
+    "clothing_style",
+    "hairstyle",
+    "affectation",
+    "value_most",
+    "feel_about_people",
+    "most_valued_person",
+    "most_valued_possession",
+    "family_background",
+    "childhood_environment",
+    "family_crisis",
+    "friends",
+    "enemy_who",
+    "enemy_cause",
+    "enemy_throw",
+    "sweet_revenge",
+    "tragic_love",
+    "life_goals"
+  ],
+  "_missing": [],
+  "tables": {
+    "cultural_origin": {
+      "id": "cultural_origin",
+      "label": "Cultural Origin",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "Where did you come up?",
+      "grantsSkill": {
+        "skill": "Language",
+        "level": 4,
+        "free": true,
+        "note": "Pick one language from your region's list. Granted at Rank 4 \u2014 never deducted from the 86 Skill Points. A language outside the list is explicitly allowed."
+      },
+      "entries": [
+        {
+          "roll": 1,
+          "region": "North American",
+          "languages": [
+            "Chinese",
+            "Cree",
+            "Creole",
+            "English",
+            "French",
+            "Navajo",
+            "Spanish"
+          ]
+        },
+        {
+          "roll": 2,
+          "region": "South/Central American",
+          "languages": [
+            "Creole",
+            "English",
+            "German",
+            "Guarani",
+            "Mayan",
+            "Portuguese",
+            "Quechua",
+            "Spanish"
+          ]
+        },
+        {
+          "roll": 3,
+          "region": "Western European",
+          "languages": [
+            "Dutch",
+            "English",
+            "French",
+            "German",
+            "Italian",
+            "Norwegian",
+            "Portuguese",
+            "Spanish"
+          ]
+        },
+        {
+          "roll": 4,
+          "region": "Eastern European",
+          "languages": [
+            "English",
+            "Finnish",
+            "Polish",
+            "Romanian",
+            "Russian",
+            "Ukrainian"
+          ]
+        },
+        {
+          "roll": 5,
+          "region": "Middle Eastern/North African",
+          "languages": [
+            "Arabic",
+            "Berber",
+            "English",
+            "Farsi",
+            "French",
+            "Hebrew",
+            "Turkish"
+          ]
+        },
+        {
+          "roll": 6,
+          "region": "Sub-Saharan African",
+          "languages": [
+            "Arabic",
+            "English",
+            "French",
+            "Hausa",
+            "Lingala",
+            "Oromo",
+            "Portuguese",
+            "Swahili",
+            "Twi",
+            "Yoruba"
+          ]
+        },
+        {
+          "roll": 7,
+          "region": "South Asian",
+          "languages": [
+            "Bengali",
+            "Dari",
+            "English",
+            "Hindi",
+            "Nepali",
+            "Sinhalese",
+            "Tamil",
+            "Urdu"
+          ]
+        },
+        {
+          "roll": 8,
+          "region": "South East Asian",
+          "languages": [
+            "Arabic",
+            "Burmese",
+            "English",
+            "Filipino",
+            "Hindi",
+            "Indonesian",
+            "Khmer",
+            "Malayan",
+            "Vietnamese"
+          ]
+        },
+        {
+          "roll": 9,
+          "region": "East Asian",
+          "languages": [
+            "Cantonese Chinese",
+            "English",
+            "Japanese",
+            "Korean",
+            "Mandarin Chinese",
+            "Mongolian"
+          ]
+        },
+        {
+          "roll": 10,
+          "region": "Oceania/Pacific Islander",
+          "languages": [
+            "English",
+            "French",
+            "Hawaiian",
+            "Maori",
+            "Pama-Nyungan",
+            "Tahitian Victoria's already decided to play a Netrunner. That means her next step is the Lifepath. She starts with Cultural Origins and decides to roll instead of choose. She likes the idea of stringing together a bunch of random results into a comprehensive Character background. Victoria rolls a 6 on a d10. According to the Cultural Origins table",
+            "that means her Character",
+            "or her Character's family",
+            "was originally from SubSaharan Africa. Her GM tells her Africa's in the midst of a technological boom thank to its close association with the Highriders in orbit. Victoria has family in Ethiopia in real life",
+            "so she decides her Netrunner comes from there. She's not sure why her Character left home yet",
+            "but Victoria's certain the reason will come to her as she continues along the Lifepath. Finally",
+            "Victoria looks over the Language list. She doesn't see Amharic",
+            "the official language of Ethiopia",
+            "there but the rules say she's free to add to the list if it makes sense. Victoria notes her Netrunner has 4 levels of the Language (Amharic) Skill."
+          ]
+        }
+      ]
+    },
+    "personality": {
+      "id": "personality",
+      "label": "Personality",
+      "prompt": "What are you like as a person?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Shy and secretive"
+        },
+        {
+          "roll": 2,
+          "value": "Rebellious, antisocial, and violent"
+        },
+        {
+          "roll": 3,
+          "value": "Arrogant, proud, and aloof"
+        },
+        {
+          "roll": 4,
+          "value": "Moody, rash, and headstrong"
+        },
+        {
+          "roll": 5,
+          "value": "Picky, fussy, and nervous"
+        },
+        {
+          "roll": 6,
+          "value": "Stable and serious"
+        },
+        {
+          "roll": 7,
+          "value": "Silly and fluff-headed"
+        },
+        {
+          "roll": 8,
+          "value": "Sneaky and deceptive"
+        },
+        {
+          "roll": 9,
+          "value": "Intellectual and detached"
+        },
+        {
+          "roll": 10,
+          "value": "Friendly and outgoing"
+        }
+      ]
+    },
+    "clothing_style": {
+      "id": "clothing_style",
+      "label": "Clothing Style",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "How do you dress?",
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Generic Chic (Standard, Colorful, Modular)"
+        },
+        {
+          "roll": 2,
+          "value": "Leisurewear (Comfort, Agility, Athleticism)"
+        },
+        {
+          "roll": 3,
+          "value": "Urban Flash (Flashy, Technological, Streetwear)"
+        },
+        {
+          "roll": 4,
+          "value": "Businesswear (Leadership, Presence, Authority)"
+        },
+        {
+          "roll": 5,
+          "value": "High Fashion (Exclusive, Designer, Couture)"
+        },
+        {
+          "roll": 6,
+          "value": "Bohemian (Folksy, Retro, Free-spirited)"
+        },
+        {
+          "roll": 7,
+          "value": "Bag Lady Chic (Homeless, Ragged, Vagrant)"
+        },
+        {
+          "roll": 8,
+          "value": "Gang Colors (Dangerous, Violent, Rebellious)"
+        },
+        {
+          "roll": 9,
+          "value": "Nomad Leathers (Western, Rugged, Tribal)"
+        },
+        {
+          "roll": 10,
+          "value": "Asia Pop (Bright, Costume-like, Youthful)"
+        }
+      ]
+    },
+    "hairstyle": {
+      "id": "hairstyle",
+      "label": "Hairstyle",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "What's your hair like?",
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Mohawk"
+        },
+        {
+          "roll": 2,
+          "value": "Long and ratty"
+        },
+        {
+          "roll": 3,
+          "value": "Short and spiked"
+        },
+        {
+          "roll": 4,
+          "value": "Wild and all over"
+        },
+        {
+          "roll": 5,
+          "value": "Bald"
+        },
+        {
+          "roll": 6,
+          "value": "Striped"
+        },
+        {
+          "roll": 7,
+          "value": "Wild colors"
+        },
+        {
+          "roll": 8,
+          "value": "Neat and short"
+        },
+        {
+          "roll": 9,
+          "value": "Short and curly"
+        },
+        {
+          "roll": 10,
+          "value": "Long and straight"
+        }
+      ]
+    },
+    "affectation": {
+      "id": "affectation",
+      "label": "Affectation",
+      "prompt": "What are you never without?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Tattoos"
+        },
+        {
+          "roll": 2,
+          "value": "Mirrorshades"
+        },
+        {
+          "roll": 3,
+          "value": "Ritual scars"
+        },
+        {
+          "roll": 4,
+          "value": "Spiked gloves"
+        },
+        {
+          "roll": 5,
+          "value": "Nose rings"
+        },
+        {
+          "roll": 6,
+          "value": "Tongue or other piercings"
+        },
+        {
+          "roll": 7,
+          "value": "Strange fingernail implants"
+        },
+        {
+          "roll": 8,
+          "value": "Spiked boots or heels"
+        },
+        {
+          "roll": 9,
+          "value": "Fingerless gloves"
+        },
+        {
+          "roll": 10,
+          "value": "Strange contacts Victoria's now knows her Netrunner's Cultural Origins (Sub-Saharan Africa) and her Personality (stable and serious). Next is Dress and Personal Style. There's three categories: Clothing Style, Hairstyle, and Affectation. V i c t o r i a r o l l s 4 f o r C l o t h i n g S t y l e: Businesswear. She rolls 9 for Hairstyle: Short and curly. And she rolls 5 for Affectation: Nose rings. Obviously, Victoria like to keep things neat and professional. Thinking about it, she decides her Netrunner gets this from her family, who instilled a need to \"dress to impress\" in her from a young age, especially when dealing with outsiders. \"Outsiders rarely look below the surface,\" her father told her, \"Make sure your surface says you mean business\". Victoria's Netrunner prefers sharp suits and keeps her hair short but natural. The nose ring is a little touch of home, as it was a gift Victoria's Character received before she left Ethiopia. \u25b6"
+        }
+      ]
+    },
+    "value_most": {
+      "id": "value_most",
+      "label": "What Do You Value Most?",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "What matters to you?",
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Money"
+        },
+        {
+          "roll": 2,
+          "value": "Honor"
+        },
+        {
+          "roll": 3,
+          "value": "Your word"
+        },
+        {
+          "roll": 4,
+          "value": "Honesty"
+        },
+        {
+          "roll": 5,
+          "value": "Knowledge"
+        },
+        {
+          "roll": 6,
+          "value": "Vengeance"
+        },
+        {
+          "roll": 7,
+          "value": "Love"
+        },
+        {
+          "roll": 8,
+          "value": "Power"
+        },
+        {
+          "roll": 9,
+          "value": "Family"
+        },
+        {
+          "roll": 10,
+          "value": "Friendship"
+        }
+      ]
+    },
+    "feel_about_people": {
+      "id": "feel_about_people",
+      "label": "How Do You Feel About Most People?",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "How do you see other people?",
+      "entries": [
+        {
+          "roll": 1,
+          "value": "I stay neutral."
+        },
+        {
+          "roll": 2,
+          "value": "I stay neutral."
+        },
+        {
+          "roll": 3,
+          "value": "I like almost everyone."
+        },
+        {
+          "roll": 4,
+          "value": "I hate almost everyone."
+        },
+        {
+          "roll": 5,
+          "value": "People are tools. Use them for your own goals then discard them."
+        },
+        {
+          "roll": 6,
+          "value": "Every person is a valuable individual."
+        },
+        {
+          "roll": 7,
+          "value": "People are obstacles to be destroyed if they cross me."
+        },
+        {
+          "roll": 8,
+          "value": "People are untrustworthy. Don't depend on anyone."
+        },
+        {
+          "roll": 9,
+          "value": "Wipe \u2018em all out and let the cockroaches take over."
+        },
+        {
+          "roll": 10,
+          "value": "People are wonderful!"
+        }
+      ]
+    },
+    "most_valued_person": {
+      "id": "most_valued_person",
+      "label": "Most Valued Person",
+      "prompt": "Who matters most to you?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "A parent"
+        },
+        {
+          "roll": 2,
+          "value": "A brother or sister"
+        },
+        {
+          "roll": 3,
+          "value": "A lover"
+        },
+        {
+          "roll": 4,
+          "value": "A friend"
+        },
+        {
+          "roll": 5,
+          "value": "Yourself"
+        },
+        {
+          "roll": 6,
+          "value": "A pet"
+        },
+        {
+          "roll": 7,
+          "value": "A teacher or mentor"
+        },
+        {
+          "roll": 8,
+          "value": "A public figure"
+        },
+        {
+          "roll": 9,
+          "value": "A personal hero"
+        },
+        {
+          "roll": 10,
+          "value": "No one Roll 1d10 or choose one."
+        }
+      ]
+    },
+    "most_valued_possession": {
+      "id": "most_valued_possession",
+      "label": "Most Valued Possession",
+      "prompt": "What possession means the most to you?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "A weapon"
+        },
+        {
+          "roll": 2,
+          "value": "A tool"
+        },
+        {
+          "roll": 3,
+          "value": "A piece of clothing"
+        },
+        {
+          "roll": 4,
+          "value": "A photograph"
+        },
+        {
+          "roll": 5,
+          "value": "A book or diary"
+        },
+        {
+          "roll": 6,
+          "value": "A recording"
+        },
+        {
+          "roll": 7,
+          "value": "A musical instrument"
+        },
+        {
+          "roll": 8,
+          "value": "A piece of jewelry"
+        },
+        {
+          "roll": 9,
+          "value": "A toy"
+        },
+        {
+          "roll": 10,
+          "value": "A letter their favorite teddddy bearar everrywherre. Arre you maakingg \u2014 the Mighty bozo ripper-offer of arms"
+        }
+      ]
+    },
+    "family_background": {
+      "id": "family_background",
+      "label": "Original Family Background",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "Where did you originally come from?",
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Corporate Execs",
+          "description": "Wealthy, powerful, with servants, luxury homes, and the best of everything. Private security made sure you were always safe. You definitely went to a big-name private school."
+        },
+        {
+          "roll": 2,
+          "value": "Corporate Managers",
+          "description": "Well to do, with large homes, safe neighborhoods, nice cars, etc. Sometimes your parent(s) would hire servants, although this was rare. You had a mix of private and corporate education."
+        },
+        {
+          "roll": 3,
+          "value": "Corporate Technicians",
+          "description": "Middle-middle class, with comfortable conapts or Beaverville suburban homes, minivans and corporate-run technical schools. Kind of like living 1950s America crossed with 1984."
+        },
+        {
+          "roll": 4,
+          "value": "Nomad Pack",
+          "description": "You had a mix of rugged trailers, vehicles, and huge road kombis for your home. You learned to drive and fight at an early age, but the family was always there to care for you. Food was actually fresh and abundant. Mostly home schooled."
+        },
+        {
+          "roll": 5,
+          "value": "Ganger \"Family\"",
+          "description": "A savage, violent home in any place the gang could take over. You were usually hungry, cold, and scared. You probably didn't know who your actual parents were. Education? The Gang taught you how to fight, kill, and steal\u2014what else did you need to know?"
+        },
+        {
+          "roll": 6,
+          "value": "Combat Zoners",
+          "description": "A step up from a gang \"family,\" your home was a decaying building somewhere in the \u2018Zone', heavily fortified. You were hungry at times, but regularly could score a bed and a meal. Home schooled."
+        },
+        {
+          "roll": 7,
+          "value": "Urban Homeless",
+          "description": "You lived in cars, dumpsters, or abandoned shipping modules. If you were lucky. You were usually hungry, cold, and scared, unless you were tough enough to fight for the scraps. Education? School of Hard Knocks."
+        },
+        {
+          "roll": 8,
+          "value": "Megastructure Warren Rats",
+          "description": "You grew up in one of the huge new megastructures that went up after the War. A tiny conapt, kibble and scop for food, a mostly warm bed. Some better educated adult warren dwellers or a local Corporation may have set up a school."
+        },
+        {
+          "roll": 9,
+          "value": "Reclaimers",
+          "description": "You started out on the road, but then moved into one of the deserted ghost towns or cities to rebuild it. A pioneer life: dangerous, but with plenty of simple food and a safe place to sleep. You were home schooled if there was anyone who had the time."
+        },
+        {
+          "roll": 10,
+          "value": "Edgerunners",
+          "description": "Your home was always changing based on your parents' current \"job.\" Could be a luxury apartment, an urban conapt, or a dumpster if you were on the run. Food and shelter ran the gamut from gourmet to kibble."
+        }
+      ]
+    },
+    "childhood_environment": {
+      "id": "childhood_environment",
+      "label": "Childhood Environment",
+      "prompt": "How did you grow up?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Ran on The Street, with no adult supervision."
+        },
+        {
+          "roll": 2,
+          "value": "Spent in a safe Corp Zone walled off from the rest of the City."
+        },
+        {
+          "roll": 3,
+          "value": "In a Nomad pack moving from place to place."
+        },
+        {
+          "roll": 4,
+          "value": "In a Nomad pack with roots in transport (ships, planes, caravans)."
+        },
+        {
+          "roll": 5,
+          "value": "In a decaying, once upscale neighborhood, now holding off the boosters to survive."
+        },
+        {
+          "roll": 6,
+          "value": "In the heart of the Combat Zone, living in a wrecked building or other squat."
+        },
+        {
+          "roll": 7,
+          "value": "In a huge \"megastructure\" building controlled by a Corp or the City."
+        },
+        {
+          "roll": 8,
+          "value": "In the ruins of a deserted town or city taken over by Reclaimers."
+        },
+        {
+          "roll": 9,
+          "value": "In a Drift Nation (a floating offshore city) that is a meeting place for all kinds of people."
+        },
+        {
+          "roll": 10,
+          "value": "In a Corporate luxury \"starscraper,\" high above the rest of the teeming rabble."
+        }
+      ]
+    },
+    "family_crisis": {
+      "id": "family_crisis",
+      "label": "Family Crisis",
+      "prompt": "What happened to your family?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Your family lost everything through betrayal."
+        },
+        {
+          "roll": 2,
+          "value": "Your family lost everything through bad management."
+        },
+        {
+          "roll": 3,
+          "value": "Your family was exiled or otherwise driven from their original home/nation/Corporation."
+        },
+        {
+          "roll": 4,
+          "value": "Your family is imprisoned, and you alone escaped."
+        },
+        {
+          "roll": 5,
+          "value": "Your family vanished. You are the only remaining member."
+        },
+        {
+          "roll": 6,
+          "value": "Your family was killed, and you were the only survivor."
+        },
+        {
+          "roll": 7,
+          "value": "Your family is involved in a long-term conspiracy, organization, or association, such as a crime family or revolutionary group."
+        },
+        {
+          "roll": 8,
+          "value": "Your family was scattered to the winds due to misfortune."
+        },
+        {
+          "roll": 9,
+          "value": "Your family is cursed with a hereditary feud that has lasted for generations."
+        },
+        {
+          "roll": 10,
+          "value": "You are the inheritor of a family debt; you must honor this debt before moving on with your life."
+        }
+      ]
+    },
+    "friends": {
+      "id": "friends",
+      "label": "Friend's Relationship",
+      "prompt": "How do you know them?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Like an older sibling to you."
+        },
+        {
+          "roll": 2,
+          "value": "Like a younger sibling to you."
+        },
+        {
+          "roll": 3,
+          "value": "A teacher or mentor."
+        },
+        {
+          "roll": 4,
+          "value": "A partner or coworker."
+        },
+        {
+          "roll": 5,
+          "value": "A former lover."
+        },
+        {
+          "roll": 6,
+          "value": "An old enemy."
+        },
+        {
+          "roll": 7,
+          "value": "Like a parent to you."
+        },
+        {
+          "roll": 8,
+          "value": "An old childhood friend."
+        },
+        {
+          "roll": 9,
+          "value": "Someone you know from The Street."
+        },
+        {
+          "roll": 10,
+          "value": "Someone with a common interest or goal."
+        }
+      ]
+    },
+    "enemy_who": {
+      "id": "enemy_who",
+      "label": "Who Is Your Enemy?",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "Who did you cross?",
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Ex-friend"
+        },
+        {
+          "roll": 2,
+          "value": "Ex-lover"
+        },
+        {
+          "roll": 3,
+          "value": "Estranged relative"
+        },
+        {
+          "roll": 4,
+          "value": "Childhood enemy"
+        },
+        {
+          "roll": 5,
+          "value": "Person working for you"
+        },
+        {
+          "roll": 6,
+          "value": "Person you work for"
+        },
+        {
+          "roll": 7,
+          "value": "Partner or coworker"
+        },
+        {
+          "roll": 8,
+          "value": "Corporate exec"
+        },
+        {
+          "roll": 9,
+          "value": "Government official"
+        },
+        {
+          "roll": 10,
+          "value": "Boosterganger"
+        }
+      ]
+    },
+    "enemy_cause": {
+      "id": "enemy_cause",
+      "label": "What Caused It?",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "What started it?",
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Caused the other to lose face or status."
+        },
+        {
+          "roll": 2,
+          "value": "Caused the loss of lover, friend, or relative."
+        },
+        {
+          "roll": 3,
+          "value": "Caused a major public humiliation."
+        },
+        {
+          "roll": 4,
+          "value": "Accused the other of cowardice or some other major personal flaw."
+        },
+        {
+          "roll": 5,
+          "value": "Deserted or betrayed the other."
+        },
+        {
+          "roll": 6,
+          "value": "Turned down the other's offer of a job or romantic involvement."
+        },
+        {
+          "roll": 7,
+          "value": "You just don't like each other."
+        },
+        {
+          "roll": 8,
+          "value": "One of you was a romantic rival."
+        },
+        {
+          "roll": 9,
+          "value": "One of you was a business rival."
+        },
+        {
+          "roll": 10,
+          "value": "One of you set the other up for a crime they didn't commit."
+        }
+      ]
+    },
+    "enemy_throw": {
+      "id": "enemy_throw",
+      "label": "What Can They Throw at You?",
+      "die": "1d10",
+      "allowChoose": true,
+      "prompt": "What can they bring to bear?",
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Just themselves and even they won't go out of their way."
+        },
+        {
+          "roll": 2,
+          "value": "Just themselves."
+        },
+        {
+          "roll": 3,
+          "value": "Just themselves and a close friend."
+        },
+        {
+          "roll": 4,
+          "value": "Themselves and a few (1d6/2) friends."
+        },
+        {
+          "roll": 5,
+          "value": "Themselves and a few (1d10/2) friends."
+        },
+        {
+          "roll": 6,
+          "value": "An entire gang (at least 1d10 + 5 people)."
+        },
+        {
+          "roll": 7,
+          "value": "The local cops or other Lawmen."
+        },
+        {
+          "roll": 8,
+          "value": "A powerful gang lord or small Corporation."
+        },
+        {
+          "roll": 9,
+          "value": "A powerful Corporation."
+        },
+        {
+          "roll": 10,
+          "value": "An entire city or government or agency."
+        }
+      ]
+    },
+    "sweet_revenge": {
+      "id": "sweet_revenge",
+      "label": "Sweet Revenge",
+      "die": "1d10",
+      "allowChoose": true,
+      "usesRanges": true,
+      "prompt": "What happens when you meet again?",
+      "entries": [
+        {
+          "rollMin": 1,
+          "rollMax": 2,
+          "label": "1-2",
+          "value": "Avoid the scum."
+        },
+        {
+          "rollMin": 3,
+          "rollMax": 4,
+          "label": "3-4",
+          "value": "Go into a murderous rage and try to physically rip their face off."
+        },
+        {
+          "rollMin": 5,
+          "rollMax": 6,
+          "label": "5-6",
+          "value": "Backstab them indirectly."
+        },
+        {
+          "rollMin": 7,
+          "rollMax": 8,
+          "label": "7-8",
+          "value": "Verbally attack them."
+        },
+        {
+          "rollMin": 9,
+          "rollMax": 9,
+          "label": "9",
+          "value": "Set them up for a crime or other transgression they didn't commit."
+        },
+        {
+          "rollMin": 10,
+          "rollMax": 10,
+          "label": "10",
+          "value": "Set out to murder or maim them."
+        }
+      ]
+    },
+    "tragic_love": {
+      "id": "tragic_love",
+      "label": "Tragic Love Affair",
+      "prompt": "How did it end?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Your lover died in an accident."
+        },
+        {
+          "roll": 2,
+          "value": "Your lover mysteriously vanished."
+        },
+        {
+          "roll": 3,
+          "value": "It just didn't work out."
+        },
+        {
+          "roll": 4,
+          "value": "A personal goal or vendetta came between you and your lover."
+        },
+        {
+          "roll": 5,
+          "value": "Your lover was kidnapped."
+        },
+        {
+          "roll": 6,
+          "value": "Your lover went insane or cyberpsycho."
+        },
+        {
+          "roll": 7,
+          "value": "Your lover committed suicide."
+        },
+        {
+          "roll": 8,
+          "value": "Your lover was killed in a fight."
+        },
+        {
+          "roll": 9,
+          "value": "A rival cut you out of the action."
+        },
+        {
+          "roll": 10,
+          "value": "Your lover is imprisoned or exiled."
+        }
+      ]
+    },
+    "life_goals": {
+      "id": "life_goals",
+      "label": "Life Goals",
+      "prompt": "What do you want out of life?",
+      "die": "1d10",
+      "allowChoose": true,
+      "entries": [
+        {
+          "roll": 1,
+          "value": "Get rid of a bad reputation."
+        },
+        {
+          "roll": 2,
+          "value": "Gain power and control."
+        },
+        {
+          "roll": 3,
+          "value": "Get off The Street no matter what it takes."
+        },
+        {
+          "roll": 4,
+          "value": "Cause pain and suffering to anyone who crosses you."
+        },
+        {
+          "roll": 5,
+          "value": "Live down your past life and try to forget it."
+        },
+        {
+          "roll": 6,
+          "value": "Hunt down those responsible for your miserable life and make them pay."
+        },
+        {
+          "roll": 7,
+          "value": "Get what's rightfully yours."
+        },
+        {
+          "roll": 8,
+          "value": "Save, if possible, anyone else involved in your background, like a lover, or family member."
+        },
+        {
+          "roll": 9,
+          "value": "Gain fame and recognition."
+        },
+        {
+          "roll": 10,
+          "value": "Become feared and respected."
+        }
+      ]
+    }
+  }
+}
