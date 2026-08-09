@@ -1,4 +1,5 @@
 import { useState } from "react";
+import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -6,29 +7,62 @@ import {
   culturalOriginLanguageGrant,
   getLifepathTable,
   languagesForCulturalOrigin,
+  pruneRoleLifepathAnswers,
   rollEnemy,
   rollLifepathCount,
   rollLifepathTable,
+  visibleRoleLifepathTables,
   type LifepathEntryRecord,
 } from "@/engine";
 import { BiographyPanel } from "./BiographyPanel";
+import { AssembledBiography, type BiographyEditRow } from "./AssembledBiography";
 import { LifepathTableCard } from "./LifepathTableCard";
+import { RoleLifepathTableCard } from "./RoleLifepathTableCard";
+import {
+  enemySentences,
+  friendSentence,
+  languageSentence,
+  loveSentence,
+  roleLifepathSentences,
+  sentenceFor,
+} from "./lifepathNarrative";
 import {
   SINGLE_LIFEPATH_TABLES,
   readGeneralLifepath,
   type EnemyEntry,
   type GeneralLifepath,
 } from "./lifepathState";
+import { readRoleLifepath, type RoleLifepath } from "./roleLifepathState";
 import { useChargenStore, type ChargenState } from "./store";
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 
+const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
+
 export function LifepathPanel({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const general = readGeneralLifepath(state.lifepath.general);
+  const roleLifepath = readRoleLifepath(state.lifepath.roleSpecific, state.roleId);
+  const roleName = state.roleId ? ROLE_NAMES[state.roleId]?.name : undefined;
 
   function setGeneral(next: GeneralLifepath) {
     patch({ lifepath: { ...state.lifepath, general: next as unknown as Record<string, unknown> } });
+  }
+
+  function setRoleLifepath(next: RoleLifepath) {
+    patch({
+      lifepath: { ...state.lifepath, roleSpecific: next as unknown as Record<string, unknown> },
+    });
+  }
+
+  /** A changed gate answer clears anything it no longer reveals. */
+  function setRoleEntry(entry: LifepathEntryRecord) {
+    if (!state.roleId) return;
+    const entries = { ...roleLifepath.entries, [entry.tableId]: entry };
+    setRoleLifepath({
+      roleId: state.roleId,
+      entries: pruneRoleLifepathAnswers(state.roleId, entries),
+    });
   }
 
   function setEntry(entry: LifepathEntryRecord) {
@@ -81,13 +115,135 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
           entries={general.tragicLove}
           onChange={(tragicLove) => setGeneral({ ...general, tragicLove })}
         />
+
+        {state.roleId ? (
+          <section className="border border-hairline/60 bg-surface/40 p-4">
+            <header className="flex flex-wrap items-baseline gap-3">
+              <h2 className="font-display text-base font-bold uppercase tracking-[0.14em] text-text">
+                {roleName} Lifepath
+              </h2>
+              <p className="text-xs text-text-dim">
+                Mixed dice — read each table's own die. Branch tables appear once you answer their
+                gate.
+              </p>
+            </header>
+            <div className="mt-4 space-y-3">
+              {visibleRoleLifepathTables(state.roleId, roleLifepath.entries).map((table) => (
+                <RoleLifepathTableCard
+                  key={table.id}
+                  roleId={state.roleId!}
+                  table={table}
+                  entry={roleLifepath.entries[table.id] ?? null}
+                  onChange={setRoleEntry}
+                />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <p className="border border-dashed border-hairline p-4 text-sm text-text-dim">
+            Pick a Role and its own Lifepath tables appear here.
+          </p>
+        )}
+
+        <AssembledBiography
+          paragraphs={assembledParagraphs(general, roleLifepath, roleName)}
+          rows={editRows(general, setGeneral, roleLifepath, setRoleEntry, state.roleId)}
+        />
       </div>
 
       <aside className="xl:sticky xl:top-8 xl:self-start">
-        <BiographyPanel lifepath={general} />
+        <BiographyPanel
+          lifepath={general}
+          roleLifepath={roleLifepath}
+          {...(roleName ? { roleName } : {})}
+        />
       </aside>
     </div>
   );
+}
+
+function assembledParagraphs(
+  general: GeneralLifepath,
+  roleLifepath: RoleLifepath,
+  roleName: string | undefined,
+): string[] {
+  const opening = SINGLE_LIFEPATH_TABLES.filter((id) => id !== "life_goals")
+    .map((id) => general.entries[id])
+    .filter(Boolean)
+    .map((entry) => sentenceFor(entry!));
+  if (general.language) opening.push(languageSentence(general.language));
+
+  const people = [
+    ...general.friends.map(friendSentence),
+    ...general.enemies.flatMap(enemySentences),
+    ...general.tragicLove.map(loveSentence),
+  ];
+
+  const goal = general.entries["life_goals"];
+  const role = roleLifepath.roleId
+    ? roleLifepathSentences(roleLifepath.roleId, roleLifepath.entries)
+    : [];
+
+  const paragraphs: string[] = [];
+  if (opening.length) paragraphs.push(opening.join(" "));
+  if (people.length) paragraphs.push(people.join(" "));
+  if (goal) paragraphs.push(sentenceFor(goal));
+  if (role.length) paragraphs.push(`${roleName ?? "Your Role"}: ${role.join(" ")}`);
+  return paragraphs;
+}
+
+function editRows(
+  general: GeneralLifepath,
+  setGeneral: (next: GeneralLifepath) => void,
+  roleLifepath: RoleLifepath,
+  setRoleEntry: (entry: LifepathEntryRecord) => void,
+  roleId: string | null,
+): BiographyEditRow[] {
+  const rows: BiographyEditRow[] = [];
+
+  for (const tableId of SINGLE_LIFEPATH_TABLES) {
+    const entry = general.entries[tableId];
+    if (!entry) continue;
+    rows.push({
+      key: tableId,
+      label: getLifepathTable(tableId).label,
+      entry,
+      onChange: (next) => setGeneral({ ...general, entries: { ...general.entries, [tableId]: next } }),
+    });
+  }
+
+  general.friends.forEach((entry, i) =>
+    rows.push({
+      key: `friend-${i}`,
+      label: `Friend ${i + 1}`,
+      entry,
+      onChange: (next) =>
+        setGeneral({ ...general, friends: general.friends.map((e, j) => (j === i ? next : e)) }),
+    }),
+  );
+
+  general.tragicLove.forEach((entry, i) =>
+    rows.push({
+      key: `love-${i}`,
+      label: `Tragic Love ${i + 1}`,
+      entry,
+      onChange: (next) =>
+        setGeneral({
+          ...general,
+          tragicLove: general.tragicLove.map((e, j) => (j === i ? next : e)),
+        }),
+    }),
+  );
+
+  if (roleId) {
+    for (const table of visibleRoleLifepathTables(roleId, roleLifepath.entries)) {
+      const entry = roleLifepath.entries[table.id];
+      if (!entry) continue;
+      rows.push({ key: `role-${table.id}`, label: table.label, entry, onChange: setRoleEntry });
+    }
+  }
+
+  return rows;
 }
 
 function LanguagePicker({

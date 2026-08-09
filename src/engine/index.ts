@@ -9,3 +9,4 @@ export * from "./statGeneration";
 export * from "./skillAllocation";
 export * from "./humanity";
 export * from "./lifepath";
+export * from "./roleLifepath";
