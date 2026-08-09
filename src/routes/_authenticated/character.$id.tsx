@@ -3,9 +3,9 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 export const Route = createFileRoute("/_authenticated/character/$id")({
   head: () => ({
     meta: [
-      { title: "Character Sheet — Edgerunner Forge" },
+      { title: "Character Sheet — Night City Tales" },
       { name: "description", content: "View and manage one of your saved edgerunners." },
-      { property: "og:title", content: "Character Sheet — Edgerunner Forge" },
+      { property: "og:title", content: "Character Sheet — Night City Tales" },
       {
         property: "og:description",
         content: "View and manage one of your saved edgerunners.",

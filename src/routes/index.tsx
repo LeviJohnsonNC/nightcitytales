@@ -6,13 +6,13 @@ import { getCurrentUser, onAuthChange, signOut, type AuthUser } from "@/lib/back
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Edgerunner Forge — Cyberpunk RED Character Builder" },
+      { title: "Night City Tales — Cyberpunk RED Character Builder" },
       {
         name: "description",
         content:
           "Roll up Cyberpunk RED characters with a guided wizard and keep your whole roster saved to your account.",
       },
-      { property: "og:title", content: "Edgerunner Forge — Cyberpunk RED Character Builder" },
+      { property: "og:title", content: "Night City Tales — Cyberpunk RED Character Builder" },
       {
         property: "og:description",
         content:
@@ -35,7 +35,7 @@ function Index() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
       <div className="space-y-3">
-        <h1 className="text-4xl font-semibold tracking-tight">Edgerunner Forge</h1>
+        <h1 className="text-4xl font-semibold tracking-tight">Night City Tales</h1>
         <p className="max-w-md text-sm text-muted-foreground">
           A character builder for Cyberpunk RED. Scaffolding is in place — the wizard comes next.
         </p>
