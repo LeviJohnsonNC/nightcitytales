@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendMagicLink, signInWithPassword, signUpWithPassword } from "@/lib/backend";
+import loginArt from "@/assets/login-skyline.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -66,10 +67,26 @@ function LoginPage() {
     });
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
+    <main className="relative flex min-h-screen items-center justify-start overflow-hidden px-6 py-16">
+      {/* Decorative key art. Focal point sits right-of-centre so the figure survives narrow crops. */}
+      <img
+        src={loginArt.url}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ objectPosition: "72% 45%" }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(20,16,19,0.94) 0%, rgba(20,16,19,0.85) 35%, rgba(20,16,19,0.45) 70%, rgba(20,16,19,0.2) 100%)",
+        }}
+      />
       <form
         onSubmit={onSignIn}
-        className="w-full max-w-sm space-y-5 border border-hairline bg-surface p-7"
+        className="relative w-full max-w-sm space-y-5 border border-hairline bg-surface/90 p-7 backdrop-blur-[2px] lg:ml-[8%]"
       >
         <div className="space-y-2">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-ember">
