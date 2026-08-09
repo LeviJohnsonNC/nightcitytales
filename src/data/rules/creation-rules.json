@@ -119,6 +119,10 @@
         "loss": "2d6"
       }
     ],
-    "_note": "Trauma losses are GM-driven and belong to the play loop, not chargen. Included here so the engine has one authoritative Humanity source."
+    "_note": "Trauma losses are GM-driven and belong to the play loop, not chargen. Included here so the engine has one authoritative Humanity source.",
+    "canGoBelowZero": true,
+    "clampNote": "Humanity is NOT clamped at 0. RAW (p.80) says cyberpsychosis triggers when HUM 'drops below zero', which requires negative values to exist. Clamping at 0 makes the cyberpsychosis flag unreachable. Track the true (possibly negative) value for threshold logic and floor only the DISPLAY value at 0.",
+    "empFloor": 0,
+    "empFloorNote": "EMP derived from Humanity is floored at 0 \u2014 negative Humanity must not produce a negative EMP."
   }
 }
