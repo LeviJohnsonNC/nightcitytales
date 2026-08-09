@@ -7,8 +7,7 @@ import { CREATION_RULES } from "./rulesData";
 import { empFromHumanity } from "./derived";
 
 const humanityRules = (CREATION_RULES as unknown as Record<string, unknown>)["humanity"] as
-  | { cyberpsychosisThreshold?: number }
-  | undefined;
+  { cyberpsychosisThreshold?: number; cyberpsychosisComparison?: string } | undefined;
 
 /**
  * Null when the rules data does not define it. No value is inferred here —
@@ -18,18 +17,43 @@ const humanityRules = (CREATION_RULES as unknown as Record<string, unknown>)["hu
 export const CYBERPSYCHOSIS_THRESHOLD: number | null =
   humanityRules?.cyberpsychosisThreshold ?? null;
 
+/**
+ * How `humanityCurrent` is compared against the threshold. The rules data
+ * carries this alongside the threshold because the two are meaningless apart:
+ * a threshold of 0 means very different things under "below" and "atOrBelow".
+ */
+const COMPARATORS: Record<string, (humanity: number, threshold: number) => boolean> = {
+  below: (humanity, threshold) => humanity < threshold,
+  atOrBelow: (humanity, threshold) => humanity <= threshold,
+};
+
+export const CYBERPSYCHOSIS_COMPARISON: string | null =
+  humanityRules?.cyberpsychosisComparison ?? null;
+
 export const MISSING_CYBERPSYCHOSIS_RULE =
   "src/data/rules/creation-rules.json → humanity.cyberpsychosisThreshold";
+
+export const MISSING_CYBERPSYCHOSIS_COMPARISON_RULE =
+  "src/data/rules/creation-rules.json → humanity.cyberpsychosisComparison" +
+  ` (expected one of: ${Object.keys(COMPARATORS).join(", ")})`;
 
 export type HumanityLossResult = {
   humanityBefore: number;
   humanityLost: number;
+  /**
+   * The true remaining Humanity, NOT floored at zero. Cyberpsychosis is
+   * defined as dropping below the threshold, so overshoot past it has to
+   * survive or the comparison could never fire. Use `humanitySheet` for
+   * the value shown on a character sheet.
+   */
   humanityCurrent: number;
-  /** EMP derived from the remaining Humanity. */
+  /** `humanityCurrent` floored at 0 — the display value. */
+  humanitySheet: number;
+  /** EMP derived from the remaining Humanity. Never negative. */
   emp: number;
   /**
-   * True/false when the threshold is present in the rules data,
-   * null when it is not (see missingRule).
+   * True/false when the threshold and comparison are both present in the
+   * rules data, null when either is not (see missingRule).
    */
   cyberpsychosisRisk: boolean | null;
   missingRule: string | null;
@@ -40,15 +64,29 @@ export function applyCyberwareHumanityLoss(
   lossRolls: number[],
 ): HumanityLossResult {
   const humanityLost = lossRolls.reduce((sum, n) => sum + n, 0);
-  const humanityCurrent = Math.max(0, currentHumanity - humanityLost);
+  const humanityCurrent = currentHumanity - humanityLost;
+  const humanitySheet = Math.max(0, humanityCurrent);
   const threshold = CYBERPSYCHOSIS_THRESHOLD;
+  const comparator =
+    CYBERPSYCHOSIS_COMPARISON === null ? undefined : COMPARATORS[CYBERPSYCHOSIS_COMPARISON];
+
+  let cyberpsychosisRisk: boolean | null = null;
+  let missingRule: string | null = null;
+  if (threshold === null) {
+    missingRule = MISSING_CYBERPSYCHOSIS_RULE;
+  } else if (comparator === undefined) {
+    missingRule = MISSING_CYBERPSYCHOSIS_COMPARISON_RULE;
+  } else {
+    cyberpsychosisRisk = comparator(humanityCurrent, threshold);
+  }
 
   return {
     humanityBefore: currentHumanity,
     humanityLost,
     humanityCurrent,
-    emp: empFromHumanity(humanityCurrent),
-    cyberpsychosisRisk: threshold === null ? null : humanityCurrent <= threshold,
-    missingRule: threshold === null ? MISSING_CYBERPSYCHOSIS_RULE : null,
+    humanitySheet,
+    emp: Math.max(0, empFromHumanity(humanitySheet)),
+    cyberpsychosisRisk,
+    missingRule,
   };
 }
