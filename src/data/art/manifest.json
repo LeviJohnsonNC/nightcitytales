@@ -1,0 +1,86 @@
+{
+  "_note": "Art manifest. src:null means artwork has not landed yet; the UI renders a styled placeholder showing the asset id. This file is the ONLY source of image paths.",
+  "roleArt": {
+    "rockerboy": {
+      "src": null,
+      "alt": "Rockerboy key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "solo": {
+      "src": null,
+      "alt": "Solo key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "netrunner": {
+      "src": null,
+      "alt": "Netrunner key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "tech": {
+      "src": null,
+      "alt": "Tech key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "medtech": {
+      "src": null,
+      "alt": "Medtech key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "media": {
+      "src": null,
+      "alt": "Media key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "exec": {
+      "src": null,
+      "alt": "Exec key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "lawman": {
+      "src": null,
+      "alt": "Lawman key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "fixer": {
+      "src": null,
+      "alt": "Fixer key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    },
+    "nomad": {
+      "src": null,
+      "alt": "Nomad key art",
+      "focalPoint": [
+        0.5,
+        0.35
+      ]
+    }
+  },
+  "portraits": []
+}
