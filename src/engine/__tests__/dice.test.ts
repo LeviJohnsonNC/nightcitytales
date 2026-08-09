@@ -43,4 +43,39 @@ describe("dice", () => {
     expect(result.critical).toBeNull();
     expect(result.total).toBe(7);
   });
+
+  it("never chains a Critical Success", () => {
+    const result = statSkillCheck(0, scripted([10, 10, 10]));
+    expect(result.critical).toBe("success");
+    expect(result.rolls).toEqual([10, 10]);
+    expect(result.total).toBe(20);
+  });
+
+  it("never chains a Critical Failure", () => {
+    const result = statSkillCheck(0, scripted([1, 1, 1]));
+    expect(result.critical).toBe("failure");
+    expect(result.rolls).toEqual([1, 1]);
+    expect(result.total).toBe(0);
+  });
+
+  it("logs a traceable formula against a DV", () => {
+    const modifiers = [
+      { label: "REF", value: 6 },
+      { label: "Athletics", value: 4 },
+    ];
+    const hit = statSkillCheck(modifiers, scripted([9]), { dv: 15 });
+    expect(hit.total).toBe(19);
+    expect(hit.success).toBe(true);
+    expect(hit.formula).toBe("1d10(9) + REF(6) + Athletics(4) = 19 vs DV15 → SUCCESS by 4");
+
+    const miss = statSkillCheck(modifiers, scripted([9]), { dv: 21 });
+    expect(miss.success).toBe(false);
+    expect(miss.formula).toBe("1d10(9) + REF(6) + Athletics(4) = 19 vs DV21 → FAILED by 2");
+  });
+
+  it("reproduces identical checks for a given seed", () => {
+    const a = statSkillCheck(3, seededRng(99), { dv: 15, now: () => new Date(0) });
+    const b = statSkillCheck(3, seededRng(99), { dv: 15, now: () => new Date(0) });
+    expect(a).toEqual(b);
+  });
 });
