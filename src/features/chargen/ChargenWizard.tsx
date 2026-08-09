@@ -48,7 +48,8 @@ export function ChargenWizard({ userId }: { userId: string }) {
     Object.keys(state.lifepath.roleSpecific).length > 0;
 
   function requestMethod(method: CreationMethod) {
-    if (state.method && state.method !== method) {
+    // Method is switchable freely until a Role is locked; after that it restarts.
+    if (state.method && state.method !== method && state.roleId) {
       setPending({ kind: "method", method });
       return;
     }
