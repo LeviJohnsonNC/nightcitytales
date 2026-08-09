@@ -8,6 +8,7 @@ import {
   validateCompletePackageStats,
   validateEdgerunnerSkills,
 } from "@/engine";
+import { generalLifepathComplete, readGeneralLifepath } from "./lifepathState";
 import type { ChargenState } from "./store";
 import { CHARGEN_STEPS, type ChargenStep } from "./steps";
 
@@ -35,6 +36,13 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       return state.roleId
         ? { violations: [], untouched: false }
         : { violations: ["No Role chosen yet."], untouched: true };
+
+    case "lifepath": {
+      const general = readGeneralLifepath(state.lifepath.general);
+      const untouched = Object.keys(general.entries).length === 0;
+      if (untouched) return { violations: ["No Lifepath tables answered yet."], untouched };
+      return { violations: generalLifepathComplete(general), untouched };
+    }
 
     case "stats": {
       if (state.method === "complete_package") {
