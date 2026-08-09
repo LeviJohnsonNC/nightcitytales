@@ -1,0 +1,2492 @@
+{
+ "_source": {
+  "book": "Cyberpunk RED Core Rulebook",
+  "publisher": "R. Talsorian Games",
+  "pages": "54-69",
+  "note": "Role-specific Lifepaths. 59 tables across 10 Roles. Mixed dice (1d10/1d6) and several choice-only tables. Entry counts verified against each table's stated die."
+ },
+ "_rules": {
+  "allowChoose": true,
+  "persistenceShape": "{ tableId, value, method: 'rolled'|'chosen', roll: number|null }",
+  "note": "Same roll-or-choose model, same persistence shape, and same free-text override as the general Lifepath. Appends to the existing biography panel under a Role heading; does not start a new panel.",
+  "conditionalTables": "Tables with a `dependsOn` are hidden until the gate table is answered with a revealing value. A Nomad picks Land, Air, or Sea and only that branch's table appears."
+ },
+ "roles": {
+  "rockerboy": {
+   "id": "rockerboy",
+   "_order": [
+    "what_kind_of_rockerboy_are_you",
+    "are_you_in_a_group_or_a_solo_act",
+    "where_do_you_perform",
+    "who_s_gunning_for_you_your_group",
+    "were_you_once_in_a_group",
+    "why_did_you_leave"
+   ],
+   "tables": {
+    "what_kind_of_rockerboy_are_you": {
+     "id": "what_kind_of_rockerboy_are_you",
+     "label": "What Kind of Rockerboy are You?",
+     "prompt": "What Kind of Rockerboy are You?",
+     "die": "1d10",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Musician"
+      },
+      {
+       "roll": 2,
+       "value": "Slam Poet"
+      },
+      {
+       "roll": 3,
+       "value": "Street Artist"
+      },
+      {
+       "roll": 4,
+       "value": "Performance Artist"
+      },
+      {
+       "roll": 5,
+       "value": "Comedian"
+      },
+      {
+       "roll": 6,
+       "value": "Orator"
+      },
+      {
+       "roll": 7,
+       "value": "Politico"
+      },
+      {
+       "roll": 8,
+       "value": "Rap Artist"
+      },
+      {
+       "roll": 9,
+       "value": "DJ"
+      },
+      {
+       "roll": 10,
+       "value": "Idoru"
+      }
+     ]
+    },
+    "are_you_in_a_group_or_a_solo_act": {
+     "id": "are_you_in_a_group_or_a_solo_act",
+     "label": "Are You in a Group or a Solo Act?",
+     "prompt": "Are You in a Group or a Solo Act?",
+     "die": null,
+     "diePrinted": null,
+     "isChoiceOnly": true,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": null,
+       "value": "In a Group"
+      },
+      {
+       "roll": null,
+       "value": "Solo Act"
+      }
+     ]
+    },
+    "where_do_you_perform": {
+     "id": "where_do_you_perform",
+     "label": "Where Do You Perform?",
+     "prompt": "Where Do You Perform?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Alternative Cafes"
+      },
+      {
+       "roll": 2,
+       "value": "Private Clubs"
+      },
+      {
+       "roll": 3,
+       "value": "Seedy Dive Bars"
+      },
+      {
+       "roll": 4,
+       "value": "Guerrilla Performances"
+      },
+      {
+       "roll": 5,
+       "value": "Nightclubs Around the City"
+      },
+      {
+       "roll": 6,
+       "value": "On the Data Pool"
+      }
+     ]
+    },
+    "who_s_gunning_for_you_your_group": {
+     "id": "who_s_gunning_for_you_your_group",
+     "label": "Who's Gunning for You/Your Group?",
+     "prompt": "Who's Gunning for You/Your Group?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Old group member who thinks you did them dirty."
+      },
+      {
+       "roll": 2,
+       "value": "Rival group or artist trying to steal market share."
+      },
+      {
+       "roll": 3,
+       "value": "Corporate enemies who don't like your message."
+      },
+      {
+       "roll": 4,
+       "value": "Critic or other \"influencer\" trying to bring you down."
+      },
+      {
+       "roll": 5,
+       "value": "Older media star who feels threatened by your rising fame."
+      },
+      {
+       "roll": 6,
+       "value": "Romantic interest or media figure who wants revenge for personal reasons."
+      }
+     ]
+    },
+    "were_you_once_in_a_group": {
+     "id": "were_you_once_in_a_group",
+     "label": "Were You Once in a Group?",
+     "prompt": "Were You Once in a Group?",
+     "die": null,
+     "diePrinted": null,
+     "isChoiceOnly": true,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": null,
+       "value": "Once in a group"
+      },
+      {
+       "roll": null,
+       "value": "Always a solo act"
+      }
+     ]
+    },
+    "why_did_you_leave": {
+     "id": "why_did_you_leave",
+     "label": "Why Did You Leave?",
+     "prompt": "Why Did You Leave?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": true,
+     "dependsOn": {
+      "tableId": "were_you_once_in_a_group",
+      "revealWhen": [
+       "Once in a group"
+      ]
+     },
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "You were a jerk and the rest of the group voted you out."
+      },
+      {
+       "roll": 2,
+       "value": "You got caught sleeping around with another member's mainline."
+      },
+      {
+       "roll": 3,
+       "value": "The rest of the group was killed in a tragic \"accident.\""
+      },
+      {
+       "roll": 4,
+       "value": "The rest of the group was murdered or otherwise broken up by external enemies."
+      },
+      {
+       "roll": 5,
+       "value": "The group broke up over \"creative differences.\""
+      },
+      {
+       "roll": 6,
+       "value": "You decided to go solo."
+      }
+     ]
+    }
+   }
+  },
+  "solo": {
+   "id": "solo",
+   "_order": [
+    "what_kind_of_solo_are_you",
+    "what_s_your_operational_territory",
+    "who_s_gunning_for_you",
+    "what_s_your_moral_compass_like",
+    "got_a_partner_or_do_you_work_alone",
+    "if_you_have_a_partner_who_are_they"
+   ],
+   "tables": {
+    "what_kind_of_solo_are_you": {
+     "id": "what_kind_of_solo_are_you",
+     "label": "What Kind of Solo are You?",
+     "prompt": "What Kind of Solo are You?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Bodyguard"
+      },
+      {
+       "roll": 2,
+       "value": "Street Muscle for Hire"
+      },
+      {
+       "roll": 3,
+       "value": "Corporate Enforcer who takes jobs on the side"
+      },
+      {
+       "roll": 4,
+       "value": "Corporate or Freelance Black Ops Agent"
+      },
+      {
+       "roll": 5,
+       "value": "Local Vigilante for Hire"
+      },
+      {
+       "roll": 6,
+       "value": "Assassin/Hitman for Hire"
+      }
+     ]
+    },
+    "what_s_your_operational_territory": {
+     "id": "what_s_your_operational_territory",
+     "label": "What's Your Operational Territory?",
+     "prompt": "What's Your Operational Territory?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "A Corporate Zone"
+      },
+      {
+       "roll": 2,
+       "value": "Combat Zones"
+      },
+      {
+       "roll": 3,
+       "value": "The whole City"
+      },
+      {
+       "roll": 4,
+       "value": "The territory of a single Corporation"
+      },
+      {
+       "roll": 5,
+       "value": "The territory of a particular Fixer or contact"
+      },
+      {
+       "roll": 6,
+       "value": "Wherever the money takes you"
+      }
+     ]
+    },
+    "who_s_gunning_for_you": {
+     "id": "who_s_gunning_for_you",
+     "label": "Who's Gunning for You?",
+     "prompt": "Who's Gunning for You?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "A Corporation you may have angered."
+      },
+      {
+       "roll": 2,
+       "value": "A boostergang you may have tackled earlier."
+      },
+      {
+       "roll": 3,
+       "value": "Corrupt Lawmen or Lawmen who mistakenly think you're guilty of something."
+      },
+      {
+       "roll": 4,
+       "value": "A rival Solo from another Corp."
+      },
+      {
+       "roll": 5,
+       "value": "A Fixer who sees you as a threat."
+      },
+      {
+       "roll": 6,
+       "value": "A rival Solo who sees you as their nemesis."
+      }
+     ]
+    },
+    "what_s_your_moral_compass_like": {
+     "id": "what_s_your_moral_compass_like",
+     "label": "What's Your Moral Compass Like?",
+     "prompt": "What's Your Moral Compass Like?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Always working for good, trying to take out the \"bad guys.\""
+      },
+      {
+       "roll": 2,
+       "value": "Always spare the innocent (elderly, women, children, pets)."
+      },
+      {
+       "roll": 3,
+       "value": "Will occasionally slip and do unethical or bad things, but it's rare."
+      },
+      {
+       "roll": 4,
+       "value": "Ruthless and profit centered; you will work for anyone, take any job for the money."
+      },
+      {
+       "roll": 5,
+       "value": "Willing to bend the rules (and the law) to get the job done."
+      },
+      {
+       "roll": 6,
+       "value": "Totally evil. You engage in illegal, unethical work all the time; in fact, you enjoy it. SOLO got a partner work alone"
+      }
+     ]
+    },
+    "got_a_partner_or_do_you_work_alone": {
+     "id": "got_a_partner_or_do_you_work_alone",
+     "label": "Got a Partner, or Do You Work Alone?",
+     "prompt": "Got a Partner, or Do You Work Alone?",
+     "die": null,
+     "diePrinted": null,
+     "isChoiceOnly": true,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": null,
+       "value": "Have a Partner"
+      },
+      {
+       "roll": null,
+       "value": "Work Alone"
+      }
+     ]
+    },
+    "if_you_have_a_partner_who_are_they": {
+     "id": "if_you_have_a_partner_who_are_they",
+     "label": "If You Have a Partner, Who are They?",
+     "prompt": "If You Have a Partner, Who are They?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": true,
+     "dependsOn": {
+      "tableId": "got_a_partner_or_do_you_work_alone",
+      "revealWhen": [
+       "Have a Partner"
+      ]
+     },
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Family member"
+      },
+      {
+       "roll": 2,
+       "value": "Old friend"
+      },
+      {
+       "roll": 3,
+       "value": "Possible romantic partner as well"
+      },
+      {
+       "roll": 4,
+       "value": "Secret partner who might be a rogue AI. Might."
+      },
+      {
+       "roll": 5,
+       "value": "Secret partner with mob/gang connections"
+      },
+      {
+       "roll": 6,
+       "value": "Secret partner with Corporate connections"
+      }
+     ]
+    }
+   }
+  },
+  "netrunner": {
+   "id": "netrunner",
+   "_order": [
+    "what_kind_of_runner_are_you",
+    "what_s_your_workspace_like",
+    "who_are_some_of_your_other_clients",
+    "where_do_you_get_your_programs",
+    "who_s_gunning_for_you"
+   ],
+   "tables": {
+    "what_kind_of_runner_are_you": {
+     "id": "what_kind_of_runner_are_you",
+     "label": "What Kind of Runner are You?",
+     "prompt": "What Kind of Runner are You?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Freelancer who will hack for hire."
+      },
+      {
+       "roll": 2,
+       "value": "Corporate \"clone runner\" who hacks for the Man."
+      },
+      {
+       "roll": 3,
+       "value": "Hacktivist interested in cracking systems and exposing bad guys."
+      },
+      {
+       "roll": 4,
+       "value": "Just like to crack systems for the fun of it."
+      },
+      {
+       "roll": 5,
+       "value": "Part of a regular team of freelancers."
+      },
+      {
+       "roll": 6,
+       "value": "Hack for a Media, politico, or Lawman who hires you as needed."
+      }
+     ]
+    },
+    "what_s_your_workspace_like": {
+     "id": "what_s_your_workspace_like",
+     "label": "What's Your Workspace Like?",
+     "prompt": "What's Your Workspace Like?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "There are screens everywhere."
+      },
+      {
+       "roll": 2,
+       "value": "It looks better in Virtuality, you swear."
+      },
+      {
+       "roll": 3,
+       "value": "It's a filthy bed covered in wires."
+      },
+      {
+       "roll": 4,
+       "value": "Corporate, modular, and utilitarian."
+      },
+      {
+       "roll": 5,
+       "value": "Minimalist, clean, and organized."
+      },
+      {
+       "roll": 6,
+       "value": "It's taken over your entire living space. NETRUNNER There's an entire chapter on Netrunning starting on Page 195"
+      }
+     ]
+    },
+    "who_are_some_of_your_other_clients": {
+     "id": "who_are_some_of_your_other_clients",
+     "label": "Who are Some of Your Other Clients?",
+     "prompt": "Who are Some of Your Other Clients?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Local Fixers who send you clients."
+      },
+      {
+       "roll": 2,
+       "value": "Local gangers who also protect your work area while you sweep for NET threats."
+      },
+      {
+       "roll": 3,
+       "value": "Corporate Execs who use you for \"black project\" work."
+      },
+      {
+       "roll": 4,
+       "value": "Local Solos or other combat types who use you to keep their personal systems secure."
+      },
+      {
+       "roll": 5,
+       "value": "Local Nomads and Fixers who use you to keep their family systems secure."
+      },
+      {
+       "roll": 6,
+       "value": "You work for yourself and sell whatever data you can find on the NET."
+      }
+     ]
+    },
+    "where_do_you_get_your_programs": {
+     "id": "where_do_you_get_your_programs",
+     "label": "Where Do You Get Your Programs?",
+     "prompt": "Where Do You Get Your Programs?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Dig around in old abandoned City Zones."
+      },
+      {
+       "roll": 2,
+       "value": "Steal them from other Netrunners you brain-burn."
+      },
+      {
+       "roll": 3,
+       "value": "Have a local Fixer supply programs in exchange for hack work."
+      },
+      {
+       "roll": 4,
+       "value": "Corporate Execs supply you with programs in exchange for your services."
+      },
+      {
+       "roll": 5,
+       "value": "You have backdoors into a few Corporate warehouses."
+      },
+      {
+       "roll": 6,
+       "value": "You hit the Night Markets and score programs whenever you can."
+      }
+     ]
+    },
+    "who_s_gunning_for_you": {
+     "id": "who_s_gunning_for_you",
+     "label": "Who's Gunning for You?",
+     "prompt": "Who's Gunning for You?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "You think it might be a rogue AI or a NET Ghost. Either way, it's bad news."
+      },
+      {
+       "roll": 2,
+       "value": "Rival Netrunners who just don't like you."
+      },
+      {
+       "roll": 3,
+       "value": "Corporates who want you to work for them exclusively."
+      },
+      {
+       "roll": 4,
+       "value": "Lawmen who consider you an illegal \"black hat\" and want to bust you."
+      },
+      {
+       "roll": 5,
+       "value": "Old clients who think you screwed them over."
+      },
+      {
+       "roll": 6,
+       "value": "Fixer or another client who wants your services exclusively. Lifepath Example Victoria flips to the Role Specific Lifepath for a Netrunner. She rolls a 1 on first table, meaning she's a freelancer who hacks for hire. She decides her Netrunner flies solo. Her workspace is, on a roll of 5, minimalist, clean, and organized. She rolls a 5 and discovers that, among her clients, are local Fixers who use her services to secure their systems. She gets her Programs from Night Markets with a roll of 6, and with a 1 on the Who's Gunning for You table, there's a rogue AI or NET Ghost after her! Victoria thinks about it and decides Maryam, her Netrunner, left home to seek her fortune after being rejected for a Highrider NET security position. When she got to Night City she quickly discovered jobs could hard to come by. Luckily, she made a friend who introduced her to some local Fixers who could use her skills to keep their data safe. As for her new enemy? It may be that, before she left Africa, Maryam cracked open an old Data Fortress Netwatch missed when it cleaned up the old NET and, just maybe, whatever was inside found a way to follow her to Night City. NETRUNNER got a partner work alone"
+      }
+     ]
+    }
+   }
+  },
+  "tech": {
+   "id": "tech",
+   "_order": [
+    "what_kind_of_tech_are_you",
+    "got_a_partner_or_do_you_work_alone",
+    "if_you_have_a_partner_who_are_they",
+    "what_s_your_workspace_like",
+    "who_are_your_main_clients",
+    "where_do_you_get_your_supplies",
+    "who_s_gunning_for_you"
+   ],
+   "tables": {
+    "what_kind_of_tech_are_you": {
+     "id": "what_kind_of_tech_are_you",
+     "label": "What Kind of Tech are You?",
+     "prompt": "What Kind of Tech are You?",
+     "die": "1d10",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Cyberware Technician"
+      },
+      {
+       "roll": 2,
+       "value": "Vehicle Mechanic"
+      },
+      {
+       "roll": 3,
+       "value": "Jack of All Trades"
+      },
+      {
+       "roll": 4,
+       "value": "Small Electronics Technician"
+      },
+      {
+       "roll": 5,
+       "value": "Weaponsmith"
+      },
+      {
+       "roll": 6,
+       "value": "Crazy Inventor"
+      },
+      {
+       "roll": 7,
+       "value": "Robot and Drone Mechanic"
+      },
+      {
+       "roll": 8,
+       "value": "Heavy Machinery Mechanic"
+      },
+      {
+       "roll": 9,
+       "value": "Scavenger"
+      },
+      {
+       "roll": 10,
+       "value": "Nautical Mechanic"
+      }
+     ]
+    },
+    "got_a_partner_or_do_you_work_alone": {
+     "id": "got_a_partner_or_do_you_work_alone",
+     "label": "Got a Partner, or Do You Work Alone?",
+     "prompt": "Got a Partner, or Do You Work Alone?",
+     "die": null,
+     "diePrinted": null,
+     "isChoiceOnly": true,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": null,
+       "value": "Have a Partner"
+      },
+      {
+       "roll": null,
+       "value": "Work Alone"
+      }
+     ]
+    },
+    "if_you_have_a_partner_who_are_they": {
+     "id": "if_you_have_a_partner_who_are_they",
+     "label": "If You Have a Partner, Who are They?",
+     "prompt": "If You Have a Partner, Who are They?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": true,
+     "dependsOn": {
+      "tableId": "got_a_partner_or_do_you_work_alone",
+      "revealWhen": [
+       "Have a Partner"
+      ]
+     },
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Family member"
+      },
+      {
+       "roll": 2,
+       "value": "Old friend"
+      },
+      {
+       "roll": 3,
+       "value": "Possible romantic partner as well"
+      },
+      {
+       "roll": 4,
+       "value": "Mentor"
+      },
+      {
+       "roll": 5,
+       "value": "Secret partner with mob/gang connections"
+      },
+      {
+       "roll": 6,
+       "value": "Secret partner with Corporate connections"
+      }
+     ]
+    },
+    "what_s_your_workspace_like": {
+     "id": "what_s_your_workspace_like",
+     "label": "What's Your Workspace Like?",
+     "prompt": "What's Your Workspace Like?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "A mess strewn with blueprint paper."
+      },
+      {
+       "roll": 2,
+       "value": "Everything is color coded, but it's still a nightmare."
+      },
+      {
+       "roll": 3,
+       "value": "Totally digital and obsessively backed up every day."
+      },
+      {
+       "roll": 4,
+       "value": "You design everything on your Agent."
+      },
+      {
+       "roll": 5,
+       "value": "You keep everything just in case you need it later."
+      },
+      {
+       "roll": 6,
+       "value": "Only you understand your filing system. TECH some eye bleacach after. — Torch"
+      }
+     ]
+    },
+    "who_are_your_main_clients": {
+     "id": "who_are_your_main_clients",
+     "label": "Who are Your Main Clients?",
+     "prompt": "Who are Your Main Clients?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Local Fixers who send you clients."
+      },
+      {
+       "roll": 2,
+       "value": "Local gangers who also protect your work area or home."
+      },
+      {
+       "roll": 3,
+       "value": "Corporate Execs who use you for \"black project\" work."
+      },
+      {
+       "roll": 4,
+       "value": "Local Solos or other combat types who use you for weapon upkeep."
+      },
+      {
+       "roll": 5,
+       "value": "Local Nomads and Fixers who bring you \"found\" tech to repair."
+      },
+      {
+       "roll": 6,
+       "value": "You work for yourself and sell what you invent/repair."
+      }
+     ]
+    },
+    "where_do_you_get_your_supplies": {
+     "id": "where_do_you_get_your_supplies",
+     "label": "Where Do You Get Your Supplies?",
+     "prompt": "Where Do You Get Your Supplies?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Scavenge the wreckage you find in abandoned City Zones."
+      },
+      {
+       "roll": 2,
+       "value": "Strip gear from bodies after firefights."
+      },
+      {
+       "roll": 3,
+       "value": "Have a local Fixer bring you supplies in exchange for repair work."
+      },
+      {
+       "roll": 4,
+       "value": "Corporate Execs supply you with stuff in exchange for your services."
+      },
+      {
+       "roll": 5,
+       "value": "You have backdoor into a few Corporate warehouses."
+      },
+      {
+       "roll": 6,
+       "value": "You hit the Night Markets and score deals whenever you can."
+      }
+     ]
+    },
+    "who_s_gunning_for_you": {
+     "id": "who_s_gunning_for_you",
+     "label": "Who's Gunning For You?",
+     "prompt": "Who's Gunning For You?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Combat Zone gangers who want you to work for them exclusively."
+      },
+      {
+       "roll": 2,
+       "value": "Rival Tech trying to steal your customers."
+      },
+      {
+       "roll": 3,
+       "value": "Corporates who want you to work for them exclusively."
+      },
+      {
+       "roll": 4,
+       "value": "Larger manufacturer trying to bring you down because your mods are a threat."
+      },
+      {
+       "roll": 5,
+       "value": "Old client who thinks you screwed them over."
+      },
+      {
+       "roll": 6,
+       "value": "Rival Tech trying to beat you out for resources and parts. TECH About Workspaces Later in the book (on pg. 377) you'll learn more about Housing. Those are the rules that cover where you sleep and they're important. If you're exhausted, you'll suffer penalties on Checks due to lack of sleep. Some Roles, such as Netrunner and Tech, roll on a Workspace table as part of their Role Specific Lifepath. The result rolled doesn't represent a physical location the Character owns but, rather, whatever space they set up to work in. That might be a curtained off area in the Housing they rent, a spare desk at a partner's place, or just whatever corner they can spread out in at the time. Under no circumstances do e s a Charac t er 's Workspace, by itself, count as Housing. If a Character sleeps in their Workspace, and that Workspace isn't already part of their purchased Housing (in a spare room in their Conapt, for example), it counts as if they had slept in a vehicle for the purposes of deciding if they got a good night's sleep or not. got a partner work alone"
+      }
+     ]
+    }
+   }
+  },
+  "medtech": {
+   "id": "medtech",
+   "_order": [
+    "what_kind_of_medtech_are_you",
+    "what_s_your_workspace_like",
+    "got_a_partner_or_do_you_work_alone",
+    "tell_us_about_your_partner_s",
+    "who_are_your_main_clients",
+    "where_do_you_get_your_supplies"
+   ],
+   "tables": {
+    "what_kind_of_medtech_are_you": {
+     "id": "what_kind_of_medtech_are_you",
+     "label": "What Kind of Medtech are You?",
+     "prompt": "What Kind of Medtech are You?",
+     "die": "1d10",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Surgeon"
+      },
+      {
+       "roll": 2,
+       "value": "General Practitioner"
+      },
+      {
+       "roll": 3,
+       "value": "Trauma Medic"
+      },
+      {
+       "roll": 4,
+       "value": "Psychiatrist"
+      },
+      {
+       "roll": 5,
+       "value": "Cyberpsycho Therapist"
+      },
+      {
+       "roll": 6,
+       "value": "Ripperdoc"
+      },
+      {
+       "roll": 7,
+       "value": "Cryosystems Operator"
+      },
+      {
+       "roll": 8,
+       "value": "Pharmacist"
+      },
+      {
+       "roll": 9,
+       "value": "Bodysculptor"
+      },
+      {
+       "roll": 10,
+       "value": "Forensic Pathologist"
+      }
+     ]
+    },
+    "what_s_your_workspace_like": {
+     "id": "what_s_your_workspace_like",
+     "label": "What's Your Workspace Like?",
+     "prompt": "What's Your Workspace Like?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Sterilized daily in the morning like clockwork."
+      },
+      {
+       "roll": 2,
+       "value": "It's not state-of-the-art anymore, but it's comfortable to you."
+      },
+      {
+       "roll": 3,
+       "value": "Your cryo equipment is also used to cool drinks."
+      },
+      {
+       "roll": 4,
+       "value": "Everything possible is single-use and stored compacted until needed."
+      },
+      {
+       "roll": 5,
+       "value": "Not as clean as many of your patients may have hoped."
+      },
+      {
+       "roll": 6,
+       "value": "Meticulously organized, sharpened, and sterilized."
+      }
+     ]
+    },
+    "got_a_partner_or_do_you_work_alone": {
+     "id": "got_a_partner_or_do_you_work_alone",
+     "label": "Got a Partner, or Do You Work Alone?",
+     "prompt": "Got a Partner, or Do You Work Alone?",
+     "die": null,
+     "diePrinted": null,
+     "isChoiceOnly": true,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": null,
+       "value": "Have a Partner"
+      },
+      {
+       "roll": null,
+       "value": "Work Alone"
+      }
+     ]
+    },
+    "tell_us_about_your_partner_s": {
+     "id": "tell_us_about_your_partner_s",
+     "label": "Tell Us About Your Partner(s).",
+     "prompt": "Tell Us About Your Partner(s).",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": true,
+     "dependsOn": {
+      "tableId": "got_a_partner_or_do_you_work_alone",
+      "revealWhen": [
+       "Have a Partner"
+      ]
+     },
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Trauma Team group"
+      },
+      {
+       "roll": 2,
+       "value": "Old friend"
+      },
+      {
+       "roll": 3,
+       "value": "Possible romantic partner as well"
+      },
+      {
+       "roll": 4,
+       "value": "Family member"
+      },
+      {
+       "roll": 5,
+       "value": "Secret partner with mob/gang connections"
+      },
+      {
+       "roll": 6,
+       "value": "Secret partner with Corporate connections MEDTECH For more info on patching people up, go to Page 219 Trauma Team: A premium emergency medical Corp. For more info see Page 279 BY HÉLIO FRAZÃO"
+      }
+     ]
+    },
+    "who_are_your_main_clients": {
+     "id": "who_are_your_main_clients",
+     "label": "Who are Your Main Clients?",
+     "prompt": "Who are Your Main Clients?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Local Fixers who send you clients."
+      },
+      {
+       "roll": 2,
+       "value": "Local gangers who also protect your work area or home in exchange for medical help."
+      },
+      {
+       "roll": 3,
+       "value": "Corporate Execs who use you for \"black project\" medical work."
+      },
+      {
+       "roll": 4,
+       "value": "Local Solos or other combat types who use you for medical help."
+      },
+      {
+       "roll": 5,
+       "value": "Local Nomads and Fixers who bring you wounded clients."
+      },
+      {
+       "roll": 6,
+       "value": "Trauma Team paramedical work."
+      }
+     ]
+    },
+    "where_do_you_get_your_supplies": {
+     "id": "where_do_you_get_your_supplies",
+     "label": "Where Do You Get Your Supplies?",
+     "prompt": "Where Do You Get Your Supplies?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Scavenge stashes of medical supplies you find in abandoned City Zones."
+      },
+      {
+       "roll": 2,
+       "value": "Strip parts from bodies after firefights."
+      },
+      {
+       "roll": 3,
+       "value": "Have a local Fixer bring you supplies in exchange for medical work."
+      },
+      {
+       "roll": 4,
+       "value": "Corporate Execs or Trauma Team supply you with stuff in exchange for your services."
+      },
+      {
+       "roll": 5,
+       "value": "You have a backdoor into a few Corporate or Hospital warehouses."
+      },
+      {
+       "roll": 6,
+       "value": "You hit the Night Markets and score deals whenever you can. MEDTECH"
+      }
+     ]
+    }
+   }
+  },
+  "media": {
+   "id": "media",
+   "_order": [
+    "what_kind_of_media_are_you",
+    "how_ethical_are_you",
+    "how_does_your_work_reach_the_public",
+    "what_types_of_stories_do_you_want_to_tell"
+   ],
+   "tables": {
+    "what_kind_of_media_are_you": {
+     "id": "what_kind_of_media_are_you",
+     "label": "What Kind of Media are You?",
+     "prompt": "What Kind of Media are You?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Blogger"
+      },
+      {
+       "roll": 2,
+       "value": "Writer (Books)"
+      },
+      {
+       "roll": 3,
+       "value": "Videographer"
+      },
+      {
+       "roll": 4,
+       "value": "Documentarian"
+      },
+      {
+       "roll": 5,
+       "value": "Investigative Reporter"
+      },
+      {
+       "roll": 6,
+       "value": "Street Scribe"
+      }
+     ]
+    },
+    "how_ethical_are_you": {
+     "id": "how_ethical_are_you",
+     "label": "How Ethical are You?",
+     "prompt": "How Ethical are You?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Fair, honest reporting, strong ethical practices. You only report the verifiable truth."
+      },
+      {
+       "roll": 2,
+       "value": "Fair and honest reporting, but willing to go on hearsay and rumor if that's what it takes."
+      },
+      {
+       "roll": 3,
+       "value": "Will occasionally slip and do unethical things, but it's rare. You have some standards."
+      },
+      {
+       "roll": 4,
+       "value": "Willing to bend any rules to get the bad guys. But only the bad guys."
+      },
+      {
+       "roll": 5,
+       "value": "Ruthless and determined to make it big, even if it means breaking the law. You're a muckraker."
+      },
+      {
+       "roll": 6,
+       "value": "Totally corrupt. You take bribes, engage in illegal, unethical reporting all the time. Your pen is for hire to the highest bidder."
+      }
+     ]
+    },
+    "how_does_your_work_reach_the_public": {
+     "id": "how_does_your_work_reach_the_public",
+     "label": "How Does Your Work Reach the Public?",
+     "prompt": "How Does Your Work Reach the Public?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Monthly magazine"
+      },
+      {
+       "roll": 2,
+       "value": "Blog"
+      },
+      {
+       "roll": 3,
+       "value": "Mainstream vid feed"
+      },
+      {
+       "roll": 4,
+       "value": "News channel"
+      },
+      {
+       "roll": 5,
+       "value": "\"Book\" sales"
+      },
+      {
+       "roll": 6,
+       "value": "Screamsheets"
+      }
+     ]
+    },
+    "what_types_of_stories_do_you_want_to_tell": {
+     "id": "what_types_of_stories_do_you_want_to_tell",
+     "label": "What Types of Stories Do You Want to Tell?",
+     "prompt": "What Types of Stories Do You Want to Tell?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Political Intrigue"
+      },
+      {
+       "roll": 2,
+       "value": "Ecological Impact"
+      },
+      {
+       "roll": 3,
+       "value": "Celebrity News"
+      },
+      {
+       "roll": 4,
+       "value": "Corporate Takedowns"
+      },
+      {
+       "roll": 5,
+       "value": "Editorials"
+      },
+      {
+       "roll": 6,
+       "value": "Propaganda MEDIA To learn more about how people in 2045 get their news see Page 326"
+      }
+     ]
+    }
+   }
+  },
+  "exec": {
+   "id": "exec",
+   "_order": [
+    "what_kind_of_corp_do_you_work_for",
+    "what_division_do_you_work_in",
+    "how_good_bad_is_your_corp",
+    "current_state_with_your_boss",
+    "where_is_your_corp_based",
+    "who_s_gunning_for_your_group"
+   ],
+   "tables": {
+    "what_kind_of_corp_do_you_work_for": {
+     "id": "what_kind_of_corp_do_you_work_for",
+     "label": "What Kind of Corp Do You Work For?",
+     "prompt": "What Kind of Corp Do You Work For?",
+     "die": "1d10",
+     "diePrinted": "1d6",
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": true,
+     "sourceDiscrepancy": "The book prints 'Roll 1d6' but lists 10 entries; a d6 makes entries 7-10 unreachable. Implemented as 1d10 so every printed option is reachable. This is a documented deviation from the printed text, not a silent fix — check official errata before relying on it.",
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Financial"
+      },
+      {
+       "roll": 2,
+       "value": "Media and Communications"
+      },
+      {
+       "roll": 3,
+       "value": "Cybertech and Medical Technologies"
+      },
+      {
+       "roll": 4,
+       "value": "Pharmaceuticals and Biotech"
+      },
+      {
+       "roll": 5,
+       "value": "Food, Clothing, or other General Consumables"
+      },
+      {
+       "roll": 6,
+       "value": "Energy Production"
+      },
+      {
+       "roll": 7,
+       "value": "Personal Electronics and Robotics"
+      },
+      {
+       "roll": 8,
+       "value": "Corporate Services"
+      },
+      {
+       "roll": 9,
+       "value": "Consumer Services"
+      },
+      {
+       "roll": 10,
+       "value": "Real Estate and Construction"
+      }
+     ]
+    },
+    "what_division_do_you_work_in": {
+     "id": "what_division_do_you_work_in",
+     "label": "What Division Do You Work In?",
+     "prompt": "What Division Do You Work In?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Procurement"
+      },
+      {
+       "roll": 2,
+       "value": "Manufacturing"
+      },
+      {
+       "roll": 3,
+       "value": "Research and Development"
+      },
+      {
+       "roll": 4,
+       "value": "Human Resources"
+      },
+      {
+       "roll": 5,
+       "value": "Public Affairs/Publicity/Advertising"
+      },
+      {
+       "roll": 6,
+       "value": "Mergers and Acquisitions"
+      }
+     ]
+    },
+    "how_good_bad_is_your_corp": {
+     "id": "how_good_bad_is_your_corp",
+     "label": "How Good/Bad is Your Corp?",
+     "prompt": "How Good/Bad is Your Corp?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Always working for good, fully supporting ethical practices."
+      },
+      {
+       "roll": 2,
+       "value": "Operates as a fair and honest business all the time."
+      },
+      {
+       "roll": 3,
+       "value": "Will occasionally slip and do unethical things, but it's rare."
+      },
+      {
+       "roll": 4,
+       "value": "Willing to bend the rules to get what it needs."
+      },
+      {
+       "roll": 5,
+       "value": "Ruthless and profit-centered, willing to do some bad things."
+      },
+      {
+       "roll": 6,
+       "value": "Totally evil. Will engage in illegal, unethical business all the time. EXEC"
+      }
+     ]
+    },
+    "current_state_with_your_boss": {
+     "id": "current_state_with_your_boss",
+     "label": "Current State with Your Boss",
+     "prompt": "Current State with Your Boss",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Your Boss mentors you but watch out for their enemies."
+      },
+      {
+       "roll": 2,
+       "value": "Your Boss gives you a free hand and doesn't want to know what you're up to."
+      },
+      {
+       "roll": 3,
+       "value": "Your Boss is a micromanager who tries to meddle in your work."
+      },
+      {
+       "roll": 4,
+       "value": "Your Boss is a psycho whose unpredictable outbursts are offset by quiet paranoia."
+      },
+      {
+       "roll": 5,
+       "value": "Your Boss is cool and watches your back against rivals."
+      },
+      {
+       "roll": 6,
+       "value": "Your Boss is threatened by your meteoric rise and is planning to knife you."
+      }
+     ]
+    },
+    "where_is_your_corp_based": {
+     "id": "where_is_your_corp_based",
+     "label": "Where is Your Corp Based?",
+     "prompt": "Where is Your Corp Based?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "One city"
+      },
+      {
+       "roll": 2,
+       "value": "Several cities"
+      },
+      {
+       "roll": 3,
+       "value": "Statewide"
+      },
+      {
+       "roll": 4,
+       "value": "National"
+      },
+      {
+       "roll": 5,
+       "value": "International, offices in a few major cities"
+      },
+      {
+       "roll": 6,
+       "value": "International, offices everywhere"
+      }
+     ]
+    },
+    "who_s_gunning_for_your_group": {
+     "id": "who_s_gunning_for_your_group",
+     "label": "Who's Gunning for Your Group?",
+     "prompt": "Who's Gunning for Your Group?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Rival Corp in the same industry."
+      },
+      {
+       "roll": 2,
+       "value": "Law enforcement is watching you."
+      },
+      {
+       "roll": 3,
+       "value": "Local Media wants to bring you down."
+      },
+      {
+       "roll": 4,
+       "value": "Different divisions in your own company are feuding with each other."
+      },
+      {
+       "roll": 5,
+       "value": "Local government doesn't like your Corp."
+      },
+      {
+       "roll": 6,
+       "value": "International Corporations are eyeing you for a hostile takeover. EXEC Execs and Lawmen in a Punk Game In the real world, it's unfortunately all too common for people with power to punch down at the people without it. That's doubly true in the world of Cyberpunk, where the Corps and police forces have more power than just about anyone else. Let's face it. If you're playing an Exec or a Lawman, there's a pretty good chance you aren't working for the good guys. Still, you need to ask yourself. In a world where Edgerunners often rail against the tyranny of authority, where does your Lawman or Exec fit in? Are they selfishly using the rest of the party for their own gain? Are they the classic \"kid made good\", hanging with old friends and caught between two worlds? Or are they starry-eyed dreamers, hoping to change the system from the inside? Those are all valid stories for you to tell. Just be careful. You know the old saying: power corrupts."
+      }
+     ]
+    }
+   }
+  },
+  "lawman": {
+   "id": "lawman",
+   "_order": [
+    "what_is_your_position_on_the_force",
+    "how_wide_is_your_group_s_jurisdiction",
+    "how_corrupt_is_your_group",
+    "who_s_gunning_for_your_group",
+    "who_is_your_group_s_major_target"
+   ],
+   "tables": {
+    "what_is_your_position_on_the_force": {
+     "id": "what_is_your_position_on_the_force",
+     "label": "What is Your Position on the Force",
+     "prompt": "What is Your Position on the Force",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Guard"
+      },
+      {
+       "roll": 2,
+       "value": "Standard Beat or Patrol"
+      },
+      {
+       "roll": 3,
+       "value": "Criminal Investigation"
+      },
+      {
+       "roll": 4,
+       "value": "Special Weapons and Tactics"
+      },
+      {
+       "roll": 5,
+       "value": "Motor Patrol"
+      },
+      {
+       "roll": 6,
+       "value": "Internal Affairs"
+      }
+     ]
+    },
+    "how_wide_is_your_group_s_jurisdiction": {
+     "id": "how_wide_is_your_group_s_jurisdiction",
+     "label": "How Wide is Your Group's Jurisdiction?",
+     "prompt": "How Wide is Your Group's Jurisdiction?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Corporate Zones"
+      },
+      {
+       "roll": 2,
+       "value": "Standard City Patrol Zone"
+      },
+      {
+       "roll": 3,
+       "value": "Combat Zones"
+      },
+      {
+       "roll": 4,
+       "value": "Outer City"
+      },
+      {
+       "roll": 5,
+       "value": "Recovery Zones"
+      },
+      {
+       "roll": 6,
+       "value": "Open Highways"
+      }
+     ]
+    },
+    "how_corrupt_is_your_group": {
+     "id": "how_corrupt_is_your_group",
+     "label": "How Corrupt is Your Group?",
+     "prompt": "How Corrupt is Your Group?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Fair, honest policing, strong ethical practices."
+      },
+      {
+       "roll": 2,
+       "value": "Fair and honest policing, but hard on lawbreakers."
+      },
+      {
+       "roll": 3,
+       "value": "Will occasionally slip and do unethical things, but it's rare."
+      },
+      {
+       "roll": 4,
+       "value": "Willing to bend any rules to get the bad guys."
+      },
+      {
+       "roll": 5,
+       "value": "Ruthless and determined to control The Street, even if it means breaking the law."
+      },
+      {
+       "roll": 6,
+       "value": "Totally corrupt. You take bribes, engage in illegal, and unethical business all the time."
+      }
+     ]
+    },
+    "who_s_gunning_for_your_group": {
+     "id": "who_s_gunning_for_your_group",
+     "label": "Who's Gunning for Your Group?",
+     "prompt": "Who's Gunning for Your Group?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Organized Crime"
+      },
+      {
+       "roll": 2,
+       "value": "Boostergangs"
+      },
+      {
+       "roll": 3,
+       "value": "Police Accountability Group"
+      },
+      {
+       "roll": 4,
+       "value": "Dirty Politicians"
+      },
+      {
+       "roll": 5,
+       "value": "Smugglers"
+      },
+      {
+       "roll": 6,
+       "value": "Street Criminals"
+      }
+     ]
+    },
+    "who_is_your_group_s_major_target": {
+     "id": "who_is_your_group_s_major_target",
+     "label": "Who is Your Group's Major Target?",
+     "prompt": "Who is Your Group's Major Target?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Organized Crime"
+      },
+      {
+       "roll": 2,
+       "value": "Boostergangs"
+      },
+      {
+       "roll": 3,
+       "value": "Drug Runners"
+      },
+      {
+       "roll": 4,
+       "value": "Dirty Politicians"
+      },
+      {
+       "roll": 5,
+       "value": "Smugglers"
+      },
+      {
+       "roll": 6,
+       "value": "Street Crime LAWMAN got a partner work alone"
+      }
+     ]
+    }
+   }
+  },
+  "fixer": {
+   "id": "fixer",
+   "_order": [
+    "what_kind_of_fixer_are_you",
+    "what_s_your_office_like",
+    "got_a_partner_or_work_alone",
+    "got_a_partner_who",
+    "who_are_your_side_clients",
+    "who_s_gunning_for_you"
+   ],
+   "tables": {
+    "what_kind_of_fixer_are_you": {
+     "id": "what_kind_of_fixer_are_you",
+     "label": "What Kind of Fixer are You?",
+     "prompt": "What Kind of Fixer are You?",
+     "die": "1d10",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Broker deals between rival gangs."
+      },
+      {
+       "roll": 2,
+       "value": "Procure rare or atypical resources for exclusive clientele."
+      },
+      {
+       "roll": 3,
+       "value": "Specialize in brokering Solo or Tech services as an agent."
+      },
+      {
+       "roll": 4,
+       "value": "Supply a regular resource for the Night Markets, like food, medicines, or drugs."
+      },
+      {
+       "roll": 5,
+       "value": "Procure highly illegal resources, like street drugs or milspec weapons."
+      },
+      {
+       "roll": 6,
+       "value": "Supply resources for Techs and Medtechs, like parts and medical supplies."
+      },
+      {
+       "roll": 7,
+       "value": "Operate several successful Night Markets, although not as owner."
+      },
+      {
+       "roll": 8,
+       "value": "Broker use contracts for heavy machinery, military vehicles, and aircraft."
+      },
+      {
+       "roll": 9,
+       "value": "Broker deals as a fence for scavengers raiding Corps or Combat Zones."
+      },
+      {
+       "roll": 10,
+       "value": "Act as an exclusive agent for a Media, Rockerboy, or a Nomad Pack."
+      }
+     ]
+    },
+    "what_s_your_office_like": {
+     "id": "what_s_your_office_like",
+     "label": "What's Your \"Office\" Like?",
+     "prompt": "What's Your \"Office\" Like?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "You don't have one. You like to keep it mobile."
+      },
+      {
+       "roll": 2,
+       "value": "A booth in a local bar."
+      },
+      {
+       "roll": 3,
+       "value": "All Data Pool messages and anonymous dead drops."
+      },
+      {
+       "roll": 4,
+       "value": "Spare room in a warehouse, shop, or clinic."
+      },
+      {
+       "roll": 5,
+       "value": "An otherwise abandoned building."
+      },
+      {
+       "roll": 6,
+       "value": "The lobby of a cube hotel."
+      }
+     ]
+    },
+    "got_a_partner_or_work_alone": {
+     "id": "got_a_partner_or_work_alone",
+     "label": "Got a Partner or Work Alone?",
+     "prompt": "Got a Partner or Work Alone?",
+     "die": null,
+     "diePrinted": null,
+     "isChoiceOnly": true,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": null,
+       "value": "Have a Partner"
+      },
+      {
+       "roll": null,
+       "value": "Work Alone"
+      }
+     ]
+    },
+    "got_a_partner_who": {
+     "id": "got_a_partner_who",
+     "label": "Got a Partner? Who?",
+     "prompt": "Got a Partner? Who?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": true,
+     "dependsOn": {
+      "tableId": "got_a_partner_or_work_alone",
+      "revealWhen": [
+       "Have a Partner"
+      ]
+     },
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Family member"
+      },
+      {
+       "roll": 2,
+       "value": "Old friend"
+      },
+      {
+       "roll": 3,
+       "value": "Possible romantic partner as well"
+      },
+      {
+       "roll": 4,
+       "value": "Mentor"
+      },
+      {
+       "roll": 5,
+       "value": "Secret partner with mob/gang connections"
+      },
+      {
+       "roll": 6,
+       "value": "Secret partner with Corporate connections FIXER Night Market: A pop-up marketplace set up by Fixers to quickly sell goods. See Page 337"
+      }
+     ]
+    },
+    "who_are_your_side_clients": {
+     "id": "who_are_your_side_clients",
+     "label": "Who are Your Side Clients?",
+     "prompt": "Who are Your Side Clients?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Local Rockerboys or Medias who use you to get them gigs or contacts."
+      },
+      {
+       "roll": 2,
+       "value": "Local gangers who also protect your work area or home."
+      },
+      {
+       "roll": 3,
+       "value": "Corporate Execs who use you for \"black project\" procurement work."
+      },
+      {
+       "roll": 4,
+       "value": "Local Solos or other combat types who use you to get them jobs or contacts."
+      },
+      {
+       "roll": 5,
+       "value": "Local Nomads and Fixers who use you to set up transactions or deals."
+      },
+      {
+       "roll": 6,
+       "value": "Local politicos or Execs who depend on you for finding out information. FIXER"
+      }
+     ]
+    },
+    "who_s_gunning_for_you": {
+     "id": "who_s_gunning_for_you",
+     "label": "Who's Gunning for You?",
+     "prompt": "Who's Gunning for You?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Combat Zone gangers who want you to work for them exclusively."
+      },
+      {
+       "roll": 2,
+       "value": "Rival Fixers trying to steal your clients."
+      },
+      {
+       "roll": 3,
+       "value": "Execs who want you to work for them exclusively."
+      },
+      {
+       "roll": 4,
+       "value": "Enemy of a former client who wants to clean up \"loose ends\"—like you."
+      },
+      {
+       "roll": 5,
+       "value": "Old client who thinks you screwed them over."
+      },
+      {
+       "roll": 6,
+       "value": "Rival Fixer trying to beat you out for resources and parts. land air sea NOMAD"
+      }
+     ]
+    }
+   }
+  },
+  "nomad": {
+   "id": "nomad",
+   "_order": [
+    "how_big_is_your_pack",
+    "is_your_pack_based_on_land_air_or_sea",
+    "if_on_land_what_do_they_do",
+    "if_in_air_what_do_they_do",
+    "if_at_sea_what_do_they_do",
+    "what_do_you_do_for_your_pack",
+    "who_s_gunning_for_your_pack",
+    "what_s_your_pack_s_overall_philosophy"
+   ],
+   "tables": {
+    "how_big_is_your_pack": {
+     "id": "how_big_is_your_pack",
+     "label": "How Big is Your Pack?",
+     "prompt": "How Big is Your Pack?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "A single extended tribe or family"
+      },
+      {
+       "roll": 2,
+       "value": "A couple dozen members"
+      },
+      {
+       "roll": 3,
+       "value": "Forty or fifty members"
+      },
+      {
+       "roll": 4,
+       "value": "A hundred or more members"
+      },
+      {
+       "roll": 5,
+       "value": "A Blood Family (hundreds of members)"
+      },
+      {
+       "roll": 6,
+       "value": "An Affiliated Family (made of several Blood Families)"
+      }
+     ]
+    },
+    "is_your_pack_based_on_land_air_or_sea": {
+     "id": "is_your_pack_based_on_land_air_or_sea",
+     "label": "Is Your Pack Based on Land, Air, or Sea?",
+     "prompt": "Is Your Pack Based on Land, Air, or Sea?",
+     "die": null,
+     "diePrinted": null,
+     "isChoiceOnly": true,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": null,
+       "value": "Land"
+      },
+      {
+       "roll": null,
+       "value": "Air"
+      },
+      {
+       "roll": null,
+       "value": "Sea"
+      }
+     ]
+    },
+    "if_on_land_what_do_they_do": {
+     "id": "if_on_land_what_do_they_do",
+     "label": "If on Land, What Do They Do?",
+     "prompt": "If on Land, What Do They Do?",
+     "die": "1d10",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": true,
+     "dependsOn": {
+      "tableId": "is_your_pack_based_on_land_air_or_sea",
+      "revealWhen": [
+       "Land"
+      ]
+     },
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Gogang"
+      },
+      {
+       "roll": 2,
+       "value": "Passenger transport"
+      },
+      {
+       "roll": 3,
+       "value": "Chautauqua/school"
+      },
+      {
+       "roll": 4,
+       "value": "Traveling show/carnival"
+      },
+      {
+       "roll": 5,
+       "value": "Migrant farmers"
+      },
+      {
+       "roll": 6,
+       "value": "Cargo transport"
+      },
+      {
+       "roll": 7,
+       "value": "Shipment protection"
+      },
+      {
+       "roll": 8,
+       "value": "Smuggling"
+      },
+      {
+       "roll": 9,
+       "value": "Mercenary army"
+      },
+      {
+       "roll": 10,
+       "value": "Construction work gang"
+      }
+     ]
+    },
+    "if_in_air_what_do_they_do": {
+     "id": "if_in_air_what_do_they_do",
+     "label": "If in Air, What Do They Do?",
+     "prompt": "If in Air, What Do They Do?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": true,
+     "dependsOn": {
+      "tableId": "is_your_pack_based_on_land_air_or_sea",
+      "revealWhen": [
+       "Air"
+      ]
+     },
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Air piracy"
+      },
+      {
+       "roll": 2,
+       "value": "Cargo transport"
+      },
+      {
+       "roll": 3,
+       "value": "Passenger transport"
+      },
+      {
+       "roll": 4,
+       "value": "Aircraft protection"
+      },
+      {
+       "roll": 5,
+       "value": "Smuggling"
+      },
+      {
+       "roll": 6,
+       "value": "Combat support"
+      }
+     ]
+    },
+    "if_at_sea_what_do_they_do": {
+     "id": "if_at_sea_what_do_they_do",
+     "label": "If at Sea, What Do They Do?",
+     "prompt": "If at Sea, What Do They Do?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": true,
+     "dependsOn": {
+      "tableId": "is_your_pack_based_on_land_air_or_sea",
+      "revealWhen": [
+       "Sea"
+      ]
+     },
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Piracy"
+      },
+      {
+       "roll": 2,
+       "value": "Cargo transport"
+      },
+      {
+       "roll": 3,
+       "value": "Passenger transport"
+      },
+      {
+       "roll": 4,
+       "value": "Smuggling"
+      },
+      {
+       "roll": 5,
+       "value": "Combat support"
+      },
+      {
+       "roll": 6,
+       "value": "Submarine warfare Different Nomad groups include the Aldecaldos, who are helping rebuild Night City; the Jodes, originally farmers from the American Midwest; the Blood Nation, who specialize in traveling entertainment; and the Meta, made up from military personnel abandoned during the SouthAm Wars. NOMAD Nomads in a City Game In 2045, Nomads control the highways and sea lanes. Want to get cargo from point A to point B? Chances are you'll be contracting with Nomads to do so at ports and depot sites they run. They're also construction exper ts, putting their talents to work rebuilding what the 4th Corporate War broke. See that fancy megabuilding going up in the distance? There's probably a few hundred Nomads working that job. These days, several Nomad families maint ain per manent enclaves either in Night City or on its outskirts. So, finding a reason for your Nomad to be in the City shouldn't be difficult. As for why they're hanging out with a bunch of statics (non-Nomads)? We recommend keeping it personal. Make it about the connection between your Nomad and one or more of the other Characters. Maybe the Fixer's working with your Pack to secure supplies and you've been assigned to keep an eye out. Or maybe your Pack owes the Medtech a favor. Talk to your GM. Talk to the other Players. You'll figure it out."
+      }
+     ]
+    },
+    "what_do_you_do_for_your_pack": {
+     "id": "what_do_you_do_for_your_pack",
+     "label": "What Do You Do for Your Pack?",
+     "prompt": "What Do You Do for Your Pack?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Scout (negotiator)"
+      },
+      {
+       "roll": 2,
+       "value": "Outrider (protection, weapons)"
+      },
+      {
+       "roll": 3,
+       "value": "Transport pilot/driver"
+      },
+      {
+       "roll": 4,
+       "value": "Loadmaster (large cargo mover, trucker)"
+      },
+      {
+       "roll": 5,
+       "value": "Solo smuggler"
+      },
+      {
+       "roll": 6,
+       "value": "Procurement (fuel, vehicles, etc.)"
+      }
+     ]
+    },
+    "who_s_gunning_for_your_pack": {
+     "id": "who_s_gunning_for_your_pack",
+     "label": "Who's Gunning for Your Pack?",
+     "prompt": "Who's Gunning for Your Pack?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Organized Crime"
+      },
+      {
+       "roll": 2,
+       "value": "Boostergangs"
+      },
+      {
+       "roll": 3,
+       "value": "Drug Runners"
+      },
+      {
+       "roll": 4,
+       "value": "Dirty Politicians"
+      },
+      {
+       "roll": 5,
+       "value": "Rival Packs in the same businesses"
+      },
+      {
+       "roll": 6,
+       "value": "Dirty Cops"
+      }
+     ]
+    },
+    "what_s_your_pack_s_overall_philosophy": {
+     "id": "what_s_your_pack_s_overall_philosophy",
+     "label": "What's Your Pack's Overall Philosophy?",
+     "prompt": "What's Your Pack's Overall Philosophy?",
+     "die": "1d6",
+     "diePrinted": null,
+     "isChoiceOnly": false,
+     "allowChoose": true,
+     "conditional": false,
+     "dependsOn": null,
+     "houseRule": false,
+     "sourceDiscrepancy": null,
+     "entries": [
+      {
+       "roll": 1,
+       "value": "Always working for good; your Pack accepts others, just wants to get along."
+      },
+      {
+       "roll": 2,
+       "value": "It's more like a family business. Operates as a fair and honest concern."
+      },
+      {
+       "roll": 3,
+       "value": "Will occasionally slip and do unethical things, but it's rare."
+      },
+      {
+       "roll": 4,
+       "value": "Willing to bend the rules whenever they get in the way to get what the Pack needs."
+      },
+      {
+       "roll": 5,
+       "value": "Ruthless and self-centered, willing to do some bad things if it will get the Pack ahead."
+      },
+      {
+       "roll": 6,
+       "value": "Totally evil. You rage up and down the highways, killing, looting, and just terrorizing everyone. FITTED for the future the parts of a character Your Character is the role that you will be playing in the loose, impromptu play that makes up a roleplaying session. For example, if your roleplaying group were staging a recreation of the movie Blade Runner, the Android, Roy Batty (Mike's personal favorite, by the way) would be one of the Characters. FITTED FOR THE FUTURE Much like actor Rutger Hauer, the person playing Roy in this adventure would try to act out what they thought the Character would be doing in each scene of the \"movie.\" But what keeps a Player from saying, \"Ah! When Deckard corners Roy, Roy uses his heat-ray vision to melt Deckard's gun?\" That's where the rules come in. To make sure a Character is played convincingly, the GM uses a set of structured guidelines (like these) to tell Players what is or isn't possible within the confines of the world. To set guidelines on what is possible for a particular Character, the GM starts out with the powerful tool of Statistics. What are Statistics? Statistics (also called STATs) are numbers that describe your Character's abilities in the game, as compared to everything else in the universe. All people and creatures can be described (or written up) using Statistics. This helps you compare Characters' abilities, which is often important in the game. For instance, a person with a STAT of 5 might be better off than a person with a STAT of 4, but not as good as a person with a STAT of 6. Statistics are generally rated from 1 to 8, but can go higher. In a Cyberpunk RED campaign, Characters will have Ten Primary Statistics, arranged into four groups: Mental, Combat, Fortune, and Physical. Mental Group Intelligence (INT): How generally bright you are. As a rule, this is more than sheer intelligence, but also includes cleverness, awareness, perception, and your ability to learn. Willpower (WILL): Your determination and ability to face danger and/or stress. This STAT also represents your courage and ability to survive longterm privation. This STAT is important for determining how much damage you can take. Cool (COOL): Your ability to impress and influence people through your character and charisma; how well you get along with others; how you interact in social situations. Empathy (EMP): Your ability to relate to and care for others, and take others into consideration. Particularly important as it offsets the effects of cyberpsychosis, a dangerous mental illness common in the Dark Future. Combat Group Technique (TECH): Your ability to manipulate tools or instruments. This is not the same as Reflexes, inasmuch as this covers the knack of using tools. One Character might have a high Technique but might not be able to fence or juggle. On the other hand, another might have high Reflexes, but might not be able to rewire a computer or hot-wire a car. Reflexes (REF): Your response time and coordination, as used in aiming, throwing, juggling, etc. A stage magician, for example, would have a high Reflex STAT. Most importantly, this is the STAT that affects your ability to hit things with ranged weapons. Fortune Group Luck (LUCK): How the gods of chance see you. With a high enough Luck, you can tip the scales in your favor. In a game mechanics sense, you can apply points from this STAT to offset die rolls in your favor. However, this pool of points only refills at the beginning of the next session. Physical Group Body (BODY): Your size, toughness, and ability to stay alive and conscious due to physical mass, structure, or other qualities. This STAT is important for determining how much damage you can take. Dexterity (DEX): Your overall physical competence, as it pertains to balancing, leaping, jumping, combat, and other athletic activities. A gymnast would have a high Dexterity. Most importantly, this is the STAT that affects your ability to hit things with melee weapons and can help you dodge attacks. Movement (MOVE): Your speed of movement: running, leaping, swimming, etc. FITTED FOR THE FUTURE How Do You Get Your STATs? Got it? Let's start with the first step to all these methods: the STAT Block. The STAT Block When creating a Character, you will be placing your STATs in a STAT Block like the one below: This block remains the same for all three types of Character Generation: Streetrats, Edgerunners, and Complete Packages. You will find a STAT Block similar to this on your Character Sheet. The Three Ways to Generate STATs"
+      }
+     ]
+    }
+   }
+  }
+ },
+ "_schema": {
+  "note": "Every table object has an identical key set, and every entry is {roll, value}. Nullable fields are present as null rather than omitted, and no array is ever empty — this keeps TypeScript's inferred type from resolveJsonModule a single shape instead of a union, and avoids never[].",
+  "table": {
+   "id": "string",
+   "label": "string",
+   "prompt": "string",
+   "die": "string | null — null means choice-only",
+   "diePrinted": "string | null — set only where it differs from die",
+   "isChoiceOnly": "boolean",
+   "allowChoose": "boolean",
+   "conditional": "boolean",
+   "dependsOn": "{ tableId, revealWhen: string[] } | null",
+   "houseRule": "boolean",
+   "sourceDiscrepancy": "string | null",
+   "entries": "Array<{ roll: number | null, value: string }>"
+  },
+  "choiceOnlyNote": "Choice-only tables express their options as entries with roll: null. Do not look for an `options` key."
+ }
+}
