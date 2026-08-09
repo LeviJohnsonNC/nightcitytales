@@ -27,7 +27,7 @@ type Manifest = {
   portraits?: PortraitEntry[];
 };
 
-const manifest = (manifestJson ?? {}) as Manifest;
+const manifest = (manifestJson ?? {}) as unknown as Manifest;
 
 export const MANIFEST_PRESENT = Boolean(manifest.roleArt || manifest.portraits);
 
