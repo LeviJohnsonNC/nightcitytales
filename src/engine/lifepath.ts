@@ -160,7 +160,11 @@ export function rollLifepathTable(
   const table = getLifepathTable(tableId);
   const roll = d10(rng);
   const entry = lifepathEntryForRoll(tableId, roll);
-  const result = buildRollResult({ dice: table.die, rolls: [roll], now: options.now });
+  const result = buildRollResult({
+    dice: table.die,
+    rolls: [roll],
+    ...(options.now ? { now: options.now } : {}),
+  });
   return {
     entry: { tableId, value: entry.value, method: "rolled", roll },
     table: entry,
@@ -203,7 +207,7 @@ export function rollLifepathCount(
     dice: LIFEPATH_RULES.die,
     rolls: [roll],
     modifiers: [{ label: "count", value: -LIFEPATH_COUNT_RULE.subtract }],
-    now: options.now,
+    ...(options.now ? { now: options.now } : {}),
   });
   return { count, result };
 }
