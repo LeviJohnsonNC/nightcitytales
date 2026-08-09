@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { CREATION_RULES, STAT_ORDER, deriveStats } from "@/engine";
 import type { CreationMethod, StatBlock } from "@/engine";
+import { LifepathPanel } from "./LifepathPanel";
 import { MethodPanel } from "./MethodPanel";
 import { RolePanel } from "./RolePanel";
 import { useChargenStore, type ChargenState } from "./store";
@@ -121,9 +122,7 @@ export function StepPanel({
       );
 
     case "lifepath":
-      return (
-        <Placeholder step="Lifepath" note="General Lifepath, then the Role-specific Lifepath table." />
-      );
+      return <LifepathPanel state={state} />;
     case "stats":
       return (
         <Placeholder
