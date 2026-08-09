@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import rolesData from "@/data/rules/roles.json";
 import type { CreationMethod, StatBlock } from "@/engine";
 import { STEP_IDS, clearedByRoleChange, type ChargenStep } from "./steps";
 
@@ -10,6 +11,8 @@ export type ChargenState = {
   step: ChargenStep;
   method: CreationMethod | null;
   roleId: string | null;
+  /** Set by selectRole from roles.json. Rank is the rules starting rank. */
+  roleAbility: { id: string; name: string; rank: number } | null;
   name: string;
   handle: string;
   portrait: string | null;
@@ -41,6 +44,7 @@ const initialState: ChargenState = {
   step: "method",
   method: null,
   roleId: null,
+  roleAbility: null,
   name: "",
   handle: "",
   portrait: null,
@@ -55,6 +59,27 @@ const initialState: ChargenState = {
 
 function withVisit(state: ChargenState, step: ChargenStep): ChargenStep[] {
   return state.visited.includes(step) ? state.visited : [...state.visited, step];
+}
+
+type RoleRecord = {
+  id: string;
+  name: string;
+  roleAbility: { id: string; name: string; startingRank: number };
+};
+
+const ROLE_RECORDS = rolesData.roles as unknown as Record<string, RoleRecord>;
+
+/** The Role Ability entry written on Role confirm, read straight from roles.json. */
+export function roleAbilityForRole(roleId: string): ChargenState["roleAbility"] {
+  const role = ROLE_RECORDS[roleId];
+  if (!role) throw new Error(`Unknown role "${roleId}" (src/data/rules/roles.json)`);
+  const rank = role.roleAbility.startingRank;
+  if (typeof rank !== "number") {
+    throw new Error(
+      `Role "${roleId}" has no roleAbility.startingRank (src/data/rules/roles.json)`,
+    );
+  }
+  return { id: role.roleAbility.id, name: role.roleAbility.name, rank };
 }
 
 export const useChargenStore = create<ChargenState & ChargenActions>((set, get) => ({
@@ -76,7 +101,11 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
         : { ...initialState, draftId: s.draftId, method, step: s.step, visited: s.visited },
     ),
   selectRole: (roleId) =>
-    set((s) => (s.roleId === roleId ? { roleId } : { ...clearedByRoleChange(s), roleId })),
+    set((s) =>
+      s.roleId === roleId
+        ? { roleId, roleAbility: roleAbilityForRole(roleId) }
+        : { ...clearedByRoleChange(s), roleId, roleAbility: roleAbilityForRole(roleId) },
+    ),
   hydrate: (state) => set((s) => ({ ...s, ...state })),
   reset: () => set({ ...initialState }),
 }));
