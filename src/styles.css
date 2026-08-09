@@ -22,6 +22,8 @@
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --default-transition-duration: 220ms;
+  --default-transition-timing-function: cubic-bezier(0.16, 0.84, 0.44, 1);
   --radius-sm: 2px;
   --radius-md: 2px;
   --radius-lg: 2px;
