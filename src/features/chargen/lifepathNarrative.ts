@@ -3,6 +3,7 @@
  * no rules values live here, just the sentence each table's answer slots into.
  */
 import type { LifepathEntryRecord } from "@/engine";
+import { getRoleLifepathOrder, getRoleLifepathTable, isRoleTableRevealed } from "@/engine";
 import { displayValue, type EnemyEntry, type GeneralLifepath } from "./lifepathState";
 
 const SENTENCES: Record<string, (v: string) => string> = {
@@ -59,4 +60,23 @@ export function enemySentences(enemy: EnemyEntry): string[] {
   lines.push(`They can bring ${lower(displayValue(enemy.throwAtYou))}`);
   lines.push(`When you meet again, you will ${lower(displayValue(enemy.revenge))}`);
   return lines;
+}
+
+/**
+ * Role-specific answers as prose. This data set carries no sentence shapes,
+ * so each line reads as the table's own question and the answer.
+ */
+export function roleLifepathSentences(
+  roleId: string,
+  entries: Record<string, LifepathEntryRecord>,
+): string[] {
+  return getRoleLifepathOrder(roleId)
+    .filter((tableId) => isRoleTableRevealed(getRoleLifepathTable(roleId, tableId), entries))
+    .map((tableId) => {
+      const entry = entries[tableId];
+      if (!entry) return null;
+      const table = getRoleLifepathTable(roleId, tableId);
+      return `${table.label.replace(/\?$/, "")} — ${displayValue(entry)}.`;
+    })
+    .filter((line): line is string => line !== null);
 }
