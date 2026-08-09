@@ -1,0 +1,1079 @@
+{
+  "_source": {
+    "book": "Cyberpunk RED Core Rulebook",
+    "publisher": "R. Talsorian Games",
+    "pages": "86-90",
+    "note": "Streetrat levels verified against the book's worked Solo example. Edgerunner uses the identical 20 skills per Role with player-assigned levels."
+  },
+  "_rules": {
+    "streetrat": {
+      "levelsFixed": true,
+      "editable": false
+    },
+    "edgerunner": {
+      "skillPoints": 86,
+      "minLevel": 2,
+      "maxLevel": 6,
+      "skillsRestrictedToRoleList": true,
+      "note": "Same 20 skills as the Streetrat package; only the levels are player-assigned."
+    },
+    "completePackage": {
+      "skillPoints": 86,
+      "maxLevel": 6,
+      "anySkillAllowed": true,
+      "basicSkillMinimum": 2
+    }
+  },
+  "roles": {
+    "rockerboy": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 4
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Composition",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Handgun",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Melee Weapon",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Personal Grooming",
+          "specialization": null,
+          "level": 4
+        },
+        {
+          "skill": "Play Instrument",
+          "specialization": "choose 1",
+          "level": 6
+        },
+        {
+          "skill": "Streetwise",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Wardrobe & Style",
+          "specialization": null,
+          "level": 4
+        }
+      ]
+    },
+    "solo": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 2
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Autofire",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Handgun",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Interrogation",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Melee Weapon",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Resist Torture/Drugs",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Shoulder Arms",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Tactics",
+          "specialization": null,
+          "level": 6
+        }
+      ]
+    },
+    "netrunner": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 2
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Basic Tech",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Conceal/Reveal Object",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Cryptography",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Cybertech",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Electronics/Security Tech",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Handgun",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Library Search",
+          "specialization": null,
+          "level": 6
+        }
+      ]
+    },
+    "tech": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 2
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Basic Tech",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Cybertech",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Electronics/Security Tech",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Land Vehicle Tech",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Shoulder Arms",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Science",
+          "specialization": "choose 1",
+          "level": 6
+        },
+        {
+          "skill": "Weaponstech",
+          "specialization": null,
+          "level": 6
+        }
+      ]
+    },
+    "medtech": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 2
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Basic Tech",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Cybertech",
+          "specialization": null,
+          "level": 4
+        },
+        {
+          "skill": "Deduction",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Paramedic",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Resist Torture/Drugs",
+          "specialization": null,
+          "level": 4
+        },
+        {
+          "skill": "Science",
+          "specialization": "choose 1",
+          "level": 6
+        },
+        {
+          "skill": "Shoulder Arms",
+          "specialization": null,
+          "level": 6
+        }
+      ]
+    },
+    "media": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 6
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Bribery",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Composition",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Deduction",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Handgun",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Library Search",
+          "specialization": null,
+          "level": 4
+        },
+        {
+          "skill": "Lip Reading",
+          "specialization": null,
+          "level": 4
+        },
+        {
+          "skill": "Photography/Film",
+          "specialization": null,
+          "level": 4
+        }
+      ]
+    },
+    "lawman": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 2
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Autofire",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Criminology",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Deduction",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Handgun",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Interrogation",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Shoulder Arms",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Tracking",
+          "specialization": null,
+          "level": 6
+        }
+      ]
+    },
+    "exec": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 2
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Accounting",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Bureaucracy",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Business",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Deduction",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Handgun",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Lip Reading",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Personal Grooming",
+          "specialization": null,
+          "level": 4
+        }
+      ]
+    },
+    "fixer": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 4
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 6
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 4
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Bribery",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Business",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Forgery",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Handgun",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Pick Lock",
+          "specialization": null,
+          "level": 4
+        },
+        {
+          "skill": "Streetwise",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Trading",
+          "specialization": null,
+          "level": 6
+        }
+      ]
+    },
+    "nomad": {
+      "skillCount": 20,
+      "skills": [
+        {
+          "skill": "Athletics",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Brawling",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Concentration",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Conversation",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Education",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Evasion",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "First Aid",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Human Perception",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Language",
+          "specialization": "Streetslang",
+          "level": 2
+        },
+        {
+          "skill": "Local Expert",
+          "specialization": "Your Home",
+          "level": 2
+        },
+        {
+          "skill": "Perception",
+          "specialization": null,
+          "level": 4
+        },
+        {
+          "skill": "Persuasion",
+          "specialization": null,
+          "level": 2
+        },
+        {
+          "skill": "Stealth",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Animal Handling",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Drive Land Vehicle",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Handgun",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Melee Weapon",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Tracking",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Trading",
+          "specialization": null,
+          "level": 6
+        },
+        {
+          "skill": "Wilderness Survival",
+          "specialization": null,
+          "level": 6
+        }
+      ]
+    }
+  }
+}
