@@ -1,5 +1,5 @@
 import { backendClient } from "./client";
-import type { ChargenDraft, Json } from "./types";
+import type { ChargenDraft, ChargenDraftInsert, Json } from "./types";
 
 export async function getLatestDraft(): Promise<ChargenDraft | null> {
   const { data, error } = await backendClient
@@ -13,7 +13,8 @@ export async function getLatestDraft(): Promise<ChargenDraft | null> {
 }
 
 export async function saveDraft(userId: string, state: Json, id?: string): Promise<ChargenDraft> {
-  const payload = id ? { id, user_id: userId, state } : { user_id: userId, state };
+  const payload: ChargenDraftInsert = { user_id: userId, state };
+  if (id) payload.id = id;
   const { data, error } = await backendClient
     .from("chargen_drafts")
     .upsert(payload, { onConflict: "id" })
