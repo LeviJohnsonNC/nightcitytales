@@ -1,5 +1,14 @@
 {
-  "_note": "Art manifest. src:null means artwork has not landed yet; the UI renders a styled placeholder showing the asset id. This file is the ONLY source of image paths.",
+  "_note": "Art manifest. Each entry may carry \"pointer\": the file name of an uploaded Lovable asset pointer in src/assets (e.g. \"portrait-01.png\"), resolved by src/features/chargen/art.ts. Resolution order is pointer -> src -> placeholder. src:null and no pointer means artwork has not landed yet; the UI renders a styled placeholder showing the asset id. This file is the ONLY source of image references.",
+  "_portraitSchema": {
+    "id": "string",
+    "pointer": "string | null",
+    "src": "string | null",
+    "roles": "role id array",
+    "presentation": "masc | femme | androgynous",
+    "alt": "string",
+    "focalPoint": "[x, y] 0-1"
+  },
   "roleArt": {
     "rockerboy": {
       "src": null,
