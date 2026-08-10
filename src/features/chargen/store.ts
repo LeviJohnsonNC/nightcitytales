@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import rolesData from "@/data/rules/roles.json";
-import type { CreationMethod, SkillEntry, StatBlock, StatKey } from "@/engine";
+import { EMPTY_LOADOUT, type CreationMethod, type Loadout, type SkillEntry, type StatBlock, type StatKey } from "@/engine";
 import { STEP_IDS, clearedByRoleChange, type ChargenStep } from "./steps";
 
 export type { ChargenStep };
@@ -25,8 +25,8 @@ export type ChargenState = {
   /** Sheet skill lines. Specialized skills may appear more than once. */
   skills: SkillEntry[];
   lifepath: { general: Record<string, unknown>; roleSpecific: Record<string, unknown> };
-  gear: string[];
-  cyberware: string[];
+  /** Purchases, worn armor and cyberware installs. Engine-owned shape. */
+  loadout: Loadout;
   lifestyle: Record<string, unknown>;
   /** Steps the player has opened at least once. Drives "in progress" vs "locked". */
   visited: ChargenStep[];
@@ -58,8 +58,7 @@ const initialState: ChargenState = {
   statRolls: { row: null, rows: {} },
   skills: [],
   lifepath: { general: {}, roleSpecific: {} },
-  gear: [],
-  cyberware: [],
+  loadout: EMPTY_LOADOUT,
   lifestyle: {},
   visited: ["method"],
 };

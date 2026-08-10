@@ -43,8 +43,8 @@ export function ChargenWizard({ userId }: { userId: string }) {
 
   const hasDependentData =
     state.skills.length > 0 ||
-    state.gear.length > 0 ||
-    state.cyberware.length > 0 ||
+    state.loadout.lines.length > 0 ||
+    Object.keys(state.loadout.packageChoices).length > 0 ||
     Object.keys(state.lifepath.roleSpecific).length > 0;
 
   function requestMethod(method: CreationMethod) {
