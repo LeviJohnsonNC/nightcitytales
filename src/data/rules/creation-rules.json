@@ -124,5 +124,87 @@
     "clampNote": "Humanity is NOT clamped at 0. RAW (p.80) says cyberpsychosis triggers when HUM 'drops below zero', which requires negative values to exist. Clamping at 0 makes the cyberpsychosis flag unreachable. Track the true (possibly negative) value for threshold logic and floor only the DISPLAY value at 0.",
     "empFloor": 0,
     "empFloorNote": "EMP derived from Humanity is floored at 0 \u2014 negative Humanity must not produce a negative EMP."
+  },
+  "statDescriptions": {
+    "_source": "Cyberpunk RED Core Rulebook p.72 (STAT definitions). `description` is the book's own wording, condensed only by removing line-break artifacts. `drives` is a plain-language UI summary of what the STAT governs mechanically \u2014 written for players, derived from the rules but not printed verbatim.",
+    "_groups": [
+      "Mental",
+      "Combat",
+      "Fortune",
+      "Physical"
+    ],
+    "stats": {
+      "int": {
+        "stat": "INT",
+        "name": "Intelligence",
+        "group": "Mental",
+        "description": "How generally bright you are. As a rule, this is more than sheer intelligence, but also includes cleverness, awareness, perception, and your ability to learn.",
+        "drives": "Perception, Education, and most knowledge Skills."
+      },
+      "will": {
+        "stat": "WILL",
+        "name": "Willpower",
+        "group": "Mental",
+        "description": "Your determination and ability to face danger and/or stress. This STAT also represents your courage and ability to survive long-term privation. This STAT is important for determining how much damage you can take.",
+        "drives": "Resisting fear and stress. With BODY, sets Hit Points."
+      },
+      "cool": {
+        "stat": "COOL",
+        "name": "Cool",
+        "group": "Mental",
+        "description": "Your ability to impress and influence people through your character and charisma; how well you get along with others; how you interact in social situations.",
+        "drives": "Persuasion, Interrogation, and Reputation checks."
+      },
+      "emp": {
+        "stat": "EMP",
+        "name": "Empathy",
+        "group": "Mental",
+        "description": "Your ability to relate to and care for others, and take others into consideration. Particularly important as it offsets the effects of cyberpsychosis, a dangerous mental illness common in the Dark Future.",
+        "drives": "Reading and relating to people. Sets your starting Humanity (EMP x 10)."
+      },
+      "tech": {
+        "stat": "TECH",
+        "name": "Technique",
+        "group": "Combat",
+        "description": "Your ability to manipulate tools or instruments. This is not the same as Reflexes, inasmuch as this covers the knack of using tools. One Character might have a high Technique but might not be able to fence or juggle. On the other hand, another might have high Reflexes, but might not be able to rewire a computer or hot-wire a car.",
+        "drives": "Repair, medical, and crafting Skills."
+      },
+      "ref": {
+        "stat": "REF",
+        "name": "Reflexes",
+        "group": "Combat",
+        "description": "Your response time and coordination, as used in aiming, throwing, juggling, etc. A stage magician, for example, would have a high Reflex STAT. Most importantly, this is the STAT that affects your ability to hit things with ranged weapons.",
+        "drives": "Ranged attack Skills and Initiative."
+      },
+      "luck": {
+        "stat": "LUCK",
+        "name": "Luck",
+        "group": "Fortune",
+        "description": "How the gods of chance see you. With a high enough Luck, you can tip the scales in your favor. In a game mechanics sense, you can apply points from this STAT to offset die rolls in your favor. However, this pool of points only refills at the beginning of the next session.",
+        "drives": "A refreshing pool of points you can spend to boost your own rolls."
+      },
+      "body": {
+        "stat": "BODY",
+        "name": "Body",
+        "group": "Physical",
+        "description": "Your size, toughness, and ability to stay alive and conscious due to physical mass, structure, or other qualities. This STAT is important for determining how much damage you can take.",
+        "drives": "Melee damage, Death Save, and with WILL, Hit Points."
+      },
+      "dex": {
+        "stat": "DEX",
+        "name": "Dexterity",
+        "group": "Physical",
+        "description": "Your overall physical competence, as it pertains to balancing, leaping, jumping, combat, and other athletic activities. A gymnast would have a high Dexterity. Most importantly, this is the STAT that affects your ability to hit things with melee weapons and can help you dodge attacks.",
+        "drives": "Melee attack Skills, Evasion, and Athletics."
+      },
+      "move": {
+        "stat": "MOVE",
+        "name": "Movement",
+        "group": "Physical",
+        "description": "Your speed of movement: running, leaping, swimming, etc.",
+        "drives": "How far you travel in a Turn, and jumping distance."
+      }
+    },
+    "_hyphenNote": "Line-break hyphens in the source are ambiguous. Of five joins in this section, four are correct as joined (competence, coordination, inasmuch, represents); 'long-term' required its hyphen restored."
   }
 }
