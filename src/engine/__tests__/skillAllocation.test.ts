@@ -5,6 +5,7 @@ import {
   skillPointCost,
   validateCompletePackageSkills,
   validateEdgerunnerSkills,
+  validateSkillEntries,
   type SkillAllocation,
 } from "../skillAllocation";
 import { getRoleSkillIds, getSkill } from "../rulesData";
