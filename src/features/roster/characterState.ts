@@ -127,6 +127,12 @@ function statsFrom(full: FullCharacter): Partial<StatBlock> {
   return stats;
 }
 
+function abilityFor(roleId: string): NonNullable<ChargenState["roleAbility"]> {
+  const ability = roleAbilityForRole(roleId);
+  if (!ability) throw new Error(`Role "${roleId}" has no Role Ability (src/data/rules/roles.json)`);
+  return ability;
+}
+
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
@@ -147,10 +153,10 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
           id: full.roleAbility.ability_id,
           name:
             (record(full.roleAbility.metadata)["name"] as string | undefined) ??
-            roleAbilityForRole(roleId).name,
+            abilityFor(roleId).name,
           rank: full.roleAbility.rank,
         }
-      : roleAbilityForRole(roleId),
+      : abilityFor(roleId),
     name: full.character.name,
     handle: full.character.handle ?? "",
     pronouns: "",
