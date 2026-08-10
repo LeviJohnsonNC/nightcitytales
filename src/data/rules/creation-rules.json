@@ -78,13 +78,50 @@
     }
   ],
   "startingLifestyle": {
+    "_source": "Cyberpunk RED Core Rulebook p.109 (chargen), p.377-378 (Lifestyle & Housing), p.181 (Exec Teamwork Role Ability)",
     "housing": "Rented Cargo Container",
     "location": [
       "Overcrowded Suburbs",
       "Combat Zone"
     ],
     "lifestyle": "Kibble",
-    "_UNRESOLVED": "The rules state this applies 'if you aren't an Exec'. The Exec provision has not yet been extracted \u2014 do NOT implement an Exec branch until confirmed."
+    "rent": 1000,
+    "rentPeriod": "month",
+    "lifestyleCost": 100,
+    "lifestyleCostPeriod": "month",
+    "firstMonthFree": true,
+    "firstMonthNote": "Characters get their starting housing and Lifestyle free for the first month. Rent and Lifestyle are due from month two.",
+    "lifestyleFailureNote": "If Lifestyle is unpaid at the start of a month, the Character has one week, then rolls a Death Save at the start of each unpaid day.",
+    "execProvision": {
+      "_RESOLVED": "Previously flagged _UNRESOLVED. Now extracted.",
+      "applies": true,
+      "rule": "The Exec's Teamwork Role Ability grants Corporate Housing at Rank 2. Every Character starts with their Role Ability at Rank 4, so an Exec DOES receive it at character creation.",
+      "housing": "Corporate Conapt",
+      "rent": 0,
+      "rentNote": "Given by the Corporation. No rent or fees while they remain a member. If they move to another Corporation, the new one extends the same offer and pays to move their belongings.",
+      "lifestyleStillPaid": true,
+      "lifestyleNote": "The Exec must still buy their own Lifestyle separately every month \u2014 housing is free, food is not.",
+      "laterRanks": [
+        {
+          "rank": 7,
+          "housing": "Beaverville House in the Executive Zone"
+        },
+        {
+          "rank": 10,
+          "housing": "Beaverville McMansion in the Executive Zone, or a Luxury Penthouse in the Corporate Zone"
+        }
+      ],
+      "signingBonus": {
+        "rank": 1,
+        "items": [
+          "Businesswear Jacket",
+          "Businesswear Top",
+          "Businesswear Bottom",
+          "Businesswear Footwear"
+        ],
+        "note": "Granted at Teamwork Rank 1, so every starting Exec has it. Matches the printed Exec outfit in gear-packages.json. Cannot be resold without raising suspicion."
+      }
+    }
   },
   "humanity": {
     "_source": "Cyberpunk RED Core Rulebook p.80 (Humanity STAT), p.230 (Cyberpsychosis)",
@@ -206,5 +243,103 @@
       }
     },
     "_hyphenNote": "Line-break hyphens in the source are ambiguous. Of five joins in this section, four are correct as joined (competence, coordination, inasmuch, represents); 'long-term' required its hyphen restored."
-  }
+  },
+  "lifestyles": [
+    {
+      "id": "kibble",
+      "name": "Kibble",
+      "monthlyCost": 100,
+      "entails": "You eat horrible food that you might not buy for a dog you liked. Once a month, you can see a movie or braindance."
+    },
+    {
+      "id": "generic_prepak",
+      "name": "Generic Prepak",
+      "monthlyCost": 300,
+      "entails": "Food that tastes much better than kibble. Each weekend you can afford a good bar or a sit-down meal."
+    },
+    {
+      "id": "good_prepak",
+      "name": "Good Prepak",
+      "monthlyCost": 600,
+      "entails": "Restaurant-quality artificial food. Excellent bars and restaurants. Once a month, a live concert or sporting event."
+    },
+    {
+      "id": "fresh_food",
+      "name": "Fresh Food",
+      "monthlyCost": 1500,
+      "entails": "Real food. A hotel room when stranded. An executive bar. Once a month, a world class restaurant."
+    }
+  ],
+  "housing": [
+    {
+      "id": "street",
+      "name": "Living on The Street",
+      "rent": null,
+      "buy": null,
+      "note": "DV15 Endurance Check nightly or be Fatigued (-2 to everything)."
+    },
+    {
+      "id": "street_vehicle",
+      "name": "Living on The Street in a Vehicle",
+      "rent": null,
+      "buy": null
+    },
+    {
+      "id": "cube_hotel",
+      "name": "Cube Hotel",
+      "rent": 500,
+      "buy": null
+    },
+    {
+      "id": "cargo_container",
+      "name": "Cargo Container",
+      "rent": 1000,
+      "buy": 15000
+    },
+    {
+      "id": "studio_apartment",
+      "name": "Studio Apartment",
+      "rent": 1500,
+      "buy": 25000
+    },
+    {
+      "id": "two_bedroom",
+      "name": "Two-Bedroom Apartment",
+      "rent": 2500,
+      "buy": 35000
+    },
+    {
+      "id": "corporate_conapt",
+      "name": "Corporate Conapt",
+      "rent": 0,
+      "buy": null,
+      "note": "Given to you by a Corp."
+    },
+    {
+      "id": "upscale_conapt",
+      "name": "Upscale Conapt",
+      "rent": 7500,
+      "buy": 85000
+    },
+    {
+      "id": "luxury_penthouse",
+      "name": "Luxury Penthouse",
+      "rent": 15000,
+      "buy": 500000
+    },
+    {
+      "id": "corp_beaverville_house",
+      "name": "Corporate Beaverville House",
+      "rent": 0,
+      "buy": 200000,
+      "note": "Given to you by a Corp."
+    },
+    {
+      "id": "corp_beaverville_mcmansion",
+      "name": "Corporate Beaverville McMansion",
+      "rent": 0,
+      "buy": 500000,
+      "note": "Given to you by a Corp."
+    }
+  ]
 }
