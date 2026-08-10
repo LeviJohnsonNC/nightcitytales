@@ -3,7 +3,8 @@
  * Cyberpunk RED three-page sheet so a player can cross-reference cell by cell.
  * Display only: every number arrives pre-computed from the engine.
  */
-import { getRole, type AssembledCharacter, type CharacterBuild } from "@/engine";
+import rolesData from "@/data/rules/roles.json";
+import type { AssembledCharacter, CharacterBuild } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
 import { readGeneralLifepath } from "./lifepathState";
@@ -75,7 +76,8 @@ export function CharacterSheet({
   build: CharacterBuild;
   sheet: AssembledCharacter;
 }) {
-  const role = build.roleId ? getRole(build.roleId) : null;
+  const roles = rolesData.roles as unknown as Record<string, { name: string }>;
+  const role = build.roleId ? (roles[build.roleId] ?? null) : null;
   const portrait = build.portraitId ? portraitById(build.portraitId) : undefined;
   const general = readGeneralLifepath(state.lifepath.general);
   const roleLifepath = readRoleLifepath(state.lifepath.roleSpecific, build.roleId);
