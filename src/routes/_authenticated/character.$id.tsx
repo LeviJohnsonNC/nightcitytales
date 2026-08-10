@@ -1,4 +1,5 @@
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { CharacterDetail } from "@/features/roster/CharacterDetail";
 
 export const Route = createFileRoute("/_authenticated/character/$id")({
   head: () => ({
@@ -16,11 +17,11 @@ export const Route = createFileRoute("/_authenticated/character/$id")({
 });
 
 function CharacterPage() {
-  const { id } = useParams({ from: "/_authenticated/character/$id" });
+  const { id } = Route.useParams();
+  const { user } = Route.useRouteContext();
   return (
-    <main className="mx-auto max-w-3xl space-y-2 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Character sheet</h1>
-      <p className="text-sm text-muted-foreground">Character {id} — sheet UI not built yet.</p>
+    <main className="mx-auto max-w-5xl px-6 py-10">
+      <CharacterDetail id={id} userId={user.id} />
     </main>
   );
 }
