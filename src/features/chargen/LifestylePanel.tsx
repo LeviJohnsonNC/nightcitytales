@@ -1,5 +1,4 @@
 import {
-  FIRST_MONTH_NOTE,
   FASHION_RULES,
   FASHION_SLOTS,
   FASHION_STYLES,
@@ -265,7 +264,6 @@ function HousingCard({ state }: { state: ChargenState }) {
       ) : null}
 
       <p className="mt-3 text-sm text-text-muted">{LIFESTYLE_FAILURE_NOTE}</p>
-      <p className="sr-only">{FIRST_MONTH_NOTE}</p>
     </div>
   );
 }

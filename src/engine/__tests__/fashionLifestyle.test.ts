@@ -12,6 +12,7 @@ import {
   getFashion,
   isFashionItem,
   readLifestyle,
+  startingLifestylePlan,
   validateLifestyle,
 } from "../index";
 
@@ -55,6 +56,23 @@ describe("starting lifestyle", () => {
     expect(STARTING_HOUSING).toBe("Rented Cargo Container");
     expect(STARTING_LIFESTYLE).toBe("Kibble");
     expect(STARTING_LOCATIONS).toEqual(["Overcrowded Suburbs", "Combat Zone"]);
+  });
+
+  it("carries rent, lifestyle cost and the free first month", () => {
+    const plan = startingLifestylePlan("solo");
+    expect(plan.rent).toBe(1000);
+    expect(plan.lifestyleCost).toBe(100);
+    expect(plan.firstMonthFree).toBe(true);
+    expect(plan.requiresLocation).toBe(true);
+  });
+
+  it("gives an Exec granted Corporate Housing at no rent but still charges Lifestyle", () => {
+    const plan = startingLifestylePlan("exec");
+    expect(plan.housingName).toBe("Corporate Conapt");
+    expect(plan.rent).toBe(0);
+    expect(plan.requiresLocation).toBe(false);
+    expect(plan.lifestyleCost).toBe(100);
+    expect(validateLifestyle({ location: null }, "exec")).toHaveLength(0);
   });
 
   it("requires a location and rejects anything off the list", () => {
