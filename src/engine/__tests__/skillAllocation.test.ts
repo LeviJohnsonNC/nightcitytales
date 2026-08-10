@@ -107,3 +107,41 @@ describe("complete package skills", () => {
     expect(result.violations.some((v) => v.includes("Handgun is 7"))).toBe(true);
   });
 });
+describe("entry-aware skill validation", () => {
+  const basics = (level: number) =>
+    BASIC_SKILLS.map((skillId) => ({
+      skillId,
+      specialization: skillId === "language" || skillId === "local_expert" ? "Streetslang" : null,
+      level,
+    }));
+
+  it("names the specific skill and rule when a level is over the cap", () => {
+    const entries = [...basics(2), { skillId: "cybertech", specialization: null, level: 7 }];
+    const result = validateSkillEntries({ method: "complete_package", entries });
+    expect(result.violations).toContain("Cybertech is at 7 — the maximum Skill Level is 6");
+  });
+
+  it("reports leftover points in plain language", () => {
+    const result = validateSkillEntries({ method: "complete_package", entries: basics(2) });
+    expect(result.violations.some((v) => /Skill Points left to spend/.test(v))).toBe(true);
+  });
+
+  it("counts repeatable specializations as separate purchases", () => {
+    const entries = [
+      ...basics(2),
+      { skillId: "language", specialization: "Spanish", level: 4 },
+    ];
+    const withOne = validateSkillEntries({ method: "complete_package", entries: basics(2) });
+    const withTwo = validateSkillEntries({ method: "complete_package", entries });
+    expect(withTwo.pointsSpent - withOne.pointsSpent).toBe(4);
+  });
+
+  it("ignores granted entries in the budget", () => {
+    const entries = [
+      ...basics(2),
+      { skillId: "language", specialization: "Streetslang", level: 4, granted: true },
+    ];
+    const result = validateSkillEntries({ method: "complete_package", entries });
+    expect(result.pointsSpent).toBe(validateSkillEntries({ method: "complete_package", entries: basics(2) }).pointsSpent);
+  });
+});
