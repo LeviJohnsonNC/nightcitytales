@@ -177,61 +177,95 @@ function FashionShop({ state }: { state: ChargenState }) {
 
 function HousingCard({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
+  const plan = startingLifestylePlan(state.roleId);
   return (
     <div className="border border-hairline bg-surface p-4">
-      <SectionTitle>Housing & Lifestyle</SectionTitle>
-      <p className="mt-2 text-sm text-text">
-        You start in a rented <span className="text-ember">{STARTING_HOUSING}</span> on a{" "}
-        <span className="text-ember">{STARTING_LIFESTYLE}</span> Lifestyle. Pick where it sits.
-      </p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {STARTING_LOCATIONS.map((location) => {
-          const selected = state.lifestyle.location === location;
-          return (
-            <button
-              key={location}
-              type="button"
-              onClick={() => patch({ lifestyle: { location } })}
-              aria-pressed={selected}
-              className={`border p-4 text-left transition-colors duration-200 ${
-                selected ? "border-ember bg-ember/10" : "border-hairline bg-surface-raised hover:border-ember/60"
-              }`}
-            >
-              <span className="font-mono text-sm uppercase tracking-[0.15em] text-text">
-                {location}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim">
-        Rent:{" "}
-        {STARTING_RENT === null
-          ? "not in the rules data — see the TODO below"
-          : `${STARTING_RENT}eb / month`}
-      </p>
-    </div>
-  );
-}
+      <SectionTitle>Housing &amp; Lifestyle</SectionTitle>
+      {plan.grantedByRoleAbility ? (
+        <>
+          <p className="mt-2 text-sm text-text">
+            Your Role Ability hands you a <span className="text-ember">{plan.housingName}</span> at{" "}
+            <span className="text-ember">{eb(plan.rent)}</span> rent — no location roll, no
+            neighbourhood choice.
+          </p>
+          {plan.grantRule ? (
+            <p className="mt-2 text-sm text-text-muted">{plan.grantRule}</p>
+          ) : null}
+          {plan.rentNote ? (
+            <p className="mt-2 text-sm text-text-muted">{plan.rentNote}</p>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <p className="mt-2 text-sm text-text">
+            You start in a rented <span className="text-ember">{plan.housingName}</span> on a{" "}
+            <span className="text-ember">{plan.lifestyleName}</span> Lifestyle. Pick where it sits.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {plan.locations.map((location) => {
+              const selected = state.lifestyle.location === location;
+              return (
+                <button
+                  key={location}
+                  type="button"
+                  onClick={() => patch({ lifestyle: { location } })}
+                  aria-pressed={selected}
+                  className={`border p-4 text-left transition-colors duration-200 ${
+                    selected
+                      ? "border-ember bg-ember/10"
+                      : "border-hairline bg-surface-raised hover:border-ember/60"
+                  }`}
+                >
+                  <span className="font-mono text-sm uppercase tracking-[0.15em] text-text">
+                    {location}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
-function RulesTodo() {
-  return (
-    <div className="border border-cool/60 bg-cool/10 p-4">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-cool">
-        TODO — unresolved rules data
-      </p>
-      {STARTING_LIFESTYLE_UNRESOLVED ? (
-        <p className="mt-2 text-sm text-text">
-          creation-rules.json → startingLifestyle._UNRESOLVED: “{STARTING_LIFESTYLE_UNRESOLVED}”
-          Execs are on the default housing here; no Exec branch has been implemented.
+      <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="border border-hairline bg-surface-raised p-3">
+          <dt className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim">
+            Rent — {plan.housingName}
+          </dt>
+          <dd className="mt-1 font-mono text-sm tabular-nums text-text">
+            {eb(plan.rent)} / {plan.rentPeriod}
+          </dd>
+        </div>
+        <div className="border border-hairline bg-surface-raised p-3">
+          <dt className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim">
+            Lifestyle — {plan.lifestyleName}
+          </dt>
+          <dd className="mt-1 font-mono text-sm tabular-nums text-text">
+            {eb(plan.lifestyleCost)} / {plan.lifestyleCostPeriod}
+          </dd>
+        </div>
+      </dl>
+
+      {plan.lifestyleOption ? (
+        <p className="mt-3 text-sm text-text-muted">{plan.lifestyleOption.entails}</p>
+      ) : null}
+
+      {plan.firstMonthFree ? (
+        <p className="mt-3 text-sm text-text">
+          <span className="text-ember">First month is free.</span> Payment starts in month two.{" "}
+          {plan.firstMonthNote}
         </p>
       ) : null}
-      {STARTING_RENT === null ? (
-        <p className="mt-2 text-sm text-text">
-          creation-rules.json → startingLifestyle carries no <code>rent</code> field, so the rent
-          figure cannot be recorded yet. Add that field and it will appear here.
+
+      {plan.lifestyleNote ? (
+        <p className="mt-3 border border-cool/60 bg-cool/10 p-3 text-sm text-text">
+          {plan.lifestyleNote} Free housing is not free everything — the{" "}
+          {eb(plan.lifestyleCost)} / {plan.lifestyleCostPeriod} {plan.lifestyleName} Lifestyle is
+          still yours to pay.
         </p>
       ) : null}
+
+      <p className="mt-3 text-sm text-text-muted">{LIFESTYLE_FAILURE_NOTE}</p>
+      <p className="sr-only">{FIRST_MONTH_NOTE}</p>
     </div>
   );
 }
@@ -242,7 +276,6 @@ export function LifestylePanel({ state }: { state: ChargenState }) {
       <LookSummary state={state} />
       {state.method === "complete_package" ? <FashionShop state={state} /> : <PackageOutfit state={state} />}
       <HousingCard state={state} />
-      <RulesTodo />
     </div>
   );
 }
