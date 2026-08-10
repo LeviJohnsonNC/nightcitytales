@@ -19,6 +19,9 @@ export type SkillDefinition = {
   stat: string;
   doubleCost: boolean;
   isBasicSkill: boolean;
+  requiresSpecialization: boolean;
+  specializationLabel: string | null;
+  repeatable: boolean;
 };
 
 export const SKILLS: SkillDefinition[] = (skillsData.skills as SkillDefinition[]).map((s) => ({
@@ -28,6 +31,9 @@ export const SKILLS: SkillDefinition[] = (skillsData.skills as SkillDefinition[]
   stat: s.stat,
   doubleCost: s.doubleCost,
   isBasicSkill: s.isBasicSkill,
+  requiresSpecialization: s.requiresSpecialization,
+  specializationLabel: s.specializationLabel,
+  repeatable: s.repeatable,
 }));
 
 const SKILLS_BY_ID = new Map(SKILLS.map((s) => [s.id, s]));

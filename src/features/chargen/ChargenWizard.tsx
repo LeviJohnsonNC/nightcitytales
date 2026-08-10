@@ -42,7 +42,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const index = STEP_IDS.indexOf(state.step);
 
   const hasDependentData =
-    Object.keys(state.skills).length > 0 ||
+    state.skills.length > 0 ||
     state.gear.length > 0 ||
     state.cyberware.length > 0 ||
     Object.keys(state.lifepath.roleSpecific).length > 0;

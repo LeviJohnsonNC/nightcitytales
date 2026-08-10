@@ -4,9 +4,8 @@
  */
 import {
   STAT_ORDER,
-  validateCompletePackageSkills,
   validateCompletePackageStats,
-  validateEdgerunnerSkills,
+  validateSkillEntries,
 } from "@/engine";
 import { generalLifepathComplete, readGeneralLifepath } from "./lifepathState";
 import { readRoleLifepath, roleLifepathComplete } from "./roleLifepathState";
@@ -68,14 +67,28 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
     }
 
     case "skills": {
-      const untouched = Object.keys(state.skills).length === 0;
+      const untouched = state.skills.length === 0;
+      if (state.method === "streetrat") {
+        // Fixed package: nothing for the player to get wrong.
+        return { violations: [], untouched: false };
+      }
       if (untouched) return { violations: ["No Skill Points allocated yet."], untouched };
       if (state.method === "complete_package") {
-        return { violations: validateCompletePackageSkills(state.skills).violations, untouched };
+        return {
+          violations: validateSkillEntries({
+            method: "complete_package",
+            entries: state.skills,
+          }).violations,
+          untouched,
+        };
       }
       if (state.method === "edgerunner" && state.roleId) {
         return {
-          violations: validateEdgerunnerSkills(state.roleId, state.skills).violations,
+          violations: validateSkillEntries({
+            method: "edgerunner",
+            roleId: state.roleId,
+            entries: state.skills,
+          }).violations,
           untouched,
         };
       }
