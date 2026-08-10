@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { sendMagicLink, signInWithPassword, signUpWithPassword } from "@/lib/backend";
+import { signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/lib/backend";
 import loginArt from "@/assets/login-skyline.png.asset.json";
 
 export const Route = createFileRoute("/login")({
@@ -12,12 +12,12 @@ export const Route = createFileRoute("/login")({
       { title: "Sign In — Night City Tales" },
       {
         name: "description",
-        content: "Sign in with email and password or a magic link to reach your character roster.",
+        content: "Sign in with your Google account or email and password to reach your character roster.",
       },
       { property: "og:title", content: "Sign In — Night City Tales" },
       {
         property: "og:description",
-        content: "Sign in with email and password or a magic link to reach your character roster.",
+        content: "Sign in with your Google account or email and password to reach your character roster.",
       },
     ],
   }),
@@ -60,10 +60,11 @@ function LoginPage() {
       else await navigate({ to: "/roster" });
     });
 
-  const onMagicLink = () =>
+  const onGoogle = () =>
     void run(async () => {
-      await sendMagicLink(email);
-      setMessage("Magic link sent. Check your email.");
+      const { redirected } = await signInWithGoogle();
+      if (redirected) return;
+      await navigate({ to: "/roster" });
     });
 
   return (
@@ -94,8 +95,18 @@ function LoginPage() {
           </p>
           <h1 className="text-2xl text-text">Sign in</h1>
           <p className="text-sm text-text-muted">
-            Email and password, or a magic link if you prefer.
+            Use your Google account, or an email and password.
           </p>
+        </div>
+
+        <Button type="button" variant="secondary" disabled={busy} onClick={onGoogle}>
+          Continue with Google
+        </Button>
+
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-hairline" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-text-dim">or</span>
+          <span className="h-px flex-1 bg-hairline" />
         </div>
 
         <div className="space-y-2">
@@ -134,9 +145,6 @@ function LoginPage() {
           </Button>
           <Button type="button" variant="secondary" disabled={busy} onClick={onSignUp}>
             Create account
-          </Button>
-          <Button type="button" variant="ghost" disabled={busy || !email} onClick={onMagicLink}>
-            Email me a magic link
           </Button>
         </div>
       </form>

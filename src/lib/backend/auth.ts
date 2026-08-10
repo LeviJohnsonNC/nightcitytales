@@ -27,12 +27,13 @@ export async function signUpWithPassword(email: string, password: string) {
   return { needsEmailConfirmation: data.session === null };
 }
 
-export async function sendMagicLink(email: string) {
-  const { error } = await backendClient.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${window.location.origin}/roster` },
+export async function signInWithGoogle() {
+  const { lovable } = await import("@/integrations/lovable/index");
+  const result = await lovable.auth.signInWithOAuth("google", {
+    redirect_uri: window.location.origin,
   });
-  if (error) throw error;
+  if (result.error) throw result.error;
+  return { redirected: Boolean(result.redirected) };
 }
 
 export async function sendPasswordReset(email: string) {
