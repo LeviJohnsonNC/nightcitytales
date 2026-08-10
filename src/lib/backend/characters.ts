@@ -27,6 +27,30 @@ export async function listCharacters(): Promise<Character[]> {
   return unwrap(res) ?? [];
 }
 
+export type RosterStats = {
+  hp_current: number | null;
+  hp_max: number | null;
+  humanity_current: number | null;
+  humanity_max: number | null;
+};
+
+export type RosterEntry = Character & { stats: RosterStats | null };
+
+/** The roster grid read: every saved character, most recently updated first. */
+export async function listRoster(): Promise<RosterEntry[]> {
+  const res = await backendClient
+    .from("characters")
+    .select("*, character_stats(hp_current,hp_max,humanity_current,humanity_max)")
+    .order("updated_at", { ascending: false });
+  const rows = unwrap(res) ?? [];
+  return (rows as unknown as (Character & { character_stats: RosterStats | RosterStats[] | null })[]).map(
+    ({ character_stats, ...character }) => ({
+      ...character,
+      stats: Array.isArray(character_stats) ? (character_stats[0] ?? null) : character_stats,
+    }),
+  );
+}
+
 export async function getCharacter(id: string): Promise<FullCharacter | null> {
   const characterRes = await backendClient.from("characters").select("*").eq("id", id).maybeSingle();
   const character = unwrap(characterRes);
