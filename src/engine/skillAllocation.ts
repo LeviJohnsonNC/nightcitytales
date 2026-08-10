@@ -6,6 +6,8 @@ import {
   BASIC_SKILL_IDS,
   SKILL_PACKAGE_RULES,
   SKILL_RULES,
+  findSkillByName,
+  getRolePackage,
   getRoleSkillIds,
   getSkill,
 } from "./rulesData";
@@ -130,6 +132,107 @@ export function validateCompletePackageSkills(
   const pointsRemaining = budget - pointsSpent;
   if (pointsRemaining < 0) {
     violations.push(`${-pointsRemaining} Skill Points over the ${budget} point budget`);
+  }
+
+  return { valid: violations.length === 0, pointsSpent, pointsRemaining, violations };
+}
+/**
+ * A single skill line on the sheet. Specialized skills (Language, Science,
+ * Martial Arts…) can appear more than once, each with its own specialization,
+ * so the sheet is a list of entries rather than a map keyed by skill id.
+ */
+export type SkillEntry = {
+  skillId: string;
+  /** null for skills that take no specialization. */
+  specialization: string | null;
+  level: number;
+  /** Granted entries (the free Cultural Origin Language) cost no points. */
+  granted?: boolean;
+};
+
+/** Stable identity for an entry: skill id plus specialization. */
+export function skillEntryKey(entry: Pick<SkillEntry, "skillId" | "specialization">): string {
+  return entry.specialization ? `${entry.skillId}::${entry.specialization}` : entry.skillId;
+}
+
+/** Display name including the specialization, e.g. "Language (Streetslang)". */
+export function skillEntryName(entry: Pick<SkillEntry, "skillId" | "specialization">): string {
+  const name = getSkill(entry.skillId).name;
+  return entry.specialization ? `${name} (${entry.specialization})` : name;
+}
+
+/** The Role's printed 20-skill package as sheet entries. */
+export function rolePackageEntries(roleId: string): SkillEntry[] {
+  return getRolePackage(roleId).skills.map((line) => {
+    const skill = findSkillByName(line.skill);
+    if (!skill) {
+      throw new Error(
+        `Role package skill "${line.skill}" has no entry in src/data/rules/skills.json`,
+      );
+    }
+    return { skillId: skill.id, specialization: line.specialization, level: line.level };
+  });
+}
+
+export type SkillEntryValidationInput = {
+  method: "edgerunner" | "complete_package";
+  /** Required for edgerunner: entries are restricted to this Role's list. */
+  roleId?: string;
+  entries: SkillEntry[];
+};
+
+/** Entry-aware validation. Same rules as the map validators, repeatable-skill safe. */
+export function validateSkillEntries(input: SkillEntryValidationInput): SkillValidation {
+  const rules = input.method === "edgerunner" ? EDGERUNNER : COMPLETE_PACKAGE;
+  const budget = rules.skillPoints;
+  const maxLevel = rules.maxLevel;
+  const violations: string[] = [];
+  const purchased = input.entries.filter((e) => !e.granted);
+
+  const roleSkillIds =
+    input.method === "edgerunner" && input.roleId ? new Set(getRoleSkillIds(input.roleId)) : null;
+
+  for (const entry of purchased) {
+    const name = skillEntryName(entry);
+    if (roleSkillIds && !roleSkillIds.has(entry.skillId)) {
+      violations.push(`${name} is not one of the ${input.roleId} Role's Skills and can't be taken`);
+    }
+    if (entry.level > maxLevel) {
+      violations.push(`${name} is at ${entry.level} — the maximum Skill Level is ${maxLevel}`);
+    }
+    if (input.method === "edgerunner" && entry.level < EDGERUNNER.minLevel) {
+      violations.push(
+        `${name} is at ${entry.level} — Edgerunner Skills start at ${EDGERUNNER.minLevel}`,
+      );
+    }
+    if (entry.level < 0) violations.push(`${name} cannot be negative`);
+  }
+
+  const minimum = SKILL_RULES.basicSkillMinimum;
+  for (const basicId of BASIC_SKILLS) {
+    const best = input.entries
+      .filter((e) => e.skillId === basicId)
+      .reduce((max, e) => Math.max(max, e.level), -1);
+    if (best < minimum) {
+      violations.push(
+        best < 0
+          ? `Basic Skill ${getSkill(basicId).name} is missing — every Basic Skill must be at least ${minimum}`
+          : `Basic Skill ${getSkill(basicId).name} is at ${best} — Basic Skills must be at least ${minimum}`,
+      );
+    }
+  }
+
+  const pointsSpent = purchased.reduce(
+    (sum, entry) => sum + skillPointCost(entry.skillId, 0, entry.level),
+    0,
+  );
+  const pointsRemaining = budget - pointsSpent;
+  if (pointsRemaining < 0) {
+    violations.push(
+      `You are ${-pointsRemaining} Skill Points over the ${budget} point budget — spend fewer points`,
+    );
+  } else if (pointsRemaining > 0) {
+    violations.push(`You have ${pointsRemaining} Skill Points left to spend`);
   }
 
   return { valid: violations.length === 0, pointsSpent, pointsRemaining, violations };
