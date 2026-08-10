@@ -35,6 +35,20 @@ export type EdgerunnerResult = {
   rolls: Record<StatKey, RollResult>;
 };
 
+export type EdgerunnerStatResult = { stat: StatKey; value: number; row: number; roll: RollResult };
+
+/** Roll a single STAT against its own column of the Role's template table. */
+export function rollEdgerunnerStat(roleId: string, stat: StatKey, rng: RNG): EdgerunnerStatResult {
+  const row = d10(rng);
+  const value = getStatTemplateRow(roleId, row)[stat];
+  const roll = buildRollResult({
+    dice: "1d10",
+    rolls: [row],
+    modifiers: [{ label: `${stat.toUpperCase()} column → ${value}`, value: 0 }],
+  });
+  return { stat, value, row, roll };
+}
+
 /** Roll 1d10 per STAT, each read against that STAT's own column of the same table. */
 export function rollEdgerunnerStats(roleId: string, rng: RNG): EdgerunnerResult {
   const stats = {} as StatBlock;
@@ -42,15 +56,10 @@ export function rollEdgerunnerStats(roleId: string, rng: RNG): EdgerunnerResult 
   const rolls = {} as Record<StatKey, RollResult>;
 
   for (const stat of STAT_ORDER) {
-    const row = d10(rng);
-    const value = getStatTemplateRow(roleId, row)[stat];
-    stats[stat] = value;
-    rows[stat] = row;
-    rolls[stat] = buildRollResult({
-      dice: "1d10",
-      rolls: [row],
-      modifiers: [{ label: `${stat.toUpperCase()} column → ${value}`, value: 0 }],
-    });
+    const result = rollEdgerunnerStat(roleId, stat, rng);
+    stats[stat] = result.value;
+    rows[stat] = result.row;
+    rolls[stat] = result.roll;
   }
 
   return { stats, rows, rolls };
