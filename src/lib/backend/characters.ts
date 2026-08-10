@@ -11,6 +11,7 @@ import type {
   CharacterSkillInsert,
   CharacterStatsInsert,
   FullCharacter,
+  Json,
 } from "./types";
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -130,4 +131,50 @@ export async function saveFinance(finance: CharacterFinanceInsert) {
       .select("*")
       .single(),
   );
+}
+
+/**
+ * The one payload the save_character database function accepts. It writes the
+ * character and every attached table in a single transaction and clears the
+ * draft, so a half-saved character cannot exist.
+ */
+export type SaveCharacterPayload = {
+  draft_id: string | null;
+  character: {
+    name: string;
+    handle: string | null;
+    role: string;
+    creation_method: string;
+    portrait_id: string | null;
+  };
+  stats: Record<string, number | null>;
+  skills: { skill_id: string; level: number; specialization: string | null }[];
+  role_ability: { ability_id: string; rank: number; metadata: Record<string, unknown> } | null;
+  gear: {
+    item_id: string;
+    quantity: number;
+    equipped: boolean;
+    slot: string | null;
+    current_sp: number | null;
+    notes: string | null;
+  }[];
+  cyberware: {
+    key: string;
+    foundation_key: string | null;
+    item_id: string;
+    install_location: string | null;
+    humanity_loss_rolled: number | null;
+  }[];
+  lifepath: { general: unknown; role_specific: unknown };
+  finance: { eurobucks: number; lifestyle: string; housing: string; rent: number };
+};
+
+/** Returns the new character id. */
+export async function saveCompleteCharacter(payload: SaveCharacterPayload): Promise<string> {
+  const { data, error } = await backendClient.rpc("save_character", {
+    payload: payload as unknown as Json,
+  });
+  if (error) throw new Error(error.message);
+  if (typeof data !== "string") throw new Error("Save did not return a character id.");
+  return data;
 }
