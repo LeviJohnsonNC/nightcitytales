@@ -154,6 +154,19 @@ export const STAT_DESCRIPTIONS = creationRules.statDescriptions.stats as unknown
 
 export const HUMANITY_RULES = creationRules.humanity;
 
+export type ReputationLevel = { level: number; whoKnows: string };
+
+/** Improvement Points, read from creation-rules.json. */
+export const IMPROVEMENT_POINTS = creationRules.improvementPoints;
+
+/** Reputation starting value, recognition rule, and the 10-level ladder. */
+export const REPUTATION = creationRules.reputation as {
+  startingValue: number;
+  note: string;
+  encounterRule: string;
+  levels: ReputationLevel[];
+};
+
 export const DV_TABLE_DATA = dvTable;
 export const HP_TABLE_DATA = hpTable;
 export const LIFEPATH_GENERAL = lifepathGeneral;
