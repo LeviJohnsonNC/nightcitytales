@@ -14,17 +14,6 @@ import { StatsPanel } from "./StatsPanel";
 import { useChargenStore, type ChargenState } from "./store";
 import type { ChargenStep } from "./steps";
 
-function Placeholder({ step, note }: { step: string; note: string }) {
-  return (
-    <div className="border border-dashed border-border bg-card/50 p-6">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-        {step} — panel pending
-      </p>
-      <p className="mt-2 text-sm text-muted-foreground">{note}</p>
-    </div>
-  );
-}
-
 export function StepPanel({
   step,
   state,
