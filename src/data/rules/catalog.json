@@ -52,7 +52,9 @@
  "_schema": {
   "weapon": "{id,name,category,skill,damage,magazine,rof,handsRequired,concealable,cost,notes}",
   "armor": "{id,name,sp,penalty,cost,locations,notes}",
-  "cyberware": "{id,name,category,install,cost,humanityLoss,slotsUsed,requires,foundational,slots,notes}"
+  "cyberware": "{id,name,category,install,cost,humanityLoss,slotsUsed,requires,foundational,slots,notes}",
+  "gear": "{id,name,cost,priceCategory,description}",
+  "fashionStyle": "{id,name,prices:{<slot>:cost}}"
  },
  "weapons": [
   {
@@ -655,9 +657,513 @@
   }
  ],
  "_pending": [
-  "gear list (p.99)",
-  "fashion list (p.102)",
-  "expanded Night Market rows (p.342+)"
+  "expanded Night Market rows (p.342+) — optional, not required for chargen"
  ],
- "_scopeNote": "Cyberware here is the foundational set plus common options — enough for P9 to exercise every install rule (foundations, slot limits, prerequisites, category caps, preset Humanity Loss). Expand rows later without schema change."
+ "_scopeNote": "Weapons, armor, ammunition, the full gear list, the full fashion price grid, and a curated cyberware set covering every install rule. Sufficient for complete Complete Package shopping. Expanding Night Market rows later needs no schema change.",
+ "gear": [
+  {
+   "id": "agent",
+   "name": "Agent",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "Self-adaptive AI powered smartphone. +2 to Library Search. +2 to Wardrobe and Style under some circumstances. See pg. 352 for more information."
+  },
+  {
+   "id": "airhypo",
+   "name": "Airhypo",
+   "cost": 50,
+   "priceCategory": "Costly",
+   "description": "Easy to use drug distribution platform."
+  },
+  {
+   "id": "anti_smog_breathing_mask",
+   "name": "Anti-Smog Breathing Mask",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "Useful for filtering out airborne toxins."
+  },
+  {
+   "id": "audio_recorder",
+   "name": "Audio Recorder",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "Records up to 24 hours of sound on a single Memory Chip."
+  },
+  {
+   "id": "auto_level_dampening_ear_protectors",
+   "name": "Auto Level Dampening Ear Protectors",
+   "cost": 1000,
+   "priceCategory": "V. Expensive",
+   "description": "Compact ear protection. Makes user immune to effects caused by dangerously loud sounds."
+  },
+  {
+   "id": "binoculars",
+   "name": "Binoculars",
+   "cost": 50,
+   "priceCategory": "Costly",
+   "description": "Good for seeing far away. x2 or x3 magnification."
+  },
+  {
+   "id": "braindance_viewer",
+   "name": "Braindance Viewer",
+   "cost": 1000,
+   "priceCategory": "V. Expensive",
+   "description": "Allows viewer to experience braindance."
+  },
+  {
+   "id": "bug_detector",
+   "name": "Bug Detector",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Beeps when within 2m/yds of a listening device."
+  },
+  {
+   "id": "carryall",
+   "name": "Carryall",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "Bag for carrying stuff."
+  },
+  {
+   "id": "chemical_analyzer",
+   "name": "Chemical Analyzer",
+   "cost": 1000,
+   "priceCategory": "V. Expensive",
+   "description": "Can test chemical composition of substance against a database of samples."
+  },
+  {
+   "id": "computer",
+   "name": "Computer",
+   "cost": 50,
+   "priceCategory": "Costly",
+   "description": "Laptop or desktop computer."
+  },
+  {
+   "id": "cyberdeck",
+   "name": "Cyberdeck",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Basic deck for netrunning. 7 slots. See pg. 353 for more information."
+  },
+  {
+   "id": "disposable_cell_phone",
+   "name": "Disposable Cell Phone",
+   "cost": 50,
+   "priceCategory": "Costly",
+   "description": "Makes calls. Easy to dump if needed."
+  },
+  {
+   "id": "drum_synthesizer",
+   "name": "Drum Synthesizer",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Can simulate almost any type of drum. Needs amp."
+  },
+  {
+   "id": "duct_tape",
+   "name": "Duct Tape",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "Comes in many colors, including glow-in-the-dark."
+  },
+  {
+   "id": "electric_guitar_other_instrument",
+   "name": "Electric Guitar/Other Instrument",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Good for making music. Electric versions need amp."
+  },
+  {
+   "id": "flashlight",
+   "name": "Flashlight",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "100m/yd beam of light. Lasts 10 hours on a charge."
+  },
+  {
+   "id": "food_stick",
+   "name": "Food Stick",
+   "cost": 10,
+   "priceCategory": "Cheap",
+   "description": "One awful meal in bar form."
+  },
+  {
+   "id": "glow_paint",
+   "name": "Glow Paint",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "Glow in dark spraypaint."
+  },
+  {
+   "id": "glow_stick",
+   "name": "Glow Stick",
+   "cost": 10,
+   "priceCategory": "Cheap",
+   "description": "Illuminates up to 4m/yds. Lasts for 10 hours."
+  },
+  {
+   "id": "grapple_gun",
+   "name": "Grapple Gun",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "Fires a grapple line up to 30m/yds. Cannot be used as a weapon."
+  },
+  {
+   "id": "handcuffs",
+   "name": "Handcuffs",
+   "cost": 50,
+   "priceCategory": "Costly",
+   "description": "Restraints. Requires BODY >10 to break."
+  },
+  {
+   "id": "homing_tracer",
+   "name": "Homing Tracer",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Can follow a linked tracer up to 1-mile away."
+  },
+  {
+   "id": "inflatable_bed_sleep_bag",
+   "name": "Inflatable Bed & Sleep-bag",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "Self-inflating mattress w/ sleeping bag."
+  },
+  {
+   "id": "kibble_pack",
+   "name": "Kibble Pack",
+   "cost": 10,
+   "priceCategory": "Cheap",
+   "description": "One meal's worth of Kibble."
+  },
+  {
+   "id": "lock_picking_set",
+   "name": "Lock Picking Set",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "Used to crack mechanical locks."
+  },
+  {
+   "id": "medscanner",
+   "name": "Medscanner",
+   "cost": 1000,
+   "priceCategory": "V. Expensive",
+   "description": "Helps diagnose illness and injury. +2 to First Aid and Paramedic."
+  },
+  {
+   "id": "medtech_bag",
+   "name": "Medtech Bag",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "A full medical toolkit in a bag."
+  },
+  {
+   "id": "memory_chip",
+   "name": "Memory Chip",
+   "cost": 10,
+   "priceCategory": "Cheap",
+   "description": "Standard data storage device."
+  },
+  {
+   "id": "mre",
+   "name": "MRE",
+   "cost": 10,
+   "priceCategory": "Cheap",
+   "description": "Self-heating plastic and foil meal bag."
+  },
+  {
+   "id": "personal_carepak",
+   "name": "Personal CarePak",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "Everything you need to clean up."
+  },
+  {
+   "id": "pocket_amplifier",
+   "name": "Pocket Amplifier",
+   "cost": 50,
+   "priceCategory": "Costly",
+   "description": "Can support up to two instruments. Lasts 6 hours per charge."
+  },
+  {
+   "id": "radar_detector",
+   "name": "Radar Detector",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Beeps if within 100m/yd of an active radar beam."
+  },
+  {
+   "id": "radiation_suit",
+   "name": "Radiation Suit",
+   "cost": 1000,
+   "priceCategory": "V. Expensive",
+   "description": "Protects you from radiation."
+  },
+  {
+   "id": "radio_communicator",
+   "name": "Radio Communicator",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "Earpiece. One mile range."
+  },
+  {
+   "id": "radio_scanner_music_player",
+   "name": "Radio Scanner/Music Player",
+   "cost": 50,
+   "priceCategory": "Costly",
+   "description": "Play the hottest music or tune into radio bands within 1-mile."
+  },
+  {
+   "id": "road_flare",
+   "name": "Road Flare",
+   "cost": 10,
+   "priceCategory": "Cheap",
+   "description": "Lights up an area of 100m/yd for 1 hour."
+  },
+  {
+   "id": "rope_60m_yd",
+   "name": "Rope (60m/yd)",
+   "cost": 20,
+   "priceCategory": "Everyday",
+   "description": "Nylon rope."
+  },
+  {
+   "id": "scrambler_descrambler",
+   "name": "Scrambler/Descrambler",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Scrambles/descrambles communications."
+  },
+  {
+   "id": "smart_glasses",
+   "name": "Smart Glasses",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Technologically enhanced glasses. Has 2 slots for Cyberoptic Options."
+  },
+  {
+   "id": "tech_bag",
+   "name": "Tech Bag",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Small bag of tools for fixing stuff."
+  },
+  {
+   "id": "techscanner",
+   "name": "Techscanner",
+   "cost": 1000,
+   "priceCategory": "V. Expensive",
+   "description": "Helps diagnose broken tech. +2 to multiple TECH-based Skills."
+  },
+  {
+   "id": "techtool",
+   "name": "Techtool",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "An all-in-one multitool."
+  },
+  {
+   "id": "tent_and_camping_equipment",
+   "name": "Tent and Camping Equipment",
+   "cost": 50,
+   "priceCategory": "Costly",
+   "description": "Gear for one person to camp."
+  },
+  {
+   "id": "vial_of_biotoxin",
+   "name": "Vial of Biotoxin",
+   "cost": 500,
+   "priceCategory": "Expensive",
+   "description": "Does damage 3d6. Resisted by Resist Torture/Drugs. Not affected by armor."
+  },
+  {
+   "id": "vial_of_poison",
+   "name": "Vial of Poison",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "Does damage 2d6. Resisted by Resist Torture/Drugs. Not affected by armor."
+  },
+  {
+   "id": "video_camera",
+   "name": "Video Camera",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "Record up to 12 hours of audio and video on a single memory chip."
+  },
+  {
+   "id": "virtuality_goggles",
+   "name": "Virtuality Goggles",
+   "cost": 100,
+   "priceCategory": "Premium",
+   "description": "Projects cyberspace imagery over real world view."
+  }
+ ],
+ "fashion": {
+  "_source": "Cyberpunk RED Core Rulebook p.102",
+  "_note": "Fashion is priced per garment slot per style. A character buys individual pieces (e.g. Leisurewear Jacket at 100eb), which is how the printed Streetrat/Edgerunner outfit strings decompose.",
+  "_slots": [
+   "Bottoms",
+   "Top",
+   "Jacket",
+   "Footwear",
+   "Jewelry",
+   "Mirrorshades",
+   "Glasses",
+   "Contact Lenses",
+   "Hats"
+  ],
+  "_budgetRule": "Fashion and Fashionware share the separate 800eb Complete Package budget. Unspent fashion money is LOST.",
+  "styles": [
+   {
+    "id": "bag_lady_chic",
+    "name": "Bag Lady Chic",
+    "prices": {
+     "Bottoms": 20,
+     "Top": 10,
+     "Jacket": 20,
+     "Footwear": 20,
+     "Jewelry": 20,
+     "Mirrorshades": 20,
+     "Glasses": 10,
+     "Contact Lenses": 10,
+     "Hats": 10
+    }
+   },
+   {
+    "id": "generic_chic",
+    "name": "Generic Chic",
+    "prices": {
+     "Bottoms": 50,
+     "Top": 20,
+     "Jacket": 50,
+     "Footwear": 20,
+     "Jewelry": 50,
+     "Mirrorshades": 20,
+     "Glasses": 20,
+     "Contact Lenses": 10,
+     "Hats": 10
+    }
+   },
+   {
+    "id": "gang_colors",
+    "name": "Gang Colors",
+    "prices": {
+     "Bottoms": 50,
+     "Top": 20,
+     "Jacket": 50,
+     "Footwear": 20,
+     "Jewelry": 50,
+     "Mirrorshades": 20,
+     "Glasses": 20,
+     "Contact Lenses": 10,
+     "Hats": 10
+    }
+   },
+   {
+    "id": "leisurewear",
+    "name": "Leisurewear",
+    "prices": {
+     "Bottoms": 100,
+     "Top": 20,
+     "Jacket": 100,
+     "Footwear": 50,
+     "Jewelry": 100,
+     "Mirrorshades": 50,
+     "Glasses": 50,
+     "Contact Lenses": 20,
+     "Hats": 50
+    }
+   },
+   {
+    "id": "bohemian",
+    "name": "Bohemian",
+    "prices": {
+     "Bottoms": 50,
+     "Top": 20,
+     "Jacket": 50,
+     "Footwear": 50,
+     "Jewelry": 100,
+     "Mirrorshades": 50,
+     "Glasses": 50,
+     "Contact Lenses": 10,
+     "Hats": 10
+    }
+   },
+   {
+    "id": "nomad_leathers",
+    "name": "Nomad Leathers",
+    "prices": {
+     "Bottoms": 100,
+     "Top": 20,
+     "Jacket": 100,
+     "Footwear": 100,
+     "Jewelry": 100,
+     "Mirrorshades": 50,
+     "Glasses": 50,
+     "Contact Lenses": 20,
+     "Hats": 100
+    }
+   },
+   {
+    "id": "asia_pop",
+    "name": "Asia Pop",
+    "prices": {
+     "Bottoms": 100,
+     "Top": 20,
+     "Jacket": 100,
+     "Footwear": 100,
+     "Jewelry": 100,
+     "Mirrorshades": 100,
+     "Glasses": 100,
+     "Contact Lenses": 100,
+     "Hats": 100
+    }
+   },
+   {
+    "id": "urban_flash",
+    "name": "Urban Flash",
+    "prices": {
+     "Bottoms": 100,
+     "Top": 20,
+     "Jacket": 100,
+     "Footwear": 100,
+     "Jewelry": 100,
+     "Mirrorshades": 100,
+     "Glasses": 100,
+     "Contact Lenses": 100,
+     "Hats": 100
+    }
+   },
+   {
+    "id": "businesswear",
+    "name": "Businesswear",
+    "prices": {
+     "Bottoms": 500,
+     "Top": 50,
+     "Jacket": 500,
+     "Footwear": 500,
+     "Jewelry": 5000,
+     "Mirrorshades": 500,
+     "Glasses": 500,
+     "Contact Lenses": 100,
+     "Hats": 500
+    }
+   },
+   {
+    "id": "high_fashion",
+    "name": "High Fashion",
+    "prices": {
+     "Bottoms": 1000,
+     "Top": 500,
+     "Jacket": 1000,
+     "Footwear": 5000,
+     "Jewelry": 50000,
+     "Mirrorshades": 1000,
+     "Glasses": 1000,
+     "Contact Lenses": 1000,
+     "Hats": 5000
+    }
+   }
+  ]
+ }
 }
