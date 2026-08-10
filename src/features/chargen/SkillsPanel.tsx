@@ -210,10 +210,16 @@ function Budget({
 }
 
 function StreetratBranch({ state }: { state: ChargenState }) {
+  const patch = useChargenStore((s) => s.patch);
   const roleId = state.roleId!;
   const granted = grantedLanguage(state);
   const entries = useMemo(() => rolePackageEntries(roleId), [roleId]);
   const all = granted ? [...entries, granted] : entries;
+
+  // The fixed package is what gets written to the sheet, so store it as-is.
+  useEffect(() => {
+    if (state.skills.length === 0) patch({ skills: entries });
+  }, [entries, state.skills.length, patch]);
 
   return (
     <div className="space-y-4">
