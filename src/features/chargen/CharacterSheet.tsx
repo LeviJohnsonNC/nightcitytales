@@ -4,6 +4,7 @@
  * Display only: every number arrives pre-computed from the engine.
  */
 import rolesData from "@/data/rules/roles.json";
+import { IMPROVEMENT_POINTS, REPUTATION } from "@/engine";
 import type { AssembledCharacter, CharacterBuild } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
