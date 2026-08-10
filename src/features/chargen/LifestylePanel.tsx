@@ -13,7 +13,6 @@ import {
   lineCost,
 } from "@/engine";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { readGeneralLifepath, displayValue } from "./lifepathState";
 import { BudgetBars, FashionWarning, PurchaseError, eb, useLoadoutActions } from "./market";
 import { useChargenStore, type ChargenState } from "./store";
@@ -240,20 +239,10 @@ function RulesTodo() {
 }
 
 export function LifestylePanel({ state }: { state: ChargenState }) {
-  const patch = useChargenStore((s) => s.patch);
   return (
     <div className="space-y-6">
       <LookSummary state={state} />
       {state.method === "complete_package" ? <FashionShop state={state} /> : <PackageOutfit state={state} />}
-      <div className="space-y-2">
-        <SectionTitle>How you wear it (optional)</SectionTitle>
-        <Textarea
-          value={state.selfDescription}
-          onChange={(e) => patch({ selfDescription: e.target.value })}
-          placeholder="One line on how the look reads on the street."
-          rows={2}
-        />
-      </div>
       <HousingCard state={state} />
       <RulesTodo />
     </div>
