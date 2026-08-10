@@ -1,0 +1,663 @@
+{
+ "_source": {
+  "book": "Cyberpunk RED Core Rulebook",
+  "publisher": "R. Talsorian Games",
+  "pages": "91-97 (Weapons/Armor), 111-115 (Cyberware), 342+ (Night Market)"
+ },
+ "_scope": "Curated v1 subset using the full-book schema. Every field a full catalog needs is present; only the number of rows is reduced. Adding rows later needs no schema change.",
+ "_rules": {
+  "completePackageBudgets": {
+   "gearEurobucks": 2550,
+   "gearUnspentKept": true,
+   "fashionEurobucks": 800,
+   "fashionUnspentKept": false,
+   "fashionNote": "The 800eb may ONLY buy Fashion or Fashionware. Anything unspent is lost."
+  },
+  "humanityLossAtCreation": "At Character Generation, Humanity Loss is the PRESET flat number. The dice in parentheses apply only AFTER creation. Do not roll HL during chargen.",
+  "installLevels": [
+   "Mall",
+   "Clinic",
+   "Hospital"
+  ],
+  "installNote": "Installation surgery is always included at no extra charge, including at Character Generation.",
+  "optionSlots": {
+   "foundational": {
+    "neural_link": {
+     "slots": 5
+    },
+    "cybereye": {
+     "slots": 3,
+     "perUnit": true
+    },
+    "cyberaudio_suite": {
+     "slots": 3,
+     "maxInstalls": 1
+    },
+    "cyberarm": {
+     "slots": 4,
+     "notes": "Ships with a Standard Hand that costs no Humanity and no slot."
+    },
+    "cyberleg": {
+     "slots": 3,
+     "notes": "Ships with a Standard Foot that costs no Humanity and no slot."
+    }
+   },
+   "nonFoundational": "Fashionware, Internal Cyberware, and External Cyberware have no foundational piece, but a Character may still only implant 7 Option Slots worth of each category.",
+   "default": "Unless otherwise marked, a cyberware option consumes 1 Option Slot in its foundation.",
+   "_resolves": "This closes the previously-open question about foundation slot counts."
+  },
+  "armorNote": "One worn armor per location (head / body / shield). Track current SP separately from base SP so ablation works in play.",
+  "stackingNote": "Benefits from multiple installations of the same cyberware do not stack unless stated."
+ },
+ "_schema": {
+  "weapon": "{id,name,category,skill,damage,magazine,rof,handsRequired,concealable,cost,notes}",
+  "armor": "{id,name,sp,penalty,cost,locations,notes}",
+  "cyberware": "{id,name,category,install,cost,humanityLoss,slotsUsed,requires,foundational,slots,notes}"
+ },
+ "weapons": [
+  {
+   "id": "light_melee",
+   "name": "Light Melee Weapon",
+   "category": "melee",
+   "skill": "Melee Weapon",
+   "damage": "1d6",
+   "magazine": null,
+   "rof": 2,
+   "handsRequired": "Varies",
+   "concealable": true,
+   "cost": 50,
+   "notes": "Combat Knife, Tomahawk"
+  },
+  {
+   "id": "medium_melee",
+   "name": "Medium Melee Weapon",
+   "category": "melee",
+   "skill": "Melee Weapon",
+   "damage": "2d6",
+   "magazine": null,
+   "rof": 2,
+   "handsRequired": "Varies",
+   "concealable": false,
+   "cost": 50,
+   "notes": "Baseball Bat, Crowbar, Machete"
+  },
+  {
+   "id": "heavy_melee",
+   "name": "Heavy Melee Weapon",
+   "category": "melee",
+   "skill": "Melee Weapon",
+   "damage": "3d6",
+   "magazine": null,
+   "rof": 2,
+   "handsRequired": "Varies",
+   "concealable": false,
+   "cost": 100,
+   "notes": "Lead Pipe, Sword, Spiked Bat"
+  },
+  {
+   "id": "very_heavy_melee",
+   "name": "Very Heavy Melee Weapon",
+   "category": "melee",
+   "skill": "Melee Weapon",
+   "damage": "4d6",
+   "magazine": null,
+   "rof": 1,
+   "handsRequired": "Varies",
+   "concealable": false,
+   "cost": 500,
+   "notes": "Chainsaw, Sledgehammer, Naginata"
+  },
+  {
+   "id": "medium_pistol",
+   "name": "Medium Pistol",
+   "category": "ranged",
+   "skill": "Handgun",
+   "damage": "2d6",
+   "magazine": 12,
+   "rof": 2,
+   "handsRequired": 1,
+   "concealable": true,
+   "cost": 50,
+   "notes": ""
+  },
+  {
+   "id": "heavy_pistol",
+   "name": "Heavy Pistol",
+   "category": "ranged",
+   "skill": "Handgun",
+   "damage": "3d6",
+   "magazine": 8,
+   "rof": 2,
+   "handsRequired": 1,
+   "concealable": true,
+   "cost": 100,
+   "notes": ""
+  },
+  {
+   "id": "very_heavy_pistol",
+   "name": "Very Heavy Pistol",
+   "category": "ranged",
+   "skill": "Handgun",
+   "damage": "4d6",
+   "magazine": 8,
+   "rof": 1,
+   "handsRequired": 1,
+   "concealable": false,
+   "cost": 100,
+   "notes": ""
+  },
+  {
+   "id": "smg",
+   "name": "SMG",
+   "category": "ranged",
+   "skill": "Handgun",
+   "damage": "2d6",
+   "magazine": 30,
+   "rof": 1,
+   "handsRequired": 1,
+   "concealable": true,
+   "cost": 100,
+   "notes": "Autofire (3), Suppressive Fire"
+  },
+  {
+   "id": "heavy_smg",
+   "name": "Heavy SMG",
+   "category": "ranged",
+   "skill": "Handgun",
+   "damage": "3d6",
+   "magazine": 40,
+   "rof": 1,
+   "handsRequired": 1,
+   "concealable": false,
+   "cost": 100,
+   "notes": "Autofire (3), Suppressive Fire"
+  },
+  {
+   "id": "shotgun",
+   "name": "Shotgun",
+   "category": "ranged",
+   "skill": "Shoulder Arms",
+   "damage": "5d6",
+   "magazine": 4,
+   "rof": 1,
+   "handsRequired": 2,
+   "concealable": false,
+   "cost": 500,
+   "notes": "Shotgun Shell"
+  },
+  {
+   "id": "assault_rifle",
+   "name": "Assault Rifle",
+   "category": "ranged",
+   "skill": "Shoulder Arms",
+   "damage": "5d6",
+   "magazine": 25,
+   "rof": 1,
+   "handsRequired": 2,
+   "concealable": false,
+   "cost": 500,
+   "notes": "Autofire (4), Suppressive Fire"
+  },
+  {
+   "id": "sniper_rifle",
+   "name": "Sniper Rifle",
+   "category": "ranged",
+   "skill": "Shoulder Arms",
+   "damage": "5d6",
+   "magazine": 4,
+   "rof": 1,
+   "handsRequired": 2,
+   "concealable": false,
+   "cost": 500,
+   "notes": ""
+  },
+  {
+   "id": "bows_crossbows",
+   "name": "Bows & Crossbows",
+   "category": "ranged",
+   "skill": "Archery",
+   "damage": "4d6",
+   "magazine": null,
+   "rof": 1,
+   "handsRequired": 2,
+   "concealable": false,
+   "cost": 100,
+   "notes": "Arrows"
+  },
+  {
+   "id": "grenade_launcher",
+   "name": "Grenade Launcher",
+   "category": "ranged",
+   "skill": "Heavy Weapons",
+   "damage": "6d6",
+   "magazine": 2,
+   "rof": 1,
+   "handsRequired": 2,
+   "concealable": false,
+   "cost": 500,
+   "notes": "Explosive"
+  },
+  {
+   "id": "rocket_launcher",
+   "name": "Rocket Launcher",
+   "category": "ranged",
+   "skill": "Heavy Weapons",
+   "damage": "8d6",
+   "magazine": 1,
+   "rof": 1,
+   "handsRequired": 2,
+   "concealable": false,
+   "cost": 500,
+   "notes": "Explosive"
+  }
+ ],
+ "armor": [
+  {
+   "id": "leathers",
+   "name": "Leathers",
+   "sp": 4,
+   "penalty": null,
+   "cost": 20,
+   "locations": [
+    "body",
+    "head"
+   ],
+   "notes": "Favored by Nomads and bikers."
+  },
+  {
+   "id": "kevlar",
+   "name": "Kevlar",
+   "sp": 7,
+   "penalty": null,
+   "cost": 50,
+   "locations": [
+    "body",
+    "head"
+   ],
+   "notes": "Can be made into clothes, vests, jackets, suits."
+  },
+  {
+   "id": "light_armorjack",
+   "name": "Light Armorjack",
+   "sp": 11,
+   "penalty": null,
+   "cost": 100,
+   "locations": [
+    "body",
+    "head"
+   ],
+   "notes": "Kevlar and plastic mesh in the weave."
+  },
+  {
+   "id": "bodyweight_suit",
+   "name": "Bodyweight Suit",
+   "sp": 11,
+   "penalty": null,
+   "cost": 1000,
+   "locations": [
+    "body"
+   ],
+   "notes": "Stores a Cyberdeck and supports Interface Plugs."
+  },
+  {
+   "id": "medium_armorjack",
+   "name": "Medium Armorjack",
+   "sp": 12,
+   "penalty": {
+    "stats": [
+     "REF",
+     "DEX",
+     "MOVE"
+    ],
+    "value": -2
+   },
+   "cost": 100,
+   "locations": [
+    "body",
+    "head"
+   ]
+  },
+  {
+   "id": "heavy_armorjack",
+   "name": "Heavy Armorjack",
+   "sp": 13,
+   "penalty": {
+    "stats": [
+     "REF",
+     "DEX",
+     "MOVE"
+    ],
+    "value": -2
+   },
+   "cost": 500,
+   "locations": [
+    "body",
+    "head"
+   ]
+  },
+  {
+   "id": "flak",
+   "name": "Flak",
+   "sp": 15,
+   "penalty": {
+    "stats": [
+     "REF",
+     "DEX",
+     "MOVE"
+    ],
+    "value": -4
+   },
+   "cost": 500,
+   "locations": [
+    "body",
+    "head"
+   ]
+  },
+  {
+   "id": "metalgear",
+   "name": "Metalgear",
+   "sp": 18,
+   "penalty": {
+    "stats": [
+     "REF",
+     "DEX",
+     "MOVE"
+    ],
+    "value": -4
+   },
+   "cost": 5000,
+   "locations": [
+    "body",
+    "head"
+   ]
+  },
+  {
+   "id": "bulletproof_shield",
+   "name": "Bulletproof Shield",
+   "sp": null,
+   "hp": 10,
+   "penalty": null,
+   "cost": 100,
+   "locations": [
+    "shield"
+   ],
+   "notes": "10 HP reduced by damage. Always occupies one arm."
+  }
+ ],
+ "ammunition": [
+  {
+   "id": "basic_ammo",
+   "name": "Basic Ammunition",
+   "cost": 10,
+   "unit": "per 10 units",
+   "types": [
+    "Bullet (Pistol)",
+    "Bullet (Slug)",
+    "Bullet (Rifle)",
+    "Shotgun Shell",
+    "Arrow"
+   ],
+   "notes": "Grenades and Rockets are not sold as Basic ammunition."
+  }
+ ],
+ "cyberware": [
+  {
+   "id": "biomonitor",
+   "name": "Biomonitor",
+   "category": "fashionware",
+   "install": "Mall",
+   "cost": 100,
+   "humanityLoss": 0,
+   "humanityLossDice": null,
+   "slotsUsed": 1,
+   "requires": null,
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Subdermal vitals readout. Links to an Agent."
+  },
+  {
+   "id": "chemskin",
+   "name": "Chemskin",
+   "category": "fashionware",
+   "install": "Mall",
+   "cost": 100,
+   "humanityLoss": 0,
+   "humanityLossDice": null,
+   "slotsUsed": 1,
+   "requires": null,
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Permanently changes skin hue. +2 Personal Grooming with Techhair."
+  },
+  {
+   "id": "emp_threading",
+   "name": "EMP Threading",
+   "category": "fashionware",
+   "install": "Mall",
+   "cost": 10,
+   "humanityLoss": 0,
+   "humanityLossDice": null,
+   "slotsUsed": 1,
+   "requires": null,
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Silver circuit-pattern lines across the body."
+  },
+  {
+   "id": "light_tattoo",
+   "name": "Light Tattoo",
+   "category": "fashionware",
+   "install": "Mall",
+   "cost": 100,
+   "humanityLoss": 0,
+   "humanityLossDice": null,
+   "slotsUsed": 1,
+   "requires": null,
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "+2 Wardrobe & Style with three or more tattoos."
+  },
+  {
+   "id": "shift_tacts",
+   "name": "Shift Tacts",
+   "category": "fashionware",
+   "install": "Mall",
+   "cost": 100,
+   "humanityLoss": 0,
+   "humanityLossDice": null,
+   "slotsUsed": 1,
+   "requires": null,
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Color-changing implanted lenses."
+  },
+  {
+   "id": "neural_link",
+   "name": "Neural Link",
+   "category": "neuralware",
+   "install": "Clinic",
+   "cost": 500,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 0,
+   "requires": null,
+   "foundational": true,
+   "providesSlots": 5,
+   "notes": "Required for Neuralware and Subdermal Grip."
+  },
+  {
+   "id": "braindance_recorder",
+   "name": "Braindance Recorder",
+   "category": "neuralware",
+   "install": "Clinic",
+   "cost": 500,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 1,
+   "requires": "neural_link",
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Records the user's experiences to a memory chip or external device."
+  },
+  {
+   "id": "chipware_socket",
+   "name": "Chipware Socket",
+   "category": "neuralware",
+   "install": "Clinic",
+   "cost": 500,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 1,
+   "requires": "neural_link",
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "A socket in the back of the neck. Required to use Chipware."
+  },
+  {
+   "id": "interface_plugs",
+   "name": "Interface Plugs",
+   "category": "neuralware",
+   "install": "Clinic",
+   "cost": 500,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 1,
+   "requires": "neural_link",
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Plugs in wrist or head allowing connection to machines."
+  },
+  {
+   "id": "kerenzikov",
+   "name": "Kerenzikov",
+   "category": "neuralware",
+   "install": "Clinic",
+   "cost": 500,
+   "humanityLoss": 14,
+   "humanityLossDice": "4d6",
+   "slotsUsed": 1,
+   "requires": "neural_link",
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Speedware. +2 Initiative. Only one Speedware at a time."
+  },
+  {
+   "id": "sandevistan",
+   "name": "Sandevistan",
+   "category": "neuralware",
+   "install": "Clinic",
+   "cost": 500,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 1,
+   "requires": "neural_link",
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Speedware. +3 Initiative for one minute, 1 hour cooldown. Only one Speedware at a time."
+  },
+  {
+   "id": "memory_chip",
+   "name": "Memory Chip",
+   "category": "chipware",
+   "install": "N/A",
+   "cost": 10,
+   "humanityLoss": 0,
+   "humanityLossDice": null,
+   "slotsUsed": 0,
+   "requires": null,
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Data storage."
+  },
+  {
+   "id": "chemical_analyzer",
+   "name": "Chemical Analyzer",
+   "category": "chipware",
+   "install": "N/A",
+   "cost": 500,
+   "humanityLoss": 3,
+   "humanityLossDice": "1d6",
+   "slotsUsed": 1,
+   "requires": "chipware_socket",
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Tests a substance for chemical composition against a database."
+  },
+  {
+   "id": "olfactory_boost",
+   "name": "Olfactory Boost",
+   "category": "chipware",
+   "install": "N/A",
+   "cost": 100,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 1,
+   "requires": "chipware_socket",
+   "foundational": false,
+   "providesSlots": null,
+   "notes": "Track by scent using the Tracking Skill."
+  },
+  {
+   "id": "cybereye",
+   "name": "Cybereye",
+   "category": "cyberoptics",
+   "install": "Clinic",
+   "cost": 100,
+   "humanityLoss": 2,
+   "humanityLossDice": "1d6/2 round up",
+   "slotsUsed": 0,
+   "requires": null,
+   "foundational": true,
+   "providesSlots": 3,
+   "notes": "Artificial eye. Each Cybereye has 3 Option Slots. Many options must be paired across two eyes."
+  },
+  {
+   "id": "cyberaudio_suite",
+   "name": "Cyberaudio Suite",
+   "category": "cyberaudio",
+   "install": "Clinic",
+   "cost": 500,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 0,
+   "requires": null,
+   "foundational": true,
+   "providesSlots": 3,
+   "notes": "Has 3 Option Slots. Cannot install more than one."
+  },
+  {
+   "id": "cyberarm",
+   "name": "Cyberarm",
+   "category": "cyberlimb",
+   "install": "Hospital",
+   "cost": 500,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 0,
+   "requires": null,
+   "foundational": true,
+   "providesSlots": 4,
+   "notes": "Replacement arm. Ships with a Standard Hand that costs no Humanity and no slot."
+  },
+  {
+   "id": "cyberleg",
+   "name": "Cyberleg",
+   "category": "cyberlimb",
+   "install": "Hospital",
+   "cost": 500,
+   "humanityLoss": 7,
+   "humanityLossDice": "2d6",
+   "slotsUsed": 0,
+   "requires": null,
+   "foundational": true,
+   "providesSlots": 3,
+   "notes": "Replacement leg. Ships with a Standard Foot that costs no Humanity and no slot."
+  }
+ ],
+ "_pending": [
+  "gear list (p.99)",
+  "fashion list (p.102)",
+  "expanded Night Market rows (p.342+)"
+ ],
+ "_scopeNote": "Cyberware here is the foundational set plus common options — enough for P9 to exercise every install rule (foundations, slot limits, prerequisites, category caps, preset Humanity Loss). Expand rows later without schema change."
+}
