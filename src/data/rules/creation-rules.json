@@ -341,5 +341,59 @@
       "buy": 500000,
       "note": "Given to you by a Corp."
     }
-  ]
+  ],
+  "improvementPoints": {
+    "_source": "Cyberpunk RED Core Rulebook p.99 (sheet notes), p.406 (Improvement Points)",
+    "startingValue": 0,
+    "note": "Improvement Points are earned and spent during play to raise Skill Levels and Role Ability Ranks. A newly created Character has none. The sheet reserves a space for them; at creation it reads 0.",
+    "_chargenScope": "Display only. Spending rules belong to the play loop, not chargen."
+  },
+  "reputation": {
+    "_source": "Cyberpunk RED Core Rulebook p.193",
+    "startingValue": 0,
+    "note": "Most Cyberpunk RED Characters start with a Reputation of 0. Reputation Levels are awarded by the GM for notable deeds; a new deed only replaces the old one if its Level is higher.",
+    "encounterRule": "When first meeting, Characters roll 1d10. A Character who rolls under the Reputation Level of the person they are meeting has heard of them.",
+    "levels": [
+      {
+        "level": 1,
+        "whoKnows": "Anyone who was there at the time knows."
+      },
+      {
+        "level": 2,
+        "whoKnows": "Stories have gotten around to immediate friends."
+      },
+      {
+        "level": 3,
+        "whoKnows": "All your co-workers and casual acquaintances know."
+      },
+      {
+        "level": 4,
+        "whoKnows": "Stories are all over the local area."
+      },
+      {
+        "level": 5,
+        "whoKnows": "Others beyond your local area recognize your name."
+      },
+      {
+        "level": 6,
+        "whoKnows": "Others beyond your local area know you on sight."
+      },
+      {
+        "level": 7,
+        "whoKnows": "A news story or two has been written about your exploits."
+      },
+      {
+        "level": 8,
+        "whoKnows": "Your exploits regularly make the headlines and screamsheets."
+      },
+      {
+        "level": 9,
+        "whoKnows": "Your exploits always make the screamsheets and TV."
+      },
+      {
+        "level": 10,
+        "whoKnows": "You're known worldwide."
+      }
+    ]
+  }
 }
