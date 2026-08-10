@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import rolesData from "@/data/rules/roles.json";
-import type { CreationMethod, StatBlock } from "@/engine";
+import type { CreationMethod, StatBlock, StatKey } from "@/engine";
 import { STEP_IDS, clearedByRoleChange, type ChargenStep } from "./steps";
 
 export type { ChargenStep };
@@ -17,6 +17,11 @@ export type ChargenState = {
   handle: string;
   portrait: string | null;
   stats: Partial<StatBlock>;
+  /**
+   * Which template row each STAT came from. `row` is the single Streetrat row;
+   * `rows` is the per-STAT row for Edgerunner. Empty for Complete Package.
+   */
+  statRolls: { row: number | null; rows: Partial<Record<StatKey, number>> };
   skills: Record<string, number>;
   lifepath: { general: Record<string, unknown>; roleSpecific: Record<string, unknown> };
   gear: string[];
@@ -49,6 +54,7 @@ const initialState: ChargenState = {
   handle: "",
   portrait: null,
   stats: {},
+  statRolls: { row: null, rows: {} },
   skills: {},
   lifepath: { general: {}, roleSpecific: {} },
   gear: [],
