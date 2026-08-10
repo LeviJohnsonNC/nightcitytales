@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import type { CreationMethod } from "@/engine";
 import { CyberwarePanel } from "./CyberwarePanel";
 import { DerivedPanel } from "./DerivedPanel";
 import { GearPanel } from "./GearPanel";
+import { IdentityPanel } from "./IdentityPanel";
 import { LifepathPanel } from "./LifepathPanel";
+import { LifestylePanel } from "./LifestylePanel";
 import { MethodPanel } from "./MethodPanel";
 import { RolePanel } from "./RolePanel";
 import { RollLog } from "./RollLog";
@@ -36,8 +36,6 @@ export function StepPanel({
   onRequestMethod: (method: CreationMethod) => void;
   onRequestRole: (roleId: string) => void;
 }) {
-  const patch = useChargenStore((s) => s.patch);
-
   switch (step) {
     case "method":
       return <MethodPanel state={state} onRequestMethod={onRequestMethod} />;
@@ -49,31 +47,7 @@ export function StepPanel({
       return <DerivedPanel state={state} />;
 
     case "identity":
-      return (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="chargen-name">Name</Label>
-            <Input
-              id="chargen-name"
-              value={state.name}
-              onChange={(e) => patch({ name: e.target.value })}
-              placeholder="Legal name"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="chargen-handle">Handle</Label>
-            <Input
-              id="chargen-handle"
-              value={state.handle}
-              onChange={(e) => patch({ handle: e.target.value })}
-              placeholder="Street handle"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <Placeholder step="Portrait gallery" note="Portrait selection arrives in a later pass." />
-          </div>
-        </div>
-      );
+      return <IdentityPanel state={state} />;
 
     case "review":
       return (
@@ -102,6 +76,6 @@ export function StepPanel({
     case "cyberware":
       return <CyberwarePanel state={state} />;
     case "lifestyle":
-      return <Placeholder step="Outfit, Lifestyle & Housing" note="Fashion, housing, and lifestyle." />;
+      return <LifestylePanel state={state} />;
   }
 }

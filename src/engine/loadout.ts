@@ -84,7 +84,13 @@ export function budgetsForMethod(method: CreationMethod): BudgetDefinition[] {
 
 /** Fashion money may only buy Fashion or Fashionware. */
 export function isFashionItem(kind: ItemKind, itemId: string): boolean {
+  if (kind === "fashion") return true;
   return kind === "cyberware" && getCyberware(itemId).category === "fashionware";
+}
+
+/** The fashion pieces bought so far, as cart lines. */
+export function fashionLines(loadout: Loadout): CartLine[] {
+  return loadout.lines.filter((l) => l.kind === "fashion");
 }
 
 export function lineCost(line: CartLine): number {

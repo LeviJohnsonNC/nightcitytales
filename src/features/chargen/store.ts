@@ -1,6 +1,15 @@
 import { create } from "zustand";
 import rolesData from "@/data/rules/roles.json";
-import { EMPTY_LOADOUT, type CreationMethod, type Loadout, type SkillEntry, type StatBlock, type StatKey } from "@/engine";
+import {
+  EMPTY_LIFESTYLE,
+  EMPTY_LOADOUT,
+  type CreationMethod,
+  type LifestyleChoice,
+  type Loadout,
+  type SkillEntry,
+  type StatBlock,
+  type StatKey,
+} from "@/engine";
 import { STEP_IDS, clearedByRoleChange, type ChargenStep } from "./steps";
 
 export type { ChargenStep };
@@ -15,6 +24,8 @@ export type ChargenState = {
   roleAbility: { id: string; name: string; rank: number } | null;
   name: string;
   handle: string;
+  pronouns: string;
+  selfDescription: string;
   portrait: string | null;
   stats: Partial<StatBlock>;
   /**
@@ -27,7 +38,8 @@ export type ChargenState = {
   lifepath: { general: Record<string, unknown>; roleSpecific: Record<string, unknown> };
   /** Purchases, worn armor and cyberware installs. Engine-owned shape. */
   loadout: Loadout;
-  lifestyle: Record<string, unknown>;
+  /** Housing location pick. Housing, rent and Lifestyle themselves are fixed by the rules. */
+  lifestyle: LifestyleChoice;
   /** Steps the player has opened at least once. Drives "in progress" vs "locked". */
   visited: ChargenStep[];
 };
@@ -53,13 +65,15 @@ const initialState: ChargenState = {
   roleAbility: null,
   name: "",
   handle: "",
+  pronouns: "",
+  selfDescription: "",
   portrait: null,
   stats: {},
   statRolls: { row: null, rows: {} },
   skills: [],
   lifepath: { general: {}, roleSpecific: {} },
   loadout: EMPTY_LOADOUT,
-  lifestyle: {},
+  lifestyle: EMPTY_LIFESTYLE,
   visited: ["method"],
 };
 
