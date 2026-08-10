@@ -320,14 +320,25 @@ export function CharacterSheet({
 
       {/* 6 — Improvement Points and Reputation */}
       <Panel title="Improvement Points & Reputation">
-        <p className="border-l-2 border-ember bg-ember/10 p-3 text-sm text-text-muted">
-          Rules data missing: src/data/rules/creation-rules.json has no
-          <span className="font-mono"> improvementPoints </span>
-          or
-          <span className="font-mono"> reputation </span>
-          entry, so no starting values can be printed here. Add those fields and this box fills
-          itself in.
-        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <Box label="Improvement Points" value={String(IMPROVEMENT_POINTS.startingValue)} />
+          <Box label="Reputation Level" value={String(REPUTATION.startingValue)} />
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-text-muted">{REPUTATION.note}</p>
+        <details className="mt-3 border border-hairline bg-surface-raised p-3">
+          <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
+            Reputation ladder (reference for play)
+          </summary>
+          <p className="mt-2 text-sm text-text-muted">{REPUTATION.encounterRule}</p>
+          <ul className="mt-2 space-y-1 text-sm text-text">
+            {REPUTATION.levels.map((l) => (
+              <li key={l.level} className="flex gap-3">
+                <span className="num w-6 shrink-0 text-right text-text-dim">{l.level}</span>
+                <span>{l.whoKnows}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
       </Panel>
 
       {/* 7 — General Lifepath */}
