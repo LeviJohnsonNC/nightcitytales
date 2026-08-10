@@ -18,7 +18,7 @@ function build(overrides: Partial<Parameters<typeof assembleCharacter>[0]> = {})
     selfDescription: "",
     portraitId: null,
     stats: STATS,
-    skills: [{ skillId: "athletics", level: 4 }],
+    skills: [{ skillId: "athletics", level: 4, specialization: null }],
     loadout: EMPTY_LOADOUT,
     lifestyleLocation: null,
     ...overrides,
