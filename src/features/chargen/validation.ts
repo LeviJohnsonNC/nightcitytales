@@ -142,11 +142,6 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       return { violations, untouched: untouched && violations.length === 0 };
     }
 
-    case "lifestyle":
-      return state.name.trim()
-        ? { violations: [], untouched: false }
-        : { violations: ["Your character has no name yet."], untouched: true };
-
     case "review": {
       const violations = CHARGEN_STEPS.filter((s) => s.id !== "review").flatMap((s) =>
         validateStep(s.id, state).violations,
