@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import rolesData from "@/data/rules/roles.json";
-import type { CreationMethod, StatBlock, StatKey } from "@/engine";
+import type { CreationMethod, SkillEntry, StatBlock, StatKey } from "@/engine";
 import { STEP_IDS, clearedByRoleChange, type ChargenStep } from "./steps";
 
 export type { ChargenStep };
@@ -22,7 +22,8 @@ export type ChargenState = {
    * `rows` is the per-STAT row for Edgerunner. Empty for Complete Package.
    */
   statRolls: { row: number | null; rows: Partial<Record<StatKey, number>> };
-  skills: Record<string, number>;
+  /** Sheet skill lines. Specialized skills may appear more than once. */
+  skills: SkillEntry[];
   lifepath: { general: Record<string, unknown>; roleSpecific: Record<string, unknown> };
   gear: string[];
   cyberware: string[];
@@ -55,7 +56,7 @@ const initialState: ChargenState = {
   portrait: null,
   stats: {},
   statRolls: { row: null, rows: {} },
-  skills: {},
+  skills: [],
   lifepath: { general: {}, roleSpecific: {} },
   gear: [],
   cyberware: [],
