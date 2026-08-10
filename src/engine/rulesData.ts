@@ -121,6 +121,33 @@ export function getRoleSkillIds(roleId: string): string[] {
 
 export const CREATION_RULES = creationRules;
 export const CREATION_METHODS = creationRules.methods;
+
+export type WoundState = {
+  state: string;
+  threshold: string;
+  effect: string;
+  stabilizationDV: number | null;
+  note?: string;
+};
+
+/** The Wound State ladder, read from creation-rules.json. */
+export const WOUND_STATES = creationRules.woundStates as WoundState[];
+
+export type StatDescription = {
+  stat: string;
+  name: string;
+  group: string;
+  description: string;
+  drives: string;
+};
+
+/** Per-STAT in-game meaning, read from creation-rules.json. */
+export const STAT_DESCRIPTIONS = creationRules.statDescriptions.stats as unknown as Partial<
+  Record<StatKey, StatDescription>
+>;
+
+export const HUMANITY_RULES = creationRules.humanity;
+
 export const DV_TABLE_DATA = dvTable;
 export const HP_TABLE_DATA = hpTable;
 export const LIFEPATH_GENERAL = lifepathGeneral;
