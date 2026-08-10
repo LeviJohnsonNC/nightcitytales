@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { CREATION_RULES, STAT_ORDER, deriveStats } from "@/engine";
-import type { CreationMethod, StatBlock } from "@/engine";
+import type { CreationMethod } from "@/engine";
+import { DerivedPanel } from "./DerivedPanel";
 import { LifepathPanel } from "./LifepathPanel";
 import { MethodPanel } from "./MethodPanel";
 import { RolePanel } from "./RolePanel";
@@ -20,45 +19,6 @@ function Placeholder({ step, note }: { step: string; note: string }) {
       </p>
       <p className="mt-2 text-sm text-muted-foreground">{note}</p>
     </div>
-  );
-}
-
-function DerivedPanel({ state }: { state: ChargenState }) {
-  const complete = STAT_ORDER.every((s) => typeof state.stats[s] === "number");
-  if (!complete) {
-    return (
-      <Placeholder
-        step="Derived STATs"
-        note="These fill in automatically once every STAT has a value."
-      />
-    );
-  }
-  const stats = state.stats as StatBlock;
-  const derived = deriveStats(stats);
-  const rows = [
-    { label: "Hit Points", value: derived.hpMax, math: CREATION_RULES.derivedStats.hitPoints },
-    {
-      label: "Seriously Wounded",
-      value: derived.seriouslyWoundedThreshold,
-      math: CREATION_RULES.derivedStats.seriouslyWoundedThreshold,
-    },
-    { label: "Death Save", value: derived.deathSave, math: CREATION_RULES.derivedStats.deathSave },
-    { label: "Humanity", value: derived.humanityMax, math: CREATION_RULES.derivedStats.humanity },
-  ];
-  return (
-    <dl className="divide-y divide-border border border-border bg-card">
-      {rows.map((row) => (
-        <div key={row.label} className="flex items-baseline gap-4 p-4">
-          <dt className="w-44 shrink-0 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            {row.label}
-          </dt>
-          <dd className="font-mono text-2xl font-bold tabular-nums text-foreground">{row.value}</dd>
-          <span className="ml-auto text-right font-mono text-[11px] text-muted-foreground">
-            {row.math}
-          </span>
-        </div>
-      ))}
-    </dl>
   );
 }
 

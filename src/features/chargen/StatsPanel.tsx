@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import {
   CREATION_METHODS,
   STAT_ORDER,
+  STAT_DESCRIPTIONS,
   defaultRng,
   deriveStats,
   rollEdgerunnerStat,
@@ -24,12 +25,27 @@ import { useChargenStore, type ChargenState } from "./store";
 
 const COMPLETE = CREATION_METHODS.completePackage;
 
-/**
- * The rules data in /src/data/rules/ carries no per-STAT description, so the
- * tooltip says so rather than inventing game meaning.
- */
-const MISSING_STAT_MEANING =
-  "No in-game description for this STAT exists in src/data/rules/ yet — add a statDescriptions block to creation-rules.json and it appears here.";
+/** Per-STAT meaning comes from creation-rules.json → statDescriptions. */
+function StatMeaning({ stat }: { stat: StatKey }) {
+  const info = STAT_DESCRIPTIONS[stat];
+  if (!info) {
+    return (
+      <span>
+        No entry for {stat.toUpperCase()} in src/data/rules/creation-rules.json →
+        statDescriptions.stats.
+      </span>
+    );
+  }
+  return (
+    <span className="block space-y-1">
+      <span className="block font-semibold">
+        {info.stat} — {info.name}
+      </span>
+      <span className="block">{info.description}</span>
+      <span className="block text-text-muted">Drives: {info.drives}</span>
+    </span>
+  );
+}
 
 function DerivedPreview({ stats }: { stats: Partial<StatBlock> }) {
   const complete = STAT_ORDER.every((s) => typeof stats[s] === "number");
@@ -291,7 +307,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
                     </span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs text-sm">
-                    {MISSING_STAT_MEANING}
+                    <StatMeaning stat={stat} />
                   </TooltipContent>
                 </Tooltip>
                 <Button variant="outline" size="sm" onClick={() => step(stat, -1)}>
