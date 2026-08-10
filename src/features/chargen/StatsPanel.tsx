@@ -20,7 +20,7 @@ import {
 } from "@/engine";
 import type { StatBlock, StatKey } from "@/engine";
 import { StatTemplateTable } from "./StatTemplateTable";
-import { useRollLog } from "./rollLogStore";
+import { appendRoll } from "./rollLogStore";
 import { useChargenStore, type ChargenState } from "./store";
 
 const COMPLETE = CREATION_METHODS.completePackage;
@@ -113,7 +113,7 @@ function Notice({ children }: { children: React.ReactNode }) {
 
 function StreetratBranch({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
-  const append = useRollLog((s) => s.append);
+  const append = appendRoll;
   const [rolling, setRolling] = useState(false);
   const roleId = state.roleId!;
 
@@ -153,7 +153,7 @@ function StreetratBranch({ state }: { state: ChargenState }) {
 
 function EdgerunnerBranch({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
-  const append = useRollLog((s) => s.append);
+  const append = appendRoll;
   const [busy, setBusy] = useState<StatKey | "all" | null>(null);
   const roleId = state.roleId!;
 
