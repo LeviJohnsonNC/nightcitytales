@@ -7,9 +7,11 @@ import {
   budgetStates,
   deriveStats,
   loadoutHumanity,
+  readLifestyle,
   unresolvedChoices,
   validateCompletePackageStats,
   validateSkillEntries,
+  validateLifestyle,
 } from "@/engine";
 import type { StatBlock } from "@/engine";
 import { generalLifepathComplete, readGeneralLifepath } from "./lifepathState";
@@ -100,10 +102,21 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       return { violations: [], untouched };
     }
 
-    case "identity":
-      return state.name.trim()
-        ? { violations: [], untouched: false }
-        : { violations: ["Your character has no name yet."], untouched: true };
+    case "identity": {
+      const violations: string[] = [];
+      if (!state.name.trim()) violations.push("Your character has no name yet.");
+      if (!state.handle.trim()) {
+        violations.push("Your character has no handle — the street name the GM will use.");
+      }
+      const untouched = !state.name.trim() && !state.handle.trim();
+      return { violations, untouched };
+    }
+
+    case "lifestyle": {
+      const lifestyle = readLifestyle(state.lifestyle);
+      const violations = validateLifestyle(lifestyle);
+      return { violations, untouched: !lifestyle.location };
+    }
 
     case "gear": {
       const untouched =
