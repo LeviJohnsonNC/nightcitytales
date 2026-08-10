@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import type { CreationMethod } from "@/engine";
 import { CyberwarePanel } from "./CyberwarePanel";
 import { DerivedPanel } from "./DerivedPanel";
@@ -7,6 +6,7 @@ import { IdentityPanel } from "./IdentityPanel";
 import { LifepathPanel } from "./LifepathPanel";
 import { LifestylePanel } from "./LifestylePanel";
 import { MethodPanel } from "./MethodPanel";
+import { ReviewPanel } from "./ReviewPanel";
 import { RolePanel } from "./RolePanel";
 import { RollLog } from "./RollLog";
 import { SkillsPanel } from "./SkillsPanel";
@@ -50,15 +50,7 @@ export function StepPanel({
       return <IdentityPanel state={state} />;
 
     case "review":
-      return (
-        <div className="space-y-3">
-          <Placeholder
-            step="Final sheet"
-            note="The full read-only sheet renders here once the earlier steps are built."
-          />
-          <Button disabled>Save to roster</Button>
-        </div>
-      );
+      return <ReviewPanel state={state} />;
 
     case "lifepath":
       return <LifepathPanel state={state} />;
