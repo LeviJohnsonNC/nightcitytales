@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useRollLog } from "./rollLogStore";
+import { clearRollLog, useRollEntries } from "./rollLogStore";
 
 /** Expandable, auditable list of every roll this session. */
 export function RollLog() {
-  const entries = useRollLog((s) => s.entries);
+  const entries = useRollEntries();
   const [open, setOpen] = useState(false);
 
   return (
@@ -15,7 +15,7 @@ export function RollLog() {
         className="flex w-full items-center justify-between p-3 text-left"
       >
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-          Roll log — {entries.length} {entries.length === 1 ? "roll" : "rolls"} this session
+          Roll log — {entries.length} {entries.length === 1 ? "roll" : "rolls"} so far
         </span>
         <span className="font-mono text-[11px] text-accent">{open ? "Hide" : "Show"}</span>
       </button>
@@ -43,7 +43,7 @@ export function RollLog() {
                 ))}
               </ul>
               <div className="border-t border-border p-3">
-                <Button variant="outline" size="sm" onClick={() => useRollLog.getState().clear()}>
+                <Button variant="outline" size="sm" onClick={clearRollLog}>
                   Clear log
                 </Button>
               </div>

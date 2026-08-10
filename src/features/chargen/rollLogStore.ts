@@ -1,23 +1,23 @@
-import { create } from "zustand";
 import type { RollResult } from "@/engine";
+import { useChargenStore, type LoggedRoll } from "./store";
 
-export type LoggedRoll = { id: string; label: string; result: RollResult };
+export type { LoggedRoll };
 
-type RollLogStore = {
-  entries: LoggedRoll[];
-  append: (label: string, result: RollResult) => void;
-  clear: () => void;
-};
+/**
+ * The roll log lives in the chargen store so it is saved with the draft and
+ * survives a reload. A player can always check that the row they rolled is the
+ * row they kept.
+ */
+export function useRollEntries(): LoggedRoll[] {
+  return useChargenStore((s) => s.rollLog);
+}
 
-/** Session-only log of every die the app rolled, newest first. */
-export const useRollLog = create<RollLogStore>((set) => ({
-  entries: [],
-  append: (label, result) =>
-    set((s) => ({
-      entries: [
-        { id: `${result.timestamp}-${s.entries.length}`, label, result },
-        ...s.entries,
-      ],
-    })),
-  clear: () => set({ entries: [] }),
-}));
+export function appendRoll(label: string, result: RollResult): void {
+  useChargenStore.setState((s) => ({
+    rollLog: [{ id: `${result.timestamp}-${s.rollLog.length}`, label, result }, ...s.rollLog],
+  }));
+}
+
+export function clearRollLog(): void {
+  useChargenStore.setState({ rollLog: [] });
+}

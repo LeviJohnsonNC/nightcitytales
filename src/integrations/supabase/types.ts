@@ -353,6 +353,7 @@ export type Database = {
     }
     Functions: {
       owns_character: { Args: { _character_id: string }; Returns: boolean }
+      save_character: { Args: { payload: Json }; Returns: string }
     }
     Enums: {
       [_ in never]: never

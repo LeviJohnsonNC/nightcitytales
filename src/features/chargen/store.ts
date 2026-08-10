@@ -6,6 +6,7 @@ import {
   type CreationMethod,
   type LifestyleChoice,
   type Loadout,
+  type RollResult,
   type SkillEntry,
   type StatBlock,
   type StatKey,
@@ -14,6 +15,9 @@ import { STEP_IDS, clearedByRoleChange, type ChargenStep } from "./steps";
 
 export type { ChargenStep };
 export { CHARGEN_STEPS, STEP_IDS } from "./steps";
+
+/** One audited roll. Newest first. Persisted with the draft: it is the trust artifact. */
+export type LoggedRoll = { id: string; label: string; result: RollResult };
 
 export type ChargenState = {
   draftId: string | null;
@@ -42,6 +46,8 @@ export type ChargenState = {
   lifestyle: LifestyleChoice;
   /** Steps the player has opened at least once. Drives "in progress" vs "locked". */
   visited: ChargenStep[];
+  /** Every die this app rolled for this character, in reverse order. */
+  rollLog: LoggedRoll[];
 };
 
 export type ChargenActions = {
@@ -75,6 +81,7 @@ const initialState: ChargenState = {
   loadout: EMPTY_LOADOUT,
   lifestyle: EMPTY_LIFESTYLE,
   visited: ["method"],
+  rollLog: [],
 };
 
 function withVisit(state: ChargenState, step: ChargenStep): ChargenStep[] {

@@ -195,3 +195,47 @@
     }
   }
 }
+
+/* ---- Print: the sheet, laid out like the printed three-page character sheet ---- */
+@media print {
+  .no-print,
+  nav,
+  header.app-header,
+  aside,
+  button {
+    display: none !important;
+  }
+
+  :root {
+    --background: #ffffff;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .sheet {
+    color: #000000;
+  }
+
+  .sheet .sheet-panel,
+  .sheet section {
+    background: #ffffff !important;
+    border-color: #999999 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .sheet * {
+    color: #000000 !important;
+  }
+
+  .sheet-page-1 {
+    break-after: auto;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}
