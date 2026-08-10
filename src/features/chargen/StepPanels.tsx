@@ -7,6 +7,7 @@ import { LifepathPanel } from "./LifepathPanel";
 import { MethodPanel } from "./MethodPanel";
 import { RolePanel } from "./RolePanel";
 import { RollLog } from "./RollLog";
+import { SkillsPanel } from "./SkillsPanel";
 import { StatsPanel } from "./StatsPanel";
 import { useChargenStore, type ChargenState } from "./store";
 import type { ChargenStep } from "./steps";
@@ -93,12 +94,7 @@ export function StepPanel({
         </div>
       );
     case "skills":
-      return (
-        <Placeholder
-          step="Skills"
-          note="Fixed package, Role-limited point spend, or open point spend, depending on method."
-        />
-      );
+      return <SkillsPanel state={state} />;
     case "gear":
       return <Placeholder step="Gear & Armor" note="Fixed package or eurobuck shopping." />;
     case "cyberware":

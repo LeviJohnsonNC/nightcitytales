@@ -256,8 +256,7 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-4">
       <Notice>
-        Only this Role's {state.skills.length || EDGERUNNER_RULES.skillPoints && 20} listed
-        Skills are available to an Edgerunner, each starting at the floor of{" "}
+        Only this Role's listed Skills are available to an Edgerunner, each starting at the floor of{" "}
         {EDGERUNNER_RULES.minLevel} and capped at {EDGERUNNER_RULES.maxLevel}. The Skill Base
         on the right is the number you actually roll in play: STAT + Skill Level.
       </Notice>
