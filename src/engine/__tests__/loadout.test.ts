@@ -60,12 +60,11 @@ describe("budgets", () => {
   });
 
   it("blocks a purchase that exceeds the budget", () => {
-    const loadout = buy(EMPTY_LOADOUT, { kind: "armor", itemId: "metalgear", budget: "gear" });
-    const check = canPurchase("complete_package", loadout, {
+    const check = canPurchase("complete_package", EMPTY_LOADOUT, {
       kind: "armor",
       itemId: "metalgear",
       budget: "gear",
-      location: "head",
+      location: "body",
     });
     expect(check.ok).toBe(false);
     expect(check.reason).toMatch(/left in/);
@@ -115,16 +114,52 @@ describe("cyberware install rules", () => {
     }
     expect(foundations(loadout)[0]!.used).toBe(4);
     expect(foundations(loadout)[0]!.slots).toBe(5);
-    loadout = buy(loadout, { kind: "cyberware", itemId: "kerenzikov", budget: "gear" });
-    expect(foundations(loadout)[0]!.free).toBe(0);
-    // A sixth option has nowhere to go.
-    const overflow = canPurchase("complete_package", loadout, {
+    expect(foundations(loadout)[0]!.free).toBe(1);
+
+    // Fill the last slot and confirm the sixth option is refused on slots.
+    // The lines are built directly so the rejection under test is the slot
+    // rule, not the eurobuck budget.
+    const full: Loadout = {
+      packageChoices: {},
+      lines: [
+        ...loadout.lines,
+        {
+          lineId: "manual",
+          kind: "cyberware",
+          itemId: "kerenzikov",
+          qty: 1,
+          budget: "gear",
+          foundationLineId: loadout.lines[0]!.lineId,
+        },
+      ],
+    };
+    expect(foundations(full)[0]!.free).toBe(0);
+    const overflow = canPurchase("streetrat", full, {
       kind: "cyberware",
       itemId: "braindance_recorder",
-      budget: "gear",
+      budget: "free",
     });
     expect(overflow.ok).toBe(false);
     expect(overflow.reason).toMatch(/full/i);
+  });
+
+  it("treats a non-foundational prerequisite as presence-only", () => {
+    let loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "neural_link", budget: "gear" });
+    expect(
+      canPurchase("complete_package", loadout, {
+        kind: "cyberware",
+        itemId: "chemical_analyzer",
+        budget: "gear",
+      }).reason,
+    ).toMatch(/Chipware Socket/);
+    loadout = buy(loadout, { kind: "cyberware", itemId: "chipware_socket", budget: "gear" });
+    expect(
+      canPurchase("complete_package", loadout, {
+        kind: "cyberware",
+        itemId: "chemical_analyzer",
+        budget: "gear",
+      }).ok,
+    ).toBe(true);
   });
 
   it("honours maxInstalls on the Cyberaudio Suite", () => {

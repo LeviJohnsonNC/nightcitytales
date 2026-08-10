@@ -259,6 +259,18 @@ export function canPurchase(
       }
     } else if (item.requires) {
       const foundationItem = getCyberware(item.requires);
+      if (!foundationItem.foundational) {
+        // A prerequisite that is not itself a foundation (e.g. a Chipware
+        // Socket) only has to be present; it provides no Option Slots.
+        const present = loadout.lines.some((l) => l.itemId === item.requires);
+        if (!present) {
+          return {
+            ok: false,
+            reason: `${name} requires a ${foundationItem.name}. Install a ${foundationItem.name} first.`,
+          };
+        }
+        return { ok: true, reason: null };
+      }
       const available = foundations(loadout).filter((f) => f.itemId === item.requires);
       if (available.length === 0) {
         return {
@@ -327,7 +339,7 @@ export function addPurchase(
 
   if (request.kind === "cyberware") {
     const item = getCyberware(request.itemId);
-    if (!item.foundational && item.requires) {
+    if (!item.foundational && item.requires && getCyberware(item.requires).foundational) {
       const available = foundations(loadout).filter((f) => f.itemId === item.requires);
       const target = request.foundationLineId
         ? available.find((f) => f.line.lineId === request.foundationLineId)
