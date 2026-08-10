@@ -75,9 +75,9 @@ function SkillRow({
 }: {
   entry: SkillEntry;
   state: ChargenState;
-  readOnly?: boolean;
-  onLevel?: (level: number) => void;
-  onRemove?: () => void;
+  readOnly?: boolean | undefined;
+  onLevel?: ((level: number) => void) | undefined;
+  onRemove?: (() => void) | undefined;
 }) {
   const skill = getSkill(entry.skillId);
   const stat = statValue(state, skill.stat);
@@ -145,9 +145,9 @@ function CategoryGroups({
 }: {
   entries: SkillEntry[];
   state: ChargenState;
-  readOnly?: boolean;
-  onLevel?: (entry: SkillEntry, level: number) => void;
-  onRemove?: (entry: SkillEntry) => void;
+  readOnly?: boolean | undefined;
+  onLevel?: ((entry: SkillEntry, level: number) => void) | undefined;
+  onRemove?: ((entry: SkillEntry) => void) | undefined;
 }) {
   return (
     <div className="space-y-4">
