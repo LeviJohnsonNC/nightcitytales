@@ -27,9 +27,9 @@ function Panel({
   className,
 }: {
   title: string;
-  note?: string;
+  note?: string | undefined;
   children: React.ReactNode;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <section className={`sheet-panel border border-hairline bg-surface p-4 ${className ?? ""}`}>
@@ -48,7 +48,7 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm italic text-text-dim">{children}</p>;
 }
 
-function Box({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Box({ label, value, sub }: { label: string; value: string; sub?: string | undefined }) {
   return (
     <div className="border border-hairline bg-surface-raised px-3 py-2">
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">{label}</p>
