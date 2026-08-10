@@ -102,7 +102,7 @@ export const CATALOG_RULES = catalogData._rules;
 /** Row counts the file itself flags as not yet extracted. */
 export const CATALOG_PENDING = catalogData._pending as string[];
 
-export type ItemKind = "weapon" | "armor" | "ammunition" | "cyberware";
+export type ItemKind = "weapon" | "armor" | "ammunition" | "cyberware" | "fashion";
 
 const WEAPONS_BY_ID = new Map(WEAPONS.map((w) => [w.id, w]));
 const ARMOR_BY_ID = new Map(ARMOR.map((a) => [a.id, a]));
@@ -141,7 +141,7 @@ export function itemCost(kind: ItemKind, id: string): number {
 export function catalogItem(
   kind: ItemKind,
   id: string,
-): CatalogWeapon | CatalogArmor | CatalogAmmunition | CatalogCyberware {
+): CatalogWeapon | CatalogArmor | CatalogAmmunition | CatalogCyberware | CatalogFashion {
   switch (kind) {
     case "weapon":
       return getWeapon(id);
@@ -151,6 +151,8 @@ export function catalogItem(
       return getAmmunition(id);
     case "cyberware":
       return getCyberware(id);
+    case "fashion":
+      return getFashion(id);
   }
 }
 
