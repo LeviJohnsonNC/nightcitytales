@@ -1,16 +1,14 @@
 import {
+  FIRST_MONTH_NOTE,
   FASHION_RULES,
   FASHION_SLOTS,
   FASHION_STYLES,
-  STARTING_HOUSING,
-  STARTING_LIFESTYLE,
-  STARTING_LIFESTYLE_UNRESOLVED,
-  STARTING_LOCATIONS,
-  STARTING_RENT,
+  LIFESTYLE_FAILURE_NOTE,
   fashionItemId,
   getFashion,
   getGearPackage,
   lineCost,
+  startingLifestylePlan,
 } from "@/engine";
 import { Button } from "@/components/ui/button";
 import { readGeneralLifepath, displayValue } from "./lifepathState";
