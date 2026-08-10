@@ -114,8 +114,8 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
 
     case "lifestyle": {
       const lifestyle = readLifestyle(state.lifestyle);
-      const violations = validateLifestyle(lifestyle);
-      return { violations, untouched: !lifestyle.location };
+      const violations = validateLifestyle(lifestyle, state.roleId);
+      return { violations, untouched: !lifestyle.location && violations.length > 0 };
     }
 
     case "gear": {
