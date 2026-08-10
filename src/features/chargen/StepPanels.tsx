@@ -2,7 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CreationMethod } from "@/engine";
+import { CyberwarePanel } from "./CyberwarePanel";
 import { DerivedPanel } from "./DerivedPanel";
+import { GearPanel } from "./GearPanel";
 import { LifepathPanel } from "./LifepathPanel";
 import { MethodPanel } from "./MethodPanel";
 import { RolePanel } from "./RolePanel";
@@ -96,11 +98,9 @@ export function StepPanel({
     case "skills":
       return <SkillsPanel state={state} />;
     case "gear":
-      return <Placeholder step="Gear & Armor" note="Fixed package or eurobuck shopping." />;
+      return <GearPanel state={state} />;
     case "cyberware":
-      return (
-        <Placeholder step="Cyberware" note="Installing cyberware applies Humanity Loss to the sheet." />
-      );
+      return <CyberwarePanel state={state} />;
     case "lifestyle":
       return <Placeholder step="Outfit, Lifestyle & Housing" note="Fashion, housing, and lifestyle." />;
   }

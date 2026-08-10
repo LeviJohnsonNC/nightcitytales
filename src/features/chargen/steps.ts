@@ -1,3 +1,4 @@
+import { EMPTY_LOADOUT } from "@/engine";
 import type { ChargenState } from "./store";
 
 export type ChargenStep =
@@ -72,8 +73,7 @@ export const DEPENDENTS: Record<string, ChargenStep[]> = {
 export function clearedByRoleChange(state: ChargenState): Partial<ChargenState> {
   return {
     skills: [],
-    gear: [],
-    cyberware: [],
+    loadout: EMPTY_LOADOUT,
     lifepath: { general: state.lifepath.general, roleSpecific: {} },
   };
 }

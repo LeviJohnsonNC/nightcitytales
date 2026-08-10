@@ -10,3 +10,6 @@ export * from "./skillAllocation";
 export * from "./humanity";
 export * from "./lifepath";
 export * from "./roleLifepath";
+export * from "./catalog";
+export * from "./gearPackages";
+export * from "./loadout";

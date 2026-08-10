@@ -4,9 +4,14 @@
  */
 import {
   STAT_ORDER,
+  budgetStates,
+  deriveStats,
+  loadoutHumanity,
+  unresolvedChoices,
   validateCompletePackageStats,
   validateSkillEntries,
 } from "@/engine";
+import type { StatBlock } from "@/engine";
 import { generalLifepathComplete, readGeneralLifepath } from "./lifepathState";
 import { readRoleLifepath, roleLifepathComplete } from "./roleLifepathState";
 import type { ChargenState } from "./store";
@@ -99,6 +104,43 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       return state.name.trim()
         ? { violations: [], untouched: false }
         : { violations: ["Your character has no name yet."], untouched: true };
+
+    case "gear": {
+      const untouched =
+        state.loadout.lines.length === 0 &&
+        Object.keys(state.loadout.packageChoices).length === 0;
+      const violations: string[] = [];
+      if (state.method && state.method !== "complete_package" && state.roleId) {
+        for (const point of unresolvedChoices(state.roleId, state.loadout.packageChoices)) {
+          violations.push(`Your package offers a choice you have not made: ${point.options.join(" or ")}.`);
+        }
+      }
+      if (state.method) {
+        for (const budget of budgetStates(state.method, state.loadout)) {
+          if (budget.overspent) {
+            violations.push(
+              `You have overspent "${budget.label}" by ${budget.spent - budget.limit}eb.`,
+            );
+          }
+        }
+      }
+      return { violations, untouched: untouched && violations.length === 0 };
+    }
+
+    case "cyberware": {
+      const untouched = state.loadout.lines.every((l) => l.kind !== "cyberware");
+      const violations: string[] = [];
+      if (statsAssigned(state)) {
+        const derived = deriveStats(state.stats as StatBlock);
+        const humanity = loadoutHumanity(derived.humanityMax, state.loadout);
+        if (humanity.cyberpsychosisRisk) {
+          violations.push(
+            `Your cyberware costs ${humanity.humanityLost} Humanity and you only have ${humanity.humanityBefore}. Below zero Humanity the character falls to cyberpsychosis and is no longer playable — remove a piece.`,
+          );
+        }
+      }
+      return { violations, untouched: untouched && violations.length === 0 };
+    }
 
     case "review": {
       const violations = CHARGEN_STEPS.filter((s) => s.id !== "review").flatMap((s) =>
