@@ -7,6 +7,8 @@ import type { CreationMethod, StatBlock } from "@/engine";
 import { LifepathPanel } from "./LifepathPanel";
 import { MethodPanel } from "./MethodPanel";
 import { RolePanel } from "./RolePanel";
+import { RollLog } from "./RollLog";
+import { StatsPanel } from "./StatsPanel";
 import { useChargenStore, type ChargenState } from "./store";
 import type { ChargenStep } from "./steps";
 
@@ -125,10 +127,10 @@ export function StepPanel({
       return <LifepathPanel state={state} />;
     case "stats":
       return (
-        <Placeholder
-          step="STATs"
-          note="This panel branches by creation method: template row, per-STAT roll, or point buy."
-        />
+        <div className="space-y-6">
+          <StatsPanel state={state} />
+          <RollLog />
+        </div>
       );
     case "skills":
       return (
