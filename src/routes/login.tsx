@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/lib/backend";
-import loginArt from "@/assets/login-skyline.png.asset.json";
+import loginArt from "@/assets/login-skyline-v2.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
