@@ -77,7 +77,7 @@ function RoleSpotlight({
   const [abilityOpen, setAbilityOpen] = useState(false);
   const plays = playsBody(role.id);
   const paragraphs = loreParagraphs(role.flavorText);
-  const emphasisTerms = [role.name, `${role.name}s`, role.roleAbility.name];
+  const emphasisTerms = [`${role.name}s`, role.name, role.roleAbility.name];
 
   return (
     <div className="overflow-hidden border border-border bg-card">
