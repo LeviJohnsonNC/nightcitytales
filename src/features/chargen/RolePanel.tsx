@@ -97,22 +97,32 @@ function RoleSpotlight({
           )}
 
           <div>
-            <p
-              className={cn(
-                "text-sm leading-relaxed text-muted-foreground",
-                !loreOpen && "line-clamp-3",
-              )}
-            >
-              {role.flavorText}
-            </p>
-            <button
-              type="button"
-              onClick={() => setLoreOpen((v) => !v)}
-              className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-neon-cyan hover:underline"
-            >
-              {loreOpen ? "Show less" : "Read more"}
-            </button>
+            <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+              {(loreOpen ? paragraphs : paragraphs.slice(0, 1)).map((para, i) => (
+                <p key={i} className={cn(!loreOpen && "line-clamp-4")}>
+                  {emphasizeTerms(para, emphasisTerms).map((seg, j) =>
+                    seg.emphasis ? (
+                      <strong key={j} className="font-semibold text-foreground">
+                        {seg.text}
+                      </strong>
+                    ) : (
+                      <span key={j}>{seg.text}</span>
+                    ),
+                  )}
+                </p>
+              ))}
+            </div>
+            {paragraphs.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setLoreOpen((v) => !v)}
+                className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-neon-cyan hover:underline"
+              >
+                {loreOpen ? "Show less" : "Read more"}
+              </button>
+            )}
           </div>
+
         </div>
 
         <div className="min-w-0 space-y-3 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
