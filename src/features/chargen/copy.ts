@@ -1,5 +1,5 @@
 /**
- * UI copy ONLY. Nothing here is a Cyberpunk RED rules value — every number a
+ * UI copy ONLY. Nothing here is a Cyberpunk RED rules value: every number a
  * player acts on is read from /src/data/rules/. These strings are plain-English
  * orientation text for the wizard, written from the user's brief.
  */
@@ -31,7 +31,7 @@ export const METHOD_COPY: MethodCopy[] = [
   {
     id: "complete_package",
     headline: "Total control. Build exactly the character you want.",
-    body: "62 points to buy STATs, 86 Skill Points to spend on any Skills you like, and 2,550eb to shop the Night Market yourself — plus 800eb that can only be spent on Fashion and Fashionware.",
+    body: "62 points to buy STATs, 86 Skill Points to spend on any Skills you like, and 2,550eb to shop the Night Market yourself: plus 800eb that can only be spent on Fashion and Fashionware.",
     choice: "Total",
     time: "~40 minutes",
   },
@@ -39,14 +39,14 @@ export const METHOD_COPY: MethodCopy[] = [
 
 /** Plain-English playstyle line per Role. Flavor guidance, not mechanics. */
 export const ROLE_PLAYS_LIKE: Record<string, string> = {
-  rockerboy: "Plays like: the crowd is your weapon — talk, perform, and turn strangers into a movement.",
-  solo: "Plays like: the one who wins the fight — you read the battlefield and end it first.",
-  netrunner: "Plays like: a second game inside the game — you go into the NET while the crew holds the room.",
-  tech: "Plays like: the fixer of broken things — you build, repair, and upgrade what nobody else can.",
-  medtech: "Plays like: the reason the crew comes home — you patch bodies back together mid-job.",
-  media: "Plays like: the truth as a crowbar — you dig up what people hide and make it public.",
-  exec: "Plays like: playing the corporation itself — money, staff, and favors instead of a gun.",
-  lawman: "Plays like: the badge in a lawless city — authority, backup, and hard calls.",
-  fixer: "Plays like: the one everybody calls — deals, contacts, and getting hold of the impossible.",
-  nomad: "Plays like: wheels, family, and the open road — you move the crew and the cargo.",
+  rockerboy: "Plays like: the crowd is your weapon: talk, perform, and turn strangers into a movement.",
+  solo: "Plays like: the one who wins the fight: you read the battlefield and end it first.",
+  netrunner: "Plays like: a second game inside the game: you go into the NET while the crew holds the room.",
+  tech: "Plays like: the fixer of broken things: you build, repair, and upgrade what nobody else can.",
+  medtech: "Plays like: the reason the crew comes home: you patch bodies back together mid-job.",
+  media: "Plays like: the truth as a crowbar: you dig up what people hide and make it public.",
+  exec: "Plays like: playing the corporation itself: money, staff, and favors instead of a gun.",
+  lawman: "Plays like: the badge in a lawless city: authority, backup, and hard calls.",
+  fixer: "Plays like: the one everybody calls: deals, contacts, and getting hold of the impossible.",
+  nomad: "Plays like: wheels, family, and the open road: you move the crew and the cargo.",
 };
