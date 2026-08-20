@@ -1,100 +1,105 @@
 {
-  "_note": "Art manifest. Each entry may carry \"pointer\": the file name of an uploaded Lovable asset pointer in src/assets (e.g. \"portrait-01.png\"), resolved by src/features/chargen/art.ts. Resolution order is pointer -> src -> placeholder. src:null and no pointer means artwork has not landed yet; the UI renders a styled placeholder showing the asset id. This file is the ONLY source of image references.",
-  "_portraitSchema": {
-    "id": "string",
-    "pointer": "string | null",
-    "src": "string | null",
-    "roles": "role id array",
-    "presentation": "masc | femme | androgynous",
-    "alt": "string",
-    "focalPoint": "[x, y] 0-1"
+ "_note": "Art manifest. Each entry may carry \"pointer\": the file name of an uploaded Lovable asset pointer in src/assets (e.g. \"portrait-01.png\"), resolved by src/features/chargen/art.ts. Resolution order is pointer -> src -> placeholder. src:null and no pointer means artwork has not landed yet; the UI renders a styled placeholder showing the asset id. This file is the ONLY source of image references.",
+ "_portraitSchema": {
+  "id": "string",
+  "pointer": "string | null",
+  "src": "string | null",
+  "roles": "role id array",
+  "presentation": "masc | femme | androgynous",
+  "alt": "string",
+  "focalPoint": "[x, y] 0-1"
+ },
+ "roleArt": {
+  "rockerboy": {
+   "pointer": "role-rockerboy.png",
+   "src": null,
+   "alt": "Rockerboy key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
   },
-  "roleArt": {
-    "rockerboy": {
-      "pointer": "role-rockerboy.png",
-      "src": null,
-      "alt": "Rockerboy key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "solo": {
-      "pointer": "role-solo.png",
-      "src": null,
-      "alt": "Solo key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "netrunner": {
-      "pointer": "role-netrunner.png",
-      "src": null,
-      "alt": "Netrunner key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "tech": {
-      "pointer": "role-tech.png",
-      "src": null,
-      "alt": "Tech key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "medtech": {
-      "pointer": "role-medtech.png",
-      "src": null,
-      "alt": "Medtech key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "media": {
-      "src": null,
-      "alt": "Media key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "exec": {
-      "src": null,
-      "alt": "Exec key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "lawman": {
-      "src": null,
-      "alt": "Lawman key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "fixer": {
-      "src": null,
-      "alt": "Fixer key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    },
-    "nomad": {
-      "src": null,
-      "alt": "Nomad key art",
-      "focalPoint": [
-        0.5,
-        0.35
-      ]
-    }
+  "solo": {
+   "pointer": "role-solo.png",
+   "src": null,
+   "alt": "Solo key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
   },
-  "portraits": []
+  "netrunner": {
+   "pointer": "role-netrunner.png",
+   "src": null,
+   "alt": "Netrunner key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
+  },
+  "tech": {
+   "pointer": "role-tech.png",
+   "src": null,
+   "alt": "Tech key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
+  },
+  "medtech": {
+   "pointer": "role-medtech.png",
+   "src": null,
+   "alt": "Medtech key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
+  },
+  "media": {
+   "pointer": "role-media.png",
+   "src": null,
+   "alt": "Media key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
+  },
+  "exec": {
+   "pointer": "role-exec.png",
+   "src": null,
+   "alt": "Exec key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
+  },
+  "lawman": {
+   "pointer": "role-lawman.png",
+   "src": null,
+   "alt": "Lawman key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
+  },
+  "fixer": {
+   "pointer": "role-fixer.png",
+   "src": null,
+   "alt": "Fixer key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
+  },
+  "nomad": {
+   "pointer": "role-nomad.png",
+   "src": null,
+   "alt": "Nomad key art",
+   "focalPoint": [
+    0.5,
+    0.35
+   ]
+  }
+ },
+ "portraits": []
 }
