@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ function RoleTile({
       onClick={onPreview}
       aria-pressed={previewed}
       className={cn(
-        "group relative flex flex-col overflow-hidden border bg-card text-left transition-colors",
+        "group relative block aspect-[16/10] w-full overflow-hidden border bg-card text-left transition-colors",
         committed
           ? "border-primary"
           : previewed
@@ -48,26 +48,20 @@ function RoleTile({
             : "border-border hover:border-accent/60",
       )}
     >
+      <ArtSlot art={roleArt(role.id, role.name)} label={role.name} className="border-0" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
       {committed && (
         <span className="absolute right-2 top-2 z-10 bg-primary px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-primary-foreground">
           Selected
         </span>
       )}
-      <div className="h-28 shrink-0 border-b border-border">
-        <ArtSlot art={roleArt(role.id, role.name)} label={role.name} className="border-0" />
-      </div>
-      <div className="flex flex-1 flex-col p-3">
-        <h3 className="text-base font-bold tracking-tight">{role.name}</h3>
-        <p className="mt-1 min-h-[2.25rem] text-xs leading-relaxed text-muted-foreground line-clamp-2">
-          {playsBody(role.id)}
-        </p>
-        <span className="mt-2 inline-block self-start border border-neon-cyan/40 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-neon-cyan">
-          {role.roleAbility.name} · Rank {role.roleAbility.startingRank}
-        </span>
-      </div>
+      <h3 className="absolute bottom-2 left-3 right-3 truncate text-base font-bold tracking-tight">
+        {role.name}
+      </h3>
     </button>
   );
 }
+
 
 function RoleSpotlight({
   role,
