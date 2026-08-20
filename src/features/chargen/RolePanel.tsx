@@ -78,14 +78,18 @@ function RoleSpotlight({
 
   return (
     <div className="overflow-hidden border border-border bg-card">
-      <div className="relative h-40 border-b border-border">
+      <div className="relative h-48 border-b border-border sm:h-64">
         <ArtSlot art={roleArt(role.id, role.name)} label={role.name} className="border-0" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
-        <h2 className="absolute bottom-3 left-4 text-2xl font-bold tracking-tight">{role.name}</h2>
+        <h2 className="absolute bottom-3 left-4 text-2xl font-bold tracking-tight sm:text-3xl">
+          {role.name}
+        </h2>
       </div>
 
-      <div className="space-y-3 p-4">
-        <p className="text-sm text-accent">{role.tagline}</p>
+      <div className="grid gap-4 p-4 lg:grid-cols-2 lg:gap-6">
+        <div className="min-w-0 space-y-3">
+          <p className="text-sm text-accent">{role.tagline}</p>
+
 
         {plays && (
           <p className="border-l-2 border-primary/70 bg-primary/5 px-3 py-2 text-sm leading-relaxed">
