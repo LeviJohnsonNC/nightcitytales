@@ -96,21 +96,6 @@ function Index() {
               </Button>
             )}
           </div>
-
-          <dl className="mt-16 grid max-w-2xl grid-cols-3 gap-px border border-hairline bg-hairline">
-            {[
-              { k: "Roles", v: "10" },
-              { k: "Build methods", v: "3" },
-              { k: "Steps", v: "11" },
-            ].map((s) => (
-              <div key={s.k} className="bg-surface/90 px-4 py-5 backdrop-blur-[2px]">
-                <dt className="font-mono text-[10px] uppercase tracking-[0.25em] text-text-muted">
-                  {s.k}
-                </dt>
-                <dd className="num mt-2 text-3xl font-semibold text-text">{s.v}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </div>
     </main>
