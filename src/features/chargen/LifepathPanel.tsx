@@ -16,6 +16,7 @@ import {
   type LifepathEntryRecord,
 } from "@/engine";
 import { BiographyPanel } from "./BiographyPanel";
+import { DiceSoundToggle } from "./DiceSoundToggle";
 import { LifepathTableCard } from "./LifepathTableCard";
 import { RoleLifepathTableCard } from "./RoleLifepathTableCard";
 import {
@@ -153,10 +154,11 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
               {answered} of {total} answered
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden h-1.5 w-36 overflow-hidden rounded-full bg-hairline sm:block">
               <div className="h-full bg-ember transition-all duration-300" style={{ width: `${pct}%` }} />
             </div>
+            <DiceSoundToggle />
             <Button size="sm" variant="outline" onClick={rollAllRemaining}>
               Roll all remaining
             </Button>

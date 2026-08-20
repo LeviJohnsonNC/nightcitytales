@@ -309,3 +309,20 @@
     margin: 12mm;
   }
 }
+
+/* Dice settle "pop" — overshoot scale when a die lands. Neutralized under
+   prefers-reduced-motion by the reduced-motion rule above. */
+@keyframes dice-settle {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.dice-settle {
+  animation: dice-settle 340ms cubic-bezier(0.22, 0.84, 0.44, 1);
+}

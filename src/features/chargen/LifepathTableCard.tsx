@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,14 +15,12 @@ import {
   rollLifepathTable,
   type LifepathEntryRecord,
 } from "@/engine";
-
-/** How long the die tumbles before the engine's result is shown. */
-const ROLL_MS = 620;
+import { DiceRoll } from "./DiceRoll";
 
 /**
  * A single Lifepath table rendered as a compact row: label + current value on
- * the left, Roll / Choose / edit controls on the right. The free-text override
- * is hidden behind the pencil and only appears when the player opens it.
+ * the left, the neon die (click to roll) plus Choose / edit controls on the
+ * right. The free-text override stays hidden behind the pencil.
  */
 export function LifepathTableCard({
   tableId,
@@ -42,25 +40,7 @@ export function LifepathTableCard({
   const table = getLifepathTable(tableId);
   const [choosing, setChoosing] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [face, setFace] = useState<number | null>(null);
-  const timers = useRef<number[]>([]);
 
-  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
-
-  function handleRoll() {
-    if (face !== null) return;
-    const tick = window.setInterval(() => setFace(1 + Math.floor(Math.random() * 10)), 60);
-    const stop = window.setTimeout(() => {
-      window.clearInterval(tick);
-      const rolled = rollLifepathTable(tableId, Math.random);
-      setFace(null);
-      onChange(rolled.entry);
-    }, ROLL_MS);
-    timers.current.push(stop);
-    setFace(1);
-  }
-
-  const rolling = face !== null;
   const value = entry ? (entry.custom?.trim() ? entry.custom.trim() : entry.value) : null;
 
   return (
@@ -88,17 +68,14 @@ export function LifepathTableCard({
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          {rolling && (
-            <span
-              aria-hidden
-              className="grid size-7 animate-pulse place-items-center border border-ember font-mono text-sm font-semibold text-ember num"
-            >
-              {face}
-            </span>
-          )}
-          <Button size="sm" onClick={handleRoll} disabled={rolling}>
-            {rolling ? "…" : entry ? "Reroll" : "Roll"}
-          </Button>
+          <DiceRoll
+            sides={10}
+            value={entry?.roll ?? null}
+            roll={() => {
+              const rolled = rollLifepathTable(tableId, Math.random);
+              return { face: rolled.entry.roll ?? 1, commit: () => onChange(rolled.entry) };
+            }}
+          />
           <Button size="sm" variant="outline" onClick={() => setChoosing(true)}>
             Choose
           </Button>
