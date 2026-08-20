@@ -37,9 +37,12 @@ export function emphasizeTerms(paragraph: string, terms: string[]): LoreSegment[
   const cleaned = terms.map((t) => t.trim()).filter((t) => t.length > 2);
   if (cleaned.length === 0) return [{ text: paragraph, emphasis: false }];
 
-  const pattern = new RegExp(`(${cleaned.map(escapeRegExp).join("|")})`, "gi");
+  const alternation = cleaned.map(escapeRegExp).join("|");
+  const splitter = new RegExp(`(${alternation})`, "gi");
+  const exact = new RegExp(`^(${alternation})$`, "i");
   return paragraph
-    .split(pattern)
+    .split(splitter)
     .filter((chunk) => chunk.length > 0)
-    .map((chunk) => ({ text: chunk, emphasis: pattern.test(chunk) && new RegExp(`^(${cleaned.map(escapeRegExp).join("|")})$`, "i").test(chunk) }));
+    .map((chunk) => ({ text: chunk, emphasis: exact.test(chunk) }));
 }
+
