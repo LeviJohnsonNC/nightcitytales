@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -5,16 +6,16 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * Design system definition — "Night City" neon-noir theme.
  *
  * The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
+ * Palette: deep indigo/navy grounds, hot magenta + cyan neon, purple accents,
+ * chrome/steel highlights. Cool, neon-lit, glowing — sampled from the key art.
  *
  * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 1. Add the variable to :root
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
@@ -32,20 +33,26 @@
   --radius-3xl: 2px;
   --radius-4xl: 2px;
 
-  /* Painted neon-noir palette, sampled from the key art. */
-  --color-ground: #141013;
-  --color-surface: #1e1a1b;
-  --color-surface-raised: #262020;
-  --color-hairline: #3d3635;
-  --color-text: #f2e9e1;
-  --color-text-muted: #b9a99c;
-  --color-text-dim: #7c6c63;
-  --color-ember: #f08521;
-  --color-ember-deep: #bd6e2d;
-  --color-ember-dim: #95592f;
-  --color-danger: #f3581d;
-  --color-cool: #5c7a8a;
-  --color-success: #7f8b5a;
+  /* Neon-noir palette, sampled from the key art: indigo grounds, neon accents. */
+  --color-ground: #0d0a1f;
+  --color-surface: #161232;
+  --color-surface-raised: #1f1a45;
+  --color-hairline: #352d6b;
+  --color-text: #ecf1ff;
+  --color-text-muted: #aab0da;
+  --color-text-dim: #6f6ea6;
+  --color-ember: #ff3d9a;
+  --color-ember-deep: #cc2f86;
+  --color-ember-dim: #9c2a6b;
+  --color-danger: #ff4d4d;
+  --color-cool: #34d5e6;
+  --color-success: #6fe3a4;
+
+  /* Neon signature colors (used by glow utilities + accents). */
+  --color-neon-pink: #ff3d9a;
+  --color-neon-cyan: #34d5e6;
+  --color-neon-purple: #a15cff;
+  --color-chrome: #d9dce8;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -83,40 +90,40 @@
 }
 
 :root {
-  /* Painted neon-noir. Warm near-black grounds, one ember accent. Matte, never glowing. */
+  /* Neon-noir. Deep indigo grounds, cool near-whites, magenta + cyan neon. */
   --radius: 2px;
-  --background: #141013;
-  --foreground: #f2e9e1;
-  --card: #1e1a1b;
-  --card-foreground: #f2e9e1;
-  --popover: #1e1a1b;
-  --popover-foreground: #f2e9e1;
-  --primary: #f08521;
-  --primary-foreground: #141013;
-  --secondary: #262020;
-  --secondary-foreground: #f2e9e1;
-  --muted: #262020;
-  --muted-foreground: #b9a99c;
-  --accent: #f08521;
-  --accent-foreground: #141013;
-  --destructive: #f3581d;
-  --destructive-foreground: #141013;
-  --border: #3d3635;
-  --input: #3d3635;
-  --ring: #f08521;
-  --chart-1: #f08521;
-  --chart-2: #f3581d;
-  --chart-3: #7f8b5a;
-  --chart-4: #5c7a8a;
-  --chart-5: #bd6e2d;
-  --sidebar: #1e1a1b;
-  --sidebar-foreground: #f2e9e1;
-  --sidebar-primary: #f08521;
-  --sidebar-primary-foreground: #141013;
-  --sidebar-accent: #262020;
-  --sidebar-accent-foreground: #f2e9e1;
-  --sidebar-border: #3d3635;
-  --sidebar-ring: #f08521;
+  --background: #0d0a1f;
+  --foreground: #ecf1ff;
+  --card: #161232;
+  --card-foreground: #ecf1ff;
+  --popover: #161232;
+  --popover-foreground: #ecf1ff;
+  --primary: #ff3d9a;
+  --primary-foreground: #0d0a1f;
+  --secondary: #1f1a45;
+  --secondary-foreground: #ecf1ff;
+  --muted: #1f1a45;
+  --muted-foreground: #aab0da;
+  --accent: #a15cff;
+  --accent-foreground: #0d0a1f;
+  --destructive: #ff4d4d;
+  --destructive-foreground: #0d0a1f;
+  --border: #352d6b;
+  --input: #352d6b;
+  --ring: #34d5e6;
+  --chart-1: #ff3d9a;
+  --chart-2: #34d5e6;
+  --chart-3: #a15cff;
+  --chart-4: #4f7bff;
+  --chart-5: #ffb14d;
+  --sidebar: #161232;
+  --sidebar-foreground: #ecf1ff;
+  --sidebar-primary: #ff3d9a;
+  --sidebar-primary-foreground: #0d0a1f;
+  --sidebar-accent: #1f1a45;
+  --sidebar-accent-foreground: #ecf1ff;
+  --sidebar-border: #352d6b;
+  --sidebar-ring: #34d5e6;
 }
 
 .dark {
@@ -133,8 +140,9 @@
   }
 
   /*
-   * Painted ground: a faint warm vertical gradient echoing the sky, plus a
-   * generated grain overlay so flat panels sit inside the art rather than on it.
+   * Neon sky wash: a magenta glow bleeding from the top-right and a cyan/blue
+   * glow from the bottom-left over the indigo ground, plus a generated grain
+   * overlay so flat panels sit inside the art rather than on it.
    */
   html::before {
     content: "";
@@ -144,13 +152,17 @@
     pointer-events: none;
     background-image:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.045'/%3E%3C/svg%3E"),
-      linear-gradient(180deg, #1a1518 0%, #141013 55%, #100c0f 100%);
+      radial-gradient(ellipse 90% 60% at 78% -8%, rgba(255, 61, 154, 0.22), transparent 60%),
+      radial-gradient(ellipse 80% 60% at -5% 108%, rgba(52, 120, 230, 0.2), transparent 60%),
+      linear-gradient(180deg, #141033 0%, #0d0a1f 55%, #08061a 100%);
   }
 
   body {
     background-color: transparent;
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   h1,
@@ -162,9 +174,9 @@
     letter-spacing: -0.02em;
   }
 
-  /* Keyboard focus is always ember, always visible. */
+  /* Keyboard focus is always neon cyan, always visible. */
   :focus-visible {
-    outline: 2px solid var(--color-ember);
+    outline: 2px solid var(--color-cool);
     outline-offset: 2px;
   }
 }
@@ -193,6 +205,64 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+/*
+ * Cyberpunk flavor utilities — opt in per element.
+ *   text-glow          neon halo around text (inherits its color)
+ *   text-glow-pink     magenta neon text
+ *   text-glow-cyan     cyan neon text
+ *   text-chrome        brushed-metal gradient text
+ *   neon-frame         glowing magenta outline for cards/panels
+ *   neon-frame-cyan    glowing cyan outline
+ */
+@layer utilities {
+  .text-glow {
+    text-shadow:
+      0 0 6px currentColor,
+      0 0 16px currentColor;
+  }
+
+  .text-glow-pink {
+    color: var(--color-neon-pink);
+    text-shadow:
+      0 0 6px rgba(255, 61, 154, 0.9),
+      0 0 18px rgba(255, 61, 154, 0.55);
+  }
+
+  .text-glow-cyan {
+    color: var(--color-neon-cyan);
+    text-shadow:
+      0 0 6px rgba(52, 213, 230, 0.9),
+      0 0 18px rgba(52, 213, 230, 0.55);
+  }
+
+  .text-chrome {
+    background: linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #cfd4e6 45%,
+      #8f93ad 55%,
+      #eef1fa 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .neon-frame {
+    border: 1px solid rgba(255, 61, 154, 0.55);
+    box-shadow:
+      0 0 12px -2px rgba(255, 61, 154, 0.55),
+      inset 0 0 12px -6px rgba(255, 61, 154, 0.4);
+  }
+
+  .neon-frame-cyan {
+    border: 1px solid rgba(52, 213, 230, 0.55);
+    box-shadow:
+      0 0 12px -2px rgba(52, 213, 230, 0.55),
+      inset 0 0 12px -6px rgba(52, 213, 230, 0.4);
   }
 }
 

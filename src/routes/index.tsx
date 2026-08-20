@@ -51,7 +51,7 @@ function Index() {
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(90deg, rgba(20,16,19,0.96) 0%, rgba(20,16,19,0.88) 40%, rgba(20,16,19,0.55) 70%, rgba(20,16,19,0.25) 100%)",
+            "linear-gradient(90deg, rgba(13,10,31,0.96) 0%, rgba(13,10,31,0.88) 40%, rgba(13,10,31,0.55) 70%, rgba(13,10,31,0.25) 100%)",
         }}
       />
       {/* Bottom vignette to ground the content against the skyline. */}
@@ -60,16 +60,16 @@ function Index() {
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(to top, rgba(20,16,19,0.85) 0%, rgba(20,16,19,0.35) 35%, transparent 70%)",
+            "linear-gradient(to top, rgba(13,10,31,0.85) 0%, rgba(13,10,31,0.35) 35%, transparent 70%)",
         }}
       />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 py-16">
         <div className="max-w-2xl">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.35em] text-ember">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.35em] text-ember text-glow">
             Cyberpunk RED
           </p>
-          <h1 className="mt-4 max-w-3xl font-display text-5xl leading-[0.95] tracking-[-0.02em] text-text sm:text-7xl">
+          <h1 className="mt-4 max-w-3xl font-display text-5xl leading-[0.95] tracking-[-0.02em] text-chrome sm:text-7xl">
             Night City Tales
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-text-muted">
