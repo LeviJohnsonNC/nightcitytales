@@ -10,18 +10,22 @@ export function ArtSlot({
   art,
   label,
   className,
+  focalOverride,
 }: {
   art: ResolvedArt;
   label: string;
   className?: string;
+  /** Presentation-only crop override, [x, y] in 0-1. */
+  focalOverride?: [number, number];
 }) {
+  const focal = focalOverride ?? art.focalPoint;
   if (art.src) {
     return (
       <img
         src={art.src}
         alt={art.alt}
         loading="lazy"
-        style={{ objectPosition: `${art.focalPoint[0] * 100}% ${art.focalPoint[1] * 100}%` }}
+        style={{ objectPosition: `${focal[0] * 100}% ${focal[1] * 100}%` }}
         className={cn("h-full w-full object-cover", className)}
       />
     );

@@ -23,6 +23,15 @@ function playsBody(roleId: string): string {
   const raw = ROLE_PLAYS_LIKE[roleId] ?? "";
   return raw.replace(/^plays like:\s*/i, "");
 }
+/** Presentation-only: banner crops that would otherwise clip the character's head. */
+const SPOTLIGHT_FOCAL: Record<string, [number, number]> = {
+  rockerboy: [0.5, 0.15],
+  solo: [0.5, 0.15],
+  lawman: [0.5, 0.15],
+  fixer: [0.5, 0.15],
+  nomad: [0.5, 0.15],
+};
+
 
 function RoleTile({
   role,
@@ -82,7 +91,12 @@ function RoleSpotlight({
   return (
     <div className="overflow-hidden border border-border bg-card">
       <div className="relative h-48 border-b border-border sm:h-64">
-        <ArtSlot art={roleArt(role.id, role.name)} label={role.name} className="border-0" />
+        <ArtSlot
+          art={roleArt(role.id, role.name)}
+          label={role.name}
+          className="border-0"
+          focalOverride={SPOTLIGHT_FOCAL[role.id]}
+        />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
         <h2 className="absolute bottom-3 left-4 text-2xl font-bold tracking-tight sm:text-3xl">
           {role.name}
