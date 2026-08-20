@@ -173,22 +173,31 @@ export function RolePanel({
 }) {
   const [previewId, setPreviewId] = useState<string>(state.roleId ?? ROLES[0]!.id);
   const preview = ROLES.find((r) => r.id === previewId) ?? ROLES[0]!;
+  const detailsRef = useRef<HTMLDivElement>(null);
+
+  function previewRole(roleId: string) {
+    setPreviewId(roleId);
+    requestAnimationFrame(() => {
+      detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      detailsRef.current?.focus({ preventScroll: true });
+    });
+  }
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
-      <div className="grid gap-3 sm:grid-cols-2">
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
         {ROLES.map((role) => (
           <RoleTile
             key={role.id}
             role={role}
             committed={state.roleId === role.id}
             previewed={previewId === role.id}
-            onPreview={() => setPreviewId(role.id)}
+            onPreview={() => previewRole(role.id)}
           />
         ))}
       </div>
 
-      <div className="lg:sticky lg:top-20">
+      <div ref={detailsRef} tabIndex={-1} className="scroll-mt-20 outline-none">
         <RoleSpotlight
           key={preview.id}
           role={preview}
@@ -197,5 +206,6 @@ export function RolePanel({
         />
       </div>
     </div>
+
   );
 }
