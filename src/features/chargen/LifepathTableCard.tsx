@@ -56,9 +56,9 @@ export function LifepathTableCard({
             <h3 className="truncate font-display text-xs font-bold uppercase tracking-[0.12em] text-text">
               {titleOverride ?? table.label}
             </h3>
-            {entry && (
+            {entry && entry.method !== "rolled" && (
               <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-text-dim num">
-                {entry.method === "rolled" ? `rolled ${entry.roll}` : "chosen"}
+                chosen
               </span>
             )}
           </div>

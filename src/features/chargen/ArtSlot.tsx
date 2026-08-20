@@ -16,7 +16,7 @@ export function ArtSlot({
   label: string;
   className?: string;
   /** Presentation-only crop override, [x, y] in 0-1. */
-  focalOverride?: [number, number];
+  focalOverride?: [number, number] | undefined;
 }) {
   const focal = focalOverride ?? art.focalPoint;
   if (art.src) {
