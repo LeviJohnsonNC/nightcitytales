@@ -23,12 +23,20 @@ function playsBody(roleId: string): string {
   const raw = ROLE_PLAYS_LIKE[roleId] ?? "";
   return raw.replace(/^plays like:\s*/i, "");
 }
+/** Presentation-only: banner crops that would otherwise clip the character's head. */
+const SPOTLIGHT_FOCAL: Record<string, [number, number]> = {
+  rockerboy: [0.5, 0.15],
+  solo: [0.5, 0.15],
+  lawman: [0.5, 0.15],
+  fixer: [0.5, 0.15],
+  nomad: [0.5, 0.15],
+};
+
 
 function RoleTile({
   role,
   committed,
   previewed,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onPreview,
 }: {
   role: Role;
