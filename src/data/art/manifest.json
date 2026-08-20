@@ -11,6 +11,7 @@
   },
   "roleArt": {
     "rockerboy": {
+      "pointer": "role-rockerboy.png",
       "src": null,
       "alt": "Rockerboy key art",
       "focalPoint": [
@@ -19,6 +20,7 @@
       ]
     },
     "solo": {
+      "pointer": "role-solo.png",
       "src": null,
       "alt": "Solo key art",
       "focalPoint": [
@@ -27,6 +29,7 @@
       ]
     },
     "netrunner": {
+      "pointer": "role-netrunner.png",
       "src": null,
       "alt": "Netrunner key art",
       "focalPoint": [
@@ -35,6 +38,7 @@
       ]
     },
     "tech": {
+      "pointer": "role-tech.png",
       "src": null,
       "alt": "Tech key art",
       "focalPoint": [
@@ -43,6 +47,7 @@
       ]
     },
     "medtech": {
+      "pointer": "role-medtech.png",
       "src": null,
       "alt": "Medtech key art",
       "focalPoint": [
