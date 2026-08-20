@@ -86,7 +86,7 @@ function RoleCard({
               What this actually does
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <p className="mt-2 max-h-56 overflow-y-auto border border-border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
+              <p className="mt-2 max-h-56 overflow-y-auto whitespace-pre-line border border-border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
                 {role.roleAbility.mechanicalText}
               </p>
             </CollapsibleContent>

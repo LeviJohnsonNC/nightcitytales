@@ -78,6 +78,35 @@ export function ChargenWizard({ userId }: { userId: string }) {
       </aside>
 
       <section className="min-w-0 space-y-6">
+        {/* Sticky quick-nav so Back/Next are always reachable without scrolling the panel. */}
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border border-border bg-background/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+              Step {String(def.index).padStart(2, "0")} / {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}
+            </span>
+            <span className="hidden truncate text-sm font-semibold tracking-tight sm:inline">
+              {def.title}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {violations.length > 0 && (
+              <span className="hidden font-mono text-[10px] uppercase tracking-wider text-muted-foreground md:inline">
+                {violations.length === 1 ? "1 rule unmet" : `${violations.length} rules unmet`}
+              </span>
+            )}
+            <Button variant="outline" size="sm" onClick={state.back} disabled={index === 0}>
+              Back
+            </Button>
+            <Button
+              size="sm"
+              onClick={state.next}
+              disabled={violations.length > 0 || index === STEP_IDS.length - 1}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+
         <header className="border-b border-border pb-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
             Step {String(def.index).padStart(2, "0")} / {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}

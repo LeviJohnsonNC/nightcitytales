@@ -430,7 +430,7 @@
       "category": "Fighting",
       "stat": "dex",
       "doubleCost": true,
-      "description": "Skill for fighting with a Martial Arts Form. Each time you increase this Skill you must choose in which form you are training. You can learn multiple forms, but you must do so separately. Possible options (Karate, Taekwondo, Judo, Aikido) can be found on pg. 178.",
+      "description": "Skill for fighting with a Martial Arts Form. Each time you increase this Skill you must choose in which form you are training. You can learn multiple forms, but you must do so separately. Common forms include Karate, Taekwondo, Judo, and Aikido.",
       "isBasicSkill": false,
       "requiresSpecialization": true,
       "specializationLabel": "martial arts form",
