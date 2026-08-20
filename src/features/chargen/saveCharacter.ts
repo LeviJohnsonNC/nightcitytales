@@ -122,6 +122,7 @@ export function savePayload(
     lifepath: {
       general: state.lifepath.general,
       role_specific: state.lifepath.roleSpecific,
+      narrative: state.background.trim() || null,
     },
     finance: {
       eurobucks: sheet.finance.eurobucks,

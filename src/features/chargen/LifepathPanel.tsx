@@ -15,17 +15,19 @@ import {
   visibleRoleLifepathTables,
   type LifepathEntryRecord,
 } from "@/engine";
-import { BiographyPanel } from "./BiographyPanel";
+import { BackgroundPanel } from "./BackgroundPanel";
 import { DiceSoundToggle } from "./DiceSoundToggle";
 import { LifepathTableCard } from "./LifepathTableCard";
 import { RoleLifepathTableCard } from "./RoleLifepathTableCard";
+import { buildBackgroundInput } from "./lifepathBackground";
 import {
   SINGLE_LIFEPATH_TABLES,
+  generalLifepathComplete,
   readGeneralLifepath,
   type EnemyEntry,
   type GeneralLifepath,
 } from "./lifepathState";
-import { readRoleLifepath, type RoleLifepath } from "./roleLifepathState";
+import { readRoleLifepath, roleLifepathComplete, type RoleLifepath } from "./roleLifepathState";
 import { useChargenStore, type ChargenState } from "./store";
 
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -94,6 +96,14 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
   const total = SINGLE_LIFEPATH_TABLES.length + 1 + roleTables.length;
   const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
 
+  // ---- background generation gate ---------------------------------------
+  const roleAbilityName = state.roleAbility?.name ?? undefined;
+  const missing = [
+    ...generalLifepathComplete(general),
+    ...(state.roleId ? roleLifepathComplete(roleLifepath) : []),
+  ];
+  const ready = missing.length === 0;
+
   /** Fill every unanswered rollable table (leaves choices like enemies alone). */
   function rollAllRemaining() {
     const entries = { ...general.entries };
@@ -144,8 +154,7 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
   const groups = leftover.length ? [...GENERAL_GROUPS, { title: "More", ids: leftover }] : GENERAL_GROUPS;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="space-y-3">
+    <div className="space-y-3">
         {/* Sticky progress header */}
         <div className="sticky top-14 z-10 flex items-center justify-between gap-3 border border-hairline bg-surface/90 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
           <div>
@@ -229,16 +238,15 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
             Pick a Role and its own Lifepath tables appear here.
           </p>
         )}
-      </div>
 
-      <aside className="xl:sticky xl:top-14 xl:self-start">
-        <BiographyPanel
-          lifepath={general}
-          roleLifepath={roleLifepath}
-          {...(roleName ? { roleName } : {})}
+        <BackgroundPanel
+          ready={ready}
+          missing={missing}
+          buildInput={() => buildBackgroundInput(general, roleLifepath, roleName, roleAbilityName)}
+          value={state.background}
+          onChange={(text) => patch({ background: text })}
         />
-      </aside>
-    </div>
+      </div>
   );
 }
 

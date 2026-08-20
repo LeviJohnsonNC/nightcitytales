@@ -48,6 +48,8 @@ export type ChargenState = {
   visited: ChargenStep[];
   /** Every die this app rolled for this character, in reverse order. */
   rollLog: LoggedRoll[];
+  /** AI-woven, hand-editable character background prose from the Lifepath. */
+  background: string;
 };
 
 export type ChargenActions = {
@@ -82,6 +84,7 @@ const initialState: ChargenState = {
   lifestyle: EMPTY_LIFESTYLE,
   visited: ["method"],
   rollLog: [],
+  background: "",
 };
 
 function withVisit(state: ChargenState, step: ChargenStep): ChargenStep[] {
