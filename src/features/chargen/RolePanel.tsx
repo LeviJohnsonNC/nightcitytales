@@ -82,7 +82,12 @@ function RoleSpotlight({
   return (
     <div className="overflow-hidden border border-border bg-card">
       <div className="relative h-48 border-b border-border sm:h-64">
-        <ArtSlot art={roleArt(role.id, role.name)} label={role.name} className="border-0" />
+        <ArtSlot
+          art={roleArt(role.id, role.name)}
+          label={role.name}
+          className="border-0"
+          focalOverride={SPOTLIGHT_FOCAL[role.id]}
+        />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
         <h2 className="absolute bottom-3 left-4 text-2xl font-bold tracking-tight sm:text-3xl">
           {role.name}
