@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, onAuthChange, signOut, type AuthUser } from "@/lib/backend";
-import homepageArt from "@/assets/homepage-skyline.png.asset.json";
+import homepageArt from "@/assets/homepage-skyline-v2.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
