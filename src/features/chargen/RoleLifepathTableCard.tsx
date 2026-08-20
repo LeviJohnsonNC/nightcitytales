@@ -48,13 +48,11 @@ export function RoleLifepathTableCard({
             <h3 className="truncate font-display text-xs font-bold uppercase tracking-[0.12em] text-text">
               {table.label}
             </h3>
-            <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-text-dim">
-              {entry
-                ? entry.method === "rolled"
-                  ? `rolled ${entry.roll}`
-                  : "chosen"
-                : (table.die ?? "choose")}
-            </span>
+            {!(entry && entry.method === "rolled") && (
+              <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-text-dim">
+                {entry ? "chosen" : (table.die ?? "choose")}
+              </span>
+            )}
           </div>
           <p className={cn("mt-0.5 truncate text-sm", value ? "text-text" : "text-text-dim")}>
             {value ?? "Not set"}
