@@ -177,6 +177,7 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
     lifestyle: { location: STARTING_LOCATIONS.find((l) => housing.includes(l)) ?? null },
     visited: [...STEP_IDS],
     rollLog: [],
+    background: "",
   };
 }
 
