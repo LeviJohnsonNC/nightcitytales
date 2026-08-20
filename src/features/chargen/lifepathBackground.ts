@@ -19,6 +19,7 @@ import {
   getRoleLifepathTable,
   isRoleTableRevealed,
 } from "@/engine";
+import { generateBackgroundFn } from "@/lib/background.functions";
 import { SINGLE_LIFEPATH_TABLES, displayValue, type GeneralLifepath } from "./lifepathState";
 import type { RoleLifepath } from "./roleLifepathState";
 
