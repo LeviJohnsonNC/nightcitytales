@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ArtSlot } from "./ArtSlot";
 import { roleArt } from "./art";
 import { ROLE_PLAYS_LIKE } from "./copy";
+import { emphasizeTerms, loreParagraphs } from "./loreFormat";
 import type { ChargenState } from "./store";
 
 type Role = {
