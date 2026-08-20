@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,21 +11,13 @@ import {
   rollEnemy,
   rollLifepathCount,
   rollLifepathTable,
+  rollRoleLifepathTable,
   visibleRoleLifepathTables,
   type LifepathEntryRecord,
 } from "@/engine";
 import { BiographyPanel } from "./BiographyPanel";
-import { AssembledBiography, type BiographyEditRow } from "./AssembledBiography";
 import { LifepathTableCard } from "./LifepathTableCard";
 import { RoleLifepathTableCard } from "./RoleLifepathTableCard";
-import {
-  enemySentences,
-  friendSentence,
-  languageSentence,
-  loveSentence,
-  roleLifepathSentences,
-  sentenceFor,
-} from "./lifepathNarrative";
 import {
   SINGLE_LIFEPATH_TABLES,
   readGeneralLifepath,
@@ -38,6 +30,20 @@ import { useChargenStore, type ChargenState } from "./store";
 const newId = () => Math.random().toString(36).slice(2, 10);
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
+
+/** Single-answer general tables, grouped for progressive disclosure. */
+const GENERAL_GROUPS: { title: string; ids: string[] }[] = [
+  {
+    title: "Origins & Upbringing",
+    ids: ["cultural_origin", "family_background", "childhood_environment", "family_crisis"],
+  },
+  {
+    title: "Personality & Style",
+    ids: ["personality", "clothing_style", "hairstyle", "affectation", "value_most", "feel_about_people"],
+  },
+  { title: "What You Hold Close", ids: ["most_valued_person", "most_valued_possession"] },
+  { title: "Your Drive", ids: ["life_goals"] },
+];
 
 export function LifepathPanel({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
@@ -67,7 +73,6 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
 
   function setEntry(entry: LifepathEntryRecord) {
     const entries = { ...general.entries, [entry.tableId]: entry };
-    // A new Cultural Origin invalidates a language picked from the old region's list.
     const language =
       entry.tableId === "cultural_origin" &&
       general.language?.source === "list" &&
@@ -77,58 +82,136 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
     setGeneral({ ...general, entries, language });
   }
 
+  // ---- progress ----------------------------------------------------------
+  const roleTables = state.roleId
+    ? visibleRoleLifepathTables(state.roleId, roleLifepath.entries)
+    : [];
+  const generalAnswered = SINGLE_LIFEPATH_TABLES.filter((id) => general.entries[id]).length;
+  const languageAnswered = general.language ? 1 : 0;
+  const roleAnswered = roleTables.filter((t) => roleLifepath.entries[t.id]).length;
+  const answered = generalAnswered + languageAnswered + roleAnswered;
+  const total = SINGLE_LIFEPATH_TABLES.length + 1 + roleTables.length;
+  const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+
+  /** Fill every unanswered rollable table (leaves choices like enemies alone). */
+  function rollAllRemaining() {
+    const entries = { ...general.entries };
+    for (const id of SINGLE_LIFEPATH_TABLES) {
+      if (!entries[id]) entries[id] = rollLifepathTable(id, Math.random).entry;
+    }
+    let language = general.language;
+    const region = entries["cultural_origin"]?.value;
+    if (!language && region) {
+      const opts = languagesForCulturalOrigin(region);
+      if (opts.length) {
+        const grant = culturalOriginLanguageGrant();
+        const pick = opts[Math.floor(Math.random() * opts.length)]!;
+        language = { value: pick, rank: grant.level, free: true, source: "list" };
+      }
+    }
+    const nextGeneral: GeneralLifepath = { ...general, entries, language };
+
+    let nextRole = roleLifepath;
+    if (state.roleId) {
+      const rEntries = { ...roleLifepath.entries };
+      // Two passes: rolling a gate can reveal a dependent table.
+      for (let pass = 0; pass < 2; pass++) {
+        for (const t of visibleRoleLifepathTables(state.roleId, rEntries)) {
+          if (!rEntries[t.id] && t.die) {
+            rEntries[t.id] = rollRoleLifepathTable(state.roleId, t.id, Math.random).entry;
+          }
+        }
+      }
+      nextRole = {
+        roleId: state.roleId,
+        entries: pruneRoleLifepathAnswers(state.roleId, rEntries),
+      };
+    }
+
+    patch({
+      lifepath: {
+        ...state.lifepath,
+        general: nextGeneral as unknown as Record<string, unknown>,
+        roleSpecific: nextRole as unknown as Record<string, unknown>,
+      },
+    });
+  }
+
+  // Any single table not placed in a group still gets shown.
+  const grouped = new Set(GENERAL_GROUPS.flatMap((g) => g.ids));
+  const leftover = SINGLE_LIFEPATH_TABLES.filter((id) => !grouped.has(id));
+  const groups = leftover.length ? [...GENERAL_GROUPS, { title: "More", ids: leftover }] : GENERAL_GROUPS;
+
   return (
-    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div className="space-y-4">
-        {SINGLE_LIFEPATH_TABLES.map((tableId) => (
-          <div key={tableId} className="space-y-4">
-            <LifepathTableCard
-              tableId={tableId}
-              entry={general.entries[tableId] ?? null}
-              onChange={setEntry}
-            />
-            {tableId === "cultural_origin" && general.entries["cultural_origin"] && (
-              <LanguagePicker
-                region={general.entries["cultural_origin"]!.value}
-                language={general.language}
-                onChange={(language) => setGeneral({ ...general, language })}
-              />
-            )}
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="space-y-3">
+        {/* Sticky progress header */}
+        <div className="sticky top-14 z-10 flex items-center justify-between gap-3 border border-hairline bg-surface/90 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">Lifepath</p>
+            <p className="text-sm font-semibold text-text num">
+              {answered} of {total} answered
+            </p>
           </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden h-1.5 w-36 overflow-hidden rounded-full bg-hairline sm:block">
+              <div className="h-full bg-ember transition-all duration-300" style={{ width: `${pct}%` }} />
+            </div>
+            <Button size="sm" variant="outline" onClick={rollAllRemaining}>
+              Roll all remaining
+            </Button>
+          </div>
+        </div>
+
+        {groups.map((group) => (
+          <GeneralGroup
+            key={group.title}
+            title={group.title}
+            ids={group.ids}
+            general={general}
+            onEntry={setEntry}
+            onLanguage={(language) => setGeneral({ ...general, language })}
+          />
         ))}
 
-        <RepeatableSection
-          title="Friends"
-          tableId="friends"
-          entries={general.friends}
-          onChange={(friends) => setGeneral({ ...general, friends })}
-        />
-
-        <EnemySection
-          enemies={general.enemies}
-          onChange={(enemies) => setGeneral({ ...general, enemies })}
-        />
-
-        <RepeatableSection
-          title="Tragic Love Affairs"
-          tableId="tragic_love"
-          entries={general.tragicLove}
-          onChange={(tragicLove) => setGeneral({ ...general, tragicLove })}
-        />
+        {/* Optional relationships, collapsed by default */}
+        <CollapsibleSection
+          title="People In Your Life"
+          note="Optional"
+          count={general.friends.length + general.enemies.length + general.tragicLove.length}
+          countLabel="added"
+          defaultOpen={false}
+        >
+          <div className="space-y-4">
+            <RepeatableSection
+              title="Friends"
+              tableId="friends"
+              entries={general.friends}
+              onChange={(friends) => setGeneral({ ...general, friends })}
+            />
+            <EnemySection
+              enemies={general.enemies}
+              onChange={(enemies) => setGeneral({ ...general, enemies })}
+            />
+            <RepeatableSection
+              title="Tragic Love Affairs"
+              tableId="tragic_love"
+              entries={general.tragicLove}
+              onChange={(tragicLove) => setGeneral({ ...general, tragicLove })}
+            />
+          </div>
+        </CollapsibleSection>
 
         {state.roleId ? (
-          <section className="border border-hairline/60 bg-surface/40 p-4">
-            <header className="flex flex-wrap items-baseline gap-3">
-              <h2 className="font-display text-base font-bold uppercase tracking-[0.14em] text-text">
-                {roleName} Lifepath
-              </h2>
-              <p className="text-xs text-text-dim">
-                Mixed dice — read each table's own die. Branch tables appear once you answer their
-                gate.
-              </p>
-            </header>
-            <div className="mt-4 space-y-3">
-              {visibleRoleLifepathTables(state.roleId, roleLifepath.entries).map((table) => (
+          <CollapsibleSection
+            title={`${roleName ?? "Role"} Background`}
+            note="Mixed dice; branch tables appear once you answer their gate"
+            count={roleAnswered}
+            total={roleTables.length}
+            defaultOpen
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {roleTables.map((table) => (
                 <RoleLifepathTableCard
                   key={table.id}
                   roleId={state.roleId!}
@@ -138,20 +221,15 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
                 />
               ))}
             </div>
-          </section>
+          </CollapsibleSection>
         ) : (
           <p className="border border-dashed border-hairline p-4 text-sm text-text-dim">
             Pick a Role and its own Lifepath tables appear here.
           </p>
         )}
-
-        <AssembledBiography
-          paragraphs={assembledParagraphs(general, roleLifepath, roleName)}
-          rows={editRows(general, setGeneral, roleLifepath, setRoleEntry, state.roleId)}
-        />
       </div>
 
-      <aside className="xl:sticky xl:top-8 xl:self-start">
+      <aside className="xl:sticky xl:top-14 xl:self-start">
         <BiographyPanel
           lifepath={general}
           roleLifepath={roleLifepath}
@@ -162,88 +240,103 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
   );
 }
 
-function assembledParagraphs(
-  general: GeneralLifepath,
-  roleLifepath: RoleLifepath,
-  roleName: string | undefined,
-): string[] {
-  const opening = SINGLE_LIFEPATH_TABLES.filter((id) => id !== "life_goals")
-    .map((id) => general.entries[id])
-    .filter(Boolean)
-    .map((entry) => sentenceFor(entry!));
-  if (general.language) opening.push(languageSentence(general.language));
+function GeneralGroup({
+  title,
+  ids,
+  general,
+  onEntry,
+  onLanguage,
+}: {
+  title: string;
+  ids: string[];
+  general: GeneralLifepath;
+  onEntry: (entry: LifepathEntryRecord) => void;
+  onLanguage: (language: GeneralLifepath["language"]) => void;
+}) {
+  const count = ids.filter((id) => general.entries[id]).length;
+  const showLanguage = ids.includes("cultural_origin") && Boolean(general.entries["cultural_origin"]);
 
-  const people = [
-    ...general.friends.map(friendSentence),
-    ...general.enemies.flatMap(enemySentences),
-    ...general.tragicLove.map(loveSentence),
-  ];
-
-  const goal = general.entries["life_goals"];
-  const role = roleLifepath.roleId
-    ? roleLifepathSentences(roleLifepath.roleId, roleLifepath.entries)
-    : [];
-
-  const paragraphs: string[] = [];
-  if (opening.length) paragraphs.push(opening.join(" "));
-  if (people.length) paragraphs.push(people.join(" "));
-  if (goal) paragraphs.push(sentenceFor(goal));
-  if (role.length) paragraphs.push(`${roleName ?? "Your Role"}: ${role.join(" ")}`);
-  return paragraphs;
+  return (
+    <CollapsibleSection title={title} count={count} total={ids.length} defaultOpen>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {ids.map((id) => (
+          <LifepathTableCard
+            key={id}
+            tableId={id}
+            entry={general.entries[id] ?? null}
+            onChange={onEntry}
+          />
+        ))}
+      </div>
+      {showLanguage && (
+        <div className="mt-2">
+          <LanguagePicker
+            region={general.entries["cultural_origin"]!.value}
+            language={general.language}
+            onChange={onLanguage}
+          />
+        </div>
+      )}
+    </CollapsibleSection>
+  );
 }
 
-function editRows(
-  general: GeneralLifepath,
-  setGeneral: (next: GeneralLifepath) => void,
-  roleLifepath: RoleLifepath,
-  setRoleEntry: (entry: LifepathEntryRecord) => void,
-  roleId: string | null,
-): BiographyEditRow[] {
-  const rows: BiographyEditRow[] = [];
+function CollapsibleSection({
+  title,
+  note,
+  count,
+  total,
+  countLabel,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  note?: string;
+  count?: number;
+  total?: number;
+  countLabel?: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const complete = total !== undefined && count !== undefined && count >= total;
 
-  for (const tableId of SINGLE_LIFEPATH_TABLES) {
-    const entry = general.entries[tableId];
-    if (!entry) continue;
-    rows.push({
-      key: tableId,
-      label: getLifepathTable(tableId).label,
-      entry,
-      onChange: (next) => setGeneral({ ...general, entries: { ...general.entries, [tableId]: next } }),
-    });
-  }
-
-  general.friends.forEach((entry, i) =>
-    rows.push({
-      key: `friend-${i}`,
-      label: `Friend ${i + 1}`,
-      entry,
-      onChange: (next) =>
-        setGeneral({ ...general, friends: general.friends.map((e, j) => (j === i ? next : e)) }),
-    }),
+  return (
+    <section className="border border-hairline/60 bg-surface/40">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+      >
+        <span className="flex min-w-0 items-baseline gap-3">
+          <span className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
+            {title}
+          </span>
+          {note && <span className="truncate text-xs text-text-dim">{note}</span>}
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          {count !== undefined && (
+            <span
+              className={cn(
+                "font-mono text-[10px] uppercase tracking-[0.18em] num",
+                complete ? "text-cool" : "text-text-dim",
+              )}
+            >
+              {total !== undefined ? `${count}/${total}` : `${count} ${countLabel ?? ""}`.trim()}
+            </span>
+          )}
+          <span
+            aria-hidden
+            className={cn("text-text-dim transition-transform", open && "rotate-90")}
+          >
+            ›
+          </span>
+        </span>
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </section>
   );
-
-  general.tragicLove.forEach((entry, i) =>
-    rows.push({
-      key: `love-${i}`,
-      label: `Tragic Love ${i + 1}`,
-      entry,
-      onChange: (next) =>
-        setGeneral({
-          ...general,
-          tragicLove: general.tragicLove.map((e, j) => (j === i ? next : e)),
-        }),
-    }),
-  );
-
-  if (roleId) {
-    for (const table of visibleRoleLifepathTables(roleId, roleLifepath.entries)) {
-      const entry = roleLifepath.entries[table.id];
-      if (!entry) continue;
-      rows.push({ key: `role-${table.id}`, label: table.label, entry, onChange: setRoleEntry });
-    }
-  }
-
-  return rows;
 }
 
 function LanguagePicker({
@@ -260,31 +353,27 @@ function LanguagePicker({
   const [custom, setCustom] = useState(language?.source === "custom" ? language.value : "");
 
   return (
-    <div className="border border-hairline bg-surface p-4">
-      <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
-        Free Language — {grant.skill} at Rank {grant.level}
-      </h3>
+    <div className="border border-hairline bg-surface p-3">
+      <h4 className="font-display text-xs font-bold uppercase tracking-[0.12em] text-text">
+        Free Language: {grant.skill} at Rank {grant.level}
+      </h4>
       <p className="mt-1 text-xs text-text-muted">{grant.note}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {options.map((option) => (
           <button
             key={option}
             type="button"
-            onClick={() =>
-              onChange({ value: option, rank: grant.level, free: true, source: "list" })
-            }
+            onClick={() => onChange({ value: option, rank: grant.level, free: true, source: "list" })}
             className={cn(
-              "border border-hairline px-3 py-1.5 font-mono text-xs uppercase tracking-[0.12em] transition-colors duration-200 hover:border-ember",
-              language?.value === option
-                ? "border-ember bg-ember/10 text-ember"
-                : "text-text-muted",
+              "border border-hairline px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-200 hover:border-ember",
+              language?.value === option ? "border-ember bg-ember/10 text-ember" : "text-text-muted",
             )}
           >
             {option}
           </button>
         ))}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <Input
           className="max-w-xs"
           value={custom}
@@ -299,7 +388,7 @@ function LanguagePicker({
             onChange({ value: custom.trim(), rank: grant.level, free: true, source: "custom" })
           }
         >
-          Use this language
+          Use this
         </Button>
       </div>
     </div>
@@ -315,7 +404,7 @@ function CountRoll({ label, onRoll }: { label: string; onRoll: (count: number) =
         variant="outline"
         onClick={() => {
           const { count, result } = rollLifepathCount(Math.random);
-          setNote(`${result.rolls[0]} − 7 → ${count} ${label.toLowerCase()}`);
+          setNote(`${result.rolls[0]} then minus 7 gives ${count} ${label.toLowerCase()}`);
           onRoll(count);
         }}
       >
@@ -341,31 +430,28 @@ function RepeatableSection({
   const add = () => onChange([...entries, rollLifepathTable(tableId, Math.random).entry]);
 
   return (
-    <section className="border border-hairline/60 bg-surface/40 p-4">
+    <section className="border border-hairline bg-surface p-3">
       <header className="flex flex-wrap items-baseline gap-3">
-        <h2 className="font-display text-base font-bold uppercase tracking-[0.14em] text-text">
+        <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
           {title}
-        </h2>
+        </h3>
         <p className="text-xs text-text-dim">{table.prompt}</p>
         <div className="ml-auto">
           <CountRoll
             label={title}
             onRoll={(count) =>
-              onChange(
-                Array.from({ length: count }, () => rollLifepathTable(tableId, Math.random).entry),
-              )
+              onChange(Array.from({ length: count }, () => rollLifepathTable(tableId, Math.random).entry))
             }
           />
         </div>
       </header>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 space-y-2">
         {entries.map((entry, i) => (
           <LifepathTableCard
             key={`${tableId}-${i}`}
             tableId={tableId}
             titleOverride={`${title.replace(/s$/, "")} ${i + 1}`}
-            compact
             entry={entry}
             onChange={(next) => onChange(entries.map((e, j) => (j === i ? next : e)))}
             onRemove={() => onChange(entries.filter((_, j) => j !== i))}
@@ -391,14 +477,12 @@ function EnemySection({
     onChange(enemies.map((e) => (e.id === id ? { ...e, ...next } : e)));
 
   return (
-    <section className="border border-hairline/60 bg-surface/40 p-4">
+    <section className="border border-hairline bg-surface p-3">
       <header className="flex flex-wrap items-baseline gap-3">
-        <h2 className="font-display text-base font-bold uppercase tracking-[0.14em] text-text">
+        <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
           Enemies
-        </h2>
-        <p className="text-xs text-text-dim">
-          Who, what caused it, what they can throw at you, and what happens when you meet.
-        </p>
+        </h3>
+        <p className="text-xs text-text-dim">Who, what caused it, what they can throw at you.</p>
         <div className="ml-auto">
           <CountRoll
             label="Enemies"
@@ -409,13 +493,13 @@ function EnemySection({
         </div>
       </header>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-3 space-y-3">
         {enemies.map((enemy, i) => (
-          <div key={enemy.id} className="border border-hairline bg-surface p-4">
+          <div key={enemy.id} className="border border-hairline bg-surface-raised p-3">
             <div className="flex items-baseline gap-3">
-              <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
+              <h4 className="font-display text-xs font-bold uppercase tracking-[0.14em] text-text">
                 Enemy {i + 1}
-              </h3>
+              </h4>
               <button
                 type="button"
                 onClick={() => onChange(enemies.filter((e) => e.id !== enemy.id))}
@@ -425,56 +509,49 @@ function EnemySection({
               </button>
             </div>
 
-            <div className="mt-3 space-y-3">
+            <div className="mt-2 space-y-2">
               <LifepathTableCard
                 tableId="enemy_who"
-                compact
                 entry={enemy.who}
                 onChange={(who) => update(enemy.id, { who })}
               />
               <LifepathTableCard
                 tableId="enemy_cause"
-                compact
                 entry={enemy.cause}
                 onChange={(cause) => update(enemy.id, { cause })}
               />
-              <div className="border border-hairline bg-surface-raised p-4">
-                <h4 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
-                  Who was the injured party?
-                </h4>
-                <p className="mt-1 text-xs text-text-dim">A choice, not a roll.</p>
-                <div className="mt-3 flex gap-2">
-                  {(
-                    [
-                      { key: "you", label: "You were wronged" },
-                      { key: "them", label: "They were wronged" },
-                    ] as const
-                  ).map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => update(enemy.id, { injuredParty: option.key })}
-                      className={cn(
-                        "border border-hairline px-3 py-1.5 font-mono text-xs uppercase tracking-[0.12em] transition-colors duration-200 hover:border-ember",
-                        enemy.injuredParty === option.key
-                          ? "border-ember bg-ember/10 text-ember"
-                          : "text-text-muted",
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex flex-wrap items-center gap-2 border border-hairline bg-surface px-3 py-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-dim">
+                  Injured party
+                </span>
+                {(
+                  [
+                    { key: "you", label: "You were wronged" },
+                    { key: "them", label: "They were wronged" },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => update(enemy.id, { injuredParty: option.key })}
+                    className={cn(
+                      "border border-hairline px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-200 hover:border-ember",
+                      enemy.injuredParty === option.key
+                        ? "border-ember bg-ember/10 text-ember"
+                        : "text-text-muted",
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
               <LifepathTableCard
                 tableId="enemy_throw"
-                compact
                 entry={enemy.throwAtYou}
                 onChange={(throwAtYou) => update(enemy.id, { throwAtYou })}
               />
               <LifepathTableCard
                 tableId="sweet_revenge"
-                compact
                 entry={enemy.revenge}
                 onChange={(revenge) => update(enemy.id, { revenge })}
               />
