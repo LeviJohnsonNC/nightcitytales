@@ -189,7 +189,7 @@ export type SaveCharacterPayload = {
     install_location: string | null;
     humanity_loss_rolled: number | null;
   }[];
-  lifepath: { general: unknown; role_specific: unknown };
+  lifepath: { general: unknown; role_specific: unknown; narrative?: string | null };
   finance: { eurobucks: number; lifestyle: string; housing: string; rent: number };
 };
 
