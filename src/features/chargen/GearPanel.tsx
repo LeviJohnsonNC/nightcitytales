@@ -29,7 +29,7 @@ import {
   useLoadoutActions,
 } from "./market";
 import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
-import { ITEM_FLAVOR } from "./itemFlavor";
+import { ITEM_FLAVOR, VARIANT_FLAVOR } from "./itemFlavor";
 import type { ChargenState } from "./store";
 
 const matches = (name: string, query: string) =>
