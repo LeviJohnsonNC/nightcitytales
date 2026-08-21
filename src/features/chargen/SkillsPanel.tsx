@@ -189,6 +189,7 @@ function CategoryGroups({
                   entry={entry}
                   state={state}
                   readOnly={readOnly}
+                  limits={limitsFor ? limitsFor(entry) : undefined}
                   onLevel={onLevel ? (level) => onLevel(entry, level) : undefined}
                   onRemove={onRemove ? () => onRemove(entry) : undefined}
                 />
