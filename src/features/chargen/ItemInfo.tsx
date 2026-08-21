@@ -86,6 +86,7 @@ export function ItemInfo({
   const flavor = ITEM_FLAVOR[it.id];
   const mechanical = it.notes ?? it.description ?? null;
   const stats = statLine(kind, it);
+  const priceContext = priceCategoryContext(it.priceCategory);
   const art = itemArt(`${kind}.${it.id}`, it.name);
 
   return (
