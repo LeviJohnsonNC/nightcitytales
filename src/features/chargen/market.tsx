@@ -166,7 +166,7 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
       {lines.length === 0 ? (
         <p className="px-4 py-6 text-sm text-text-muted">Nothing bought yet.</p>
       ) : (
-        <ul className="divide-y divide-hairline">
+        <ul className="max-h-64 divide-y divide-hairline overflow-y-auto">
           {lines.map((line) => (
             <li key={line.lineId} className="flex items-center justify-between gap-3 px-4 py-2">
               <div className="min-w-0">
