@@ -122,6 +122,7 @@ export function DiceRoll({
 
   return (
     <button
+      {...buttonProps}
       type="button"
       onClick={start}
       disabled={disabled || rolling}
