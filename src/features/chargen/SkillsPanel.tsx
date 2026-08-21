@@ -404,7 +404,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
         remaining={result.pointsRemaining}
         budget={COMPLETE_RULES.skillPoints}
       />
-      <Violations violations={result.violations} />
+      <Guidance remaining={result.pointsRemaining} />
 
       <section className="space-y-3">
         <h3 className="font-mono text-[11px] uppercase tracking-[0.25em] text-ember">
