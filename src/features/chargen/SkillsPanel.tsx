@@ -161,12 +161,14 @@ function CategoryGroups({
   entries,
   state,
   readOnly,
+  limitsFor,
   onLevel,
   onRemove,
 }: {
   entries: SkillEntry[];
   state: ChargenState;
   readOnly?: boolean | undefined;
+  limitsFor?: ((entry: SkillEntry) => SkillLimits) | undefined;
   onLevel?: ((entry: SkillEntry, level: number) => void) | undefined;
   onRemove?: ((entry: SkillEntry) => void) | undefined;
 }) {
