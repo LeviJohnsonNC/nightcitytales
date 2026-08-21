@@ -106,7 +106,7 @@ export function ItemInfo({
             <DialogTitle className="font-display tracking-tight">{item.name}</DialogTitle>
             <DialogDescription className="font-mono text-[11px] uppercase tracking-[0.18em]">
               {kind}
-              {item.priceCategory ? ` · ${item.priceCategory}` : ""}
+              {it.priceCategory ? ` · ${it.priceCategory}` : ""}
             </DialogDescription>
           </DialogHeader>
 
