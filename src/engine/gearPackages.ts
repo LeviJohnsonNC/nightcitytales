@@ -3,6 +3,7 @@
  * src/data/rules/gear-packages.json.
  */
 import gearPackages from "@/data/rules/gear-packages.json";
+import { variantOptionsFor } from "./packageCatalog";
 
 export type PackageItem = { item: string; qty: number };
 export type PackageChoice = { choice: string[] };
@@ -82,8 +83,6 @@ export function unresolvedChoices(roleId: string, selections: Record<string, str
 }
 
 /* ------------------------------------------------- specific-weapon choices */
-
-import { variantOptionsFor } from "./packageCatalog";
 
 /**
  * Package entries that name a weapon class ("Heavy Melee Weapon") rather than
