@@ -469,6 +469,22 @@
     0.5,
     0.5
    ]
+  },
+  "gear.glow_stick": {
+   "src": "/images/gear/glow_stick.png",
+   "alt": "Glow Stick art",
+   "focalPoint": [
+    0.5,
+    0.5
+   ]
+  },
+  "gear.lock_picking_set": {
+   "src": "/images/gear/lock_picking_set.png",
+   "alt": "Lock Picking Set art",
+   "focalPoint": [
+    0.5,
+    0.5
+   ]
   }
  },
  "portraits": []
