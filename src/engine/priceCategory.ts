@@ -65,10 +65,12 @@ function ladderIndex(category: string): number {
  */
 const fixerReach: { rank: number; maxIndex: number }[] = (() => {
   const out: { rank: number; maxIndex: number }[] = [];
-  for (const line of FIXER_TEXT.split("\n")) {
-    const rankMatch = /^Ranks?\s+(\d+)/.exec(line.trim());
+  // Rank tiers are written inline as "Ranks 1-2: ... Reach: ... Haggle: ...".
+  const segments = FIXER_TEXT.split(/(?=Ranks?\s+\d+(?:[–—-]\d+)?:)/);
+  for (const segment of segments) {
+    const rankMatch = /^Ranks?\s+(\d+)/.exec(segment.trim());
     if (!rankMatch) continue;
-    const reachMatch = /Reach:\s*([^]*?)(?:\sHaggle:|$)/.exec(line);
+    const reachMatch = /Reach:\s*([^;\n]*?)(?:\s*Haggle:|$)/.exec(segment);
     if (!reachMatch) continue;
     const reach = reachMatch[1];
     if (/Night Market/i.test(reach)) continue;
