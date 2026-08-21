@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+import { priceCategoryContext } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { itemArt } from "./art";
 import { ITEM_FLAVOR } from "./itemFlavor";
@@ -86,6 +86,7 @@ export function ItemInfo({
   const flavor = ITEM_FLAVOR[it.id];
   const mechanical = it.notes ?? it.description ?? null;
   const stats = statLine(kind, it);
+  const priceContext = priceCategoryContext(it.priceCategory);
   const art = itemArt(`${kind}.${it.id}`, it.name);
 
   return (
@@ -126,6 +127,19 @@ export function ItemInfo({
                 </div>
               ))}
             </dl>
+          )}
+
+          {priceContext && (
+            <p className="mt-1 text-xs leading-relaxed text-text-dim">
+              <span className="font-mono uppercase tracking-[0.15em] text-text-muted">
+                {priceContext.label}.{" "}
+              </span>
+              {priceContext.fixerRank
+                ? `A Fixer at Operator Rank ${priceContext.fixerRank} can always source this. `
+                : ""}
+              A Tech builds or upgrades one at DV{priceContext.techDV}, {priceContext.techTime} of
+              work.
+            </p>
           )}
 
           {it.variants && it.variants.length > 0 && (
