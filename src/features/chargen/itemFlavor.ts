@@ -104,3 +104,35 @@ export const ITEM_FLAVOR: Record<string, string> = {
   tent_and_camping_equipment: `Shelter for one, packed down to a bundle. Out past the city limits there's nothing between you and the weather but this, and the weather out there is not friendly.`,
   video_camera: `Glass, lens, and storage: the Media's oldest weapon. Point it at the thing they told you not to point it at. Footage has toppled more Night City execs than bullets have.`,
 };
+
+/**
+ * In-voice descriptions for the specific weapons behind a catalog category
+ * (e.g. Light Melee Weapon → Combat Knife or Tomahawk). Keyed by the exact
+ * variant string printed in src/data/rules/catalog.json → weapons[].variants.
+ * These add colour only: every stat still comes from the parent catalog row.
+ */
+export const VARIANT_FLAVOR: Record<string, string> = {
+  // Light Melee Weapon
+  "Combat Knife": `Short, balanced, and boring enough that nobody looks twice at it. A combat knife rides in a boot or a sleeve, clears a zip-tie, opens a ration pack, and goes into a throat without a sound.`,
+  Tomahawk: `A hatchet built for hands, not firewood. Heavier at the head than a knife, so it bites deeper and sticks, and it throws well enough that some people never bother closing the distance.`,
+
+  // Medium Melee Weapon
+  "Baseball Bat": `The most deniable weapon in Night City. Nobody gets arrested for owning a bat. Long reach, plenty of swing, and a sound on impact you don't forget.`,
+  Crowbar: `A tool first, which is exactly why it works. It opens doors, vents, and crates all shift, then opens the guy who objects. Steel all the way through, impossible to break.`,
+  Machete: `A blade long enough to keep someone at arm's length and heavy enough to go through what's in the way. Cheap, common in the Badlands, and it cuts brush as happily as it cuts people.`,
+
+  // Heavy Melee Weapon
+  "Lead Pipe": `Two hands, no edge, all mass. A length of pipe costs nothing, comes off a wall in any abandoned block, and breaks bones through armour that shrugs off a knife.`,
+  Sword: `An anachronism that keeps proving itself. A two-handed blade is a statement about how the next thirty seconds are going to go, and in a city full of gunfire, nobody expects it.`,
+  "Spiked Bat": `A bat somebody improved with a fistful of nails. Same swing, same reach, worse outcome. Booster gangs love it because the damage it leaves is a signature.`,
+
+  // Very Heavy Melee Weapon
+  Chainsaw: `Loud before it touches anything, which is half the point. It's slow, it's heavy, it needs fuel, and the noise clears a room faster than the blade does.`,
+  Sledgehammer: `Built to break concrete, repurposed to break everything else. No edge to dull, no mechanism to fail. Swing it once and whatever it hits stops being structurally sound.`,
+  "Helicopter Blades": `Scrap-yard art: a rotor blade cut down and wrapped with a grip. Absurdly long, absurdly heavy, and it takes a whole doorway to swing in. Pure Nomad theatre with a lethal edge.`,
+  Naginata: `A curved blade on a long shaft, kept alive by Arasaka drill halls and the people who trained in them. Reach, precision, and a discipline that reads as very expensive.`,
+
+  // Bows & Crossbows
+  Bow: `Silent, serial-number-free, and the arrow is still there after. Slow between shots and it takes real arm to draw, but out where ammo costs more than food, that matters.`,
+  Crossbow: `The bow's patient cousin. Slower to load, but it holds at full draw all night, so you can sit on a doorway for an hour and still put a bolt through it.`,
+};
