@@ -413,6 +413,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
         <CategoryGroups
           entries={granted ? [...state.skills, granted] : state.skills}
           state={state}
+          limitsFor={limitsFor}
           onLevel={(entry, level) => !entry.granted && setLevel(entry, level)}
           onRemove={(entry) =>
             !entry.granted && !BASIC_SKILLS.includes(entry.skillId) ? removeSkill(entry) : undefined
