@@ -111,9 +111,13 @@ export function ItemInfo({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Image placeholder. Drops in real art via manifest.itemArt later. */}
-          <div className="aspect-[16/9] w-full overflow-hidden border border-hairline">
-            <ArtSlot art={art} label={item.name} className="border-0" />
+          {/* Art scales to fit — never cropped, no frame. */}
+          <div className="min-h-32 w-full">
+            <ArtSlot
+              art={art}
+              label={item.name}
+              className="max-h-64 w-full border-0 object-contain"
+            />
           </div>
 
           {stats.length > 0 && (
