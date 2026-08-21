@@ -4,12 +4,12 @@ import { RosterList } from "@/features/roster/RosterList";
 export const Route = createFileRoute("/_authenticated/roster")({
   head: () => ({
     meta: [
-      { title: "Your Roster — Night City Tales" },
-      { name: "description", content: "Every edgerunner you have created, saved to your account." },
-      { property: "og:title", content: "Your Roster — Night City Tales" },
+      { title: "Your Roster · Night City Tales" },
+      { name: "description", content: "Every edgerunner you've made, saved to your account and ready to run." },
+      { property: "og:title", content: "Your Roster · Night City Tales" },
       {
         property: "og:description",
-        content: "Every edgerunner you have created, saved to your account.",
+        content: "Every edgerunner you've made, saved to your account and ready to run.",
       },
     ],
   }),
@@ -23,7 +23,7 @@ function RosterPage() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Your roster</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Every edgerunner you have saved, plus any draft still in progress.
+          Every edgerunner you've made, plus whatever draft you left on the table.
         </p>
       </header>
       <RosterList userId={user.id} />

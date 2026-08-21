@@ -4,12 +4,12 @@ import { CharacterDetail } from "@/features/roster/CharacterDetail";
 export const Route = createFileRoute("/_authenticated/character/$id")({
   head: () => ({
     meta: [
-      { title: "Character Sheet — Night City Tales" },
-      { name: "description", content: "View and manage one of your saved edgerunners." },
-      { property: "og:title", content: "Character Sheet — Night City Tales" },
+      { title: "Character Sheet · Night City Tales" },
+      { name: "description", content: "Pull up one of your saved edgerunners and read the whole sheet, top to bottom." },
+      { property: "og:title", content: "Character Sheet · Night City Tales" },
       {
         property: "og:description",
-        content: "View and manage one of your saved edgerunners.",
+        content: "Pull up one of your saved edgerunners and read the whole sheet, top to bottom.",
       },
     ],
   }),

@@ -7,17 +7,17 @@ import homepageArt from "@/assets/homepage-skyline-v2.png.asset.json";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Night City Tales — Cyberpunk RED Character Builder" },
+      { title: "Night City Tales · Cyberpunk RED Character Builder" },
       {
         name: "description",
         content:
-          "Roll up Cyberpunk RED characters with a guided wizard and keep your whole roster saved to your account.",
+          "Build Cyberpunk RED characters the right way: guided, rules-accurate, and fast. Roll an edgerunner and keep your whole crew saved to your account.",
       },
-      { property: "og:title", content: "Night City Tales — Cyberpunk RED Character Builder" },
+      { property: "og:title", content: "Night City Tales · Cyberpunk RED Character Builder" },
       {
         property: "og:description",
         content:
-          "Roll up Cyberpunk RED characters with a guided wizard and keep your whole roster saved to your account.",
+          "Build Cyberpunk RED characters the right way: guided, rules-accurate, and fast. Roll an edgerunner and keep your whole crew saved to your account.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -73,8 +73,9 @@ function Index() {
             Night City Tales
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-text-muted">
-            A character builder for Cyberpunk RED. Roll up an edgerunner step by step, keep the
-            math honest, and keep your whole roster saved to your account.
+            Build an edgerunner for Cyberpunk RED, one honest roll at a time. The math is real,
+            the dice don't cheat, and your whole crew stays saved to your account. Night City is
+            not going to survive itself.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-3">

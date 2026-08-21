@@ -14,17 +14,17 @@ import {
 export const Route = createFileRoute("/style")({
   head: () => ({
     meta: [
-      { title: "Visual System — Night City Tales" },
+      { title: "Visual System · Night City Tales" },
       {
         name: "description",
         content:
-          "The Night City Tales design system: painted ember palette, Archivo and IBM Plex type, and every interface primitive in one place.",
+          "The Night City Tales design system: deep indigo neon-noir palette (magenta, cyan, purple), Archivo and IBM Plex type, and every interface primitive in one place.",
       },
-      { property: "og:title", content: "Visual System — Night City Tales" },
+      { property: "og:title", content: "Visual System · Night City Tales" },
       {
         property: "og:description",
         content:
-          "The Night City Tales design system: painted ember palette, Archivo and IBM Plex type, and every interface primitive in one place.",
+          "The Night City Tales design system: deep indigo neon-noir palette (magenta, cyan, purple), Archivo and IBM Plex type, and every interface primitive in one place.",
       },
     ],
   }),
