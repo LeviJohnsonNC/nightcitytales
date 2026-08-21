@@ -136,3 +136,29 @@ export const VARIANT_FLAVOR: Record<string, string> = {
   Bow: `Silent, serial-number-free, and the arrow is still there after. Slow between shots and it takes real arm to draw, but out where ammo costs more than food, that matters.`,
   Crossbow: `The bow's patient cousin. Slower to load, but it holds at full draw all night, so you can sit on a doorway for an hour and still put a bolt through it.`,
 };
+
+/* ---- Gear: personal electronics, tools, and stage kit ---- */
+Object.assign(ITEM_FLAVOR, {
+  agent: `Everyone's got one. A pocket AI that answers your calls, screens your contacts, digs through the data pools for you, and quietly tells you that jacket doesn't work. Lose it and you're nobody.`,
+  audio_recorder: `Twenty-four hours of sound on a single chip. Medias live off these: leave one running in the wrong room and the tape does the reporting for you.`,
+  auto_level_dampening_ear_protectors:
+    `Compact plugs that clamp down the instant the noise turns dangerous. Standing next to a shotgun, a Shrieker, or a stack of amps stops costing you an eardrum.`,
+  binoculars: `Two or three times closer, from somewhere they can't reach you. Rooftop work, stakeouts, and knowing how many are in the room before you're in it.`,
+  bug_detector: `Beeps when there's a listening device within a couple of metres. In this city that beep goes off more than it should, which is exactly why you carry one.`,
+  chemical_analyzer: `Point it at a powder, a drink, or a puddle and it names the compound off a sample database. Handy for Medtechs, essential for anyone buying from strangers.`,
+  disposable_cell_phone: `Burner. Makes calls, holds nothing, and goes in a storm drain the second the job's done. Cheap enough to buy in packs.`,
+  drum_synthesizer: `Every drum ever built, in one box, no van needed. Plug it into an amp and a Rockerboy can fill a lot from the back of a bike.`,
+  electric_guitar_other_instrument:
+    `The instrument, whichever one is yours. Electric means it needs an amp, and an amp means a crowd. Half the revolutions in this city started with somebody plugging in.`,
+  glow_stick: `Snap it and get four metres of light for ten hours. No batteries, no heat, no muzzle flash giving you away. Combat zone standard.`,
+  grapple_gun: `Thirty metres of line and a hook that holds. Gets you up the outside of a building or off the roof in a hurry. Not a weapon, whatever you were thinking.`,
+  homing_tracer: `Stick the tracer, follow from a mile out. Fixers use them on cargo, Solos use them on people, and nobody admits to owning one.`,
+  medscanner: `Reads vitals and names the problem before you cut. In a Medtech's hands it's the difference between stabilising someone and guessing at them.`,
+  pocket_amplifier: `Two instruments, six hours a charge, small enough to carry to the corner you're about to make loud. Street shows don't need a venue, just this.`,
+  road_flare: `A hundred metres of hard red light for an hour. Marks a landing zone, blinds a pursuit, or tells the convoy where the trouble is.`,
+  smart_glasses: `Ordinary-looking frames with two Cyberoptic option slots inside, so you get the chrome tricks without a scalpel in your eye socket. Take them off at the border.`,
+  tech_bag: `Drivers, cutters, tape, and spares in one shoulder bag. It won't rebuild an engine, but it'll get the door open and the drone flying again.`,
+  vial_of_biotoxin: `A sealed vial of something that shouldn't exist outside a lab. 3d6, ignores armour entirely, and only a hard Resist Torture/Drugs keeps you upright. Handle it like it hates you.`,
+  vial_of_poison: `Old-fashioned murder in a glass tube. 2d6 straight past armour unless they can tough it out. Quiet, deniable, and very hard to explain if you're searched.`,
+  virtuality_goggles: `Lays NET imagery over the real world, so the data floats in the room with you. Netrunners love them. Wearing them while crossing a street is how people die.`,
+});
