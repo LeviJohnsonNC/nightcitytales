@@ -112,7 +112,14 @@ function SkillRow({
 
       <div className="flex items-center gap-2">
         {!readOnly && onLevel && (
-          <Button variant="outline" size="sm" onClick={() => onLevel(entry.level - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={limits ? !limits.canDecrease : false}
+            title={limits?.decreaseReason ?? `Lower ${skillEntryName(entry)}`}
+            aria-label={`Lower ${skillEntryName(entry)}`}
+            onClick={() => onLevel(entry.level - 1)}
+          >
             −
           </Button>
         )}
@@ -120,7 +127,14 @@ function SkillRow({
           {entry.level}
         </span>
         {!readOnly && onLevel && (
-          <Button variant="outline" size="sm" onClick={() => onLevel(entry.level + 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={limits ? !limits.canIncrease : false}
+            title={limits?.increaseReason ?? `Raise ${skillEntryName(entry)}`}
+            aria-label={`Raise ${skillEntryName(entry)}`}
+            onClick={() => onLevel(entry.level + 1)}
+          >
             +
           </Button>
         )}
