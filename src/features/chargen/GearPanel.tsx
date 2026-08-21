@@ -73,16 +73,65 @@ function EmptyRow({ query }: { query: string }) {
   );
 }
 
-function PackageEntries({ entries, choiceIds }: { entries: PackageEntry[]; choiceIds: string[] }) {
+/** The "?" modal for a printed package label, when it maps to a catalog row. */
+function PackageItemInfo({ label }: { label: string }) {
+  const row = packageCatalogRow(label);
+  if (!row || row.kind === "fashion") return null;
+  return <ItemInfo kind={row.kind as ItemKindLabel} item={row.item as { id: string; name: string }} />;
+}
+
+function VariantPicker({
+  id,
+  label,
+  options,
+}: {
+  id: string;
+  label: string;
+  options: string[];
+}) {
+  const { loadout, setPackageVariant } = useLoadoutActions();
+  const picked = loadout.packageVariants?.[id];
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-dim">
+        Pick the specific weapon
+      </span>
+      {options.map((option) => (
+        <button
+          key={option}
+          type="button"
+          aria-pressed={picked === option}
+          aria-label={`${label}: ${option}`}
+          onClick={() => setPackageVariant(id, option)}
+          className={cn(
+            "border px-2 py-0.5 font-mono text-[11px] tracking-wide transition-colors",
+            picked === option
+              ? "border-ember bg-ember/10 text-ember"
+              : "border-hairline text-text-muted hover:border-ember",
+          )}
+        >
+          {option}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PackageEntries({
+  entries,
+  field,
+}: {
+  entries: PackageEntry[];
+  field: "weaponsArmor" | "gear" | "cyberware";
+}) {
   const { loadout, setChoice } = useLoadoutActions();
-  let choiceIndex = -1;
   return (
     <ul className="space-y-2">
       {entries.map((entry, i) => {
+        const id = `${field}.${i}`;
         if (isChoice(entry)) {
-          choiceIndex += 1;
-          const id = choiceIds[choiceIndex]!;
           const picked = loadout.packageChoices[id];
+          const variants = picked ? variantOptionsFor(picked) : [];
           return (
             <li key={id} className="border border-dashed border-ember/60 bg-ember/5 p-3">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
@@ -90,23 +139,37 @@ function PackageEntries({ entries, choiceIds }: { entries: PackageEntry[]; choic
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {entry.choice.map((option) => (
-                  <Button
-                    key={option}
-                    size="sm"
-                    variant={picked === option ? "default" : "outline"}
-                    onClick={() => setChoice(id, option)}
-                  >
-                    {option}
-                  </Button>
+                  <span key={option} className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant={picked === option ? "default" : "outline"}
+                      onClick={() => setChoice(id, option)}
+                    >
+                      {option}
+                    </Button>
+                    <PackageItemInfo label={option} />
+                  </span>
                 ))}
               </div>
+              {picked && variants.length > 0 && (
+                <VariantPicker id={id} label={picked} options={variants} />
+              )}
             </li>
           );
         }
+        const variants = variantOptionsFor(entry.item);
         return (
-          <li key={`${entry.item}-${i}`} className="flex justify-between text-sm text-text">
-            <span>{entry.item}</span>
-            <span className="font-mono tabular-nums text-text-dim">×{entry.qty}</span>
+          <li key={`${entry.item}-${i}`} className="text-sm text-text">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2">
+                {entry.item}
+                <PackageItemInfo label={entry.item} />
+              </span>
+              <span className="font-mono tabular-nums text-text-dim">×{entry.qty}</span>
+            </div>
+            {variants.length > 0 && (
+              <VariantPicker id={id} label={entry.item} options={variants} />
+            )}
           </li>
         );
       })}
