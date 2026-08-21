@@ -19,6 +19,7 @@ import {
   validateCompletePackageStats,
 } from "@/engine";
 import type { StatBlock, StatKey } from "@/engine";
+import { DiceRoll } from "./DiceRoll";
 import { StatTemplateTable } from "./StatTemplateTable";
 import { appendRoll } from "./rollLogStore";
 import { useChargenStore, type ChargenState } from "./store";
