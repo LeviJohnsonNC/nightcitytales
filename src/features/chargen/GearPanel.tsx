@@ -35,6 +35,10 @@ import type { ChargenState } from "./store";
 const matches = (name: string, query: string) =>
   !query.trim() || name.toLowerCase().includes(query.trim().toLowerCase());
 
+/** Market lists read alphabetically so items are easy to find. */
+const byName = <T extends { name: string }>(rows: T[]) =>
+  [...rows].sort((a, b) => a.name.localeCompare(b.name));
+
 /**
  * Every market row shows a description. Terse catalog one-liners ("Explosive")
  * get replaced by the item's house-voice blurb so rows read consistently.
@@ -247,7 +251,7 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
   const [variant, setVariant] = useState<Record<string, string>>({});
-  const rows = WEAPONS.filter((w) => matches(w.name, query));
+  const rows = byName(WEAPONS.filter((w) => matches(w.name, query)));
   if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
@@ -332,7 +336,7 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
 function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [locations, setLocations] = useState<Record<string, ArmorLocation>>({});
-  const rows = ARMOR.filter((a) => matches(a.name, query));
+  const rows = byName(ARMOR.filter((a) => matches(a.name, query)));
   if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
@@ -400,7 +404,7 @@ function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
 function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
-  const rows = AMMUNITION.filter((a) => matches(a.name, query));
+  const rows = byName(AMMUNITION.filter((a) => matches(a.name, query)));
   if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
@@ -441,7 +445,7 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
 function GearTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
-  const rows = GEAR.filter((g) => matches(g.name, query));
+  const rows = byName(GEAR.filter((g) => matches(g.name, query)));
   if (rows.length === 0)
     return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
@@ -479,7 +483,9 @@ function GearTable({ state, query }: { state: ChargenState; query: string }) {
 
 function FashionTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
-  const fashionware = CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query));
+  const fashionware = byName(
+    CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query)),
+  );
   if (fashionware.length === 0)
     return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
@@ -554,52 +560,60 @@ export function GearPanel({ state }: { state: ChargenState }) {
         </div>
       )}
 
-      {/* Sticky budget so remaining eb stays in view while you shop. */}
-      <div className="sticky top-14 z-10 bg-ground/95 py-2 backdrop-blur">
-        <BudgetBars state={state} />
-      </div>
-      <FashionWarning state={state} />
-      <PurchaseError error={error} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="min-w-0 space-y-6">
+          {/* Sticky budget so remaining eb stays in view while you shop. */}
+          <div className="sticky top-14 z-10 bg-ground/95 py-2 backdrop-blur">
+            <BudgetBars state={state} />
+          </div>
+          <FashionWarning state={state} />
+          <PurchaseError error={error} />
 
-      <Tabs defaultValue="weapons">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger value="weapons">Weapons</TabsTrigger>
-            <TabsTrigger value="armor">Armor</TabsTrigger>
-            <TabsTrigger value="ammo">Ammunition</TabsTrigger>
-            <TabsTrigger value="gear">Gear</TabsTrigger>
-            <TabsTrigger value="fashion">Fashion & Fashionware</TabsTrigger>
-          </TabsList>
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search this list…"
-            aria-label="Search the current list"
-            className="sm:max-w-xs"
-          />
+          <Tabs defaultValue="weapons">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <TabsList>
+                <TabsTrigger value="weapons">Weapons</TabsTrigger>
+                <TabsTrigger value="armor">Armor</TabsTrigger>
+                <TabsTrigger value="ammo">Ammunition</TabsTrigger>
+                <TabsTrigger value="gear">Gear</TabsTrigger>
+                <TabsTrigger value="fashion">Fashion & Fashionware</TabsTrigger>
+              </TabsList>
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search this list…"
+                aria-label="Search the current list"
+                className="sm:max-w-xs"
+              />
+            </div>
+            <TabsContent value="weapons" className="mt-4">
+              <WeaponTable state={state} query={query} />
+            </TabsContent>
+            <TabsContent value="armor" className="mt-4">
+              <ArmorTable state={state} query={query} />
+              <p className="mt-2 text-xs text-text-dim">
+                One worn armor per location. Current SP is stored apart from base SP so ablation
+                works in play.
+              </p>
+            </TabsContent>
+            <TabsContent value="ammo" className="mt-4">
+              <AmmoTable state={state} query={query} />
+            </TabsContent>
+            <TabsContent value="gear" className="mt-4">
+              <GearTable state={state} query={query} />
+            </TabsContent>
+            <TabsContent value="fashion" className="mt-4">
+              <FashionTable state={state} query={query} />
+            </TabsContent>
+          </Tabs>
         </div>
-        <TabsContent value="weapons" className="mt-4">
-          <WeaponTable state={state} query={query} />
-        </TabsContent>
-        <TabsContent value="armor" className="mt-4">
-          <ArmorTable state={state} query={query} />
-          <p className="mt-2 text-xs text-text-dim">
-            One worn armor per location. Current SP is stored apart from base SP so ablation works
-            in play.
-          </p>
-        </TabsContent>
-        <TabsContent value="ammo" className="mt-4">
-          <AmmoTable state={state} query={query} />
-        </TabsContent>
-        <TabsContent value="gear" className="mt-4">
-          <GearTable state={state} query={query} />
-        </TabsContent>
-        <TabsContent value="fashion" className="mt-4">
-          <FashionTable state={state} query={query} />
-        </TabsContent>
-      </Tabs>
 
-      <Cart state={state} onRemove={remove} />
+        {/* The cart rides along in the right rail while you shop. */}
+        <aside className="lg:sticky lg:top-14 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+          <Cart state={state} onRemove={remove} />
+        </aside>
+      </div>
+
 
       {CATALOG_PENDING.length > 0 && (
         <div className="border border-dashed border-hairline bg-surface/50 p-4">
