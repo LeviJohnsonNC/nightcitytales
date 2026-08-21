@@ -6,6 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { priceCategoryContext } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { itemArt } from "./art";
@@ -107,7 +113,30 @@ export function ItemInfo({
             <DialogTitle className="font-display tracking-tight">{item.name}</DialogTitle>
             <DialogDescription className="font-mono text-[11px] uppercase tracking-[0.18em]">
               {kind}
-              {it.priceCategory ? ` · ${it.priceCategory}` : ""}
+              {it.priceCategory ? (
+                <>
+                  {" · "}
+                  {priceContext ? (
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help underline decoration-dotted underline-offset-4">
+                          {it.priceCategory}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-xs normal-case tracking-normal">
+                        {priceContext.fixerRank
+                          ? `A Fixer at Operator Rank ${priceContext.fixerRank} can always source this. `
+                          : ""}
+                        {`A Tech builds or upgrades one at DV${priceContext.techDV}, ${priceContext.techTime} of work.`}
+                      </TooltipContent>
+                    </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    it.priceCategory
+                  )}
+                </>
+              ) : null}
             </DialogDescription>
           </DialogHeader>
 
@@ -133,18 +162,6 @@ export function ItemInfo({
             </dl>
           )}
 
-          {priceContext && (
-            <p className="mt-1 text-xs leading-relaxed text-text-dim">
-              <span className="font-mono uppercase tracking-[0.15em] text-text-muted">
-                {priceContext.label}.{" "}
-              </span>
-              {priceContext.fixerRank
-                ? `A Fixer at Operator Rank ${priceContext.fixerRank} can always source this. `
-                : ""}
-              A Tech builds or upgrades one at DV{priceContext.techDV}, {priceContext.techTime} of
-              work.
-            </p>
-          )}
 
           {it.variants && it.variants.length > 0 && (
             <p className="text-xs text-text-dim">
