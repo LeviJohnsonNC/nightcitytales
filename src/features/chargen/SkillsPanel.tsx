@@ -302,10 +302,11 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
         remaining={result.pointsRemaining}
         budget={EDGERUNNER_RULES.skillPoints}
       />
-      <Violations violations={result.violations} />
+      <Guidance remaining={result.pointsRemaining} />
       <CategoryGroups
         entries={granted ? [...state.skills, granted] : state.skills}
         state={state}
+        limitsFor={limitsFor}
         onLevel={(entry, level) => !entry.granted && setLevel(entry, level)}
       />
     </div>
