@@ -148,3 +148,72 @@ describe("entry-aware skill validation", () => {
     expect(result.pointsSpent).toBe(validateSkillEntries({ method: "complete_package", entries: basics(2) }).pointsSpent);
   });
 });
+
+describe("control limits", () => {
+  const entries = (level: number) =>
+    BASIC_SKILLS.map((skillId) => ({
+      skillId,
+      specialization: skillId === "language" || skillId === "local_expert" ? "Streetslang" : null,
+      level,
+    }));
+
+  it("caps the raise at the maximum Skill Level", () => {
+    const list = [...entries(2), { skillId: "handgun", specialization: null, level: 6 }];
+    const limits = skillEntryLimits({
+      method: "complete_package",
+      entries: list,
+      entry: list[list.length - 1]!,
+    });
+    expect(limits.max).toBe(6);
+    expect(limits.canIncrease).toBe(false);
+    expect(limits.increaseReason).toMatch(/maximum Skill Level/);
+  });
+
+  it("caps the raise at what the budget can afford", () => {
+    const list = [
+      ...entries(2),
+      { skillId: "handgun", specialization: null, level: 5 },
+      { skillId: "autofire", specialization: null, level: 6 },
+    ];
+    const spent = list.reduce((s, e) => s + skillPointCost(e.skillId, 0, e.level), 0);
+    const filler = 86 - spent;
+    const withFiller = [
+      ...list,
+      { skillId: "brawling", specialization: null, level: filler },
+    ];
+    const limits = skillEntryLimits({
+      method: "complete_package",
+      entries: withFiller,
+      entry: list[list.length - 2]!,
+    });
+    expect(limits.canIncrease).toBe(false);
+    expect(limits.increaseReason).toMatch(/No Skill Points left/);
+  });
+
+  it("holds Basic Skills at their floor", () => {
+    const list = entries(2);
+    const limits = skillEntryLimits({
+      method: "complete_package",
+      entries: list,
+      entry: list[0]!,
+    });
+    expect(limits.min).toBe(2);
+    expect(limits.canDecrease).toBe(false);
+    expect(limits.decreaseReason).toMatch(/at least 2/);
+  });
+
+  it("refuses an unaffordable addition", () => {
+    const list = [...entries(2), { skillId: "handgun", specialization: null, level: 6 }];
+    const spent = list.reduce((s, e) => s + skillPointCost(e.skillId, 0, e.level), 0);
+    const full = [...list, { skillId: "brawling", specialization: null, level: 86 - spent }];
+    const result = canAddSkillEntry({
+      method: "complete_package",
+      entries: full,
+      skillId: "autofire",
+      specialization: null,
+      level: 2,
+    });
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toMatch(/Not enough Skill Points/);
+  });
+});
