@@ -69,7 +69,7 @@ function Index() {
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.35em] text-ember text-glow">
             Cyberpunk RED
           </p>
-          <h1 className="mt-4 max-w-3xl font-display text-5xl leading-[0.95] tracking-[-0.02em] text-chrome sm:text-7xl">
+          <h1 className="mt-4 max-w-3xl pb-[0.12em] font-display text-5xl leading-[1.12] tracking-[-0.02em] text-chrome sm:text-7xl">
             Night City Tales
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-text-muted">
