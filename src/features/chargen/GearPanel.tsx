@@ -29,10 +29,22 @@ import {
   useLoadoutActions,
 } from "./market";
 import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
+import { ITEM_FLAVOR } from "./itemFlavor";
 import type { ChargenState } from "./store";
 
 const matches = (name: string, query: string) =>
   !query.trim() || name.toLowerCase().includes(query.trim().toLowerCase());
+
+/**
+ * Every market row shows a description. Terse catalog one-liners ("Explosive")
+ * get replaced by the item's house-voice blurb so rows read consistently.
+ */
+function Blurb({ id, text }: { id: string; text?: string | null }) {
+  const flavor = ITEM_FLAVOR[id];
+  const body = !text || text.trim().split(/\s+/).length <= 6 ? (flavor ?? text) : text;
+  if (!body) return null;
+  return <p className="mt-1.5 text-xs leading-relaxed text-text-dim">{body}</p>;
+}
 
 function Row({ children }: { children: React.ReactNode }) {
   return <div className="border border-hairline bg-surface p-4">{children}</div>;
@@ -236,8 +248,8 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
         const variants = (w as unknown as { variants?: string[] }).variants;
         const chosen = variants ? (variant[w.id] ?? variants[0]!) : undefined;
         return (
-          <div key={w.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-            <div className="min-w-[16rem]">
+          <div key={w.id} className="flex items-start justify-between gap-4 p-3">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-text">{w.name}</p>
                 <ItemInfo kind="weapon" item={w} />
@@ -272,9 +284,9 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
                   ))}
                 </div>
               )}
-              {!variants && w.notes ? <p className="mt-1 text-xs text-text-dim">{w.notes}</p> : null}
+              {!variants ? <Blurb id={w.id} text={w.notes} /> : null}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3">
               <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [w.id]: v }))} />
               <span className="font-mono text-sm tabular-nums text-ember">{eb(w.cost * n)}</span>
               <Button
@@ -310,8 +322,8 @@ function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
       {rows.map((a) => {
         const location = locations[a.id] ?? a.locations[0]!;
         return (
-          <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-            <div className="min-w-[16rem]">
+          <div key={a.id} className="flex items-start justify-between gap-4 p-3">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-text">{a.name}</p>
                 <ItemInfo kind="armor" item={a} />
@@ -324,9 +336,9 @@ function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
                   value={a.penalty ? `${a.penalty.value} ${a.penalty.stats.join("/")}` : "none"}
                 />
               </div>
-              {a.notes ? <p className="mt-1 text-xs text-text-dim">{a.notes}</p> : null}
+              <Blurb id={a.id} text={a.notes} />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3">
               {a.locations.length > 1 ? (
                 <div className="flex gap-1">
                   {a.locations.map((loc) => (
@@ -378,8 +390,8 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
       {rows.map((a) => {
         const n = qty[a.id] ?? 1;
         return (
-          <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-            <div>
+          <div key={a.id} className="flex items-start justify-between gap-4 p-3">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-text">
                   {a.name} <span className="text-text-dim">({a.unit})</span>
@@ -387,9 +399,9 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
                 <ItemInfo kind="ammunition" item={a} />
               </div>
               <p className="mt-1 text-xs text-text-dim">{a.types.join(" · ")}</p>
-              {a.notes ? <p className="mt-1 text-xs text-text-dim">{a.notes}</p> : null}
+              <Blurb id={a.id} text={a.notes} />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3">
               <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [a.id]: v }))} />
               <span className="font-mono text-sm tabular-nums text-ember">{eb(a.cost * n)}</span>
               <Button
@@ -420,8 +432,8 @@ function GearTable({ state, query }: { state: ChargenState; query: string }) {
       {rows.map((g) => {
         const n = qty[g.id] ?? 1;
         return (
-          <div key={g.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-            <div className="min-w-[16rem]">
+          <div key={g.id} className="flex items-start justify-between gap-4 p-3">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-text">{g.name}</p>
                 <ItemInfo kind="gear" item={g} />
@@ -429,11 +441,9 @@ function GearTable({ state, query }: { state: ChargenState; query: string }) {
               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
                 <Stat label="PRICE" value={g.priceCategory} />
               </div>
-              {g.description ? (
-                <p className="mt-1 text-xs text-text-dim">{g.description}</p>
-              ) : null}
+              <Blurb id={g.id} text={g.description} />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3">
               <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [g.id]: v }))} />
               <span className="font-mono text-sm tabular-nums text-ember">{eb(g.cost * n)}</span>
               <Button
@@ -461,8 +471,8 @@ function FashionTable({ state, query }: { state: ChargenState; query: string }) 
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {fashionware.map((c) => (
-        <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-          <div className="min-w-[16rem]">
+        <div key={c.id} className="flex items-start justify-between gap-4 p-3">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <p className="text-sm text-text">{c.name}</p>
               <ItemInfo kind="cyberware" item={c} />
@@ -472,9 +482,9 @@ function FashionTable({ state, query }: { state: ChargenState; query: string }) 
               <Stat label="SLOTS" value={c.slotsUsed} />
               <Stat label="INSTALL" value={c.install} />
             </div>
-            {c.notes ? <p className="mt-1 text-xs text-text-dim">{c.notes}</p> : null}
+            <Blurb id={c.id} text={c.notes} />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <span className="font-mono text-sm tabular-nums text-ember">{eb(c.cost)}</span>
             <Button
               size="sm"
