@@ -69,7 +69,7 @@ function statLine(kind: ItemKindLabel, item: AnyItem): { label: string; value: s
     push("Available", item.types?.join(", "));
     push("Sold", item.unit);
   } else if (kind === "gear") {
-    push("Price", item.priceCategory);
+    // Price category lives in the header tooltip, not the stat row.
   } else if (kind === "cyberware") {
     push("Humanity Loss", item.humanityLoss);
     push("Slots", item.slotsUsed);
