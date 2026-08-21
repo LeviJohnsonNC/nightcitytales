@@ -41,7 +41,8 @@ const matches = (name: string, query: string) =>
  */
 function Blurb({ id, text }: { id: string; text: string | null | undefined }) {
   const flavor = ITEM_FLAVOR[id];
-  const body = !text || text.trim().split(/\s+/).length <= 6 ? (flavor ?? text) : text;
+  const body = flavor ?? text;
+
   if (!body) return null;
   return <p className="mt-1.5 text-xs leading-relaxed text-text-dim">{body}</p>;
 }
