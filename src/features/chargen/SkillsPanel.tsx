@@ -350,19 +350,37 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
     return true;
   });
 
+  const limitsFor = (entry: SkillEntry) =>
+    skillEntryLimits({ method: "complete_package", entries: state.skills, entry });
+
+  /** Level a newly added Skill starts at, and what it costs. */
+  const ADD_LEVEL = COMPLETE_RULES.basicSkillMinimum;
+
+  function addability(skill: SkillDefinition) {
+    return canAddSkillEntry({
+      method: "complete_package",
+      entries: state.skills,
+      skillId: skill.id,
+      specialization: skill.requiresSpecialization ? (spec[skill.id] ?? "").trim() || null : null,
+      level: ADD_LEVEL,
+    });
+  }
+
   function setLevel(target: SkillEntry, level: number) {
+    // Clamp as a second line of defence — the buttons already prevent this.
+    const limits = limitsFor(target);
+    const clamped = Math.min(limits.max, Math.max(limits.min, level));
     patch({
       skills: state.skills.map((e) =>
-        skillEntryKey(e) === skillEntryKey(target) ? { ...e, level } : e,
+        skillEntryKey(e) === skillEntryKey(target) ? { ...e, level: clamped } : e,
       ),
     });
   }
 
   function addSkill(skill: SkillDefinition) {
+    if (!addability(skill).allowed) return;
     const specialization = skill.requiresSpecialization ? (spec[skill.id] ?? "").trim() : null;
-    if (skill.requiresSpecialization && !specialization) return;
-    const entry: SkillEntry = { skillId: skill.id, specialization, level: 2 };
-    if (state.skills.some((e) => skillEntryKey(e) === skillEntryKey(entry))) return;
+    const entry: SkillEntry = { skillId: skill.id, specialization, level: ADD_LEVEL };
     patch({ skills: [...state.skills, entry] });
     if (skill.requiresSpecialization) setSpec((s) => ({ ...s, [skill.id]: "" }));
   }
