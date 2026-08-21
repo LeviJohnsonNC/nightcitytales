@@ -16,6 +16,7 @@ import {
   type LifepathEntryRecord,
 } from "@/engine";
 import { BackgroundPanel } from "./BackgroundPanel";
+import { DiceRoll } from "./DiceRoll";
 import { DiceSoundToggle } from "./DiceSoundToggle";
 import { LifepathTableCard } from "./LifepathTableCard";
 import { RoleLifepathTableCard } from "./RoleLifepathTableCard";
