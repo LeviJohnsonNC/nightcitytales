@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+import { priceCategoryContext } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { itemArt } from "./art";
 import { ITEM_FLAVOR } from "./itemFlavor";
