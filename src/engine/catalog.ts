@@ -112,12 +112,13 @@ export const CATALOG_RULES = catalogData._rules;
 /** Row counts the file itself flags as not yet extracted. */
 export const CATALOG_PENDING = catalogData._pending as string[];
 
-export type ItemKind = "weapon" | "armor" | "ammunition" | "cyberware" | "fashion";
+export type ItemKind = "weapon" | "armor" | "ammunition" | "cyberware" | "fashion" | "gear";
 
 const WEAPONS_BY_ID = new Map(WEAPONS.map((w) => [w.id, w]));
 const ARMOR_BY_ID = new Map(ARMOR.map((a) => [a.id, a]));
 const AMMO_BY_ID = new Map(AMMUNITION.map((a) => [a.id, a]));
 const CYBER_BY_ID = new Map(CYBERWARE.map((c) => [c.id, c]));
+const GEAR_BY_ID = new Map(GEAR.map((g) => [g.id, g]));
 
 export function getWeapon(id: string): CatalogWeapon {
   const w = WEAPONS_BY_ID.get(id);
