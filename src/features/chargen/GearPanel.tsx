@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AMMUNITION,
@@ -27,6 +28,9 @@ import {
 import { ItemInfo } from "./ItemInfo";
 import type { ChargenState } from "./store";
 
+const matches = (name: string, query: string) =>
+  !query.trim() || name.toLowerCase().includes(query.trim().toLowerCase());
+
 function Row({ children }: { children: React.ReactNode }) {
   return <div className="border border-hairline bg-surface p-4">{children}</div>;
 }
@@ -37,6 +41,34 @@ function Stat({ label, value }: { label: string; value: string | number | null |
     <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim">
       {label} <span className="tabular-nums text-text-muted">{value}</span>
     </span>
+  );
+}
+
+function QtyStepper({ qty, setQty }: { qty: number; setQty: (n: number) => void }) {
+  return (
+    <div className="flex items-center">
+      <Button
+        variant="outline"
+        size="sm"
+        aria-label="Decrease quantity"
+        disabled={qty <= 1}
+        onClick={() => setQty(Math.max(1, qty - 1))}
+      >
+        −
+      </Button>
+      <span className="w-8 text-center font-mono text-sm tabular-nums text-text">{qty}</span>
+      <Button variant="outline" size="sm" aria-label="Increase quantity" onClick={() => setQty(qty + 1)}>
+        +
+      </Button>
+    </div>
+  );
+}
+
+function EmptyRow({ query }: { query: string }) {
+  return (
+    <p className="p-4 text-sm text-text-muted">
+      Nothing matches “{query.trim()}”. Try a different search.
+    </p>
   );
 }
 
@@ -116,12 +148,10 @@ function FixedPackage({ roleId }: { roleId: string }) {
       </Row>
       {flags.length > 0 ? (
         <Row>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
-            Source flag — read before you commit
-          </p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">Good to know</p>
           {flags.map((f) => (
             <p key={f.item} className="mt-2 text-sm text-text-muted">
-              <span className="text-text">{f.item}</span> — {f.issue} (confidence: {f.confidence})
+              <span className="text-text">{f.item}</span>: {f.issue}
             </p>
           ))}
         </Row>
@@ -130,47 +160,59 @@ function FixedPackage({ roleId }: { roleId: string }) {
   );
 }
 
-function WeaponTable({ state }: { state: ChargenState }) {
+function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const rows = WEAPONS.filter((w) => matches(w.name, query));
+  if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
-      {WEAPONS.map((w) => (
-        <div key={w.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-          <div className="min-w-[16rem]">
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-text">{w.name}</p>
-              <ItemInfo kind="weapon" item={w} />
+      {rows.map((w) => {
+        const n = qty[w.id] ?? 1;
+        return (
+          <div key={w.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
+            <div className="min-w-[16rem]">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-text">{w.name}</p>
+                <ItemInfo kind="weapon" item={w} />
+              </div>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                <Stat label="DMG" value={w.damage} />
+                <Stat label="MAG" value={w.magazine ?? "None"} />
+                <Stat label="ROF" value={w.rof} />
+                <Stat label="HANDS" value={w.handsRequired} />
+                <Stat label="SKILL" value={w.skill} />
+              </div>
+              {w.notes ? <p className="mt-1 text-xs text-text-dim">{w.notes}</p> : null}
             </div>
-            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-              <Stat label="DMG" value={w.damage} />
-              <Stat label="MAG" value={w.magazine ?? "—"} />
-              <Stat label="ROF" value={w.rof} />
-              <Stat label="HANDS" value={w.handsRequired} />
-              <Stat label="SKILL" value={w.skill} />
+            <div className="flex items-center gap-3">
+              <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [w.id]: v }))} />
+              <span className="font-mono text-sm tabular-nums text-ember">{eb(w.cost * n)}</span>
+              <Button
+                size="sm"
+                aria-label={`Buy ${w.name}`}
+                onClick={() =>
+                  buy({ kind: "weapon", itemId: w.id, qty: n, budget: defaultBudgetFor("weapon", w.id, state) })
+                }
+              >
+                Buy
+              </Button>
             </div>
-            {w.notes ? <p className="mt-1 text-xs text-text-dim">{w.notes}</p> : null}
           </div>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-sm tabular-nums text-ember">{eb(w.cost)}</span>
-            <Button
-              size="sm"
-              onClick={() => buy({ kind: "weapon", itemId: w.id, budget: defaultBudgetFor("weapon", w.id, state) })}
-            >
-              Buy
-            </Button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-function ArmorTable({ state }: { state: ChargenState }) {
+function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [locations, setLocations] = useState<Record<string, ArmorLocation>>({});
+  const rows = ARMOR.filter((a) => matches(a.name, query));
+  if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
-      {ARMOR.map((a) => {
+      {rows.map((a) => {
         const location = locations[a.id] ?? a.locations[0]!;
         return (
           <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
@@ -180,7 +222,7 @@ function ArmorTable({ state }: { state: ChargenState }) {
                 <ItemInfo kind="armor" item={a} />
               </div>
               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                <Stat label="SP" value={a.sp ?? "—"} />
+                <Stat label="SP" value={a.sp ?? "None"} />
                 <Stat label="HP" value={a.hp ?? undefined} />
                 <Stat
                   label="PENALTY"
@@ -211,6 +253,7 @@ function ArmorTable({ state }: { state: ChargenState }) {
               <span className="font-mono text-sm tabular-nums text-ember">{eb(a.cost)}</span>
               <Button
                 size="sm"
+                aria-label={`Wear ${a.name}`}
                 onClick={() =>
                   buy({
                     kind: "armor",
@@ -230,42 +273,52 @@ function ArmorTable({ state }: { state: ChargenState }) {
   );
 }
 
-function AmmoTable({ state }: { state: ChargenState }) {
+function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const rows = AMMUNITION.filter((a) => matches(a.name, query));
+  if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
-      {AMMUNITION.map((a) => (
-        <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-text">
-                {a.name} <span className="text-text-dim">({a.unit})</span>
-              </p>
-              <ItemInfo kind="ammunition" item={a} />
+      {rows.map((a) => {
+        const n = qty[a.id] ?? 1;
+        return (
+          <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-text">
+                  {a.name} <span className="text-text-dim">({a.unit})</span>
+                </p>
+                <ItemInfo kind="ammunition" item={a} />
+              </div>
+              <p className="mt-1 text-xs text-text-dim">{a.types.join(" · ")}</p>
+              {a.notes ? <p className="mt-1 text-xs text-text-dim">{a.notes}</p> : null}
             </div>
-            <p className="mt-1 text-xs text-text-dim">{a.types.join(" · ")}</p>
-            {a.notes ? <p className="mt-1 text-xs text-text-dim">{a.notes}</p> : null}
+            <div className="flex items-center gap-3">
+              <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [a.id]: v }))} />
+              <span className="font-mono text-sm tabular-nums text-ember">{eb(a.cost * n)}</span>
+              <Button
+                size="sm"
+                aria-label={`Buy ${a.name}`}
+                onClick={() =>
+                  buy({ kind: "ammunition", itemId: a.id, qty: n, budget: defaultBudgetFor("ammunition", a.id, state) })
+                }
+              >
+                Buy
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-sm tabular-nums text-ember">{eb(a.cost)}</span>
-            <Button
-              size="sm"
-              onClick={() =>
-                buy({ kind: "ammunition", itemId: a.id, budget: defaultBudgetFor("ammunition", a.id, state) })
-              }
-            >
-              Buy
-            </Button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-function FashionTable({ state }: { state: ChargenState }) {
+function FashionTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
-  const fashionware = CYBERWARE.filter((c) => c.category === "fashionware");
+  const fashionware = CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query));
+  if (fashionware.length === 0)
+    return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {fashionware.map((c) => (
@@ -286,6 +339,7 @@ function FashionTable({ state }: { state: ChargenState }) {
             <span className="font-mono text-sm tabular-nums text-ember">{eb(c.cost)}</span>
             <Button
               size="sm"
+              aria-label={`Buy ${c.name}`}
               onClick={() =>
                 buy({ kind: "cyberware", itemId: c.id, budget: defaultBudgetFor("cyberware", c.id, state) })
               }
@@ -301,12 +355,13 @@ function FashionTable({ state }: { state: ChargenState }) {
 
 export function GearPanel({ state }: { state: ChargenState }) {
   const { remove, error } = useLoadoutActions();
+  const [query, setQuery] = useState("");
   const isPackage = state.method === "streetrat" || state.method === "edgerunner";
 
   if (!state.method || !state.roleId) {
     return (
       <div className="border border-dashed border-hairline bg-surface/50 p-6 text-sm text-text-muted">
-        Choose a creation method and a Role first — gear is issued per Role.
+        Choose a creation method and a Role first. Gear is issued per Role.
       </div>
     );
   }
@@ -336,32 +391,44 @@ export function GearPanel({ state }: { state: ChargenState }) {
         </div>
       )}
 
-      <BudgetBars state={state} />
+      {/* Sticky budget so remaining eb stays in view while you shop. */}
+      <div className="sticky top-14 z-10 bg-ground/95 py-2 backdrop-blur">
+        <BudgetBars state={state} />
+      </div>
       <FashionWarning state={state} />
       <PurchaseError error={error} />
 
       <Tabs defaultValue="weapons">
-        <TabsList>
-          <TabsTrigger value="weapons">Weapons</TabsTrigger>
-          <TabsTrigger value="armor">Armor</TabsTrigger>
-          <TabsTrigger value="ammo">Ammunition</TabsTrigger>
-          <TabsTrigger value="fashion">Fashion & Fashionware</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList>
+            <TabsTrigger value="weapons">Weapons</TabsTrigger>
+            <TabsTrigger value="armor">Armor</TabsTrigger>
+            <TabsTrigger value="ammo">Ammunition</TabsTrigger>
+            <TabsTrigger value="fashion">Fashion & Fashionware</TabsTrigger>
+          </TabsList>
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search this list…"
+            aria-label="Search the current list"
+            className="sm:max-w-xs"
+          />
+        </div>
         <TabsContent value="weapons" className="mt-4">
-          <WeaponTable state={state} />
+          <WeaponTable state={state} query={query} />
         </TabsContent>
         <TabsContent value="armor" className="mt-4">
-          <ArmorTable state={state} />
+          <ArmorTable state={state} query={query} />
           <p className="mt-2 text-xs text-text-dim">
             One worn armor per location. Current SP is stored apart from base SP so ablation works
             in play.
           </p>
         </TabsContent>
         <TabsContent value="ammo" className="mt-4">
-          <AmmoTable state={state} />
+          <AmmoTable state={state} query={query} />
         </TabsContent>
         <TabsContent value="fashion" className="mt-4">
-          <FashionTable state={state} />
+          <FashionTable state={state} query={query} />
         </TabsContent>
       </Tabs>
 

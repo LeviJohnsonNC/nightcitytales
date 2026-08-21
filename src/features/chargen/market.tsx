@@ -99,8 +99,8 @@ export function BudgetBars({ state }: { state: ChargenState }) {
               />
             </div>
             <p className="mt-2 font-mono text-[11px] tabular-nums text-text-dim">
-              {eb(b.spent)} of {eb(b.limit)} spent —{" "}
-              {b.unspentKept ? "unspent is KEPT" : "unspent is LOST when you leave"}
+              {eb(b.spent)} of {eb(b.limit)} spent.{" "}
+              {b.unspentKept ? "Unspent is KEPT" : "Unspent is LOST when you leave"}
             </p>
           </div>
         );
@@ -120,8 +120,8 @@ export function FashionWarning({ state }: { state: ChargenState }) {
       </p>
       {evaporating.map((b) => (
         <p key={b.id} className="mt-1 text-sm text-text">
-          You still have <span className="font-mono tabular-nums">{eb(b.remaining)}</span> in “
-          {b.label}”. That money is lost the moment you finish — it cannot be carried into play.
+          You still have <span className="font-mono tabular-nums">{eb(b.remaining)}</span> in "
+          {b.label}". That money is lost the moment you finish. It cannot be carried into play.
         </p>
       ))}
     </div>
@@ -135,7 +135,7 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
   return (
     <div className="border border-hairline bg-surface">
       <p className="border-b border-hairline px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
-        Cart — {lines.length} line{lines.length === 1 ? "" : "s"}
+        Cart · {lines.length} line{lines.length === 1 ? "" : "s"}
       </p>
       {lines.length === 0 ? (
         <p className="px-4 py-6 text-sm text-text-muted">Nothing bought yet.</p>
@@ -230,11 +230,11 @@ export function HumanityMeter({ state }: { state: ChargenState }) {
       {humanity.cyberpsychosisRisk ? (
         <p className="mt-3 text-sm text-text">
           Humanity has dropped below zero. This character is in cyberpsychosis and cannot be
-          played — remove cyberware until Humanity is at zero or above.
+          played. Remove cyberware until Humanity is at zero or above.
         </p>
       ) : near ? (
         <p className="mt-3 text-sm text-text">
-          Careful — {humanity.humanitySheet} Humanity left. One more heavy piece can tip this
+          Careful: {humanity.humanitySheet} Humanity left. One more heavy piece can tip this
           character into cyberpsychosis.
         </p>
       ) : null}
