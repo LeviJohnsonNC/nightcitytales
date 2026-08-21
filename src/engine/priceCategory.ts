@@ -39,9 +39,9 @@ const makerTable: { labels: string[]; dv: number; time: string }[] = (() => {
       const match = /^\s*(.+?)\s+DV(\d+),\s*(.+?)\.?\s*$/.exec(segment);
       if (!match) return null;
       return {
-        labels: match[1].split("/").map((s) => s.trim()),
+        labels: (match[1] ?? "").split("/").map((s) => s.trim()),
         dv: Number(match[2]),
-        time: match[3].trim(),
+        time: (match[3] ?? "").trim(),
       };
     })
     .filter((row): row is { labels: string[]; dv: number; time: string } => row !== null);
@@ -72,7 +72,7 @@ const fixerReach: { rank: number; maxIndex: number }[] = (() => {
     if (!rankMatch) continue;
     const reachMatch = /Reach:\s*([^\n]*?)(?:\s*Haggle:|$)/.exec(segment);
     if (!reachMatch) continue;
-    const reach = reachMatch[1].split(";")[0];
+    const reach = (reachMatch[1] ?? "").split(";")[0] ?? "";
     if (/Night Market/i.test(reach)) continue;
     let maxIndex = -1;
     LADDER.forEach((label, index) => {
@@ -94,7 +94,7 @@ export function priceCategoryContext(category: string | null | undefined): Price
   if (!category) return null;
   const index = ladderIndex(category);
   if (index === -1) return null;
-  const label = LADDER[index];
+  const label = LADDER[index] ?? "";
   const row = makerTable.find((r) => r.labels.some((l) => normalize(l) === normalize(label)));
   if (!row) return null;
   return { label, techDV: row.dv, techTime: row.time, fixerRank: lowestFixerRank(index) };
