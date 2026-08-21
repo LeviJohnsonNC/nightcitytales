@@ -49,8 +49,12 @@ function Notice({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Violations({ violations }: { violations: string[] }) {
-  if (violations.length === 0) {
+/**
+ * The controls make illegal states unreachable, so the only thing left to say
+ * is how many points are still unspent.
+ */
+function Guidance({ remaining }: { remaining: number }) {
+  if (remaining === 0) {
     return (
       <p className="border-l-2 border-success bg-success/5 p-3 text-sm text-text-muted">
         Every Skill rule is satisfied — you can move on.
@@ -58,11 +62,9 @@ function Violations({ violations }: { violations: string[] }) {
     );
   }
   return (
-    <ul className="space-y-1 border-l-2 border-danger bg-danger/5 p-3 text-sm text-text-muted">
-      {violations.map((v) => (
-        <li key={v}>{v}</li>
-      ))}
-    </ul>
+    <p className="border-l-2 border-ember/70 bg-ember/5 p-3 text-sm text-text-muted">
+      You have {remaining} Skill {remaining === 1 ? "Point" : "Points"} left to spend.
+    </p>
   );
 }
 
@@ -70,12 +72,14 @@ function SkillRow({
   entry,
   state,
   readOnly,
+  limits,
   onLevel,
   onRemove,
 }: {
   entry: SkillEntry;
   state: ChargenState;
   readOnly?: boolean | undefined;
+  limits?: SkillLimits | undefined;
   onLevel?: ((level: number) => void) | undefined;
   onRemove?: (() => void) | undefined;
 }) {
