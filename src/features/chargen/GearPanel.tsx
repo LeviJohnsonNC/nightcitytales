@@ -10,9 +10,11 @@ import {
   CYBERWARE,
   PACKAGE_FLAGS,
   PACKAGE_NOTES,
+  GEAR,
   WEAPONS,
-  choicePoints,
   getGearPackage,
+  packageCatalogRow,
+  variantOptionsFor,
   isChoice,
   type ArmorLocation,
   type PackageEntry,
@@ -26,7 +28,7 @@ import {
   eb,
   useLoadoutActions,
 } from "./market";
-import { ItemInfo } from "./ItemInfo";
+import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
 import type { ChargenState } from "./store";
 
 const matches = (name: string, query: string) =>
@@ -179,9 +181,6 @@ function PackageEntries({
 
 function FixedPackage({ roleId }: { roleId: string }) {
   const pkg = getGearPackage(roleId);
-  const points = choicePoints(roleId);
-  const idsFor = (field: "weaponsArmor" | "gear" | "cyberware") =>
-    points.filter((p) => p.field === field).map((p) => p.id);
   const flags = PACKAGE_FLAGS.filter((f) => f.role === roleId);
 
   return (
@@ -191,14 +190,14 @@ function FixedPackage({ roleId }: { roleId: string }) {
           Weapons & Armor
         </p>
         <div className="mt-3">
-          <PackageEntries entries={pkg.weaponsArmor} choiceIds={idsFor("weaponsArmor")} />
+          <PackageEntries entries={pkg.weaponsArmor} field="weaponsArmor" />
         </div>
         <p className="mt-3 text-xs text-text-muted">{PACKAGE_NOTES.armor}</p>
       </Row>
       <Row>
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">Gear</p>
         <div className="mt-3">
-          <PackageEntries entries={pkg.gear} choiceIds={idsFor("gear")} />
+          <PackageEntries entries={pkg.gear} field="gear" />
         </div>
       </Row>
       <Row>
@@ -410,6 +409,50 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   );
 }
 
+function GearTable({ state, query }: { state: ChargenState; query: string }) {
+  const { buy } = useLoadoutActions();
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const rows = GEAR.filter((g) => matches(g.name, query));
+  if (rows.length === 0)
+    return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
+  return (
+    <div className="divide-y divide-hairline border border-hairline bg-surface">
+      {rows.map((g) => {
+        const n = qty[g.id] ?? 1;
+        return (
+          <div key={g.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
+            <div className="min-w-[16rem]">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-text">{g.name}</p>
+                <ItemInfo kind="gear" item={g} />
+              </div>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                <Stat label="PRICE" value={g.priceCategory} />
+              </div>
+              {g.description ? (
+                <p className="mt-1 text-xs text-text-dim">{g.description}</p>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-3">
+              <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [g.id]: v }))} />
+              <span className="font-mono text-sm tabular-nums text-ember">{eb(g.cost * n)}</span>
+              <Button
+                size="sm"
+                aria-label={`Buy ${g.name}`}
+                onClick={() =>
+                  buy({ kind: "gear", itemId: g.id, qty: n, budget: defaultBudgetFor("gear", g.id, state) })
+                }
+              >
+                Buy
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function FashionTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const fashionware = CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query));
@@ -500,6 +543,7 @@ export function GearPanel({ state }: { state: ChargenState }) {
             <TabsTrigger value="weapons">Weapons</TabsTrigger>
             <TabsTrigger value="armor">Armor</TabsTrigger>
             <TabsTrigger value="ammo">Ammunition</TabsTrigger>
+            <TabsTrigger value="gear">Gear</TabsTrigger>
             <TabsTrigger value="fashion">Fashion & Fashionware</TabsTrigger>
           </TabsList>
           <Input
@@ -522,6 +566,9 @@ export function GearPanel({ state }: { state: ChargenState }) {
         </TabsContent>
         <TabsContent value="ammo" className="mt-4">
           <AmmoTable state={state} query={query} />
+        </TabsContent>
+        <TabsContent value="gear" className="mt-4">
+          <GearTable state={state} query={query} />
         </TabsContent>
         <TabsContent value="fashion" className="mt-4">
           <FashionTable state={state} query={query} />
