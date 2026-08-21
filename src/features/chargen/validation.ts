@@ -9,6 +9,7 @@ import {
   loadoutHumanity,
   readLifestyle,
   unresolvedChoices,
+  unresolvedVariants,
   validateCompletePackageStats,
   validateSkillEntries,
   validateLifestyle,
@@ -126,6 +127,15 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       if (state.method && state.method !== "complete_package" && state.roleId) {
         for (const point of unresolvedChoices(state.roleId, state.loadout.packageChoices)) {
           violations.push(`Your package offers a choice you have not made: ${point.options.join(" or ")}.`);
+        }
+        for (const point of unresolvedVariants(
+          state.roleId,
+          state.loadout.packageChoices,
+          state.loadout.packageVariants ?? {},
+        )) {
+          violations.push(
+            `Pick the specific weapon for "${point.label}": ${point.options.join(", ")}.`,
+          );
         }
       }
       if (state.method) {
