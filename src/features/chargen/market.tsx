@@ -145,7 +145,12 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
             <li key={line.lineId} className="flex items-center justify-between gap-3 px-4 py-2">
               <div className="min-w-0">
                 <p className="truncate text-sm text-text">
-                  {itemName(line.kind, line.itemId)}
+                  {line.variant ?? itemName(line.kind, line.itemId)}
+                  {line.variant ? (
+                    <span className="ml-1 text-text-dim">
+                      ({itemName(line.kind, line.itemId)})
+                    </span>
+                  ) : null}
                   {line.qty > 1 ? ` ×${line.qty}` : ""}
                   {line.location ? (
                     <span className="ml-2 font-mono text-[11px] uppercase text-text-dim">

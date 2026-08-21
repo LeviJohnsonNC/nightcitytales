@@ -68,7 +68,11 @@
       "handsRequired": "Varies",
       "concealable": true,
       "cost": 50,
-      "notes": "Combat Knife, Tomahawk"
+      "notes": "Combat Knife, Tomahawk",
+      "variants": [
+        "Combat Knife",
+        "Tomahawk"
+      ]
     },
     {
       "id": "medium_melee",
@@ -81,7 +85,12 @@
       "handsRequired": "Varies",
       "concealable": false,
       "cost": 50,
-      "notes": "Baseball Bat, Crowbar, Machete"
+      "notes": "Baseball Bat, Crowbar, Machete",
+      "variants": [
+        "Baseball Bat",
+        "Crowbar",
+        "Machete"
+      ]
     },
     {
       "id": "heavy_melee",
@@ -94,7 +103,12 @@
       "handsRequired": "Varies",
       "concealable": false,
       "cost": 100,
-      "notes": "Lead Pipe, Sword, Spiked Bat"
+      "notes": "Lead Pipe, Sword, Spiked Bat",
+      "variants": [
+        "Lead Pipe",
+        "Sword",
+        "Spiked Bat"
+      ]
     },
     {
       "id": "very_heavy_melee",
@@ -107,7 +121,13 @@
       "handsRequired": "Varies",
       "concealable": false,
       "cost": 500,
-      "notes": "Chainsaw, Sledgehammer, Naginata"
+      "notes": "Chainsaw, Sledgehammer, Naginata",
+      "variants": [
+        "Chainsaw",
+        "Sledgehammer",
+        "Helicopter Blades",
+        "Naginata"
+      ]
     },
     {
       "id": "medium_pistol",
@@ -224,7 +244,11 @@
       "handsRequired": 2,
       "concealable": false,
       "cost": 100,
-      "notes": "Arrows"
+      "notes": "Arrows",
+      "variants": [
+        "Bow",
+        "Crossbow"
+      ]
     },
     {
       "id": "grenade_launcher",

@@ -35,6 +35,7 @@ type AnyItem = {
   install?: string;
   cost?: number;
   priceCategory?: string;
+  variants?: string[];
   notes?: string | null;
   description?: string | null;
 };
@@ -123,6 +124,13 @@ export function ItemInfo({
                 </div>
               ))}
             </dl>
+          )}
+
+          {it.variants && it.variants.length > 0 && (
+            <p className="text-xs text-text-dim">
+              <span className="font-mono uppercase tracking-[0.15em]">Examples: </span>
+              {it.variants.join(", ")}
+            </p>
           )}
 
           {flavor && <p className="mt-1 text-[0.95rem] leading-relaxed text-text">{flavor}</p>}

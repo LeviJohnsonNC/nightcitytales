@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import {
   AMMUNITION,
   ARMOR,
@@ -163,12 +164,15 @@ function FixedPackage({ roleId }: { roleId: string }) {
 function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
+  const [variant, setVariant] = useState<Record<string, string>>({});
   const rows = WEAPONS.filter((w) => matches(w.name, query));
   if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {rows.map((w) => {
         const n = qty[w.id] ?? 1;
+        const variants = (w as unknown as { variants?: string[] }).variants;
+        const chosen = variants ? (variant[w.id] ?? variants[0]!) : undefined;
         return (
           <div key={w.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
             <div className="min-w-[16rem]">
@@ -183,16 +187,45 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
                 <Stat label="HANDS" value={w.handsRequired} />
                 <Stat label="SKILL" value={w.skill} />
               </div>
-              {w.notes ? <p className="mt-1 text-xs text-text-dim">{w.notes}</p> : null}
+              {variants && (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-dim">
+                    Pick one
+                  </span>
+                  {variants.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={chosen === v}
+                      onClick={() => setVariant((p) => ({ ...p, [w.id]: v }))}
+                      className={cn(
+                        "border px-2 py-0.5 font-mono text-[11px] tracking-wide transition-colors",
+                        chosen === v
+                          ? "border-ember bg-ember/10 text-ember"
+                          : "border-hairline text-text-muted hover:border-ember",
+                      )}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!variants && w.notes ? <p className="mt-1 text-xs text-text-dim">{w.notes}</p> : null}
             </div>
             <div className="flex items-center gap-3">
               <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [w.id]: v }))} />
               <span className="font-mono text-sm tabular-nums text-ember">{eb(w.cost * n)}</span>
               <Button
                 size="sm"
-                aria-label={`Buy ${w.name}`}
+                aria-label={`Buy ${chosen ?? w.name}`}
                 onClick={() =>
-                  buy({ kind: "weapon", itemId: w.id, qty: n, budget: defaultBudgetFor("weapon", w.id, state) })
+                  buy({
+                    kind: "weapon",
+                    itemId: w.id,
+                    qty: n,
+                    ...(chosen ? { variant: chosen } : {}),
+                    budget: defaultBudgetFor("weapon", w.id, state),
+                  })
                 }
               >
                 Buy

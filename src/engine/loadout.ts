@@ -27,6 +27,8 @@ export type CartLine = {
   itemId: string;
   qty: number;
   budget: BudgetId;
+  /** Flavor variant of a generic item (e.g. "Combat Knife"). Cosmetic only. */
+  variant?: string | null;
   /** Armor only: which location it is worn on. */
   location?: ArmorLocation | null;
   /** Armor only: ablates in play, so it is tracked apart from the base SP. */
@@ -202,6 +204,8 @@ export type PurchaseRequest = {
   qty?: number;
   location?: ArmorLocation | null;
   foundationLineId?: string | null;
+  /** Flavor variant of a generic item (e.g. "Combat Knife"). Cosmetic only. */
+  variant?: string | null;
 };
 
 export type PurchaseCheck = { ok: boolean; reason: string | null };
@@ -222,7 +226,7 @@ export function canPurchase(
   if (budget.fashionOnly && !isFashionItem(request.kind, request.itemId)) {
     return {
       ok: false,
-      reason: `You cannot buy ${name} with fashion money — the ${budget.limit}eb Fashion budget only buys Fashion and Fashionware.`,
+      reason: `You cannot buy ${name} with fashion money: the ${budget.limit}eb Fashion budget only buys Fashion and Fashionware.`,
     };
   }
 
@@ -290,7 +294,7 @@ export function canPurchase(
       if (!target) {
         return {
           ok: false,
-          reason: `Every ${foundationItem.name} is full — ${name} needs ${item.slotsUsed} Option Slot(s).`,
+          reason: `Every ${foundationItem.name} is full. ${name} needs ${item.slotsUsed} Option Slot(s).`,
         };
       }
       if (target.free < item.slotsUsed) {
@@ -336,6 +340,8 @@ export function addPurchase(
     qty,
     budget: request.budget,
   };
+
+  if (request.variant) line.variant = request.variant;
 
   if (request.kind === "armor") {
     const armor = getArmor(request.itemId);

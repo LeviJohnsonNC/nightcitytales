@@ -35,7 +35,7 @@ export function savePayload(
         equipped: line.kind === "armor" ? Boolean(line.location) : false,
         slot: line.location ?? line.kind,
         current_sp: line.currentSp ?? null,
-        notes: null as string | null,
+        notes: line.variant ?? null,
       })),
     ...(["weaponsArmor", "gear"] as const).flatMap((field) =>
       (field === "weaponsArmor" ? sheet.packageWeaponsArmor : sheet.packageGear).map(
@@ -128,7 +128,7 @@ export function savePayload(
       eurobucks: sheet.finance.eurobucks,
       lifestyle: sheet.finance.lifestyle,
       housing: sheet.finance.location
-        ? `${sheet.finance.housing} — ${sheet.finance.location}`
+        ? `${sheet.finance.housing}, ${sheet.finance.location}`
         : sheet.finance.housing,
       rent: sheet.finance.rent,
     },
