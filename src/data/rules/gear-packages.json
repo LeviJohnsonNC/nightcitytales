@@ -1,685 +1,670 @@
 {
- "_source": {
-  "book": "Cyberpunk RED Core Rulebook",
-  "publisher": "R. Talsorian Games",
-  "pages": "98-99 (Weapons/Armor), 103 (Outfit and Gear)",
-  "note": "Fixed packages for Streetrat and Edgerunner. Complete Package buys everything individually instead."
- },
- "_extraction": {
-  "method": "The source prints these as five-column tables that do not linearise cleanly — Medtech's outfit line appears interleaved mid-gear-list, so no structural split is reliable. Assignments were made by reading the printed columns, then every item string was verified to exist in the source text, and the Solo package was checked against the book's own worked 'Jay's Solo' example (exact match).",
-  "confidence": "High for all ten roles. Two items are flagged below as lower confidence."
- },
- "_rules": {
-  "appliesTo": [
-   "streetrat",
-   "edgerunner"
-  ],
-  "freeEurobucks": 500,
-  "unspentKept": true,
-  "choiceRule": "Where an entry is a `choice`, the player picks exactly ONE option. Never both.",
-  "armorNote": "Every Role receives Light Armorjack Body Armor and Head Armor at SP11. Track current SP separately from base SP so ablation works in play.",
-  "cyberwareNote": "NOT IN THIS FILE. The core rulebook does not print starting cyberware packages for Streetrat/Edgerunner — those Characters begin with no cyberware, so no Humanity Loss applies at creation. Complete Package Characters buy cyberware from the 2,550eb budget and take Humanity Loss then.",
-  "outfitNote": "Outfit strings are printed as Fashion-style groupings with quantities inline (e.g. 'Leisurewear: Footwear x2, Jacket x3'). Kept as printed rather than exploded into items — the Fashion catalog defines the pieces."
- },
- "_schema": {
-  "entry": "{ item: string, qty: number }  OR  { choice: string[] }",
-  "note": "Every array element is one or the other. Check for a `choice` key before reading `item`."
- },
- "_flagged": [
-  {
-   "role": "medtech",
-   "field": "weaponsArmor",
-   "item": "Bulletproof Shield",
-   "issue": "Appears after Medtech's armor lines, where every other Role's block ends. It falls inside Medtech's column before the next header, so it is read as Medtech's. Unusual for a medic — worth a second look at the printed page.",
-   "confidence": "medium"
+  "_source": {
+    "book": "Cyberpunk RED Core Rulebook",
+    "publisher": "R. Talsorian Games",
+    "pages": "98-99 (Weapons/Armor), 103 (Outfit and Gear)",
+    "note": "Fixed packages for Streetrat and Edgerunner. Complete Package buys everything individually instead."
   },
-  {
-   "role": "fixer",
-   "field": "weaponsArmor",
-   "item": "Heavy Pistol or Very Heavy Pistol (x2)",
-   "issue": "The choice appears twice in Fixer's column, giving two pistols. The armor-line delimiters make the block boundaries unambiguous, so this is the literal reading, but a duplicated line in the source layout would look identical.",
-   "confidence": "medium"
+  "_extraction": {
+    "method": "The source prints these as five-column tables that do not linearise cleanly \u2014 Medtech's outfit line appears interleaved mid-gear-list, so no structural split is reliable. Assignments were made by reading the printed columns, then every item string was verified to exist in the source text, and the Solo package was checked against the book's own worked 'Jay's Solo' example (exact match).",
+    "confidence": "Confirmed for all ten roles against the printed Weapons/Armor tables (2026-08-21). The two previously flagged rows \u2014 Medtech's Bulletproof Shield and Fixer's duplicated Heavy/Very Heavy Pistol choice \u2014 both read as printed and are correct."
+  },
+  "_rules": {
+    "appliesTo": [
+      "streetrat",
+      "edgerunner"
+    ],
+    "freeEurobucks": 500,
+    "unspentKept": true,
+    "choiceRule": "Where an entry is a `choice`, the player picks exactly ONE option. Never both.",
+    "armorNote": "Every Role receives Light Armorjack Body Armor and Head Armor at SP11. Track current SP separately from base SP so ablation works in play.",
+    "cyberwareNote": "NOT IN THIS FILE. The core rulebook does not print starting cyberware packages for Streetrat/Edgerunner \u2014 those Characters begin with no cyberware, so no Humanity Loss applies at creation. Complete Package Characters buy cyberware from the 2,550eb budget and take Humanity Loss then.",
+    "outfitNote": "Outfit strings are printed as Fashion-style groupings with quantities inline (e.g. 'Leisurewear: Footwear x2, Jacket x3'). Kept as printed rather than exploded into items \u2014 the Fashion catalog defines the pieces."
+  },
+  "_schema": {
+    "entry": "{ item: string, qty: number }  OR  { choice: string[] }",
+    "note": "Every array element is one or the other. Check for a `choice` key before reading `item`."
+  },
+  "_flagged": [],
+  "roles": {
+    "rockerboy": {
+      "id": "rockerboy",
+      "weaponsArmor": [
+        {
+          "item": "Very Heavy Pistol",
+          "qty": 1
+        },
+        {
+          "item": "Basic VH Pistol Ammunition",
+          "qty": 50
+        },
+        {
+          "choice": [
+            "Heavy Melee Weapon",
+            "Flashbang Grenade"
+          ]
+        },
+        {
+          "item": "Teargas Grenade",
+          "qty": 2
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        },
+        {
+          "item": "Computer",
+          "qty": 1
+        },
+        {
+          "choice": [
+            "Electric Guitar",
+            "Bug Detector"
+          ]
+        },
+        {
+          "item": "Glow Paint",
+          "qty": 5
+        },
+        {
+          "item": "Pocket Amp",
+          "qty": 1
+        },
+        {
+          "item": "Radio Scanner/Music Player",
+          "qty": 1
+        },
+        {
+          "item": "Video Camera",
+          "qty": 1
+        }
+      ],
+      "outfit": [
+        "Generic Chic: Jacket, Jewelry x3, Top x4",
+        "Leisurewear: Jewelry, Mirrorshades, Footwear",
+        "Urbanflash: Bottoms, Top"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "solo": {
+      "id": "solo",
+      "weaponsArmor": [
+        {
+          "item": "Assault Rifle",
+          "qty": 1
+        },
+        {
+          "item": "Very Heavy Pistol",
+          "qty": 1
+        },
+        {
+          "choice": [
+            "Heavy Melee Weapon",
+            "Bulletproof Shield"
+          ]
+        },
+        {
+          "item": "Basic VH Pistol Ammunition",
+          "qty": 30
+        },
+        {
+          "item": "Basic Rifle Ammunition",
+          "qty": 70
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        }
+      ],
+      "outfit": [
+        "Leisurewear: Footwear x2, Jacket x3, Mirrorshades, Bottoms x2, Top x2"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "netrunner": {
+      "id": "netrunner",
+      "weaponsArmor": [
+        {
+          "item": "Very Heavy Pistol",
+          "qty": 1
+        },
+        {
+          "item": "Basic VH Pistol Ammunition",
+          "qty": 30
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        },
+        {
+          "item": "Cyberdeck (7 Slots)",
+          "qty": 1
+        },
+        {
+          "item": "Virtuality Goggles",
+          "qty": 1
+        },
+        {
+          "item": "Program: Armor",
+          "qty": 1
+        },
+        {
+          "item": "Program: Sword",
+          "qty": 1
+        },
+        {
+          "choice": [
+            "Program: See Ya",
+            "Program: Eraser"
+          ]
+        },
+        {
+          "choice": [
+            "Program: Sword",
+            "Program: Vrizzbolt"
+          ]
+        },
+        {
+          "choice": [
+            "Program: Worm",
+            "Program: Sword"
+          ]
+        }
+      ],
+      "outfit": [
+        "Generic Chic: Top x10",
+        "Leisurewear: Footwear x2, Jewelry, Bottoms x2",
+        "Urban Flash: Jacket"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "tech": {
+      "id": "tech",
+      "weaponsArmor": [
+        {
+          "choice": [
+            "Shotgun",
+            "Assault Rifle"
+          ]
+        },
+        {
+          "choice": [
+            "Basic Shotgun Shell Ammunition x100",
+            "Basic Rifle Ammunition x100"
+          ]
+        },
+        {
+          "item": "Flashbang Grenade",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        },
+        {
+          "item": "Anti-Smog Breathing Mask",
+          "qty": 1
+        },
+        {
+          "item": "Disposable Cell Phone",
+          "qty": 1
+        },
+        {
+          "item": "Duct Tape",
+          "qty": 5
+        },
+        {
+          "item": "Flashlight",
+          "qty": 1
+        },
+        {
+          "item": "Road Flare",
+          "qty": 6
+        },
+        {
+          "item": "Tech Bag",
+          "qty": 1
+        }
+      ],
+      "outfit": [
+        "Generic Chic: Bottoms x8, Tops x10",
+        "Leisurewear: Footwear x2"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "medtech": {
+      "id": "medtech",
+      "weaponsArmor": [
+        {
+          "choice": [
+            "Shotgun",
+            "Assault Rifle"
+          ]
+        },
+        {
+          "choice": [
+            "Basic Shotgun Shell Ammunition x100",
+            "Basic Rifle Ammunition x100"
+          ]
+        },
+        {
+          "choice": [
+            "Incendiary Shotgun Shell Ammunition x10",
+            "Incendiary Rifle Ammunition x10"
+          ]
+        },
+        {
+          "item": "Smoke Grenade",
+          "qty": 2
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Bulletproof Shield",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        },
+        {
+          "item": "Airhypo",
+          "qty": 1
+        },
+        {
+          "item": "Handcuffs",
+          "qty": 1
+        },
+        {
+          "item": "Flashlight",
+          "qty": 1
+        },
+        {
+          "item": "Glow Paint",
+          "qty": 1
+        },
+        {
+          "item": "Medtech Bag",
+          "qty": 1
+        }
+      ],
+      "outfit": [
+        "Generic Chic Jacket x3",
+        "Leisurewear: Footwear, Bottoms x3, Top x5"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "media": {
+      "id": "media",
+      "weaponsArmor": [
+        {
+          "choice": [
+            "Heavy Pistol",
+            "Very Heavy Pistol"
+          ]
+        },
+        {
+          "choice": [
+            "Basic H Pistol Ammunition x50",
+            "Basic VH Pistol Ammunition x50"
+          ]
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        },
+        {
+          "item": "Audio Recorder",
+          "qty": 1
+        },
+        {
+          "item": "Binoculars",
+          "qty": 1
+        },
+        {
+          "choice": [
+            "Disposable Cellphone x2",
+            "Grapple Gun"
+          ]
+        },
+        {
+          "item": "Flashlight",
+          "qty": 1
+        },
+        {
+          "item": "Computer",
+          "qty": 1
+        },
+        {
+          "item": "Radio Scanner/Music Player",
+          "qty": 1
+        },
+        {
+          "item": "Scrambler/Descrambler",
+          "qty": 1
+        },
+        {
+          "item": "Video Camera",
+          "qty": 1
+        }
+      ],
+      "outfit": [
+        "Generic Chic: Footwear, Bottoms, Top",
+        "Leisurewear: Jacket",
+        "Urbanflash: Mirrorshades"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "lawman": {
+      "id": "lawman",
+      "weaponsArmor": [
+        {
+          "choice": [
+            "Assault Rifle",
+            "Shotgun"
+          ]
+        },
+        {
+          "item": "Heavy Pistol",
+          "qty": 1
+        },
+        {
+          "choice": [
+            "Basic Rifle Ammunition x100",
+            "Basic Shotgun Shell Ammunition x100",
+            "Basic Slug Ammunition x100"
+          ]
+        },
+        {
+          "item": "Basic H Pistol Ammunition",
+          "qty": 30
+        },
+        {
+          "choice": [
+            "Bulletproof Shield",
+            "Smoke Grenade x2"
+          ]
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        },
+        {
+          "item": "Flashlight",
+          "qty": 1
+        },
+        {
+          "item": "Handcuffs",
+          "qty": 2
+        },
+        {
+          "item": "Radio Communicator",
+          "qty": 1
+        },
+        {
+          "item": "Road Flare",
+          "qty": 10
+        }
+      ],
+      "outfit": [
+        "Generic Chic: Jacket, Bottoms x2, Top x3",
+        "Leisurewear: Footwear x2, Jacket x2, Bottoms x2, Mirrorshades, Top x2"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "exec": {
+      "id": "exec",
+      "weaponsArmor": [
+        {
+          "item": "Very Heavy Pistol",
+          "qty": 1
+        },
+        {
+          "item": "Basic VH Pistol Ammunition",
+          "qty": 50
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Radio Communicator",
+          "qty": 4
+        },
+        {
+          "item": "Scrambler/Descrambler",
+          "qty": 1
+        }
+      ],
+      "outfit": [
+        "Businesswear: Footwear, Jacket, Bottoms, Mirrorshades, Top, Jewelry x2"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "fixer": {
+      "id": "fixer",
+      "weaponsArmor": [
+        {
+          "choice": [
+            "Heavy Pistol",
+            "Very Heavy Pistol"
+          ]
+        },
+        {
+          "choice": [
+            "Heavy Pistol",
+            "Very Heavy Pistol"
+          ]
+        },
+        {
+          "item": "Light Melee Weapon",
+          "qty": 1
+        },
+        {
+          "choice": [
+            "Basic H Pistol Ammunition x100",
+            "Basic VH Pistol Ammunition x100"
+          ]
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        },
+        {
+          "item": "Bug Detector",
+          "qty": 1
+        },
+        {
+          "item": "Computer",
+          "qty": 1
+        },
+        {
+          "item": "Disposable Phone",
+          "qty": 2
+        }
+      ],
+      "outfit": [
+        "Generic Chic: Contacts, Jewelry",
+        "Leisurewear: Mirrorshades",
+        "Urbanflash: Footwear, Jacket, Bottoms, Top"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    },
+    "nomad": {
+      "id": "nomad",
+      "weaponsArmor": [
+        {
+          "choice": [
+            "Heavy Pistol",
+            "Very Heavy Pistol"
+          ]
+        },
+        {
+          "choice": [
+            "Basic H Pistol Ammunition x100",
+            "Basic VH Pistol Ammunition x100"
+          ]
+        },
+        {
+          "choice": [
+            "Heavy Melee Weapon",
+            "Heavy Pistol"
+          ]
+        },
+        {
+          "item": "Light Armorjack Body Armor (SP11)",
+          "qty": 1
+        },
+        {
+          "item": "Light Armorjack Head Armor (SP11)",
+          "qty": 1
+        }
+      ],
+      "gear": [
+        {
+          "item": "Agent",
+          "qty": 1
+        },
+        {
+          "item": "Anti-Smog Breathing Mask",
+          "qty": 1
+        },
+        {
+          "item": "Duct Tape",
+          "qty": 1
+        },
+        {
+          "item": "Flashlight",
+          "qty": 1
+        },
+        {
+          "item": "Grapple Gun",
+          "qty": 1
+        },
+        {
+          "item": "Inflatable Bed & Sleep-Bag",
+          "qty": 1
+        },
+        {
+          "item": "Medtech Bag",
+          "qty": 1
+        },
+        {
+          "item": "Radio Communicator",
+          "qty": 2
+        },
+        {
+          "item": "Rope",
+          "qty": 1
+        },
+        {
+          "item": "Techtool",
+          "qty": 1
+        },
+        {
+          "item": "Tent and Camping Equipment",
+          "qty": 1
+        }
+      ],
+      "outfit": [
+        "Bohemian: Jewelry",
+        "Nomad Leathers: Top x4, Bottom x2, Footwear x2, Jacket, Hat"
+      ],
+      "cyberware": [],
+      "freeEurobucks": 500
+    }
   }
- ],
- "roles": {
-  "rockerboy": {
-   "id": "rockerboy",
-   "weaponsArmor": [
-    {
-     "item": "Very Heavy Pistol",
-     "qty": 1
-    },
-    {
-     "item": "Basic VH Pistol Ammunition",
-     "qty": 50
-    },
-    {
-     "choice": [
-      "Heavy Melee Weapon",
-      "Flashbang Grenade"
-     ]
-    },
-    {
-     "item": "Teargas Grenade",
-     "qty": 2
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    },
-    {
-     "item": "Computer",
-     "qty": 1
-    },
-    {
-     "choice": [
-      "Electric Guitar",
-      "Bug Detector"
-     ]
-    },
-    {
-     "item": "Glow Paint",
-     "qty": 5
-    },
-    {
-     "item": "Pocket Amp",
-     "qty": 1
-    },
-    {
-     "item": "Radio Scanner/Music Player",
-     "qty": 1
-    },
-    {
-     "item": "Video Camera",
-     "qty": 1
-    }
-   ],
-   "outfit": [
-    "Generic Chic: Jacket, Jewelry x3, Top x4",
-    "Leisurewear: Jewelry, Mirrorshades, Footwear",
-    "Urbanflash: Bottoms, Top"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "solo": {
-   "id": "solo",
-   "weaponsArmor": [
-    {
-     "item": "Assault Rifle",
-     "qty": 1
-    },
-    {
-     "item": "Very Heavy Pistol",
-     "qty": 1
-    },
-    {
-     "choice": [
-      "Heavy Melee Weapon",
-      "Bulletproof Shield"
-     ]
-    },
-    {
-     "item": "Basic VH Pistol Ammunition",
-     "qty": 30
-    },
-    {
-     "item": "Basic Rifle Ammunition",
-     "qty": 70
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    }
-   ],
-   "outfit": [
-    "Leisurewear: Footwear x2, Jacket x3, Mirrorshades, Bottoms x2, Top x2"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "netrunner": {
-   "id": "netrunner",
-   "weaponsArmor": [
-    {
-     "item": "Very Heavy Pistol",
-     "qty": 1
-    },
-    {
-     "item": "Basic VH Pistol Ammunition",
-     "qty": 30
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    },
-    {
-     "item": "Cyberdeck (7 Slots)",
-     "qty": 1
-    },
-    {
-     "item": "Virtuality Goggles",
-     "qty": 1
-    },
-    {
-     "item": "Program: Armor",
-     "qty": 1
-    },
-    {
-     "item": "Program: Sword",
-     "qty": 1
-    },
-    {
-     "choice": [
-      "Program: See Ya",
-      "Program: Eraser"
-     ]
-    },
-    {
-     "choice": [
-      "Program: Sword",
-      "Program: Vrizzbolt"
-     ]
-    },
-    {
-     "choice": [
-      "Program: Worm",
-      "Program: Sword"
-     ]
-    }
-   ],
-   "outfit": [
-    "Generic Chic: Top x10",
-    "Leisurewear: Footwear x2, Jewelry, Bottoms x2",
-    "Urban Flash: Jacket"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "tech": {
-   "id": "tech",
-   "weaponsArmor": [
-    {
-     "choice": [
-      "Shotgun",
-      "Assault Rifle"
-     ]
-    },
-    {
-     "choice": [
-      "Basic Shotgun Shell Ammunition x100",
-      "Basic Rifle Ammunition x100"
-     ]
-    },
-    {
-     "item": "Flashbang Grenade",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    },
-    {
-     "item": "Anti-Smog Breathing Mask",
-     "qty": 1
-    },
-    {
-     "item": "Disposable Cell Phone",
-     "qty": 1
-    },
-    {
-     "item": "Duct Tape",
-     "qty": 5
-    },
-    {
-     "item": "Flashlight",
-     "qty": 1
-    },
-    {
-     "item": "Road Flare",
-     "qty": 6
-    },
-    {
-     "item": "Tech Bag",
-     "qty": 1
-    }
-   ],
-   "outfit": [
-    "Generic Chic: Bottoms x8, Tops x10",
-    "Leisurewear: Footwear x2"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "medtech": {
-   "id": "medtech",
-   "weaponsArmor": [
-    {
-     "choice": [
-      "Shotgun",
-      "Assault Rifle"
-     ]
-    },
-    {
-     "choice": [
-      "Basic Shotgun Shell Ammunition x100",
-      "Basic Rifle Ammunition x100"
-     ]
-    },
-    {
-     "choice": [
-      "Incendiary Shotgun Shell Ammunition x10",
-      "Incendiary Rifle Ammunition x10"
-     ]
-    },
-    {
-     "item": "Smoke Grenade",
-     "qty": 2
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Bulletproof Shield",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    },
-    {
-     "item": "Airhypo",
-     "qty": 1
-    },
-    {
-     "item": "Handcuffs",
-     "qty": 1
-    },
-    {
-     "item": "Flashlight",
-     "qty": 1
-    },
-    {
-     "item": "Glow Paint",
-     "qty": 1
-    },
-    {
-     "item": "Medtech Bag",
-     "qty": 1
-    }
-   ],
-   "outfit": [
-    "Generic Chic Jacket x3",
-    "Leisurewear: Footwear, Bottoms x3, Top x5"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "media": {
-   "id": "media",
-   "weaponsArmor": [
-    {
-     "choice": [
-      "Heavy Pistol",
-      "Very Heavy Pistol"
-     ]
-    },
-    {
-     "choice": [
-      "Basic H Pistol Ammunition x50",
-      "Basic VH Pistol Ammunition x50"
-     ]
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    },
-    {
-     "item": "Audio Recorder",
-     "qty": 1
-    },
-    {
-     "item": "Binoculars",
-     "qty": 1
-    },
-    {
-     "choice": [
-      "Disposable Cellphone x2",
-      "Grapple Gun"
-     ]
-    },
-    {
-     "item": "Flashlight",
-     "qty": 1
-    },
-    {
-     "item": "Computer",
-     "qty": 1
-    },
-    {
-     "item": "Radio Scanner/Music Player",
-     "qty": 1
-    },
-    {
-     "item": "Scrambler/Descrambler",
-     "qty": 1
-    },
-    {
-     "item": "Video Camera",
-     "qty": 1
-    }
-   ],
-   "outfit": [
-    "Generic Chic: Footwear, Bottoms, Top",
-    "Leisurewear: Jacket",
-    "Urbanflash: Mirrorshades"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "lawman": {
-   "id": "lawman",
-   "weaponsArmor": [
-    {
-     "choice": [
-      "Assault Rifle",
-      "Shotgun"
-     ]
-    },
-    {
-     "item": "Heavy Pistol",
-     "qty": 1
-    },
-    {
-     "choice": [
-      "Basic Rifle Ammunition x100",
-      "Basic Shotgun Shell Ammunition x100",
-      "Basic Slug Ammunition x100"
-     ]
-    },
-    {
-     "item": "Basic H Pistol Ammunition",
-     "qty": 30
-    },
-    {
-     "choice": [
-      "Bulletproof Shield",
-      "Smoke Grenade x2"
-     ]
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    },
-    {
-     "item": "Flashlight",
-     "qty": 1
-    },
-    {
-     "item": "Handcuffs",
-     "qty": 2
-    },
-    {
-     "item": "Radio Communicator",
-     "qty": 1
-    },
-    {
-     "item": "Road Flare",
-     "qty": 10
-    }
-   ],
-   "outfit": [
-    "Generic Chic: Jacket, Bottoms x2, Top x3",
-    "Leisurewear: Footwear x2, Jacket x2, Bottoms x2, Mirrorshades, Top x2"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "exec": {
-   "id": "exec",
-   "weaponsArmor": [
-    {
-     "item": "Very Heavy Pistol",
-     "qty": 1
-    },
-    {
-     "item": "Basic VH Pistol Ammunition",
-     "qty": 50
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Radio Communicator",
-     "qty": 4
-    },
-    {
-     "item": "Scrambler/Descrambler",
-     "qty": 1
-    }
-   ],
-   "outfit": [
-    "Businesswear: Footwear, Jacket, Bottoms, Mirrorshades, Top, Jewelry x2"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "fixer": {
-   "id": "fixer",
-   "weaponsArmor": [
-    {
-     "choice": [
-      "Heavy Pistol",
-      "Very Heavy Pistol"
-     ]
-    },
-    {
-     "choice": [
-      "Heavy Pistol",
-      "Very Heavy Pistol"
-     ]
-    },
-    {
-     "item": "Light Melee Weapon",
-     "qty": 1
-    },
-    {
-     "choice": [
-      "Basic H Pistol Ammunition x100",
-      "Basic VH Pistol Ammunition x100"
-     ]
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    },
-    {
-     "item": "Bug Detector",
-     "qty": 1
-    },
-    {
-     "item": "Computer",
-     "qty": 1
-    },
-    {
-     "item": "Disposable Phone",
-     "qty": 2
-    }
-   ],
-   "outfit": [
-    "Generic Chic: Contacts, Jewelry",
-    "Leisurewear: Mirrorshades",
-    "Urbanflash: Footwear, Jacket, Bottoms, Top"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  },
-  "nomad": {
-   "id": "nomad",
-   "weaponsArmor": [
-    {
-     "choice": [
-      "Heavy Pistol",
-      "Very Heavy Pistol"
-     ]
-    },
-    {
-     "choice": [
-      "Basic H Pistol Ammunition x100",
-      "Basic VH Pistol Ammunition x100"
-     ]
-    },
-    {
-     "choice": [
-      "Heavy Melee Weapon",
-      "Heavy Pistol"
-     ]
-    },
-    {
-     "item": "Light Armorjack Body Armor (SP11)",
-     "qty": 1
-    },
-    {
-     "item": "Light Armorjack Head Armor (SP11)",
-     "qty": 1
-    }
-   ],
-   "gear": [
-    {
-     "item": "Agent",
-     "qty": 1
-    },
-    {
-     "item": "Anti-Smog Breathing Mask",
-     "qty": 1
-    },
-    {
-     "item": "Duct Tape",
-     "qty": 1
-    },
-    {
-     "item": "Flashlight",
-     "qty": 1
-    },
-    {
-     "item": "Grapple Gun",
-     "qty": 1
-    },
-    {
-     "item": "Inflatable Bed & Sleep-Bag",
-     "qty": 1
-    },
-    {
-     "item": "Medtech Bag",
-     "qty": 1
-    },
-    {
-     "item": "Radio Communicator",
-     "qty": 2
-    },
-    {
-     "item": "Rope",
-     "qty": 1
-    },
-    {
-     "item": "Techtool",
-     "qty": 1
-    },
-    {
-     "item": "Tent and Camping Equipment",
-     "qty": 1
-    }
-   ],
-   "outfit": [
-    "Bohemian: Jewelry",
-    "Nomad Leathers: Top x4, Bottom x2, Footwear x2, Jacket, Hat"
-   ],
-   "cyberware": [],
-   "freeEurobucks": 500
-  }
- }
 }
