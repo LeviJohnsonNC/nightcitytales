@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import {
   BASIC_SKILLS,
   SKILLS,
+  canAddSkillEntry,
+  skillEntryLimits,
+  type SkillLimits,
   SKILL_PACKAGE_RULES,
   getSkill,
   getRoleSkillIds,
@@ -49,8 +52,12 @@ function Notice({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Violations({ violations }: { violations: string[] }) {
-  if (violations.length === 0) {
+/**
+ * The controls make illegal states unreachable, so the only thing left to say
+ * is how many points are still unspent.
+ */
+function Guidance({ remaining }: { remaining: number }) {
+  if (remaining === 0) {
     return (
       <p className="border-l-2 border-success bg-success/5 p-3 text-sm text-text-muted">
         Every Skill rule is satisfied — you can move on.
@@ -58,11 +65,9 @@ function Violations({ violations }: { violations: string[] }) {
     );
   }
   return (
-    <ul className="space-y-1 border-l-2 border-danger bg-danger/5 p-3 text-sm text-text-muted">
-      {violations.map((v) => (
-        <li key={v}>{v}</li>
-      ))}
-    </ul>
+    <p className="border-l-2 border-ember/70 bg-ember/5 p-3 text-sm text-text-muted">
+      You have {remaining} Skill {remaining === 1 ? "Point" : "Points"} left to spend.
+    </p>
   );
 }
 
@@ -70,12 +75,14 @@ function SkillRow({
   entry,
   state,
   readOnly,
+  limits,
   onLevel,
   onRemove,
 }: {
   entry: SkillEntry;
   state: ChargenState;
   readOnly?: boolean | undefined;
+  limits?: SkillLimits | undefined;
   onLevel?: ((level: number) => void) | undefined;
   onRemove?: (() => void) | undefined;
 }) {
@@ -108,7 +115,14 @@ function SkillRow({
 
       <div className="flex items-center gap-2">
         {!readOnly && onLevel && (
-          <Button variant="outline" size="sm" onClick={() => onLevel(entry.level - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={limits ? !limits.canDecrease : false}
+            title={limits?.decreaseReason ?? `Lower ${skillEntryName(entry)}`}
+            aria-label={`Lower ${skillEntryName(entry)}`}
+            onClick={() => onLevel(entry.level - 1)}
+          >
             −
           </Button>
         )}
@@ -116,7 +130,14 @@ function SkillRow({
           {entry.level}
         </span>
         {!readOnly && onLevel && (
-          <Button variant="outline" size="sm" onClick={() => onLevel(entry.level + 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={limits ? !limits.canIncrease : false}
+            title={limits?.increaseReason ?? `Raise ${skillEntryName(entry)}`}
+            aria-label={`Raise ${skillEntryName(entry)}`}
+            onClick={() => onLevel(entry.level + 1)}
+          >
             +
           </Button>
         )}
@@ -140,12 +161,14 @@ function CategoryGroups({
   entries,
   state,
   readOnly,
+  limitsFor,
   onLevel,
   onRemove,
 }: {
   entries: SkillEntry[];
   state: ChargenState;
   readOnly?: boolean | undefined;
+  limitsFor?: ((entry: SkillEntry) => SkillLimits) | undefined;
   onLevel?: ((entry: SkillEntry, level: number) => void) | undefined;
   onRemove?: ((entry: SkillEntry) => void) | undefined;
 }) {
@@ -166,6 +189,7 @@ function CategoryGroups({
                   entry={entry}
                   state={state}
                   readOnly={readOnly}
+                  limits={limitsFor ? limitsFor(entry) : undefined}
                   onLevel={onLevel ? (level) => onLevel(entry, level) : undefined}
                   onRemove={onRemove ? () => onRemove(entry) : undefined}
                 />
@@ -251,13 +275,20 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
 
   const result = validateSkillEntries({ method: "edgerunner", roleId, entries: state.skills });
 
+  const limitsFor = (entry: SkillEntry) =>
+    skillEntryLimits({ method: "edgerunner", roleId, entries: state.skills, entry });
+
   function setLevel(target: SkillEntry, level: number) {
+    // Clamp as a second line of defence — the buttons already prevent this.
+    const limits = limitsFor(target);
+    const clamped = Math.min(limits.max, Math.max(limits.min, level));
     patch({
       skills: state.skills.map((e) =>
-        skillEntryKey(e) === skillEntryKey(target) ? { ...e, level } : e,
+        skillEntryKey(e) === skillEntryKey(target) ? { ...e, level: clamped } : e,
       ),
     });
   }
+
 
   return (
     <div className="space-y-4">
@@ -271,10 +302,11 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
         remaining={result.pointsRemaining}
         budget={EDGERUNNER_RULES.skillPoints}
       />
-      <Violations violations={result.violations} />
+      <Guidance remaining={result.pointsRemaining} />
       <CategoryGroups
         entries={granted ? [...state.skills, granted] : state.skills}
         state={state}
+        limitsFor={limitsFor}
         onLevel={(entry, level) => !entry.granted && setLevel(entry, level)}
       />
     </div>
@@ -318,19 +350,37 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
     return true;
   });
 
+  const limitsFor = (entry: SkillEntry) =>
+    skillEntryLimits({ method: "complete_package", entries: state.skills, entry });
+
+  /** Level a newly added Skill starts at, and what it costs. */
+  const ADD_LEVEL = COMPLETE_RULES.basicSkillMinimum;
+
+  function addability(skill: SkillDefinition) {
+    return canAddSkillEntry({
+      method: "complete_package",
+      entries: state.skills,
+      skillId: skill.id,
+      specialization: skill.requiresSpecialization ? (spec[skill.id] ?? "").trim() || null : null,
+      level: ADD_LEVEL,
+    });
+  }
+
   function setLevel(target: SkillEntry, level: number) {
+    // Clamp as a second line of defence — the buttons already prevent this.
+    const limits = limitsFor(target);
+    const clamped = Math.min(limits.max, Math.max(limits.min, level));
     patch({
       skills: state.skills.map((e) =>
-        skillEntryKey(e) === skillEntryKey(target) ? { ...e, level } : e,
+        skillEntryKey(e) === skillEntryKey(target) ? { ...e, level: clamped } : e,
       ),
     });
   }
 
   function addSkill(skill: SkillDefinition) {
+    if (!addability(skill).allowed) return;
     const specialization = skill.requiresSpecialization ? (spec[skill.id] ?? "").trim() : null;
-    if (skill.requiresSpecialization && !specialization) return;
-    const entry: SkillEntry = { skillId: skill.id, specialization, level: 2 };
-    if (state.skills.some((e) => skillEntryKey(e) === skillEntryKey(entry))) return;
+    const entry: SkillEntry = { skillId: skill.id, specialization, level: ADD_LEVEL };
     patch({ skills: [...state.skills, entry] });
     if (skill.requiresSpecialization) setSpec((s) => ({ ...s, [skill.id]: "" }));
   }
@@ -354,7 +404,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
         remaining={result.pointsRemaining}
         budget={COMPLETE_RULES.skillPoints}
       />
-      <Violations violations={result.violations} />
+      <Guidance remaining={result.pointsRemaining} />
 
       <section className="space-y-3">
         <h3 className="font-mono text-[11px] uppercase tracking-[0.25em] text-ember">
@@ -363,6 +413,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
         <CategoryGroups
           entries={granted ? [...state.skills, granted] : state.skills}
           state={state}
+          limitsFor={limitsFor}
           onLevel={(entry, level) => !entry.granted && setLevel(entry, level)}
           onRemove={(entry) =>
             !entry.granted && !BASIC_SKILLS.includes(entry.skillId) ? removeSkill(entry) : undefined
@@ -401,6 +452,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
             const taken = state.skills.some(
               (e) => e.skillId === skill.id && !skill.requiresSpecialization,
             );
+            const add = addability(skill);
             return (
               <div
                 key={skill.id}
@@ -436,7 +488,8 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={taken}
+                  disabled={taken || !add.allowed}
+                  title={taken ? "Already on your sheet" : (add.reason ?? `Add ${skill.name}`)}
                   onClick={() => addSkill(skill)}
                 >
                   {taken ? "On sheet" : "Add"}
