@@ -6,12 +6,14 @@ import {
   AMMUNITION,
   ARMOR,
   EMPTY_LOADOUT,
+  GEAR,
   STARTING_LOCATIONS,
   STAT_ORDER,
   WEAPONS,
   getGearPackage,
   isChoice,
   isFashionItem,
+  variantOptionsFor,
   type ArmorLocation,
   type CartLine,
   type CreationMethod,
@@ -29,9 +31,11 @@ const ARMOR_LOCATIONS: ArmorLocation[] = ["head", "body", "shield"];
 const WEAPON_IDS = new Set(WEAPONS.map((w) => w.id));
 const ARMOR_IDS = new Set(ARMOR.map((a) => a.id));
 const AMMO_IDS = new Set(AMMUNITION.map((a) => a.id));
+const GEAR_IDS = new Set(GEAR.map((g) => g.id));
 
 function gearKind(itemId: string): ItemKind {
   if (WEAPON_IDS.has(itemId)) return "weapon";
+  if (GEAR_IDS.has(itemId)) return "gear";
   if (ARMOR_IDS.has(itemId)) return "armor";
   if (AMMO_IDS.has(itemId)) return "ammunition";
   return "fashion";
@@ -64,6 +68,29 @@ function packageChoices(
     });
   }
   return picked;
+}
+
+/** Recovers the specific weapon saved for a package entry, from its notes. */
+function packageVariants(
+  roleId: string | null,
+  method: CreationMethod | null,
+  gear: CharacterGear[],
+): Record<string, string> {
+  if (!roleId || !method || method === "complete_package") return {};
+  const pkg = getGearPackage(roleId);
+  const out: Record<string, string> = {};
+  for (const field of ["weaponsArmor", "gear"] as const) {
+    const rows = gear.filter((g) => g.slot === `package:${field}`);
+    (pkg[field] as PackageEntry[]).forEach((entry, index) => {
+      const options = isChoice(entry) ? entry.choice : [entry.item];
+      const row = rows.find((r) => options.includes(r.item_id));
+      const saved = row?.notes?.split(" · ")[1];
+      if (saved && variantOptionsFor(row!.item_id).includes(saved)) {
+        out[`${field}.${index}`] = saved;
+      }
+    });
+  }
+  return out;
 }
 
 function loadoutFrom(full: FullCharacter, method: CreationMethod | null): Loadout {
@@ -105,6 +132,7 @@ function loadoutFrom(full: FullCharacter, method: CreationMethod | null): Loadou
   ];
 
   return {
+    packageVariants: packageVariants(full.character.role, method, full.gear),
     packageChoices: packageChoices(
       full.character.role,
       method,

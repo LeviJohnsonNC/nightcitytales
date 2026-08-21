@@ -10,9 +10,11 @@ import {
   CYBERWARE,
   PACKAGE_FLAGS,
   PACKAGE_NOTES,
+  GEAR,
   WEAPONS,
-  choicePoints,
   getGearPackage,
+  packageCatalogRow,
+  variantOptionsFor,
   isChoice,
   type ArmorLocation,
   type PackageEntry,
@@ -26,7 +28,7 @@ import {
   eb,
   useLoadoutActions,
 } from "./market";
-import { ItemInfo } from "./ItemInfo";
+import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
 import type { ChargenState } from "./store";
 
 const matches = (name: string, query: string) =>
@@ -73,16 +75,65 @@ function EmptyRow({ query }: { query: string }) {
   );
 }
 
-function PackageEntries({ entries, choiceIds }: { entries: PackageEntry[]; choiceIds: string[] }) {
+/** The "?" modal for a printed package label, when it maps to a catalog row. */
+function PackageItemInfo({ label }: { label: string }) {
+  const row = packageCatalogRow(label);
+  if (!row || row.kind === "fashion") return null;
+  return <ItemInfo kind={row.kind as ItemKindLabel} item={row.item as { id: string; name: string }} />;
+}
+
+function VariantPicker({
+  id,
+  label,
+  options,
+}: {
+  id: string;
+  label: string;
+  options: string[];
+}) {
+  const { loadout, setPackageVariant } = useLoadoutActions();
+  const picked = loadout.packageVariants?.[id];
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-dim">
+        Pick the specific weapon
+      </span>
+      {options.map((option) => (
+        <button
+          key={option}
+          type="button"
+          aria-pressed={picked === option}
+          aria-label={`${label}: ${option}`}
+          onClick={() => setPackageVariant(id, option)}
+          className={cn(
+            "border px-2 py-0.5 font-mono text-[11px] tracking-wide transition-colors",
+            picked === option
+              ? "border-ember bg-ember/10 text-ember"
+              : "border-hairline text-text-muted hover:border-ember",
+          )}
+        >
+          {option}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PackageEntries({
+  entries,
+  field,
+}: {
+  entries: PackageEntry[];
+  field: "weaponsArmor" | "gear" | "cyberware";
+}) {
   const { loadout, setChoice } = useLoadoutActions();
-  let choiceIndex = -1;
   return (
     <ul className="space-y-2">
       {entries.map((entry, i) => {
+        const id = `${field}.${i}`;
         if (isChoice(entry)) {
-          choiceIndex += 1;
-          const id = choiceIds[choiceIndex]!;
           const picked = loadout.packageChoices[id];
+          const variants = picked ? variantOptionsFor(picked) : [];
           return (
             <li key={id} className="border border-dashed border-ember/60 bg-ember/5 p-3">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
@@ -90,23 +141,37 @@ function PackageEntries({ entries, choiceIds }: { entries: PackageEntry[]; choic
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {entry.choice.map((option) => (
-                  <Button
-                    key={option}
-                    size="sm"
-                    variant={picked === option ? "default" : "outline"}
-                    onClick={() => setChoice(id, option)}
-                  >
-                    {option}
-                  </Button>
+                  <span key={option} className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant={picked === option ? "default" : "outline"}
+                      onClick={() => setChoice(id, option)}
+                    >
+                      {option}
+                    </Button>
+                    <PackageItemInfo label={option} />
+                  </span>
                 ))}
               </div>
+              {picked && variants.length > 0 && (
+                <VariantPicker id={id} label={picked} options={variants} />
+              )}
             </li>
           );
         }
+        const variants = variantOptionsFor(entry.item);
         return (
-          <li key={`${entry.item}-${i}`} className="flex justify-between text-sm text-text">
-            <span>{entry.item}</span>
-            <span className="font-mono tabular-nums text-text-dim">×{entry.qty}</span>
+          <li key={`${entry.item}-${i}`} className="text-sm text-text">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2">
+                {entry.item}
+                <PackageItemInfo label={entry.item} />
+              </span>
+              <span className="font-mono tabular-nums text-text-dim">×{entry.qty}</span>
+            </div>
+            {variants.length > 0 && (
+              <VariantPicker id={id} label={entry.item} options={variants} />
+            )}
           </li>
         );
       })}
@@ -116,9 +181,6 @@ function PackageEntries({ entries, choiceIds }: { entries: PackageEntry[]; choic
 
 function FixedPackage({ roleId }: { roleId: string }) {
   const pkg = getGearPackage(roleId);
-  const points = choicePoints(roleId);
-  const idsFor = (field: "weaponsArmor" | "gear" | "cyberware") =>
-    points.filter((p) => p.field === field).map((p) => p.id);
   const flags = PACKAGE_FLAGS.filter((f) => f.role === roleId);
 
   return (
@@ -128,14 +190,14 @@ function FixedPackage({ roleId }: { roleId: string }) {
           Weapons & Armor
         </p>
         <div className="mt-3">
-          <PackageEntries entries={pkg.weaponsArmor} choiceIds={idsFor("weaponsArmor")} />
+          <PackageEntries entries={pkg.weaponsArmor} field="weaponsArmor" />
         </div>
         <p className="mt-3 text-xs text-text-muted">{PACKAGE_NOTES.armor}</p>
       </Row>
       <Row>
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">Gear</p>
         <div className="mt-3">
-          <PackageEntries entries={pkg.gear} choiceIds={idsFor("gear")} />
+          <PackageEntries entries={pkg.gear} field="gear" />
         </div>
       </Row>
       <Row>
@@ -347,6 +409,50 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   );
 }
 
+function GearTable({ state, query }: { state: ChargenState; query: string }) {
+  const { buy } = useLoadoutActions();
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const rows = GEAR.filter((g) => matches(g.name, query));
+  if (rows.length === 0)
+    return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
+  return (
+    <div className="divide-y divide-hairline border border-hairline bg-surface">
+      {rows.map((g) => {
+        const n = qty[g.id] ?? 1;
+        return (
+          <div key={g.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
+            <div className="min-w-[16rem]">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-text">{g.name}</p>
+                <ItemInfo kind="gear" item={g} />
+              </div>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                <Stat label="PRICE" value={g.priceCategory} />
+              </div>
+              {g.description ? (
+                <p className="mt-1 text-xs text-text-dim">{g.description}</p>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-3">
+              <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [g.id]: v }))} />
+              <span className="font-mono text-sm tabular-nums text-ember">{eb(g.cost * n)}</span>
+              <Button
+                size="sm"
+                aria-label={`Buy ${g.name}`}
+                onClick={() =>
+                  buy({ kind: "gear", itemId: g.id, qty: n, budget: defaultBudgetFor("gear", g.id, state) })
+                }
+              >
+                Buy
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function FashionTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const fashionware = CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query));
@@ -437,6 +543,7 @@ export function GearPanel({ state }: { state: ChargenState }) {
             <TabsTrigger value="weapons">Weapons</TabsTrigger>
             <TabsTrigger value="armor">Armor</TabsTrigger>
             <TabsTrigger value="ammo">Ammunition</TabsTrigger>
+            <TabsTrigger value="gear">Gear</TabsTrigger>
             <TabsTrigger value="fashion">Fashion & Fashionware</TabsTrigger>
           </TabsList>
           <Input
@@ -459,6 +566,9 @@ export function GearPanel({ state }: { state: ChargenState }) {
         </TabsContent>
         <TabsContent value="ammo" className="mt-4">
           <AmmoTable state={state} query={query} />
+        </TabsContent>
+        <TabsContent value="gear" className="mt-4">
+          <GearTable state={state} query={query} />
         </TabsContent>
         <TabsContent value="fashion" className="mt-4">
           <FashionTable state={state} query={query} />

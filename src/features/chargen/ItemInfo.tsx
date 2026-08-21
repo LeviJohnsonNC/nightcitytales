@@ -12,7 +12,7 @@ import { itemArt } from "./art";
 import { ITEM_FLAVOR } from "./itemFlavor";
 import { eb } from "./market";
 
-export type ItemKindLabel = "weapon" | "armor" | "ammunition" | "cyberware";
+export type ItemKindLabel = "weapon" | "armor" | "ammunition" | "cyberware" | "gear";
 
 /** Loose shape covering every catalog row this modal renders. */
 type AnyItem = {
@@ -62,6 +62,8 @@ function statLine(kind: ItemKindLabel, item: AnyItem): { label: string; value: s
   } else if (kind === "ammunition") {
     push("Available", item.types?.join(", "));
     push("Sold", item.unit);
+  } else if (kind === "gear") {
+    push("Price", item.priceCategory);
   } else if (kind === "cyberware") {
     push("Humanity Loss", item.humanityLoss);
     push("Slots", item.slotsUsed);
@@ -104,7 +106,7 @@ export function ItemInfo({
             <DialogTitle className="font-display tracking-tight">{item.name}</DialogTitle>
             <DialogDescription className="font-mono text-[11px] uppercase tracking-[0.18em]">
               {kind}
-              {item.priceCategory ? ` · ${item.priceCategory}` : ""}
+              {it.priceCategory ? ` · ${it.priceCategory}` : ""}
             </DialogDescription>
           </DialogHeader>
 

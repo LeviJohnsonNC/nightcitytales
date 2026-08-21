@@ -11,6 +11,7 @@ export * from "./humanity";
 export * from "./lifepath";
 export * from "./roleLifepath";
 export * from "./catalog";
+export * from "./packageCatalog";
 export * from "./gearPackages";
 export * from "./loadout";
 export * from "./lifestyle";

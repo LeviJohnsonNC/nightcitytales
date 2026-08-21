@@ -40,10 +40,15 @@ export type CartLine = {
 export type Loadout = {
   /** Fixed-package either/or picks, keyed by choice point id. */
   packageChoices: Record<string, string>;
+  /**
+   * Specific weapon picked for a package entry that only names a class,
+   * keyed by the same choice-point id.
+   */
+  packageVariants?: Record<string, string>;
   lines: CartLine[];
 };
 
-export const EMPTY_LOADOUT: Loadout = { packageChoices: {}, lines: [] };
+export const EMPTY_LOADOUT: Loadout = { packageChoices: {}, packageVariants: {}, lines: [] };
 
 export type BudgetDefinition = {
   id: BudgetId;

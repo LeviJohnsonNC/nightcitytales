@@ -5,7 +5,7 @@
  */
 import rolesData from "@/data/rules/roles.json";
 import { IMPROVEMENT_POINTS, REPUTATION } from "@/engine";
-import type { AssembledCharacter, CharacterBuild } from "@/engine";
+import type { AssembledCharacter, CharacterBuild, PackageEntry } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
 import { readGeneralLifepath } from "./lifepathState";
@@ -277,9 +277,7 @@ export function CharacterSheet({
                 </p>
                 <ul className="mt-1 space-y-0.5 text-sm text-text-muted">
                   {sheet.packageWeaponsArmor.map((entry, i) => (
-                    <li key={i}>
-                      {"item" in entry ? `${entry.item}${entry.qty > 1 ? ` ×${entry.qty}` : ""}` : entry.choice.join(" or ")}
-                    </li>
+                    <li key={i}>{packageLineText(sheet, "weaponsArmor", entry, i)}</li>
                   ))}
                 </ul>
               </div>
@@ -416,9 +414,7 @@ export function CharacterSheet({
           {sheet.packageGear.length > 0 && (
             <ul className="mb-3 space-y-0.5 text-sm text-text-muted">
               {sheet.packageGear.map((entry, i) => (
-                <li key={i}>
-                  {"item" in entry ? `${entry.item}${entry.qty > 1 ? ` ×${entry.qty}` : ""}` : entry.choice.join(" or ")}
-                </li>
+                <li key={i}>{packageLineText(sheet, "gear", entry, i)}</li>
               ))}
             </ul>
           )}
@@ -500,4 +496,25 @@ export function CharacterSheet({
       </div>
     </div>
   );
+}
+
+/**
+ * How a Role-package line reads on the sheet: the option that was picked, the
+ * specific weapon when one was chosen, and the printed quantity.
+ */
+function packageLineText(
+  sheet: AssembledCharacter,
+  field: "weaponsArmor" | "gear",
+  entry: PackageEntry,
+  index: number,
+): string {
+  const id = `${field}.${index}`;
+  const variant = sheet.packageVariants[id];
+  if (!("item" in entry)) {
+    const picked = sheet.packageChoices.find((c) => c.id === id)?.picked;
+    if (!picked) return entry.choice.join(" or ");
+    return variant ? `${variant} (${picked})` : picked;
+  }
+  const name = variant ? `${variant} (${entry.item})` : entry.item;
+  return `${name}${entry.qty > 1 ? ` ×${entry.qty}` : ""}`;
 }

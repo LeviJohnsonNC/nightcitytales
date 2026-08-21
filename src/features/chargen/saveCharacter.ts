@@ -43,13 +43,14 @@ export function savePayload(
           const picked = isChoice(entry)
             ? (build.loadout.packageChoices[`${field}.${index}`] ?? entry.choice[0]!)
             : entry.item;
+          const variant = build.loadout.packageVariants?.[`${field}.${index}`];
           return {
             item_id: picked,
             quantity: isChoice(entry) ? 1 : entry.qty,
             equipped: false,
             slot: `package:${field}`,
             current_sp: null,
-            notes: "Role package" as string | null,
+            notes: (variant ? `Role package · ${variant}` : "Role package") as string | null,
           };
         },
       ),

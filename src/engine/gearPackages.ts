@@ -3,6 +3,7 @@
  * src/data/rules/gear-packages.json.
  */
 import gearPackages from "@/data/rules/gear-packages.json";
+import { variantOptionsFor } from "./packageCatalog";
 
 export type PackageItem = { item: string; qty: number };
 export type PackageChoice = { choice: string[] };
@@ -77,6 +78,49 @@ export function choicePoints(roleId: string): ChoicePoint[] {
 export function unresolvedChoices(roleId: string, selections: Record<string, string>): ChoicePoint[] {
   return choicePoints(roleId).filter((point) => {
     const picked = selections[point.id];
+    return !picked || !point.options.includes(picked);
+  });
+}
+
+/* ------------------------------------------------- specific-weapon choices */
+
+/**
+ * Package entries that name a weapon class ("Heavy Melee Weapon") rather than
+ * a specific weapon. The options come from catalog.json → weapons[].variants.
+ */
+export type VariantPoint = {
+  id: string;
+  field: "weaponsArmor" | "gear";
+  label: string;
+  options: string[];
+};
+
+export function variantPoints(
+  roleId: string,
+  selections: Record<string, string>,
+): VariantPoint[] {
+  const pkg = getGearPackage(roleId);
+  const out: VariantPoint[] = [];
+  for (const field of ["weaponsArmor", "gear"] as const) {
+    pkg[field].forEach((entry, index) => {
+      const id = `${field}.${index}`;
+      const label = isChoice(entry) ? selections[id] : entry.item;
+      if (!label) return;
+      const options = variantOptionsFor(label);
+      if (options.length > 0) out.push({ id, field, label, options });
+    });
+  }
+  return out;
+}
+
+/** Variant points that still have no specific weapon picked. */
+export function unresolvedVariants(
+  roleId: string,
+  selections: Record<string, string>,
+  variants: Record<string, string>,
+): VariantPoint[] {
+  return variantPoints(roleId, selections).filter((point) => {
+    const picked = variants[point.id];
     return !picked || !point.options.includes(picked);
   });
 }

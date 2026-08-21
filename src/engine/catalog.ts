@@ -56,7 +56,17 @@ export type CatalogCyberware = {
   notes?: string | null;
 };
 
+export type CatalogGear = {
+  id: string;
+  name: string;
+  cost: number;
+  priceCategory: string;
+  description?: string | null;
+  notes?: string | null;
+};
+
 export const WEAPONS = catalogData.weapons as CatalogWeapon[];
+export const GEAR = (catalogData as unknown as { gear: CatalogGear[] }).gear;
 export const ARMOR = catalogData.armor as unknown as CatalogArmor[];
 export const AMMUNITION = catalogData.ammunition as CatalogAmmunition[];
 export const CYBERWARE = catalogData.cyberware as CatalogCyberware[];
@@ -102,12 +112,13 @@ export const CATALOG_RULES = catalogData._rules;
 /** Row counts the file itself flags as not yet extracted. */
 export const CATALOG_PENDING = catalogData._pending as string[];
 
-export type ItemKind = "weapon" | "armor" | "ammunition" | "cyberware" | "fashion";
+export type ItemKind = "weapon" | "armor" | "ammunition" | "cyberware" | "fashion" | "gear";
 
 const WEAPONS_BY_ID = new Map(WEAPONS.map((w) => [w.id, w]));
 const ARMOR_BY_ID = new Map(ARMOR.map((a) => [a.id, a]));
 const AMMO_BY_ID = new Map(AMMUNITION.map((a) => [a.id, a]));
 const CYBER_BY_ID = new Map(CYBERWARE.map((c) => [c.id, c]));
+const GEAR_BY_ID = new Map(GEAR.map((g) => [g.id, g]));
 
 export function getWeapon(id: string): CatalogWeapon {
   const w = WEAPONS_BY_ID.get(id);
@@ -130,6 +141,12 @@ export function getCyberware(id: string): CatalogCyberware {
   return c;
 }
 
+export function getGear(id: string): CatalogGear {
+  const g = GEAR_BY_ID.get(id);
+  if (!g) throw new Error(`Unknown gear "${id}" (src/data/rules/catalog.json → gear)`);
+  return g;
+}
+
 export function itemName(kind: ItemKind, id: string): string {
   return catalogItem(kind, id).name;
 }
@@ -141,7 +158,7 @@ export function itemCost(kind: ItemKind, id: string): number {
 export function catalogItem(
   kind: ItemKind,
   id: string,
-): CatalogWeapon | CatalogArmor | CatalogAmmunition | CatalogCyberware | CatalogFashion {
+): CatalogWeapon | CatalogArmor | CatalogAmmunition | CatalogCyberware | CatalogFashion | CatalogGear {
   switch (kind) {
     case "weapon":
       return getWeapon(id);
@@ -153,6 +170,8 @@ export function catalogItem(
       return getCyberware(id);
     case "fashion":
       return getFashion(id);
+    case "gear":
+      return getGear(id);
   }
 }
 

@@ -147,6 +147,8 @@ export type AssembledCharacter = {
   packageCyberware: PackageEntry[];
   packageOutfit: string[];
   packageChoices: SheetPackageChoiceLine[];
+  /** Specific weapon picked for a package entry, keyed by "<field>.<index>". */
+  packageVariants: Record<string, string>;
   finance: SheetFinance;
 };
 
@@ -352,6 +354,7 @@ export function assembleCharacter(build: CharacterBuild): AssembledCharacter {
     packageCyberware: pkg.cyberware,
     packageOutfit: pkg.outfit,
     packageChoices: choiceLines(build.roleId, build.method, build.loadout),
+    packageVariants: build.loadout.packageVariants ?? {},
     finance: {
       eurobucks: build.method ? eurobucksKept(build.method, build.loadout) : 0,
       plan,

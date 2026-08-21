@@ -50,8 +50,24 @@ export function useLoadoutActions() {
   }
 
   function setChoice(choiceId: string, option: string) {
+    const variants = { ...(loadout.packageVariants ?? {}) };
+    // A different option means any specific weapon picked for it no longer applies.
+    if (loadout.packageChoices[choiceId] !== option) delete variants[choiceId];
     patch({
-      loadout: { ...loadout, packageChoices: { ...loadout.packageChoices, [choiceId]: option } },
+      loadout: {
+        ...loadout,
+        packageChoices: { ...loadout.packageChoices, [choiceId]: option },
+        packageVariants: variants,
+      },
+    });
+  }
+
+  function setPackageVariant(choiceId: string, variant: string) {
+    patch({
+      loadout: {
+        ...loadout,
+        packageVariants: { ...(loadout.packageVariants ?? {}), [choiceId]: variant },
+      },
     });
   }
 
@@ -59,7 +75,17 @@ export function useLoadoutActions() {
     return method ? canPurchase(method, loadout, request) : { ok: false, reason: null };
   }
 
-  return { loadout, method, buy, remove, setChoice, check, error, clearError: () => setError(null) };
+  return {
+    loadout,
+    method,
+    buy,
+    remove,
+    setChoice,
+    setPackageVariant,
+    check,
+    error,
+    clearError: () => setError(null),
+  };
 }
 
 export function eb(value: number) {
