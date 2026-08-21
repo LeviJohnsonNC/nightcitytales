@@ -107,7 +107,28 @@ export function ItemInfo({
             <DialogTitle className="font-display tracking-tight">{item.name}</DialogTitle>
             <DialogDescription className="font-mono text-[11px] uppercase tracking-[0.18em]">
               {kind}
-              {it.priceCategory ? ` · ${it.priceCategory}` : ""}
+              {it.priceCategory ? (
+                <>
+                  {" · "}
+                  {priceContext ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help underline decoration-dotted underline-offset-4">
+                          {it.priceCategory}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-xs normal-case tracking-normal">
+                        {priceContext.fixerRank
+                          ? `A Fixer at Operator Rank ${priceContext.fixerRank} can always source this. `
+                          : ""}
+                        {`A Tech builds or upgrades one at DV${priceContext.techDV}, ${priceContext.techTime} of work.`}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    it.priceCategory
+                  )}
+                </>
+              ) : null}
             </DialogDescription>
           </DialogHeader>
 
