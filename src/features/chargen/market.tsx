@@ -75,7 +75,17 @@ export function useLoadoutActions() {
     return method ? canPurchase(method, loadout, request) : { ok: false, reason: null };
   }
 
-  return { loadout, method, buy, remove, setChoice, check, error, clearError: () => setError(null) };
+  return {
+    loadout,
+    method,
+    buy,
+    remove,
+    setChoice,
+    setPackageVariant,
+    check,
+    error,
+    clearError: () => setError(null),
+  };
 }
 
 export function eb(value: number) {
