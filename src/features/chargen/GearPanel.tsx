@@ -251,7 +251,7 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
   const [variant, setVariant] = useState<Record<string, string>>({});
-  const rows = WEAPONS.filter((w) => matches(w.name, query));
+  const rows = byName(WEAPONS.filter((w) => matches(w.name, query)));
   if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
@@ -336,7 +336,7 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
 function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [locations, setLocations] = useState<Record<string, ArmorLocation>>({});
-  const rows = ARMOR.filter((a) => matches(a.name, query));
+  const rows = byName(ARMOR.filter((a) => matches(a.name, query)));
   if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
@@ -404,7 +404,7 @@ function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
 function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
-  const rows = AMMUNITION.filter((a) => matches(a.name, query));
+  const rows = byName(AMMUNITION.filter((a) => matches(a.name, query)));
   if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
@@ -445,7 +445,7 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
 function GearTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
-  const rows = GEAR.filter((g) => matches(g.name, query));
+  const rows = byName(GEAR.filter((g) => matches(g.name, query)));
   if (rows.length === 0)
     return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
@@ -483,7 +483,9 @@ function GearTable({ state, query }: { state: ChargenState; query: string }) {
 
 function FashionTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
-  const fashionware = CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query));
+  const fashionware = byName(
+    CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query)),
+  );
   if (fashionware.length === 0)
     return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
   return (
