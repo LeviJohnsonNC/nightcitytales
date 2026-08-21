@@ -56,7 +56,17 @@ export type CatalogCyberware = {
   notes?: string | null;
 };
 
+export type CatalogGear = {
+  id: string;
+  name: string;
+  cost: number;
+  priceCategory: string;
+  description?: string | null;
+  notes?: string | null;
+};
+
 export const WEAPONS = catalogData.weapons as CatalogWeapon[];
+export const GEAR = (catalogData as unknown as { gear: CatalogGear[] }).gear;
 export const ARMOR = catalogData.armor as unknown as CatalogArmor[];
 export const AMMUNITION = catalogData.ammunition as CatalogAmmunition[];
 export const CYBERWARE = catalogData.cyberware as CatalogCyberware[];
