@@ -39,7 +39,7 @@ const matches = (name: string, query: string) =>
  * Every market row shows a description. Terse catalog one-liners ("Explosive")
  * get replaced by the item's house-voice blurb so rows read consistently.
  */
-function Blurb({ id, text }: { id: string; text?: string | null }) {
+function Blurb({ id, text }: { id: string; text: string | null | undefined }) {
   const flavor = ITEM_FLAVOR[id];
   const body = !text || text.trim().split(/\s+/).length <= 6 ? (flavor ?? text) : text;
   if (!body) return null;
