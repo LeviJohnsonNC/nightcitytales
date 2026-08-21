@@ -22,6 +22,7 @@ import {
   type StatKey,
 } from "@/engine";
 import { readGeneralLifepath } from "./lifepathState";
+import { SkillInfo } from "./SkillInfo";
 import { useChargenStore, type ChargenState } from "./store";
 
 /** Rulebook categories, in the order skills.json lists them. */
@@ -94,19 +95,22 @@ function SkillRow({
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-hairline px-4 py-2 last:border-b-0">
       <div className="min-w-52 flex-1">
-        <p className="font-medium text-text">
-          {skillEntryName(entry)}
-          {skill.doubleCost && (
-            <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-ember">
-              ×2
-            </span>
-          )}
-          {entry.granted && (
-            <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-cool">
-              granted
-            </span>
-          )}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-text">
+            {skillEntryName(entry)}
+            {skill.doubleCost && (
+              <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-ember">
+                ×2
+              </span>
+            )}
+            {entry.granted && (
+              <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-cool">
+                granted
+              </span>
+            )}
+          </p>
+          <SkillInfo skillId={entry.skillId} />
+        </div>
         <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
           {skill.stat.toUpperCase()} · {skill.category}
           {!entry.granted && ` · ${cost} pts`}
@@ -459,19 +463,22 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
                 className="flex flex-wrap items-center gap-3 border-b border-hairline px-4 py-2 last:border-b-0"
               >
                 <div className="min-w-52 flex-1">
-                  <p className="text-text">
-                    {skill.name}
-                    {skill.doubleCost && (
-                      <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-ember">
-                        ×2
-                      </span>
-                    )}
-                    {roleSkillIds.has(skill.id) && (
-                      <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-cool">
-                        Role
-                      </span>
-                    )}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-text">
+                      {skill.name}
+                      {skill.doubleCost && (
+                        <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-ember">
+                          ×2
+                        </span>
+                      )}
+                      {roleSkillIds.has(skill.id) && (
+                        <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-cool">
+                          Role
+                        </span>
+                      )}
+                    </p>
+                    <SkillInfo skillId={skill.id} />
+                  </div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
                     {skill.stat.toUpperCase()} · {skill.category}
                   </p>
