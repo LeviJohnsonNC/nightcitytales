@@ -237,3 +237,112 @@ export function validateSkillEntries(input: SkillEntryValidationInput): SkillVal
 
   return { valid: violations.length === 0, pointsSpent, pointsRemaining, violations };
 }
+
+/** Points spent by a set of entries (granted entries are free). */
+export function skillPointsSpent(entries: SkillEntry[]): number {
+  return entries
+    .filter((e) => !e.granted)
+    .reduce((sum, e) => sum + skillPointCost(e.skillId, 0, e.level), 0);
+}
+
+export type SkillLimitsInput = {
+  method: "edgerunner" | "complete_package";
+  roleId?: string | undefined;
+  entries: SkillEntry[];
+  entry: SkillEntry;
+};
+
+export type SkillLimits = {
+  /** Lowest legal Level for this entry. */
+  min: number;
+  /** Highest Level reachable right now, given the remaining budget and the cap. */
+  max: number;
+  canIncrease: boolean;
+  canDecrease: boolean;
+  /** Plain-language reason the + button is unavailable, when it is. */
+  increaseReason: string | null;
+  /** Plain-language reason the − button is unavailable, when it is. */
+  decreaseReason: string | null;
+};
+
+function rulesFor(method: "edgerunner" | "complete_package") {
+  return method === "edgerunner" ? EDGERUNNER : COMPLETE_PACKAGE;
+}
+
+/** Lowest Level an entry may be lowered to under the given method. */
+export function skillFloor(method: "edgerunner" | "complete_package", skillId: string): number {
+  if (method === "edgerunner") return EDGERUNNER.minLevel;
+  return BASIC_SKILLS.includes(skillId) ? SKILL_RULES.basicSkillMinimum : 0;
+}
+
+/**
+ * What the ± controls may legally do to one entry right now. Pure: the UI
+ * disables buttons from this rather than letting the player break a rule.
+ */
+export function skillEntryLimits(input: SkillLimitsInput): SkillLimits {
+  const rules = rulesFor(input.method);
+  const { entry } = input;
+  const costPerLevel = getSkill(entry.skillId).doubleCost ? 2 : 1;
+  const min = entry.granted ? entry.level : skillFloor(input.method, entry.skillId);
+  const remaining = rules.skillPoints - skillPointsSpent(input.entries);
+  const affordable = entry.level + Math.floor(Math.max(0, remaining) / costPerLevel);
+  const max = entry.granted ? entry.level : Math.min(rules.maxLevel, affordable);
+
+  const canIncrease = !entry.granted && entry.level < max;
+  const canDecrease = !entry.granted && entry.level > min;
+
+  let increaseReason: string | null = null;
+  if (!canIncrease) {
+    if (entry.granted) increaseReason = "Granted Skills can't be changed";
+    else if (entry.level >= rules.maxLevel) {
+      increaseReason = `The maximum Skill Level at creation is ${rules.maxLevel}`;
+    } else {
+      increaseReason =
+        costPerLevel === 2
+          ? "This ×2 Skill costs 2 points per Level and you don't have 2 left"
+          : "No Skill Points left to spend";
+    }
+  }
+
+  let decreaseReason: string | null = null;
+  if (!canDecrease) {
+    if (entry.granted) decreaseReason = "Granted Skills can't be changed";
+    else if (input.method === "edgerunner") {
+      decreaseReason = `Edgerunner Skills can't go below ${EDGERUNNER.minLevel}`;
+    } else if (BASIC_SKILLS.includes(entry.skillId)) {
+      decreaseReason = `Basic Skills must be at least ${SKILL_RULES.basicSkillMinimum}`;
+    } else {
+      decreaseReason = "Already at 0 — remove the Skill instead";
+    }
+  }
+
+  return { min, max, canIncrease, canDecrease, increaseReason, decreaseReason };
+}
+
+/** Whether a new Skill line can be added to the sheet at `level`. */
+export function canAddSkillEntry(input: {
+  method: "edgerunner" | "complete_package";
+  entries: SkillEntry[];
+  skillId: string;
+  specialization: string | null;
+  level: number;
+}): { allowed: boolean; reason: string | null } {
+  const rules = rulesFor(input.method);
+  const key = skillEntryKey({ skillId: input.skillId, specialization: input.specialization });
+  if (input.entries.some((e) => skillEntryKey(e) === key)) {
+    return { allowed: false, reason: "Already on your sheet" };
+  }
+  const skill = getSkill(input.skillId);
+  if (skill.requiresSpecialization && !input.specialization) {
+    return {
+      allowed: false,
+      reason: `Name the ${skill.specializationLabel ?? "specialization"} first`,
+    };
+  }
+  const remaining = rules.skillPoints - skillPointsSpent(input.entries);
+  const cost = skillPointCost(input.skillId, 0, input.level);
+  if (cost > remaining) {
+    return { allowed: false, reason: `Not enough Skill Points left — this costs ${cost}` };
+  }
+  return { allowed: true, reason: null };
+}
