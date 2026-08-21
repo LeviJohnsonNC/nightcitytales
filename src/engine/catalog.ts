@@ -141,6 +141,12 @@ export function getCyberware(id: string): CatalogCyberware {
   return c;
 }
 
+export function getGear(id: string): CatalogGear {
+  const g = GEAR_BY_ID.get(id);
+  if (!g) throw new Error(`Unknown gear "${id}" (src/data/rules/catalog.json → gear)`);
+  return g;
+}
+
 export function itemName(kind: ItemKind, id: string): string {
   return catalogItem(kind, id).name;
 }
