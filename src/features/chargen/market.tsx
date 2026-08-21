@@ -92,11 +92,11 @@ export function eb(value: number) {
   return `${value.toLocaleString()}eb`;
 }
 
-export function BudgetBars({ state }: { state: ChargenState }) {
+export function BudgetBars({ state, className }: { state: ChargenState; className?: string }) {
   if (!state.method) return null;
   const budgets = budgetStates(state.method, state.loadout);
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className={className ?? "grid gap-3 sm:grid-cols-2"}>
       {budgets.map((b) => {
         const pct = Math.min(100, (b.spent / b.limit) * 100);
         return (
