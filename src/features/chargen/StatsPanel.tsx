@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,6 +19,7 @@ import {
   validateCompletePackageStats,
 } from "@/engine";
 import type { StatBlock, StatKey } from "@/engine";
+import { DiceRoll } from "./DiceRoll";
 import { StatTemplateTable } from "./StatTemplateTable";
 import { appendRoll } from "./rollLogStore";
 import { useChargenStore, type ChargenState } from "./store";
@@ -114,18 +115,7 @@ function Notice({ children }: { children: React.ReactNode }) {
 function StreetratBranch({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const append = appendRoll;
-  const [rolling, setRolling] = useState(false);
   const roleId = state.roleId!;
-
-  function rollRow() {
-    setRolling(true);
-    window.setTimeout(() => {
-      const result = rollStreetratStats(roleId, defaultRng);
-      append(`Streetrat STAT template row (${roleId})`, result.roll);
-      patch({ stats: result.stats, statRolls: { row: result.row, rows: {} } });
-      setRolling(false);
-    }, 620);
-  }
 
   return (
     <div className="space-y-4">
@@ -135,15 +125,27 @@ function StreetratBranch({ state }: { state: ChargenState }) {
         table below is the same one the die reads, so you can check the row yourself.
       </Notice>
       <div className="flex items-center gap-4">
-        <Button onClick={rollRow} disabled={rolling}>
-          {rolling ? "Rolling…" : state.statRolls.row ? "Re-roll 1d10" : "Roll 1d10"}
-        </Button>
-        {state.statRolls.row && (
-          <p className="font-mono text-sm text-muted-foreground">
-            Rolled <span className="num font-bold text-primary">{state.statRolls.row}</span> — row{" "}
-            {state.statRolls.row} taken as written.
-          </p>
-        )}
+        <DiceRoll
+          sides={10}
+          size={52}
+          value={state.statRolls.row}
+          label={state.statRolls.row ? "Re-roll the STAT template row" : "Roll the STAT template row"}
+          roll={() => {
+            const result = rollStreetratStats(roleId, defaultRng);
+            return {
+              face: result.row,
+              commit: () => {
+                append(`Streetrat STAT template row (${roleId})`, result.roll);
+                patch({ stats: result.stats, statRolls: { row: result.row, rows: {} } });
+              },
+            };
+          }}
+        />
+        <p className="font-mono text-sm text-muted-foreground">
+          {state.statRolls.row
+            ? `Row ${state.statRolls.row} taken as written.`
+            : "Click the die to roll your row."}
+        </p>
       </div>
       <StatReadout stats={state.stats} />
       <StatTemplateTable roleId={roleId} highlightRow={state.statRolls.row} />
@@ -154,37 +156,35 @@ function StreetratBranch({ state }: { state: ChargenState }) {
 function EdgerunnerBranch({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const append = appendRoll;
-  const [busy, setBusy] = useState<StatKey | "all" | null>(null);
   const roleId = state.roleId!;
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [bursting, setBursting] = useState(false);
 
-  function rollOne(stat: StatKey) {
-    setBusy(stat);
-    window.setTimeout(() => {
-      const result = rollEdgerunnerStat(roleId, stat, defaultRng);
-      append(`Edgerunner ${stat.toUpperCase()} column (${roleId})`, result.roll);
-      const s = useChargenStore.getState();
-      patch({
-        stats: { ...s.stats, [stat]: result.value },
-        statRolls: { row: null, rows: { ...s.statRolls.rows, [stat]: result.row } },
-      });
-      setBusy(null);
-    }, 420);
+  function rollStat(stat: StatKey) {
+    const result = rollEdgerunnerStat(roleId, stat, defaultRng);
+    return {
+      face: result.row,
+      commit: () => {
+        append(`Edgerunner ${stat.toUpperCase()} column (${roleId})`, result.roll);
+        const s = useChargenStore.getState();
+        patch({
+          stats: { ...s.stats, [stat]: result.value },
+          statRolls: { row: null, rows: { ...s.statRolls.rows, [stat]: result.row } },
+        });
+      },
+    };
   }
 
+  /** Fire each card's own die in sequence so all ten animate. */
   function rollAll() {
-    setBusy("all");
-    const stats: Partial<StatBlock> = {};
-    const rows: Partial<Record<StatKey, number>> = {};
-    for (const stat of STAT_ORDER) {
-      const result = rollEdgerunnerStat(roleId, stat, defaultRng);
-      append(`Edgerunner ${stat.toUpperCase()} column (${roleId})`, result.roll);
-      stats[stat] = result.value;
-      rows[stat] = result.row;
-    }
-    window.setTimeout(() => {
-      patch({ stats, statRolls: { row: null, rows } });
-      setBusy(null);
-    }, 620);
+    const grid = gridRef.current;
+    if (!grid || bursting) return;
+    const buttons = Array.from(grid.querySelectorAll<HTMLButtonElement>("button[data-stat-die]"));
+    setBursting(true);
+    buttons.forEach((button, i) => {
+      window.setTimeout(() => button.click(), i * 110);
+    });
+    window.setTimeout(() => setBursting(false), buttons.length * 110 + 1000);
   }
 
   return (
@@ -194,36 +194,31 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
         Once a STAT lands it stays where it landed — no rearranging, no swapping between STATs.
       </Notice>
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={rollAll} disabled={busy !== null}>
-          {busy === "all" ? "Rolling ten dice…" : "Roll all ten"}
+        <Button onClick={rollAll} disabled={bursting}>
+          {bursting ? "Rolling ten dice…" : "Roll all ten"}
         </Button>
         <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           or roll them one at a time below
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div ref={gridRef} className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {STAT_ORDER.map((stat) => (
           <div key={stat} className="border border-border bg-card p-3 text-center">
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
               {stat.toUpperCase()}
             </p>
             <p className="num font-mono text-2xl font-bold tabular-nums text-foreground">
-              {busy === stat ? "…" : (state.stats[stat] ?? "—")}
+              {state.stats[stat] ?? "—"}
             </p>
-            <p className="font-mono text-[10px] text-muted-foreground">
-              {state.statRolls.rows[stat] !== undefined
-                ? `row ${state.statRolls.rows[stat]}`
-                : "unrolled"}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2 w-full"
-              disabled={busy !== null}
-              onClick={() => rollOne(stat)}
-            >
-              {state.stats[stat] === undefined ? "Roll 1d10" : "Re-roll"}
-            </Button>
+            <div className="mt-2 flex justify-center" data-stat-die-wrap={stat}>
+              <DiceRoll
+                sides={10}
+                value={state.statRolls.rows[stat] ?? null}
+                label={`${state.stats[stat] === undefined ? "Roll" : "Re-roll"} 1d10 for ${stat.toUpperCase()}`}
+                buttonProps={{ "data-stat-die": stat }}
+                roll={() => rollStat(stat)}
+              />
+            </div>
           </div>
         ))}
       </div>

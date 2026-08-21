@@ -27,6 +27,7 @@ export function DiceRoll({
   size = 44,
   disabled,
   label,
+  buttonProps,
 }: {
   sides: number;
   value: number | null;
@@ -34,6 +35,8 @@ export function DiceRoll({
   size?: number;
   disabled?: boolean;
   label?: string;
+  /** Extra attributes spread onto the underlying button (e.g. data-* hooks). */
+  buttonProps?: React.ButtonHTMLAttributes<HTMLButtonElement> & Record<`data-${string}`, string>;
 }) {
   const gradientId = useId();
   const bounceRef = useRef<HTMLDivElement>(null);
@@ -119,6 +122,7 @@ export function DiceRoll({
 
   return (
     <button
+      {...buttonProps}
       type="button"
       onClick={start}
       disabled={disabled || rolling}

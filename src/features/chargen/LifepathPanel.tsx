@@ -16,6 +16,7 @@ import {
   type LifepathEntryRecord,
 } from "@/engine";
 import { BackgroundPanel } from "./BackgroundPanel";
+import { DiceRoll } from "./DiceRoll";
 import { DiceSoundToggle } from "./DiceSoundToggle";
 import { LifepathTableCard } from "./LifepathTableCard";
 import { RoleLifepathTableCard } from "./RoleLifepathTableCard";
@@ -407,20 +408,30 @@ function LanguagePicker({
 
 function CountRoll({ label, onRoll }: { label: string; onRoll: (count: number) => void }) {
   const [note, setNote] = useState<string | null>(null);
+  const [face, setFace] = useState<number | null>(null);
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => {
+    <div className="flex flex-wrap items-center gap-2">
+      <DiceRoll
+        sides={10}
+        size={36}
+        value={face}
+        label={`Roll how many ${label.toLowerCase()}`}
+        roll={() => {
           const { count, result } = rollLifepathCount(Math.random);
-          setNote(`${result.rolls[0]} then minus 7 gives ${count} ${label.toLowerCase()}`);
-          onRoll(count);
+          const rolled = result.rolls[0] ?? 1;
+          return {
+            face: rolled,
+            commit: () => {
+              setFace(rolled);
+              setNote(`minus 7 gives ${count} ${label.toLowerCase()}`);
+              onRoll(count);
+            },
+          };
         }}
-      >
-        Roll how many
-      </Button>
-      {note && <span className="font-mono text-[11px] text-text-dim num">{note}</span>}
+      />
+      <span className="font-mono text-[11px] text-text-dim num">
+        {note ?? "Roll how many"}
+      </span>
     </div>
   );
 }
