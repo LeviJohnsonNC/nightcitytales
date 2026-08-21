@@ -1,0 +1,142 @@
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import { ArtSlot } from "./ArtSlot";
+import { itemArt } from "./art";
+import { ITEM_FLAVOR } from "./itemFlavor";
+import { eb } from "./market";
+
+export type ItemKindLabel = "weapon" | "armor" | "ammunition" | "cyberware";
+
+/** Loose shape covering every catalog row this modal renders. */
+type AnyItem = {
+  id: string;
+  name: string;
+  damage?: string;
+  magazine?: number | null;
+  rof?: number | string;
+  handsRequired?: string;
+  skill?: string;
+  concealable?: boolean;
+  sp?: number | null;
+  hp?: number | null;
+  penalty?: { value: number; stats: string[] } | null;
+  locations?: string[];
+  types?: string[];
+  unit?: string;
+  humanityLoss?: number;
+  slotsUsed?: number;
+  install?: string;
+  cost?: number;
+  priceCategory?: string;
+  notes?: string | null;
+  description?: string | null;
+};
+
+function statLine(kind: ItemKindLabel, item: AnyItem): { label: string; value: string }[] {
+  const rows: { label: string; value: string }[] = [];
+  const push = (label: string, value: string | number | null | undefined) => {
+    if (value === null || value === undefined || value === "") return;
+    rows.push({ label, value: String(value) });
+  };
+
+  if (kind === "weapon") {
+    push("Damage", item.damage);
+    push("Magazine", item.magazine ?? "None");
+    push("ROF", item.rof);
+    push("Hands", item.handsRequired);
+    push("Skill", item.skill);
+    push("Conceal", item.concealable === undefined ? undefined : item.concealable ? "Yes" : "No");
+  } else if (kind === "armor") {
+    push("SP", item.sp ?? "None");
+    push("HP", item.hp ?? undefined);
+    push("Penalty", item.penalty ? `${item.penalty.value} ${item.penalty.stats.join("/")}` : "None");
+    push("Locations", item.locations?.join(" / "));
+  } else if (kind === "ammunition") {
+    push("Available", item.types?.join(", "));
+    push("Sold", item.unit);
+  } else if (kind === "cyberware") {
+    push("Humanity Loss", item.humanityLoss);
+    push("Slots", item.slotsUsed);
+    push("Install", item.install);
+  }
+  push("Cost", item.cost === undefined ? undefined : eb(item.cost));
+  return rows;
+}
+
+/** A small "?" button that opens a modal explaining a catalog item. */
+export function ItemInfo({
+  kind,
+  item,
+}: {
+  kind: ItemKindLabel;
+  item: { id: string; name: string } & Record<string, unknown>;
+}) {
+  const [open, setOpen] = useState(false);
+  const it = item as AnyItem;
+  const flavor = ITEM_FLAVOR[it.id];
+  const mechanical = it.notes ?? it.description ?? null;
+  const stats = statLine(kind, it);
+  const art = itemArt(`${kind}.${it.id}`, it.name);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`What is ${item.name}?`}
+        title={`What is ${item.name}?`}
+        className="grid size-5 shrink-0 place-items-center rounded-full border border-hairline font-mono text-[11px] leading-none text-text-dim transition-colors hover:border-ember hover:text-ember"
+      >
+        ?
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display tracking-tight">{item.name}</DialogTitle>
+            <DialogDescription className="font-mono text-[11px] uppercase tracking-[0.18em]">
+              {kind}
+              {item.priceCategory ? ` · ${item.priceCategory}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Image placeholder. Drops in real art via manifest.itemArt later. */}
+          <div className="aspect-[16/9] w-full overflow-hidden border border-hairline">
+            <ArtSlot art={art} label={item.name} className="border-0" />
+          </div>
+
+          {stats.length > 0 && (
+            <dl className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+              {stats.map((s) => (
+                <div key={s.label} className="flex items-baseline gap-1.5">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.15em] text-text-dim">
+                    {s.label}
+                  </dt>
+                  <dd className="font-mono text-sm tabular-nums text-text">{s.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
+          {flavor && <p className="mt-1 text-[0.95rem] leading-relaxed text-text">{flavor}</p>}
+
+          {mechanical && (
+            <div className="mt-2 border-t border-hairline pt-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
+                How it works
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-text-muted">{mechanical}</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

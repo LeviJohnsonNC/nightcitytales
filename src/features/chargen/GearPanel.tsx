@@ -24,6 +24,7 @@ import {
   eb,
   useLoadoutActions,
 } from "./market";
+import { ItemInfo } from "./ItemInfo";
 import type { ChargenState } from "./store";
 
 function Row({ children }: { children: React.ReactNode }) {
@@ -136,7 +137,10 @@ function WeaponTable({ state }: { state: ChargenState }) {
       {WEAPONS.map((w) => (
         <div key={w.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
           <div className="min-w-[16rem]">
-            <p className="text-sm text-text">{w.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-text">{w.name}</p>
+              <ItemInfo kind="weapon" item={w} />
+            </div>
             <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
               <Stat label="DMG" value={w.damage} />
               <Stat label="MAG" value={w.magazine ?? "—"} />
@@ -171,7 +175,10 @@ function ArmorTable({ state }: { state: ChargenState }) {
         return (
           <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
             <div className="min-w-[16rem]">
-              <p className="text-sm text-text">{a.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-text">{a.name}</p>
+                <ItemInfo kind="armor" item={a} />
+              </div>
               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
                 <Stat label="SP" value={a.sp ?? "—"} />
                 <Stat label="HP" value={a.hp ?? undefined} />
@@ -230,9 +237,12 @@ function AmmoTable({ state }: { state: ChargenState }) {
       {AMMUNITION.map((a) => (
         <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
           <div>
-            <p className="text-sm text-text">
-              {a.name} <span className="text-text-dim">({a.unit})</span>
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-text">
+                {a.name} <span className="text-text-dim">({a.unit})</span>
+              </p>
+              <ItemInfo kind="ammunition" item={a} />
+            </div>
             <p className="mt-1 text-xs text-text-dim">{a.types.join(" · ")}</p>
             {a.notes ? <p className="mt-1 text-xs text-text-dim">{a.notes}</p> : null}
           </div>
@@ -261,7 +271,10 @@ function FashionTable({ state }: { state: ChargenState }) {
       {fashionware.map((c) => (
         <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
           <div className="min-w-[16rem]">
-            <p className="text-sm text-text">{c.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-text">{c.name}</p>
+              <ItemInfo kind="cyberware" item={c} />
+            </div>
             <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
               <Stat label="HL" value={c.humanityLoss} />
               <Stat label="SLOTS" value={c.slotsUsed} />

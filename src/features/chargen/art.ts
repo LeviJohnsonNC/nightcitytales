@@ -65,6 +65,7 @@ export type PortraitEntry = {
 
 type Manifest = {
   roleArt?: Record<string, Partial<ArtEntry> | undefined>;
+  itemArt?: Record<string, Partial<ArtEntry> | undefined>;
   portraits?: PortraitEntry[];
 };
 
@@ -87,6 +88,21 @@ export function roleArt(roleId: string, roleName: string): ResolvedArt {
     src: pointerUrl(entry?.pointer) ?? entry?.src ?? null,
     alt: entry?.alt ?? `${roleName} key art`,
     focalPoint: (entry?.focalPoint as FocalPoint | undefined) ?? [0.5, 0.35],
+  };
+}
+
+/**
+ * Art for a catalog item, resolved through the same pointer -> src -> placeholder
+ * order as everything else. `key` is `${kind}.${id}`, e.g. "weapon.stun_baton".
+ * Add images later by adding a manifest.itemArt entry; no component changes.
+ */
+export function itemArt(key: string, label: string): ResolvedArt {
+  const entry = manifest.itemArt?.[key];
+  return {
+    assetId: `itemArt.${key}`,
+    src: pointerUrl(entry?.pointer) ?? entry?.src ?? null,
+    alt: entry?.alt ?? `${label} art`,
+    focalPoint: (entry?.focalPoint as FocalPoint | undefined) ?? [0.5, 0.5],
   };
 }
 
