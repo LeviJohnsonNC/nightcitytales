@@ -41,7 +41,8 @@ const matches = (name: string, query: string) =>
  */
 function Blurb({ id, text }: { id: string; text: string | null | undefined }) {
   const flavor = ITEM_FLAVOR[id];
-  const body = !text || text.trim().split(/\s+/).length <= 6 ? (flavor ?? text) : text;
+  const body = flavor ?? text;
+
   if (!body) return null;
   return <p className="mt-1.5 text-xs leading-relaxed text-text-dim">{body}</p>;
 }
@@ -107,46 +108,34 @@ function VariantPicker({
   const picked = loadout.packageVariants?.[id];
   return (
     <div className="mt-2">
-      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-dim">
-        Pick the specific weapon
-      </span>
-      <ul className="mt-1.5 space-y-1.5">
-        {options.map((option) => {
-          const active = picked === option;
-          return (
-            <li key={option}>
-              <button
-                type="button"
-                aria-pressed={active}
-                aria-label={`${label}: ${option}`}
-                onClick={() => setPackageVariant(id, option)}
-                className={cn(
-                  "w-full border px-2.5 py-2 text-left transition-colors",
-                  active
-                    ? "border-ember bg-ember/10"
-                    : "border-hairline hover:border-ember/70",
-                )}
-              >
-                <span
-                  className={cn(
-                    "font-mono text-[11px] tracking-wide",
-                    active ? "text-ember" : "text-text",
-                  )}
-                >
-                  {option}
-                </span>
-                {VARIANT_FLAVOR[option] && (
-                  <span className="mt-1 block text-xs leading-relaxed text-text-dim">
-                    {VARIANT_FLAVOR[option]}
-                  </span>
-                )}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-dim">
+          Pick the specific weapon
+        </span>
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={picked === option}
+            aria-label={`${label}: ${option}`}
+            onClick={() => setPackageVariant(id, option)}
+            className={cn(
+              "border px-2 py-0.5 font-mono text-[11px] tracking-wide transition-colors",
+              picked === option
+                ? "border-ember bg-ember/10 text-ember"
+                : "border-hairline text-text-muted hover:border-ember",
+            )}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+      {picked && VARIANT_FLAVOR[picked] && (
+        <p className="mt-1.5 text-xs leading-relaxed text-text-dim">{VARIANT_FLAVOR[picked]}</p>
+      )}
     </div>
   );
+
 
 }
 
@@ -281,45 +270,38 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
                 <Stat label="SKILL" value={w.skill} />
               </div>
               {variants && (
-                <div className="mt-2">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-dim">
                     Pick one
                   </span>
-                  <ul className="mt-1.5 space-y-1.5">
-                    {variants.map((v) => (
-                      <li key={v}>
-                        <button
-                          type="button"
-                          aria-pressed={chosen === v}
-                          onClick={() => setVariant((p) => ({ ...p, [w.id]: v }))}
-                          className={cn(
-                            "w-full border px-2.5 py-2 text-left transition-colors",
-                            chosen === v
-                              ? "border-ember bg-ember/10"
-                              : "border-hairline hover:border-ember/70",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "font-mono text-[11px] tracking-wide",
-                              chosen === v ? "text-ember" : "text-text",
-                            )}
-                          >
-                            {v}
-                          </span>
-                          {VARIANT_FLAVOR[v] && (
-                            <span className="mt-1 block text-xs leading-relaxed text-text-dim">
-                              {VARIANT_FLAVOR[v]}
-                            </span>
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  {variants.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={chosen === v}
+                      onClick={() => setVariant((p) => ({ ...p, [w.id]: v }))}
+                      className={cn(
+                        "border px-2 py-0.5 font-mono text-[11px] tracking-wide transition-colors",
+                        chosen === v
+                          ? "border-ember bg-ember/10 text-ember"
+                          : "border-hairline text-text-muted hover:border-ember",
+                      )}
+                    >
+                      {v}
+                    </button>
+                  ))}
                 </div>
               )}
+              {variants ? (
+                chosen && VARIANT_FLAVOR[chosen] ? (
+                  <p className="mt-1.5 text-xs leading-relaxed text-text-dim">
+                    {VARIANT_FLAVOR[chosen]}
+                  </p>
+                ) : null
+              ) : (
+                <Blurb id={w.id} text={w.notes} />
+              )}
 
-              {!variants ? <Blurb id={w.id} text={w.notes} /> : null}
             </div>
             <div className="flex shrink-0 items-center gap-3">
               <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [w.id]: v }))} />
