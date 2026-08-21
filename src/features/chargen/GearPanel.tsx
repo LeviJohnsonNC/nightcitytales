@@ -35,6 +35,10 @@ import type { ChargenState } from "./store";
 const matches = (name: string, query: string) =>
   !query.trim() || name.toLowerCase().includes(query.trim().toLowerCase());
 
+/** Market lists read alphabetically so items are easy to find. */
+const byName = <T extends { name: string }>(rows: T[]) =>
+  [...rows].sort((a, b) => a.name.localeCompare(b.name));
+
 /**
  * Every market row shows a description. Terse catalog one-liners ("Explosive")
  * get replaced by the item's house-voice blurb so rows read consistently.
