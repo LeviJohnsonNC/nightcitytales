@@ -251,6 +251,188 @@
       "concealable": false,
       "cost": 500,
       "notes": "Explosive"
+    },
+    {
+      "id": "air_pistol",
+      "name": "Air Pistol",
+      "category": "ranged",
+      "skill": "Handgun",
+      "damage": "None",
+      "magazine": null,
+      "rof": 2,
+      "handsRequired": "1",
+      "concealable": true,
+      "cost": 100,
+      "notes": "Exotic Medium Pistol firing paintballs (no damage). Filled with Acid, each hit lowers the shot location's armor SP by 1. Cannot cause Critical Injuries. Great for taking someone alive."
+    },
+    {
+      "id": "battleglove",
+      "name": "Battleglove",
+      "category": "melee",
+      "skill": "Brawling",
+      "damage": "1d6",
+      "magazine": null,
+      "rof": 2,
+      "handsRequired": "1",
+      "concealable": false,
+      "cost": 1000,
+      "notes": "Exotic heavy gauntlet with 3 Cyberarm option slots you can access while worn. Putting it on or taking it off is an Action. Cannot be concealed."
+    },
+    {
+      "id": "hurricane_assault",
+      "name": "Constitution Arms Hurricane Assault Weapon",
+      "category": "ranged",
+      "skill": "Shoulder Arms",
+      "damage": "5d6",
+      "magazine": 16,
+      "rof": 2,
+      "handsRequired": "2",
+      "concealable": false,
+      "cost": 5000,
+      "notes": "Exotic 2 ROF Shotgun. No Aimed Shots. 16-shot drum, reload takes two Actions. Requires BODY 11+ to fire unmounted."
+    },
+    {
+      "id": "dartgun",
+      "name": "Dartgun",
+      "category": "ranged",
+      "skill": "Handgun",
+      "damage": "4d6",
+      "magazine": 8,
+      "rof": 1,
+      "handsRequired": "1",
+      "concealable": true,
+      "cost": 100,
+      "notes": "Exotic Very Heavy Pistol that loads only Non-Basic Arrow ammunition, in an 8-round clip. Reloads like a Very Heavy Pistol."
+    },
+    {
+      "id": "flamethrower",
+      "name": "Flamethrower",
+      "category": "ranged",
+      "skill": "Heavy Weapons",
+      "damage": "5d6",
+      "magazine": null,
+      "rof": 1,
+      "handsRequired": "2",
+      "concealable": false,
+      "cost": 500,
+      "notes": "Exotic Shotgun fired with Heavy Weapons. Fires only incendiary shotgun shells; ignited targets take 4 HP per turn until they put themselves out. No Aimed Shots, no Critical Injuries."
+    },
+    {
+      "id": "kendachi_mono_three",
+      "name": "Kendachi Mono-Three",
+      "category": "melee",
+      "skill": "Melee Weapon",
+      "damage": "4d6",
+      "magazine": null,
+      "rof": 2,
+      "handsRequired": "2",
+      "concealable": false,
+      "cost": 5000,
+      "notes": "Excellent Quality Two-Handed Exotic Very Heavy Melee weapon. With the correct biometric key, ignores armor entirely below SP11. A vibrating crystal katana; a laser can be set in the hilt for a neon glow."
+    },
+    {
+      "id": "malorian_3516",
+      "name": "Malorian Arms 3516",
+      "category": "ranged",
+      "skill": "Handgun",
+      "damage": "5d6",
+      "magazine": 8,
+      "rof": 2,
+      "handsRequired": "1",
+      "concealable": true,
+      "cost": 10000,
+      "notes": "Excellent Quality Exotic Very Heavy Pistol dealing 5d6 on a single shot, with a permanently installed Smartgun Link (needs Interface Plugs or a Subdermal Grip). Rare and coveted."
+    },
+    {
+      "id": "microwaver",
+      "name": "Microwaver",
+      "category": "ranged",
+      "skill": "Handgun",
+      "damage": "None",
+      "magazine": null,
+      "rof": 2,
+      "handsRequired": "1",
+      "concealable": true,
+      "cost": 500,
+      "notes": "Exotic Very Heavy Pistol. No damage: on a hit the target must beat a DV15 Cybertech Check or the GM shuts down two of their cyberware or electronics for a minute. Battery: 8 shots, spare packs 50eb."
+    },
+    {
+      "id": "cowboy_u56",
+      "name": "Militech \"Cowboy\" U-56 Grenade Launcher",
+      "category": "ranged",
+      "skill": "Heavy Weapons",
+      "damage": "6d6",
+      "magazine": 4,
+      "rof": 2,
+      "handsRequired": "2",
+      "concealable": false,
+      "cost": 5000,
+      "notes": "Exotic 2 ROF Grenade Launcher holding 4 grenades and able to fire all Grenade Ammunition. Reload takes two Actions. Requires BODY 11+ to fire unmounted."
+    },
+    {
+      "id": "rhinemetall_railgun",
+      "name": "Rhinemetall EMG-86 Railgun",
+      "category": "ranged",
+      "skill": "Heavy Weapons",
+      "damage": "5d6",
+      "magazine": 4,
+      "rof": 1,
+      "handsRequired": "2",
+      "concealable": false,
+      "cost": 5000,
+      "notes": "Exotic Assault Rifle fired with Heavy Weapons. No Autofire, no Aimed Shots. Holds 4 shots and ignores armor below SP11. Reload takes two Actions. Requires BODY 11+ unmounted."
+    },
+    {
+      "id": "shrieker",
+      "name": "Shrieker",
+      "category": "ranged",
+      "skill": "Handgun",
+      "damage": "None",
+      "magazine": null,
+      "rof": 2,
+      "handsRequired": "1",
+      "concealable": true,
+      "cost": 500,
+      "notes": "Exotic Very Heavy Pistol. No damage: on a hit the target must beat a DV15 Resist Torture/Drugs Check or suffer Damaged Ear. Firing it without ear protection damages your own ear. Battery: 8 shots."
+    },
+    {
+      "id": "stun_baton",
+      "name": "Stun Baton",
+      "category": "melee",
+      "skill": "Melee Weapon",
+      "damage": "2d6",
+      "magazine": null,
+      "rof": 2,
+      "handsRequired": "1",
+      "concealable": true,
+      "cost": 100,
+      "notes": "One-Handed Exotic Medium Melee weapon. Non-lethal: a target it would drop below 1 HP is left Unconscious at 1 HP instead. No Critical Injuries, no armor ablation."
+    },
+    {
+      "id": "stun_gun",
+      "name": "Stun Gun",
+      "category": "ranged",
+      "skill": "Handgun",
+      "damage": "3d6",
+      "magazine": null,
+      "rof": 1,
+      "handsRequired": "1",
+      "concealable": true,
+      "cost": 100,
+      "notes": "Exotic Heavy Pistol. Non-lethal: a target it would drop below 1 HP is left Unconscious at 1 HP instead. No Critical Injuries, no armor ablation. Battery: 8 shots, spare packs 50eb."
+    },
+    {
+      "id": "tsunami_helix",
+      "name": "Tsunami Arms Helix",
+      "category": "ranged",
+      "skill": "Autofire",
+      "damage": "2d6",
+      "magazine": 40,
+      "rof": 3,
+      "handsRequired": "2",
+      "concealable": false,
+      "cost": 5000,
+      "notes": "Exotic Assault Rifle fired only with Autofire, no single shot or Aimed Shots. Holds 40 rounds and burns 20 per attack; on a hit, 2d6 multiplied by how much you beat the DV (max x5). Requires BODY 11+ unmounted."
     }
   ],
   "armor": [
@@ -400,6 +582,138 @@
         "Arrow"
       ],
       "notes": "Grenades and Rockets are not sold as Basic ammunition."
+    },
+    {
+      "id": "ap_ammo",
+      "name": "Armor-Piercing Ammunition",
+      "cost": 100,
+      "priceCategory": "Premium",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "All except Shotgun Shells"
+      ],
+      "notes": "Ablate armor by 2 instead of 1 whenever you would ablate armor."
+    },
+    {
+      "id": "biotoxin_ammo",
+      "name": "Biotoxin Ammunition",
+      "cost": 500,
+      "priceCategory": "Expensive",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Arrows and Grenades only"
+      ],
+      "notes": "Deals no damage. A meat target must beat a DV15 Resist Torture/Drugs Check or take 3d6 straight to HP, armor unablated."
+    },
+    {
+      "id": "emp_ammo",
+      "name": "EMP Ammunition",
+      "cost": 500,
+      "priceCategory": "Expensive",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Grenades only"
+      ],
+      "notes": "Deals no damage. Target must beat a DV15 Cybertech Check or the GM shuts down two pieces of their cyberware or carried electronics for 1 minute."
+    },
+    {
+      "id": "expansive_ammo",
+      "name": "Expansive Ammunition",
+      "cost": 100,
+      "priceCategory": "Premium",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Arrows, Bullets, and Slugs"
+      ],
+      "notes": "On a Foreign Object Critical Injury, the target rolls a second Critical Injury and suffers it too (no bonus damage)."
+    },
+    {
+      "id": "flashbang_ammo",
+      "name": "Flashbang Ammunition",
+      "cost": 100,
+      "priceCategory": "Premium",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Grenades only"
+      ],
+      "notes": "Deals no damage. Target must beat a DV15 Resist Torture/Drugs Check or suffer Damaged Eye and Damaged Ear for a minute."
+    },
+    {
+      "id": "incendiary_ammo",
+      "name": "Incendiary Ammunition",
+      "cost": 100,
+      "priceCategory": "Premium",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Arrows, Bullets, Grenades, and Shotgun Shells"
+      ],
+      "notes": "Deal damage through armor and the target ignites: 2 HP at the end of each of their turns until they spend an Action to put it out. Does not stack."
+    },
+    {
+      "id": "poison_ammo",
+      "name": "Poison Ammunition",
+      "cost": 100,
+      "priceCategory": "Premium",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Arrows and Grenades only"
+      ],
+      "notes": "Deals no damage. A meat target must beat a DV13 Resist Torture/Drugs Check or take 2d6 straight to HP, armor unablated."
+    },
+    {
+      "id": "rubber_ammo",
+      "name": "Rubber Ammunition",
+      "cost": 10,
+      "priceCategory": "Cheap",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Arrows, Bullets, and Slugs"
+      ],
+      "notes": "Cannot cause Critical Injuries and cannot ablate armor. Never drops a target with more than 1 HP below 1 HP."
+    },
+    {
+      "id": "sleep_ammo",
+      "name": "Sleep Ammunition",
+      "cost": 500,
+      "priceCategory": "Expensive",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Arrows and Grenades"
+      ],
+      "notes": "Deals no damage. A meat target must beat a DV13 Resist Torture/Drugs Check or drop Prone and Unconscious for a minute (or until woken or damaged)."
+    },
+    {
+      "id": "smart_ammo",
+      "name": "Smart Ammunition",
+      "cost": 500,
+      "priceCategory": "Expensive",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Arrows, Bullets, and Rockets"
+      ],
+      "notes": "Requires Targeting Scope cyberware to fire. A single shot that misses by 4 or less gets a second chance to hit at +10 on the die."
+    },
+    {
+      "id": "smoke_ammo",
+      "name": "Smoke Ammunition",
+      "cost": 50,
+      "priceCategory": "Costly",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Grenades only"
+      ],
+      "notes": "Fills a 10m by 10m area with smoke for a minute on impact. Tasks attempted in it take a -4."
+    },
+    {
+      "id": "teargas_ammo",
+      "name": "Teargas Ammunition",
+      "cost": 50,
+      "priceCategory": "Costly",
+      "unit": "per 10 (grenades and rockets: each)",
+      "types": [
+        "Grenades only"
+      ],
+      "notes": "Deals no damage. A target with meat eyes must beat a DV13 Resist Torture/Drugs Check or suffer Damaged Eye for a minute."
     }
   ],
   "cyberware": [
@@ -656,10 +970,8 @@
       "notes": "Replacement leg. Ships with a Standard Foot that costs no Humanity and no slot."
     }
   ],
-  "_pending": [
-    "expanded Night Market rows (p.342+) \u2014 optional, not required for chargen"
-  ],
-  "_scopeNote": "Weapons, armor, ammunition, the full gear list, the full fashion price grid, and a curated cyberware set covering every install rule. Sufficient for complete Complete Package shopping. Expanding Night Market rows later needs no schema change.",
+  "_pending": [],
+  "_scopeNote": "Weapons (standard and Exotic), armor, the full ammunition-type table, the full gear list, the fashion price grid, and a curated cyberware set. Covers Night Market shopping at Character Generation. Weapon Attachments are an in-play upgrade system, handled separately.",
   "gear": [
     {
       "id": "agent",

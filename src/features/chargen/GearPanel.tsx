@@ -354,15 +354,17 @@ export function GearPanel({ state }: { state: ChargenState }) {
 
       <Cart state={state} onRemove={remove} />
 
-      <div className="border border-dashed border-hairline bg-surface/50 p-4">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
-          Catalog coverage
-        </p>
-        <p className="mt-2 text-sm text-text-muted">
-          The v1 catalog does not yet include: {CATALOG_PENDING.join(", ")}. Those rows are marked
-          pending in the rules data, so nothing here is invented to fill the gap.
-        </p>
-      </div>
+      {CATALOG_PENDING.length > 0 && (
+        <div className="border border-dashed border-hairline bg-surface/50 p-4">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
+            Catalog coverage
+          </p>
+          <p className="mt-2 text-sm text-text-muted">
+            The catalog does not yet include: {CATALOG_PENDING.join(", ")}. Those rows are marked
+            pending in the rules data, so nothing here is invented to fill the gap.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
