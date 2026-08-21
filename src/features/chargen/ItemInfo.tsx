@@ -112,7 +112,7 @@ export function ItemInfo({
           </DialogHeader>
 
           {/* Art scales to fit — never cropped, no frame. */}
-          <div className="w-full">
+          <div className="min-h-32 w-full">
             <ArtSlot
               art={art}
               label={item.name}
