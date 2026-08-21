@@ -275,13 +275,20 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
 
   const result = validateSkillEntries({ method: "edgerunner", roleId, entries: state.skills });
 
+  const limitsFor = (entry: SkillEntry) =>
+    skillEntryLimits({ method: "edgerunner", roleId, entries: state.skills, entry });
+
   function setLevel(target: SkillEntry, level: number) {
+    // Clamp as a second line of defence — the buttons already prevent this.
+    const limits = limitsFor(target);
+    const clamped = Math.min(limits.max, Math.max(limits.min, level));
     patch({
       skills: state.skills.map((e) =>
-        skillEntryKey(e) === skillEntryKey(target) ? { ...e, level } : e,
+        skillEntryKey(e) === skillEntryKey(target) ? { ...e, level: clamped } : e,
       ),
     });
   }
+
 
   return (
     <div className="space-y-4">
