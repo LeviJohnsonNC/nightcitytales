@@ -154,18 +154,6 @@ export function ItemInfo({
             </dl>
           )}
 
-          {priceContext && (
-            <p className="mt-1 text-xs leading-relaxed text-text-dim">
-              <span className="font-mono uppercase tracking-[0.15em] text-text-muted">
-                {priceContext.label}.{" "}
-              </span>
-              {priceContext.fixerRank
-                ? `A Fixer at Operator Rank ${priceContext.fixerRank} can always source this. `
-                : ""}
-              A Tech builds or upgrades one at DV{priceContext.techDV}, {priceContext.techTime} of
-              work.
-            </p>
-          )}
 
           {it.variants && it.variants.length > 0 && (
             <p className="text-xs text-text-dim">
