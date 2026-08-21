@@ -452,6 +452,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
             const taken = state.skills.some(
               (e) => e.skillId === skill.id && !skill.requiresSpecialization,
             );
+            const add = addability(skill);
             return (
               <div
                 key={skill.id}
