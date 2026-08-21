@@ -6,6 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { priceCategoryContext } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { itemArt } from "./art";
@@ -111,7 +117,8 @@ export function ItemInfo({
                 <>
                   {" · "}
                   {priceContext ? (
-                    <Tooltip>
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="cursor-help underline decoration-dotted underline-offset-4">
                           {it.priceCategory}
@@ -124,6 +131,7 @@ export function ItemInfo({
                         {`A Tech builds or upgrades one at DV${priceContext.techDV}, ${priceContext.techTime} of work.`}
                       </TooltipContent>
                     </Tooltip>
+                    </TooltipProvider>
                   ) : (
                     it.priceCategory
                   )}
