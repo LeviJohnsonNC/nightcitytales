@@ -89,11 +89,6 @@ export function ChargenWizard({ userId }: { userId: string }) {
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {violations.length > 0 && (
-              <span className="hidden font-mono text-[10px] uppercase tracking-wider text-muted-foreground md:inline">
-                {violations.length === 1 ? "1 rule unmet" : `${violations.length} rules unmet`}
-              </span>
-            )}
             <Button variant="outline" size="sm" onClick={state.back} disabled={index === 0}>
               Back
             </Button>
@@ -127,16 +122,17 @@ export function ChargenWizard({ userId }: { userId: string }) {
         />
 
         {violations.length > 0 && (
-          <div className="border border-destructive/70 bg-destructive/10 p-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-destructive">
-              {violations.length === 1 ? "1 rule unmet" : `${violations.length} rules unmet`}
-            </p>
-            <ul className="mt-2 space-y-1 text-sm text-foreground">
-              {violations.map((violation) => (
-                <li key={violation}>{violation}</li>
-              ))}
-            </ul>
-          </div>
+          <ul className="space-y-1.5 text-sm text-foreground">
+            {violations.map((violation) => (
+              <li key={violation} className="flex items-start gap-2.5">
+                <span
+                  aria-hidden
+                  className="mt-[0.45rem] h-2 w-2 shrink-0 rounded-full bg-destructive"
+                />
+                <span>{violation}</span>
+              </li>
+            ))}
+          </ul>
         )}
 
         <div className="flex items-center justify-between border-t border-border pt-4">
