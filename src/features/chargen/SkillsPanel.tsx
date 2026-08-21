@@ -488,7 +488,8 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={taken}
+                  disabled={taken || !add.allowed}
+                  title={taken ? "Already on your sheet" : (add.reason ?? `Add ${skill.name}`)}
                   onClick={() => addSkill(skill)}
                 >
                   {taken ? "On sheet" : "Add"}
