@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import {
   BASIC_SKILLS,
   SKILLS,
+  canAddSkillEntry,
+  skillEntryLimits,
+  type SkillLimits,
   SKILL_PACKAGE_RULES,
   getSkill,
   getRoleSkillIds,
