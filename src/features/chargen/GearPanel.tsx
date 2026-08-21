@@ -455,9 +455,6 @@ function GearTable({ state, query }: { state: ChargenState; query: string }) {
                 <p className="text-sm text-text">{g.name}</p>
                 <ItemInfo kind="gear" item={g} />
               </div>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                <Stat label="PRICE" value={g.priceCategory} />
-              </div>
               <Blurb id={g.id} text={g.description} />
             </div>
             <div className="flex shrink-0 items-center gap-3">
