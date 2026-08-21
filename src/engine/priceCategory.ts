@@ -70,9 +70,9 @@ const fixerReach: { rank: number; maxIndex: number }[] = (() => {
   for (const segment of segments) {
     const rankMatch = /^Ranks?\s+(\d+)/.exec(segment.trim());
     if (!rankMatch) continue;
-    const reachMatch = /Reach:\s*([^;\n]*?)(?:\s*Haggle:|$)/.exec(segment);
+    const reachMatch = /Reach:\s*([^\n]*?)(?:\s*Haggle:|$)/.exec(segment);
     if (!reachMatch) continue;
-    const reach = reachMatch[1];
+    const reach = reachMatch[1].split(";")[0];
     if (/Night Market/i.test(reach)) continue;
     let maxIndex = -1;
     LADDER.forEach((label, index) => {
