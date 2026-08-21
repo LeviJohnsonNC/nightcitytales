@@ -158,7 +158,7 @@ export function itemCost(kind: ItemKind, id: string): number {
 export function catalogItem(
   kind: ItemKind,
   id: string,
-): CatalogWeapon | CatalogArmor | CatalogAmmunition | CatalogCyberware | CatalogFashion {
+): CatalogWeapon | CatalogArmor | CatalogAmmunition | CatalogCyberware | CatalogFashion | CatalogGear {
   switch (kind) {
     case "weapon":
       return getWeapon(id);
@@ -170,6 +170,8 @@ export function catalogItem(
       return getCyberware(id);
     case "fashion":
       return getFashion(id);
+    case "gear":
+      return getGear(id);
   }
 }
 
