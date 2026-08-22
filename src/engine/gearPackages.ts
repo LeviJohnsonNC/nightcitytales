@@ -3,7 +3,9 @@
  * src/data/rules/gear-packages.json.
  */
 import gearPackages from "@/data/rules/gear-packages.json";
-import { variantOptionsFor } from "./packageCatalog";
+import { getCyberware } from "./catalog";
+import { resolvePackageCyberware, variantOptionsFor } from "./packageCatalog";
+import type { CreationMethod } from "./types";
 
 export type PackageItem = { item: string; qty: number };
 export type PackageChoice = { choice: string[] };
@@ -127,4 +129,44 @@ export function unresolvedVariants(
     const picked = variants[point.id];
     return !picked || !point.options.includes(picked);
   });
+}
+
+/* ------------------------------------------------ package cyberware humanity */
+
+/**
+ * The fixed cyberware a Streetrat/Edgerunner Role is issued (pg. 117), resolved
+ * to catalog ids. For a choice, the selection is used, falling back to the
+ * first option so the sheet has a defined value before the player picks.
+ * Complete Package characters have no fixed cyberware and get an empty list.
+ */
+export function packageCyberwareIds(
+  roleId: string | null,
+  method: CreationMethod | null,
+  selections: Record<string, string>,
+): string[] {
+  if (!roleId || !method || method === "complete_package") return [];
+  const pkg = getGearPackage(roleId);
+  const ids: string[] = [];
+  pkg.cyberware.forEach((entry, index) => {
+    const label = isChoice(entry)
+      ? (selections[`cyberware.${index}`] ?? entry.choice[0]!)
+      : entry.item;
+    const id = resolvePackageCyberware(label);
+    if (id) ids.push(id);
+  });
+  return ids;
+}
+
+/**
+ * Preset Humanity Loss for a Role's fixed cyberware, one entry per piece.
+ * Feeds the same humanity math the bought loadout uses.
+ */
+export function packageCyberwareHumanityRolls(
+  roleId: string | null,
+  method: CreationMethod | null,
+  selections: Record<string, string>,
+): number[] {
+  return packageCyberwareIds(roleId, method, selections)
+    .map((id) => getCyberware(id).humanityLoss)
+    .filter((loss) => loss > 0);
 }

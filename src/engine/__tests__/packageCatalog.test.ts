@@ -4,6 +4,7 @@ import {
   GEAR,
   getGear,
   isChoice,
+  resolvePackageCyberware,
   resolvePackageItem,
   unresolvedVariants,
   variantOptionsFor,
@@ -42,7 +43,10 @@ describe("gear catalog", () => {
 describe("package label resolution", () => {
   it("resolves every package label except the ones the catalog does not cover", () => {
     const misses = allLabels().filter(
-      (label) => !resolvePackageItem(label) && !UNRESOLVED.some((re) => re.test(label)),
+      (label) =>
+        !resolvePackageItem(label) &&
+        !resolvePackageCyberware(label) &&
+        !UNRESOLVED.some((re) => re.test(label)),
     );
     expect(misses).toEqual([]);
   });

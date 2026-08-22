@@ -6,8 +6,8 @@
     "note": "Fixed packages for Streetrat and Edgerunner. Complete Package buys everything individually instead."
   },
   "_extraction": {
-    "method": "The source prints these as five-column tables that do not linearise cleanly \u2014 Medtech's outfit line appears interleaved mid-gear-list, so no structural split is reliable. Assignments were made by reading the printed columns, then every item string was verified to exist in the source text, and the Solo package was checked against the book's own worked 'Jay's Solo' example (exact match).",
-    "confidence": "Confirmed for all ten roles against the printed Weapons/Armor tables (2026-08-21). The two previously flagged rows \u2014 Medtech's Bulletproof Shield and Fixer's duplicated Heavy/Very Heavy Pistol choice \u2014 both read as printed and are correct."
+    "method": "The source prints these as five-column tables that do not linearise cleanly — Medtech's outfit line appears interleaved mid-gear-list, so no structural split is reliable. Assignments were made by reading the printed columns, then every item string was verified to exist in the source text, and the Solo package was checked against the book's own worked 'Jay's Solo' example (exact match).",
+    "confidence": "Confirmed for all ten roles against the printed Weapons/Armor tables (2026-08-21). The two previously flagged rows — Medtech's Bulletproof Shield and Fixer's duplicated Heavy/Very Heavy Pistol choice — both read as printed and are correct."
   },
   "_rules": {
     "appliesTo": ["streetrat", "edgerunner"],
@@ -15,8 +15,8 @@
     "unspentKept": true,
     "choiceRule": "Where an entry is a `choice`, the player picks exactly ONE option. Never both.",
     "armorNote": "Every Role receives Light Armorjack Body Armor and Head Armor at SP11. Track current SP separately from base SP so ablation works in play.",
-    "cyberwareNote": "NOT IN THIS FILE. The core rulebook does not print starting cyberware packages for Streetrat/Edgerunner \u2014 those Characters begin with no cyberware, so no Humanity Loss applies at creation. Complete Package Characters buy cyberware from the 2,550eb budget and take Humanity Loss then.",
-    "outfitNote": "Outfit strings are printed as Fashion-style groupings with quantities inline (e.g. 'Leisurewear: Footwear x2, Jacket x3'). Kept as printed rather than exploded into items \u2014 the Fashion catalog defines the pieces."
+    "cyberwareNote": "Streetrat and Edgerunner Characters receive predetermined starting cyberware by Role (core rulebook pg. 117) and take the listed Humanity Loss at Character Generation. Where an entry is a choice, pick exactly one. Complete Package Characters instead buy cyberware from the 2,550eb budget.",
+    "outfitNote": "Outfit strings are printed as Fashion-style groupings with quantities inline (e.g. 'Leisurewear: Footwear x2, Jacket x3'). Kept as printed rather than exploded into items — the Fashion catalog defines the pieces."
   },
   "_schema": {
     "entry": "{ item: string, qty: number }  OR  { choice: string[] }",
@@ -85,7 +85,28 @@
         "Leisurewear: Jewelry, Mirrorshades, Footwear",
         "Urbanflash: Bottoms, Top"
       ],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "item": "Audio Recorder",
+          "qty": 1
+        },
+        {
+          "item": "Chemskin",
+          "qty": 1
+        },
+        {
+          "item": "Cyberaudio Suite",
+          "qty": 1
+        },
+        {
+          "item": "Techhair",
+          "qty": 1
+        },
+        {
+          "item": "Biomonitor",
+          "qty": 1
+        }
+      ],
       "freeEurobucks": 500
     },
     "solo": {
@@ -126,7 +147,15 @@
         }
       ],
       "outfit": ["Leisurewear: Footwear x2, Jacket x3, Mirrorshades, Bottoms x2, Top x2"],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "item": "Neural Link",
+          "qty": 1
+        },
+        {
+          "choice": ["Sandevistan", "Wolvers"]
+        }
+      ],
       "freeEurobucks": 500
     },
     "netrunner": {
@@ -185,7 +214,20 @@
         "Leisurewear: Footwear x2, Jewelry, Bottoms x2",
         "Urban Flash: Jacket"
       ],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "item": "Interface Plugs",
+          "qty": 1
+        },
+        {
+          "item": "Neural Link",
+          "qty": 1
+        },
+        {
+          "item": "Shift Tacts",
+          "qty": 1
+        }
+      ],
       "freeEurobucks": 500
     },
     "tech": {
@@ -241,7 +283,24 @@
         }
       ],
       "outfit": ["Generic Chic: Bottoms x8, Tops x10", "Leisurewear: Footwear x2"],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "item": "Cybereye",
+          "qty": 1
+        },
+        {
+          "item": "MicroOptics",
+          "qty": 1
+        },
+        {
+          "item": "Skinwatch",
+          "qty": 1
+        },
+        {
+          "item": "Tool Hand",
+          "qty": 1
+        }
+      ],
       "freeEurobucks": 500
     },
     "medtech": {
@@ -300,7 +359,23 @@
         }
       ],
       "outfit": ["Generic Chic Jacket x3", "Leisurewear: Footwear, Bottoms x3, Top x5"],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "item": "Biomonitor",
+          "qty": 1
+        },
+        {
+          "item": "Cybereye",
+          "qty": 1
+        },
+        {
+          "choice": ["Nasal Filters", "Toxin Binders"]
+        },
+        {
+          "item": "TeleOptics",
+          "qty": 1
+        }
+      ],
       "freeEurobucks": 500
     },
     "media": {
@@ -363,7 +438,15 @@
         "Leisurewear: Jacket",
         "Urbanflash: Mirrorshades"
       ],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "choice": ["Amplified Hearing", "Voice Stress Analyzer"]
+        },
+        {
+          "item": "Cyberaudio Suite",
+          "qty": 1
+        }
+      ],
       "freeEurobucks": 500
     },
     "lawman": {
@@ -425,7 +508,20 @@
         "Generic Chic: Jacket, Bottoms x2, Top x3",
         "Leisurewear: Footwear x2, Jacket x2, Bottoms x2, Mirrorshades, Top x2"
       ],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "item": "Light Tattoo",
+          "qty": 1
+        },
+        {
+          "item": "Hidden Holster",
+          "qty": 1
+        },
+        {
+          "item": "Subdermal Pocket",
+          "qty": 1
+        }
+      ],
       "freeEurobucks": 500
     },
     "exec": {
@@ -459,7 +555,22 @@
         }
       ],
       "outfit": ["Businesswear: Footwear, Jacket, Bottoms, Mirrorshades, Top, Jewelry x2"],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "choice": ["Biomonitor", "Techhair"]
+        },
+        {
+          "item": "Cyberaudio Suite",
+          "qty": 1
+        },
+        {
+          "item": "Internal Agent",
+          "qty": 1
+        },
+        {
+          "choice": ["Toxin Binders", "Nasal Filters"]
+        }
+      ],
       "freeEurobucks": 500
     },
     "fixer": {
@@ -510,7 +621,23 @@
         "Leisurewear: Mirrorshades",
         "Urbanflash: Footwear, Jacket, Bottoms, Top"
       ],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "item": "Cyberaudio Suite",
+          "qty": 1
+        },
+        {
+          "item": "Internal Agent",
+          "qty": 1
+        },
+        {
+          "item": "Subdermal Pocket",
+          "qty": 1
+        },
+        {
+          "choice": ["Voice Stress Analyzer", "Amplified Hearing"]
+        }
+      ],
       "freeEurobucks": 500
     },
     "nomad": {
@@ -584,8 +711,32 @@
         "Bohemian: Jewelry",
         "Nomad Leathers: Top x4, Bottom x2, Footwear x2, Jacket, Hat"
       ],
-      "cyberware": [],
+      "cyberware": [
+        {
+          "choice": ["Interface Plugs", "Wolvers"]
+        },
+        {
+          "item": "Neural Link",
+          "qty": 1
+        }
+      ],
       "freeEurobucks": 500
+    }
+  },
+  "_cyberwareExtraction": {
+    "source": "Core rulebook pg. 117, 'Time to Score Some Cyberware for Streetrats & Edgerunners'.",
+    "method": "Per-role columns reconstructed and each verified against the printed total Humanity Loss (checksum).",
+    "humanityLossByRole": {
+      "rockerboy": 9,
+      "solo": 14,
+      "netrunner": 14,
+      "tech": 12,
+      "medtech": 12,
+      "media": 10,
+      "lawman": 10,
+      "exec": 12,
+      "fixer": 16,
+      "nomad": 14
     }
   }
 }

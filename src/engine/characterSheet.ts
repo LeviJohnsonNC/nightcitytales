@@ -15,14 +15,19 @@ import {
 } from "./catalog";
 import { deriveStats } from "./derived";
 import { derivedStatColumns, type DerivedStatColumns } from "./derivedColumns";
-import { getGearPackage, isChoice, type PackageEntry } from "./gearPackages";
-import type { HumanityLossResult } from "./humanity";
+import {
+  getGearPackage,
+  isChoice,
+  packageCyberwareHumanityRolls,
+  type PackageEntry,
+} from "./gearPackages";
+import { applyCyberwareHumanityLoss, type HumanityLossResult } from "./humanity";
 import { startingLifestylePlan, type StartingLifestylePlan } from "./lifestyle";
 import {
   eurobucksKept,
   foundations,
+  humanityLossRolls,
   lineCost,
-  loadoutHumanity,
   wornArmor,
   type CartLine,
   type Loadout,
@@ -288,7 +293,14 @@ export function assembleCharacter(build: CharacterBuild): AssembledCharacter {
   const statsComplete = STAT_ORDER.every((stat) => typeof build.stats[stat] === "number");
   const derived = statsComplete ? deriveStats(build.stats as StatBlock) : null;
   const columns = statsComplete ? derivedStatColumns(build.stats as StatBlock) : null;
-  const humanity = derived ? loadoutHumanity(derived.humanityMax, build.loadout) : null;
+  // Humanity Loss comes from bought cyberware AND, for Streetrat/Edgerunner,
+  // the Role's fixed starting cyberware (core rulebook pg. 117).
+  const humanity = derived
+    ? applyCyberwareHumanityLoss(derived.humanityMax, [
+        ...humanityLossRolls(build.loadout),
+        ...packageCyberwareHumanityRolls(build.roleId, build.method, build.loadout.packageChoices),
+      ])
+    : null;
 
   const skills = sheetSkillLines(build.skills, build.stats);
   const worn = wornArmor(build.loadout);

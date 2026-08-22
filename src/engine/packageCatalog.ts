@@ -10,10 +10,13 @@
 import {
   AMMUNITION,
   ARMOR,
+  CYBERWARE,
   GEAR,
   WEAPONS,
   catalogItem,
+  getCyberware,
   type ArmorLocation,
+  type CatalogCyberware,
   type ItemKind,
 } from "./catalog";
 
@@ -39,6 +42,25 @@ for (const w of WEAPONS) BY_NAME.set(normalize(w.name), { kind: "weapon", id: w.
 for (const a of ARMOR) BY_NAME.set(normalize(a.name), { kind: "armor", id: a.id });
 for (const a of AMMUNITION) BY_NAME.set(normalize(a.name), { kind: "ammunition", id: a.id });
 for (const g of GEAR) BY_NAME.set(normalize(g.name), { kind: "gear", id: g.id });
+
+/**
+ * Cyberware is resolved from its own name map, kept apart from BY_NAME because
+ * several cyberware names collide with Gear (Audio Recorder, Memory Chip,
+ * Medscanner, …). Package cyberware entries must never resolve to a Gear row.
+ */
+const CYBERWARE_BY_NAME = new Map<string, string>();
+for (const c of CYBERWARE) CYBERWARE_BY_NAME.set(normalize(c.name), c.id);
+
+/** The cyberware id behind a package cyberware label, or null if unmatched. */
+export function resolvePackageCyberware(label: string): string | null {
+  return CYBERWARE_BY_NAME.get(normalize(baseLabel(label))) ?? null;
+}
+
+/** The cyberware row behind a package cyberware label, for the info modal. */
+export function packageCyberwareRow(label: string): CatalogCyberware | null {
+  const id = resolvePackageCyberware(label);
+  return id ? getCyberware(id) : null;
+}
 
 /**
  * Package labels that do not match a catalog name character-for-character.
