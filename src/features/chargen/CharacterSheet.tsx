@@ -81,6 +81,26 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** The "?" info modal for a catalog line already on the sheet. */
+function CatalogInfo({ kind, itemId }: { kind: ItemKindLabel; itemId: string }) {
+  const item =
+    kind === "weapon"
+      ? getWeapon(itemId)
+      : kind === "armor"
+        ? getArmor(itemId)
+        : kind === "ammunition"
+          ? getAmmunition(itemId)
+          : getCyberware(itemId);
+  return <ItemInfo kind={kind} item={item as never} />;
+}
+
+/** The "?" info modal for a printed Role-package label, when it resolves. */
+function PackageInfo({ label }: { label: string }) {
+  const row = packageCatalogRow(label);
+  if (!row) return null;
+  return <ItemInfo kind={row.kind as ItemKindLabel} item={row.item as never} />;
+}
+
 export function CharacterSheet({
   state,
   build,
