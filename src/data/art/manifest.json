@@ -591,6 +591,16 @@
       "src": "/images/ammunition/teargas_ammo.png",
       "alt": "Teargas Ammunition art",
       "focalPoint": [0.5, 0.5]
+    },
+    "armor.leathers": {
+      "src": "/images/armor/leathers.png",
+      "alt": "Leathers art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.leathers.head": {
+      "src": "/images/armor/leathers-head.png",
+      "alt": "Leathers head armor art",
+      "focalPoint": [0.5, 0.5]
     }
   },
   "portraits": []
