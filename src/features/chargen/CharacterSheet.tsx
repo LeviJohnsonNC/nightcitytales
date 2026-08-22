@@ -12,6 +12,7 @@ import {
   getCyberware,
   getWeapon,
   packageCatalogRow,
+  packageCyberwareRow,
 } from "@/engine";
 import type { AssembledCharacter, CharacterBuild, PackageEntry } from "@/engine";
 import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
@@ -661,4 +662,16 @@ function packageLineText(
   }
   const name = variant ? `${variant} (${entry.item})` : entry.item;
   return `${name}${entry.qty > 1 ? ` ×${entry.qty}` : ""}`;
+}
+
+/** The printed catalog label behind a package line, before variants/quantity. */
+function packageLineLabel(
+  sheet: AssembledCharacter,
+  field: "weaponsArmor" | "gear",
+  entry: PackageEntry,
+  index: number,
+): string {
+  if ("item" in entry) return entry.item;
+  const id = `${field}.${index}`;
+  return sheet.packageChoices.find((c) => c.id === id)?.picked ?? entry.choice[0] ?? "";
 }
