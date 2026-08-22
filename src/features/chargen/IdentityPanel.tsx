@@ -12,7 +12,7 @@ import {
 } from "./selfDescription";
 import { useChargenStore, type ChargenState } from "./store";
 
-const PRONOUN_PRESETS = ["she/her", "he/him", "they/them", "she/they", "he/they", "it/its"];
+const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"];
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
 
