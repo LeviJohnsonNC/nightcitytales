@@ -11,7 +11,7 @@ import {
   type StatBlock,
   type StatKey,
 } from "@/engine";
-import { STEP_IDS, clearedByRoleChange, type ChargenStep } from "./steps";
+import { STEP_IDS, clearedByRoleChange, normalizeStep, type ChargenStep } from "./steps";
 
 export type { ChargenStep };
 export { CHARGEN_STEPS, STEP_IDS } from "./steps";
