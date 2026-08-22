@@ -439,7 +439,7 @@ export function CharacterSheet({
       </Panel>
 
       {/* 7 — General Lifepath */}
-      <Panel title="General Lifepath">
+      <CollapsiblePanel title="General Lifepath">
         {generalLines.length === 0 ? (
           <Empty>No Lifepath answers yet.</Empty>
         ) : (
@@ -449,10 +449,10 @@ export function CharacterSheet({
             ))}
           </ul>
         )}
-      </Panel>
+      </CollapsiblePanel>
 
       {/* 8 — Role Lifepath */}
-      <Panel title="Role-Specific Lifepath" note={role?.name}>
+      <CollapsiblePanel title="Role-Specific Lifepath" note={role?.name}>
         {roleLines.length === 0 ? (
           <Empty>No Role Lifepath answers yet.</Empty>
         ) : (
@@ -462,7 +462,7 @@ export function CharacterSheet({
             ))}
           </ul>
         )}
-      </Panel>
+      </CollapsiblePanel>
 
       {/* 9 — Outfit, ammo, cash, housing */}
       <div className="grid gap-4 md:grid-cols-2">
