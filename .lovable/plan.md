@@ -1,57 +1,71 @@
-# Generate the one-line self-description with AI
+# Generate the character portrait with AI
 
 ## What you get
 
-Next to the "One-line self-description" field on the Identity step, a small
-button: **Write one for me**. Press it and the AI returns a single punchy line
-in your character's own register, written in the house voice. The field stays
-fully editable, and pressing it again gives a different take.
+The Identity step's portrait area loses the filter chips and becomes a portrait
+studio:
 
-The button is disabled until the character actually has enough identity to
-describe. While disabled, a short line under it says what is still missing.
+- One big 3:4 frame showing the current portrait (or a styled empty plate).
+- A **Generate portrait** button under it, plus **Regenerate** once one exists.
+- A small strip of the takes generated so far (up to 4). Clicking one makes it
+  the portrait again, instantly and for free: nothing is re-generated, and a
+  fifth take pushes out the oldest.
+- The image renders progressively while it draws (blurred preview sharpening
+  into the final frame), so it never feels like a dead spinner.
 
-## When it unlocks
+The button unlocks only when everything non-optional is done: Name, Handle,
+Pronouns, Role, and every earlier required step of the wizard already passing
+its own validation (STATs, Skills, Lifepath, gear, lifestyle). While locked, one
+short line says what is still missing. Self-description stays optional, and its
+"Write one for me" button no longer demands a portrait first.
 
-All of these must be set:
+## What the portrait looks like
 
-- Name
-- Handle
-- Pronouns (this is where gender comes from: she/her reads female, he/him male,
-  they/them and anything else non-binary or unspecified, and the model is told
-  to respect that without making it the point of the line)
-- Role chosen
-- Portrait chosen
+One house prompt, built from the character, not free text from the player:
+Role and Role Ability, pronouns and the gender read from them, and the Lifepath
+glance facts already rolled (personality, clothing style, hairstyle,
+affectation, cultural origin). Rendered as a consistent house look: waist-up
+character portrait, 3:4, moody Night City street lighting, practical neon
+sources, grainy photographic realism, no text, no logos, no weapons pointed at
+camera. Every character in the roster ends up looking like it came from the
+same art department.
 
-## What the model gets
+No stats, no gear, no rules invented, nothing beyond the facts given.
 
-Name, handle, pronouns and the gender read from them, Role and Role Ability,
-plus the Lifepath facts already available (personality, clothing style,
-hairstyle, affectation, value most, life goal) when the player has rolled them.
-Nothing is invented: no stats, no gear, no mechanics.
+## Cost control
 
-The instruction asks for one sentence, roughly 8 to 20 words, present tense,
-how they read at a glance to a stranger on the street. No quotes around it, no
-trailing period drama, no name repetition unless it earns its place.
-
-## Failure and waiting
-
-The button shows a working state while it runs. If the gateway fails (no
-credits, rate limited, error), the real message appears next to the field with
-a retry. No silent canned fallback.
+- `openai/gpt-image-1-mini` at `quality: "low"`, `size: 1024x1024` — the
+  cheapest image route on the gateway, and low quality at 1024 is plenty for a
+  portrait card.
+- Streaming with `partial_images: 1`: one preview frame, not a filmstrip.
+- Takes are cached in the draft, so browsing between them costs nothing.
+- A soft cap: 6 generations per character draft. Past that the button explains
+  the cap and the player picks from the takes they have. Prevents an accidental
+  slot-machine bill.
+- Gateway failures (no credits, rate limit) surface the real message with a
+  retry, no silent fallback.
 
 ## Technical notes
 
-- New `buildSelfDescriptionPrompt()` in a small module beside
-  `lifepathBackground.ts`, wrapping the task with `withHouseStyle()` from
-  `src/lib/prose-style.ts`. The voice is never restated inline.
-- Reuses the existing server function `generateBackgroundFn`
-  (`src/lib/background.functions.ts`), which already takes a `{ system, user }`
-  pair and streams from Lovable AI, so `LOVABLE_API_KEY` stays server-side. No
-  new server surface, no schema change.
-- `IdentityPanel.tsx` gains the button, the readiness check, and local
-  loading/error state; the result is written through the existing
-  `patch({ selfDescription })`.
-- Pronoun-to-gender mapping is a tiny pure helper with unit tests; it falls back
-  to "unspecified" for custom pronouns rather than guessing.
-- Verified end to end against the running app: a real generation, read the
-  output, and confirm two runs differ.
+- New server route `src/routes/api/generate-portrait.ts` (a server route, not a
+  `createServerFn`, because the streaming SSE `Response` cannot be returned from
+  typed RPC). It takes the character facts, builds the image prompt server-side,
+  and pipes the gateway SSE straight through. Also honors `stream: false` for
+  the zero-event replay.
+- New `src/features/chargen/portraitPrompt.ts`: pure prompt builder from
+  `ChargenState` plus the readiness check, unit tested. Prose voice still comes
+  from `withHouseStyle()` where any words are generated; the image prompt has
+  its own single style constant living in that one file.
+- Persistence: the final PNG is uploaded to a new private `portraits` storage
+  bucket under `${user_id}/${draft_id}/${take_id}.png`, owner-scoped RLS, and
+  the draft stores signed-URL-resolvable paths, not base64 (base64 in the draft
+  row would bloat every autosave).
+- Store gains `portraitTakes: string[]` and `portraitUrl: string | null`
+  alongside the existing `portrait` id; `characters.portrait_url` is added as a
+  nullable column so the sheet, roster card and JSON export can show it.
+  `portrait_id` keeps working for any manifest portrait.
+- `PortraitGallery.tsx` filters and presentation chips are removed. The manifest
+  portraits list is currently empty, so the picker collapses to the generated
+  takes; manifest portraits still render if any are ever added.
+- Verified end to end against the running app: a real generation, the image on
+  screen, a second take differing, reload keeping both.
