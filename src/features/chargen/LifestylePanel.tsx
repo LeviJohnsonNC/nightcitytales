@@ -16,7 +16,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { readGeneralLifepath, displayValue } from "./lifepathState";
 import { BudgetBars, FashionWarning, PurchaseError, eb, useLoadoutActions } from "./market";
