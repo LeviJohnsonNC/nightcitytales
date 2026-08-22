@@ -560,8 +560,8 @@ export function GearPanel({ state }: { state: ChargenState }) {
         </div>
       )}
 
-      {/* Budget and cart share one sticky strip; the lists below stay full width. */}
-      <div className="sticky top-14 z-10 grid items-start gap-4 bg-ground/95 py-2 backdrop-blur lg:grid-cols-2">
+      {/* Budget and cart sit in normal flow so a growing cart pushes the lists down. */}
+      <div className="grid items-start gap-4 py-2 lg:grid-cols-2">
         <BudgetBars state={state} className="grid gap-3" />
         <Cart state={state} onRemove={remove} />
       </div>
