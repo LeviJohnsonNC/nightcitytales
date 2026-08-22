@@ -24,17 +24,21 @@ export function BackgroundPanel({
   onChange: (text: string) => void;
 }) {
   const [status, setStatus] = useState<Status>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function weave() {
     setStatus("loading");
+    setErrorMessage(null);
     try {
       const text = await generateBackground(buildInput());
       onChange(text);
       setStatus("idle");
-    } catch {
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : String(err));
       setStatus("error");
     }
   }
+
 
   const hasStory = value.trim().length > 0;
 
