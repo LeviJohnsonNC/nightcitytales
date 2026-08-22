@@ -105,13 +105,27 @@ export function CharacterSheet({
       <section className="sheet-page-1 grid gap-4 border border-hairline bg-surface p-4 sm:grid-cols-[10rem_minmax(0,1fr)]">
         <div className="aspect-[3/4] w-full">
           {generatedPortrait ? (
-            <img
+            <PortraitLightbox
               src={generatedPortrait}
               alt={`${build.name || "Character"} portrait`}
-              className="h-full w-full object-cover"
-            />
+              subtitle={build.handle ? `"${build.handle}"` : undefined}
+              className="h-full w-full"
+            >
+              <img
+                src={generatedPortrait}
+                alt={`${build.name || "Character"} portrait`}
+                className="h-full w-full object-cover"
+              />
+            </PortraitLightbox>
           ) : portrait ? (
-            <ArtSlot art={portraitArt(portrait)} label={build.name || "Portrait"} />
+            <PortraitLightbox
+              src={portraitArt(portrait).src}
+              alt={`${build.name || "Character"} portrait`}
+              subtitle={build.handle ? `"${build.handle}"` : undefined}
+              className="h-full w-full"
+            >
+              <ArtSlot art={portraitArt(portrait)} label={build.name || "Portrait"} />
+            </PortraitLightbox>
           ) : (
             <div className="flex h-full items-center justify-center border border-dashed border-hairline text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
               No portrait
