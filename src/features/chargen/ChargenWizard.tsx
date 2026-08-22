@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +40,11 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const statuses = stepStatuses(state);
   const { violations } = validateStep(state.step, state);
   const index = stepIds.indexOf(def.id);
+
+  // Every step starts at the top, no matter how far down the previous one was scrolled.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [state.step]);
 
   const hasDependentData =
     state.skills.length > 0 ||
