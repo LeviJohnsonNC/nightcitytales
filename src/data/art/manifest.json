@@ -526,6 +526,71 @@
       "src": "/images/armor/metalgear-head.png",
       "alt": "Metalgear head armor art",
       "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.basic_ammo": {
+      "src": "/images/ammunition/basic_ammo.png",
+      "alt": "Basic Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.ap_ammo": {
+      "src": "/images/ammunition/ap_ammo.png",
+      "alt": "Armor-Piercing Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.biotoxin_ammo": {
+      "src": "/images/ammunition/biotoxin_ammo.png",
+      "alt": "Biotoxin Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.emp_ammo": {
+      "src": "/images/ammunition/emp_ammo.png",
+      "alt": "EMP Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.expansive_ammo": {
+      "src": "/images/ammunition/expansive_ammo.png",
+      "alt": "Expansive Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.flashbang_ammo": {
+      "src": "/images/ammunition/flashbang_ammo.png",
+      "alt": "Flashbang Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.incendiary_ammo": {
+      "src": "/images/ammunition/incendiary_ammo.png",
+      "alt": "Incendiary Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.poison_ammo": {
+      "src": "/images/ammunition/poison_ammo.png",
+      "alt": "Poison Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.rubber_ammo": {
+      "src": "/images/ammunition/rubber_ammo.png",
+      "alt": "Rubber Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.sleep_ammo": {
+      "src": "/images/ammunition/sleep_ammo.png",
+      "alt": "Sleep Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.smart_ammo": {
+      "src": "/images/ammunition/smart_ammo.png",
+      "alt": "Smart Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.smoke_ammo": {
+      "src": "/images/ammunition/smoke_ammo.png",
+      "alt": "Smoke Ammunition art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "ammunition.teargas_ammo": {
+      "src": "/images/ammunition/teargas_ammo.png",
+      "alt": "Teargas Ammunition art",
+      "focalPoint": [0.5, 0.5]
     }
   },
   "portraits": []
