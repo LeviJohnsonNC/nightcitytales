@@ -76,7 +76,7 @@ export function roleLifepathSentences(
       const entry = entries[tableId];
       if (!entry) return null;
       const table = getRoleLifepathTable(roleId, tableId);
-      return `${table.label.replace(/\?$/, "")} — ${displayValue(entry)}.`;
+      return `${table.label.replace(/\?$/, "")}: ${displayValue(entry)}.`;
     })
     .filter((line): line is string => line !== null);
 }

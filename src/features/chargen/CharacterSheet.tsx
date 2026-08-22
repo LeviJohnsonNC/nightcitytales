@@ -4,8 +4,18 @@
  * Display only: every number arrives pre-computed from the engine.
  */
 import rolesData from "@/data/rules/roles.json";
-import { IMPROVEMENT_POINTS, REPUTATION } from "@/engine";
+import {
+  IMPROVEMENT_POINTS,
+  REPUTATION,
+  getAmmunition,
+  getArmor,
+  getCyberware,
+  getWeapon,
+  packageCatalogRow,
+  packageCyberwareRow,
+} from "@/engine";
 import type { AssembledCharacter, CharacterBuild, PackageEntry } from "@/engine";
+import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
 import { PortraitLightbox } from "./PortraitLightbox";
@@ -49,6 +59,31 @@ function Panel({
   );
 }
 
+/** Same chrome as Panel, but folded away until the reader opens it. */
+function CollapsiblePanel({
+  title,
+  note,
+  children,
+}: {
+  title: string;
+  note?: string | undefined;
+  children: React.ReactNode;
+}) {
+  return (
+    <details className="sheet-panel border border-hairline bg-surface p-4">
+      <summary className="flex cursor-pointer flex-wrap items-baseline gap-x-3">
+        <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.18em] text-text">
+          {title}
+        </h2>
+        {note && (
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">{note}</p>
+        )}
+      </summary>
+      <div className="mt-3 border-t border-hairline pt-3">{children}</div>
+    </details>
+  );
+}
+
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm italic text-text-dim">{children}</p>;
 }
@@ -70,6 +105,26 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="num text-right text-text">{value}</span>
     </div>
   );
+}
+
+/** The "?" info modal for a catalog line already on the sheet. */
+function CatalogInfo({ kind, itemId }: { kind: ItemKindLabel; itemId: string }) {
+  const item =
+    kind === "weapon"
+      ? getWeapon(itemId)
+      : kind === "armor"
+        ? getArmor(itemId)
+        : kind === "ammunition"
+          ? getAmmunition(itemId)
+          : getCyberware(itemId);
+  return <ItemInfo kind={kind} item={item as never} />;
+}
+
+/** The "?" info modal for a printed Role-package label, when it resolves. */
+function PackageInfo({ label }: { label: string }) {
+  const row = packageCatalogRow(label);
+  if (!row) return null;
+  return <ItemInfo kind={row.kind as ItemKindLabel} item={row.item as never} />;
 }
 
 export function CharacterSheet({
@@ -98,6 +153,18 @@ export function CharacterSheet({
     ...general.enemies.flatMap(enemySentences),
   ];
   const roleLines = build.roleId ? roleLifepathSentences(build.roleId, roleLifepath.entries) : [];
+
+  // Role-package weapons/armor arrive on one printed list; the sheet keeps
+  // armor in the Armor panel and weapons in the Weapons panel.
+  const packageWeaponsArmorLines = sheet.packageWeaponsArmor.map((entry, index) => ({
+    index,
+    label: packageLineLabel(sheet, "weaponsArmor", entry, index),
+    text: packageLineText(sheet, "weaponsArmor", entry, index),
+  }));
+  const isArmorLabel = (label: string) => packageCatalogRow(label)?.kind === "armor";
+  const packageArmor = packageWeaponsArmorLines.filter((l) => isArmorLabel(l.label));
+  const packageWeapons = packageWeaponsArmorLines.filter((l) => !isArmorLabel(l.label));
+
 
   return (
     <div className="sheet space-y-4">
@@ -133,7 +200,7 @@ export function CharacterSheet({
           )}
         </div>
         <div className="min-w-0 space-y-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ember">
+          <p className="font-display text-lg font-bold uppercase tracking-[0.22em] text-ember">
             {role ? role.name : "No Role"}
           </p>
           <h1 className="font-display text-3xl font-bold leading-tight text-text">
@@ -141,7 +208,6 @@ export function CharacterSheet({
           </h1>
           <p className="text-sm text-text-muted">
             {build.handle ? `"${build.handle}"` : "no handle"}
-            {build.pronouns ? ` · ${build.pronouns}` : ""}
           </p>
           {build.roleAbility && (
             <p className="mt-3 font-mono text-xs uppercase tracking-[0.14em] text-text-muted">
@@ -202,20 +268,14 @@ export function CharacterSheet({
               </p>
             )}
             <div className="grid gap-2 sm:grid-cols-2">
-              <div className="border border-dashed border-hairline p-3">
+              <div className="min-h-20 border border-dashed border-hairline p-3">
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
                   Critical Injuries
                 </p>
-                <p className="mt-2 text-sm italic text-text-dim">
-                  None at creation. Space for play.
-                </p>
               </div>
-              <div className="border border-dashed border-hairline p-3">
+              <div className="min-h-20 border border-dashed border-hairline p-3">
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
                   Addictions
-                </p>
-                <p className="mt-2 text-sm italic text-text-dim">
-                  None at creation. Space for play.
                 </p>
               </div>
             </div>
@@ -224,7 +284,7 @@ export function CharacterSheet({
       </Panel>
 
       {/* 4 — Skills */}
-      <Panel title="Skills" note="Level · STAT · Skill Base">
+      <Panel title="Skills" note="Skill Base — hover a row for Level and STAT">
         {sheet.skills.length === 0 ? (
           <Empty>No skills on the sheet yet.</Empty>
         ) : (
@@ -234,10 +294,16 @@ export function CharacterSheet({
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ember">
                   {group.category}
                 </p>
-                <table className="mt-1 w-full text-sm">
+                <table className="mt-1 w-full table-fixed text-sm">
                   <tbody>
                     {group.lines.map((line) => (
-                      <tr key={line.key} className="border-b border-hairline/60">
+                      <tr
+                        key={line.key}
+                        className="border-b border-hairline/60"
+                        title={`Level ${line.level} · ${line.stat.toUpperCase()}${
+                          line.statValue !== null ? ` ${line.statValue}` : ""
+                        } · Skill Base ${line.base ?? "—"}`}
+                      >
                         <td className="py-1 pr-2 text-text">
                           {line.name}
                           {line.doubleCost && <span className="text-text-dim"> (x2)</span>}
@@ -247,12 +313,7 @@ export function CharacterSheet({
                             </span>
                           )}
                         </td>
-                        <td className="num py-1 text-right text-text-muted">{line.level}</td>
-                        <td className="num py-1 pl-2 text-right font-mono text-[11px] uppercase text-text-dim">
-                          {line.stat}
-                          {line.statValue !== null ? ` ${line.statValue}` : ""}
-                        </td>
-                        <td className="num py-1 pl-3 text-right font-bold text-ember">
+                        <td className="num w-12 py-1 text-right font-bold tabular-nums text-ember">
                           {line.base ?? "—"}
                         </td>
                       </tr>
@@ -267,7 +328,7 @@ export function CharacterSheet({
 
       {/* 5 — Weapons and Armor */}
       <Panel title="Weapons" note="damage · magazine · ROF">
-        {sheet.weapons.length === 0 && sheet.packageWeaponsArmor.length === 0 ? (
+        {sheet.weapons.length === 0 && packageWeapons.length === 0 ? (
           <Empty>No weapons carried.</Empty>
         ) : (
           <div className="space-y-3">
@@ -287,8 +348,13 @@ export function CharacterSheet({
                   {sheet.weapons.map((w) => (
                     <tr key={w.lineId} className="border-t border-hairline/60">
                       <td className="py-1 text-text">
-                        {w.name}
-                        {w.qty > 1 ? ` ×${w.qty}` : ""}
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>
+                            {w.name}
+                            {w.qty > 1 ? ` ×${w.qty}` : ""}
+                          </span>
+                          <CatalogInfo kind="weapon" itemId={w.itemId} />
+                        </span>
                         {w.notes && <span className="block text-xs text-text-dim">{w.notes}</span>}
                       </td>
                       <td className="py-1 text-text-muted">{w.skill}</td>
@@ -301,14 +367,17 @@ export function CharacterSheet({
                 </tbody>
               </table>
             )}
-            {sheet.packageWeaponsArmor.length > 0 && (
+            {packageWeapons.length > 0 && (
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
                   From your Role package, as printed
                 </p>
                 <ul className="mt-1 space-y-0.5 text-sm text-text-muted">
-                  {sheet.packageWeaponsArmor.map((entry, i) => (
-                    <li key={i}>{packageLineText(sheet, "weaponsArmor", entry, i)}</li>
+                  {packageWeapons.map((line) => (
+                    <li key={line.index} className="flex items-center gap-1.5">
+                      <span>{line.text}</span>
+                      <PackageInfo label={line.label} />
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -318,33 +387,57 @@ export function CharacterSheet({
       </Panel>
 
       <Panel title="Armor" note="SP and penalty by location">
-        {sheet.armor.length === 0 ? (
+        {sheet.armor.length === 0 && packageArmor.length === 0 ? (
           <Empty>Nothing worn.</Empty>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
-                <th className="pb-1 text-left">Location</th>
-                <th className="pb-1 text-left">Armor</th>
-                <th className="pb-1 text-right">SP</th>
-                <th className="pb-1 text-right">Current SP</th>
-                <th className="pb-1 text-right">Penalty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sheet.armor.map((a) => (
-                <tr key={a.lineId} className="border-t border-hairline/60">
-                  <td className="py-1 uppercase text-text-muted">{a.location}</td>
-                  <td className="py-1 text-text">{a.name}</td>
-                  <td className="num py-1 text-right">{a.sp ?? "—"}</td>
-                  <td className="num py-1 text-right">{a.currentSp ?? "—"}</td>
-                  <td className="num py-1 text-right">
-                    {a.penalty ? JSON.stringify(a.penalty).replace(/[{}"]/g, "") : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="space-y-3">
+            {sheet.armor.length > 0 && (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
+                    <th className="pb-1 text-left">Location</th>
+                    <th className="pb-1 text-left">Armor</th>
+                    <th className="pb-1 text-right">SP</th>
+                    <th className="pb-1 text-right">Current SP</th>
+                    <th className="pb-1 text-right">Penalty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sheet.armor.map((a) => (
+                    <tr key={a.lineId} className="border-t border-hairline/60">
+                      <td className="py-1 uppercase text-text-muted">{a.location}</td>
+                      <td className="py-1 text-text">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>{a.name}</span>
+                          <CatalogInfo kind="armor" itemId={a.itemId} />
+                        </span>
+                      </td>
+                      <td className="num py-1 text-right">{a.sp ?? "—"}</td>
+                      <td className="num py-1 text-right">{a.currentSp ?? "—"}</td>
+                      <td className="num py-1 text-right">
+                        {a.penalty ? JSON.stringify(a.penalty).replace(/[{}"]/g, "") : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {packageArmor.length > 0 && (
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
+                  From your Role package, as printed
+                </p>
+                <ul className="mt-1 space-y-0.5 text-sm text-text-muted">
+                  {packageArmor.map((line) => (
+                    <li key={line.index} className="flex items-center gap-1.5">
+                      <span>{line.text}</span>
+                      <PackageInfo label={line.label} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
       </Panel>
 
@@ -372,7 +465,7 @@ export function CharacterSheet({
       </Panel>
 
       {/* 7 — General Lifepath */}
-      <Panel title="General Lifepath">
+      <CollapsiblePanel title="General Lifepath">
         {generalLines.length === 0 ? (
           <Empty>No Lifepath answers yet.</Empty>
         ) : (
@@ -382,10 +475,10 @@ export function CharacterSheet({
             ))}
           </ul>
         )}
-      </Panel>
+      </CollapsiblePanel>
 
       {/* 8 — Role Lifepath */}
-      <Panel title="Role-Specific Lifepath" note={role?.name}>
+      <CollapsiblePanel title="Role-Specific Lifepath" note={role?.name}>
         {roleLines.length === 0 ? (
           <Empty>No Role Lifepath answers yet.</Empty>
         ) : (
@@ -395,7 +488,7 @@ export function CharacterSheet({
             ))}
           </ul>
         )}
-      </Panel>
+      </CollapsiblePanel>
 
       {/* 9 — Outfit, ammo, cash, housing */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -433,8 +526,13 @@ export function CharacterSheet({
                 {sheet.ammunition.map((a) => (
                   <tr key={a.lineId} className="border-b border-hairline/60">
                     <td className="py-1 text-text">
-                      {a.name}
-                      {a.qty > 1 ? ` ×${a.qty}` : ""}
+                      <span className="inline-flex items-center gap-1.5">
+                        <span>
+                          {a.name}
+                          {a.qty > 1 ? ` ×${a.qty}` : ""}
+                        </span>
+                        <CatalogInfo kind="ammunition" itemId={a.itemId} />
+                      </span>
                     </td>
                     <td className="num py-1 text-right text-text-muted">{a.cost}eb</td>
                   </tr>
@@ -486,16 +584,22 @@ export function CharacterSheet({
                   <ul className="mt-1 space-y-1 text-sm">
                     {location.installs.map((install) => (
                       <li key={install.lineId}>
-                        <span className="text-text">{install.item.name}</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="text-text">{install.item.name}</span>
+                          <ItemInfo kind="cyberware" item={install.item as never} />
+                        </span>
                         {install.slots !== null && (
                           <span className="num ml-2 font-mono text-[11px] text-text-dim">
                             {install.slotsUsed}/{install.slots} slots
                           </span>
                         )}
                         {install.options.length > 0 && (
-                          <ul className="ml-4 list-disc text-text-muted">
+                          <ul className="ml-4 space-y-1 text-text-muted">
                             {install.options.map((option) => (
-                              <li key={option.lineId}>{option.item.name}</li>
+                              <li key={option.lineId} className="flex items-center gap-1.5">
+                                <span>{option.item.name}</span>
+                                <ItemInfo kind="cyberware" item={option.item as never} />
+                              </li>
                             ))}
                           </ul>
                         )}
@@ -510,13 +614,24 @@ export function CharacterSheet({
                     From your Role package, as printed
                   </p>
                   <ul className="mt-1 space-y-0.5 text-sm text-text-muted">
-                    {sheet.packageCyberware.map((entry, i) => (
-                      <li key={i}>
-                        {"item" in entry
-                          ? `${entry.item}${entry.qty > 1 ? ` ×${entry.qty}` : ""}`
-                          : entry.choice.join(" or ")}
-                      </li>
-                    ))}
+                    {sheet.packageCyberware.map((entry, i) => {
+                      const picked =
+                        "item" in entry
+                          ? entry.item
+                          : (sheet.packageChoices.find((c) => c.id === `cyberware.${i}`)?.picked ??
+                            null);
+                      const row = picked ? packageCyberwareRow(picked) : null;
+                      return (
+                        <li key={i} className="flex items-center gap-1.5">
+                          <span>
+                            {"item" in entry
+                              ? `${entry.item}${entry.qty > 1 ? ` ×${entry.qty}` : ""}`
+                              : (picked ?? entry.choice.join(" or "))}
+                          </span>
+                          {row && <ItemInfo kind="cyberware" item={row as never} />}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -547,4 +662,16 @@ function packageLineText(
   }
   const name = variant ? `${variant} (${entry.item})` : entry.item;
   return `${name}${entry.qty > 1 ? ` ×${entry.qty}` : ""}`;
+}
+
+/** The printed catalog label behind a package line, before variants/quantity. */
+function packageLineLabel(
+  sheet: AssembledCharacter,
+  field: "weaponsArmor" | "gear",
+  entry: PackageEntry,
+  index: number,
+): string {
+  if ("item" in entry) return entry.item;
+  const id = `${field}.${index}`;
+  return sheet.packageChoices.find((c) => c.id === id)?.picked ?? entry.choice[0] ?? "";
 }
