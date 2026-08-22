@@ -386,7 +386,14 @@ export function removeLine(loadout: Loadout, lineId: string): Loadout {
  * stacks.
  */
 export function isStackableLine(line: CartLine): boolean {
-  return line.kind !== "armor" && line.kind !== "cyberware";
+  if (line.kind === "armor") return false;
+  if (line.kind === "cyberware") {
+    const item = getCyberware(line.itemId);
+    // Foundations own their Option Slots and options attach to one specific
+    // foundation line; standalone installs (fashionware, chipware) are fungible.
+    return !item.foundational && !item.requires;
+  }
+  return true;
 }
 
 /** Identity of a cart stack. Non-stackable lines are their own stack. */
