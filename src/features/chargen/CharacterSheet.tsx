@@ -226,7 +226,7 @@ export function CharacterSheet({
       </Panel>
 
       {/* 4 — Skills */}
-      <Panel title="Skills" note="Level · STAT · Skill Base">
+      <Panel title="Skills" note="Skill Base — hover a row for Level and STAT">
         {sheet.skills.length === 0 ? (
           <Empty>No skills on the sheet yet.</Empty>
         ) : (
@@ -236,10 +236,16 @@ export function CharacterSheet({
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ember">
                   {group.category}
                 </p>
-                <table className="mt-1 w-full text-sm">
+                <table className="mt-1 w-full table-fixed text-sm">
                   <tbody>
                     {group.lines.map((line) => (
-                      <tr key={line.key} className="border-b border-hairline/60">
+                      <tr
+                        key={line.key}
+                        className="border-b border-hairline/60"
+                        title={`Level ${line.level} · ${line.stat.toUpperCase()}${
+                          line.statValue !== null ? ` ${line.statValue}` : ""
+                        } · Skill Base ${line.base ?? "—"}`}
+                      >
                         <td className="py-1 pr-2 text-text">
                           {line.name}
                           {line.doubleCost && <span className="text-text-dim"> (x2)</span>}
@@ -249,12 +255,7 @@ export function CharacterSheet({
                             </span>
                           )}
                         </td>
-                        <td className="num py-1 text-right text-text-muted">{line.level}</td>
-                        <td className="num py-1 pl-2 text-right font-mono text-[11px] uppercase text-text-dim">
-                          {line.stat}
-                          {line.statValue !== null ? ` ${line.statValue}` : ""}
-                        </td>
-                        <td className="num py-1 pl-3 text-right font-bold text-ember">
+                        <td className="num w-12 py-1 text-right font-bold tabular-nums text-ember">
                           {line.base ?? "—"}
                         </td>
                       </tr>
