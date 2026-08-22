@@ -113,7 +113,19 @@ export function ChargenWizard({ userId }: { userId: string }) {
             Step {String(def.index).padStart(2, "0")} /{" "}
             {String(steps.length - 1).padStart(2, "0")}
           </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">{def.title}</h1>
+          <div className="mt-1 flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
+            {STEP_HELP[def.id] && (
+              <button
+                type="button"
+                aria-label={`About ${def.title}`}
+                onClick={() => setHelpOpen(true)}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-border font-mono text-xs text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+              >
+                ?
+              </button>
+            )}
+          </div>
 
           <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
             {SAVE_LABEL[saveStatus]}
