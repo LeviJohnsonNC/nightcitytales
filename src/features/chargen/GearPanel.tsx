@@ -323,7 +323,6 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   );
 }
 
-
 function GearTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
