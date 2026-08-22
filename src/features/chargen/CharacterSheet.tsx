@@ -210,20 +210,14 @@ export function CharacterSheet({
               </p>
             )}
             <div className="grid gap-2 sm:grid-cols-2">
-              <div className="border border-dashed border-hairline p-3">
+              <div className="min-h-20 border border-dashed border-hairline p-3">
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
                   Critical Injuries
                 </p>
-                <p className="mt-2 text-sm italic text-text-dim">
-                  None at creation. Space for play.
-                </p>
               </div>
-              <div className="border border-dashed border-hairline p-3">
+              <div className="min-h-20 border border-dashed border-hairline p-3">
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
                   Addictions
-                </p>
-                <p className="mt-2 text-sm italic text-text-dim">
-                  None at creation. Space for play.
                 </p>
               </div>
             </div>
