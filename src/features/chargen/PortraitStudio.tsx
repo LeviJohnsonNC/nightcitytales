@@ -8,6 +8,7 @@ import {
   buildPortraitFacts,
   portraitMissing,
 } from "./portraitPrompt";
+import { PortraitLightbox } from "./PortraitLightbox";
 import { usePortraitUrl } from "./usePortraitUrl";
 import { useChargenStore, type ChargenState } from "./store";
 
