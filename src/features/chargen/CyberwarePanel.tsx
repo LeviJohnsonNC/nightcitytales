@@ -91,8 +91,6 @@ export function CyberwarePanel({ state }: { state: ChargenState }) {
     );
   }
 
-  const isPackage = state.method === "streetrat" || state.method === "edgerunner";
-  const packageCyberware = isPackage ? getGearPackage(state.roleId).cyberware : [];
   const usage = categorySlotUsage(loadout);
   const installedCount = loadout.lines.filter((l) => l.kind === "cyberware").length;
 
