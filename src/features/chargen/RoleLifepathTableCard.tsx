@@ -10,11 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
+  choiceOnlyDieSides,
   chooseRoleLifepathEntry,
+  rollChoiceOnlyRoleLifepathTable,
   rollRoleLifepathTable,
   type LifepathEntryRecord,
   type RoleLifepathTable,
 } from "@/engine";
+
 import { DiceRoll } from "./DiceRoll";
 
 export function RoleLifepathTableCard({
