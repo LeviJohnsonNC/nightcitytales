@@ -103,7 +103,6 @@ export function CyberwarePanel({ state }: { state: ChargenState }) {
         <p className="mt-2 text-sm text-text-muted">{HUMANITY_LOSS_AT_CREATION_RULE}</p>
       </div>
 
-
       <HumanityMeter state={state} />
       <CyberwareSlots loadout={loadout} />
       <PurchaseError error={error} />
