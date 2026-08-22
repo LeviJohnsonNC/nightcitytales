@@ -8,7 +8,6 @@ import { LifestylePanel } from "./LifestylePanel";
 import { MethodPanel } from "./MethodPanel";
 import { ReviewPanel } from "./ReviewPanel";
 import { RolePanel } from "./RolePanel";
-import { RollLog } from "./RollLog";
 import { SkillsPanel } from "./SkillsPanel";
 import { StatsPanel } from "./StatsPanel";
 import { useChargenStore, type ChargenState } from "./store";
