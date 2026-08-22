@@ -19,7 +19,7 @@ export function genderFromPronouns(pronouns: string): GenderRead {
   if (!p) return "unspecified";
   if (p === "she/her") return "female";
   if (p === "he/him") return "male";
-  if (p === "they/them" || p === "she/they" || p === "he/they" || p === "it/its") {
+  if (p === "they/them") {
     return "non-binary";
   }
   return "unspecified";
