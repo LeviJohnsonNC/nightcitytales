@@ -1,715 +1,457 @@
 {
- "_note": "Art manifest. Each entry may carry \"pointer\": the file name of an uploaded Lovable asset pointer in src/assets (e.g. \"portrait-01.png\"), resolved by src/features/chargen/art.ts. Resolution order is pointer -> src -> placeholder. src:null and no pointer means artwork has not landed yet; the UI renders a styled placeholder showing the asset id. This file is the ONLY source of image references.",
- "_portraitSchema": {
-  "id": "string",
-  "pointer": "string | null",
-  "src": "string | null",
-  "roles": "role id array",
-  "presentation": "masc | femme | androgynous",
-  "alt": "string",
-  "focalPoint": "[x, y] 0-1"
- },
- "roleArt": {
-  "rockerboy": {
-   "pointer": "role-rockerboy.png",
-   "src": null,
-   "alt": "Rockerboy key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "solo": {
-   "pointer": "role-solo.png",
-   "src": null,
-   "alt": "Solo key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "netrunner": {
-   "pointer": "role-netrunner.png",
-   "src": null,
-   "alt": "Netrunner key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "tech": {
-   "pointer": "role-tech.png",
-   "src": null,
-   "alt": "Tech key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "medtech": {
-   "pointer": "role-medtech.png",
-   "src": null,
-   "alt": "Medtech key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "media": {
-   "pointer": "role-media.png",
-   "src": null,
-   "alt": "Media key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "exec": {
-   "pointer": "role-exec.png",
-   "src": null,
-   "alt": "Exec key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "lawman": {
-   "pointer": "role-lawman.png",
-   "src": null,
-   "alt": "Lawman key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "fixer": {
-   "pointer": "role-fixer.png",
-   "src": null,
-   "alt": "Fixer key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  },
-  "nomad": {
-   "pointer": "role-nomad.png",
-   "src": null,
-   "alt": "Nomad key art",
-   "focalPoint": [
-    0.5,
-    0.35
-   ]
-  }
- },
- "itemArt": {
-  "gear.agent": {
-   "src": "/images/gear/agent.png",
-   "alt": "Agent art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.airhypo": {
-   "src": "/images/gear/airhypo.png",
-   "alt": "Airhypo art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.anti_smog_breathing_mask": {
-   "src": "/images/gear/anti_smog_breathing_mask.png",
-   "alt": "Anti-Smog Breathing Mask art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.audio_recorder": {
-   "src": "/images/gear/audio_recorder.png",
-   "alt": "Audio Recorder art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.auto_level_dampening_ear_protectors": {
-   "src": "/images/gear/auto_level_dampening_ear_protectors.png",
-   "alt": "Auto Level Dampening Ear Protectors art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.binoculars": {
-   "src": "/images/gear/binoculars.png",
-   "alt": "Binoculars art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.braindance_viewer": {
-   "src": "/images/gear/braindance_viewer.png",
-   "alt": "Braindance Viewer art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.bug_detector": {
-   "src": "/images/gear/bug_detector.png",
-   "alt": "Bug Detector art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.carryall": {
-   "src": "/images/gear/carryall.png",
-   "alt": "Carryall art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.chemical_analyzer": {
-   "src": "/images/gear/chemical_analyzer.png",
-   "alt": "Chemical Analyzer art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.computer": {
-   "src": "/images/gear/computer.png",
-   "alt": "Computer art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.cyberdeck": {
-   "src": "/images/gear/cyberdeck.png",
-   "alt": "Cyberdeck art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.disposable_cell_phone": {
-   "src": "/images/gear/disposable_cell_phone.png",
-   "alt": "Disposable Cell Phone art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.drum_synthesizer": {
-   "src": "/images/gear/drum_synthesizer.png",
-   "alt": "Drum Synthesizer art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.duct_tape": {
-   "src": "/images/gear/duct_tape.png",
-   "alt": "Duct Tape art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.electric_guitar_other_instrument": {
-   "src": "/images/gear/electric_guitar_other_instrument.png",
-   "alt": "Electric Guitar/Other Instrument art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.flashlight": {
-   "src": "/images/gear/flashlight.png",
-   "alt": "Flashlight art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.food_stick": {
-   "src": "/images/gear/food_stick.png",
-   "alt": "Food Stick art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.glow_paint": {
-   "src": "/images/gear/glow_paint.png",
-   "alt": "Glow Paint art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.grapple_gun": {
-   "src": "/images/gear/grapple_gun.png",
-   "alt": "Grapple Gun art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.handcuffs": {
-   "src": "/images/gear/handcuffs.png",
-   "alt": "Handcuffs art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.homing_tracer": {
-   "src": "/images/gear/homing_tracer.png",
-   "alt": "Homing Tracer art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.inflatable_bed_sleep_bag": {
-   "src": "/images/gear/inflatable_bed_sleep_bag.png",
-   "alt": "Inflatable Bed & Sleep-bag art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.kibble_pack": {
-   "src": "/images/gear/kibble_pack.png",
-   "alt": "Kibble Pack art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.medscanner": {
-   "src": "/images/gear/medscanner.png",
-   "alt": "Medscanner art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.medtech_bag": {
-   "src": "/images/gear/medtech_bag.png",
-   "alt": "Medtech Bag art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.memory_chip": {
-   "src": "/images/gear/memory_chip.png",
-   "alt": "Memory Chip art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.mre": {
-   "src": "/images/gear/mre.png",
-   "alt": "MRE art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.personal_carepak": {
-   "src": "/images/gear/personal_carepak.png",
-   "alt": "Personal CarePak art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.pocket_amplifier": {
-   "src": "/images/gear/pocket_amplifier.png",
-   "alt": "Pocket Amplifier art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.radar_detector": {
-   "src": "/images/gear/radar_detector.png",
-   "alt": "Radar Detector art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.radiation_suit": {
-   "src": "/images/gear/radiation_suit.png",
-   "alt": "Radiation Suit art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.radio_communicator": {
-   "src": "/images/gear/radio_communicator.png",
-   "alt": "Radio Communicator art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.radio_scanner_music_player": {
-   "src": "/images/gear/radio_scanner_music_player.png",
-   "alt": "Radio Scanner/Music Player art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.road_flare": {
-   "src": "/images/gear/road_flare.png",
-   "alt": "Road Flare art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.rope_60m_yd": {
-   "src": "/images/gear/rope_60m_yd.png",
-   "alt": "Rope (60m/yd) art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.scrambler_descrambler": {
-   "src": "/images/gear/scrambler_descrambler.png",
-   "alt": "Scrambler/Descrambler art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.smart_glasses": {
-   "src": "/images/gear/smart_glasses.png",
-   "alt": "Smart Glasses art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.tech_bag": {
-   "src": "/images/gear/tech_bag.png",
-   "alt": "Tech Bag art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.techscanner": {
-   "src": "/images/gear/techscanner.png",
-   "alt": "Techscanner art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.techtool": {
-   "src": "/images/gear/techtool.png",
-   "alt": "Techtool art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.tent_and_camping_equipment": {
-   "src": "/images/gear/tent_and_camping_equipment.png",
-   "alt": "Tent and Camping Equipment art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.vial_of_biotoxin": {
-   "src": "/images/gear/vial_of_biotoxin.png",
-   "alt": "Vial of Biotoxin art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.vial_of_poison": {
-   "src": "/images/gear/vial_of_poison.png",
-   "alt": "Vial of Poison art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.video_camera": {
-   "src": "/images/gear/video_camera.png",
-   "alt": "Video Camera art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.virtuality_goggles": {
-   "src": "/images/gear/virtuality_goggles.png",
-   "alt": "Virtuality Goggles art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.glow_stick": {
-   "src": "/images/gear/glow_stick.png",
-   "alt": "Glow Stick art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "gear.lock_picking_set": {
-   "src": "/images/gear/lock_picking_set.png",
-   "alt": "Lock Picking Set art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.light_melee": {
-   "src": "/images/weapons/light_melee.png",
-   "alt": "Light Melee Weapon art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.medium_melee": {
-   "src": "/images/weapons/medium_melee.png",
-   "alt": "Medium Melee Weapon art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.heavy_melee": {
-   "src": "/images/weapons/heavy_melee.png",
-   "alt": "Heavy Melee Weapon art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.very_heavy_melee": {
-   "src": "/images/weapons/very_heavy_melee.png",
-   "alt": "Very Heavy Melee Weapon art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.medium_pistol": {
-   "src": "/images/weapons/medium_pistol.png",
-   "alt": "Medium Pistol art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.heavy_pistol": {
-   "src": "/images/weapons/heavy_pistol.png",
-   "alt": "Heavy Pistol art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.very_heavy_pistol": {
-   "src": "/images/weapons/very_heavy_pistol.png",
-   "alt": "Very Heavy Pistol art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.smg": {
-   "src": "/images/weapons/smg.png",
-   "alt": "SMG art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.shotgun": {
-   "src": "/images/weapons/shotgun.png",
-   "alt": "Shotgun art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.assault_rifle": {
-   "src": "/images/weapons/assault_rifle.png",
-   "alt": "Assault Rifle art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.sniper_rifle": {
-   "src": "/images/weapons/sniper_rifle.png",
-   "alt": "Sniper Rifle art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.bows_crossbows": {
-   "src": "/images/weapons/bows_crossbows.png",
-   "alt": "Bows & Crossbows art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.grenade_launcher": {
-   "src": "/images/weapons/grenade_launcher.png",
-   "alt": "Grenade Launcher art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.rocket_launcher": {
-   "src": "/images/weapons/rocket_launcher.png",
-   "alt": "Rocket Launcher art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.air_pistol": {
-   "src": "/images/weapons/air_pistol.png",
-   "alt": "Air Pistol art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.battleglove": {
-   "src": "/images/weapons/battleglove.png",
-   "alt": "Battleglove art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.hurricane_assault": {
-   "src": "/images/weapons/hurricane_assault.png",
-   "alt": "Constitution Arms Hurricane Assault Weapon art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.dartgun": {
-   "src": "/images/weapons/dartgun.png",
-   "alt": "Dartgun art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.flamethrower": {
-   "src": "/images/weapons/flamethrower.png",
-   "alt": "Flamethrower art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.kendachi_mono_three": {
-   "src": "/images/weapons/kendachi_mono_three.png",
-   "alt": "Kendachi Mono-Three art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.malorian_3516": {
-   "src": "/images/weapons/malorian_3516.png",
-   "alt": "Malorian Arms 3516 art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.microwaver": {
-   "src": "/images/weapons/microwaver.png",
-   "alt": "Microwaver art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.cowboy_u56": {
-   "src": "/images/weapons/cowboy_u56.png",
-   "alt": "Militech \"Cowboy\" U-56 Grenade Launcher art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.rhinemetall_railgun": {
-   "src": "/images/weapons/rhinemetall_railgun.png",
-   "alt": "Rhinemetall EMG-86 Railgun art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.shrieker": {
-   "src": "/images/weapons/shrieker.png",
-   "alt": "Shrieker art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.stun_baton": {
-   "src": "/images/weapons/stun_baton.png",
-   "alt": "Stun Baton art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.stun_gun": {
-   "src": "/images/weapons/stun_gun.png",
-   "alt": "Stun Gun art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  },
-  "weapon.tsunami_helix": {
-   "src": "/images/weapons/tsunami_helix.png",
-   "alt": "Tsunami Arms Helix art",
-   "focalPoint": [
-    0.5,
-    0.5
-   ]
-  }
- },
- "portraits": []
+  "_note": "Art manifest. Each entry may carry \"pointer\": the file name of an uploaded Lovable asset pointer in src/assets (e.g. \"portrait-01.png\"), resolved by src/features/chargen/art.ts. Resolution order is pointer -> src -> placeholder. src:null and no pointer means artwork has not landed yet; the UI renders a styled placeholder showing the asset id. This file is the ONLY source of image references.",
+  "_portraitSchema": {
+    "id": "string",
+    "pointer": "string | null",
+    "src": "string | null",
+    "roles": "role id array",
+    "presentation": "masc | femme | androgynous",
+    "alt": "string",
+    "focalPoint": "[x, y] 0-1"
+  },
+  "roleArt": {
+    "rockerboy": {
+      "pointer": "role-rockerboy.png",
+      "src": null,
+      "alt": "Rockerboy key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "solo": {
+      "pointer": "role-solo.png",
+      "src": null,
+      "alt": "Solo key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "netrunner": {
+      "pointer": "role-netrunner.png",
+      "src": null,
+      "alt": "Netrunner key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "tech": {
+      "pointer": "role-tech.png",
+      "src": null,
+      "alt": "Tech key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "medtech": {
+      "pointer": "role-medtech.png",
+      "src": null,
+      "alt": "Medtech key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "media": {
+      "pointer": "role-media.png",
+      "src": null,
+      "alt": "Media key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "exec": {
+      "pointer": "role-exec.png",
+      "src": null,
+      "alt": "Exec key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "lawman": {
+      "pointer": "role-lawman.png",
+      "src": null,
+      "alt": "Lawman key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "fixer": {
+      "pointer": "role-fixer.png",
+      "src": null,
+      "alt": "Fixer key art",
+      "focalPoint": [0.5, 0.35]
+    },
+    "nomad": {
+      "pointer": "role-nomad.png",
+      "src": null,
+      "alt": "Nomad key art",
+      "focalPoint": [0.5, 0.35]
+    }
+  },
+  "itemArt": {
+    "gear.agent": {
+      "src": "/images/gear/agent.png",
+      "alt": "Agent art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.airhypo": {
+      "src": "/images/gear/airhypo.png",
+      "alt": "Airhypo art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.anti_smog_breathing_mask": {
+      "src": "/images/gear/anti_smog_breathing_mask.png",
+      "alt": "Anti-Smog Breathing Mask art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.audio_recorder": {
+      "src": "/images/gear/audio_recorder.png",
+      "alt": "Audio Recorder art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.auto_level_dampening_ear_protectors": {
+      "src": "/images/gear/auto_level_dampening_ear_protectors.png",
+      "alt": "Auto Level Dampening Ear Protectors art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.binoculars": {
+      "src": "/images/gear/binoculars.png",
+      "alt": "Binoculars art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.braindance_viewer": {
+      "src": "/images/gear/braindance_viewer.png",
+      "alt": "Braindance Viewer art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.bug_detector": {
+      "src": "/images/gear/bug_detector.png",
+      "alt": "Bug Detector art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.carryall": {
+      "src": "/images/gear/carryall.png",
+      "alt": "Carryall art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.chemical_analyzer": {
+      "src": "/images/gear/chemical_analyzer.png",
+      "alt": "Chemical Analyzer art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.computer": {
+      "src": "/images/gear/computer.png",
+      "alt": "Computer art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.cyberdeck": {
+      "src": "/images/gear/cyberdeck.png",
+      "alt": "Cyberdeck art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.disposable_cell_phone": {
+      "src": "/images/gear/disposable_cell_phone.png",
+      "alt": "Disposable Cell Phone art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.drum_synthesizer": {
+      "src": "/images/gear/drum_synthesizer.png",
+      "alt": "Drum Synthesizer art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.duct_tape": {
+      "src": "/images/gear/duct_tape.png",
+      "alt": "Duct Tape art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.electric_guitar_other_instrument": {
+      "src": "/images/gear/electric_guitar_other_instrument.png",
+      "alt": "Electric Guitar/Other Instrument art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.flashlight": {
+      "src": "/images/gear/flashlight.png",
+      "alt": "Flashlight art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.food_stick": {
+      "src": "/images/gear/food_stick.png",
+      "alt": "Food Stick art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.glow_paint": {
+      "src": "/images/gear/glow_paint.png",
+      "alt": "Glow Paint art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.grapple_gun": {
+      "src": "/images/gear/grapple_gun.png",
+      "alt": "Grapple Gun art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.handcuffs": {
+      "src": "/images/gear/handcuffs.png",
+      "alt": "Handcuffs art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.homing_tracer": {
+      "src": "/images/gear/homing_tracer.png",
+      "alt": "Homing Tracer art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.inflatable_bed_sleep_bag": {
+      "src": "/images/gear/inflatable_bed_sleep_bag.png",
+      "alt": "Inflatable Bed & Sleep-bag art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.kibble_pack": {
+      "src": "/images/gear/kibble_pack.png",
+      "alt": "Kibble Pack art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.medscanner": {
+      "src": "/images/gear/medscanner.png",
+      "alt": "Medscanner art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.medtech_bag": {
+      "src": "/images/gear/medtech_bag.png",
+      "alt": "Medtech Bag art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.memory_chip": {
+      "src": "/images/gear/memory_chip.png",
+      "alt": "Memory Chip art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.mre": {
+      "src": "/images/gear/mre.png",
+      "alt": "MRE art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.personal_carepak": {
+      "src": "/images/gear/personal_carepak.png",
+      "alt": "Personal CarePak art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.pocket_amplifier": {
+      "src": "/images/gear/pocket_amplifier.png",
+      "alt": "Pocket Amplifier art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.radar_detector": {
+      "src": "/images/gear/radar_detector.png",
+      "alt": "Radar Detector art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.radiation_suit": {
+      "src": "/images/gear/radiation_suit.png",
+      "alt": "Radiation Suit art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.radio_communicator": {
+      "src": "/images/gear/radio_communicator.png",
+      "alt": "Radio Communicator art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.radio_scanner_music_player": {
+      "src": "/images/gear/radio_scanner_music_player.png",
+      "alt": "Radio Scanner/Music Player art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.road_flare": {
+      "src": "/images/gear/road_flare.png",
+      "alt": "Road Flare art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.rope_60m_yd": {
+      "src": "/images/gear/rope_60m_yd.png",
+      "alt": "Rope (60m/yd) art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.scrambler_descrambler": {
+      "src": "/images/gear/scrambler_descrambler.png",
+      "alt": "Scrambler/Descrambler art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.smart_glasses": {
+      "src": "/images/gear/smart_glasses.png",
+      "alt": "Smart Glasses art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.tech_bag": {
+      "src": "/images/gear/tech_bag.png",
+      "alt": "Tech Bag art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.techscanner": {
+      "src": "/images/gear/techscanner.png",
+      "alt": "Techscanner art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.techtool": {
+      "src": "/images/gear/techtool.png",
+      "alt": "Techtool art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.tent_and_camping_equipment": {
+      "src": "/images/gear/tent_and_camping_equipment.png",
+      "alt": "Tent and Camping Equipment art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.vial_of_biotoxin": {
+      "src": "/images/gear/vial_of_biotoxin.png",
+      "alt": "Vial of Biotoxin art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.vial_of_poison": {
+      "src": "/images/gear/vial_of_poison.png",
+      "alt": "Vial of Poison art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.video_camera": {
+      "src": "/images/gear/video_camera.png",
+      "alt": "Video Camera art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.virtuality_goggles": {
+      "src": "/images/gear/virtuality_goggles.png",
+      "alt": "Virtuality Goggles art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.glow_stick": {
+      "src": "/images/gear/glow_stick.png",
+      "alt": "Glow Stick art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "gear.lock_picking_set": {
+      "src": "/images/gear/lock_picking_set.png",
+      "alt": "Lock Picking Set art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.light_melee": {
+      "src": "/images/weapons/light_melee.png",
+      "alt": "Light Melee Weapon art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.medium_melee": {
+      "src": "/images/weapons/medium_melee.png",
+      "alt": "Medium Melee Weapon art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.heavy_melee": {
+      "src": "/images/weapons/heavy_melee.png",
+      "alt": "Heavy Melee Weapon art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.very_heavy_melee": {
+      "src": "/images/weapons/very_heavy_melee.png",
+      "alt": "Very Heavy Melee Weapon art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.medium_pistol": {
+      "src": "/images/weapons/medium_pistol.png",
+      "alt": "Medium Pistol art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.heavy_pistol": {
+      "src": "/images/weapons/heavy_pistol.png",
+      "alt": "Heavy Pistol art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.very_heavy_pistol": {
+      "src": "/images/weapons/very_heavy_pistol.png",
+      "alt": "Very Heavy Pistol art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.smg": {
+      "src": "/images/weapons/smg.png",
+      "alt": "SMG art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.shotgun": {
+      "src": "/images/weapons/shotgun.png",
+      "alt": "Shotgun art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.assault_rifle": {
+      "src": "/images/weapons/assault_rifle.png",
+      "alt": "Assault Rifle art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.sniper_rifle": {
+      "src": "/images/weapons/sniper_rifle.png",
+      "alt": "Sniper Rifle art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.bows_crossbows": {
+      "src": "/images/weapons/bows_crossbows.png",
+      "alt": "Bows & Crossbows art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.grenade_launcher": {
+      "src": "/images/weapons/grenade_launcher.png",
+      "alt": "Grenade Launcher art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.rocket_launcher": {
+      "src": "/images/weapons/rocket_launcher.png",
+      "alt": "Rocket Launcher art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.air_pistol": {
+      "src": "/images/weapons/air_pistol.png",
+      "alt": "Air Pistol art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.battleglove": {
+      "src": "/images/weapons/battleglove.png",
+      "alt": "Battleglove art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.hurricane_assault": {
+      "src": "/images/weapons/hurricane_assault.png",
+      "alt": "Constitution Arms Hurricane Assault Weapon art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.dartgun": {
+      "src": "/images/weapons/dartgun.png",
+      "alt": "Dartgun art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.flamethrower": {
+      "src": "/images/weapons/flamethrower.png",
+      "alt": "Flamethrower art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.kendachi_mono_three": {
+      "src": "/images/weapons/kendachi_mono_three.png",
+      "alt": "Kendachi Mono-Three art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.malorian_3516": {
+      "src": "/images/weapons/malorian_3516.png",
+      "alt": "Malorian Arms 3516 art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.microwaver": {
+      "src": "/images/weapons/microwaver.png",
+      "alt": "Microwaver art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.cowboy_u56": {
+      "src": "/images/weapons/cowboy_u56.png",
+      "alt": "Militech \"Cowboy\" U-56 Grenade Launcher art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.rhinemetall_railgun": {
+      "src": "/images/weapons/rhinemetall_railgun.png",
+      "alt": "Rhinemetall EMG-86 Railgun art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.shrieker": {
+      "src": "/images/weapons/shrieker.png",
+      "alt": "Shrieker art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.stun_baton": {
+      "src": "/images/weapons/stun_baton.png",
+      "alt": "Stun Baton art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.stun_gun": {
+      "src": "/images/weapons/stun_gun.png",
+      "alt": "Stun Gun art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "weapon.tsunami_helix": {
+      "src": "/images/weapons/tsunami_helix.png",
+      "alt": "Tsunami Arms Helix art",
+      "focalPoint": [0.5, 0.5]
+    }
+  },
+  "portraits": []
 }
