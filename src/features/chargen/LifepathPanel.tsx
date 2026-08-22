@@ -101,11 +101,17 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
 
   // ---- background generation gate ---------------------------------------
   const roleAbilityName = state.roleAbility?.name ?? undefined;
+  const unanswered = total - answered;
   const missing = [
     ...generalLifepathComplete(general),
     ...(state.roleId ? roleLifepathComplete(roleLifepath) : []),
+    // Every visible table must be answered (rolled or chosen) before weaving.
+    ...(unanswered > 0
+      ? [`${unanswered} Lifepath ${unanswered === 1 ? "answer" : "answers"} left`]
+      : []),
   ];
   const ready = missing.length === 0;
+
 
   /** Fill every unanswered rollable table (leaves choices like enemies alone). */
   function rollAllRemaining() {
