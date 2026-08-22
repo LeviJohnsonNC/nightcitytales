@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { CREATION_METHODS } from "@/engine";
 import { ArtSlot } from "@/features/chargen/ArtSlot";
 import { portraitArt, portraitById } from "@/features/chargen/art";
+import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { METHOD_COPY } from "@/features/chargen/copy";
 import { stepDefinition, type ChargenStep } from "@/features/chargen/steps";
 import { draftPayload, useChargenStore, type ChargenState } from "@/features/chargen/store";
@@ -150,13 +151,16 @@ function CharacterCard({
   duplicating: boolean;
 }) {
   const portrait = entry.portrait_id ? portraitById(entry.portrait_id) : undefined;
+  const generated = usePortraitUrl(entry.portrait_path);
   const roleName = ROLE_NAMES[entry.role]?.name ?? entry.role;
 
   return (
     <article className="flex flex-col border border-border bg-card">
       <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-4 p-4">
         <div className="aspect-[3/4] w-full">
-          {portrait ? (
+          {generated ? (
+            <img src={generated} alt={`${entry.name} portrait`} className="h-full w-full object-cover" />
+          ) : portrait ? (
             <ArtSlot art={portraitArt(portrait)} label={entry.name} />
           ) : (
             <div className="flex h-full items-center justify-center border border-dashed border-border text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">

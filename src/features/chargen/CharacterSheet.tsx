@@ -8,6 +8,7 @@ import { IMPROVEMENT_POINTS, REPUTATION } from "@/engine";
 import type { AssembledCharacter, CharacterBuild, PackageEntry } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
+import { usePortraitUrl } from "./usePortraitUrl";
 import { readGeneralLifepath } from "./lifepathState";
 import {
   enemySentences,
@@ -82,6 +83,7 @@ export function CharacterSheet({
   const roles = rolesData.roles as unknown as Record<string, { name: string }>;
   const role = build.roleId ? (roles[build.roleId] ?? null) : null;
   const portrait = build.portraitId ? portraitById(build.portraitId) : undefined;
+  const generatedPortrait = usePortraitUrl(build.portraitPath);
   const general = readGeneralLifepath(state.lifepath.general);
   const roleLifepath = readRoleLifepath(state.lifepath.roleSpecific, build.roleId);
 
@@ -101,7 +103,13 @@ export function CharacterSheet({
       {/* 1 — Identity */}
       <section className="sheet-page-1 grid gap-4 border border-hairline bg-surface p-4 sm:grid-cols-[10rem_minmax(0,1fr)]">
         <div className="aspect-[3/4] w-full">
-          {portrait ? (
+          {generatedPortrait ? (
+            <img
+              src={generatedPortrait}
+              alt={`${build.name || "Character"} portrait`}
+              className="h-full w-full object-cover"
+            />
+          ) : portrait ? (
             <ArtSlot art={portraitArt(portrait)} label={build.name || "Portrait"} />
           ) : (
             <div className="flex h-full items-center justify-center border border-dashed border-hairline text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">

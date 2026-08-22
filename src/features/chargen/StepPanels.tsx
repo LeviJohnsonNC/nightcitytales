@@ -16,11 +16,13 @@ import type { ChargenStep } from "./steps";
 export function StepPanel({
   step,
   state,
+  userId,
   onRequestMethod,
   onRequestRole,
 }: {
   step: ChargenStep;
   state: ChargenState;
+  userId: string;
   onRequestMethod: (method: CreationMethod) => void;
   onRequestRole: (roleId: string) => void;
 }) {
@@ -32,7 +34,7 @@ export function StepPanel({
       return <RolePanel state={state} onRequestRole={onRequestRole} />;
 
     case "identity":
-      return <IdentityPanel state={state} />;
+      return <IdentityPanel state={state} userId={userId} />;
 
     case "review":
       return <ReviewPanel state={state} />;

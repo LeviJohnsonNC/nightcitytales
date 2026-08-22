@@ -97,6 +97,7 @@ export function savePayload(
       role: build.roleId,
       creation_method: build.method,
       portrait_id: build.portraitId,
+      portrait_path: build.portraitPath ?? null,
     },
     stats: {
       ...stats,

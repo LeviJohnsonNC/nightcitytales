@@ -150,6 +150,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
         <StepPanel
           step={state.step}
           state={state}
+          userId={userId}
           onRequestMethod={requestMethod}
           onRequestRole={requestRole}
         />

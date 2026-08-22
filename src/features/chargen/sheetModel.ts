@@ -16,6 +16,7 @@ export function buildFromState(state: ChargenState): CharacterBuild {
     pronouns: state.pronouns,
     selfDescription: state.selfDescription,
     portraitId: state.portrait,
+    portraitPath: state.portraitPath,
     stats: state.stats,
     skills: state.skills,
     loadout: state.loadout,

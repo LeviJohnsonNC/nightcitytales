@@ -75,7 +75,6 @@ export function selfDescriptionMissing(state: ChargenState): string[] {
   if (!state.handle.trim()) missing.push("handle");
   if (!state.pronouns.trim()) missing.push("pronouns");
   if (!state.roleId) missing.push("a Role");
-  if (!state.portrait) missing.push("a portrait");
   return missing;
 }
 
