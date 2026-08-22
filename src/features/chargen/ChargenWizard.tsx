@@ -34,10 +34,12 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const { status: saveStatus, error: saveError } = useDraftSync(userId);
   const [pending, setPending] = useState<PendingChange>(null);
 
-  const def = stepDefinition(state.step);
+  const steps = stepsFor(state.method);
+  const stepIds = steps.map((s) => s.id);
+  const def = steps.find((s) => s.id === state.step) ?? steps[0]!;
   const statuses = stepStatuses(state);
   const { violations } = validateStep(state.step, state);
-  const index = STEP_IDS.indexOf(state.step);
+  const index = stepIds.indexOf(def.id);
 
   const hasDependentData =
     state.skills.length > 0 ||
