@@ -8,16 +8,9 @@ import {
   ARMOR,
   CATALOG_PENDING,
   CYBERWARE,
-  PACKAGE_FLAGS,
-  PACKAGE_NOTES,
   GEAR,
   WEAPONS,
-  getGearPackage,
-  packageCatalogRow,
-  variantOptionsFor,
-  isChoice,
   type ArmorLocation,
-  type PackageEntry,
 } from "@/engine";
 import {
   BudgetBars,
@@ -28,7 +21,7 @@ import {
   eb,
   useLoadoutActions,
 } from "./market";
-import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
+import { ItemInfo } from "./ItemInfo";
 import { ITEM_FLAVOR, VARIANT_FLAVOR } from "./itemFlavor";
 import type { ChargenState } from "./store";
 
