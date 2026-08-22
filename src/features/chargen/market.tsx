@@ -49,6 +49,22 @@ export function useLoadoutActions() {
     patch({ loadout: removeLine(loadout, lineId) });
   }
 
+  function removeStackByKey(key: string) {
+    setError(null);
+    patch({ loadout: removeStack(loadout, key) });
+  }
+
+  function changeStackQty(key: string, delta: number) {
+    if (!method) return;
+    const check = canChangeQty(method, loadout, key, delta);
+    if (!check.ok) {
+      setError(check.reason);
+      return;
+    }
+    setError(null);
+    patch({ loadout: changeQty(method, loadout, key, delta) });
+  }
+
   function setChoice(choiceId: string, option: string) {
     const variants = { ...(loadout.packageVariants ?? {}) };
     // A different option means any specific weapon picked for it no longer applies.
