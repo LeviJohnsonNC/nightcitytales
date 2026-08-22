@@ -107,11 +107,6 @@ export function PortraitStudio({ state, userId }: { state: ChargenState; userId:
           )}
           {error && <p className="text-sm text-danger">{error}</p>}
 
-          <p className="text-sm text-text-muted">
-            Built from your Role, pronouns and Lifepath look. Regenerating keeps your last{" "}
-            {MAX_PORTRAIT_TAKES} takes, and switching between them is free.
-          </p>
-
           {state.portraitTakes.length > 1 && (
             <ul className="flex flex-wrap gap-2">
               {state.portraitTakes.map((path) => (
