@@ -19,9 +19,9 @@ export function PortraitLightbox({
 }: {
   src: string | null | undefined;
   alt: string;
-  subtitle?: string;
+  subtitle?: string | undefined;
   children: React.ReactNode;
-  className?: string;
+  className?: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
   if (!src) return <>{children}</>;
