@@ -45,6 +45,8 @@ export type CharacterBuild = {
   pronouns: string;
   selfDescription: string;
   portraitId: string | null;
+  /** Storage path of the generated portrait, when there is one. */
+  portraitPath?: string | null;
   stats: Partial<StatBlock>;
   skills: SkillEntry[];
   loadout: Loadout;

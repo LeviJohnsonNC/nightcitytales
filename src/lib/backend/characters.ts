@@ -174,6 +174,7 @@ export type SaveCharacterPayload = {
     role: string;
     creation_method: string;
     portrait_id: string | null;
+    portrait_path: string | null;
   };
   stats: Record<string, number | null>;
   skills: { skill_id: string; level: number; specialization: string | null }[];
