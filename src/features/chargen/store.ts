@@ -12,7 +12,6 @@ import {
   type StatKey,
 } from "@/engine";
 import {
-  STEP_IDS,
   clearedByRoleChange,
   normalizeStep,
   resolveStepForMethod,
