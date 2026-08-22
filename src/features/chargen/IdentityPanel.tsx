@@ -1,13 +1,43 @@
+import { useState } from "react";
+import rolesData from "@/data/rules/roles.json";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PortraitGallery } from "./PortraitGallery";
+import {
+  buildSelfDescriptionInput,
+  generateSelfDescription,
+  selfDescriptionMissing,
+} from "./selfDescription";
 import { useChargenStore, type ChargenState } from "./store";
 
 const PRONOUN_PRESETS = ["she/her", "he/him", "they/them", "she/they", "he/they", "it/its"];
 
+const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
+
 export function IdentityPanel({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
+  const [writing, setWriting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const missing = selfDescriptionMissing(state);
+  const canWrite = missing.length === 0;
+
+  async function writeDescription() {
+    setWriting(true);
+    setError(null);
+    try {
+      const roleName = state.roleId ? ROLE_NAMES[state.roleId]?.name : undefined;
+      const text = await generateSelfDescription(buildSelfDescriptionInput(state, roleName));
+      patch({ selfDescription: text });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not write a description right now.");
+    } finally {
+      setWriting(false);
+    }
+  }
+
 
   return (
     <div className="space-y-6">
