@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { readGeneralLifepath, displayValue } from "./lifepathState";
 import { BudgetBars, FashionWarning, PurchaseError, eb, useLoadoutActions } from "./market";
+import { useState } from "react";
 import { useChargenStore, type ChargenState } from "./store";
 
 const LOOK_TABLES = [
