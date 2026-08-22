@@ -3,11 +3,9 @@ import {
   CYBERWARE,
   HUMANITY_LOSS_AT_CREATION_RULE,
   NON_FOUNDATIONAL_CATEGORY_SLOT_CAP,
-  PACKAGE_NOTES,
   categorySlotUsage,
   foundations,
   getCyberware,
-  getGearPackage,
 } from "@/engine";
 import {
   Cart,
