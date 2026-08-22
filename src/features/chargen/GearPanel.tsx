@@ -413,14 +413,6 @@ export function GearPanel({ state }: { state: ChargenState }) {
 
   return (
     <div className="space-y-6">
-      <div className="border border-hairline bg-surface-raised p-4">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">Night Market</p>
-        <p className="mt-2 text-sm text-text-muted">
-          Two budgets, and they do not mix. Gear money buys anything and what you do not spend is
-          yours. Fashion money buys only Fashion and Fashionware, and anything left of it is gone
-          for good.
-        </p>
-      </div>
 
 
       <Tabs defaultValue="weapons">
