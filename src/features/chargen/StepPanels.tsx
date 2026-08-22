@@ -44,12 +44,8 @@ export function StepPanel({
     case "lifepath":
       return <LifepathPanel state={state} />;
     case "stats":
-      return (
-        <div className="space-y-6">
-          <StatsPanel state={state} />
-          <RollLog />
-        </div>
-      );
+      return <StatsPanel state={state} />;
+
     case "skills":
       return <SkillsPanel state={state} />;
     case "gear":
