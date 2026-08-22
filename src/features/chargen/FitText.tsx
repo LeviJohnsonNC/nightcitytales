@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface FitTextProps {
@@ -17,7 +17,6 @@ export function FitText({ children, min = 0.6, className, as = "span" }: FitText
   const Tag = as;
   const outerRef = useRef<HTMLElement | null>(null);
   const innerRef = useRef<HTMLSpanElement | null>(null);
-  const [scale, setScale] = useState(1);
 
   useLayoutEffect(() => {
     const outer = outerRef.current;
@@ -32,14 +31,13 @@ export function FitText({ children, min = 0.6, className, as = "span" }: FitText
       const needed = inner.scrollWidth;
       const next = needed > available ? Math.max(min, available / needed) : 1;
       inner.style.fontSize = `${next * 100}%`;
-      setScale(next);
     };
 
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(outer);
     return () => ro.disconnect();
-  }, [children, min, scale]);
+  }, [children, min]);
 
   return (
     <Tag ref={outerRef as never} className={cn("block min-w-0 overflow-hidden", className)}>
