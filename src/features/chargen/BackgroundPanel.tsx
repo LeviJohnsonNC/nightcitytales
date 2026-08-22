@@ -89,10 +89,16 @@ export function BackgroundPanel({
       )}
 
       {status === "error" && (
-        <p className="mt-3 text-sm text-danger">
-          Something went wrong weaving your story. Try again.
-        </p>
+        <div className="mt-3 flex flex-col items-start gap-2">
+          <p className="text-sm text-danger">
+            {errorMessage ?? "Something went wrong weaving your story."}
+          </p>
+          <Button size="sm" variant="outline" onClick={weave}>
+            Try again
+          </Button>
+        </div>
       )}
+
 
       {hasStory && (
         <div className="mt-4">
