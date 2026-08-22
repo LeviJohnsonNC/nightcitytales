@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { FitText } from "./FitText";
 import {
   choiceOnlyDieSides,
   chooseRoleLifepathEntry,
@@ -48,18 +49,18 @@ export function RoleLifepathTableCard({
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <h3 className="truncate font-display text-xs font-bold uppercase tracking-[0.12em] text-text">
+            <FitText as="h3" min={0.65} className="min-w-0 flex-1 font-display text-xs font-bold uppercase tracking-[0.12em] text-text">
               {table.label}
-            </h3>
+            </FitText>
             {!(entry && entry.method === "rolled") && (
               <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-text-dim">
                 {entry ? "chosen" : (table.die ?? "choose")}
               </span>
             )}
           </div>
-          <p className={cn("mt-0.5 truncate text-sm", value ? "text-text" : "text-text-dim")}>
+          <FitText as="p" min={0.7} className={cn("mt-0.5 text-sm", value ? "text-text" : "text-text-dim")}>
             {value ?? "Not set"}
-          </p>
+          </FitText>
           {table.sourceDiscrepancy && (
             <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-cool">
               {table.sourceDiscrepancy}
