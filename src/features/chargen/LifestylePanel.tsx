@@ -73,10 +73,6 @@ function PackageOutfit({ state }: { state: ChargenState }) {
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-sm text-text-muted">
-        Printed as Fashion-style groupings. This outfit comes with your package — no fashion money
-        is spent, and nothing here is bought piece by piece.
-      </p>
     </div>
   );
 }
