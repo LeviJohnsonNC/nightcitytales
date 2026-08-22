@@ -44,9 +44,6 @@ function Blurb({ id, text }: { id: string; text: string | null | undefined }) {
   return <p className="mt-1.5 text-xs leading-relaxed text-text-dim">{body}</p>;
 }
 
-function Row({ children }: { children: React.ReactNode }) {
-  return <div className="border border-hairline bg-surface p-4">{children}</div>;
-}
 
 function Stat({ label, value }: { label: string; value: string | number | null | undefined }) {
   if (value === null || value === undefined || value === "") return null;
