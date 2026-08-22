@@ -402,32 +402,26 @@ function FashionTable({ state, query }: { state: ChargenState; query: string }) 
 export function GearPanel({ state }: { state: ChargenState }) {
   const { remove, error } = useLoadoutActions();
   const [query, setQuery] = useState("");
-  const isPackage = state.method === "streetrat" || state.method === "edgerunner";
 
   if (!state.method || !state.roleId) {
     return (
       <div className="border border-dashed border-hairline bg-surface/50 p-6 text-sm text-text-muted">
-        Choose a creation method and a Role first. Gear is issued per Role.
+        Choose a creation method and a Role first. Budgets depend on both.
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {isPackage ? (
-        <FixedPackage roleId={state.roleId} />
-      ) : (
-        <div className="border border-hairline bg-surface-raised p-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
-            Night Market
-          </p>
-          <p className="mt-2 text-sm text-text-muted">
-            Two budgets, and they do not mix. Gear money buys anything and what you do not spend is
-            yours. Fashion money buys only Fashion and Fashionware, and anything left of it is gone
-            for good.
-          </p>
-        </div>
-      )}
+      <div className="border border-hairline bg-surface-raised p-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">Night Market</p>
+        <p className="mt-2 text-sm text-text-muted">
+          Two budgets, and they do not mix. Gear money buys anything and what you do not spend is
+          yours. Fashion money buys only Fashion and Fashionware, and anything left of it is gone
+          for good.
+        </p>
+      </div>
+
 
       <Tabs defaultValue="weapons">
         {/* Sticky rail: budget + cart + list tabs travel together, fully opaque so
