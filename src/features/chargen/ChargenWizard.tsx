@@ -10,6 +10,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { CreationMethod } from "@/engine";
 import { useChargenStore } from "./store";
 import { StepPanel } from "./StepPanels";
@@ -41,6 +48,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const state = useChargenStore();
   const { status: saveStatus, error: saveError } = useDraftSync(userId);
   const [pending, setPending] = useState<PendingChange>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const steps = stepsFor(state.method);
   const stepIds = steps.map((s) => s.id);
@@ -202,6 +210,17 @@ export function ChargenWizard({ userId }: { userId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{STEP_HELP[def.id]?.title ?? def.title}</DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {STEP_HELP[def.id]?.body}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
