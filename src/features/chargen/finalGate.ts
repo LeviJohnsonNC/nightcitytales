@@ -17,9 +17,9 @@ export function finalChecklist(state: ChargenState): GateCheck[] {
   const checks: GateCheck[] = stepsFor(state.method)
     .filter((s) => s.id !== "review")
     .map((s) => {
-    const { violations } = validateStep(s.id, state);
-    return { step: s.id, title: s.title, passed: violations.length === 0, violations };
-  });
+      const { violations } = validateStep(s.id, state);
+      return { step: s.id, title: s.title, passed: violations.length === 0, violations };
+    });
 
   const identity: string[] = [];
   if (!state.name.trim()) identity.push("Your character has no name.");
