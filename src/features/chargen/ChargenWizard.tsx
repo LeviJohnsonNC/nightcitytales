@@ -29,6 +29,14 @@ const SAVE_LABEL: Record<string, string> = {
   error: "Save failed",
 };
 
+const STEP_HELP: Record<string, { title: string; body: string }> = {
+  gear: {
+    title: "Night Market",
+    body:
+      "Two budgets, and they do not mix. Gear money buys anything and what you do not spend is yours. Fashion money buys only Fashion and Fashionware, and anything left of it is gone for good.",
+  },
+};
+
 export function ChargenWizard({ userId }: { userId: string }) {
   const state = useChargenStore();
   const { status: saveStatus, error: saveError } = useDraftSync(userId);
