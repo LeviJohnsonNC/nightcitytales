@@ -92,72 +92,35 @@ export function buildBackgroundInput(
   };
 }
 
-/** The prompt we recommend for the real model call. Shared, so behavior matches. */
+/** The prompt sent to the model. Shared, so behavior matches everywhere. */
 export function buildBackgroundPrompt(input: BackgroundInput): { system: string; user: string } {
   const task = [
     "You are the Game Master for a Cyberpunk RED campaign in Night City.",
     "Write a character background from the structured Lifepath facts in the user message.",
-    "Weave ALL of the given facts in naturally. Do not invent game mechanics, STATs, cyberware, or rules; only narrative color.",
+    "Weave ALL of the given facts in naturally: origins, family, childhood, crises, personality, values, style, language, friends, enemies and their grudges, tragic loves, Role, Role answers, and life goal.",
+    "Do not invent game mechanics, STATs, cyberware, skills, or rules; narrative color only.",
     "Use second person, present tense.",
-    "Length: 2 short paragraphs, about 120 to 180 words total.",
-    "Return only the background prose, with no preamble, headings, or surrounding quotation marks.",
+    "Structure: at least 3 paragraphs, 300 to 450 words total. Paragraph one covers where you came from, family, and childhood. Paragraph two covers the turn or crisis that made you who you are. Paragraph three covers the people who matter, friends, enemies, and any tragic love. A final short paragraph lands on where you stand now as your Role and what you are chasing.",
+    "Separate paragraphs with a blank line.",
+    "Make each telling distinct: vary the opening beat, the specifics you dwell on, and the closing line.",
+    "Return only the background prose, with no preamble, headings, labels, or surrounding quotation marks.",
   ].join(" ");
 
   const system = withHouseStyle(task);
-  const user = JSON.stringify(input, null, 2);
+  const user = [
+    JSON.stringify(input, null, 2),
+    `\nSession seed (use only to vary phrasing, never mention it): ${Math.random().toString(36).slice(2, 10)}`,
+  ].join("\n");
   return { system, user };
 }
 
-// ---------------------------------------------------------------------------
-// STUB. Replace the body below with a real model call (see header). The UI
-// only depends on this signature.
-// ---------------------------------------------------------------------------
+/**
+ * Real generation. Calls the Lovable AI gateway through a server function so
+ * the API key never reaches the browser. Errors propagate to the UI on purpose:
+ * we never fall back to canned prose.
+ */
 export async function generateBackground(input: BackgroundInput): Promise<string> {
-  await delay(900); // simulate a fast model call
-
-  const lower = (s: string) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
-  const factBy = (needle: string) =>
-    input.facts.find((f) => f.label.toLowerCase().includes(needle))?.value;
-
-  const origin = factBy("cultural");
-  const family = factBy("family background") ?? factBy("family");
-  const childhood = factBy("childhood");
-  const crisis = factBy("crisis");
-  const personality = factBy("personality");
-  const value = factBy("value");
-  const style = factBy("clothing") ?? factBy("style");
-
-  const open: string[] = [];
-  if (origin) open.push(`You came up in ${lower(origin)}.`);
-  if (family) open.push(`Your people were ${lower(family)}.`);
-  if (childhood) open.push(`You spent your early years ${lower(childhood)}.`);
-  if (crisis) open.push(`Then it all tilted: ${lower(crisis)}.`);
-  if (personality) open.push(`You carry yourself ${lower(personality)},`);
-  if (value) open.push(`and above all else you value ${lower(value)}.`);
-  if (style) open.push(`On The Street they know you by ${lower(style)}.`);
-
-  const second: string[] = [];
-  if (input.language) second.push(`You keep ${input.language} on your tongue.`);
-  if (input.friends.length) second.push(`You have people who have your back.`);
-  for (const e of input.enemies) {
-    second.push(`You crossed ${lower(e.who)}, and now they want ${lower(e.revenge)}.`);
-  }
-  if (input.tragicLoves.length) second.push(`A love ended badly, and it left a mark.`);
-  if (input.role) {
-    const roleBits = input.roleAnswers.slice(0, 2).map((a) => lower(a.value));
-    second.push(
-      roleBits.length
-        ? `These days you run as a ${input.role}: ${roleBits.join(", ")}.`
-        : `These days you run as a ${input.role}.`,
-    );
-  }
-  if (input.lifeGoal) second.push(`What you want out of all of it: ${lower(input.lifeGoal)}.`);
-
-  const p1 = open.join(" ").replace(/,\s*$/, ".");
-  const p2 = second.join(" ");
-  return [p1, p2].filter(Boolean).join("\n\n");
+  const { text } = await generateBackgroundFn({ data: buildBackgroundPrompt(input) });
+  return text.trim();
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
