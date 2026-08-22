@@ -119,8 +119,7 @@ export function variantOptionsFor(label: string): string[] {
   const resolved = resolvePackageItem(label);
   if (!resolved || resolved.kind !== "weapon") return [];
   const weapon = WEAPONS.find((w) => w.id === resolved.id) as unknown as
-    | { variants?: string[] }
-    | undefined;
+    { variants?: string[] } | undefined;
   return weapon?.variants ?? [];
 }
 

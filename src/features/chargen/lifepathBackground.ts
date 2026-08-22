@@ -18,7 +18,6 @@ import { withHouseStyle } from "@/lib/prose-style";
 import { SINGLE_LIFEPATH_TABLES, displayValue, type GeneralLifepath } from "./lifepathState";
 import type { RoleLifepath } from "./roleLifepathState";
 
-
 export type BackgroundEnemy = {
   who: string;
   cause: string;
@@ -57,7 +56,9 @@ export function buildBackgroundInput(
   const roleId = roleLifepath.roleId;
   const roleAnswers = roleId
     ? getRoleLifepathOrder(roleId)
-        .filter((tid) => isRoleTableRevealed(getRoleLifepathTable(roleId, tid), roleLifepath.entries))
+        .filter((tid) =>
+          isRoleTableRevealed(getRoleLifepathTable(roleId, tid), roleLifepath.entries),
+        )
         .map((tid) => {
           const entry = roleLifepath.entries[tid];
           if (!entry) return null;
@@ -119,4 +120,3 @@ export async function generateBackground(input: BackgroundInput): Promise<string
   const { text } = await generateBackgroundFn({ data: buildBackgroundPrompt(input) });
   return text.trim();
 }
-

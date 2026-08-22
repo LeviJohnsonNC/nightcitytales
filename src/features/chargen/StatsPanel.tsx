@@ -1,12 +1,7 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   CREATION_METHODS,
@@ -120,16 +115,18 @@ function StreetratBranch({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-4">
       <Notice>
-        Streetrat takes the whole row exactly as printed. STATs here cannot be rearranged,
-        swapped, or edited — that is the trade you made for a character in five minutes. The
-        table below is the same one the die reads, so you can check the row yourself.
+        Streetrat takes the whole row exactly as printed. STATs here cannot be rearranged, swapped,
+        or edited — that is the trade you made for a character in five minutes. The table below is
+        the same one the die reads, so you can check the row yourself.
       </Notice>
       <div className="flex items-center gap-4">
         <DiceRoll
           sides={10}
           size={52}
           value={state.statRolls.row}
-          label={state.statRolls.row ? "Re-roll the STAT template row" : "Roll the STAT template row"}
+          label={
+            state.statRolls.row ? "Re-roll the STAT template row" : "Roll the STAT template row"
+          }
           roll={() => {
             const result = rollStreetratStats(roleId, defaultRng);
             return {
@@ -190,8 +187,8 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-4">
       <Notice>
-        Ten separate 1d10s, each read against that STAT's own column of the same Role table.
-        Once a STAT lands it stays where it landed — no rearranging, no swapping between STATs.
+        Ten separate 1d10s, each read against that STAT's own column of the same Role table. Once a
+        STAT lands it stays where it landed — no rearranging, no swapping between STATs.
       </Notice>
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={rollAll} disabled={bursting}>
@@ -285,8 +282,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
           {STAT_ORDER.map((stat) => {
             const value = state.stats[stat];
             const outOfRange =
-              typeof value === "number" &&
-              (value > COMPLETE.statMax || value < COMPLETE.statMin);
+              typeof value === "number" && (value > COMPLETE.statMax || value < COMPLETE.statMin);
             return (
               <div
                 key={stat}
@@ -324,11 +320,10 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
         </div>
 
         <Notice>
-          You can go over budget while you shuffle numbers around — nothing is blocked
-          mid-edit. You just can't leave this step until the total is exactly{" "}
-          {COMPLETE.statPoints} and every STAT sits between {COMPLETE.statMin} and{" "}
-          {COMPLETE.statMax}. Watch the Hit Points and Death Save below as you move BODY and
-          WILL: that is your survivability being bought.
+          You can go over budget while you shuffle numbers around — nothing is blocked mid-edit. You
+          just can't leave this step until the total is exactly {COMPLETE.statPoints} and every STAT
+          sits between {COMPLETE.statMin} and {COMPLETE.statMax}. Watch the Hit Points and Death
+          Save below as you move BODY and WILL: that is your survivability being bought.
         </Notice>
       </div>
     </TooltipProvider>

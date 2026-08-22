@@ -3,6 +3,7 @@
 ## Critique of the proposed plan
 
 Agreed, and keeping as-is:
+
 - Swap only the body of `generateBackground`; keep its signature `(input: BackgroundInput) => Promise<string>`.
 - Reuse `buildBackgroundPrompt(input)` for the system/user text; leave `buildBackgroundInput` and `buildBackgroundPrompt` untouched.
 - Delete the fake delay and the local prose stitching.
@@ -47,5 +48,6 @@ Lovable AI (no key, `google/gemini-3.7-flash`) — or Anthropic Claude Haiku wit
 ## First: two type errors to clear
 
 Left over from the background-field work; both are one-liners:
+
 - `src/lib/backend/characters.ts` — `SaveCharacterPayload.lifepath` needs `narrative?: string | null` (there is no `narrative` column on the lifepath table today, so the value is accepted by the payload type and ignored on write; if you want the background to persist and reload, say so and I'll add the column plus a migration).
 - `src/features/roster/characterState.ts` — `stateFromCharacter` must return `background: ""` so the object satisfies `ChargenState`.

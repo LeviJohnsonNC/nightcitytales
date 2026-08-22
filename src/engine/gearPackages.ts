@@ -60,7 +60,11 @@ export function getGearPackage(roleId: string): RoleGearPackage {
 }
 
 /** Every choice point in a Role package, addressed as "<field>.<index>". */
-export type ChoicePoint = { id: string; field: "weaponsArmor" | "gear" | "cyberware"; options: string[] };
+export type ChoicePoint = {
+  id: string;
+  field: "weaponsArmor" | "gear" | "cyberware";
+  options: string[];
+};
 
 export function choicePoints(roleId: string): ChoicePoint[] {
   const pkg = getGearPackage(roleId);
@@ -75,7 +79,10 @@ export function choicePoints(roleId: string): ChoicePoint[] {
 }
 
 /** Which choice points still have no selection. */
-export function unresolvedChoices(roleId: string, selections: Record<string, string>): ChoicePoint[] {
+export function unresolvedChoices(
+  roleId: string,
+  selections: Record<string, string>,
+): ChoicePoint[] {
   return choicePoints(roleId).filter((point) => {
     const picked = selections[point.id];
     return !picked || !point.options.includes(picked);
@@ -95,10 +102,7 @@ export type VariantPoint = {
   options: string[];
 };
 
-export function variantPoints(
-  roleId: string,
-  selections: Record<string, string>,
-): VariantPoint[] {
+export function variantPoints(roleId: string, selections: Record<string, string>): VariantPoint[] {
   const pkg = getGearPackage(roleId);
   const out: VariantPoint[] = [];
   for (const field of ["weaponsArmor", "gear"] as const) {

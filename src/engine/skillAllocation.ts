@@ -89,7 +89,9 @@ export function validateEdgerunnerSkills(
       violations.push(`${skill.name} is not in the ${roleId} skill package`);
     }
     if (level > EDGERUNNER.maxLevel) {
-      violations.push(`${skill.name} is ${level}; the maximum at creation is ${EDGERUNNER.maxLevel}`);
+      violations.push(
+        `${skill.name} is ${level}; the maximum at creation is ${EDGERUNNER.maxLevel}`,
+      );
     }
     if (level < EDGERUNNER.minLevel) {
       violations.push(`${skill.name} is ${level}; the minimum is ${EDGERUNNER.minLevel}`);

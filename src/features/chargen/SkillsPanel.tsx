@@ -252,9 +252,9 @@ function StreetratBranch({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-4">
       <Notice>
-        Streetrat takes the Role's printed Skill package exactly as written — no points to
-        spend and nothing to adjust. Your free Cultural Origin Language sits alongside it at
-        Rank 4, granted rather than purchased.
+        Streetrat takes the Role's printed Skill package exactly as written — no points to spend and
+        nothing to adjust. Your free Cultural Origin Language sits alongside it at Rank 4, granted
+        rather than purchased.
       </Notice>
       <CategoryGroups entries={all} state={state} readOnly />
     </div>
@@ -293,13 +293,12 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
     });
   }
 
-
   return (
     <div className="space-y-4">
       <Notice>
         Only this Role's listed Skills are available to an Edgerunner, each starting at the floor of{" "}
-        {EDGERUNNER_RULES.minLevel} and capped at {EDGERUNNER_RULES.maxLevel}. The Skill Base
-        on the right is the number you actually roll in play: STAT + Skill Level.
+        {EDGERUNNER_RULES.minLevel} and capped at {EDGERUNNER_RULES.maxLevel}. The Skill Base on the
+        right is the number you actually roll in play: STAT + Skill Level.
       </Notice>
       <Budget
         spent={result.pointsSpent}
@@ -398,8 +397,8 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-5">
       <Notice>
-        The whole Master Skill List is open to you — {COMPLETE_RULES.skillPoints} points, no
-        Skill above {COMPLETE_RULES.maxLevel}, and the 13 Basic Skills at{" "}
+        The whole Master Skill List is open to you — {COMPLETE_RULES.skillPoints} points, no Skill
+        above {COMPLETE_RULES.maxLevel}, and the 13 Basic Skills at{" "}
         {COMPLETE_RULES.basicSkillMinimum} or better. The "Suggested for your Role" chip only
         filters the list; it never restricts what you may buy.
       </Notice>
@@ -411,9 +410,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
       <Guidance remaining={result.pointsRemaining} />
 
       <section className="space-y-3">
-        <h3 className="font-mono text-[11px] uppercase tracking-[0.25em] text-ember">
-          Your sheet
-        </h3>
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.25em] text-ember">Your sheet</h3>
         <CategoryGroups
           entries={granted ? [...state.skills, granted] : state.skills}
           state={state}
@@ -440,7 +437,11 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
             Suggested for your Role
           </Chip>
           {CATEGORIES.map((c) => (
-            <Chip key={c} active={category === c} onClick={() => setCategory(category === c ? null : c)}>
+            <Chip
+              key={c}
+              active={category === c}
+              onClick={() => setCategory(category === c ? null : c)}
+            >
               {c}
             </Chip>
           ))}

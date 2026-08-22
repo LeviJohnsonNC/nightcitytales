@@ -41,9 +41,9 @@ describe("role lifepath", () => {
     expect(isRoleTableRevealed(table, { [air.tableId]: air })).toBe(false);
     const land = chooseRoleLifepathEntry("nomad", "is_your_pack_based_on_land_air_or_sea", "Land");
     expect(isRoleTableRevealed(table, { [land.tableId]: land })).toBe(true);
-    expect(
-      visibleRoleLifepathTables("nomad", { [land.tableId]: land }).map((t) => t.id),
-    ).toContain("if_on_land_what_do_they_do");
+    expect(visibleRoleLifepathTables("nomad", { [land.tableId]: land }).map((t) => t.id)).toContain(
+      "if_on_land_what_do_they_do",
+    );
   });
 
   it("clears a dependent answer when the gate answer changes", () => {
@@ -59,7 +59,11 @@ describe("role lifepath", () => {
   });
 
   it("records choices with a null roll", () => {
-    const entry = chooseRoleLifepathEntry("solo", "got_a_partner_or_do_you_work_alone", "Have a Partner");
+    const entry = chooseRoleLifepathEntry(
+      "solo",
+      "got_a_partner_or_do_you_work_alone",
+      "Have a Partner",
+    );
     expect(entry).toMatchObject({ method: "chosen", roll: null });
   });
 });

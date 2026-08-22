@@ -66,8 +66,8 @@ function PackageOutfit({ state }: { state: ChargenState }) {
         ))}
       </ul>
       <p className="mt-3 text-sm text-text-muted">
-        Printed as Fashion-style groupings. This outfit comes with your package — no fashion
-        money is spent, and nothing here is bought piece by piece.
+        Printed as Fashion-style groupings. This outfit comes with your package — no fashion money
+        is spent, and nothing here is bought piece by piece.
       </p>
     </div>
   );
@@ -187,12 +187,8 @@ function HousingCard({ state }: { state: ChargenState }) {
             <span className="text-ember">{eb(plan.rent)}</span> rent — no location roll, no
             neighbourhood choice.
           </p>
-          {plan.grantRule ? (
-            <p className="mt-2 text-sm text-text-muted">{plan.grantRule}</p>
-          ) : null}
-          {plan.rentNote ? (
-            <p className="mt-2 text-sm text-text-muted">{plan.rentNote}</p>
-          ) : null}
+          {plan.grantRule ? <p className="mt-2 text-sm text-text-muted">{plan.grantRule}</p> : null}
+          {plan.rentNote ? <p className="mt-2 text-sm text-text-muted">{plan.rentNote}</p> : null}
         </>
       ) : (
         <>
@@ -257,9 +253,8 @@ function HousingCard({ state }: { state: ChargenState }) {
 
       {plan.lifestyleNote ? (
         <p className="mt-3 border border-cool/60 bg-cool/10 p-3 text-sm text-text">
-          {plan.lifestyleNote} Free housing is not free everything — the{" "}
-          {eb(plan.lifestyleCost)} / {plan.lifestyleCostPeriod} {plan.lifestyleName} Lifestyle is
-          still yours to pay.
+          {plan.lifestyleNote} Free housing is not free everything — the {eb(plan.lifestyleCost)} /{" "}
+          {plan.lifestyleCostPeriod} {plan.lifestyleName} Lifestyle is still yours to pay.
         </p>
       ) : null}
 
@@ -272,7 +267,11 @@ export function LifestylePanel({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-6">
       <LookSummary state={state} />
-      {state.method === "complete_package" ? <FashionShop state={state} /> : <PackageOutfit state={state} />}
+      {state.method === "complete_package" ? (
+        <FashionShop state={state} />
+      ) : (
+        <PackageOutfit state={state} />
+      )}
       <HousingCard state={state} />
     </div>
   );

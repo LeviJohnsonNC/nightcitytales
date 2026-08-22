@@ -206,9 +206,7 @@ function group<T>(items: T[], key: (item: T) => string): { category: string; lin
 function cyberwareByLocation(loadout: Loadout): SheetCyberwareLocation[] {
   const cyber = loadout.lines.filter((l) => l.kind === "cyberware");
   const foundationStates = foundations(loadout);
-  const slotted = new Set(
-    cyber.filter((l) => l.foundationLineId).map((l) => l.lineId),
-  );
+  const slotted = new Set(cyber.filter((l) => l.foundationLineId).map((l) => l.lineId));
 
   const installs: SheetCyberwareInstall[] = cyber
     .filter((line) => !slotted.has(line.lineId))

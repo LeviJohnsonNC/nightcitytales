@@ -13,7 +13,11 @@ import {
 } from "../loadout";
 import { choicePoints, unresolvedChoices } from "../gearPackages";
 
-function buy(loadout: Loadout, req: Parameters<typeof addPurchase>[2], method = "complete_package" as const) {
+function buy(
+  loadout: Loadout,
+  req: Parameters<typeof addPurchase>[2],
+  method = "complete_package" as const,
+) {
   return addPurchase(method, loadout, req);
 }
 
@@ -54,7 +58,11 @@ describe("budgets", () => {
   });
 
   it("keeps unspent gear money and loses unspent fashion money", () => {
-    const loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
+    const loadout = buy(EMPTY_LOADOUT, {
+      kind: "cyberware",
+      itemId: "light_tattoo",
+      budget: "fashion",
+    });
     expect(eurobucksKept("complete_package", loadout)).toBe(2550);
     expect(evaporatingBudgets("complete_package", loadout)[0]!.remaining).toBe(700);
   });
@@ -163,7 +171,11 @@ describe("cyberware install rules", () => {
   });
 
   it("honours maxInstalls on the Cyberaudio Suite", () => {
-    const loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "cyberaudio_suite", budget: "gear" });
+    const loadout = buy(EMPTY_LOADOUT, {
+      kind: "cyberware",
+      itemId: "cyberaudio_suite",
+      budget: "gear",
+    });
     const check = canPurchase("complete_package", loadout, {
       kind: "cyberware",
       itemId: "cyberaudio_suite",
@@ -176,7 +188,11 @@ describe("cyberware install rules", () => {
   it("allows more than one Cybereye because slots are per unit", () => {
     const loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "cybereye", budget: "gear" });
     expect(
-      canPurchase("complete_package", loadout, { kind: "cyberware", itemId: "cybereye", budget: "gear" }).ok,
+      canPurchase("complete_package", loadout, {
+        kind: "cyberware",
+        itemId: "cybereye",
+        budget: "gear",
+      }).ok,
     ).toBe(true);
   });
 
@@ -206,7 +222,11 @@ describe("humanity from installed cyberware", () => {
   });
 
   it("charges no Humanity for fashionware", () => {
-    const loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
+    const loadout = buy(EMPTY_LOADOUT, {
+      kind: "cyberware",
+      itemId: "light_tattoo",
+      budget: "fashion",
+    });
     expect(loadoutHumanity(60, loadout).humanityLost).toBe(0);
   });
 });

@@ -7,12 +7,14 @@ export const Route = createFileRoute("/_authenticated/create")({
       { title: "Create a Character · Night City Tales" },
       {
         name: "description",
-        content: "Roll up a new Cyberpunk RED edgerunner step by step, then turn them loose on Night City. Saved straight to your roster.",
+        content:
+          "Roll up a new Cyberpunk RED edgerunner step by step, then turn them loose on Night City. Saved straight to your roster.",
       },
       { property: "og:title", content: "Create a Character · Night City Tales" },
       {
         property: "og:description",
-        content: "Roll up a new Cyberpunk RED edgerunner step by step, then turn them loose on Night City. Saved straight to your roster.",
+        content:
+          "Roll up a new Cyberpunk RED edgerunner step by step, then turn them loose on Night City. Saved straight to your roster.",
       },
     ],
   }),

@@ -12,7 +12,6 @@ import {
   rollChoiceOnlyRoleLifepathTable,
   rollLifepathCount,
   rollLifepathTable,
-
   rollRoleLifepathTable,
   visibleRoleLifepathTables,
   type LifepathEntryRecord,
@@ -45,7 +44,14 @@ const GENERAL_GROUPS: { title: string; ids: string[] }[] = [
   },
   {
     title: "Personality & Style",
-    ids: ["personality", "clothing_style", "hairstyle", "affectation", "value_most", "feel_about_people"],
+    ids: [
+      "personality",
+      "clothing_style",
+      "hairstyle",
+      "affectation",
+      "value_most",
+      "feel_about_people",
+    ],
   },
   { title: "What You Hold Close", ids: ["most_valued_person", "most_valued_possession"] },
   { title: "Your Drive", ids: ["life_goals"] },
@@ -112,7 +118,6 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
   ];
   const ready = missing.length === 0;
 
-
   /** Fill every unanswered rollable table (leaves choices like enemies alone). */
   function rollAllRemaining() {
     const entries = { ...general.entries };
@@ -142,7 +147,6 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
             ? rollRoleLifepathTable(state.roleId, t.id, Math.random).entry
             : rollChoiceOnlyRoleLifepathTable(state.roleId, t.id, Math.random).entry;
         }
-
       }
       nextRole = {
         roleId: state.roleId,
@@ -162,102 +166,107 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
   // Any single table not placed in a group still gets shown.
   const grouped = new Set(GENERAL_GROUPS.flatMap((g) => g.ids));
   const leftover = SINGLE_LIFEPATH_TABLES.filter((id) => !grouped.has(id));
-  const groups = leftover.length ? [...GENERAL_GROUPS, { title: "More", ids: leftover }] : GENERAL_GROUPS;
+  const groups = leftover.length
+    ? [...GENERAL_GROUPS, { title: "More", ids: leftover }]
+    : GENERAL_GROUPS;
 
   return (
     <div className="space-y-3">
-        {/* Sticky progress header */}
-        <div className="sticky top-14 z-10 flex items-center justify-between gap-3 border border-hairline bg-surface/90 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">Lifepath</p>
-            <p className="text-sm font-semibold text-text num">
-              {answered} of {total} answered
-            </p>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden h-1.5 w-36 overflow-hidden rounded-full bg-hairline sm:block">
-              <div className="h-full bg-ember transition-all duration-300" style={{ width: `${pct}%` }} />
-            </div>
-            <DiceSoundToggle />
-            <Button size="sm" variant="outline" onClick={rollAllRemaining}>
-              Roll all remaining
-            </Button>
-          </div>
+      {/* Sticky progress header */}
+      <div className="sticky top-14 z-10 flex items-center justify-between gap-3 border border-hairline bg-surface/90 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">Lifepath</p>
+          <p className="text-sm font-semibold text-text num">
+            {answered} of {total} answered
+          </p>
         </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden h-1.5 w-36 overflow-hidden rounded-full bg-hairline sm:block">
+            <div
+              className="h-full bg-ember transition-all duration-300"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <DiceSoundToggle />
+          <Button size="sm" variant="outline" onClick={rollAllRemaining}>
+            Roll all remaining
+          </Button>
+        </div>
+      </div>
 
-        {groups.map((group) => (
-          <GeneralGroup
-            key={group.title}
-            title={group.title}
-            ids={group.ids}
-            general={general}
-            onEntry={setEntry}
-            onLanguage={(language) => setGeneral({ ...general, language })}
+      {groups.map((group) => (
+        <GeneralGroup
+          key={group.title}
+          title={group.title}
+          ids={group.ids}
+          general={general}
+          onEntry={setEntry}
+          onLanguage={(language) => setGeneral({ ...general, language })}
+        />
+      ))}
+
+      {/* Optional relationships, collapsed by default */}
+      <CollapsibleSection
+        title="People In Your Life"
+        note="Optional"
+        count={general.friends.length + general.enemies.length + general.tragicLove.length}
+        countLabel="added"
+        defaultOpen={false}
+      >
+        <div className="space-y-4">
+          <RepeatableSection
+            title="Friends"
+            tableId="friends"
+            entries={general.friends}
+            onChange={(friends) => setGeneral({ ...general, friends })}
           />
-        ))}
+          <EnemySection
+            enemies={general.enemies}
+            onChange={(enemies) => setGeneral({ ...general, enemies })}
+          />
+          <RepeatableSection
+            title="Tragic Love Affairs"
+            tableId="tragic_love"
+            entries={general.tragicLove}
+            onChange={(tragicLove) => setGeneral({ ...general, tragicLove })}
+          />
+        </div>
+      </CollapsibleSection>
 
-        {/* Optional relationships, collapsed by default */}
+      {state.roleId ? (
         <CollapsibleSection
-          title="People In Your Life"
-          note="Optional"
-          count={general.friends.length + general.enemies.length + general.tragicLove.length}
-          countLabel="added"
-          defaultOpen={false}
+          title={`${roleName ?? "Role"} Background`}
+          note="Mixed dice; branch tables appear once you answer their gate"
+          count={roleAnswered}
+          total={roleTables.length}
+          defaultOpen
         >
-          <div className="space-y-4">
-            <RepeatableSection
-              title="Friends"
-              tableId="friends"
-              entries={general.friends}
-              onChange={(friends) => setGeneral({ ...general, friends })}
-            />
-            <EnemySection
-              enemies={general.enemies}
-              onChange={(enemies) => setGeneral({ ...general, enemies })}
-            />
-            <RepeatableSection
-              title="Tragic Love Affairs"
-              tableId="tragic_love"
-              entries={general.tragicLove}
-              onChange={(tragicLove) => setGeneral({ ...general, tragicLove })}
-            />
+          <div className="grid gap-2 sm:grid-cols-2">
+            {roleTables.map((table) => (
+              <RoleLifepathTableCard
+                key={table.id}
+                roleId={state.roleId!}
+                table={table}
+                entry={roleLifepath.entries[table.id] ?? null}
+                onChange={setRoleEntry}
+              />
+            ))}
           </div>
         </CollapsibleSection>
+      ) : (
+        <p className="border border-dashed border-hairline p-4 text-sm text-text-dim">
+          Pick a Role and its own Lifepath tables appear here.
+        </p>
+      )}
 
-        {state.roleId ? (
-          <CollapsibleSection
-            title={`${roleName ?? "Role"} Background`}
-            note="Mixed dice; branch tables appear once you answer their gate"
-            count={roleAnswered}
-            total={roleTables.length}
-            defaultOpen
-          >
-            <div className="grid gap-2 sm:grid-cols-2">
-              {roleTables.map((table) => (
-                <RoleLifepathTableCard
-                  key={table.id}
-                  roleId={state.roleId!}
-                  table={table}
-                  entry={roleLifepath.entries[table.id] ?? null}
-                  onChange={setRoleEntry}
-                />
-              ))}
-            </div>
-          </CollapsibleSection>
-        ) : (
-          <p className="border border-dashed border-hairline p-4 text-sm text-text-dim">
-            Pick a Role and its own Lifepath tables appear here.
-          </p>
-        )}
-
-        <BackgroundPanel
-          ready={ready}
-          missing={missing}
-          buildInput={() => buildBackgroundInput(general, roleLifepath, roleName, roleAbilityName)}
-          value={state.background}
-          onChange={(text) => patch({ background: text })}
-        />
-      </div>
+      <BackgroundPanel
+        ready={ready}
+        missing={missing}
+        buildInput={() => buildBackgroundInput(general, roleLifepath, roleName, roleAbilityName)}
+        value={state.background}
+        onChange={(text) => patch({ background: text })}
+      />
+    </div>
   );
 }
 
@@ -275,7 +284,8 @@ function GeneralGroup({
   onLanguage: (language: GeneralLifepath["language"]) => void;
 }) {
   const count = ids.filter((id) => general.entries[id]).length;
-  const showLanguage = ids.includes("cultural_origin") && Boolean(general.entries["cultural_origin"]);
+  const showLanguage =
+    ids.includes("cultural_origin") && Boolean(general.entries["cultural_origin"]);
 
   return (
     <CollapsibleSection title={title} count={count} total={ids.length} defaultOpen>
@@ -384,10 +394,14 @@ function LanguagePicker({
           <button
             key={option}
             type="button"
-            onClick={() => onChange({ value: option, rank: grant.level, free: true, source: "list" })}
+            onClick={() =>
+              onChange({ value: option, rank: grant.level, free: true, source: "list" })
+            }
             className={cn(
               "border border-hairline px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-200 hover:border-ember",
-              language?.value === option ? "border-ember bg-ember/10 text-ember" : "text-text-muted",
+              language?.value === option
+                ? "border-ember bg-ember/10 text-ember"
+                : "text-text-muted",
             )}
           >
             {option}
@@ -439,9 +453,7 @@ function CountRoll({ label, onRoll }: { label: string; onRoll: (count: number) =
           };
         }}
       />
-      <span className="font-mono text-[11px] text-text-dim num">
-        {note ?? "Roll how many"}
-      </span>
+      <span className="font-mono text-[11px] text-text-dim num">{note ?? "Roll how many"}</span>
     </div>
   );
 }
@@ -471,7 +483,9 @@ function RepeatableSection({
           <CountRoll
             label={title}
             onRoll={(count) =>
-              onChange(Array.from({ length: count }, () => rollLifepathTable(tableId, Math.random).entry))
+              onChange(
+                Array.from({ length: count }, () => rollLifepathTable(tableId, Math.random).entry),
+              )
             }
           />
         </div>
@@ -518,7 +532,9 @@ function EnemySection({
           <CountRoll
             label="Enemies"
             onRoll={(count) =>
-              onChange(Array.from({ length: count }, () => ({ ...rollEnemy(Math.random), id: newId() })))
+              onChange(
+                Array.from({ length: count }, () => ({ ...rollEnemy(Math.random), id: newId() })),
+              )
             }
           />
         </div>

@@ -25,7 +25,10 @@ const POINTERS = new Map<string, string>();
 for (const [path, pointer] of Object.entries(POINTER_MODULES)) {
   const url = pointer?.url;
   if (!url) continue;
-  const file = path.split("/").pop()!.replace(/\.asset\.json$/, "");
+  const file = path
+    .split("/")
+    .pop()!
+    .replace(/\.asset\.json$/, "");
   POINTERS.set(file, url);
   POINTERS.set(file.replace(/\.[^.]+$/, ""), url);
   if (pointer.original_filename) POINTERS.set(pointer.original_filename, url);

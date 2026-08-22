@@ -77,7 +77,12 @@ function QtyStepper({ qty, setQty }: { qty: number; setQty: (n: number) => void 
         −
       </Button>
       <span className="w-8 text-center font-mono text-sm tabular-nums text-text">{qty}</span>
-      <Button variant="outline" size="sm" aria-label="Increase quantity" onClick={() => setQty(qty + 1)}>
+      <Button
+        variant="outline"
+        size="sm"
+        aria-label="Increase quantity"
+        onClick={() => setQty(qty + 1)}
+      >
         +
       </Button>
     </div>
@@ -96,18 +101,12 @@ function EmptyRow({ query }: { query: string }) {
 function PackageItemInfo({ label }: { label: string }) {
   const row = packageCatalogRow(label);
   if (!row || row.kind === "fashion") return null;
-  return <ItemInfo kind={row.kind as ItemKindLabel} item={row.item as { id: string; name: string }} />;
+  return (
+    <ItemInfo kind={row.kind as ItemKindLabel} item={row.item as { id: string; name: string }} />
+  );
 }
 
-function VariantPicker({
-  id,
-  label,
-  options,
-}: {
-  id: string;
-  label: string;
-  options: string[];
-}) {
+function VariantPicker({ id, label, options }: { id: string; label: string; options: string[] }) {
   const { loadout, setPackageVariant } = useLoadoutActions();
   const picked = loadout.packageVariants?.[id];
   return (
@@ -139,8 +138,6 @@ function VariantPicker({
       )}
     </div>
   );
-
-
 }
 
 function PackageEntries({
@@ -193,9 +190,7 @@ function PackageEntries({
               </span>
               <span className="font-mono tabular-nums text-text-dim">×{entry.qty}</span>
             </div>
-            {variants.length > 0 && (
-              <VariantPicker id={id} label={entry.item} options={variants} />
-            )}
+            {variants.length > 0 && <VariantPicker id={id} label={entry.item} options={variants} />}
           </li>
         );
       })}
@@ -235,7 +230,9 @@ function FixedPackage({ roleId }: { roleId: string }) {
       </Row>
       {flags.length > 0 ? (
         <Row>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">Good to know</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
+            Good to know
+          </p>
           {flags.map((f) => (
             <p key={f.item} className="mt-2 text-sm text-text-muted">
               <span className="text-text">{f.item}</span>: {f.issue}
@@ -252,7 +249,12 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const [variant, setVariant] = useState<Record<string, string>>({});
   const rows = byName(WEAPONS.filter((w) => matches(w.name, query)));
-  if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
+  if (rows.length === 0)
+    return (
+      <div className="border border-hairline bg-surface">
+        <EmptyRow query={query} />
+      </div>
+    );
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {rows.map((w) => {
@@ -305,7 +307,6 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
               ) : (
                 <Blurb id={w.id} text={w.notes} />
               )}
-
             </div>
             <div className="flex shrink-0 items-center gap-3">
               <QtyStepper qty={n} setQty={(v) => setQty((p) => ({ ...p, [w.id]: v }))} />
@@ -337,7 +338,12 @@ function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [locations, setLocations] = useState<Record<string, ArmorLocation>>({});
   const rows = byName(ARMOR.filter((a) => matches(a.name, query)));
-  if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
+  if (rows.length === 0)
+    return (
+      <div className="border border-hairline bg-surface">
+        <EmptyRow query={query} />
+      </div>
+    );
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {rows.map((a) => {
@@ -405,7 +411,12 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
   const rows = byName(AMMUNITION.filter((a) => matches(a.name, query)));
-  if (rows.length === 0) return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
+  if (rows.length === 0)
+    return (
+      <div className="border border-hairline bg-surface">
+        <EmptyRow query={query} />
+      </div>
+    );
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {rows.map((a) => {
@@ -429,7 +440,12 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
                 size="sm"
                 aria-label={`Buy ${a.name}`}
                 onClick={() =>
-                  buy({ kind: "ammunition", itemId: a.id, qty: n, budget: defaultBudgetFor("ammunition", a.id, state) })
+                  buy({
+                    kind: "ammunition",
+                    itemId: a.id,
+                    qty: n,
+                    budget: defaultBudgetFor("ammunition", a.id, state),
+                  })
                 }
               >
                 Buy
@@ -447,7 +463,11 @@ function GearTable({ state, query }: { state: ChargenState; query: string }) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const rows = byName(GEAR.filter((g) => matches(g.name, query)));
   if (rows.length === 0)
-    return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
+    return (
+      <div className="border border-hairline bg-surface">
+        <EmptyRow query={query} />
+      </div>
+    );
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {rows.map((g) => {
@@ -468,7 +488,12 @@ function GearTable({ state, query }: { state: ChargenState; query: string }) {
                 size="sm"
                 aria-label={`Buy ${g.name}`}
                 onClick={() =>
-                  buy({ kind: "gear", itemId: g.id, qty: n, budget: defaultBudgetFor("gear", g.id, state) })
+                  buy({
+                    kind: "gear",
+                    itemId: g.id,
+                    qty: n,
+                    budget: defaultBudgetFor("gear", g.id, state),
+                  })
                 }
               >
                 Buy
@@ -487,7 +512,11 @@ function FashionTable({ state, query }: { state: ChargenState; query: string }) 
     CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query)),
   );
   if (fashionware.length === 0)
-    return <div className="border border-hairline bg-surface"><EmptyRow query={query} /></div>;
+    return (
+      <div className="border border-hairline bg-surface">
+        <EmptyRow query={query} />
+      </div>
+    );
   return (
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {fashionware.map((c) => (
@@ -510,7 +539,11 @@ function FashionTable({ state, query }: { state: ChargenState; query: string }) 
               size="sm"
               aria-label={`Buy ${c.name}`}
               onClick={() =>
-                buy({ kind: "cyberware", itemId: c.id, budget: defaultBudgetFor("cyberware", c.id, state) })
+                buy({
+                  kind: "cyberware",
+                  itemId: c.id,
+                  budget: defaultBudgetFor("cyberware", c.id, state),
+                })
               }
             >
               Buy
@@ -540,15 +573,14 @@ export function GearPanel({ state }: { state: ChargenState }) {
       {isPackage ? (
         <FixedPackage roleId={state.roleId} />
       ) : (
-
         <div className="border border-hairline bg-surface-raised p-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
             Night Market
           </p>
           <p className="mt-2 text-sm text-text-muted">
-            Two budgets, and they do not mix. Gear money buys anything and what you do not spend
-            is yours. Fashion money buys only Fashion and Fashionware, and anything left of it is
-            gone for good.
+            Two budgets, and they do not mix. Gear money buys anything and what you do not spend is
+            yours. Fashion money buys only Fashion and Fashionware, and anything left of it is gone
+            for good.
           </p>
         </div>
       )}
@@ -603,8 +635,6 @@ export function GearPanel({ state }: { state: ChargenState }) {
           <FashionTable state={state} query={query} />
         </TabsContent>
       </Tabs>
-
-
 
       {CATALOG_PENDING.length > 0 && (
         <div className="border border-dashed border-hairline bg-surface/50 p-4">

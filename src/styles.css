@@ -239,13 +239,7 @@
   }
 
   .text-chrome {
-    background: linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #cfd4e6 45%,
-      #8f93ad 55%,
-      #eef1fa 100%
-    );
+    background: linear-gradient(180deg, #ffffff 0%, #cfd4e6 45%, #8f93ad 55%, #eef1fa 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

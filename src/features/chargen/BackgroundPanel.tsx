@@ -39,7 +39,6 @@ export function BackgroundPanel({
     }
   }
 
-
   const hasStory = value.trim().length > 0;
 
   return (
@@ -98,7 +97,6 @@ export function BackgroundPanel({
           </Button>
         </div>
       )}
-
 
       {hasStory && (
         <div className="mt-4">

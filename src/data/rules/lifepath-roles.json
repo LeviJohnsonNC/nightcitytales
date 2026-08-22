@@ -213,9 +213,7 @@
           "conditional": true,
           "dependsOn": {
             "tableId": "were_you_once_in_a_group",
-            "revealWhen": [
-              "Once in a group"
-            ]
+            "revealWhen": ["Once in a group"]
           },
           "houseRule": false,
           "sourceDiscrepancy": null,
@@ -449,9 +447,7 @@
           "conditional": true,
           "dependsOn": {
             "tableId": "got_a_partner_or_do_you_work_alone",
-            "revealWhen": [
-              "Have a Partner"
-            ]
+            "revealWhen": ["Have a Partner"]
           },
           "houseRule": false,
           "sourceDiscrepancy": null,
@@ -792,9 +788,7 @@
           "conditional": true,
           "dependsOn": {
             "tableId": "got_a_partner_or_do_you_work_alone",
-            "revealWhen": [
-              "Have a Partner"
-            ]
+            "revealWhen": ["Have a Partner"]
           },
           "houseRule": false,
           "sourceDiscrepancy": null,
@@ -1122,9 +1116,7 @@
           "conditional": true,
           "dependsOn": {
             "tableId": "got_a_partner_or_do_you_work_alone",
-            "revealWhen": [
-              "Have a Partner"
-            ]
+            "revealWhen": ["Have a Partner"]
           },
           "houseRule": false,
           "sourceDiscrepancy": null,
@@ -2011,9 +2003,7 @@
           "conditional": true,
           "dependsOn": {
             "tableId": "got_a_partner_or_work_alone",
-            "revealWhen": [
-              "Have a Partner"
-            ]
+            "revealWhen": ["Have a Partner"]
           },
           "houseRule": false,
           "sourceDiscrepancy": null,
@@ -2214,9 +2204,7 @@
           "conditional": true,
           "dependsOn": {
             "tableId": "is_your_pack_based_on_land_air_or_sea",
-            "revealWhen": [
-              "Land"
-            ]
+            "revealWhen": ["Land"]
           },
           "houseRule": false,
           "sourceDiscrepancy": null,
@@ -2274,9 +2262,7 @@
           "conditional": true,
           "dependsOn": {
             "tableId": "is_your_pack_based_on_land_air_or_sea",
-            "revealWhen": [
-              "Air"
-            ]
+            "revealWhen": ["Air"]
           },
           "houseRule": false,
           "sourceDiscrepancy": null,
@@ -2318,9 +2304,7 @@
           "conditional": true,
           "dependsOn": {
             "tableId": "is_your_pack_based_on_land_air_or_sea",
-            "revealWhen": [
-              "Sea"
-            ]
+            "revealWhen": ["Sea"]
           },
           "houseRule": false,
           "sourceDiscrepancy": null,

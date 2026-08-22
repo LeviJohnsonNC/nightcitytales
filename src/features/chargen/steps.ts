@@ -69,7 +69,6 @@ export const DEPENDENTS: Record<string, ChargenStep[]> = {
   role: ["lifepath", "skills", "gear", "cyberware"],
 };
 
-
 /** The parts of the draft wiped when a Role change is confirmed. */
 export function clearedByRoleChange(state: ChargenState): Partial<ChargenState> {
   return {

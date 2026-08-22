@@ -90,7 +90,9 @@ function lowestFixerRank(index: number): number | null {
   return tier ? tier.rank : null;
 }
 
-export function priceCategoryContext(category: string | null | undefined): PriceCategoryContext | null {
+export function priceCategoryContext(
+  category: string | null | undefined,
+): PriceCategoryContext | null {
   if (!category) return null;
   const index = ladderIndex(category);
   if (index === -1) return null;

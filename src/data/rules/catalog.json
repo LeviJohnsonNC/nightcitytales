@@ -14,11 +14,7 @@
       "fashionNote": "The 800eb may ONLY buy Fashion or Fashionware. Anything unspent is lost."
     },
     "humanityLossAtCreation": "At Character Generation, Humanity Loss is the PRESET flat number. The dice in parentheses apply only AFTER creation. Do not roll HL during chargen.",
-    "installLevels": [
-      "Mall",
-      "Clinic",
-      "Hospital"
-    ],
+    "installLevels": ["Mall", "Clinic", "Hospital"],
     "installNote": "Installation surgery is always included at no extra charge, including at Character Generation.",
     "optionSlots": {
       "foundational": {
@@ -69,10 +65,7 @@
       "concealable": true,
       "cost": 50,
       "notes": "Combat Knife, Tomahawk",
-      "variants": [
-        "Combat Knife",
-        "Tomahawk"
-      ]
+      "variants": ["Combat Knife", "Tomahawk"]
     },
     {
       "id": "medium_melee",
@@ -86,11 +79,7 @@
       "concealable": false,
       "cost": 50,
       "notes": "Baseball Bat, Crowbar, Machete",
-      "variants": [
-        "Baseball Bat",
-        "Crowbar",
-        "Machete"
-      ]
+      "variants": ["Baseball Bat", "Crowbar", "Machete"]
     },
     {
       "id": "heavy_melee",
@@ -104,11 +93,7 @@
       "concealable": false,
       "cost": 100,
       "notes": "Lead Pipe, Sword, Spiked Bat",
-      "variants": [
-        "Lead Pipe",
-        "Sword",
-        "Spiked Bat"
-      ]
+      "variants": ["Lead Pipe", "Sword", "Spiked Bat"]
     },
     {
       "id": "very_heavy_melee",
@@ -122,12 +107,7 @@
       "concealable": false,
       "cost": 500,
       "notes": "Chainsaw, Sledgehammer, Naginata",
-      "variants": [
-        "Chainsaw",
-        "Sledgehammer",
-        "Helicopter Blades",
-        "Naginata"
-      ]
+      "variants": ["Chainsaw", "Sledgehammer", "Helicopter Blades", "Naginata"]
     },
     {
       "id": "medium_pistol",
@@ -245,10 +225,7 @@
       "concealable": false,
       "cost": 100,
       "notes": "Arrows",
-      "variants": [
-        "Bow",
-        "Crossbow"
-      ]
+      "variants": ["Bow", "Crossbow"]
     },
     {
       "id": "grenade_launcher",
@@ -466,10 +443,7 @@
       "sp": 4,
       "penalty": null,
       "cost": 20,
-      "locations": [
-        "body",
-        "head"
-      ],
+      "locations": ["body", "head"],
       "notes": "Favored by Nomads and bikers."
     },
     {
@@ -478,10 +452,7 @@
       "sp": 7,
       "penalty": null,
       "cost": 50,
-      "locations": [
-        "body",
-        "head"
-      ],
+      "locations": ["body", "head"],
       "notes": "Can be made into clothes, vests, jackets, suits."
     },
     {
@@ -490,10 +461,7 @@
       "sp": 11,
       "penalty": null,
       "cost": 100,
-      "locations": [
-        "body",
-        "head"
-      ],
+      "locations": ["body", "head"],
       "notes": "Kevlar and plastic mesh in the weave."
     },
     {
@@ -502,9 +470,7 @@
       "sp": 11,
       "penalty": null,
       "cost": 1000,
-      "locations": [
-        "body"
-      ],
+      "locations": ["body"],
       "notes": "Stores a Cyberdeck and supports Interface Plugs."
     },
     {
@@ -512,72 +478,44 @@
       "name": "Medium Armorjack",
       "sp": 12,
       "penalty": {
-        "stats": [
-          "REF",
-          "DEX",
-          "MOVE"
-        ],
+        "stats": ["REF", "DEX", "MOVE"],
         "value": -2
       },
       "cost": 100,
-      "locations": [
-        "body",
-        "head"
-      ]
+      "locations": ["body", "head"]
     },
     {
       "id": "heavy_armorjack",
       "name": "Heavy Armorjack",
       "sp": 13,
       "penalty": {
-        "stats": [
-          "REF",
-          "DEX",
-          "MOVE"
-        ],
+        "stats": ["REF", "DEX", "MOVE"],
         "value": -2
       },
       "cost": 500,
-      "locations": [
-        "body",
-        "head"
-      ]
+      "locations": ["body", "head"]
     },
     {
       "id": "flak",
       "name": "Flak",
       "sp": 15,
       "penalty": {
-        "stats": [
-          "REF",
-          "DEX",
-          "MOVE"
-        ],
+        "stats": ["REF", "DEX", "MOVE"],
         "value": -4
       },
       "cost": 500,
-      "locations": [
-        "body",
-        "head"
-      ]
+      "locations": ["body", "head"]
     },
     {
       "id": "metalgear",
       "name": "Metalgear",
       "sp": 18,
       "penalty": {
-        "stats": [
-          "REF",
-          "DEX",
-          "MOVE"
-        ],
+        "stats": ["REF", "DEX", "MOVE"],
         "value": -4
       },
       "cost": 5000,
-      "locations": [
-        "body",
-        "head"
-      ]
+      "locations": ["body", "head"]
     },
     {
       "id": "bulletproof_shield",
@@ -586,9 +524,7 @@
       "hp": 10,
       "penalty": null,
       "cost": 100,
-      "locations": [
-        "shield"
-      ],
+      "locations": ["shield"],
       "notes": "10 HP reduced by damage. Always occupies one arm."
     }
   ],
@@ -598,13 +534,7 @@
       "name": "Basic Ammunition",
       "cost": 10,
       "unit": "per 10 units",
-      "types": [
-        "Bullet (Pistol)",
-        "Bullet (Slug)",
-        "Bullet (Rifle)",
-        "Shotgun Shell",
-        "Arrow"
-      ],
+      "types": ["Bullet (Pistol)", "Bullet (Slug)", "Bullet (Rifle)", "Shotgun Shell", "Arrow"],
       "notes": "Grenades and Rockets are not sold as Basic ammunition."
     },
     {
@@ -613,9 +543,7 @@
       "cost": 100,
       "priceCategory": "Premium",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "All except Shotgun Shells"
-      ],
+      "types": ["All except Shotgun Shells"],
       "notes": "Ablate armor by 2 instead of 1 whenever you would ablate armor."
     },
     {
@@ -624,9 +552,7 @@
       "cost": 500,
       "priceCategory": "Expensive",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Arrows and Grenades only"
-      ],
+      "types": ["Arrows and Grenades only"],
       "notes": "Deals no damage. A meat target must beat a DV15 Resist Torture/Drugs Check or take 3d6 straight to HP, armor unablated."
     },
     {
@@ -635,9 +561,7 @@
       "cost": 500,
       "priceCategory": "Expensive",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Grenades only"
-      ],
+      "types": ["Grenades only"],
       "notes": "Deals no damage. Target must beat a DV15 Cybertech Check or the GM shuts down two pieces of their cyberware or carried electronics for 1 minute."
     },
     {
@@ -646,9 +570,7 @@
       "cost": 100,
       "priceCategory": "Premium",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Arrows, Bullets, and Slugs"
-      ],
+      "types": ["Arrows, Bullets, and Slugs"],
       "notes": "On a Foreign Object Critical Injury, the target rolls a second Critical Injury and suffers it too (no bonus damage)."
     },
     {
@@ -657,9 +579,7 @@
       "cost": 100,
       "priceCategory": "Premium",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Grenades only"
-      ],
+      "types": ["Grenades only"],
       "notes": "Deals no damage. Target must beat a DV15 Resist Torture/Drugs Check or suffer Damaged Eye and Damaged Ear for a minute."
     },
     {
@@ -668,9 +588,7 @@
       "cost": 100,
       "priceCategory": "Premium",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Arrows, Bullets, Grenades, and Shotgun Shells"
-      ],
+      "types": ["Arrows, Bullets, Grenades, and Shotgun Shells"],
       "notes": "Deal damage through armor and the target ignites: 2 HP at the end of each of their turns until they spend an Action to put it out. Does not stack."
     },
     {
@@ -679,9 +597,7 @@
       "cost": 100,
       "priceCategory": "Premium",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Arrows and Grenades only"
-      ],
+      "types": ["Arrows and Grenades only"],
       "notes": "Deals no damage. A meat target must beat a DV13 Resist Torture/Drugs Check or take 2d6 straight to HP, armor unablated."
     },
     {
@@ -690,9 +606,7 @@
       "cost": 10,
       "priceCategory": "Cheap",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Arrows, Bullets, and Slugs"
-      ],
+      "types": ["Arrows, Bullets, and Slugs"],
       "notes": "Cannot cause Critical Injuries and cannot ablate armor. Never drops a target with more than 1 HP below 1 HP."
     },
     {
@@ -701,9 +615,7 @@
       "cost": 500,
       "priceCategory": "Expensive",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Arrows and Grenades"
-      ],
+      "types": ["Arrows and Grenades"],
       "notes": "Deals no damage. A meat target must beat a DV13 Resist Torture/Drugs Check or drop Prone and Unconscious for a minute (or until woken or damaged)."
     },
     {
@@ -712,9 +624,7 @@
       "cost": 500,
       "priceCategory": "Expensive",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Arrows, Bullets, and Rockets"
-      ],
+      "types": ["Arrows, Bullets, and Rockets"],
       "notes": "Requires Targeting Scope cyberware to fire. A single shot that misses by 4 or less gets a second chance to hit at +10 on the die."
     },
     {
@@ -723,9 +633,7 @@
       "cost": 50,
       "priceCategory": "Costly",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Grenades only"
-      ],
+      "types": ["Grenades only"],
       "notes": "Fills a 10m by 10m area with smoke for a minute on impact. Tasks attempted in it take a -4."
     },
     {
@@ -734,9 +642,7 @@
       "cost": 50,
       "priceCategory": "Costly",
       "unit": "per 10 (grenades and rockets: each)",
-      "types": [
-        "Grenades only"
-      ],
+      "types": ["Grenades only"],
       "notes": "Deals no damage. A target with meat eyes must beat a DV13 Resist Torture/Drugs Check or suffer Damaged Eye for a minute."
     }
   ],

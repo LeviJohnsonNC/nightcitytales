@@ -39,14 +39,21 @@ export const METHOD_COPY: MethodCopy[] = [
 
 /** Playstyle line per Role, in the house voice. Flavor guidance, not mechanics. */
 export const ROLE_PLAYS_LIKE: Record<string, string> = {
-  rockerboy: "Plays like: the crowd is your weapon. Talk, play, and turn a room full of strangers into your movement.",
+  rockerboy:
+    "Plays like: the crowd is your weapon. Talk, play, and turn a room full of strangers into your movement.",
   solo: "Plays like: the one who walks out. You read the fight before it starts and end it before it's fair.",
-  netrunner: "Plays like: a second game inside the game. You jack into the NET while the crew holds the meat world.",
+  netrunner:
+    "Plays like: a second game inside the game. You jack into the NET while the crew holds the meat world.",
   tech: "Plays like: the one who makes the broken work. Build it, fix it, upgrade it past what the manual allows.",
-  medtech: "Plays like: the reason the crew comes home. You put bodies back together mid-job, no questions asked.",
-  media: "Plays like: the truth as a crowbar. You dig up what the Corps bury and put it on every screen in the city.",
+  medtech:
+    "Plays like: the reason the crew comes home. You put bodies back together mid-job, no questions asked.",
+  media:
+    "Plays like: the truth as a crowbar. You dig up what the Corps bury and put it on every screen in the city.",
   exec: "Plays like: running the corporation instead of robbing it. Money, staff, and favors do your fighting.",
-  lawman: "Plays like: the badge in a city that eats badges. Authority, backup, and calls nobody else will make.",
-  fixer: "Plays like: the number everyone has saved. Deals, contacts, and getting hold of the impossible for a cut.",
-  nomad: "Plays like: wheels, family, and open road. You move the crew and the cargo, and you always know the way out.",
+  lawman:
+    "Plays like: the badge in a city that eats badges. Authority, backup, and calls nobody else will make.",
+  fixer:
+    "Plays like: the number everyone has saved. Deals, contacts, and getting hold of the impossible for a cut.",
+  nomad:
+    "Plays like: wheels, family, and open road. You move the crew and the cargo, and you always know the way out.",
 };

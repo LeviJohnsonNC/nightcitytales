@@ -165,7 +165,9 @@ function CharacterCard({
           )}
         </div>
         <div className="min-w-0 space-y-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">{roleName}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">
+            {roleName}
+          </p>
           <h3 className="truncate text-lg font-bold leading-tight">{entry.name}</h3>
           <p className="truncate text-sm text-muted-foreground">
             {entry.handle ? `"${entry.handle}"` : "no handle"}
@@ -235,7 +237,9 @@ export function RosterList({ userId }: { userId: string }) {
       {duplicate.error && (
         <p className="text-sm text-destructive">{(duplicate.error as Error).message}</p>
       )}
-      {remove.error && <p className="text-sm text-destructive">{(remove.error as Error).message}</p>}
+      {remove.error && (
+        <p className="text-sm text-destructive">{(remove.error as Error).message}</p>
+      )}
 
       {data.length === 0 ? (
         <EmptyRoster />

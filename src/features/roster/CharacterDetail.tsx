@@ -18,7 +18,8 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
 
   if (isPending) return <p className="text-sm text-muted-foreground">Loading character…</p>;
   if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
-  if (!data) return <p className="text-sm text-muted-foreground">That character no longer exists.</p>;
+  if (!data)
+    return <p className="text-sm text-muted-foreground">That character no longer exists.</p>;
 
   const state = stateFromCharacter(data);
   const build = buildFromState(state);
@@ -37,11 +38,7 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
           <Button disabled title="Play sessions arrive in a later release">
             Start Adventure — coming soon
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => edit.mutate({ id })}
-            disabled={edit.isPending}
-          >
+          <Button variant="outline" onClick={() => edit.mutate({ id })} disabled={edit.isPending}>
             {edit.isPending ? "Opening…" : "Edit in wizard"}
           </Button>
           <Button

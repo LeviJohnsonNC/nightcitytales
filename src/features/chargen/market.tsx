@@ -182,9 +182,7 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
                 <p className="truncate text-sm text-text">
                   {line.variant ?? itemName(line.kind, line.itemId)}
                   {line.variant ? (
-                    <span className="ml-1 text-text-dim">
-                      ({itemName(line.kind, line.itemId)})
-                    </span>
+                    <span className="ml-1 text-text-dim">({itemName(line.kind, line.itemId)})</span>
                   ) : null}
                   {line.qty > 1 ? ` ×${line.qty}` : ""}
                   {line.location ? (
@@ -239,7 +237,6 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
   );
 }
 
-
 export function PurchaseError({ error }: { error: string | null }) {
   if (!error) return null;
   return (
@@ -278,7 +275,9 @@ export function HumanityMeter({ state }: { state: ChargenState }) {
       <div className="mt-2 grid grid-cols-3 gap-3 font-mono tabular-nums">
         <div>
           <p className="text-2xl text-text">{humanity.humanitySheet}</p>
-          <p className="text-[11px] uppercase text-text-dim">Humanity (was {humanity.humanityBefore})</p>
+          <p className="text-[11px] uppercase text-text-dim">
+            Humanity (was {humanity.humanityBefore})
+          </p>
         </div>
         <div>
           <p className="text-2xl text-danger">−{humanity.humanityLost}</p>
@@ -293,8 +292,8 @@ export function HumanityMeter({ state }: { state: ChargenState }) {
       </div>
       {humanity.cyberpsychosisRisk ? (
         <p className="mt-3 text-sm text-text">
-          Humanity has dropped below zero. This character is in cyberpsychosis and cannot be
-          played. Remove cyberware until Humanity is at zero or above.
+          Humanity has dropped below zero. This character is in cyberpsychosis and cannot be played.
+          Remove cyberware until Humanity is at zero or above.
         </p>
       ) : near ? (
         <p className="mt-3 text-sm text-text">
@@ -328,11 +327,7 @@ export function CyberwareSlots({ loadout }: { loadout: Loadout }) {
   );
 }
 
-export function defaultBudgetFor(
-  kind: ItemKind,
-  itemId: string,
-  state: ChargenState,
-): BudgetId {
+export function defaultBudgetFor(kind: ItemKind, itemId: string, state: ChargenState): BudgetId {
   if (state.method !== "complete_package") return "free";
   if (!isFashionItem(kind, itemId)) return "gear";
   const fashion = budgetStates(state.method, state.loadout).find((b) => b.id === "fashion");

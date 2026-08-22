@@ -32,7 +32,6 @@ const SPOTLIGHT_FOCAL: Record<string, [number, number]> = {
   nomad: [0.5, 0.15],
 };
 
-
 function RoleTile({
   role,
   committed,
@@ -71,7 +70,6 @@ function RoleTile({
     </button>
   );
 }
-
 
 function RoleSpotlight({
   role,
@@ -139,7 +137,6 @@ function RoleSpotlight({
               </button>
             )}
           </div>
-
         </div>
 
         <div className="min-w-0 space-y-3 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
@@ -187,7 +184,6 @@ function RoleSpotlight({
         </div>
       </div>
     </div>
-
   );
 }
 
@@ -233,6 +229,5 @@ export function RolePanel({
         />
       </div>
     </div>
-
   );
 }

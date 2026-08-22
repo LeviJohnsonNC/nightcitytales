@@ -1,10 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArtSlot } from "./ArtSlot";
 import { PRESENTATIONS, portraitArt, portraits, type Presentation } from "./art";
@@ -38,7 +33,7 @@ export function PortraitGallery({
     [all, roleOnly, roleId, presentation],
   );
 
-  const enlargedEntry = enlarged ? all.find((p) => p.id === enlarged) ?? null : null;
+  const enlargedEntry = enlarged ? (all.find((p) => p.id === enlarged) ?? null) : null;
 
   return (
     <div className="space-y-3">
@@ -81,8 +76,8 @@ export function PortraitGallery({
           </p>
           <p className="mt-2 text-sm text-text-muted">
             Upload artwork to Lovable, then add one entry to
-            <span className="font-mono"> src/data/art/manifest.json → portraits</span>. Nothing
-            else needs touching.
+            <span className="font-mono"> src/data/art/manifest.json → portraits</span>. Nothing else
+            needs touching.
           </p>
         </div>
       ) : shown.length === 0 ? (

@@ -80,10 +80,7 @@
   "startingLifestyle": {
     "_source": "Cyberpunk RED Core Rulebook p.109 (chargen), p.377-378 (Lifestyle & Housing), p.181 (Exec Teamwork Role Ability)",
     "housing": "Rented Cargo Container",
-    "location": [
-      "Overcrowded Suburbs",
-      "Combat Zone"
-    ],
+    "location": ["Overcrowded Suburbs", "Combat Zone"],
     "lifestyle": "Kibble",
     "rent": 1000,
     "rentPeriod": "month",
@@ -130,10 +127,7 @@
     "cyberpsychosisThreshold": 0,
     "cyberpsychosisComparison": "below",
     "cyberpsychosisNote": "Cyberpsychosis triggers when Humanity drops BELOW zero (HUM < 0). Exactly 0 is not yet cyberpsychosis. There is no intermediate mechanical warning band in RAW; low EMP is described as narratively predisposing but carries no separate threshold.",
-    "humanityLossSources": [
-      "Cyberware installation",
-      "Mental trauma (GM-assigned)"
-    ],
+    "humanityLossSources": ["Cyberware installation", "Mental trauma (GM-assigned)"],
     "traumaHumanityLoss": [
       {
         "type": "Traumatic Physical Incident",
@@ -164,12 +158,7 @@
   },
   "statDescriptions": {
     "_source": "Cyberpunk RED Core Rulebook p.72 (STAT definitions). `description` is the book's own wording, condensed only by removing line-break artifacts. `drives` is a plain-language UI summary of what the STAT governs mechanically \u2014 written for players, derived from the rules but not printed verbatim.",
-    "_groups": [
-      "Mental",
-      "Combat",
-      "Fortune",
-      "Physical"
-    ],
+    "_groups": ["Mental", "Combat", "Fortune", "Physical"],
     "stats": {
       "int": {
         "stat": "INT",

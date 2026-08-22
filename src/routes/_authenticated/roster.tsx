@@ -5,7 +5,10 @@ export const Route = createFileRoute("/_authenticated/roster")({
   head: () => ({
     meta: [
       { title: "Your Roster · Night City Tales" },
-      { name: "description", content: "Every edgerunner you've made, saved to your account and ready to run." },
+      {
+        name: "description",
+        content: "Every edgerunner you've made, saved to your account and ready to run.",
+      },
       { property: "og:title", content: "Your Roster · Night City Tales" },
       {
         property: "og:description",

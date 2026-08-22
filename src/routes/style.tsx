@@ -96,13 +96,11 @@ function StylePage() {
   return (
     <main className="mx-auto max-w-5xl space-y-14 px-6 py-14">
       <header className="space-y-3">
-        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-ember">
-          Design system
-        </p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-ember">Design system</p>
         <h1 className="text-4xl text-text">Night City Tales visual language</h1>
         <p className="max-w-xl text-text-muted">
-          Painted, matte, squared. One ember accent, warm near-black grounds, and every
-          number in tabular mono.
+          Painted, matte, squared. One ember accent, warm near-black grounds, and every number in
+          tabular mono.
         </p>
       </header>
 

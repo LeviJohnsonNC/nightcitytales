@@ -10,11 +10,7 @@
     "allowChoose": true,
     "chooseNote": "The rules explicitly permit choosing instead of rolling on any table, and re-choosing if a result doesn't fit the Character. Record which path was taken.",
     "persistenceShape": "{ tableId, value, method: 'rolled'|'chosen', roll: number|null }",
-    "repeatableTables": [
-      "friends",
-      "enemies",
-      "tragic_love"
-    ],
+    "repeatableTables": ["friends", "enemies", "tragic_love"],
     "countRoll": "Friends, Enemies, and Tragic Love Affairs each use: roll 1d10 and subtract 7, minimum 0, to determine how many you have. Then roll once per instance.",
     "enemyNote": "Each enemy is built from four linked rolls: enemy_who, enemy_cause, enemy_throw, plus who was the injured party (a choice, not a roll). Then consult sweet_revenge for what happens when you meet."
   },
@@ -57,15 +53,7 @@
         {
           "roll": 1,
           "region": "North American",
-          "languages": [
-            "Chinese",
-            "Cree",
-            "Creole",
-            "English",
-            "French",
-            "Navajo",
-            "Spanish"
-          ]
+          "languages": ["Chinese", "Cree", "Creole", "English", "French", "Navajo", "Spanish"]
         },
         {
           "roll": 2,
@@ -98,27 +86,12 @@
         {
           "roll": 4,
           "region": "Eastern European",
-          "languages": [
-            "English",
-            "Finnish",
-            "Polish",
-            "Romanian",
-            "Russian",
-            "Ukrainian"
-          ]
+          "languages": ["English", "Finnish", "Polish", "Romanian", "Russian", "Ukrainian"]
         },
         {
           "roll": 5,
           "region": "Middle Eastern/North African",
-          "languages": [
-            "Arabic",
-            "Berber",
-            "English",
-            "Farsi",
-            "French",
-            "Hebrew",
-            "Turkish"
-          ]
+          "languages": ["Arabic", "Berber", "English", "Farsi", "French", "Hebrew", "Turkish"]
         },
         {
           "roll": 6,
@@ -180,14 +153,7 @@
         {
           "roll": 10,
           "region": "Oceania/Pacific Islander",
-          "languages": [
-            "English",
-            "French",
-            "Hawaiian",
-            "Maori",
-            "Pama-Nyungan",
-            "Tahitian"
-          ]
+          "languages": ["English", "French", "Hawaiian", "Maori", "Pama-Nyungan", "Tahitian"]
         }
       ]
     },

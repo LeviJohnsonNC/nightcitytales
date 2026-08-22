@@ -20,7 +20,9 @@ describe("engine purity", () => {
       .filter((file) => {
         const source = readFileSync(file, "utf8");
         const imports = [...source.matchAll(/from\s+["']([^"']+)["']/g)].map((m) => m[1]!);
-        return imports.some((spec) => FORBIDDEN.some((bad) => spec === bad || spec.startsWith(bad)));
+        return imports.some((spec) =>
+          FORBIDDEN.some((bad) => spec === bad || spec.startsWith(bad)),
+        );
       });
     expect(offenders).toEqual([]);
   });

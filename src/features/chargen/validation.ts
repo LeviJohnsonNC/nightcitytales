@@ -61,7 +61,10 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       if (state.method === "complete_package") {
         const result = validateCompletePackageStats(state.stats);
         const untouched = Object.keys(state.stats).length === 0;
-        return { violations: untouched ? ["No STATs allocated yet."] : result.violations, untouched };
+        return {
+          violations: untouched ? ["No STATs allocated yet."] : result.violations,
+          untouched,
+        };
       }
       return statsAssigned(state)
         ? { violations: [], untouched: false }
@@ -115,12 +118,13 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
 
     case "gear": {
       const untouched =
-        state.loadout.lines.length === 0 &&
-        Object.keys(state.loadout.packageChoices).length === 0;
+        state.loadout.lines.length === 0 && Object.keys(state.loadout.packageChoices).length === 0;
       const violations: string[] = [];
       if (state.method && state.method !== "complete_package" && state.roleId) {
         for (const point of unresolvedChoices(state.roleId, state.loadout.packageChoices)) {
-          violations.push(`Your package offers a choice you have not made: ${point.options.join(" or ")}.`);
+          violations.push(
+            `Your package offers a choice you have not made: ${point.options.join(" or ")}.`,
+          );
         }
         for (const point of unresolvedVariants(
           state.roleId,
@@ -160,8 +164,8 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
     }
 
     case "review": {
-      const violations = CHARGEN_STEPS.filter((s) => s.id !== "review").flatMap((s) =>
-        validateStep(s.id, state).violations,
+      const violations = CHARGEN_STEPS.filter((s) => s.id !== "review").flatMap(
+        (s) => validateStep(s.id, state).violations,
       );
       return { violations, untouched: false };
     }

@@ -77,7 +77,6 @@ export function MethodPanel({
                 />
               </div>
 
-
               <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold tracking-tight">{LABELS[method.id]}</h2>

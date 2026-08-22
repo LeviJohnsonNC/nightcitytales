@@ -5,18 +5,7 @@
     "pages": "73-77",
     "note": "Streetrat rolls 1d10 once and takes the entire row as written. Edgerunner rolls 1d10 per STAT, each read against that STAT's own column. Neither may rearrange results."
   },
-  "_statOrder": [
-    "int",
-    "ref",
-    "dex",
-    "tech",
-    "cool",
-    "will",
-    "luck",
-    "move",
-    "body",
-    "emp"
-  ],
+  "_statOrder": ["int", "ref", "dex", "tech", "cool", "will", "luck", "move", "body", "emp"],
   "templates": {
     "rockerboy": {
       "rows": {

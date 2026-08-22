@@ -9,14 +9,17 @@ Three gaps on the Gear step:
 ## What changes
 
 ### 1. Gear becomes a real catalog section
+
 `src/data/rules/catalog.json` already has a `gear` array; the engine just never exposed it. Add it to the typed catalog as a new item kind, add a **Gear** tab to the Night Market with search, cost, price category, buy button, and the same "?" info modal used everywhere else. No new numbers are authored — cost and description come straight from the file.
 
 ### 2. Info icons inside the fixed package
+
 Package entries are plain display strings ("Heavy Pistol", "Basic H Pistol Ammunition x100", "Light Armorjack Body Armor (SP11)", "Agent"). Add a pure engine resolver that maps a package label to its catalog row (kind + id, plus armor location or ammo quantity where the label says so), using an explicit name-alias table — matching only, no invented stats.
 
 Every resolved entry then renders with the existing `ItemInfo` modal, both for fixed lines and for each option inside a "Pick exactly one" block. A label that resolves to nothing renders exactly as it does today, with no icon, rather than guessing at a match.
 
 ### 3. Specific weapon required for generic package entries
+
 When a chosen (or fixed) package entry resolves to a catalog weapon that has variants — Light/Medium/Heavy/Very Heavy Melee, Bows & Crossbows — show a second row of variant buttons ("Lead Pipe / Sword / Spiked Bat"), mirroring the Night Market styling.
 
 - New `packageVariants` map on the loadout, keyed the same way as `packageChoices`.

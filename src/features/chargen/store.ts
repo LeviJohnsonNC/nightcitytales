@@ -105,9 +105,7 @@ export function roleAbilityForRole(roleId: string): ChargenState["roleAbility"] 
   if (!role) throw new Error(`Unknown role "${roleId}" (src/data/rules/roles.json)`);
   const rank = role.roleAbility.startingRank;
   if (typeof rank !== "number") {
-    throw new Error(
-      `Role "${roleId}" has no roleAbility.startingRank (src/data/rules/roles.json)`,
-    );
+    throw new Error(`Role "${roleId}" has no roleAbility.startingRank (src/data/rules/roles.json)`);
   }
   return { id: role.roleAbility.id, name: role.roleAbility.name, rank };
 }

@@ -45,4 +45,3 @@ export function emphasizeTerms(paragraph: string, terms: string[]): LoreSegment[
     .filter((chunk) => chunk.length > 0)
     .map((chunk) => ({ text: chunk, emphasis: exact.test(chunk) }));
 }
-

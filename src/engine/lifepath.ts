@@ -114,9 +114,7 @@ export const REPEATABLE_LIFEPATH_TABLES: string[] = LIFEPATH_RULES.repeatableTab
 export function getLifepathTable(tableId: string): LifepathTable {
   const table = TABLES[tableId];
   if (!table) {
-    throw new Error(
-      `Unknown Lifepath table "${tableId}" (src/data/rules/lifepath-general.json)`,
-    );
+    throw new Error(`Unknown Lifepath table "${tableId}" (src/data/rules/lifepath-general.json)`);
   }
   return table;
 }

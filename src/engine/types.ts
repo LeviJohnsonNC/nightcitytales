@@ -3,16 +3,7 @@
  * The engine is pure TypeScript: no React, no backend, no feature imports.
  */
 export type StatKey =
-  | "int"
-  | "ref"
-  | "dex"
-  | "tech"
-  | "cool"
-  | "will"
-  | "luck"
-  | "move"
-  | "body"
-  | "emp";
+  "int" | "ref" | "dex" | "tech" | "cool" | "will" | "luck" | "move" | "body" | "emp";
 
 export type StatBlock = Record<StatKey, number>;
 

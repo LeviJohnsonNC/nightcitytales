@@ -38,7 +38,9 @@ function Panel({
         <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.18em] text-text">
           {title}
         </h2>
-        {note && <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">{note}</p>}
+        {note && (
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">{note}</p>
+        )}
       </header>
       {children}
     </section>
@@ -84,7 +86,9 @@ export function CharacterSheet({
   const roleLifepath = readRoleLifepath(state.lifepath.roleSpecific, build.roleId);
 
   const generalLines: string[] = [
-    ...SINGLE_LIFEPATH_TABLES.map((id) => general.entries[id]).filter(Boolean).map((e) => sentenceFor(e!)),
+    ...SINGLE_LIFEPATH_TABLES.map((id) => general.entries[id])
+      .filter(Boolean)
+      .map((e) => sentenceFor(e!)),
     ...(general.language ? [languageSentence(general.language)] : []),
     ...general.friends.map(friendSentence),
     ...general.tragicLove.map(loveSentence),
@@ -179,13 +183,17 @@ export function CharacterSheet({
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
                   Critical Injuries
                 </p>
-                <p className="mt-2 text-sm italic text-text-dim">None at creation. Space for play.</p>
+                <p className="mt-2 text-sm italic text-text-dim">
+                  None at creation. Space for play.
+                </p>
               </div>
               <div className="border border-dashed border-hairline p-3">
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
                   Addictions
                 </p>
-                <p className="mt-2 text-sm italic text-text-dim">None at creation. Space for play.</p>
+                <p className="mt-2 text-sm italic text-text-dim">
+                  None at creation. Space for play.
+                </p>
               </div>
             </div>
           </div>
@@ -424,10 +432,7 @@ export function CharacterSheet({
         <Panel title="Housing & Lifestyle">
           <Row label="Housing" value={sheet.finance.housing} />
           {sheet.finance.location && <Row label="Location" value={sheet.finance.location} />}
-          <Row
-            label="Rent"
-            value={`${sheet.finance.rent}eb / ${sheet.finance.plan.rentPeriod}`}
-          />
+          <Row label="Rent" value={`${sheet.finance.rent}eb / ${sheet.finance.plan.rentPeriod}`} />
           <Row label="Lifestyle" value={sheet.finance.lifestyle} />
           <Row
             label="Lifestyle cost"
@@ -484,7 +489,9 @@ export function CharacterSheet({
                   <ul className="mt-1 space-y-0.5 text-sm text-text-muted">
                     {sheet.packageCyberware.map((entry, i) => (
                       <li key={i}>
-                        {"item" in entry ? `${entry.item}${entry.qty > 1 ? ` ×${entry.qty}` : ""}` : entry.choice.join(" or ")}
+                        {"item" in entry
+                          ? `${entry.item}${entry.qty > 1 ? ` ×${entry.qty}` : ""}`
+                          : entry.choice.join(" or ")}
                       </li>
                     ))}
                   </ul>

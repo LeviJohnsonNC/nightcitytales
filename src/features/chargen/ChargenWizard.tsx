@@ -19,9 +19,7 @@ import { useDraftSync } from "./useDraftSync";
 import { stepStatuses, validateStep } from "./validation";
 
 type PendingChange =
-  | { kind: "method"; method: CreationMethod }
-  | { kind: "role"; roleId: string }
-  | null;
+  { kind: "method"; method: CreationMethod } | { kind: "role"; roleId: string } | null;
 
 const SAVE_LABEL: Record<string, string> = {
   loading: "Loading draft…",
@@ -82,7 +80,8 @@ export function ChargenWizard({ userId }: { userId: string }) {
         <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border border-border bg-background/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
           <div className="flex min-w-0 items-center gap-3">
             <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-              Step {String(def.index).padStart(2, "0")} / {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}
+              Step {String(def.index).padStart(2, "0")} /{" "}
+              {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}
             </span>
             <span className="hidden truncate text-sm font-semibold tracking-tight sm:inline">
               {def.title}
@@ -104,10 +103,11 @@ export function ChargenWizard({ userId }: { userId: string }) {
 
         <header className="border-b border-border pb-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-            Step {String(def.index).padStart(2, "0")} / {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}
+            Step {String(def.index).padStart(2, "0")} /{" "}
+            {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">{def.title}</h1>
-          
+
           <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
             {SAVE_LABEL[saveStatus]}
             {saveError ? ` — ${saveError}` : ""}

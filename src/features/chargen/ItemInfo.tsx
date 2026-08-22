@@ -6,12 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { priceCategoryContext } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { itemArt } from "./art";
@@ -63,7 +58,10 @@ function statLine(kind: ItemKindLabel, item: AnyItem): { label: string; value: s
   } else if (kind === "armor") {
     push("SP", item.sp ?? "None");
     push("HP", item.hp ?? undefined);
-    push("Penalty", item.penalty ? `${item.penalty.value} ${item.penalty.stats.join("/")}` : "None");
+    push(
+      "Penalty",
+      item.penalty ? `${item.penalty.value} ${item.penalty.stats.join("/")}` : "None",
+    );
     push("Locations", item.locations?.join(" / "));
   } else if (kind === "ammunition") {
     push("Available", item.types?.join(", "));
@@ -119,18 +117,18 @@ export function ItemInfo({
                   {priceContext ? (
                     <TooltipProvider delayDuration={150}>
                       <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-help underline decoration-dotted underline-offset-4">
-                          {it.priceCategory}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs text-xs normal-case tracking-normal">
-                        {priceContext.fixerRank
-                          ? `A Fixer at Operator Rank ${priceContext.fixerRank} can always source this. `
-                          : ""}
-                        {`A Tech builds or upgrades one at DV${priceContext.techDV}, ${priceContext.techTime} of work.`}
-                      </TooltipContent>
-                    </Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted underline-offset-4">
+                            {it.priceCategory}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-xs normal-case tracking-normal">
+                          {priceContext.fixerRank
+                            ? `A Fixer at Operator Rank ${priceContext.fixerRank} can always source this. `
+                            : ""}
+                          {`A Tech builds or upgrades one at DV${priceContext.techDV}, ${priceContext.techTime} of work.`}
+                        </TooltipContent>
+                      </Tooltip>
                     </TooltipProvider>
                   ) : (
                     it.priceCategory
@@ -161,7 +159,6 @@ export function ItemInfo({
               ))}
             </dl>
           )}
-
 
           {it.variants && it.variants.length > 0 && (
             <p className="text-xs text-text-dim">

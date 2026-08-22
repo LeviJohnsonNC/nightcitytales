@@ -33,8 +33,9 @@ export function BiographyPanel({
   ];
 
   const goal = lifepath.entries["life_goals"];
-  const roleLines =
-    roleLifepath?.roleId ? roleLifepathSentences(roleLifepath.roleId, roleLifepath.entries) : [];
+  const roleLines = roleLifepath?.roleId
+    ? roleLifepathSentences(roleLifepath.roleId, roleLifepath.entries)
+    : [];
   const empty = opening.length === 0 && people.length === 0 && !goal && roleLines.length === 0;
 
   return (

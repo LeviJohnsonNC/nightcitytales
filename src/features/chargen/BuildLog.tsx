@@ -28,9 +28,7 @@ export function BuildLog() {
       {open && (
         <div className="space-y-2 border-t border-hairline px-4 py-3">
           {entries.length === 0 ? (
-            <p className="text-sm italic text-text-dim">
-              No dice were rolled for this character.
-            </p>
+            <p className="text-sm italic text-text-dim">No dice were rolled for this character.</p>
           ) : (
             <ol className="space-y-2">
               {[...entries].reverse().map((entry, i) => (

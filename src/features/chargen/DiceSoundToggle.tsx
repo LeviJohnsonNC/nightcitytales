@@ -55,7 +55,12 @@ export function DiceSoundToggle({ className }: { className?: string }) {
             strokeLinecap="round"
           />
         ) : (
-          <path d="M17 9l4 6M21 9l-4 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <path
+            d="M17 9l4 6M21 9l-4 6"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
         )}
       </svg>
     </button>

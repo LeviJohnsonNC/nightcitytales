@@ -76,17 +76,23 @@ export const CYBERWARE = catalogData.cyberware as CatalogCyberware[];
 export type FashionStyle = { id: string; name: string; prices: Record<string, number> };
 
 /** Garment slots, in the printed order from catalog.json → fashion._slots. */
-export const FASHION_SLOTS = (catalogData as unknown as {
-  fashion: { _slots: string[] };
-}).fashion._slots;
+export const FASHION_SLOTS = (
+  catalogData as unknown as {
+    fashion: { _slots: string[] };
+  }
+).fashion._slots;
 
-export const FASHION_STYLES = (catalogData as unknown as {
-  fashion: { styles: FashionStyle[] };
-}).fashion.styles;
+export const FASHION_STYLES = (
+  catalogData as unknown as {
+    fashion: { styles: FashionStyle[] };
+  }
+).fashion.styles;
 
-export const FASHION_RULES = (catalogData as unknown as {
-  fashion: { _note: string; _budgetRule: string; _source: string };
-}).fashion;
+export const FASHION_RULES = (
+  catalogData as unknown as {
+    fashion: { _note: string; _budgetRule: string; _source: string };
+  }
+).fashion;
 
 const FASHION_STYLES_BY_ID = new Map(FASHION_STYLES.map((s) => [s.id, s]));
 
@@ -95,7 +101,13 @@ export function fashionItemId(styleId: string, slot: string): string {
   return `fashion:${styleId}:${slot}`;
 }
 
-export type CatalogFashion = { id: string; name: string; styleId: string; slot: string; cost: number };
+export type CatalogFashion = {
+  id: string;
+  name: string;
+  styleId: string;
+  slot: string;
+  cost: number;
+};
 
 export function getFashion(id: string): CatalogFashion {
   const [prefix, styleId, slot] = id.split(":");
@@ -158,7 +170,13 @@ export function itemCost(kind: ItemKind, id: string): number {
 export function catalogItem(
   kind: ItemKind,
   id: string,
-): CatalogWeapon | CatalogArmor | CatalogAmmunition | CatalogCyberware | CatalogFashion | CatalogGear {
+):
+  | CatalogWeapon
+  | CatalogArmor
+  | CatalogAmmunition
+  | CatalogCyberware
+  | CatalogFashion
+  | CatalogGear {
   switch (kind) {
     case "weapon":
       return getWeapon(id);
@@ -180,12 +198,19 @@ export const COMPLETE_PACKAGE_BUDGETS = CATALOG_RULES.completePackageBudgets;
 
 /** Foundation slot counts and the non-foundational per-category cap. */
 const OPTION_SLOT_RULES = CATALOG_RULES.optionSlots as unknown as {
-  foundational: Record<string, { slots: number; perUnit?: boolean; maxInstalls?: number; notes?: string }>;
+  foundational: Record<
+    string,
+    { slots: number; perUnit?: boolean; maxInstalls?: number; notes?: string }
+  >;
   nonFoundational: string;
   default: string;
 };
 
-export function foundationRule(id: string): { slots: number; perUnit?: boolean; maxInstalls?: number } {
+export function foundationRule(id: string): {
+  slots: number;
+  perUnit?: boolean;
+  maxInstalls?: number;
+} {
   const rule = OPTION_SLOT_RULES.foundational[id];
   if (!rule) {
     throw new Error(

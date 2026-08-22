@@ -141,15 +141,13 @@ export const VARIANT_FLAVOR: Record<string, string> = {
 Object.assign(ITEM_FLAVOR, {
   agent: `Everyone's got one. A pocket AI that answers your calls, screens your contacts, digs through the data pools for you, and quietly tells you that jacket doesn't work. Lose it and you're nobody.`,
   audio_recorder: `Twenty-four hours of sound on a single chip. Medias live off these: leave one running in the wrong room and the tape does the reporting for you.`,
-  auto_level_dampening_ear_protectors:
-    `Compact plugs that clamp down the instant the noise turns dangerous. Standing next to a shotgun, a Shrieker, or a stack of amps stops costing you an eardrum.`,
+  auto_level_dampening_ear_protectors: `Compact plugs that clamp down the instant the noise turns dangerous. Standing next to a shotgun, a Shrieker, or a stack of amps stops costing you an eardrum.`,
   binoculars: `Two or three times closer, from somewhere they can't reach you. Rooftop work, stakeouts, and knowing how many are in the room before you're in it.`,
   bug_detector: `Beeps when there's a listening device within a couple of metres. In this city that beep goes off more than it should, which is exactly why you carry one.`,
   chemical_analyzer: `Point it at a powder, a drink, or a puddle and it names the compound off a sample database. Handy for Medtechs, essential for anyone buying from strangers.`,
   disposable_cell_phone: `Burner. Makes calls, holds nothing, and goes in a storm drain the second the job's done. Cheap enough to buy in packs.`,
   drum_synthesizer: `Every drum ever built, in one box, no van needed. Plug it into an amp and a Rockerboy can fill a lot from the back of a bike.`,
-  electric_guitar_other_instrument:
-    `The instrument, whichever one is yours. Electric means it needs an amp, and an amp means a crowd. Half the revolutions in this city started with somebody plugging in.`,
+  electric_guitar_other_instrument: `The instrument, whichever one is yours. Electric means it needs an amp, and an amp means a crowd. Half the revolutions in this city started with somebody plugging in.`,
   glow_stick: `Snap it and get four metres of light for ten hours. No batteries, no heat, no muzzle flash giving you away. Combat zone standard.`,
   grapple_gun: `Thirty metres of line and a hook that holds. Gets you up the outside of a building or off the roof in a hurry. Not a weapon, whatever you were thinking.`,
   homing_tracer: `Stick the tracer, follow from a mile out. Fixers use them on cargo, Solos use them on people, and nobody admits to owning one.`,

@@ -12,12 +12,14 @@ export const Route = createFileRoute("/login")({
       { title: "Sign In · Night City Tales" },
       {
         name: "description",
-        content: "Sign in with your Google account or email and password to reach your character roster.",
+        content:
+          "Sign in with your Google account or email and password to reach your character roster.",
       },
       { property: "og:title", content: "Sign In · Night City Tales" },
       {
         property: "og:description",
-        content: "Sign in with your Google account or email and password to reach your character roster.",
+        content:
+          "Sign in with your Google account or email and password to reach your character roster.",
       },
     ],
   }),
@@ -105,7 +107,9 @@ function LoginPage() {
 
         <div className="flex items-center gap-3">
           <span className="h-px flex-1 bg-hairline" />
-          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-text-dim">or</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-text-dim">
+            or
+          </span>
           <span className="h-px flex-1 bg-hairline" />
         </div>
 
@@ -132,9 +136,7 @@ function LoginPage() {
           />
         </div>
 
-        {error && (
-          <p className="border-l-2 border-danger pl-3 text-sm text-text">{error}</p>
-        )}
+        {error && <p className="border-l-2 border-danger pl-3 text-sm text-text">{error}</p>}
         {message && (
           <p className="border-l-2 border-success pl-3 text-sm text-text-muted">{message}</p>
         )}

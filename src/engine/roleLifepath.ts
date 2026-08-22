@@ -133,7 +133,6 @@ export function rollChoiceOnlyRoleLifepathTable(
 }
 
 export function chooseRoleLifepathEntry(
-
   roleId: string,
   tableId: string,
   value: string,

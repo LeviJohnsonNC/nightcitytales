@@ -149,7 +149,8 @@ function statsFrom(full: FullCharacter): Partial<StatBlock> {
   const stats: Partial<StatBlock> = {};
   for (const stat of STAT_ORDER) {
     // EMP is stored twice: emp is the cyberware-reduced current, emp_max the STAT.
-    const value = stat === "emp" ? (row.emp_max ?? row.emp) : (row as Record<string, unknown>)[stat];
+    const value =
+      stat === "emp" ? (row.emp_max ?? row.emp) : (row as Record<string, unknown>)[stat];
     if (typeof value === "number") stats[stat] = value;
   }
   return stats;

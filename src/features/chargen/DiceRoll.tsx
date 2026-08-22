@@ -186,9 +186,7 @@ export function DiceRoll({
         )}
         style={{
           fontSize: size * 0.42,
-          textShadow: settling
-            ? "0 0 8px rgba(255,61,154,.9)"
-            : "0 0 6px rgba(52,213,230,.5)",
+          textShadow: settling ? "0 0 8px rgba(255,61,154,.9)" : "0 0 6px rgba(52,213,230,.5)",
           paddingBottom: size * 0.04,
         }}
       >

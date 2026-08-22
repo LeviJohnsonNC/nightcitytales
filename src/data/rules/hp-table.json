@@ -8,14 +8,8 @@
   "_purpose": "Test fixture. The engine computes HP from the formula; this table exists so tests assert against published values rather than against the formula itself.",
   "formula": "10 + 5 * ceil((BODY + WILL) / 2)",
   "formulaMatchesPrintedTable": true,
-  "bodyRange": [
-    2,
-    10
-  ],
-  "willRange": [
-    2,
-    15
-  ],
+  "bodyRange": [2, 10],
+  "willRange": [2, 15],
   "table": {
     "2": {
       "2": 20,

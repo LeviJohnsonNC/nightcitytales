@@ -10,10 +10,7 @@
     "confidence": "Confirmed for all ten roles against the printed Weapons/Armor tables (2026-08-21). The two previously flagged rows \u2014 Medtech's Bulletproof Shield and Fixer's duplicated Heavy/Very Heavy Pistol choice \u2014 both read as printed and are correct."
   },
   "_rules": {
-    "appliesTo": [
-      "streetrat",
-      "edgerunner"
-    ],
+    "appliesTo": ["streetrat", "edgerunner"],
     "freeEurobucks": 500,
     "unspentKept": true,
     "choiceRule": "Where an entry is a `choice`, the player picks exactly ONE option. Never both.",
@@ -39,10 +36,7 @@
           "qty": 50
         },
         {
-          "choice": [
-            "Heavy Melee Weapon",
-            "Flashbang Grenade"
-          ]
+          "choice": ["Heavy Melee Weapon", "Flashbang Grenade"]
         },
         {
           "item": "Teargas Grenade",
@@ -67,10 +61,7 @@
           "qty": 1
         },
         {
-          "choice": [
-            "Electric Guitar",
-            "Bug Detector"
-          ]
+          "choice": ["Electric Guitar", "Bug Detector"]
         },
         {
           "item": "Glow Paint",
@@ -109,10 +100,7 @@
           "qty": 1
         },
         {
-          "choice": [
-            "Heavy Melee Weapon",
-            "Bulletproof Shield"
-          ]
+          "choice": ["Heavy Melee Weapon", "Bulletproof Shield"]
         },
         {
           "item": "Basic VH Pistol Ammunition",
@@ -137,9 +125,7 @@
           "qty": 1
         }
       ],
-      "outfit": [
-        "Leisurewear: Footwear x2, Jacket x3, Mirrorshades, Bottoms x2, Top x2"
-      ],
+      "outfit": ["Leisurewear: Footwear x2, Jacket x3, Mirrorshades, Bottoms x2, Top x2"],
       "cyberware": [],
       "freeEurobucks": 500
     },
@@ -185,22 +171,13 @@
           "qty": 1
         },
         {
-          "choice": [
-            "Program: See Ya",
-            "Program: Eraser"
-          ]
+          "choice": ["Program: See Ya", "Program: Eraser"]
         },
         {
-          "choice": [
-            "Program: Sword",
-            "Program: Vrizzbolt"
-          ]
+          "choice": ["Program: Sword", "Program: Vrizzbolt"]
         },
         {
-          "choice": [
-            "Program: Worm",
-            "Program: Sword"
-          ]
+          "choice": ["Program: Worm", "Program: Sword"]
         }
       ],
       "outfit": [
@@ -215,16 +192,10 @@
       "id": "tech",
       "weaponsArmor": [
         {
-          "choice": [
-            "Shotgun",
-            "Assault Rifle"
-          ]
+          "choice": ["Shotgun", "Assault Rifle"]
         },
         {
-          "choice": [
-            "Basic Shotgun Shell Ammunition x100",
-            "Basic Rifle Ammunition x100"
-          ]
+          "choice": ["Basic Shotgun Shell Ammunition x100", "Basic Rifle Ammunition x100"]
         },
         {
           "item": "Flashbang Grenade",
@@ -269,10 +240,7 @@
           "qty": 1
         }
       ],
-      "outfit": [
-        "Generic Chic: Bottoms x8, Tops x10",
-        "Leisurewear: Footwear x2"
-      ],
+      "outfit": ["Generic Chic: Bottoms x8, Tops x10", "Leisurewear: Footwear x2"],
       "cyberware": [],
       "freeEurobucks": 500
     },
@@ -280,22 +248,13 @@
       "id": "medtech",
       "weaponsArmor": [
         {
-          "choice": [
-            "Shotgun",
-            "Assault Rifle"
-          ]
+          "choice": ["Shotgun", "Assault Rifle"]
         },
         {
-          "choice": [
-            "Basic Shotgun Shell Ammunition x100",
-            "Basic Rifle Ammunition x100"
-          ]
+          "choice": ["Basic Shotgun Shell Ammunition x100", "Basic Rifle Ammunition x100"]
         },
         {
-          "choice": [
-            "Incendiary Shotgun Shell Ammunition x10",
-            "Incendiary Rifle Ammunition x10"
-          ]
+          "choice": ["Incendiary Shotgun Shell Ammunition x10", "Incendiary Rifle Ammunition x10"]
         },
         {
           "item": "Smoke Grenade",
@@ -340,10 +299,7 @@
           "qty": 1
         }
       ],
-      "outfit": [
-        "Generic Chic Jacket x3",
-        "Leisurewear: Footwear, Bottoms x3, Top x5"
-      ],
+      "outfit": ["Generic Chic Jacket x3", "Leisurewear: Footwear, Bottoms x3, Top x5"],
       "cyberware": [],
       "freeEurobucks": 500
     },
@@ -351,16 +307,10 @@
       "id": "media",
       "weaponsArmor": [
         {
-          "choice": [
-            "Heavy Pistol",
-            "Very Heavy Pistol"
-          ]
+          "choice": ["Heavy Pistol", "Very Heavy Pistol"]
         },
         {
-          "choice": [
-            "Basic H Pistol Ammunition x50",
-            "Basic VH Pistol Ammunition x50"
-          ]
+          "choice": ["Basic H Pistol Ammunition x50", "Basic VH Pistol Ammunition x50"]
         },
         {
           "item": "Light Armorjack Body Armor (SP11)",
@@ -385,10 +335,7 @@
           "qty": 1
         },
         {
-          "choice": [
-            "Disposable Cellphone x2",
-            "Grapple Gun"
-          ]
+          "choice": ["Disposable Cellphone x2", "Grapple Gun"]
         },
         {
           "item": "Flashlight",
@@ -423,10 +370,7 @@
       "id": "lawman",
       "weaponsArmor": [
         {
-          "choice": [
-            "Assault Rifle",
-            "Shotgun"
-          ]
+          "choice": ["Assault Rifle", "Shotgun"]
         },
         {
           "item": "Heavy Pistol",
@@ -444,10 +388,7 @@
           "qty": 30
         },
         {
-          "choice": [
-            "Bulletproof Shield",
-            "Smoke Grenade x2"
-          ]
+          "choice": ["Bulletproof Shield", "Smoke Grenade x2"]
         },
         {
           "item": "Light Armorjack Body Armor (SP11)",
@@ -517,9 +458,7 @@
           "qty": 1
         }
       ],
-      "outfit": [
-        "Businesswear: Footwear, Jacket, Bottoms, Mirrorshades, Top, Jewelry x2"
-      ],
+      "outfit": ["Businesswear: Footwear, Jacket, Bottoms, Mirrorshades, Top, Jewelry x2"],
       "cyberware": [],
       "freeEurobucks": 500
     },
@@ -527,26 +466,17 @@
       "id": "fixer",
       "weaponsArmor": [
         {
-          "choice": [
-            "Heavy Pistol",
-            "Very Heavy Pistol"
-          ]
+          "choice": ["Heavy Pistol", "Very Heavy Pistol"]
         },
         {
-          "choice": [
-            "Heavy Pistol",
-            "Very Heavy Pistol"
-          ]
+          "choice": ["Heavy Pistol", "Very Heavy Pistol"]
         },
         {
           "item": "Light Melee Weapon",
           "qty": 1
         },
         {
-          "choice": [
-            "Basic H Pistol Ammunition x100",
-            "Basic VH Pistol Ammunition x100"
-          ]
+          "choice": ["Basic H Pistol Ammunition x100", "Basic VH Pistol Ammunition x100"]
         },
         {
           "item": "Light Armorjack Body Armor (SP11)",
@@ -587,22 +517,13 @@
       "id": "nomad",
       "weaponsArmor": [
         {
-          "choice": [
-            "Heavy Pistol",
-            "Very Heavy Pistol"
-          ]
+          "choice": ["Heavy Pistol", "Very Heavy Pistol"]
         },
         {
-          "choice": [
-            "Basic H Pistol Ammunition x100",
-            "Basic VH Pistol Ammunition x100"
-          ]
+          "choice": ["Basic H Pistol Ammunition x100", "Basic VH Pistol Ammunition x100"]
         },
         {
-          "choice": [
-            "Heavy Melee Weapon",
-            "Heavy Pistol"
-          ]
+          "choice": ["Heavy Melee Weapon", "Heavy Pistol"]
         },
         {
           "item": "Light Armorjack Body Armor (SP11)",

@@ -20,7 +20,10 @@ function baseAllocation(): SkillAllocation {
 }
 
 function costOf(allocation: SkillAllocation): number {
-  return Object.entries(allocation).reduce((sum, [id, level]) => sum + skillPointCost(id, 0, level), 0);
+  return Object.entries(allocation).reduce(
+    (sum, [id, level]) => sum + skillPointCost(id, 0, level),
+    0,
+  );
 }
 
 /** Raise single-cost Role skills one level at a time until the budget hits `target`. */
@@ -130,10 +133,7 @@ describe("entry-aware skill validation", () => {
   });
 
   it("counts repeatable specializations as separate purchases", () => {
-    const entries = [
-      ...basics(2),
-      { skillId: "language", specialization: "Spanish", level: 4 },
-    ];
+    const entries = [...basics(2), { skillId: "language", specialization: "Spanish", level: 4 }];
     const withOne = validateSkillEntries({ method: "complete_package", entries: basics(2) });
     const withTwo = validateSkillEntries({ method: "complete_package", entries });
     expect(withTwo.pointsSpent - withOne.pointsSpent).toBe(4);
@@ -145,7 +145,9 @@ describe("entry-aware skill validation", () => {
       { skillId: "language", specialization: "Streetslang", level: 4, granted: true },
     ];
     const result = validateSkillEntries({ method: "complete_package", entries });
-    expect(result.pointsSpent).toBe(validateSkillEntries({ method: "complete_package", entries: basics(2) }).pointsSpent);
+    expect(result.pointsSpent).toBe(
+      validateSkillEntries({ method: "complete_package", entries: basics(2) }).pointsSpent,
+    );
   });
 });
 
@@ -177,10 +179,7 @@ describe("control limits", () => {
     ];
     const spent = list.reduce((s, e) => s + skillPointCost(e.skillId, 0, e.level), 0);
     const filler = 86 - spent;
-    const withFiller = [
-      ...list,
-      { skillId: "brawling", specialization: null, level: filler },
-    ];
+    const withFiller = [...list, { skillId: "brawling", specialization: null, level: filler }];
     const limits = skillEntryLimits({
       method: "complete_package",
       entries: withFiller,

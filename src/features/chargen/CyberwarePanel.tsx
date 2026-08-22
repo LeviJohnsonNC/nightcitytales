@@ -45,7 +45,9 @@ function CyberwareRow({ state, id }: { state: ChargenState; id: string }) {
           <span>
             HL <span className="tabular-nums text-danger">{item.humanityLoss}</span>
             {item.humanityLossDice ? (
-              <span className="ml-1 text-text-dim">({item.humanityLossDice} after play starts)</span>
+              <span className="ml-1 text-text-dim">
+                ({item.humanityLossDice} after play starts)
+              </span>
             ) : null}
           </span>
           <span>
@@ -115,13 +117,16 @@ export function CyberwarePanel({ state }: { state: ChargenState }) {
           ) : (
             <ul className="mt-2 space-y-1 text-sm text-text">
               {packageCyberware.map((entry, i) => (
-                <li key={i}>{"item" in entry ? `${entry.item} ×${entry.qty}` : entry.choice.join(" or ")}</li>
+                <li key={i}>
+                  {"item" in entry ? `${entry.item} ×${entry.qty}` : entry.choice.join(" or ")}
+                </li>
               ))}
             </ul>
           )}
           <p className="mt-2 text-xs text-text-dim">
-            Anything you install below comes out of your {eb(getGearPackage(state.roleId).freeEurobucks)} free
-            spend and costs Humanity the moment it goes in.
+            Anything you install below comes out of your{" "}
+            {eb(getGearPackage(state.roleId).freeEurobucks)} free spend and costs Humanity the
+            moment it goes in.
           </p>
         </div>
       ) : null}

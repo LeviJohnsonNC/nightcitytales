@@ -148,7 +148,9 @@ export const EMPTY_LIFESTYLE: LifestyleChoice = { location: null };
 export function readLifestyle(raw: unknown): LifestyleChoice {
   if (!raw || typeof raw !== "object") return EMPTY_LIFESTYLE;
   const value = (raw as LifestyleChoice).location;
-  return { location: typeof value === "string" && STARTING_LOCATIONS.includes(value) ? value : null };
+  return {
+    location: typeof value === "string" && STARTING_LOCATIONS.includes(value) ? value : null,
+  };
 }
 
 export function validateLifestyle(choice: LifestyleChoice, roleId: string | null = null): string[] {

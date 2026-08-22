@@ -51,7 +51,11 @@ export function RoleLifepathTableCard({
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <FitText as="h3" min={0.65} className="min-w-0 flex-1 font-display text-xs font-bold uppercase tracking-[0.12em] text-text">
+            <FitText
+              as="h3"
+              min={0.65}
+              className="min-w-0 flex-1 font-display text-xs font-bold uppercase tracking-[0.12em] text-text"
+            >
               {table.label}
             </FitText>
             {!(entry && entry.method === "rolled") && (
@@ -60,7 +64,11 @@ export function RoleLifepathTableCard({
               </span>
             )}
           </div>
-          <FitText as="p" min={0.7} className={cn("mt-0.5 text-sm", value ? "text-text" : "text-text-dim")}>
+          <FitText
+            as="p"
+            min={0.7}
+            className={cn("mt-0.5 text-sm", value ? "text-text" : "text-text-dim")}
+          >
             {value ?? "Not set"}
           </FitText>
           {table.sourceDiscrepancy && (

@@ -62,9 +62,7 @@ export function AssembledBiography({
                 className="mt-1"
                 value={row.entry.custom ?? ""}
                 placeholder={row.entry.value}
-                onChange={(e) =>
-                  row.onChange({ ...row.entry, custom: e.target.value || null })
-                }
+                onChange={(e) => row.onChange({ ...row.entry, custom: e.target.value || null })}
               />
             </label>
           ))}

@@ -4,7 +4,16 @@ import { EMPTY_LOADOUT } from "../loadout";
 import type { StatBlock } from "../types";
 
 const STATS: StatBlock = {
-  int: 6, ref: 6, dex: 6, tech: 6, cool: 6, will: 6, luck: 6, move: 6, body: 6, emp: 5,
+  int: 6,
+  ref: 6,
+  dex: 6,
+  tech: 6,
+  cool: 6,
+  will: 6,
+  luck: 6,
+  move: 6,
+  body: 6,
+  emp: 5,
 };
 
 function build(overrides: Partial<Parameters<typeof assembleCharacter>[0]> = {}) {
