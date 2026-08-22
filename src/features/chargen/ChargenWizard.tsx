@@ -107,7 +107,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
             Step {String(def.index).padStart(2, "0")} / {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">{def.title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{def.blurb}</p>
+          
           <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
             {SAVE_LABEL[saveStatus]}
             {saveError ? ` — ${saveError}` : ""}
