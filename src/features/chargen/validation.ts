@@ -154,7 +154,6 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       return { violations, untouched: untouched && violations.length === 0 };
     }
 
-
     case "cyberware": {
       const untouched = state.loadout.lines.every((l) => l.kind !== "cyberware");
       const violations: string[] = [];

@@ -92,7 +92,6 @@ export function stepIndex(step: ChargenStep): number {
   return stepDefinition(step).index;
 }
 
-
 /**
  * Which later steps a change to an earlier step invalidates.
  * Changing method restarts the character entirely (handled separately).

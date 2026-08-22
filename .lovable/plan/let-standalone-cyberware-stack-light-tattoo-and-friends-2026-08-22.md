@@ -2,7 +2,7 @@
 
 ## Why it isn't stacking today
 
-Light Tattoo is cyberware, and the current rule excludes *all* cyberware from stacking. That was the right call for two of the three kinds of cyberware, but too broad:
+Light Tattoo is cyberware, and the current rule excludes _all_ cyberware from stacking. That was the right call for two of the three kinds of cyberware, but too broad:
 
 - **Foundations** (Neural Link, Cybereye, Cyberarm, Cyberaudio Suite, Cyberleg) each provide their own Option Slots and each install is addressed individually — removing one removes what's slotted into it. Must stay separate.
 - **Slotted options** (Kerenzikov, Interface Plugs, Chemical Analyzer, ...) each attach to a specific foundation line by id. Must stay separate.

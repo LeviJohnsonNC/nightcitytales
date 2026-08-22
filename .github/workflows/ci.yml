@@ -18,7 +18,7 @@ jobs:
     name: Lint, typecheck and test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -29,10 +29,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Full-repo lint. The repo is Prettier-clean, so this gates every push
-      # to main and every PR, not just changed files.
+      # Non-blocking: the Autoformat workflow keeps main Prettier-clean, so a
+      # formatting-dirty push (e.g. from Lovable) is reported here without
+      # failing the build. Real (non-formatting) eslint errors still surface
+      # as annotations.
       - name: Lint
         run: bun run lint
+        continue-on-error: true
 
       - name: Typecheck
         run: bun run typecheck

@@ -124,9 +124,7 @@ export function BudgetBars({ state, className }: { state: ChargenState; classNam
         return (
           <div
             key={b.id}
-            className={`border p-4 ${
-              budgets.length === 1 ? "col-span-full" : ""
-            } ${
+            className={`border p-4 ${budgets.length === 1 ? "col-span-full" : ""} ${
               b.unspentKept ? "border-hairline bg-surface" : "border-danger/60 bg-danger/5"
             }`}
           >
@@ -284,9 +282,7 @@ export function Cart({
       key={stack.key}
       stack={stack}
       canAdd={
-        onQty
-          ? canChangeQty(method, state.loadout, stack.key, 1)
-          : { ok: false, reason: null }
+        onQty ? canChangeQty(method, state.loadout, stack.key, 1) : { ok: false, reason: null }
       }
       onRemove={removeStackRow}
       onQty={changeRowQty}
@@ -342,7 +338,6 @@ export function Cart({
     </div>
   );
 }
-
 
 export function PurchaseError({ error }: { error: string | null }) {
   if (!error) return null;

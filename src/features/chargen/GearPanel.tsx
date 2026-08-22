@@ -44,7 +44,6 @@ function Blurb({ id, text }: { id: string; text: string | null | undefined }) {
   return <p className="mt-1.5 text-xs leading-relaxed text-text-dim">{body}</p>;
 }
 
-
 function Stat({ label, value }: { label: string; value: string | number | null | undefined }) {
   if (value === null || value === undefined || value === "") return null;
   return (
@@ -86,7 +85,6 @@ function EmptyRow({ query }: { query: string }) {
     </p>
   );
 }
-
 
 function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
@@ -414,19 +412,13 @@ export function GearPanel({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-6">
 
-
       <Tabs defaultValue="weapons">
         {/* Sticky rail: budget + cart + list tabs travel together, fully opaque so
             the lists scroll underneath instead of showing through. */}
         <div className="sticky top-0 z-30 -mx-1 border-b border-border bg-background px-1 pb-3 pt-2 shadow-[0_10px_20px_-10px_rgba(0,0,0,0.9)]">
           <div className="grid gap-4">
             <BudgetBars state={state} className="grid gap-3 sm:grid-cols-2" />
-            <Cart
-              state={state}
-              onRemove={remove}
-              onRemoveStack={removeStack}
-              onQty={changeQty}
-            />
+            <Cart state={state} onRemove={remove} onRemoveStack={removeStack} onQty={changeQty} />
           </div>
 
           <FashionWarning state={state} />

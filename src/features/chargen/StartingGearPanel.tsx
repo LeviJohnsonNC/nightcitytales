@@ -167,7 +167,9 @@ export function StartingGearPanel({ state }: { state: ChargenState }) {
       </Row>
       {flags.length > 0 ? (
         <Row>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">Good to know</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
+            Good to know
+          </p>
           {flags.map((f) => (
             <p key={f.item} className="mt-2 text-sm text-text-muted">
               <span className="text-text">{f.item}</span>: {f.issue}

@@ -315,7 +315,11 @@ describe("cart stacks", () => {
 
 describe("standalone cyberware stacking", () => {
   it("stacks fashionware installs", () => {
-    let loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
+    let loadout = buy(EMPTY_LOADOUT, {
+      kind: "cyberware",
+      itemId: "light_tattoo",
+      budget: "fashion",
+    });
     loadout = buy(loadout, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
     const stacks = cartStacks(loadout);
     expect(stacks).toHaveLength(1);

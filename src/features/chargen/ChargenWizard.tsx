@@ -126,8 +126,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
 
         <header className="border-b border-border pb-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-            Step {String(def.index).padStart(2, "0")} /{" "}
-            {String(steps.length - 1).padStart(2, "0")}
+            Step {String(def.index).padStart(2, "0")} / {String(steps.length - 1).padStart(2, "0")}
           </p>
           <div className="mt-1 flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
