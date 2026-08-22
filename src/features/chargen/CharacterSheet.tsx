@@ -525,8 +525,13 @@ export function CharacterSheet({
                 {sheet.ammunition.map((a) => (
                   <tr key={a.lineId} className="border-b border-hairline/60">
                     <td className="py-1 text-text">
-                      {a.name}
-                      {a.qty > 1 ? ` ×${a.qty}` : ""}
+                      <span className="inline-flex items-center gap-1.5">
+                        <span>
+                          {a.name}
+                          {a.qty > 1 ? ` ×${a.qty}` : ""}
+                        </span>
+                        <CatalogInfo kind="ammunition" itemId={a.itemId} />
+                      </span>
                     </td>
                     <td className="num py-1 text-right text-text-muted">{a.cost}eb</td>
                   </tr>
