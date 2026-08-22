@@ -107,29 +107,6 @@ export function CyberwarePanel({ state }: { state: ChargenState }) {
         <p className="mt-2 text-sm text-text-muted">{HUMANITY_LOSS_AT_CREATION_RULE}</p>
       </div>
 
-      {isPackage ? (
-        <div className="border border-hairline bg-surface p-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
-            Your package cyberware
-          </p>
-          {packageCyberware.length === 0 ? (
-            <p className="mt-2 text-sm text-text-muted">{PACKAGE_NOTES.cyberware}</p>
-          ) : (
-            <ul className="mt-2 space-y-1 text-sm text-text">
-              {packageCyberware.map((entry, i) => (
-                <li key={i}>
-                  {"item" in entry ? `${entry.item} ×${entry.qty}` : entry.choice.join(" or ")}
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-2 text-xs text-text-dim">
-            Anything you install below comes out of your{" "}
-            {eb(getGearPackage(state.roleId).freeEurobucks)} free spend and costs Humanity the
-            moment it goes in.
-          </p>
-        </div>
-      ) : null}
 
       <HumanityMeter state={state} />
       <CyberwareSlots loadout={loadout} />
