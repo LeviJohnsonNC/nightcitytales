@@ -33,6 +33,8 @@ export function RoleLifepathTableCard({
   onChange: (entry: LifepathEntryRecord) => void;
 }) {
   const [choosing, setChoosing] = useState(false);
+  /** Face shown at rest for tables with no printed die (virtual d2/d3/etc). */
+  const [virtualFace, setVirtualFace] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
 
   const sides = table.die ? Number(table.die.slice(2)) : 0;
@@ -82,13 +84,16 @@ export function RoleLifepathTableCard({
             /* No printed die: offer a die sized to the number of options instead. */
             <DiceRoll
               sides={choiceOnlyDieSides(table)}
-              value={null}
+              value={virtualFace}
               label={`Pick at random (1d${choiceOnlyDieSides(table)})`}
               roll={() => {
                 const rolled = rollChoiceOnlyRoleLifepathTable(roleId, table.id, Math.random);
                 return {
                   face: rolled.face,
-                  commit: () => onChange({ ...rolled.entry, custom: entry?.custom ?? null }),
+                  commit: () => {
+                    setVirtualFace(rolled.face);
+                    onChange({ ...rolled.entry, custom: entry?.custom ?? null });
+                  },
                 };
               }}
             />
@@ -150,6 +155,7 @@ export function RoleLifepathTableCard({
                     entry?.value === row.value && "bg-surface-raised",
                   )}
                   onClick={() => {
+                    setVirtualFace(null);
                     onChange({
                       ...chooseRoleLifepathEntry(roleId, table.id, row.value),
                       custom: entry?.custom ?? null,
