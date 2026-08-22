@@ -116,26 +116,32 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       return { violations, untouched: !lifestyle.location && violations.length > 0 };
     }
 
-    case "gear": {
-      const untouched =
-        state.loadout.lines.length === 0 && Object.keys(state.loadout.packageChoices).length === 0;
-      const violations: string[] = [];
-      if (state.method && state.method !== "complete_package" && state.roleId) {
-        for (const point of unresolvedChoices(state.roleId, state.loadout.packageChoices)) {
-          violations.push(
-            `Your package offers a choice you have not made: ${point.options.join(" or ")}.`,
-          );
-        }
-        for (const point of unresolvedVariants(
-          state.roleId,
-          state.loadout.packageChoices,
-          state.loadout.packageVariants ?? {},
-        )) {
-          violations.push(
-            `Pick the specific weapon for "${point.label}": ${point.options.join(", ")}.`,
-          );
-        }
+    case "package": {
+      if (!hasStartingPackage(state.method) || !state.roleId) {
+        return { violations: [], untouched: false };
       }
+      const violations: string[] = [];
+      for (const point of unresolvedChoices(state.roleId, state.loadout.packageChoices)) {
+        violations.push(
+          `Your package offers a choice you have not made: ${point.options.join(" or ")}.`,
+        );
+      }
+      for (const point of unresolvedVariants(
+        state.roleId,
+        state.loadout.packageChoices,
+        state.loadout.packageVariants ?? {},
+      )) {
+        violations.push(
+          `Pick the specific weapon for "${point.label}": ${point.options.join(", ")}.`,
+        );
+      }
+      const untouched = Object.keys(state.loadout.packageChoices).length === 0;
+      return { violations, untouched: untouched && violations.length === 0 };
+    }
+
+    case "gear": {
+      const untouched = state.loadout.lines.length === 0;
+      const violations: string[] = [];
       if (state.method) {
         for (const budget of budgetStates(state.method, state.loadout)) {
           if (budget.overspent) {
@@ -147,6 +153,7 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       }
       return { violations, untouched: untouched && violations.length === 0 };
     }
+
 
     case "cyberware": {
       const untouched = state.loadout.lines.every((l) => l.kind !== "cyberware");
