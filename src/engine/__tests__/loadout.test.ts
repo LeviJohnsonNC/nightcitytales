@@ -274,9 +274,9 @@ describe("cart stacks", () => {
     expect(cartStacks(loadout)).toHaveLength(2);
   });
 
-  it("never stacks cyberware installs", () => {
-    let loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
-    loadout = buy(loadout, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
+  it("never stacks foundation cyberware installs", () => {
+    let loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "cybereye", budget: "gear" });
+    loadout = buy(loadout, { kind: "cyberware", itemId: "cybereye", budget: "gear" });
     const stacks = cartStacks(loadout);
     expect(stacks).toHaveLength(2);
     expect(stacks.every((s) => s.stackable)).toBe(false);
