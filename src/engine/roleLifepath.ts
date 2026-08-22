@@ -92,7 +92,48 @@ export function rollRoleLifepathTable(
   return { entry: { tableId, value: found.value, method: "rolled", roll }, result };
 }
 
+/**
+ * How many sides a choice-only table gets when the player asks for a random
+ * answer. The book prints no die for these tables, so this is a UI affordance,
+ * not a rules value: one face per printed option (2 options -> d2, 3 -> d3).
+ */
+export function choiceOnlyDieSides(table: RoleLifepathTable): number {
+  return table.entries.length;
+}
+
+/**
+ * Randomise a choice-only Role table. Not a printed roll — the result is
+ * recorded as "chosen" so the sheet never claims the book gave it a die.
+ */
+export function rollChoiceOnlyRoleLifepathTable(
+  roleId: string,
+  tableId: string,
+  rng: RNG,
+  options: { now?: () => Date } = {},
+): { entry: LifepathEntryRecord; face: number; result: RollResult } {
+  const table = getRoleLifepathTable(roleId, tableId);
+  const sides = choiceOnlyDieSides(table);
+  if (sides < 1) {
+    throw new Error(
+      `Role Lifepath table "${tableId}" has no entries to pick from (src/data/rules/lifepath-roles.json)`,
+    );
+  }
+  const face = rollDie(sides, rng);
+  const found = table.entries[face - 1]!;
+  const result = buildRollResult({
+    dice: `1d${sides}`,
+    rolls: [face],
+    ...(options.now ? { now: options.now } : {}),
+  });
+  return {
+    entry: { tableId, value: found.value, method: "chosen", roll: null },
+    face,
+    result,
+  };
+}
+
 export function chooseRoleLifepathEntry(
+
   roleId: string,
   tableId: string,
   value: string,

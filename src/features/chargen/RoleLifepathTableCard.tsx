@@ -10,11 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
+  choiceOnlyDieSides,
   chooseRoleLifepathEntry,
+  rollChoiceOnlyRoleLifepathTable,
   rollRoleLifepathTable,
   type LifepathEntryRecord,
   type RoleLifepathTable,
 } from "@/engine";
+
 import { DiceRoll } from "./DiceRoll";
 
 export function RoleLifepathTableCard({
@@ -65,7 +68,7 @@ export function RoleLifepathTableCard({
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          {table.die && sides > 0 && (
+          {table.die && sides > 0 ? (
             <DiceRoll
               sides={sides}
               value={entry?.roll ?? null}
@@ -74,7 +77,22 @@ export function RoleLifepathTableCard({
                 return { face: rolled.entry.roll ?? 1, commit: () => onChange(rolled.entry) };
               }}
             />
+          ) : (
+            /* No printed die: offer a die sized to the number of options instead. */
+            <DiceRoll
+              sides={choiceOnlyDieSides(table)}
+              value={null}
+              label={`Pick at random (1d${choiceOnlyDieSides(table)})`}
+              roll={() => {
+                const rolled = rollChoiceOnlyRoleLifepathTable(roleId, table.id, Math.random);
+                return {
+                  face: rolled.face,
+                  commit: () => onChange({ ...rolled.entry, custom: entry?.custom ?? null }),
+                };
+              }}
+            />
           )}
+
           <Button size="sm" variant="outline" onClick={() => setChoosing(true)}>
             Choose
           </Button>
