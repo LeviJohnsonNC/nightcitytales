@@ -142,7 +142,7 @@ export function CharacterSheet({
           )}
         </div>
         <div className="min-w-0 space-y-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ember">
+          <p className="font-display text-lg font-bold uppercase tracking-[0.22em] text-ember">
             {role ? role.name : "No Role"}
           </p>
           <h1 className="font-display text-3xl font-bold leading-tight text-text">
@@ -150,7 +150,6 @@ export function CharacterSheet({
           </h1>
           <p className="text-sm text-text-muted">
             {build.handle ? `"${build.handle}"` : "no handle"}
-            {build.pronouns ? ` · ${build.pronouns}` : ""}
           </p>
           {build.roleAbility && (
             <p className="mt-3 font-mono text-xs uppercase tracking-[0.14em] text-text-muted">
