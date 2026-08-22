@@ -37,6 +37,12 @@ export type ChargenState = {
   pronouns: string;
   selfDescription: string;
   portrait: string | null;
+  /** Storage path of the chosen AI portrait, in the private portraits bucket. */
+  portraitPath: string | null;
+  /** Storage paths of the takes generated so far, newest last. */
+  portraitTakes: string[];
+  /** How many images this draft has generated. Caps runaway spend. */
+  portraitGenerations: number;
   stats: Partial<StatBlock>;
   /**
    * Which template row each STAT came from. `row` is the single Streetrat row;
