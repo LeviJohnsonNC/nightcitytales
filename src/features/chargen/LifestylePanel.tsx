@@ -10,6 +10,14 @@ import {
   startingLifestylePlan,
 } from "@/engine";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { readGeneralLifepath, displayValue } from "./lifepathState";
 import { BudgetBars, FashionWarning, PurchaseError, eb, useLoadoutActions } from "./market";
 import { useChargenStore, type ChargenState } from "./store";
