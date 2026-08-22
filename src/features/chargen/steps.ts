@@ -1,4 +1,4 @@
-import { EMPTY_LOADOUT } from "@/engine";
+import { EMPTY_LOADOUT, type CreationMethod } from "@/engine";
 import type { ChargenState } from "./store";
 
 export type ChargenStep =
@@ -7,6 +7,7 @@ export type ChargenStep =
   | "lifepath"
   | "stats"
   | "skills"
+  | "package"
   | "gear"
   | "cyberware"
   | "lifestyle"
@@ -33,14 +34,34 @@ export const CHARGEN_STEPS: StepDefinition[] = [
   { id: "lifepath", index: 2, title: "Lifepath", blurb: "General, then Role-specific" },
   { id: "stats", index: 3, title: "STATs", blurb: "Branches by creation method" },
   { id: "skills", index: 4, title: "Skills", blurb: "Branches by creation method" },
-  { id: "gear", index: 5, title: "Gear & Armor", blurb: "Fixed package or shopping" },
-  { id: "cyberware", index: 6, title: "Cyberware", blurb: "Applies Humanity Loss" },
-  { id: "lifestyle", index: 7, title: "Outfit & Lifestyle", blurb: "Fashion, housing, lifestyle" },
-  { id: "identity", index: 8, title: "Identity", blurb: "Name, handle, portrait" },
-  { id: "review", index: 9, title: "Final Sheet", blurb: "Review every value, then save" },
+  { id: "package", index: 5, title: "Starting Gear", blurb: "The kit your Role is issued" },
+  { id: "gear", index: 6, title: "Gear & Armor", blurb: "Spend your eurobucks" },
+  { id: "cyberware", index: 7, title: "Cyberware", blurb: "Applies Humanity Loss" },
+  { id: "lifestyle", index: 8, title: "Outfit & Lifestyle", blurb: "Fashion, housing, lifestyle" },
+  { id: "identity", index: 9, title: "Identity", blurb: "Name, handle, portrait" },
+  { id: "review", index: 10, title: "Final Sheet", blurb: "Review every value, then save" },
 ];
 
 export const STEP_IDS: ChargenStep[] = CHARGEN_STEPS.map((s) => s.id);
+
+/** Only Streetrat and Edgerunner characters are issued a fixed starting package. */
+export function hasStartingPackage(method: CreationMethod | null | undefined): boolean {
+  return method === "streetrat" || method === "edgerunner";
+}
+
+/**
+ * The steps this character actually walks, renumbered so the displayed
+ * sequence is always contiguous. Complete Package skips Starting Gear.
+ */
+export function stepsFor(method: CreationMethod | null | undefined): StepDefinition[] {
+  return CHARGEN_STEPS.filter((s) => s.id !== "package" || hasStartingPackage(method)).map(
+    (s, index) => ({ ...s, index }),
+  );
+}
+
+export function stepIdsFor(method: CreationMethod | null | undefined): ChargenStep[] {
+  return stepsFor(method).map((s) => s.id);
+}
 
 /** Legacy drafts may reference removed steps; map them to the nearest live step. */
 const LEGACY_STEPS: Record<string, ChargenStep> = { derived: "stats" };
@@ -51,8 +72,18 @@ export function normalizeStep(step: string | null | undefined): ChargenStep {
   return LEGACY_STEPS[step] ?? "method";
 }
 
-export function stepDefinition(step: ChargenStep): StepDefinition {
-  const def = CHARGEN_STEPS.find((s) => s.id === normalizeStep(step));
+/** A hidden step can never be the current step: resolve it forward. */
+export function resolveStepForMethod(
+  step: ChargenStep,
+  method: CreationMethod | null | undefined,
+): ChargenStep {
+  if (step === "package" && !hasStartingPackage(method)) return "gear";
+  return step;
+}
+
+export function stepDefinition(step: ChargenStep, method?: CreationMethod | null): StepDefinition {
+  const id = normalizeStep(step);
+  const def = (method === undefined ? CHARGEN_STEPS : stepsFor(method)).find((s) => s.id === id);
   if (!def) throw new Error(`Unknown chargen step "${step}"`);
   return def;
 }
@@ -60,6 +91,7 @@ export function stepDefinition(step: ChargenStep): StepDefinition {
 export function stepIndex(step: ChargenStep): number {
   return stepDefinition(step).index;
 }
+
 
 /**
  * Which later steps a change to an earlier step invalidates.
