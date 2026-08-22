@@ -538,16 +538,9 @@ export function GearPanel({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-6">
       {isPackage ? (
-        <>
-          <div className="border border-hairline bg-surface-raised p-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
-              Fixed package
-            </p>
-            <p className="mt-2 text-sm text-text-muted">{PACKAGE_NOTES.choice}</p>
-          </div>
-          <FixedPackage roleId={state.roleId} />
-        </>
+        <FixedPackage roleId={state.roleId} />
       ) : (
+
         <div className="border border-hairline bg-surface-raised p-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
             Night Market
