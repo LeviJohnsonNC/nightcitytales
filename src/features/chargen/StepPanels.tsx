@@ -44,6 +44,8 @@ export function StepPanel({
 
     case "skills":
       return <SkillsPanel state={state} />;
+    case "package":
+      return <StartingGearPanel state={state} />;
     case "gear":
       return <GearPanel state={state} />;
     case "cyberware":
