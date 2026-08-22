@@ -34,9 +34,14 @@ export const CHARGEN_STEPS: StepDefinition[] = [
   { id: "lifepath", index: 2, title: "Lifepath", blurb: "General, then Role-specific" },
   { id: "stats", index: 3, title: "STATs", blurb: "Branches by creation method" },
   { id: "skills", index: 4, title: "Skills", blurb: "Branches by creation method" },
-  { id: "package", index: 5, title: "Starting Gear", blurb: "The kit your Role is issued" },
+  {
+    id: "package",
+    index: 5,
+    title: "Starting Gear",
+    blurb: "The kit and cyberware your Role is issued",
+  },
   { id: "gear", index: 6, title: "Gear & Armor", blurb: "Spend your eurobucks" },
-  { id: "cyberware", index: 7, title: "Cyberware", blurb: "Applies Humanity Loss" },
+  { id: "cyberware", index: 7, title: "Cyberware", blurb: "Install chrome, pay Humanity" },
   { id: "lifestyle", index: 8, title: "Outfit & Lifestyle", blurb: "Fashion, housing, lifestyle" },
   { id: "identity", index: 9, title: "Identity", blurb: "Name, handle, portrait" },
   { id: "review", index: 10, title: "Final Sheet", blurb: "Review every value, then save" },
@@ -54,9 +59,14 @@ export function hasStartingPackage(method: CreationMethod | null | undefined): b
  * sequence is always contiguous. Complete Package skips Starting Gear.
  */
 export function stepsFor(method: CreationMethod | null | undefined): StepDefinition[] {
-  return CHARGEN_STEPS.filter((s) => s.id !== "package" || hasStartingPackage(method)).map(
-    (s, index) => ({ ...s, index }),
-  );
+  return CHARGEN_STEPS.filter((s) => {
+    // Streetrat/Edgerunner get a fixed Starting Gear package (which now
+    // includes their cyberware) and skip the à-la-carte Cyberware step.
+    // Complete Package skips Starting Gear and shops for cyberware instead.
+    if (s.id === "package") return hasStartingPackage(method);
+    if (s.id === "cyberware") return !hasStartingPackage(method);
+    return true;
+  }).map((s, index) => ({ ...s, index }));
 }
 
 export function stepIdsFor(method: CreationMethod | null | undefined): ChargenStep[] {
@@ -78,6 +88,7 @@ export function resolveStepForMethod(
   method: CreationMethod | null | undefined,
 ): ChargenStep {
   if (step === "package" && !hasStartingPackage(method)) return "gear";
+  if (step === "cyberware" && hasStartingPackage(method)) return "lifestyle";
   return step;
 }
 

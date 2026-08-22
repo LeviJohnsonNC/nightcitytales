@@ -5,6 +5,8 @@ import {
   PACKAGE_NOTES,
   getGearPackage,
   packageCatalogRow,
+  packageCyberwareHumanityRolls,
+  packageCyberwareRow,
   variantOptionsFor,
   isChoice,
   type PackageEntry,
@@ -21,10 +23,14 @@ function Row({ children }: { children: React.ReactNode }) {
 /** The "?" modal for a printed package label, when it maps to a catalog row. */
 function PackageItemInfo({ label }: { label: string }) {
   const row = packageCatalogRow(label);
-  if (!row || row.kind === "fashion") return null;
-  return (
-    <ItemInfo kind={row.kind as ItemKindLabel} item={row.item as { id: string; name: string }} />
-  );
+  if (row && row.kind !== "fashion") {
+    return (
+      <ItemInfo kind={row.kind as ItemKindLabel} item={row.item as { id: string; name: string }} />
+    );
+  }
+  const cyber = packageCyberwareRow(label);
+  if (cyber) return <ItemInfo kind="cyberware" item={cyber as { id: string; name: string }} />;
+  return null;
 }
 
 function VariantPicker({ id, label, options }: { id: string; label: string; options: string[] }) {
@@ -130,6 +136,11 @@ export function StartingGearPanel({ state }: { state: ChargenState }) {
 
   const pkg = getGearPackage(state.roleId);
   const flags = PACKAGE_FLAGS.filter((f) => f.role === state.roleId);
+  const cyberHumanityLoss = packageCyberwareHumanityRolls(
+    state.roleId,
+    state.method,
+    state.loadout.packageChoices,
+  ).reduce((a, b) => a + b, 0);
 
   return (
     <div className="space-y-4">
@@ -155,6 +166,28 @@ export function StartingGearPanel({ state }: { state: ChargenState }) {
         <div className="mt-3">
           <PackageEntries entries={pkg.gear} field="gear" />
         </div>
+      </Row>
+      <Row>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
+            Cyberware
+          </p>
+          {cyberHumanityLoss > 0 ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-danger">
+              −{cyberHumanityLoss} Humanity
+            </p>
+          ) : null}
+        </div>
+        <div className="mt-3">
+          {pkg.cyberware.length > 0 ? (
+            <PackageEntries entries={pkg.cyberware} field="cyberware" />
+          ) : (
+            <p className="text-sm text-text-muted">This Role starts with no cyberware.</p>
+          )}
+        </div>
+        <p className="mt-3 text-xs text-text-muted">
+          Applied to your Humanity at creation. Where an entry is a choice, pick exactly one.
+        </p>
       </Row>
       <Row>
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">Outfit</p>

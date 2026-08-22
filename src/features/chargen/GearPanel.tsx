@@ -3,24 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import {
-  AMMUNITION,
-  ARMOR,
-  CATALOG_PENDING,
-  CYBERWARE,
-  GEAR,
-  WEAPONS,
-  type ArmorLocation,
-} from "@/engine";
-import {
-  BudgetBars,
-  Cart,
-  FashionWarning,
-  PurchaseError,
-  defaultBudgetFor,
-  eb,
-  useLoadoutActions,
-} from "./market";
+import { AMMUNITION, ARMOR, CATALOG_PENDING, GEAR, WEAPONS, type ArmorLocation } from "@/engine";
+import { BudgetBars, Cart, PurchaseError, defaultBudgetFor, eb, useLoadoutActions } from "./market";
 import { ItemInfo } from "./ItemInfo";
 import { ITEM_FLAVOR, VARIANT_FLAVOR } from "./itemFlavor";
 import type { ChargenState } from "./store";
@@ -348,55 +332,6 @@ function GearTable({ state, query }: { state: ChargenState; query: string }) {
   );
 }
 
-function FashionTable({ state, query }: { state: ChargenState; query: string }) {
-  const { buy } = useLoadoutActions();
-  const fashionware = byName(
-    CYBERWARE.filter((c) => c.category === "fashionware" && matches(c.name, query)),
-  );
-  if (fashionware.length === 0)
-    return (
-      <div className="border border-hairline bg-surface">
-        <EmptyRow query={query} />
-      </div>
-    );
-  return (
-    <div className="divide-y divide-hairline border border-hairline bg-surface">
-      {fashionware.map((c) => (
-        <div key={c.id} className="flex items-start justify-between gap-4 p-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-text">{c.name}</p>
-              <ItemInfo kind="cyberware" item={c} />
-            </div>
-            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-              <Stat label="HL" value={c.humanityLoss} />
-              <Stat label="SLOTS" value={c.slotsUsed} />
-              <Stat label="INSTALL" value={c.install} />
-            </div>
-            <Blurb id={c.id} text={c.notes} />
-          </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <span className="font-mono text-sm tabular-nums text-ember">{eb(c.cost)}</span>
-            <Button
-              size="sm"
-              aria-label={`Buy ${c.name}`}
-              onClick={() =>
-                buy({
-                  kind: "cyberware",
-                  itemId: c.id,
-                  budget: defaultBudgetFor("cyberware", c.id, state),
-                })
-              }
-            >
-              Buy
-            </Button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function GearPanel({ state }: { state: ChargenState }) {
   const { remove, removeStack, changeQty, error } = useLoadoutActions();
   const [query, setQuery] = useState("");
@@ -420,7 +355,6 @@ export function GearPanel({ state }: { state: ChargenState }) {
             <Cart state={state} onRemove={remove} onRemoveStack={removeStack} onQty={changeQty} />
           </div>
 
-          <FashionWarning state={state} />
           <PurchaseError error={error} />
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -429,7 +363,6 @@ export function GearPanel({ state }: { state: ChargenState }) {
               <TabsTrigger value="armor">Armor</TabsTrigger>
               <TabsTrigger value="ammo">Ammunition</TabsTrigger>
               <TabsTrigger value="gear">Gear</TabsTrigger>
-              <TabsTrigger value="fashion">Fashion & Fashionware</TabsTrigger>
             </TabsList>
             <Input
               value={query}
@@ -456,9 +389,6 @@ export function GearPanel({ state }: { state: ChargenState }) {
         </TabsContent>
         <TabsContent value="gear" className="mt-4">
           <GearTable state={state} query={query} />
-        </TabsContent>
-        <TabsContent value="fashion" className="mt-4">
-          <FashionTable state={state} query={query} />
         </TabsContent>
       </Tabs>
 
