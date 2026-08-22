@@ -613,13 +613,24 @@ export function CharacterSheet({
                     From your Role package, as printed
                   </p>
                   <ul className="mt-1 space-y-0.5 text-sm text-text-muted">
-                    {sheet.packageCyberware.map((entry, i) => (
-                      <li key={i}>
-                        {"item" in entry
-                          ? `${entry.item}${entry.qty > 1 ? ` ×${entry.qty}` : ""}`
-                          : entry.choice.join(" or ")}
-                      </li>
-                    ))}
+                    {sheet.packageCyberware.map((entry, i) => {
+                      const picked =
+                        "item" in entry
+                          ? entry.item
+                          : (sheet.packageChoices.find((c) => c.id === `cyberware.${i}`)?.picked ??
+                            null);
+                      const row = picked ? packageCyberwareRow(picked) : null;
+                      return (
+                        <li key={i} className="flex items-center gap-1.5">
+                          <span>
+                            {"item" in entry
+                              ? `${entry.item}${entry.qty > 1 ? ` ×${entry.qty}` : ""}`
+                              : (picked ?? entry.choice.join(" or "))}
+                          </span>
+                          {row && <ItemInfo kind="cyberware" item={row as never} />}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
