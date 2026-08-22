@@ -296,6 +296,7 @@ export type Database = {
           is_complete: boolean
           name: string
           portrait_id: string | null
+          portrait_path: string | null
           role: string
           updated_at: string
           user_id: string
@@ -308,6 +309,7 @@ export type Database = {
           is_complete?: boolean
           name: string
           portrait_id?: string | null
+          portrait_path?: string | null
           role: string
           updated_at?: string
           user_id: string
@@ -320,6 +322,7 @@ export type Database = {
           is_complete?: boolean
           name?: string
           portrait_id?: string | null
+          portrait_path?: string | null
           role?: string
           updated_at?: string
           user_id?: string
