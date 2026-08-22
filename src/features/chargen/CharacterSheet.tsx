@@ -270,7 +270,7 @@ export function CharacterSheet({
 
       {/* 5 — Weapons and Armor */}
       <Panel title="Weapons" note="damage · magazine · ROF">
-        {sheet.weapons.length === 0 && sheet.packageWeaponsArmor.length === 0 ? (
+        {sheet.weapons.length === 0 && packageWeapons.length === 0 ? (
           <Empty>No weapons carried.</Empty>
         ) : (
           <div className="space-y-3">
@@ -290,8 +290,13 @@ export function CharacterSheet({
                   {sheet.weapons.map((w) => (
                     <tr key={w.lineId} className="border-t border-hairline/60">
                       <td className="py-1 text-text">
-                        {w.name}
-                        {w.qty > 1 ? ` ×${w.qty}` : ""}
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>
+                            {w.name}
+                            {w.qty > 1 ? ` ×${w.qty}` : ""}
+                          </span>
+                          <CatalogInfo kind="weapon" itemId={w.itemId} />
+                        </span>
                         {w.notes && <span className="block text-xs text-text-dim">{w.notes}</span>}
                       </td>
                       <td className="py-1 text-text-muted">{w.skill}</td>
@@ -304,14 +309,17 @@ export function CharacterSheet({
                 </tbody>
               </table>
             )}
-            {sheet.packageWeaponsArmor.length > 0 && (
+            {packageWeapons.length > 0 && (
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
                   From your Role package, as printed
                 </p>
                 <ul className="mt-1 space-y-0.5 text-sm text-text-muted">
-                  {sheet.packageWeaponsArmor.map((entry, i) => (
-                    <li key={i}>{packageLineText(sheet, "weaponsArmor", entry, i)}</li>
+                  {packageWeapons.map((line) => (
+                    <li key={line.index} className="flex items-center gap-1.5">
+                      <span>{line.text}</span>
+                      <PackageInfo label={line.label} />
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -321,33 +329,57 @@ export function CharacterSheet({
       </Panel>
 
       <Panel title="Armor" note="SP and penalty by location">
-        {sheet.armor.length === 0 ? (
+        {sheet.armor.length === 0 && packageArmor.length === 0 ? (
           <Empty>Nothing worn.</Empty>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
-                <th className="pb-1 text-left">Location</th>
-                <th className="pb-1 text-left">Armor</th>
-                <th className="pb-1 text-right">SP</th>
-                <th className="pb-1 text-right">Current SP</th>
-                <th className="pb-1 text-right">Penalty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sheet.armor.map((a) => (
-                <tr key={a.lineId} className="border-t border-hairline/60">
-                  <td className="py-1 uppercase text-text-muted">{a.location}</td>
-                  <td className="py-1 text-text">{a.name}</td>
-                  <td className="num py-1 text-right">{a.sp ?? "—"}</td>
-                  <td className="num py-1 text-right">{a.currentSp ?? "—"}</td>
-                  <td className="num py-1 text-right">
-                    {a.penalty ? JSON.stringify(a.penalty).replace(/[{}"]/g, "") : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="space-y-3">
+            {sheet.armor.length > 0 && (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
+                    <th className="pb-1 text-left">Location</th>
+                    <th className="pb-1 text-left">Armor</th>
+                    <th className="pb-1 text-right">SP</th>
+                    <th className="pb-1 text-right">Current SP</th>
+                    <th className="pb-1 text-right">Penalty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sheet.armor.map((a) => (
+                    <tr key={a.lineId} className="border-t border-hairline/60">
+                      <td className="py-1 uppercase text-text-muted">{a.location}</td>
+                      <td className="py-1 text-text">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>{a.name}</span>
+                          <CatalogInfo kind="armor" itemId={a.itemId} />
+                        </span>
+                      </td>
+                      <td className="num py-1 text-right">{a.sp ?? "—"}</td>
+                      <td className="num py-1 text-right">{a.currentSp ?? "—"}</td>
+                      <td className="num py-1 text-right">
+                        {a.penalty ? JSON.stringify(a.penalty).replace(/[{}"]/g, "") : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {packageArmor.length > 0 && (
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
+                  From your Role package, as printed
+                </p>
+                <ul className="mt-1 space-y-0.5 text-sm text-text-muted">
+                  {packageArmor.map((line) => (
+                    <li key={line.index} className="flex items-center gap-1.5">
+                      <span>{line.text}</span>
+                      <PackageInfo label={line.label} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
       </Panel>
 
