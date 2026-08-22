@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/generate-portrait")({
           body: JSON.stringify({
             model: MODEL,
             prompt: buildPortraitPrompt(facts),
-            size: "1024x1024",
+            size: "1024x1536",
             quality: "low",
             n: 1,
             ...(stream ? { stream: true, partial_images: 1 } : {}),
