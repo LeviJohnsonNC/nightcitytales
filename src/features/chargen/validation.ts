@@ -171,9 +171,9 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
     }
 
     case "review": {
-      const violations = CHARGEN_STEPS.filter((s) => s.id !== "review").flatMap(
-        (s) => validateStep(s.id, state).violations,
-      );
+      const violations = stepsFor(state.method)
+        .filter((s) => s.id !== "review")
+        .flatMap((s) => validateStep(s.id, state).violations);
       return { violations, untouched: false };
     }
 
@@ -184,10 +184,11 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
 }
 
 export function stepStatus(step: ChargenStep, state: ChargenState): StepStatus {
-  const index = CHARGEN_STEPS.findIndex((s) => s.id === step);
-  const blocked = CHARGEN_STEPS.slice(0, index).some(
-    (s) => validateStep(s.id, state).violations.length > 0,
-  );
+  const steps = stepsFor(state.method);
+  const index = steps.findIndex((s) => s.id === step);
+  const blocked = steps
+    .slice(0, index < 0 ? 0 : index)
+    .some((s) => validateStep(s.id, state).violations.length > 0);
   if (blocked && state.step !== step) return "locked";
 
   const { violations, untouched } = validateStep(step, state);
