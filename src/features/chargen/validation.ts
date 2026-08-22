@@ -18,7 +18,7 @@ import type { StatBlock } from "@/engine";
 import { generalLifepathComplete, readGeneralLifepath } from "./lifepathState";
 import { readRoleLifepath, roleLifepathComplete } from "./roleLifepathState";
 import type { ChargenState } from "./store";
-import { CHARGEN_STEPS, type ChargenStep } from "./steps";
+import { CHARGEN_STEPS, hasStartingPackage, stepsFor, type ChargenStep } from "./steps";
 
 export type StepStatus = "locked" | "in progress" | "valid" | "has errors";
 
@@ -116,26 +116,32 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       return { violations, untouched: !lifestyle.location && violations.length > 0 };
     }
 
-    case "gear": {
-      const untouched =
-        state.loadout.lines.length === 0 && Object.keys(state.loadout.packageChoices).length === 0;
-      const violations: string[] = [];
-      if (state.method && state.method !== "complete_package" && state.roleId) {
-        for (const point of unresolvedChoices(state.roleId, state.loadout.packageChoices)) {
-          violations.push(
-            `Your package offers a choice you have not made: ${point.options.join(" or ")}.`,
-          );
-        }
-        for (const point of unresolvedVariants(
-          state.roleId,
-          state.loadout.packageChoices,
-          state.loadout.packageVariants ?? {},
-        )) {
-          violations.push(
-            `Pick the specific weapon for "${point.label}": ${point.options.join(", ")}.`,
-          );
-        }
+    case "package": {
+      if (!hasStartingPackage(state.method) || !state.roleId) {
+        return { violations: [], untouched: false };
       }
+      const violations: string[] = [];
+      for (const point of unresolvedChoices(state.roleId, state.loadout.packageChoices)) {
+        violations.push(
+          `Your package offers a choice you have not made: ${point.options.join(" or ")}.`,
+        );
+      }
+      for (const point of unresolvedVariants(
+        state.roleId,
+        state.loadout.packageChoices,
+        state.loadout.packageVariants ?? {},
+      )) {
+        violations.push(
+          `Pick the specific weapon for "${point.label}": ${point.options.join(", ")}.`,
+        );
+      }
+      const untouched = Object.keys(state.loadout.packageChoices).length === 0;
+      return { violations, untouched: untouched && violations.length === 0 };
+    }
+
+    case "gear": {
+      const untouched = state.loadout.lines.length === 0;
+      const violations: string[] = [];
       if (state.method) {
         for (const budget of budgetStates(state.method, state.loadout)) {
           if (budget.overspent) {
@@ -147,6 +153,7 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       }
       return { violations, untouched: untouched && violations.length === 0 };
     }
+
 
     case "cyberware": {
       const untouched = state.loadout.lines.every((l) => l.kind !== "cyberware");
@@ -164,9 +171,9 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
     }
 
     case "review": {
-      const violations = CHARGEN_STEPS.filter((s) => s.id !== "review").flatMap(
-        (s) => validateStep(s.id, state).violations,
-      );
+      const violations = stepsFor(state.method)
+        .filter((s) => s.id !== "review")
+        .flatMap((s) => validateStep(s.id, state).violations);
       return { violations, untouched: false };
     }
 
@@ -177,10 +184,11 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
 }
 
 export function stepStatus(step: ChargenStep, state: ChargenState): StepStatus {
-  const index = CHARGEN_STEPS.findIndex((s) => s.id === step);
-  const blocked = CHARGEN_STEPS.slice(0, index).some(
-    (s) => validateStep(s.id, state).violations.length > 0,
-  );
+  const steps = stepsFor(state.method);
+  const index = steps.findIndex((s) => s.id === step);
+  const blocked = steps
+    .slice(0, index < 0 ? 0 : index)
+    .some((s) => validateStep(s.id, state).violations.length > 0);
   if (blocked && state.step !== step) return "locked";
 
   const { violations, untouched } = validateStep(step, state);

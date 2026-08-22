@@ -14,7 +14,7 @@ import type { CreationMethod } from "@/engine";
 import { useChargenStore } from "./store";
 import { StepPanel } from "./StepPanels";
 import { StepRail } from "./StepRail";
-import { CHARGEN_STEPS, STEP_IDS, stepDefinition } from "./steps";
+import { stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
 import { stepStatuses, validateStep } from "./validation";
 
@@ -34,10 +34,12 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const { status: saveStatus, error: saveError } = useDraftSync(userId);
   const [pending, setPending] = useState<PendingChange>(null);
 
-  const def = stepDefinition(state.step);
+  const steps = stepsFor(state.method);
+  const stepIds = steps.map((s) => s.id);
+  const def = steps.find((s) => s.id === state.step) ?? steps[0]!;
   const statuses = stepStatuses(state);
   const { violations } = validateStep(state.step, state);
-  const index = STEP_IDS.indexOf(state.step);
+  const index = stepIds.indexOf(def.id);
 
   const hasDependentData =
     state.skills.length > 0 ||
@@ -72,7 +74,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-8 lg:self-start">
-        <StepRail current={state.step} statuses={statuses} onSelect={state.setStep} />
+        <StepRail steps={steps} current={state.step} statuses={statuses} onSelect={state.setStep} />
       </aside>
 
       <section className="min-w-0 space-y-6">
@@ -81,7 +83,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
           <div className="flex min-w-0 items-center gap-3">
             <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
               Step {String(def.index).padStart(2, "0")} /{" "}
-              {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}
+              {String(steps.length - 1).padStart(2, "0")}
             </span>
             <span className="hidden truncate text-sm font-semibold tracking-tight sm:inline">
               {def.title}
@@ -94,7 +96,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
             <Button
               size="sm"
               onClick={state.next}
-              disabled={violations.length > 0 || index === STEP_IDS.length - 1}
+              disabled={violations.length > 0 || index === stepIds.length - 1}
             >
               Next
             </Button>
@@ -104,7 +106,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
         <header className="border-b border-border pb-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
             Step {String(def.index).padStart(2, "0")} /{" "}
-            {String(CHARGEN_STEPS.length - 1).padStart(2, "0")}
+            {String(steps.length - 1).padStart(2, "0")}
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">{def.title}</h1>
 
@@ -147,7 +149,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
             )}
             <Button
               onClick={state.next}
-              disabled={violations.length > 0 || index === STEP_IDS.length - 1}
+              disabled={violations.length > 0 || index === stepIds.length - 1}
             >
               Next
             </Button>

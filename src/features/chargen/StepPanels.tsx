@@ -8,6 +8,7 @@ import { MethodPanel } from "./MethodPanel";
 import { ReviewPanel } from "./ReviewPanel";
 import { RolePanel } from "./RolePanel";
 import { SkillsPanel } from "./SkillsPanel";
+import { StartingGearPanel } from "./StartingGearPanel";
 import { StatsPanel } from "./StatsPanel";
 import { useChargenStore, type ChargenState } from "./store";
 import type { ChargenStep } from "./steps";
@@ -43,6 +44,8 @@ export function StepPanel({
 
     case "skills":
       return <SkillsPanel state={state} />;
+    case "package":
+      return <StartingGearPanel state={state} />;
     case "gear":
       return <GearPanel state={state} />;
     case "cyberware":

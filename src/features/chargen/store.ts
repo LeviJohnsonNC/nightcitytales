@@ -11,7 +11,13 @@ import {
   type StatBlock,
   type StatKey,
 } from "@/engine";
-import { STEP_IDS, clearedByRoleChange, normalizeStep, type ChargenStep } from "./steps";
+import {
+  clearedByRoleChange,
+  normalizeStep,
+  resolveStepForMethod,
+  stepIdsFor,
+  type ChargenStep,
+} from "./steps";
 
 export type { ChargenStep };
 export { CHARGEN_STEPS, STEP_IDS } from "./steps";
@@ -114,19 +120,27 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
   ...initialState,
   setStep: (step) => set((s) => ({ step, visited: withVisit(s, step) })),
   next: () => {
-    const i = STEP_IDS.indexOf(get().step);
-    get().setStep(STEP_IDS[Math.min(i + 1, STEP_IDS.length - 1)]!);
+    const ids = stepIdsFor(get().method);
+    const i = ids.indexOf(get().step);
+    get().setStep(ids[Math.min(i + 1, ids.length - 1)]!);
   },
   back: () => {
-    const i = STEP_IDS.indexOf(get().step);
-    get().setStep(STEP_IDS[Math.max(i - 1, 0)]!);
+    const ids = stepIdsFor(get().method);
+    const i = ids.indexOf(get().step);
+    get().setStep(ids[Math.max(i - 1, 0)]!);
   },
   patch: (partial) => set(partial),
   selectMethod: (method) =>
     set((s) =>
       s.method === method
         ? { method }
-        : { ...initialState, draftId: s.draftId, method, step: s.step, visited: s.visited },
+        : {
+            ...initialState,
+            draftId: s.draftId,
+            method,
+            step: resolveStepForMethod(s.step, method),
+            visited: s.visited,
+          },
     ),
   selectRole: (roleId) =>
     set((s) =>
@@ -137,7 +151,7 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
   hydrate: (state) =>
     set((s) => {
       const next = { ...s, ...state };
-      const step = normalizeStep(next.step);
+      const step = resolveStepForMethod(normalizeStep(next.step), next.method);
       return {
         ...next,
         step,
