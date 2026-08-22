@@ -8,6 +8,7 @@ import {
   buildPortraitFacts,
   portraitMissing,
 } from "./portraitPrompt";
+import { PortraitLightbox } from "./PortraitLightbox";
 import { usePortraitUrl } from "./usePortraitUrl";
 import { useChargenStore, type ChargenState } from "./store";
 
@@ -61,13 +62,20 @@ export function PortraitStudio({ state, userId }: { state: ChargenState; userId:
       <div className="grid gap-4 sm:grid-cols-[16rem_minmax(0,1fr)]">
         <div className="relative aspect-[3/4] w-full border border-hairline bg-surface/60">
           {shown ? (
-            <img
+            <PortraitLightbox
               src={shown}
               alt={`${state.handle || state.name || "Character"} portrait`}
-              className={`h-full w-full object-cover transition-[filter] duration-500 ${
-                drawing && !previewFinal ? "blur-xl" : "blur-0"
-              }`}
-            />
+              subtitle={state.handle ? `"${state.handle}"` : undefined}
+              className="h-full w-full"
+            >
+              <img
+                src={shown}
+                alt={`${state.handle || state.name || "Character"} portrait`}
+                className={`h-full w-full object-cover transition-[filter] duration-500 ${
+                  drawing && !previewFinal ? "blur-xl" : "blur-0"
+                }`}
+              />
+            </PortraitLightbox>
           ) : (
             <div className="flex h-full items-center justify-center p-4 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
               {drawing ? "Exposing the plate…" : "No portrait yet"}
@@ -134,20 +142,49 @@ function TakeThumb({
 }) {
   const url = usePortraitUrl(path);
   return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onSelect}
-      className={`h-20 w-[3.75rem] overflow-hidden border transition-colors duration-200 ${
-        selected ? "border-ember" : "border-hairline hover:border-ember/60"
-      }`}
-    >
-      {url ? (
-        <img src={url} alt="Portrait take" className="h-full w-full object-cover" />
-      ) : (
-        <span className="sr-only">Loading take</span>
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        aria-pressed={selected}
+        onClick={onSelect}
+        className={`h-20 w-[3.75rem] overflow-hidden border transition-colors duration-200 ${
+          selected ? "border-ember" : "border-hairline hover:border-ember/60"
+        }`}
+      >
+        {url ? (
+          <img src={url} alt="Portrait take" className="h-full w-full object-cover" />
+        ) : (
+          <span className="sr-only">Loading take</span>
+        )}
+      </button>
+      {url && (
+        <PortraitLightbox
+          src={url}
+          alt="Portrait take"
+          className="h-20 w-[3.75rem]"
+        >
+          <div className="flex h-full w-full items-center justify-center border border-hairline bg-surface/60 text-text-dim hover:border-ember/60">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="15 3 21 3 21 9" />
+              <polyline points="9 21 3 21 3 15" />
+              <line x1="21" y1="3" x2="14" y2="10" />
+              <line x1="3" y1="21" x2="10" y2="14" />
+            </svg>
+          </div>
+        </PortraitLightbox>
       )}
-    </button>
+    </div>
   );
 }
 
