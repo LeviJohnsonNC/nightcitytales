@@ -560,12 +560,13 @@ export function GearPanel({ state }: { state: ChargenState }) {
         </div>
       )}
 
-      {/* Sticky budget + cart rail. Capped height with an opaque backdrop so the lists
-          scroll beneath it instead of being covered by a growing cart. */}
-      <div className="sticky top-0 z-20 -mx-1 grid max-h-[55vh] items-start gap-4 overflow-y-auto bg-background/95 px-1 py-2 backdrop-blur lg:grid-cols-2">
+      {/* Sticky budget + cart rail. Fully opaque so nothing shows through as the
+          lists scroll underneath it. */}
+      <div className="sticky top-0 z-30 -mx-1 grid max-h-[55vh] items-start gap-4 overflow-y-auto border-b border-border bg-background px-1 pb-3 pt-2 shadow-[0_10px_20px_-10px_rgba(0,0,0,0.9)] lg:grid-cols-2">
         <BudgetBars state={state} className="grid gap-3" />
         <Cart state={state} onRemove={remove} />
       </div>
+
 
 
       <FashionWarning state={state} />
