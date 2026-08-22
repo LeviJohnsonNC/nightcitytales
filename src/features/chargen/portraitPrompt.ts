@@ -104,8 +104,10 @@ export function portraitMissing(state: ChargenState): string[] {
   const ids = stepsFor(state.method);
   for (const step of ids) {
     if (step.id === "identity" || step.id === "review") continue;
-    const { violations, untouched } = validateStep(step.id, state);
-    if (violations.length > 0 || untouched) missing.push(step.title);
+    // Only actual rule violations block a portrait. Steps where buying
+    // nothing is legal (Gear & Armor, Cyberware) must not gate on "untouched".
+    const { violations } = validateStep(step.id, state);
+    if (violations.length > 0) missing.push(step.title);
   }
   return [...new Set(missing)];
 }
