@@ -202,9 +202,6 @@ function CartRow({ stack, canAdd, onRemove, onQty }: CartRowProps) {
             </span>
           ) : null}
         </p>
-        <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim">
-          {line.budget === "fashion" ? "fashion money" : "gear money"} · {line.kind}
-        </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {stack.stackable ? (
