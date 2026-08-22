@@ -1,4 +1,5 @@
 import { useState } from "react";
+import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
 import { generatePortrait } from "./portraitGeneration";
 import {
@@ -154,5 +155,4 @@ function roleName(roleId: string): string | undefined {
   return ROLE_NAMES[roleId]?.name;
 }
 
-import rolesData from "@/data/rules/roles.json";
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
