@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { CREATION_METHODS } from "@/engine";
 import { ArtSlot } from "@/features/chargen/ArtSlot";
 import { portraitArt, portraitById } from "@/features/chargen/art";
+import { PortraitLightbox } from "@/features/chargen/PortraitLightbox";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { METHOD_COPY } from "@/features/chargen/copy";
 import { stepDefinition, type ChargenStep } from "@/features/chargen/steps";
