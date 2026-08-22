@@ -64,12 +64,19 @@ export function MethodPanel({
                 selected ? "border-accent bg-accent/10" : "hover:border-accent/50",
               )}
             >
-              <img
-                src={ART[method.id].url}
-                alt={`${LABELS[method.id]} key art`}
-                loading="lazy"
-                className="aspect-[4/5] w-full object-cover"
-              />
+              <div className="aspect-[4/5] w-full overflow-hidden">
+                <img
+                  src={ART[method.id].url}
+                  alt={`${LABELS[method.id]} key art`}
+                  loading="lazy"
+                  className={cn(
+                    "h-full w-full object-cover",
+                    // Edgerunner art frames its subject further back; zoom to match the others.
+                    method.id === "edgerunner" && "scale-[1.35] origin-[35%_60%]",
+                  )}
+                />
+              </div>
+
 
               <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-center gap-2">
