@@ -160,13 +160,27 @@ function CharacterCard({
       <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-4 p-4">
         <div className="aspect-[3/4] w-full">
           {generated ? (
-            <img
+            <PortraitLightbox
               src={generated}
               alt={`${entry.name} portrait`}
-              className="h-full w-full object-cover"
-            />
+              subtitle={entry.handle ? `"${entry.handle}"` : undefined}
+              className="h-full w-full"
+            >
+              <img
+                src={generated}
+                alt={`${entry.name} portrait`}
+                className="h-full w-full object-cover"
+              />
+            </PortraitLightbox>
           ) : portrait ? (
-            <ArtSlot art={portraitArt(portrait)} label={entry.name} />
+            <PortraitLightbox
+              src={portraitArt(portrait).src}
+              alt={`${entry.name} portrait`}
+              subtitle={entry.handle ? `"${entry.handle}"` : undefined}
+              className="h-full w-full"
+            >
+              <ArtSlot art={portraitArt(portrait)} label={entry.name} />
+            </PortraitLightbox>
           ) : (
             <div className="flex h-full items-center justify-center border border-dashed border-border text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
               No portrait
