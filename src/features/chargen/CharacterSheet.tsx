@@ -8,6 +8,7 @@ import { IMPROVEMENT_POINTS, REPUTATION } from "@/engine";
 import type { AssembledCharacter, CharacterBuild, PackageEntry } from "@/engine";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
+import { PortraitLightbox } from "./PortraitLightbox";
 import { usePortraitUrl } from "./usePortraitUrl";
 import { readGeneralLifepath } from "./lifepathState";
 import {
