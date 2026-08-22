@@ -136,7 +136,16 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
         ? { roleId, roleAbility: roleAbilityForRole(roleId) }
         : { ...clearedByRoleChange(s), roleId, roleAbility: roleAbilityForRole(roleId) },
     ),
-  hydrate: (state) => set((s) => ({ ...s, ...state })),
+  hydrate: (state) =>
+    set((s) => {
+      const next = { ...s, ...state };
+      const step = normalizeStep(next.step);
+      return {
+        ...next,
+        step,
+        visited: (next.visited ?? []).map(normalizeStep).filter((v, i, a) => a.indexOf(v) === i),
+      };
+    }),
   reset: () => set({ ...initialState }),
 }));
 
