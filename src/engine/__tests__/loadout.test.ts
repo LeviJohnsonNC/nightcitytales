@@ -6,6 +6,7 @@ import {
   canChangeQty,
   canPurchase,
   cartStacks,
+  categorySlotUsage,
   changeQty,
   removeStack,
   eurobucksKept,
@@ -309,5 +310,34 @@ describe("cart stacks", () => {
     loadout = buy(loadout, { kind: "weapon", itemId: "medium_pistol", budget: "gear" });
     const key = cartStacks(loadout)[0]!.key;
     expect(removeStack(loadout, key).lines).toHaveLength(0);
+  });
+});
+
+describe("standalone cyberware stacking", () => {
+  it("stacks fashionware installs", () => {
+    let loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
+    loadout = buy(loadout, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
+    const stacks = cartStacks(loadout);
+    expect(stacks).toHaveLength(1);
+    expect(stacks[0]!.qty).toBe(2);
+    expect(stacks[0]!.stackable).toBe(true);
+  });
+
+  it("keeps foundations and their options as separate rows", () => {
+    let loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "neural_link", budget: "gear" });
+    loadout = buy(loadout, { kind: "cyberware", itemId: "kerenzikov", budget: "gear" });
+    const stacks = cartStacks(loadout);
+    expect(stacks).toHaveLength(2);
+    expect(stacks.every((s) => s.stackable)).toBe(false);
+  });
+
+  it("charges the same Humanity and slots whether stacked or not", () => {
+    let separate = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "biomonitor", budget: "gear" });
+    separate = buy(separate, { kind: "cyberware", itemId: "biomonitor", budget: "gear" });
+    const key = cartStacks(separate)[0]!.key;
+    const stacked = changeQty("complete_package", separate, key, 1);
+    expect(cartStacks(stacked)[0]!.qty).toBe(3);
+    expect(categorySlotUsage(stacked)["fashionware"]).toBe(3);
+    expect(loadoutHumanity(60, stacked).humanityLost).toBe(0);
   });
 });
