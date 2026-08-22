@@ -18,7 +18,7 @@ import type { StatBlock } from "@/engine";
 import { generalLifepathComplete, readGeneralLifepath } from "./lifepathState";
 import { readRoleLifepath, roleLifepathComplete } from "./roleLifepathState";
 import type { ChargenState } from "./store";
-import { CHARGEN_STEPS, type ChargenStep } from "./steps";
+import { CHARGEN_STEPS, hasStartingPackage, stepsFor, type ChargenStep } from "./steps";
 
 export type StepStatus = "locked" | "in progress" | "valid" | "has errors";
 
