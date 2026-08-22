@@ -10,6 +10,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { CreationMethod } from "@/engine";
 import { useChargenStore } from "./store";
 import { StepPanel } from "./StepPanels";
@@ -29,10 +36,19 @@ const SAVE_LABEL: Record<string, string> = {
   error: "Save failed",
 };
 
+const STEP_HELP: Record<string, { title: string; body: string }> = {
+  gear: {
+    title: "Night Market",
+    body:
+      "Two budgets, and they do not mix. Gear money buys anything and what you do not spend is yours. Fashion money buys only Fashion and Fashionware, and anything left of it is gone for good.",
+  },
+};
+
 export function ChargenWizard({ userId }: { userId: string }) {
   const state = useChargenStore();
   const { status: saveStatus, error: saveError } = useDraftSync(userId);
   const [pending, setPending] = useState<PendingChange>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const steps = stepsFor(state.method);
   const stepIds = steps.map((s) => s.id);
@@ -113,7 +129,19 @@ export function ChargenWizard({ userId }: { userId: string }) {
             Step {String(def.index).padStart(2, "0")} /{" "}
             {String(steps.length - 1).padStart(2, "0")}
           </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">{def.title}</h1>
+          <div className="mt-1 flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
+            {STEP_HELP[def.id] && (
+              <button
+                type="button"
+                aria-label={`About ${def.title}`}
+                onClick={() => setHelpOpen(true)}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-border font-mono text-xs text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+              >
+                ?
+              </button>
+            )}
+          </div>
 
           <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
             {SAVE_LABEL[saveStatus]}
@@ -182,6 +210,17 @@ export function ChargenWizard({ userId }: { userId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{STEP_HELP[def.id]?.title ?? def.title}</DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {STEP_HELP[def.id]?.body}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
