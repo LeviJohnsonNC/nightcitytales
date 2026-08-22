@@ -3,7 +3,11 @@ import {
   EMPTY_LOADOUT,
   addPurchase,
   budgetStates,
+  canChangeQty,
   canPurchase,
+  cartStacks,
+  changeQty,
+  removeStack,
   eurobucksKept,
   evaporatingBudgets,
   foundations,
@@ -12,6 +16,7 @@ import {
   type Loadout,
 } from "../loadout";
 import { choicePoints, unresolvedChoices } from "../gearPackages";
+import { itemCost } from "../catalog";
 
 function buy(
   loadout: Loadout,
@@ -239,5 +244,70 @@ describe("fixed package choices", () => {
     expect(unresolvedChoices("solo", {})).toHaveLength(points.length);
     const picked = { [points[0]!.id]: points[0]!.options[0]! };
     expect(unresolvedChoices("solo", picked)).toHaveLength(points.length - 1);
+  });
+});
+
+describe("cart stacks", () => {
+  it("merges identical purchases into one stack", () => {
+    let loadout = buy(EMPTY_LOADOUT, { kind: "weapon", itemId: "medium_pistol", budget: "gear" });
+    loadout = buy(loadout, { kind: "weapon", itemId: "medium_pistol", budget: "gear" });
+    const stacks = cartStacks(loadout);
+    expect(stacks).toHaveLength(1);
+    expect(stacks[0]!.qty).toBe(2);
+    expect(stacks[0]!.cost).toBe(itemCost("weapon", "medium_pistol") * 2);
+  });
+
+  it("keeps different variants apart", () => {
+    let loadout = buy(EMPTY_LOADOUT, {
+      kind: "weapon",
+      itemId: "very_heavy_melee",
+      budget: "gear",
+      variant: "Spiked Bat",
+    });
+    loadout = buy(loadout, {
+      kind: "weapon",
+      itemId: "very_heavy_melee",
+      budget: "gear",
+      variant: "Combat Knife",
+    });
+    expect(cartStacks(loadout)).toHaveLength(2);
+  });
+
+  it("never stacks cyberware installs", () => {
+    let loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
+    loadout = buy(loadout, { kind: "cyberware", itemId: "light_tattoo", budget: "fashion" });
+    const stacks = cartStacks(loadout);
+    expect(stacks).toHaveLength(2);
+    expect(stacks.every((s) => s.stackable)).toBe(false);
+  });
+
+  it("adds and removes one unit at a time", () => {
+    const loadout = buy(EMPTY_LOADOUT, { kind: "weapon", itemId: "medium_pistol", budget: "gear" });
+    const key = cartStacks(loadout)[0]!.key;
+    const more = changeQty("complete_package", loadout, key, 1);
+    expect(cartStacks(more)[0]!.qty).toBe(2);
+    const fewer = changeQty("complete_package", more, key, -1);
+    expect(cartStacks(fewer)[0]!.qty).toBe(1);
+    expect(cartStacks(changeQty("complete_package", fewer, key, -1))).toHaveLength(0);
+  });
+
+  it("blocks adding one more when the budget cannot cover it", () => {
+    let loadout = EMPTY_LOADOUT;
+    const cost = itemCost("weapon", "medium_pistol");
+    const limit = budgetStates("complete_package", loadout).find((b) => b.id === "gear")!.limit;
+    const affordable = Math.floor(limit / cost);
+    for (let i = 0; i < affordable; i += 1) {
+      loadout = buy(loadout, { kind: "weapon", itemId: "medium_pistol", budget: "gear" });
+    }
+    const key = cartStacks(loadout)[0]!.key;
+    expect(canChangeQty("complete_package", loadout, key, 1).ok).toBe(false);
+    expect(changeQty("complete_package", loadout, key, 1)).toBe(loadout);
+  });
+
+  it("removes a whole stack at once", () => {
+    let loadout = buy(EMPTY_LOADOUT, { kind: "weapon", itemId: "medium_pistol", budget: "gear" });
+    loadout = buy(loadout, { kind: "weapon", itemId: "medium_pistol", budget: "gear" });
+    const key = cartStacks(loadout)[0]!.key;
+    expect(removeStack(loadout, key).lines).toHaveLength(0);
   });
 });

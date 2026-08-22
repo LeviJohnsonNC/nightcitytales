@@ -377,3 +377,119 @@ export function removeLine(loadout: Loadout, lineId: string): Loadout {
     lines: loadout.lines.filter((l) => l.lineId !== lineId && l.foundationLineId !== lineId),
   };
 }
+
+/* ------------------------------------------------------------- cart stacks */
+
+/**
+ * Armor is worn on a specific location and ablates; cyberware occupies specific
+ * Option Slots in a specific foundation. Neither is interchangeable, so neither
+ * stacks.
+ */
+export function isStackableLine(line: CartLine): boolean {
+  return line.kind !== "armor" && line.kind !== "cyberware";
+}
+
+/** Identity of a cart stack. Non-stackable lines are their own stack. */
+export function stackKey(line: CartLine): string {
+  if (!isStackableLine(line)) return `line:${line.lineId}`;
+  return `${line.kind}|${line.itemId}|${line.budget}|${line.variant ?? ""}`;
+}
+
+export type CartStack = {
+  key: string;
+  lines: CartLine[];
+  /** First line in the stack; carries the representative display fields. */
+  line: CartLine;
+  qty: number;
+  cost: number;
+  stackable: boolean;
+};
+
+/** Merged view of the cart, in first-appearance order. */
+export function cartStacks(loadout: Loadout): CartStack[] {
+  const order: string[] = [];
+  const byKey = new Map<string, CartStack>();
+  for (const line of loadout.lines) {
+    const key = stackKey(line);
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.lines.push(line);
+      existing.qty += line.qty;
+      existing.cost += lineCost(line);
+    } else {
+      order.push(key);
+      byKey.set(key, {
+        key,
+        lines: [line],
+        line,
+        qty: line.qty,
+        cost: lineCost(line),
+        stackable: isStackableLine(line),
+      });
+    }
+  }
+  return order.map((key) => byKey.get(key)!);
+}
+
+function findStack(loadout: Loadout, key: string): CartStack | undefined {
+  return cartStacks(loadout).find((s) => s.key === key);
+}
+
+function requestForStack(stack: CartStack): PurchaseRequest {
+  return {
+    kind: stack.line.kind,
+    itemId: stack.line.itemId,
+    budget: stack.line.budget,
+    qty: 1,
+    variant: stack.line.variant ?? null,
+  };
+}
+
+/** Whether one more / one fewer unit of a stack is allowed. */
+export function canChangeQty(
+  method: CreationMethod,
+  loadout: Loadout,
+  key: string,
+  delta: number,
+): PurchaseCheck {
+  const stack = findStack(loadout, key);
+  if (!stack) return { ok: false, reason: "That cart line no longer exists." };
+  if (delta < 0) return { ok: true, reason: null };
+  if (!stack.stackable) {
+    return { ok: false, reason: "This item is installed or worn individually and cannot stack." };
+  }
+  return canPurchase(method, loadout, requestForStack(stack));
+}
+
+/** Adds or removes one unit of a stack. Returns the loadout unchanged when blocked. */
+export function changeQty(
+  method: CreationMethod,
+  loadout: Loadout,
+  key: string,
+  delta: number,
+): Loadout {
+  const stack = findStack(loadout, key);
+  if (!stack) return loadout;
+
+  if (delta > 0) {
+    if (!canChangeQty(method, loadout, key, delta).ok) return loadout;
+    return addPurchase(method, loadout, requestForStack(stack));
+  }
+
+  // Shrink the last line by one, or drop it entirely when it holds a single unit.
+  const last = stack.lines[stack.lines.length - 1]!;
+  if (last.qty > 1) {
+    return {
+      ...loadout,
+      lines: loadout.lines.map((l) => (l.lineId === last.lineId ? { ...l, qty: l.qty - 1 } : l)),
+    };
+  }
+  return removeLine(loadout, last.lineId);
+}
+
+/** Removes every line in a stack. */
+export function removeStack(loadout: Loadout, key: string): Loadout {
+  const stack = findStack(loadout, key);
+  if (!stack) return loadout;
+  return stack.lines.reduce((acc, l) => removeLine(acc, l.lineId), loadout);
+}

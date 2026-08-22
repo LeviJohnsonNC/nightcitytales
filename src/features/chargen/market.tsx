@@ -4,8 +4,13 @@ import {
   ARMOR,
   addPurchase,
   budgetStates,
+  canChangeQty,
   canPurchase,
+  cartStacks,
   catalogItem,
+  changeQty,
+  removeStack,
+  type CartStack,
   deriveStats,
   evaporatingBudgets,
   eurobucksKept,
@@ -13,7 +18,6 @@ import {
   getCyberware,
   isFashionItem,
   itemName,
-  lineCost,
   loadoutHumanity,
   removeLine,
   type BudgetId,
@@ -49,6 +53,22 @@ export function useLoadoutActions() {
     patch({ loadout: removeLine(loadout, lineId) });
   }
 
+  function removeStackByKey(key: string) {
+    setError(null);
+    patch({ loadout: removeStack(loadout, key) });
+  }
+
+  function changeStackQty(key: string, delta: number) {
+    if (!method) return;
+    const check = canChangeQty(method, loadout, key, delta);
+    if (!check.ok) {
+      setError(check.reason);
+      return;
+    }
+    setError(null);
+    patch({ loadout: changeQty(method, loadout, key, delta) });
+  }
+
   function setChoice(choiceId: string, option: string) {
     const variants = { ...(loadout.packageVariants ?? {}) };
     // A different option means any specific weapon picked for it no longer applies.
@@ -80,6 +100,8 @@ export function useLoadoutActions() {
     method,
     buy,
     remove,
+    removeStack: removeStackByKey,
+    changeQty: changeStackQty,
     setChoice,
     setPackageVariant,
     check,
@@ -159,9 +181,15 @@ export function FashionWarning({ state }: { state: ChargenState }) {
 const CART_PAGE_SIZE = 10;
 const CART_COLUMN_SIZE = CART_PAGE_SIZE / 2;
 
-type CartLineShape = ChargenState["loadout"]["lines"][number];
+type CartRowProps = {
+  stack: CartStack;
+  canAdd: { ok: boolean; reason: string | null };
+  onRemove: (key: string) => void;
+  onQty: (key: string, delta: number) => void;
+};
 
-function CartLine({ line, onRemove }: { line: CartLineShape; onRemove: (id: string) => void }) {
+function CartRow({ stack, canAdd, onRemove, onQty }: CartRowProps) {
+  const { line } = stack;
   return (
     <li className="flex items-center justify-between gap-3 px-4 py-2">
       <div className="min-w-0">
@@ -170,7 +198,6 @@ function CartLine({ line, onRemove }: { line: CartLineShape; onRemove: (id: stri
           {line.variant ? (
             <span className="ml-1 text-text-dim">({itemName(line.kind, line.itemId)})</span>
           ) : null}
-          {line.qty > 1 ? ` ×${line.qty}` : ""}
           {line.location ? (
             <span className="ml-2 font-mono text-[11px] uppercase text-text-dim">
               {line.location}
@@ -181,9 +208,38 @@ function CartLine({ line, onRemove }: { line: CartLineShape; onRemove: (id: stri
           {line.budget === "fashion" ? "fashion money" : "gear money"} · {line.kind}
         </p>
       </div>
-      <div className="flex shrink-0 items-center gap-3">
-        <span className="font-mono text-sm tabular-nums text-text-muted">{eb(lineCost(line))}</span>
-        <Button size="sm" variant="ghost" onClick={() => onRemove(line.lineId)}>
+      <div className="flex shrink-0 items-center gap-2">
+        {stack.stackable ? (
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-label="Remove one"
+              className="h-7 w-7 p-0 font-mono"
+              onClick={() => onQty(stack.key, -1)}
+            >
+              −
+            </Button>
+            <span className="w-6 text-center font-mono text-sm tabular-nums text-text">
+              {stack.qty}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-label="Add one"
+              className="h-7 w-7 p-0 font-mono"
+              disabled={!canAdd.ok}
+              title={canAdd.ok ? undefined : (canAdd.reason ?? undefined)}
+              onClick={() => onQty(stack.key, 1)}
+            >
+              +
+            </Button>
+          </div>
+        ) : null}
+        <span className="w-16 text-right font-mono text-sm tabular-nums text-text-muted">
+          {eb(stack.cost)}
+        </span>
+        <Button size="sm" variant="ghost" onClick={() => onRemove(stack.key)}>
           Remove
         </Button>
       </div>
@@ -191,39 +247,66 @@ function CartLine({ line, onRemove }: { line: CartLineShape; onRemove: (id: stri
   );
 }
 
-export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: string) => void }) {
-  const lines = state.loadout.lines;
+export function Cart({
+  state,
+  onRemove,
+  onRemoveStack,
+  onQty,
+}: {
+  state: ChargenState;
+  onRemove: (id: string) => void;
+  onRemoveStack?: (key: string) => void;
+  onQty?: (key: string, delta: number) => void;
+}) {
+  const stacks = cartStacks(state.loadout);
   const [page, setPage] = useState(0);
-  const pageCount = Math.max(1, Math.ceil(lines.length / CART_PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(stacks.length / CART_PAGE_SIZE));
   const current = Math.min(page, pageCount - 1);
   useEffect(() => {
     if (page > pageCount - 1) setPage(pageCount - 1);
   }, [page, pageCount]);
   if (!state.method) return null;
-  const kept = eurobucksKept(state.method, state.loadout);
-  const visible = lines.slice(current * CART_PAGE_SIZE, current * CART_PAGE_SIZE + CART_PAGE_SIZE);
+  const method = state.method;
+  const kept = eurobucksKept(method, state.loadout);
+  const removeStackRow =
+    onRemoveStack ??
+    ((key: string) => {
+      const stack = stacks.find((s) => s.key === key);
+      stack?.lines.forEach((l) => onRemove(l.lineId));
+    });
+  const changeRowQty = onQty ?? (() => {});
+  const visible = stacks.slice(current * CART_PAGE_SIZE, current * CART_PAGE_SIZE + CART_PAGE_SIZE);
   // Column-major fill: read top-to-bottom on the left, then the right column.
   const left = visible.slice(0, CART_COLUMN_SIZE);
   const right = visible.slice(CART_COLUMN_SIZE);
+  const renderRow = (stack: CartStack) => (
+    <CartRow
+      key={stack.key}
+      stack={stack}
+      canAdd={
+        onQty
+          ? canChangeQty(method, state.loadout, stack.key, 1)
+          : { ok: false, reason: null }
+      }
+      onRemove={removeStackRow}
+      onQty={changeRowQty}
+    />
+  );
   return (
     <div className="border border-hairline bg-surface">
       <p className="border-b border-hairline px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
-        Cart · {lines.length} line{lines.length === 1 ? "" : "s"}
+        Cart · {stacks.length} line{stacks.length === 1 ? "" : "s"}
       </p>
-      {lines.length === 0 ? (
+      {stacks.length === 0 ? (
         <p className="px-4 py-6 text-sm text-text-muted">Nothing bought yet.</p>
       ) : (
         <div className="max-h-[45vh] overflow-y-auto lg:grid lg:grid-cols-2">
           <ul className="divide-y divide-hairline lg:border-r lg:border-hairline">
-            {left.map((line) => (
-              <CartLine key={line.lineId} line={line} onRemove={onRemove} />
-            ))}
+            {left.map(renderRow)}
           </ul>
           {right.length > 0 ? (
             <ul className="divide-y divide-hairline border-t border-hairline lg:border-t-0">
-              {right.map((line) => (
-                <CartLine key={line.lineId} line={line} onRemove={onRemove} />
-              ))}
+              {right.map(renderRow)}
             </ul>
           ) : (
             <div className="hidden lg:block" />
