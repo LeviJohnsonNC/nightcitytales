@@ -8,7 +8,6 @@ import { LifestylePanel } from "./LifestylePanel";
 import { MethodPanel } from "./MethodPanel";
 import { ReviewPanel } from "./ReviewPanel";
 import { RolePanel } from "./RolePanel";
-import { RollLog } from "./RollLog";
 import { SkillsPanel } from "./SkillsPanel";
 import { StatsPanel } from "./StatsPanel";
 import { useChargenStore, type ChargenState } from "./store";
@@ -44,12 +43,8 @@ export function StepPanel({
     case "lifepath":
       return <LifepathPanel state={state} />;
     case "stats":
-      return (
-        <div className="space-y-6">
-          <StatsPanel state={state} />
-          <RollLog />
-        </div>
-      );
+      return <StatsPanel state={state} />;
+
     case "skills":
       return <SkillsPanel state={state} />;
     case "gear":
