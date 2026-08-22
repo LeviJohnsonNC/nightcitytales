@@ -62,13 +62,20 @@ export function PortraitStudio({ state, userId }: { state: ChargenState; userId:
       <div className="grid gap-4 sm:grid-cols-[16rem_minmax(0,1fr)]">
         <div className="relative aspect-[3/4] w-full border border-hairline bg-surface/60">
           {shown ? (
-            <img
+            <PortraitLightbox
               src={shown}
               alt={`${state.handle || state.name || "Character"} portrait`}
-              className={`h-full w-full object-cover transition-[filter] duration-500 ${
-                drawing && !previewFinal ? "blur-xl" : "blur-0"
-              }`}
-            />
+              subtitle={state.handle ? `"${state.handle}"` : undefined}
+              className="h-full w-full"
+            >
+              <img
+                src={shown}
+                alt={`${state.handle || state.name || "Character"} portrait`}
+                className={`h-full w-full object-cover transition-[filter] duration-500 ${
+                  drawing && !previewFinal ? "blur-xl" : "blur-0"
+                }`}
+              />
+            </PortraitLightbox>
           ) : (
             <div className="flex h-full items-center justify-center p-4 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
               {drawing ? "Exposing the plate…" : "No portrait yet"}
