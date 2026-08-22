@@ -129,10 +129,12 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
       // Two passes: rolling a gate can reveal a dependent table.
       for (let pass = 0; pass < 2; pass++) {
         for (const t of visibleRoleLifepathTables(state.roleId, rEntries)) {
-          if (!rEntries[t.id] && t.die) {
-            rEntries[t.id] = rollRoleLifepathTable(state.roleId, t.id, Math.random).entry;
-          }
+          if (rEntries[t.id]) continue;
+          rEntries[t.id] = t.die
+            ? rollRoleLifepathTable(state.roleId, t.id, Math.random).entry
+            : rollChoiceOnlyRoleLifepathTable(state.roleId, t.id, Math.random).entry;
         }
+
       }
       nextRole = {
         roleId: state.roleId,
