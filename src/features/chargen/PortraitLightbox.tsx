@@ -1,9 +1,5 @@
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 /**
  * A full-size portrait lightbox. Clicking the portrait opens it in a modal
@@ -42,11 +38,7 @@ export function PortraitLightbox({
         <DialogContent className="max-w-[90vw] border-0 bg-transparent p-0 shadow-none sm:max-w-3xl">
           <DialogTitle className="sr-only">{alt}</DialogTitle>
           <div className="relative mx-auto aspect-[3/4] w-full max-w-xl overflow-hidden border border-hairline bg-surface shadow-2xl shadow-black/70">
-            <img
-              src={src}
-              alt={alt}
-              className="h-full w-full object-contain"
-            />
+            <img src={src} alt={alt} className="h-full w-full object-contain" />
             {/* Neon-noir border treatment */}
             <div className="pointer-events-none absolute inset-0 border-[6px] border-surface/80" />
             <div className="pointer-events-none absolute inset-0 border border-ember/40" />

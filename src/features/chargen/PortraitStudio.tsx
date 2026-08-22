@@ -158,11 +158,7 @@ function TakeThumb({
         )}
       </button>
       {url && (
-        <PortraitLightbox
-          src={url}
-          alt="Portrait take"
-          className="h-20 w-[3.75rem]"
-        >
+        <PortraitLightbox src={url} alt="Portrait take" className="h-20 w-[3.75rem]">
           <div className="flex h-full w-full items-center justify-center border border-hairline bg-surface/60 text-text-dim hover:border-ember/60">
             <svg
               xmlns="http://www.w3.org/2000/svg"
