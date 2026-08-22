@@ -451,6 +451,81 @@
       "src": "/images/weapons/tsunami_helix.png",
       "alt": "Tsunami Arms Helix art",
       "focalPoint": [0.5, 0.5]
+    },
+    "weapon.heavy_smg": {
+      "src": "/images/weapons/heavy_smg.png",
+      "alt": "Heavy SMG art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.bodyweight_suit": {
+      "src": "/images/armor/bodyweight_suit.png",
+      "alt": "Bodyweight Suit art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.bulletproof_shield": {
+      "src": "/images/armor/bulletproof_shield.png",
+      "alt": "Bulletproof Shield art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.flak": {
+      "src": "/images/armor/flak.png",
+      "alt": "Flak art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.flak.head": {
+      "src": "/images/armor/flak-head.png",
+      "alt": "Flak head armor art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.heavy_armorjack": {
+      "src": "/images/armor/heavy_armorjack.png",
+      "alt": "Heavy Armorjack art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.heavy_armorjack.head": {
+      "src": "/images/armor/heavy_armorjack-head.png",
+      "alt": "Heavy Armorjack head armor art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.kevlar": {
+      "src": "/images/armor/kevlar.png",
+      "alt": "Kevlar art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.kevlar.head": {
+      "src": "/images/armor/kevlar-head.png",
+      "alt": "Kevlar head armor art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.light_armorjack": {
+      "src": "/images/armor/light_armorjack.png",
+      "alt": "Light Armorjack art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.light_armorjack.head": {
+      "src": "/images/armor/light_armorjack-head.png",
+      "alt": "Light Armorjack head armor art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.medium_armorjack": {
+      "src": "/images/armor/medium_armorjack.png",
+      "alt": "Medium Armorjack art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.medium_armorjack.head": {
+      "src": "/images/armor/medium_armorjack-head.png",
+      "alt": "Medium Armorjack head armor art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.metalgear": {
+      "src": "/images/armor/metalgear.png",
+      "alt": "Metalgear art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "armor.metalgear.head": {
+      "src": "/images/armor/metalgear-head.png",
+      "alt": "Metalgear head armor art",
+      "focalPoint": [0.5, 0.5]
     }
   },
   "portraits": []

@@ -92,6 +92,9 @@ export function ItemInfo({
   const stats = statLine(kind, it);
   const priceContext = priceCategoryContext(it.priceCategory);
   const art = itemArt(`${kind}.${it.id}`, it.name);
+  // Armor art can come as a Body/Head pair; show both when a head image exists.
+  const headArt = kind === "armor" ? itemArt(`${kind}.${it.id}.head`, `${it.name} head`) : null;
+  const hasHead = Boolean(headArt?.src);
 
   return (
     <>
@@ -138,14 +141,40 @@ export function ItemInfo({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Art scales to fit — never cropped, no frame. */}
-          <div className="min-h-32 w-full">
-            <ArtSlot
-              art={art}
-              label={item.name}
-              className="max-h-64 w-full border-0 object-contain"
-            />
-          </div>
+          {/* Art scales to fit, never cropped, no frame. Armor with a Body/Head
+              pair shows both side by side. */}
+          {hasHead ? (
+            <div className="grid grid-cols-2 gap-3">
+              <figure className="min-h-32 w-full">
+                <ArtSlot
+                  art={art}
+                  label={`${item.name} body`}
+                  className="max-h-64 w-full border-0 object-contain"
+                />
+                <figcaption className="mt-1 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-text-dim">
+                  Body
+                </figcaption>
+              </figure>
+              <figure className="min-h-32 w-full">
+                <ArtSlot
+                  art={headArt!}
+                  label={`${item.name} head`}
+                  className="max-h-64 w-full border-0 object-contain"
+                />
+                <figcaption className="mt-1 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-text-dim">
+                  Head
+                </figcaption>
+              </figure>
+            </div>
+          ) : (
+            <div className="min-h-32 w-full">
+              <ArtSlot
+                art={art}
+                label={item.name}
+                className="max-h-64 w-full border-0 object-contain"
+              />
+            </div>
+          )}
 
           {stats.length > 0 && (
             <dl className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
