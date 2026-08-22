@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { CHARGEN_STEPS, type ChargenStep } from "./steps";
+import { type ChargenStep, type StepDefinition } from "./steps";
 import type { StepStatus } from "./validation";
 
 const STATUS_STYLES: Record<StepStatus, string> = {
