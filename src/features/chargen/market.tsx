@@ -96,6 +96,8 @@ export function useLoadoutActions() {
     method,
     buy,
     remove,
+    removeStack: removeStackByKey,
+    changeQty: changeStackQty,
     setChoice,
     setPackageVariant,
     check,
