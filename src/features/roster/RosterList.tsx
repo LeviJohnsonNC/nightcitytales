@@ -159,7 +159,11 @@ function CharacterCard({
       <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-4 p-4">
         <div className="aspect-[3/4] w-full">
           {generated ? (
-            <img src={generated} alt={`${entry.name} portrait`} className="h-full w-full object-cover" />
+            <img
+              src={generated}
+              alt={`${entry.name} portrait`}
+              className="h-full w-full object-cover"
+            />
           ) : portrait ? (
             <ArtSlot art={portraitArt(portrait)} label={entry.name} />
           ) : (

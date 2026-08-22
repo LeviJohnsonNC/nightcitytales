@@ -37,7 +37,9 @@ export async function generatePortrait(
     body: JSON.stringify(facts),
   });
   if (!res.ok || !res.body) {
-    throw new Error((await res.text().catch(() => "")) || `Portrait generation failed (${res.status}).`);
+    throw new Error(
+      (await res.text().catch(() => "")) || `Portrait generation failed (${res.status}).`,
+    );
   }
 
   let finalB64: string | null = null;

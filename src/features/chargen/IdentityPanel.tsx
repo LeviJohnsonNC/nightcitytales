@@ -124,9 +124,7 @@ export function IdentityPanel({ state, userId }: { state: ChargenState; userId: 
       </div>
 
       <div className="space-y-3">
-        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-text-dim">
-          Portrait
-        </p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-text-dim">Portrait</p>
         <PortraitStudio state={state} userId={userId} />
       </div>
     </div>
