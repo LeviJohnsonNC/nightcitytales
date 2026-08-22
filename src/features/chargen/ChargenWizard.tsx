@@ -14,7 +14,7 @@ import type { CreationMethod } from "@/engine";
 import { useChargenStore } from "./store";
 import { StepPanel } from "./StepPanels";
 import { StepRail } from "./StepRail";
-import { CHARGEN_STEPS, STEP_IDS, stepDefinition } from "./steps";
+import { stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
 import { stepStatuses, validateStep } from "./validation";
 
