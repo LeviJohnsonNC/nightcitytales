@@ -9,8 +9,10 @@ import {
   languagesForCulturalOrigin,
   pruneRoleLifepathAnswers,
   rollEnemy,
+  rollChoiceOnlyRoleLifepathTable,
   rollLifepathCount,
   rollLifepathTable,
+
   rollRoleLifepathTable,
   visibleRoleLifepathTables,
   type LifepathEntryRecord,
