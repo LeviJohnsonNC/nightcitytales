@@ -98,6 +98,29 @@ export function IdentityPanel({ state }: { state: ChargenState }) {
             placeholder="How they read at a glance."
             rows={3}
           />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!canWrite || writing}
+              onClick={writeDescription}
+            >
+              {writing
+                ? "Writing…"
+                : state.selfDescription.trim()
+                  ? "Write another"
+                  : "Write one for me"}
+            </Button>
+            {!canWrite && (
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
+                Needs {missing.join(", ")}
+              </p>
+            )}
+          </div>
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
+            Anything written here is yours to edit or replace.
+          </p>
         </div>
       </div>
 
