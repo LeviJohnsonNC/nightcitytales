@@ -12,6 +12,7 @@ export * from "./lifepath";
 export * from "./roleLifepath";
 export * from "./catalog";
 export * from "./priceCategory";
+export * from "./ammoTypes";
 export * from "./packageCatalog";
 export * from "./gearPackages";
 export * from "./loadout";
