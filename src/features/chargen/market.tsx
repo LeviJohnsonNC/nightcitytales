@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   ARMOR,
@@ -158,10 +158,10 @@ const CART_PAGE_SIZE = 5;
 
 export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: string) => void }) {
   const lines = state.loadout.lines;
-  const [page, setPage] = React.useState(0);
+  const [page, setPage] = useState(0);
   const pageCount = Math.max(1, Math.ceil(lines.length / CART_PAGE_SIZE));
   const current = Math.min(page, pageCount - 1);
-  React.useEffect(() => {
+  useEffect(() => {
     if (page > pageCount - 1) setPage(pageCount - 1);
   }, [page, pageCount]);
   if (!state.method) return null;
