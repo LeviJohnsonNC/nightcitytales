@@ -58,6 +58,31 @@ function Panel({
   );
 }
 
+/** Same chrome as Panel, but folded away until the reader opens it. */
+function CollapsiblePanel({
+  title,
+  note,
+  children,
+}: {
+  title: string;
+  note?: string | undefined;
+  children: React.ReactNode;
+}) {
+  return (
+    <details className="sheet-panel border border-hairline bg-surface p-4">
+      <summary className="flex cursor-pointer flex-wrap items-baseline gap-x-3">
+        <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.18em] text-text">
+          {title}
+        </h2>
+        {note && (
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">{note}</p>
+        )}
+      </summary>
+      <div className="mt-3 border-t border-hairline pt-3">{children}</div>
+    </details>
+  );
+}
+
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm italic text-text-dim">{children}</p>;
 }
