@@ -81,7 +81,6 @@ export function ReviewPanel({ state }: { state: ChargenState }) {
       </section>
 
       <CharacterSheet state={state} build={build} sheet={sheet} />
-
     </div>
   );
 }

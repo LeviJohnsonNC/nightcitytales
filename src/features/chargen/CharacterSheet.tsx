@@ -165,7 +165,6 @@ export function CharacterSheet({
   const packageArmor = packageWeaponsArmorLines.filter((l) => isArmorLabel(l.label));
   const packageWeapons = packageWeaponsArmorLines.filter((l) => !isArmorLabel(l.label));
 
-
   return (
     <div className="sheet space-y-4">
       {/* 1 — Identity */}
