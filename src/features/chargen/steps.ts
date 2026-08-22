@@ -98,7 +98,7 @@ export function stepIndex(step: ChargenStep): number {
  * Changing method restarts the character entirely (handled separately).
  */
 export const DEPENDENTS: Record<string, ChargenStep[]> = {
-  role: ["lifepath", "skills", "gear", "cyberware"],
+  role: ["lifepath", "skills", "package", "gear", "cyberware"],
 };
 
 /** The parts of the draft wiped when a Role change is confirmed. */
