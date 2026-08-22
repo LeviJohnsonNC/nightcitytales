@@ -560,11 +560,13 @@ export function GearPanel({ state }: { state: ChargenState }) {
         </div>
       )}
 
-      {/* Budget and cart sit in normal flow so a growing cart pushes the lists down. */}
-      <div className="grid items-start gap-4 py-2 lg:grid-cols-2">
+      {/* Sticky budget + cart rail. Capped height with an opaque backdrop so the lists
+          scroll beneath it instead of being covered by a growing cart. */}
+      <div className="sticky top-0 z-20 -mx-1 grid max-h-[55vh] items-start gap-4 overflow-y-auto bg-background/95 px-1 py-2 backdrop-blur lg:grid-cols-2">
         <BudgetBars state={state} className="grid gap-3" />
         <Cart state={state} onRemove={remove} />
       </div>
+
 
       <FashionWarning state={state} />
       <PurchaseError error={error} />
