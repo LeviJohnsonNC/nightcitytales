@@ -53,11 +53,14 @@ export function BackgroundPanel({
 
       {!hasStory && status !== "loading" && (
         <div className="mt-4 flex flex-col items-start gap-3">
-          <p className="text-sm leading-relaxed text-text-dim">
-            Pull your threads on the Lifepath first. Then weave them into a background in your
-            character's own voice, the kind of story a Night City local would actually tell. Every
-            word stays yours to rewrite.
-          </p>
+          {!ready && (
+            <p className="text-sm leading-relaxed text-text-dim">
+              Pull your threads on the Lifepath first. Then weave them into a background in your
+              character's own voice, the kind of story a Night City local would actually tell. Every
+              word stays yours to rewrite.
+            </p>
+          )}
+
           <Button disabled={!ready} onClick={weave}>
             Weave my story
           </Button>
