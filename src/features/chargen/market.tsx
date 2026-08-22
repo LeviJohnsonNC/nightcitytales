@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   ARMOR,
@@ -154,10 +154,19 @@ export function FashionWarning({ state }: { state: ChargenState }) {
   );
 }
 
+const CART_PAGE_SIZE = 5;
+
 export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: string) => void }) {
   const lines = state.loadout.lines;
+  const [page, setPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil(lines.length / CART_PAGE_SIZE));
+  const current = Math.min(page, pageCount - 1);
+  useEffect(() => {
+    if (page > pageCount - 1) setPage(pageCount - 1);
+  }, [page, pageCount]);
   if (!state.method) return null;
   const kept = eurobucksKept(state.method, state.loadout);
+  const visible = lines.slice(current * CART_PAGE_SIZE, current * CART_PAGE_SIZE + CART_PAGE_SIZE);
   return (
     <div className="border border-hairline bg-surface">
       <p className="border-b border-hairline px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
@@ -166,8 +175,8 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
       {lines.length === 0 ? (
         <p className="px-4 py-6 text-sm text-text-muted">Nothing bought yet.</p>
       ) : (
-        <ul className="max-h-64 divide-y divide-hairline overflow-y-auto">
-          {lines.map((line) => (
+        <ul className="divide-y divide-hairline">
+          {visible.map((line) => (
             <li key={line.lineId} className="flex items-center justify-between gap-3 px-4 py-2">
               <div className="min-w-0">
                 <p className="truncate text-sm text-text">
@@ -200,12 +209,36 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
           ))}
         </ul>
       )}
+      {pageCount > 1 ? (
+        <div className="flex items-center justify-between gap-3 border-t border-hairline px-4 py-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={current === 0}
+            onClick={() => setPage(current - 1)}
+          >
+            Previous
+          </Button>
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
+            Page {current + 1} of {pageCount}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={current >= pageCount - 1}
+            onClick={() => setPage(current + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      ) : null}
       <p className="border-t border-hairline px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
         Carried into play: <span className="text-ember tabular-nums">{eb(kept)}</span>
       </p>
     </div>
   );
 }
+
 
 export function PurchaseError({ error }: { error: string | null }) {
   if (!error) return null;
