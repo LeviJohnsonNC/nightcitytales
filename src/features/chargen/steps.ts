@@ -6,7 +6,6 @@ export type ChargenStep =
   | "role"
   | "lifepath"
   | "stats"
-  | "derived"
   | "skills"
   | "gear"
   | "cyberware"
@@ -33,25 +32,27 @@ export const CHARGEN_STEPS: StepDefinition[] = [
   { id: "role", index: 1, title: "Role", blurb: "Pick your Role and its Role Ability" },
   { id: "lifepath", index: 2, title: "Lifepath", blurb: "General, then Role-specific" },
   { id: "stats", index: 3, title: "STATs", blurb: "Branches by creation method" },
-  {
-    id: "derived",
-    index: 4,
-    title: "Derived STATs",
-    blurb: "HP, Seriously Wounded, Death Save, Humanity",
-    readOnly: true,
-  },
-  { id: "skills", index: 5, title: "Skills", blurb: "Branches by creation method" },
-  { id: "gear", index: 6, title: "Gear & Armor", blurb: "Fixed package or shopping" },
-  { id: "cyberware", index: 7, title: "Cyberware", blurb: "Applies Humanity Loss" },
-  { id: "lifestyle", index: 8, title: "Outfit & Lifestyle", blurb: "Fashion, housing, lifestyle" },
-  { id: "identity", index: 9, title: "Identity", blurb: "Name, handle, portrait" },
-  { id: "review", index: 10, title: "Final Sheet", blurb: "Review every value, then save" },
+  { id: "skills", index: 4, title: "Skills", blurb: "Branches by creation method" },
+  { id: "gear", index: 5, title: "Gear & Armor", blurb: "Fixed package or shopping" },
+  { id: "cyberware", index: 6, title: "Cyberware", blurb: "Applies Humanity Loss" },
+  { id: "lifestyle", index: 7, title: "Outfit & Lifestyle", blurb: "Fashion, housing, lifestyle" },
+  { id: "identity", index: 8, title: "Identity", blurb: "Name, handle, portrait" },
+  { id: "review", index: 9, title: "Final Sheet", blurb: "Review every value, then save" },
 ];
 
 export const STEP_IDS: ChargenStep[] = CHARGEN_STEPS.map((s) => s.id);
 
+/** Legacy drafts may reference removed steps; map them to the nearest live step. */
+const LEGACY_STEPS: Record<string, ChargenStep> = { derived: "stats" };
+
+export function normalizeStep(step: string | null | undefined): ChargenStep {
+  if (!step) return "method";
+  if (STEP_IDS.includes(step as ChargenStep)) return step as ChargenStep;
+  return LEGACY_STEPS[step] ?? "method";
+}
+
 export function stepDefinition(step: ChargenStep): StepDefinition {
-  const def = CHARGEN_STEPS.find((s) => s.id === step);
+  const def = CHARGEN_STEPS.find((s) => s.id === normalizeStep(step));
   if (!def) throw new Error(`Unknown chargen step "${step}"`);
   return def;
 }
@@ -66,8 +67,8 @@ export function stepIndex(step: ChargenStep): number {
  */
 export const DEPENDENTS: Record<string, ChargenStep[]> = {
   role: ["lifepath", "skills", "gear", "cyberware"],
-  stats: ["derived"],
 };
+
 
 /** The parts of the draft wiped when a Role change is confirmed. */
 export function clearedByRoleChange(state: ChargenState): Partial<ChargenState> {

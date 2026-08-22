@@ -68,12 +68,6 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
         : { violations: ["STATs have not been rolled yet."], untouched: true };
     }
 
-    case "derived": {
-      return statsAssigned(state)
-        ? { violations: [], untouched: false }
-        : { violations: ["Derived STATs need a complete STAT block first."], untouched: true };
-    }
-
     case "skills": {
       const untouched = state.skills.length === 0;
       if (state.method === "streetrat") {

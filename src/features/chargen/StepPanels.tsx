@@ -1,6 +1,5 @@
 import type { CreationMethod } from "@/engine";
 import { CyberwarePanel } from "./CyberwarePanel";
-import { DerivedPanel } from "./DerivedPanel";
 import { GearPanel } from "./GearPanel";
 import { IdentityPanel } from "./IdentityPanel";
 import { LifepathPanel } from "./LifepathPanel";
@@ -30,9 +29,6 @@ export function StepPanel({
 
     case "role":
       return <RolePanel state={state} onRequestRole={onRequestRole} />;
-
-    case "derived":
-      return <DerivedPanel state={state} />;
 
     case "identity":
       return <IdentityPanel state={state} />;
