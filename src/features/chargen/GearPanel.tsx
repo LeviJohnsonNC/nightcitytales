@@ -3,7 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { AMMUNITION, ARMOR, CATALOG_PENDING, GEAR, WEAPONS, type ArmorLocation } from "@/engine";
+import {
+  AMMUNITION,
+  ARMOR,
+  CATALOG_PENDING,
+  GEAR,
+  WEAPONS,
+  ammoTypeOptions,
+  ammoUnitFor,
+  ammoVariantLabel,
+  type AmmoType,
+  type ArmorLocation,
+} from "@/engine";
 import { BudgetBars, Cart, PurchaseError, defaultBudgetFor, eb, useLoadoutActions } from "./market";
 import { ItemInfo } from "./ItemInfo";
 import { ITEM_FLAVOR, VARIANT_FLAVOR } from "./itemFlavor";
