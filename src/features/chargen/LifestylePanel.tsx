@@ -10,8 +10,16 @@ import {
   startingLifestylePlan,
 } from "@/engine";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { readGeneralLifepath, displayValue } from "./lifepathState";
 import { BudgetBars, FashionWarning, PurchaseError, eb, useLoadoutActions } from "./market";
+import { useState } from "react";
 import { useChargenStore, type ChargenState } from "./store";
 
 const LOOK_TABLES = [
@@ -177,9 +185,20 @@ function FashionShop({ state }: { state: ChargenState }) {
 function HousingCard({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const plan = startingLifestylePlan(state.roleId);
+  const [infoOpen, setInfoOpen] = useState(false);
   return (
     <div className="border border-hairline bg-surface p-4">
-      <SectionTitle>Housing &amp; Lifestyle</SectionTitle>
+      <div className="flex items-center gap-2">
+        <SectionTitle>Housing &amp; Lifestyle</SectionTitle>
+        <button
+          type="button"
+          aria-label="Lifestyle failure rules"
+          onClick={() => setInfoOpen(true)}
+          className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+        >
+          ?
+        </button>
+      </div>
       {plan.grantedByRoleAbility ? (
         <>
           <p className="mt-2 text-sm text-text">
@@ -258,7 +277,16 @@ function HousingCard({ state }: { state: ChargenState }) {
         </p>
       ) : null}
 
-      <p className="mt-3 text-sm text-text-muted">{LIFESTYLE_FAILURE_NOTE}</p>
+      <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lifestyle Failure</DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {LIFESTYLE_FAILURE_NOTE}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
