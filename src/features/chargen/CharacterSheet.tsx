@@ -108,6 +108,18 @@ export function CharacterSheet({
   ];
   const roleLines = build.roleId ? roleLifepathSentences(build.roleId, roleLifepath.entries) : [];
 
+  // Role-package weapons/armor arrive on one printed list; the sheet keeps
+  // armor in the Armor panel and weapons in the Weapons panel.
+  const packageWeaponsArmorLines = sheet.packageWeaponsArmor.map((entry, index) => ({
+    index,
+    label: packageLineLabel(sheet, "weaponsArmor", entry, index),
+    text: packageLineText(sheet, "weaponsArmor", entry, index),
+  }));
+  const isArmorLabel = (label: string) => packageCatalogRow(label)?.kind === "armor";
+  const packageArmor = packageWeaponsArmorLines.filter((l) => isArmorLabel(l.label));
+  const packageWeapons = packageWeaponsArmorLines.filter((l) => !isArmorLabel(l.label));
+
+
   return (
     <div className="sheet space-y-4">
       {/* 1 — Identity */}
