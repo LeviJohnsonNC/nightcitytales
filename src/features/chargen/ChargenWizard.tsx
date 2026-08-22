@@ -39,8 +39,7 @@ const SAVE_LABEL: Record<string, string> = {
 const STEP_HELP: Record<string, { title: string; body: string }> = {
   gear: {
     title: "Night Market",
-    body:
-      "Two budgets, and they do not mix. Gear money buys anything and what you do not spend is yours. Fashion money buys only Fashion and Fashionware, and anything left of it is gone for good.",
+    body: "Two budgets, and they do not mix. Gear money buys anything and what you do not spend is yours. Fashion money buys only Fashion and Fashionware, and anything left of it is gone for good.",
   },
 };
 

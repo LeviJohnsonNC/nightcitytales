@@ -411,7 +411,6 @@ export function GearPanel({ state }: { state: ChargenState }) {
 
   return (
     <div className="space-y-6">
-
       <Tabs defaultValue="weapons">
         {/* Sticky rail: budget + cart + list tabs travel together, fully opaque so
             the lists scroll underneath instead of showing through. */}
