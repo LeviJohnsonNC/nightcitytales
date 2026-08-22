@@ -400,7 +400,7 @@ function FashionTable({ state, query }: { state: ChargenState; query: string }) 
 }
 
 export function GearPanel({ state }: { state: ChargenState }) {
-  const { remove, error } = useLoadoutActions();
+  const { remove, removeStack, changeQty, error } = useLoadoutActions();
   const [query, setQuery] = useState("");
 
   if (!state.method || !state.roleId) {
@@ -429,7 +429,12 @@ export function GearPanel({ state }: { state: ChargenState }) {
         <div className="sticky top-0 z-30 -mx-1 border-b border-border bg-background px-1 pb-3 pt-2 shadow-[0_10px_20px_-10px_rgba(0,0,0,0.9)]">
           <div className="grid gap-4">
             <BudgetBars state={state} className="grid gap-3 sm:grid-cols-2" />
-            <Cart state={state} onRemove={remove} />
+            <Cart
+              state={state}
+              onRemove={remove}
+              onRemoveStack={removeStack}
+              onQty={changeQty}
+            />
           </div>
 
           <FashionWarning state={state} />

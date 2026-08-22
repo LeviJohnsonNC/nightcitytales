@@ -18,7 +18,6 @@ import {
   getCyberware,
   isFashionItem,
   itemName,
-  lineCost,
   loadoutHumanity,
   removeLine,
   type BudgetId,
