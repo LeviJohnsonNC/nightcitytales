@@ -3,7 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { AMMUNITION, ARMOR, CATALOG_PENDING, GEAR, WEAPONS, type ArmorLocation } from "@/engine";
+import {
+  AMMUNITION,
+  ARMOR,
+  CATALOG_PENDING,
+  GEAR,
+  WEAPONS,
+  ammoTypeOptions,
+  ammoUnitFor,
+  ammoVariantLabel,
+  type AmmoType,
+  type ArmorLocation,
+} from "@/engine";
 import { BudgetBars, Cart, PurchaseError, defaultBudgetFor, eb, useLoadoutActions } from "./market";
 import { ItemInfo } from "./ItemInfo";
 import { ITEM_FLAVOR, VARIANT_FLAVOR } from "./itemFlavor";
@@ -236,6 +247,7 @@ function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
 function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
+  const [type, setType] = useState<Record<string, AmmoType>>({});
   const rows = byName(AMMUNITION.filter((a) => matches(a.name, query)));
   if (rows.length === 0)
     return (
@@ -247,16 +259,42 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
     <div className="divide-y divide-hairline border border-hairline bg-surface">
       {rows.map((a) => {
         const n = qty[a.id] ?? 1;
+        const options = ammoTypeOptions(a);
+        const chosen = type[a.id] ?? options[0]!;
         return (
           <div key={a.id} className="flex items-start justify-between gap-4 p-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-text">
-                  {a.name} <span className="text-text-dim">({a.unit})</span>
+                  {a.name} <span className="text-text-dim">({ammoUnitFor(chosen)})</span>
                 </p>
                 <ItemInfo kind="ammunition" item={a} />
               </div>
-              <p className="mt-1 text-xs text-text-dim">{a.types.join(" · ")}</p>
+              {options.length > 1 ? (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-dim">
+                    Pick one
+                  </span>
+                  {options.map((o) => (
+                    <button
+                      key={o}
+                      type="button"
+                      aria-pressed={chosen === o}
+                      onClick={() => setType((p) => ({ ...p, [a.id]: o }))}
+                      className={cn(
+                        "border px-2 py-0.5 font-mono text-[11px] tracking-wide transition-colors",
+                        chosen === o
+                          ? "border-ember bg-ember/10 text-ember"
+                          : "border-hairline text-text-muted hover:border-ember",
+                      )}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-text-dim">{chosen}</p>
+              )}
               <Blurb id={a.id} text={a.notes} />
             </div>
             <div className="flex shrink-0 items-center gap-3">
@@ -264,12 +302,13 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
               <span className="font-mono text-sm tabular-nums text-ember">{eb(a.cost * n)}</span>
               <Button
                 size="sm"
-                aria-label={`Buy ${a.name}`}
+                aria-label={`Buy ${a.name} (${chosen})`}
                 onClick={() =>
                   buy({
                     kind: "ammunition",
                     itemId: a.id,
                     qty: n,
+                    variant: ammoVariantLabel(a, chosen),
                     budget: defaultBudgetFor("ammunition", a.id, state),
                   })
                 }
@@ -283,6 +322,7 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
     </div>
   );
 }
+
 
 function GearTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
