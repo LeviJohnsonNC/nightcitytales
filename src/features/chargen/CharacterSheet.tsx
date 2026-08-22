@@ -583,16 +583,22 @@ export function CharacterSheet({
                   <ul className="mt-1 space-y-1 text-sm">
                     {location.installs.map((install) => (
                       <li key={install.lineId}>
-                        <span className="text-text">{install.item.name}</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="text-text">{install.item.name}</span>
+                          <ItemInfo kind="cyberware" item={install.item as never} />
+                        </span>
                         {install.slots !== null && (
                           <span className="num ml-2 font-mono text-[11px] text-text-dim">
                             {install.slotsUsed}/{install.slots} slots
                           </span>
                         )}
                         {install.options.length > 0 && (
-                          <ul className="ml-4 list-disc text-text-muted">
+                          <ul className="ml-4 space-y-1 text-text-muted">
                             {install.options.map((option) => (
-                              <li key={option.lineId}>{option.item.name}</li>
+                              <li key={option.lineId} className="flex items-center gap-1.5">
+                                <span>{option.item.name}</span>
+                                <ItemInfo kind="cyberware" item={option.item as never} />
+                              </li>
                             ))}
                           </ul>
                         )}
