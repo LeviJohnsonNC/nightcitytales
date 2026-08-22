@@ -278,7 +278,16 @@ function HousingCard({ state }: { state: ChargenState }) {
         </p>
       ) : null}
 
-      <p className="mt-3 text-sm text-text-muted">{LIFESTYLE_FAILURE_NOTE}</p>
+      <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lifestyle Failure</DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {LIFESTYLE_FAILURE_NOTE}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
