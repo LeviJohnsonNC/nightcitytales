@@ -192,6 +192,8 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
     selfDescription: "",
     portrait: full.character.portrait_id,
     portraitPath: (full.character as { portrait_path?: string | null }).portrait_path ?? null,
+    portraitTakes: [],
+    portraitGenerations: 0,
     stats: statsFrom(full),
     statRolls: { row: null, rows: {} },
     skills: full.skills.map((row) => ({
