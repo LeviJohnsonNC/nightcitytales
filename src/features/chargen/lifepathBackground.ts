@@ -2,16 +2,10 @@
  * Background generation for the Lifepath step.
  *
  * The player's structured Lifepath is the source of truth. This module turns it
- * into (a) a clean input payload, (b) the prompt we recommend sending to the
- * model, and (c) a text draft.
+ * into (a) a clean input payload, (b) the prompt, and (c) the model call.
  *
- * ┌─────────────────────────────────────────────────────────────────────────┐
- * │ SWAP POINT: `generateBackground` is currently a STUB that stitches the    │
- * │ facts into readable prose locally, with a simulated delay. Replace ONLY   │
- * │ the body of `generateBackground` with a real model call. Keep the         │
- * │ signature `(input: BackgroundInput) => Promise<string>` and the UI needs  │
- * │ no changes. Use `buildBackgroundPrompt(input)` for the system/user text.  │
- * └─────────────────────────────────────────────────────────────────────────┘
+ * The model call runs server-side via `generateBackgroundFn`, so LOVABLE_API_KEY
+ * never reaches the browser. House voice comes from `@/lib/prose-style`.
  */
 import {
   getLifepathTable,
@@ -19,9 +13,11 @@ import {
   getRoleLifepathTable,
   isRoleTableRevealed,
 } from "@/engine";
+import { generateBackgroundFn } from "@/lib/background.functions";
 import { withHouseStyle } from "@/lib/prose-style";
 import { SINGLE_LIFEPATH_TABLES, displayValue, type GeneralLifepath } from "./lifepathState";
 import type { RoleLifepath } from "./roleLifepathState";
+
 
 export type BackgroundEnemy = {
   who: string;
