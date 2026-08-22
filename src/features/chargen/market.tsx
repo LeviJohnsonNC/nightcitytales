@@ -103,6 +103,8 @@ export function BudgetBars({ state, className }: { state: ChargenState; classNam
           <div
             key={b.id}
             className={`border p-4 ${
+              budgets.length === 1 ? "col-span-full" : ""
+            } ${
               b.unspentKept ? "border-hairline bg-surface" : "border-danger/60 bg-danger/5"
             }`}
           >
