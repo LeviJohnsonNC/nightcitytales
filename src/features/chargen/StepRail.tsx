@@ -17,10 +17,12 @@ const STATUS_DOT: Record<StepStatus, string> = {
 };
 
 export function StepRail({
+  steps,
   current,
   statuses,
   onSelect,
 }: {
+  steps: StepDefinition[];
   current: ChargenStep;
   statuses: Record<ChargenStep, StepStatus>;
   onSelect: (step: ChargenStep) => void;
@@ -31,7 +33,7 @@ export function StepRail({
         Build sequence
       </p>
       <ol className="space-y-1">
-        {CHARGEN_STEPS.map((step) => {
+        {steps.map((step) => {
           const status = statuses[step.id];
           const active = step.id === current;
           return (
