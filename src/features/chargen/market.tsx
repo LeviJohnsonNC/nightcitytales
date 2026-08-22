@@ -154,7 +154,40 @@ export function FashionWarning({ state }: { state: ChargenState }) {
   );
 }
 
-const CART_PAGE_SIZE = 5;
+const CART_PAGE_SIZE = 10;
+const CART_COLUMN_SIZE = CART_PAGE_SIZE / 2;
+
+type CartLineShape = ChargenState["loadout"]["lines"][number];
+
+function CartLine({ line, onRemove }: { line: CartLineShape; onRemove: (id: string) => void }) {
+  return (
+    <li className="flex items-center justify-between gap-3 px-4 py-2">
+      <div className="min-w-0">
+        <p className="truncate text-sm text-text">
+          {line.variant ?? itemName(line.kind, line.itemId)}
+          {line.variant ? (
+            <span className="ml-1 text-text-dim">({itemName(line.kind, line.itemId)})</span>
+          ) : null}
+          {line.qty > 1 ? ` ×${line.qty}` : ""}
+          {line.location ? (
+            <span className="ml-2 font-mono text-[11px] uppercase text-text-dim">
+              {line.location}
+            </span>
+          ) : null}
+        </p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim">
+          {line.budget === "fashion" ? "fashion money" : "gear money"} · {line.kind}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        <span className="font-mono text-sm tabular-nums text-text-muted">{eb(lineCost(line))}</span>
+        <Button size="sm" variant="ghost" onClick={() => onRemove(line.lineId)}>
+          Remove
+        </Button>
+      </div>
+    </li>
+  );
+}
 
 export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: string) => void }) {
   const lines = state.loadout.lines;
@@ -167,6 +200,9 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
   if (!state.method) return null;
   const kept = eurobucksKept(state.method, state.loadout);
   const visible = lines.slice(current * CART_PAGE_SIZE, current * CART_PAGE_SIZE + CART_PAGE_SIZE);
+  // Column-major fill: read top-to-bottom on the left, then the right column.
+  const left = visible.slice(0, CART_COLUMN_SIZE);
+  const right = visible.slice(CART_COLUMN_SIZE);
   return (
     <div className="border border-hairline bg-surface">
       <p className="border-b border-hairline px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
@@ -175,37 +211,22 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
       {lines.length === 0 ? (
         <p className="px-4 py-6 text-sm text-text-muted">Nothing bought yet.</p>
       ) : (
-        <ul className="divide-y divide-hairline">
-          {visible.map((line) => (
-            <li key={line.lineId} className="flex items-center justify-between gap-3 px-4 py-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm text-text">
-                  {line.variant ?? itemName(line.kind, line.itemId)}
-                  {line.variant ? (
-                    <span className="ml-1 text-text-dim">({itemName(line.kind, line.itemId)})</span>
-                  ) : null}
-                  {line.qty > 1 ? ` ×${line.qty}` : ""}
-                  {line.location ? (
-                    <span className="ml-2 font-mono text-[11px] uppercase text-text-dim">
-                      {line.location}
-                    </span>
-                  ) : null}
-                </p>
-                <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim">
-                  {line.budget === "fashion" ? "fashion money" : "gear money"} · {line.kind}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-sm tabular-nums text-text-muted">
-                  {eb(lineCost(line))}
-                </span>
-                <Button size="sm" variant="ghost" onClick={() => onRemove(line.lineId)}>
-                  Remove
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="max-h-[45vh] overflow-y-auto lg:grid lg:grid-cols-2">
+          <ul className="divide-y divide-hairline lg:border-r lg:border-hairline">
+            {left.map((line) => (
+              <CartLine key={line.lineId} line={line} onRemove={onRemove} />
+            ))}
+          </ul>
+          {right.length > 0 ? (
+            <ul className="divide-y divide-hairline border-t border-hairline lg:border-t-0">
+              {right.map((line) => (
+                <CartLine key={line.lineId} line={line} onRemove={onRemove} />
+              ))}
+            </ul>
+          ) : (
+            <div className="hidden lg:block" />
+          )}
+        </div>
       )}
       {pageCount > 1 ? (
         <div className="flex items-center justify-between gap-3 border-t border-hairline px-4 py-2">
@@ -236,6 +257,7 @@ export function Cart({ state, onRemove }: { state: ChargenState; onRemove: (id: 
     </div>
   );
 }
+
 
 export function PurchaseError({ error }: { error: string | null }) {
   if (!error) return null;

@@ -427,8 +427,8 @@ export function GearPanel({ state }: { state: ChargenState }) {
         {/* Sticky rail: budget + cart + list tabs travel together, fully opaque so
             the lists scroll underneath instead of showing through. */}
         <div className="sticky top-0 z-30 -mx-1 border-b border-border bg-background px-1 pb-3 pt-2 shadow-[0_10px_20px_-10px_rgba(0,0,0,0.9)]">
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            <BudgetBars state={state} className="grid gap-3" />
+          <div className="grid gap-4">
+            <BudgetBars state={state} className="grid gap-3 sm:grid-cols-2" />
             <Cart state={state} onRemove={remove} />
           </div>
 
