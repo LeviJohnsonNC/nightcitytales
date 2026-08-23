@@ -43,10 +43,6 @@ const ALIASES: Record<string, string> = {
   intimidate: "interrogation",
   haggle: "trading",
   barter: "trading",
-  hack: "interface",
-  netrun: "interface",
-  netrunning: "interface",
-  computer: "interface",
   pistol: "handgun",
   sidearm: "handgun",
   gun: "handgun",
@@ -69,8 +65,10 @@ const ALIASES: Record<string, string> = {
   "street knowledge": "streetwise",
   "local knowledge": "local_expert",
   research: "library_search",
+  "electronics security": "electronics_security_tech",
+  "lock pick": "pick_lock",
+  lockpicking: "pick_lock",
   investigate: "library_search",
-  disguise: "wardrobe_style",
 };
 
 /**
