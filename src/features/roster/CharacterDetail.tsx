@@ -66,9 +66,7 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
         </div>
       </header>
 
-      {start.error && (
-        <p className="text-sm text-destructive">{(start.error as Error).message}</p>
-      )}
+      {start.error && <p className="text-sm text-destructive">{(start.error as Error).message}</p>}
       {edit.error && <p className="text-sm text-destructive">{(edit.error as Error).message}</p>}
       <p className="no-print text-sm text-muted-foreground">
         Editing opens the wizard on a fresh draft copied from this character, so the saved sheet
