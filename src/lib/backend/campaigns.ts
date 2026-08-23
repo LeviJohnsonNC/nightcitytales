@@ -73,6 +73,23 @@ export async function updateCampaign(id: string, patch: CampaignUpdate): Promise
   );
 }
 
+/** Write the player's live HP / wound state back after combat. */
+export async function updateCampaignVitals(
+  campaignId: string,
+  patch: CampaignVitalsUpdate,
+): Promise<CampaignVitals> {
+  return unwrap(
+    await backendClient
+      .from("campaign_vitals")
+      .update(patch)
+      .eq("campaign_id", campaignId)
+      .select("*")
+      .single(),
+  );
+}
+
+
+
 /**
  * The payload the start_campaign database function accepts. It creates the
  * campaign, snapshots live vitals from the character, copies inventory, opens
