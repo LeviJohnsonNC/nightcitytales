@@ -11,6 +11,7 @@ import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/g
 import {
   advance,
   availableExits,
+  awardImprovementPoints,
   beginTurn,
   currentBeat,
   getBeat,
@@ -18,6 +19,8 @@ import {
   failMission,
   getSkill,
   missionPayout,
+  type IpAward,
+  type IpPlaystyle,
   performAttack,
   resolveSkillId,
   skillCheckForCharacter,
@@ -31,6 +34,7 @@ import {
 } from "@/engine";
 
 import {
+  addImprovementPoints,
   appendCampaignEvent,
   getCampaign,
   getCharacter,
