@@ -15,11 +15,13 @@ import {
   getBeat,
   getMission,
   getSkill,
+  performAttack,
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
   type Mission,
   type MissionRuntime,
+  type PerformAttackResult,
   type SkillCheckResult,
 } from "@/engine";
 import {
@@ -27,6 +29,7 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  updateCampaignVitals,
   type Campaign,
   type CampaignEvent,
   type CampaignNpc,
@@ -37,9 +40,22 @@ import {
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { logSkillCheck } from "@/features/campaign/skillCheckLog";
+import { logAttack } from "@/features/campaign/combatLog";
+import {
+  loadLiveEncounter,
+  saveLiveEncounter,
+  type LiveEncounter,
+} from "@/features/campaign/encounterState";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
 import { gmTurnFn } from "@/features/gm/gmTurn.server";
 import { actorFor, characterSummary, npcSummaries, recentEventLines } from "./playModel";
+import { beginEncounter, describeAttack, runNpcTurns } from "./combatFlow";
+import {
+  findTarget,
+  pendingAttackFrom,
+  type AttackOption,
+  type PendingAttack,
+} from "./attackPrompt";
 import {
   dvBandName,
   pendingCheckFrom,
@@ -47,6 +63,7 @@ import {
   snapToPublishedDv,
   type PendingCheck,
 } from "./checkPrompt";
+
 
 export type PlayBundle = {
   campaign: Campaign;
