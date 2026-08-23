@@ -15,7 +15,6 @@ import type {
   Json,
 } from "./types";
 
-
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
   return res.data as T;
@@ -87,8 +86,6 @@ export async function updateCampaignVitals(
       .single(),
   );
 }
-
-
 
 /**
  * The payload the start_campaign database function accepts. It creates the

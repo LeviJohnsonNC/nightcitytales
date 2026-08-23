@@ -22,7 +22,12 @@ import {
   type LiveEncounter,
 } from "@/features/campaign/encounterState";
 import type { GmEnemy } from "@/features/gm/gmResponse";
-import { appendCampaignEvent, type CampaignVitals, type FullCharacter, type Json } from "@/lib/backend";
+import {
+  appendCampaignEvent,
+  type CampaignVitals,
+  type FullCharacter,
+  type Json,
+} from "@/lib/backend";
 import {
   hostileCombatant,
   playerCombatant as buildPlayerCombatant,
@@ -109,9 +114,7 @@ export async function runNpcTurns(
         died: begun.died,
         beatId,
       });
-      lines.push(
-        `${actor.name} Death Save: ${begun.died ? "failed and is dead" : "survived"}.`,
-      );
+      lines.push(`${actor.name} Death Save: ${begun.died ? "failed and is dead" : "survived"}.`);
     }
     const live_actor = state.combatants[actor.id];
     if (!live_actor || live_actor.defeated) continue;

@@ -377,13 +377,9 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         <InputBar
           onSend={play.submit}
           busy={
-            play.busy ||
-            play.opening ||
-            Boolean(play.pendingCheck) ||
-            Boolean(play.pendingAttack)
+            play.busy || play.opening || Boolean(play.pendingCheck) || Boolean(play.pendingAttack)
           }
         />
-
       </div>
       <aside className="space-y-4">
         <CharacterPanel bundle={bundle} />

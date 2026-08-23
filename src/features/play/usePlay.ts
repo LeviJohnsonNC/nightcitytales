@@ -64,7 +64,6 @@ import {
   type PendingCheck,
 } from "./checkPrompt";
 
-
 export type PlayBundle = {
   campaign: Campaign;
   vitals: CampaignVitals;
@@ -113,7 +112,6 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     encounter,
   };
 }
-
 
 async function narrate(
   bundle: PlayBundle,
@@ -233,7 +231,6 @@ async function narrate(
     }
   }
 
-
   for (const delta of gm.stateDeltas) {
     if (delta.kind === "note") {
       await appendCampaignEvent({
@@ -341,8 +338,6 @@ export async function commitAttack(
   );
 }
 
-
-
 async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
   const campaignId = bundle.campaign.id;
@@ -443,7 +438,6 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
-
   // Open a fresh beat automatically, once, so the player never faces a blank scene.
   const opened = useRef<string | null>(null);
   const bundle = query.data;
@@ -468,7 +462,6 @@ export function usePlay(campaignId: string) {
   const pendingAttack = bundle
     ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
     : null;
-
 
   const retry = () => {
     if (!bundle) return;
@@ -542,14 +535,9 @@ export function usePlay(campaignId: string) {
     rolls: bundle ? rollHistory(bundle.events) : [],
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
-      turn.isPending ||
-      choose.isPending ||
-      open.isPending ||
-      check.isPending ||
-      combat.isPending,
+      turn.isPending || choose.isPending || open.isPending || check.isPending || combat.isPending,
     actionError,
     retry,
     canRetry: Boolean(actionError) && Boolean(bundle),
   };
 }
-

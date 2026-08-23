@@ -76,7 +76,14 @@ const live: LiveEncounter = {
     },
   },
   data: {
-    p: { key: "player", weaponName: "", damageDice: 0, rangeType: null, distance: 0, attackSkill: 0 },
+    p: {
+      key: "player",
+      weaponName: "",
+      damageDice: 0,
+      rangeType: null,
+      distance: 0,
+      attackSkill: 0,
+    },
     h: {
       key: "scav_1",
       weaponName: "sidearm",
@@ -112,7 +119,11 @@ describe("attackPrompt", () => {
 
   it("treats a resolved attack as no longer pending", () => {
     const events = [
-      event({ id: "b", type: "attack_prompt", data: { targetId: "scav_1", distance: 20 } as never }),
+      event({
+        id: "b",
+        type: "attack_prompt",
+        data: { targetId: "scav_1", distance: 20 } as never,
+      }),
       event({ id: "c", type: "attack" }),
     ];
     expect(pendingAttackFrom(events, character, live)).toBeNull();
@@ -120,7 +131,11 @@ describe("attackPrompt", () => {
 
   it("builds the option from the sheet and the printed Range DV table", () => {
     const events = [
-      event({ id: "b", type: "attack_prompt", data: { targetId: "scav_1", distance: 20 } as never }),
+      event({
+        id: "b",
+        type: "attack_prompt",
+        data: { targetId: "scav_1", distance: 20 } as never,
+      }),
     ];
     const pending = pendingAttackFrom(events, character, live)!;
     const option = attackOption(pending, weaponProfile("medium_pistol"), character);

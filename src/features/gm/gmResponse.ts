@@ -67,7 +67,6 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
 ]);
 export type GmProposedAction = z.infer<typeof GmProposedActionSchema>;
 
-
 /** A narrative state change to record (never a mechanical/dice change). */
 export const GmStateDeltaSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("set_flag"), flag: z.string() }),
@@ -152,8 +151,6 @@ function normalizeEnemies(raw: unknown): GmEnemy[] {
   return out;
 }
 
-
-
 /** Narrow the loose model output into the typed GM response the engine uses. */
 export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
   const proposedActions: GmProposedAction[] = [];
@@ -184,7 +181,6 @@ export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
           name: str(a["name"]) ?? "Firefight",
           enemies,
         });
-
     } else if (kind === "advance_beat") {
       const to = str(a["to"]) ?? str(a["beatId"]);
       if (to) proposedActions.push({ kind: "advance_beat", to });

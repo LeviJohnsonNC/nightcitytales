@@ -18,7 +18,6 @@ import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { weaponChoices } from "./encounterModel";
 import { statsRecord } from "./playModel";
 
-
 export type PendingAttack = {
   eventId: string;
   beatId: string | null;

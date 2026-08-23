@@ -60,9 +60,7 @@ export function CombatCard({
       <h3 className="text-lg font-bold leading-tight">
         {pending.attacker.name} <span className="text-muted-foreground">&rarr;</span>{" "}
         {pending.target.name}{" "}
-        <span className="text-sm font-normal text-muted-foreground">
-          at {pending.distance}m
-        </span>
+        <span className="text-sm font-normal text-muted-foreground">at {pending.distance}m</span>
       </h3>
       {pending.intent && <p className="text-sm italic text-muted-foreground">{pending.intent}</p>}
 
@@ -84,7 +82,9 @@ export function CombatCard({
                 onClick={() => setChosenId(o.weapon.itemId)}
                 title={o.gap ?? `${o.damageDice ?? "?"}d6 · DV ${o.dv ?? "?"}`}
                 className={`border px-3 py-1.5 text-left text-xs transition-colors disabled:opacity-40 ${
-                  active ? "border-neon-pink text-neon-pink" : "border-border/60 hover:border-accent"
+                  active
+                    ? "border-neon-pink text-neon-pink"
+                    : "border-border/60 hover:border-accent"
                 }`}
               >
                 <span className="block font-semibold">{o.weapon.name}</span>
