@@ -194,17 +194,6 @@ async function narrate(
   }
 }
 
-/**
- * Roll a pending check. The ENGINE rolls (skillCheckForCharacter); this records
- * the trace and then asks the GM to narrate the outcome it was handed.
- */
-export async function rollPendingCheck(
-  bundle: PlayBundle,
-  pending: PendingCheck,
-): Promise<SkillCheckResult> {
-  return skillCheckForCharacter(actorFor(bundle.character), pending.skillId, pending.dv);
-}
-
 /** Persist a rolled check and have the GM narrate the result, win or lose. */
 async function commitCheck(
   bundle: PlayBundle,
