@@ -376,9 +376,21 @@ export function usePlay(campaignId: string) {
       }
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
-    suggestions: bundle ? latestSuggestions(bundle) : [],
+    suggestions: pendingCheck ? [] : bundle ? latestSuggestions(bundle) : [],
+    /** The check waiting on the player's die, if any. */
+    pendingCheck,
+    /** Roll the pending check — the engine decides the number. */
+    rollCheck: (pending: PendingCheck) => {
+      if (!bundle) throw new Error("Still loading.");
+      return skillCheckForCharacter(actorFor(bundle.character), pending.skillId, pending.dv);
+    },
+    /** Record the rolled check and let the GM narrate the outcome. */
+    commitCheck: (pending: PendingCheck, result: SkillCheckResult) =>
+      check.mutate({ pending, result }),
+    checkBusy: check.isPending,
+    rolls: bundle ? rollHistory(bundle.events) : [],
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
-    busy: turn.isPending || choose.isPending || open.isPending,
+    busy: turn.isPending || choose.isPending || open.isPending || check.isPending,
     actionError,
     retry,
     canRetry: Boolean(actionError) && Boolean(bundle),
