@@ -307,7 +307,16 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
           readAloud={bundle.beat?.readAloud}
           busy={play.busy || play.opening}
         />
-        {play.actionError && <p className="text-sm text-destructive">{play.actionError.message}</p>}
+        {play.actionError && (
+          <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+            <p className="text-sm text-destructive">{play.actionError.message}</p>
+            {play.canRetry && (
+              <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
+                Retry
+              </Button>
+            )}
+          </div>
+        )}
         <SuggestionBar
           suggestions={play.suggestions}
           onPick={play.submit}
