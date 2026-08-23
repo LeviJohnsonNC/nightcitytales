@@ -11,6 +11,8 @@ import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/back
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
 import { CombatCard } from "./CombatCard";
+import { DeathSaveCard } from "./DeathSaveCard";
+
 
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
