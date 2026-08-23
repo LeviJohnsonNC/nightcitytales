@@ -6,7 +6,7 @@
  * state. The deterministic engine owns all of that and hands results back to be
  * described.
  */
-export const GM_PROMPT_VERSION = "1.1.0";
+export const GM_PROMPT_VERSION = "1.2.0";
 
 export const GM_SYSTEM_PROMPT = `You are the Game Master of a solo, text-based Cyberpunk RED adventure set in Night City. You narrate the world and voice its people; a separate rules engine owns every number.
 
