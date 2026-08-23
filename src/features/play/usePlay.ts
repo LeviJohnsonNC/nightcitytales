@@ -11,6 +11,7 @@ import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/g
 import {
   advance,
   availableExits,
+  beginTurn,
   currentBeat,
   getBeat,
   getMission,
@@ -19,11 +20,13 @@ import {
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
+  type BeginTurnResult,
   type Mission,
   type MissionRuntime,
   type PerformAttackResult,
   type SkillCheckResult,
 } from "@/engine";
+
 import {
   appendCampaignEvent,
   getCampaign,
@@ -40,7 +43,7 @@ import {
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { logSkillCheck } from "@/features/campaign/skillCheckLog";
-import { logAttack } from "@/features/campaign/combatLog";
+import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
 import {
   loadLiveEncounter,
   saveLiveEncounter,
@@ -63,6 +66,12 @@ import {
   snapToPublishedDv,
   type PendingCheck,
 } from "./checkPrompt";
+import {
+  deathSaveOwed,
+  pendingDeathSaveFrom,
+  type PendingDeathSave,
+} from "./deathSavePrompt";
+
 
 export type PlayBundle = {
   campaign: Campaign;
@@ -317,12 +326,11 @@ export async function commitAttack(
     await updateCampaignVitals(campaignId, { hp_current: player.hp });
   }
 
-  const status =
-    live.state.status === "friendlies_won"
-      ? " The hostiles are all down; the fight is over."
-      : live.state.status === "friendlies_lost"
-        ? " The player is down; the fight is over."
-        : "";
+  const status = await closeOutFight(campaignId, beatId, live);
+
+  // A Mortally Wounded player owes a Death Save before they can act again.
+  const owed = deathSaveOwed(live);
+  if (owed) await promptDeathSave(campaignId, beatId, owed.name);
 
   const fresh: PlayBundle = {
     ...bundle,
@@ -332,11 +340,94 @@ export async function commitAttack(
   await narrate(
     fresh,
     `(ENGINE: combat is RESOLVED for this exchange. ${lines.join(" ")}${status} Narrate exactly these results in short kinetic beats. Do not change a hit, a miss, a damage number, or who is standing. ${
-      status ? "Return to the scene." : "Then propose the player's next attack or action."
+      status
+        ? "Return to the scene."
+        : owed
+          ? "The player is Mortally Wounded and owes a Death Save before acting: end on that breath, and propose nothing."
+          : "Then propose the player's next attack or action."
     })`,
     { logInput: false },
   );
 }
+
+/** Announce a finished fight in the ledger, and describe it for the GM. */
+async function closeOutFight(
+  campaignId: string,
+  beatId: string | null,
+  live: LiveEncounter,
+): Promise<string> {
+  if (live.state.status === "active") return "";
+  const won = live.state.status === "friendlies_won";
+  const summary = won
+    ? "The hostiles are all down; the fight is over."
+    : "The player is down; the fight is over.";
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "encounter_ended",
+    summary,
+    data: { encounterId: live.id, status: live.state.status } as unknown as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
+  });
+  return ` ${summary}`;
+}
+
+/** Post the prompt the DeathSaveCard renders. */
+async function promptDeathSave(
+  campaignId: string,
+  beatId: string | null,
+  name: string,
+): Promise<void> {
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "death_save_prompt",
+    summary: `${name} must roll a Death Save`,
+    data: {} as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
+  });
+}
+
+/**
+ * Persist the player's rolled Death Save. The engine already applied it; this
+ * writes it down and hands the GM the exact outcome to narrate.
+ */
+export async function commitDeathSave(
+  bundle: PlayBundle,
+  pending: PendingDeathSave,
+  result: BeginTurnResult,
+): Promise<void> {
+  if (!bundle.encounter) throw new Error("There is no encounter to save against.");
+  const campaignId = bundle.campaign.id;
+  const beatId = pending.beatId;
+  const save = result.deathSave;
+  if (!save) throw new Error("The engine did not roll a Death Save.");
+
+  const live: LiveEncounter = { ...bundle.encounter, state: result.state };
+  await saveLiveEncounter(live);
+  await logDeathSave(campaignId, save, {
+    combatantName: pending.combatant.name,
+    died: result.died,
+    beatId,
+  });
+
+  const status = await closeOutFight(campaignId, beatId, live);
+  const line = result.died
+    ? `${pending.combatant.name} failed the Death Save and is DEAD (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}${save.autoFail ? ", a natural 10" : ""}).`
+    : `${pending.combatant.name} survived the Death Save (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}); they are still Mortally Wounded and the next save is at +${save.penaltyAfter}.`;
+
+  const fresh: PlayBundle = {
+    ...bundle,
+    events: await listCampaignEvents(campaignId),
+    encounter: live,
+  };
+  await narrate(
+    fresh,
+    `(ENGINE: the Death Save is RESOLVED. ${line}${status} Narrate exactly this. Do not revive them, do not soften it, do not re-roll it. ${
+      result.died ? "Close the scene on that death." : "End on a decision."
+    })`,
+    { logInput: false },
+  );
+}
+
 
 async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
@@ -386,6 +477,22 @@ export function latestSuggestions(bundle: PlayBundle): GmSuggestedAction[] {
   }
   return [];
 }
+
+/**
+ * Which unresolved prompt is the live one. A stale check from an earlier turn
+ * must never share the screen with a fresh attack: the newest ledger row wins.
+ */
+export function newestPrompt(
+  events: CampaignEvent[],
+  check: { eventId: string } | null,
+  attack: { eventId: string } | null,
+): "check" | "attack" | null {
+  if (!check) return attack ? "attack" : null;
+  if (!attack) return "check";
+  const index = (id: string) => events.findIndex((e) => e.id === id);
+  return index(attack.eventId) >= index(check.eventId) ? "attack" : "check";
+}
+
 
 export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
@@ -438,6 +545,14 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const death = useMutation({
+    mutationFn: ({ pending, result }: { pending: PendingDeathSave; result: BeginTurnResult }) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitDeathSave(query.data, pending, result);
+    },
+    onSuccess: invalidate,
+  });
+
   // Open a fresh beat automatically, once, so the player never faces a blank scene.
   const opened = useRef<string | null>(null);
   const bundle = query.data;
@@ -456,12 +571,22 @@ export function usePlay(campaignId: string) {
     (choose.error as Error | null) ??
     (open.error as Error | null) ??
     (check.error as Error | null) ??
-    (combat.error as Error | null);
+    (combat.error as Error | null) ??
+    (death.error as Error | null);
 
-  const pendingCheck = bundle ? pendingCheckFrom(bundle.events, bundle.character) : null;
-  const pendingAttack = bundle
-    ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
-    : null;
+  // Exactly one card is ever live: a Death Save outranks everything (you cannot
+  // act until you have made it), then whichever prompt the GM posted last.
+  const pendingDeathSave = bundle ? pendingDeathSaveFrom(bundle.events, bundle.encounter) : null;
+  const checkCandidate =
+    bundle && !pendingDeathSave ? pendingCheckFrom(bundle.events, bundle.character) : null;
+  const attackCandidate =
+    bundle && !pendingDeathSave
+      ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
+      : null;
+  const newest = bundle ? newestPrompt(bundle.events, checkCandidate, attackCandidate) : null;
+  const pendingCheck = newest === "check" ? checkCandidate : null;
+  const pendingAttack = newest === "attack" ? attackCandidate : null;
+
 
   const retry = () => {
     if (!bundle) return;
@@ -497,7 +622,13 @@ export function usePlay(campaignId: string) {
       }
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
-    suggestions: pendingCheck || pendingAttack ? [] : bundle ? latestSuggestions(bundle) : [],
+    suggestions:
+      pendingCheck || pendingAttack || pendingDeathSave
+        ? []
+        : bundle
+          ? latestSuggestions(bundle)
+          : [],
+
     /** The check waiting on the player's die, if any. */
     pendingCheck,
     /** Roll the pending check — the engine decides the number. */
@@ -532,12 +663,29 @@ export function usePlay(campaignId: string) {
     commitAttack: (pending: PendingAttack, option: AttackOption, result: PerformAttackResult) =>
       combat.mutate({ pending, option, result }),
     combatBusy: combat.isPending,
+    /** The Death Save the player owes before acting, if any. */
+    pendingDeathSave,
+    /** Roll the Death Save — the engine rolls it and applies the outcome. */
+    rollDeathSave: (): BeginTurnResult => {
+      if (!bundle?.encounter) throw new Error("There is no encounter to save against.");
+      return beginTurn(bundle.encounter.state);
+    },
+    /** Record the rolled Death Save and let the GM narrate it. */
+    commitDeathSave: (pending: PendingDeathSave, result: BeginTurnResult) =>
+      death.mutate({ pending, result }),
+    deathBusy: death.isPending,
     rolls: bundle ? rollHistory(bundle.events) : [],
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
-      turn.isPending || choose.isPending || open.isPending || check.isPending || combat.isPending,
+      turn.isPending ||
+      choose.isPending ||
+      open.isPending ||
+      check.isPending ||
+      combat.isPending ||
+      death.isPending,
     actionError,
     retry,
     canRetry: Boolean(actionError) && Boolean(bundle),
   };
+
 }

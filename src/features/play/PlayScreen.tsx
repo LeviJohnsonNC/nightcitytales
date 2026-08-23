@@ -11,6 +11,8 @@ import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/back
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
 import { CombatCard } from "./CombatCard";
+import { DeathSaveCard } from "./DeathSaveCard";
+
 
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
@@ -369,6 +371,15 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             busy={play.combatBusy}
           />
         )}
+        {play.pendingDeathSave && (
+          <DeathSaveCard
+            key={play.pendingDeathSave.eventId}
+            pending={play.pendingDeathSave}
+            roll={() => play.rollDeathSave()}
+            onSettled={(result) => play.commitDeathSave(play.pendingDeathSave!, result)}
+            busy={play.deathBusy}
+          />
+        )}
         <SuggestionBar
           suggestions={play.suggestions}
           onPick={play.submit}
@@ -377,9 +388,14 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         <InputBar
           onSend={play.submit}
           busy={
-            play.busy || play.opening || Boolean(play.pendingCheck) || Boolean(play.pendingAttack)
+            play.busy ||
+            play.opening ||
+            Boolean(play.pendingCheck) ||
+            Boolean(play.pendingAttack) ||
+            Boolean(play.pendingDeathSave)
           }
         />
+
       </div>
       <aside className="space-y-4">
         <CharacterPanel bundle={bundle} />
