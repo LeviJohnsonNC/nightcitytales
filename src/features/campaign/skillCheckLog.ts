@@ -20,6 +20,11 @@ export type SkillCheckContext = {
   beatId?: string | null;
   /** The player's stated intent, e.g. "shoot the guard". */
   intent?: string;
+  /**
+   * The check_prompt row this roll answers. Recorded so more than one prompt can
+   * be outstanding at once and each still be matched to the die that settled it.
+   */
+  promptEventId?: string;
 };
 
 /** Build the immutable ledger row for a resolved skill check. */
@@ -36,6 +41,7 @@ export function skillCheckEvent(
   if (context.skillId) data["skill_id"] = context.skillId;
   if (context.skillName) data["skill_name"] = context.skillName;
   if (context.intent) data["intent"] = context.intent;
+  if (context.promptEventId) data["prompt_event_id"] = context.promptEventId;
 
   return {
     campaign_id: campaignId,

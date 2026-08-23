@@ -39,8 +39,17 @@ export type GmContextInput = {
   npcsPresent: GmNpcSummary[];
   /** Rolling summary lines derived from the event ledger. */
   recentEvents: string[];
+  /**
+   * Player turns since dice last hit the table (see turnsSinceLastRoll). Rendered
+   * as an explicit nudge once the table has gone cold, so "ROLL FOR IT" does not
+   * rely on the system prompt alone surviving a long context.
+   */
+  turnsSinceLastRoll?: number;
   clock?: string;
 };
+
+/** Turns without a roll before the context block starts calling it out. */
+export const DRY_STREAK_THRESHOLD = 3;
 
 export type GmContext = GmContextInput;
 
@@ -128,6 +137,16 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   if (context.recentEvents.length) {
     parts.push("", "== RECENT ==");
     for (const e of context.recentEvents) parts.push(`- ${e}`);
+  }
+
+  const dry = context.turnsSinceLastRoll;
+  if (dry !== undefined && dry >= DRY_STREAK_THRESHOLD) {
+    parts.push(
+      "",
+      "== DICE ==",
+      `The player has not rolled in ${dry} turns. That is too long. Unless they are ` +
+        "purely moving or talking, find the check in what they are about to do and propose it.",
+    );
   }
 
   parts.push("", "== PLAYER INPUT ==", playerInput);

@@ -85,3 +85,25 @@ export function recentEventLines(events: CampaignEvent[], limit = 8): string[] {
     .map((e) => e.summary ?? e.type)
     .filter((line): line is string => Boolean(line));
 }
+
+/** Ledger event types that mean dice actually hit the table. */
+const ROLL_EVENT_TYPES = new Set(["skill_check", "attack", "death_save"]);
+
+/**
+ * How many player turns have gone by without the player rolling anything.
+ *
+ * The GM decides when a check is called for, and a long narrated stretch with no
+ * dice is the failure mode this measures: it counts the player_input events
+ * since the last roll event, so the context block can tell the model the table
+ * has gone cold. Zero means the player rolled on their most recent turn.
+ */
+export function turnsSinceLastRoll(events: CampaignEvent[]): number {
+  let turns = 0;
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i];
+    if (!event) continue;
+    if (ROLL_EVENT_TYPES.has(event.type)) return turns;
+    if (event.type === "player_input") turns += 1;
+  }
+  return turns;
+}

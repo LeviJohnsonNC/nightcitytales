@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { NIGHT_AT_THE_OPERA, getBeat } from "@/engine";
-import { buildGmContext, renderGmUserPrompt, type GmCharacterSummary } from "../gmContext";
+import {
+  buildGmContext,
+  renderGmUserPrompt,
+  DRY_STREAK_THRESHOLD,
+  type GmCharacterSummary,
+} from "../gmContext";
 
 const character: GmCharacterSummary = {
   name: "Vincent Kang",
@@ -40,6 +45,40 @@ describe("renderGmUserPrompt", () => {
     expect(prompt).toContain("[empty_office_hours]");
     expect(prompt).toContain("== PLAYER INPUT ==");
     expect(prompt).toContain("the missing women");
+  });
+
+  it("says nothing about dice while the player is still rolling", () => {
+    const warm = buildGmContext({
+      mission,
+      beat,
+      availableExits: [],
+      character,
+      objectives: [],
+      npcsPresent: [],
+      recentEvents: [],
+      turnsSinceLastRoll: DRY_STREAK_THRESHOLD - 1,
+    });
+    expect(renderGmUserPrompt(warm, "keep walking")).not.toContain("== DICE ==");
+  });
+
+  it("calls out a dry streak once it crosses the threshold", () => {
+    const cold = buildGmContext({
+      mission,
+      beat,
+      availableExits: [],
+      character,
+      objectives: [],
+      npcsPresent: [],
+      recentEvents: [],
+      turnsSinceLastRoll: DRY_STREAK_THRESHOLD,
+    });
+    const prompt = renderGmUserPrompt(cold, "keep walking");
+    expect(prompt).toContain("== DICE ==");
+    expect(prompt).toContain(`not rolled in ${DRY_STREAK_THRESHOLD} turns`);
+  });
+
+  it("omits the dice section entirely when the streak is not supplied", () => {
+    expect(renderGmUserPrompt(context, "look around")).not.toContain("== DICE ==");
   });
 
   it("omits sections that are empty", () => {
