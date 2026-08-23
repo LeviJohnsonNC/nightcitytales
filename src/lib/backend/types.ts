@@ -62,6 +62,8 @@ export type CampaignUpdate = Update<"campaigns">;
 
 export type CampaignVitals = Row<"campaign_vitals">;
 export type CampaignVitalsInsert = Insert<"campaign_vitals">;
+export type CampaignVitalsUpdate = Update<"campaign_vitals">;
+
 
 export type CampaignInventoryItem = Row<"campaign_inventory">;
 export type CampaignInventoryInsert = Insert<"campaign_inventory">;
