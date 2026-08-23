@@ -17,6 +17,7 @@ import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedRosterRouteImport } from './routes/_authenticated/roster'
 import { Route as ApiGeneratePortraitRouteImport } from './routes/api/generate-portrait'
 import { Route as AuthenticatedCharacterIdRouteImport } from './routes/_authenticated/character.$id'
+import { Route as AuthenticatedPlayIdRouteImport } from './routes/_authenticated/play.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const AuthenticatedCharacterIdRoute =
     path: '/character/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPlayIdRoute = AuthenticatedPlayIdRouteImport.update({
+  id: '/play/$id',
+  path: '/play/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/roster': typeof AuthenticatedRosterRoute
   '/api/generate-portrait': typeof ApiGeneratePortraitRoute
   '/character/$id': typeof AuthenticatedCharacterIdRoute
+  '/play/$id': typeof AuthenticatedPlayIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/roster': typeof AuthenticatedRosterRoute
   '/api/generate-portrait': typeof ApiGeneratePortraitRoute
   '/character/$id': typeof AuthenticatedCharacterIdRoute
+  '/play/$id': typeof AuthenticatedPlayIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/roster': typeof AuthenticatedRosterRoute
   '/api/generate-portrait': typeof ApiGeneratePortraitRoute
   '/_authenticated/character/$id': typeof AuthenticatedCharacterIdRoute
+  '/_authenticated/play/$id': typeof AuthenticatedPlayIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/roster'
     | '/api/generate-portrait'
     | '/character/$id'
+    | '/play/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/roster'
     | '/api/generate-portrait'
     | '/character/$id'
+    | '/play/$id'
   id:
     | '__root__'
     | '/'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/_authenticated/roster'
     | '/api/generate-portrait'
     | '/_authenticated/character/$id'
+    | '/_authenticated/play/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -185,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCharacterIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/play/$id': {
+      id: '/_authenticated/play/$id'
+      path: '/play/$id'
+      fullPath: '/play/$id'
+      preLoaderRoute: typeof AuthenticatedPlayIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -192,12 +211,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedRosterRoute: typeof AuthenticatedRosterRoute
   AuthenticatedCharacterIdRoute: typeof AuthenticatedCharacterIdRoute
+  AuthenticatedPlayIdRoute: typeof AuthenticatedPlayIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedRosterRoute: AuthenticatedRosterRoute,
   AuthenticatedCharacterIdRoute: AuthenticatedCharacterIdRoute,
+  AuthenticatedPlayIdRoute: AuthenticatedPlayIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

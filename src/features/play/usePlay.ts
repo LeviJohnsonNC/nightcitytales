@@ -1,0 +1,213 @@
+/**
+ * The play loop. Loads a campaign's live state, and runs a turn: the player's
+ * intent goes to the GM (gmTurnFn), the engine resolves any proposed skill
+ * checks, and everything is appended to the campaign ledger. The engine owns the
+ * dice and the beat position; this hook just sequences the calls and persists.
+ */
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  advance,
+  availableExits,
+  currentBeat,
+  getBeat,
+  getMission,
+  type Beat,
+  type BeatExit,
+  type Mission,
+  type MissionRuntime,
+} from "@/engine";
+import {
+  appendCampaignEvent,
+  getCampaign,
+  getCharacter,
+  listCampaignEvents,
+  type Campaign,
+  type CampaignEvent,
+  type CampaignNpc,
+  type CampaignVitals,
+  type FullCharacter,
+  type Json,
+} from "@/lib/backend";
+import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
+import { logBeatAdvanced } from "@/features/campaign/missionLog";
+import { logSkillCheck } from "@/features/campaign/skillCheckLog";
+import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
+import { gmTurnFn } from "@/features/gm/gmTurn.server";
+import { resolveProposedAction } from "@/features/gm/resolveAction";
+import { actorFor, characterSummary, npcSummaries, recentEventLines } from "./playModel";
+
+export type PlayBundle = {
+  campaign: Campaign;
+  vitals: CampaignVitals;
+  character: FullCharacter;
+  mission: Mission | null;
+  runtime: MissionRuntime | null;
+  beat: Beat | null;
+  availableExits: BeatExit[];
+  events: CampaignEvent[];
+  npcs: CampaignNpc[];
+};
+
+async function loadPlay(campaignId: string): Promise<PlayBundle> {
+  const full = await getCampaign(campaignId);
+  if (!full) throw new Error("Campaign not found.");
+  if (!full.vitals) throw new Error("Campaign has no vitals to play with.");
+
+  const character = await getCharacter(full.campaign.character_id);
+  if (!character) throw new Error("This campaign's character no longer exists.");
+
+  let mission: Mission | null = null;
+  let runtime: MissionRuntime | null = null;
+  let beat: Beat | null = null;
+  let exits: BeatExit[] = [];
+  if (full.campaign.current_mission_id) {
+    mission = getMission(full.campaign.current_mission_id);
+    runtime = await loadMissionRuntime(campaignId, mission);
+    beat = currentBeat(mission, runtime);
+    exits = availableExits(mission, runtime);
+  }
+
+  const events = await listCampaignEvents(campaignId);
+  return {
+    campaign: full.campaign,
+    vitals: full.vitals,
+    character,
+    mission,
+    runtime,
+    beat,
+    availableExits: exits,
+    events,
+    npcs: full.npcs,
+  };
+}
+
+async function narrate(bundle: PlayBundle, input: string): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const beatId = bundle.beat?.id ?? null;
+  const beatFields = beatId ? { beat_id: beatId } : {};
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "player_input",
+    summary: input,
+    data: {} as Json,
+    ...beatFields,
+  });
+
+  if (!bundle.mission || !bundle.runtime || !bundle.beat) {
+    throw new Error("There is no active mission to play right now.");
+  }
+
+  const context = buildGmContext({
+    mission: bundle.mission,
+    beat: bundle.beat,
+    availableExits: bundle.availableExits,
+    character: characterSummary(bundle.character, bundle.vitals),
+    objectives: bundle.runtime.objectives,
+    npcsPresent: npcSummaries(bundle.npcs),
+    recentEvents: recentEventLines(bundle.events),
+  });
+
+  const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "gm_narration",
+    summary: gm.narration,
+    data: { endsWithDecision: gm.endsWithDecision } as unknown as Json,
+    ...beatFields,
+  });
+
+  const actor = actorFor(bundle.character);
+  for (const action of gm.proposedActions) {
+    if (action.kind === "skill_check") {
+      const resolved = resolveProposedAction(action, actor);
+      if (resolved.kind === "skill_check") {
+        await logSkillCheck(campaignId, resolved.result, {
+          skillId: action.skillId,
+          intent: action.intent,
+          ...(beatId ? { beatId } : {}),
+        });
+      }
+    } else if (action.kind === "advance_beat") {
+      try {
+        const next = advance(bundle.mission, bundle.runtime, action.to);
+        await saveMissionRuntime(campaignId, next);
+        await logBeatAdvanced(campaignId, {
+          mission: bundle.mission,
+          fromBeatId: bundle.beat.id,
+          toBeat: getBeat(bundle.mission, action.to),
+        });
+      } catch {
+        // Ignore an invalid advancement the model proposed; the beat stays put.
+      }
+    }
+  }
+
+  for (const delta of gm.stateDeltas) {
+    if (delta.kind === "note") {
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "gm_note",
+        summary: delta.text,
+        data: {} as Json,
+        ...beatFields,
+      });
+    }
+  }
+}
+
+async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
+  if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
+  const campaignId = bundle.campaign.id;
+  const next = advance(bundle.mission, bundle.runtime, exit.to);
+  await saveMissionRuntime(campaignId, next);
+  const toBeat = getBeat(bundle.mission, exit.to);
+  await logBeatAdvanced(campaignId, {
+    mission: bundle.mission,
+    fromBeatId: bundle.beat.id,
+    toBeat,
+    choiceLabel: exit.label,
+  });
+  // Narrate the new scene from the fresh beat.
+  const advanced: PlayBundle = {
+    ...bundle,
+    runtime: next,
+    beat: toBeat,
+    availableExits: availableExits(bundle.mission, next),
+  };
+  await narrate(advanced, `(You choose: ${exit.label}. Set the new scene.)`);
+}
+
+export function usePlay(campaignId: string) {
+  const queryClient = useQueryClient();
+  const query = useQuery({ queryKey: ["play", campaignId], queryFn: () => loadPlay(campaignId) });
+
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+
+  const turn = useMutation({
+    mutationFn: (input: string) => {
+      if (!query.data) throw new Error("Still loading.");
+      return narrate(query.data, input);
+    },
+    onSuccess: invalidate,
+  });
+
+  const choose = useMutation({
+    mutationFn: (exit: BeatExit) => {
+      if (!query.data) throw new Error("Still loading.");
+      return takeExit(query.data, exit);
+    },
+    onSuccess: invalidate,
+  });
+
+  return {
+    bundle: query.data,
+    isPending: query.isPending,
+    error: query.error as Error | null,
+    submit: (input: string) => turn.mutate(input),
+    choose: (exit: BeatExit) => choose.mutate(exit),
+    busy: turn.isPending || choose.isPending,
+    actionError: (turn.error as Error | null) ?? (choose.error as Error | null),
+  };
+}

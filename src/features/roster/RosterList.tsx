@@ -31,6 +31,7 @@ import {
   type RosterEntry,
 } from "@/lib/backend";
 import { draftStateFromCharacter } from "./characterState";
+import { startOrResumeAdventure } from "@/features/play/startAdventure";
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
 
@@ -142,14 +143,18 @@ function DraftCard() {
 
 function CharacterCard({
   entry,
+  onStart,
   onDuplicate,
   onDelete,
   duplicating,
+  starting,
 }: {
   entry: RosterEntry;
+  onStart: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
   duplicating: boolean;
+  starting: boolean;
 }) {
   const portrait = entry.portrait_id ? portraitById(entry.portrait_id) : undefined;
   const generated = usePortraitUrl(entry.portrait_path);
@@ -213,8 +218,8 @@ function CharacterCard({
 
       {/* Primary action slot — "Start Adventure" lands here once play exists. */}
       <div className="mt-auto border-t border-border p-3">
-        <Button className="w-full" disabled title="Play sessions arrive in a later release">
-          Start Adventure — coming soon
+        <Button className="w-full" onClick={onStart} disabled={starting}>
+          {starting ? "Starting…" : "Start Adventure"}
         </Button>
         <div className="mt-2 flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm" className="flex-1">
@@ -242,6 +247,11 @@ export function RosterList({ userId }: { userId: string }) {
   const { data, isPending, error } = useQuery({ queryKey: ["roster"], queryFn: listRoster });
   const duplicate = useOpenAsDraft(userId);
 
+  const start = useMutation({
+    mutationFn: (entry: RosterEntry) => startOrResumeAdventure(entry),
+    onSuccess: (campaignId) => navigate({ to: "/play/$id", params: { id: campaignId } }),
+  });
+
   const remove = useMutation({
     mutationFn: (id: string) => deleteCharacter(id),
     onSuccess: () => {
@@ -263,6 +273,7 @@ export function RosterList({ userId }: { userId: string }) {
       {remove.error && (
         <p className="text-sm text-destructive">{(remove.error as Error).message}</p>
       )}
+      {start.error && <p className="text-sm text-destructive">{(start.error as Error).message}</p>}
 
       {data.length === 0 ? (
         <EmptyRoster />
@@ -281,6 +292,8 @@ export function RosterList({ userId }: { userId: string }) {
               <CharacterCard
                 key={entry.id}
                 entry={entry}
+                onStart={() => start.mutate(entry)}
+                starting={start.isPending && start.variables?.id === entry.id}
                 duplicating={duplicate.isPending && duplicate.variables?.id === entry.id}
                 onDuplicate={() => duplicate.mutate({ id: entry.id, name: `${entry.name} (copy)` })}
                 onDelete={() => setPendingDelete(entry)}
