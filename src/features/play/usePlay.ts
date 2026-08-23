@@ -39,8 +39,14 @@ import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { logSkillCheck } from "@/features/campaign/skillCheckLog";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
 import { gmTurnFn } from "@/features/gm/gmTurn.server";
-import { resolveProposedAction } from "@/features/gm/resolveAction";
 import { actorFor, characterSummary, npcSummaries, recentEventLines } from "./playModel";
+import {
+  dvBandName,
+  pendingCheckFrom,
+  rollHistory,
+  snapToPublishedDv,
+  type PendingCheck,
+} from "./checkPrompt";
 
 export type PlayBundle = {
   campaign: Campaign;
