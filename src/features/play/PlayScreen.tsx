@@ -238,13 +238,20 @@ function CombatHud({ campaignId }: { campaignId: string }) {
   );
 }
 
-function InputBar({ onSend, busy }: { onSend: (text: string) => void; busy: boolean }) {
+function InputBar({
+  onSend,
+  busy,
+}: {
+  onSend: (text: string) => Promise<boolean> | void;
+  busy: boolean;
+}) {
   const [text, setText] = useState("");
-  const send = () => {
+  const send = async () => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    onSend(trimmed);
-    setText("");
+    const result = await onSend(trimmed);
+    // Keep the intent in the box when the turn failed, so it can be retried.
+    if (result !== false) setText("");
   };
   return (
     <div className="flex gap-2">
