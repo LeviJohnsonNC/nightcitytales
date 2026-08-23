@@ -13,7 +13,6 @@ import { CheckCard } from "./CheckCard";
 import { CombatCard } from "./CombatCard";
 import { DeathSaveCard } from "./DeathSaveCard";
 
-
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
 import { usePlay, type PlayBundle } from "./usePlay";
@@ -395,7 +394,6 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             Boolean(play.pendingDeathSave)
           }
         />
-
       </div>
       <aside className="space-y-4">
         <CharacterPanel bundle={bundle} />

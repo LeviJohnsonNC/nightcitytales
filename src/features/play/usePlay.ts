@@ -66,12 +66,7 @@ import {
   snapToPublishedDv,
   type PendingCheck,
 } from "./checkPrompt";
-import {
-  deathSaveOwed,
-  pendingDeathSaveFrom,
-  type PendingDeathSave,
-} from "./deathSavePrompt";
-
+import { deathSaveOwed, pendingDeathSaveFrom, type PendingDeathSave } from "./deathSavePrompt";
 
 export type PlayBundle = {
   campaign: Campaign;
@@ -428,7 +423,6 @@ export async function commitDeathSave(
   );
 }
 
-
 async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
   const campaignId = bundle.campaign.id;
@@ -492,7 +486,6 @@ export function newestPrompt(
   const index = (id: string) => events.findIndex((e) => e.id === id);
   return index(attack.eventId) >= index(check.eventId) ? "attack" : "check";
 }
-
 
 export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
@@ -586,7 +579,6 @@ export function usePlay(campaignId: string) {
   const newest = bundle ? newestPrompt(bundle.events, checkCandidate, attackCandidate) : null;
   const pendingCheck = newest === "check" ? checkCandidate : null;
   const pendingAttack = newest === "attack" ? attackCandidate : null;
-
 
   const retry = () => {
     if (!bundle) return;
@@ -687,5 +679,4 @@ export function usePlay(campaignId: string) {
     retry,
     canRetry: Boolean(actionError) && Boolean(bundle),
   };
-
 }
