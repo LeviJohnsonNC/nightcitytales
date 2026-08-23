@@ -38,7 +38,7 @@ describe("actorFor", () => {
 describe("keySkills", () => {
   it("lists trained skills as Skill+base, highest first, dropping level-0", () => {
     const skills = keySkills(full);
-    expect(skills[0]).toEqual({ skill: "Handgun", base: 14 }); // REF 8 + 6
+    expect(skills[0]).toEqual({ skill: "Handgun", id: "handgun", base: 14 }); // REF 8 + 6
     expect(skills.some((s) => s.skill === "Brawling")).toBe(false); // level 0 dropped
   });
 });
