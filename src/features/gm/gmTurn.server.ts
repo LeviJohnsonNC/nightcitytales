@@ -21,8 +21,9 @@ const GmTurnInput = z.object({
 
 /** Turn a raw gateway failure into something a player can act on. */
 function gmError(error: unknown, model: string): Error {
-  const status = (error as { statusCode?: number; status?: number })?.statusCode
-    ?? (error as { status?: number })?.status;
+  const status =
+    (error as { statusCode?: number; status?: number })?.statusCode ??
+    (error as { status?: number })?.status;
   const detail = error instanceof Error ? error.message : String(error);
   if (status === 400) return new Error(`The GM model "${model}" is unavailable. (${detail})`);
   if (status === 401) return new Error("The GM is not configured: the AI key was rejected.");

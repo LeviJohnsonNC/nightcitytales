@@ -259,9 +259,7 @@ export function usePlay(campaignId: string) {
   }, [bundle, open, turn.isPending, choose.isPending]);
 
   const actionError =
-    (turn.error as Error | null) ??
-    (choose.error as Error | null) ??
-    (open.error as Error | null);
+    (turn.error as Error | null) ?? (choose.error as Error | null) ?? (open.error as Error | null);
 
   const retry = () => {
     if (!bundle) return;
@@ -298,8 +296,7 @@ export function usePlay(campaignId: string) {
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
     suggestions: bundle ? latestSuggestions(bundle) : [],
-    opening:
-      open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
+    opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy: turn.isPending || choose.isPending || open.isPending,
     actionError,
     retry,

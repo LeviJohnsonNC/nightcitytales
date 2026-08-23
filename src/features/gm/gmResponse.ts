@@ -77,7 +77,8 @@ export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
     const intent = str(a["intent"]) ?? str(a["description"]) ?? "";
     if (kind === "skill_check") {
       const skillId = str(a["skillId"]) ?? str(a["skill"]);
-      if (skillId) proposedActions.push({ kind: "skill_check", skillId, dv: num(a["dv"]) ?? 13, intent });
+      if (skillId)
+        proposedActions.push({ kind: "skill_check", skillId, dv: num(a["dv"]) ?? 13, intent });
     } else if (kind === "attack") {
       const targetId = str(a["targetId"]) ?? str(a["target"]);
       if (targetId) proposedActions.push({ kind: "attack", targetId, intent });
