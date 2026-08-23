@@ -1,0 +1,1 @@
+ALTER TABLE public.mission_progress ADD COLUMN created_at timestamptz NOT NULL DEFAULT now();
