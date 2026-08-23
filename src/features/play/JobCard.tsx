@@ -49,9 +49,7 @@ export function JobCard({ mission, beat }: { mission: Mission; beat: Beat }) {
                 per head
                 {reward.upfront !== undefined ? ` · ${reward.upfront}eb up front` : ""}
               </p>
-              {reward.notes && (
-                <p className="mt-1 text-xs text-muted-foreground">{reward.notes}</p>
-              )}
+              {reward.notes && <p className="mt-1 text-xs text-muted-foreground">{reward.notes}</p>}
             </div>
           )}
           <div>
