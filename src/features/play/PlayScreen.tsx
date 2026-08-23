@@ -339,7 +339,11 @@ function IpPanel({ play }: { play: ReturnType<typeof usePlay> }) {
       <div className="flex flex-wrap gap-3">
         <Picker label="Primary" value={primary} onChange={setPrimary} />
         <Picker label="Secondary" value={secondary} onChange={setSecondary} />
-        <Button size="sm" disabled={play.ipBusy} onClick={() => play.tallyIp({ primary, secondary })}>
+        <Button
+          size="sm"
+          disabled={play.ipBusy}
+          onClick={() => play.tallyIp({ primary, secondary })}
+        >
           {play.ipBusy ? "Tallying…" : "Tally IP"}
         </Button>
       </div>
