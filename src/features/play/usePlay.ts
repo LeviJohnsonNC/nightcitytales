@@ -529,6 +529,14 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const death = useMutation({
+    mutationFn: ({ pending, result }: { pending: PendingDeathSave; result: BeginTurnResult }) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitDeathSave(query.data, pending, result);
+    },
+    onSuccess: invalidate,
+  });
+
   // Open a fresh beat automatically, once, so the player never faces a blank scene.
   const opened = useRef<string | null>(null);
   const bundle = query.data;
@@ -547,12 +555,22 @@ export function usePlay(campaignId: string) {
     (choose.error as Error | null) ??
     (open.error as Error | null) ??
     (check.error as Error | null) ??
-    (combat.error as Error | null);
+    (combat.error as Error | null) ??
+    (death.error as Error | null);
 
-  const pendingCheck = bundle ? pendingCheckFrom(bundle.events, bundle.character) : null;
-  const pendingAttack = bundle
-    ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
-    : null;
+  // Exactly one card is ever live: a Death Save outranks everything (you cannot
+  // act until you have made it), then whichever prompt the GM posted last.
+  const pendingDeathSave = bundle ? pendingDeathSaveFrom(bundle.events, bundle.encounter) : null;
+  const checkCandidate =
+    bundle && !pendingDeathSave ? pendingCheckFrom(bundle.events, bundle.character) : null;
+  const attackCandidate =
+    bundle && !pendingDeathSave
+      ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
+      : null;
+  const newest = bundle ? newestPrompt(bundle.events, checkCandidate, attackCandidate) : null;
+  const pendingCheck = newest === "check" ? checkCandidate : null;
+  const pendingAttack = newest === "attack" ? attackCandidate : null;
+
 
   const retry = () => {
     if (!bundle) return;
