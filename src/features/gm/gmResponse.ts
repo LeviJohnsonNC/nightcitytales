@@ -130,7 +130,23 @@ export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
         proposedActions.push({ kind: "skill_check", skillId, dv: num(a["dv"]) ?? 13, intent });
     } else if (kind === "attack") {
       const targetId = str(a["targetId"]) ?? str(a["target"]);
-      if (targetId) proposedActions.push({ kind: "attack", targetId, intent });
+      const distance = num(a["distance"]) ?? num(a["range"]);
+      if (targetId)
+        proposedActions.push({
+          kind: "attack",
+          targetId,
+          intent,
+          distance: clamp(distance ?? DEFAULT_ATTACK_DISTANCE, 1, 800),
+        });
+    } else if (kind === "start_encounter") {
+      const enemies = normalizeEnemies(a["enemies"] ?? a["hostiles"] ?? a["combatants"]);
+      if (enemies.length)
+        proposedActions.push({
+          kind: "start_encounter",
+          name: str(a["name"]) ?? "Firefight",
+          enemies,
+        });
+
     } else if (kind === "advance_beat") {
       const to = str(a["to"]) ?? str(a["beatId"]);
       if (to) proposedActions.push({ kind: "advance_beat", to });
