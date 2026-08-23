@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
+import { IP_PLAYSTYLES, type IpPlaystyle } from "@/engine";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
 import { CombatCard } from "./CombatCard";
@@ -380,6 +381,7 @@ function WrapUpCard({
         Eurobucks: <span className="font-bold">{bundle.vitals.eurobucks}eb</span> · HP{" "}
         {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
       </p>
+      <IpPanel play={play} />
       <Button asChild variant="outline" size="sm">
         <Link to="/roster">Back to the roster</Link>
       </Button>
@@ -510,7 +512,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             busy={play.deathBusy}
           />
         )}
-        {play.finished && <WrapUpCard bundle={bundle} status={play.finished} />}
+        {play.finished && <WrapUpCard bundle={bundle} status={play.finished} play={play} />}
         <SuggestionBar
           suggestions={play.finished ? [] : play.suggestions}
           onPick={play.submit}
