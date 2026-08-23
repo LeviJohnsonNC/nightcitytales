@@ -75,6 +75,8 @@ export type PlayBundle = {
   availableExits: BeatExit[];
   events: CampaignEvent[];
   npcs: CampaignNpc[];
+  /** The fight in progress, if the GM has started one. */
+  encounter: LiveEncounter | null;
 };
 
 async function loadPlay(campaignId: string): Promise<PlayBundle> {
@@ -97,6 +99,7 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
   }
 
   const events = await listCampaignEvents(campaignId);
+  const encounter = await loadLiveEncounter(campaignId);
   return {
     campaign: full.campaign,
     vitals: full.vitals,
@@ -107,8 +110,10 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     availableExits: exits,
     events,
     npcs: full.npcs,
+    encounter,
   };
 }
+
 
 async function narrate(
   bundle: PlayBundle,
