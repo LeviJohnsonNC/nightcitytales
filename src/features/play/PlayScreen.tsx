@@ -41,7 +41,15 @@ function EventBlock({ event }: { event: CampaignEvent }) {
   }
 }
 
-function NarrativeLog({ events }: { events: CampaignEvent[] }) {
+function NarrativeLog({
+  events,
+  readAloud,
+  busy,
+}: {
+  events: CampaignEvent[];
+  readAloud?: string | undefined;
+  busy: boolean;
+}) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
