@@ -27,7 +27,12 @@ export function SheetDrawer({ character }: { character: FullCharacter }) {
           <SheetTitle>{character.character.name}</SheetTitle>
         </SheetHeader>
         <div className="mt-4">
-          <CharacterSheet state={state} build={build} sheet={sheet} />
+          <CharacterSheet
+            state={state}
+            build={build}
+            sheet={sheet}
+            improvementPoints={character.finance?.improvement_points ?? 0}
+          />
         </div>
       </SheetContent>
     </Sheet>
