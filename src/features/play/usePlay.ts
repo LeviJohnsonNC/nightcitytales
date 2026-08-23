@@ -250,6 +250,7 @@ export function usePlay(campaignId: string) {
   const bundle = query.data;
   useEffect(() => {
     if (!bundle || open.isPending || turn.isPending || choose.isPending) return;
+    if (open.error) return; // A failed opening waits for an explicit retry.
     if (!needsOpeningScene(bundle)) return;
     const key = `${bundle.campaign.id}:${bundle.beat?.id ?? ""}`;
     if (opened.current === key) return;
@@ -257,18 +258,51 @@ export function usePlay(campaignId: string) {
     open.mutate(bundle);
   }, [bundle, open, turn.isPending, choose.isPending]);
 
+  const actionError =
+    (turn.error as Error | null) ??
+    (choose.error as Error | null) ??
+    (open.error as Error | null);
+
+  const retry = () => {
+    if (!bundle) return;
+    if (open.error) {
+      open.reset();
+      open.mutate(bundle);
+      return;
+    }
+    if (turn.error) {
+      const last = turn.variables;
+      turn.reset();
+      if (last) turn.mutate(last);
+      return;
+    }
+    if (choose.error) {
+      const last = choose.variables;
+      choose.reset();
+      if (last) choose.mutate(last);
+    }
+  };
+
   return {
     bundle,
     isPending: query.isPending,
     error: query.error as Error | null,
-    submit: (input: string) => turn.mutate(input),
+    /** Resolves true when the turn landed, false when it failed. */
+    submit: async (input: string) => {
+      try {
+        await turn.mutateAsync(input);
+        return true;
+      } catch {
+        return false;
+      }
+    },
     choose: (exit: BeatExit) => choose.mutate(exit),
     suggestions: bundle ? latestSuggestions(bundle) : [],
-    opening: open.isPending || (bundle ? needsOpeningScene(bundle) : false),
+    opening:
+      open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy: turn.isPending || choose.isPending || open.isPending,
-    actionError:
-      (turn.error as Error | null) ??
-      (choose.error as Error | null) ??
-      (open.error as Error | null),
+    actionError,
+    retry,
+    canRetry: Boolean(actionError) && Boolean(bundle),
   };
 }
