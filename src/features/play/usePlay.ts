@@ -43,7 +43,7 @@ import {
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { logSkillCheck } from "@/features/campaign/skillCheckLog";
-import { logAttack } from "@/features/campaign/combatLog";
+import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
 import {
   loadLiveEncounter,
   saveLiveEncounter,
