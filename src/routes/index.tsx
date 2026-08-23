@@ -73,9 +73,7 @@ function Index() {
             Night City Tales
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-text-muted">
-            Build an edgerunner for Cyberpunk RED, one honest roll at a time. The math is real, the
-            dice don't cheat, and your whole crew stays saved to your account. Night City is not
-            going to survive itself.
+            A solo Cyberpunk RED adventure with an AI Game Master.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-3">
