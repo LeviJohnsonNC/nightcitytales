@@ -183,7 +183,7 @@ export function CombatCard({
                 <p className="num text-base font-bold">{result.damage.total} damage rolled</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <Stat label="Through armor" value={String(result.applied.damageThrough)} />
+                <Stat label="Through armor" value={String(result.applied.damageThroughArmor)} />
                 <Stat
                   label="HP after"
                   value={`${result.applied.hpAfter}/${pending.target.hpMax}`}
