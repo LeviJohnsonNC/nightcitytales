@@ -88,21 +88,61 @@ export function describePendingCheck(
 }
 
 /**
- * The check awaiting a roll, if any: the most recent check_prompt with no
- * skill_check resolving it afterwards.
+ * Every check still awaiting a die, oldest first.
+ *
+ * A turn may post more than one prompt, so a prompt is not simply "the last one
+ * before a skill_check": each resolved roll names the prompt it answered
+ * (data.prompt_event_id), and those prompts are struck off. Rows written before
+ * that link existed carry no id, so an unlinked roll falls back to striking off
+ * the oldest outstanding prompt for the same skill — which is what the old
+ * one-at-a-time flow guaranteed anyway.
  */
+export function pendingChecksFrom(
+  events: CampaignEvent[],
+  character: FullCharacter,
+): PendingCheck[] {
+  const resolvedIds = new Set<string>();
+  const unlinkedBySkill = new Map<string, number>();
+  let unlinkedUnknownSkill = 0;
+
+  for (const event of events) {
+    if (event?.type !== "skill_check") continue;
+    const data = (event.data ?? {}) as { prompt_event_id?: unknown; skill_id?: unknown };
+    if (typeof data.prompt_event_id === "string") {
+      resolvedIds.add(data.prompt_event_id);
+    } else if (typeof data.skill_id === "string") {
+      unlinkedBySkill.set(data.skill_id, (unlinkedBySkill.get(data.skill_id) ?? 0) + 1);
+    } else {
+      unlinkedUnknownSkill += 1;
+    }
+  }
+
+  const pending: PendingCheck[] = [];
+  for (const event of events) {
+    if (event?.type !== "check_prompt") continue;
+    if (resolvedIds.has(event.id)) continue;
+    const described = describePendingCheck(event, character);
+    if (!described) continue;
+    const bySkill = unlinkedBySkill.get(described.skillId) ?? 0;
+    if (bySkill > 0) {
+      unlinkedBySkill.set(described.skillId, bySkill - 1); // an older roll settled this one
+      continue;
+    }
+    if (unlinkedUnknownSkill > 0) {
+      unlinkedUnknownSkill -= 1; // a legacy roll that named no skill settles the oldest
+      continue;
+    }
+    pending.push(described);
+  }
+  return pending;
+}
+
+/** The next check awaiting a roll, if any. Prompts are answered in the order posted. */
 export function pendingCheckFrom(
   events: CampaignEvent[],
   character: FullCharacter,
 ): PendingCheck | null {
-  for (let i = events.length - 1; i >= 0; i -= 1) {
-    const event = events[i];
-    if (!event) continue;
-    if (event.type === "skill_check") return null; // the newest check is already rolled
-    if (event.type !== "check_prompt") continue;
-    return describePendingCheck(event, character);
-  }
-  return null;
+  return pendingChecksFrom(events, character)[0] ?? null;
 }
 
 /** One line of the session's dice record. */

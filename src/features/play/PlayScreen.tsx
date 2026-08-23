@@ -489,13 +489,21 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
           </div>
         )}
         {play.pendingCheck && (
-          <CheckCard
-            key={play.pendingCheck.eventId}
-            pending={play.pendingCheck}
-            roll={() => play.rollCheck(play.pendingCheck!)}
-            onSettled={(result) => play.commitCheck(play.pendingCheck!, result)}
-            busy={play.checkBusy}
-          />
+          <div className="space-y-1">
+            <CheckCard
+              key={play.pendingCheck.eventId}
+              pending={play.pendingCheck}
+              roll={() => play.rollCheck(play.pendingCheck!)}
+              onSettled={(result) => play.commitCheck(play.pendingCheck!, result)}
+              busy={play.checkBusy}
+            />
+            {play.pendingCheckCount > 1 && (
+              <p className="text-muted-foreground text-xs">
+                {play.pendingCheckCount - 1} more check
+                {play.pendingCheckCount - 1 === 1 ? "" : "s"} on the table after this one.
+              </p>
+            )}
+          </div>
         )}
         {play.pendingAttack && (
           <CombatCard

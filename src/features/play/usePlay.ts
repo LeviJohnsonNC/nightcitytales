@@ -61,7 +61,13 @@ import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
 import { gmTurnFn } from "@/features/gm/gmTurn.server";
 import { renderIpJudgementPrompt, type IpJudgement } from "@/features/gm/ipJudgement";
 import { ipJudgementFn } from "@/features/gm/ipJudgement.server";
-import { actorFor, characterSummary, npcSummaries, recentEventLines } from "./playModel";
+import {
+  actorFor,
+  characterSummary,
+  npcSummaries,
+  recentEventLines,
+  turnsSinceLastRoll,
+} from "./playModel";
 import { beginEncounter, describeAttack, runNpcTurns } from "./combatFlow";
 import {
   findTarget,
@@ -71,12 +77,19 @@ import {
 } from "./attackPrompt";
 import {
   dvBandName,
-  pendingCheckFrom,
+  pendingChecksFrom,
   rollHistory,
   snapToPublishedDv,
   type PendingCheck,
 } from "./checkPrompt";
 import { deathSaveOwed, pendingDeathSaveFrom, type PendingDeathSave } from "./deathSavePrompt";
+
+/**
+ * How many checks one turn may put on the table at once. Two lets a compound
+ * intent ("pick the lock while she watches the hall") be the two rolls it would
+ * be at a table; more than that stops being a turn and starts being a queue.
+ */
+export const MAX_CHECKS_PER_TURN = 2;
 
 export type PlayBundle = {
   campaign: Campaign;
@@ -158,6 +171,7 @@ async function narrate(
     objectives: bundle.runtime.objectives,
     npcsPresent: npcSummaries(bundle.npcs),
     recentEvents: recentEventLines(bundle.events),
+    turnsSinceLastRoll: turnsSinceLastRoll(bundle.events),
   });
 
   const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
@@ -175,22 +189,35 @@ async function narrate(
 
   // A proposed check or attack is NOT rolled here: it is posted to the ledger as
   // a prompt and waits for the player's dice (see commitCheck / commitAttack).
-  let promptPosted = false;
+  //
+  // Up to MAX_CHECKS_PER_TURN checks may be posted, so "pick the lock while she
+  // watches the hall" is the two rolls it would be at a table — but only for
+  // genuinely distinct skills, and never alongside an attack, which stays
+  // strictly one at a time because combat resolves in sequence.
+  const postedSkillIds = new Set<string>();
+  let attackPosted = false;
   let live = bundle.encounter;
+
+  // Resolving a check narrates again, which can propose more. Budget against the
+  // prompts already outstanding so a chain of turns cannot grow the queue without
+  // bound — the player should always be able to clear the table.
+  const outstanding = pendingChecksFrom(bundle.events, bundle.character).length;
+  const checkBudget = Math.max(0, MAX_CHECKS_PER_TURN - outstanding);
 
   for (const action of gm.proposedActions) {
     if (action.kind === "skill_check") {
-      if (promptPosted) continue; // one check at a time at the table
+      if (attackPosted || postedSkillIds.size >= checkBudget) continue;
       // The model names skills in prose; the engine only knows printed ids.
       const skillId = resolveSkillId(action.skillId);
       if (!skillId) {
         console.warn(`GM proposed an unknown skill: "${action.skillId}" — no check offered.`);
         continue;
       }
+      if (postedSkillIds.has(skillId)) continue; // the same skill twice is one roll
       const skillName = getSkill(skillId).name;
       const dv = snapToPublishedDv(action.dv);
       const band = dvBandName(dv);
-      promptPosted = true;
+      postedSkillIds.add(skillId);
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "check_prompt",
@@ -230,10 +257,11 @@ async function narrate(
         enemies: action.enemies,
       });
     } else if (action.kind === "attack") {
-      if (promptPosted || !live || live.state.status !== "active") continue;
+      if (attackPosted || postedSkillIds.size > 0) continue;
+      if (!live || live.state.status !== "active") continue;
       const target = findTarget(live, action.targetId);
       if (!target || target.defeated || target.isPlayer) continue;
-      promptPosted = true;
+      attackPosted = true;
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "attack_prompt",
@@ -273,6 +301,7 @@ async function commitCheck(
     skillId: pending.skillId,
     skillName: pending.skillName,
     intent: pending.intent,
+    promptEventId: pending.eventId,
     ...(pending.beatId ? { beatId: pending.beatId } : {}),
   });
 
@@ -705,8 +734,9 @@ export function usePlay(campaignId: string) {
   // Exactly one card is ever live: a Death Save outranks everything (you cannot
   // act until you have made it), then whichever prompt the GM posted last.
   const pendingDeathSave = bundle ? pendingDeathSaveFrom(bundle.events, bundle.encounter) : null;
-  const checkCandidate =
-    bundle && !pendingDeathSave ? pendingCheckFrom(bundle.events, bundle.character) : null;
+  const checkQueue =
+    bundle && !pendingDeathSave ? pendingChecksFrom(bundle.events, bundle.character) : [];
+  const checkCandidate = checkQueue[0] ?? null;
   const attackCandidate =
     bundle && !pendingDeathSave
       ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
@@ -758,6 +788,8 @@ export function usePlay(campaignId: string) {
 
     /** The check waiting on the player's die, if any. */
     pendingCheck,
+    /** How many checks are on the table, so the UI can say another is coming. */
+    pendingCheckCount: pendingCheck ? checkQueue.length : 0,
     /** Roll the pending check — the engine decides the number. */
     rollCheck: (pending: PendingCheck) => {
       if (!bundle) throw new Error("Still loading.");

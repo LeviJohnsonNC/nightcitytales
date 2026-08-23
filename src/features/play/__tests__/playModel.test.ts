@@ -6,6 +6,7 @@ import {
   keySkills,
   npcSummaries,
   recentEventLines,
+  turnsSinceLastRoll,
 } from "../playModel";
 
 const full = {
@@ -80,5 +81,44 @@ describe("npcSummaries & recentEventLines", () => {
       { summary: null, type: "beat_advanced" } as CampaignEvent,
     ]);
     expect(lines).toEqual(["Campaign started in Night City.", "beat_advanced"]);
+  });
+});
+
+describe("turnsSinceLastRoll", () => {
+  const ev = (type: string): CampaignEvent => ({ type }) as unknown as CampaignEvent;
+
+  it("counts player turns back to the last roll", () => {
+    const events = [
+      ev("player_input"),
+      ev("skill_check"),
+      ev("gm_narration"),
+      ev("player_input"),
+      ev("gm_narration"),
+      ev("player_input"),
+    ];
+    expect(turnsSinceLastRoll(events)).toBe(2);
+  });
+
+  it("is zero when the player just rolled", () => {
+    expect(turnsSinceLastRoll([ev("player_input"), ev("skill_check")])).toBe(0);
+  });
+
+  it("counts every turn when nothing has ever been rolled", () => {
+    const events = [ev("player_input"), ev("gm_narration"), ev("player_input")];
+    expect(turnsSinceLastRoll(events)).toBe(2);
+  });
+
+  it("treats attacks and death saves as dice hitting the table", () => {
+    expect(turnsSinceLastRoll([ev("attack"), ev("player_input")])).toBe(1);
+    expect(turnsSinceLastRoll([ev("death_save"), ev("player_input")])).toBe(1);
+  });
+
+  it("ignores narration and prompts, which are not rolls", () => {
+    const events = [ev("skill_check"), ev("player_input"), ev("check_prompt"), ev("gm_narration")];
+    expect(turnsSinceLastRoll(events)).toBe(1);
+  });
+
+  it("is zero for an empty ledger", () => {
+    expect(turnsSinceLastRoll([])).toBe(0);
   });
 });
