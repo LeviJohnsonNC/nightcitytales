@@ -279,6 +279,70 @@ async function commitCheck(
   );
 }
 
+/**
+ * Persist the player's rolled attack, run the hostile turns the engine owns,
+ * sync the player's HP, then let the GM narrate exactly what happened.
+ */
+export async function commitAttack(
+  bundle: PlayBundle,
+  pending: PendingAttack,
+  option: AttackOption,
+  result: PerformAttackResult,
+): Promise<void> {
+  if (!bundle.encounter) throw new Error("There is no encounter to attack in.");
+  const campaignId = bundle.campaign.id;
+  const beatId = pending.beatId;
+
+  let live: LiveEncounter = { ...bundle.encounter, state: result.state };
+  await saveLiveEncounter(live);
+  await logAttack(
+    campaignId,
+    { attack: result.attack, damage: result.damage, applied: result.applied },
+    {
+      attackerName: pending.attacker.name,
+      targetName: pending.target.name,
+      weapon: option.weapon.name,
+      ...(result.targetWoundState ? { targetWoundState: result.targetWoundState } : {}),
+      beatId,
+    },
+  );
+
+  const lines = [
+    describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
+  ];
+  const npc = await runNpcTurns(campaignId, beatId, live);
+  live = npc.live;
+  lines.push(...npc.lines);
+
+  // The player's HP in the fight is the campaign's HP.
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  if (player && player.hp !== bundle.vitals.hp_current) {
+    await updateCampaignVitals(campaignId, { hp_current: player.hp });
+  }
+
+  const status =
+    live.state.status === "friendlies_won"
+      ? " The hostiles are all down; the fight is over."
+      : live.state.status === "friendlies_lost"
+        ? " The player is down; the fight is over."
+        : "";
+
+  const fresh: PlayBundle = {
+    ...bundle,
+    events: await listCampaignEvents(campaignId),
+    encounter: live,
+  };
+  await narrate(
+    fresh,
+    `(ENGINE: combat is RESOLVED for this exchange. ${lines.join(" ")}${status} Narrate exactly these results in short kinetic beats. Do not change a hit, a miss, a damage number, or who is standing. ${
+      status ? "Return to the scene." : "Then propose the player's next attack or action."
+    })`,
+    { logInput: false },
+  );
+}
+
+
+
 async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
   const campaignId = bundle.campaign.id;
