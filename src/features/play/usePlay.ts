@@ -194,6 +194,49 @@ async function narrate(
   }
 }
 
+/**
+ * Roll a pending check. The ENGINE rolls (skillCheckForCharacter); this records
+ * the trace and then asks the GM to narrate the outcome it was handed.
+ */
+export async function rollPendingCheck(
+  bundle: PlayBundle,
+  pending: PendingCheck,
+): Promise<SkillCheckResult> {
+  return skillCheckForCharacter(actorFor(bundle.character), pending.skillId, pending.dv);
+}
+
+/** Persist a rolled check and have the GM narrate the result, win or lose. */
+async function commitCheck(
+  bundle: PlayBundle,
+  pending: PendingCheck,
+  result: SkillCheckResult,
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  await logSkillCheck(campaignId, result, {
+    skillId: pending.skillId,
+    skillName: pending.skillName,
+    intent: pending.intent,
+    ...(pending.beatId ? { beatId: pending.beatId } : {}),
+  });
+
+  const verdict = result.success ? "SUCCESS" : "FAILURE";
+  const crit =
+    result.critical === "success"
+      ? " (Critical Success: an extra d10 was added)"
+      : result.critical === "failure"
+        ? " (Critical Failure: an extra d10 was subtracted)"
+        : "";
+  const fresh: PlayBundle = {
+    ...bundle,
+    events: await listCampaignEvents(campaignId),
+  };
+  await narrate(
+    fresh,
+    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again. End on a decision.)`,
+    { logInput: false },
+  );
+}
+
 async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
   const campaignId = bundle.campaign.id;
