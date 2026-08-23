@@ -478,6 +478,22 @@ export function latestSuggestions(bundle: PlayBundle): GmSuggestedAction[] {
   return [];
 }
 
+/**
+ * Which unresolved prompt is the live one. A stale check from an earlier turn
+ * must never share the screen with a fresh attack: the newest ledger row wins.
+ */
+export function newestPrompt(
+  events: CampaignEvent[],
+  check: { eventId: string } | null,
+  attack: { eventId: string } | null,
+): "check" | "attack" | null {
+  if (!check) return attack ? "attack" : null;
+  if (!attack) return "check";
+  const index = (id: string) => events.findIndex((e) => e.id === id);
+  return index(attack.eventId) >= index(check.eventId) ? "attack" : "check";
+}
+
+
 export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["play", campaignId], queryFn: () => loadPlay(campaignId) });
