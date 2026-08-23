@@ -606,7 +606,13 @@ export function usePlay(campaignId: string) {
       }
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
-    suggestions: pendingCheck || pendingAttack ? [] : bundle ? latestSuggestions(bundle) : [],
+    suggestions:
+      pendingCheck || pendingAttack || pendingDeathSave
+        ? []
+        : bundle
+          ? latestSuggestions(bundle)
+          : [],
+
     /** The check waiting on the player's die, if any. */
     pendingCheck,
     /** Roll the pending check — the engine decides the number. */
