@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
+import { CheckCard } from "./CheckCard";
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
 import { usePlay, type PlayBundle } from "./usePlay";
+import type { RollRecord } from "./checkPrompt";
 
 function EventBlock({ event }: { event: CampaignEvent }) {
   const text = event.summary ?? "";
@@ -30,6 +32,8 @@ function EventBlock({ event }: { event: CampaignEvent }) {
           <span className="text-accent">◆</span> {text}
         </p>
       );
+    case "check_prompt":
+      return null;
     case "beat_advanced":
       return (
         <p className="my-1 font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
@@ -210,6 +214,37 @@ function ScenePanel({
   );
 }
 
+function RollHistory({ rolls }: { rolls: RollRecord[] }) {
+  if (rolls.length === 0) return null;
+  return (
+    <section className="space-y-2 border border-border bg-card p-4">
+      <Label>Rolls</Label>
+      <ul className="space-y-1">
+        {rolls.map((r) => (
+          <li key={r.id} className="flex items-baseline justify-between gap-2 text-sm">
+            <span className="truncate">{r.skillName}</span>
+            <span className="num font-mono text-xs text-muted-foreground">
+              {r.total}
+              {r.dv !== null ? ` vs ${r.dv}` : ""}{" "}
+              <span
+                className={
+                  r.critical
+                    ? "text-neon-pink"
+                    : r.success
+                      ? "text-accent"
+                      : "text-destructive"
+                }
+              >
+                {r.success === null ? "—" : r.success ? "HIT" : "MISS"}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function CombatHud({ campaignId }: { campaignId: string }) {
   const { data } = useQuery({
     queryKey: ["play-encounter", campaignId],
@@ -317,15 +352,28 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             )}
           </div>
         )}
+        {play.pendingCheck && (
+          <CheckCard
+            key={play.pendingCheck.eventId}
+            pending={play.pendingCheck}
+            roll={() => play.rollCheck(play.pendingCheck!)}
+            onSettled={(result) => play.commitCheck(play.pendingCheck!, result)}
+            busy={play.checkBusy}
+          />
+        )}
         <SuggestionBar
           suggestions={play.suggestions}
           onPick={play.submit}
           busy={play.busy || play.opening}
         />
-        <InputBar onSend={play.submit} busy={play.busy || play.opening} />
+        <InputBar
+          onSend={play.submit}
+          busy={play.busy || play.opening || Boolean(play.pendingCheck)}
+        />
       </div>
       <aside className="space-y-4">
         <CharacterPanel bundle={bundle} />
+        <RollHistory rolls={play.rolls} />
         <CombatHud campaignId={campaignId} />
         <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
         {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}

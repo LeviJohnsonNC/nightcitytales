@@ -14,10 +14,13 @@ import {
   currentBeat,
   getBeat,
   getMission,
+  getSkill,
+  skillCheckForCharacter,
   type Beat,
   type BeatExit,
   type Mission,
   type MissionRuntime,
+  type SkillCheckResult,
 } from "@/engine";
 import {
   appendCampaignEvent,
@@ -36,8 +39,14 @@ import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { logSkillCheck } from "@/features/campaign/skillCheckLog";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
 import { gmTurnFn } from "@/features/gm/gmTurn.server";
-import { resolveProposedAction } from "@/features/gm/resolveAction";
 import { actorFor, characterSummary, npcSummaries, recentEventLines } from "./playModel";
+import {
+  dvBandName,
+  pendingCheckFrom,
+  rollHistory,
+  snapToPublishedDv,
+  type PendingCheck,
+} from "./checkPrompt";
 
 export type PlayBundle = {
   campaign: Campaign;
@@ -130,17 +139,33 @@ async function narrate(
     ...beatFields,
   });
 
-  const actor = actorFor(bundle.character);
+  // A proposed check is NOT rolled here: it is posted to the ledger as a prompt
+  // and waits for the player to roll it (see resolvePendingCheck).
+  let promptPosted = false;
   for (const action of gm.proposedActions) {
     if (action.kind === "skill_check") {
-      const resolved = resolveProposedAction(action, actor);
-      if (resolved.kind === "skill_check") {
-        await logSkillCheck(campaignId, resolved.result, {
-          skillId: action.skillId,
-          intent: action.intent,
-          ...(beatId ? { beatId } : {}),
-        });
+      if (promptPosted) continue; // one check at a time at the table
+      let skillName: string | null = null;
+      try {
+        skillName = getSkill(action.skillId).name;
+      } catch {
+        continue; // an unknown skill id is not a check we can offer
       }
+      const dv = snapToPublishedDv(action.dv);
+      const band = dvBandName(dv);
+      promptPosted = true;
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "check_prompt",
+        summary: `${skillName} check — DV ${dv}${band ? ` (${band})` : ""}`,
+        data: {
+          skillId: action.skillId,
+          skillName,
+          dv,
+          intent: action.intent,
+        } as unknown as Json,
+        ...beatFields,
+      });
     } else if (action.kind === "advance_beat") {
       try {
         const next = advance(bundle.mission, bundle.runtime, action.to);
@@ -167,6 +192,38 @@ async function narrate(
       });
     }
   }
+}
+
+/** Persist a rolled check and have the GM narrate the result, win or lose. */
+async function commitCheck(
+  bundle: PlayBundle,
+  pending: PendingCheck,
+  result: SkillCheckResult,
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  await logSkillCheck(campaignId, result, {
+    skillId: pending.skillId,
+    skillName: pending.skillName,
+    intent: pending.intent,
+    ...(pending.beatId ? { beatId: pending.beatId } : {}),
+  });
+
+  const verdict = result.success ? "SUCCESS" : "FAILURE";
+  const crit =
+    result.critical === "success"
+      ? " (Critical Success: an extra d10 was added)"
+      : result.critical === "failure"
+        ? " (Critical Failure: an extra d10 was subtracted)"
+        : "";
+  const fresh: PlayBundle = {
+    ...bundle,
+    events: await listCampaignEvents(campaignId),
+  };
+  await narrate(
+    fresh,
+    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again. End on a decision.)`,
+    { logInput: false },
+  );
 }
 
 async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
@@ -245,6 +302,14 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const check = useMutation({
+    mutationFn: ({ pending, result }: { pending: PendingCheck; result: SkillCheckResult }) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitCheck(query.data, pending, result);
+    },
+    onSuccess: invalidate,
+  });
+
   // Open a fresh beat automatically, once, so the player never faces a blank scene.
   const opened = useRef<string | null>(null);
   const bundle = query.data;
@@ -259,7 +324,12 @@ export function usePlay(campaignId: string) {
   }, [bundle, open, turn.isPending, choose.isPending]);
 
   const actionError =
-    (turn.error as Error | null) ?? (choose.error as Error | null) ?? (open.error as Error | null);
+    (turn.error as Error | null) ??
+    (choose.error as Error | null) ??
+    (open.error as Error | null) ??
+    (check.error as Error | null);
+
+  const pendingCheck = bundle ? pendingCheckFrom(bundle.events, bundle.character) : null;
 
   const retry = () => {
     if (!bundle) return;
@@ -295,9 +365,21 @@ export function usePlay(campaignId: string) {
       }
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
-    suggestions: bundle ? latestSuggestions(bundle) : [],
+    suggestions: pendingCheck ? [] : bundle ? latestSuggestions(bundle) : [],
+    /** The check waiting on the player's die, if any. */
+    pendingCheck,
+    /** Roll the pending check — the engine decides the number. */
+    rollCheck: (pending: PendingCheck) => {
+      if (!bundle) throw new Error("Still loading.");
+      return skillCheckForCharacter(actorFor(bundle.character), pending.skillId, pending.dv);
+    },
+    /** Record the rolled check and let the GM narrate the outcome. */
+    commitCheck: (pending: PendingCheck, result: SkillCheckResult) =>
+      check.mutate({ pending, result }),
+    checkBusy: check.isPending,
+    rolls: bundle ? rollHistory(bundle.events) : [],
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
-    busy: turn.isPending || choose.isPending || open.isPending,
+    busy: turn.isPending || choose.isPending || open.isPending || check.isPending,
     actionError,
     retry,
     canRetry: Boolean(actionError) && Boolean(bundle),
