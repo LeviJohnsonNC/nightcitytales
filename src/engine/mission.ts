@@ -188,3 +188,27 @@ export function flagsFromChoices(
   }
   return [...flags];
 }
+
+/**
+ * What the job pays, from the mission's printed reward. Nothing is invented
+ * here: if the mission records no reward, there is no payout.
+ */
+export type MissionPayout = {
+  upfront: number;
+  onCompletion: number;
+  total: number;
+  notes?: string;
+};
+
+export function missionPayout(mission: Mission, crewSize = 1): MissionPayout | null {
+  const reward = mission.reward;
+  if (!reward) return null;
+  const upfront = reward.upfront ?? 0;
+  const onCompletion = reward.eurobucksPerHead * Math.max(1, crewSize);
+  return {
+    upfront,
+    onCompletion,
+    total: upfront + onCompletion,
+    ...(reward.notes ? { notes: reward.notes } : {}),
+  };
+}
