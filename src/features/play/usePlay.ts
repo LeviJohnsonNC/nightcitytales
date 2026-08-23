@@ -461,9 +461,14 @@ export function usePlay(campaignId: string) {
     (turn.error as Error | null) ??
     (choose.error as Error | null) ??
     (open.error as Error | null) ??
-    (check.error as Error | null);
+    (check.error as Error | null) ??
+    (combat.error as Error | null);
 
   const pendingCheck = bundle ? pendingCheckFrom(bundle.events, bundle.character) : null;
+  const pendingAttack = bundle
+    ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
+    : null;
+
 
   const retry = () => {
     if (!bundle) return;
