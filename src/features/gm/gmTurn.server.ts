@@ -10,7 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { GM_SYSTEM_PROMPT } from "./gmSystemPrompt";
-import { GmResponseSchema, type GmResponse } from "./gmResponse";
+import { GmWireResponseSchema, normalizeGmResponse, type GmResponse } from "./gmResponse";
 
 const DEFAULT_GM_MODEL = "google/gemini-3.7-flash";
 
@@ -47,11 +47,11 @@ export const gmTurnFn = createServerFn({ method: "POST" })
     try {
       const { object } = await generateObject({
         model: gateway(model),
-        schema: GmResponseSchema,
+        schema: GmWireResponseSchema,
         system: GM_SYSTEM_PROMPT,
         prompt: data.userPrompt,
       });
-      return object;
+      return normalizeGmResponse(object);
     } catch (error) {
       throw gmError(error, model);
     }
