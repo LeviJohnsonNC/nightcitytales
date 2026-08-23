@@ -22,3 +22,4 @@ export * from "./campaign";
 export * from "./skillCheck";
 export * from "./combatTables";
 export * from "./combat";
+export * from "./encounter";

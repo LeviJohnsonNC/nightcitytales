@@ -91,3 +91,19 @@ export type FullCampaign = {
   flags: CampaignFlag[];
   missions: MissionProgress[];
 };
+
+// --- Play engine (encounters) -----------------------------------------------
+
+export type Encounter = Row<"encounters">;
+export type EncounterInsert = Insert<"encounters">;
+export type EncounterUpdate = Update<"encounters">;
+
+export type EncounterCombatant = Row<"encounter_combatants">;
+export type EncounterCombatantInsert = Insert<"encounter_combatants">;
+export type EncounterCombatantUpdate = Update<"encounter_combatants">;
+
+/** An encounter plus its combatants. */
+export type FullEncounter = {
+  encounter: Encounter;
+  combatants: EncounterCombatant[];
+};

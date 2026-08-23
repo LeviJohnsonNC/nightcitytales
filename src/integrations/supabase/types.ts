@@ -592,6 +592,147 @@ export type Database = {
           },
         ]
       }
+      encounter_combatants: {
+        Row: {
+          body: number
+          campaign_id: string
+          character_id: string | null
+          created_at: string
+          data: Json
+          death_save_penalty: number
+          defeated: boolean
+          encounter_id: string
+          hp_current: number
+          hp_max: number
+          id: string
+          initiative: number | null
+          is_player: boolean
+          name: string
+          ref: number
+          seriously_wounded_threshold: number
+          side: string
+          sp_body: number
+          sp_head: number
+          updated_at: string
+          wound_state: string
+        }
+        Insert: {
+          body: number
+          campaign_id: string
+          character_id?: string | null
+          created_at?: string
+          data?: Json
+          death_save_penalty?: number
+          defeated?: boolean
+          encounter_id: string
+          hp_current: number
+          hp_max: number
+          id?: string
+          initiative?: number | null
+          is_player?: boolean
+          name: string
+          ref: number
+          seriously_wounded_threshold: number
+          side?: string
+          sp_body?: number
+          sp_head?: number
+          updated_at?: string
+          wound_state?: string
+        }
+        Update: {
+          body?: number
+          campaign_id?: string
+          character_id?: string | null
+          created_at?: string
+          data?: Json
+          death_save_penalty?: number
+          defeated?: boolean
+          encounter_id?: string
+          hp_current?: number
+          hp_max?: number
+          id?: string
+          initiative?: number | null
+          is_player?: boolean
+          name?: string
+          ref?: number
+          seriously_wounded_threshold?: number
+          side?: string
+          sp_body?: number
+          sp_head?: number
+          updated_at?: string
+          wound_state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encounter_combatants_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encounter_combatants_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encounter_combatants_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      encounters: {
+        Row: {
+          active_index: number
+          beat_id: string | null
+          campaign_id: string
+          created_at: string
+          id: string
+          name: string | null
+          order_ids: Json
+          round: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          active_index?: number
+          beat_id?: string | null
+          campaign_id: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          order_ids?: Json
+          round?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          active_index?: number
+          beat_id?: string | null
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          order_ids?: Json
+          round?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encounters_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mission_progress: {
         Row: {
           branch_choices: Json
@@ -711,6 +852,7 @@ export type Database = {
       owns_character: { Args: { _character_id: string }; Returns: boolean }
       save_character: { Args: { payload: Json }; Returns: string }
       start_campaign: { Args: { payload: Json }; Returns: string }
+      start_encounter: { Args: { payload: Json }; Returns: string }
     }
     Enums: {
       [_ in never]: never
