@@ -504,7 +504,7 @@ export function usePlay(campaignId: string) {
       }
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
-    suggestions: pendingCheck ? [] : bundle ? latestSuggestions(bundle) : [],
+    suggestions: pendingCheck || pendingAttack ? [] : bundle ? latestSuggestions(bundle) : [],
     /** The check waiting on the player's die, if any. */
     pendingCheck,
     /** Roll the pending check — the engine decides the number. */
@@ -516,11 +516,40 @@ export function usePlay(campaignId: string) {
     commitCheck: (pending: PendingCheck, result: SkillCheckResult) =>
       check.mutate({ pending, result }),
     checkBusy: check.isPending,
+    /** The attack waiting on the player's dice, if any. */
+    pendingAttack,
+    /** The live fight, for the initiative/status rail. */
+    encounter: bundle?.encounter ?? null,
+    /** Roll the attack — the engine resolves To-Hit, damage and armor. */
+    rollAttack: (pending: PendingAttack, option: AttackOption): PerformAttackResult => {
+      if (!bundle?.encounter) throw new Error("There is no encounter to attack in.");
+      if (option.dv === null) throw new Error("This weapon has no printed Range DV here.");
+      return performAttack(bundle.encounter.state, {
+        attackerId: pending.attacker.id,
+        targetId: pending.target.id,
+        statLabel: option.statLabel,
+        statValue: option.statValue,
+        skillLabel: option.skillLabel,
+        skillValue: option.skillValue,
+        dv: option.dv,
+        damageDice: option.damageDice ?? 0,
+      });
+    },
+    /** Record the rolled attack, run the hostile turns, and narrate the result. */
+    commitAttack: (pending: PendingAttack, option: AttackOption, result: PerformAttackResult) =>
+      combat.mutate({ pending, option, result }),
+    combatBusy: combat.isPending,
     rolls: bundle ? rollHistory(bundle.events) : [],
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
-    busy: turn.isPending || choose.isPending || open.isPending || check.isPending,
+    busy:
+      turn.isPending ||
+      choose.isPending ||
+      open.isPending ||
+      check.isPending ||
+      combat.isPending,
     actionError,
     retry,
     canRetry: Boolean(actionError) && Boolean(bundle),
   };
 }
+
