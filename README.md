@@ -220,11 +220,19 @@ Continue developing this project in the [Lovable editor](https://lovable.dev/pro
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Prefer working locally? This project uses [Bun](https://bun.sh) — `bun.lock` is the lockfile CI installs from, so use Bun rather than npm to keep it in sync.
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
-npm run dev
+bun install
+bun run dev
+```
+
+The checks CI runs, if you want them before pushing:
+
+```sh
+bun run lint
+bun run typecheck
+bun run test
 ```
