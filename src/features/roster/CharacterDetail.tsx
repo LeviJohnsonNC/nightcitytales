@@ -1,11 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { assembleCharacter } from "@/engine";
 import { CharacterSheet } from "@/features/chargen/CharacterSheet";
 import { buildFromState } from "@/features/chargen/sheetModel";
 import { downloadCharacterJson } from "@/features/chargen/characterExport";
 import { getCharacter } from "@/lib/backend";
+import { startOrResumeAdventure } from "@/features/play/startAdventure";
 import { stateFromCharacter } from "./characterState";
 import { useOpenAsDraft } from "./RosterList";
 
@@ -15,6 +16,14 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
     queryFn: () => getCharacter(id),
   });
   const edit = useOpenAsDraft(userId);
+  const navigate = useNavigate();
+  const start = useMutation({
+    mutationFn: () => {
+      if (!data) throw new Error("Character not loaded.");
+      return startOrResumeAdventure(data.character);
+    },
+    onSuccess: (campaignId) => navigate({ to: "/play/$id", params: { id: campaignId } }),
+  });
 
   if (isPending) return <p className="text-sm text-muted-foreground">Loading character…</p>;
   if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
@@ -35,8 +44,8 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
           ← Back to roster
         </Link>
         <div className="flex flex-wrap gap-2">
-          <Button disabled title="Play sessions arrive in a later release">
-            Start Adventure — coming soon
+          <Button onClick={() => start.mutate()} disabled={start.isPending}>
+            {start.isPending ? "Starting…" : "Start Adventure"}
           </Button>
           <Button variant="outline" onClick={() => edit.mutate({ id })} disabled={edit.isPending}>
             {edit.isPending ? "Opening…" : "Edit in wizard"}
@@ -57,6 +66,9 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
         </div>
       </header>
 
+      {start.error && (
+        <p className="text-sm text-destructive">{(start.error as Error).message}</p>
+      )}
       {edit.error && <p className="text-sm text-destructive">{(edit.error as Error).message}</p>}
       <p className="no-print text-sm text-muted-foreground">
         Editing opens the wizard on a fresh draft copied from this character, so the saved sheet
