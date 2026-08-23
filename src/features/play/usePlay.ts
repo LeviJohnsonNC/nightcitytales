@@ -326,12 +326,11 @@ export async function commitAttack(
     await updateCampaignVitals(campaignId, { hp_current: player.hp });
   }
 
-  const status =
-    live.state.status === "friendlies_won"
-      ? " The hostiles are all down; the fight is over."
-      : live.state.status === "friendlies_lost"
-        ? " The player is down; the fight is over."
-        : "";
+  const status = await closeOutFight(campaignId, beatId, live);
+
+  // A Mortally Wounded player owes a Death Save before they can act again.
+  const owed = deathSaveOwed(live);
+  if (owed) await promptDeathSave(campaignId, beatId, owed.name);
 
   const fresh: PlayBundle = {
     ...bundle,
@@ -341,11 +340,94 @@ export async function commitAttack(
   await narrate(
     fresh,
     `(ENGINE: combat is RESOLVED for this exchange. ${lines.join(" ")}${status} Narrate exactly these results in short kinetic beats. Do not change a hit, a miss, a damage number, or who is standing. ${
-      status ? "Return to the scene." : "Then propose the player's next attack or action."
+      status
+        ? "Return to the scene."
+        : owed
+          ? "The player is Mortally Wounded and owes a Death Save before acting: end on that breath, and propose nothing."
+          : "Then propose the player's next attack or action."
     })`,
     { logInput: false },
   );
 }
+
+/** Announce a finished fight in the ledger, and describe it for the GM. */
+async function closeOutFight(
+  campaignId: string,
+  beatId: string | null,
+  live: LiveEncounter,
+): Promise<string> {
+  if (live.state.status === "active") return "";
+  const won = live.state.status === "friendlies_won";
+  const summary = won
+    ? "The hostiles are all down; the fight is over."
+    : "The player is down; the fight is over.";
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "encounter_ended",
+    summary,
+    data: { encounterId: live.id, status: live.state.status } as unknown as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
+  });
+  return ` ${summary}`;
+}
+
+/** Post the prompt the DeathSaveCard renders. */
+async function promptDeathSave(
+  campaignId: string,
+  beatId: string | null,
+  name: string,
+): Promise<void> {
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "death_save_prompt",
+    summary: `${name} must roll a Death Save`,
+    data: {} as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
+  });
+}
+
+/**
+ * Persist the player's rolled Death Save. The engine already applied it; this
+ * writes it down and hands the GM the exact outcome to narrate.
+ */
+export async function commitDeathSave(
+  bundle: PlayBundle,
+  pending: PendingDeathSave,
+  result: BeginTurnResult,
+): Promise<void> {
+  if (!bundle.encounter) throw new Error("There is no encounter to save against.");
+  const campaignId = bundle.campaign.id;
+  const beatId = pending.beatId;
+  const save = result.deathSave;
+  if (!save) throw new Error("The engine did not roll a Death Save.");
+
+  const live: LiveEncounter = { ...bundle.encounter, state: result.state };
+  await saveLiveEncounter(live);
+  await logDeathSave(campaignId, save, {
+    combatantName: pending.combatant.name,
+    died: result.died,
+    beatId,
+  });
+
+  const status = await closeOutFight(campaignId, beatId, live);
+  const line = result.died
+    ? `${pending.combatant.name} failed the Death Save and is DEAD (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}${save.autoFail ? ", a natural 10" : ""}).`
+    : `${pending.combatant.name} survived the Death Save (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}); they are still Mortally Wounded and the next save is at +${save.penaltyAfter}.`;
+
+  const fresh: PlayBundle = {
+    ...bundle,
+    events: await listCampaignEvents(campaignId),
+    encounter: live,
+  };
+  await narrate(
+    fresh,
+    `(ENGINE: the Death Save is RESOLVED. ${line}${status} Narrate exactly this. Do not revive them, do not soften it, do not re-roll it. ${
+      result.died ? "Close the scene on that death." : "End on a decision."
+    })`,
+    { logInput: false },
+  );
+}
+
 
 async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
