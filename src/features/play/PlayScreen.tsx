@@ -357,6 +357,16 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             busy={play.checkBusy}
           />
         )}
+        {play.pendingAttack && (
+          <CombatCard
+            key={play.pendingAttack.eventId}
+            pending={play.pendingAttack}
+            character={bundle.character}
+            roll={(option) => play.rollAttack(play.pendingAttack!, option)}
+            onSettled={(option, result) => play.commitAttack(play.pendingAttack!, option, result)}
+            busy={play.combatBusy}
+          />
+        )}
         <SuggestionBar
           suggestions={play.suggestions}
           onPick={play.submit}
@@ -364,8 +374,14 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         />
         <InputBar
           onSend={play.submit}
-          busy={play.busy || play.opening || Boolean(play.pendingCheck)}
+          busy={
+            play.busy ||
+            play.opening ||
+            Boolean(play.pendingCheck) ||
+            Boolean(play.pendingAttack)
+          }
         />
+
       </div>
       <aside className="space-y-4">
         <CharacterPanel bundle={bundle} />
