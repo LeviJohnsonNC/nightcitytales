@@ -66,6 +66,12 @@ import {
   snapToPublishedDv,
   type PendingCheck,
 } from "./checkPrompt";
+import {
+  deathSaveOwed,
+  pendingDeathSaveFrom,
+  type PendingDeathSave,
+} from "./deathSavePrompt";
+
 
 export type PlayBundle = {
   campaign: Campaign;
