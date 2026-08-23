@@ -228,11 +228,7 @@ function RollHistory({ rolls }: { rolls: RollRecord[] }) {
               {r.dv !== null ? ` vs ${r.dv}` : ""}{" "}
               <span
                 className={
-                  r.critical
-                    ? "text-neon-pink"
-                    : r.success
-                      ? "text-accent"
-                      : "text-destructive"
+                  r.critical ? "text-neon-pink" : r.success ? "text-accent" : "text-destructive"
                 }
               >
                 {r.success === null ? "—" : r.success ? "HIT" : "MISS"}

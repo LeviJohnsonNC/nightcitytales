@@ -63,7 +63,8 @@ export function describePendingCheck(
   }
 
   const stats = character.stats as Record<string, unknown> | null;
-  const statValue = stats && typeof stats[skill.stat] === "number" ? (stats[skill.stat] as number) : null;
+  const statValue =
+    stats && typeof stats[skill.stat] === "number" ? (stats[skill.stat] as number) : null;
   if (statValue === null) return null;
 
   const skillLevel = character.skills.find((s) => s.skill_id === skillId)?.level ?? 0;

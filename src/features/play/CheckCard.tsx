@@ -55,10 +55,7 @@ export function CheckCard({
         <Stat label={pending.stat.toUpperCase()} value={String(pending.statValue)} />
         <Stat label="Skill" value={String(pending.skillLevel)} />
         <Stat label="Base" value={`+${pending.base}`} />
-        <Stat
-          label={pending.bandName ?? "DV"}
-          value={`DV ${pending.dv}`}
-        />
+        <Stat label={pending.bandName ?? "DV"} value={`DV ${pending.dv}`} />
       </div>
 
       {result === null ? (
