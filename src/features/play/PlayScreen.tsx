@@ -48,12 +48,54 @@ function NarrativeLog({ events }: { events: CampaignEvent[] }) {
   }, [events.length]);
   return (
     <div className="flex-1 space-y-3 overflow-y-auto border border-border bg-card/40 p-4">
-      {events.length === 0 ? (
+      {readAloud && (
+        <blockquote className="border-l-2 border-accent bg-accent/5 p-3 text-sm leading-relaxed text-foreground">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
+            Briefing
+          </p>
+          {readAloud}
+        </blockquote>
+      )}
+      {events.length === 0 && !readAloud ? (
         <p className="text-sm text-muted-foreground">Night City holds its breath…</p>
       ) : (
         events.map((e) => <EventBlock key={e.id} event={e} />)
       )}
+      {busy && <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>}
       <div ref={endRef} />
+    </div>
+  );
+}
+
+function SuggestionBar({
+  suggestions,
+  onPick,
+  busy,
+}: {
+  suggestions: GmSuggestedAction[];
+  onPick: (text: string) => void;
+  busy: boolean;
+}) {
+  if (suggestions.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {suggestions.map((s) => (
+        <Button
+          key={s.label}
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          className="h-auto whitespace-normal py-2 text-left"
+          onClick={() => onPick(s.label)}
+        >
+          {s.label}
+          {s.skill ? (
+            <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+              {s.skill}
+            </span>
+          ) : null}
+        </Button>
+      ))}
     </div>
   );
 }
