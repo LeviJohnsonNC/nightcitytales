@@ -647,12 +647,29 @@ export function usePlay(campaignId: string) {
     commitAttack: (pending: PendingAttack, option: AttackOption, result: PerformAttackResult) =>
       combat.mutate({ pending, option, result }),
     combatBusy: combat.isPending,
+    /** The Death Save the player owes before acting, if any. */
+    pendingDeathSave,
+    /** Roll the Death Save — the engine rolls it and applies the outcome. */
+    rollDeathSave: (): BeginTurnResult => {
+      if (!bundle?.encounter) throw new Error("There is no encounter to save against.");
+      return beginTurn(bundle.encounter.state);
+    },
+    /** Record the rolled Death Save and let the GM narrate it. */
+    commitDeathSave: (pending: PendingDeathSave, result: BeginTurnResult) =>
+      death.mutate({ pending, result }),
+    deathBusy: death.isPending,
     rolls: bundle ? rollHistory(bundle.events) : [],
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
-      turn.isPending || choose.isPending || open.isPending || check.isPending || combat.isPending,
+      turn.isPending ||
+      choose.isPending ||
+      open.isPending ||
+      check.isPending ||
+      combat.isPending ||
+      death.isPending,
     actionError,
     retry,
     canRetry: Boolean(actionError) && Boolean(bundle),
   };
+
 }
