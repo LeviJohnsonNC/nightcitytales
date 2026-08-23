@@ -81,18 +81,24 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
   };
 }
 
-async function narrate(bundle: PlayBundle, input: string): Promise<void> {
+async function narrate(
+  bundle: PlayBundle,
+  input: string,
+  options: { logInput?: boolean } = {},
+): Promise<void> {
   const campaignId = bundle.campaign.id;
   const beatId = bundle.beat?.id ?? null;
   const beatFields = beatId ? { beat_id: beatId } : {};
 
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "player_input",
-    summary: input,
-    data: {} as Json,
-    ...beatFields,
-  });
+  if (options.logInput !== false) {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "player_input",
+      summary: input,
+      data: {} as Json,
+      ...beatFields,
+    });
+  }
 
   if (!bundle.mission || !bundle.runtime || !bundle.beat) {
     throw new Error("There is no active mission to play right now.");
