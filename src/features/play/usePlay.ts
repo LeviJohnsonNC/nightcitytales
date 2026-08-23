@@ -114,7 +114,10 @@ async function narrate(bundle: PlayBundle, input: string): Promise<void> {
     campaign_id: campaignId,
     type: "gm_narration",
     summary: gm.narration,
-    data: { endsWithDecision: gm.endsWithDecision } as unknown as Json,
+    data: {
+      endsWithDecision: gm.endsWithDecision,
+      suggestedActions: gm.suggestedActions,
+    } as unknown as Json,
     ...beatFields,
   });
 
