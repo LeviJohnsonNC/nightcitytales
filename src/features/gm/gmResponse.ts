@@ -116,6 +116,44 @@ const str = (value: unknown): string | null =>
 const num = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
 
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
+
+/** Talking distance when the GM forgets to state one; still a printed range band. */
+export const DEFAULT_ATTACK_DISTANCE = 12;
+
+/** Narrow a loose list of GM-authored hostiles into clamped enemy stat blocks. */
+function normalizeEnemies(raw: unknown): GmEnemy[] {
+  if (!Array.isArray(raw)) return [];
+  const out: GmEnemy[] = [];
+  raw.forEach((item, index) => {
+    if (!item || typeof item !== "object") return;
+    const e = item as Loose;
+    const name = str(e["name"]) ?? str(e["label"]);
+    if (!name) return;
+    const rangeRaw = str(e["rangeType"]) ?? str(e["weaponType"]);
+    const rangeType = (GM_RANGE_TYPES as readonly string[]).includes(rangeRaw ?? "")
+      ? (rangeRaw as GmEnemy["rangeType"])
+      : "pistol";
+    out.push({
+      key: str(e["key"]) ?? str(e["id"]) ?? `${name}-${index}`,
+      name,
+      ref: clamp(num(e["ref"]) ?? 5, 1, 10),
+      body: clamp(num(e["body"]) ?? 5, 1, 12),
+      hp: clamp(num(e["hp"]) ?? 25, 1, 80),
+      sp: clamp(num(e["sp"]) ?? 7, 0, 20),
+      attackSkill: clamp(num(e["attackSkill"]) ?? num(e["skill"]) ?? 4, 0, 10),
+      weaponName: str(e["weaponName"]) ?? str(e["weapon"]) ?? "sidearm",
+      damageDice: clamp(num(e["damageDice"]) ?? 2, 1, 8),
+      rangeType,
+      distance: clamp(num(e["distance"]) ?? DEFAULT_ATTACK_DISTANCE, 1, 800),
+    });
+  });
+  return out;
+}
+
+
+
 /** Narrow the loose model output into the typed GM response the engine uses. */
 export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
   const proposedActions: GmProposedAction[] = [];
