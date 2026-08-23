@@ -15,7 +15,9 @@ import {
 } from "@/engine";
 import type { CampaignEvent, FullCharacter } from "@/lib/backend";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
-import { statsRecord, weaponChoices } from "./encounterModelBridge";
+import { weaponChoices } from "./encounterModel";
+import { statsRecord } from "./playModel";
+
 
 export type PendingAttack = {
   eventId: string;
