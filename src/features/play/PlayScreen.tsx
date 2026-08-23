@@ -4,6 +4,7 @@
  * choices, and a combat HUD) alongside — all reading live campaign state.
  */
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
