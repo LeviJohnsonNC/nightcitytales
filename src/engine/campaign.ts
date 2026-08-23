@@ -47,7 +47,8 @@ export function woundStateFor(
   seriouslyWoundedThreshold: number,
 ): WoundStateCode {
   if (hpCurrent <= 0) return "mortal";
-  if (hpCurrent <= seriouslyWoundedThreshold) return "serious";
+  // Seriously Wounded is "less than 1/2 HP (round up)" (CP:R pg. 186) — strictly below.
+  if (hpCurrent < seriouslyWoundedThreshold) return "serious";
   if (hpCurrent < hpMax) return "light";
   return "none";
 }

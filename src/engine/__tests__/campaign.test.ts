@@ -45,13 +45,14 @@ describe("woundStateFor", () => {
     expect(woundStateFor(hpMax, hpMax, swt)).toBe("none");
   });
 
-  it("is 'light' below max but above the Seriously Wounded threshold", () => {
+  it("is 'light' below max, down to and including the half-HP mark", () => {
     expect(woundStateFor(hpMax - 1, hpMax, swt)).toBe("light");
-    expect(woundStateFor(swt + 1, hpMax, swt)).toBe("light");
+    // Exactly half HP is "less than 1/2" = false, so still Lightly Wounded (CP:R pg. 186).
+    expect(woundStateFor(swt, hpMax, swt)).toBe("light");
   });
 
-  it("is 'serious' at or below half HP but above zero", () => {
-    expect(woundStateFor(swt, hpMax, swt)).toBe("serious");
+  it("is 'serious' below half HP (round up) but above zero", () => {
+    expect(woundStateFor(swt - 1, hpMax, swt)).toBe("serious");
     expect(woundStateFor(1, hpMax, swt)).toBe("serious");
   });
 

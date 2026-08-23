@@ -20,3 +20,5 @@ export * from "./lifestyle";
 export * from "./characterSheet";
 export * from "./campaign";
 export * from "./skillCheck";
+export * from "./combatTables";
+export * from "./combat";
