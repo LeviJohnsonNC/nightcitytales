@@ -161,9 +161,11 @@ async function narrate(
     ...beatFields,
   });
 
-  // A proposed check is NOT rolled here: it is posted to the ledger as a prompt
-  // and waits for the player to roll it (see resolvePendingCheck).
+  // A proposed check or attack is NOT rolled here: it is posted to the ledger as
+  // a prompt and waits for the player's dice (see commitCheck / commitAttack).
   let promptPosted = false;
+  let live = bundle.encounter;
+
   for (const action of gm.proposedActions) {
     if (action.kind === "skill_check") {
       if (promptPosted) continue; // one check at a time at the table
