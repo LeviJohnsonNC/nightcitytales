@@ -191,7 +191,7 @@ function ScenePanel({
       )}
       {bundle.availableExits.length > 0 && (
         <div className="space-y-2">
-          <Label>Where to</Label>
+          <Label>Move the story on</Label>
           {bundle.availableExits.map((exit) => (
             <Button
               key={exit.to}
