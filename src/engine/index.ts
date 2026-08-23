@@ -22,6 +22,8 @@ export * from "./campaign";
 export * from "./skillCheck";
 export * from "./combatTables";
 export * from "./combat";
+export * from "./weaponProfile";
+
 export * from "./encounter";
 export * from "./mission";
 export * from "./missions";
