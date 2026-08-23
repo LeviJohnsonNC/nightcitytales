@@ -383,6 +383,68 @@ async function settleMission(
   await updateCampaign(campaignId, { status: "completed" });
 }
 
+/**
+ * The end-of-session I.P. award. The GM judges the session against the printed
+ * table; the engine turns that judgement into the number, and it is written to
+ * the campaign and to the character's permanent total exactly once.
+ */
+export type IpTally = { award: IpAward; judgement: IpJudgement; total: number };
+
+async function settleIp(
+  bundle: PlayBundle,
+  playstyles: { primary: IpPlaystyle; secondary: IpPlaystyle },
+): Promise<IpTally> {
+  const campaignId = bundle.campaign.id;
+  if (bundle.campaign.ip_awarded !== null && bundle.campaign.ip_awarded !== undefined) {
+    throw new Error("This job's Improvement Points have already been awarded.");
+  }
+  const missionFinished = bundle.campaign.status === "completed";
+  const outcome =
+    bundle.campaign.status === "dead"
+      ? `${bundle.character.character.name} died in Night City; the job was left unfinished.`
+      : missionFinished
+        ? "The job was seen through to its resolution."
+        : "The session ended with the job unfinished.";
+
+  const judgement = await ipJudgementFn({
+    data: {
+      userPrompt: renderIpJudgementPrompt({
+        missionTitle: bundle.mission?.title ?? bundle.campaign.name,
+        missionFinished,
+        outcome,
+        objectives: (bundle.runtime?.objectives ?? []).map((o) => ({
+          text: o.text,
+          status: o.status,
+        })),
+        primary: playstyles.primary,
+        secondary: playstyles.secondary,
+        log: bundle.events.slice(-60).map((e) => `[${e.type}] ${e.summary ?? ""}`),
+        rollCount: rollHistory(bundle.events).length,
+      }),
+    },
+  });
+
+  const award = awardImprovementPoints({
+    missionFinished,
+    groupIp: judgement.groupIp,
+    primary: playstyles.primary,
+    secondary: playstyles.secondary,
+    primaryIp: judgement.primaryIp,
+    secondaryIp: judgement.secondaryIp,
+    standout: judgement.standout,
+  });
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "ip_awarded",
+    summary: `${award.ip} I.P. awarded (${award.source} column${award.fromStandout ? ", standout" : ""}): ${award.descriptor}`,
+    data: { award, judgement, playstyles } as unknown as Json,
+  });
+  await updateCampaign(campaignId, { ip_awarded: award.ip });
+  const total = await addImprovementPoints(bundle.campaign.character_id, award.ip);
+  return { award, judgement, total };
+}
+
 /** The character died: fail the job and close the campaign. */
 async function settleDeath(bundle: PlayBundle): Promise<void> {
   const campaignId = bundle.campaign.id;
