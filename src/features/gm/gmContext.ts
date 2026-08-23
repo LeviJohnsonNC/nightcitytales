@@ -5,6 +5,7 @@
  * summary of recent events — never the whole transcript. That bounded slice is
  * what keeps a long campaign from drifting.
  */
+import { resolveSkillId } from "@/engine";
 import type { Beat, BeatExit, Mission, MissionObjective } from "@/engine";
 
 export type GmCharacterSummary = {
@@ -18,7 +19,8 @@ export type GmCharacterSummary = {
   humanityMax?: number;
   eurobucks?: number;
   stats: Record<string, number>;
-  keySkills: { skill: string; base: number }[];
+  /** Trained skills; `id` is the canonical skill id the GM must echo as skillId. */
+  keySkills: { skill: string; base: number; id?: string }[];
 };
 
 export type GmNpcSummary = {
@@ -50,6 +52,12 @@ function line(label: string, value: string): string {
   return `${label}: ${value}`;
 }
 
+/** Render a skill reference with its canonical id in brackets, when resolvable. */
+function withSkillId(label: string): string {
+  const id = resolveSkillId(label);
+  return id ? `${label} [id: ${id}]` : label;
+}
+
 /** Render the context + the player's input into the model's user prompt. */
 export function renderGmUserPrompt(context: GmContext, playerInput: string): string {
   const { mission, beat, character } = context;
@@ -63,8 +71,10 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   if (beat.checks?.length) {
     parts.push(
       line(
-        "Checks (DV set in advance)",
-        beat.checks.map((c) => `${c.skill} DV${c.dv}${c.note ? ` (${c.note})` : ""}`).join("; "),
+        "Checks (DV set in advance; propose skill_check with the exact [id: ...])",
+        beat.checks
+          .map((c) => `${withSkillId(c.skill)} DV${c.dv}${c.note ? ` (${c.note})` : ""}`)
+          .join("; "),
       ),
     );
   }
@@ -101,7 +111,12 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   );
   if (character.keySkills.length) {
     parts.push(
-      line("Key skills", character.keySkills.map((s) => `${s.skill} +${s.base}`).join(", ")),
+      line(
+        "Key skills (use the [id: ...] value as skillId when you propose a check)",
+        character.keySkills
+          .map((s) => `${s.skill} +${s.base}${s.id ? ` [id: ${s.id}]` : ""}`)
+          .join(", "),
+      ),
     );
   }
 

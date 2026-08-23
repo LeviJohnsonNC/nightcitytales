@@ -15,6 +15,7 @@ import {
   getBeat,
   getMission,
   getSkill,
+  resolveSkillId,
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
@@ -45,6 +46,7 @@ import {
   pendingCheckFrom,
   rollHistory,
   snapToPublishedDv,
+  woundModifier,
   type PendingCheck,
 } from "./checkPrompt";
 
@@ -128,6 +130,46 @@ async function narrate(
 
   const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
 
+  // Resolve any proposed skill check up front so the narration event can carry a
+  // debug trace of what the GM proposed and how it was interpreted. A proposed
+  // check is NOT rolled here: it is posted to the ledger as a prompt and waits for
+  // the player to roll it (see rollCheck / commitCheck). A near-miss skill (e.g.
+  // "Perception" instead of "perception") is coerced to the real id rather than
+  // dropped; a genuinely unknown skill is recorded so it is visible in dev.
+  let resolvedCheck: {
+    skillId: string;
+    skillName: string;
+    dv: number;
+    band: string | null;
+    intent: string;
+  } | null = null;
+  const droppedActions: unknown[] = [];
+  const coercions: { proposed: string; resolved: string }[] = [];
+
+  for (const action of gm.proposedActions) {
+    if (action.kind !== "skill_check") continue;
+    if (resolvedCheck) continue; // one check at a time at the table
+    const skillId = resolveSkillId(action.skillId);
+    if (!skillId) {
+      droppedActions.push(action);
+      if (import.meta.env.DEV) {
+        console.warn("[GM] dropped skill_check with unresolvable skill", action);
+      }
+      continue;
+    }
+    if (skillId !== action.skillId) coercions.push({ proposed: action.skillId, resolved: skillId });
+    const dv = snapToPublishedDv(action.dv);
+    resolvedCheck = {
+      skillId,
+      skillName: getSkill(skillId).name,
+      dv,
+      band: dvBandName(dv),
+      intent: action.intent,
+    };
+  }
+
+  const debug = droppedActions.length || coercions.length ? { droppedActions, coercions } : null;
+
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "gm_narration",
@@ -135,49 +177,38 @@ async function narrate(
     data: {
       endsWithDecision: gm.endsWithDecision,
       suggestedActions: gm.suggestedActions,
+      ...(debug ? { debug } : {}),
     } as unknown as Json,
     ...beatFields,
   });
 
-  // A proposed check is NOT rolled here: it is posted to the ledger as a prompt
-  // and waits for the player to roll it (see resolvePendingCheck).
-  let promptPosted = false;
+  if (resolvedCheck) {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "check_prompt",
+      summary: `${resolvedCheck.skillName} check — DV ${resolvedCheck.dv}${resolvedCheck.band ? ` (${resolvedCheck.band})` : ""}`,
+      data: {
+        skillId: resolvedCheck.skillId,
+        skillName: resolvedCheck.skillName,
+        dv: resolvedCheck.dv,
+        intent: resolvedCheck.intent,
+      } as unknown as Json,
+      ...beatFields,
+    });
+  }
+
   for (const action of gm.proposedActions) {
-    if (action.kind === "skill_check") {
-      if (promptPosted) continue; // one check at a time at the table
-      let skillName: string | null = null;
-      try {
-        skillName = getSkill(action.skillId).name;
-      } catch {
-        continue; // an unknown skill id is not a check we can offer
-      }
-      const dv = snapToPublishedDv(action.dv);
-      const band = dvBandName(dv);
-      promptPosted = true;
-      await appendCampaignEvent({
-        campaign_id: campaignId,
-        type: "check_prompt",
-        summary: `${skillName} check — DV ${dv}${band ? ` (${band})` : ""}`,
-        data: {
-          skillId: action.skillId,
-          skillName,
-          dv,
-          intent: action.intent,
-        } as unknown as Json,
-        ...beatFields,
+    if (action.kind !== "advance_beat") continue;
+    try {
+      const next = advance(bundle.mission, bundle.runtime, action.to);
+      await saveMissionRuntime(campaignId, next);
+      await logBeatAdvanced(campaignId, {
+        mission: bundle.mission,
+        fromBeatId: bundle.beat.id,
+        toBeat: getBeat(bundle.mission, action.to),
       });
-    } else if (action.kind === "advance_beat") {
-      try {
-        const next = advance(bundle.mission, bundle.runtime, action.to);
-        await saveMissionRuntime(campaignId, next);
-        await logBeatAdvanced(campaignId, {
-          mission: bundle.mission,
-          fromBeatId: bundle.beat.id,
-          toBeat: getBeat(bundle.mission, action.to),
-        });
-      } catch {
-        // Ignore an invalid advancement the model proposed; the beat stays put.
-      }
+    } catch {
+      // Ignore an invalid advancement the model proposed; the beat stays put.
     }
   }
 
@@ -329,7 +360,13 @@ export function usePlay(campaignId: string) {
     (open.error as Error | null) ??
     (check.error as Error | null);
 
-  const pendingCheck = bundle ? pendingCheckFrom(bundle.events, bundle.character) : null;
+  // The wound-state penalty rides on every check this turn, so the "you need X"
+  // the player sees and the die the engine rolls always use the same modifiers.
+  const woundMod = bundle ? woundModifier(bundle.vitals.wound_state) : null;
+  const checkModifiers = woundMod ? [woundMod] : [];
+  const pendingCheck = bundle
+    ? pendingCheckFrom(bundle.events, bundle.character, checkModifiers)
+    : null;
 
   const retry = () => {
     if (!bundle) return;
@@ -368,10 +405,16 @@ export function usePlay(campaignId: string) {
     suggestions: pendingCheck ? [] : bundle ? latestSuggestions(bundle) : [],
     /** The check waiting on the player's die, if any. */
     pendingCheck,
-    /** Roll the pending check — the engine decides the number. */
+    /** Roll the pending check — the engine decides the number, with the same modifiers shown. */
     rollCheck: (pending: PendingCheck) => {
       if (!bundle) throw new Error("Still loading.");
-      return skillCheckForCharacter(actorFor(bundle.character), pending.skillId, pending.dv);
+      return skillCheckForCharacter(
+        actorFor(bundle.character),
+        pending.skillId,
+        pending.dv,
+        undefined,
+        { modifiers: pending.modifiers },
+      );
     },
     /** Record the rolled check and let the GM narrate the outcome. */
     commitCheck: (pending: PendingCheck, result: SkillCheckResult) =>

@@ -58,6 +58,19 @@ export function CheckCard({
         <Stat label={pending.bandName ?? "DV"} value={`DV ${pending.dv}`} />
       </div>
 
+      {pending.modifiers.length > 0 && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {pending.modifiers.map((m) => (
+            <span key={m.label} className="font-mono text-[11px] text-muted-foreground">
+              {m.label}{" "}
+              <span className={m.value < 0 ? "text-destructive" : "text-accent"}>
+                {m.value >= 0 ? `+${m.value}` : m.value}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
       {result === null ? (
         <div className="flex items-center gap-3">
           <DiceRoll

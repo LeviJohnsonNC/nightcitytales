@@ -35,14 +35,17 @@ export function actorFor(full: FullCharacter): SkillCheckActor {
 }
 
 /** The character's best trained skills as "Skill +base" entries, highest first. */
-export function keySkills(full: FullCharacter, limit = 8): { skill: string; base: number }[] {
+export function keySkills(
+  full: FullCharacter,
+  limit = 8,
+): { skill: string; base: number; id: string }[] {
   const stats = statsRecord(full);
   return full.skills
     .filter((s) => s.level > 0)
     .map((s) => {
       const def = getSkill(s.skill_id);
       const statValue = stats[def.stat] ?? 0;
-      return { skill: def.name, base: statValue + s.level };
+      return { skill: def.name, base: statValue + s.level, id: s.skill_id };
     })
     .sort((a, b) => b.base - a.base)
     .slice(0, limit);

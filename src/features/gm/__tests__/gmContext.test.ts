@@ -13,7 +13,7 @@ const character: GmCharacterSummary = {
   humanityMax: 60,
   eurobucks: 1030,
   stats: { ref: 8, body: 6 },
-  keySkills: [{ skill: "Handgun", base: 14 }],
+  keySkills: [{ skill: "Handgun", base: 14, id: "handgun" }],
 };
 
 describe("renderGmUserPrompt", () => {
@@ -40,6 +40,11 @@ describe("renderGmUserPrompt", () => {
     expect(prompt).toContain("[empty_office_hours]");
     expect(prompt).toContain("== PLAYER INPUT ==");
     expect(prompt).toContain("the missing women");
+  });
+
+  it("gives the GM the exact skill id to echo as skillId", () => {
+    const prompt = renderGmUserPrompt(context, "I scan the crowd");
+    expect(prompt).toContain("Handgun +14 [id: handgun]");
   });
 
   it("omits sections that are empty", () => {

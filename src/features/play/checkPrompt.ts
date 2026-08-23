@@ -4,7 +4,15 @@
  * is at stake. Every number here comes from the engine and the rules JSON; this
  * file never invents a DV, a STAT, or a Skill Level.
  */
-import { DIFFICULTY_VALUES, describeDV, getSkill, type SkillCheckResult } from "@/engine";
+import {
+  DIFFICULTY_VALUES,
+  describeDV,
+  getSkill,
+  woundActionPenalty,
+  type SkillCheckModifier,
+  type SkillCheckResult,
+  type WoundStateCode,
+} from "@/engine";
 import type { CampaignEvent, FullCharacter } from "@/lib/backend";
 
 /** The published DV bands, lowest first (src/data/rules/dv-table.json). */
@@ -24,6 +32,19 @@ export function dvBandName(dv: number): string | null {
   return describeDV(dv)?.name ?? null;
 }
 
+/**
+ * The wound-state penalty as a check modifier, or null when unwounded. Seriously
+ * Wounded is −2 to all Actions, Mortally Wounded −4 (CP:R pg. 186). The same
+ * value is fed to the actual roll, so the "you need X" the player sees never
+ * disagrees with the die the engine rolls.
+ */
+export function woundModifier(woundState: string): SkillCheckModifier | null {
+  const penalty = woundActionPenalty(woundState as WoundStateCode);
+  if (penalty === 0) return null;
+  const label = woundState === "mortal" ? "Mortally Wounded" : "Seriously Wounded";
+  return { label, value: penalty };
+}
+
 export type PendingCheck = {
   /** The ledger row that proposed this check. */
   eventId: string;
@@ -33,7 +54,9 @@ export type PendingCheck = {
   stat: string;
   statValue: number;
   skillLevel: number;
-  /** STAT + Skill, before the die. */
+  /** Situational/condition modifiers applied to the roll (wound state, etc.). */
+  modifiers: SkillCheckModifier[];
+  /** STAT + Skill + modifiers, before the die. */
   base: number;
   dv: number;
   bandName: string | null;
@@ -49,6 +72,7 @@ type PromptData = { skillId?: unknown; dv?: unknown; intent?: unknown };
 export function describePendingCheck(
   event: CampaignEvent,
   character: FullCharacter,
+  modifiers: SkillCheckModifier[] = [],
 ): PendingCheck | null {
   const data = (event.data ?? {}) as PromptData;
   const skillId = typeof data.skillId === "string" ? data.skillId : null;
@@ -69,7 +93,8 @@ export function describePendingCheck(
 
   const skillLevel = character.skills.find((s) => s.skill_id === skillId)?.level ?? 0;
   const dv = snapToPublishedDv(dvRaw);
-  const base = statValue + skillLevel;
+  const modifierTotal = modifiers.reduce((sum, m) => sum + m.value, 0);
+  const base = statValue + skillLevel + modifierTotal;
 
   return {
     eventId: event.id,
@@ -78,6 +103,7 @@ export function describePendingCheck(
     stat: skill.stat,
     statValue,
     skillLevel,
+    modifiers,
     base,
     dv,
     bandName: dvBandName(dv),
@@ -94,13 +120,14 @@ export function describePendingCheck(
 export function pendingCheckFrom(
   events: CampaignEvent[],
   character: FullCharacter,
+  modifiers: SkillCheckModifier[] = [],
 ): PendingCheck | null {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i];
     if (!event) continue;
     if (event.type === "skill_check") return null; // the newest check is already rolled
     if (event.type !== "check_prompt") continue;
-    return describePendingCheck(event, character);
+    return describePendingCheck(event, character, modifiers);
   }
   return null;
 }

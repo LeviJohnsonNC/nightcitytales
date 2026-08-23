@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
@@ -14,6 +15,89 @@ import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
 import { usePlay, type PlayBundle } from "./usePlay";
 import type { RollRecord } from "./checkPrompt";
+
+/** Show the GM debug trace (dropped/coerced proposals) in dev, or with ?debug. */
+const GM_DEBUG =
+  typeof window !== "undefined" &&
+  (import.meta.env.DEV || new URLSearchParams(window.location.search).has("debug"));
+
+/** A resolved check rendered as a compact, expandable mechanics chip. */
+function CheckResultChip({ event }: { event: CampaignEvent }) {
+  const data = (event.data ?? {}) as {
+    success?: boolean;
+    margin?: number;
+    critical?: "success" | "failure" | null;
+    skill_name?: string;
+  };
+  const roll = (event.roll ?? {}) as { total?: number; dv?: number | null; formula?: string };
+  const success = typeof data.success === "boolean" ? data.success : null;
+  const margin = typeof data.margin === "number" ? Math.abs(data.margin) : null;
+  const name = data.skill_name ?? "Check";
+
+  return (
+    <details className="group border border-border/60 bg-background/40 px-3 py-2">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-sm">
+          <span className="text-accent">◆</span>
+          <span className="font-semibold">{name}</span>
+          {typeof roll.total === "number" && (
+            <span className="num font-mono text-xs text-muted-foreground">
+              {roll.total}
+              {roll.dv != null ? ` vs DV ${roll.dv}` : ""}
+            </span>
+          )}
+        </span>
+        <span className="flex items-center gap-2">
+          {data.critical && (
+            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-neon-pink">
+              {data.critical === "success" ? "Crit" : "Fumble"}
+            </span>
+          )}
+          <span
+            className={cn(
+              "px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em]",
+              success === null
+                ? "bg-muted text-muted-foreground"
+                : success
+                  ? "bg-accent/15 text-accent"
+                  : "bg-destructive/15 text-destructive",
+            )}
+          >
+            {success === null ? "—" : success ? "Pass" : "Fail"}
+            {margin !== null ? ` by ${margin}` : ""}
+          </span>
+        </span>
+      </summary>
+      {roll.formula && (
+        <p className="mt-2 font-mono text-[11px] leading-relaxed text-muted-foreground">
+          {roll.formula}
+        </p>
+      )}
+    </details>
+  );
+}
+
+function GmDebugNote({ event }: { event: CampaignEvent }) {
+  const debug = (event.data as { debug?: unknown } | null)?.debug as
+    | {
+        droppedActions?: unknown[];
+        coercions?: { proposed: string; resolved: string }[];
+      }
+    | undefined;
+  if (!debug) return null;
+  const dropped = debug.droppedActions?.length ?? 0;
+  const coercions = debug.coercions ?? [];
+  if (!dropped && coercions.length === 0) return null;
+  return (
+    <p className="mt-1 font-mono text-[10px] text-neon-pink/80">
+      GM debug:
+      {dropped ? ` ${dropped} check${dropped === 1 ? "" : "s"} dropped (unknown skill)` : ""}
+      {coercions.length
+        ? ` coerced ${coercions.map((c) => `${c.proposed}→${c.resolved}`).join(", ")}`
+        : ""}
+    </p>
+  );
+}
 
 function EventBlock({ event }: { event: CampaignEvent }) {
   const text = event.summary ?? "";
@@ -23,8 +107,14 @@ function EventBlock({ event }: { event: CampaignEvent }) {
         <p className="border-l-2 border-accent/60 pl-3 text-sm italic text-accent">&gt; {text}</p>
       );
     case "gm_narration":
-      return <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>;
+      return (
+        <div>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>
+          {GM_DEBUG && <GmDebugNote event={event} />}
+        </div>
+      );
     case "skill_check":
+      return <CheckResultChip event={event} />;
     case "attack":
     case "death_save":
       return (

@@ -49,6 +49,42 @@ export function findSkillByName(name: string): SkillDefinition | undefined {
   return SKILLS_BY_NAME.get(name.toLowerCase());
 }
 
+/**
+ * A normalized lookup key for loose skill references: lowercased, with the words
+ * "check"/"skill"/"roll" removed and all punctuation and whitespace stripped. So
+ * "Melee Weapon", "melee_weapon", and "Melee Weapon check" all collapse to the
+ * same key. Used only by resolveSkillId — the canonical id is always the output.
+ */
+function normalizeSkillKey(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\b(check|skill|roll)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+const SKILLS_BY_NORMALIZED = new Map<string, SkillDefinition>();
+for (const skill of SKILLS) {
+  // Set the name key first, then the id key, so an id spelling wins any collision.
+  SKILLS_BY_NORMALIZED.set(normalizeSkillKey(skill.name), skill);
+  SKILLS_BY_NORMALIZED.set(normalizeSkillKey(skill.id), skill);
+}
+
+/**
+ * Resolve a loosely-specified skill reference to a canonical skill id. Accepts an
+ * exact id, a case-insensitive id or name, or a lightly-normalized name (spaces,
+ * punctuation and a trailing "check"/"skill"/"roll" stripped). Returns null when
+ * nothing matches, so the caller can decide whether that is a dropped action
+ * rather than trusting a bad id. This is the safety net that keeps a GM proposal
+ * like "Perception" or "perception check" from being silently thrown away.
+ */
+export function resolveSkillId(reference: string): string | null {
+  if (!reference) return null;
+  if (SKILLS_BY_ID.has(reference)) return reference;
+  const byName = SKILLS_BY_NAME.get(reference.toLowerCase());
+  if (byName) return byName.id;
+  return SKILLS_BY_NORMALIZED.get(normalizeSkillKey(reference))?.id ?? null;
+}
+
 export const SKILL_RULES = skillsData._rules;
 
 /** The 13 Basic Skills, as skill ids, read from skills.json. */
