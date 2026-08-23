@@ -59,6 +59,8 @@ import {
 } from "@/features/campaign/encounterState";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
 import { gmTurnFn } from "@/features/gm/gmTurn.server";
+import { renderIpJudgementPrompt, type IpJudgement } from "@/features/gm/ipJudgement";
+import { ipJudgementFn } from "@/features/gm/ipJudgement.server";
 import { actorFor, characterSummary, npcSummaries, recentEventLines } from "./playModel";
 import { beginEncounter, describeAttack, runNpcTurns } from "./combatFlow";
 import {
