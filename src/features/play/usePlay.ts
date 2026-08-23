@@ -4,7 +4,10 @@
  * checks, and everything is appended to the campaign ledger. The engine owns the
  * dice and the beat position; this hook just sequences the calls and persists.
  */
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/gmResponse";
 import {
   advance,
   availableExits,
