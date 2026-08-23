@@ -4,20 +4,34 @@
  * structured, engine-resolvable actions. The API key never leaves the server,
  * mirroring generateBackgroundFn.
  *
- * GM_MODEL must be an Anthropic model slug the Lovable gateway exposes; override
- * it with the GM_MODEL env var. The GM system prompt is tuned for Claude.
+ * GM_MODEL must be a model slug the Lovable gateway exposes; override it with
+ * the GM_MODEL env var.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { GM_SYSTEM_PROMPT } from "./gmSystemPrompt";
 import { GmResponseSchema, type GmResponse } from "./gmResponse";
 
-const DEFAULT_GM_MODEL = "anthropic/claude-sonnet-4";
+const DEFAULT_GM_MODEL = "google/gemini-3.7-flash";
 
 const GmTurnInput = z.object({
   /** The rendered context slice + player input (see renderGmUserPrompt). */
   userPrompt: z.string().min(1),
 });
+
+/** Turn a raw gateway failure into something a player can act on. */
+function gmError(error: unknown, model: string): Error {
+  const status = (error as { statusCode?: number; status?: number })?.statusCode
+    ?? (error as { status?: number })?.status;
+  const detail = error instanceof Error ? error.message : String(error);
+  if (status === 400) return new Error(`The GM model "${model}" is unavailable. (${detail})`);
+  if (status === 401) return new Error("The GM is not configured: the AI key was rejected.");
+  if (status === 402) return new Error("The GM is out of AI credits. Top up to keep playing.");
+  if (status === 403) return new Error("AI access is blocked for this workspace.");
+  if (status === 429) return new Error("The GM is being rate limited. Try again in a moment.");
+  if (status && status >= 500) return new Error("The GM stumbled upstream. Try again.");
+  return error instanceof Error ? error : new Error(detail);
+}
 
 export const gmTurnFn = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => GmTurnInput.parse(input))
@@ -30,11 +44,15 @@ export const gmTurnFn = createServerFn({ method: "POST" })
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
 
     const gateway = createLovableAiGatewayProvider(key);
-    const { object } = await generateObject({
-      model: gateway(model),
-      schema: GmResponseSchema,
-      system: GM_SYSTEM_PROMPT,
-      prompt: data.userPrompt,
-    });
-    return object;
+    try {
+      const { object } = await generateObject({
+        model: gateway(model),
+        schema: GmResponseSchema,
+        system: GM_SYSTEM_PROMPT,
+        prompt: data.userPrompt,
+      });
+      return object;
+    } catch (error) {
+      throw gmError(error, model);
+    }
   });
