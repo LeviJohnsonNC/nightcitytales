@@ -313,6 +313,14 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const check = useMutation({
+    mutationFn: ({ pending, result }: { pending: PendingCheck; result: SkillCheckResult }) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitCheck(query.data, pending, result);
+    },
+    onSuccess: invalidate,
+  });
+
   // Open a fresh beat automatically, once, so the player never faces a blank scene.
   const opened = useRef<string | null>(null);
   const bundle = query.data;
