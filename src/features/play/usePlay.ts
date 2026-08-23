@@ -15,11 +15,13 @@ import {
   getBeat,
   getMission,
   getSkill,
+  performAttack,
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
   type Mission,
   type MissionRuntime,
+  type PerformAttackResult,
   type SkillCheckResult,
 } from "@/engine";
 import {
@@ -27,6 +29,7 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  updateCampaignVitals,
   type Campaign,
   type CampaignEvent,
   type CampaignNpc,
@@ -37,9 +40,22 @@ import {
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { logSkillCheck } from "@/features/campaign/skillCheckLog";
+import { logAttack } from "@/features/campaign/combatLog";
+import {
+  loadLiveEncounter,
+  saveLiveEncounter,
+  type LiveEncounter,
+} from "@/features/campaign/encounterState";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
 import { gmTurnFn } from "@/features/gm/gmTurn.server";
 import { actorFor, characterSummary, npcSummaries, recentEventLines } from "./playModel";
+import { beginEncounter, describeAttack, runNpcTurns } from "./combatFlow";
+import {
+  findTarget,
+  pendingAttackFrom,
+  type AttackOption,
+  type PendingAttack,
+} from "./attackPrompt";
 import {
   dvBandName,
   pendingCheckFrom,
@@ -47,6 +63,7 @@ import {
   snapToPublishedDv,
   type PendingCheck,
 } from "./checkPrompt";
+
 
 export type PlayBundle = {
   campaign: Campaign;
@@ -58,6 +75,8 @@ export type PlayBundle = {
   availableExits: BeatExit[];
   events: CampaignEvent[];
   npcs: CampaignNpc[];
+  /** The fight in progress, if the GM has started one. */
+  encounter: LiveEncounter | null;
 };
 
 async function loadPlay(campaignId: string): Promise<PlayBundle> {
@@ -80,6 +99,7 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
   }
 
   const events = await listCampaignEvents(campaignId);
+  const encounter = await loadLiveEncounter(campaignId);
   return {
     campaign: full.campaign,
     vitals: full.vitals,
@@ -90,8 +110,10 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     availableExits: exits,
     events,
     npcs: full.npcs,
+    encounter,
   };
 }
+
 
 async function narrate(
   bundle: PlayBundle,
@@ -139,9 +161,11 @@ async function narrate(
     ...beatFields,
   });
 
-  // A proposed check is NOT rolled here: it is posted to the ledger as a prompt
-  // and waits for the player to roll it (see resolvePendingCheck).
+  // A proposed check or attack is NOT rolled here: it is posted to the ledger as
+  // a prompt and waits for the player's dice (see commitCheck / commitAttack).
   let promptPosted = false;
+  let live = bundle.encounter;
+
   for (const action of gm.proposedActions) {
     if (action.kind === "skill_check") {
       if (promptPosted) continue; // one check at a time at the table
@@ -178,8 +202,37 @@ async function narrate(
       } catch {
         // Ignore an invalid advancement the model proposed; the beat stays put.
       }
+    } else if (action.kind === "start_encounter") {
+      if (live) continue; // one fight at a time
+      live = await beginEncounter({
+        campaignId,
+        characterId: bundle.campaign.character_id,
+        beatId,
+        name: action.name,
+        character: bundle.character,
+        vitals: bundle.vitals,
+        enemies: action.enemies,
+      });
+    } else if (action.kind === "attack") {
+      if (promptPosted || !live || live.state.status !== "active") continue;
+      const target = findTarget(live, action.targetId);
+      if (!target || target.defeated || target.isPlayer) continue;
+      promptPosted = true;
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "attack_prompt",
+        summary: `Attack ${target.name} at ${action.distance}m`,
+        data: {
+          targetId: target.id,
+          targetName: target.name,
+          distance: action.distance,
+          intent: action.intent,
+        } as unknown as Json,
+        ...beatFields,
+      });
     }
   }
+
 
   for (const delta of gm.stateDeltas) {
     if (delta.kind === "note") {
@@ -225,6 +278,70 @@ async function commitCheck(
     { logInput: false },
   );
 }
+
+/**
+ * Persist the player's rolled attack, run the hostile turns the engine owns,
+ * sync the player's HP, then let the GM narrate exactly what happened.
+ */
+export async function commitAttack(
+  bundle: PlayBundle,
+  pending: PendingAttack,
+  option: AttackOption,
+  result: PerformAttackResult,
+): Promise<void> {
+  if (!bundle.encounter) throw new Error("There is no encounter to attack in.");
+  const campaignId = bundle.campaign.id;
+  const beatId = pending.beatId;
+
+  let live: LiveEncounter = { ...bundle.encounter, state: result.state };
+  await saveLiveEncounter(live);
+  await logAttack(
+    campaignId,
+    { attack: result.attack, damage: result.damage, applied: result.applied },
+    {
+      attackerName: pending.attacker.name,
+      targetName: pending.target.name,
+      weapon: option.weapon.name,
+      ...(result.targetWoundState ? { targetWoundState: result.targetWoundState } : {}),
+      beatId,
+    },
+  );
+
+  const lines = [
+    describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
+  ];
+  const npc = await runNpcTurns(campaignId, beatId, live);
+  live = npc.live;
+  lines.push(...npc.lines);
+
+  // The player's HP in the fight is the campaign's HP.
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  if (player && player.hp !== bundle.vitals.hp_current) {
+    await updateCampaignVitals(campaignId, { hp_current: player.hp });
+  }
+
+  const status =
+    live.state.status === "friendlies_won"
+      ? " The hostiles are all down; the fight is over."
+      : live.state.status === "friendlies_lost"
+        ? " The player is down; the fight is over."
+        : "";
+
+  const fresh: PlayBundle = {
+    ...bundle,
+    events: await listCampaignEvents(campaignId),
+    encounter: live,
+  };
+  await narrate(
+    fresh,
+    `(ENGINE: combat is RESOLVED for this exchange. ${lines.join(" ")}${status} Narrate exactly these results in short kinetic beats. Do not change a hit, a miss, a damage number, or who is standing. ${
+      status ? "Return to the scene." : "Then propose the player's next attack or action."
+    })`,
+    { logInput: false },
+  );
+}
+
+
 
 async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
@@ -310,6 +427,23 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const combat = useMutation({
+    mutationFn: ({
+      pending,
+      option,
+      result,
+    }: {
+      pending: PendingAttack;
+      option: AttackOption;
+      result: PerformAttackResult;
+    }) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitAttack(query.data, pending, option, result);
+    },
+    onSuccess: invalidate,
+  });
+
+
   // Open a fresh beat automatically, once, so the player never faces a blank scene.
   const opened = useRef<string | null>(null);
   const bundle = query.data;
@@ -327,9 +461,14 @@ export function usePlay(campaignId: string) {
     (turn.error as Error | null) ??
     (choose.error as Error | null) ??
     (open.error as Error | null) ??
-    (check.error as Error | null);
+    (check.error as Error | null) ??
+    (combat.error as Error | null);
 
   const pendingCheck = bundle ? pendingCheckFrom(bundle.events, bundle.character) : null;
+  const pendingAttack = bundle
+    ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
+    : null;
+
 
   const retry = () => {
     if (!bundle) return;
@@ -365,7 +504,7 @@ export function usePlay(campaignId: string) {
       }
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
-    suggestions: pendingCheck ? [] : bundle ? latestSuggestions(bundle) : [],
+    suggestions: pendingCheck || pendingAttack ? [] : bundle ? latestSuggestions(bundle) : [],
     /** The check waiting on the player's die, if any. */
     pendingCheck,
     /** Roll the pending check — the engine decides the number. */
@@ -377,11 +516,40 @@ export function usePlay(campaignId: string) {
     commitCheck: (pending: PendingCheck, result: SkillCheckResult) =>
       check.mutate({ pending, result }),
     checkBusy: check.isPending,
+    /** The attack waiting on the player's dice, if any. */
+    pendingAttack,
+    /** The live fight, for the initiative/status rail. */
+    encounter: bundle?.encounter ?? null,
+    /** Roll the attack — the engine resolves To-Hit, damage and armor. */
+    rollAttack: (pending: PendingAttack, option: AttackOption): PerformAttackResult => {
+      if (!bundle?.encounter) throw new Error("There is no encounter to attack in.");
+      if (option.dv === null) throw new Error("This weapon has no printed Range DV here.");
+      return performAttack(bundle.encounter.state, {
+        attackerId: pending.attacker.id,
+        targetId: pending.target.id,
+        statLabel: option.statLabel,
+        statValue: option.statValue,
+        skillLabel: option.skillLabel,
+        skillValue: option.skillValue,
+        dv: option.dv,
+        damageDice: option.damageDice ?? 0,
+      });
+    },
+    /** Record the rolled attack, run the hostile turns, and narrate the result. */
+    commitAttack: (pending: PendingAttack, option: AttackOption, result: PerformAttackResult) =>
+      combat.mutate({ pending, option, result }),
+    combatBusy: combat.isPending,
     rolls: bundle ? rollHistory(bundle.events) : [],
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
-    busy: turn.isPending || choose.isPending || open.isPending || check.isPending,
+    busy:
+      turn.isPending ||
+      choose.isPending ||
+      open.isPending ||
+      check.isPending ||
+      combat.isPending,
     actionError,
     retry,
     canRetry: Boolean(actionError) && Boolean(bundle),
   };
 }
+

@@ -9,9 +9,12 @@ import type {
   CampaignEvent,
   CampaignEventInsert,
   CampaignUpdate,
+  CampaignVitals,
+  CampaignVitalsUpdate,
   FullCampaign,
   Json,
 } from "./types";
+
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -69,6 +72,23 @@ export async function updateCampaign(id: string, patch: CampaignUpdate): Promise
     await backendClient.from("campaigns").update(patch).eq("id", id).select("*").single(),
   );
 }
+
+/** Write the player's live HP / wound state back after combat. */
+export async function updateCampaignVitals(
+  campaignId: string,
+  patch: CampaignVitalsUpdate,
+): Promise<CampaignVitals> {
+  return unwrap(
+    await backendClient
+      .from("campaign_vitals")
+      .update(patch)
+      .eq("campaign_id", campaignId)
+      .select("*")
+      .single(),
+  );
+}
+
+
 
 /**
  * The payload the start_campaign database function accepts. It creates the

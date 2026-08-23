@@ -5,6 +5,43 @@
  */
 import { z } from "zod";
 
+/**
+ * A hostile the GM brings into a fight. These are NPC stat blocks the GM
+ * improvises (the core rules' mook numbers), not values read from the rules
+ * data, so every field is clamped into a sane band before the engine sees it.
+ * The weapon's range type must be one of the printed Range DV tables.
+ */
+export const GM_RANGE_TYPES = [
+  "pistol",
+  "smg",
+  "shotgun_slug",
+  "assault_rifle",
+  "sniper_rifle",
+  "bow_crossbow",
+  "grenade_launcher",
+  "rocket_launcher",
+] as const;
+export type GmRangeType = (typeof GM_RANGE_TYPES)[number];
+
+export const GmEnemySchema = z.object({
+  /** Stable key the GM uses to refer to this hostile in later attacks. */
+  key: z.string(),
+  name: z.string(),
+  ref: z.number().int(),
+  body: z.number().int(),
+  hp: z.number().int(),
+  /** Armor SP (used for both body and head). */
+  sp: z.number().int(),
+  /** The hostile's level in the skill their weapon uses. */
+  attackSkill: z.number().int(),
+  weaponName: z.string(),
+  damageDice: z.number().int(),
+  rangeType: z.enum(GM_RANGE_TYPES),
+  /** Distance in metres from the player character right now. */
+  distance: z.number().int(),
+});
+export type GmEnemy = z.infer<typeof GmEnemySchema>;
+
 /** A mechanical action the engine should resolve from the player's intent. */
 export const GmProposedActionSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -13,11 +50,23 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     dv: z.number().int(),
     intent: z.string(),
   }),
-  z.object({ kind: z.literal("attack"), targetId: z.string(), intent: z.string() }),
+  z.object({
+    kind: z.literal("start_encounter"),
+    name: z.string(),
+    enemies: z.array(GmEnemySchema),
+  }),
+  z.object({
+    kind: z.literal("attack"),
+    targetId: z.string(),
+    intent: z.string(),
+    /** Distance in metres to the target; the engine reads the Range DV table with it. */
+    distance: z.number().int(),
+  }),
   z.object({ kind: z.literal("advance_beat"), to: z.string() }),
   z.object({ kind: z.literal("none") }),
 ]);
 export type GmProposedAction = z.infer<typeof GmProposedActionSchema>;
+
 
 /** A narrative state change to record (never a mechanical/dice change). */
 export const GmStateDeltaSchema = z.discriminatedUnion("kind", [
@@ -67,6 +116,44 @@ const str = (value: unknown): string | null =>
 const num = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
 
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
+
+/** Talking distance when the GM forgets to state one; still a printed range band. */
+export const DEFAULT_ATTACK_DISTANCE = 12;
+
+/** Narrow a loose list of GM-authored hostiles into clamped enemy stat blocks. */
+function normalizeEnemies(raw: unknown): GmEnemy[] {
+  if (!Array.isArray(raw)) return [];
+  const out: GmEnemy[] = [];
+  raw.forEach((item, index) => {
+    if (!item || typeof item !== "object") return;
+    const e = item as Loose;
+    const name = str(e["name"]) ?? str(e["label"]);
+    if (!name) return;
+    const rangeRaw = str(e["rangeType"]) ?? str(e["weaponType"]);
+    const rangeType = (GM_RANGE_TYPES as readonly string[]).includes(rangeRaw ?? "")
+      ? (rangeRaw as GmEnemy["rangeType"])
+      : "pistol";
+    out.push({
+      key: str(e["key"]) ?? str(e["id"]) ?? `${name}-${index}`,
+      name,
+      ref: clamp(num(e["ref"]) ?? 5, 1, 10),
+      body: clamp(num(e["body"]) ?? 5, 1, 12),
+      hp: clamp(num(e["hp"]) ?? 25, 1, 80),
+      sp: clamp(num(e["sp"]) ?? 7, 0, 20),
+      attackSkill: clamp(num(e["attackSkill"]) ?? num(e["skill"]) ?? 4, 0, 10),
+      weaponName: str(e["weaponName"]) ?? str(e["weapon"]) ?? "sidearm",
+      damageDice: clamp(num(e["damageDice"]) ?? 2, 1, 8),
+      rangeType,
+      distance: clamp(num(e["distance"]) ?? DEFAULT_ATTACK_DISTANCE, 1, 800),
+    });
+  });
+  return out;
+}
+
+
+
 /** Narrow the loose model output into the typed GM response the engine uses. */
 export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
   const proposedActions: GmProposedAction[] = [];
@@ -81,7 +168,23 @@ export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
         proposedActions.push({ kind: "skill_check", skillId, dv: num(a["dv"]) ?? 13, intent });
     } else if (kind === "attack") {
       const targetId = str(a["targetId"]) ?? str(a["target"]);
-      if (targetId) proposedActions.push({ kind: "attack", targetId, intent });
+      const distance = num(a["distance"]) ?? num(a["range"]);
+      if (targetId)
+        proposedActions.push({
+          kind: "attack",
+          targetId,
+          intent,
+          distance: clamp(distance ?? DEFAULT_ATTACK_DISTANCE, 1, 800),
+        });
+    } else if (kind === "start_encounter") {
+      const enemies = normalizeEnemies(a["enemies"] ?? a["hostiles"] ?? a["combatants"]);
+      if (enemies.length)
+        proposedActions.push({
+          kind: "start_encounter",
+          name: str(a["name"]) ?? "Firefight",
+          enemies,
+        });
+
     } else if (kind === "advance_beat") {
       const to = str(a["to"]) ?? str(a["beatId"]);
       if (to) proposedActions.push({ kind: "advance_beat", to });
