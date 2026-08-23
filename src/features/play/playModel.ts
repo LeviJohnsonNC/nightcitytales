@@ -35,14 +35,17 @@ export function actorFor(full: FullCharacter): SkillCheckActor {
 }
 
 /** The character's best trained skills as "Skill +base" entries, highest first. */
-export function keySkills(full: FullCharacter, limit = 8): { skill: string; base: number }[] {
+export function keySkills(
+  full: FullCharacter,
+  limit = 8,
+): { skill: string; id: string; base: number }[] {
   const stats = statsRecord(full);
   return full.skills
     .filter((s) => s.level > 0)
     .map((s) => {
       const def = getSkill(s.skill_id);
       const statValue = stats[def.stat] ?? 0;
-      return { skill: def.name, base: statValue + s.level };
+      return { skill: def.name, id: def.id, base: statValue + s.level };
     })
     .sort((a, b) => b.base - a.base)
     .slice(0, limit);
@@ -61,6 +64,7 @@ export function characterSummary(full: FullCharacter, vitals: CampaignVitals): G
     eurobucks: vitals.eurobucks,
     stats: statsRecord(full),
     keySkills: keySkills(full),
+    trainedSkills: keySkills(full, 40),
     ...(full.character.handle ? { handle: full.character.handle } : {}),
   };
 }

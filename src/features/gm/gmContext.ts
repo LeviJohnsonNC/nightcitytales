@@ -18,7 +18,9 @@ export type GmCharacterSummary = {
   humanityMax?: number;
   eurobucks?: number;
   stats: Record<string, number>;
-  keySkills: { skill: string; base: number }[];
+  keySkills: { skill: string; id: string; base: number }[];
+  /** Every trained skill, so the model names ids the engine actually knows. */
+  trainedSkills?: { skill: string; id: string; base: number }[];
 };
 
 export type GmNpcSummary = {
@@ -99,9 +101,12 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
         .join(", "),
     ),
   );
-  if (character.keySkills.length) {
+  const skillList = character.trainedSkills?.length ? character.trainedSkills : character.keySkills;
+  if (skillList.length) {
     parts.push(
-      line("Key skills", character.keySkills.map((s) => `${s.skill} +${s.base}`).join(", ")),
+      "",
+      "== SKILLS (use the id in [brackets] as skillId; these are the only valid ids) ==",
+      skillList.map((s) => `${s.skill} [${s.id}] +${s.base}`).join(", "),
     );
   }
 

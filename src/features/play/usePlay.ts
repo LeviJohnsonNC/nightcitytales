@@ -15,8 +15,11 @@ import {
   currentBeat,
   getBeat,
   getMission,
+  failMission,
   getSkill,
+  missionPayout,
   performAttack,
+  resolveSkillId,
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
@@ -32,6 +35,7 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  updateCampaign,
   updateCampaignVitals,
   type Campaign,
   type CampaignEvent,
@@ -171,12 +175,13 @@ async function narrate(
   for (const action of gm.proposedActions) {
     if (action.kind === "skill_check") {
       if (promptPosted) continue; // one check at a time at the table
-      let skillName: string | null = null;
-      try {
-        skillName = getSkill(action.skillId).name;
-      } catch {
-        continue; // an unknown skill id is not a check we can offer
+      // The model names skills in prose; the engine only knows printed ids.
+      const skillId = resolveSkillId(action.skillId);
+      if (!skillId) {
+        console.warn(`GM proposed an unknown skill: "${action.skillId}" — no check offered.`);
+        continue;
       }
+      const skillName = getSkill(skillId).name;
       const dv = snapToPublishedDv(action.dv);
       const band = dvBandName(dv);
       promptPosted = true;
@@ -185,7 +190,7 @@ async function narrate(
         type: "check_prompt",
         summary: `${skillName} check — DV ${dv}${band ? ` (${band})` : ""}`,
         data: {
-          skillId: action.skillId,
+          skillId,
           skillName,
           dv,
           intent: action.intent,
@@ -201,6 +206,9 @@ async function narrate(
           fromBeatId: bundle.beat.id,
           toBeat: getBeat(bundle.mission, action.to),
         });
+        if (next.status === "completed") {
+          await settleMission({ ...bundle, runtime: next }, next, bundle.mission);
+        }
       } catch {
         // Ignore an invalid advancement the model proposed; the beat stays put.
       }
@@ -345,6 +353,51 @@ export async function commitAttack(
   );
 }
 
+/**
+ * A finished job: pay the printed reward into the campaign's eurobucks, write
+ * the wrap-up to the ledger, and close the campaign. Every number comes from
+ * the mission's own reward block — nothing is invented here.
+ */
+async function settleMission(
+  bundle: PlayBundle,
+  runtime: MissionRuntime,
+  mission: Mission,
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const payout = missionPayout(mission);
+  if (payout) {
+    await updateCampaignVitals(campaignId, {
+      eurobucks: bundle.vitals.eurobucks + payout.total,
+    });
+  }
+  const done = runtime.objectives.filter((o) => o.status === "done").length;
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "mission_completed",
+    summary: payout
+      ? `${mission.title} complete — ${payout.total}eb paid (${payout.upfront}eb up front, ${payout.onCompletion}eb on delivery); ${done}/${runtime.objectives.length} objectives closed.`
+      : `${mission.title} complete — ${done}/${runtime.objectives.length} objectives closed. This job records no printed payout.`,
+    data: { missionId: mission.id, payout } as unknown as Json,
+    ...(runtime.currentBeatId ? { beat_id: runtime.currentBeatId } : {}),
+  });
+  await updateCampaign(campaignId, { status: "completed" });
+}
+
+/** The character died: fail the job and close the campaign. */
+async function settleDeath(bundle: PlayBundle): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  if (bundle.mission && bundle.runtime) {
+    await saveMissionRuntime(campaignId, failMission(bundle.runtime));
+  }
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "campaign_ended",
+    summary: `${bundle.character.character.name} died in Night City. The job is over.`,
+    data: { reason: "death" } as unknown as Json,
+  });
+  await updateCampaign(campaignId, { status: "dead" });
+}
+
 /** Announce a finished fight in the ledger, and describe it for the GM. */
 async function closeOutFight(
   campaignId: string,
@@ -409,6 +462,8 @@ export async function commitDeathSave(
     ? `${pending.combatant.name} failed the Death Save and is DEAD (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}${save.autoFail ? ", a natural 10" : ""}).`
     : `${pending.combatant.name} survived the Death Save (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}); they are still Mortally Wounded and the next save is at +${save.penaltyAfter}.`;
 
+  if (result.died) await settleDeath(bundle);
+
   const fresh: PlayBundle = {
     ...bundle,
     events: await listCampaignEvents(campaignId),
@@ -435,6 +490,10 @@ async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
     toBeat,
     choiceLabel: exit.label,
   });
+  if (next.status === "completed") {
+    await settleMission({ ...bundle, runtime: next }, next, bundle.mission);
+  }
+
   // Narrate the new scene from the fresh beat.
   const advanced: PlayBundle = {
     ...bundle,
@@ -667,6 +726,8 @@ export function usePlay(campaignId: string) {
       death.mutate({ pending, result }),
     deathBusy: death.isPending,
     rolls: bundle ? rollHistory(bundle.events) : [],
+    /** The job is over: completed, or the character died. */
+    finished: bundle && bundle.campaign.status !== "active" ? bundle.campaign.status : null,
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
       turn.isPending ||

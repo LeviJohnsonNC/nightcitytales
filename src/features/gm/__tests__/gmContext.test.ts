@@ -13,7 +13,7 @@ const character: GmCharacterSummary = {
   humanityMax: 60,
   eurobucks: 1030,
   stats: { ref: 8, body: 6 },
-  keySkills: [{ skill: "Handgun", base: 14 }],
+  keySkills: [{ skill: "Handgun", id: "handgun", base: 14 }],
 };
 
 describe("renderGmUserPrompt", () => {
