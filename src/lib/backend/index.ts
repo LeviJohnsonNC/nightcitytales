@@ -3,3 +3,4 @@ export * from "./auth";
 export * from "./characters";
 export * from "./drafts";
 export * from "./portraits";
+export * from "./campaigns";

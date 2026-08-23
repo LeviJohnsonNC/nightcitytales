@@ -14,6 +14,311 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_events: {
+        Row: {
+          beat_id: string | null
+          campaign_id: string
+          created_at: string
+          data: Json
+          id: string
+          roll: Json | null
+          seq: number
+          summary: string | null
+          type: string
+        }
+        Insert: {
+          beat_id?: string | null
+          campaign_id: string
+          created_at?: string
+          data?: Json
+          id?: string
+          roll?: Json | null
+          seq?: number
+          summary?: string | null
+          type: string
+        }
+        Update: {
+          beat_id?: string | null
+          campaign_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          roll?: Json | null
+          seq?: number
+          summary?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_factions: {
+        Row: {
+          campaign_id: string
+          faction_id: string
+          id: string
+          reputation: number
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          faction_id: string
+          id?: string
+          reputation?: number
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          faction_id?: string
+          id?: string
+          reputation?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_factions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_flags: {
+        Row: {
+          campaign_id: string
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_flags_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_inventory: {
+        Row: {
+          ammo_loaded: number | null
+          campaign_id: string
+          created_at: string
+          current_sp: number | null
+          equipped: boolean
+          id: string
+          item_id: string
+          notes: string | null
+          quantity: number
+          slot: string | null
+          updated_at: string
+        }
+        Insert: {
+          ammo_loaded?: number | null
+          campaign_id: string
+          created_at?: string
+          current_sp?: number | null
+          equipped?: boolean
+          id?: string
+          item_id: string
+          notes?: string | null
+          quantity?: number
+          slot?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ammo_loaded?: number | null
+          campaign_id?: string
+          created_at?: string
+          current_sp?: number | null
+          equipped?: boolean
+          id?: string
+          item_id?: string
+          notes?: string | null
+          quantity?: number
+          slot?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_inventory_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_npcs: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          disposition: number
+          first_met_beat_id: string | null
+          id: string
+          knowledge: Json
+          location: string | null
+          name: string
+          notes: string | null
+          npc_key: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          disposition?: number
+          first_met_beat_id?: string | null
+          id?: string
+          knowledge?: Json
+          location?: string | null
+          name: string
+          notes?: string | null
+          npc_key: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          disposition?: number
+          first_met_beat_id?: string | null
+          id?: string
+          knowledge?: Json
+          location?: string | null
+          name?: string
+          notes?: string | null
+          npc_key?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_npcs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_vitals: {
+        Row: {
+          campaign_id: string
+          eurobucks: number
+          hp_current: number
+          hp_max: number
+          humanity_current: number
+          humanity_max: number
+          mortal_save_failures: number
+          seriously_wounded_threshold: number
+          updated_at: string
+          wound_state: string
+        }
+        Insert: {
+          campaign_id: string
+          eurobucks?: number
+          hp_current: number
+          hp_max: number
+          humanity_current: number
+          humanity_max: number
+          mortal_save_failures?: number
+          seriously_wounded_threshold: number
+          updated_at?: string
+          wound_state?: string
+        }
+        Update: {
+          campaign_id?: string
+          eurobucks?: number
+          hp_current?: number
+          hp_max?: number
+          humanity_current?: number
+          humanity_max?: number
+          mortal_save_failures?: number
+          seriously_wounded_threshold?: number
+          updated_at?: string
+          wound_state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_vitals_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: true
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          character_id: string
+          created_at: string
+          current_mission_id: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          user_id: string
+          world_day: number
+          world_minute: number
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          current_mission_id?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          world_day?: number
+          world_minute?: number
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          current_mission_id?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          world_day?: number
+          world_minute?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_cyberware: {
         Row: {
           character_id: string
@@ -287,6 +592,53 @@ export type Database = {
           },
         ]
       }
+      mission_progress: {
+        Row: {
+          branch_choices: Json
+          campaign_id: string
+          completed_beats: Json
+          created_at: string
+          current_beat_id: string | null
+          id: string
+          mission_id: string
+          objectives: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          branch_choices?: Json
+          campaign_id: string
+          completed_beats?: Json
+          created_at?: string
+          current_beat_id?: string | null
+          id?: string
+          mission_id: string
+          objectives?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          branch_choices?: Json
+          campaign_id?: string
+          completed_beats?: Json
+          created_at?: string
+          current_beat_id?: string | null
+          id?: string
+          mission_id?: string
+          objectives?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_progress_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
           created_at: string
@@ -355,8 +707,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      owns_campaign: { Args: { _campaign_id: string }; Returns: boolean }
       owns_character: { Args: { _character_id: string }; Returns: boolean }
       save_character: { Args: { payload: Json }; Returns: string }
+      start_campaign: { Args: { payload: Json }; Returns: string }
     }
     Enums: {
       [_ in never]: never

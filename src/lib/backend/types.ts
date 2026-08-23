@@ -53,3 +53,41 @@ export type FullCharacter = {
   lifepath: CharacterLifepath | null;
   finance: CharacterFinance | null;
 };
+
+// --- Play engine (campaigns) ------------------------------------------------
+
+export type Campaign = Row<"campaigns">;
+export type CampaignInsert = Insert<"campaigns">;
+export type CampaignUpdate = Update<"campaigns">;
+
+export type CampaignVitals = Row<"campaign_vitals">;
+export type CampaignVitalsInsert = Insert<"campaign_vitals">;
+
+export type CampaignInventoryItem = Row<"campaign_inventory">;
+export type CampaignInventoryInsert = Insert<"campaign_inventory">;
+
+export type CampaignNpc = Row<"campaign_npcs">;
+export type CampaignNpcInsert = Insert<"campaign_npcs">;
+
+export type CampaignFaction = Row<"campaign_factions">;
+export type CampaignFactionInsert = Insert<"campaign_factions">;
+
+export type CampaignFlag = Row<"campaign_flags">;
+export type CampaignFlagInsert = Insert<"campaign_flags">;
+
+export type MissionProgress = Row<"mission_progress">;
+export type MissionProgressInsert = Insert<"mission_progress">;
+
+export type CampaignEvent = Row<"campaign_events">;
+export type CampaignEventInsert = Insert<"campaign_events">;
+
+/** A campaign plus its live child state. */
+export type FullCampaign = {
+  campaign: Campaign;
+  vitals: CampaignVitals | null;
+  inventory: CampaignInventoryItem[];
+  npcs: CampaignNpc[];
+  factions: CampaignFaction[];
+  flags: CampaignFlag[];
+  missions: MissionProgress[];
+};
