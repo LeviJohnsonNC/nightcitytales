@@ -238,13 +238,20 @@ function CombatHud({ campaignId }: { campaignId: string }) {
   );
 }
 
-function InputBar({ onSend, busy }: { onSend: (text: string) => void; busy: boolean }) {
+function InputBar({
+  onSend,
+  busy,
+}: {
+  onSend: (text: string) => Promise<boolean> | void;
+  busy: boolean;
+}) {
   const [text, setText] = useState("");
-  const send = () => {
+  const send = async () => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    onSend(trimmed);
-    setText("");
+    const result = await onSend(trimmed);
+    // Keep the intent in the box when the turn failed, so it can be retried.
+    if (result !== false) setText("");
   };
   return (
     <div className="flex gap-2">
@@ -300,7 +307,16 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
           readAloud={bundle.beat?.readAloud}
           busy={play.busy || play.opening}
         />
-        {play.actionError && <p className="text-sm text-destructive">{play.actionError.message}</p>}
+        {play.actionError && (
+          <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+            <p className="text-sm text-destructive">{play.actionError.message}</p>
+            {play.canRetry && (
+              <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
+                Retry
+              </Button>
+            )}
+          </div>
+        )}
         <SuggestionBar
           suggestions={play.suggestions}
           onPick={play.submit}
