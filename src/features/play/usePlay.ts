@@ -726,6 +726,8 @@ export function usePlay(campaignId: string) {
       death.mutate({ pending, result }),
     deathBusy: death.isPending,
     rolls: bundle ? rollHistory(bundle.events) : [],
+    /** The job is over: completed, or the character died. */
+    finished: bundle && bundle.campaign.status !== "active" ? bundle.campaign.status : null,
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
       turn.isPending ||
