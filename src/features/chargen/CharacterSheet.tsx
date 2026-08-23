@@ -131,10 +131,13 @@ export function CharacterSheet({
   state,
   build,
   sheet,
+  improvementPoints,
 }: {
   state: ChargenState;
   build: CharacterBuild;
   sheet: AssembledCharacter;
+  /** The saved career I.P. total; omitted during creation, where it is 0. */
+  improvementPoints?: number;
 }) {
   const roles = rolesData.roles as unknown as Record<string, { name: string }>;
   const role = build.roleId ? (roles[build.roleId] ?? null) : null;
@@ -443,7 +446,10 @@ export function CharacterSheet({
       {/* 6 — Improvement Points and Reputation */}
       <Panel title="Improvement Points & Reputation">
         <div className="grid grid-cols-2 gap-3">
-          <Box label="Improvement Points" value={String(IMPROVEMENT_POINTS.startingValue)} />
+          <Box
+            label="Improvement Points"
+            value={String(improvementPoints ?? IMPROVEMENT_POINTS.startingValue)}
+          />
           <Box label="Reputation Level" value={String(REPUTATION.startingValue)} />
         </div>
         <p className="mt-3 text-sm leading-relaxed text-text-muted">{REPUTATION.note}</p>

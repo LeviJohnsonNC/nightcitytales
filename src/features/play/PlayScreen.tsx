@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
+import { IP_PLAYSTYLES, type IpPlaystyle } from "@/engine";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
 import { CombatCard } from "./CombatCard";
@@ -273,7 +274,89 @@ function CombatHud({ campaignId }: { campaignId: string }) {
   );
 }
 
-function WrapUpCard({ bundle, status }: { bundle: PlayBundle; status: string }) {
+function IpPanel({ play }: { play: ReturnType<typeof usePlay> }) {
+  const [primary, setPrimary] = useState<IpPlaystyle>("warrior");
+  const [secondary, setSecondary] = useState<IpPlaystyle>("roleplayer");
+  const tally = play.ipTally;
+
+  if (play.ipAwarded !== null && !tally) {
+    return (
+      <p className="num text-sm">
+        Improvement Points: <span className="font-bold">{play.ipAwarded} IP</span> (already awarded)
+      </p>
+    );
+  }
+
+  if (tally) {
+    return (
+      <div className="space-y-1 border border-accent/50 bg-accent/5 p-3 text-sm">
+        <p className="num">
+          Improvement Points: <span className="font-bold">{tally.award.ip} IP</span>{" "}
+          <span className="text-muted-foreground">
+            ({tally.award.source} column{tally.award.fromStandout ? ", standout" : ""})
+          </span>
+        </p>
+        <p className="text-muted-foreground">{tally.award.descriptor}</p>
+        <p className="italic">{tally.judgement.reason}</p>
+        {tally.award.fromStandout && tally.judgement.standout && (
+          <p className="text-muted-foreground">Standout: {tally.judgement.standout.reason}</p>
+        )}
+        <p className="num text-muted-foreground">Career total: {tally.total} IP</p>
+      </div>
+    );
+  }
+
+  const Picker = ({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string;
+    value: IpPlaystyle;
+    onChange: (v: IpPlaystyle) => void;
+  }) => (
+    <label className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+      {label}
+      <select
+        className="border border-border bg-background px-2 py-1 text-sm text-foreground"
+        value={value}
+        onChange={(e) => onChange(e.target.value as IpPlaystyle)}
+      >
+        {IP_PLAYSTYLES.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  return (
+    <div className="space-y-2 border border-border p-3">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        Improvement Points — declare how you played
+      </p>
+      <div className="flex flex-wrap gap-3">
+        <Picker label="Primary" value={primary} onChange={setPrimary} />
+        <Picker label="Secondary" value={secondary} onChange={setSecondary} />
+        <Button size="sm" disabled={play.ipBusy} onClick={() => play.tallyIp({ primary, secondary })}>
+          {play.ipBusy ? "Tallying…" : "Tally IP"}
+        </Button>
+      </div>
+      {play.ipError && <p className="text-sm text-destructive">{play.ipError.message}</p>}
+    </div>
+  );
+}
+
+function WrapUpCard({
+  bundle,
+  status,
+  play,
+}: {
+  bundle: PlayBundle;
+  status: string;
+  play: ReturnType<typeof usePlay>;
+}) {
   const died = status === "dead";
   const summary = [...bundle.events]
     .reverse()
@@ -298,6 +381,7 @@ function WrapUpCard({ bundle, status }: { bundle: PlayBundle; status: string }) 
         Eurobucks: <span className="font-bold">{bundle.vitals.eurobucks}eb</span> · HP{" "}
         {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
       </p>
+      <IpPanel play={play} />
       <Button asChild variant="outline" size="sm">
         <Link to="/roster">Back to the roster</Link>
       </Button>
@@ -428,7 +512,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             busy={play.deathBusy}
           />
         )}
-        {play.finished && <WrapUpCard bundle={bundle} status={play.finished} />}
+        {play.finished && <WrapUpCard bundle={bundle} status={play.finished} play={play} />}
         <SuggestionBar
           suggestions={play.finished ? [] : play.suggestions}
           onPick={play.submit}

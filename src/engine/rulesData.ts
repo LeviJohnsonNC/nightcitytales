@@ -5,6 +5,7 @@
 import creationRules from "@/data/rules/creation-rules.json";
 import dvTable from "@/data/rules/dv-table.json";
 import hpTable from "@/data/rules/hp-table.json";
+import ipAwards from "@/data/rules/ip-awards.json";
 import lifepathGeneral from "@/data/rules/lifepath-general.json";
 import lifepathRoles from "@/data/rules/lifepath-roles.json";
 import roleSkillPackages from "@/data/rules/role-skill-packages.json";
@@ -158,6 +159,22 @@ export type ReputationLevel = { level: number; whoKnows: string };
 
 /** Improvement Points, read from creation-rules.json. */
 export const IMPROVEMENT_POINTS = creationRules.improvementPoints;
+
+export type IpTier = {
+  ip: number;
+  group: string;
+  warrior: string;
+  socializer: string;
+  explorer: string;
+  roleplayer: string;
+};
+
+/** The end-of-session I.P. award table, read from ip-awards.json. */
+export const IP_AWARDS = ipAwards as unknown as {
+  _rules: { finished: string; unfinished: string };
+  playstyles: { id: string; name: string }[];
+  tiers: IpTier[];
+};
 
 /** Reputation starting value, recognition rule, and the 10-level ladder. */
 export const REPUTATION = creationRules.reputation as {

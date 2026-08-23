@@ -264,6 +264,7 @@ export type Database = {
           current_mission_id: string | null
           day: number
           id: string
+          ip_awarded: number | null
           minute: number
           name: string
           status: string
@@ -276,6 +277,7 @@ export type Database = {
           current_mission_id?: string | null
           day?: number
           id?: string
+          ip_awarded?: number | null
           minute?: number
           name: string
           status?: string
@@ -288,6 +290,7 @@ export type Database = {
           current_mission_id?: string | null
           day?: number
           id?: string
+          ip_awarded?: number | null
           minute?: number
           name?: string
           status?: string
@@ -351,6 +354,7 @@ export type Database = {
           character_id: string
           eurobucks: number
           housing: string | null
+          improvement_points: number
           lifestyle: string | null
           rent: number | null
         }
@@ -358,6 +362,7 @@ export type Database = {
           character_id: string
           eurobucks?: number
           housing?: string | null
+          improvement_points?: number
           lifestyle?: string | null
           rent?: number | null
         }
@@ -365,6 +370,7 @@ export type Database = {
           character_id?: string
           eurobucks?: number
           housing?: string | null
+          improvement_points?: number
           lifestyle?: string | null
           rent?: number | null
         }

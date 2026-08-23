@@ -73,7 +73,12 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
         stays intact until you save the edited version.
       </p>
 
-      <CharacterSheet state={state} build={build} sheet={sheet} />
+      <CharacterSheet
+        state={state}
+        build={build}
+        sheet={sheet}
+        improvementPoints={data.finance?.improvement_points ?? 0}
+      />
     </div>
   );
 }

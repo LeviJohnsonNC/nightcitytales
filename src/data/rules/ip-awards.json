@@ -1,0 +1,79 @@
+{
+  "_source": "Cyberpunk RED Core Rulebook — Improvement Point awards (end of session)",
+  "_rules": {
+    "finished": "If the mission was finished (successfully or unsuccessfully), the Players gain Improvement Points based on their Group's success (taking the value from the Group Column) unless they did something that the GM considers stand out from one of the other playstyles that would award them more points.",
+    "unfinished": "If the players didn't finish the mission, they are awarded I.P. based on either their Primary or Secondary Playstyle, unless they did something that the GM considers stand out from one of the other playstyles that would award them more points."
+  },
+  "playstyles": [
+    { "id": "warrior", "name": "Warrior" },
+    { "id": "socializer", "name": "Socializer" },
+    { "id": "explorer", "name": "Explorer" },
+    { "id": "roleplayer", "name": "Roleplayer" }
+  ],
+  "tiers": [
+    {
+      "ip": 10,
+      "group": "Group did not succeed in mission, but tried valiantly",
+      "warrior": "Used combat Skills often, even if not to exceptional effect",
+      "socializer": "Was a supportive and helpful part of the party, in or out of game",
+      "explorer": "Attempted to investigate or explore the world/situation often, even if not to exceptional effect",
+      "roleplayer": "Attempted to roleplay character often"
+    },
+    {
+      "ip": 20,
+      "group": "Group barely accomplished mission goals",
+      "warrior": "Used combat Skills often and effectively, often taking out important opponents",
+      "socializer": "Supportive actions were helpful in maintaining Player/party unity and cohesion (quote lists, game notebooks, etc.)",
+      "explorer": "Used exploration effectively to learn about the world/situation",
+      "roleplayer": "Roleplayed in character all the time, often effectively"
+    },
+    {
+      "ip": 30,
+      "group": "Group worked together well, accomplishing most of the mission goals with everyone taking part in the adventure",
+      "warrior": "Frequent and effective use of combat Skills, defeating the most dangerous opponents in a given combat challenge",
+      "socializer": "Frequent and effective use of supportive or helpful activities were beneficial in maintaining Player/party unity and cohesion (Character pictures, extensive diaries, etc.)",
+      "explorer": "Frequent and effective use of exploration and investigation to further personal and party goals",
+      "roleplayer": "Frequent and effective use of roleplaying to accomplish a goal (acted, not rolled to accomplish task)"
+    },
+    {
+      "ip": 40,
+      "group": "Group accomplished most of the mission goals well, showing strong cooperative skills",
+      "warrior": "Did something out of the ordinary with use of combat Skills, defeating an opponent in an unexpected or unusual way",
+      "socializer": "Did something out of the ordinary that encouraged or helped the group overall (extensive diaries, special events)",
+      "explorer": "Discovered something out of the ordinary or exceptional through exploration and investigation activities",
+      "roleplayer": "Did something out of the ordinary roleplaying wise (a clever speech or interaction in game)"
+    },
+    {
+      "ip": 50,
+      "group": "Group accomplished most of the mission goals extremely well, with a few stellar moments",
+      "warrior": "Very effective or clever use of combat Skills, defeating several opponents in unexpected or unusual ways",
+      "socializer": "Did something very effective or clever that encouraged or helped the group overall",
+      "explorer": "Very effective or clever use of investigation or exploration activities to uncover an important person, place, clue, or thing",
+      "roleplayer": "Very effective or clever use of roleplaying (a clever interaction or important roleplaying moment)"
+    },
+    {
+      "ip": 60,
+      "group": "Group's mission was a strong success, accomplishing all of the mission goals set forth with several stellar moments in the adventure",
+      "warrior": "Combat Skills were absolutely critical to the Character in this game session, allowing the Character to defeat a major opponent or long-term nemesis single-handedly",
+      "socializer": "Player's participation in supporting the group was a very important part of helping the group work together to accomplish its goals",
+      "explorer": "Player's use of investigation or exploration to uncover an important person, place, clue, or thing was critical to the Character in this game session",
+      "roleplayer": "Roleplaying actions were critical to the Player in this game session (changed personal game outcome through convincing roleplaying)"
+    },
+    {
+      "ip": 70,
+      "group": "Group's mission was a resounding success, accomplishing all of the mission goals set forth and also several side goals of the session. Group also showed strong cooperation and teamwork",
+      "warrior": "Combat Skills were absolutely critical to entire party in this game session (without Character's help, party would have been totally defeated)",
+      "socializer": "Player's participation in supporting the group was a critical part of helping the group work together to accomplish its goals",
+      "explorer": "Player's use of investigation or exploration to uncover an important person, place, clue, or thing was critical to entire party in this game session",
+      "roleplayer": "Roleplaying actions were critical to entire party in this game session (changed entire game outcome through convincing roleplaying)"
+    },
+    {
+      "ip": 80,
+      "group": "Group's mission was legendary, accomplishing all of the mission goals set forth and also all side goals of the session. Group also showed exceptional cooperation and teamwork",
+      "warrior": "Did something really incredible in a combat encounter (hole in one shot, took down impossible enemy or nemesis, saved entire party)",
+      "socializer": "Did something really incredible to support the group and help it work together to accomplish its goals",
+      "explorer": "Player's use of investigation or exploration uncovered something really incredible in this game session",
+      "roleplayer": "Did something really incredible in roleplaying, such as a heroic speech, star moment, or amazing influence on game outcomes through roleplaying"
+    }
+  ]
+}
