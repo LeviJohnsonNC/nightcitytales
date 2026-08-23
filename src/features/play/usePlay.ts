@@ -200,8 +200,37 @@ async function narrate(
       } catch {
         // Ignore an invalid advancement the model proposed; the beat stays put.
       }
+    } else if (action.kind === "start_encounter") {
+      if (live) continue; // one fight at a time
+      live = await beginEncounter({
+        campaignId,
+        characterId: bundle.campaign.character_id,
+        beatId,
+        name: action.name,
+        character: bundle.character,
+        vitals: bundle.vitals,
+        enemies: action.enemies,
+      });
+    } else if (action.kind === "attack") {
+      if (promptPosted || !live || live.state.status !== "active") continue;
+      const target = findTarget(live, action.targetId);
+      if (!target || target.defeated || target.isPlayer) continue;
+      promptPosted = true;
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "attack_prompt",
+        summary: `Attack ${target.name} at ${action.distance}m`,
+        data: {
+          targetId: target.id,
+          targetName: target.name,
+          distance: action.distance,
+          intent: action.intent,
+        } as unknown as Json,
+        ...beatFields,
+      });
     }
   }
+
 
   for (const delta of gm.stateDeltas) {
     if (delta.kind === "note") {
