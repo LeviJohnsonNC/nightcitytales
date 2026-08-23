@@ -673,6 +673,14 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const ip = useMutation({
+    mutationFn: (playstyles: { primary: IpPlaystyle; secondary: IpPlaystyle }) => {
+      if (!query.data) throw new Error("Still loading.");
+      return settleIp(query.data, playstyles);
+    },
+    onSuccess: invalidate,
+  });
+
   // Open a fresh beat automatically, once, so the player never faces a blank scene.
   const opened = useRef<string | null>(null);
   const bundle = query.data;
@@ -794,6 +802,14 @@ export function usePlay(campaignId: string) {
       death.mutate({ pending, result }),
     deathBusy: death.isPending,
     rolls: bundle ? rollHistory(bundle.events) : [],
+    /** Tally the session's Improvement Points once the job is over. */
+    tallyIp: (playstyles: { primary: IpPlaystyle; secondary: IpPlaystyle }) =>
+      ip.mutate(playstyles),
+    ipTally: (ip.data as IpTally | undefined) ?? null,
+    ipBusy: ip.isPending,
+    ipError: (ip.error as Error | null) ?? null,
+    /** The I.P. this job already paid, if it has been tallied. */
+    ipAwarded: bundle?.campaign.ip_awarded ?? null,
     /** The job is over: completed, or the character died. */
     finished: bundle && bundle.campaign.status !== "active" ? bundle.campaign.status : null,
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
