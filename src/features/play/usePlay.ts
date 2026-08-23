@@ -335,7 +335,12 @@ export function usePlay(campaignId: string) {
   }, [bundle, open, turn.isPending, choose.isPending]);
 
   const actionError =
-    (turn.error as Error | null) ?? (choose.error as Error | null) ?? (open.error as Error | null);
+    (turn.error as Error | null) ??
+    (choose.error as Error | null) ??
+    (open.error as Error | null) ??
+    (check.error as Error | null);
+
+  const pendingCheck = bundle ? pendingCheckFrom(bundle.events, bundle.character) : null;
 
   const retry = () => {
     if (!bundle) return;
