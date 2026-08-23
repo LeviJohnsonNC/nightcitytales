@@ -770,6 +770,7 @@ export type Database = {
           branch_choices: Json
           campaign_id: string
           completed_beats: Json
+          created_at: string
           current_beat_id: string | null
           id: string
           mission_id: string
@@ -781,6 +782,7 @@ export type Database = {
           branch_choices?: Json
           campaign_id: string
           completed_beats?: Json
+          created_at?: string
           current_beat_id?: string | null
           id?: string
           mission_id: string
@@ -792,6 +794,7 @@ export type Database = {
           branch_choices?: Json
           campaign_id?: string
           completed_beats?: Json
+          created_at?: string
           current_beat_id?: string | null
           id?: string
           mission_id?: string
