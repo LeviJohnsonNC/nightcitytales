@@ -130,17 +130,33 @@ async function narrate(
     ...beatFields,
   });
 
-  const actor = actorFor(bundle.character);
+  // A proposed check is NOT rolled here: it is posted to the ledger as a prompt
+  // and waits for the player to roll it (see resolvePendingCheck).
+  let promptPosted = false;
   for (const action of gm.proposedActions) {
     if (action.kind === "skill_check") {
-      const resolved = resolveProposedAction(action, actor);
-      if (resolved.kind === "skill_check") {
-        await logSkillCheck(campaignId, resolved.result, {
-          skillId: action.skillId,
-          intent: action.intent,
-          ...(beatId ? { beatId } : {}),
-        });
+      if (promptPosted) continue; // one check at a time at the table
+      let skillName: string | null = null;
+      try {
+        skillName = getSkill(action.skillId).name;
+      } catch {
+        continue; // an unknown skill id is not a check we can offer
       }
+      const dv = snapToPublishedDv(action.dv);
+      const band = dvBandName(dv);
+      promptPosted = true;
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "check_prompt",
+        summary: `${skillName} check — DV ${dv}${band ? ` (${band})` : ""}`,
+        data: {
+          skillId: action.skillId,
+          skillName,
+          dv,
+          intent: action.intent,
+        } as unknown as Json,
+        ...beatFields,
+      });
     } else if (action.kind === "advance_beat") {
       try {
         const next = advance(bundle.mission, bundle.runtime, action.to);
