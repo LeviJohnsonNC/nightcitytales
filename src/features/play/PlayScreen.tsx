@@ -221,7 +221,7 @@ function RollHistory({ rolls }: { rolls: RollRecord[] }) {
   if (rolls.length === 0) return null;
   return (
     <section className="space-y-2 border border-border bg-card p-4">
-      <Label>Rolls</Label>
+      <Label>Rolls · {rolls.length}</Label>
       <ul className="space-y-1">
         {rolls.map((r) => (
           <li key={r.id} className="flex items-baseline justify-between gap-2 text-sm">
@@ -272,6 +272,38 @@ function CombatHud({ campaignId }: { campaignId: string }) {
   );
 }
 
+function WrapUpCard({ bundle, status }: { bundle: PlayBundle; status: string }) {
+  const died = status === "dead";
+  const summary = [...bundle.events]
+    .reverse()
+    .find((e) => e.type === "mission_completed" || e.type === "campaign_ended");
+  const objectives = bundle.runtime?.objectives ?? [];
+  return (
+    <section
+      className={`space-y-3 border p-4 ${died ? "border-destructive bg-destructive/10" : "border-accent bg-accent/5"}`}
+    >
+      <Label>{died ? "You died in Night City" : "Job complete"}</Label>
+      {summary && <p className="text-sm">{summary.summary}</p>}
+      {objectives.length > 0 && (
+        <ul className="space-y-1 text-sm text-muted-foreground">
+          {objectives.map((o) => (
+            <li key={o.id}>
+              {o.status === "done" ? "✓" : o.status === "failed" ? "✕" : "•"} {o.text}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="num text-sm">
+        Eurobucks: <span className="font-bold">{bundle.vitals.eurobucks}eb</span> · HP{" "}
+        {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
+      </p>
+      <Button asChild variant="outline" size="sm">
+        <Link to="/roster">Back to the roster</Link>
+      </Button>
+    </section>
+  );
+}
+
 function InputBar({
   onSend,
   busy,
@@ -280,10 +312,14 @@ function InputBar({
   busy: boolean;
 }) {
   const [text, setText] = useState("");
+  const [callRoll, setCallRoll] = useState(false);
   const send = async () => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    const result = await onSend(trimmed);
+    const payload = callRoll
+      ? `${trimmed}\n(ENGINE: the player is asking to roll for this. Propose a skill_check with a skillId from the SKILLS list and a DV from the published table, and stop.)`
+      : trimmed;
+    const result = await onSend(payload);
     // Keep the intent in the box when the turn failed, so it can be retried.
     if (result !== false) setText("");
   };
@@ -303,9 +339,21 @@ function InputBar({
         className="flex-1 resize-none"
         disabled={busy}
       />
-      <Button onClick={send} disabled={busy || !text.trim()}>
-        {busy ? "…" : "Act"}
-      </Button>
+      <div className="flex flex-col gap-1">
+        <Button onClick={send} disabled={busy || !text.trim()}>
+          {busy ? "…" : "Act"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={callRoll ? "default" : "outline"}
+          onClick={() => setCallRoll((v) => !v)}
+          disabled={busy}
+          title="Ask the GM to call for a skill check on this action"
+        >
+          Roll for it
+        </Button>
+      </div>
     </div>
   );
 }
@@ -379,8 +427,9 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             busy={play.deathBusy}
           />
         )}
+        {play.finished && <WrapUpCard bundle={bundle} status={play.finished} />}
         <SuggestionBar
-          suggestions={play.suggestions}
+          suggestions={play.finished ? [] : play.suggestions}
           onPick={play.submit}
           busy={play.busy || play.opening}
         />
@@ -389,6 +438,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
           busy={
             play.busy ||
             play.opening ||
+            Boolean(play.finished) ||
             Boolean(play.pendingCheck) ||
             Boolean(play.pendingAttack) ||
             Boolean(play.pendingDeathSave)
