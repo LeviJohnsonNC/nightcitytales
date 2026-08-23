@@ -284,22 +284,35 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
   return (
     <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex min-h-[70vh] flex-col gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{bundle.campaign.name}</h1>
-          {bundle.beat && (
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-              {bundle.mission?.title} · {bundle.beat.title}
-            </p>
-          )}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{bundle.campaign.name}</h1>
+            {bundle.beat && (
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+                {bundle.mission?.title} · {bundle.beat.title}
+              </p>
+            )}
+          </div>
+          <SheetDrawer character={bundle.character} />
         </div>
-        <NarrativeLog events={bundle.events} />
+        <NarrativeLog
+          events={bundle.events}
+          readAloud={bundle.beat?.readAloud}
+          busy={play.busy || play.opening}
+        />
         {play.actionError && <p className="text-sm text-destructive">{play.actionError.message}</p>}
-        <InputBar onSend={play.submit} busy={play.busy} />
+        <SuggestionBar
+          suggestions={play.suggestions}
+          onPick={play.submit}
+          busy={play.busy || play.opening}
+        />
+        <InputBar onSend={play.submit} busy={play.busy || play.opening} />
       </div>
       <aside className="space-y-4">
         <CharacterPanel bundle={bundle} />
         <CombatHud campaignId={campaignId} />
         <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
+        {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
       </aside>
     </div>
   );
