@@ -8,6 +8,9 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
+import type { GmSuggestedAction } from "@/features/gm/gmResponse";
+import { JobCard } from "./JobCard";
+import { SheetDrawer } from "./SheetDrawer";
 import { usePlay, type PlayBundle } from "./usePlay";
 
 function EventBlock({ event }: { event: CampaignEvent }) {
@@ -38,19 +41,69 @@ function EventBlock({ event }: { event: CampaignEvent }) {
   }
 }
 
-function NarrativeLog({ events }: { events: CampaignEvent[] }) {
+function NarrativeLog({
+  events,
+  readAloud,
+  busy,
+}: {
+  events: CampaignEvent[];
+  readAloud?: string | undefined;
+  busy: boolean;
+}) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [events.length]);
   return (
     <div className="flex-1 space-y-3 overflow-y-auto border border-border bg-card/40 p-4">
-      {events.length === 0 ? (
+      {readAloud && (
+        <blockquote className="border-l-2 border-accent bg-accent/5 p-3 text-sm leading-relaxed text-foreground">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
+            Briefing
+          </p>
+          {readAloud}
+        </blockquote>
+      )}
+      {events.length === 0 && !readAloud ? (
         <p className="text-sm text-muted-foreground">Night City holds its breath…</p>
       ) : (
         events.map((e) => <EventBlock key={e.id} event={e} />)
       )}
+      {busy && <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>}
       <div ref={endRef} />
+    </div>
+  );
+}
+
+function SuggestionBar({
+  suggestions,
+  onPick,
+  busy,
+}: {
+  suggestions: GmSuggestedAction[];
+  onPick: (text: string) => void;
+  busy: boolean;
+}) {
+  if (suggestions.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {suggestions.map((s) => (
+        <Button
+          key={s.label}
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          className="h-auto whitespace-normal py-2 text-left"
+          onClick={() => onPick(s.label)}
+        >
+          {s.label}
+          {s.skill ? (
+            <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+              {s.skill}
+            </span>
+          ) : null}
+        </Button>
+      ))}
     </div>
   );
 }
@@ -138,7 +191,7 @@ function ScenePanel({
       )}
       {bundle.availableExits.length > 0 && (
         <div className="space-y-2">
-          <Label>Where to</Label>
+          <Label>Move the story on</Label>
           {bundle.availableExits.map((exit) => (
             <Button
               key={exit.to}
@@ -231,22 +284,35 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
   return (
     <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex min-h-[70vh] flex-col gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{bundle.campaign.name}</h1>
-          {bundle.beat && (
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-              {bundle.mission?.title} · {bundle.beat.title}
-            </p>
-          )}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{bundle.campaign.name}</h1>
+            {bundle.beat && (
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+                {bundle.mission?.title} · {bundle.beat.title}
+              </p>
+            )}
+          </div>
+          <SheetDrawer character={bundle.character} />
         </div>
-        <NarrativeLog events={bundle.events} />
+        <NarrativeLog
+          events={bundle.events}
+          readAloud={bundle.beat?.readAloud}
+          busy={play.busy || play.opening}
+        />
         {play.actionError && <p className="text-sm text-destructive">{play.actionError.message}</p>}
-        <InputBar onSend={play.submit} busy={play.busy} />
+        <SuggestionBar
+          suggestions={play.suggestions}
+          onPick={play.submit}
+          busy={play.busy || play.opening}
+        />
+        <InputBar onSend={play.submit} busy={play.busy || play.opening} />
       </div>
       <aside className="space-y-4">
         <CharacterPanel bundle={bundle} />
         <CombatHud campaignId={campaignId} />
         <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
+        {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
       </aside>
     </div>
   );

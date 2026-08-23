@@ -27,9 +27,19 @@ export const GmStateDeltaSchema = z.discriminatedUnion("kind", [
 ]);
 export type GmStateDelta = z.infer<typeof GmStateDeltaSchema>;
 
+/** A concrete thing the player could try right now, offered as a button. */
+export const GmSuggestedActionSchema = z.object({
+  /** Short, in-fiction, first-person-ish intent the player can click. */
+  label: z.string(),
+  /** The skill it would most likely lean on, if any. */
+  skill: z.string().nullish(),
+});
+export type GmSuggestedAction = z.infer<typeof GmSuggestedActionSchema>;
+
 export const GmResponseSchema = z.object({
   narration: z.string(),
   proposedActions: z.array(GmProposedActionSchema).default([]),
+  suggestedActions: z.array(GmSuggestedActionSchema).default([]),
   stateDeltas: z.array(GmStateDeltaSchema).default([]),
   endsWithDecision: z.boolean().default(false),
 });
