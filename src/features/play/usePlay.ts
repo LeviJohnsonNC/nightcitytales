@@ -11,6 +11,7 @@ import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/g
 import {
   advance,
   availableExits,
+  beginTurn,
   currentBeat,
   getBeat,
   getMission,
@@ -19,11 +20,13 @@ import {
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
+  type BeginTurnResult,
   type Mission,
   type MissionRuntime,
   type PerformAttackResult,
   type SkillCheckResult,
 } from "@/engine";
+
 import {
   appendCampaignEvent,
   getCampaign,
