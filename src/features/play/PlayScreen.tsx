@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
+import { CombatCard } from "./CombatCard";
+
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
 import { usePlay, type PlayBundle } from "./usePlay";
