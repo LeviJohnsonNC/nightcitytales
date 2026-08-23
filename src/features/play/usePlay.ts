@@ -188,6 +188,33 @@ async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   await narrate(advanced, `(You choose: ${exit.label}. Set the new scene.)`);
 }
 
+/** True when the current beat has never been narrated (fresh campaign or beat). */
+export function needsOpeningScene(bundle: PlayBundle): boolean {
+  if (!bundle.mission || !bundle.beat) return false;
+  return !bundle.events.some((e) => e.type === "gm_narration" && e.beat_id === bundle.beat?.id);
+}
+
+/** Ask the GM to open the current beat, without logging a fake player action. */
+async function openScene(bundle: PlayBundle): Promise<void> {
+  await narrate(
+    bundle,
+    "(ENGINE: open this scene. Dramatize the beat's read-aloud and brief, make clear how the character knows what they know and why they are involved, place them somewhere concrete, and end on a decision.)",
+    { logInput: false },
+  );
+}
+
+/** The clickable suggestions from the most recent GM narration. */
+export function latestSuggestions(bundle: PlayBundle): GmSuggestedAction[] {
+  for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
+    const event = bundle.events[i];
+    if (!event || event.type !== "gm_narration") continue;
+    const data = event.data as { suggestedActions?: unknown } | null;
+    const parsed = z.array(GmSuggestedActionSchema).safeParse(data?.suggestedActions ?? []);
+    return parsed.success ? parsed.data : [];
+  }
+  return [];
+}
+
 export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["play", campaignId], queryFn: () => loadPlay(campaignId) });
@@ -210,13 +237,35 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const open = useMutation({
+    mutationFn: (bundle: PlayBundle) => openScene(bundle),
+    onSuccess: invalidate,
+  });
+
+  // Open a fresh beat automatically, once, so the player never faces a blank scene.
+  const opened = useRef<string | null>(null);
+  const bundle = query.data;
+  useEffect(() => {
+    if (!bundle || open.isPending || turn.isPending || choose.isPending) return;
+    if (!needsOpeningScene(bundle)) return;
+    const key = `${bundle.campaign.id}:${bundle.beat?.id ?? ""}`;
+    if (opened.current === key) return;
+    opened.current = key;
+    open.mutate(bundle);
+  }, [bundle, open, turn.isPending, choose.isPending]);
+
   return {
-    bundle: query.data,
+    bundle,
     isPending: query.isPending,
     error: query.error as Error | null,
     submit: (input: string) => turn.mutate(input),
     choose: (exit: BeatExit) => choose.mutate(exit),
-    busy: turn.isPending || choose.isPending,
-    actionError: (turn.error as Error | null) ?? (choose.error as Error | null),
+    suggestions: bundle ? latestSuggestions(bundle) : [],
+    opening: open.isPending || (bundle ? needsOpeningScene(bundle) : false),
+    busy: turn.isPending || choose.isPending || open.isPending,
+    actionError:
+      (turn.error as Error | null) ??
+      (choose.error as Error | null) ??
+      (open.error as Error | null),
   };
 }
