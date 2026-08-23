@@ -5,6 +5,43 @@
  */
 import { z } from "zod";
 
+/**
+ * A hostile the GM brings into a fight. These are NPC stat blocks the GM
+ * improvises (the core rules' mook numbers), not values read from the rules
+ * data, so every field is clamped into a sane band before the engine sees it.
+ * The weapon's range type must be one of the printed Range DV tables.
+ */
+export const GM_RANGE_TYPES = [
+  "pistol",
+  "smg",
+  "shotgun_slug",
+  "assault_rifle",
+  "sniper_rifle",
+  "bow_crossbow",
+  "grenade_launcher",
+  "rocket_launcher",
+] as const;
+export type GmRangeType = (typeof GM_RANGE_TYPES)[number];
+
+export const GmEnemySchema = z.object({
+  /** Stable key the GM uses to refer to this hostile in later attacks. */
+  key: z.string(),
+  name: z.string(),
+  ref: z.number().int(),
+  body: z.number().int(),
+  hp: z.number().int(),
+  /** Armor SP (used for both body and head). */
+  sp: z.number().int(),
+  /** The hostile's level in the skill their weapon uses. */
+  attackSkill: z.number().int(),
+  weaponName: z.string(),
+  damageDice: z.number().int(),
+  rangeType: z.enum(GM_RANGE_TYPES),
+  /** Distance in metres from the player character right now. */
+  distance: z.number().int(),
+});
+export type GmEnemy = z.infer<typeof GmEnemySchema>;
+
 /** A mechanical action the engine should resolve from the player's intent. */
 export const GmProposedActionSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -13,11 +50,23 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     dv: z.number().int(),
     intent: z.string(),
   }),
-  z.object({ kind: z.literal("attack"), targetId: z.string(), intent: z.string() }),
+  z.object({
+    kind: z.literal("start_encounter"),
+    name: z.string(),
+    enemies: z.array(GmEnemySchema),
+  }),
+  z.object({
+    kind: z.literal("attack"),
+    targetId: z.string(),
+    intent: z.string(),
+    /** Distance in metres to the target; the engine reads the Range DV table with it. */
+    distance: z.number().int(),
+  }),
   z.object({ kind: z.literal("advance_beat"), to: z.string() }),
   z.object({ kind: z.literal("none") }),
 ]);
 export type GmProposedAction = z.infer<typeof GmProposedActionSchema>;
+
 
 /** A narrative state change to record (never a mechanical/dice change). */
 export const GmStateDeltaSchema = z.discriminatedUnion("kind", [
