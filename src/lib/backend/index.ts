@@ -5,3 +5,4 @@ export * from "./drafts";
 export * from "./portraits";
 export * from "./campaigns";
 export * from "./encounters";
+export * from "./missions";

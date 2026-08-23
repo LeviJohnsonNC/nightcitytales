@@ -107,3 +107,5 @@ export type FullEncounter = {
   encounter: Encounter;
   combatants: EncounterCombatant[];
 };
+
+export type MissionProgressUpdate = Update<"mission_progress">;
