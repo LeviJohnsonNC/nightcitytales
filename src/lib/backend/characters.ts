@@ -187,6 +187,32 @@ export async function addImprovementPoints(characterId: string, amount: number):
 }
 
 /**
+ * Buy one Skill Level with Improvement Points. Returns the I.P. left.
+ *
+ * The deduction and the raise happen in one transaction (spend_ip_on_skill), so
+ * they cannot come apart, and the function re-checks the balance and the Skill's
+ * current Level itself — a stale or replayed call is rejected rather than
+ * charged twice.
+ */
+export async function spendIpOnSkill(
+  characterId: string,
+  skillId: string,
+  newLevel: number,
+  cost: number,
+  specialization: string | null = null,
+): Promise<number> {
+  const { data, error } = await backendClient.rpc("spend_ip_on_skill", {
+    p_character_id: characterId,
+    p_skill_id: skillId,
+    p_new_level: newLevel,
+    p_cost: cost,
+    p_specialization: specialization,
+  });
+  if (error) throw new Error(error.message);
+  return data as number;
+}
+
+/**
  * The one payload the save_character database function accepts. It writes the
  * character and every attached table in a single transaction and clears the
  * draft, so a half-saved character cannot exist.

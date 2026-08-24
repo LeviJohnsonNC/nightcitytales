@@ -7,6 +7,7 @@ import { buildFromState } from "@/features/chargen/sheetModel";
 import { downloadCharacterJson } from "@/features/chargen/characterExport";
 import { getCharacter } from "@/lib/backend";
 import { startOrResumeAdventure } from "@/features/play/startAdventure";
+import { SpendIpCard } from "./SpendIpCard";
 import { stateFromCharacter } from "./characterState";
 import { useOpenAsDraft } from "./RosterList";
 
@@ -72,6 +73,8 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
         Editing opens the wizard on a fresh draft copied from this character, so the saved sheet
         stays intact until you save the edited version.
       </p>
+
+      <SpendIpCard character={data} improvementPoints={data.finance?.improvement_points ?? 0} />
 
       <CharacterSheet
         state={state}
