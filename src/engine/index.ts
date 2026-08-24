@@ -9,6 +9,7 @@ export * from "./statGeneration";
 export * from "./skillAllocation";
 export * from "./humanity";
 export * from "./improvementPoints";
+export * from "./advancement";
 export * from "./lifepath";
 export * from "./roleLifepath";
 export * from "./catalog";

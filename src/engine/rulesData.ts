@@ -10,6 +10,7 @@ import lifepathGeneral from "@/data/rules/lifepath-general.json";
 import lifepathRoles from "@/data/rules/lifepath-roles.json";
 import roleSkillPackages from "@/data/rules/role-skill-packages.json";
 import skillsData from "@/data/rules/skills.json";
+import ipCosts from "@/data/rules/ip-costs.json";
 import statTemplates from "@/data/rules/stat-templates.json";
 import type { StatBlock, StatKey } from "./types";
 
@@ -159,6 +160,13 @@ export type ReputationLevel = { level: number; whoKnows: string };
 
 /** Improvement Points, read from creation-rules.json. */
 export const IMPROVEMENT_POINTS = creationRules.improvementPoints;
+
+/** What advancement costs in I.P., read from ip-costs.json. */
+export const IP_COSTS = ipCosts as unknown as {
+  _rules: { skill: string; levelling: string; maximum: string };
+  skillCostPerLevel: number;
+  doubleCostMultiplier: number;
+};
 
 export type IpTier = {
   ip: number;
