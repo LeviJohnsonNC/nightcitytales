@@ -59,6 +59,16 @@ function Verdict({ roll }: { roll: Extract<CheckRoll, { kind: "opposed" }> }) {
   );
 }
 
+/** The wound tax on this roll, stated plainly rather than buried in the total. */
+function WoundLine({ penalty }: { penalty: number }) {
+  if (penalty === 0) return null;
+  return (
+    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-destructive">
+      {penalty} to this check — you are {penalty <= -4 ? "mortally" : "seriously"} wounded
+    </p>
+  );
+}
+
 function CritLine({ critical, who }: { critical: "success" | "failure" | null; who: string }) {
   if (!critical) return null;
   return (
@@ -121,6 +131,8 @@ function OpposedBody({
           </div>
         </div>
       </div>
+
+      <WoundLine penalty={pending.woundPenalty} />
 
       {opposition.remembered && (
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -263,6 +275,8 @@ function DvBody({
         <Stat label="Base" value={`+${pending.base}`} />
         <Stat label={pending.bandName ?? "DV"} value={`DV ${dv}`} />
       </div>
+
+      <WoundLine penalty={pending.woundPenalty} />
 
       {result === null ? (
         <div className="space-y-3">

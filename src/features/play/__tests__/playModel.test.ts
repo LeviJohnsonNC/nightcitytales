@@ -5,6 +5,7 @@ import {
   characterSummary,
   findNpcByKey,
   gmSkillList,
+  npcDispositionAfter,
   keySkills,
   suggestionInput,
   jobOutcome,
@@ -220,5 +221,24 @@ describe("npcSummaries", () => {
       { npc_id: "trace-santiago", name: "Trace Santiago", disposition: 1, status: "alive" },
     ] as unknown as CampaignNpc[]);
     expect(summaries[0]).toMatchObject({ name: "Trace Santiago", key: "trace-santiago" });
+  });
+});
+
+describe("npcDispositionAfter", () => {
+  it("moves an NPC the campaign already knows", () => {
+    expect(npcDispositionAfter({ disposition: 1 }, -2)).toEqual({ disposition: -1, isNew: false });
+  });
+
+  it("starts a stranger from neutral", () => {
+    expect(npcDispositionAfter(null, 2)).toEqual({ disposition: 2, isNew: true });
+  });
+
+  it("bottoms out at hostile rather than running away", () => {
+    // A run of bad turns cannot drive someone to -12.
+    expect(npcDispositionAfter({ disposition: -3 }, -5).disposition).toBe(-3);
+  });
+
+  it("tops out at devoted", () => {
+    expect(npcDispositionAfter({ disposition: 3 }, 4).disposition).toBe(3);
   });
 });
