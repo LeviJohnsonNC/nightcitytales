@@ -31,6 +31,7 @@ import {
   performAttack,
   resolveSkillId,
   rollJobSeed,
+  woundActionPenalty,
   startMission,
   skillCheckForCharacter,
   type Beat,
@@ -41,6 +42,7 @@ import {
   type OpposedCheckResult,
   type Opposition,
   type PerformAttackResult,
+  type WoundStateCode,
 } from "@/engine";
 
 import {
@@ -49,6 +51,9 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  saveCampaignNpc,
+  setCampaignFlag,
+  setNpcDisposition,
   updateCampaign,
   updateCampaignVitals,
   type Campaign,
@@ -80,6 +85,7 @@ import {
   actorFor,
   characterSummary,
   findNpcByKey,
+  npcDispositionAfter,
   statsRecord,
   npcSummaries,
   jobOutcome,
@@ -221,7 +227,11 @@ async function narrate(
   // Resolving a check narrates again, which can propose more. Budget against the
   // prompts already outstanding so a chain of turns cannot grow the queue without
   // bound — the player should always be able to clear the table.
-  const outstanding = pendingChecksFrom(bundle.events, bundle.character).length;
+  const outstanding = pendingChecksFrom(
+    bundle.events,
+    bundle.character,
+    bundle.vitals.wound_state as WoundStateCode,
+  ).length;
   const checkBudget = Math.max(0, MAX_CHECKS_PER_TURN - outstanding);
 
   for (const action of gm.proposedActions) {
@@ -363,6 +373,10 @@ async function narrate(
     }
   }
 
+  // The world remembers. Every one of these was being parsed and thrown away:
+  // the GM proposes "the alarm was raised" and "she trusts you less" most turns,
+  // and a campaign that forgets them is the reset-button amnesia the brief
+  // forbids.
   for (const delta of gm.stateDeltas) {
     if (delta.kind === "note") {
       await appendCampaignEvent({
@@ -370,6 +384,31 @@ async function narrate(
         type: "gm_note",
         summary: delta.text,
         data: {} as Json,
+        ...beatFields,
+      });
+    } else if (delta.kind === "set_flag") {
+      await setCampaignFlag(campaignId, delta.flag);
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "flag_set",
+        summary: `Night City noted: ${delta.flag.replace(/_/g, " ")}`,
+        data: { flag: delta.flag } as unknown as Json,
+        ...beatFields,
+      });
+    } else if (delta.kind === "npc_disposition") {
+      const npc = findNpcByKey(bundle.npcs, delta.npcKey);
+      const { disposition } = npcDispositionAfter(npc, delta.delta);
+      // An NPC the campaign has never filed still gets one, so the shift
+      // sticks; a later opposed check corrects the name.
+      const row = npc ?? (await saveCampaignNpc(campaignId, delta.npcKey, { name: delta.npcKey }));
+      await setNpcDisposition(row.id, disposition);
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "npc_disposition",
+        summary:
+          `${npc?.name ?? delta.npcKey} ${delta.delta >= 0 ? "warms to" : "cools on"} you ` +
+          `(${delta.delta >= 0 ? "+" : ""}${delta.delta}).`,
+        data: { npcKey: delta.npcKey, delta: delta.delta } as unknown as Json,
         ...beatFields,
       });
     }
@@ -946,7 +985,13 @@ export function usePlay(campaignId: string) {
   // act until you have made it), then whichever prompt the GM posted last.
   const pendingDeathSave = bundle ? pendingDeathSaveFrom(bundle.events, bundle.encounter) : null;
   const checkQueue =
-    bundle && !pendingDeathSave ? pendingChecksFrom(bundle.events, bundle.character) : [];
+    bundle && !pendingDeathSave
+      ? pendingChecksFrom(
+          bundle.events,
+          bundle.character,
+          bundle.vitals.wound_state as WoundStateCode,
+        )
+      : [];
   const checkCandidate = checkQueue[0] ?? null;
   const attackCandidate =
     bundle && !pendingDeathSave
@@ -1024,7 +1069,14 @@ export function usePlay(campaignId: string) {
         luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character)),
       );
       const spend = luckModifier(luckSpent);
-      const modifiers = spend ? { modifiers: [spend] } : {};
+      // Being hurt follows you out of the fight: the same −2/−4 the engine
+      // already applies to attacks now rides on every other Check too.
+      const wounds = woundActionPenalty(bundle.vitals.wound_state as WoundStateCode);
+      const situational = [
+        ...(spend ? [spend] : []),
+        ...(wounds !== 0 ? [{ label: "Wounds", value: wounds }] : []),
+      ];
+      const modifiers = situational.length > 0 ? { modifiers: situational } : {};
       const opposition = oppositionFor(pending);
       if (opposition) {
         return {

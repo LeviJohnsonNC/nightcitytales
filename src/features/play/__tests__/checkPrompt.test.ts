@@ -246,3 +246,41 @@ describe("rollHistory", () => {
     expect(rolls[0]).toMatchObject({ total: 18, dv: 15, success: true, opposedBy: null });
   });
 });
+
+describe("wound penalties on checks", () => {
+  const prompt = event({
+    id: "w",
+    type: "check_prompt",
+    data: { skillId: "perception", dv: 15, intent: "spot the tail" } as never,
+  });
+
+  it("leaves an unwounded check exactly as it was", () => {
+    const pending = pendingCheckFrom([prompt], character, "none");
+    expect(pending).toMatchObject({ woundPenalty: 0, base: 10, needed: 5 });
+  });
+
+  it("does not penalise a Lightly Wounded character", () => {
+    // Lightly Wounded is any damage at all; the penalty starts at Serious.
+    expect(pendingCheckFrom([prompt], character, "light")?.woundPenalty).toBe(0);
+  });
+
+  it("costs a Seriously Wounded character 2, raising the number they need", () => {
+    const pending = pendingCheckFrom([prompt], character, "serious");
+    expect(pending?.woundPenalty).toBe(-2);
+    expect(pending?.base).toBe(10); // STAT + Skill is untouched
+    expect(pending?.needed).toBe(7); // the die has to cover it instead
+  });
+
+  it("costs a Mortally Wounded character 4", () => {
+    const pending = pendingCheckFrom([prompt], character, "mortal");
+    expect(pending?.woundPenalty).toBe(-4);
+    expect(pending?.needed).toBe(9);
+  });
+
+  it("rides on an opposed check too, where there is no DV to raise", () => {
+    const pending = pendingCheckFrom([opposedPrompt()], talker, "serious");
+    expect(pending?.woundPenalty).toBe(-2);
+    expect(pending?.needed).toBeNull();
+    expect(pending?.dv).toBeNull();
+  });
+});

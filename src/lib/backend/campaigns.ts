@@ -8,6 +8,7 @@ import type {
   Campaign,
   CampaignEvent,
   CampaignEventInsert,
+  CampaignFlag,
   CampaignInventoryItem,
   CampaignNpc,
   CampaignUpdate,
@@ -224,6 +225,40 @@ export async function setInventorySp(
       .from("campaign_inventory")
       .update({ current_sp: currentSp })
       .eq("id", inventoryId)
+      .select("*")
+      .single(),
+  );
+}
+
+/**
+ * Record a world fact the GM established. The table is unique on
+ * (campaign_id, flag), so setting the same flag twice is idempotent rather
+ * than a second row.
+ */
+export async function setCampaignFlag(
+  campaignId: string,
+  flag: string,
+  value: Json = true as unknown as Json,
+): Promise<CampaignFlag> {
+  return unwrap(
+    await backendClient
+      .from("campaign_flags")
+      .upsert({ campaign_id: campaignId, flag, value }, { onConflict: "campaign_id,flag" })
+      .select("*")
+      .single(),
+  );
+}
+
+/** Move an NPC's disposition, clamped by the caller to the scale the column allows. */
+export async function setNpcDisposition(
+  npcRowId: string,
+  disposition: number,
+): Promise<CampaignNpc> {
+  return unwrap(
+    await backendClient
+      .from("campaign_npcs")
+      .update({ disposition })
+      .eq("id", npcRowId)
       .select("*")
       .single(),
   );

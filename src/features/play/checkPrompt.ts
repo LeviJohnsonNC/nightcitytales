@@ -8,6 +8,8 @@ import {
   DIFFICULTY_VALUES,
   describeDV,
   getSkill,
+  woundActionPenalty,
+  type WoundStateCode,
   type OpposedCheckResult,
   type Opposition,
   type SkillCheckResult,
@@ -62,6 +64,12 @@ export type PendingCheck = {
   skillLevel: number;
   /** STAT + Skill, before the die. */
   base: number;
+  /**
+   * The wound penalty riding on this check: 0 unwounded, −2 Seriously Wounded,
+   * −4 Mortally Wounded. Shown before the roll so the player can see why the
+   * number got worse, and why patching up in downtime is worth the days.
+   */
+  woundPenalty: number;
   /** The Difficulty Value, or null when another character's roll is the target. */
   dv: number | null;
   bandName: string | null;
@@ -142,6 +150,7 @@ function describeOpposition(raw: PromptOpposition | undefined): PendingOppositio
 export function describePendingCheck(
   event: CampaignEvent,
   character: FullCharacter,
+  woundState: WoundStateCode = "none",
 ): PendingCheck | null {
   const data = (event.data ?? {}) as PromptData;
   const skillId = typeof data.skillId === "string" ? data.skillId : null;
@@ -168,6 +177,7 @@ export function describePendingCheck(
 
   const skillLevel = character.skills.find((s) => s.skill_id === skillId)?.level ?? 0;
   const base = statValue + skillLevel;
+  const woundPenalty = woundActionPenalty(woundState);
   const dv = opposition || dvRaw === null ? null : snapToPublishedDv(dvRaw);
 
   return {
@@ -178,9 +188,12 @@ export function describePendingCheck(
     statValue,
     skillLevel,
     base,
+    woundPenalty,
     dv,
     bandName: dv === null ? null : dvBandName(dv),
-    needed: dv === null ? null : dv - base,
+    // Being hurt raises the number on the die, not the DV: the difficulty was
+    // set by the beat, the penalty is carried by the character.
+    needed: dv === null ? null : dv - base - woundPenalty,
     opposition,
     intent: typeof data.intent === "string" ? data.intent : "",
     beatId: event.beat_id ?? null,
@@ -200,6 +213,7 @@ export function describePendingCheck(
 export function pendingChecksFrom(
   events: CampaignEvent[],
   character: FullCharacter,
+  woundState: WoundStateCode = "none",
 ): PendingCheck[] {
   const resolvedIds = new Set<string>();
   const unlinkedBySkill = new Map<string, number>();
@@ -221,7 +235,7 @@ export function pendingChecksFrom(
   for (const event of events) {
     if (event?.type !== "check_prompt") continue;
     if (resolvedIds.has(event.id)) continue;
-    const described = describePendingCheck(event, character);
+    const described = describePendingCheck(event, character, woundState);
     if (!described) continue;
     const bySkill = unlinkedBySkill.get(described.skillId) ?? 0;
     if (bySkill > 0) {
@@ -241,8 +255,9 @@ export function pendingChecksFrom(
 export function pendingCheckFrom(
   events: CampaignEvent[],
   character: FullCharacter,
+  woundState: WoundStateCode = "none",
 ): PendingCheck | null {
-  return pendingChecksFrom(events, character)[0] ?? null;
+  return pendingChecksFrom(events, character, woundState)[0] ?? null;
 }
 
 /** One line of the session's dice record. */

@@ -5,6 +5,7 @@
  */
 import {
   BASIC_SKILL_IDS,
+  clampDisposition,
   getSkill,
   STAT_ORDER,
   type MissionStatus,
@@ -122,6 +123,21 @@ export function npcSummaries(npcs: CampaignNpc[]): GmNpcSummary[] {
     ...(npc.npc_id ? { key: npc.npc_id } : {}),
     ...(npc.location ? { notes: `at ${npc.location}` } : {}),
   }));
+}
+
+/**
+ * Where an NPC's disposition lands after the GM shifts it.
+ *
+ * The scale is small and the column enforces it, so a run of hostile turns
+ * cannot drive someone to -12; it bottoms out at hostile. An NPC the campaign
+ * has never filed starts from neutral, which is what a stranger is.
+ */
+export function npcDispositionAfter(
+  npc: { disposition: number } | null,
+  delta: number,
+): { disposition: number; isNew: boolean } {
+  const current = npc?.disposition ?? 0;
+  return { disposition: clampDisposition(current + delta), isNew: npc === null };
 }
 
 /**
