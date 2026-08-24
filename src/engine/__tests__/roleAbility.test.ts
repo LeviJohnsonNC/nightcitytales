@@ -6,7 +6,17 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  BELIEVABILITY_FORBIDS_LUCK,
   CHARISMATIC_AUDIENCES,
+  RUMOR_TIERS,
+  backupTierFor,
+  believabilityCheck,
+  callBackup,
+  credibilityFor,
+  evidenceBonus,
+  fieldExpertiseBonus,
+  juryRigMinutes,
+  makerSpecialtyPool,
   CHARISMATIC_LOCKOUT_DAYS,
   COMBAT_AWARENESS_OPTIONS,
   charismaticFavor,
@@ -164,5 +174,130 @@ describe("rolling Charismatic Impact", () => {
 
   it("refuses an audience the rules do not describe", () => {
     expect(() => charismaticImpactCheck(4, "stadium", face(5))).toThrow(/Unknown audience/);
+  });
+});
+
+describe("Lawman — Backup", () => {
+  /** d10 then d6, in that order, as callBackup rolls them. */
+  const rolls = (...faces: [number, number][]) => {
+    let i = 0;
+    return () => {
+      const [face, sides] = faces[i++]!;
+      return (face - 1) / sides + 0.0001;
+    };
+  };
+
+  it("answers on a roll equal to or under the Rank", () => {
+    const call = callBackup(4, rolls([4, 10], [2, 6]));
+    expect(call.responded).toBe(true);
+    expect(call.roundsUntilArrival).toBe(2);
+    expect(call.tier?.name).toBe("Local Beat Cops");
+  });
+
+  it("sends nobody on a roll over the Rank, and no tier with them", () => {
+    const call = callBackup(4, rolls([5, 10]));
+    expect(call).toMatchObject({
+      responded: false,
+      tier: null,
+      roundsUntilArrival: null,
+      groups: 0,
+    });
+  });
+
+  it("sends a better class of help when the arrival roll comes up 6", () => {
+    const call = callBackup(4, rolls([1, 10], [6, 6]));
+    expect(call.tierUp).toBe(true);
+    expect(call.tier?.name).toBe("Sheriff's Department"); // the tier above Beat Cops
+  });
+
+  it("sends two groups only at the Rank the rules name", () => {
+    expect(callBackup(10, rolls([1, 10], [3, 6])).groups).toBe(2);
+    expect(callBackup(9, rolls([1, 10], [3, 6])).groups).toBe(1);
+  });
+
+  it("has no tier above the top one to bump into", () => {
+    const call = callBackup(10, rolls([1, 10], [6, 6]));
+    expect(call.tierUp).toBe(false);
+    expect(call.tier?.name).toBe("National Law Enforcement");
+  });
+
+  it("carries the printed stat block for whoever turns up", () => {
+    expect(backupTierFor(1)).toMatchObject({
+      name: "Corporate Security",
+      count: 4,
+      combat: 8,
+      sp: 7,
+      hp: 20,
+    });
+    expect(backupTierFor(8)).toMatchObject({ name: "Recovery Zone Marshal", count: 1, hp: 50 });
+  });
+});
+
+describe("Media — Credibility", () => {
+  const face = (value: number) => () => (value - 1) / 10 + 0.001;
+
+  it("reaches further and is believed more often at higher Rank", () => {
+    expect(credibilityFor(2)).toMatchObject({ believeIn10: 2, audience: "your neighbourhood" });
+    expect(credibilityFor(10)).toMatchObject({ believeIn10: 7, audience: "worldwide" });
+  });
+
+  it("prints the rumor tiers with both DVs", () => {
+    expect(RUMOR_TIERS.map((t) => [t.id, t.passiveDv, t.activeDv])).toEqual([
+      ["vague", 7, 13],
+      ["typical", 9, 15],
+      ["substantial", 11, 17],
+      ["detailed", 13, 21],
+    ]);
+  });
+
+  it("raises the believe chance with hard evidence, and stacks the thresholds", () => {
+    expect(evidenceBonus(0)).toBe(0);
+    expect(evidenceBonus(1)).toBe(1);
+    expect(evidenceBonus(4)).toBe(1);
+    expect(evidenceBonus(5)).toBe(3); // 1 for the first piece, 2 more past four
+  });
+
+  it("believes a story on a roll within the chance", () => {
+    // Rank 4 is 3-in-10; a 3 lands, a 4 does not.
+    expect(believabilityCheck(4, 0, face(3))).toMatchObject({ believed: true, chance: 3 });
+    expect(believabilityCheck(4, 0, face(4)).believed).toBe(false);
+  });
+
+  it("never lets the chance run past certainty", () => {
+    expect(believabilityCheck(10, 99, face(10)).chance).toBe(10);
+  });
+
+  it("forbids Luck on a Believability Check", () => {
+    expect(BELIEVABILITY_FORBIDS_LUCK).toBe(true);
+  });
+});
+
+describe("Tech — Maker", () => {
+  it("gives two Specialty Ranks for every Rank of Maker", () => {
+    expect(makerSpecialtyPool(4)).toBe(8);
+    expect(makerSpecialtyPool(0)).toBe(0);
+  });
+
+  it("adds Field Expertise to the listed Tech Skills", () => {
+    expect(
+      fieldExpertiseBonus({ abilityId: "maker", specialtyRank: 3, skillId: "basic_tech" }),
+    ).toBe(3);
+    expect(
+      fieldExpertiseBonus({ abilityId: "maker", specialtyRank: 3, skillId: "cybertech" }),
+    ).toBe(3);
+  });
+
+  it("adds nothing to a Skill outside the list, or for anyone who is not a Tech", () => {
+    expect(
+      fieldExpertiseBonus({ abilityId: "maker", specialtyRank: 3, skillId: "persuasion" }),
+    ).toBe(0);
+    expect(
+      fieldExpertiseBonus({ abilityId: "operator", specialtyRank: 3, skillId: "basic_tech" }),
+    ).toBe(0);
+  });
+
+  it("holds a jury-rig for ten minutes a Rank, and not at all at Rank 0", () => {
+    expect(juryRigMinutes(3)).toBe(30);
+    expect(juryRigMinutes(0)).toBe(0);
   });
 });

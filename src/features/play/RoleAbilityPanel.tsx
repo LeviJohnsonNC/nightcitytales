@@ -11,11 +11,19 @@
  */
 import { useEffect, useState } from "react";
 import {
+  BELIEVABILITY_FORBIDS_LUCK,
   CHARISMATIC_AUDIENCES,
   COMBAT_AWARENESS_OPTIONS,
+  MAKER_SPECIALTIES,
+  RUMOR_TIERS,
+  believabilityCheck,
   charismaticFavor,
   combatAwarenessEffects,
   combatAwarenessValue,
+  credibilityFor,
+  evidenceBonus,
+  type BackupCall,
+  type BelievabilityResult,
   type CharismaticImpactResult,
   type CombatAwarenessOption,
 } from "@/engine";
@@ -246,6 +254,224 @@ function CharismaticImpactSection({ play }: { play: ReturnType<typeof usePlay> }
   );
 }
 
+/** A Lawman calling it in: roll to be answered, then wait for the Round. */
+function BackupSection({ play }: { play: ReturnType<typeof usePlay> }) {
+  const rank = play.roleAbility?.rank ?? 0;
+  const tier = play.backupTier;
+  const inbound = play.pendingBackup;
+  const [call, setCall] = useState<BackupCall | null>(null);
+  const inFight = play.encounter?.state.status === "active";
+  const busy = play.backupBusy || play.busy;
+
+  return (
+    <section className="space-y-2 border border-border bg-card p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <Label>Backup</Label>
+        <p className="num text-xs text-muted-foreground">Rank {rank}</p>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {tier
+          ? `${tier.count} × ${tier.name} — Combat ${tier.combat}, SP ${tier.sp}, HP ${tier.hp}.`
+          : "No agency will take your call at this Rank."}
+      </p>
+
+      {inbound ? (
+        <p className="text-sm font-semibold text-accent">
+          {inbound.tierName} inbound — arriving Round {inbound.arrivesOnRound}.
+        </p>
+      ) : call === null ? (
+        <div className="flex items-center gap-3">
+          <DiceRoll
+            sides={10}
+            value={null}
+            size={44}
+            disabled={busy || !tier}
+            label="Roll to reach Backup"
+            roll={() => {
+              const rolled = play.rollBackup();
+              return {
+                face: rolled.responseRoll,
+                commit: () => {
+                  setCall(rolled);
+                  play.commitBackupCall(rolled);
+                },
+              };
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            Roll {rank} or under to be answered.
+            {!inFight && " You are not in a fight — they will have nothing to shoot."}
+          </p>
+        </div>
+      ) : (
+        <p className={call.responded ? "text-sm text-accent" : "text-sm text-destructive"}>
+          {call.responded
+            ? `${call.tier?.name} answered — ${call.roundsUntilArrival} Round(s) out${call.tierUp ? ", and they sent better" : ""}.`
+            : `Rolled ${call.responseRoll}. Nobody answers — try again next Turn.`}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** A Tech dividing their Maker Specialty ranks. */
+function MakerSection({ play }: { play: ReturnType<typeof usePlay> }) {
+  const saved = play.makerSpecialties;
+  const budget = play.makerBudget;
+  const [draft, setDraft] = useState<Record<string, number>>(saved);
+  useEffect(() => setDraft(saved), [saved]);
+
+  const spent = Object.values(draft).reduce((sum, value) => sum + value, 0);
+  const pool = budget?.pool ?? 0;
+  const remaining = pool - spent;
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+
+  return (
+    <section className="space-y-2 border border-border bg-card p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <Label>Maker</Label>
+        <p className="num text-xs text-muted-foreground">
+          {remaining} of {pool} Specialty ranks free
+        </p>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Two Specialty ranks for every Rank of Maker. Field Expertise rides on your Tech Skill
+        Checks; the other three need materials and quality rules this app does not model yet.
+      </p>
+
+      <ul className="space-y-1">
+        {MAKER_SPECIALTIES.map((specialty) => {
+          const points = draft[specialty.id] ?? 0;
+          return (
+            <li key={specialty.id} className="flex items-center justify-between gap-2">
+              <span className="text-sm">
+                {specialty.name}
+                {specialty.id !== "field_expertise" && (
+                  <span className="ml-1 text-xs text-muted-foreground">(not modelled)</span>
+                )}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 w-6 p-0"
+                  disabled={play.makerBusy || points <= 0}
+                  aria-label={`Fewer ranks in ${specialty.name}`}
+                  onClick={() => setDraft({ ...draft, [specialty.id]: points - 1 })}
+                >
+                  −
+                </Button>
+                <span className="num w-6 text-center text-xs">{points}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 w-6 p-0"
+                  disabled={play.makerBusy || remaining <= 0}
+                  aria-label={`More ranks in ${specialty.name}`}
+                  onClick={() => setDraft({ ...draft, [specialty.id]: points + 1 })}
+                >
+                  +
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {dirty && (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            disabled={play.makerBusy}
+            onClick={() => play.setMakerSpecialties(draft)}
+          >
+            {play.makerBusy ? "…" : "Set specialties"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setDraft(saved)}>
+            Revert
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** A Media putting a story out, and what it takes to be believed. */
+function CredibilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
+  const rank = play.roleAbility?.rank ?? 0;
+  const band = credibilityFor(rank);
+  const [evidence, setEvidence] = useState(0);
+  const [result, setResult] = useState<BelievabilityResult | null>(null);
+  const chance = Math.min(10, (band?.believeIn10 ?? 0) + evidenceBonus(evidence));
+
+  return (
+    <section className="space-y-2 border border-border bg-card p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <Label>Credibility</Label>
+        <p className="num text-xs text-muted-foreground">Rank {rank}</p>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {band ? `Reach: ${band.audience}. Impact: ${band.impact}.` : "No reach at this Rank."}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Hunting a rumor actively: {RUMOR_TIERS.map((t) => `${t.name} DV${t.activeDv}`).join(" · ")}
+      </p>
+
+      <div className="flex items-center gap-2">
+        <Label>Hard evidence</Label>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 w-6 p-0"
+          disabled={evidence <= 0 || result !== null}
+          aria-label="One piece fewer"
+          onClick={() => setEvidence(Math.max(0, evidence - 1))}
+        >
+          −
+        </Button>
+        <span className="num w-6 text-center text-xs">{evidence}</span>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 w-6 p-0"
+          disabled={result !== null}
+          aria-label="One piece more"
+          onClick={() => setEvidence(evidence + 1)}
+        >
+          +
+        </Button>
+        <span className="num text-xs text-muted-foreground">{chance}-in-10 believed</span>
+      </div>
+
+      {result === null ? (
+        <div className="flex items-center gap-3">
+          <DiceRoll
+            sides={10}
+            value={null}
+            size={44}
+            disabled={play.busy || !band}
+            label="Roll Believability"
+            roll={() => {
+              const rolled = believabilityCheck(rank, evidence);
+              return { face: rolled.roll, commit: () => setResult(rolled) };
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            {chance} or under and they buy it.
+            {BELIEVABILITY_FORBIDS_LUCK && " Luck cannot touch this roll."}
+          </p>
+        </div>
+      ) : (
+        <p className={result.believed ? "text-sm text-accent" : "text-sm text-destructive"}>
+          {result.believed
+            ? `Rolled ${result.roll} — ${result.audience} believes it. ${result.impact}.`
+            : `Rolled ${result.roll} — the story does not land.`}
+        </p>
+      )}
+    </section>
+  );
+}
+
 /** Every other Role: name the ability and what it is doing for them right now. */
 function AbilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
   const ability = play.roleAbility;
@@ -285,6 +511,15 @@ export function RoleAbilityPanel({ play }: { play: ReturnType<typeof usePlay> })
   }
   if (ability.info.abilityId === "charismatic_impact") {
     return <CharismaticImpactSection play={play} />;
+  }
+  if (ability.info.abilityId === "backup") {
+    return <BackupSection play={play} />;
+  }
+  if (ability.info.abilityId === "maker") {
+    return <MakerSection play={play} />;
+  }
+  if (ability.info.abilityId === "credibility") {
+    return <CredibilitySection play={play} />;
   }
   return <AbilitySection play={play} />;
 }

@@ -16,7 +16,7 @@
  * The other seven Roles are transcribed in the rules data but not modelled;
  * roleAbilityMechanics returns null for them rather than inventing anything.
  */
-import { defaultRng, statSkillCheck, type CheckResult } from "./dice";
+import { defaultRng, rollDie, statSkillCheck, type CheckResult } from "./dice";
 import type { RNG } from "./types";
 import rolesData from "@/data/rules/roles.json";
 
@@ -247,4 +247,215 @@ export function charismaticImpactCheck(
     dv: audience.dv,
   });
   return { ...result, audience, favor: charismaticFavor(rank, audienceId) };
+}
+
+// ---------------------------------------------------------------------------
+// Lawman — Backup
+// ---------------------------------------------------------------------------
+
+export type BackupTier = {
+  minRank: number;
+  maxRank: number;
+  name: string;
+  count: number;
+  /** Combined STAT+Skill base they add 1d10 to, for attack or defense. */
+  combat: number;
+  sp: number;
+  hp: number;
+  move: number;
+  body: number;
+  note: string;
+};
+
+type BackupMechanics = {
+  call: {
+    tierUpOnArrivalRoll: number;
+    twoGroupsAtRank: number;
+  };
+  tiers: BackupTier[];
+};
+
+const BACKUP = mechanicsOf<BackupMechanics>("lawman");
+
+export const BACKUP_TIERS: BackupTier[] = BACKUP?.tiers ?? [];
+
+/** The group a Lawman of this Rank can call, or null below the lowest tier. */
+export function backupTierFor(rank: number): BackupTier | null {
+  return BACKUP_TIERS.find((tier) => rank >= tier.minRank && rank <= tier.maxRank) ?? null;
+}
+
+/** The next tier up, for the arrival roll that sends someone better. */
+export function backupTierAbove(tier: BackupTier | null): BackupTier | null {
+  if (!tier) return null;
+  const index = BACKUP_TIERS.indexOf(tier);
+  return index >= 0 && index < BACKUP_TIERS.length - 1 ? (BACKUP_TIERS[index + 1] ?? null) : null;
+}
+
+export type BackupCall = {
+  /** The d10 rolled against the Rank. */
+  responseRoll: number;
+  responded: boolean;
+  /** Rounds until they arrive, on a 1d6. Null when nobody answered. */
+  arrivalRoll: number | null;
+  roundsUntilArrival: number | null;
+  /** Who is coming, after any tier bump. Null when nobody answered. */
+  tier: BackupTier | null;
+  /** True when the arrival roll sent someone better than the Rank calls for. */
+  tierUp: boolean;
+  /** How many groups arrive — two only at the Rank the rules name. */
+  groups: number;
+};
+
+/**
+ * Call it in. Roll equal to or under your Backup Rank on a d10 to get anyone at
+ * all; then 1d6 for how many Rounds until they arrive, where a 6 sends a better
+ * class of help. Nobody answering is not the end of it — the rules let you try
+ * again next Turn, which is the caller's business, not this function's.
+ */
+export function callBackup(rank: number, rng: RNG = defaultRng): BackupCall {
+  const responseRoll = rollDie(10, rng);
+  const responded = responseRoll <= Math.max(0, Math.trunc(rank));
+  if (!responded) {
+    return {
+      responseRoll,
+      responded: false,
+      arrivalRoll: null,
+      roundsUntilArrival: null,
+      tier: null,
+      tierUp: false,
+      groups: 0,
+    };
+  }
+
+  const arrivalRoll = rollDie(6, rng);
+  const base = backupTierFor(rank);
+  const bumped = arrivalRoll === (BACKUP?.call.tierUpOnArrivalRoll ?? 6);
+  const tier = (bumped ? backupTierAbove(base) : null) ?? base;
+  return {
+    responseRoll,
+    responded: true,
+    arrivalRoll,
+    roundsUntilArrival: arrivalRoll,
+    tier,
+    tierUp: bumped && tier !== base,
+    groups: rank >= (BACKUP?.call.twoGroupsAtRank ?? 10) ? 2 : 1,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Media — Credibility
+// ---------------------------------------------------------------------------
+
+export type RumorTier = { id: string; name: string; passiveDv: number; activeDv: number };
+export type CredibilityRank = {
+  maxRank: number;
+  audience: string;
+  believeIn10: number;
+  impact: string;
+};
+
+type CredibilityMechanics = {
+  rumors: { tiers: RumorTier[] };
+  publishing: {
+    evidenceBonus: { pieces: number; bonus: number }[];
+    luckForbidden: boolean;
+    byRank: CredibilityRank[];
+  };
+};
+
+const CREDIBILITY = mechanicsOf<CredibilityMechanics>("media");
+
+export const RUMOR_TIERS: RumorTier[] = CREDIBILITY?.rumors.tiers ?? [];
+/** Luck can never be spent on a Believability Check. */
+export const BELIEVABILITY_FORBIDS_LUCK: boolean = CREDIBILITY?.publishing.luckForbidden ?? false;
+
+/** What a Media of this Rank reaches, and how often they are believed. */
+export function credibilityFor(rank: number): CredibilityRank | null {
+  return (CREDIBILITY?.publishing.byRank ?? []).find((row) => rank <= row.maxRank) ?? null;
+}
+
+/** The believe-chance bump hard evidence buys, per the printed thresholds. */
+export function evidenceBonus(pieces: number): number {
+  const count = Math.max(0, Math.trunc(pieces));
+  let bonus = 0;
+  for (const step of CREDIBILITY?.publishing.evidenceBonus ?? []) {
+    if (count >= step.pieces) bonus += step.bonus;
+  }
+  return bonus;
+}
+
+export type BelievabilityResult = {
+  roll: number;
+  /** The chance in 10 this story had, evidence included. */
+  chance: number;
+  believed: boolean;
+  audience: string;
+  impact: string;
+};
+
+/**
+ * Does the audience buy it? A d10 against the Rank's chance in ten, raised by
+ * hard evidence. Luck cannot touch this roll, which is why it takes no
+ * modifiers at all.
+ */
+export function believabilityCheck(
+  rank: number,
+  evidencePieces: number,
+  rng: RNG = defaultRng,
+): BelievabilityResult {
+  const band = credibilityFor(rank);
+  if (!band) throw new Error(`No Credibility band for Rank ${rank}.`);
+  const chance = Math.min(10, band.believeIn10 + evidenceBonus(evidencePieces));
+  const roll = rollDie(10, rng);
+  return { roll, chance, believed: roll <= chance, audience: band.audience, impact: band.impact };
+}
+
+// ---------------------------------------------------------------------------
+// Tech — Maker
+// ---------------------------------------------------------------------------
+
+export type MakerSpecialty = { id: string; name: string };
+
+type MakerMechanics = {
+  specialties: MakerSpecialty[];
+  ranksPerMakerRank: number;
+  fieldExpertise: {
+    addsRankToSkills: string[];
+    juryRig: { minRank: number; holdsMinutesPerRank: number };
+  };
+};
+
+const MAKER = mechanicsOf<MakerMechanics>("tech");
+
+export const MAKER_SPECIALTIES: MakerSpecialty[] = MAKER?.specialties ?? [];
+export const MAKER_RANKS_PER_RANK: number = MAKER?.ranksPerMakerRank ?? 0;
+export const FIELD_EXPERTISE_SKILLS: string[] = MAKER?.fieldExpertise.addsRankToSkills ?? [];
+
+/** Specialty ranks a Tech has to spend: two for every Rank of Maker. */
+export function makerSpecialtyPool(makerRank: number): number {
+  return Math.max(0, Math.trunc(makerRank)) * MAKER_RANKS_PER_RANK;
+}
+
+/**
+ * What Field Expertise adds to a Skill Check.
+ *
+ * The Rank rides on the listed Tech Skills and on nothing else, and only for
+ * work that is not itself a Maker job — repairing a door is Field Expertise,
+ * building a new one is Fabrication.
+ */
+export function fieldExpertiseBonus(input: {
+  abilityId: string | null | undefined;
+  specialtyRank: number;
+  skillId: string;
+}): number {
+  if (input.abilityId !== "maker") return 0;
+  if (!FIELD_EXPERTISE_SKILLS.includes(input.skillId)) return 0;
+  return Math.max(0, Math.trunc(input.specialtyRank));
+}
+
+/** How long a jury-rig holds before the item reverts: 10 minutes a Rank. */
+export function juryRigMinutes(specialtyRank: number): number {
+  const rank = Math.max(0, Math.trunc(specialtyRank));
+  if (rank < (MAKER?.fieldExpertise.juryRig.minRank ?? 1)) return 0;
+  return rank * (MAKER?.fieldExpertise.juryRig.holdsMinutesPerRank ?? 0);
 }

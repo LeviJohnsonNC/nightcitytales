@@ -4,6 +4,7 @@ import {
   beginTurn,
   currentCombatant,
   defeatCombatant,
+  joinEncounter,
   outcome,
   performAttack,
   playerCombatant,
@@ -392,5 +393,37 @@ describe("Combat Awareness at the table", () => {
     );
     expect(result.attack.critical).toBe("failure");
     expect(result.attack.total).toBe(9); // 1 + 12 − 4
+  });
+});
+
+describe("joining a fight in progress", () => {
+  it("rolls the newcomer's Initiative and slots them into the order", () => {
+    const state = stateOf([
+      { ...mk("fast", { ref: 9 }), initiative: 18 },
+      { ...mk("slow", { ref: 4 }), initiative: 8 },
+    ]);
+    // REF 6 + a d10 of 6 = 12, which sits between 18 and 8.
+    const next = joinEncounter(state, mk("backup", { side: "friendly", ref: 6 }), seq([[6, 10]]));
+    expect(next.order).toEqual(["fast", "backup", "slow"]);
+    expect(next.combatants["backup"]!.initiative).toBe(12);
+  });
+
+  it("leaves the turn with whoever already had it", () => {
+    const state = stateOf(
+      [
+        { ...mk("fast", { ref: 9 }), initiative: 18 },
+        { ...mk("slow", { ref: 4 }), initiative: 8 },
+      ],
+      1, // it is "slow"'s turn
+    );
+    const next = joinEncounter(state, mk("backup", { side: "friendly", ref: 6 }), seq([[6, 10]]));
+    // "slow" moved from index 1 to index 2; the turn moved with them.
+    expect(next.order[next.activeIndex]).toBe("slow");
+  });
+
+  it("puts a slow arrival at the back rather than dropping them", () => {
+    const state = stateOf([{ ...mk("fast", { ref: 9 }), initiative: 18 }]);
+    const next = joinEncounter(state, mk("backup", { side: "friendly", ref: 2 }), seq([[1, 10]]));
+    expect(next.order).toEqual(["fast", "backup"]);
   });
 });

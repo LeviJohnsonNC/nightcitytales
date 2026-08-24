@@ -1,0 +1,131 @@
+/**
+ * A Lawman calling it in.
+ *
+ * Backup is armed, armored, and played by the GM — here, by the engine. A call
+ * that lands names a tier and a number of Rounds; when that Round comes around
+ * the group joins the fight as friendly combatants and starts shooting the
+ * people who are shooting you.
+ *
+ * The tier's printed Combat Number is a combined STAT+Skill base that a d10 is
+ * added to, which is not how a player's attack is built (STAT and Skill
+ * separately). It is carried as the whole of their attack, with the Skill half
+ * zero, so the arithmetic matches the book exactly.
+ */
+import { joinEncounter, type BackupCall, type BackupTier, type Combatant } from "@/engine";
+import { addCombatant, appendCampaignEvent, type Json } from "@/lib/backend";
+import { saveLiveEncounter, type LiveEncounter } from "@/features/campaign/encounterState";
+import type { CombatantData } from "./encounterModel";
+
+/** What a landed call is waiting on, stored until the Round comes round. */
+export type PendingBackup = {
+  tierName: string;
+  arrivesOnRound: number;
+  groups: number;
+};
+
+/** The state a call leaves behind for the encounter to honour. */
+export function pendingBackupFrom(call: BackupCall, currentRound: number): PendingBackup | null {
+  if (!call.responded || !call.tier || call.roundsUntilArrival === null) return null;
+  return {
+    tierName: call.tier.name,
+    arrivesOnRound: currentRound + call.roundsUntilArrival,
+    groups: call.groups,
+  };
+}
+
+/** One member of a Backup group, as a combatant. */
+function backupCombatant(
+  tier: BackupTier,
+  index: number,
+  id: string,
+): {
+  combatant: Combatant;
+  data: CombatantData;
+} {
+  const combatant: Combatant = {
+    id,
+    name: tier.count > 1 ? `${tier.name} ${index + 1}` : tier.name,
+    side: "friendly",
+    isPlayer: false,
+    // The Combat Number is the whole of their attack base; Initiative is rolled
+    // off it too, since the tier prints no separate REF.
+    ref: tier.combat,
+    body: tier.body,
+    hpMax: tier.hp,
+    hp: tier.hp,
+    seriouslyWoundedThreshold: Math.ceil(tier.hp / 2),
+    woundState: "none",
+    deathSavePenalty: 0,
+    spHead: tier.sp,
+    spBody: tier.sp,
+    defeated: false,
+    initiative: null,
+  };
+  const data: CombatantData = {
+    key: `backup-${tier.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index + 1}`,
+    weaponName: "Backup sidearm",
+    damageDice: 3,
+    rangeType: "pistol",
+    distance: 12,
+    // The Combat Number already carries their Skill; adding it again would
+    // count the same training twice.
+    attackSkill: 0,
+  };
+  return { combatant, data };
+}
+
+/**
+ * Bring a group in. Everyone rolls Initiative and takes their place in the
+ * order, the rows are written so the fight survives a reload, and the ledger
+ * records who turned up.
+ */
+export async function arriveBackup(input: {
+  campaignId: string;
+  beatId: string | null;
+  live: LiveEncounter;
+  tier: BackupTier;
+  groups: number;
+}): Promise<{ live: LiveEncounter; line: string }> {
+  let state = input.live.state;
+  const data = { ...input.live.data };
+  const members = input.tier.count * Math.max(1, input.groups);
+
+  for (let index = 0; index < members; index += 1) {
+    const id = crypto.randomUUID();
+    const built = backupCombatant(input.tier, index, id);
+    state = joinEncounter(state, built.combatant);
+    data[id] = built.data;
+    await addCombatant(input.live.id, {
+      id,
+      name: built.combatant.name,
+      side: built.combatant.side,
+      is_player: false,
+      ref: built.combatant.ref,
+      body: built.combatant.body,
+      hp_max: built.combatant.hpMax,
+      hp_current: built.combatant.hp,
+      seriously_wounded_threshold: built.combatant.seriouslyWoundedThreshold,
+      wound_state: built.combatant.woundState,
+      sp_head: built.combatant.spHead,
+      sp_body: built.combatant.spBody,
+      initiative: state.combatants[id]?.initiative ?? null,
+      data: built.data as unknown as Json,
+    });
+  }
+
+  const live: LiveEncounter = { ...input.live, state, data };
+  await saveLiveEncounter(live);
+
+  const line =
+    `${input.tier.name} arrives — ${members} of them, ` +
+    `Combat ${input.tier.combat}, SP ${input.tier.sp}, HP ${input.tier.hp}. ${input.tier.note}`;
+  await appendCampaignEvent({
+    campaign_id: input.campaignId,
+    type: "backup_arrived",
+    summary: line,
+    data: { tier: input.tier.name, members } as unknown as Json,
+    ...(input.beatId ? { beat_id: input.beatId } : {}),
+  });
+
+  return { live, line };
+}
