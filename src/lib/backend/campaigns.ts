@@ -108,6 +108,17 @@ export async function startCampaign(payload: StartCampaignPayload): Promise<stri
   return data;
 }
 
+/**
+ * Wipe every playthrough a character has: campaigns, and through them vitals,
+ * inventory, NPCs, factions, flags, mission progress, encounters and the event
+ * ledger, all of which cascade off the campaign row. The character sheet itself
+ * is untouched — starting again snapshots it fresh.
+ */
+export async function resetAdventureForCharacter(characterId: string): Promise<void> {
+  const { error } = await backendClient.from("campaigns").delete().eq("character_id", characterId);
+  if (error) throw new Error(error.message);
+}
+
 /** Append one entry to a campaign's immutable event ledger. */
 export async function appendCampaignEvent(event: CampaignEventInsert): Promise<CampaignEvent> {
   return unwrap(await backendClient.from("campaign_events").insert(event).select("*").single());
