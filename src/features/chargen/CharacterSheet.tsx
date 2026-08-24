@@ -89,9 +89,21 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm italic text-text-dim">{children}</p>;
 }
 
-function Box({ label, value, sub }: { label: string; value: string; sub?: string | undefined }) {
+function Box({
+  label,
+  value,
+  sub,
+  className,
+}: {
+  label: string;
+  value: string;
+  sub?: string | undefined;
+  className?: string | undefined;
+}) {
   return (
-    <div className="border border-hairline bg-surface-raised px-3 py-2">
+    <div
+      className={`border border-hairline bg-surface-raised px-3 py-2 transition-colors ${className ?? ""}`}
+    >
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">{label}</p>
       <p className="num text-2xl font-bold leading-tight text-text">{value}</p>
       {sub && <p className="font-mono text-[10px] tracking-wide text-text-dim">{sub}</p>}
