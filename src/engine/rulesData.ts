@@ -34,6 +34,7 @@ export const SKILLS: SkillDefinition[] = (skillsData.skills as SkillDefinition[]
   category: s.category,
   stat: s.stat,
   doubleCost: s.doubleCost,
+  description: s.description ?? null,
   isBasicSkill: s.isBasicSkill,
   requiresSpecialization: s.requiresSpecialization,
   specializationLabel: s.specializationLabel,
