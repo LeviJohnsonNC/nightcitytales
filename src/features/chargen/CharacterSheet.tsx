@@ -16,6 +16,7 @@ import {
 } from "@/engine";
 import type { AssembledCharacter, CharacterBuild, PackageEntry } from "@/engine";
 import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
+import { SkillInfo, StatInfoDialog } from "./SheetInfo";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
 import { PortraitLightbox } from "./PortraitLightbox";
@@ -172,7 +173,7 @@ export function CharacterSheet({
     <div className="sheet space-y-4">
       {/* 1 — Identity */}
       <section className="sheet-page-1 grid gap-4 border border-hairline bg-surface p-4 sm:grid-cols-[10rem_minmax(0,1fr)]">
-        <div className="aspect-[3/4] w-full">
+        <div className="neon-frame aspect-[3/4] w-full overflow-hidden">
           {generatedPortrait ? (
             <PortraitLightbox
               src={generatedPortrait}
@@ -226,26 +227,27 @@ export function CharacterSheet({
       </section>
 
       {/* 2 — STATs */}
-      <Panel title="STATs" note="current / maximum">
+      <Panel title="STATs" note="tap a STAT for what it is good for">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {sheet.statOrder.map((stat) => {
             const value = sheet.stats[stat];
             const isEmp = stat === "emp";
             const current = isEmp ? sheet.empCurrent : (value ?? null);
             return (
-              <Box
-                key={stat}
-                label={stat.toUpperCase()}
-                value={current === null || current === undefined ? "—" : String(current)}
-                sub={isEmp && value !== undefined ? `max ${value}` : undefined}
-              />
+              <StatInfoDialog key={stat} stat={stat} value={current ?? null}>
+                <Box
+                  label={stat.toUpperCase()}
+                  value={current === null || current === undefined ? "—" : String(current)}
+                  sub={isEmp && value !== undefined ? `max ${value}` : undefined}
+                />
+              </StatInfoDialog>
             );
           })}
         </div>
       </Panel>
 
       {/* 3 — Derived */}
-      <Panel title="Derived STATs" note="engine computed">
+      <Panel title="Derived STATs">
         {sheet.derived === null ? (
           <Empty>STATs are incomplete, so nothing derives yet.</Empty>
         ) : (
@@ -307,13 +309,18 @@ export function CharacterSheet({
                         } · Skill Base ${line.base ?? "—"}`}
                       >
                         <td className="py-1 pr-2 text-text">
-                          {line.name}
-                          {line.doubleCost && <span className="text-text-dim"> (x2)</span>}
-                          {line.granted && (
-                            <span className="ml-1 font-mono text-[10px] uppercase text-text-dim">
-                              free
+                          <span className="inline-flex items-center gap-1.5">
+                            <span>
+                              {line.name}
+                              {line.doubleCost && <span className="text-text-dim"> (x2)</span>}
+                              {line.granted && (
+                                <span className="ml-1 font-mono text-[10px] uppercase text-text-dim">
+                                  free
+                                </span>
+                              )}
                             </span>
-                          )}
+                            <SkillInfo skillId={line.skillId} />
+                          </span>
                         </td>
                         <td className="num w-12 py-1 text-right font-bold tabular-nums text-ember">
                           {line.base ?? "—"}
@@ -495,6 +502,15 @@ export function CharacterSheet({
         )}
       </CollapsiblePanel>
 
+      {/* 8b — The woven background, folded away until asked for */}
+      {state.background.trim() !== "" && (
+        <CollapsiblePanel title="Background" note="woven from your Lifepath">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-text">
+            {state.background}
+          </p>
+        </CollapsiblePanel>
+      )}
+
       {/* 9 — Outfit, ammo, cash, housing */}
       <div className="grid gap-4 md:grid-cols-2">
         <Panel title="Outfit & Fashion">
@@ -548,7 +564,10 @@ export function CharacterSheet({
           {sheet.packageGear.length > 0 && (
             <ul className="mb-3 space-y-0.5 text-sm text-text-muted">
               {sheet.packageGear.map((entry, i) => (
-                <li key={i}>{packageLineText(sheet, "gear", entry, i)}</li>
+                <li key={i} className="flex items-center gap-1.5">
+                  <span>{packageLineText(sheet, "gear", entry, i)}</span>
+                  <PackageInfo label={packageLineLabel(sheet, "gear", entry, i)} />
+                </li>
               ))}
             </ul>
           )}
