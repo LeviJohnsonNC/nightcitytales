@@ -26,6 +26,7 @@ import {
   getCharacter,
   getLatestDraft,
   listRoster,
+  resetAdventureForCharacter,
   saveDraft,
   type Json,
   type RosterEntry,
