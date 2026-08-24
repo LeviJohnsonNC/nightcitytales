@@ -88,7 +88,7 @@ export function StatInfoDialog({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="block w-full text-left transition-colors hover:border-ember focus-visible:outline-none"
+        className="block w-full cursor-pointer text-left focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
         aria-label={`What is ${stat.toUpperCase()} good for?`}
       >
         {children}
