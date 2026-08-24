@@ -276,9 +276,7 @@ export function RosterList({ userId: _userId }: { userId: string }) {
     <div className="space-y-6">
       <DraftCard />
 
-      {duplicate.error && (
-        <p className="text-sm text-destructive">{(duplicate.error as Error).message}</p>
-      )}
+      {reset.error && <p className="text-sm text-destructive">{(reset.error as Error).message}</p>}
       {remove.error && (
         <p className="text-sm text-destructive">{(remove.error as Error).message}</p>
       )}
