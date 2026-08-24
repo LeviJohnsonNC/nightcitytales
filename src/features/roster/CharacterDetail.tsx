@@ -6,7 +6,7 @@ import { CharacterSheet } from "@/features/chargen/CharacterSheet";
 import { buildFromState } from "@/features/chargen/sheetModel";
 import { downloadCharacterJson } from "@/features/chargen/characterExport";
 import { getCharacter } from "@/lib/backend";
-import { startOrResumeAdventure } from "@/features/play/startAdventure";
+import { startOrResumeAdventure, type AdventureStart } from "@/features/play/startAdventure";
 import { SpendIpCard } from "./SpendIpCard";
 import { stateFromCharacter } from "./characterState";
 import { useOpenAsDraft } from "./RosterList";
@@ -19,9 +19,9 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
   const edit = useOpenAsDraft(userId);
   const navigate = useNavigate();
   const start = useMutation({
-    mutationFn: () => {
+    mutationFn: (how: AdventureStart) => {
       if (!data) throw new Error("Character not loaded.");
-      return startOrResumeAdventure(data.character);
+      return startOrResumeAdventure(data.character, how);
     },
     onSuccess: (campaignId) => navigate({ to: "/play/$id", params: { id: campaignId } }),
   });
@@ -45,8 +45,16 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
           ← Back to roster
         </Link>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => start.mutate()} disabled={start.isPending}>
+          <Button onClick={() => start.mutate({ kind: "starter" })} disabled={start.isPending}>
             {start.isPending ? "Starting…" : "Start Adventure"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => start.mutate({ kind: "generated" })}
+            disabled={start.isPending}
+            title="Roll a fresh procedurally generated job instead of the authored opener"
+          >
+            Take a random job
           </Button>
           <Button variant="outline" onClick={() => edit.mutate({ id })} disabled={edit.isPending}>
             {edit.isPending ? "Opening…" : "Edit in wizard"}
