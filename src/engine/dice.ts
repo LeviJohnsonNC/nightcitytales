@@ -42,6 +42,12 @@ export type CheckResult = RollResult & {
 export type CheckOptions = {
   dv?: number | null;
   now?: () => Date;
+  /**
+   * Suppress the Critical Failure implosion on a natural 1. A Solo's Fumble
+   * Recovery ignores critical failures while attacking; the die still reads 1,
+   * it just does not drag a second d10 down with it.
+   */
+  ignoreCriticalFailure?: boolean;
 };
 
 export function statSkillCheck(
@@ -63,7 +69,8 @@ export function statSkillCheck(
   let critical: "success" | "failure" | null = null;
   let criticalDie: number | null = null;
 
-  if (base === 10 || base === 1) {
+  const imploding = base === 1 && !options.ignoreCriticalFailure;
+  if (base === 10 || imploding) {
     criticalDie = d10(rng); // single step only — crits never chain
     critical = base === 10 ? "success" : "failure";
     rolls.push(criticalDie);

@@ -271,6 +271,7 @@ export type Database = {
           ip_awarded: number | null
           minute: number
           name: string
+          role_state: Json
           status: string
           updated_at: string
           user_id: string
@@ -285,6 +286,7 @@ export type Database = {
           ip_awarded?: number | null
           minute?: number
           name: string
+          role_state?: Json
           status?: string
           updated_at?: string
           user_id: string
@@ -299,6 +301,7 @@ export type Database = {
           ip_awarded?: number | null
           minute?: number
           name?: string
+          role_state?: Json
           status?: string
           updated_at?: string
           user_id?: string

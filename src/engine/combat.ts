@@ -67,6 +67,8 @@ export type AttackInput = {
   /** Situational modifiers: aimed shot, cover, wound penalty, scope, etc. */
   modifiers?: RollModifier[];
   now?: () => Date;
+  /** Solo's Fumble Recovery: a natural 1 does not implode. */
+  ignoreCriticalFailure?: boolean;
 };
 
 export type AttackResult = CheckResult & {
@@ -85,6 +87,7 @@ export function resolveAttack(input: AttackInput, rng: RNG = defaultRng): Attack
   const result = statSkillCheck(modifiers, rng, {
     dv: input.dv,
     ...(input.now ? { now: input.now } : {}),
+    ...(input.ignoreCriticalFailure ? { ignoreCriticalFailure: true } : {}),
   });
   const margin = result.total - input.dv;
   return { ...result, margin, hit: margin > 0 };

@@ -19,6 +19,7 @@ import { DeathSaveCard } from "./DeathSaveCard";
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
 import { DowntimePanel } from "@/features/downtime/DowntimePanel";
+import { RoleAbilityPanel } from "./RoleAbilityPanel";
 import { gmSkillList, suggestionInput } from "./playModel";
 import { usePlay, type PlayBundle } from "./usePlay";
 import type { RollRecord } from "./checkPrompt";
@@ -632,6 +633,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
       </div>
       <aside className="space-y-4">
         <CharacterPanel bundle={bundle} luck={play.luck} />
+        <RoleAbilityPanel play={play} />
         <RollHistory rolls={play.rolls} />
         <CombatHud campaignId={campaignId} />
         <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />

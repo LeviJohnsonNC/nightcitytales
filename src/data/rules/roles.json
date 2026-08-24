@@ -20,8 +20,70 @@
         "name": "Charismatic Impact",
         "startingRank": 4,
         "summary": "The Rockerboy's Role Ability is Charismatic Impact. With this ability, they can influence others by sheer presence of personality. They need not be a musical performer; they can influence others through poetry, art, dance, or simply their physical presence. They could be a rocker, or a cult leader. As they grow in skill, they can affect larger and larger groups and call on their fans for greater and greater requests of loyalty.",
-        "mechanicalText": "The Rockerboy's Role Ability is Charismatic Impact. They can influence others by sheer presence of personality: through music, poetry, art, dance, or simply their physical presence. They could be a rocker, or a cult leader. A Rockerboy can only use Charismatic Impact on Fans. Outside of combat you can turn non-fans into fans (unless they actively dislike you) by rolling Charismatic Impact + 1d10 vs. DV8 for a single person, DV10 for a Small Group of up to 6, or DV12 for a Huge Group. The GM decides when someone you meet is already a Fan. When you ask a favor of a fan or group, the GM checks the favor against your current Rank. If it's beyond your Rank you automatically fail. Otherwise group size sets the DV and you roll Charismatic Impact + 1d10. On a success the fans give their best effort; on a failure you can't ask that same favor of those fans again for a week. Each Rank sets the best venue you can play and what you can ask of a single fan (DV8), a small group of up to 6 (DV10), and a huge group (DV12): Ranks 1\u20132: Venues: small local clubs. Single: a small favor (buy you a drink/meal, give you a lift). Small Group: fans ask for autographs and stop you in the street. Huge Group: none yet.\nRanks 3\u20134: Venues: well-known clubs. Single: a major favor (put in a good word, etc.). Small Group: regularly hang out and supply party favors. Huge Group: a strong local following that buys your recordings and merch.\nRanks 5\u20136: Venues: large, important clubs. Single: commit a minor crime (shoplift, help in a fight). Small Group: act as your personal posse. Huge Group: loyal fans across the City doing major favors for attention.\nRanks 7\u20138: Venues: small concert halls, local video feed. Single: risk their life for you without question. Small Group: commit a minor crime for you. Huge Group: rabidly loyal: they fight rival fans and band together to help you.\nRank 9: Venues: large concert halls, national video feed. Single: commit a major crime. Small Group: commit a major crime. Huge Group: a cult-like following that will riot, destroy property, even kill for you.\nRank 10: Venues: huge stadiums or international video. Single: sacrifice themselves for you without question. Small Group: risk their lives as personal protection. Huge Group: a worldwide, cult-like following: effectively a private army built on your charisma.",
-        "_ranksPending": false
+        "mechanicalText": "The Rockerboy's Role Ability is Charismatic Impact. They can influence others by sheer presence of personality: through music, poetry, art, dance, or simply their physical presence. They could be a rocker, or a cult leader. A Rockerboy can only use Charismatic Impact on Fans. Outside of combat you can turn non-fans into fans (unless they actively dislike you) by rolling Charismatic Impact + 1d10 vs. DV8 for a single person, DV10 for a Small Group of up to 6, or DV12 for a Huge Group. The GM decides when someone you meet is already a Fan. When you ask a favor of a fan or group, the GM checks the favor against your current Rank. If it's beyond your Rank you automatically fail. Otherwise group size sets the DV and you roll Charismatic Impact + 1d10. On a success the fans give their best effort; on a failure you can't ask that same favor of those fans again for a week. Each Rank sets the best venue you can play and what you can ask of a single fan (DV8), a small group of up to 6 (DV10), and a huge group (DV12): Ranks 1–2: Venues: small local clubs. Single: a small favor (buy you a drink/meal, give you a lift). Small Group: fans ask for autographs and stop you in the street. Huge Group: none yet.\nRanks 3–4: Venues: well-known clubs. Single: a major favor (put in a good word, etc.). Small Group: regularly hang out and supply party favors. Huge Group: a strong local following that buys your recordings and merch.\nRanks 5–6: Venues: large, important clubs. Single: commit a minor crime (shoplift, help in a fight). Small Group: act as your personal posse. Huge Group: loyal fans across the City doing major favors for attention.\nRanks 7–8: Venues: small concert halls, local video feed. Single: risk their life for you without question. Small Group: commit a minor crime for you. Huge Group: rabidly loyal: they fight rival fans and band together to help you.\nRank 9: Venues: large concert halls, national video feed. Single: commit a major crime. Small Group: commit a major crime. Huge Group: a cult-like following that will riot, destroy property, even kill for you.\nRank 10: Venues: huge stadiums or international video. Single: sacrifice themselves for you without question. Small Group: risk their lives as personal protection. Huge Group: a worldwide, cult-like following: effectively a private army built on your charisma.",
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "audiences": [
+            {
+              "id": "single",
+              "name": "A single person",
+              "dv": 8
+            },
+            {
+              "id": "small_group",
+              "name": "A Small Group (up to 6)",
+              "dv": 10,
+              "maxSize": 6
+            },
+            {
+              "id": "huge_group",
+              "name": "A Huge Group",
+              "dv": 12
+            }
+          ],
+          "formula": "Charismatic Impact Rank + 1d10 vs the audience DV.",
+          "onlyOnFans": true,
+          "failureLockoutDays": 7,
+          "favorsByRank": [
+            {
+              "maxRank": 2,
+              "single": "a small favour — buy you a drink or a meal, give you a lift",
+              "small_group": "fans ask for autographs and stop you in the street",
+              "huge_group": null
+            },
+            {
+              "maxRank": 4,
+              "single": "a major favour — put in a good word",
+              "small_group": "regularly hang out and supply party favours",
+              "huge_group": "a strong local following that buys your recordings and merch"
+            },
+            {
+              "maxRank": 6,
+              "single": "commit a minor crime — shoplift, help in a fight",
+              "small_group": "act as your personal posse",
+              "huge_group": "loyal fans across the City doing major favours for attention"
+            },
+            {
+              "maxRank": 8,
+              "single": "risk their life for you without question",
+              "small_group": "commit a minor crime for you",
+              "huge_group": "rabidly loyal: they fight rival fans and band together to help you"
+            },
+            {
+              "maxRank": 9,
+              "single": "commit a major crime",
+              "small_group": "commit a major crime",
+              "huge_group": "a cult-like following that will riot, destroy property, even kill for you"
+            },
+            {
+              "maxRank": 10,
+              "single": "sacrifice themselves for you without question",
+              "small_group": "risk their lives as personal protection",
+              "huge_group": "a worldwide, cult-like following: effectively a private army"
+            }
+          ]
+        }
       }
     },
     "solo": {
@@ -35,7 +97,94 @@
         "startingRank": 4,
         "summary": "The Solo's Role Ability is Combat Awareness. With Combat Awareness, a Solo can call up their training to have an enhanced situational awareness of the battlefield. When combat begins, anytime outside of combat, or in combat with an Action, a Solo may divide the total number of points they have in their Combat Awareness Role Ability among a number of combat abilities. If a Solo chooses to not change their point assignments, their previous ones persist. Activating some of these abilities will cost the Solo more points than others.",
         "mechanicalText": "When combat begins (before Initiative is rolled), anytime outside of combat, or in combat with an Action, a Solo may divide the total points they have in their Combat Awareness Role Ability among the abilities below. If they don't change their assignments, the previous ones persist. Some abilities cost more points than others. Damage Deflection: trained to roll with the punches. For 2 points decrease the first damage you take this Round by 1; 4 points by 2; 6 points by 3; 8 points by 4; 10 points by 5.\nFumble Recovery: for 4 points, you ignore critical failures (natural 1s) rolled while attacking. Those rolls still count as a 1.\nInitiative Reaction: each point adds +1 to your Initiative rolls.\nPrecision Attack: for 3 points, +1 to any Attacks; 6 points, +2; 9 points, +3.\nSpot Weakness: each point adds +1 to the damage (before armor) of your first successful Attack in a Round.\nThreat Detection: each point adds +1 to any Perception Checks.",
-        "_ranksPending": false
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "poolEqualsRank": true,
+          "options": [
+            {
+              "id": "damage_deflection",
+              "name": "Damage Deflection",
+              "steps": [
+                {
+                  "cost": 2,
+                  "value": 1
+                },
+                {
+                  "cost": 4,
+                  "value": 2
+                },
+                {
+                  "cost": 6,
+                  "value": 3
+                },
+                {
+                  "cost": 8,
+                  "value": 4
+                },
+                {
+                  "cost": 10,
+                  "value": 5
+                }
+              ],
+              "applies": "first_damage_taken_each_round",
+              "effect": "Decrease the first damage you take this Round by the step value."
+            },
+            {
+              "id": "fumble_recovery",
+              "name": "Fumble Recovery",
+              "steps": [
+                {
+                  "cost": 4,
+                  "value": 1
+                }
+              ],
+              "applies": "attack_critical_failure",
+              "effect": "Ignore critical failures (natural 1s) rolled while attacking. Those rolls still count as a 1."
+            },
+            {
+              "id": "initiative_reaction",
+              "name": "Initiative Reaction",
+              "perPoint": 1,
+              "applies": "initiative",
+              "effect": "Each point adds +1 to your Initiative rolls."
+            },
+            {
+              "id": "precision_attack",
+              "name": "Precision Attack",
+              "steps": [
+                {
+                  "cost": 3,
+                  "value": 1
+                },
+                {
+                  "cost": 6,
+                  "value": 2
+                },
+                {
+                  "cost": 9,
+                  "value": 3
+                }
+              ],
+              "applies": "attack_rolls",
+              "effect": "+1/+2/+3 to any Attacks at 3/6/9 points."
+            },
+            {
+              "id": "spot_weakness",
+              "name": "Spot Weakness",
+              "perPoint": 1,
+              "applies": "first_successful_attack_damage_each_round",
+              "effect": "Each point adds +1 to the damage (before armor) of your first successful Attack in a Round."
+            },
+            {
+              "id": "threat_detection",
+              "name": "Threat Detection",
+              "perPoint": 1,
+              "applies": "perception_checks",
+              "effect": "Each point adds +1 to any Perception Checks."
+            }
+          ]
+        }
       }
     },
     "netrunner": {
@@ -48,7 +197,7 @@
         "name": "Interface",
         "startingRank": 4,
         "summary": "The Netrunner's Role Ability is Interface. Interface is what allows the Netrunner to Netrun, to interface with electronic mind-modems (called cyberdecks) to control computers, electronics, and associated programming. The Interface Role Ability also gives the Netrunner access to a wide suite of Abilities related to computer hacking and system control.",
-        "mechanicalText": "A Netrunner's Interface Role Ability lets them Netrun, sets how many NET Actions they take on their Turn, and grants a suite of Interface Abilities. (The full Netrunning rules are covered separately.) NET Actions per Turn by Interface Rank: Rank 1\u20133 = 2 actions; Rank 4\u20136 = 3; Rank 7\u20139 = 4; Rank 10 = 5. Interface Abilities:\nBackdoor: break through Passwords and other obstructions in the Architecture.\nCloak: hide your actions in the Architecture before you leave.\nControl: control things attached to the Architecture.\nEye-Dee: identify a found piece of data and its value.\nPathfinder: learn the \u201cmap\u201d of the Architecture.\nScanner: find the locations of systems in an area.\nSlide: slip away from one Black ICE that is following you.\nVirus: leave a custom virus at the core of the Architecture.\nZap: a basic Netrunner attack that works against both Programs and other Netrunners.",
+        "mechanicalText": "A Netrunner's Interface Role Ability lets them Netrun, sets how many NET Actions they take on their Turn, and grants a suite of Interface Abilities. (The full Netrunning rules are covered separately.) NET Actions per Turn by Interface Rank: Rank 1–3 = 2 actions; Rank 4–6 = 3; Rank 7–9 = 4; Rank 10 = 5. Interface Abilities:\nBackdoor: break through Passwords and other obstructions in the Architecture.\nCloak: hide your actions in the Architecture before you leave.\nControl: control things attached to the Architecture.\nEye-Dee: identify a found piece of data and its value.\nPathfinder: learn the “map” of the Architecture.\nScanner: find the locations of systems in an area.\nSlide: slip away from one Black ICE that is following you.\nVirus: leave a custom virus at the core of the Architecture.\nZap: a basic Netrunner attack that works against both Programs and other Netrunners.",
         "_ranksPending": false
       }
     },
@@ -90,7 +239,7 @@
         "name": "Credibility",
         "startingRank": 4,
         "summary": "The Media's Role Ability is Credibility. The Media can not only convince an audience of the truth of what they publish but also has a larger audience the more credible they are. Medias also have greater levels of access to sources and information; they are always in the know with their ears to the ground to pick up on rumors and information passively.",
-        "mechanicalText": "The Media Role Ability is Credibility. A Media can convince an audience of what they publish, reaches a larger audience the more credible they are, has greater access to sources and information, and passively picks up rumors. Rumors: As long as you aren't entirely off-grid, at least twice per week the GM secretly rolls your Credibility Rank + 1d10; if it beats a DV on the Rumor Table's Passive column, the GM clues you in on the highest rumor you beat. You can also actively hunt rumors with STAT + a relevant Skill (Library Search, Conversation, Interrogation, etc.) + 1d10 vs. the Active DV. Rumor tiers (Passive DV / Active DV): Vague 7/13, Typical 9/15, Substantial 11/17, Detailed 13/21. Publishing Stories or Scoops: Each Rank sets your Access/Sources (who you can reach), Audience (how far a story spreads), Believability (a d10 chance the audience buys it), and Impact (how much real change a story causes). One piece of easily understood verifiable evidence raises the believe chance by 1; more than 4 distinct hard pieces raises it by 2 (these stack). LUCK can never be spent on a Believability Check. You can't publish another story on the exact same topic without new information. Ranks 1\u20132: local honchos/gang lords; neighborhood audience; 2-in-10 believe; small incremental change.\nRanks 3\u20134: city gang honchos, minor politicians, Corp Execs; known local contributor; 3-in-10; local bad guys arrested or ousted.\nRanks 5\u20136: major City players and politicos, local celebrities; Citywide reach; 4-in-10; change across the City, local laws may pass.\nRanks 7\u20138: local Corp presidents, mayors, City celebrities; Statewide reach; 5-in-10; mid-level corporations or governments may fall, multi-city laws.\nRank 9: divisional Corp heads, State politicos; national reach; 6-in-10; national change, large corporations or governments may be toppled.\nRank 10: world leaders, major Corporation heads, world-famous celebrities; worldwide reach; 7-in-10; global change: Megacorps and governments may fall, international laws established.",
+        "mechanicalText": "The Media Role Ability is Credibility. A Media can convince an audience of what they publish, reaches a larger audience the more credible they are, has greater access to sources and information, and passively picks up rumors. Rumors: As long as you aren't entirely off-grid, at least twice per week the GM secretly rolls your Credibility Rank + 1d10; if it beats a DV on the Rumor Table's Passive column, the GM clues you in on the highest rumor you beat. You can also actively hunt rumors with STAT + a relevant Skill (Library Search, Conversation, Interrogation, etc.) + 1d10 vs. the Active DV. Rumor tiers (Passive DV / Active DV): Vague 7/13, Typical 9/15, Substantial 11/17, Detailed 13/21. Publishing Stories or Scoops: Each Rank sets your Access/Sources (who you can reach), Audience (how far a story spreads), Believability (a d10 chance the audience buys it), and Impact (how much real change a story causes). One piece of easily understood verifiable evidence raises the believe chance by 1; more than 4 distinct hard pieces raises it by 2 (these stack). LUCK can never be spent on a Believability Check. You can't publish another story on the exact same topic without new information. Ranks 1–2: local honchos/gang lords; neighborhood audience; 2-in-10 believe; small incremental change.\nRanks 3–4: city gang honchos, minor politicians, Corp Execs; known local contributor; 3-in-10; local bad guys arrested or ousted.\nRanks 5–6: major City players and politicos, local celebrities; Citywide reach; 4-in-10; change across the City, local laws may pass.\nRanks 7–8: local Corp presidents, mayors, City celebrities; Statewide reach; 5-in-10; mid-level corporations or governments may fall, multi-city laws.\nRank 9: divisional Corp heads, State politicos; national reach; 6-in-10; national change, large corporations or governments may be toppled.\nRank 10: world leaders, major Corporation heads, world-famous celebrities; worldwide reach; 7-in-10; global change: Megacorps and governments may fall, international laws established.",
         "_ranksPending": false
       }
     },
@@ -118,7 +267,7 @@
         "name": "Backup",
         "startingRank": 4,
         "summary": "The Lawman's Role Ability is Backup. With this ability, Lawmen can call upon the help of a group of fellow officers, based on the Lawman's Rank and the conditions under which they make the call. This Backup is armed and armored based on their Rank.",
-        "mechanicalText": "The Lawman's Role Ability is Backup: they can call on a group of fellow law enforcers based on their Backup Rank and the situation. Backup is armed, armored, and played by the GM. As a Lawman rises in Rank they're promoted or recruited into agencies they can call Backup from. When in danger, as an Action you call for Backup of your Rank or lower, rolling equal to or under your Backup Rank on a d10 to get a response (abuse it and your Boss will fine you or throw you off the force). On a response, roll 1d6 for how many Rounds until they arrive; on a 6 the arriving Backup is one tier higher (at Rank 10, two groups arrive). If nobody responds, you can try again next Turn. Each tier lists Combat Number (a combined STAT+Skill base you add 1d10 to for attack or defense: Backup can't dodge bullets), SP (Body and Head), HP, and MOVE & BODY:\nRanks 1\u20132: Corporate Security: 4 renta-cops on foot with Heavy Pistols and Kevlar\u00ae. Combat 8 / SP 7 / HP 20 / MOVE & BODY 4.\nRanks 3\u20134: Local Beat Cops: 4 cops in two Compact Groundcars, Heavy Pistols, Kevlar\u00ae. Combat 10 / SP 7 / HP 25 / 5.\nRanks 5\u20137: Sheriff's Department: 2 County Mounties in a High Performance Groundcar with Heavy Pistols and Assault Rifles, Heavy Armorjack. Combat 14 / SP 13 / HP 35 / 4.\nRank 8: Recovery Zone Marshal: 1 lone marshal on a Superbike with a Very Heavy Pistol, Assault Rifle, Grenade Launcher, and Flak Armor. Combat 16 / SP 15 / HP 50 / 6.\nRank 9: C-SWAT: 2 Psycho Squad hitters with Assault Rifles and Rocket Launchers in Metalgear\u00ae, arriving by AV-4. Combat 15 / SP 18 / HP 35 / 4.\nRank 10: National Law Enforcement / Interpol / FBI / Netwatch: 2 serious hitters by AV-4 with Very Heavy Pistols and Assault Rifles in Light Armorjack. Combat 14 / SP 11 / HP 35 / 6. They stay after the fight to investigate, and the same pair keeps responding to related calls until the case closes.",
+        "mechanicalText": "The Lawman's Role Ability is Backup: they can call on a group of fellow law enforcers based on their Backup Rank and the situation. Backup is armed, armored, and played by the GM. As a Lawman rises in Rank they're promoted or recruited into agencies they can call Backup from. When in danger, as an Action you call for Backup of your Rank or lower, rolling equal to or under your Backup Rank on a d10 to get a response (abuse it and your Boss will fine you or throw you off the force). On a response, roll 1d6 for how many Rounds until they arrive; on a 6 the arriving Backup is one tier higher (at Rank 10, two groups arrive). If nobody responds, you can try again next Turn. Each tier lists Combat Number (a combined STAT+Skill base you add 1d10 to for attack or defense: Backup can't dodge bullets), SP (Body and Head), HP, and MOVE & BODY:\nRanks 1–2: Corporate Security: 4 renta-cops on foot with Heavy Pistols and Kevlar®. Combat 8 / SP 7 / HP 20 / MOVE & BODY 4.\nRanks 3–4: Local Beat Cops: 4 cops in two Compact Groundcars, Heavy Pistols, Kevlar®. Combat 10 / SP 7 / HP 25 / 5.\nRanks 5–7: Sheriff's Department: 2 County Mounties in a High Performance Groundcar with Heavy Pistols and Assault Rifles, Heavy Armorjack. Combat 14 / SP 13 / HP 35 / 4.\nRank 8: Recovery Zone Marshal: 1 lone marshal on a Superbike with a Very Heavy Pistol, Assault Rifle, Grenade Launcher, and Flak Armor. Combat 16 / SP 15 / HP 50 / 6.\nRank 9: C-SWAT: 2 Psycho Squad hitters with Assault Rifles and Rocket Launchers in Metalgear®, arriving by AV-4. Combat 15 / SP 18 / HP 35 / 4.\nRank 10: National Law Enforcement / Interpol / FBI / Netwatch: 2 serious hitters by AV-4 with Very Heavy Pistols and Assault Rifles in Light Armorjack. Combat 14 / SP 11 / HP 35 / 6. They stay after the fight to investigate, and the same pair keeps responding to related calls until the case closes.",
         "_ranksPending": false
       }
     },
@@ -132,8 +281,20 @@
         "name": "Operator",
         "startingRank": 4,
         "summary": "The Fixer's Role Ability is Operator. Fixers know how to get things on the black market and are adept at navigating the complex social customs of The Street, where hundreds of cultures and economic levels collide. Fixers maintain vast webs of contacts and clients who they can reach out to source goods, favors, or information. Fixers can also source desirable resources and make favorable deals.",
-        "mechanicalText": "The Fixer's Role Ability is Operator. Fixers know how to get things on the black market and navigate The Street's tangle of cultures and economic levels, maintaining vast webs of contacts and clients. Contacts & Clients: who the Fixer can reach to source goods, favors, or information (still paid for).\nReach: the highest price category the Fixer can always source; at higher Ranks they can gather other Fixers to run a Night Market, briefly making all price categories available.\nHaggle: striking a deal. Roll COOL + Trading + your Operator Rank + 1d10 against the other party's COOL + Trading (+ their Operator Rank if a Fixer) + 1d10. On a success you make one deal of your Operator Rank or lower; only one Fixer deal per transaction.\nGrease: blending into the many cultures on and off The Street: knowing their language, social codes, and status marks. Ranks 1\u20132: local honchos/gang lords. Reach: always source Cheap and Everyday items. Haggle: \u00b110% of market price. Grease: your immediate neighborhood and its gangs.\nRanks 3\u20134: city gang honchos, minor politicians, Corp Execs. Reach: up to Expensive items. Haggle: buy 5+ of an item, get one free. Grease: one more culture plus a related language at Skill 4.\nRanks 5\u20136: major City players and politicos, neighborhood celebrities. Reach: once a month, organize a Night Market to source up to Super Luxury. Haggle: negotiate job pay up 20%. Grease: 3 cultures total, each with a related language at Skill 4.\nRanks 7\u20138: local Corp presidents, mayors, local celebrities. Reach: up to Very Expensive items. Haggle: on a Luxury/Super Luxury item, pay half now and half in a month (miss it and nobody deals again). Grease: 6 cultures total, each with a related language at Skill 4.\nRank 9: divisional Corp heads, State/City-zone politicos. Reach: up to Luxury items; can add a Midnight Market inside a Night Market. Haggle: \u00b120% of market price. Grease: blend with Corporate and governmental agencies.\nRank 10: world leaders, major Corporation heads, world-famous celebrities. Reach: always source up to Super Luxury. Haggle: double the pay per person on a Dangerous Job. Grease: blend seamlessly with almost any group, even secret societies or exclusive memberships.",
-        "_ranksPending": false
+        "mechanicalText": "The Fixer's Role Ability is Operator. Fixers know how to get things on the black market and navigate The Street's tangle of cultures and economic levels, maintaining vast webs of contacts and clients. Contacts & Clients: who the Fixer can reach to source goods, favors, or information (still paid for).\nReach: the highest price category the Fixer can always source; at higher Ranks they can gather other Fixers to run a Night Market, briefly making all price categories available.\nHaggle: striking a deal. Roll COOL + Trading + your Operator Rank + 1d10 against the other party's COOL + Trading (+ their Operator Rank if a Fixer) + 1d10. On a success you make one deal of your Operator Rank or lower; only one Fixer deal per transaction.\nGrease: blending into the many cultures on and off The Street: knowing their language, social codes, and status marks. Ranks 1–2: local honchos/gang lords. Reach: always source Cheap and Everyday items. Haggle: ±10% of market price. Grease: your immediate neighborhood and its gangs.\nRanks 3–4: city gang honchos, minor politicians, Corp Execs. Reach: up to Expensive items. Haggle: buy 5+ of an item, get one free. Grease: one more culture plus a related language at Skill 4.\nRanks 5–6: major City players and politicos, neighborhood celebrities. Reach: once a month, organize a Night Market to source up to Super Luxury. Haggle: negotiate job pay up 20%. Grease: 3 cultures total, each with a related language at Skill 4.\nRanks 7–8: local Corp presidents, mayors, local celebrities. Reach: up to Very Expensive items. Haggle: on a Luxury/Super Luxury item, pay half now and half in a month (miss it and nobody deals again). Grease: 6 cultures total, each with a related language at Skill 4.\nRank 9: divisional Corp heads, State/City-zone politicos. Reach: up to Luxury items; can add a Midnight Market inside a Night Market. Haggle: ±20% of market price. Grease: blend with Corporate and governmental agencies.\nRank 10: world leaders, major Corporation heads, world-famous celebrities. Reach: always source up to Super Luxury. Haggle: double the pay per person on a Dangerous Job. Grease: blend seamlessly with almost any group, even secret societies or exclusive memberships.",
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "haggle": {
+            "formula": "COOL + Trading + Operator Rank + 1d10, opposed by the other party's COOL + Trading (+ their Operator Rank if a Fixer) + 1d10.",
+            "skillId": "trading",
+            "addsRankToRoll": true
+          },
+          "reach": {
+            "_seeAlso": "Reach tiers are parsed from the mechanicalText by engine/priceCategory.ts (fixerRank).",
+            "description": "The highest price category the Fixer can always source."
+          }
+        }
       }
     },
     "nomad": {
@@ -146,7 +307,7 @@
         "name": "Moto",
         "startingRank": 4,
         "summary": "The Nomad's Role Ability is Moto. Whenever a Nomad increases their Rank in Moto, they have the option of adding another stock vehicle (with minimum specs) of their Moto Rank or lower to the pool of Family vehicles they have permission to use from the Family Motorpool or to make an upgrade to one of their current vehicles. Thanks to being around vehicles since birth, Nomads are also able to drive any type of vehicle with tremendous skill.",
-        "mechanicalText": "The Nomad Role Ability is Moto. Nomad Vehicle Familiarity: A Nomad adds their Moto Rank to any Drive Land Vehicle, Pilot Air Vehicle, Pilot Sea Vehicle, Air Vehicle Tech, Land Vehicle Tech, or Sea Vehicle Tech Skill Check. Family Motorpool: Whenever a Nomad's Role Ability Rank rises, they either add a stock vehicle (minimum specs) of their Moto Rank or lower to the vehicles they may use from the Family Motorpool, or upgrade one already-permitted Family Vehicle with a single upgrade of their Moto Rank or lower. A Nomad can have one Family Vehicle out at a time and can call the Family to swap it for another the next morning (if Family is close by). A destroyed Family Vehicle is fully repaired in a week for 500eb; daily repairs like bullet removal are the Nomad's own responsibility. At Rank 10 the Nomad is promoted to Family leadership and may have all their Family Vehicles out at once; further vehicles are bought at market price and upgrades at 1,000eb each. Family Motorpool by Rank: 1\u20134: Compact Groundcar, Gyrocopter, Jetski, Roadbike; 5\u20136: Helicopter, High Performance Groundcar, Speedboat; 7\u20138: AV-4, Cabin Cruiser, Superbike; 9\u201310: Aerozep, AV-9, Super Groundcar, Yacht.",
+        "mechanicalText": "The Nomad Role Ability is Moto. Nomad Vehicle Familiarity: A Nomad adds their Moto Rank to any Drive Land Vehicle, Pilot Air Vehicle, Pilot Sea Vehicle, Air Vehicle Tech, Land Vehicle Tech, or Sea Vehicle Tech Skill Check. Family Motorpool: Whenever a Nomad's Role Ability Rank rises, they either add a stock vehicle (minimum specs) of their Moto Rank or lower to the vehicles they may use from the Family Motorpool, or upgrade one already-permitted Family Vehicle with a single upgrade of their Moto Rank or lower. A Nomad can have one Family Vehicle out at a time and can call the Family to swap it for another the next morning (if Family is close by). A destroyed Family Vehicle is fully repaired in a week for 500eb; daily repairs like bullet removal are the Nomad's own responsibility. At Rank 10 the Nomad is promoted to Family leadership and may have all their Family Vehicles out at once; further vehicles are bought at market price and upgrades at 1,000eb each. Family Motorpool by Rank: 1–4: Compact Groundcar, Gyrocopter, Jetski, Roadbike; 5–6: Helicopter, High Performance Groundcar, Speedboat; 7–8: AV-4, Cabin Cruiser, Superbike; 9–10: Aerozep, AV-9, Super Groundcar, Yacht.",
         "_ranksPending": false
       }
     }

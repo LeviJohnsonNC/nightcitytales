@@ -29,6 +29,7 @@ import {
   luckRemaining,
   opposedCheckForCharacter,
   performAttack,
+  charismaticImpactCheck,
   resolveSkillId,
   rollJobSeed,
   woundActionPenalty,
@@ -41,6 +42,7 @@ import {
   type MissionRuntime,
   type OpposedCheckResult,
   type Opposition,
+  type CharismaticImpactResult,
   type PerformAttackResult,
   type WoundStateCode,
 } from "@/engine";
@@ -109,6 +111,13 @@ import {
   type PendingCheck,
 } from "./checkPrompt";
 import { deathSaveOwed, pendingDeathSaveFrom, type PendingDeathSave } from "./deathSavePrompt";
+import {
+  combatAwarenessAllocation,
+  combatAwarenessFor,
+  liveRoleAbility,
+  roleCheckModifiers,
+  withAbilityState,
+} from "./roleAbilityModel";
 
 /**
  * How many checks one turn may put on the table at once. Two lets a compound
@@ -343,6 +352,8 @@ async function narrate(
       }
     } else if (action.kind === "start_encounter") {
       if (live) continue; // one fight at a time
+      // A Solo brings their Combat Awareness division into the fight with them.
+      const awareness = combatAwarenessFor(bundle.campaign, bundle.character);
       live = await beginEncounter({
         campaignId,
         characterId: bundle.campaign.character_id,
@@ -351,6 +362,16 @@ async function narrate(
         character: bundle.character,
         vitals: bundle.vitals,
         enemies: action.enemies,
+        ...(awareness
+          ? {
+              roleEffects: {
+                initiative: awareness.initiative,
+                damageDeflection: awareness.damageDeflection,
+                spotWeakness: awareness.spotWeakness,
+                fumbleRecovery: awareness.fumbleRecovery,
+              },
+            }
+          : {}),
       });
     } else if (action.kind === "attack") {
       if (attackPosted || postedSkillIds.size > 0) continue;
@@ -493,6 +514,47 @@ async function commitOpposedCheck(
       `${opposition.npcName} (${opposition.skillName}): ${result.opponent.formula} = ${result.opponent.total}${critNote(result.opponent.critical)}. ` +
       `Outcome: ${verdict}. Narrate this exact outcome for the intent "${pending.intent}", showing how ${opposition.npcName} met it. ` +
       `Do not re-decide it, do not soften a failure, do not propose the same check again. End on a decision.)`,
+    { logInput: false },
+  );
+}
+
+/**
+ * Record a Rockerboy working a crowd, and hand the result to the GM.
+ *
+ * Charismatic Impact is not a Skill Check — it is Rank + 1d10 against a DV set
+ * by how many of them there are — so it gets its own ledger row rather than
+ * pretending to be a skill_check.
+ */
+async function commitCharismaticImpact(
+  bundle: PlayBundle,
+  result: CharismaticImpactResult,
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const beatId = bundle.beat?.id ?? null;
+  const verdict = result.success ? "WON THEM OVER" : "FAILED";
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "role_ability",
+    summary: `Charismatic Impact on ${result.audience.name}: ${result.formula} → ${verdict}`,
+    roll: result as unknown as Json,
+    data: {
+      ability: "charismatic_impact",
+      audience: result.audience.id,
+      success: result.success,
+    } as unknown as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
+  });
+
+  const fresh: PlayBundle = { ...bundle, events: await listCampaignEvents(campaignId) };
+  await narrate(
+    fresh,
+    `(ENGINE: the player used their Rockerboy Charismatic Impact on ${result.audience.name}. ` +
+      `${result.formula}. Outcome: ${verdict}. ` +
+      (result.success
+        ? `They are Fans now, and at this Rank a fan will ${result.favor ?? "do very little"}. ` +
+          `Narrate the crowd turning, and what that buys the player right now.`
+        : `Narrate the room not buying it. They cannot be worked again for a week.`) +
+      ` Do not re-decide the outcome. End on a decision.)`,
     { logInput: false },
   );
 }
@@ -1001,6 +1063,28 @@ export function usePlay(campaignId: string) {
   const pendingCheck = newest === "check" ? checkCandidate : null;
   const pendingAttack = newest === "attack" ? attackCandidate : null;
 
+  // A Solo re-divides their Combat Awareness when combat begins or outside it,
+  // and the division persists until they change it — so it is campaign state,
+  // not something the card holds.
+  const awarenessMutation = useMutation({
+    mutationFn: (allocation: Record<string, number>) => {
+      if (!query.data) throw new Error("Still loading.");
+      const campaign = query.data.campaign;
+      return updateCampaign(campaign.id, {
+        role_state: withAbilityState(campaign, "combat_awareness", { allocation }) as Json,
+      });
+    },
+    onSuccess: invalidate,
+  });
+
+  const charismaMutation = useMutation({
+    mutationFn: (result: CharismaticImpactResult) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitCharismaticImpact(query.data, result);
+    },
+    onSuccess: invalidate,
+  });
+
   const nextJobMutation = useMutation({
     mutationFn: () => {
       if (!query.data) throw new Error("Still loading.");
@@ -1075,6 +1159,13 @@ export function usePlay(campaignId: string) {
       const situational = [
         ...(spend ? [spend] : []),
         ...(wounds !== 0 ? [{ label: "Wounds", value: wounds }] : []),
+        // What your Role brings to this particular check — a Solo's Threat
+        // Detection on a Perception roll, a Fixer's Operator Rank on a deal.
+        ...roleCheckModifiers({
+          campaign: bundle.campaign,
+          character: bundle.character,
+          skillId: pending.skillId,
+        }),
       ];
       const modifiers = situational.length > 0 ? { modifiers: situational } : {};
       const opposition = oppositionFor(pending);
@@ -1095,6 +1186,28 @@ export function usePlay(campaignId: string) {
         result: skillCheckForCharacter(actor, pending.skillId, pending.dv, undefined, modifiers),
       };
     },
+    /** The character's Role Ability and Rank, for the panel that spends it. */
+    roleAbility: bundle ? liveRoleAbility(bundle.character) : null,
+    /** A Solo's live Combat Awareness division, or null for every other Role. */
+    combatAwareness: bundle ? combatAwarenessFor(bundle.campaign, bundle.character) : null,
+    /** The points as currently assigned, for the panel to edit. */
+    combatAwarenessAllocation: bundle ? combatAwarenessAllocation(bundle.campaign) : {},
+    /** Re-divide the pool. Rejected by the engine if it does not fit. */
+    setCombatAwareness: (allocation: Record<string, number>) =>
+      awarenessMutation.mutate(allocation),
+    combatAwarenessBusy: awarenessMutation.isPending,
+    /** Roll a Rockerboy's Charismatic Impact — the engine decides the number. */
+    rollCharismaticImpact: (audienceId: string): CharismaticImpactResult => {
+      if (!bundle) throw new Error("Still loading.");
+      const ability = liveRoleAbility(bundle.character);
+      if (!ability || ability.info.abilityId !== "charismatic_impact") {
+        throw new Error("That is not your Role Ability.");
+      }
+      return charismaticImpactCheck(ability.rank, audienceId);
+    },
+    /** Record it and let the GM narrate the room. */
+    commitCharismaticImpact: (result: CharismaticImpactResult) => charismaMutation.mutate(result),
+    charismaBusy: charismaMutation.isPending,
     /** The Luck Pool as the table sees it: what is left, and what it holds full. */
     luck: {
       remaining: bundle
@@ -1125,6 +1238,14 @@ export function usePlay(campaignId: string) {
           luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character)),
         ),
       );
+      // A Solo's Precision Attack rides on the To-Hit roll.
+      const awareness = combatAwarenessFor(bundle.campaign, bundle.character);
+      const attackModifiers = [
+        ...(spend ? [spend] : []),
+        ...(awareness && awareness.attack > 0
+          ? [{ label: "Precision Attack", value: awareness.attack }]
+          : []),
+      ];
       return performAttack(bundle.encounter.state, {
         attackerId: pending.attacker.id,
         targetId: pending.target.id,
@@ -1134,7 +1255,7 @@ export function usePlay(campaignId: string) {
         skillValue: option.skillValue,
         dv: option.dv,
         damageDice: option.damageDice ?? 0,
-        ...(spend ? { modifiers: [spend] } : {}),
+        ...(attackModifiers.length > 0 ? { modifiers: attackModifiers } : {}),
       });
     },
     /** Record the rolled attack, run the hostile turns, and narrate the result. */

@@ -48,6 +48,32 @@ export type Combatant = {
   defeated: boolean;
   /** Initiative total (REF + 1d10); null until the encounter starts. */
   initiative: number | null;
+  /**
+   * What this combatant's Role Ability is doing in the fight — a Solo's
+   * Combat Awareness division. Carried on the combatant so the engine applies
+   * it wherever it lands, including on attacks made AGAINST them by NPCs.
+   */
+  roleEffects?: CombatantRoleEffects;
+  /**
+   * The Round this combatant last landed a hit in, and last took damage in.
+   * Two of Combat Awareness's options fire only on the FIRST of each in a
+   * Round; remembering the round number is safer than a flag somebody has to
+   * remember to clear.
+   */
+  lastHitRound?: number;
+  lastDamagedRound?: number;
+};
+
+/** The slice of a Role Ability the combat engine can apply itself. */
+export type CombatantRoleEffects = {
+  /** Added to the Initiative roll. */
+  initiative?: number;
+  /** Subtracted from the first damage taken each Round. */
+  damageDeflection?: number;
+  /** Added to the damage of the first successful attack each Round. */
+  spotWeakness?: number;
+  /** Natural 1s while attacking do not implode. */
+  fumbleRecovery?: boolean;
 };
 
 export type EncounterStatus = "active" | "friendlies_won" | "friendlies_lost";
@@ -106,7 +132,7 @@ export function playerCombatant(state: EncounterState): Combatant | null {
 export function startEncounter(combatants: Combatant[], rng: RNG = defaultRng): EncounterState {
   const entries: InitiativeEntry<Combatant>[] = combatants.map((combatant) => ({
     combatant,
-    initiative: rollInitiative(combatant.ref, rng),
+    initiative: rollInitiative(combatant.ref + (combatant.roleEffects?.initiative ?? 0), rng),
   }));
   const ordered = orderByInitiative(entries);
 
@@ -241,6 +267,8 @@ export function performAttack(
       skillValue: params.skillValue,
       dv: params.dv,
       modifiers,
+      // Solo, Fumble Recovery: a natural 1 still reads 1, but does not implode.
+      ...(attacker.roleEffects?.fumbleRecovery ? { ignoreCriticalFailure: true } : {}),
     },
     rng,
   );
@@ -261,13 +289,23 @@ export function performAttack(
   const aimedHead = location === "head";
   const sp = aimedHead ? target.spHead : target.spBody;
 
+  // Solo, Spot Weakness: the FIRST successful attack in a Round hits harder,
+  // before armor. Solo, Damage Deflection: the FIRST damage taken in a Round
+  // lands softer. Both are "first this Round", so both read the round the thing
+  // last happened in rather than a flag somebody has to clear.
+  const spotWeakness =
+    attacker.lastHitRound === state.round ? 0 : (attacker.roleEffects?.spotWeakness ?? 0);
+  const deflection =
+    target.lastDamagedRound === state.round ? 0 : (target.roleEffects?.damageDeflection ?? 0);
+  const incoming = Math.max(0, damage.total + spotWeakness - deflection);
+
   // A Mortally Wounded target suffers a Critical Injury whenever damaged (pg. 186).
   const forcedCrit = target.woundState === "mortal";
   const criticalInjury = damage.criticalInjury || forcedCrit;
 
   const applied = applyDamage({
     hpBefore: target.hp,
-    damage: damage.total,
+    damage: incoming,
     sp,
     aimedHead,
     criticalInjury,
@@ -277,7 +315,10 @@ export function performAttack(
   });
 
   const next = clone(state);
+  const attacked = next.combatants[params.attackerId]!;
+  attacked.lastHitRound = state.round;
   const updated = next.combatants[params.targetId]!;
+  updated.lastDamagedRound = state.round;
   const wasMortal = updated.woundState === "mortal";
   updated.hp = applied.hpAfter;
   if (aimedHead) updated.spHead = applied.spAfter;
