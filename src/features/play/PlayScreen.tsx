@@ -17,6 +17,7 @@ import { DeathSaveCard } from "./DeathSaveCard";
 
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
+import { DowntimePanel } from "@/features/downtime/DowntimePanel";
 import { suggestionInput } from "./playModel";
 import { usePlay, type PlayBundle } from "./usePlay";
 import type { RollRecord } from "./checkPrompt";
@@ -424,10 +425,12 @@ function WrapUpCard({
           <Link to="/roster">Back to the roster</Link>
         </Button>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            The run continues — your eurobucks, wounds and gear carry over to the next job.
+            The run continues — your eurobucks, wounds and gear carry over to the next job. Take the
+            downtime first: nothing patches itself up.
           </p>
+          <DowntimePanel campaignId={bundle.campaign.id} character={bundle.character} />
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
