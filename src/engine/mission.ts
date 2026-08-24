@@ -212,3 +212,74 @@ export function missionPayout(mission: Mission, crewSize = 1): MissionPayout | n
     ...(reward.notes ? { notes: reward.notes } : {}),
   };
 }
+
+// ---------------------------------------------------------------------------
+
+/**
+ * Structural problems with a beat graph, as human-readable lines. Empty means
+ * the graph is walkable: every exit lands somewhere real, every beat is
+ * reachable from the start, and at least one Resolution can actually be
+ * arrived at.
+ *
+ * Authored missions are proofread by whoever transcribed them. Generated ones
+ * are not proofread by anyone, so this is what stands in for that — a generator
+ * that emits a dead end or an orphan beat should fail a test, not strand a
+ * player mid-job.
+ */
+export function validateMission(mission: Mission): string[] {
+  const problems: string[] = [];
+  const ids = new Set<string>();
+
+  for (const beat of mission.beats) {
+    if (ids.has(beat.id)) problems.push(`Duplicate beat id "${beat.id}".`);
+    ids.add(beat.id);
+  }
+
+  if (mission.beats.length === 0) {
+    problems.push("Mission has no beats.");
+    return problems;
+  }
+  if (!ids.has(mission.startBeatId)) {
+    problems.push(`startBeatId "${mission.startBeatId}" is not a beat in this mission.`);
+  }
+
+  for (const beat of mission.beats) {
+    for (const exit of beat.exits) {
+      if (!ids.has(exit.to)) {
+        problems.push(`Beat "${beat.id}" exits to "${exit.to}", which does not exist.`);
+      }
+    }
+    if (!isTerminal(beat) && beat.exits.length === 0) {
+      problems.push(`Beat "${beat.id}" is a dead end but is not a Resolution.`);
+    }
+  }
+
+  // Walk forward from the start, ignoring flag gates: a beat unreachable even
+  // with every flag set is unreachable, full stop.
+  const reached = new Set<string>();
+  const queue = [mission.startBeatId];
+  while (queue.length > 0) {
+    const id = queue.shift() as string;
+    if (reached.has(id) || !ids.has(id)) continue;
+    reached.add(id);
+    const beat = mission.beats.find((b) => b.id === id);
+    for (const exit of beat?.exits ?? []) queue.push(exit.to);
+  }
+
+  for (const beat of mission.beats) {
+    if (!reached.has(beat.id)) problems.push(`Beat "${beat.id}" is unreachable from the start.`);
+  }
+  if (![...reached].some((id) => mission.beats.find((b) => b.id === id)?.type === "resolution")) {
+    problems.push("No Resolution beat is reachable, so the mission can never complete.");
+  }
+
+  return problems;
+}
+
+/** Throw if a beat graph is not walkable. */
+export function assertValidMission(mission: Mission): void {
+  const problems = validateMission(mission);
+  if (problems.length > 0) {
+    throw new Error(`Mission "${mission.id}" is malformed:\n- ${problems.join("\n- ")}`);
+  }
+}
