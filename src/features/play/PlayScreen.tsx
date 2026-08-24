@@ -228,7 +228,12 @@ function RollHistory({ rolls }: { rolls: RollRecord[] }) {
       <ul className="space-y-1">
         {rolls.map((r) => (
           <li key={r.id} className="flex items-baseline justify-between gap-2 text-sm">
-            <span className="truncate">{r.skillName}</span>
+            <span className="truncate">
+              {r.skillName}
+              {r.opposedBy ? (
+                <span className="text-muted-foreground"> vs {r.opposedBy}</span>
+              ) : null}
+            </span>
             <span className="num font-mono text-xs text-muted-foreground">
               {r.total}
               {r.dv !== null ? ` vs ${r.dv}` : ""}{" "}
@@ -523,7 +528,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
               key={play.pendingCheck.eventId}
               pending={play.pendingCheck}
               roll={() => play.rollCheck(play.pendingCheck!)}
-              onSettled={(result) => play.commitCheck(play.pendingCheck!, result)}
+              onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
               busy={play.checkBusy}
             />
             {play.pendingCheckCount > 1 && (

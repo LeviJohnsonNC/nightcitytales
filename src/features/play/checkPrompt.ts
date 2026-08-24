@@ -4,7 +4,14 @@
  * is at stake. Every number here comes from the engine and the rules JSON; this
  * file never invents a DV, a STAT, or a Skill Level.
  */
-import { DIFFICULTY_VALUES, describeDV, getSkill, type SkillCheckResult } from "@/engine";
+import {
+  DIFFICULTY_VALUES,
+  describeDV,
+  getSkill,
+  type OpposedCheckResult,
+  type Opposition,
+  type SkillCheckResult,
+} from "@/engine";
 import type { CampaignEvent, FullCharacter } from "@/lib/backend";
 
 /** The published DV bands, lowest first (src/data/rules/dv-table.json). */
@@ -24,6 +31,26 @@ export function dvBandName(dv: number): string | null {
   return describeDV(dv)?.name ?? null;
 }
 
+/**
+ * The other side of an opposed check, as the table sees it before the dice: who
+ * is resisting, with what, and what they add to their own d10.
+ */
+export type PendingOpposition = {
+  npcKey: string;
+  npcName: string;
+  /** The printed skill they resist with. */
+  skillId: string;
+  skillName: string;
+  /** Governing STAT key of THEIR skill, e.g. "emp". */
+  stat: string;
+  statValue: number;
+  skillLevel: number;
+  /** STAT + Skill, before their die. */
+  base: number;
+  /** True when these numbers came from the campaign's memory of this NPC. */
+  remembered: boolean;
+};
+
 export type PendingCheck = {
   /** The ledger row that proposed this check. */
   eventId: string;
@@ -35,15 +62,75 @@ export type PendingCheck = {
   skillLevel: number;
   /** STAT + Skill, before the die. */
   base: number;
-  dv: number;
+  /** The Difficulty Value, or null when another character's roll is the target. */
+  dv: number | null;
   bandName: string | null;
-  /** The number the d10 must show or beat, before any crit. */
-  needed: number;
+  /** The number the d10 must show or beat, before any crit. Null when opposed. */
+  needed: number | null;
+  /** Set when this check is resolved against a person rather than a DV. */
+  opposition: PendingOpposition | null;
   intent: string;
   beatId: string | null;
 };
 
-type PromptData = { skillId?: unknown; dv?: unknown; intent?: unknown };
+/** A rolled check, tagged by how it was resolved. */
+export type CheckRoll =
+  { kind: "dv"; result: SkillCheckResult } | { kind: "opposed"; result: OpposedCheckResult };
+
+/** The opposing side of a pending check, as the engine wants it. */
+export function oppositionFor(pending: PendingCheck): Opposition | null {
+  if (!pending.opposition) return null;
+  return {
+    name: pending.opposition.npcName,
+    skillId: pending.opposition.skillId,
+    skillLevel: pending.opposition.skillLevel,
+    statValue: pending.opposition.statValue,
+  };
+}
+
+type PromptOpposition = {
+  npcKey?: unknown;
+  npcName?: unknown;
+  skillId?: unknown;
+  skillLevel?: unknown;
+  statValue?: unknown;
+  remembered?: unknown;
+};
+
+type PromptData = {
+  skillId?: unknown;
+  dv?: unknown;
+  intent?: unknown;
+  opposition?: PromptOpposition;
+};
+
+/** Read the opposing side off a prompt row. Null when it is a plain DV check. */
+function describeOpposition(raw: PromptOpposition | undefined): PendingOpposition | null {
+  if (!raw || typeof raw !== "object") return null;
+  const skillId = typeof raw.skillId === "string" ? raw.skillId : null;
+  const npcName = typeof raw.npcName === "string" ? raw.npcName : null;
+  const statValue = typeof raw.statValue === "number" ? raw.statValue : null;
+  const skillLevel = typeof raw.skillLevel === "number" ? raw.skillLevel : null;
+  if (!skillId || !npcName || statValue === null || skillLevel === null) return null;
+
+  let skill;
+  try {
+    skill = getSkill(skillId);
+  } catch {
+    return null;
+  }
+  return {
+    npcKey: typeof raw.npcKey === "string" ? raw.npcKey : npcName,
+    npcName,
+    skillId,
+    skillName: skill.name,
+    stat: skill.stat,
+    statValue,
+    skillLevel,
+    base: statValue + skillLevel,
+    remembered: raw.remembered === true,
+  };
+}
 
 /** Describe a proposed check against a saved character. Null if unreadable. */
 export function describePendingCheck(
@@ -52,8 +139,14 @@ export function describePendingCheck(
 ): PendingCheck | null {
   const data = (event.data ?? {}) as PromptData;
   const skillId = typeof data.skillId === "string" ? data.skillId : null;
+  if (!skillId) return null;
+
+  // A check is settled EITHER by a DV or by another character's roll. An opposed
+  // prompt carries no DV, and inventing one for it would be a difficulty nobody
+  // set at the table.
+  const opposition = describeOpposition(data.opposition);
   const dvRaw = typeof data.dv === "number" ? data.dv : null;
-  if (!skillId || dvRaw === null) return null;
+  if (!opposition && dvRaw === null) return null;
 
   let skill;
   try {
@@ -68,8 +161,8 @@ export function describePendingCheck(
   if (statValue === null) return null;
 
   const skillLevel = character.skills.find((s) => s.skill_id === skillId)?.level ?? 0;
-  const dv = snapToPublishedDv(dvRaw);
   const base = statValue + skillLevel;
+  const dv = opposition || dvRaw === null ? null : snapToPublishedDv(dvRaw);
 
   return {
     eventId: event.id,
@@ -80,8 +173,9 @@ export function describePendingCheck(
     skillLevel,
     base,
     dv,
-    bandName: dvBandName(dv),
-    needed: dv - base,
+    bandName: dv === null ? null : dvBandName(dv),
+    needed: dv === null ? null : dv - base,
+    opposition,
     intent: typeof data.intent === "string" ? data.intent : "",
     beatId: event.beat_id ?? null,
   };
@@ -150,17 +244,48 @@ export type RollRecord = {
   id: string;
   skillName: string;
   total: number;
+  /** The DV, or on an opposed check the total the player was up against. */
   dv: number | null;
   success: boolean | null;
   critical: "success" | "failure" | null;
+  /** Who opposed it, when the target number was another character's roll. */
+  opposedBy: string | null;
 };
+
+/**
+ * One rolled check as the rail shows it. An opposed roll is logged with both
+ * sides, so it is read back as the player's total against the total they were
+ * actually up against — the opposing roll IS the number they had to beat.
+ */
+function recordFrom(event: CampaignEvent, name: string): RollRecord {
+  const roll = event.roll as (Partial<SkillCheckResult> & Partial<OpposedCheckResult>) | null;
+  if (roll?.actor && roll.opponent) {
+    return {
+      id: event.id,
+      skillName: name,
+      total: roll.actor.total,
+      dv: roll.opponent.total,
+      success: roll.success ?? null,
+      critical: roll.actor.critical ?? null,
+      opposedBy: roll.opponentSide?.name ?? null,
+    };
+  }
+  return {
+    id: event.id,
+    skillName: name,
+    total: typeof roll?.total === "number" ? roll.total : 0,
+    dv: typeof roll?.dv === "number" ? roll.dv : null,
+    success: typeof roll?.success === "boolean" ? roll.success : null,
+    critical: roll?.critical ?? null,
+    opposedBy: null,
+  };
+}
 
 export function rollHistory(events: CampaignEvent[], limit = 10): RollRecord[] {
   const out: RollRecord[] = [];
   for (let i = events.length - 1; i >= 0 && out.length < limit; i -= 1) {
     const event = events[i];
     if (!event || event.type !== "skill_check") continue;
-    const roll = event.roll as Partial<SkillCheckResult> | null;
     const data = (event.data ?? {}) as { skill_name?: unknown; skill_id?: unknown };
     const name =
       typeof data.skill_name === "string"
@@ -168,14 +293,7 @@ export function rollHistory(events: CampaignEvent[], limit = 10): RollRecord[] {
         : typeof data.skill_id === "string"
           ? data.skill_id
           : "Check";
-    out.push({
-      id: event.id,
-      skillName: name,
-      total: typeof roll?.total === "number" ? roll.total : 0,
-      dv: typeof roll?.dv === "number" ? roll.dv : null,
-      success: typeof roll?.success === "boolean" ? roll.success : null,
-      critical: roll?.critical ?? null,
-    });
+    out.push(recordFrom(event, name));
   }
   return out;
 }

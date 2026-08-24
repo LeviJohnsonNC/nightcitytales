@@ -22,6 +22,7 @@ export * from "./lifestyle";
 export * from "./characterSheet";
 export * from "./campaign";
 export * from "./skillCheck";
+export * from "./opposedCheck";
 export * from "./skillMatch";
 export * from "./combatTables";
 export * from "./combat";

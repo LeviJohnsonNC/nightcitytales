@@ -219,6 +219,20 @@ export const REPUTATION = creationRules.reputation as {
 };
 
 export const DV_TABLE_DATA = dvTable;
+
+/**
+ * The printed rules for resolving a check against another character, read from
+ * the rules JSON like every other rules value. tieGoesTo is the one knob that
+ * decides a tied opposed check — see the file's own provenance note.
+ */
+export const OPPOSED_CHECK_RULES = dvTable._rules.opposedCheck as {
+  formula: string;
+  tieGoesTo: "defender" | "actor";
+  criticals: string;
+};
+
+/** Who takes a tied opposed check, per the rules data. */
+export const OPPOSED_CHECK_TIE_GOES_TO = OPPOSED_CHECK_RULES.tieGoesTo;
 export const HP_TABLE_DATA = hpTable;
 export const LIFEPATH_GENERAL = lifepathGeneral;
 export const LIFEPATH_ROLES = lifepathRoles;

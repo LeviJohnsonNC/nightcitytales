@@ -119,8 +119,21 @@ export function npcSummaries(npcs: CampaignNpc[]): GmNpcSummary[] {
     name: npc.name,
     disposition: npc.disposition,
     status: npc.status,
+    ...(npc.npc_id ? { key: npc.npc_id } : {}),
     ...(npc.location ? { notes: `at ${npc.location}` } : {}),
   }));
+}
+
+/**
+ * The stored NPC a GM-supplied key refers to. The model is shown each NPC's key
+ * and told to reuse it, but a key it typed slightly differently must not read as
+ * a stranger with fresh numbers — so a miss falls back to matching the name.
+ */
+export function findNpcByKey(npcs: CampaignNpc[], key: string, name?: string): CampaignNpc | null {
+  const byKey = npcs.find((npc) => npc.npc_id === key);
+  if (byKey) return byKey;
+  const wanted = (name ?? key).trim().toLowerCase();
+  return npcs.find((npc) => npc.name.trim().toLowerCase() === wanted) ?? null;
 }
 
 /** The most recent ledger entries as short lines for the rolling GM summary. */

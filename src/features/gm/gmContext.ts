@@ -28,6 +28,12 @@ export type GmCharacterSummary = {
 
 export type GmNpcSummary = {
   name: string;
+  /**
+   * The stable key this NPC is stored under. Printed in the context so an
+   * opposed check can name the same key twice and the campaign's memory of
+   * their numbers actually gets hit.
+   */
+  key?: string;
   disposition: number;
   status: string;
   notes?: string;
@@ -131,10 +137,11 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   }
 
   if (context.npcsPresent.length) {
-    parts.push("", "== NPCS PRESENT ==");
+    parts.push("", "== NPCS PRESENT (use the key in [brackets] as npcKey) ==");
     for (const npc of context.npcsPresent) {
+      const key = npc.key ? ` [${npc.key}]` : "";
       parts.push(
-        `- ${npc.name} (disposition ${npc.disposition}, ${npc.status})${npc.notes ? ` — ${npc.notes}` : ""}`,
+        `- ${npc.name}${key} (disposition ${npc.disposition}, ${npc.status})${npc.notes ? ` — ${npc.notes}` : ""}`,
       );
     }
   }

@@ -50,6 +50,24 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     dv: z.number().int(),
     intent: z.string(),
   }),
+  /**
+   * A check against a person who is actively resisting: both sides roll
+   * STAT + Skill + 1d10 and the higher total wins. The GM supplies who opposes
+   * it and what they bring; the engine rolls both dice and compares them.
+   */
+  z.object({
+    kind: z.literal("opposed_check"),
+    skillId: z.string(),
+    /** Stable key for the NPC, reused so the same face keeps the same numbers. */
+    npcKey: z.string(),
+    npcName: z.string(),
+    /** The printed skill the NPC resists with; its STAT comes from the rules. */
+    opposingSkillId: z.string(),
+    opposingSkillLevel: z.number().int(),
+    /** The NPC's value in the STAT that opposing skill is printed under. */
+    opposingStatValue: z.number().int(),
+    intent: z.string(),
+  }),
   z.object({
     kind: z.literal("start_encounter"),
     name: z.string(),
@@ -113,6 +131,7 @@ export const GmWireResponseSchema = z.object({
       'Mechanical actions for the engine to resolve. Each item is an object with a "kind" field ' +
         "and the fields that kind needs: " +
         '{"kind":"skill_check","skillId":"<id from the SKILLS list>","dv":<number>,"intent":"<what they are attempting>"}; ' +
+        '{"kind":"opposed_check","skillId":"<id from the SKILLS list>","npcKey":"<stable key>","npcName":"<who resists>","opposingSkillId":"<printed skill id they resist with>","opposingSkillLevel":<0-10>,"opposingStatValue":<1-10>,"intent":"<what they are attempting>"}; ' +
         '{"kind":"start_encounter","name":"<label>","enemies":[{"key","name","ref","body","hp","sp","attackSkill","weaponName","damageDice","rangeType","distance"}]}; ' +
         '{"kind":"attack","targetId":"<enemy key>","intent":"<what they are doing>","distance":<metres>}; ' +
         '{"kind":"advance_beat","to":"<beat id>"}. Use [] when nothing is proposed.',
@@ -167,6 +186,13 @@ const ACTION_KIND_KEYS = ["kind", "type", "action", "actionType", "action_type",
 const ACTION_KIND_ALIASES: Record<string, GmProposedAction["kind"]> = {
   skill_check: "skill_check",
   check: "skill_check",
+  opposed_check: "opposed_check",
+  opposed: "opposed_check",
+  opposed_roll: "opposed_check",
+  opposed_skill_check: "opposed_check",
+  contest: "opposed_check",
+  contested_check: "opposed_check",
+  versus: "opposed_check",
   skill: "skill_check",
   skill_roll: "skill_check",
   roll: "skill_check",
@@ -200,6 +226,10 @@ export function actionKindOf(item: Loose): GmProposedAction["kind"] | null {
     if (mapped) return mapped;
   }
   if (item["enemies"] ?? item["hostiles"] ?? item["combatants"]) return "start_encounter";
+  // Opposed before plain: an item carrying an opposing side is a contest, and
+  // reading it as a DV check would silently invent a difficulty nobody set.
+  if (str(item["opposingSkillId"]) ?? str(item["opposing_skill_id"]) ?? str(item["opposingSkill"]))
+    return "opposed_check";
   if (str(item["skillId"]) ?? str(item["skill"]) ?? str(item["skill_id"])) return "skill_check";
   if (str(item["targetId"]) ?? str(item["target"]) ?? str(item["target_id"])) return "attack";
   if (str(item["to"]) ?? str(item["beatId"]) ?? str(item["beat_id"])) return "advance_beat";
@@ -272,6 +302,36 @@ export function normalizeGmResponse(
       if (skillId)
         proposedActions.push({ kind: "skill_check", skillId, dv: num(a["dv"]) ?? 13, intent });
       else warn(`GM proposed a check with no skill, dropped: ${JSON.stringify(raw)}`);
+    } else if (kind === "opposed_check") {
+      const skillId = str(a["skillId"]) ?? str(a["skill"]) ?? str(a["skill_id"]);
+      const opposingSkillId =
+        str(a["opposingSkillId"]) ?? str(a["opposing_skill_id"]) ?? str(a["opposingSkill"]);
+      const npcName = str(a["npcName"]) ?? str(a["npc_name"]) ?? str(a["opponent"]);
+      const npcKey = str(a["npcKey"]) ?? str(a["npc_key"]) ?? str(a["npcId"]) ?? npcName;
+      if (skillId && opposingSkillId && npcKey && npcName) {
+        proposedActions.push({
+          kind: "opposed_check",
+          skillId,
+          npcKey,
+          npcName,
+          opposingSkillId,
+          // NPCs are people: their STATs sit in the human 1-10 band and an
+          // improvised Level never exceeds the printed maximum.
+          opposingSkillLevel: clamp(
+            num(a["opposingSkillLevel"]) ?? num(a["opposing_skill_level"]) ?? 3,
+            0,
+            10,
+          ),
+          opposingStatValue: clamp(
+            num(a["opposingStatValue"]) ?? num(a["opposing_stat_value"]) ?? 5,
+            1,
+            10,
+          ),
+          intent,
+        });
+      } else {
+        warn(`GM proposed an opposed check missing a side, dropped: ${JSON.stringify(raw)}`);
+      }
     } else if (kind === "attack") {
       const targetId = str(a["targetId"]) ?? str(a["target"]) ?? str(a["target_id"]);
       const distance = num(a["distance"]) ?? num(a["range"]);

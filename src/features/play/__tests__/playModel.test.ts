@@ -3,6 +3,7 @@ import type { CampaignEvent, CampaignNpc, CampaignVitals, FullCharacter } from "
 import {
   actorFor,
   characterSummary,
+  findNpcByKey,
   gmSkillList,
   keySkills,
   suggestionInput,
@@ -185,5 +186,39 @@ describe("suggestionInput", () => {
     expect(sent).toContain("Talk the guard down");
     expect(sent).toContain("persuasion");
     expect(sent).toContain("skill_check");
+  });
+});
+
+describe("findNpcByKey", () => {
+  const npcs = [
+    { npc_id: "trace-santiago", name: "Trace Santiago" },
+    { npc_id: null, name: "The Doorman" },
+  ] as unknown as CampaignNpc[];
+
+  it("finds an NPC by the key the GM was shown", () => {
+    expect(findNpcByKey(npcs, "trace-santiago")?.name).toBe("Trace Santiago");
+  });
+
+  it("falls back to the name when the GM retyped the key", () => {
+    // A new key for a face the campaign already knows must not read as a
+    // stranger with fresh numbers.
+    expect(findNpcByKey(npcs, "trace_santiago", "Trace Santiago")?.npc_id).toBe("trace-santiago");
+  });
+
+  it("matches a name case- and space-insensitively", () => {
+    expect(findNpcByKey(npcs, "doorman", "  the doorman ")?.name).toBe("The Doorman");
+  });
+
+  it("returns null for someone the campaign has never met", () => {
+    expect(findNpcByKey(npcs, "unknown-fixer", "Unknown Fixer")).toBeNull();
+  });
+});
+
+describe("npcSummaries", () => {
+  it("carries the stable key so the GM can name it back", () => {
+    const summaries = npcSummaries([
+      { npc_id: "trace-santiago", name: "Trace Santiago", disposition: 1, status: "alive" },
+    ] as unknown as CampaignNpc[]);
+    expect(summaries[0]).toMatchObject({ name: "Trace Santiago", key: "trace-santiago" });
   });
 });
