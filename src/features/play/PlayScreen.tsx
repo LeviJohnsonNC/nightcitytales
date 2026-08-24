@@ -126,7 +126,13 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CharacterPanel({ bundle }: { bundle: PlayBundle }) {
+function CharacterPanel({
+  bundle,
+  luck,
+}: {
+  bundle: PlayBundle;
+  luck: { remaining: number; max: number };
+}) {
   const { character, vitals } = bundle;
   return (
     <section className="space-y-3 border border-border bg-card p-4">
@@ -155,6 +161,27 @@ function CharacterPanel({ bundle }: { bundle: PlayBundle }) {
           </p>
         </div>
       </div>
+      {luck.max > 0 && (
+        <div>
+          <Label>Luck</Label>
+          <div className="flex items-center gap-2">
+            <p className="num text-lg font-bold">
+              {luck.remaining}/{luck.max}
+            </p>
+            <div className="flex flex-wrap gap-1" aria-hidden>
+              {Array.from({ length: luck.max }, (_, i) => (
+                <span
+                  key={i}
+                  className={`h-2 w-2 rounded-full ${
+                    i < luck.remaining ? "bg-accent" : "bg-border"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Refills with each new job</p>
+        </div>
+      )}
       <div>
         <Label>Eurobucks</Label>
         <p className="num text-base font-bold">{vitals.eurobucks}eb</p>
@@ -527,9 +554,10 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             <CheckCard
               key={play.pendingCheck.eventId}
               pending={play.pendingCheck}
-              roll={() => play.rollCheck(play.pendingCheck!)}
+              roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
               onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
               busy={play.checkBusy}
+              luckRemaining={play.luck.remaining}
             />
             {play.pendingCheckCount > 1 && (
               <p className="text-muted-foreground text-xs">
@@ -544,9 +572,12 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             key={play.pendingAttack.eventId}
             pending={play.pendingAttack}
             character={bundle.character}
-            roll={(option) => play.rollAttack(play.pendingAttack!, option)}
-            onSettled={(option, result) => play.commitAttack(play.pendingAttack!, option, result)}
+            roll={(option, luckSpend) => play.rollAttack(play.pendingAttack!, option, luckSpend)}
+            onSettled={(option, result, luckSpent) =>
+              play.commitAttack(play.pendingAttack!, option, result, luckSpent)
+            }
             busy={play.combatBusy}
+            luckRemaining={play.luck.remaining}
           />
         )}
         {play.pendingDeathSave && (
@@ -577,7 +608,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         />
       </div>
       <aside className="space-y-4">
-        <CharacterPanel bundle={bundle} />
+        <CharacterPanel bundle={bundle} luck={play.luck} />
         <RollHistory rolls={play.rolls} />
         <CombatHud campaignId={campaignId} />
         <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />

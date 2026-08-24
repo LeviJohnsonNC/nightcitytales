@@ -12,6 +12,7 @@
  */
 import { useState } from "react";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
+import { LuckStepper } from "./LuckStepper";
 import type { CheckRoll, PendingCheck, PendingOpposition } from "./checkPrompt";
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -75,13 +76,16 @@ function OpposedBody({
   roll,
   onSettled,
   busy,
+  luckRemaining,
 }: {
   pending: PendingCheck;
   opposition: PendingOpposition;
-  roll: () => CheckRoll;
+  roll: (luckSpend: number) => CheckRoll;
   onSettled: (roll: CheckRoll) => void;
   busy: boolean;
+  luckRemaining: number;
 }) {
+  const [luck, setLuck] = useState(0);
   // Both sides are rolled together on the first click; `revealed` is only how
   // much of that result the player has turned over so far.
   const [rolled, setRolled] = useState<Extract<CheckRoll, { kind: "opposed" }> | null>(null);
@@ -124,6 +128,13 @@ function OpposedBody({
         </p>
       )}
 
+      <LuckStepper
+        value={luck}
+        remaining={luckRemaining}
+        onChange={setLuck}
+        disabled={busy || rolled !== null}
+      />
+
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
           <DiceRoll
@@ -133,7 +144,7 @@ function OpposedBody({
             size={52}
             disabled={busy || rolled !== null}
             roll={() => {
-              const next = roll();
+              const next = roll(luck);
               if (next.kind !== "opposed") throw new Error("This check is opposed.");
               return { face: next.result.actor.rolls[0] ?? 1, commit: () => setRolled(next) };
             }}
@@ -227,14 +238,20 @@ function DvBody({
   roll,
   onSettled,
   busy,
+  luckRemaining,
 }: {
   pending: PendingCheck;
   dv: number;
-  roll: () => CheckRoll;
+  roll: (luckSpend: number) => CheckRoll;
   onSettled: (roll: CheckRoll) => void;
   busy: boolean;
+  luckRemaining: number;
 }) {
   const [rolled, setRolled] = useState<Extract<CheckRoll, { kind: "dv" }> | null>(null);
+  const [luck, setLuck] = useState(0);
+  // Opposed checks carry no target number; on this side of the card there is
+  // always a DV, so derive it rather than rendering a null.
+  const needed = pending.needed ?? dv - pending.base;
   const result = rolled?.result ?? null;
   const critDie = result && result.rolls.length > 1 ? result.rolls[1]! : null;
 
@@ -248,30 +265,34 @@ function DvBody({
       </div>
 
       {result === null ? (
-        <div className="flex items-center gap-3">
-          <DiceRoll
-            sides={10}
-            value={null}
-            label={`Roll 1d10 for ${pending.skillName}`}
-            size={52}
-            disabled={busy}
-            roll={() => {
-              const next = roll();
-              if (next.kind !== "dv") throw new Error("This check is rolled against a DV.");
-              return {
-                face: next.result.rolls[0] ?? 1,
-                commit: () => {
-                  setRolled(next);
-                  onSettled(next);
-                },
-              };
-            }}
-          />
-          <div>
-            <p className="text-sm font-semibold">Roll 1d10</p>
-            <p className="text-xs text-muted-foreground">
-              You need a {pending.needed} or better on the die.
-            </p>
+        <div className="space-y-3">
+          <LuckStepper value={luck} remaining={luckRemaining} onChange={setLuck} disabled={busy} />
+          <div className="flex items-center gap-3">
+            <DiceRoll
+              sides={10}
+              value={null}
+              label={`Roll 1d10 for ${pending.skillName}`}
+              size={52}
+              disabled={busy}
+              roll={() => {
+                const next = roll(luck);
+                if (next.kind !== "dv") throw new Error("This check is rolled against a DV.");
+                return {
+                  face: next.result.rolls[0] ?? 1,
+                  commit: () => {
+                    setRolled(next);
+                    onSettled(next);
+                  },
+                };
+              }}
+            />
+            <div>
+              <p className="text-sm font-semibold">Roll 1d10</p>
+              <p className="text-xs text-muted-foreground">
+                You need a {needed} or better on the die
+                {luck > 0 ? `, or ${needed - luck} with the Luck you dedicated` : ""}.
+              </p>
+            </div>
           </div>
         </div>
       ) : (
@@ -316,11 +337,14 @@ export function CheckCard({
   roll,
   onSettled,
   busy,
+  luckRemaining,
 }: {
   pending: PendingCheck;
-  roll: () => CheckRoll;
+  roll: (luckSpend: number) => CheckRoll;
   onSettled: (roll: CheckRoll) => void;
   busy: boolean;
+  /** Luck Points the character has left this session. */
+  luckRemaining: number;
 }) {
   const opposition = pending.opposition;
 
@@ -352,6 +376,7 @@ export function CheckCard({
           roll={roll}
           onSettled={onSettled}
           busy={busy}
+          luckRemaining={luckRemaining}
         />
       ) : (
         <DvBody
@@ -360,6 +385,7 @@ export function CheckCard({
           roll={roll}
           onSettled={onSettled}
           busy={busy}
+          luckRemaining={luckRemaining}
         />
       )}
     </section>

@@ -231,6 +231,20 @@ export const OPPOSED_CHECK_RULES = dvTable._rules.opposedCheck as {
   criticals: string;
 };
 
+/**
+ * The printed rules for Luck: the pool, when it refills, and that it is
+ * committed before the dice are rolled. Read from the rules JSON so the engine
+ * states the rule in one place — see that entry's own provenance note.
+ */
+export const LUCK_RULES = dvTable._rules.luck as {
+  pool: string;
+  refresh: string;
+  spending: string;
+  timing: string;
+  appliesTo: string;
+  notAppliedTo: string;
+};
+
 /** Who takes a tied opposed check, per the rules data. */
 export const OPPOSED_CHECK_TIE_GOES_TO = OPPOSED_CHECK_RULES.tieGoesTo;
 export const HP_TABLE_DATA = hpTable;

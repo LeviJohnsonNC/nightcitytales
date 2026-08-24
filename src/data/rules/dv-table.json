@@ -15,6 +15,15 @@
       "tieGoesTo": "defender",
       "criticals": "Each side rolls its own d10 and applies the Critical Success / Critical Failure rules above independently.",
       "_provenance": "NOT transcribed from the printed page, unlike every other entry in this file. Sourced from R. Talsorian rules clarifications and consistent secondary sources, which state that a skill roll must beat (be higher than) the opposing roll and that a tie therefore goes to the defender. Confirm against the Core Rulebook before treating this as verified; tieGoesTo is the single value to change if the printed wording differs."
+    },
+    "luck": {
+      "pool": "A character's Luck Pool holds Luck Points equal to their LUCK STAT.",
+      "refresh": "The pool refills at the beginning of each game session.",
+      "spending": "Before rolling, dedicate any number of points from the remaining Luck Pool to a Check; the roll increases by +1 for each point spent.",
+      "timing": "Luck is committed BEFORE the dice are rolled, never after seeing the result. Points spent are gone until the pool refills.",
+      "appliesTo": "Checks — STAT + Skill + 1d10 against a DV or against another character's roll. An attack roll is such a Check.",
+      "notAppliedTo": "Death Saves. A Death Save is not a Check: it is 1d10 rolled UNDER the character's BODY (CP:R pg. 187), so a +1 bonus would make it likelier to fail. This exclusion is a reading of the two rules together, NOT a printed prohibition — see _provenance.",
+      "_provenance": "NOT transcribed from the printed page, unlike the DV table above. The pool/refresh/spending wording follows R. Talsorian's own rules summaries; publisher and licensed-content sources were unreachable from the build environment. The Death Save exclusion is an inference from the roll-under mechanic, not a quoted rule. Confirm both against the Core Rulebook."
     }
   },
   "difficultyValues": [
