@@ -26,6 +26,7 @@ import {
   getCharacter,
   getLatestDraft,
   listRoster,
+  resetAdventureForCharacter,
   saveDraft,
   type Json,
   type RosterEntry,
@@ -144,16 +145,16 @@ function DraftCard() {
 function CharacterCard({
   entry,
   onStart,
-  onDuplicate,
+  onReset,
   onDelete,
-  duplicating,
+  resetting,
   starting,
 }: {
   entry: RosterEntry;
   onStart: () => void;
-  onDuplicate: () => void;
+  onReset: () => void;
   onDelete: () => void;
-  duplicating: boolean;
+  resetting: boolean;
   starting: boolean;
 }) {
   const portrait = entry.portrait_id ? portraitById(entry.portrait_id) : undefined;
@@ -227,8 +228,8 @@ function CharacterCard({
               Open sheet
             </Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={onDuplicate} disabled={duplicating}>
-            {duplicating ? "Copying…" : "Duplicate"}
+          <Button variant="outline" size="sm" onClick={onReset} disabled={resetting}>
+            {resetting ? "Resetting…" : "Reset adventure"}
           </Button>
           <Button variant="ghost" size="sm" onClick={onDelete}>
             Delete
@@ -239,17 +240,26 @@ function CharacterCard({
   );
 }
 
-export function RosterList({ userId }: { userId: string }) {
+export function RosterList({ userId: _userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [pendingDelete, setPendingDelete] = useState<RosterEntry | null>(null);
+  const [pendingReset, setPendingReset] = useState<RosterEntry | null>(null);
 
   const { data, isPending, error } = useQuery({ queryKey: ["roster"], queryFn: listRoster });
-  const duplicate = useOpenAsDraft(userId);
 
   const start = useMutation({
     mutationFn: (entry: RosterEntry) => startOrResumeAdventure(entry),
     onSuccess: (campaignId) => navigate({ to: "/play/$id", params: { id: campaignId } }),
+  });
+
+  const reset = useMutation({
+    mutationFn: (id: string) => resetAdventureForCharacter(id),
+    onSuccess: () => {
+      setPendingReset(null);
+      void queryClient.invalidateQueries({ queryKey: ["roster"] });
+      void queryClient.invalidateQueries({ queryKey: ["campaign"] });
+    },
   });
 
   const remove = useMutation({
@@ -267,9 +277,7 @@ export function RosterList({ userId }: { userId: string }) {
     <div className="space-y-6">
       <DraftCard />
 
-      {duplicate.error && (
-        <p className="text-sm text-destructive">{(duplicate.error as Error).message}</p>
-      )}
+      {reset.error && <p className="text-sm text-destructive">{(reset.error as Error).message}</p>}
       {remove.error && (
         <p className="text-sm text-destructive">{(remove.error as Error).message}</p>
       )}
@@ -294,8 +302,8 @@ export function RosterList({ userId }: { userId: string }) {
                 entry={entry}
                 onStart={() => start.mutate(entry)}
                 starting={start.isPending && start.variables?.id === entry.id}
-                duplicating={duplicate.isPending && duplicate.variables?.id === entry.id}
-                onDuplicate={() => duplicate.mutate({ id: entry.id, name: `${entry.name} (copy)` })}
+                resetting={reset.isPending && reset.variables === entry.id}
+                onReset={() => setPendingReset(entry)}
                 onDelete={() => setPendingDelete(entry)}
               />
             ))}
@@ -322,6 +330,32 @@ export function RosterList({ userId }: { userId: string }) {
               disabled={remove.isPending}
             >
               {remove.isPending ? "Deleting…" : `Delete ${pendingDelete?.name ?? ""}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingReset !== null}
+        onOpenChange={(open) => !open && setPendingReset(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset {pendingReset?.name}&apos;s adventure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Every playthrough this character has — the job in progress, live HP and Humanity,
+              money earned, loot, contacts, encounters and the whole session log — is wiped. The
+              character sheet itself is untouched, and the next Start Adventure begins clean from
+              it. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep playing</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => pendingReset && reset.mutate(pendingReset.id)}
+              disabled={reset.isPending}
+            >
+              {reset.isPending ? "Resetting…" : "Yes, reset the adventure"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
