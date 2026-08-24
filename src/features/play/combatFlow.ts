@@ -11,6 +11,7 @@ import {
   singleShotDV,
   startEncounter as rollInitiativeOrder,
   type Combatant,
+  type CombatantRoleEffects,
   type EncounterState,
   type PerformAttackResult,
   type WeaponRangeType,
@@ -45,11 +46,18 @@ export async function beginEncounter(input: {
   character: FullCharacter;
   vitals: CampaignVitals;
   enemies: GmEnemy[];
+  /**
+   * What the player's Role Ability brings into the fight — a Solo's Combat
+   * Awareness division. Carried on their combatant so the engine applies it on
+   * their own attacks AND on the ones they take.
+   */
+  roleEffects?: CombatantRoleEffects;
 }): Promise<LiveEncounter> {
   const data: Record<string, CombatantData> = {};
   const combatants: Combatant[] = [];
 
   const player = buildPlayerCombatant(input.character, input.vitals, crypto.randomUUID());
+  if (input.roleEffects) player.combatant.roleEffects = input.roleEffects;
   combatants.push(player.combatant);
   data[player.combatant.id] = player.data;
 

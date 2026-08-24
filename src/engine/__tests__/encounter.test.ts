@@ -253,3 +253,144 @@ describe("defeatCombatant", () => {
     expect(next.status).toBe("friendlies_won");
   });
 });
+
+describe("Combat Awareness at the table", () => {
+  const attack = {
+    statLabel: "REF",
+    statValue: 8,
+    skillLabel: "Handgun",
+    skillValue: 4,
+    dv: 13,
+    damageDice: 2,
+  };
+
+  it("adds Initiative Reaction to the Initiative roll", () => {
+    const solo = mk("solo", {
+      side: "friendly",
+      isPlayer: true,
+      ref: 8,
+      roleEffects: { initiative: 3 },
+    });
+    // A d10 of 5: REF 8 + 3 points + 5 = 16, where an ordinary 8 REF gets 13.
+    const state = startEncounter([solo], seq([[5, 10]]));
+    expect(state.combatants["solo"]!.initiative).toBe(16);
+  });
+
+  it("adds Spot Weakness to the first successful attack of a Round only", () => {
+    const solo = mk("solo", { side: "friendly", isPlayer: true, roleEffects: { spotWeakness: 2 } });
+    const goon = mk("goon", { hp: 40, spBody: 0 });
+    const state = stateOf([solo, goon]);
+
+    // To-hit 9 (hits DV13 with +12), damage 3 and 3 = 6, +2 Spot Weakness = 8.
+    const first = performAttack(
+      state,
+      { ...attack, attackerId: "solo", targetId: "goon" },
+      seq([
+        [9, 10],
+        [3, 6],
+        [3, 6],
+      ]),
+    );
+    expect(first.applied!.hpAfter).toBe(32);
+
+    // The second hit in the same Round is plain damage: 6 off 32 is 26.
+    const second = performAttack(
+      first.state,
+      { ...attack, attackerId: "solo", targetId: "goon" },
+      seq([
+        [9, 10],
+        [3, 6],
+        [3, 6],
+      ]),
+    );
+    expect(second.applied!.hpAfter).toBe(26);
+  });
+
+  it("softens the first damage taken in a Round with Damage Deflection", () => {
+    const solo = mk("solo", {
+      side: "friendly",
+      isPlayer: true,
+      hp: 40,
+      roleEffects: { damageDeflection: 3 },
+    });
+    const goon = mk("goon");
+    const state = stateOf([goon, solo]);
+
+    // 6 damage less 3 deflected = 3.
+    const first = performAttack(
+      state,
+      { ...attack, attackerId: "goon", targetId: "solo" },
+      seq([
+        [9, 10],
+        [3, 6],
+        [3, 6],
+      ]),
+    );
+    expect(first.applied!.hpAfter).toBe(37);
+
+    // The next one this Round lands in full: 6 off 37 is 31.
+    const second = performAttack(
+      first.state,
+      { ...attack, attackerId: "goon", targetId: "solo" },
+      seq([
+        [9, 10],
+        [3, 6],
+        [3, 6],
+      ]),
+    );
+    expect(second.applied!.hpAfter).toBe(31);
+  });
+
+  it("never turns a deflected hit into healing", () => {
+    const solo = mk("solo", {
+      side: "friendly",
+      isPlayer: true,
+      hp: 40,
+      roleEffects: { damageDeflection: 5 },
+    });
+    const state = stateOf([mk("goon"), solo]);
+    // 2 damage against 5 points of deflection floors at 0, not −3.
+    const result = performAttack(
+      state,
+      { ...attack, attackerId: "goon", targetId: "solo" },
+      seq([
+        [9, 10],
+        [1, 6],
+        [1, 6],
+      ]),
+    );
+    expect(result.applied!.hpAfter).toBe(40);
+  });
+
+  it("ignores the implosion on a natural 1 with Fumble Recovery", () => {
+    const solo = mk("solo", {
+      side: "friendly",
+      isPlayer: true,
+      roleEffects: { fumbleRecovery: true },
+    });
+    const state = stateOf([solo, mk("goon")]);
+    // A natural 1 would normally subtract a second d10; here it just reads 1.
+    const result = performAttack(
+      state,
+      { ...attack, attackerId: "solo", targetId: "goon" },
+      seq([[1, 10]]),
+    );
+    expect(result.attack.rolls).toEqual([1]);
+    expect(result.attack.critical).toBeNull();
+    expect(result.attack.total).toBe(13); // 1 + REF 8 + Handgun 4
+  });
+
+  it("leaves an ordinary attacker's natural 1 imploding", () => {
+    const state = stateOf([mk("goon"), mk("mook")]);
+    const result = performAttack(
+      state,
+      { ...attack, attackerId: "goon", targetId: "mook" },
+      seq([
+        [1, 10],
+        [4, 10],
+      ]),
+    );
+    expect(result.attack.critical).toBe("failure");
+    expect(result.attack.total).toBe(9); // 1 + 12 − 4
+  });
+});
