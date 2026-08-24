@@ -525,7 +525,6 @@ function InputBar({
       </Button>
     </div>
   );
-
 }
 
 export function PlayScreen({ campaignId }: { campaignId: string }) {
