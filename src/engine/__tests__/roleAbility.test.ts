@@ -7,6 +7,22 @@
 import { describe, expect, it } from "vitest";
 import {
   BELIEVABILITY_FORBIDS_LUCK,
+  LOYALTY_GAINS,
+  LOYALTY_LOSSES,
+  MEDICAL_DRUGS,
+  SYNTHESIS_DV,
+  SYNTHESIS_MATERIALS_COST,
+  execPerks,
+  loyaltyAfter,
+  loyaltySave,
+  medicineSkillLevels,
+  medicineSpecialtyCap,
+  rollTeamMember,
+  speedhealAmount,
+  synthesisDoses,
+  teamMemberSlots,
+  unlockedDrugs,
+  vehicleFamiliarityBonus,
   CHARISMATIC_AUDIENCES,
   RUMOR_TIERS,
   backupTierFor,
@@ -299,5 +315,106 @@ describe("Tech — Maker", () => {
   it("holds a jury-rig for ten minutes a Rank, and not at all at Rank 0", () => {
     expect(juryRigMinutes(3)).toBe(30);
     expect(juryRigMinutes(0)).toBe(0);
+  });
+});
+
+describe("Nomad — Moto", () => {
+  it("adds the Rank to anything with a wheel or a stick", () => {
+    expect(
+      vehicleFamiliarityBonus({ abilityId: "moto", rank: 4, skillId: "drive_land_vehicle" }),
+    ).toBe(4);
+    expect(
+      vehicleFamiliarityBonus({ abilityId: "moto", rank: 4, skillId: "land_vehicle_tech" }),
+    ).toBe(4);
+  });
+
+  it("adds nothing to a Skill off the list, or for anyone who is not a Nomad", () => {
+    expect(vehicleFamiliarityBonus({ abilityId: "moto", rank: 4, skillId: "handgun" })).toBe(0);
+    expect(
+      vehicleFamiliarityBonus({ abilityId: "maker", rank: 4, skillId: "drive_land_vehicle" }),
+    ).toBe(0);
+  });
+});
+
+describe("Medtech — Medicine", () => {
+  it("buys two Surgery Skill points a Specialty point", () => {
+    expect(medicineSkillLevels({ surgery: 3 })["surgery"]).toBe(6);
+  });
+
+  it("sums both Medical Tech Specialties into the one Skill", () => {
+    expect(medicineSkillLevels({ pharmaceuticals: 3, cryosystem: 2 })["medical_tech"]).toBe(5);
+  });
+
+  it("stops counting points past a Specialty's cap", () => {
+    // Pharmaceuticals takes at most 5 points; a sixth buys nothing.
+    expect(medicineSkillLevels({ pharmaceuticals: 6 })["medical_tech"]).toBe(5);
+    expect(medicineSpecialtyCap("pharmaceuticals")).toBe(5);
+    expect(medicineSpecialtyCap("surgery")).toBeNull();
+  });
+
+  it("never takes a Skill past 10", () => {
+    expect(medicineSkillLevels({ surgery: 9 })["surgery"]).toBe(10);
+  });
+
+  it("unlocks one drug per point of Pharmaceuticals", () => {
+    expect(unlockedDrugs(0)).toEqual([]);
+    expect(unlockedDrugs(2).map((d) => d.id)).toEqual(["antibiotic", "rapidetox"]);
+    expect(unlockedDrugs(5)).toHaveLength(MEDICAL_DRUGS.length);
+  });
+
+  it("makes as many doses as the Medical Tech Skill, for 200eb", () => {
+    expect(synthesisDoses(5)).toBe(5);
+    expect(SYNTHESIS_MATERIALS_COST).toBe(200);
+    expect(SYNTHESIS_DV).toBe(13);
+  });
+
+  it("heals BODY + WILL with a Speedheal", () => {
+    expect(speedhealAmount({ body: 7, will: 5 })).toBe(12);
+    expect(speedhealAmount({})).toBe(0);
+  });
+});
+
+describe("Exec — Teamwork", () => {
+  const d6 = (...faces: number[]) => {
+    let i = 0;
+    return () => (faces[i++]! - 1) / 6 + 0.0001;
+  };
+
+  it("opens Team Member slots at the printed Ranks", () => {
+    expect(teamMemberSlots(2)).toBe(0);
+    expect(teamMemberSlots(3)).toBe(1);
+    expect(teamMemberSlots(5)).toBe(2);
+    expect(teamMemberSlots(9)).toBe(3);
+    expect(teamMemberSlots(10)).toBe(3);
+  });
+
+  it("rolls a new member's STATs and starting Loyalty", () => {
+    expect(rollTeamMember(d6(4, 3))).toEqual({ statRoll: 4, loyalty: 4 }); // 3 + 1
+  });
+
+  it("passes a task Save on a roll under current Loyalty", () => {
+    expect(loyaltySave(5, d6(4))).toMatchObject({ passed: true, betrays: false });
+    expect(loyaltySave(5, d6(5))).toMatchObject({ passed: false, betrays: false });
+  });
+
+  it("has someone at zero Loyalty working against you, roll or no roll", () => {
+    expect(loyaltySave(0, d6(1))).toMatchObject({ passed: false, betrays: true });
+    expect(loyaltySave(-3, d6(1)).betrays).toBe(true);
+  });
+
+  it("caps Loyalty at ten but lets it fall past zero", () => {
+    expect(loyaltyAfter(8, 6)).toBe(10);
+    expect(loyaltyAfter(2, -8)).toBe(-6);
+  });
+
+  it("prints the ways Loyalty is won and lost", () => {
+    expect(LOYALTY_GAINS.find((g) => g.id === "risked_harm")?.delta).toBe(8);
+    expect(LOYALTY_LOSSES.find((l) => l.id === "abandoned")?.delta).toBe(-8);
+  });
+
+  it("hands out the Corp perks a Rank has earned", () => {
+    expect(execPerks(1)).toHaveLength(1);
+    expect(execPerks(6).join(" ")).toContain("Trauma Team Silver");
+    expect(execPerks(10)).toHaveLength(6);
   });
 });

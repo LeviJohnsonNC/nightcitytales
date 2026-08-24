@@ -9,8 +9,11 @@ import {
   combatAwarenessEffects,
   fieldExpertiseBonus,
   makerSpecialtyPool,
+  medicineSkillLevels,
   operatorHaggleBonus,
   roleAbilityOf,
+  teamMemberSlots,
+  vehicleFamiliarityBonus,
   type CombatAwarenessAllocation,
   type CombatAwarenessEffects,
   type RoleAbilityInfo,
@@ -90,9 +93,8 @@ export function pendingBackup(campaign: Campaign): PendingBackup | null {
   };
 }
 
-/** A Tech's division of their Maker Specialty ranks. */
-export function makerSpecialties(campaign: Campaign): Record<string, number> {
-  const raw = abilityState(campaign, "maker")["specialties"];
+/** Positive whole numbers out of a stored map, ignoring anything else. */
+function numberMap(raw: unknown): Record<string, number> {
   if (!raw || typeof raw !== "object") return {};
   const out: Record<string, number> = {};
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
@@ -100,6 +102,11 @@ export function makerSpecialties(campaign: Campaign): Record<string, number> {
       out[key] = Math.trunc(value);
   }
   return out;
+}
+
+/** A Tech's division of their Maker Specialty ranks. */
+export function makerSpecialties(campaign: Campaign): Record<string, number> {
+  return numberMap(abilityState(campaign, "maker")["specialties"]);
 }
 
 /** How many Specialty ranks a Tech has to spend, and how many are spent. */
@@ -112,6 +119,56 @@ export function makerSpecialtyBudget(
   const allocation = makerSpecialties(campaign);
   const spent = Object.values(allocation).reduce((sum, value) => sum + value, 0);
   return { pool: makerSpecialtyPool(ability.rank), spent };
+}
+
+/** A Medtech's division of their Medicine Specialty points. */
+export function medicineSpecialties(campaign: Campaign): Record<string, number> {
+  return numberMap(abilityState(campaign, "medicine")["specialties"]);
+}
+
+/** Doses a Medtech has synthesized and not yet used, by drug id. */
+export function medicineDoses(campaign: Campaign): Record<string, number> {
+  return numberMap(abilityState(campaign, "medicine")["doses"]);
+}
+
+/** The Skill Levels those Specialty points buy, ready to add to a check. */
+export function medicineSkills(campaign: Campaign): Record<string, number> {
+  return medicineSkillLevels(medicineSpecialties(campaign));
+}
+
+/** One of an Exec's Team Members. */
+export type TeamMember = {
+  id: string;
+  name: string;
+  memberClass: string;
+  statRoll: number;
+  loyalty: number;
+};
+
+/** The Exec's team, and how many slots their Rank supports. */
+export function execTeam(
+  campaign: Campaign,
+  character: FullCharacter,
+): { members: TeamMember[]; slots: number } | null {
+  const ability = liveRoleAbility(character);
+  if (!ability || ability.info.abilityId !== "teamwork") return null;
+  const raw = abilityState(campaign, "teamwork")["members"];
+  const members: TeamMember[] = [];
+  if (Array.isArray(raw)) {
+    for (const entry of raw) {
+      if (!entry || typeof entry !== "object") continue;
+      const m = entry as Record<string, unknown>;
+      if (typeof m["id"] !== "string" || typeof m["name"] !== "string") continue;
+      members.push({
+        id: m["id"],
+        name: m["name"],
+        memberClass: typeof m["memberClass"] === "string" ? m["memberClass"] : "Team Member",
+        statRoll: typeof m["statRoll"] === "number" ? m["statRoll"] : 0,
+        loyalty: typeof m["loyalty"] === "number" ? m["loyalty"] : 0,
+      });
+    }
+  }
+  return { members, slots: teamMemberSlots(ability.rank) };
 }
 
 /**
@@ -142,6 +199,21 @@ export function roleCheckModifiers(input: {
     skillId: input.skillId,
   });
   if (field > 0) out.push({ label: "Field Expertise", value: field });
+
+  // Nomad: the Moto Rank rides on anything they drive, fly, sail or fix.
+  const moto = vehicleFamiliarityBonus({
+    abilityId: ability.info.abilityId,
+    rank: ability.rank,
+    skillId: input.skillId,
+  });
+  if (moto > 0) out.push({ label: "Moto", value: moto });
+
+  // Medtech: Specialty points ARE Skill Levels in Surgery and Medical Tech, so
+  // they land on a check as the Skill the character does not otherwise have.
+  if (ability.info.abilityId === "medicine") {
+    const level = medicineSkills(input.campaign)[input.skillId] ?? 0;
+    if (level > 0) out.push({ label: "Medicine", value: level });
+  }
 
   // Fixer: the Operator Rank is part of the printed Haggle roll.
   const haggle = operatorHaggleBonus({

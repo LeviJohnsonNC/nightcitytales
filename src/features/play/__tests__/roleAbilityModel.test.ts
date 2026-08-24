@@ -10,7 +10,10 @@ import {
   combatAwarenessAllocation,
   combatAwarenessFor,
   liveRoleAbility,
+  execTeam,
   makerSpecialtyBudget,
+  medicineDoses,
+  medicineSkills,
   pendingBackup,
   roleCheckModifiers,
   withAbilityState,
@@ -129,12 +132,34 @@ describe("what a Role brings to a check", () => {
     ).toEqual([]);
   });
 
-  it("says nothing at all for a Role that is not modelled yet", () => {
+  it("puts a Nomad's Moto Rank on anything they drive", () => {
     expect(
       roleCheckModifiers({
         campaign: campaign(),
         character: character("nomad", 4),
         skillId: "drive_land_vehicle",
+      }),
+    ).toEqual([{ label: "Moto", value: 4 }]);
+  });
+
+  it("gives a Medtech the Skill their Specialty points bought", () => {
+    const stored = campaign({ medicine: { specialties: { surgery: 3 } } });
+    expect(
+      roleCheckModifiers({
+        campaign: stored,
+        character: character("medtech", 4),
+        skillId: "surgery",
+      }),
+    ).toEqual([{ label: "Medicine", value: 6 }]);
+  });
+
+  it("says nothing at all for a Role that is not modelled yet", () => {
+    // The Netrunner needs the NET, which this app does not have.
+    expect(
+      roleCheckModifiers({
+        campaign: campaign(),
+        character: character("netrunner", 4),
+        skillId: "interface",
       }),
     ).toEqual([]);
   });
@@ -191,5 +216,44 @@ describe("Lawman — Backup on its way", () => {
   it("is null when nothing is inbound, or the record is junk", () => {
     expect(pendingBackup(campaign())).toBeNull();
     expect(pendingBackup(campaign({ backup: { pending: { tierName: 12 } } }))).toBeNull();
+  });
+});
+
+describe("Exec — the team", () => {
+  it("reads the roster and the slots the Rank supports", () => {
+    const stored = campaign({
+      teamwork: {
+        members: [{ id: "m1", name: "Ito", memberClass: "Bodyguard", statRoll: 4, loyalty: 5 }],
+      },
+    });
+    expect(execTeam(stored, character("exec", 5))).toEqual({
+      members: [{ id: "m1", name: "Ito", memberClass: "Bodyguard", statRoll: 4, loyalty: 5 }],
+      slots: 2,
+    });
+  });
+
+  it("has no team below the Rank that grants one", () => {
+    expect(execTeam(campaign(), character("exec", 2))).toEqual({ members: [], slots: 0 });
+  });
+
+  it("drops a roster entry missing a name or an id", () => {
+    const junk = campaign({ teamwork: { members: [{ id: "m1" }, "Ito", null] } });
+    expect(execTeam(junk, character("exec", 5))?.members).toEqual([]);
+  });
+
+  it("is null for anyone who is not an Exec", () => {
+    expect(execTeam(campaign(), character("solo", 4))).toBeNull();
+  });
+});
+
+describe("Medtech — doses and Skills", () => {
+  it("turns Specialty points into Skill Levels", () => {
+    const stored = campaign({ medicine: { specialties: { pharmaceuticals: 3, cryosystem: 2 } } });
+    expect(medicineSkills(stored)["medical_tech"]).toBe(5);
+  });
+
+  it("reads synthesized doses back, ignoring junk", () => {
+    const stored = campaign({ medicine: { doses: { speedheal: 3, stim: "lots" } } });
+    expect(medicineDoses(stored)).toEqual({ speedheal: 3 });
   });
 });

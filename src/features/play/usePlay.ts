@@ -118,7 +118,10 @@ import { deathSaveOwed, pendingDeathSaveFrom, type PendingDeathSave } from "./de
 import {
   combatAwarenessAllocation,
   combatAwarenessFor,
+  execTeam,
   liveRoleAbility,
+  medicineDoses,
+  medicineSpecialties,
   makerSpecialties,
   makerSpecialtyBudget,
   pendingBackup,
@@ -1168,6 +1171,19 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  // Specialty divisions and team rosters are all one shape: a blob under the
+  // ability's own key in role_state.
+  const abilityStateMutation = useMutation({
+    mutationFn: ({ abilityId, state }: { abilityId: string; state: Record<string, unknown> }) => {
+      if (!query.data) throw new Error("Still loading.");
+      const campaign = query.data.campaign;
+      return updateCampaign(campaign.id, {
+        role_state: withAbilityState(campaign, abilityId, state) as Json,
+      });
+    },
+    onSuccess: invalidate,
+  });
+
   const charismaMutation = useMutation({
     mutationFn: (result: CharismaticImpactResult) => {
       if (!query.data) throw new Error("Still loading.");
@@ -1322,6 +1338,26 @@ export function usePlay(campaignId: string) {
     setMakerSpecialties: (specialties: Record<string, number>) =>
       specialtyMutation.mutate(specialties),
     makerBusy: specialtyMutation.isPending,
+
+    /** Medtech: Specialty points and the doses they have on hand. */
+    medicineSpecialties: bundle ? medicineSpecialties(bundle.campaign) : {},
+    medicineDoses: bundle ? medicineDoses(bundle.campaign) : {},
+    setMedicineSpecialties: (specialties: Record<string, number>) =>
+      abilityStateMutation.mutate({
+        abilityId: "medicine",
+        state: { specialties, doses: bundle ? medicineDoses(bundle.campaign) : {} },
+      }),
+    setMedicineDoses: (doses: Record<string, number>) =>
+      abilityStateMutation.mutate({
+        abilityId: "medicine",
+        state: { specialties: bundle ? medicineSpecialties(bundle.campaign) : {}, doses },
+      }),
+
+    /** Exec: the team and the slots their Rank supports. */
+    execTeam: bundle ? execTeam(bundle.campaign, bundle.character) : null,
+    setExecTeam: (members: unknown[]) =>
+      abilityStateMutation.mutate({ abilityId: "teamwork", state: { members } }),
+    abilityStateBusy: abilityStateMutation.isPending,
     /** The Luck Pool as the table sees it: what is left, and what it holds full. */
     luck: {
       remaining: bundle

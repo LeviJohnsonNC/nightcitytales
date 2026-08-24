@@ -459,3 +459,193 @@ export function juryRigMinutes(specialtyRank: number): number {
   if (rank < (MAKER?.fieldExpertise.juryRig.minRank ?? 1)) return 0;
   return rank * (MAKER?.fieldExpertise.juryRig.holdsMinutesPerRank ?? 0);
 }
+
+// ---------------------------------------------------------------------------
+// Nomad — Moto
+// ---------------------------------------------------------------------------
+
+type MotoMechanics = { vehicleFamiliarity: { addsRankToSkills: string[] } };
+
+export const VEHICLE_FAMILIARITY_SKILLS: string[] =
+  mechanicsOf<MotoMechanics>("nomad")?.vehicleFamiliarity.addsRankToSkills ?? [];
+
+/**
+ * A Nomad adds their Moto Rank to anything with a steering wheel or a stick —
+ * driving, piloting, and the Tech Skills for the same machines.
+ */
+export function vehicleFamiliarityBonus(input: {
+  abilityId: string | null | undefined;
+  rank: number;
+  skillId: string;
+}): number {
+  if (input.abilityId !== "moto") return 0;
+  if (!VEHICLE_FAMILIARITY_SKILLS.includes(input.skillId)) return 0;
+  return Math.max(0, Math.trunc(input.rank));
+}
+
+// ---------------------------------------------------------------------------
+// Medtech — Medicine
+// ---------------------------------------------------------------------------
+
+export type MedicineSpecialty = {
+  id: string;
+  name: string;
+  skillId: string;
+  skillPerPoint: number;
+  maxSkill: number;
+  maxPoints: number | null;
+};
+
+export type MedicalDrug = {
+  id: string;
+  name: string;
+  effect: string;
+  hpPerDayBonus?: number;
+  days?: number;
+  healsStats?: string[];
+  perDay?: number;
+};
+
+type MedicineMechanics = {
+  specialties: MedicineSpecialty[];
+  medicalTechSkillIsSumOf: string[];
+  synthesis: { dv: number; skillId: string; materialsCost: number; drugsUnlockedPerPoint: number };
+  drugs: MedicalDrug[];
+};
+
+const MEDICINE = mechanicsOf<MedicineMechanics>("medtech");
+
+export const MEDICINE_SPECIALTIES: MedicineSpecialty[] = MEDICINE?.specialties ?? [];
+export const MEDICAL_DRUGS: MedicalDrug[] = MEDICINE?.drugs ?? [];
+export const SYNTHESIS_DV: number = MEDICINE?.synthesis.dv ?? 0;
+export const SYNTHESIS_MATERIALS_COST: number = MEDICINE?.synthesis.materialsCost ?? 0;
+
+/** The most points a Specialty will take, or null where the rules set no cap. */
+export function medicineSpecialtyCap(id: string): number | null {
+  return MEDICINE_SPECIALTIES.find((s) => s.id === id)?.maxPoints ?? null;
+}
+
+/**
+ * The Skill Levels a Medtech's Specialty points buy them.
+ *
+ * Surgery is two Skill points a Specialty point; Medical Tech is one, and both
+ * Medical Tech Specialties feed the same Skill — which is why they are summed
+ * rather than taken separately. Everything caps where the rules cap it.
+ */
+export function medicineSkillLevels(points: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const specialty of MEDICINE_SPECIALTIES) {
+    const cap = specialty.maxPoints;
+    const spent = Math.max(0, Math.trunc(points[specialty.id] ?? 0));
+    const counted = cap === null ? spent : Math.min(spent, cap);
+    const gained = counted * specialty.skillPerPoint;
+    out[specialty.skillId] = Math.min(specialty.maxSkill, (out[specialty.skillId] ?? 0) + gained);
+  }
+  return out;
+}
+
+/** How many of the printed drugs this Medtech can synthesize. */
+export function unlockedDrugs(pharmaceuticalPoints: number): MedicalDrug[] {
+  const perPoint = MEDICINE?.synthesis.drugsUnlockedPerPoint ?? 1;
+  const count = Math.max(0, Math.trunc(pharmaceuticalPoints)) * perPoint;
+  return MEDICAL_DRUGS.slice(0, count);
+}
+
+/** Doses made from one 200eb batch: as many as the Medical Tech Skill Level. */
+export function synthesisDoses(medicalTechSkill: number): number {
+  return Math.max(0, Math.trunc(medicalTechSkill));
+}
+
+/** Speedheal restores BODY + WILL, and never to someone Mortally Wounded. */
+export function speedhealAmount(stats: { body?: number; will?: number }): number {
+  return Math.max(0, Math.trunc(stats.body ?? 0)) + Math.max(0, Math.trunc(stats.will ?? 0));
+}
+
+// ---------------------------------------------------------------------------
+// Exec — Teamwork
+// ---------------------------------------------------------------------------
+
+export type LoyaltyChange = { id: string; label: string; delta: number };
+
+type TeamworkMechanics = {
+  teamMembers: {
+    byRank: { rank: number; members: number }[];
+    classes: string[];
+  };
+  loyalty: {
+    capBetweenSessions: number;
+    betrayAtOrBelow: number;
+    gains: LoyaltyChange[];
+    losses: LoyaltyChange[];
+  };
+  replacement: { startingLoyalty: number; hiringFee: number };
+  perksByRank: { rank: number; perk: string }[];
+};
+
+const TEAMWORK = mechanicsOf<TeamworkMechanics>("exec");
+
+export const TEAM_MEMBER_CLASSES: string[] = TEAMWORK?.teamMembers.classes ?? [];
+export const LOYALTY_GAINS: LoyaltyChange[] = TEAMWORK?.loyalty.gains ?? [];
+export const LOYALTY_LOSSES: LoyaltyChange[] = TEAMWORK?.loyalty.losses ?? [];
+export const LOYALTY_CAP: number = TEAMWORK?.loyalty.capBetweenSessions ?? 10;
+export const REPLACEMENT_FEE: number = TEAMWORK?.replacement.hiringFee ?? 0;
+
+/** How many Team Members this Rank supports. */
+export function teamMemberSlots(rank: number): number {
+  let slots = 0;
+  for (const step of TEAMWORK?.teamMembers.byRank ?? []) {
+    if (rank >= step.rank) slots = Math.max(slots, step.members);
+  }
+  return slots;
+}
+
+/** The Corp perks this Rank has earned, in the order they were granted. */
+export function execPerks(rank: number): string[] {
+  return (TEAMWORK?.perksByRank ?? []).filter((row) => rank >= row.rank).map((row) => row.perk);
+}
+
+export type TeamMemberRoll = {
+  /** 1d6 sets their STATs; the value is kept so a reroll is traceable. */
+  statRoll: number;
+  loyalty: number;
+};
+
+/** Roll up a new Team Member: 1d6 for STATs, 1d6+1 for starting Loyalty. */
+export function rollTeamMember(rng: RNG = defaultRng): TeamMemberRoll {
+  return { statRoll: rollDie(6, rng), loyalty: rollDie(6, rng) + 1 };
+}
+
+export type LoyaltySave = {
+  roll: number;
+  loyalty: number;
+  /** True when they do the thing asked. */
+  passed: boolean;
+  /** True when Loyalty has fallen far enough that they work against you. */
+  betrays: boolean;
+};
+
+/**
+ * Asking a Team Member to do something: roll 1d6 under their current Loyalty.
+ *
+ * A failed Save is not simply a refusal — the rules let it be a refusal, a
+ * botch, or worse — so this reports the failure and leaves what it looks like
+ * to the GM. At or below zero Loyalty they are actively against you, which no
+ * roll rescues.
+ */
+export function loyaltySave(loyalty: number, rng: RNG = defaultRng): LoyaltySave {
+  const betrayAt = TEAMWORK?.loyalty.betrayAtOrBelow ?? 0;
+  const roll = rollDie(6, rng);
+  if (loyalty <= betrayAt) {
+    return { roll, loyalty, passed: false, betrays: true };
+  }
+  return { roll, loyalty, passed: roll < loyalty, betrays: false };
+}
+
+/**
+ * Loyalty after a shift. It caps at 10 between sessions and has no floor: a
+ * member driven below zero is gone at the end of the session, which is the
+ * caller's business to notice.
+ */
+export function loyaltyAfter(current: number, delta: number): number {
+  return Math.min(LOYALTY_CAP, Math.trunc(current) + Math.trunc(delta));
+}
