@@ -73,6 +73,29 @@ export function getStatTemplateRows(roleId: string): TemplateRows {
   return template.rows;
 }
 
+/**
+ * The band a STAT actually occupies in the printed Role templates: the lowest
+ * and highest value that appears for it across every Role row. Nothing is
+ * invented here — it is read straight out of stat-templates.json — so the sheet
+ * can show where a Character sits without inventing a rules-wide STAT ceiling.
+ */
+export function statTemplateRange(stat: StatKey): { min: number; max: number } {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const template of Object.values(TEMPLATES)) {
+    for (const row of Object.values(template.rows)) {
+      const value = row[stat];
+      if (value === undefined) continue;
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+  }
+  if (min === Infinity) {
+    throw new Error(`No template values for STAT "${stat}" (src/data/rules/stat-templates.json)`);
+  }
+  return { min, max };
+}
+
 export function getStatTemplateRow(roleId: string, row: number): StatBlock {
   const rows = getStatTemplateRows(roleId);
   const values = rows[String(row)];
