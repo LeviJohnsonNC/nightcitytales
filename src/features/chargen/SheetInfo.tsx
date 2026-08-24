@@ -63,8 +63,8 @@ function StatScale({ stat, value }: { stat: StatKey; value: number | null }) {
         <span className="num font-mono text-xs text-text-dim">{max}</span>
       </div>
       <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
-        {value === null ? "not set" : `you: ${value}`} · band seen in the Role templates {range.min}–
-        {range.max}
+        {value === null ? "not set" : `you: ${value}`} · band seen in the Role templates {range.min}
+        –{range.max}
       </p>
     </div>
   );
