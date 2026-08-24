@@ -100,33 +100,30 @@ export function SpendIpCard({
         <span className="font-mono text-sm">{improvementPoints} I.P. unspent</span>
       </div>
 
-      <>
-          <p className="text-xs text-muted-foreground">
-            A Skill costs its new Level in I.P. (doubled for a Skill the sheet flags x2), one Level
-            at a time, up to Level {MAX_SKILL_LEVEL}.
-          </p>
-          {shown.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Not enough for any Skill yet — the cheapest raise is {raises[0]?.cost ?? 0} I.P.
-            </p>
-          ) : (
-            <ul className="max-h-72 overflow-y-auto">
-              {shown.map((raise) => (
-                <RaiseRow
-                  key={raise.key}
-                  raise={raise}
-                  onBuy={(r) => buy.mutate(r)}
-                  busy={buy.isPending}
-                />
-              ))}
-            </ul>
-          )}
-          {raises.length > affordable.length && (
-            <Button size="sm" variant="ghost" onClick={() => setShowAll((v) => !v)}>
-              {showAll ? "Show only what I can afford" : `Show all ${raises.length} skills`}
-            </Button>
-          )}
-        </>
+      <p className="text-xs text-muted-foreground">
+        A Skill costs its new Level in I.P. (doubled for a Skill the sheet flags x2), one Level at a
+        time, up to Level {MAX_SKILL_LEVEL}.
+      </p>
+      {shown.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Not enough for any Skill yet — the cheapest raise is {raises[0]?.cost ?? 0} I.P.
+        </p>
+      ) : (
+        <ul className="max-h-72 overflow-y-auto">
+          {shown.map((raise) => (
+            <RaiseRow
+              key={raise.key}
+              raise={raise}
+              onBuy={(r) => buy.mutate(r)}
+              busy={buy.isPending}
+            />
+          ))}
+        </ul>
+      )}
+      {raises.length > affordable.length && (
+        <Button size="sm" variant="ghost" onClick={() => setShowAll((v) => !v)}>
+          {showAll ? "Show only what I can afford" : `Show all ${raises.length} skills`}
+        </Button>
       )}
 
       {buy.error && <p className="text-sm text-destructive">{(buy.error as Error).message}</p>}
