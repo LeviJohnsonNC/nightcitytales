@@ -301,8 +301,8 @@ export function RosterList({ userId: _userId }: { userId: string }) {
                 entry={entry}
                 onStart={() => start.mutate(entry)}
                 starting={start.isPending && start.variables?.id === entry.id}
-                duplicating={duplicate.isPending && duplicate.variables?.id === entry.id}
-                onDuplicate={() => duplicate.mutate({ id: entry.id, name: `${entry.name} (copy)` })}
+                resetting={reset.isPending && reset.variables === entry.id}
+                onReset={() => setPendingReset(entry)}
                 onDelete={() => setPendingDelete(entry)}
               />
             ))}
