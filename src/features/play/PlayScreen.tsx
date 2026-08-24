@@ -131,17 +131,15 @@ function SuggestionBar({
           return (
             <Tooltip key={s.label}>
               <TooltipTrigger asChild>{button}</TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs">
+              <TooltipContent
+                side="top"
+                className="max-w-xs border border-accent bg-card text-foreground"
+              >
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Likely check
+                  Skill
                 </p>
-                <p className="text-sm font-semibold">{hint.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {hint.base === null
-                    ? "You have no training or STAT on record for this."
-                    : hint.base === 0
-                      ? "Your base is 0 — you go in cold."
-                      : `Your base is ${hint.base} (STAT + skill level), added to your d10.`}
+                <p className="text-sm font-semibold">
+                  {hint.name}: {hint.base ?? 0}
                 </p>
               </TooltipContent>
             </Tooltip>
