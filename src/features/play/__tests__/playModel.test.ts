@@ -4,6 +4,7 @@ import {
   actorFor,
   characterSummary,
   keySkills,
+  jobOutcome,
   npcSummaries,
   recentEventLines,
   turnsSinceLastRoll,
@@ -120,5 +121,38 @@ describe("turnsSinceLastRoll", () => {
 
   it("is zero for an empty ledger", () => {
     expect(turnsSinceLastRoll([])).toBe(0);
+  });
+});
+
+describe("jobOutcome", () => {
+  it("is null while the job is still being played", () => {
+    expect(jobOutcome("active", "active")).toBeNull();
+    expect(jobOutcome("active", null)).toBeNull();
+  });
+
+  it("reports a completed job from the mission, not the campaign", () => {
+    // The campaign stays active across jobs — it is the character's run, so the
+    // job's own status is the only thing that says the job is done.
+    expect(jobOutcome("active", "completed")).toBe("completed");
+  });
+
+  it("reports death from the campaign, which death does close", () => {
+    expect(jobOutcome("lost", "active")).toBe("died");
+  });
+
+  it("treats death as final even on a job that reached its Resolution", () => {
+    expect(jobOutcome("lost", "completed")).toBe("died");
+  });
+
+  it("does not treat a failed or abandoned job as finished", () => {
+    expect(jobOutcome("active", "failed")).toBeNull();
+    expect(jobOutcome("active", "abandoned")).toBeNull();
+  });
+
+  it("only recognises statuses the campaigns table actually permits", () => {
+    // 'completed' and 'dead' were written here once; both violate the CHECK on
+    // campaigns.status, so neither may ever mean anything again.
+    expect(jobOutcome("completed", "active")).toBeNull();
+    expect(jobOutcome("dead", "active")).toBeNull();
   });
 });

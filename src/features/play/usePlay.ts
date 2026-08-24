@@ -21,8 +21,11 @@ import {
   missionPayout,
   type IpAward,
   type IpPlaystyle,
+  jobIdForSeed,
   performAttack,
   resolveSkillId,
+  rollJobSeed,
+  startMission,
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
@@ -65,6 +68,7 @@ import {
   actorFor,
   characterSummary,
   npcSummaries,
+  jobOutcome,
   recentEventLines,
   turnsSinceLastRoll,
 } from "./playModel";
@@ -231,8 +235,16 @@ async function narrate(
         ...beatFields,
       });
     } else if (action.kind === "advance_beat") {
+      // Only the model's proposed advancement is allowed to be wrong. Everything
+      // after it is our own bookkeeping, and a failure there must surface — a
+      // catch around the settlement is what hid a job silently failing to close.
+      let next: MissionRuntime | null = null;
       try {
-        const next = advance(bundle.mission, bundle.runtime, action.to);
+        next = advance(bundle.mission, bundle.runtime, action.to);
+      } catch {
+        next = null; // the model named an exit that is not available; stay put
+      }
+      if (next) {
         await saveMissionRuntime(campaignId, next);
         await logBeatAdvanced(campaignId, {
           mission: bundle.mission,
@@ -242,8 +254,6 @@ async function narrate(
         if (next.status === "completed") {
           await settleMission({ ...bundle, runtime: next }, next, bundle.mission);
         }
-      } catch {
-        // Ignore an invalid advancement the model proposed; the beat stays put.
       }
     } else if (action.kind === "start_encounter") {
       if (live) continue; // one fight at a time
@@ -415,7 +425,9 @@ async function settleMission(
     data: { missionId: mission.id, payout } as unknown as Json,
     ...(runtime.currentBeatId ? { beat_id: runtime.currentBeatId } : {}),
   });
-  await updateCampaign(campaignId, { status: "completed" });
+  // The campaign stays active: it is the character's run, not this one job.
+  // mission_progress already records the job as completed, and the player is
+  // offered the next one at wrap-up.
 }
 
 /**
@@ -433,9 +445,9 @@ async function settleIp(
   if (bundle.campaign.ip_awarded !== null && bundle.campaign.ip_awarded !== undefined) {
     throw new Error("This job's Improvement Points have already been awarded.");
   }
-  const missionFinished = bundle.campaign.status === "completed";
+  const missionFinished = bundle.runtime?.status === "completed";
   const outcome =
-    bundle.campaign.status === "dead"
+    bundle.campaign.status === "lost"
       ? `${bundle.character.character.name} died in Night City; the job was left unfinished.`
       : missionFinished
         ? "The job was seen through to its resolution."
@@ -492,7 +504,35 @@ async function settleDeath(bundle: PlayBundle): Promise<void> {
     summary: `${bundle.character.character.name} died in Night City. The job is over.`,
     data: { reason: "death" } as unknown as Json,
   });
-  await updateCampaign(campaignId, { status: "dead" });
+  await updateCampaign(campaignId, { status: "lost" });
+}
+
+/**
+ * Take the next job in the same campaign.
+ *
+ * The run continues: eurobucks, HP, wounds and inventory all carry over, which
+ * is the whole point of the campaign outliving the job. Only the mission
+ * pointer moves, and ip_awarded is cleared so the next session can be judged on
+ * its own merits — I.P. are awarded per session, not once per character.
+ */
+async function startNextJob(bundle: PlayBundle): Promise<string> {
+  const campaignId = bundle.campaign.id;
+  const missionId = jobIdForSeed(rollJobSeed());
+  const mission = getMission(missionId);
+
+  await saveMissionRuntime(campaignId, startMission(mission));
+  await updateCampaign(campaignId, {
+    current_mission_id: missionId,
+    ip_awarded: null,
+    status: "active",
+  });
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "mission_started",
+    summary: `New job: ${mission.title}${mission.patron ? ` — ${mission.patron}` : ""}`,
+    data: { missionId } as unknown as Json,
+  });
+  return missionId;
 }
 
 /** Announce a finished fight in the ledger, and describe it for the GM. */
@@ -745,6 +785,14 @@ export function usePlay(campaignId: string) {
   const pendingCheck = newest === "check" ? checkCandidate : null;
   const pendingAttack = newest === "attack" ? attackCandidate : null;
 
+  const nextJobMutation = useMutation({
+    mutationFn: () => {
+      if (!query.data) throw new Error("Still loading.");
+      return startNextJob(query.data);
+    },
+    onSuccess: invalidate,
+  });
+
   const retry = () => {
     if (!bundle) return;
     if (open.error) {
@@ -842,8 +890,12 @@ export function usePlay(campaignId: string) {
     ipError: (ip.error as Error | null) ?? null,
     /** The I.P. this job already paid, if it has been tallied. */
     ipAwarded: bundle?.campaign.ip_awarded ?? null,
-    /** The job is over: completed, or the character died. */
-    finished: bundle && bundle.campaign.status !== "active" ? bundle.campaign.status : null,
+    /** The job is over: completed, or the character died. Null while playing. */
+    finished: bundle ? jobOutcome(bundle.campaign.status, bundle.runtime?.status ?? null) : null,
+    /** Take the next job in this campaign, keeping the run's money and wounds. */
+    nextJob: () => nextJobMutation.mutate(),
+    nextJobBusy: nextJobMutation.isPending,
+    nextJobError: (nextJobMutation.error as Error | null) ?? null,
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
       turn.isPending ||

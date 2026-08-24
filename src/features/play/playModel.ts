@@ -3,7 +3,13 @@
  * character summary, the skill-check actor, NPC summaries, and rolling event
  * lines. No React, no I/O — so it can be unit-tested and reused by the hook.
  */
-import { getSkill, STAT_ORDER, type SkillCheckActor, type StatKey } from "@/engine";
+import {
+  getSkill,
+  STAT_ORDER,
+  type MissionStatus,
+  type SkillCheckActor,
+  type StatKey,
+} from "@/engine";
 import type { GmCharacterSummary, GmNpcSummary } from "@/features/gm/gmContext";
 import type { CampaignEvent, CampaignNpc, CampaignVitals, FullCharacter } from "@/lib/backend";
 
@@ -106,4 +112,23 @@ export function turnsSinceLastRoll(events: CampaignEvent[]): number {
     if (event.type === "player_input") turns += 1;
   }
   return turns;
+}
+
+/**
+ * How the current job ended, or null while it is still being played.
+ *
+ * A campaign is the character's ongoing run; a mission is one job inside it.
+ * Finishing a job therefore does NOT end the campaign — only death does. So the
+ * two outcomes are read from different places: the job's own runtime says it
+ * reached a Resolution, and the campaign's status says the character is gone.
+ */
+export type JobOutcome = "died" | "completed" | null;
+
+export function jobOutcome(
+  campaignStatus: string,
+  missionStatus: MissionStatus | null,
+): JobOutcome {
+  if (campaignStatus === "lost") return "died";
+  if (missionStatus === "completed") return "completed";
+  return null;
 }
