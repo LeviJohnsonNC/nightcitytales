@@ -333,6 +333,32 @@ export function RosterList({ userId: _userId }: { userId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={pendingReset !== null}
+        onOpenChange={(open) => !open && setPendingReset(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset {pendingReset?.name}&apos;s adventure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Every playthrough this character has — the job in progress, live HP and Humanity,
+              money earned, loot, contacts, encounters and the whole session log — is wiped. The
+              character sheet itself is untouched, and the next Start Adventure begins clean from
+              it. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep playing</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => pendingReset && reset.mutate(pendingReset.id)}
+              disabled={reset.isPending}
+            >
+              {reset.isPending ? "Resetting…" : "Yes, reset the adventure"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
