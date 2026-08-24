@@ -144,16 +144,16 @@ function DraftCard() {
 function CharacterCard({
   entry,
   onStart,
-  onDuplicate,
+  onReset,
   onDelete,
-  duplicating,
+  resetting,
   starting,
 }: {
   entry: RosterEntry;
   onStart: () => void;
-  onDuplicate: () => void;
+  onReset: () => void;
   onDelete: () => void;
-  duplicating: boolean;
+  resetting: boolean;
   starting: boolean;
 }) {
   const portrait = entry.portrait_id ? portraitById(entry.portrait_id) : undefined;
@@ -227,8 +227,8 @@ function CharacterCard({
               Open sheet
             </Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={onDuplicate} disabled={duplicating}>
-            {duplicating ? "Copying…" : "Duplicate"}
+          <Button variant="outline" size="sm" onClick={onReset} disabled={resetting}>
+            {resetting ? "Resetting…" : "Reset adventure"}
           </Button>
           <Button variant="ghost" size="sm" onClick={onDelete}>
             Delete
