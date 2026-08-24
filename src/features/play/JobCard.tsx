@@ -17,6 +17,9 @@ function Label({ children }: { children: React.ReactNode }) {
 export function JobCard({ mission, beat }: { mission: Mission; beat: Beat }) {
   const [open, setOpen] = useState(true);
   const reward = mission.reward;
+  // Never render gmBrief: it holds the twists the player has not uncovered yet.
+  const known = beat.playerBrief ?? beat.readAloud;
+
   return (
     <section className="border border-border bg-card p-4">
       <button
