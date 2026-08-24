@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { STAT_DESCRIPTIONS, getSkill, statTemplateRange } from "@/engine";
 import type { StatKey } from "@/engine";
+import { STAT_FLAVOR } from "./statFlavor";
 
 /** The shared round "?" button used beside a sheet line. */
 export function InfoDot({ label, onClick }: { label: string; onClick: () => void }) {
