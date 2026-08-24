@@ -4,6 +4,7 @@
  * lines. No React, no I/O — so it can be unit-tested and reused by the hook.
  */
 import {
+  BASIC_SKILL_IDS,
   getSkill,
   STAT_ORDER,
   type MissionStatus,
@@ -11,6 +12,7 @@ import {
   type StatKey,
 } from "@/engine";
 import type { GmCharacterSummary, GmNpcSummary } from "@/features/gm/gmContext";
+import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import type { CampaignEvent, CampaignNpc, CampaignVitals, FullCharacter } from "@/lib/backend";
 
 /** The STATs as a plain record, skipping any that aren't set. */
@@ -57,6 +59,30 @@ export function keySkills(
     .slice(0, limit);
 }
 
+/**
+ * Every skill id the GM may legally name this turn: the character's trained
+ * skills first, then the Basic Skills they are untrained in, at Level 0.
+ *
+ * Trained skills alone are not enough. The context block tells the model these
+ * ids are the only valid ones, so a character who never bought Persuasion left
+ * the GM with no id for talking someone round — and a persuasion attempt got
+ * narrated instead of rolled. Everyone rolls Basic Skills at Level 0; the list
+ * has to say so.
+ */
+export function gmSkillList(
+  full: FullCharacter,
+  limit = 40,
+): { skill: string; id: string; base: number }[] {
+  const stats = statsRecord(full);
+  const trained = keySkills(full, limit);
+  const known = new Set(trained.map((s) => s.id));
+  const untrainedBasics = BASIC_SKILL_IDS.filter((id) => !known.has(id)).map((id) => {
+    const def = getSkill(id);
+    return { skill: def.name, id: def.id, base: stats[def.stat] ?? 0 };
+  });
+  return [...trained, ...untrainedBasics];
+}
+
 /** The GM's compact view of the player character, from the sheet + live vitals. */
 export function characterSummary(full: FullCharacter, vitals: CampaignVitals): GmCharacterSummary {
   return {
@@ -70,9 +96,22 @@ export function characterSummary(full: FullCharacter, vitals: CampaignVitals): G
     eurobucks: vitals.eurobucks,
     stats: statsRecord(full),
     keySkills: keySkills(full),
-    trainedSkills: keySkills(full, 40),
+    availableSkills: gmSkillList(full),
     ...(full.character.handle ? { handle: full.character.handle } : {}),
   };
+}
+
+/**
+ * What a clicked suggestion sends as the player's turn.
+ *
+ * A suggestion the GM tagged with a skill is a check it already has in mind, so
+ * clicking it must not degrade into plain prose the model may narrate away: the
+ * tag is passed back as an engine note. An untagged suggestion is just its label.
+ */
+export function suggestionInput(suggestion: GmSuggestedAction): string {
+  const skill = suggestion.skill?.trim();
+  if (!skill) return suggestion.label;
+  return `${suggestion.label}\n(ENGINE: this action leans on ${skill}. If it can plausibly fail, propose a skill_check with that skillId and a DV from the published table, and stop.)`;
 }
 
 export function npcSummaries(npcs: CampaignNpc[]): GmNpcSummary[] {

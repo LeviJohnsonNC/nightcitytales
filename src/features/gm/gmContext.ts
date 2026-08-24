@@ -19,8 +19,11 @@ export type GmCharacterSummary = {
   eurobucks?: number;
   stats: Record<string, number>;
   keySkills: { skill: string; id: string; base: number }[];
-  /** Every trained skill, so the model names ids the engine actually knows. */
-  trainedSkills?: { skill: string; id: string; base: number }[];
+  /**
+   * Every skill the model may name this turn — trained skills plus the Basic
+   * Skills anyone rolls at Level 0 — so it always has a real id for the action.
+   */
+  availableSkills?: { skill: string; id: string; base: number }[];
 };
 
 export type GmNpcSummary = {
@@ -110,7 +113,9 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
         .join(", "),
     ),
   );
-  const skillList = character.trainedSkills?.length ? character.trainedSkills : character.keySkills;
+  const skillList = character.availableSkills?.length
+    ? character.availableSkills
+    : character.keySkills;
   if (skillList.length) {
     parts.push(
       "",

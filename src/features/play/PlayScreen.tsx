@@ -17,6 +17,7 @@ import { DeathSaveCard } from "./DeathSaveCard";
 
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
+import { suggestionInput } from "./playModel";
 import { usePlay, type PlayBundle } from "./usePlay";
 import type { RollRecord } from "./checkPrompt";
 
@@ -90,7 +91,7 @@ function SuggestionBar({
   busy,
 }: {
   suggestions: GmSuggestedAction[];
-  onPick: (text: string) => void;
+  onPick: (suggestion: GmSuggestedAction) => void;
   busy: boolean;
 }) {
   if (suggestions.length === 0) return null;
@@ -103,7 +104,7 @@ function SuggestionBar({
           size="sm"
           disabled={busy}
           className="h-auto whitespace-normal py-2 text-left"
-          onClick={() => onPick(s.label)}
+          onClick={() => onPick(s)}
         >
           {s.label}
           {s.skill ? (
@@ -555,7 +556,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         {play.finished && <WrapUpCard bundle={bundle} status={play.finished} play={play} />}
         <SuggestionBar
           suggestions={play.finished ? [] : play.suggestions}
-          onPick={play.submit}
+          onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
           busy={play.busy || play.opening}
         />
         <InputBar
