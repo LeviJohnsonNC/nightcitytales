@@ -6,10 +6,16 @@
   },
   "_rules": {
     "checkFormula": "STAT + Skill + 1d10 vs DV",
-    "criticalSuccess": "Natural 10 on the d10: roll another 1d10 and ADD it to the first roll. A second 10 does NOT trigger another Critical Success \u2014 crits never chain.",
-    "criticalFailure": "Natural 1 on the d10: roll another 1d10 and SUBTRACT it from STAT + Skill + first roll. A second 1 does NOT trigger another Critical Failure \u2014 crits never chain.",
+    "criticalSuccess": "Natural 10 on the d10: roll another 1d10 and ADD it to the first roll. A second 10 does NOT trigger another Critical Success — crits never chain.",
+    "criticalFailure": "Natural 1 on the d10: roll another 1d10 and SUBTRACT it from STAT + Skill + first roll. A second 1 does NOT trigger another Critical Failure — crits never chain.",
     "modifiers": "Modifier Values are subtracted from the roll.",
-    "_verified": "Exact wording confirmed against p.130. This resolves the previously-flagged open question about crit chaining: it does not chain, in either direction."
+    "_verified": "Exact wording confirmed against p.130. This resolves the previously-flagged open question about crit chaining: it does not chain, in either direction.",
+    "opposedCheck": {
+      "formula": "Both sides roll STAT + Skill + 1d10. The higher total wins; the acting character must EXCEED the opposing total, not match it.",
+      "tieGoesTo": "defender",
+      "criticals": "Each side rolls its own d10 and applies the Critical Success / Critical Failure rules above independently.",
+      "_provenance": "NOT transcribed from the printed page, unlike every other entry in this file. Sourced from R. Talsorian rules clarifications and consistent secondary sources, which state that a skill roll must beat (be higher than) the opposing roll and that a tie therefore goes to the defender. Confirm against the Core Rulebook before treating this as verified; tieGoesTo is the single value to change if the printed wording differs."
+    }
   },
   "difficultyValues": [
     {

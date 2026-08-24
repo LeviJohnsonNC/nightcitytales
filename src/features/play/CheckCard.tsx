@@ -2,11 +2,17 @@
  * The table moment: a proposed check, laid out the way a GM would call it, with
  * the neon d10 the player actually rolls. The engine rolls first and the die
  * animates toward that face — the same contract the Lifepath cards use.
+ *
+ * A check comes in two shapes. Against the world it is rolled against a printed
+ * Difficulty Value. Against a person who is pushing back it is an Opposed Check:
+ * both sides roll STAT + Skill + 1d10, and the player rolls both dice — theirs,
+ * then the one the NPC answers with. The engine rolls both the moment the first
+ * die is clicked; the second click only reveals what it already rolled, so the
+ * opposing die can never be re-rolled into a better answer.
  */
 import { useState } from "react";
-import type { SkillCheckResult } from "@/engine";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
-import type { PendingCheck } from "./checkPrompt";
+import type { CheckRoll, PendingCheck, PendingOpposition } from "./checkPrompt";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -19,43 +25,226 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function CheckCard({
+function SideHeading({ who, detail }: { who: string; detail: string }) {
+  return (
+    <div>
+      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">{who}</p>
+      <p className="text-sm font-semibold leading-tight">{detail}</p>
+    </div>
+  );
+}
+
+/** The verdict line, in the language the rules use for it. */
+function Verdict({ roll }: { roll: Extract<CheckRoll, { kind: "opposed" }> }) {
+  const { result } = roll;
+  if (result.tie) {
+    return (
+      <div>
+        <p className="text-lg font-bold text-destructive">Failure — tied</p>
+        <p className="text-xs text-muted-foreground">
+          Both totals came to {result.actor.total}. A tie goes to the one resisting.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <p
+      className={
+        result.success ? "text-lg font-bold text-accent" : "text-lg font-bold text-destructive"
+      }
+    >
+      {result.success ? "Success" : "Failure"} by {Math.abs(result.margin)}
+    </p>
+  );
+}
+
+function CritLine({ critical, who }: { critical: "success" | "failure" | null; who: string }) {
+  if (!critical) return null;
+  return (
+    <p className="font-mono text-xs uppercase tracking-[0.18em] text-neon-pink">
+      {who} {critical === "success" ? "Critical Success" : "Critical Failure"} — one extra d10, no
+      chaining
+    </p>
+  );
+}
+
+/** The opposed layout: your numbers, their numbers, and the two dice between them. */
+function OpposedBody({
   pending,
+  opposition,
   roll,
   onSettled,
   busy,
 }: {
   pending: PendingCheck;
-  roll: () => SkillCheckResult;
-  onSettled: (result: SkillCheckResult) => void;
+  opposition: PendingOpposition;
+  roll: () => CheckRoll;
+  onSettled: (roll: CheckRoll) => void;
   busy: boolean;
 }) {
-  const [result, setResult] = useState<SkillCheckResult | null>(null);
+  // Both sides are rolled together on the first click; `revealed` is only how
+  // much of that result the player has turned over so far.
+  const [rolled, setRolled] = useState<Extract<CheckRoll, { kind: "opposed" }> | null>(null);
+  const [opponentRevealed, setOpponentRevealed] = useState(false);
 
+  const actorDie = rolled?.result.actor.rolls[0] ?? null;
+  const actorCrit =
+    rolled && rolled.result.actor.rolls.length > 1 ? rolled.result.actor.rolls[1]! : null;
+  const opponentDie = rolled?.result.opponent.rolls[0] ?? null;
+  const opponentCrit =
+    rolled && rolled.result.opponent.rolls.length > 1 ? rolled.result.opponent.rolls[1]! : null;
+
+  return (
+    <>
+      <div className="grid gap-3 border-y border-border/60 py-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <SideHeading who="You" detail={`${pending.skillName} (${pending.stat.toUpperCase()})`} />
+          <div className="grid grid-cols-3 gap-2">
+            <Stat label={pending.stat.toUpperCase()} value={String(pending.statValue)} />
+            <Stat label="Skill" value={String(pending.skillLevel)} />
+            <Stat label="Base" value={`+${pending.base}`} />
+          </div>
+        </div>
+        <div className="space-y-2 sm:border-l sm:border-border/60 sm:pl-3">
+          <SideHeading
+            who={opposition.npcName}
+            detail={`${opposition.skillName} (${opposition.stat.toUpperCase()})`}
+          />
+          <div className="grid grid-cols-3 gap-2">
+            <Stat label={opposition.stat.toUpperCase()} value={String(opposition.statValue)} />
+            <Stat label="Skill" value={String(opposition.skillLevel)} />
+            <Stat label="Base" value={`+${opposition.base}`} />
+          </div>
+        </div>
+      </div>
+
+      {opposition.remembered && (
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          Their numbers are what this campaign already knows about them
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2">
+          <DiceRoll
+            sides={10}
+            value={actorDie}
+            label={`Roll your 1d10 for ${pending.skillName}`}
+            size={52}
+            disabled={busy || rolled !== null}
+            roll={() => {
+              const next = roll();
+              if (next.kind !== "opposed") throw new Error("This check is opposed.");
+              return { face: next.result.actor.rolls[0] ?? 1, commit: () => setRolled(next) };
+            }}
+          />
+          {actorCrit !== null && (
+            <DiceRoll
+              sides={10}
+              value={actorCrit}
+              roll={() => ({ face: actorCrit, commit: () => {} })}
+              size={38}
+              disabled
+            />
+          )}
+          <div>
+            <p className="text-sm font-semibold">Your roll</p>
+            <p className="num text-sm text-muted-foreground">
+              {rolled ? rolled.result.actor.total : "—"}
+            </p>
+          </div>
+        </div>
+
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">vs</p>
+
+        <div className="flex items-center gap-2">
+          <DiceRoll
+            sides={10}
+            value={opponentRevealed ? opponentDie : null}
+            label={`Roll ${opposition.npcName}'s 1d10`}
+            size={52}
+            disabled={busy || rolled === null || opponentRevealed}
+            roll={() => {
+              if (!rolled) throw new Error("Roll your own die first.");
+              return {
+                face: rolled.result.opponent.rolls[0] ?? 1,
+                commit: () => {
+                  setOpponentRevealed(true);
+                  onSettled(rolled);
+                },
+              };
+            }}
+          />
+          {opponentRevealed && opponentCrit !== null && (
+            <DiceRoll
+              sides={10}
+              value={opponentCrit}
+              roll={() => ({ face: opponentCrit, commit: () => {} })}
+              size={38}
+              disabled
+            />
+          )}
+          <div>
+            <p className="text-sm font-semibold">{opposition.npcName}</p>
+            <p className="num text-sm text-muted-foreground">
+              {opponentRevealed && rolled ? rolled.result.opponent.total : "—"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {!rolled && (
+        <p className="text-xs text-muted-foreground">
+          Roll your d10 first, then theirs. You have to beat their total — a tie goes to them.
+        </p>
+      )}
+      {rolled && !opponentRevealed && (
+        <p className="text-xs text-muted-foreground">
+          You have {rolled.result.actor.total}. Roll {opposition.npcName}&apos;s die to see if it
+          holds.
+        </p>
+      )}
+
+      {rolled && opponentRevealed && (
+        <div className="space-y-2">
+          <Verdict roll={rolled} />
+          <CritLine critical={rolled.result.actor.critical} who="Your" />
+          <CritLine critical={rolled.result.opponent.critical} who={`${opposition.npcName}'s`} />
+          <p className="font-mono text-xs text-muted-foreground">{rolled.result.actor.formula}</p>
+          <p className="font-mono text-xs text-muted-foreground">
+            {rolled.result.opponent.formula}
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** The classic layout: one die against a Difficulty Value. */
+function DvBody({
+  pending,
+  dv,
+  roll,
+  onSettled,
+  busy,
+}: {
+  pending: PendingCheck;
+  dv: number;
+  roll: () => CheckRoll;
+  onSettled: (roll: CheckRoll) => void;
+  busy: boolean;
+}) {
+  const [rolled, setRolled] = useState<Extract<CheckRoll, { kind: "dv" }> | null>(null);
+  const result = rolled?.result ?? null;
   const critDie = result && result.rolls.length > 1 ? result.rolls[1]! : null;
 
   return (
-    <section className="space-y-3 border border-accent/60 bg-accent/5 p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">Check called</p>
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          1d10 + STAT + Skill vs DV
-        </p>
-      </div>
-
-      <h3 className="text-lg font-bold leading-tight">
-        {pending.skillName}{" "}
-        <span className="text-sm font-normal text-muted-foreground">
-          ({pending.stat.toUpperCase()})
-        </span>
-      </h3>
-      {pending.intent && <p className="text-sm italic text-muted-foreground">{pending.intent}</p>}
-
+    <>
       <div className="grid grid-cols-4 gap-2 border-y border-border/60 py-2">
         <Stat label={pending.stat.toUpperCase()} value={String(pending.statValue)} />
         <Stat label="Skill" value={String(pending.skillLevel)} />
         <Stat label="Base" value={`+${pending.base}`} />
-        <Stat label={pending.bandName ?? "DV"} value={`DV ${pending.dv}`} />
+        <Stat label={pending.bandName ?? "DV"} value={`DV ${dv}`} />
       </div>
 
       {result === null ? (
@@ -67,12 +256,13 @@ export function CheckCard({
             size={52}
             disabled={busy}
             roll={() => {
-              const rolled = roll();
+              const next = roll();
+              if (next.kind !== "dv") throw new Error("This check is rolled against a DV.");
               return {
-                face: rolled.rolls[0] ?? 1,
+                face: next.result.rolls[0] ?? 1,
                 commit: () => {
-                  setResult(rolled);
-                  onSettled(rolled);
+                  setRolled(next);
+                  onSettled(next);
                 },
               };
             }}
@@ -110,17 +300,67 @@ export function CheckCard({
                   : "text-lg font-bold text-destructive"
               }
             >
-              {result.success ? "Success" : "Failure"} by {Math.abs(result.total - pending.dv)}
+              {result.success ? "Success" : "Failure"} by {Math.abs(result.total - dv)}
             </p>
           </div>
-          {result.critical && (
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-neon-pink">
-              {result.critical === "success" ? "Critical Success" : "Critical Failure"} — one extra
-              d10, no chaining
-            </p>
-          )}
+          <CritLine critical={result.critical} who="" />
           <p className="font-mono text-xs text-muted-foreground">{result.formula}</p>
         </div>
+      )}
+    </>
+  );
+}
+
+export function CheckCard({
+  pending,
+  roll,
+  onSettled,
+  busy,
+}: {
+  pending: PendingCheck;
+  roll: () => CheckRoll;
+  onSettled: (roll: CheckRoll) => void;
+  busy: boolean;
+}) {
+  const opposition = pending.opposition;
+
+  return (
+    <section className="space-y-3 border border-accent/60 bg-accent/5 p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
+          {opposition ? "Opposed check" : "Check called"}
+        </p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          {opposition
+            ? "1d10 + STAT + Skill vs their 1d10 + STAT + Skill"
+            : "1d10 + STAT + Skill vs DV"}
+        </p>
+      </div>
+
+      <h3 className="text-lg font-bold leading-tight">
+        {pending.skillName}{" "}
+        <span className="text-sm font-normal text-muted-foreground">
+          ({pending.stat.toUpperCase()}){opposition ? ` vs ${opposition.npcName}` : ""}
+        </span>
+      </h3>
+      {pending.intent && <p className="text-sm italic text-muted-foreground">{pending.intent}</p>}
+
+      {opposition ? (
+        <OpposedBody
+          pending={pending}
+          opposition={opposition}
+          roll={roll}
+          onSettled={onSettled}
+          busy={busy}
+        />
+      ) : (
+        <DvBody
+          pending={pending}
+          dv={pending.dv ?? 0}
+          roll={roll}
+          onSettled={onSettled}
+          busy={busy}
+        />
       )}
     </section>
   );

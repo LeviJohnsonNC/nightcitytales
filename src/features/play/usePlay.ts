@@ -22,6 +22,7 @@ import {
   type IpAward,
   type IpPlaystyle,
   jobIdForSeed,
+  opposedCheckForCharacter,
   performAttack,
   resolveSkillId,
   rollJobSeed,
@@ -32,8 +33,9 @@ import {
   type BeginTurnResult,
   type Mission,
   type MissionRuntime,
+  type OpposedCheckResult,
+  type Opposition,
   type PerformAttackResult,
-  type SkillCheckResult,
 } from "@/engine";
 
 import {
@@ -53,7 +55,12 @@ import {
 } from "@/lib/backend";
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
-import { logSkillCheck } from "@/features/campaign/skillCheckLog";
+import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
+import {
+  oppositionProfileOf,
+  reconcileOpposition,
+  rememberOpposition,
+} from "@/features/campaign/npcOpposition";
 import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
 import {
   loadLiveEncounter,
@@ -67,6 +74,7 @@ import { ipJudgementFn } from "@/features/gm/ipJudgement.server";
 import {
   actorFor,
   characterSummary,
+  findNpcByKey,
   npcSummaries,
   jobOutcome,
   recentEventLines,
@@ -81,9 +89,11 @@ import {
 } from "./attackPrompt";
 import {
   dvBandName,
+  oppositionFor,
   pendingChecksFrom,
   rollHistory,
   snapToPublishedDv,
+  type CheckRoll,
   type PendingCheck,
 } from "./checkPrompt";
 import { deathSaveOwed, pendingDeathSaveFrom, type PendingDeathSave } from "./deathSavePrompt";
@@ -240,6 +250,60 @@ async function narrate(
         } as unknown as Json,
         ...beatFields,
       });
+    } else if (action.kind === "opposed_check") {
+      if (attackPosted || postedSkillIds.size >= checkBudget) {
+        console.warn(
+          `GM proposed an opposed "${action.skillId}" check with no room left this turn ` +
+            `(budget ${checkBudget}, ${outstanding} already on the table) — not offered.`,
+        );
+        continue;
+      }
+      const skillId = resolveSkillId(action.skillId);
+      const opposingSkillId = resolveSkillId(action.opposingSkillId);
+      if (!skillId || !opposingSkillId) {
+        console.warn(
+          `GM proposed an opposed check naming an unknown skill ` +
+            `("${action.skillId}" vs "${action.opposingSkillId}") — no check offered.`,
+        );
+        continue;
+      }
+      if (postedSkillIds.has(skillId)) continue; // the same skill twice is one roll
+      postedSkillIds.add(skillId);
+
+      // The world remembers: an NPC the campaign has already measured opposes
+      // with the numbers it measured, not with whatever the model says today.
+      const npc = findNpcByKey(bundle.npcs, action.npcKey, action.npcName);
+      const { opposition, remembered } = reconcileOpposition(
+        {
+          name: action.npcName,
+          skillId: opposingSkillId,
+          skillLevel: action.opposingSkillLevel,
+          statValue: action.opposingStatValue,
+        },
+        oppositionProfileOf(npc),
+      );
+
+      const skillName = getSkill(skillId).name;
+      const opposingSkill = getSkill(opposingSkillId);
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "check_prompt",
+        summary: `${skillName} check — opposed by ${action.npcName} (${opposingSkill.name})`,
+        data: {
+          skillId,
+          skillName,
+          intent: action.intent,
+          opposition: {
+            npcKey: action.npcKey,
+            npcName: action.npcName,
+            skillId: opposingSkillId,
+            skillLevel: opposition.skillLevel,
+            statValue: opposition.statValue,
+            remembered,
+          },
+        } as unknown as Json,
+        ...beatFields,
+      });
     } else if (action.kind === "advance_beat") {
       // Only the model's proposed advancement is allowed to be wrong. Everything
       // after it is our own bookkeeping, and a failure there must surface — a
@@ -306,13 +370,77 @@ async function narrate(
   }
 }
 
+function critNote(critical: "success" | "failure" | null): string {
+  if (critical === "success") return " (Critical Success: an extra d10 was added)";
+  if (critical === "failure") return " (Critical Failure: an extra d10 was subtracted)";
+  return "";
+}
+
+/**
+ * Persist a rolled opposed check: the two rolls to the ledger, the NPC's numbers
+ * to their row so the same face opposes the same way next time, and then the
+ * result to the GM to narrate exactly as it landed.
+ */
+async function commitOpposedCheck(
+  bundle: PlayBundle,
+  pending: PendingCheck,
+  result: OpposedCheckResult,
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const opposition = pending.opposition;
+  if (!opposition) throw new Error("That check has no opposing side to resolve.");
+
+  await logOpposedCheck(campaignId, result, {
+    skillId: pending.skillId,
+    skillName: pending.skillName,
+    intent: pending.intent,
+    promptEventId: pending.eventId,
+    npcKey: opposition.npcKey,
+    ...(pending.beatId ? { beatId: pending.beatId } : {}),
+  });
+
+  const engineOpposition: Opposition = {
+    name: opposition.npcName,
+    skillId: opposition.skillId,
+    skillLevel: opposition.skillLevel,
+    statValue: opposition.statValue,
+  };
+  await rememberOpposition({
+    campaignId,
+    npcKey: opposition.npcKey,
+    npcName: opposition.npcName,
+    npc: findNpcByKey(bundle.npcs, opposition.npcKey, opposition.npcName),
+    opposition: engineOpposition,
+  });
+
+  const verdict = result.success
+    ? `SUCCESS by ${result.margin}`
+    : result.tie
+      ? "FAILURE on a tie — the totals matched and a tie goes to the one resisting"
+      : `FAILURE by ${Math.abs(result.margin)}`;
+
+  const fresh: PlayBundle = { ...bundle, events: await listCampaignEvents(campaignId) };
+  await narrate(
+    fresh,
+    `(ENGINE: the opposed ${pending.skillName} check against ${opposition.npcName} is RESOLVED. ` +
+      `Player: ${result.actor.formula} = ${result.actor.total}${critNote(result.actor.critical)}. ` +
+      `${opposition.npcName} (${opposition.skillName}): ${result.opponent.formula} = ${result.opponent.total}${critNote(result.opponent.critical)}. ` +
+      `Outcome: ${verdict}. Narrate this exact outcome for the intent "${pending.intent}", showing how ${opposition.npcName} met it. ` +
+      `Do not re-decide it, do not soften a failure, do not propose the same check again. End on a decision.)`,
+    { logInput: false },
+  );
+}
+
 /** Persist a rolled check and have the GM narrate the result, win or lose. */
 async function commitCheck(
   bundle: PlayBundle,
   pending: PendingCheck,
-  result: SkillCheckResult,
+  roll: CheckRoll,
 ): Promise<void> {
+  if (roll.kind === "opposed") return commitOpposedCheck(bundle, pending, roll.result);
+  const result = roll.result;
   const campaignId = bundle.campaign.id;
+  if (pending.dv === null) throw new Error("That check has no DV to resolve against.");
   await logSkillCheck(campaignId, result, {
     skillId: pending.skillId,
     skillName: pending.skillName,
@@ -322,12 +450,7 @@ async function commitCheck(
   });
 
   const verdict = result.success ? "SUCCESS" : "FAILURE";
-  const crit =
-    result.critical === "success"
-      ? " (Critical Success: an extra d10 was added)"
-      : result.critical === "failure"
-        ? " (Critical Failure: an extra d10 was subtracted)"
-        : "";
+  const crit = critNote(result.critical);
   const fresh: PlayBundle = {
     ...bundle,
     events: await listCampaignEvents(campaignId),
@@ -717,9 +840,9 @@ export function usePlay(campaignId: string) {
   });
 
   const check = useMutation({
-    mutationFn: ({ pending, result }: { pending: PendingCheck; result: SkillCheckResult }) => {
+    mutationFn: ({ pending, roll }: { pending: PendingCheck; roll: CheckRoll }) => {
       if (!query.data) throw new Error("Still loading.");
-      return commitCheck(query.data, pending, result);
+      return commitCheck(query.data, pending, roll);
     },
     onSuccess: invalidate,
   });
@@ -844,14 +967,31 @@ export function usePlay(campaignId: string) {
     pendingCheck,
     /** How many checks are on the table, so the UI can say another is coming. */
     pendingCheckCount: pendingCheck ? checkQueue.length : 0,
-    /** Roll the pending check — the engine decides the number. */
-    rollCheck: (pending: PendingCheck) => {
+    /**
+     * Roll the pending check — the engine decides the numbers. An opposed check
+     * rolls BOTH sides here, in one call, so the two dice the card reveals are
+     * the two the engine actually rolled.
+     */
+    rollCheck: (pending: PendingCheck): CheckRoll => {
       if (!bundle) throw new Error("Still loading.");
-      return skillCheckForCharacter(actorFor(bundle.character), pending.skillId, pending.dv);
+      const actor = actorFor(bundle.character);
+      const opposition = oppositionFor(pending);
+      if (opposition) {
+        return {
+          kind: "opposed",
+          result: opposedCheckForCharacter(actor, pending.skillId, opposition, undefined, {
+            actorName: bundle.character.character.name,
+          }),
+        };
+      }
+      if (pending.dv === null) throw new Error("That check has neither a DV nor an opponent.");
+      return {
+        kind: "dv",
+        result: skillCheckForCharacter(actor, pending.skillId, pending.dv),
+      };
     },
     /** Record the rolled check and let the GM narrate the outcome. */
-    commitCheck: (pending: PendingCheck, result: SkillCheckResult) =>
-      check.mutate({ pending, result }),
+    commitCheck: (pending: PendingCheck, roll: CheckRoll) => check.mutate({ pending, roll }),
     checkBusy: check.isPending,
     /** The attack waiting on the player's dice, if any. */
     pendingAttack,

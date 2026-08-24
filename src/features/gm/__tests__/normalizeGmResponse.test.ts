@@ -94,3 +94,81 @@ describe("normalizeGmResponse", () => {
     expect(onWarn).not.toHaveBeenCalled();
   });
 });
+
+describe("opposed checks", () => {
+  const opposed = {
+    kind: "opposed_check",
+    skillId: "persuasion",
+    npcKey: "trace-santiago",
+    npcName: "Trace Santiago",
+    opposingSkillId: "human_perception",
+    opposingSkillLevel: 3,
+    opposingStatValue: 5,
+    intent: "talk her round",
+  };
+
+  it("keeps a well-formed opposed check", () => {
+    const out = normalizeGmResponse(wire([opposed]), quiet);
+    expect(out.proposedActions[0]).toEqual({ ...opposed, kind: "opposed_check" });
+  });
+
+  it("reads it under the spellings a model drifts to", () => {
+    expect(actionKindOf({ kind: "opposedCheck" })).toBe("opposed_check");
+    expect(actionKindOf({ type: "contested_check" })).toBe("opposed_check");
+    expect(actionKindOf({ kind: "Opposed Check" })).toBe("opposed_check");
+  });
+
+  it("infers an opposed check over a plain one when an opposing side is present", () => {
+    // Both a skillId and an opposing skill: reading this as a DV check would
+    // invent a difficulty nobody set.
+    expect(actionKindOf({ skillId: "persuasion", opposingSkillId: "human_perception" })).toBe(
+      "opposed_check",
+    );
+  });
+
+  it("accepts snake_case field names and an opponent named instead of keyed", () => {
+    const out = normalizeGmResponse(
+      wire([
+        {
+          type: "opposed",
+          skill: "persuasion",
+          opposing_skill_id: "human_perception",
+          opponent: "Trace Santiago",
+          opposing_skill_level: 4,
+          opposing_stat_value: 6,
+          intent: "lean on her",
+        },
+      ]),
+      quiet,
+    );
+    expect(out.proposedActions[0]).toMatchObject({
+      kind: "opposed_check",
+      skillId: "persuasion",
+      npcName: "Trace Santiago",
+      npcKey: "Trace Santiago", // falls back to the name when no key is given
+      opposingSkillLevel: 4,
+      opposingStatValue: 6,
+    });
+  });
+
+  it("clamps improvised NPC numbers into the human band", () => {
+    const out = normalizeGmResponse(
+      wire([{ ...opposed, opposingSkillLevel: 99, opposingStatValue: 40 }]),
+      quiet,
+    );
+    expect(out.proposedActions[0]).toMatchObject({
+      opposingSkillLevel: 10,
+      opposingStatValue: 10,
+    });
+  });
+
+  it("warns rather than dropping an opposed check in silence", () => {
+    const onWarn = vi.fn();
+    const out = normalizeGmResponse(
+      wire([{ kind: "opposed_check", skillId: "persuasion", npcName: "Trace" }]),
+      { onWarn },
+    );
+    expect(out.proposedActions).toEqual([]);
+    expect(onWarn).toHaveBeenCalledWith(expect.stringContaining("missing a side"));
+  });
+});

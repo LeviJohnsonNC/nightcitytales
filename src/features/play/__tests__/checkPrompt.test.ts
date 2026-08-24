@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignEvent, FullCharacter } from "@/lib/backend";
-import { pendingCheckFrom, pendingChecksFrom, snapToPublishedDv, dvBandName } from "../checkPrompt";
+import {
+  pendingCheckFrom,
+  pendingChecksFrom,
+  rollHistory,
+  snapToPublishedDv,
+  dvBandName,
+} from "../checkPrompt";
 
 const event = (over: Partial<CampaignEvent>): CampaignEvent =>
   ({
@@ -114,5 +120,129 @@ describe("pendingChecksFrom — more than one check on the table", () => {
       event({ id: "r1", type: "skill_check", data: { skill_id: "pick_lock" } as never }),
     ];
     expect(pendingChecksFrom(events, twoSkilled).map((p) => p.skillId)).toEqual(["perception"]);
+  });
+});
+
+const talker = {
+  character: { name: "Red", role: "Solo" },
+  stats: { cool: 6, int: 6 },
+  skills: [{ skill_id: "persuasion", level: 4 }],
+} as unknown as FullCharacter;
+
+const opposedPrompt = (over: Record<string, unknown> = {}) =>
+  event({
+    id: "op",
+    type: "check_prompt",
+    data: {
+      skillId: "persuasion",
+      intent: "talk the fixer round",
+      opposition: {
+        npcKey: "trace-santiago",
+        npcName: "Trace Santiago",
+        skillId: "human_perception",
+        skillLevel: 3,
+        statValue: 5,
+        ...over,
+      },
+    } as never,
+  });
+
+describe("opposed check prompts", () => {
+  it("describes both sides and sets no DV", () => {
+    const pending = pendingCheckFrom([opposedPrompt()], talker);
+    expect(pending).not.toBeNull();
+    expect(pending?.dv).toBeNull();
+    expect(pending?.needed).toBeNull();
+    expect(pending?.bandName).toBeNull();
+    expect(pending?.base).toBe(10); // COOL 6 + Persuasion 4
+    expect(pending?.opposition).toMatchObject({
+      npcKey: "trace-santiago",
+      npcName: "Trace Santiago",
+      skillName: "Human Perception",
+      stat: "emp", // the printed STAT for that skill, not one the prompt chose
+      statValue: 5,
+      skillLevel: 3,
+      base: 8,
+      remembered: false,
+    });
+  });
+
+  it("marks numbers the campaign already knew", () => {
+    const pending = pendingCheckFrom([opposedPrompt({ remembered: true })], talker);
+    expect(pending?.opposition?.remembered).toBe(true);
+  });
+
+  it("drops an opposed prompt whose opposing skill is not a printed one", () => {
+    const pending = pendingCheckFrom([opposedPrompt({ skillId: "mind_reading" })], talker);
+    expect(pending).toBeNull();
+  });
+
+  it("drops an opposed prompt with no opposing numbers", () => {
+    const bad = event({
+      id: "op",
+      type: "check_prompt",
+      data: {
+        skillId: "persuasion",
+        opposition: { npcName: "Trace Santiago", skillId: "human_perception" },
+      } as never,
+    });
+    expect(pendingCheckFrom([bad], talker)).toBeNull();
+  });
+
+  it("still requires a DV when there is no opposition", () => {
+    const bad = event({ id: "x", type: "check_prompt", data: { skillId: "persuasion" } as never });
+    expect(pendingCheckFrom([bad], talker)).toBeNull();
+  });
+
+  it("queues opposed and DV prompts together, oldest first", () => {
+    const events = [
+      opposedPrompt(),
+      event({
+        id: "dv",
+        type: "check_prompt",
+        data: { skillId: "perception", dv: 15, intent: "watch the door" } as never,
+      }),
+    ];
+    const queue = pendingChecksFrom(events, talker);
+    expect(queue.map((c) => c.skillId)).toEqual(["persuasion", "perception"]);
+  });
+});
+
+describe("rollHistory", () => {
+  it("reads an opposed roll as the player's total against the total they faced", () => {
+    const rolls = rollHistory([
+      event({
+        id: "r1",
+        type: "skill_check",
+        data: { skill_name: "Persuasion" } as never,
+        roll: {
+          actor: { total: 17, critical: null },
+          opponent: { total: 12, critical: null },
+          opponentSide: { name: "Trace Santiago" },
+          success: true,
+          tie: false,
+          margin: 5,
+        } as never,
+      }),
+    ]);
+    expect(rolls[0]).toMatchObject({
+      skillName: "Persuasion",
+      total: 17,
+      dv: 12,
+      success: true,
+      opposedBy: "Trace Santiago",
+    });
+  });
+
+  it("still reads a plain DV roll", () => {
+    const rolls = rollHistory([
+      event({
+        id: "r2",
+        type: "skill_check",
+        data: { skill_name: "Perception" } as never,
+        roll: { total: 18, dv: 15, success: true, critical: null } as never,
+      }),
+    ]);
+    expect(rolls[0]).toMatchObject({ total: 18, dv: 15, success: true, opposedBy: null });
   });
 });

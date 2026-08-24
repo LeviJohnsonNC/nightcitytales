@@ -8,6 +8,7 @@ import type {
   Campaign,
   CampaignEvent,
   CampaignEventInsert,
+  CampaignNpc,
   CampaignUpdate,
   CampaignVitals,
   CampaignVitalsUpdate,
@@ -117,6 +118,54 @@ export async function startCampaign(payload: StartCampaignPayload): Promise<stri
 export async function resetAdventureForCharacter(characterId: string): Promise<void> {
   const { error } = await backendClient.from("campaigns").delete().eq("character_id", characterId);
   if (error) throw new Error(error.message);
+}
+
+/** One of a campaign's NPCs by the stable key the GM refers to them by. */
+export async function findCampaignNpc(
+  campaignId: string,
+  npcKey: string,
+): Promise<CampaignNpc | null> {
+  const res = await backendClient
+    .from("campaign_npcs")
+    .select("*")
+    .eq("campaign_id", campaignId)
+    .eq("npc_id", npcKey)
+    .maybeSingle();
+  return unwrap(res);
+}
+
+/**
+ * Create or update an NPC by key. The table has no unique constraint on
+ * (campaign_id, npc_id), so this reads before it writes rather than upserting.
+ */
+export async function saveCampaignNpc(
+  campaignId: string,
+  npcKey: string,
+  patch: { name?: string; data?: Json },
+): Promise<CampaignNpc> {
+  const existing = await findCampaignNpc(campaignId, npcKey);
+  if (existing) {
+    return unwrap(
+      await backendClient
+        .from("campaign_npcs")
+        .update(patch)
+        .eq("id", existing.id)
+        .select("*")
+        .single(),
+    );
+  }
+  return unwrap(
+    await backendClient
+      .from("campaign_npcs")
+      .insert({
+        campaign_id: campaignId,
+        npc_id: npcKey,
+        name: patch.name ?? npcKey,
+        ...(patch.data ? { data: patch.data } : {}),
+      })
+      .select("*")
+      .single(),
+  );
 }
 
 /** Append one entry to a campaign's immutable event ledger. */
