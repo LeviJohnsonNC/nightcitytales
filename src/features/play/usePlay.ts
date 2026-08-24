@@ -29,6 +29,9 @@ import {
   luckRemaining,
   opposedCheckForCharacter,
   performAttack,
+  BACKUP_TIERS,
+  backupTierFor,
+  callBackup,
   charismaticImpactCheck,
   resolveSkillId,
   rollJobSeed,
@@ -42,6 +45,7 @@ import {
   type MissionRuntime,
   type OpposedCheckResult,
   type Opposition,
+  type BackupCall,
   type CharismaticImpactResult,
   type PerformAttackResult,
   type WoundStateCode,
@@ -115,9 +119,13 @@ import {
   combatAwarenessAllocation,
   combatAwarenessFor,
   liveRoleAbility,
+  makerSpecialties,
+  makerSpecialtyBudget,
+  pendingBackup,
   roleCheckModifiers,
   withAbilityState,
 } from "./roleAbilityModel";
+import { arriveBackup, pendingBackupFrom } from "./backupFlow";
 
 /**
  * How many checks one turn may put on the table at once. Two lets a compound
@@ -559,6 +567,48 @@ async function commitCharismaticImpact(
   );
 }
 
+/**
+ * Record a Lawman calling it in. A call that lands is not help yet — it is help
+ * on its way, so what gets stored is the Round it turns up on.
+ */
+async function commitBackupCall(bundle: PlayBundle, call: BackupCall): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const beatId = bundle.beat?.id ?? null;
+  const round = bundle.encounter?.state.round ?? 0;
+  const pending = pendingBackupFrom(call, round);
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "backup_called",
+    summary: call.responded
+      ? `Called for Backup (rolled ${call.responseRoll}) — ${call.tier?.name} inbound, ` +
+        `${call.roundsUntilArrival} Round${call.roundsUntilArrival === 1 ? "" : "s"} out` +
+        (call.tierUp ? ", and they are sending better" : "") +
+        (call.groups > 1 ? ", two groups" : "")
+      : `Called for Backup (rolled ${call.responseRoll}) — nobody answers.`,
+    roll: call as unknown as Json,
+    data: { responded: call.responded } as unknown as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
+  });
+
+  if (pending) {
+    await updateCampaign(campaignId, {
+      role_state: withAbilityState(bundle.campaign, "backup", { pending }) as Json,
+    });
+  }
+
+  const fresh: PlayBundle = { ...bundle, events: await listCampaignEvents(campaignId) };
+  await narrate(
+    fresh,
+    `(ENGINE: the player called for Backup. ${
+      call.responded
+        ? `Someone answered: ${call.tier?.name} is ${call.roundsUntilArrival} Round(s) out. Narrate the call going out and the wait, and do NOT narrate them arriving yet.`
+        : `Nobody answered. Narrate the silence on the line. They can try again next Turn.`
+    } Do not re-decide it. End on a decision.)`,
+    { logInput: false },
+  );
+}
+
 /** Persist a rolled check and have the GM narrate the result, win or lose. */
 async function commitCheck(
   bundle: PlayBundle,
@@ -631,6 +681,28 @@ export async function commitAttack(
   const npc = await runNpcTurns(campaignId, beatId, live);
   live = npc.live;
   lines.push(...npc.lines);
+
+  // Backup that was called earlier turns up once its Round comes round, and
+  // joins the order from there. Checked after the hostile Turns, because that
+  // is what advances the Round.
+  const inbound = pendingBackup(bundle.campaign);
+  if (inbound && live.state.status === "active" && live.state.round >= inbound.arrivesOnRound) {
+    const tier = BACKUP_TIERS.find((t) => t.name === inbound.tierName) ?? null;
+    if (tier) {
+      const arrival = await arriveBackup({
+        campaignId,
+        beatId,
+        live,
+        tier,
+        groups: inbound.groups,
+      });
+      live = arrival.live;
+      lines.push(arrival.line);
+    }
+    await updateCampaign(campaignId, {
+      role_state: withAbilityState(bundle.campaign, "backup", {}) as Json,
+    });
+  }
 
   // The player's HP in the fight is the campaign's HP.
   const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
@@ -1077,6 +1149,25 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const backupMutation = useMutation({
+    mutationFn: (call: BackupCall) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitBackupCall(query.data, call);
+    },
+    onSuccess: invalidate,
+  });
+
+  const specialtyMutation = useMutation({
+    mutationFn: (specialties: Record<string, number>) => {
+      if (!query.data) throw new Error("Still loading.");
+      const campaign = query.data.campaign;
+      return updateCampaign(campaign.id, {
+        role_state: withAbilityState(campaign, "maker", { specialties }) as Json,
+      });
+    },
+    onSuccess: invalidate,
+  });
+
   const charismaMutation = useMutation({
     mutationFn: (result: CharismaticImpactResult) => {
       if (!query.data) throw new Error("Still loading.");
@@ -1208,6 +1299,29 @@ export function usePlay(campaignId: string) {
     /** Record it and let the GM narrate the room. */
     commitCharismaticImpact: (result: CharismaticImpactResult) => charismaMutation.mutate(result),
     charismaBusy: charismaMutation.isPending,
+
+    /** Lawman: roll to see whether anyone answers the call. */
+    rollBackup: (): BackupCall => {
+      if (!bundle) throw new Error("Still loading.");
+      const ability = liveRoleAbility(bundle.character);
+      if (!ability || ability.info.abilityId !== "backup") {
+        throw new Error("That is not your Role Ability.");
+      }
+      return callBackup(ability.rank);
+    },
+    commitBackupCall: (call: BackupCall) => backupMutation.mutate(call),
+    backupBusy: backupMutation.isPending,
+    /** The group this Rank can call, for the panel to name before the roll. */
+    backupTier: bundle ? backupTierFor(liveRoleAbility(bundle.character)?.rank ?? 0) : null,
+    /** Help already on its way, if a call has landed. */
+    pendingBackup: bundle ? pendingBackup(bundle.campaign) : null,
+
+    /** Tech: the Maker Specialty division and its budget. */
+    makerSpecialties: bundle ? makerSpecialties(bundle.campaign) : {},
+    makerBudget: bundle ? makerSpecialtyBudget(bundle.campaign, bundle.character) : null,
+    setMakerSpecialties: (specialties: Record<string, number>) =>
+      specialtyMutation.mutate(specialties),
+    makerBusy: specialtyMutation.isPending,
     /** The Luck Pool as the table sees it: what is left, and what it holds full. */
     luck: {
       remaining: bundle

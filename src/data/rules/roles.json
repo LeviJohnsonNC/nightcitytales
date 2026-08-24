@@ -212,7 +212,50 @@
         "startingRank": 4,
         "summary": "A Tech can fix, improve, modify, make, and invent items using Maker, their Role Ability. Each time their Maker Rank rises they gain a Rank in two Maker Specialties of their choice: Field Expertise, Upgrade Expertise, Fabrication Expertise, or Invention Expertise.",
         "mechanicalText": "A Tech can fix, improve, modify, make, and invent new items using Maker, their Role Ability. Whenever a Tech increases their Maker Rank by 1, they gain 1 Rank in two different Maker Specialties (Field Expertise, Upgrade Expertise, Fabrication Expertise, or Invention Expertise) of their choice. Field Expertise: Add your Rank in this Specialty to any Basic Tech, Cybertech, Electronics/Security Tech, Weaponstech, or Land/Sea/Air Vehicle Tech Skill Check made for a non-Maker purpose. With at least 1 Rank, instead of a lengthy full repair you can jury-rig a target to perfect condition (full SP and HP) as an Action at the item's normal repair DV, adding your Field Expertise Rank. The fix holds 10 minutes per Rank, after which the item reverts and can't be jury-rigged again until fully repaired. Upgrade Expertise: Improve an item in one of the listed ways (an item can benefit from only one such upgrade): e.g. lower non-borgware cyberware Humanity Loss by 1d6 (if normally 2d6+), add a slot, halve future repair time, make a one-handed weapon concealable, raise Average to Excellent quality, add an Attachment Slot or non-basic ammo to an Exotic weapon, +1 SP (if it had any), a Nomad-Rank-1 vehicle upgrade, or install one of your own inventions. Roll TECH + the item's usual repair Skill + this Rank + 1d10; buy materials of the item's price category (consumed). DV and time scale with price category. On a failure you start over, but materials and item are unharmed. Fabrication Expertise: Build an existing or self-invented item from materials. Roll TECH + the item's usual repair Skill + this Rank + 1d10; buy materials one price category below the item (Super Luxury items need materials worth half their Price). DV and time scale with price category; a failure means starting over with materials intact. Invention Expertise: Invent a new item or upgrade. Describe its function to the GM in terms of existing technology; if approved, the GM sets its rules and a Price Category (minimum Expensive). Roll TECH + the relevant repair Skill + this Rank + 1d10. Once invented, it can be built with Fabrication or Upgrade Expertise. The GM may rebalance an invention over time. Upgrade / Fabricate / Invent DV & Time by cost: Cheap/Everyday DV9, 1 hour; Costly DV13, 6 hours; Premium DV17, 1 day; Expensive DV21, 1 week; Very Expensive DV24, 2 weeks; Luxury DV29, 1 month; Super Luxury DV29, 1 month per 10,000eb of Cost.",
-        "_ranksPending": false
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "specialties": [
+            {
+              "id": "field_expertise",
+              "name": "Field Expertise"
+            },
+            {
+              "id": "upgrade_expertise",
+              "name": "Upgrade Expertise"
+            },
+            {
+              "id": "fabrication_expertise",
+              "name": "Fabrication Expertise"
+            },
+            {
+              "id": "invention_expertise",
+              "name": "Invention Expertise"
+            }
+          ],
+          "ranksPerMakerRank": 2,
+          "fieldExpertise": {
+            "addsRankToSkills": [
+              "basic_tech",
+              "cybertech",
+              "electronics_security_tech",
+              "weaponstech",
+              "land_vehicle_tech",
+              "sea_vehicle_tech",
+              "air_vehicle_tech"
+            ],
+            "nonMakerPurposeOnly": true,
+            "juryRig": {
+              "minRank": 1,
+              "restoresTo": "full SP and HP",
+              "rollAddsRank": true,
+              "holdsMinutesPerRank": 10,
+              "thenReverts": true,
+              "noRepeatUntilFullyRepaired": true
+            }
+          },
+          "_notModelled": "Upgrade, Fabrication and Invention Expertise need item quality tiers, attachment slots, materials and inventions, none of which this app models yet."
+        }
       }
     },
     "medtech": {
@@ -240,7 +283,95 @@
         "startingRank": 4,
         "summary": "The Media's Role Ability is Credibility. The Media can not only convince an audience of the truth of what they publish but also has a larger audience the more credible they are. Medias also have greater levels of access to sources and information; they are always in the know with their ears to the ground to pick up on rumors and information passively.",
         "mechanicalText": "The Media Role Ability is Credibility. A Media can convince an audience of what they publish, reaches a larger audience the more credible they are, has greater access to sources and information, and passively picks up rumors. Rumors: As long as you aren't entirely off-grid, at least twice per week the GM secretly rolls your Credibility Rank + 1d10; if it beats a DV on the Rumor Table's Passive column, the GM clues you in on the highest rumor you beat. You can also actively hunt rumors with STAT + a relevant Skill (Library Search, Conversation, Interrogation, etc.) + 1d10 vs. the Active DV. Rumor tiers (Passive DV / Active DV): Vague 7/13, Typical 9/15, Substantial 11/17, Detailed 13/21. Publishing Stories or Scoops: Each Rank sets your Access/Sources (who you can reach), Audience (how far a story spreads), Believability (a d10 chance the audience buys it), and Impact (how much real change a story causes). One piece of easily understood verifiable evidence raises the believe chance by 1; more than 4 distinct hard pieces raises it by 2 (these stack). LUCK can never be spent on a Believability Check. You can't publish another story on the exact same topic without new information. Ranks 1–2: local honchos/gang lords; neighborhood audience; 2-in-10 believe; small incremental change.\nRanks 3–4: city gang honchos, minor politicians, Corp Execs; known local contributor; 3-in-10; local bad guys arrested or ousted.\nRanks 5–6: major City players and politicos, local celebrities; Citywide reach; 4-in-10; change across the City, local laws may pass.\nRanks 7–8: local Corp presidents, mayors, City celebrities; Statewide reach; 5-in-10; mid-level corporations or governments may fall, multi-city laws.\nRank 9: divisional Corp heads, State politicos; national reach; 6-in-10; national change, large corporations or governments may be toppled.\nRank 10: world leaders, major Corporation heads, world-famous celebrities; worldwide reach; 7-in-10; global change: Megacorps and governments may fall, international laws established.",
-        "_ranksPending": false
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "rumors": {
+            "formulaPassive": "Credibility Rank + 1d10 vs the Passive DV, rolled secretly by the GM at least twice a week.",
+            "formulaActive": "STAT + a relevant Skill + 1d10 vs the Active DV.",
+            "tiers": [
+              {
+                "id": "vague",
+                "name": "Vague",
+                "passiveDv": 7,
+                "activeDv": 13
+              },
+              {
+                "id": "typical",
+                "name": "Typical",
+                "passiveDv": 9,
+                "activeDv": 15
+              },
+              {
+                "id": "substantial",
+                "name": "Substantial",
+                "passiveDv": 11,
+                "activeDv": 17
+              },
+              {
+                "id": "detailed",
+                "name": "Detailed",
+                "passiveDv": 13,
+                "activeDv": 21
+              }
+            ]
+          },
+          "publishing": {
+            "believabilityRoll": "1d10; the story is believed on a roll within the Rank's chance in 10.",
+            "evidenceBonus": [
+              {
+                "pieces": 1,
+                "bonus": 1,
+                "note": "One easily understood, verifiable piece."
+              },
+              {
+                "pieces": 5,
+                "bonus": 2,
+                "note": "More than four distinct hard pieces. Stacks with the above."
+              }
+            ],
+            "luckForbidden": true,
+            "noRepeatWithoutNewInformation": true,
+            "byRank": [
+              {
+                "maxRank": 2,
+                "audience": "your neighbourhood",
+                "believeIn10": 2,
+                "impact": "small incremental change"
+              },
+              {
+                "maxRank": 4,
+                "audience": "a known local contributor's readership",
+                "believeIn10": 3,
+                "impact": "local bad guys arrested or ousted"
+              },
+              {
+                "maxRank": 6,
+                "audience": "Citywide",
+                "believeIn10": 4,
+                "impact": "change across the City; local laws may pass"
+              },
+              {
+                "maxRank": 8,
+                "audience": "Statewide",
+                "believeIn10": 5,
+                "impact": "mid-level corporations or governments may fall"
+              },
+              {
+                "maxRank": 9,
+                "audience": "national",
+                "believeIn10": 6,
+                "impact": "national change; large corporations may be toppled"
+              },
+              {
+                "maxRank": 10,
+                "audience": "worldwide",
+                "believeIn10": 7,
+                "impact": "global change; Megacorps and governments may fall"
+              }
+            ]
+          }
+        }
       }
     },
     "exec": {
@@ -268,7 +399,91 @@
         "startingRank": 4,
         "summary": "The Lawman's Role Ability is Backup. With this ability, Lawmen can call upon the help of a group of fellow officers, based on the Lawman's Rank and the conditions under which they make the call. This Backup is armed and armored based on their Rank.",
         "mechanicalText": "The Lawman's Role Ability is Backup: they can call on a group of fellow law enforcers based on their Backup Rank and the situation. Backup is armed, armored, and played by the GM. As a Lawman rises in Rank they're promoted or recruited into agencies they can call Backup from. When in danger, as an Action you call for Backup of your Rank or lower, rolling equal to or under your Backup Rank on a d10 to get a response (abuse it and your Boss will fine you or throw you off the force). On a response, roll 1d6 for how many Rounds until they arrive; on a 6 the arriving Backup is one tier higher (at Rank 10, two groups arrive). If nobody responds, you can try again next Turn. Each tier lists Combat Number (a combined STAT+Skill base you add 1d10 to for attack or defense: Backup can't dodge bullets), SP (Body and Head), HP, and MOVE & BODY:\nRanks 1–2: Corporate Security: 4 renta-cops on foot with Heavy Pistols and Kevlar®. Combat 8 / SP 7 / HP 20 / MOVE & BODY 4.\nRanks 3–4: Local Beat Cops: 4 cops in two Compact Groundcars, Heavy Pistols, Kevlar®. Combat 10 / SP 7 / HP 25 / 5.\nRanks 5–7: Sheriff's Department: 2 County Mounties in a High Performance Groundcar with Heavy Pistols and Assault Rifles, Heavy Armorjack. Combat 14 / SP 13 / HP 35 / 4.\nRank 8: Recovery Zone Marshal: 1 lone marshal on a Superbike with a Very Heavy Pistol, Assault Rifle, Grenade Launcher, and Flak Armor. Combat 16 / SP 15 / HP 50 / 6.\nRank 9: C-SWAT: 2 Psycho Squad hitters with Assault Rifles and Rocket Launchers in Metalgear®, arriving by AV-4. Combat 15 / SP 18 / HP 35 / 4.\nRank 10: National Law Enforcement / Interpol / FBI / Netwatch: 2 serious hitters by AV-4 with Very Heavy Pistols and Assault Rifles in Light Armorjack. Combat 14 / SP 11 / HP 35 / 6. They stay after the fight to investigate, and the same pair keeps responding to related calls until the case closes.",
-        "_ranksPending": false
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "call": {
+            "responseRoll": "1d10, equal to or under your Backup Rank",
+            "arrivalRoll": "1d6 Rounds until they arrive",
+            "tierUpOnArrivalRoll": 6,
+            "twoGroupsAtRank": 10,
+            "retryNextTurn": true
+          },
+          "tiers": [
+            {
+              "minRank": 1,
+              "maxRank": 2,
+              "name": "Corporate Security",
+              "count": 4,
+              "combat": 8,
+              "sp": 7,
+              "hp": 20,
+              "move": 4,
+              "body": 4,
+              "note": "Renta-cops on foot with Heavy Pistols and Kevlar."
+            },
+            {
+              "minRank": 3,
+              "maxRank": 4,
+              "name": "Local Beat Cops",
+              "count": 4,
+              "combat": 10,
+              "sp": 7,
+              "hp": 25,
+              "move": 5,
+              "body": 5,
+              "note": "Two Compact Groundcars, Heavy Pistols, Kevlar."
+            },
+            {
+              "minRank": 5,
+              "maxRank": 7,
+              "name": "Sheriff's Department",
+              "count": 2,
+              "combat": 14,
+              "sp": 13,
+              "hp": 35,
+              "move": 4,
+              "body": 4,
+              "note": "County Mounties in a High Performance Groundcar, Heavy Pistols and Assault Rifles, Heavy Armorjack."
+            },
+            {
+              "minRank": 8,
+              "maxRank": 8,
+              "name": "Recovery Zone Marshal",
+              "count": 1,
+              "combat": 16,
+              "sp": 15,
+              "hp": 50,
+              "move": 6,
+              "body": 6,
+              "note": "A lone marshal on a Superbike: Very Heavy Pistol, Assault Rifle, Grenade Launcher, Flak Armor."
+            },
+            {
+              "minRank": 9,
+              "maxRank": 9,
+              "name": "C-SWAT",
+              "count": 2,
+              "combat": 15,
+              "sp": 18,
+              "hp": 35,
+              "move": 4,
+              "body": 4,
+              "note": "Psycho Squad hitters with Assault Rifles and Rocket Launchers in Metalgear, arriving by AV-4."
+            },
+            {
+              "minRank": 10,
+              "maxRank": 10,
+              "name": "National Law Enforcement",
+              "count": 2,
+              "combat": 14,
+              "sp": 11,
+              "hp": 35,
+              "move": 6,
+              "body": 6,
+              "note": "Serious hitters by AV-4, Very Heavy Pistols and Assault Rifles in Light Armorjack. They stay to investigate."
+            }
+          ]
+        }
       }
     },
     "fixer": {

@@ -90,8 +90,22 @@ export async function beginEncounter(input: {
   return live;
 }
 
-function playerOf(state: EncounterState): Combatant | null {
-  return Object.values(state.combatants).find((c) => c.isPlayer) ?? null;
+/**
+ * Who an NPC on their Turn shoots at.
+ *
+ * Until Backup existed every non-player combatant was hostile, so "the target"
+ * was always the player. Friendly NPCs changed that: a Lawman's Backup takes
+ * its Turn through the same loop, and must shoot the people it came to shoot.
+ */
+function targetFor(state: EncounterState, actor: Combatant): Combatant | null {
+  const standing = Object.values(state.combatants).filter((c) => !c.defeated);
+  if (actor.side === "hostile") {
+    // Hostiles go for the player first, and for their friends when the player
+    // is already down.
+    const player = standing.find((c) => c.isPlayer);
+    return player ?? standing.find((c) => c.side === "friendly") ?? null;
+  }
+  return standing.find((c) => c.side === "hostile") ?? null;
 }
 
 /**
@@ -127,7 +141,7 @@ export async function runNpcTurns(
     const live_actor = state.combatants[actor.id];
     if (!live_actor || live_actor.defeated) continue;
 
-    const target = playerOf(state);
+    const target = targetFor(state, live_actor);
     if (!target || target.defeated) break;
 
     const stats = live.data[actor.id];

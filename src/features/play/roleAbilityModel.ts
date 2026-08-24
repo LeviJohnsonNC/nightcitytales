@@ -7,6 +7,8 @@
  */
 import {
   combatAwarenessEffects,
+  fieldExpertiseBonus,
+  makerSpecialtyPool,
   operatorHaggleBonus,
   roleAbilityOf,
   type CombatAwarenessAllocation,
@@ -14,6 +16,7 @@ import {
   type RoleAbilityInfo,
 } from "@/engine";
 import type { Campaign, FullCharacter } from "@/lib/backend";
+import type { PendingBackup } from "./backupFlow";
 
 export type LiveRoleAbility = {
   info: RoleAbilityInfo;
@@ -74,6 +77,43 @@ export function combatAwarenessFor(
   return { ...effects, rank: ability.rank };
 }
 
+/** Backup that has answered and is on its way, if any. */
+export function pendingBackup(campaign: Campaign): PendingBackup | null {
+  const raw = abilityState(campaign, "backup")["pending"];
+  if (!raw || typeof raw !== "object") return null;
+  const p = raw as Record<string, unknown>;
+  if (typeof p["tierName"] !== "string" || typeof p["arrivesOnRound"] !== "number") return null;
+  return {
+    tierName: p["tierName"],
+    arrivesOnRound: p["arrivesOnRound"],
+    groups: typeof p["groups"] === "number" ? p["groups"] : 1,
+  };
+}
+
+/** A Tech's division of their Maker Specialty ranks. */
+export function makerSpecialties(campaign: Campaign): Record<string, number> {
+  const raw = abilityState(campaign, "maker")["specialties"];
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0)
+      out[key] = Math.trunc(value);
+  }
+  return out;
+}
+
+/** How many Specialty ranks a Tech has to spend, and how many are spent. */
+export function makerSpecialtyBudget(
+  campaign: Campaign,
+  character: FullCharacter,
+): { pool: number; spent: number } | null {
+  const ability = liveRoleAbility(character);
+  if (!ability || ability.info.abilityId !== "maker") return null;
+  const allocation = makerSpecialties(campaign);
+  const spent = Object.values(allocation).reduce((sum, value) => sum + value, 0);
+  return { pool: makerSpecialtyPool(ability.rank), spent };
+}
+
 /**
  * Every Role-Ability modifier that applies to one skill check, as labelled roll
  * modifiers. Empty for a Role with nothing to say about this check — which is
@@ -94,6 +134,14 @@ export function roleCheckModifiers(input: {
   if (awareness && input.skillId === "perception" && awareness.perception > 0) {
     out.push({ label: "Threat Detection", value: awareness.perception });
   }
+
+  // Tech: Field Expertise rides on the printed list of Tech Skills.
+  const field = fieldExpertiseBonus({
+    abilityId: ability.info.abilityId,
+    specialtyRank: makerSpecialties(input.campaign)["field_expertise"] ?? 0,
+    skillId: input.skillId,
+  });
+  if (field > 0) out.push({ label: "Field Expertise", value: field });
 
   // Fixer: the Operator Rank is part of the printed Haggle roll.
   const haggle = operatorHaggleBonus({

@@ -10,6 +10,8 @@ import {
   combatAwarenessAllocation,
   combatAwarenessFor,
   liveRoleAbility,
+  makerSpecialtyBudget,
+  pendingBackup,
   roleCheckModifiers,
   withAbilityState,
 } from "../roleAbilityModel";
@@ -135,5 +137,59 @@ describe("what a Role brings to a check", () => {
         skillId: "drive_land_vehicle",
       }),
     ).toEqual([]);
+  });
+});
+
+describe("Tech — Maker specialties", () => {
+  const tech = character("tech", 4);
+
+  it("gives two Specialty ranks per Rank of Maker", () => {
+    expect(makerSpecialtyBudget(campaign(), tech)).toEqual({ pool: 8, spent: 0 });
+  });
+
+  it("counts what has been spent", () => {
+    const stored = campaign({
+      maker: { specialties: { field_expertise: 3, upgrade_expertise: 2 } },
+    });
+    expect(makerSpecialtyBudget(stored, tech)?.spent).toBe(5);
+  });
+
+  it("is null for anyone who is not a Tech", () => {
+    expect(makerSpecialtyBudget(campaign(), character("solo", 4))).toBeNull();
+  });
+
+  it("puts Field Expertise on a Tech Skill and nowhere else", () => {
+    const stored = campaign({ maker: { specialties: { field_expertise: 3 } } });
+    expect(
+      roleCheckModifiers({ campaign: stored, character: tech, skillId: "basic_tech" }),
+    ).toEqual([{ label: "Field Expertise", value: 3 }]);
+    expect(
+      roleCheckModifiers({ campaign: stored, character: tech, skillId: "persuasion" }),
+    ).toEqual([]);
+  });
+
+  it("adds nothing when the ranks went to a Specialty that is not Field Expertise", () => {
+    const stored = campaign({ maker: { specialties: { fabrication_expertise: 4 } } });
+    expect(
+      roleCheckModifiers({ campaign: stored, character: tech, skillId: "basic_tech" }),
+    ).toEqual([]);
+  });
+});
+
+describe("Lawman — Backup on its way", () => {
+  it("reads a call that landed", () => {
+    const stored = campaign({
+      backup: { pending: { tierName: "Local Beat Cops", arrivesOnRound: 5, groups: 1 } },
+    });
+    expect(pendingBackup(stored)).toEqual({
+      tierName: "Local Beat Cops",
+      arrivesOnRound: 5,
+      groups: 1,
+    });
+  });
+
+  it("is null when nothing is inbound, or the record is junk", () => {
+    expect(pendingBackup(campaign())).toBeNull();
+    expect(pendingBackup(campaign({ backup: { pending: { tierName: 12 } } }))).toBeNull();
   });
 });

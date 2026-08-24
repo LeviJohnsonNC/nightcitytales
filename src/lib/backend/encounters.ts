@@ -61,6 +61,36 @@ export async function startEncounter(payload: StartEncounterPayload): Promise<st
   return data;
 }
 
+/**
+ * Put a new combatant into a fight already in progress — a Lawman's Backup
+ * turning up. start_encounter writes the opening roster in one transaction;
+ * this is the only way anyone joins after that.
+ */
+export async function addCombatant(
+  encounterId: string,
+  combatant: {
+    id: string;
+    name: string;
+    side: string;
+    is_player: boolean;
+    ref: number;
+    body: number;
+    hp_max: number;
+    hp_current: number;
+    seriously_wounded_threshold: number;
+    wound_state: string;
+    sp_head: number;
+    sp_body: number;
+    initiative: number | null;
+    data: Json;
+  },
+): Promise<void> {
+  const { error } = await backendClient
+    .from("encounter_combatants")
+    .insert({ encounter_id: encounterId, ...combatant });
+  if (error) throw new Error(error.message);
+}
+
 /** The active encounter for a campaign, if a fight is in progress. */
 export async function getActiveEncounter(campaignId: string): Promise<Encounter | null> {
   const res = await backendClient

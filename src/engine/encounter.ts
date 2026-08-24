@@ -151,6 +151,39 @@ export function startEncounter(combatants: Combatant[], rng: RNG = defaultRng): 
   return { ...state, status: outcome(state) };
 }
 
+/**
+ * Someone joins a fight already in progress — a Lawman's Backup arriving.
+ *
+ * They roll Initiative like everyone else and take their place in the order by
+ * it. Whoever's Turn it is keeps it: the active index follows the combatant it
+ * pointed at rather than the slot, so a latecomer slotting in above them does
+ * not hand the turn to somebody else.
+ */
+export function joinEncounter(
+  state: EncounterState,
+  combatant: Combatant,
+  rng: RNG = defaultRng,
+): EncounterState {
+  const next = clone(state);
+  const active = next.order[next.activeIndex];
+  const initiative = rollInitiative(
+    combatant.ref + (combatant.roleEffects?.initiative ?? 0),
+    rng,
+  ).total;
+
+  next.combatants[combatant.id] = { ...combatant, initiative };
+  const index = next.order.findIndex((id) => (next.combatants[id]?.initiative ?? 0) < initiative);
+  if (index === -1) next.order.push(combatant.id);
+  else next.order.splice(index, 0, combatant.id);
+
+  if (active) {
+    const moved = next.order.indexOf(active);
+    if (moved >= 0) next.activeIndex = moved;
+  }
+  next.status = outcome(next);
+  return next;
+}
+
 // ---------------------------------------------------------------------------
 // Advancing the turn — skip defeated combatants, bump the round on wrap.
 // ---------------------------------------------------------------------------
