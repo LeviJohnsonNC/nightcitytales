@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GmResponseSchema } from "../gmResponse";
+import { GmResponseSchema, MAX_REST_DAYS, normalizeGmResponse } from "../gmResponse";
 
 describe("GmResponseSchema", () => {
   it("parses a bare narration and applies defaults", () => {
@@ -31,5 +31,53 @@ describe("GmResponseSchema", () => {
     expect(() =>
       GmResponseSchema.parse({ narration: "x", proposedActions: [{ kind: "teleport" }] }),
     ).toThrow();
+  });
+});
+
+describe("rest proposals", () => {
+  it("accepts a rest with whole days", () => {
+    const out = normalizeGmResponse({
+      narration: "You hole up.",
+      proposedActions: [{ kind: "rest", days: 3, intent: "lie low and heal" }],
+    } as never);
+    expect(out.proposedActions[0]).toEqual({
+      kind: "rest",
+      days: 3,
+      intent: "lie low and heal",
+    });
+  });
+
+  it("defaults to a single day when none is stated", () => {
+    const out = normalizeGmResponse({
+      narration: "",
+      proposedActions: [{ kind: "rest", intent: "sleep it off" }],
+    } as never);
+    expect(out.proposedActions[0]).toMatchObject({ kind: "rest", days: 1 });
+  });
+
+  it("floors a fractional day rather than healing for half of one", () => {
+    const out = normalizeGmResponse({
+      narration: "",
+      proposedActions: [{ kind: "rest", days: 2.8, intent: "" }],
+    } as never);
+    expect(out.proposedActions[0]).toMatchObject({ days: 2 });
+  });
+
+  it("caps a hallucinated stretch of downtime", () => {
+    const out = normalizeGmResponse({
+      narration: "",
+      proposedActions: [{ kind: "rest", days: 900, intent: "" }],
+    } as never);
+    expect(out.proposedActions[0]).toMatchObject({ days: MAX_REST_DAYS });
+  });
+
+  it("never proposes zero or negative days", () => {
+    for (const days of [0, -4]) {
+      const out = normalizeGmResponse({
+        narration: "",
+        proposedActions: [{ kind: "rest", days, intent: "" }],
+      } as never);
+      expect(out.proposedActions[0]).toMatchObject({ days: 1 });
+    }
   });
 });

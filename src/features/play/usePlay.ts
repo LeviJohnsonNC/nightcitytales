@@ -21,8 +21,13 @@ import {
   missionPayout,
   type IpAward,
   type IpPlaystyle,
+  applyStabilization,
+  isHealingSkill,
   jobIdForSeed,
   performAttack,
+  rest,
+  REST_RATE_STAT,
+  stabilizationDvFor,
   resolveSkillId,
   rollJobSeed,
   startMission,
@@ -32,6 +37,7 @@ import {
   type BeginTurnResult,
   type Mission,
   type MissionRuntime,
+  type WoundStateCode,
   type PerformAttackResult,
   type SkillCheckResult,
 } from "@/engine";
@@ -219,7 +225,14 @@ async function narrate(
       }
       if (postedSkillIds.has(skillId)) continue; // the same skill twice is one roll
       const skillName = getSkill(skillId).name;
-      const dv = snapToPublishedDv(action.dv);
+      // A stabilization DV is set by how badly the patient is hurt, not by the
+      // GM — the same fairness rule the DV table gets. Fall back to the
+      // proposed DV only when there is nothing to stabilize (patching an NPC,
+      // say), where the ladder has nothing to say.
+      const stabilizationDv = isHealingSkill(skillId)
+        ? stabilizationDvFor(bundle.vitals.wound_state as WoundStateCode)
+        : null;
+      const dv = stabilizationDv ?? snapToPublishedDv(action.dv);
       const band = dvBandName(dv);
       postedSkillIds.add(skillId);
       await appendCampaignEvent({
@@ -255,6 +268,30 @@ async function narrate(
           await settleMission({ ...bundle, runtime: next }, next, bundle.mission);
         }
       }
+    } else if (action.kind === "rest") {
+      const bodyStat = bundle.character.stats?.body;
+      if (typeof bodyStat !== "number") continue; // no BODY, no printed rate
+      const outcome = rest({
+        hp: bundle.vitals.hp_current,
+        hpMax: bundle.vitals.hp_max,
+        seriouslyWoundedThreshold: bundle.vitals.seriously_wounded_threshold,
+        bodyStat,
+        days: action.days,
+      });
+      await updateCampaignVitals(campaignId, {
+        hp_current: outcome.hp,
+        wound_state: outcome.woundState,
+      });
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "rest",
+        summary:
+          outcome.restored > 0
+            ? `Rested ${outcome.days} day${outcome.days === 1 ? "" : "s"} — ${outcome.restored} HP recovered (BODY ${bodyStat}/day), now ${outcome.hp}/${bundle.vitals.hp_max}.`
+            : `Rested ${outcome.days} day${outcome.days === 1 ? "" : "s"} — no Hit Points recovered.`,
+        data: { ...outcome, bodyStat } as unknown as Json,
+        ...beatFields,
+      });
     } else if (action.kind === "start_encounter") {
       if (live) continue; // one fight at a time
       live = await beginEncounter({
@@ -322,13 +359,45 @@ async function commitCheck(
       : result.critical === "failure"
         ? " (Critical Failure: an extra d10 was subtracted)"
         : "";
+
+  // A resolved First Aid / Paramedic check has a mechanical effect, and the
+  // engine owns it: stabilizing a Mortally Wounded patient brings them to 1 HP,
+  // and at lighter wounds it stops the bleeding without restoring anything.
+  let healingNote = "";
+  if (isHealingSkill(pending.skillId)) {
+    const outcome = applyStabilization({
+      hp: bundle.vitals.hp_current,
+      hpMax: bundle.vitals.hp_max,
+      seriouslyWoundedThreshold: bundle.vitals.seriously_wounded_threshold,
+      success: Boolean(result.success),
+    });
+    if (outcome.stabilized) {
+      await updateCampaignVitals(campaignId, {
+        hp_current: outcome.hp,
+        wound_state: outcome.woundState,
+      });
+      healingNote =
+        outcome.restored > 0
+          ? ` The patient is stabilized at ${outcome.hp} HP${outcome.unconscious ? ", and is unconscious for about a minute" : ""}.`
+          : " The patient is stabilized; the bleeding stops, but no Hit Points come back — those need rest.";
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "stabilized",
+        summary: healingNote.trim(),
+        data: outcome as unknown as Json,
+        ...(pending.beatId ? { beat_id: pending.beatId } : {}),
+      });
+    } else if (!result.success) {
+      healingNote = " The patient is not stabilized; nothing about their condition improves.";
+    }
+  }
   const fresh: PlayBundle = {
     ...bundle,
     events: await listCampaignEvents(campaignId),
   };
   await narrate(
     fresh,
-    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again. End on a decision.)`,
+    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}".${healingNote} Do not re-decide it, do not soften a failure, do not propose the same check again. End on a decision.)`,
     { logInput: false },
   );
 }

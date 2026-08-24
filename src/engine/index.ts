@@ -8,6 +8,7 @@ export * from "./checkDV";
 export * from "./statGeneration";
 export * from "./skillAllocation";
 export * from "./humanity";
+export * from "./healing";
 export * from "./improvementPoints";
 export * from "./advancement";
 export * from "./lifepath";

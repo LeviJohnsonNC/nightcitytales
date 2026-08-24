@@ -1,0 +1,15 @@
+{
+  "_source": {
+    "book": "Cyberpunk RED Core Rulebook",
+    "publisher": "R. Talsorian Games",
+    "pages": "225-227 (Wounds, Healing and Death)",
+    "note": "Stabilization DVs are not repeated here — they live with the wound states in creation-rules.json, which is the one place that ladder is written down."
+  },
+  "_rules": {
+    "rest": "A Character recovers Hit Points equal to their BODY for every full day of rest.",
+    "stabilization": "A First Aid or Paramedic check against the wound state's stabilization DV stabilizes the patient. Stabilizing a Mortally Wounded Character restores them to 1 HP and leaves them Unconscious for 1 minute; at lighter wound states stabilization stops the deterioration but restores no Hit Points — those come back with rest.",
+    "cap": "Healing never takes a Character above their maximum Hit Points."
+  },
+  "restHpPerDayStat": "body",
+  "healingSkills": ["first_aid", "paramedic"]
+}

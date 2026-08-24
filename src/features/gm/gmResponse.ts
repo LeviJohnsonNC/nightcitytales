@@ -63,6 +63,12 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     distance: z.number().int(),
   }),
   z.object({ kind: z.literal("advance_beat"), to: z.string() }),
+  z.object({
+    kind: z.literal("rest"),
+    /** Whole days of downtime. The engine heals BODY Hit Points per full day. */
+    days: z.number().int(),
+    intent: z.string(),
+  }),
   z.object({ kind: z.literal("none") }),
 ]);
 export type GmProposedAction = z.infer<typeof GmProposedActionSchema>;
@@ -152,6 +158,9 @@ function normalizeEnemies(raw: unknown): GmEnemy[] {
 }
 
 /** Narrow the loose model output into the typed GM response the engine uses. */
+/** The longest stretch of downtime one proposal may claim. */
+export const MAX_REST_DAYS = 7;
+
 export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
   const proposedActions: GmProposedAction[] = [];
   for (const raw of wire.proposedActions ?? []) {
@@ -184,6 +193,14 @@ export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
     } else if (kind === "advance_beat") {
       const to = str(a["to"]) ?? str(a["beatId"]);
       if (to) proposedActions.push({ kind: "advance_beat", to });
+    } else if (kind === "rest") {
+      // A stretch of downtime. The rate is per FULL day, so a part-day is
+      // floored rather than rounded — num() rounds, which would hand out a day
+      // the fiction never had. Bounded so a hallucinated "rest 900 days" cannot
+      // heal a character to full off a typo; the engine still owns the rate.
+      const raw = a["days"] ?? a["duration"];
+      const days = typeof raw === "number" && Number.isFinite(raw) ? Math.floor(raw) : 1;
+      proposedActions.push({ kind: "rest", days: clamp(days, 1, MAX_REST_DAYS), intent });
     }
   }
 
