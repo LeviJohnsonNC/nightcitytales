@@ -239,17 +239,26 @@ function CharacterCard({
   );
 }
 
-export function RosterList({ userId }: { userId: string }) {
+export function RosterList({ userId: _userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [pendingDelete, setPendingDelete] = useState<RosterEntry | null>(null);
+  const [pendingReset, setPendingReset] = useState<RosterEntry | null>(null);
 
   const { data, isPending, error } = useQuery({ queryKey: ["roster"], queryFn: listRoster });
-  const duplicate = useOpenAsDraft(userId);
 
   const start = useMutation({
     mutationFn: (entry: RosterEntry) => startOrResumeAdventure(entry),
     onSuccess: (campaignId) => navigate({ to: "/play/$id", params: { id: campaignId } }),
+  });
+
+  const reset = useMutation({
+    mutationFn: (id: string) => resetAdventureForCharacter(id),
+    onSuccess: () => {
+      setPendingReset(null);
+      void queryClient.invalidateQueries({ queryKey: ["roster"] });
+      void queryClient.invalidateQueries({ queryKey: ["campaign"] });
+    },
   });
 
   const remove = useMutation({
