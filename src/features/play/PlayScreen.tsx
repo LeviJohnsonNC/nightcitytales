@@ -10,12 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
 import { getSkill, resolveSkillId, IP_PLAYSTYLES, type IpPlaystyle } from "@/engine";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
 import { CombatCard } from "./CombatCard";

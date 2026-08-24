@@ -185,8 +185,7 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       page: 14,
       gmBrief:
         "With therapy, Lucy Rhinemeyer will live a full life again. The other six women are returned to their families; Rocklin Augmentics pays for postmortem biosculpting so they can be buried with their own faces. The Crew is paid the remainder of their wages. If they staked Ruthven through the heart — or did something equally dramatic, like taking his head — they've earned a favor with the Philharmonic Vampyres. The curtain falls on Night City. Lock your doors.",
-      playerBrief:
-        "It's over. Time to settle up, and to see what the night cost you.",
+      playerBrief: "It's over. Time to settle up, and to see what the night cost you.",
       exits: [],
     },
   ],
