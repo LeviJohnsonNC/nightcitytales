@@ -114,26 +114,29 @@ function SuggestionBar({
       <div className="flex flex-wrap gap-2">
         {suggestions.map((s) => {
           const hint = s.skill ? skillHint(character, s.skill) : null;
+          const isSkill = hint !== null;
           const button = (
             <Button
               variant="outline"
               size="sm"
               disabled={busy}
               className={`h-auto whitespace-normal py-2 text-left ${
-                hint ? "border-accent/60" : ""
+                isSkill
+                  ? "border-neon-pink shadow-[0_0_8px_rgba(255,61,154,0.25)] hover:border-neon-pink/80"
+                  : ""
               }`}
               onClick={() => onPick(s)}
             >
               {s.label}
             </Button>
           );
-          if (!hint) return <span key={s.label}>{button}</span>;
+          if (!isSkill) return <span key={s.label}>{button}</span>;
           return (
             <Tooltip key={s.label}>
               <TooltipTrigger asChild>{button}</TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="max-w-xs border border-accent bg-card text-foreground"
+                className="max-w-xs border border-neon-pink bg-card text-foreground"
               >
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                   Skill
