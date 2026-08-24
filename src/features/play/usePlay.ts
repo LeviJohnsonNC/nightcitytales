@@ -36,7 +36,6 @@ import {
   type OpposedCheckResult,
   type Opposition,
   type PerformAttackResult,
-  type SkillCheckResult,
 } from "@/engine";
 
 import {
