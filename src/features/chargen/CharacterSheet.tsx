@@ -243,8 +243,7 @@ export function CharacterSheet({
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {sheet.statOrder.map((stat) => {
             const value = sheet.stats[stat];
-            const isEmp = stat === "emp";
-            const current = isEmp ? sheet.empCurrent : (value ?? null);
+            const current = stat === "emp" ? sheet.empCurrent : (value ?? null);
             return (
               <StatInfoDialog key={stat} stat={stat} value={current ?? null}>
                 <Box
