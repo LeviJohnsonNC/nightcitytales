@@ -502,6 +502,15 @@ export function CharacterSheet({
         )}
       </CollapsiblePanel>
 
+      {/* 8b — The woven background, folded away until asked for */}
+      {state.background.trim() !== "" && (
+        <CollapsiblePanel title="Background" note="woven from your Lifepath">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-text">
+            {state.background}
+          </p>
+        </CollapsiblePanel>
+      )}
+
       {/* 9 — Outfit, ammo, cash, housing */}
       <div className="grid gap-4 md:grid-cols-2">
         <Panel title="Outfit & Fashion">
