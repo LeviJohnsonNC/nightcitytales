@@ -16,6 +16,7 @@ import {
 } from "@/engine";
 import type { AssembledCharacter, CharacterBuild, PackageEntry } from "@/engine";
 import { ItemInfo, type ItemKindLabel } from "./ItemInfo";
+import { SkillInfo, StatInfoDialog } from "./SheetInfo";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
 import { PortraitLightbox } from "./PortraitLightbox";
