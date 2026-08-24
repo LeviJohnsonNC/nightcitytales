@@ -262,7 +262,6 @@ export type Database = {
       }
       campaigns: {
         Row: {
-          bills_paid_through_day: number
           character_id: string
           created_at: string
           current_mission_id: string | null
@@ -276,7 +275,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          bills_paid_through_day?: number
           character_id: string
           created_at?: string
           current_mission_id?: string | null
@@ -290,7 +288,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          bills_paid_through_day?: number
           character_id?: string
           created_at?: string
           current_mission_id?: string | null
