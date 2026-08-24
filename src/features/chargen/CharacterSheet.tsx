@@ -250,7 +250,7 @@ export function CharacterSheet({
                 <Box
                   label={stat.toUpperCase()}
                   value={current === null || current === undefined ? "—" : String(current)}
-                  sub={isEmp && value !== undefined ? `max ${value}` : undefined}
+                  className="cursor-pointer hover:border-primary/60 hover:bg-surface/80 hover:shadow-[0_0_10px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] active:bg-surface/60"
                 />
               </StatInfoDialog>
             );
