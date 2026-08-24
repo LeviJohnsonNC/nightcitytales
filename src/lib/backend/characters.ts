@@ -206,7 +206,9 @@ export async function spendIpOnSkill(
     p_skill_id: skillId,
     p_new_level: newLevel,
     p_cost: cost,
-    p_specialization: specialization,
+    // The generated signature types this optional, so an unspecialized line
+    // omits it and hits the function's own DEFAULT NULL — the same thing.
+    ...(specialization === null ? {} : { p_specialization: specialization }),
   });
   if (error) throw new Error(error.message);
   return data as number;
