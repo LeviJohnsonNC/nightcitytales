@@ -4,6 +4,7 @@
  */
 import creationRules from "@/data/rules/creation-rules.json";
 import dvTable from "@/data/rules/dv-table.json";
+import recovery from "@/data/rules/recovery.json";
 import hpTable from "@/data/rules/hp-table.json";
 import ipAwards from "@/data/rules/ip-awards.json";
 import lifepathGeneral from "@/data/rules/lifepath-general.json";
@@ -219,6 +220,23 @@ export const REPUTATION = creationRules.reputation as {
 };
 
 export const DV_TABLE_DATA = dvTable;
+
+/**
+ * Healing, monthly costs and repair, read from recovery.json. That file is
+ * explicit about which of its values are transcribed from the book and which
+ * are this app's own modelling — read its provenance notes before trusting a
+ * number here.
+ */
+export const RECOVERY_RULES = recovery as unknown as {
+  _rules: {
+    naturalHealing: string;
+    restInterrupted: string;
+    stabilization: string;
+  };
+  healing: { hpPerDayOfRest: string; requiresStabilized: boolean; note: string };
+  month: { days: number };
+  armorRepair: { costPerMissingSpFraction: number };
+};
 
 /**
  * The printed rules for resolving a check against another character, read from

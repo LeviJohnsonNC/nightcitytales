@@ -24,6 +24,7 @@ export * from "./campaign";
 export * from "./skillCheck";
 export * from "./opposedCheck";
 export * from "./luck";
+export * from "./downtime";
 export * from "./skillMatch";
 export * from "./combatTables";
 export * from "./combat";

@@ -8,6 +8,7 @@ import type {
   Campaign,
   CampaignEvent,
   CampaignEventInsert,
+  CampaignInventoryItem,
   CampaignNpc,
   CampaignUpdate,
   CampaignVitals,
@@ -163,6 +164,66 @@ export async function saveCampaignNpc(
         name: patch.name ?? npcKey,
         ...(patch.data ? { data: patch.data } : {}),
       })
+      .select("*")
+      .single(),
+  );
+}
+
+/**
+ * Add a bought item to the campaign's kit, stacking onto an identical unequipped
+ * line rather than filing a second row for the same thing. Armor and weapons are
+ * tracked individually (their SP and mods diverge), so only stackable kinds
+ * stack; the caller says which by passing `stack`.
+ */
+export async function addInventoryItem(
+  campaignId: string,
+  item: { kind: string; itemId: string; quantity: number; stack: boolean },
+): Promise<CampaignInventoryItem> {
+  if (item.stack) {
+    const existing = await backendClient
+      .from("campaign_inventory")
+      .select("*")
+      .eq("campaign_id", campaignId)
+      .eq("kind", item.kind)
+      .eq("item_id", item.itemId)
+      .limit(1)
+      .maybeSingle();
+    const row = unwrap(existing);
+    if (row) {
+      return unwrap(
+        await backendClient
+          .from("campaign_inventory")
+          .update({ quantity: row.quantity + item.quantity })
+          .eq("id", row.id)
+          .select("*")
+          .single(),
+      );
+    }
+  }
+  return unwrap(
+    await backendClient
+      .from("campaign_inventory")
+      .insert({
+        campaign_id: campaignId,
+        kind: item.kind,
+        item_id: item.itemId,
+        quantity: item.quantity,
+      })
+      .select("*")
+      .single(),
+  );
+}
+
+/** Restore a repaired piece of armor to a given SP. */
+export async function setInventorySp(
+  inventoryId: string,
+  currentSp: number,
+): Promise<CampaignInventoryItem> {
+  return unwrap(
+    await backendClient
+      .from("campaign_inventory")
+      .update({ current_sp: currentSp })
+      .eq("id", inventoryId)
       .select("*")
       .single(),
   );

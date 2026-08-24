@@ -1,0 +1,29 @@
+{
+  "_source": {
+    "book": "Cyberpunk RED Core Rulebook",
+    "publisher": "R. Talsorian Games",
+    "pages": "Healing and Stabilization (Damage & Death chapter)",
+    "_provenance": "NOT transcribed from the printed page, unlike the rules files around it. Publisher and licensed-content sources were unreachable from the build environment, so the wording below follows consistent secondary summaries of the printed rules. Page numbers are deliberately not claimed. Confirm against the Core Rulebook before treating any of this as verified.",
+    "_confidence": "naturalHealing and restInterrupted were corroborated by independent sources and are quoted closely. stabilization is reported consistently but its DV should be checked. monthDays and armorRepair are OURS, not the book's — see their own notes."
+  },
+  "_rules": {
+    "naturalHealing": "Once stabilized, a character heals a number of Hit Points equal to their BODY for each full day they spend resting, doing only light activity.",
+    "restInterrupted": "If the patient pushes it, they gain no HP that day, their wounds reopen, and they must be stabilized again before natural healing resumes.",
+    "stabilization": "Stabilizing a Mortally Wounded character is TECH + First Aid or Paramedic + 1d10 against a DV. Reported as DV15; verify.",
+    "_verified": false
+  },
+  "healing": {
+    "hpPerDayOfRest": "BODY",
+    "requiresStabilized": true,
+    "note": "The rate is the character's BODY STAT, not a fixed number, so a tough character recovers faster."
+  },
+  "month": {
+    "days": 30,
+    "_provenance": "OURS, not the book's. Rent and Lifestyle are printed as monthly costs (creation-rules.json), and a day counter needs a month length to charge them against. 30 is the modelling choice; nothing in the rules states it."
+  },
+  "armorRepair": {
+    "costPerMissingSpFraction": 0.1,
+    "_provenance": "OURS, not the book's. The printed rule prices item repair by the item's Price Category and sets a TECH DV and a time cost, which this app does not model yet; no eurobuck figure for repairing ablated armor was verifiable from the build environment. This charges a tenth of the armor's catalog price for each point of SP restored, so a full rebuild of a badly chewed vest costs about what the vest did.",
+    "_alternativeReported": "Some secondary sources say ablated armor recovers 1 SP per day of rest for free. That reading may be about SUBDERMAL armor (which repairs itself via nanomachines) rather than worn armor, so it was not implemented. If the book supports it for worn armor, replace this paid repair with a per-day recovery in downtime."
+  }
+}
