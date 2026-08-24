@@ -3,7 +3,9 @@ import type { CampaignEvent, CampaignNpc, CampaignVitals, FullCharacter } from "
 import {
   actorFor,
   characterSummary,
+  gmSkillList,
   keySkills,
+  suggestionInput,
   jobOutcome,
   npcSummaries,
   recentEventLines,
@@ -154,5 +156,34 @@ describe("jobOutcome", () => {
     // campaigns.status, so neither may ever mean anything again.
     expect(jobOutcome("completed", "active")).toBeNull();
     expect(jobOutcome("dead", "active")).toBeNull();
+  });
+});
+
+describe("gmSkillList", () => {
+  it("lists trained skills and the Basic Skills they are untrained in", () => {
+    const list = gmSkillList(full);
+    expect(list[0]).toEqual({ skill: "Handgun", id: "handgun", base: 14 });
+    // Persuasion was never bought, but everyone rolls it at Level 0 (COOL 4).
+    expect(list).toContainEqual({ skill: "Persuasion", id: "persuasion", base: 4 });
+  });
+
+  it("never lists a skill twice", () => {
+    const ids = gmSkillList(full).map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("suggestionInput", () => {
+  it("sends an untagged suggestion as its plain label", () => {
+    expect(suggestionInput({ label: "Case the side entrance", skill: null })).toBe(
+      "Case the side entrance",
+    );
+  });
+
+  it("carries a tagged suggestion's skill back as an engine note", () => {
+    const sent = suggestionInput({ label: "Talk the guard down", skill: "persuasion" });
+    expect(sent).toContain("Talk the guard down");
+    expect(sent).toContain("persuasion");
+    expect(sent).toContain("skill_check");
   });
 });

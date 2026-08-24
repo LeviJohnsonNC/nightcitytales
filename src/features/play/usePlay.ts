@@ -210,7 +210,13 @@ async function narrate(
 
   for (const action of gm.proposedActions) {
     if (action.kind === "skill_check") {
-      if (attackPosted || postedSkillIds.size >= checkBudget) continue;
+      if (attackPosted || postedSkillIds.size >= checkBudget) {
+        console.warn(
+          `GM proposed a "${action.skillId}" check with no room left this turn ` +
+            `(budget ${checkBudget}, ${outstanding} already on the table) — not offered.`,
+        );
+        continue;
+      }
       // The model names skills in prose; the engine only knows printed ids.
       const skillId = resolveSkillId(action.skillId);
       if (!skillId) {

@@ -98,12 +98,41 @@ export type GmResponse = z.infer<typeof GmResponseSchema>;
  * and defaults are unreliable across providers' structured-output modes, and
  * models drift on item field names, so the wire shape is deliberately loose and
  * normalizeGmResponse() below narrows it into the typed GmResponse.
+ *
+ * Loose is not undescribed: an untyped array told the model nothing about what a
+ * proposed action looks like, and an action it spelled its own way was dropped —
+ * which is how checks stopped reaching the table. The item shapes are documented
+ * here so the schema itself carries the contract, and normalizeGmResponse accepts
+ * the spellings models reach for anyway.
  */
 export const GmWireResponseSchema = z.object({
   narration: z.string(),
-  proposedActions: z.array(z.unknown()).nullish(),
-  suggestedActions: z.array(z.unknown()).nullish(),
-  stateDeltas: z.array(z.unknown()).nullish(),
+  proposedActions: z
+    .array(z.unknown())
+    .describe(
+      'Mechanical actions for the engine to resolve. Each item is an object with a "kind" field ' +
+        "and the fields that kind needs: " +
+        '{"kind":"skill_check","skillId":"<id from the SKILLS list>","dv":<number>,"intent":"<what they are attempting>"}; ' +
+        '{"kind":"start_encounter","name":"<label>","enemies":[{"key","name","ref","body","hp","sp","attackSkill","weaponName","damageDice","rangeType","distance"}]}; ' +
+        '{"kind":"attack","targetId":"<enemy key>","intent":"<what they are doing>","distance":<metres>}; ' +
+        '{"kind":"advance_beat","to":"<beat id>"}. Use [] when nothing is proposed.',
+    )
+    .nullish(),
+  suggestedActions: z
+    .array(z.unknown())
+    .describe(
+      "Things the player could try right now. Each item is " +
+        '{"label":"<short in-fiction action>","skill":"<skill id it would lean on, or null>"}.',
+    )
+    .nullish(),
+  stateDeltas: z
+    .array(z.unknown())
+    .describe(
+      "Narrative state changes to record. Each item is " +
+        '{"kind":"set_flag","flag":"<name>"}, {"kind":"npc_disposition","npcKey":"<key>","delta":<number>}, ' +
+        'or {"kind":"note","text":"<what happened>"}.',
+    )
+    .nullish(),
   endsWithDecision: z.boolean().nullish(),
 });
 export type GmWireResponse = z.infer<typeof GmWireResponseSchema>;
@@ -117,6 +146,65 @@ const num = (value: unknown): number | null =>
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
+
+/** Collapse a model-authored kind ("Skill Check", "skillCheck") to a snake key. */
+function snake(raw: string): string {
+  return raw
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+/**
+ * The discriminator the engine reads is "kind", but nothing forces a model to
+ * spell it that way — and an action we cannot name is an action the player never
+ * gets to roll. So every plausible spelling of the field, and of the value, maps
+ * back onto the four kinds the engine actually resolves.
+ */
+const ACTION_KIND_KEYS = ["kind", "type", "action", "actionType", "action_type", "name"] as const;
+
+const ACTION_KIND_ALIASES: Record<string, GmProposedAction["kind"]> = {
+  skill_check: "skill_check",
+  check: "skill_check",
+  skill: "skill_check",
+  skill_roll: "skill_check",
+  roll: "skill_check",
+  ability_check: "skill_check",
+  start_encounter: "start_encounter",
+  encounter: "start_encounter",
+  begin_encounter: "start_encounter",
+  start_combat: "start_encounter",
+  combat: "start_encounter",
+  attack: "attack",
+  melee_attack: "attack",
+  ranged_attack: "attack",
+  advance_beat: "advance_beat",
+  advance: "advance_beat",
+  next_beat: "advance_beat",
+  beat: "advance_beat",
+  none: "none",
+  no_action: "none",
+};
+
+/**
+ * Which kind an action item is. Reads any of the spellings above, and when the
+ * model names none, infers the kind from the fields it did send — a payload with
+ * a skill and a DV is a check whatever it calls itself.
+ */
+export function actionKindOf(item: Loose): GmProposedAction["kind"] | null {
+  for (const key of ACTION_KIND_KEYS) {
+    const raw = str(item[key]);
+    if (!raw) continue;
+    const mapped = ACTION_KIND_ALIASES[snake(raw)];
+    if (mapped) return mapped;
+  }
+  if (item["enemies"] ?? item["hostiles"] ?? item["combatants"]) return "start_encounter";
+  if (str(item["skillId"]) ?? str(item["skill"]) ?? str(item["skill_id"])) return "skill_check";
+  if (str(item["targetId"]) ?? str(item["target"]) ?? str(item["target_id"])) return "attack";
+  if (str(item["to"]) ?? str(item["beatId"]) ?? str(item["beat_id"])) return "advance_beat";
+  return null;
+}
 
 /** Talking distance when the GM forgets to state one; still a printed range band. */
 export const DEFAULT_ATTACK_DISTANCE = 12;
@@ -151,20 +239,41 @@ function normalizeEnemies(raw: unknown): GmEnemy[] {
   return out;
 }
 
+export type NormalizeOptions = {
+  /**
+   * Where dropped actions are reported. A silently discarded proposal is a check
+   * the player never sees, so nothing here fails quietly by default.
+   */
+  onWarn?: (message: string) => void;
+};
+
 /** Narrow the loose model output into the typed GM response the engine uses. */
-export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
+export function normalizeGmResponse(
+  wire: GmWireResponse,
+  options: NormalizeOptions = {},
+): GmResponse {
+  const warn = options.onWarn ?? ((message: string) => console.warn(message));
   const proposedActions: GmProposedAction[] = [];
-  for (const raw of wire.proposedActions ?? []) {
-    if (!raw || typeof raw !== "object") continue;
+  const rawActions = wire.proposedActions ?? [];
+  for (const raw of rawActions) {
+    if (!raw || typeof raw !== "object") {
+      warn(`GM proposed a non-object action, dropped: ${JSON.stringify(raw)}`);
+      continue;
+    }
     const a = raw as Loose;
-    const kind = str(a["kind"]);
+    const kind = actionKindOf(a);
     const intent = str(a["intent"]) ?? str(a["description"]) ?? "";
+    if (kind === null) {
+      warn(`GM proposed an action with no recognizable kind, dropped: ${JSON.stringify(raw)}`);
+      continue;
+    }
     if (kind === "skill_check") {
-      const skillId = str(a["skillId"]) ?? str(a["skill"]);
+      const skillId = str(a["skillId"]) ?? str(a["skill"]) ?? str(a["skill_id"]);
       if (skillId)
         proposedActions.push({ kind: "skill_check", skillId, dv: num(a["dv"]) ?? 13, intent });
+      else warn(`GM proposed a check with no skill, dropped: ${JSON.stringify(raw)}`);
     } else if (kind === "attack") {
-      const targetId = str(a["targetId"]) ?? str(a["target"]);
+      const targetId = str(a["targetId"]) ?? str(a["target"]) ?? str(a["target_id"]);
       const distance = num(a["distance"]) ?? num(a["range"]);
       if (targetId)
         proposedActions.push({
@@ -173,6 +282,7 @@ export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
           intent,
           distance: clamp(distance ?? DEFAULT_ATTACK_DISTANCE, 1, 800),
         });
+      else warn(`GM proposed an attack with no target, dropped: ${JSON.stringify(raw)}`);
     } else if (kind === "start_encounter") {
       const enemies = normalizeEnemies(a["enemies"] ?? a["hostiles"] ?? a["combatants"]);
       if (enemies.length)
@@ -181,10 +291,15 @@ export function normalizeGmResponse(wire: GmWireResponse): GmResponse {
           name: str(a["name"]) ?? "Firefight",
           enemies,
         });
+      else warn(`GM proposed an encounter with no hostiles, dropped: ${JSON.stringify(raw)}`);
     } else if (kind === "advance_beat") {
-      const to = str(a["to"]) ?? str(a["beatId"]);
+      const to = str(a["to"]) ?? str(a["beatId"]) ?? str(a["beat_id"]);
       if (to) proposedActions.push({ kind: "advance_beat", to });
+      else warn(`GM proposed a beat advance with no destination, dropped: ${JSON.stringify(raw)}`);
     }
+  }
+  if (rawActions.length > 0 && proposedActions.length === 0) {
+    warn(`GM returned ${rawActions.length} proposed action(s) and none survived normalization.`);
   }
 
   const stateDeltas: GmStateDelta[] = [];
