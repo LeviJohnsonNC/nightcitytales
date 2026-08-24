@@ -121,3 +121,15 @@ describe("opposedCheckEvent", () => {
     expect(opposedCheckSummary(opposed)).toContain("SUCCESS by 5");
   });
 });
+
+describe("Luck on the ledger", () => {
+  it("records what a roll cost in Luck", () => {
+    const event = skillCheckEvent("camp-1", result, { skillId: "handgun", luckSpent: 3 });
+    expect((event.data as Record<string, unknown>)["luck_spent"]).toBe(3);
+  });
+
+  it("says nothing when no Luck was dedicated", () => {
+    const event = skillCheckEvent("camp-1", result, { skillId: "handgun", luckSpent: 0 });
+    expect((event.data as Record<string, unknown>)["luck_spent"]).toBeUndefined();
+  });
+});

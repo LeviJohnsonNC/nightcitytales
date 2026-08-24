@@ -25,6 +25,8 @@ export type SkillCheckContext = {
    * be outstanding at once and each still be matched to the die that settled it.
    */
   promptEventId?: string;
+  /** Luck Points dedicated to this roll, so the trace shows what it cost. */
+  luckSpent?: number;
 };
 
 /** Build the immutable ledger row for a resolved skill check. */
@@ -42,6 +44,7 @@ export function skillCheckEvent(
   if (context.skillName) data["skill_name"] = context.skillName;
   if (context.intent) data["intent"] = context.intent;
   if (context.promptEventId) data["prompt_event_id"] = context.promptEventId;
+  if (context.luckSpent) data["luck_spent"] = context.luckSpent;
 
   return {
     campaign_id: campaignId,
@@ -100,6 +103,7 @@ export function opposedCheckEvent(
   if (context.skillName) data["skill_name"] = context.skillName;
   if (context.intent) data["intent"] = context.intent;
   if (context.promptEventId) data["prompt_event_id"] = context.promptEventId;
+  if (context.luckSpent) data["luck_spent"] = context.luckSpent;
 
   return {
     campaign_id: campaignId,

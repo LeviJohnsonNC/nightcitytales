@@ -5,6 +5,7 @@
  * decides a hit, a damage total, or a Critical Injury.
  */
 import { useMemo, useState } from "react";
+import { LuckStepper } from "./LuckStepper";
 import type { PerformAttackResult } from "@/engine";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
 import type { FullCharacter } from "@/lib/backend";
@@ -27,13 +28,16 @@ export function CombatCard({
   roll,
   onSettled,
   busy,
+  luckRemaining,
 }: {
   pending: PendingAttack;
   character: FullCharacter;
   /** Ask the engine to resolve the attack with the chosen weapon. */
-  roll: (option: AttackOption) => PerformAttackResult;
-  onSettled: (option: AttackOption, result: PerformAttackResult) => void;
+  roll: (option: AttackOption, luckSpend: number) => PerformAttackResult;
+  onSettled: (option: AttackOption, result: PerformAttackResult, luckSpent: number) => void;
   busy: boolean;
+  /** Luck Points left this session — an attack roll is a Check like any other. */
+  luckRemaining: number;
 }) {
   const options = useMemo<AttackOption[]>(
     () => pending.weapons.map((w) => attackOption(pending, w, character)),
@@ -42,6 +46,7 @@ export function CombatCard({
   const usable = options.filter((o) => o.gap === null);
   const [chosenId, setChosenId] = useState<string | null>(usable[0]?.weapon.itemId ?? null);
   const [result, setResult] = useState<PerformAttackResult | null>(null);
+  const [luck, setLuck] = useState(0);
 
   const chosen = options.find((o) => o.weapon.itemId === chosenId) ?? null;
   const critDie = result && result.attack.rolls.length > 1 ? result.attack.rolls[1]! : null;
@@ -110,30 +115,38 @@ export function CombatCard({
       )}
 
       {result === null ? (
-        <div className="flex items-center gap-3">
-          <DiceRoll
-            sides={10}
-            value={null}
-            label={`Roll 1d10 to hit ${pending.target.name}`}
-            size={52}
+        <div className="space-y-3">
+          <LuckStepper
+            value={luck}
+            remaining={luckRemaining}
+            onChange={setLuck}
             disabled={busy || !chosen || chosen.gap !== null}
-            roll={() => {
-              const rolled = roll(chosen!);
-              return {
-                face: rolled.attack.rolls[0] ?? 1,
-                commit: () => {
-                  setResult(rolled);
-                  onSettled(chosen!, rolled);
-                },
-              };
-            }}
           />
-          <div>
-            <p className="text-sm font-semibold">Roll To-Hit</p>
-            <p className="text-xs text-muted-foreground">
-              {pending.target.name}: {pending.target.hp}/{pending.target.hpMax} HP, SP{" "}
-              {pending.target.spBody}
-            </p>
+          <div className="flex items-center gap-3">
+            <DiceRoll
+              sides={10}
+              value={null}
+              label={`Roll 1d10 to hit ${pending.target.name}`}
+              size={52}
+              disabled={busy || !chosen || chosen.gap !== null}
+              roll={() => {
+                const rolled = roll(chosen!, luck);
+                return {
+                  face: rolled.attack.rolls[0] ?? 1,
+                  commit: () => {
+                    setResult(rolled);
+                    onSettled(chosen!, rolled, luck);
+                  },
+                };
+              }}
+            />
+            <div>
+              <p className="text-sm font-semibold">Roll To-Hit</p>
+              <p className="text-xs text-muted-foreground">
+                {pending.target.name}: {pending.target.hp}/{pending.target.hpMax} HP, SP{" "}
+                {pending.target.spBody}
+              </p>
+            </div>
           </div>
         </div>
       ) : (

@@ -73,9 +73,15 @@ export type PendingCheck = {
   beatId: string | null;
 };
 
-/** A rolled check, tagged by how it was resolved. */
-export type CheckRoll =
-  { kind: "dv"; result: SkillCheckResult } | { kind: "opposed"; result: OpposedCheckResult };
+/**
+ * A rolled check, tagged by how it was resolved, carrying the Luck it was made
+ * with. The points ride along on the roll rather than being deducted up front:
+ * Luck is dedicated before the dice and paid for once they have been thrown, so
+ * a card the player never rolls costs them nothing.
+ */
+export type CheckRoll = { luckSpent: number } & (
+  { kind: "dv"; result: SkillCheckResult } | { kind: "opposed"; result: OpposedCheckResult }
+);
 
 /** The opposing side of a pending check, as the engine wants it. */
 export function oppositionFor(pending: PendingCheck): Opposition | null {

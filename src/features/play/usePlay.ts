@@ -21,7 +21,12 @@ import {
   missionPayout,
   type IpAward,
   type IpPlaystyle,
+  clampLuckSpend,
   jobIdForSeed,
+  luckAfterSpend,
+  luckModifier,
+  luckPoolMax,
+  luckRemaining,
   opposedCheckForCharacter,
   performAttack,
   resolveSkillId,
@@ -75,6 +80,7 @@ import {
   actorFor,
   characterSummary,
   findNpcByKey,
+  statsRecord,
   npcSummaries,
   jobOutcome,
   recentEventLines,
@@ -370,6 +376,21 @@ async function narrate(
   }
 }
 
+/**
+ * Take the Luck a roll was made with out of the pool.
+ *
+ * Called when the roll is committed, not when the stepper moves: Luck is
+ * dedicated before the dice and paid for once the dice have been thrown, so a
+ * card the player abandons mid-turn costs them nothing.
+ */
+async function payLuck(bundle: PlayBundle, spend: number): Promise<void> {
+  if (spend <= 0) return;
+  const remaining = luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character));
+  await updateCampaignVitals(bundle.campaign.id, {
+    luck_current: luckAfterSpend(remaining, spend),
+  });
+}
+
 function critNote(critical: "success" | "failure" | null): string {
   if (critical === "success") return " (Critical Success: an extra d10 was added)";
   if (critical === "failure") return " (Critical Failure: an extra d10 was subtracted)";
@@ -385,12 +406,14 @@ async function commitOpposedCheck(
   bundle: PlayBundle,
   pending: PendingCheck,
   result: OpposedCheckResult,
+  luckSpent: number,
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
   const opposition = pending.opposition;
   if (!opposition) throw new Error("That check has no opposing side to resolve.");
 
   await logOpposedCheck(campaignId, result, {
+    luckSpent,
     skillId: pending.skillId,
     skillName: pending.skillName,
     intent: pending.intent,
@@ -398,6 +421,10 @@ async function commitOpposedCheck(
     npcKey: opposition.npcKey,
     ...(pending.beatId ? { beatId: pending.beatId } : {}),
   });
+  // Paid after the roll is on the ledger. If this write is the one that fails,
+  // the player keeps points they have already had the benefit of — better than
+  // charging them for a roll no record was kept of.
+  await payLuck(bundle, luckSpent);
 
   const engineOpposition: Opposition = {
     name: opposition.npcName,
@@ -437,17 +464,22 @@ async function commitCheck(
   pending: PendingCheck,
   roll: CheckRoll,
 ): Promise<void> {
-  if (roll.kind === "opposed") return commitOpposedCheck(bundle, pending, roll.result);
+  const luckSpent = roll.luckSpent;
+  if (roll.kind === "opposed") {
+    return commitOpposedCheck(bundle, pending, roll.result, luckSpent);
+  }
   const result = roll.result;
   const campaignId = bundle.campaign.id;
   if (pending.dv === null) throw new Error("That check has no DV to resolve against.");
   await logSkillCheck(campaignId, result, {
+    luckSpent,
     skillId: pending.skillId,
     skillName: pending.skillName,
     intent: pending.intent,
     promptEventId: pending.eventId,
     ...(pending.beatId ? { beatId: pending.beatId } : {}),
   });
+  await payLuck(bundle, luckSpent);
 
   const verdict = result.success ? "SUCCESS" : "FAILURE";
   const crit = critNote(result.critical);
@@ -471,6 +503,7 @@ export async function commitAttack(
   pending: PendingAttack,
   option: AttackOption,
   result: PerformAttackResult,
+  luckSpent = 0,
 ): Promise<void> {
   if (!bundle.encounter) throw new Error("There is no encounter to attack in.");
   const campaignId = bundle.campaign.id;
@@ -489,6 +522,7 @@ export async function commitAttack(
       beatId,
     },
   );
+  await payLuck(bundle, luckSpent);
 
   const lines = [
     describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
@@ -654,6 +688,12 @@ async function startNextJob(bundle: PlayBundle): Promise<string> {
     current_mission_id: missionId,
     ip_awarded: null,
     status: "active",
+  });
+  // A new job is a new session: the Luck Pool refills. This app has always
+  // treated one job as one session — it is the unit Improvement Points are
+  // awarded on — so Luck refreshes on the same boundary.
+  await updateCampaignVitals(campaignId, {
+    luck_current: luckPoolMax(statsRecord(bundle.character)),
   });
   await appendCampaignEvent({
     campaign_id: campaignId,
@@ -852,13 +892,15 @@ export function usePlay(campaignId: string) {
       pending,
       option,
       result,
+      luckSpent,
     }: {
       pending: PendingAttack;
       option: AttackOption;
       result: PerformAttackResult;
+      luckSpent: number;
     }) => {
       if (!query.data) throw new Error("Still loading.");
-      return commitAttack(query.data, pending, option, result);
+      return commitAttack(query.data, pending, option, result, luckSpent);
     },
     onSuccess: invalidate,
   });
@@ -972,23 +1014,41 @@ export function usePlay(campaignId: string) {
      * rolls BOTH sides here, in one call, so the two dice the card reveals are
      * the two the engine actually rolled.
      */
-    rollCheck: (pending: PendingCheck): CheckRoll => {
+    rollCheck: (pending: PendingCheck, luckSpend = 0): CheckRoll => {
       if (!bundle) throw new Error("Still loading.");
       const actor = actorFor(bundle.character);
+      // Clamp against the live pool, not against what the card offered: the
+      // stepper cannot talk the engine into spending points that are not there.
+      const luckSpent = clampLuckSpend(
+        luckSpend,
+        luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character)),
+      );
+      const spend = luckModifier(luckSpent);
+      const modifiers = spend ? { modifiers: [spend] } : {};
       const opposition = oppositionFor(pending);
       if (opposition) {
         return {
           kind: "opposed",
+          luckSpent,
           result: opposedCheckForCharacter(actor, pending.skillId, opposition, undefined, {
             actorName: bundle.character.character.name,
+            ...modifiers,
           }),
         };
       }
       if (pending.dv === null) throw new Error("That check has neither a DV nor an opponent.");
       return {
         kind: "dv",
-        result: skillCheckForCharacter(actor, pending.skillId, pending.dv),
+        luckSpent,
+        result: skillCheckForCharacter(actor, pending.skillId, pending.dv, undefined, modifiers),
       };
+    },
+    /** The Luck Pool as the table sees it: what is left, and what it holds full. */
+    luck: {
+      remaining: bundle
+        ? luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character))
+        : 0,
+      max: bundle ? luckPoolMax(statsRecord(bundle.character)) : 0,
     },
     /** Record the rolled check and let the GM narrate the outcome. */
     commitCheck: (pending: PendingCheck, roll: CheckRoll) => check.mutate({ pending, roll }),
@@ -998,9 +1058,21 @@ export function usePlay(campaignId: string) {
     /** The live fight, for the initiative/status rail. */
     encounter: bundle?.encounter ?? null,
     /** Roll the attack — the engine resolves To-Hit, damage and armor. */
-    rollAttack: (pending: PendingAttack, option: AttackOption): PerformAttackResult => {
+    rollAttack: (
+      pending: PendingAttack,
+      option: AttackOption,
+      luckSpend = 0,
+    ): PerformAttackResult => {
       if (!bundle?.encounter) throw new Error("There is no encounter to attack in.");
       if (option.dv === null) throw new Error("This weapon has no printed Range DV here.");
+      // An attack roll is a Check, so Luck rides on it exactly as it does on a
+      // Persuasion roll.
+      const spend = luckModifier(
+        clampLuckSpend(
+          luckSpend,
+          luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character)),
+        ),
+      );
       return performAttack(bundle.encounter.state, {
         attackerId: pending.attacker.id,
         targetId: pending.target.id,
@@ -1010,11 +1082,16 @@ export function usePlay(campaignId: string) {
         skillValue: option.skillValue,
         dv: option.dv,
         damageDice: option.damageDice ?? 0,
+        ...(spend ? { modifiers: [spend] } : {}),
       });
     },
     /** Record the rolled attack, run the hostile turns, and narrate the result. */
-    commitAttack: (pending: PendingAttack, option: AttackOption, result: PerformAttackResult) =>
-      combat.mutate({ pending, option, result }),
+    commitAttack: (
+      pending: PendingAttack,
+      option: AttackOption,
+      result: PerformAttackResult,
+      luckSpent = 0,
+    ) => combat.mutate({ pending, option, result, luckSpent }),
     combatBusy: combat.isPending,
     /** The Death Save the player owes before acting, if any. */
     pendingDeathSave,
