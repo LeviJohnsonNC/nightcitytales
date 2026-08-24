@@ -496,13 +496,10 @@ function InputBar({
   busy: boolean;
 }) {
   const [text, setText] = useState("");
-  const [callRoll, setCallRoll] = useState(false);
   const send = async () => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    const payload = callRoll
-      ? `${trimmed}\n(ENGINE: the player is asking to roll for this. Propose a skill_check with a skillId from the SKILLS list and a DV from the published table, and stop.)`
-      : trimmed;
+    const payload = `${trimmed}\n(ENGINE: judge this action case by case. If it is risky, opposed, or uncertain, propose a skill_check with a skillId from the SKILLS list and a DV from the published table, and stop. If it is routine, just narrate the outcome.)`;
     const result = await onSend(payload);
     // Keep the intent in the box when the turn failed, so it can be retried.
     if (result !== false) setText("");
@@ -523,23 +520,12 @@ function InputBar({
         className="flex-1 resize-none"
         disabled={busy}
       />
-      <div className="flex flex-col gap-1">
-        <Button onClick={send} disabled={busy || !text.trim()}>
-          {busy ? "…" : "Act"}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={callRoll ? "default" : "outline"}
-          onClick={() => setCallRoll((v) => !v)}
-          disabled={busy}
-          title="Ask the GM to call for a skill check on this action"
-        >
-          Roll for it
-        </Button>
-      </div>
+      <Button onClick={send} disabled={busy || !text.trim()}>
+        {busy ? "…" : "Act"}
+      </Button>
     </div>
   );
+
 }
 
 export function PlayScreen({ campaignId }: { campaignId: string }) {
