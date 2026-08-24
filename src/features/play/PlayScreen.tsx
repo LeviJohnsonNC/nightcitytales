@@ -361,7 +361,7 @@ function WrapUpCard({
   status: string;
   play: ReturnType<typeof usePlay>;
 }) {
-  const died = status === "dead";
+  const died = status === "died";
   const summary = [...bundle.events]
     .reverse()
     .find((e) => e.type === "mission_completed" || e.type === "campaign_ended");
@@ -386,9 +386,37 @@ function WrapUpCard({
         {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
       </p>
       <IpPanel play={play} />
-      <Button asChild variant="outline" size="sm">
-        <Link to="/roster">Back to the roster</Link>
-      </Button>
+      {died ? (
+        <Button asChild variant="outline" size="sm">
+          <Link to="/roster">Back to the roster</Link>
+        </Button>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            The run continues — your eurobucks, wounds and gear carry over to the next job.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              onClick={() => play.nextJob()}
+              disabled={play.nextJobBusy || play.ipAwarded === null}
+              title={
+                play.ipAwarded === null
+                  ? "Tally this session's Improvement Points first"
+                  : "Line up the next job in Night City"
+              }
+            >
+              {play.nextJobBusy ? "Lining up work…" : "Take the next job"}
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/roster">Back to the roster</Link>
+            </Button>
+          </div>
+          {play.nextJobError && (
+            <p className="text-sm text-destructive">{play.nextJobError.message}</p>
+          )}
+        </div>
+      )}
     </section>
   );
 }
