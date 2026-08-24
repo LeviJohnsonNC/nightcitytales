@@ -89,6 +89,10 @@ export function SpendIpCard({
 
   const shown = showAll ? raises : affordable;
 
+  // Nothing banked, nothing to decide: the card stays out of the way until the
+  // session hands over some I.P.
+  if (improvementPoints === 0) return null;
+
   return (
     <section className="no-print space-y-3 rounded-md border border-border p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -96,13 +100,7 @@ export function SpendIpCard({
         <span className="font-mono text-sm">{improvementPoints} I.P. unspent</span>
       </div>
 
-      {improvementPoints === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          None yet. Improvement Points are awarded at the end of a session; spend them here to raise
-          a Skill.
-        </p>
-      ) : (
-        <>
+      <>
           <p className="text-xs text-muted-foreground">
             A Skill costs its new Level in I.P. (doubled for a Skill the sheet flags x2), one Level
             at a time, up to Level {MAX_SKILL_LEVEL}.
