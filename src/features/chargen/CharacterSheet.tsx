@@ -309,13 +309,18 @@ export function CharacterSheet({
                         } · Skill Base ${line.base ?? "—"}`}
                       >
                         <td className="py-1 pr-2 text-text">
-                          {line.name}
-                          {line.doubleCost && <span className="text-text-dim"> (x2)</span>}
-                          {line.granted && (
-                            <span className="ml-1 font-mono text-[10px] uppercase text-text-dim">
-                              free
+                          <span className="inline-flex items-center gap-1.5">
+                            <span>
+                              {line.name}
+                              {line.doubleCost && <span className="text-text-dim"> (x2)</span>}
+                              {line.granted && (
+                                <span className="ml-1 font-mono text-[10px] uppercase text-text-dim">
+                                  free
+                                </span>
+                              )}
                             </span>
-                          )}
+                            <SkillInfo skillId={line.skillId} />
+                          </span>
                         </td>
                         <td className="num w-12 py-1 text-right font-bold tabular-nums text-ember">
                           {line.base ?? "—"}
