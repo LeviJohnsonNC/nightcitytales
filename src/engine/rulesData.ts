@@ -20,6 +20,8 @@ export type SkillDefinition = {
   category: string;
   stat: string;
   doubleCost: boolean;
+  /** The book's own one-line description, read from skills.json. */
+  description: string | null;
   isBasicSkill: boolean;
   requiresSpecialization: boolean;
   specializationLabel: string | null;
