@@ -218,7 +218,6 @@ export type Database = {
           hp_max: number
           humanity_current: number
           humanity_max: number
-          luck_current: number | null
           mortal_save_failures: number
           seriously_wounded_threshold: number
           updated_at: string
@@ -231,7 +230,6 @@ export type Database = {
           hp_max: number
           humanity_current: number
           humanity_max: number
-          luck_current?: number | null
           mortal_save_failures?: number
           seriously_wounded_threshold: number
           updated_at?: string
@@ -244,7 +242,6 @@ export type Database = {
           hp_max?: number
           humanity_current?: number
           humanity_max?: number
-          luck_current?: number | null
           mortal_save_failures?: number
           seriously_wounded_threshold?: number
           updated_at?: string
