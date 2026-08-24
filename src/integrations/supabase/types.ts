@@ -827,16 +827,6 @@ export type Database = {
       owns_character: { Args: { _character_id: string }; Returns: boolean }
       owns_encounter: { Args: { _encounter_id: string }; Returns: boolean }
       save_character: { Args: { payload: Json }; Returns: string }
-      spend_ip_on_skill: {
-        Args: {
-          p_character_id: string
-          p_cost: number
-          p_new_level: number
-          p_skill_id: string
-          p_specialization?: string | null
-        }
-        Returns: number
-      }
       start_campaign: { Args: { payload: Json }; Returns: string }
       start_encounter: { Args: { payload: Json }; Returns: string }
     }
