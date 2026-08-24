@@ -172,7 +172,7 @@ export function CharacterSheet({
     <div className="sheet space-y-4">
       {/* 1 — Identity */}
       <section className="sheet-page-1 grid gap-4 border border-hairline bg-surface p-4 sm:grid-cols-[10rem_minmax(0,1fr)]">
-        <div className="aspect-[3/4] w-full">
+        <div className="neon-frame aspect-[3/4] w-full overflow-hidden">
           {generatedPortrait ? (
             <PortraitLightbox
               src={generatedPortrait}
