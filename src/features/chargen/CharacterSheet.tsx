@@ -226,26 +226,27 @@ export function CharacterSheet({
       </section>
 
       {/* 2 — STATs */}
-      <Panel title="STATs" note="current / maximum">
+      <Panel title="STATs" note="tap a STAT for what it is good for">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {sheet.statOrder.map((stat) => {
             const value = sheet.stats[stat];
             const isEmp = stat === "emp";
             const current = isEmp ? sheet.empCurrent : (value ?? null);
             return (
-              <Box
-                key={stat}
-                label={stat.toUpperCase()}
-                value={current === null || current === undefined ? "—" : String(current)}
-                sub={isEmp && value !== undefined ? `max ${value}` : undefined}
-              />
+              <StatInfoDialog key={stat} stat={stat} value={current ?? null}>
+                <Box
+                  label={stat.toUpperCase()}
+                  value={current === null || current === undefined ? "—" : String(current)}
+                  sub={isEmp && value !== undefined ? `max ${value}` : undefined}
+                />
+              </StatInfoDialog>
             );
           })}
         </div>
       </Panel>
 
       {/* 3 — Derived */}
-      <Panel title="Derived STATs" note="engine computed">
+      <Panel title="Derived STATs">
         {sheet.derived === null ? (
           <Empty>STATs are incomplete, so nothing derives yet.</Empty>
         ) : (
