@@ -9,7 +9,13 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
-import { IP_PLAYSTYLES, type IpPlaystyle } from "@/engine";
+import { getSkill, resolveSkillId, IP_PLAYSTYLES, type IpPlaystyle } from "@/engine";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
 import { CombatCard } from "./CombatCard";
@@ -18,7 +24,7 @@ import { DeathSaveCard } from "./DeathSaveCard";
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
 import { DowntimePanel } from "@/features/downtime/DowntimePanel";
-import { suggestionInput } from "./playModel";
+import { gmSkillList, suggestionInput } from "./playModel";
 import { usePlay, type PlayBundle } from "./usePlay";
 import type { RollRecord } from "./checkPrompt";
 
@@ -86,36 +92,68 @@ function NarrativeLog({
   );
 }
 
+type SkillHint = { name: string; base: number | null };
+
+/** Pretty skill name + how strong the character is in it, for the hover. */
+function skillHint(full: PlayBundle["character"], raw: string): SkillHint | null {
+  const id = resolveSkillId(raw);
+  if (!id) return null;
+  const entry = gmSkillList(full).find((s) => s.id === id);
+  return { name: getSkill(id).name, base: entry ? entry.base : null };
+}
+
 function SuggestionBar({
   suggestions,
   onPick,
   busy,
+  character,
 }: {
   suggestions: GmSuggestedAction[];
   onPick: (suggestion: GmSuggestedAction) => void;
   busy: boolean;
+  character: PlayBundle["character"];
 }) {
   if (suggestions.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-2">
-      {suggestions.map((s) => (
-        <Button
-          key={s.label}
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          className="h-auto whitespace-normal py-2 text-left"
-          onClick={() => onPick(s)}
-        >
-          {s.label}
-          {s.skill ? (
-            <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
-              {s.skill}
-            </span>
-          ) : null}
-        </Button>
-      ))}
-    </div>
+    <TooltipProvider delayDuration={150}>
+      <div className="flex flex-wrap gap-2">
+        {suggestions.map((s) => {
+          const hint = s.skill ? skillHint(character, s.skill) : null;
+          const button = (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              className={`h-auto whitespace-normal py-2 text-left ${
+                hint ? "border-accent/60" : ""
+              }`}
+              onClick={() => onPick(s)}
+            >
+              {s.label}
+            </Button>
+          );
+          if (!hint) return <span key={s.label}>{button}</span>;
+          return (
+            <Tooltip key={s.label}>
+              <TooltipTrigger asChild>{button}</TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Likely check
+                </p>
+                <p className="text-sm font-semibold">{hint.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {hint.base === null
+                    ? "You have no training or STAT on record for this."
+                    : hint.base === 0
+                      ? "Your base is 0 — you go in cold."
+                      : `Your base is ${hint.base} (STAT + skill level), added to your d10.`}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 }
 
@@ -597,6 +635,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
           suggestions={play.finished ? [] : play.suggestions}
           onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
           busy={play.busy || play.opening}
+          character={bundle.character}
         />
         <InputBar
           onSend={play.submit}

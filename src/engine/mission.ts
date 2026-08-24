@@ -39,8 +39,13 @@ export type Beat = {
   page?: number;
   /** Verbatim read-aloud text, where the source provides it. */
   readAloud?: string;
-  /** GM-facing brief the AI narrates this beat from. */
+  /** GM-facing brief the AI narrates this beat from. NEVER shown to the player. */
   gmBrief: string;
+  /**
+   * What the player legitimately knows while standing on this beat — safe to
+   * render in the UI. Anything secret belongs in gmBrief only.
+   */
+  playerBrief?: string;
   objectives?: string[];
   checks?: BeatCheck[];
   opposition?: string[];
