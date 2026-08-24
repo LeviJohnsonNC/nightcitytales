@@ -555,7 +555,10 @@ export function CharacterSheet({
           {sheet.packageGear.length > 0 && (
             <ul className="mb-3 space-y-0.5 text-sm text-text-muted">
               {sheet.packageGear.map((entry, i) => (
-                <li key={i}>{packageLineText(sheet, "gear", entry, i)}</li>
+                <li key={i} className="flex items-center gap-1.5">
+                  <span>{packageLineText(sheet, "gear", entry, i)}</span>
+                  <PackageInfo label={packageLineLabel(sheet, "gear", entry, i)} />
+                </li>
               ))}
             </ul>
           )}
