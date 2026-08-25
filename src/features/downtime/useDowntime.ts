@@ -1,10 +1,7 @@
 /**
- * Downtime, applied. The model says what resting, paying, buying and repairing
- * would do; this sequences the writes and records each one in the campaign
- * ledger, so the after-action shows up in the log alongside the job itself.
- *
- * Every mechanical number comes from the engine through downtimeModel. Nothing
- * here decides a cost or a healing rate.
+ * The Downtime panel's state. The operations themselves live in downtimeOps,
+ * so the Life loop performs the very same rest, bill payment and repair rather
+ * than a second implementation of each.
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +30,8 @@ export function useDowntime(campaignId: string) {
     void queryClient.invalidateQueries({ queryKey: ["downtime", campaignId] });
     // The play screen shows the same HP, eurobucks and kit.
     void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+    // Life reads the same HP, eurobucks, calendar and kit.
+    void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
   };
 
   const bundle = query.data ?? null;
