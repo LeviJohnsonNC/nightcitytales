@@ -845,8 +845,10 @@ async function settleMission(
     ...(runtime.currentBeatId ? { beat_id: runtime.currentBeatId } : {}),
   });
   // The campaign stays active: it is the character's run, not this one job.
-  // mission_progress already records the job as completed, and the player is
-  // offered the next one at wrap-up.
+  // The phase moves to aftermath — the wrap-up screen — and only the player's
+  // press moves it on to Life. The AI never performs this transition.
+  const after = nextPhase(phaseOf(bundle.campaign.phase), "end_job");
+  if (after) await setCampaignPhase(campaignId, after);
 }
 
 /**
@@ -927,21 +929,20 @@ async function settleDeath(bundle: PlayBundle): Promise<void> {
 }
 
 /**
- * Take the next job in the same campaign.
+ * Back to the street.
  *
- * The run continues: eurobucks, HP, wounds and inventory all carry over, which
- * is the whole point of the campaign outliving the job. Only the mission
- * pointer moves, and ip_awarded is cleared so the next session can be judged on
- * its own merits — I.P. are awarded per session, not once per character.
+ * Wrap-up is done, so the campaign returns to Life. The run continues:
+ * eurobucks, HP, wounds and inventory all carry over, which is the whole point
+ * of the campaign outliving the job. The mission pointer is cleared and
+ * ip_awarded reset, so the next session is judged on its own merits — and the
+ * next job has to arrive as an offer the player accepts, never as a screen they
+ * are dropped into.
  */
-async function startNextJob(bundle: PlayBundle): Promise<string> {
+async function returnToLife(bundle: PlayBundle): Promise<void> {
   const campaignId = bundle.campaign.id;
-  const missionId = jobIdForSeed(rollJobSeed());
-  const mission = getMission(missionId);
 
-  await saveMissionRuntime(campaignId, startMission(mission));
   await updateCampaign(campaignId, {
-    current_mission_id: missionId,
+    current_mission_id: null,
     ip_awarded: null,
     status: "active",
   });
@@ -953,11 +954,12 @@ async function startNextJob(bundle: PlayBundle): Promise<string> {
   });
   await appendCampaignEvent({
     campaign_id: campaignId,
-    type: "mission_started",
-    summary: `New job: ${mission.title}${mission.patron ? ` — ${mission.patron}` : ""}`,
-    data: { missionId } as unknown as Json,
+    type: "phase_changed",
+    summary: `${bundle.character.character.name} goes back to the street.`,
+    data: { phase: "life" } as unknown as Json,
   });
-  return missionId;
+  const back = nextPhase(phaseOf(bundle.campaign.phase), "close_out");
+  await setCampaignPhase(campaignId, back ?? "life");
 }
 
 /** Announce a finished fight in the ledger, and describe it for the GM. */
@@ -1275,7 +1277,7 @@ export function usePlay(campaignId: string) {
   const nextJobMutation = useMutation({
     mutationFn: () => {
       if (!query.data) throw new Error("Still loading.");
-      return startNextJob(query.data);
+      return returnToLife(query.data);
     },
     onSuccess: invalidate,
   });
