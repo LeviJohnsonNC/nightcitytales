@@ -518,6 +518,7 @@ export function useLife(campaignId: string) {
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
     void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+    void queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] });
   };
 
   const bundle = query.data;
