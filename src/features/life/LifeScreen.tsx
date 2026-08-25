@@ -18,7 +18,9 @@ import {
   clampLuckSpend,
   formatDuration,
   formatLifeClock,
+  getFaction,
   getSkill,
+  isHostile,
   knownTerms,
   luckModifier,
   luckPoolMax,
@@ -27,6 +29,7 @@ import {
   openAsks,
   resolveSkillId,
   skillCheckForCharacter,
+  standingBand,
   woundActionPenalty,
   type WoundStateCode,
 } from "@/engine";
@@ -73,6 +76,18 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
           <span className="text-accent">◆</span> {text}
         </p>
       );
+    case "pressure_arrived":
+      return (
+        <p className="my-1 border-l-2 border-destructive bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+          {text}
+        </p>
+      );
+    case "pressure_moved":
+      return (
+        <p className="font-mono text-xs text-muted-foreground">
+          <span className="text-destructive">▲</span> {text}
+        </p>
+      );
     case "npc_read":
       return (
         <p className="border-l-2 border-neon-pink/60 pl-3 font-mono text-xs text-neon-pink">
@@ -109,6 +124,8 @@ const LIFE_EVENT_TYPES = new Set([
   "hook_offered",
   "hook_negotiated",
   "npc_read",
+  "pressure_moved",
+  "pressure_arrived",
   "hook_declined",
   "mission_started",
   "mission_completed",
@@ -613,6 +630,27 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   </div>
                 </div>
               ))}
+            </section>
+          )}
+
+          {life.standings.length > 0 && (
+            <section className="space-y-2 border border-border bg-card p-4">
+              <Label>Standing</Label>
+              <ul className="space-y-1">
+                {life.standings.map((s) => (
+                  <li key={s.factionId} className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm">{getFaction(s.factionId).name}</span>
+                    <span
+                      className={`num font-mono text-[10px] uppercase tracking-[0.16em] ${
+                        isHostile(s.standing) ? "text-destructive" : "text-muted-foreground"
+                      }`}
+                      title={`Standing ${s.standing}`}
+                    >
+                      {standingBand(s.standing).label}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 

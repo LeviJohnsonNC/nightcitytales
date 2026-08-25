@@ -52,17 +52,14 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
 ]);
 export type LifeProposedAction = z.infer<typeof LifeProposedActionSchema>;
 
+/**
+ * World changes the model may record. There is deliberately NO clock here any
+ * more: a dial the model can name, size and move is not a clock. Pressure is
+ * reported as observations (see below) and priced by the engine.
+ */
 export const LifeDeltaSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("set_flag"), flag: z.string() }),
   z.object({ kind: z.literal("npc_disposition"), npcKey: z.string(), delta: z.number().int() }),
-  z.object({
-    kind: z.literal("clock"),
-    clockKey: z.string(),
-    label: z.string(),
-    delta: z.number().int(),
-    segments: z.number().int(),
-    hidden: z.boolean(),
-  }),
   z.object({ kind: z.literal("note"), text: z.string() }),
 ]);
 export type LifeDelta = z.infer<typeof LifeDeltaSchema>;
@@ -88,6 +85,9 @@ export type LifeNewSituation = {
   dueDay: number | null;
 };
 
+/** One thing the fiction noticed, for the engine to price. */
+export type LifeObservation = { observation: string; factionId: string | null };
+
 export type LifeResponse = {
   situation: LifeSituationCard;
   /**
@@ -104,6 +104,11 @@ export type LifeResponse = {
   resolution: string | null;
   proposedActions: LifeProposedAction[];
   deltas: LifeDelta[];
+  /**
+   * What the turn noticed, from the engine's closed vocabulary. The model
+   * reports; engine/clocks.ts decides what each one costs.
+   */
+  observations: LifeObservation[];
   newSituation: LifeNewSituation | null;
 };
 
@@ -119,6 +124,7 @@ export const LifeWireResponseSchema = z.object({
   resolution: z.string().nullish(),
   proposedActions: z.array(z.unknown()).nullish(),
   deltas: z.array(z.unknown()).nullish(),
+  observations: z.array(z.unknown()).nullish(),
   newSituation: z.unknown().nullish(),
 });
 export type LifeWireResponse = z.infer<typeof LifeWireResponseSchema>;
@@ -292,19 +298,10 @@ function normalizeDeltas(raw: unknown): LifeDelta[] {
     const kind = (str(d["kind"]) ?? str(d["type"]) ?? "").toLowerCase();
     const flag = str(d["flag"]);
     const npcKey = str(d["npcKey"]) ?? str(d["npc_key"]) ?? str(d["npc"]);
+    // A model reaching for a clock is reaching for authority it does not have.
+    // Dropped rather than approximated: what it noticed belongs in observations.
     const clockKey = str(d["clockKey"]) ?? str(d["clock_key"]) ?? str(d["clock"]);
-    if (kind === "clock" || clockKey) {
-      if (!clockKey) continue;
-      out.push({
-        kind: "clock",
-        clockKey,
-        label: str(d["label"]) ?? clockKey.replace(/_/g, " "),
-        delta: clamp(num(d["delta"]) ?? 1, -6, 6),
-        segments: clamp(num(d["segments"]) ?? 6, 2, 12),
-        hidden: d["hidden"] === true,
-      });
-      continue;
-    }
+    if (kind === "clock" || clockKey) continue;
     if (kind === "npc_disposition" || (npcKey && num(d["delta"]) !== undefined)) {
       if (!npcKey) continue;
       out.push({ kind: "npc_disposition", npcKey, delta: clamp(num(d["delta"]) ?? 0, -3, 3) });
@@ -317,6 +314,28 @@ function normalizeDeltas(raw: unknown): LifeDelta[] {
     }
     const text = str(d["text"]) ?? str(d["note"]) ?? str(d["summary"]);
     if (text) out.push({ kind: "note", text });
+  }
+  return out;
+}
+
+/** Shape-check only. Whether these name real observations is the engine's call. */
+function normalizeObservations(raw: unknown): LifeObservation[] {
+  if (!Array.isArray(raw)) return [];
+  const out: LifeObservation[] = [];
+  for (const item of raw) {
+    if (typeof item === "string") {
+      out.push({ observation: item, factionId: null });
+      continue;
+    }
+    if (!item || typeof item !== "object") continue;
+    const o = item as Loose;
+    const observation = str(o["observation"]) ?? str(o["kind"]) ?? str(o["what"]);
+    if (!observation) continue;
+    out.push({
+      observation,
+      factionId: str(o["factionId"]) ?? str(o["faction_id"]) ?? str(o["faction"]) ?? null,
+    });
+    if (out.length === 6) break;
   }
   return out;
 }
@@ -366,6 +385,9 @@ export function normalizeLifeResponse(
     resolution: str(wire.resolution) ?? null,
     proposedActions: normalizeProposed(wire.proposedActions, warn),
     deltas: normalizeDeltas(wire.deltas),
+    // Left raw on purpose: engine/clocks.ts owns the vocabulary, and
+    // features/campaign/pressure.ts is the one place it is checked against.
+    observations: normalizeObservations(wire.observations),
     newSituation: normalizeNewSituation(wire.newSituation),
   };
 }

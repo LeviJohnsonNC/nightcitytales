@@ -28,6 +28,7 @@ import {
   rollJobSeed,
   selectSituation,
   settleHookAsk,
+  standingBand,
   startMission,
   tickClock,
   BROKER_DEFAULT_SKILL_LEVEL,
@@ -36,7 +37,7 @@ import {
   type GameClock,
   type GamePhase,
   type HookAsk,
-  type LifeClock,
+  type FactionStanding,
   type LifeSituation,
   type Opposition,
   type WoundStateCode,
@@ -47,6 +48,7 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  listCampaignFactions,
   listClocks,
   listSituations,
   setCampaignClock,
@@ -115,6 +117,15 @@ import {
   revealNextFact,
 } from "@/features/campaign/castSeeding";
 import {
+  applyPressure,
+  notableFrom,
+  pressureFrom,
+  readObservations,
+  spendFiredClock,
+  standingLines,
+  type LivePressure,
+} from "@/features/campaign/pressure";
+import {
   campaignPhase,
   clockFromRow,
   derivedSituations,
@@ -136,7 +147,10 @@ export type LifeBundle = {
   phase: GamePhase;
   clock: GameClock;
   situations: LifeSituation[];
-  clocks: LifeClock[];
+  /** Every clock the engine recognises, worst first. */
+  pressure: LivePressure[];
+  /** Every organisation that has formed an opinion. */
+  standings: FactionStanding[];
   /** The one situation this turn is about. */
   current: LifeSituation | null;
   /** The offer on the table, when the campaign is in the hook phase. */
@@ -159,10 +173,11 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
   const character = await getCharacter(full.campaign.character_id);
   if (!character) throw new Error("This campaign's character no longer exists.");
 
-  const [events, situationRows, clockRows] = await Promise.all([
+  const [events, situationRows, clockRows, factionRows] = await Promise.all([
     listCampaignEvents(campaignId),
     listSituations(campaignId),
     listClocks(campaignId),
+    listCampaignFactions(campaignId),
   ]);
 
   // The six the campaign lives among. Seeded once, from the character's own
@@ -225,7 +240,8 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     phase: campaignPhase(full.campaign),
     clock,
     situations: merged,
-    clocks: clockRows.map(clockFromRow),
+    pressure: pressureFrom(clockRows),
+    standings: notableFrom(factionRows),
     current: selectSituation(merged, clock.day, lastShownKey),
     hook,
     wire: hook ? null : wire,
@@ -307,7 +323,8 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     otherSituations: bundle.situations.filter(
       (s) => s.status === "live" && s.key !== bundle.current?.key,
     ),
-    clocks: bundle.clocks,
+    clocks: bundle.pressure.map((p) => p.clock),
+    standings: standingLines(bundle.standings),
     people: lifePeople(bundle.npcs),
     recentEvents: recentLifeLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
@@ -541,23 +558,6 @@ async function applyResponse(
         // to a wider range here wrote values the database refuses.
         await setNpcDisposition(npc.id, clampDisposition(npc.disposition + delta.delta));
       }
-    } else if (delta.kind === "clock") {
-      const existing = bundle.clocks.find((c) => c.key === delta.clockKey);
-      const base: LifeClock = existing ?? {
-        key: delta.clockKey,
-        label: delta.label,
-        filled: 0,
-        segments: delta.segments,
-        hidden: delta.hidden,
-      };
-      const ticked = tickClock(base, delta.delta);
-      await upsertClock(campaignId, {
-        clockKey: ticked.key,
-        label: ticked.label,
-        filled: ticked.filled,
-        segments: ticked.segments,
-        hidden: ticked.hidden,
-      });
     } else if (delta.kind === "note") {
       await appendCampaignEvent({
         campaign_id: campaignId,
@@ -565,6 +565,18 @@ async function applyResponse(
         summary: delta.text,
         data: {} as Json,
       });
+    }
+  }
+
+  // --- pressure ------------------------------------------------------------
+  // The model reported what the fiction noticed; the engine decides what each
+  // observation costs, moves the dials, and hands back anything that has come
+  // due. Skipped on an options turn, which did not happen.
+  if (!turn.options) {
+    const reports = readObservations(response.observations);
+    if (reports.length) {
+      const { pressure } = await applyPressure(campaignId, reports);
+      await arrivePressure(campaignId, pressure, clock.day);
     }
   }
 
@@ -599,6 +611,38 @@ async function applyResponse(
   if (clock.day !== bundle.clock.day || clock.minute !== bundle.clock.minute) {
     await setCampaignClock(campaignId, clock);
   }
+}
+
+/**
+ * Let a filled clock arrive.
+ *
+ * The engine spends the clock and writes what came; the situation it raises is a
+ * severity-5 pressure, which is loud enough that selectSituation will put it in
+ * front of the player next turn. The model narrates it after the fact, exactly
+ * as it narrates a resolved check: it does not get to decide whether Maelstrom
+ * turned up, only what it looked like when they did.
+ */
+async function arrivePressure(
+  campaignId: string,
+  pressure: LivePressure[],
+  day: number,
+): Promise<void> {
+  const arrived = await spendFiredClock(campaignId);
+  if (!arrived) return;
+  await upsertSituations(campaignId, [
+    {
+      situationKey: `pressure_${arrived.definition.key}`,
+      category: "pressure",
+      title: arrived.definition.label.replace(/ (Retaliation|Investigation|Heat)$/, " have come"),
+      summary: arrived.payoff,
+      status: "live",
+      severity: 5,
+      data: {
+        clockKey: arrived.definition.key,
+        factionId: arrived.definition.factionId,
+      } as unknown as Json,
+    },
+  ]);
 }
 
 /** One Life turn: the player says something, the world answers. */
@@ -1058,7 +1102,9 @@ export function useLife(campaignId: string) {
     situations: bundle?.situations.filter((s) => s.status === "live") ?? [],
     /** The people this character actually knows, as the player may see them. */
     people: bundle ? lifePeople(bundle.npcs) : [],
-    clocks: bundle?.clocks.filter((c) => !c.hidden) ?? [],
+    clocks: bundle?.pressure.filter((p) => !p.clock.hidden).map((p) => p.clock) ?? [],
+    /** Organisations with an opinion, for the Standing panel. */
+    standings: bundle?.standings ?? [],
     hook: bundle?.hook ?? null,
     narration: latestNarration,
     actions,

@@ -226,6 +226,40 @@ function CharacterPanel({
   );
 }
 
+/**
+ * What is closing in, during the job it might close in on. Only clocks with
+ * something on them: an empty dial is not pressure, it is furniture.
+ */
+function PressurePanel({ pressure }: { pressure: PlayBundle["pressure"] }) {
+  const live = pressure.filter((p) => !p.clock.hidden && p.clock.filled > 0);
+  if (live.length === 0) return null;
+  return (
+    <section className="space-y-2 border border-border bg-card p-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        Pressure
+      </p>
+      {live.map(({ clock }) => (
+        <div key={clock.key}>
+          <p className="flex justify-between text-sm">
+            <span>{clock.label}</span>
+            <span className="num font-mono text-xs text-muted-foreground">
+              {clock.filled}/{clock.segments}
+            </span>
+          </p>
+          <div className="mt-1 flex gap-1" aria-hidden>
+            {Array.from({ length: clock.segments }, (_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 flex-1 ${i < clock.filled ? "bg-destructive" : "bg-border"}`}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function ScenePanel({
   bundle,
   onChoose,
@@ -652,6 +686,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         <RoleAbilityPanel play={play} />
         <RollHistory rolls={play.rolls} />
         <CombatHud campaignId={campaignId} />
+        <PressurePanel pressure={bundle.pressure} />
         <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
         {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
       </aside>

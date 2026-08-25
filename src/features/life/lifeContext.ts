@@ -71,6 +71,8 @@ export type LifeContext = {
   /** Everything else still live, so the model can keep continuity. */
   otherSituations: LifeSituation[];
   clocks: LifeClock[];
+  /** Organisations with an opinion of the character, already worded. */
+  standings?: string[];
   people: LifePersonSummary[];
   recentEvents: string[];
   capabilities?: string[];
@@ -168,10 +170,15 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     }
   }
 
-  const visibleClocks = context.clocks.filter((c) => !c.hidden);
+  const visibleClocks = context.clocks.filter((c) => !c.hidden && c.filled > 0);
   if (visibleClocks.length) {
-    parts.push("", "== PRESSURES ==");
+    parts.push("", "== PRESSURE (the engine owns these; never state a number that disagrees) ==");
     for (const c of visibleClocks) parts.push(`- ${c.label}: ${c.filled}/${c.segments}`);
+  }
+
+  if (context.standings?.length) {
+    parts.push("", "== WHO HAS AN OPINION ==");
+    for (const line of context.standings) parts.push(`- ${line}`);
   }
 
   if (context.people.length) {

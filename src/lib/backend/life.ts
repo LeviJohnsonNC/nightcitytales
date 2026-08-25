@@ -4,7 +4,7 @@
  * allowed to touch the Cloud client.
  */
 import { backendClient } from "./client";
-import type { Campaign, CampaignClock, CampaignSituation, Json } from "./types";
+import type { Campaign, CampaignClock, CampaignFaction, CampaignSituation, Json } from "./types";
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -167,6 +167,52 @@ export async function setCampaignPhase(campaignId: string, phase: string): Promi
       .from("campaigns")
       .update({ phase })
       .eq("id", campaignId)
+      .select("*")
+      .single(),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Factions. The organisations that remember, as opposed to the people who do.
+// ---------------------------------------------------------------------------
+
+/** Every faction this campaign has an opinion on file with. */
+export async function listCampaignFactions(campaignId: string): Promise<CampaignFaction[]> {
+  const res = await backendClient
+    .from("campaign_factions")
+    .select("*")
+    .eq("campaign_id", campaignId);
+  return unwrap(res) ?? [];
+}
+
+export type FactionUpsert = {
+  factionId: string;
+  name: string;
+  standing: number;
+  notes?: string | null;
+};
+
+/**
+ * Write a faction's standing. Keyed on (campaign_id, faction_id), which is
+ * unique, so an organisation can never end up with two opinions of you.
+ */
+export async function upsertFactionStanding(
+  campaignId: string,
+  input: FactionUpsert,
+): Promise<CampaignFaction> {
+  return unwrap(
+    await backendClient
+      .from("campaign_factions")
+      .upsert(
+        {
+          campaign_id: campaignId,
+          faction_id: input.factionId,
+          name: input.name,
+          standing: Math.round(input.standing),
+          ...(input.notes !== undefined ? { notes: input.notes } : {}),
+        },
+        { onConflict: "campaign_id,faction_id" },
+      )
       .select("*")
       .single(),
   );

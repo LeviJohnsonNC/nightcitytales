@@ -52,6 +52,9 @@ import {
   type CharismaticImpactResult,
   type PerformAttackResult,
   type WoundStateCode,
+  findFactionIn,
+  type FactionId,
+  type ObservationReport,
 } from "@/engine";
 
 import {
@@ -62,6 +65,7 @@ import {
   listCampaignEvents,
   saveCampaignNpc,
   setCampaignClock,
+  listClocks,
   setCampaignFlag,
   type CampaignFlag,
   setCampaignPhase,
@@ -139,6 +143,16 @@ import {
 import { arriveBackup, pendingBackupFrom } from "./backupFlow";
 import { JOB_PAYOUT_FLAG } from "@/features/life/hookOffer";
 import {
+  applyPressure,
+  notableFrom,
+  pressureFrom,
+  pressureLines,
+  readObservations,
+  spendFiredClock,
+  standingLines,
+  type LivePressure,
+} from "@/features/campaign/pressure";
+import {
   ammoAfterShot,
   buildCapabilitySnapshot,
   renderCapabilityLines,
@@ -171,6 +185,10 @@ export type PlayBundle = {
    * the printed reward. Null on a job nobody negotiated.
    */
   agreedPayout: number | null;
+  /** Clocks the engine recognises, worst first. */
+  pressure: LivePressure[];
+  /** Organisations with an opinion, already worded. */
+  standings: string[];
 };
 
 async function loadPlay(campaignId: string): Promise<PlayBundle> {
@@ -207,6 +225,8 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     inventory: full.inventory,
     encounter,
     agreedPayout: agreedPayoutFrom(full.flags),
+    pressure: pressureFrom(await listClocks(campaignId)),
+    standings: standingLines(notableFrom(full.factions)),
   };
 }
 
@@ -266,6 +286,13 @@ async function narrate(
     });
   };
 
+  // Pressure that has come due arrives NOW, in this scene. Held back while a
+  // fight is already running: a second threat walking in mid-firefight is not
+  // tension, it is two encounters wearing one coat, and the engine has no way
+  // to fold the newcomers into an initiative order that is already turning.
+  const fightRunning = bundle.encounter?.state.status === "active";
+  const arrived = fightRunning ? null : await spendFiredClock(campaignId, { beatId });
+
   const context = buildGmContext({
     mission: bundle.mission,
     beat: bundle.beat,
@@ -276,6 +303,9 @@ async function narrate(
     recentEvents: recentEventLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
     turnsSinceLastRoll: turnsSinceLastRoll(bundle.events),
+    pressure: pressureLines(bundle.pressure),
+    standings: bundle.standings,
+    ...(arrived ? { arrived: arrived.payoff } : {}),
     ...(options.optionsRequested ? { optionsRequested: true } : {}),
   });
 
@@ -288,6 +318,17 @@ async function narrate(
     { day: bundle.campaign.day, minute: bundle.campaign.minute },
     TIME_COSTS.quick,
   );
+
+  // What the city noticed. The model reported; engine/clocks.ts prices it.
+  //
+  // One player action narrates more than once (the attempt, then the check it
+  // proposed, then the result), and a model describing the same body each time
+  // would be charged for it each time. An identical report to the one just
+  // recorded is treated as the same event restated, not a second one.
+  const observed = readObservations(gm.observations);
+  if (observed.length) {
+    await applyPressure(campaignId, observed, { beatId, notAgainAfter: bundle.events });
+  }
 
   await appendCampaignEvent({
     campaign_id: campaignId,
@@ -882,11 +923,69 @@ async function settleMission(
     data: { missionId: mission.id, payout } as unknown as Json,
     ...(runtime.currentBeatId ? { beat_id: runtime.currentBeatId } : {}),
   });
+  // What the job itself cost, read off the engine's own record rather than
+  // asked of the model. A body the combat engine dropped is a body whether or
+  // not the narration mentioned it, and the opposition a generated job names is
+  // who it was dropped on. Deliberately thin: the richer read of the ledger
+  // (witnesses, how loudly it was sold, a payout that goes wrong) belongs with
+  // the aftermath work, and will feed the same rules this already uses.
+  await settlePressure(bundle, mission);
+
   // The campaign stays active: it is the character's run, not this one job.
   // The phase moves to aftermath — the wrap-up screen — and only the player's
   // press moves it on to Life. The AI never performs this transition.
   const after = nextPhase(phaseOf(bundle.campaign.phase), "end_job");
   if (after) await setCampaignPhase(campaignId, after);
+}
+
+/**
+ * The pressure a finished job leaves behind.
+ *
+ * Counts the bodies the engine itself recorded and points them at whoever the
+ * mission said was in the way. Nothing here asks the model anything: this is the
+ * floor under the observations a turn may have reported, so a silent GM cannot
+ * make a firefight cost nothing.
+ */
+async function settlePressure(bundle: PlayBundle, mission: Mission): Promise<void> {
+  const opposedBy = missionFaction(mission);
+
+  // Only this job's dead. The ledger is the whole campaign's, so counting from
+  // the top would charge every later job for the bodies of every earlier one.
+  const startedAt = bundle.events.map((e) => e.type).lastIndexOf("mission_started");
+  const thisJob = startedAt === -1 ? bundle.events : bundle.events.slice(startedAt + 1);
+
+  // Death Saves the engine itself failed on somebody other than the player.
+  // That is the one record of a body that exists whatever the narration said.
+  const killed = thisJob.filter((event) => {
+    if (event.type !== "death_save") return false;
+    const data = (event.data ?? {}) as { died?: unknown; combatant?: unknown };
+    if (data.died !== true) return false;
+    return data.combatant !== bundle.character.character.name;
+  }).length;
+  if (!killed) return;
+
+  const reports: ObservationReport[] = Array.from({ length: Math.min(killed, 4) }, () => ({
+    observation: "killed" as const,
+    factionId: opposedBy,
+  }));
+  await applyPressure(bundle.campaign.id, reports);
+}
+
+/**
+ * Which faction a job's opposition belongs to, when it names one.
+ *
+ * Scans authored mission text ("a Tyger Claws crew, and they are not new at
+ * this"), which is this project's own content, so findFactionIn is the right
+ * tool for it. A job whose opposition is nobody in particular returns null, and
+ * the bodies still raise Heat.
+ */
+function missionFaction(mission: Mission): FactionId | null {
+  const named = [mission.offer?.opposition, ...mission.beats.flatMap((b) => b.opposition ?? [])];
+  for (const text of named) {
+    const factionId = findFactionIn(text);
+    if (factionId) return factionId;
+  }
+  return null;
 }
 
 /**
