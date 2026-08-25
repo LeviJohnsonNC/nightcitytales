@@ -28,6 +28,16 @@ import type {
 import type { StartEncounterPayload } from "@/lib/backend";
 import { statsRecord } from "./playModel";
 
+/** Per-combatant turn bookkeeping: one Action and one Move a Round (CP:R pg. 165). */
+export type CombatantTurnState = {
+  /** The Round these counters belong to; a new Round resets them. */
+  round: number;
+  actionUsed: boolean;
+  shotsThisRound: number;
+  shotWeaponId: string | null;
+  metresMoved: number;
+};
+
 /** The per-combatant extras the schema keeps in `data`. */
 export type CombatantData = {
   /** The GM's stable key for this hostile ("scav_1"); the player uses "player". */
@@ -39,10 +49,26 @@ export type CombatantData = {
   distance: number;
   /** Skill level used for this combatant's attacks (hostiles only). */
   attackSkill: number;
+  /** What this combatant has spent of the current Round, when tracked. */
+  turn?: CombatantTurnState;
 };
+
+function turnStateOf(raw: unknown): CombatantTurnState | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const t = raw as Partial<CombatantTurnState>;
+  if (typeof t.round !== "number") return undefined;
+  return {
+    round: t.round,
+    actionUsed: t.actionUsed === true,
+    shotsThisRound: typeof t.shotsThisRound === "number" ? t.shotsThisRound : 0,
+    shotWeaponId: typeof t.shotWeaponId === "string" ? t.shotWeaponId : null,
+    metresMoved: typeof t.metresMoved === "number" ? t.metresMoved : 0,
+  };
+}
 
 export function combatantDataOf(row: EncounterCombatant): CombatantData {
   const raw = (row.data ?? {}) as Partial<CombatantData>;
+  const turn = turnStateOf(raw.turn);
   return {
     key: typeof raw.key === "string" ? raw.key : row.id,
     weaponName: typeof raw.weaponName === "string" ? raw.weaponName : "sidearm",
@@ -50,8 +76,10 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
     rangeType: typeof raw.rangeType === "string" ? raw.rangeType : null,
     distance: typeof raw.distance === "number" ? raw.distance : 12,
     attackSkill: typeof raw.attackSkill === "number" ? raw.attackSkill : 0,
+    ...(turn ? { turn } : {}),
   };
 }
+
 
 /** Equipped armor SP by location, using ablated current_sp when present. */
 export function armorSp(character: FullCharacter): { head: number; body: number } {
