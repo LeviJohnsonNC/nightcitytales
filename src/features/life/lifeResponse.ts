@@ -203,14 +203,17 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
       });
       continue;
     }
+    // Bills and repairs are named jobs the engine prices itself, so they are
+    // matched BEFORE the generic spend branch — a model that helpfully attaches
+    // its own guess at the rent must not turn into an arbitrary withdrawal.
+    if (kindRaw === "pay_bills" || kindRaw === "bills" || kindRaw === "pay_rent") {
+      out.push({ kind: "pay_bills" });
+      continue;
+    }
     if (kindRaw === "spend" || (num(a["amount"]) !== undefined && !skillId)) {
       const amount = num(a["amount"]) ?? num(a["cost"]);
       if (amount === undefined || amount <= 0) continue;
       out.push({ kind: "spend", amount, reason: str(a["reason"]) ?? intent });
-      continue;
-    }
-    if (kindRaw === "pay_bills" || kindRaw === "bills" || kindRaw === "pay_rent") {
-      out.push({ kind: "pay_bills" });
       continue;
     }
     if (kindRaw === "repair_armor" || kindRaw === "repair") {
