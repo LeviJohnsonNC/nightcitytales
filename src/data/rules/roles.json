@@ -269,7 +269,80 @@
         "startingRank": 4,
         "summary": "The Medtech's Role Ability is Medicine. With this ability, Medtechs can keep people alive who should be dead with their knowledge, tools, and training. In the Time of the Red, they are as much doctors as they are mechanics, caring for people who are often more machine than human. Whenever the Medtech increases their Medicine Rank, they also choose one of three Medicine Specialties to allocate a single point to: surgery, pharmaceuticals, or cryosystems operation.",
         "mechanicalText": "The Medtech Role Ability is Medicine. Whenever the Medtech increases their Medicine Rank, they allocate 1 point to one of three Specialties: Surgery, Medical Tech (Pharmaceuticals), or Medical Tech (Cryosystem Operation). The Medical rules add uses of the Surgery and Medical Tech Skills available only to Medtechs: including cyberware installation and harvesting, bodysculpting, and therapy. Surgery: Each point gives 2 points in the Surgery Skill (max 10). Surgery is the TECH Skill for treating the most severe Critical Injuries and implanting cyberware, available to Medtechs only through this Specialty. Medical Tech (Pharmaceuticals): Each point gives 1 point in the Medical Tech Skill (max 10; max 5 points in this Specialty). Each point also unlocks one pharmaceutical you can synthesize with a DV13 Medical Tech Check (materials wasted on a failure); from 200eb of materials you make doses equal to your Medical Tech Skill in 1 hour. You can't synthesize Street Drugs this way. Drugs: Antibiotic (a naturally healing target heals +2 HP/day for a week; one at a time); Rapidetox (immediately purges a drug, poison, or intoxicant); Speedheal (a non-Mortally-Wounded target heals BODY + WILL HP; once per day); Stim (ignore Seriously Wounded penalties for an hour; once per day); Surge (function without sleep for 24 hours; once per week). Administering a dose takes an Action; an unwilling target can be hit with an Airhypo Melee Attack to dose them instead of dealing damage. Only a Medtech can administer these correctly. Medical Tech (Cryosystem Operation): Each point gives 1 point in the Medical Tech Skill (max 10; max 5 points here). Benefits by points: 1: one Cryopump; 2: Registered Cryotank Technician with 24/7 access to 1 cryotank at a time at any corporate or government facility; 3: one Cryotank installed in a room of your choice; 4: two more Cryotanks (same room) and a Cryopump with 2 charges carrying up to 2 people in stasis; 5: three more Cryotanks and a Cryopump with 3 charges carrying up to 3 people. Your Medical Tech Skill Level equals your Pharmaceuticals points plus your Cryosystem Operation points.",
-        "_ranksPending": false
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "specialties": [
+            {
+              "id": "surgery",
+              "name": "Surgery",
+              "skillId": "surgery",
+              "skillPerPoint": 2,
+              "maxSkill": 10,
+              "maxPoints": null
+            },
+            {
+              "id": "pharmaceuticals",
+              "name": "Medical Tech (Pharmaceuticals)",
+              "skillId": "medical_tech",
+              "skillPerPoint": 1,
+              "maxSkill": 10,
+              "maxPoints": 5
+            },
+            {
+              "id": "cryosystem",
+              "name": "Medical Tech (Cryosystem Operation)",
+              "skillId": "medical_tech",
+              "skillPerPoint": 1,
+              "maxSkill": 10,
+              "maxPoints": 5
+            }
+          ],
+          "medicalTechSkillIsSumOf": ["pharmaceuticals", "cryosystem"],
+          "synthesis": {
+            "dv": 13,
+            "skillId": "medical_tech",
+            "materialsCost": 200,
+            "hours": 1,
+            "dosesEqualSkill": true,
+            "materialsWastedOnFailure": true,
+            "drugsUnlockedPerPoint": 1,
+            "noStreetDrugs": true
+          },
+          "drugs": [
+            {
+              "id": "antibiotic",
+              "name": "Antibiotic",
+              "effect": "A naturally healing target heals +2 HP a day for a week. One at a time.",
+              "hpPerDayBonus": 2,
+              "days": 7
+            },
+            {
+              "id": "rapidetox",
+              "name": "Rapidetox",
+              "effect": "Immediately purges a drug, poison or intoxicant."
+            },
+            {
+              "id": "speedheal",
+              "name": "Speedheal",
+              "effect": "A target who is not Mortally Wounded heals BODY + WILL HP. Once a day.",
+              "healsStats": ["body", "will"],
+              "perDay": 1
+            },
+            {
+              "id": "stim",
+              "name": "Stim",
+              "effect": "Ignore Seriously Wounded penalties for an hour. Once a day.",
+              "perDay": 1
+            },
+            {
+              "id": "surge",
+              "name": "Surge",
+              "effect": "Function without sleep for 24 hours. Once a week."
+            }
+          ],
+          "_notModelled": "Cyberware installation and harvesting, bodysculpting, therapy and Cryosystem tanks need systems this app does not have."
+        }
       }
     },
     "media": {
@@ -385,7 +458,134 @@
         "startingRank": 4,
         "summary": "The Exec's Role Ability is Teamwork. Just like a real corporate executive, the Exec builds a team whose members help them accomplish their goals, whether legal or not, morale permitting. Team members have a visible job description (like secretary or driver) but also have a covert roles (such as Netrunner, bodyguard, or assassin). Plus they get free housing and nice set of clothes!.",
         "mechanicalText": "The Exec Role Ability is Teamwork: the Exec builds a team whose members help accomplish their goals, morale permitting. Signing Bonus (Rank 1): a Businesswear Jacket, Top, Bottom, and Footwear marking them as business elite (can't be resold without raising suspicion). Corporate Housing (Rank 2): access to a Company Corporate Conapt, rent-free while they remain with the Corporation (Lifestyle is still bought separately). Rank 7 improves it to a Beaverville House in the Executive Zone; Rank 10 to a Beaverville McMansion (Executive Zone) or a Luxury Penthouse (Corporate Zone). A new Corporation matches the offer and pays to move their things. Corporate Health Insurance: Rank 6 grants Trauma Team Silver coverage (Corp-paid monthly); Rank 8 upgrades it to Trauma Team Executive. Team Members: Rank 3 grants 1 Team Member; Ranks 5 and 9 add one more each (max 3 at Rank 9). Team Members are built like PCs but don't improve Skills, are controlled by the GM, and can only wear Light Armorjack. The Exec picks each Team Member's class (Bodyguard, Covert Operative, Driver, Netrunner, Technician, etc.); a 1d6 roll sets their STATs and starting Loyalty is 1d6+1. Loyalty: Team Members act based on Loyalty (caps at 10 between sessions; no cap within a session). When given a task, the GM rolls 1d6 under current Loyalty: a failed Save means they may refuse, botch, or turn on the Exec; at 0 or lower they actively betray the Exec, and ending a session below 0 means they leave. Loyalty is built by things like complimenting work (+1), perks worth 200eb+ (+4), backing them against management (+4), a 20% job cut (+6), paid time off (+6), or risking harm for them (+8); it is lost by neglect (-1), berating them (-2), forgetting their contribution or birthday (-4), broken promises (-6), throwing them under the bus (-6), or abandoning them under fire (-8). Losing a Team Member: HR repossesses their gear and sends a replacement next session with new STATs, starting Loyalty 1, and a 200eb hiring fee to the Exec.",
-        "_ranksPending": false
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "teamMembers": {
+            "byRank": [
+              {
+                "rank": 3,
+                "members": 1
+              },
+              {
+                "rank": 5,
+                "members": 2
+              },
+              {
+                "rank": 9,
+                "members": 3
+              }
+            ],
+            "statRoll": "1d6",
+            "startingLoyalty": "1d6+1",
+            "armorLimit": "Light Armorjack",
+            "classes": ["Bodyguard", "Covert Operative", "Driver", "Netrunner", "Technician"],
+            "gmControlled": true,
+            "skillsDoNotImprove": true
+          },
+          "loyalty": {
+            "capBetweenSessions": 10,
+            "noCapWithinSession": true,
+            "taskSave": "1d6 under current Loyalty",
+            "betrayAtOrBelow": 0,
+            "leavesIfSessionEndsBelow": 0,
+            "gains": [
+              {
+                "id": "compliment",
+                "label": "Complimented their work",
+                "delta": 1
+              },
+              {
+                "id": "perk",
+                "label": "A perk worth 200eb or more",
+                "delta": 4
+              },
+              {
+                "id": "backed_them",
+                "label": "Backed them against management",
+                "delta": 4
+              },
+              {
+                "id": "job_cut",
+                "label": "A 20% cut of the job",
+                "delta": 6
+              },
+              {
+                "id": "paid_time_off",
+                "label": "Paid time off",
+                "delta": 6
+              },
+              {
+                "id": "risked_harm",
+                "label": "Risked harm for them",
+                "delta": 8
+              }
+            ],
+            "losses": [
+              {
+                "id": "neglect",
+                "label": "Neglected them",
+                "delta": -1
+              },
+              {
+                "id": "berated",
+                "label": "Berated them",
+                "delta": -2
+              },
+              {
+                "id": "forgot",
+                "label": "Forgot their contribution or birthday",
+                "delta": -4
+              },
+              {
+                "id": "broken_promise",
+                "label": "Broke a promise",
+                "delta": -6
+              },
+              {
+                "id": "thrown_under_bus",
+                "label": "Threw them under the bus",
+                "delta": -6
+              },
+              {
+                "id": "abandoned",
+                "label": "Abandoned them under fire",
+                "delta": -8
+              }
+            ]
+          },
+          "replacement": {
+            "startingLoyalty": 1,
+            "hiringFee": 200,
+            "newStats": true
+          },
+          "perksByRank": [
+            {
+              "rank": 1,
+              "perk": "Signing Bonus: business elite Businesswear that cannot be resold without suspicion."
+            },
+            {
+              "rank": 2,
+              "perk": "Corporate Housing: a Company Corporate Conapt, rent-free while you remain with the Corporation."
+            },
+            {
+              "rank": 6,
+              "perk": "Corporate Health Insurance: Trauma Team Silver, Corp-paid."
+            },
+            {
+              "rank": 7,
+              "perk": "Housing improves to a Beaverville House in the Executive Zone."
+            },
+            {
+              "rank": 8,
+              "perk": "Health Insurance upgrades to Trauma Team Executive."
+            },
+            {
+              "rank": 10,
+              "perk": "Housing improves to a Beaverville McMansion or a Luxury Penthouse."
+            }
+          ]
+        }
       }
     },
     "lawman": {
@@ -523,7 +723,21 @@
         "startingRank": 4,
         "summary": "The Nomad's Role Ability is Moto. Whenever a Nomad increases their Rank in Moto, they have the option of adding another stock vehicle (with minimum specs) of their Moto Rank or lower to the pool of Family vehicles they have permission to use from the Family Motorpool or to make an upgrade to one of their current vehicles. Thanks to being around vehicles since birth, Nomads are also able to drive any type of vehicle with tremendous skill.",
         "mechanicalText": "The Nomad Role Ability is Moto. Nomad Vehicle Familiarity: A Nomad adds their Moto Rank to any Drive Land Vehicle, Pilot Air Vehicle, Pilot Sea Vehicle, Air Vehicle Tech, Land Vehicle Tech, or Sea Vehicle Tech Skill Check. Family Motorpool: Whenever a Nomad's Role Ability Rank rises, they either add a stock vehicle (minimum specs) of their Moto Rank or lower to the vehicles they may use from the Family Motorpool, or upgrade one already-permitted Family Vehicle with a single upgrade of their Moto Rank or lower. A Nomad can have one Family Vehicle out at a time and can call the Family to swap it for another the next morning (if Family is close by). A destroyed Family Vehicle is fully repaired in a week for 500eb; daily repairs like bullet removal are the Nomad's own responsibility. At Rank 10 the Nomad is promoted to Family leadership and may have all their Family Vehicles out at once; further vehicles are bought at market price and upgrades at 1,000eb each. Family Motorpool by Rank: 1–4: Compact Groundcar, Gyrocopter, Jetski, Roadbike; 5–6: Helicopter, High Performance Groundcar, Speedboat; 7–8: AV-4, Cabin Cruiser, Superbike; 9–10: Aerozep, AV-9, Super Groundcar, Yacht.",
-        "_ranksPending": false
+        "_ranksPending": false,
+        "mechanics": {
+          "_note": "Structured restatement of the mechanicalText in this same entry, for the engine to read. No new rules: every value here appears in the prose above it, which carries the book's own page citation. If the two ever disagree, the mechanicalText is the source of truth.",
+          "vehicleFamiliarity": {
+            "addsRankToSkills": [
+              "drive_land_vehicle",
+              "pilot_air_vehicle",
+              "pilot_sea_vehicle",
+              "air_vehicle_tech",
+              "land_vehicle_tech",
+              "sea_vehicle_tech"
+            ]
+          },
+          "_notModelled": "Family Motorpool: the vehicles a Nomad may take out, and their upgrades, need a vehicle system this app does not have."
+        }
       }
     }
   }

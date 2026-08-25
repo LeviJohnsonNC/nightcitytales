@@ -14,14 +14,28 @@ import {
   BELIEVABILITY_FORBIDS_LUCK,
   CHARISMATIC_AUDIENCES,
   COMBAT_AWARENESS_OPTIONS,
+  LOYALTY_GAINS,
+  LOYALTY_LOSSES,
   MAKER_SPECIALTIES,
+  MEDICINE_SPECIALTIES,
   RUMOR_TIERS,
+  SYNTHESIS_DV,
+  SYNTHESIS_MATERIALS_COST,
+  TEAM_MEMBER_CLASSES,
   believabilityCheck,
   charismaticFavor,
   combatAwarenessEffects,
   combatAwarenessValue,
   credibilityFor,
   evidenceBonus,
+  execPerks,
+  loyaltyAfter,
+  loyaltySave,
+  medicineSkillLevels,
+  medicineSpecialtyCap,
+  rollTeamMember,
+  synthesisDoses,
+  unlockedDrugs,
   type BackupCall,
   type BelievabilityResult,
   type CharismaticImpactResult,
@@ -472,12 +486,295 @@ function CredibilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
   );
 }
 
+/** A Medtech's Specialties, the Skills they buy, and the drugs they unlock. */
+function MedicineSection({ play }: { play: ReturnType<typeof usePlay> }) {
+  const rank = play.roleAbility?.rank ?? 0;
+  const saved = play.medicineSpecialties;
+  const [draft, setDraft] = useState<Record<string, number>>(saved);
+  useEffect(() => setDraft(saved), [saved]);
+
+  const spent = Object.values(draft).reduce((sum, value) => sum + value, 0);
+  const remaining = rank - spent;
+  const skills = medicineSkillLevels(draft);
+  const drugs = unlockedDrugs(draft["pharmaceuticals"] ?? 0);
+  const doses = synthesisDoses(skills["medical_tech"] ?? 0);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+
+  return (
+    <section className="space-y-2 border border-border bg-card p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <Label>Medicine</Label>
+        <p className="num text-xs text-muted-foreground">
+          {remaining} of {rank} points free
+        </p>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        One point per Rank of Medicine. Surgery buys two Skill points each; both Medical Tech
+        Specialties feed the same Skill.
+      </p>
+
+      <ul className="space-y-1">
+        {MEDICINE_SPECIALTIES.map((specialty) => {
+          const points = draft[specialty.id] ?? 0;
+          const cap = medicineSpecialtyCap(specialty.id);
+          const capped = cap !== null && points >= cap;
+          return (
+            <li key={specialty.id} className="flex items-center justify-between gap-2">
+              <span className="text-sm">
+                {specialty.name}
+                {capped && <span className="ml-1 text-xs text-muted-foreground">(at cap)</span>}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 w-6 p-0"
+                  disabled={play.abilityStateBusy || points <= 0}
+                  aria-label={`Fewer points in ${specialty.name}`}
+                  onClick={() => setDraft({ ...draft, [specialty.id]: points - 1 })}
+                >
+                  −
+                </Button>
+                <span className="num w-6 text-center text-xs">{points}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 w-6 p-0"
+                  disabled={play.abilityStateBusy || remaining <= 0 || capped}
+                  aria-label={`More points in ${specialty.name}`}
+                  onClick={() => setDraft({ ...draft, [specialty.id]: points + 1 })}
+                >
+                  +
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <p className="num text-xs text-muted-foreground">
+        Surgery {skills["surgery"] ?? 0} · Medical Tech {skills["medical_tech"] ?? 0}
+      </p>
+
+      {drugs.length > 0 ? (
+        <div className="space-y-1">
+          <Label>Can synthesize</Label>
+          <ul className="space-y-1">
+            {drugs.map((drug) => (
+              <li key={drug.id} className="text-xs">
+                <span className="font-semibold">{drug.name}</span>{" "}
+                <span className="text-muted-foreground">{drug.effect}</span>
+                {(play.medicineDoses[drug.id] ?? 0) > 0 && (
+                  <span className="num ml-1 text-accent">
+                    ×{play.medicineDoses[drug.id]} on hand
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-foreground">
+            A batch is {SYNTHESIS_MATERIALS_COST}eb of materials and a DV{SYNTHESIS_DV} Medical Tech
+            Check, for {doses} dose{doses === 1 ? "" : "s"}.
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Put points into Pharmaceuticals to unlock drugs you can synthesize.
+        </p>
+      )}
+
+      {dirty && (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            disabled={play.abilityStateBusy}
+            onClick={() => play.setMedicineSpecialties(draft)}
+          >
+            {play.abilityStateBusy ? "…" : "Set specialties"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setDraft(saved)}>
+            Revert
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** An Exec's team, and how loyal they are to you today. */
+function TeamworkSection({ play }: { play: ReturnType<typeof usePlay> }) {
+  const rank = play.roleAbility?.rank ?? 0;
+  const team = play.execTeam;
+  const [name, setName] = useState("");
+  const [memberClass, setMemberClass] = useState(TEAM_MEMBER_CLASSES[0] ?? "Bodyguard");
+  const [save, setSave] = useState<{ id: string; text: string } | null>(null);
+  if (!team) return null;
+
+  const full = team.members.length >= team.slots;
+
+  const hire = () => {
+    const rolled = rollTeamMember();
+    play.setExecTeam([
+      ...team.members,
+      {
+        id: crypto.randomUUID(),
+        name: name.trim() || memberClass,
+        memberClass,
+        statRoll: rolled.statRoll,
+        loyalty: rolled.loyalty,
+      },
+    ]);
+    setName("");
+  };
+
+  const shift = (id: string, delta: number) =>
+    play.setExecTeam(
+      team.members.map((m) =>
+        m.id === id ? { ...m, loyalty: loyaltyAfter(m.loyalty, delta) } : m,
+      ),
+    );
+
+  return (
+    <section className="space-y-2 border border-border bg-card p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <Label>Teamwork</Label>
+        <p className="num text-xs text-muted-foreground">Rank {rank}</p>
+      </div>
+      <ul className="space-y-1 text-xs text-muted-foreground">
+        {execPerks(rank).map((perk) => (
+          <li key={perk}>{perk}</li>
+        ))}
+      </ul>
+
+      {team.slots === 0 ? (
+        <p className="text-xs text-muted-foreground">No Team Members until Rank 3.</p>
+      ) : (
+        <>
+          <p className="num text-xs text-muted-foreground">
+            {team.members.length} of {team.slots} Team Members
+          </p>
+
+          <ul className="space-y-2">
+            {team.members.map((member) => (
+              <li
+                key={member.id}
+                className="space-y-1 border-b border-border/40 pb-2 last:border-0"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">
+                    {member.name}{" "}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {member.memberClass}
+                    </span>
+                  </span>
+                  <span
+                    className={
+                      member.loyalty <= 0
+                        ? "num text-xs font-bold text-destructive"
+                        : "num text-xs font-bold"
+                    }
+                  >
+                    Loyalty {member.loyalty}
+                  </span>
+                </div>
+
+                {member.loyalty <= 0 && (
+                  <p className="text-xs text-destructive">
+                    Working against you. Below zero at the end of the session and they walk.
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={play.abilityStateBusy}
+                    onClick={() => {
+                      const result = loyaltySave(member.loyalty);
+                      setSave({
+                        id: member.id,
+                        text: result.betrays
+                          ? `Rolled ${result.roll}. They are past caring — they work against you.`
+                          : result.passed
+                            ? `Rolled ${result.roll} under ${result.loyalty}. They do it.`
+                            : `Rolled ${result.roll} against ${result.loyalty}. They may refuse, botch it, or turn on you.`,
+                      });
+                    }}
+                  >
+                    Ask them to do it
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={play.abilityStateBusy}
+                    onClick={() => play.setExecTeam(team.members.filter((m) => m.id !== member.id))}
+                  >
+                    Let them go
+                  </Button>
+                </div>
+
+                {save?.id === member.id && <p className="text-xs text-accent">{save.text}</p>}
+
+                <div className="flex flex-wrap gap-1">
+                  {[...LOYALTY_GAINS, ...LOYALTY_LOSSES].map((change) => (
+                    <Button
+                      key={change.id}
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-[10px]"
+                      disabled={play.abilityStateBusy}
+                      title={change.label}
+                      onClick={() => shift(member.id, change.delta)}
+                    >
+                      {change.delta > 0 ? `+${change.delta}` : change.delta} {change.label}
+                    </Button>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {!full && (
+            <div className="flex flex-wrap items-center gap-1">
+              <input
+                className="h-7 flex-1 border border-border bg-background px-2 text-sm"
+                placeholder="Name (optional)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <select
+                className="h-7 border border-border bg-background px-1 text-xs"
+                value={memberClass}
+                onChange={(e) => setMemberClass(e.target.value)}
+              >
+                {TEAM_MEMBER_CLASSES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <Button size="sm" disabled={play.abilityStateBusy} onClick={hire}>
+                Bring them on
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 /** Every other Role: name the ability and what it is doing for them right now. */
 function AbilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
   const ability = play.roleAbility;
   if (!ability) return null;
 
   const lines: string[] = [];
+  if (ability.info.abilityId === "moto") {
+    lines.push(
+      `+${ability.rank} on driving, piloting and vehicle Tech Checks. The Family Motorpool needs a vehicle system this app does not have yet.`,
+    );
+  }
   if (ability.info.abilityId === "operator") {
     lines.push(`+${ability.rank} on a Trading deal — your Operator Rank is part of the Haggle.`);
   }
@@ -520,6 +817,12 @@ export function RoleAbilityPanel({ play }: { play: ReturnType<typeof usePlay> })
   }
   if (ability.info.abilityId === "credibility") {
     return <CredibilitySection play={play} />;
+  }
+  if (ability.info.abilityId === "medicine") {
+    return <MedicineSection play={play} />;
+  }
+  if (ability.info.abilityId === "teamwork") {
+    return <TeamworkSection play={play} />;
   }
   return <AbilitySection play={play} />;
 }
