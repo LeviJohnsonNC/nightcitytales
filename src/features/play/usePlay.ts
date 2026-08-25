@@ -18,6 +18,8 @@ import {
   getMission,
   failMission,
   getSkill,
+  judgeAction,
+  type LegalityVerdict,
   missionPayout,
   type IpAward,
   type IpPlaystyle,
