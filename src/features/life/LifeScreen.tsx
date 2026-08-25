@@ -360,7 +360,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
           <InputBar onSend={(text) => life.act(text)} busy={life.busy || !!life.pendingCheck} />
         </div>
 
-        <aside className="space-y-4">
+        <aside className="sticky top-6 h-fit space-y-4 self-start">
           <section className="space-y-3 border border-border bg-card p-4">
             <div>
               <h2 className="text-lg font-bold leading-tight">{bundle.character.character.name}</h2>
