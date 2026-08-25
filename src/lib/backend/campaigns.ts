@@ -123,6 +123,16 @@ export async function resetAdventureForCharacter(characterId: string): Promise<v
 }
 
 /** One of a campaign's NPCs by the stable key the GM refers to them by. */
+/** Every person this campaign remembers, in the order they were written. */
+export async function listCampaignNpcs(campaignId: string): Promise<CampaignNpc[]> {
+  const res = await backendClient
+    .from("campaign_npcs")
+    .select("*")
+    .eq("campaign_id", campaignId)
+    .order("created_at", { ascending: true });
+  return unwrap(res) ?? [];
+}
+
 export async function findCampaignNpc(
   campaignId: string,
   npcKey: string,

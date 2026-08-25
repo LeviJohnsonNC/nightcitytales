@@ -16,6 +16,7 @@ import {
   missionOffer,
   missionPayout,
   startingTerms,
+  type CastMember,
   type HookAsk,
   type HookTerms,
   type LifeSituation,
@@ -56,6 +57,10 @@ type HookData = {
   payout?: unknown;
   asked?: unknown;
   learned?: unknown;
+  /** The cast member who brought it, when someone the player knows did. */
+  brokerKey?: unknown;
+  brokerName?: unknown;
+  brokerLine?: unknown;
 };
 
 function asks(raw: unknown): HookAsk[] {
@@ -91,11 +96,24 @@ export function hookFromSituation(situation: LifeSituation): LifeHook | null {
     return null;
   }
   const basePayout = int(data.basePayout, printedPayout(mission));
+  // The broker is stored rather than re-derived: the person who made the offer
+  // has to still be the person you are arguing with two turns later.
+  const stored =
+    typeof data.brokerKey === "string" && typeof data.brokerName === "string"
+      ? {
+          key: data.brokerKey,
+          name: data.brokerName,
+          standing: typeof data.brokerLine === "string" ? data.brokerLine : "",
+        }
+      : null;
+  const offer = missionOffer(mission);
   return {
     situationKey: situation.key,
     missionId,
     mission,
-    offer: missionOffer(mission),
+    offer: stored
+      ? { ...offer, brokerKey: stored.key, brokerName: stored.name, brokerLine: stored.standing }
+      : offer,
     terms: {
       basePayout,
       payout: int(data.payout, basePayout),
@@ -131,6 +149,9 @@ export function hookUpsert(
       payout: terms.payout,
       asked: terms.asked,
       learned: terms.learned,
+      brokerKey: offer.brokerKey,
+      brokerName: offer.brokerName,
+      brokerLine: offer.brokerLine,
     } as unknown as Json,
   };
 }
@@ -156,11 +177,36 @@ export function nextJobSeedFrom(flags: CampaignFlag[]): number | null {
   return null;
 }
 
+/**
+ * Who is actually bringing this job.
+ *
+ * A generated job comes with a fixer from its own content pool, which is fine
+ * for a campaign with nobody in it. A campaign with a standing cast has a fixer
+ * already: the one whose number the character has, who keeps their disposition
+ * and their history. That person brings the work instead, so jobs arrive from
+ * someone the player knows rather than from a new name every time.
+ *
+ * Only the voice on the phone changes. The job, the client and what is waiting
+ * are the mission's, untouched.
+ */
+export function offerThrough(offer: MissionOffer, broker: CastMember | null): MissionOffer {
+  if (!broker) return offer;
+  return {
+    ...offer,
+    brokerName: broker.name,
+    brokerKey: broker.key,
+    brokerLine: broker.standing,
+  };
+}
+
 /** The public half of the job a seed names: what a broker would say out loud. */
-export function wireOfferFor(seed: number): { missionId: string; wire: LifeWireOffer } {
+export function wireOfferFor(
+  seed: number,
+  broker: CastMember | null = null,
+): { missionId: string; wire: LifeWireOffer } {
   const missionId = jobIdForSeed(seed);
   const mission = getMission(missionId);
-  const offer = missionOffer(mission);
+  const offer = offerThrough(missionOffer(mission), broker);
   return {
     missionId,
     wire: {

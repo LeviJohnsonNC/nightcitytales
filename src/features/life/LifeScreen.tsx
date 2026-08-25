@@ -38,6 +38,17 @@ import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
 import type { LifeActionCard } from "./lifeResponse";
 
+/** Where someone stands with the character, in words rather than a number. */
+function dispositionLabel(disposition: number): string {
+  if (disposition <= -3) return "hostile";
+  if (disposition === -2) return "hates you";
+  if (disposition === -1) return "cold";
+  if (disposition === 0) return "neutral";
+  if (disposition === 1) return "warm";
+  if (disposition === 2) return "close";
+  return "devoted";
+}
+
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -60,6 +71,12 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
       return (
         <p className="font-mono text-xs text-muted-foreground">
           <span className="text-accent">◆</span> {text}
+        </p>
+      );
+    case "npc_read":
+      return (
+        <p className="border-l-2 border-neon-pink/60 pl-3 font-mono text-xs text-neon-pink">
+          ◆ {text}
         </p>
       );
     case "hook_negotiated":
@@ -91,6 +108,7 @@ const LIFE_EVENT_TYPES = new Set([
   "skill_check",
   "hook_offered",
   "hook_negotiated",
+  "npc_read",
   "hook_declined",
   "mission_started",
   "mission_completed",
@@ -515,6 +533,35 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                       {s.title}
                     </span>
                     <span className="block text-xs text-muted-foreground">{s.summary}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {life.people.length > 0 && (
+            <section className="space-y-2 border border-border bg-card p-4">
+              <Label>People</Label>
+              <ul className="space-y-2">
+                {life.people.slice(0, 8).map((person) => (
+                  <li key={person.key} className="text-sm">
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="font-medium">{person.name}</span>
+                      <span
+                        className="num font-mono text-[10px] uppercase tracking-[0.16em]"
+                        title={`Disposition ${person.disposition}`}
+                      >
+                        {dispositionLabel(person.disposition)}
+                      </span>
+                    </span>
+                    {person.standing && (
+                      <span className="block text-xs text-muted-foreground">{person.standing}</span>
+                    )}
+                    {(person.known ?? []).map((fact) => (
+                      <span key={fact} className="mt-1 block text-xs text-neon-pink">
+                        {fact}
+                      </span>
+                    ))}
                   </li>
                 ))}
               </ul>

@@ -14,6 +14,17 @@ export type LifePersonSummary = {
   status: string;
   lastSeenDay?: number;
   notes?: string;
+  /** Their job in the standing cast: fixer, ripperdoc, landlord, and so on. */
+  role?: string;
+  /** One public line on who this person is to the character. */
+  standing?: string;
+  /** What the character's own Lifepath said about them, quoted. */
+  tie?: string;
+  /**
+   * What the player has actually worked out about them. Absent facts are absent
+   * on purpose: the engine holds the rest and the model is never shown it.
+   */
+  known?: string[];
 };
 
 /**
@@ -164,13 +175,27 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
   }
 
   if (context.people.length) {
-    parts.push("", "== PEOPLE THEY KNOW (prefer these over new faces; use the key as npcKey) ==");
+    parts.push(
+      "",
+      "== PEOPLE THEY KNOW (use these; do not invent new named faces while these exist) ==",
+      "These are recurring characters. They keep their names, their voices and their grudges.",
+    );
     for (const p of context.people.slice(0, 10)) {
-      const seen = p.lastSeenDay !== undefined ? `, last dealt with day ${p.lastSeenDay}` : "";
+      const seen = p.lastSeenDay ? `, last dealt with day ${p.lastSeenDay}` : ", not seen yet";
+      const role = p.role ? `${p.role.replace(/_/g, " ")}, ` : "";
       parts.push(
-        `- ${p.name} [${p.key}] (disposition ${p.disposition}, ${p.status}${seen})${p.notes ? ` — ${p.notes}` : ""}`,
+        `- ${p.name} [${p.key}] (${role}disposition ${p.disposition}, ${p.status}${seen})`,
       );
+      if (p.standing) parts.push(`    ${p.standing}`);
+      if (p.tie) parts.push(`    From their history together: ${p.tie}`);
+      for (const fact of p.known ?? []) parts.push(`    The player has worked out: ${fact}`);
+      if (p.notes) parts.push(`    ${p.notes}`);
     }
+    parts.push(
+      "What is written above is ALL you know about these people. They have motives and " +
+        "histories you have not been told; play them as people with their own business, and never " +
+        "invent a want, a fear or a secret for them and state it as fact.",
+    );
   }
 
   if (context.recentEvents.length) {

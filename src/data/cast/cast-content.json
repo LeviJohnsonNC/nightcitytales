@@ -1,0 +1,320 @@
+{
+  "_about": {
+    "kind": "Original content written for this project. NOT transcribed from any published book.",
+    "note": "Pools for the six recurring people a campaign opens with (engine/cast.ts). Like job-content.json these cite no page, because there is no book behind them: they are written in the Cyberpunk RED idiom.",
+    "shape": "Each archetype supplies names, standing lines (what the player openly knows), and the four dossier fields. Every field is drawn deterministically from the campaign seed, so a character's cast is the same cast forever.",
+    "rules": "A `standing` line is PUBLIC and goes in the prompt. `wants`, `fear` and `secret` are learned through play and must read as true statements about the person, not as hooks addressed to the player. `breakingPoint` is the line they will not cross whatever is offered; write it as a hard limit, not a preference."
+  },
+
+  "fixer": {
+    "label": "Fixer",
+    "names": [
+      "Ilsa Bräun",
+      "Marcus \"Tally\" Oyelaran",
+      "Dinh Bao Tran",
+      "Rosalind Achebe",
+      "Yuri Pastrana",
+      "Kit Mwangi"
+    ],
+    "standing": [
+      "Your fixer. Takes their cut off the top and never itemises it.",
+      "Your fixer. Answers on the second ring, never the first.",
+      "The fixer who has your number, which is not the same as trusting you.",
+      "Your fixer. Feeds you work steadily enough that you have stopped asking why.",
+      "Your fixer. Was doing this before you could hold a gun and will be after.",
+      "The fixer who took you on when nobody else was returning calls."
+    ],
+    "wants": [
+      "To be the one Watson calls first, and to stop having to prove it every month.",
+      "Out. Enough put aside to buy a licence and a legitimate name to hang it on.",
+      "To find out who has been undercutting their rates on the same street.",
+      "A crew they can send anywhere without being asked what the job really is.",
+      "To pay off the people who fronted them their first year, before those people ask.",
+      "To place one client so high up the corporate ladder that the ladder becomes theirs."
+    ],
+    "fear": [
+      "That the client list is one bad night from ending up on somebody's screen.",
+      "Being the last person to know something. It has almost killed them twice.",
+      "That the people who fronted them the first year are keeping a running total.",
+      "Getting old on The Street with no one who owes them anything.",
+      "That a job they brokered years ago is still walking around looking for them.",
+      "Being reduced to what they actually are without the phone in their hand."
+    ],
+    "secret": [
+      "They have been quietly selling job outcomes to a corporate analyst for two years.",
+      "One of the crews they placed last year never came back, and they knew the odds.",
+      "They are into a Tyger Claws bookmaker for more than they can raise.",
+      "They took a finder's fee to put you specifically on a job that went wrong.",
+      "Their real name is on an NCPD file under a case that was never closed.",
+      "They have a second phone, and a second client list that nobody on the first one knows about."
+    ],
+    "breakingPoint": [
+      "They will not broker anything that touches a child. There is no fee for it.",
+      "They will not give up a client's name, even one they despise. It is the whole business.",
+      "They will never work with the fixer who burned them in Kabuki, at any price.",
+      "They will not walk into a corporate building. Not once, not for anything.",
+      "They will not front you money twice. Once is business, twice is a habit.",
+      "They will not lie to you about the pay. Everything else is negotiable."
+    ]
+  },
+
+  "ripperdoc": {
+    "label": "Ripperdoc",
+    "names": [
+      "Dr. Ana Sørenson",
+      "Boro \"Two-Thumbs\" Kalinić",
+      "Meiling Zhou",
+      "Reg Amankwah",
+      "Dr. Halvor Ness",
+      "Priya Raghunathan"
+    ],
+    "standing": [
+      "Your ripperdoc. The chair is clean, which is more than most can say.",
+      "Your ripperdoc. Talks through the whole procedure whether you want it or not.",
+      "The ripper who did your first install and has done every one since.",
+      "Your ripperdoc. Cash up front, no questions, no small talk.",
+      "Your ripperdoc. Keeps a real waiting room and real hours, which costs them clients.",
+      "The ripper you go to because the alternative is a chair behind a noodle bar."
+    ],
+    "wants": [
+      "A licence. A real one, with their name on it, hanging where people can see it.",
+      "To stop working on people who cannot afford what they are asking for.",
+      "One clean year with nobody dying on the table.",
+      "The equipment to do the work properly instead of the work they can afford to do.",
+      "To get their sibling out of the apartment block they both grew up in.",
+      "To publish. Somewhere real. Under their own name, about what chrome does to people."
+    ],
+    "fear": [
+      "That the last three installs were from a batch they should have refused.",
+      "Losing the hands. Everything they are is in twenty centimetres of forearm.",
+      "That someone will connect the clinic to the body found in Northside in March.",
+      "Their own chrome. They have not looked at their own scans in two years.",
+      "That they have started enjoying the part of the job they should not.",
+      "The supplier finding out where the surplus stock has actually been going."
+    ],
+    "secret": [
+      "They are treating half the block for free and stealing the stock to do it.",
+      "They lost their licence in another city, under another name, for good reason.",
+      "They keep tissue samples from every client, and they are not sure why any more.",
+      "Trauma Team pays them a retainer for names, and the retainer is most of the rent.",
+      "The chair in the back room is not theirs. It belongs to people they cannot refuse.",
+      "They have installed something in a client that the client did not consent to."
+    ],
+    "breakingPoint": [
+      "They will not install anything in someone who cannot say their own name.",
+      "They will not go under a Humanity floor with you. They will refuse and mean it.",
+      "They will not treat anyone wearing Maelstrom colours. Not after what they saw.",
+      "They will not work on a body they were not introduced to while it was breathing.",
+      "They will not lie on a scan, for you or anyone. The numbers are the numbers.",
+      "They will not let anyone into the back room. Not once, not for anything."
+    ]
+  },
+
+  "landlord": {
+    "label": "Landlord",
+    "names": [
+      "Odalys Kimura",
+      "Bern Halloran",
+      "Ma Tsatsu",
+      "Emeka Duarte",
+      "Verity Nakashima",
+      "Sal Ozturk"
+    ],
+    "standing": [
+      "Your landlord. Knows exactly what day it is, every month, without a calendar.",
+      "Your landlord. Fixes what breaks eventually, and remembers who complained.",
+      "Your landlord. Lives two floors down, which cuts both ways.",
+      "Your landlord. Has never once raised their voice and has never once forgotten.",
+      "Your landlord, and the closest thing this building has to a government.",
+      "Your landlord. Was here before the building changed hands and expects to outlast the next one."
+    ],
+    "wants": [
+      "To hold onto the building through whatever is coming for it.",
+      "One tenant on this floor who is not a problem waiting to be discovered.",
+      "To get the water fixed properly, which means money nobody in the building has.",
+      "Their name off the deed and someone else's headache in its place.",
+      "To know what you actually do, so they can price the risk of you correctly.",
+      "The unit on four emptied without anybody official being involved."
+    ],
+    "fear": [
+      "The offer they have already had on the building, and what happens when it is refused twice.",
+      "That one of these doors is going to open onto something they cannot un-see.",
+      "Being alone in this building when it finally stops being theirs.",
+      "The inspection they have been putting off for three years.",
+      "That the tenant on four has stopped answering for a reason.",
+      "Whoever it is that has started asking around about the tenant list."
+    ],
+    "secret": [
+      "They have already signed a preliminary agreement with the buyer.",
+      "They have a key to your unit and have used it, once, and put everything back.",
+      "The building's registered owner has been dead for a year and they have not filed it.",
+      "They are paying protection to a gang and calling it a maintenance fee.",
+      "There is a body in the block's utility space and they know exactly whose it is.",
+      "They have been quietly forgiving one tenant's rent for eight months, and it is not you."
+    ],
+    "breakingPoint": [
+      "They will not evict anyone with a child in the unit. They will eat the loss instead.",
+      "They will not open a tenant's door for anyone official. Ever, for any reason.",
+      "They will not take a payment they cannot write down somewhere.",
+      "They will not let anyone move into unit six. It stays empty and they will not say why.",
+      "They will not lie to your face. They will decline to answer, but they will not lie.",
+      "They will not let the building go to that buyer, whatever the number is."
+    ]
+  },
+
+  "friend": {
+    "label": "Friend",
+    "names": [
+      "Teodora \"Teo\" Vasquez",
+      "Nnamdi Cole",
+      "Sasha Bright-Ito",
+      "Wren Kovalenko",
+      "Beniamino \"Benny\" Sarto",
+      "Halima Osei"
+    ],
+    "standing": [
+      "The one person who has never asked you what you do for money.",
+      "Knows you well enough to tell when you are managing them.",
+      "Has been in your corner longer than anyone else who is still breathing.",
+      "The friend you call at four in the morning, and have.",
+      "Owes you nothing, which is exactly why you trust them.",
+      "Has bailed you out twice and brought it up neither time."
+    ],
+    "wants": [
+      "To get you out of this line of work before it finishes the job.",
+      "One thing of their own that has nothing to do with anybody else's problems.",
+      "To be needed by you the way they need you, and to stop noticing the difference.",
+      "Enough put by to leave Night City, and someone to leave it with.",
+      "To finish the thing they started six years ago and have not mentioned since.",
+      "To find out what happened to their brother, and to be told the truth about it."
+    ],
+    "fear": [
+      "Getting the call about you. They have rehearsed it.",
+      "That they are the reason you have not left, and that this makes them selfish.",
+      "Turning into their mother, who is still alive and still in the same chair.",
+      "That everyone they keep is temporary and they are the common factor.",
+      "Being asked for something they will have to say no to.",
+      "The debt they took on last year, which they have told nobody about."
+    ],
+    "secret": [
+      "They have been talking to someone about you, and telling the truth.",
+      "They took money from your enemy once, years ago, and gave it back too late.",
+      "They are sicker than they have said, and have known for months.",
+      "They have a family across town that they have never mentioned to you.",
+      "They kept the thing you asked them to get rid of, and they still have it.",
+      "They were there the night it went wrong, and they left before you saw them."
+    ],
+    "breakingPoint": [
+      "They will not lie to your face for you. They will refuse the ask instead.",
+      "They will not put their sibling anywhere near any of this. Not once.",
+      "They will not carry a weapon for you. They will do almost anything else.",
+      "They will not be in the room when it turns violent. They will leave.",
+      "They will not help you with anything involving that one name, and will not explain.",
+      "They will not go back to the Badlands. Not for you, not for anything."
+    ]
+  },
+
+  "enemy": {
+    "label": "Enemy",
+    "names": [
+      "Corrado \"Razor\" Villanueva",
+      "Song Ha-eun",
+      "Deacon Ferris",
+      "Mirela Ionescu",
+      "Tobias Kanu",
+      "Lark Ferreira"
+    ],
+    "standing": [
+      "Has not forgotten, has not moved on, and is not in a hurry.",
+      "Would step over you in the street. Would also step on you.",
+      "Tells the story about you at parties, and the story gets worse every year.",
+      "Has been patient about this for a long time, which is the worrying part.",
+      "Would rather ruin you slowly than have it be over.",
+      "Has never once come at you directly, and never once let it go either."
+    ],
+    "wants": [
+      "To take from you the one thing you would actually miss.",
+      "An apology, in public, which they will never ask for and never accept.",
+      "To be the person you became instead of the person they are.",
+      "To be finished with you, and cannot work out how to get there.",
+      "Everything you have, item by item, and then to hand it to somebody else.",
+      "To make you understand, precisely, what it cost. Understanding is the whole point."
+    ],
+    "fear": [
+      "That you genuinely do not think about them at all.",
+      "That they have become nothing but this, and there is no version of them without it.",
+      "The person they answer to, who is losing patience with the whole business.",
+      "Dying before it is settled. That is the only thing that frightens them.",
+      "That the story they have been telling about that night is not what happened.",
+      "Being alone in a room with someone who knew them before."
+    ],
+    "secret": [
+      "They tried to make peace, once, through someone who never passed the message on.",
+      "They are working for the same fixer you are, one step removed, and do not know it.",
+      "The thing they blame you for was mostly somebody else, and they have suspected for a while.",
+      "They are dying, and have about a year, and have told no one.",
+      "They have a photograph of you both from before, and they have not thrown it away.",
+      "They have already sold information about you, and are waiting to see what it buys."
+    ],
+    "breakingPoint": [
+      "They will not touch your family. That was the one rule, and it still holds.",
+      "They will not do it in front of witnesses. Whatever it is, it happens quietly.",
+      "They will not accept money to stop. Offering insults the entire thing.",
+      "They will not be the one who moves first. They need you to.",
+      "They will not work with the Tyger Claws, whatever it would buy them.",
+      "They will not let anybody else be the one who does it."
+    ]
+  },
+
+  "old_flame": {
+    "label": "Old flame",
+    "names": [
+      "Juno Adeyemi",
+      "Kasimir Wolde",
+      "Nadia Sirko",
+      "Emil Onobrakpeya",
+      "Sunny Okafor",
+      "Vero Lindqvist"
+    ],
+    "standing": [
+      "Still has your number. Uses it about twice a year, always late.",
+      "You do not talk. You are both aware of exactly where the other one lives.",
+      "It ended badly and neither of you has ever agreed on why.",
+      "Left, came back, and has not explained either trip.",
+      "The one you do not mention, and everyone who knows you knows not to ask.",
+      "Answers on the first ring, every time, which neither of you has ever discussed."
+    ],
+    "wants": [
+      "To know whether you are all right, without having to ask you directly.",
+      "To finish the argument you never finished, and to win it.",
+      "Their things back. The actual things. It has been years and they still want them.",
+      "To be told it was not their fault, by you, out loud.",
+      "Out of Night City, and to not have to think about any of this again.",
+      "One evening where it is the way it used to be, and then never again."
+    ],
+    "fear": [
+      "That you have been fine this whole time.",
+      "Running into you somewhere with no way to leave gracefully.",
+      "That they will say yes to you again, and know they would.",
+      "The person they are with now finding out how often they think about this.",
+      "That everything since has been a version of trying to get back to it.",
+      "Hearing about you secondhand, from someone who does not know."
+    ],
+    "secret": [
+      "They kept paying off a debt of yours for a year after it ended.",
+      "They were the one who told your enemy where to find you, and they did not mean it to go that way.",
+      "They are in debt to people who have started asking about you by name.",
+      "They have been outside your building more than once and not come up.",
+      "There is a child, and they have never mentioned it, and the arithmetic works.",
+      "They left because of something they found out about you, and never told you what."
+    ],
+    "breakingPoint": [
+      "They will not put themselves anywhere near your work. That was why it ended.",
+      "They will not be lied to twice about the same thing. Once was survivable.",
+      "They will not let you near their family again, whatever the reason.",
+      "They will not take your money. It is the one thing they will not do.",
+      "They will not start it up again. They will do almost anything except that.",
+      "They will not tell you where they are living now. Not ever."
+    ]
+  }
+}

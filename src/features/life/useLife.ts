@@ -23,6 +23,7 @@ import {
   mergeSituations,
   missionOffer,
   nextPhase,
+  readsThePerson,
   resolveSkillId,
   rollJobSeed,
   selectSituation,
@@ -108,6 +109,12 @@ import {
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
 import {
+  castMemberInRole,
+  ensureCast,
+  markDealtWith,
+  revealNextFact,
+} from "@/features/campaign/castSeeding";
+import {
   campaignPhase,
   clockFromRow,
   derivedSituations,
@@ -158,13 +165,23 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     listClocks(campaignId),
   ]);
 
+  // The six the campaign lives among. Seeded once, from the character's own
+  // Lifepath, before anything reads the people: a campaign with nobody in it
+  // has no fixer to be called by and no friend to have gone quiet on.
+  const cast = await ensureCast({
+    campaignId,
+    flags: full.flags,
+    character,
+    npcs: full.npcs,
+  });
+
   const clock: GameClock = { day: full.campaign.day, minute: full.campaign.minute };
   const input = {
     campaign: full.campaign,
     vitals: full.vitals,
     character,
     inventory: full.inventory,
-    npcs: full.npcs,
+    npcs: cast.npcs,
   };
 
   // Age what was already on the books, then fold in what is true right now.
@@ -187,7 +204,11 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
   // stored, so the same work is still on the wire after a reload, and so the
   // mission behind an offer exists BEFORE anyone pitches it.
   const seed = await ensureNextJobSeed(campaignId, full.flags);
-  const { missionId: wireMissionId, wire } = wireOfferFor(seed);
+  // Work comes through the fixer the character actually has, not a new name.
+  const { missionId: wireMissionId, wire } = wireOfferFor(
+    seed,
+    castMemberInRole(cast.npcs, "fixer"),
+  );
 
   const hookRow = liveHookSituation(merged);
   let hook = hookRow ? hookFromSituation(hookRow) : null;
@@ -598,6 +619,44 @@ async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {
     data: { userPrompt: renderLifeUserPrompt(context, input || opening) },
   });
   await applyResponse(bundle, response, turn);
+
+  // Acting on a situation about a person IS dealing with them. Only a turn the
+  // player actually typed counts: opening the moment, or asking what the
+  // options are, is not the same as picking up the phone.
+  const npcKey = bundle.current?.npcKey;
+  if (npcKey && input.trim() && !turn.options) {
+    const npc = bundle.npcs.find((n) => n.npc_id === npcKey);
+    if (npc) await markDealtWith(bundle.campaign.id, npc, bundle.clock.day);
+  }
+}
+
+/**
+ * Reading someone while you were doing something else.
+ *
+ * A Social check won comfortably against a person tells you something about
+ * them that they did not volunteer. The engine decides what: the next rung of
+ * their dossier, in order, once per check. The model is handed the fact
+ * afterwards to narrate as a tell, and is never shown the rungs still hidden.
+ */
+async function applyInsight(
+  campaignId: string,
+  npcKey: string,
+  skillId: string,
+  success: boolean,
+  margin: number,
+): Promise<string | null> {
+  if (!success || !readsThePerson(skillId, margin)) return null;
+  const npc = await findCampaignNpc(campaignId, npcKey);
+  if (!npc) return null;
+  const learned = await revealNextFact(campaignId, npc);
+  if (!learned) return null;
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "npc_read",
+    summary: learned.text,
+    data: { npcKey, fact: learned.fact } as unknown as Json,
+  });
+  return learned.text;
 }
 
 /** Roll a Life check the player pressed, then let the world answer it. */
@@ -631,10 +690,23 @@ async function commitLifeCheck(
       : roll.result.tie
         ? "FAILURE — tied, and a tie goes to the one resisting"
         : `FAILURE by ${Math.abs(roll.result.margin)}`;
+    const read = pending.opposition?.npcKey
+      ? await applyInsight(
+          campaignId,
+          pending.opposition.npcKey,
+          pending.skillId,
+          roll.result.success,
+          roll.result.margin,
+        )
+      : null;
     const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
     await liveTurn(fresh, "", {
       minutes: 0,
-      resolved: `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".`,
+      resolved:
+        `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".` +
+        (read
+          ? ` Reading them that closely told the character something they did not volunteer: ${read} Let it show as a tell in how they behave, not as an announcement.`
+          : ""),
     });
     return;
   }
@@ -834,6 +906,11 @@ async function settleNegotiation(
   }
 
   const outcome = settleHookAsk(hook.terms, hook.offer, ask, { success, margin });
+  // Only a push made AGAINST the broker reads the broker. Asking around the
+  // street is a check about the job, with the fixer nowhere in the room.
+  const read = spec.opposedBy
+    ? await applyInsight(campaignId, hook.offer.brokerKey, pending.skillId, success, margin)
+    : null;
 
   await upsertSituations(campaignId, [
     hookUpsert(hook.situationKey, hook.mission, hook.offer, outcome.terms),
@@ -864,6 +941,7 @@ async function settleNegotiation(
     `The player pushed on the offer (${spec.label.toLowerCase()}) and the ${pending.skillName} check is RESOLVED: ${success ? "SUCCESS" : "FAILURE"}.`,
     `The engine has already applied it: ${outcome.summary}`,
     outcome.revealed ? `They now know this, and did not before: ${outcome.revealed}` : "",
+    read ? `Leaning on them that hard also showed something: ${read} Play it as a tell.` : "",
     `Narrate the exchange in ${hook.offer.brokerName}'s voice. Do not change the fee, do not add terms, and do not offer anything the engine did not.`,
   ]
     .filter(Boolean)
@@ -978,6 +1056,8 @@ export function useLife(campaignId: string) {
     clock: bundle?.clock ?? { day: 1, minute: 1080 },
     situation: bundle?.current ?? null,
     situations: bundle?.situations.filter((s) => s.status === "live") ?? [],
+    /** The people this character actually knows, as the player may see them. */
+    people: bundle ? lifePeople(bundle.npcs) : [],
     clocks: bundle?.clocks.filter((c) => !c.hidden) ?? [],
     hook: bundle?.hook ?? null,
     narration: latestNarration,
