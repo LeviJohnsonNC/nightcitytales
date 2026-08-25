@@ -137,12 +137,7 @@ function LifeLog({
   const shown = events
     .filter((e) => LIFE_EVENT_TYPES.has(e.type))
     .filter(
-      (e) =>
-        !(
-          suppressed &&
-          e.type === "life_narration" &&
-          norm(e.summary ?? "") === suppressed
-        ),
+      (e) => !(suppressed && e.type === "life_narration" && norm(e.summary ?? "") === suppressed),
     )
     .slice(-40);
   return (
