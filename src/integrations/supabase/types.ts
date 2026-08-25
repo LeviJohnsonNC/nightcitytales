@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_clocks: {
+        Row: {
+          campaign_id: string
+          clock_key: string
+          created_at: string
+          data: Json
+          filled: number
+          hidden: boolean
+          id: string
+          label: string
+          segments: number
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          clock_key: string
+          created_at?: string
+          data?: Json
+          filled?: number
+          hidden?: boolean
+          id?: string
+          label: string
+          segments?: number
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          clock_key?: string
+          created_at?: string
+          data?: Json
+          filled?: number
+          hidden?: boolean
+          id?: string
+          label?: string
+          segments?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_clocks_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_events: {
         Row: {
           beat_id: string | null
@@ -216,6 +263,65 @@ export type Database = {
           },
         ]
       }
+      campaign_situations: {
+        Row: {
+          campaign_id: string
+          category: string
+          created_at: string
+          data: Json
+          due_day: number | null
+          id: string
+          last_shown_day: number | null
+          npc_key: string | null
+          severity: number
+          situation_key: string
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          category?: string
+          created_at?: string
+          data?: Json
+          due_day?: number | null
+          id?: string
+          last_shown_day?: number | null
+          npc_key?: string | null
+          severity?: number
+          situation_key: string
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          category?: string
+          created_at?: string
+          data?: Json
+          due_day?: number | null
+          id?: string
+          last_shown_day?: number | null
+          npc_key?: string | null
+          severity?: number
+          situation_key?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_situations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_vitals: {
         Row: {
           campaign_id: string
@@ -277,6 +383,7 @@ export type Database = {
           ip_awarded: number | null
           minute: number
           name: string
+          phase: string
           role_state: Json
           status: string
           updated_at: string
@@ -292,6 +399,7 @@ export type Database = {
           ip_awarded?: number | null
           minute?: number
           name: string
+          phase?: string
           role_state?: Json
           status?: string
           updated_at?: string
@@ -307,6 +415,7 @@ export type Database = {
           ip_awarded?: number | null
           minute?: number
           name?: string
+          phase?: string
           role_state?: Json
           status?: string
           updated_at?: string
