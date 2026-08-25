@@ -1321,6 +1321,21 @@ export function usePlay(campaignId: string) {
           ? latestSuggestions(bundle)
           : [],
 
+    /**
+     * What the character can actually do right now, so the cards can grey out
+     * the impossible instead of letting the player roll for it.
+     */
+    capability: bundle
+      ? buildCapabilitySnapshot({
+          character: bundle.character,
+          vitals: bundle.vitals,
+          inventory: bundle.inventory,
+          encounter: bundle.encounter,
+          events: bundle.events,
+          beatId: bundle.beat?.id ?? null,
+        })
+      : null,
+
     /** The check waiting on the player's die, if any. */
     pendingCheck,
     /** How many checks are on the table, so the UI can say another is coming. */

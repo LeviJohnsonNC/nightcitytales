@@ -600,6 +600,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
               play.commitAttack(play.pendingAttack!, option, result, luckSpent)
             }
             busy={play.combatBusy}
+            capability={play.capability}
             luckRemaining={play.luck.remaining}
           />
         )}
