@@ -607,7 +607,7 @@ export function useLife(campaignId: string) {
     actionError:
       ((turn.error ?? check.error ?? accept.error ?? decline.error) as Error | null) ?? null,
     /** Resolves true when the turn landed, false when it failed. */
-    act: async (input: string, minutes = TIME_COSTS.quick) => {
+    act: async (input: string, minutes: number = TIME_COSTS.quick) => {
       try {
         await turn.mutateAsync({ input, minutes });
         return true;

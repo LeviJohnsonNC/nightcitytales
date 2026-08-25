@@ -55,9 +55,7 @@ export function situationToUpsert(situation: LifeSituation): SituationUpsert {
     severity: situation.severity,
     dueDay: situation.dueDay ?? null,
     lastShownDay: situation.lastShownDay ?? null,
-    ...(situation.data
-      ? { data: situation.data as unknown as SituationUpsert["data"] }
-      : {}),
+    data: (situation.data ?? {}) as unknown as NonNullable<SituationUpsert["data"]>,
   };
 }
 
@@ -123,7 +121,7 @@ export type LifeBundleInput = {
  * mechanical number (bills, repair costs, HP) comes from the existing engine
  * modules through downtimeView — none is invented here.
  */
-export function buildLifeState(input: LifeBundleInput): LifeStateInput {
+export function buildLifeState(input: LifeBundleInput): Omit<LifeStateInput, "people"> {
   const view = downtimeView({
     campaign: input.campaign,
     vitals: input.vitals,
