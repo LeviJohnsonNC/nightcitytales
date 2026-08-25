@@ -7,14 +7,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ItemKind } from "@/engine";
 import { billsAfterResting, downtimeView, type RepairableArmor } from "./downtimeModel";
-import {
-  buy,
-  loadDowntime,
-  payBills,
-  repair,
-  rest,
-  type DowntimeBundle,
-} from "./downtimeOps";
+import { buy, loadDowntime, payBills, repair, rest, type DowntimeBundle } from "./downtimeOps";
 
 export type { DowntimeBundle };
 
