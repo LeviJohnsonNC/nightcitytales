@@ -6,7 +6,7 @@
  */
 import { useMemo, useState } from "react";
 import { LuckStepper } from "./LuckStepper";
-import type { PerformAttackResult } from "@/engine";
+import type { CapabilitySnapshot, PerformAttackResult } from "@/engine";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
 import type { FullCharacter } from "@/lib/backend";
 import { attackOption, type AttackOption, type PendingAttack } from "./attackPrompt";
