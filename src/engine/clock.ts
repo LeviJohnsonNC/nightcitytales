@@ -26,7 +26,7 @@ export type Weekday = (typeof WEEKDAYS)[number];
 
 /** Day 1 is a Monday. */
 export function weekdayFor(day: number): Weekday {
-  const index = ((Math.trunc(day) - 1) % 7 + 7) % 7;
+  const index = (((Math.trunc(day) - 1) % 7) + 7) % 7;
   return WEEKDAYS[index] as Weekday;
 }
 

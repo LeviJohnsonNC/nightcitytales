@@ -187,9 +187,7 @@ function buildContext(bundle: LifeBundle, resolved?: string): LifeContext {
     clock: bundle.clock,
     character: {
       name: bundle.character.character.name,
-      ...(bundle.character.character.handle
-        ? { handle: bundle.character.character.handle }
-        : {}),
+      ...(bundle.character.character.handle ? { handle: bundle.character.character.handle } : {}),
       role: bundle.character.character.role,
       hp: bundle.vitals.hp_current,
       hpMax: bundle.vitals.hp_max,

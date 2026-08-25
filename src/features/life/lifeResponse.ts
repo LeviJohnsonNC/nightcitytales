@@ -100,9 +100,7 @@ export type LifeResponse = {
  * turn, so everything is narrowed in normalizeLifeResponse instead.
  */
 export const LifeWireResponseSchema = z.object({
-  situation: z
-    .object({ title: z.string().nullish(), description: z.string().nullish() })
-    .nullish(),
+  situation: z.object({ title: z.string().nullish(), description: z.string().nullish() }).nullish(),
   actions: z.array(z.unknown()).nullish(),
   resolution: z.string().nullish(),
   proposedActions: z.array(z.unknown()).nullish(),
@@ -158,7 +156,11 @@ function normalizeActions(raw: unknown): LifeActionCard[] {
     out.push({
       label,
       description: str(a["description"]) ?? str(a["detail"]) ?? "",
-      timeMinutes: clamp(num(a["timeMinutes"] ?? a["time_minutes"] ?? a["minutes"]) ?? 15, 0, MAX_MINUTES),
+      timeMinutes: clamp(
+        num(a["timeMinutes"] ?? a["time_minutes"] ?? a["minutes"]) ?? 15,
+        0,
+        MAX_MINUTES,
+      ),
       knownCost: cost !== undefined && cost > 0 ? cost : null,
       skillId: str(a["skillId"]) ?? str(a["skill_id"]) ?? str(a["skill"]) ?? null,
     });
@@ -226,8 +228,16 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
         npcKey,
         npcName,
         opposingSkillId,
-        opposingSkillLevel: clamp(num(a["opposingSkillLevel"] ?? a["opposing_skill_level"]) ?? 3, 0, 10),
-        opposingStatValue: clamp(num(a["opposingStatValue"] ?? a["opposing_stat_value"]) ?? 5, 1, 10),
+        opposingSkillLevel: clamp(
+          num(a["opposingSkillLevel"] ?? a["opposing_skill_level"]) ?? 3,
+          0,
+          10,
+        ),
+        opposingStatValue: clamp(
+          num(a["opposingStatValue"] ?? a["opposing_stat_value"]) ?? 5,
+          1,
+          10,
+        ),
         intent,
       });
       continue;

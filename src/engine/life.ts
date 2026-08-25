@@ -338,7 +338,16 @@ export function mergeSituations(
   return out;
 }
 
-const DERIVED_PREFIXES = ["rent_due", "wounded", "armor_repair_", "no_ammo", "broken_weapon", "humanity_low", "broke", "person_"];
+const DERIVED_PREFIXES = [
+  "rent_due",
+  "wounded",
+  "armor_repair_",
+  "no_ammo",
+  "broken_weapon",
+  "humanity_low",
+  "broke",
+  "person_",
+];
 
 function isDerivedKey(key: string): boolean {
   return DERIVED_PREFIXES.some((p) => (p.endsWith("_") ? key.startsWith(p) : key === p));
