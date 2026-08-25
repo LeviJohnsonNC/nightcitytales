@@ -26,6 +26,7 @@ import {
   clampLuckSpend,
   luckAfterSpend,
   luckModifier,
+  advanceClock,
   luckPoolMax,
   nextPhase,
   phaseOf,
@@ -59,7 +60,9 @@ import {
   getCharacter,
   listCampaignEvents,
   saveCampaignNpc,
+  setCampaignClock,
   setCampaignFlag,
+  setCampaignPhase,
   setInventoryAmmo,
   setNpcDisposition,
   updateCampaign,
@@ -262,6 +265,14 @@ async function narrate(
 
   const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
 
+  // The city keeps its own time during a job, not only between them. Each turn
+  // costs a few minutes, so rent, bills and the calendar stay real while the
+  // player is working. TIME_COSTS are app pacing, not published rules.
+  let clock = advanceClock(
+    { day: bundle.campaign.day, minute: bundle.campaign.minute },
+    TIME_COSTS.quick,
+  );
+
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "gm_narration",
@@ -415,6 +426,9 @@ async function narrate(
           fromBeatId: bundle.beat.id,
           toBeat: getBeat(bundle.mission, action.to),
         });
+        // Moving between beats is travel, legwork, waiting — an errand's worth
+        // of the evening, not a heartbeat.
+        clock = advanceClock(clock, TIME_COSTS.errand);
         if (next.status === "completed") {
           await settleMission({ ...bundle, runtime: next }, next, bundle.mission);
         }
