@@ -42,6 +42,7 @@ import {
   type CombatAwarenessOption,
 } from "@/engine";
 import { Button } from "@/components/ui/button";
+import { describeOutlook } from "./outlook";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
 import type { usePlay } from "./usePlay";
 
@@ -244,7 +245,7 @@ function CharismaticImpactSection({ play }: { play: ReturnType<typeof usePlay> }
             }}
           />
           <p className="text-xs text-muted-foreground">
-            You need {Math.max(1, (audience?.dv ?? 0) - rank)} or better on the die.
+            {describeOutlook(rank, audience?.dv ?? 0)}
           </p>
         </div>
       ) : (

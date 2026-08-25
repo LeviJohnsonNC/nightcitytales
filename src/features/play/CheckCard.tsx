@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
 import { LuckStepper } from "./LuckStepper";
+import { describeOutlook } from "./outlook";
 import type { CheckRoll, PendingCheck, PendingOpposition } from "./checkPrompt";
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -261,9 +262,6 @@ function DvBody({
 }) {
   const [rolled, setRolled] = useState<Extract<CheckRoll, { kind: "dv" }> | null>(null);
   const [luck, setLuck] = useState(0);
-  // Opposed checks carry no target number; on this side of the card there is
-  // always a DV, so derive it rather than rendering a null.
-  const needed = pending.needed ?? dv - pending.base;
   const result = rolled?.result ?? null;
   const critDie = result && result.rolls.length > 1 ? result.rolls[1]! : null;
 
@@ -303,10 +301,10 @@ function DvBody({
             <div>
               <p className="text-sm font-semibold">Roll 1d10</p>
               <p className="text-xs text-muted-foreground">
-                You need a {needed} or better on the die
-                {luck > 0 ? `, or ${needed - luck} with the Luck you dedicated` : ""}.
+                {describeOutlook(pending.base + luck - pending.woundPenalty, dv)}
               </p>
             </div>
+
           </div>
         </div>
       ) : (
