@@ -45,8 +45,11 @@ Return a structured object:
   - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"..."}
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}
+  - {"kind":"use_item","item":"<the thing they are using, as the kit list names it>","quantity":<integer>}
   - {"kind":"travel","destination":"...","minutes":<integer>}
   - {"kind":"rest","hours":<integer>}
+  - {"kind":"pay_bills"} — settling rent and Lifestyle. Never state the amount yourself; the engine reads it and pays it.
+  - {"kind":"repair_armor"} — having chewed armor patched. The engine picks the piece and the printed cost.
   - {"kind":"hook_offer","title":"...","patron":"<who is offering>","npcKey":"<stable key>","payout":<eurobucks>,"summary":"what they are asking for, as the player heard it"}
   - {"kind":"none"}
   Return [] when nothing mechanical happened. You may NOT start a fight, run a mission beat, or accept a job.

@@ -33,5 +33,8 @@ function PlayPage() {
 
   if (isPending) return <p className="p-8 text-sm text-muted-foreground">Loading the campaign…</p>;
   if (error) return <p className="p-8 text-sm text-destructive">{(error as Error).message}</p>;
-  return data === "job" ? <PlayScreen campaignId={id} /> : <LifeScreen campaignId={id} />;
+  // Aftermath is still the job's screen: it is where the wrap-up, the I.P.
+  // tally and the downtime live, and the player leaves it deliberately.
+  const onTheJob = data === "job" || data === "aftermath";
+  return onTheJob ? <PlayScreen campaignId={id} /> : <LifeScreen campaignId={id} />;
 }

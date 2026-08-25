@@ -462,29 +462,29 @@ function WrapUpCard({
       ) : (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            The run continues — your eurobucks, wounds and gear carry over to the next job. Take the
-            downtime first: nothing patches itself up.
+            The run continues — your eurobucks, wounds and gear carry over. Take the downtime here
+            if you want it, then go back to the street. The next job has to find you.
           </p>
           <DowntimePanel campaignId={bundle.campaign.id} character={bundle.character} />
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              onClick={() => play.nextJob()}
-              disabled={play.nextJobBusy || play.ipAwarded === null}
+              onClick={() => play.backToLife()}
+              disabled={play.backToLifeBusy || play.ipAwarded === null}
               title={
                 play.ipAwarded === null
                   ? "Tally this session's Improvement Points first"
-                  : "Line up the next job in Night City"
+                  : "Return to life between jobs"
               }
             >
-              {play.nextJobBusy ? "Lining up work…" : "Take the next job"}
+              {play.backToLifeBusy ? "Heading out…" : "Back to the street"}
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/roster">Back to the roster</Link>
             </Button>
           </div>
-          {play.nextJobError && (
-            <p className="text-sm text-destructive">{play.nextJobError.message}</p>
+          {play.backToLifeError && (
+            <p className="text-sm text-destructive">{play.backToLifeError.message}</p>
           )}
         </div>
       )}

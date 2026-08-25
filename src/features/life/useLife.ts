@@ -15,6 +15,7 @@ import {
   getMission,
   getSkill,
   jobIdForSeed,
+  judgeAction,
   luckPoolMax,
   mergeSituations,
   nextPhase,
@@ -66,6 +67,14 @@ import {
   type PendingCheck,
 } from "@/features/play/checkPrompt";
 import { buildCapabilitySnapshot, renderCapabilityLines } from "@/features/play/capabilityModel";
+import {
+  loadDowntime,
+  payBills,
+  repair,
+  rest,
+  worstArmor,
+  type DowntimeBundle,
+} from "@/features/downtime/downtimeOps";
 import { renderLifeUserPrompt, type LifeContext } from "./lifeContext";
 import { lifeTurnFn } from "./lifeTurn.server";
 import type { LifeActionCard, LifeResponse } from "./lifeResponse";
@@ -238,10 +247,45 @@ async function applyResponse(
   let clock = bundle.clock;
   let eurobucks = bundle.vitals.eurobucks;
 
+  // The same gate the job loop runs. Life is not a hole in the wall: money the
+  // character does not have and kit they are not carrying are refused here,
+  // deterministically, and the refusal is written back as something that
+  // happened rather than silently dropped.
+  const capability = buildCapabilitySnapshot({
+    character: bundle.character,
+    vitals: bundle.vitals,
+    inventory: bundle.inventory,
+    encounter: null,
+    events: bundle.events,
+    beatId: null,
+  });
+  const refuse = async (reason: string, code = "impossible"): Promise<void> => {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "action_refused",
+      summary: reason,
+      data: { code } as unknown as Json,
+    });
+  };
+
+  /** The downtime operations, loaded only when a turn actually asks for one. */
+  let downtime: DowntimeBundle | null = null;
+  const downtimeBundle = async (): Promise<DowntimeBundle> => {
+    downtime ??= await loadDowntime(campaignId);
+    return downtime;
+  };
+
   for (const action of response.proposedActions) {
     if (action.kind === "spend") {
-      // Never spend money that is not there: the gate is the engine's, and the
-      // model is told what happened rather than the other way round.
+      const legal = judgeAction(capability, {
+        kind: "spend",
+        resource: "eurobucks",
+        amount: action.amount,
+      });
+      if (!legal.ok) {
+        await refuse(legal.reason, legal.code);
+        continue;
+      }
       const amount = Math.min(action.amount, eurobucks);
       if (amount <= 0) continue;
       eurobucks -= amount;
@@ -251,10 +295,56 @@ async function applyResponse(
         summary: `Paid ${amount}eb — ${action.reason}`,
         data: { amount } as unknown as Json,
       });
+    } else if (action.kind === "use_item") {
+      const legal = judgeAction(capability, {
+        kind: "use_item",
+        item: action.item,
+        quantity: action.quantity,
+      });
+      if (!legal.ok) {
+        await refuse(legal.reason, legal.code);
+        continue;
+      }
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "life_action",
+        summary: `Used ${action.quantity > 1 ? `${action.quantity}× ` : ""}${action.item}.`,
+        data: { item: action.item, quantity: action.quantity } as unknown as Json,
+      });
+    } else if (action.kind === "pay_bills") {
+      // One implementation of rent: the Downtime operation, priced by the engine.
+      try {
+        const paid = await payBills(await downtimeBundle());
+        if (paid.total > 0) eurobucks -= paid.total;
+      } catch (error) {
+        await refuse((error as Error).message, "resource_unavailable");
+      }
+    } else if (action.kind === "repair_armor") {
+      const bundleForOps = await downtimeBundle();
+      const piece = worstArmor(bundleForOps);
+      if (!piece) {
+        await refuse("Nothing in the kit needs patching.", "impossible");
+      } else {
+        try {
+          const done = await repair(bundleForOps, piece);
+          eurobucks -= done.cost;
+        } catch (error) {
+          await refuse((error as Error).message, "resource_unavailable");
+        }
+      }
     } else if (action.kind === "travel") {
       clock = advanceClock(clock, clampActionMinutes(action.minutes));
     } else if (action.kind === "rest") {
+      // Sleeping IS resting: the hours move the clock, and every whole day the
+      // character crossed heals at the printed rate through the same Downtime
+      // operation the panel uses. The clock is advanced here, so the operation
+      // is told not to move the calendar a second time.
+      const before = clock;
       clock = advanceClock(clock, clampActionMinutes(action.hours * 60));
+      const daysCrossed = clock.day - before.day;
+      if (daysCrossed > 0) {
+        await rest(await downtimeBundle(), daysCrossed, { advanceCalendar: false });
+      }
     } else if (action.kind === "skill_check" || action.kind === "opposed_check") {
       const skillId = resolveSkillId(action.skillId);
       if (!skillId) continue;

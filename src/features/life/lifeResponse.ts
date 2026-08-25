@@ -10,8 +10,11 @@ export const LIFE_ACTION_KINDS = [
   "skill_check",
   "opposed_check",
   "spend",
+  "use_item",
   "travel",
   "rest",
+  "pay_bills",
+  "repair_armor",
   "hook_offer",
   "none",
 ] as const;
@@ -35,6 +38,9 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
     intent: z.string(),
   }),
   z.object({ kind: z.literal("spend"), amount: z.number().int(), reason: z.string() }),
+  z.object({ kind: z.literal("use_item"), item: z.string(), quantity: z.number().int() }),
+  z.object({ kind: z.literal("pay_bills") }),
+  z.object({ kind: z.literal("repair_armor") }),
   z.object({ kind: z.literal("travel"), destination: z.string(), minutes: z.number().int() }),
   z.object({ kind: z.literal("rest"), hours: z.number().int() }),
   z.object({
@@ -197,10 +203,30 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
       });
       continue;
     }
+    // Bills and repairs are named jobs the engine prices itself, so they are
+    // matched BEFORE the generic spend branch — a model that helpfully attaches
+    // its own guess at the rent must not turn into an arbitrary withdrawal.
+    if (kindRaw === "pay_bills" || kindRaw === "bills" || kindRaw === "pay_rent") {
+      out.push({ kind: "pay_bills" });
+      continue;
+    }
     if (kindRaw === "spend" || (num(a["amount"]) !== undefined && !skillId)) {
       const amount = num(a["amount"]) ?? num(a["cost"]);
       if (amount === undefined || amount <= 0) continue;
       out.push({ kind: "spend", amount, reason: str(a["reason"]) ?? intent });
+      continue;
+    }
+    if (kindRaw === "repair_armor" || kindRaw === "repair") {
+      out.push({ kind: "repair_armor" });
+      continue;
+    }
+    if (kindRaw === "use_item" || kindRaw === "use") {
+      const item = str(a["item"]) ?? str(a["itemId"]) ?? str(a["item_id"]) ?? str(a["name"]);
+      if (!item) {
+        warn("Life model used an item it did not name, dropped.");
+        continue;
+      }
+      out.push({ kind: "use_item", item, quantity: clamp(num(a["quantity"]) ?? 1, 1, 99) });
       continue;
     }
     if (kindRaw === "travel") {

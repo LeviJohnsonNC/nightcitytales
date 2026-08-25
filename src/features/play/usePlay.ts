@@ -24,10 +24,13 @@ import {
   type IpAward,
   type IpPlaystyle,
   clampLuckSpend,
-  jobIdForSeed,
   luckAfterSpend,
   luckModifier,
+  TIME_COSTS,
+  advanceClock,
   luckPoolMax,
+  nextPhase,
+  phaseOf,
   luckRemaining,
   opposedCheckForCharacter,
   performAttack,
@@ -36,9 +39,7 @@ import {
   callBackup,
   charismaticImpactCheck,
   resolveSkillId,
-  rollJobSeed,
   woundActionPenalty,
-  startMission,
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
@@ -60,7 +61,9 @@ import {
   getCharacter,
   listCampaignEvents,
   saveCampaignNpc,
+  setCampaignClock,
   setCampaignFlag,
+  setCampaignPhase,
   setInventoryAmmo,
   setNpcDisposition,
   updateCampaign,
@@ -263,6 +266,14 @@ async function narrate(
 
   const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
 
+  // The city keeps its own time during a job, not only between them. Each turn
+  // costs a few minutes, so rent, bills and the calendar stay real while the
+  // player is working. TIME_COSTS are app pacing, not published rules.
+  let clock = advanceClock(
+    { day: bundle.campaign.day, minute: bundle.campaign.minute },
+    TIME_COSTS.quick,
+  );
+
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "gm_narration",
@@ -416,6 +427,9 @@ async function narrate(
           fromBeatId: bundle.beat.id,
           toBeat: getBeat(bundle.mission, action.to),
         });
+        // Moving between beats is travel, legwork, waiting — an errand's worth
+        // of the evening, not a heartbeat.
+        clock = advanceClock(clock, TIME_COSTS.errand);
         if (next.status === "completed") {
           await settleMission({ ...bundle, runtime: next }, next, bundle.mission);
         }
@@ -513,6 +527,8 @@ async function narrate(
       });
     }
   }
+
+  await setCampaignClock(campaignId, clock);
 }
 
 /**
@@ -845,8 +861,10 @@ async function settleMission(
     ...(runtime.currentBeatId ? { beat_id: runtime.currentBeatId } : {}),
   });
   // The campaign stays active: it is the character's run, not this one job.
-  // mission_progress already records the job as completed, and the player is
-  // offered the next one at wrap-up.
+  // The phase moves to aftermath — the wrap-up screen — and only the player's
+  // press moves it on to Life. The AI never performs this transition.
+  const after = nextPhase(phaseOf(bundle.campaign.phase), "end_job");
+  if (after) await setCampaignPhase(campaignId, after);
 }
 
 /**
@@ -927,37 +945,36 @@ async function settleDeath(bundle: PlayBundle): Promise<void> {
 }
 
 /**
- * Take the next job in the same campaign.
+ * Back to the street.
  *
- * The run continues: eurobucks, HP, wounds and inventory all carry over, which
- * is the whole point of the campaign outliving the job. Only the mission
- * pointer moves, and ip_awarded is cleared so the next session can be judged on
- * its own merits — I.P. are awarded per session, not once per character.
+ * Wrap-up is done, so the campaign returns to Life. The run continues:
+ * eurobucks, HP, wounds and inventory all carry over, which is the whole point
+ * of the campaign outliving the job. The mission pointer is cleared and
+ * ip_awarded reset, so the next session is judged on its own merits — and the
+ * next job has to arrive as an offer the player accepts, never as a screen they
+ * are dropped into.
  */
-async function startNextJob(bundle: PlayBundle): Promise<string> {
+async function returnToLife(bundle: PlayBundle): Promise<void> {
   const campaignId = bundle.campaign.id;
-  const missionId = jobIdForSeed(rollJobSeed());
-  const mission = getMission(missionId);
 
-  await saveMissionRuntime(campaignId, startMission(mission));
   await updateCampaign(campaignId, {
-    current_mission_id: missionId,
+    current_mission_id: null,
     ip_awarded: null,
     status: "active",
   });
-  // A new job is a new session: the Luck Pool refills. This app has always
-  // treated one job as one session — it is the unit Improvement Points are
-  // awarded on — so Luck refreshes on the same boundary.
+  // One job is one session — the unit Improvement Points are awarded on — so
+  // the Luck Pool refills as the session closes.
   await updateCampaignVitals(campaignId, {
     luck_current: luckPoolMax(statsRecord(bundle.character)),
   });
   await appendCampaignEvent({
     campaign_id: campaignId,
-    type: "mission_started",
-    summary: `New job: ${mission.title}${mission.patron ? ` — ${mission.patron}` : ""}`,
-    data: { missionId } as unknown as Json,
+    type: "phase_changed",
+    summary: `${bundle.character.character.name} goes back to the street.`,
+    data: { phase: "life" } as unknown as Json,
   });
-  return missionId;
+  const back = nextPhase(phaseOf(bundle.campaign.phase), "close_out");
+  await setCampaignPhase(campaignId, back ?? "life");
 }
 
 /** Announce a finished fight in the ledger, and describe it for the GM. */
@@ -1112,7 +1129,13 @@ export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["play", campaignId], queryFn: () => loadPlay(campaignId) });
 
-  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+    // The phase is authoritative and lives outside this bundle: a job that just
+    // ended must move the screen to wrap-up without a reload.
+    void queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] });
+    void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
+  };
 
   const turn = useMutation({
     mutationFn: (input: string) => {
@@ -1275,7 +1298,7 @@ export function usePlay(campaignId: string) {
   const nextJobMutation = useMutation({
     mutationFn: () => {
       if (!query.data) throw new Error("Still loading.");
-      return startNextJob(query.data);
+      return returnToLife(query.data);
     },
     onSuccess: invalidate,
   });
@@ -1534,9 +1557,9 @@ export function usePlay(campaignId: string) {
     /** The job is over: completed, or the character died. Null while playing. */
     finished: bundle ? jobOutcome(bundle.campaign.status, bundle.runtime?.status ?? null) : null,
     /** Take the next job in this campaign, keeping the run's money and wounds. */
-    nextJob: () => nextJobMutation.mutate(),
-    nextJobBusy: nextJobMutation.isPending,
-    nextJobError: (nextJobMutation.error as Error | null) ?? null,
+    backToLife: () => nextJobMutation.mutate(),
+    backToLifeBusy: nextJobMutation.isPending,
+    backToLifeError: (nextJobMutation.error as Error | null) ?? null,
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
       turn.isPending ||
