@@ -79,6 +79,14 @@ export type CampaignFlagInsert = Insert<"campaign_flags">;
 export type MissionProgress = Row<"mission_progress">;
 export type MissionProgressInsert = Insert<"mission_progress">;
 
+export type CampaignSituation = Row<"campaign_situations">;
+export type CampaignSituationInsert = Insert<"campaign_situations">;
+export type CampaignSituationUpdate = Update<"campaign_situations">;
+
+export type CampaignClock = Row<"campaign_clocks">;
+export type CampaignClockInsert = Insert<"campaign_clocks">;
+export type CampaignClockUpdate = Update<"campaign_clocks">;
+
 export type CampaignEvent = Row<"campaign_events">;
 export type CampaignEventInsert = Insert<"campaign_events">;
 
