@@ -457,7 +457,11 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
             </section>
           )}
 
-          <LifeLog events={bundle.events} busy={life.busy} />
+          <LifeLog
+            events={bundle.events}
+            busy={life.busy}
+            {...(life.narration ? { suppressText: life.narration.text } : {})}
+          />
 
           {life.actionError && (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
