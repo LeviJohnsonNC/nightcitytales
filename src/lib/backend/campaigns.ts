@@ -231,6 +231,54 @@ export async function setInventorySp(
 }
 
 /**
+ * Set how many rounds a carried weapon has loaded. Null means the weapon takes
+ * no ammunition; the play layer never writes a negative count.
+ */
+export async function setInventoryAmmo(
+  inventoryId: string,
+  ammoLoaded: number | null,
+): Promise<CampaignInventoryItem> {
+  return unwrap(
+    await backendClient
+      .from("campaign_inventory")
+      .update({ ammo_loaded: ammoLoaded === null ? null : Math.max(0, ammoLoaded) })
+      .eq("id", inventoryId)
+      .select("*")
+      .single(),
+  );
+}
+
+/** Mark a piece of kit broken (or repaired back to working order). */
+export async function setInventoryCondition(
+  inventoryId: string,
+  condition: "ok" | "broken",
+): Promise<CampaignInventoryItem> {
+  return unwrap(
+    await backendClient
+      .from("campaign_inventory")
+      .update({ condition })
+      .eq("id", inventoryId)
+      .select("*")
+      .single(),
+  );
+}
+
+/** Spend a quantity from a stacked line, floored at zero. */
+export async function setInventoryQuantity(
+  inventoryId: string,
+  quantity: number,
+): Promise<CampaignInventoryItem> {
+  return unwrap(
+    await backendClient
+      .from("campaign_inventory")
+      .update({ quantity: Math.max(0, quantity) })
+      .eq("id", inventoryId)
+      .select("*")
+      .single(),
+  );
+}
+
+/**
  * Record a world fact the GM established. The table is unique on
  * (campaign_id, flag), so setting the same flag twice is idempotent rather
  * than a second row.
