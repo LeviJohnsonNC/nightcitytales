@@ -303,10 +303,10 @@ function DvBody({
             <div>
               <p className="text-sm font-semibold">Roll 1d10</p>
               <p className="text-xs text-muted-foreground">
-                You need a {needed} or better on the die
-                {luck > 0 ? `, or ${needed - luck} with the Luck you dedicated` : ""}.
+                {describeOutlook(pending.base + luck - pending.woundPenalty, dv)}
               </p>
             </div>
+
           </div>
         </div>
       ) : (
