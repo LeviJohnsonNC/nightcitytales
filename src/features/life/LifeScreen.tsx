@@ -114,12 +114,37 @@ const LIFE_EVENT_TYPES = new Set([
   "mission_completed",
 ]);
 
-function LifeLog({ events, busy }: { events: CampaignEvent[]; busy: boolean }) {
+/**
+ * The running log. The turn the player is standing in is already shown above in
+ * its own block, so any narration text identical to it is dropped here: the same
+ * paragraph twice reads as a bug, because it is one.
+ */
+function LifeLog({
+  events,
+  busy,
+  suppressText,
+}: {
+  events: CampaignEvent[];
+  busy: boolean;
+  suppressText?: string;
+}) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [events.length]);
-  const shown = events.filter((e) => LIFE_EVENT_TYPES.has(e.type)).slice(-40);
+  const norm = (t: string) => t.replace(/\s+/g, " ").trim();
+  const suppressed = suppressText ? norm(suppressText) : null;
+  const shown = events
+    .filter((e) => LIFE_EVENT_TYPES.has(e.type))
+    .filter(
+      (e) =>
+        !(
+          suppressed &&
+          e.type === "life_narration" &&
+          norm(e.summary ?? "") === suppressed
+        ),
+    )
+    .slice(-40);
   return (
     <div className="flex-1 space-y-3 overflow-y-auto border border-border bg-card/40 p-4">
       {shown.length === 0 && !busy ? (
