@@ -15,6 +15,7 @@ import {
   getMission,
   getSkill,
   jobIdForSeed,
+  judgeAction,
   luckPoolMax,
   mergeSituations,
   nextPhase,
@@ -27,6 +28,7 @@ import {
   type GameClock,
   type GamePhase,
   type LifeClock,
+  type LegalityVerdict,
   type LifeSituation,
   type WoundStateCode,
 } from "@/engine";
@@ -66,6 +68,14 @@ import {
   type PendingCheck,
 } from "@/features/play/checkPrompt";
 import { buildCapabilitySnapshot, renderCapabilityLines } from "@/features/play/capabilityModel";
+import {
+  loadDowntime,
+  payBills,
+  repair,
+  rest,
+  worstArmor,
+  type DowntimeBundle,
+} from "@/features/downtime/downtimeOps";
 import { renderLifeUserPrompt, type LifeContext } from "./lifeContext";
 import { lifeTurnFn } from "./lifeTurn.server";
 import type { LifeActionCard, LifeResponse } from "./lifeResponse";
@@ -250,14 +260,12 @@ async function applyResponse(
     events: bundle.events,
     beatId: null,
   });
-  const refusals: string[] = [];
-  const refuse = async (verdict: Extract<LegalityVerdict, { ok: false }>): Promise<void> => {
-    refusals.push(verdict.reason);
+  const refuse = async (reason: string, code = "impossible"): Promise<void> => {
     await appendCampaignEvent({
       campaign_id: campaignId,
       type: "action_refused",
-      summary: verdict.reason,
-      data: { code: verdict.code } as unknown as Json,
+      summary: reason,
+      data: { code } as unknown as Json,
     });
   };
 
@@ -276,7 +284,7 @@ async function applyResponse(
         amount: action.amount,
       });
       if (!legal.ok) {
-        await refuse(legal);
+        await refuse(legal.reason, legal.code);
         continue;
       }
       const amount = Math.min(action.amount, eurobucks);
@@ -295,7 +303,7 @@ async function applyResponse(
         quantity: action.quantity,
       });
       if (!legal.ok) {
-        await refuse(legal);
+        await refuse(legal.reason, legal.code);
         continue;
       }
       await appendCampaignEvent({
@@ -310,19 +318,19 @@ async function applyResponse(
         const paid = await payBills(await downtimeBundle());
         if (paid.total > 0) eurobucks -= paid.total;
       } catch (error) {
-        refusals.push((error as Error).message);
+        await refuse((error as Error).message, "resource_unavailable");
       }
     } else if (action.kind === "repair_armor") {
       const bundleForOps = await downtimeBundle();
       const piece = worstArmor(bundleForOps);
       if (!piece) {
-        refusals.push("Nothing in the kit needs patching.");
+        await refuse("Nothing in the kit needs patching.", "impossible");
       } else {
         try {
           const done = await repair(bundleForOps, piece);
           eurobucks -= done.cost;
         } catch (error) {
-          refusals.push((error as Error).message);
+          await refuse((error as Error).message, "resource_unavailable");
         }
       }
     } else if (action.kind === "travel") {
