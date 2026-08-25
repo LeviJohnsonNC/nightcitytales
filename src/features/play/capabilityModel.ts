@@ -282,3 +282,54 @@ export function renderCapabilityLines(snapshot: CapabilitySnapshot): string[] {
   }
   return lines;
 }
+
+/**
+ * Record that the attacker spent an attack this Round, so the ROF cap and the
+ * one-Action rule have something real to read. Returns the encounter's `data`
+ * map with the attacker's turn counters advanced; the caller persists it.
+ */
+export function withAttackSpent(
+  live: LiveEncounter,
+  attackerId: string,
+  weaponItemId: string,
+): Record<string, (typeof live.data)[string]> {
+  const existing = live.data[attackerId];
+  if (!existing) return live.data;
+  const round = live.state.round;
+  const prior = existing.turn?.round === round ? existing.turn : null;
+  return {
+    ...live.data,
+    [attackerId]: {
+      ...existing,
+      turn: {
+        round,
+        actionUsed: true,
+        shotsThisRound: (prior?.shotsThisRound ?? 0) + 1,
+        shotWeaponId: weaponItemId,
+        metresMoved: prior?.metresMoved ?? 0,
+      },
+    },
+  };
+}
+
+/**
+ * One round out of the weapon that just fired. Weapons the catalog gives no
+ * magazine have no ammunition to spend, and a row that has never been fired
+ * starts from its printed magazine.
+ */
+export function ammoAfterShot(
+  rows: CampaignInventoryItem[],
+  weaponItemId: string,
+): { inventoryId: string; ammoLoaded: number } | null {
+  const row = rows.find((r) => r.slot === "weapon" && r.item_id === weaponItemId);
+  if (!row) return null;
+  let magazine: number | null;
+  try {
+    magazine = weaponProfile(row.item_id).magazine;
+  } catch {
+    return null;
+  }
+  if (magazine === null) return null;
+  const loaded = row.ammo_loaded === null ? magazine : row.ammo_loaded;
+  return { inventoryId: row.id, ammoLoaded: Math.max(0, loaded - 1) };
+}

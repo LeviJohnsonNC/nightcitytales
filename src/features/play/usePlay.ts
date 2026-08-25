@@ -61,6 +61,7 @@ import {
   listCampaignEvents,
   saveCampaignNpc,
   setCampaignFlag,
+  setInventoryAmmo,
   setNpcDisposition,
   updateCampaign,
   updateCampaignVitals,
@@ -132,7 +133,12 @@ import {
   withAbilityState,
 } from "./roleAbilityModel";
 import { arriveBackup, pendingBackupFrom } from "./backupFlow";
-import { buildCapabilitySnapshot, renderCapabilityLines } from "./capabilityModel";
+import {
+  ammoAfterShot,
+  buildCapabilitySnapshot,
+  renderCapabilityLines,
+  withAttackSpent,
+} from "./capabilityModel";
 
 /**
  * How many checks one turn may put on the table at once. Two lets a compound
@@ -725,8 +731,20 @@ export async function commitAttack(
   const campaignId = bundle.campaign.id;
   const beatId = pending.beatId;
 
-  let live: LiveEncounter = { ...bundle.encounter, state: result.state };
+  // The Round's bookkeeping: the Action is spent, the shot counts against the
+  // weapon's ROF, and a round comes out of the magazine.
+  let live: LiveEncounter = {
+    ...bundle.encounter,
+    state: result.state,
+    data: withAttackSpent(
+      { ...bundle.encounter, state: result.state },
+      pending.attacker.id,
+      option.weapon.itemId,
+    ),
+  };
   await saveLiveEncounter(live);
+  const spent = ammoAfterShot(bundle.inventory, option.weapon.itemId);
+  if (spent) await setInventoryAmmo(spent.inventoryId, spent.ammoLoaded);
   await logAttack(
     campaignId,
     { attack: result.attack, damage: result.damage, applied: result.applied },
