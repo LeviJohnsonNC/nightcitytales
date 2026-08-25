@@ -2,7 +2,7 @@
   "_about": {
     "kind": "Original content written for this project — NOT transcribed from any published book.",
     "note": "Authored jobs (src/engine/missions/*.ts) cite their source book and page. These pools do not, because there is none: they are written in the Cyberpunk RED idiom to feed the procedural generator. Never add a page citation here.",
-    "slots": "Templates interpolate {patron}, {org}, {district}, {target}, {fixer}, {opposition}. Every slot a template uses must exist, or the generator throws."
+    "slots": "Templates interpolate {patron}, {org}, {district}, {target}, {fixer}, {opposition}. Every slot a template uses must exist, or the generator throws. One exception by design: an archetype's `background` is the pitch a player hears BEFORE taking the job, and must never name {patron} or {org}. Who is paying is what negotiating an offer buys (engine/negotiation.ts), and a pitch that gives it away for free makes that ask worthless."
   },
   "_rules": {
     "dvs": "Every dv below must be a published Difficulty Value (dv-table.json): 9, 13, 15, 17, 21, 24, 29.",
@@ -137,7 +137,7 @@
       "id": "retrieval",
       "title": "Retrieval in {district}",
       "objective": "Bring {target} back intact",
-      "background": "{fixer} passes the job along without editorial: {patron} of {org} wants {target} out of {district} and into their hands, quietly, before the week turns. {why} The fee is real money for a night's work, which is the part that should worry you.",
+      "background": "{fixer} passes the job along without editorial. A client they will not name wants {target} out of {district} and into their hands, quietly, before the week turns. {why} The fee is real money for a night's work, which is the part that should worry you.",
       "backgroundBrief": "A clean-sounding retrieval. It is not clean. Establish {district} — {colour} — and let the money look better than the job.",
       "hookBrief": "{patron} meets in person. {tell} They will not say who else is looking for {target}, only that speed matters more than subtlety. The Edgerunner is being hired because someone expendable was required.",
       "legworkBrief": "The Edgerunner needs a way in, and {district} offers two: the people who work the site, and the site itself. Present both without steering.",
@@ -179,7 +179,7 @@
       "id": "extraction",
       "title": "Extraction from {district}",
       "objective": "Get the package out of {district} alive",
-      "background": "{fixer} makes the introduction and then makes themselves scarce. {patron} of {org} needs a person pulled out of {district} tonight — willing or not, and the brief is deliberately vague about which. {why}",
+      "background": "{fixer} makes the introduction and then makes themselves scarce. The client needs a person pulled out of {district} tonight — willing or not, and the brief is deliberately vague about which. {why}",
       "backgroundBrief": "An extraction with a soft centre: the package may not want extracting. Establish {district} — {colour} — and keep the ambiguity live.",
       "hookBrief": "{patron} briefs fast and leaves faster. {tell} The Edgerunner gets a face, an address, and a window. Nobody mentions what happens to the package afterward.",
       "legworkBrief": "Two ways to find the package before the window opens: the paper trail, or the people who have seen them.",
@@ -217,7 +217,7 @@
       "id": "sabotage",
       "title": "Sabotage in {district}",
       "objective": "Put the operation in {district} out of commission",
-      "background": "{fixer} says only that the client pays on results. {patron} of {org} wants something in {district} to stop working — permanently enough to matter, quietly enough to deny. {why}",
+      "background": "{fixer} says only that the client pays on results. Somebody with money wants something in {district} to stop working — permanently enough to matter, quietly enough to deny. {why}",
       "backgroundBrief": "Industrial sabotage with a deniability clause. Establish {district} — {colour} — and make clear nobody will confirm this conversation happened.",
       "hookBrief": "{patron} supplies a floor plan two revisions out of date and a hard deadline. {tell} No support, no extraction, no acknowledgement if it goes wrong.",
       "legworkBrief": "The Edgerunner needs to know what actually breaks the place: the machinery, or the people running it.",
@@ -255,7 +255,7 @@
       "id": "protection",
       "title": "Protection detail in {district}",
       "objective": "Keep the principal breathing until morning",
-      "background": "{fixer} calls it babysitting and does not laugh. {patron} of {org} needs a body between themselves and {district} for one night. {why} That is exactly why someone wants them dead.",
+      "background": "{fixer} calls it babysitting and does not laugh. The client needs a body between themselves and {district} for one night, and their name is not part of the briefing yet. {why} That is exactly why someone wants them dead.",
       "backgroundBrief": "A bodyguard job where the threat is real and the principal is not being straight. Establish {district} — {colour} — and keep the night closing in.",
       "hookBrief": "{patron} explains the schedule and omits the reason. {tell} One night, three stops, no questions — and a fee high enough to answer the questions anyway.",
       "legworkBrief": "Before the night starts, the Edgerunner can prepare the route or read the principal. Either buys something the other doesn't.",
@@ -297,7 +297,7 @@
       "id": "investigation",
       "title": "Quiet inquiry in {district}",
       "objective": "Find out what happened to {target}",
-      "background": "{fixer} passes it on because it is beneath them and above the client's means. {patron} of {org} wants to know what became of {target} in {district}. {why} No police, no noise, no report in writing.",
+      "background": "{fixer} passes it on because it is beneath them and above the client's means. Somebody is paying to know what became of {target} in {district}. {why} No police, no noise, no report in writing.",
       "backgroundBrief": "An investigation that turns out to be about somebody's exposure, not somebody's grief. Establish {district} — {colour} — and let the client's calm sit slightly wrong.",
       "hookBrief": "{patron} is measured about it, which is itself the tell. {tell} They want an answer, and there is a clear sense they would prefer one particular answer.",
       "legworkBrief": "Two threads: the last place {target} was seen, and the people who profited by it. Both lead somewhere; only one is safe.",

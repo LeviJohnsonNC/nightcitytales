@@ -63,6 +63,7 @@ import {
   saveCampaignNpc,
   setCampaignClock,
   setCampaignFlag,
+  type CampaignFlag,
   setCampaignPhase,
   setInventoryAmmo,
   setNpcDisposition,
@@ -136,6 +137,7 @@ import {
   withAbilityState,
 } from "./roleAbilityModel";
 import { arriveBackup, pendingBackupFrom } from "./backupFlow";
+import { JOB_PAYOUT_FLAG } from "@/features/life/hookOffer";
 import {
   ammoAfterShot,
   buildCapabilitySnapshot,
@@ -164,6 +166,11 @@ export type PlayBundle = {
   inventory: CampaignInventoryItem[];
   /** The fight in progress, if the GM has started one. */
   encounter: LiveEncounter | null;
+  /**
+   * The fee agreed when this job was taken, when the player argued it up from
+   * the printed reward. Null on a job nobody negotiated.
+   */
+  agreedPayout: number | null;
 };
 
 async function loadPlay(campaignId: string): Promise<PlayBundle> {
@@ -199,13 +206,20 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     npcs: full.npcs,
     inventory: full.inventory,
     encounter,
+    agreedPayout: agreedPayoutFrom(full.flags),
   };
+}
+
+/** The negotiated fee on the campaign's books, if this job carries one. */
+function agreedPayoutFrom(flags: CampaignFlag[]): number | null {
+  const value = flags.find((f) => f.flag === JOB_PAYOUT_FLAG)?.value;
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
 }
 
 async function narrate(
   bundle: PlayBundle,
   input: string,
-  options: { logInput?: boolean } = {},
+  options: { logInput?: boolean; optionsRequested?: boolean } = {},
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
   const beatId = bundle.beat?.id ?? null;
@@ -262,6 +276,7 @@ async function narrate(
     recentEvents: recentEventLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
     turnsSinceLastRoll: turnsSinceLastRoll(bundle.events),
+    ...(options.optionsRequested ? { optionsRequested: true } : {}),
   });
 
   const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
@@ -844,10 +859,17 @@ async function settleMission(
   mission: Mission,
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
-  const payout = missionPayout(mission);
-  if (payout) {
+  const printed = missionPayout(mission);
+  // A fee argued upwards at the offer is what this job pays. The printed reward
+  // is the floor, never a cap the negotiation is quietly reverted to.
+  const total =
+    bundle.agreedPayout !== null && printed
+      ? Math.max(printed.total, bundle.agreedPayout)
+      : (printed?.total ?? bundle.agreedPayout ?? 0);
+  const payout = printed ? { ...printed, total } : null;
+  if (payout && total > 0) {
     await updateCampaignVitals(campaignId, {
-      eurobucks: bundle.vitals.eurobucks + payout.total,
+      eurobucks: bundle.vitals.eurobucks + total,
     });
   }
   const done = runtime.objectives.filter((o) => o.status === "done").length;
@@ -962,6 +984,9 @@ async function returnToLife(bundle: PlayBundle): Promise<void> {
     ip_awarded: null,
     status: "active",
   });
+  // Terms belong to the job they were agreed for. Clearing the fee here stops a
+  // number argued out of one fixer following the character into the next job.
+  await setCampaignFlag(campaignId, JOB_PAYOUT_FLAG, 0 as unknown as Json);
   // One job is one session — the unit Improvement Points are awarded on — so
   // the Luck Pool refills as the session closes.
   await updateCampaignVitals(campaignId, {
@@ -1145,6 +1170,18 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  /**
+   * "What are my options?" — a turn that does not advance the scene. The GM
+   * names angles it can already see; the fiction stays exactly where it was.
+   */
+  const options = useMutation({
+    mutationFn: () => {
+      if (!query.data) throw new Error("Still loading.");
+      return narrate(query.data, "(What are my options here?)", { optionsRequested: true });
+    },
+    onSuccess: invalidate,
+  });
+
   const choose = useMutation({
     mutationFn: (exit: BeatExit) => {
       if (!query.data) throw new Error("Still loading.");
@@ -1215,6 +1252,7 @@ export function usePlay(campaignId: string) {
 
   const actionError =
     (turn.error as Error | null) ??
+    (options.error as Error | null) ??
     (choose.error as Error | null) ??
     (open.error as Error | null) ??
     (check.error as Error | null) ??
@@ -1337,6 +1375,7 @@ export function usePlay(campaignId: string) {
       }
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
+    askOptions: () => options.mutate(),
     suggestions:
       pendingCheck || pendingAttack || pendingDeathSave
         ? []
@@ -1563,6 +1602,7 @@ export function usePlay(campaignId: string) {
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
       turn.isPending ||
+      options.isPending ||
       choose.isPending ||
       open.isPending ||
       check.isPending ||

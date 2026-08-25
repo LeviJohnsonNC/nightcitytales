@@ -63,6 +63,11 @@ export type GmContextInput = {
    */
   capabilities?: string[];
   clock?: string;
+  /**
+   * True when the player asked what they could do rather than doing something.
+   * The scene does not advance on such a turn: they are thinking, not acting.
+   */
+  optionsRequested?: boolean;
 };
 
 /** Turns without a roll before the context block starts calling it out. */
@@ -171,6 +176,16 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       "== DICE ==",
       `The player has not rolled in ${dry} turns. That is too long. Unless they are ` +
         "purely moving or talking, find the check in what they are about to do and propose it.",
+    );
+  }
+
+  if (context.optionsRequested) {
+    parts.push(
+      "",
+      "== THEY ARE ASKING WHAT THEY COULD DO ==",
+      "Fill suggestedActions with 3-4 concrete things drawn from the scene you already " +
+        "described. Do not advance the fiction, do not propose a check, and do not narrate a new " +
+        "moment: restate where they are standing and stop.",
     );
   }
 
