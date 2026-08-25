@@ -26,6 +26,7 @@ import {
   type WoundStateCode,
 } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
+import type { CombatantTurnState } from "./encounterModel";
 import type {
   CampaignEvent,
   CampaignInventoryItem,
@@ -33,16 +34,6 @@ import type {
   FullCharacter,
 } from "@/lib/backend";
 import { statsRecord } from "./playModel";
-
-/** Per-combatant turn bookkeeping we keep on the encounter row's `data`. */
-export type CombatantTurnState = {
-  /** The Round these counters belong to; a new Round resets them. */
-  round?: number;
-  actionUsed?: boolean;
-  shotsThisRound?: number;
-  shotWeaponId?: string | null;
-  metresMoved?: number;
-};
 
 /** Inventory rows that are ammunition, by campaign slot or catalog id. */
 function isAmmunitionRow(row: CampaignInventoryItem): boolean {
@@ -174,8 +165,7 @@ export function targetCapabilities(live: LiveEncounter | null): TargetCapability
 export function turnEconomy(live: LiveEncounter | null, move: number): TurnEconomy {
   if (!live || live.state.status !== "active") return { ...EMPTY_TURN_ECONOMY, move };
   const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
-  const raw = (player ? ((live.data[player.id] ?? {}) as CombatantTurnState) : {}) as
-    CombatantTurnState;
+  const raw: Partial<CombatantTurnState> = (player ? live.data[player.id]?.turn : undefined) ?? {};
   const sameRound = raw.round === live.state.round;
   return {
     inCombat: true,
@@ -221,7 +211,7 @@ export function buildCapabilitySnapshot(input: SnapshotInput): CapabilitySnapsho
   const rows = inventoryFor(input.inventory, input.character);
   const move = stats["move"] ?? 0;
   const ability = roleAbilityOf(input.character.character.role);
-  const poolMax = luckPoolMax(stats["luck"] ?? 0);
+  const luckStats = { luck: stats["luck"] ?? 0 };
 
   return {
     hp: input.vitals.hp_current,
@@ -229,7 +219,7 @@ export function buildCapabilitySnapshot(input: SnapshotInput): CapabilitySnapsho
     woundState: input.vitals.wound_state as WoundStateCode,
     incapacitated: input.vitals.hp_current <= 0,
     eurobucks: input.vitals.eurobucks,
-    luck: luckRemaining(poolMax, input.vitals.luck_current),
+    luck: luckRemaining(input.vitals.luck_current, luckStats),
     move,
     weapons: weaponCapabilities(rows),
     items: itemCapabilities(rows),
