@@ -139,10 +139,7 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   }
 
   if (context.capabilities?.length) {
-    parts.push(
-      "",
-      "== WHAT THEY CAN ACTUALLY DO (never propose anything outside this) ==",
-    );
+    parts.push("", "== WHAT THEY CAN ACTUALLY DO (never propose anything outside this) ==");
     for (const c of context.capabilities) parts.push(`- ${c}`);
   }
 

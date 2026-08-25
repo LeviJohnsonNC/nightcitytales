@@ -270,9 +270,7 @@ export function renderCapabilityLines(snapshot: CapabilitySnapshot): string[] {
     if (snapshot.targets.length) {
       lines.push(
         `Targets in the fight: ${snapshot.targets
-          .map(
-            (t2) => `${t2.name} [${t2.key}] at ${t2.distance} m${t2.defeated ? " (down)" : ""}`,
-          )
+          .map((t2) => `${t2.name} [${t2.key}] at ${t2.distance} m${t2.defeated ? " (down)" : ""}`)
           .join(", ")}`,
       );
     }

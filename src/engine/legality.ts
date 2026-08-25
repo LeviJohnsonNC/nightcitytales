@@ -108,9 +108,7 @@ export function alreadyFailed(
 ): boolean {
   const want = normalise(intent);
   if (!want) return false;
-  return snapshot.failedAttempts.some(
-    (f) => f.skillId === skillId && normalise(f.intent) === want,
-  );
+  return snapshot.failedAttempts.some((f) => f.skillId === skillId && normalise(f.intent) === want);
 }
 
 function judgeWeaponForAttack(
@@ -199,7 +197,11 @@ export function judgeAction(
           `${target.name} cannot be seen or located right now — they have to be found first.`,
         );
       }
-      if (snapshot.turn.inCombat && snapshot.turn.actionUsed && snapshot.turn.shotsThisRound === 0) {
+      if (
+        snapshot.turn.inCombat &&
+        snapshot.turn.actionUsed &&
+        snapshot.turn.shotsThisRound === 0
+      ) {
         return no("action_spent", "Their Action for this Round is already spent.");
       }
       if (snapshot.weapons.length === 0) {
@@ -244,10 +246,7 @@ export function judgeAction(
         return no("item_consumed", `Their ${item.name} is used up — there is none left.`);
       }
       if (item.quantity < want) {
-        return no(
-          "resource_unavailable",
-          `They have ${item.quantity} ${item.name}, not ${want}.`,
-        );
+        return no("resource_unavailable", `They have ${item.quantity} ${item.name}, not ${want}.`);
       }
       return OK;
     }

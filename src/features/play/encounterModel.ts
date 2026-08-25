@@ -80,7 +80,6 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
   };
 }
 
-
 /** Equipped armor SP by location, using ablated current_sp when present. */
 export function armorSp(character: FullCharacter): { head: number; body: number } {
   const out = { head: 0, body: 0 };

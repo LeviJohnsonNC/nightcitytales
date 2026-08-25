@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  judgeAction,
-  type CapabilitySnapshot,
-  type WeaponCapability,
-} from "../index";
+import { judgeAction, type CapabilitySnapshot, type WeaponCapability } from "../index";
 
 const pistol: WeaponCapability = {
   itemId: "heavy_pistol",
@@ -38,7 +34,9 @@ const base: CapabilitySnapshot = {
     },
   ],
   roleAbility: { abilityId: "combat_awareness", abilityName: "Combat Awareness", rank: 4 },
-  targets: [{ key: "scav_1", id: "c1", name: "Scav", distance: 12, defeated: false, perceivable: true }],
+  targets: [
+    { key: "scav_1", id: "c1", name: "Scav", distance: 12, defeated: false, perceivable: true },
+  ],
   turn: {
     inCombat: true,
     actionUsed: false,
@@ -143,10 +141,11 @@ describe("judgeAction", () => {
   });
 
   it("refuses a target that cannot be seen or is already down", () => {
-    const hidden = judgeAction(
-      snap({ targets: [{ ...base.targets[0]!, perceivable: false }] }),
-      { kind: "attack", targetKey: "scav_1", distance: 12 },
-    );
+    const hidden = judgeAction(snap({ targets: [{ ...base.targets[0]!, perceivable: false }] }), {
+      kind: "attack",
+      targetKey: "scav_1",
+      distance: 12,
+    });
     if (!hidden.ok) expect(hidden.code).toBe("target_not_perceived");
     const down = judgeAction(snap({ targets: [{ ...base.targets[0]!, defeated: true }] }), {
       kind: "attack",
@@ -175,7 +174,12 @@ describe("judgeAction", () => {
     const unmet = judgeAction(
       snap({
         cyberware: [
-          { itemId: "image_enhance", name: "Image Enhance", requires: "cybereye", prerequisiteMet: false },
+          {
+            itemId: "image_enhance",
+            name: "Image Enhance",
+            requires: "cybereye",
+            prerequisiteMet: false,
+          },
         ],
       }),
       { kind: "use_cyberware", cyberware: "image_enhance" },
@@ -211,7 +215,12 @@ describe("judgeAction", () => {
     expect(judgeAction(base, { kind: "netrun" }).ok).toBe(false);
     const jacked = snap({
       cyberware: [
-        { itemId: "interface_plugs", name: "Interface Plugs", requires: null, prerequisiteMet: true },
+        {
+          itemId: "interface_plugs",
+          name: "Interface Plugs",
+          requires: null,
+          prerequisiteMet: true,
+        },
       ],
       items: [{ itemId: "cyberdeck", name: "Cyberdeck", kind: "gear", quantity: 1 }],
     });
