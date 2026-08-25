@@ -12,7 +12,6 @@ import {
   describeWeapon,
   getCyberware,
   itemName,
-  luckPoolMax,
   luckRemaining,
   roleAbilityOf,
   weaponProfile,
