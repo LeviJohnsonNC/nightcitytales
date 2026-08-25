@@ -54,6 +54,14 @@ export type GmContextInput = {
    * rely on the system prompt alone surviving a long context.
    */
   turnsSinceLastRoll?: number;
+  /**
+   * What the character can actually do right now — weapons and what is loaded
+   * in them, kit, chrome, Role Ability Rank, and what is left of the Turn.
+   * Rendered verbatim so the model stops proposing the impossible; the
+   * legality gate (src/engine/legality.ts) still refuses anything that slips
+   * through.
+   */
+  capabilities?: string[];
   clock?: string;
 };
 
@@ -128,6 +136,14 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       "== SKILLS (use the id in [brackets] as skillId; these are the only valid ids) ==",
       skillList.map((s) => `${s.skill} [${s.id}] +${s.base}`).join(", "),
     );
+  }
+
+  if (context.capabilities?.length) {
+    parts.push(
+      "",
+      "== WHAT THEY CAN ACTUALLY DO (never propose anything outside this) ==",
+    );
+    for (const c of context.capabilities) parts.push(`- ${c}`);
   }
 
   const activeObjectives = context.objectives.filter((o) => o.status === "active");
