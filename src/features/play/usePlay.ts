@@ -1129,7 +1129,13 @@ export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["play", campaignId], queryFn: () => loadPlay(campaignId) });
 
-  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+    // The phase is authoritative and lives outside this bundle: a job that just
+    // ended must move the screen to wrap-up without a reload.
+    void queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] });
+    void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
+  };
 
   const turn = useMutation({
     mutationFn: (input: string) => {
@@ -1551,9 +1557,9 @@ export function usePlay(campaignId: string) {
     /** The job is over: completed, or the character died. Null while playing. */
     finished: bundle ? jobOutcome(bundle.campaign.status, bundle.runtime?.status ?? null) : null,
     /** Take the next job in this campaign, keeping the run's money and wounds. */
-    nextJob: () => nextJobMutation.mutate(),
-    nextJobBusy: nextJobMutation.isPending,
-    nextJobError: (nextJobMutation.error as Error | null) ?? null,
+    backToLife: () => nextJobMutation.mutate(),
+    backToLifeBusy: nextJobMutation.isPending,
+    backToLifeError: (nextJobMutation.error as Error | null) ?? null,
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
       turn.isPending ||
