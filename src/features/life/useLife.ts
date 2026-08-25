@@ -28,7 +28,6 @@ import {
   type GameClock,
   type GamePhase,
   type LifeClock,
-  type LegalityVerdict,
   type LifeSituation,
   type WoundStateCode,
 } from "@/engine";
