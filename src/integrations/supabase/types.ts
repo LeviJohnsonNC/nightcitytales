@@ -124,7 +124,9 @@ export type Database = {
       }
       campaign_inventory: {
         Row: {
+          ammo_loaded: number | null
           campaign_id: string
+          condition: string
           current_sp: number | null
           equipped: boolean
           id: string
@@ -135,7 +137,9 @@ export type Database = {
           slot: string | null
         }
         Insert: {
+          ammo_loaded?: number | null
           campaign_id: string
+          condition?: string
           current_sp?: number | null
           equipped?: boolean
           id?: string
@@ -146,7 +150,9 @@ export type Database = {
           slot?: string | null
         }
         Update: {
+          ammo_loaded?: number | null
           campaign_id?: string
+          condition?: string
           current_sp?: number | null
           equipped?: boolean
           id?: string
