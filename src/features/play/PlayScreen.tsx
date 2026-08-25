@@ -522,7 +522,7 @@ function InputBar({
             send();
           }
         }}
-        placeholder="What do you do? (Enter to act, Shift+Enter for a new line)"
+        placeholder="What do you do?"
         rows={2}
         className="flex-1 resize-none"
         disabled={busy}
