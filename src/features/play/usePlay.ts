@@ -24,10 +24,11 @@ import {
   type IpAward,
   type IpPlaystyle,
   clampLuckSpend,
-  jobIdForSeed,
   luckAfterSpend,
   luckModifier,
   luckPoolMax,
+  nextPhase,
+  phaseOf,
   luckRemaining,
   opposedCheckForCharacter,
   performAttack,
@@ -36,9 +37,7 @@ import {
   callBackup,
   charismaticImpactCheck,
   resolveSkillId,
-  rollJobSeed,
   woundActionPenalty,
-  startMission,
   skillCheckForCharacter,
   type Beat,
   type BeatExit,
@@ -946,9 +945,8 @@ async function returnToLife(bundle: PlayBundle): Promise<void> {
     ip_awarded: null,
     status: "active",
   });
-  // A new job is a new session: the Luck Pool refills. This app has always
-  // treated one job as one session — it is the unit Improvement Points are
-  // awarded on — so Luck refreshes on the same boundary.
+  // One job is one session — the unit Improvement Points are awarded on — so
+  // the Luck Pool refills as the session closes.
   await updateCampaignVitals(campaignId, {
     luck_current: luckPoolMax(statsRecord(bundle.character)),
   });
