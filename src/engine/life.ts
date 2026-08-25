@@ -97,11 +97,58 @@ export type LifeStateInput = {
   /** Carried weapons marked broken. */
   brokenWeapons: string[];
   /** Recurring NPCs and the day they were last dealt with. */
-  people: { key: string; name: string; disposition: number; lastSeenDay?: number }[];
+  people: LifePerson[];
+};
+
+/**
+ * One of the standing cast, as the Life engine needs them. `role` and
+ * `standing` come from the cast (see cast.ts) and are what make a person going
+ * quiet read as a specific person rather than a generic contact; both are
+ * optional, so an NPC the campaign picked up along the way still works here.
+ */
+export type LifePerson = {
+  key: string;
+  name: string;
+  disposition: number;
+  lastSeenDay?: number;
+  role?: string;
+  standing?: string;
 };
 
 /** Days of quiet before a recurring face takes the initiative. */
 export const PEOPLE_SILENCE_DAYS = 3;
+
+/** Days of quiet after which someone stops being patient about it. */
+export const PEOPLE_INSISTENT_DAYS = 7;
+
+/**
+ * How many people may be waiting on the player at once.
+ *
+ * One. Six recurring faces is the point of having a cast, but six of them
+ * reaching out on the same evening is a notification tray, not a life. The
+ * quietest one surfaces; dealing with them lets the next take their turn.
+ */
+export const MAX_PEOPLE_SITUATIONS = 1;
+
+/** How a given kind of person gets back in touch. */
+function personOpener(role: string | undefined, name: string): string {
+  switch (role) {
+    case "fixer":
+      return `${name} has been trying to reach you`;
+    case "ripperdoc":
+      return `${name} left a message about your chrome`;
+    case "landlord":
+      return `${name} wants a word`;
+    case "friend":
+      return `${name} has not heard from you`;
+    case "enemy":
+      return `${name} has been asking about you`;
+    case "old_flame":
+      return `${name}'s name comes up again`;
+    default:
+      return `${name} reaches out`;
+  }
+}
 
 /** How close a bill must be before it becomes the loudest thing in the room. */
 export const RENT_WARNING_DAYS = 5;
@@ -209,18 +256,27 @@ export function deriveNeeds(state: LifeStateInput): LifeSituation[] {
     });
   }
 
-  for (const person of state.people) {
-    const quiet = state.day - (person.lastSeenDay ?? 0);
-    if (quiet < PEOPLE_SILENCE_DAYS) continue;
+  // Only the quietest person comes forward. Everyone else keeps waiting, which
+  // is what they were doing anyway.
+  const waiting = state.people
+    .map((person) => ({ person, quiet: state.day - (person.lastSeenDay ?? 0) }))
+    .filter(({ quiet }) => quiet >= PEOPLE_SILENCE_DAYS)
+    .sort((a, b) => b.quiet - a.quiet || a.person.key.localeCompare(b.person.key))
+    .slice(0, MAX_PEOPLE_SITUATIONS);
+
+  for (const { person, quiet } of waiting) {
+    const insistent = quiet >= PEOPLE_INSISTENT_DAYS;
     out.push({
       key: `person_${slug(person.key)}`,
       category: "people",
-      title: `${person.name} reaches out`,
-      summary: `You haven't dealt with ${person.name} in ${quiet} days.`,
+      title: personOpener(person.role, person.name),
+      summary: person.standing
+        ? `${person.standing} Nothing between you for ${quiet} days.`
+        : `You haven't dealt with ${person.name} in ${quiet} days.`,
       npcKey: person.key,
       status: "live",
-      severity: person.disposition <= -1 ? 3 : 2,
-      data: { disposition: person.disposition },
+      severity: clampSeverity((person.disposition <= -1 ? 3 : 2) + (insistent ? 1 : 0)),
+      data: { disposition: person.disposition, quiet },
     });
   }
 

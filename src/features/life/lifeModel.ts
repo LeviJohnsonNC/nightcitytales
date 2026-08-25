@@ -12,7 +12,9 @@ import {
   type LifeSituation,
   type LifeStateInput,
 } from "@/engine";
+import { publicView } from "@/engine";
 import { downtimeView } from "@/features/downtime/downtimeModel";
+import { castMemberFrom, knownFactsOf } from "@/features/campaign/castSeeding";
 import type {
   Campaign,
   CampaignClock,
@@ -75,12 +77,21 @@ function lastSeenDay(npc: CampaignNpc): number | undefined {
   return typeof data.lastSeenDay === "number" ? data.lastSeenDay : undefined;
 }
 
-/** Recurring faces, as both the engine and the prompt want them. */
+/**
+ * Recurring faces, as both the engine and the prompt want them.
+ *
+ * The standing cast contributes its PUBLIC half only: who this person is to the
+ * character, what the Lifepath said about them, and whichever rungs of their
+ * dossier the player has actually earned. What they want, fear and are hiding
+ * stays with the engine until it is learned (see engine/cast.ts).
+ */
 export function lifePeople(npcs: CampaignNpc[]): LifePersonSummary[] {
   return npcs
     .filter((n) => n.status !== "dead")
     .map((n) => {
       const seen = lastSeenDay(n);
+      const member = castMemberFrom(n);
+      const view = member ? publicView(member, knownFactsOf(n)) : null;
       return {
         key: n.npc_id ?? n.name,
         name: n.name,
@@ -88,6 +99,14 @@ export function lifePeople(npcs: CampaignNpc[]): LifePersonSummary[] {
         status: n.status,
         ...(seen !== undefined ? { lastSeenDay: seen } : {}),
         ...(n.notes ? { notes: n.notes } : {}),
+        ...(view
+          ? {
+              role: view.role,
+              standing: view.standing,
+              ...(view.tie ? { tie: view.tie } : {}),
+              ...(view.known.length ? { known: view.known } : {}),
+            }
+          : {}),
       };
     });
 }

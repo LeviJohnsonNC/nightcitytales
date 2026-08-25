@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { generateCast, publicView, type DossierFact } from "@/engine";
 import { renderLifeUserPrompt, type LifeContext } from "../lifeContext";
 
 const BASE: LifeContext = {
@@ -74,5 +75,68 @@ describe("the Life prompt", () => {
     expect(prompt).toContain("140eb");
     expect(prompt).toContain("Trading [trading] +6");
     expect(prompt).toContain("I check my messages.");
+  });
+});
+
+describe("the people block", () => {
+  const cast = generateCast({ seed: 0xca57 });
+
+  /** The people block as useLife builds it, for a given state of knowledge. */
+  const peopleWith = (known: DossierFact[]) =>
+    cast.map((member) => {
+      const view = publicView(member, known);
+      return {
+        key: view.key,
+        name: view.name,
+        disposition: view.disposition,
+        status: "alive",
+        role: view.role,
+        standing: view.standing,
+        ...(view.tie ? { tie: view.tie } : {}),
+        ...(view.known.length ? { known: view.known } : {}),
+      };
+    });
+
+  it("never puts a hidden fact in front of the model", () => {
+    const prompt = renderLifeUserPrompt({ ...BASE, people: peopleWith([]) }, "I go for a walk.");
+    for (const member of cast) {
+      expect(prompt).not.toContain(member.dossier.wants);
+      expect(prompt).not.toContain(member.dossier.fear);
+      expect(prompt).not.toContain(member.dossier.secret);
+      expect(prompt).not.toContain(member.dossier.breakingPoint);
+    }
+  });
+
+  it("hands over a fact once the player has earned it, and no more", () => {
+    const prompt = renderLifeUserPrompt(
+      { ...BASE, people: peopleWith(["wants"]) },
+      "I go for a walk.",
+    );
+    for (const member of cast) {
+      expect(prompt).toContain(member.dossier.wants);
+      expect(prompt).not.toContain(member.dossier.fear);
+      expect(prompt).not.toContain(member.dossier.secret);
+    }
+  });
+
+  it("keeps the breaking point out even when everything else is known", () => {
+    const prompt = renderLifeUserPrompt(
+      { ...BASE, people: peopleWith(["wants", "fear", "secret"]) },
+      "I go for a walk.",
+    );
+    for (const member of cast) {
+      expect(prompt).not.toContain(member.dossier.breakingPoint);
+    }
+  });
+
+  it("tells the model these are the people, and that it does not know the rest", () => {
+    const prompt = renderLifeUserPrompt({ ...BASE, people: peopleWith([]) }, "");
+    expect(prompt).toContain("do not invent new named faces");
+    expect(prompt).toContain("never");
+    expect(prompt).toContain("invent a want, a fear or a secret");
+    for (const member of cast) {
+      expect(prompt).toContain(member.name);
+      expect(prompt).toContain(member.standing);
+    }
   });
 });
