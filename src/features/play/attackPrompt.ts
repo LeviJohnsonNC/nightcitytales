@@ -6,6 +6,8 @@
  */
 import {
   getSkill,
+  judgeAction,
+  type CapabilitySnapshot,
   weaponAttackDv,
   weaponAttackGap,
   woundActionPenalty,
@@ -48,6 +50,8 @@ export function attackOption(
   pending: PendingAttack,
   weapon: WeaponProfile,
   character: FullCharacter,
+  /** What the character can actually do; a refusal becomes the option's gap. */
+  capability?: CapabilitySnapshot | null,
 ): AttackOption {
   const stats = statsRecord(character);
   const statKey = weapon.statKey ?? "ref";
@@ -62,8 +66,24 @@ export function attackOption(
     skillValue: skillLevel,
     dv: weaponAttackDv(weapon, pending.distance),
     damageDice: weapon.damageDice,
-    gap: weaponAttackGap(weapon, pending.distance),
+    gap: weaponAttackGap(weapon, pending.distance) ?? legalityGap(capability, pending, weapon),
   };
+}
+
+/** Why the legality gate refuses this weapon right now, phrased for the player. */
+function legalityGap(
+  capability: CapabilitySnapshot | null | undefined,
+  pending: PendingAttack,
+  weapon: WeaponProfile,
+): string | null {
+  if (!capability) return null;
+  const verdict = judgeAction(capability, {
+    kind: "attack",
+    targetKey: pending.target.id,
+    distance: pending.distance,
+    weapon: weapon.itemId,
+  });
+  return verdict.ok ? null : verdict.reason;
 }
 
 type PromptData = { targetId?: unknown; distance?: unknown; intent?: unknown };

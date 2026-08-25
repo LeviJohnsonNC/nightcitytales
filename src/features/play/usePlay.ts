@@ -18,6 +18,8 @@ import {
   getMission,
   failMission,
   getSkill,
+  judgeAction,
+  type LegalityVerdict,
   missionPayout,
   type IpAward,
   type IpPlaystyle,
@@ -59,11 +61,13 @@ import {
   listCampaignEvents,
   saveCampaignNpc,
   setCampaignFlag,
+  setInventoryAmmo,
   setNpcDisposition,
   updateCampaign,
   updateCampaignVitals,
   type Campaign,
   type CampaignEvent,
+  type CampaignInventoryItem,
   type CampaignNpc,
   type CampaignVitals,
   type FullCharacter,
@@ -129,6 +133,12 @@ import {
   withAbilityState,
 } from "./roleAbilityModel";
 import { arriveBackup, pendingBackupFrom } from "./backupFlow";
+import {
+  ammoAfterShot,
+  buildCapabilitySnapshot,
+  renderCapabilityLines,
+  withAttackSpent,
+} from "./capabilityModel";
 
 /**
  * How many checks one turn may put on the table at once. Two lets a compound
@@ -147,6 +157,8 @@ export type PlayBundle = {
   availableExits: BeatExit[];
   events: CampaignEvent[];
   npcs: CampaignNpc[];
+  /** The campaign's live kit — what is carried, loaded, and left. */
+  inventory: CampaignInventoryItem[];
   /** The fight in progress, if the GM has started one. */
   encounter: LiveEncounter | null;
 };
@@ -182,6 +194,7 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     availableExits: exits,
     events,
     npcs: full.npcs,
+    inventory: full.inventory,
     encounter,
   };
 }
@@ -209,6 +222,33 @@ async function narrate(
     throw new Error("There is no active mission to play right now.");
   }
 
+  // What the character can actually do right now. The GM sees it so it stops
+  // proposing the impossible; the gate below still refuses anything that slips
+  // through, because a model is not an enforcement layer.
+  const capability = buildCapabilitySnapshot({
+    character: bundle.character,
+    vitals: bundle.vitals,
+    inventory: bundle.inventory,
+    encounter: bundle.encounter,
+    events: bundle.events,
+    beatId,
+  });
+
+  /**
+   * Refuse an impossible action in the fiction rather than silently dropping
+   * it: the reason goes on the ledger, so the player is told why and the GM's
+   * next turn narrates it instead of proposing it again.
+   */
+  const refuse = async (verdict: Extract<LegalityVerdict, { ok: false }>): Promise<void> => {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "action_refused",
+      summary: `Not possible: ${verdict.reason}`,
+      data: { code: verdict.code } as unknown as Json,
+      ...beatFields,
+    });
+  };
+
   const context = buildGmContext({
     mission: bundle.mission,
     beat: bundle.beat,
@@ -217,6 +257,7 @@ async function narrate(
     objectives: bundle.runtime.objectives,
     npcsPresent: npcSummaries(bundle.npcs),
     recentEvents: recentEventLines(bundle.events),
+    capabilities: renderCapabilityLines(capability),
     turnsSinceLastRoll: turnsSinceLastRoll(bundle.events),
   });
 
@@ -270,6 +311,15 @@ async function narrate(
         continue;
       }
       if (postedSkillIds.has(skillId)) continue; // the same skill twice is one roll
+      const legal = judgeAction(capability, {
+        kind: "skill_check",
+        skillId,
+        intent: action.intent,
+      });
+      if (!legal.ok) {
+        await refuse(legal);
+        continue;
+      }
       const skillName = getSkill(skillId).name;
       const dv = snapToPublishedDv(action.dv);
       const band = dvBandName(dv);
@@ -304,6 +354,15 @@ async function narrate(
         continue;
       }
       if (postedSkillIds.has(skillId)) continue; // the same skill twice is one roll
+      const legalOpposed = judgeAction(capability, {
+        kind: "opposed_check",
+        skillId,
+        intent: action.intent,
+      });
+      if (!legalOpposed.ok) {
+        await refuse(legalOpposed);
+        continue;
+      }
       postedSkillIds.add(skillId);
 
       // The world remembers: an NPC the campaign has already measured opposes
@@ -389,6 +448,15 @@ async function narrate(
       if (!live || live.state.status !== "active") continue;
       const target = findTarget(live, action.targetId);
       if (!target || target.defeated || target.isPlayer) continue;
+      const legalAttack = judgeAction(capability, {
+        kind: "attack",
+        targetKey: action.targetId,
+        distance: action.distance,
+      });
+      if (!legalAttack.ok) {
+        await refuse(legalAttack);
+        continue;
+      }
       attackPosted = true;
       await appendCampaignEvent({
         campaign_id: campaignId,
@@ -663,8 +731,20 @@ export async function commitAttack(
   const campaignId = bundle.campaign.id;
   const beatId = pending.beatId;
 
-  let live: LiveEncounter = { ...bundle.encounter, state: result.state };
+  // The Round's bookkeeping: the Action is spent, the shot counts against the
+  // weapon's ROF, and a round comes out of the magazine.
+  let live: LiveEncounter = {
+    ...bundle.encounter,
+    state: result.state,
+    data: withAttackSpent(
+      { ...bundle.encounter, state: result.state },
+      pending.attacker.id,
+      option.weapon.itemId,
+    ),
+  };
   await saveLiveEncounter(live);
+  const spent = ammoAfterShot(bundle.inventory, option.weapon.itemId);
+  if (spent) await setInventoryAmmo(spent.inventoryId, spent.ammoLoaded);
   await logAttack(
     campaignId,
     { attack: result.attack, damage: result.damage, applied: result.applied },
@@ -1240,6 +1320,21 @@ export function usePlay(campaignId: string) {
         : bundle
           ? latestSuggestions(bundle)
           : [],
+
+    /**
+     * What the character can actually do right now, so the cards can grey out
+     * the impossible instead of letting the player roll for it.
+     */
+    capability: bundle
+      ? buildCapabilitySnapshot({
+          character: bundle.character,
+          vitals: bundle.vitals,
+          inventory: bundle.inventory,
+          encounter: bundle.encounter,
+          events: bundle.events,
+          beatId: bundle.beat?.id ?? null,
+        })
+      : null,
 
     /** The check waiting on the player's die, if any. */
     pendingCheck,

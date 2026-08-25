@@ -6,7 +6,7 @@
  */
 import { useMemo, useState } from "react";
 import { LuckStepper } from "./LuckStepper";
-import type { PerformAttackResult } from "@/engine";
+import type { CapabilitySnapshot, PerformAttackResult } from "@/engine";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
 import type { FullCharacter } from "@/lib/backend";
 import { attackOption, type AttackOption, type PendingAttack } from "./attackPrompt";
@@ -29,6 +29,7 @@ export function CombatCard({
   onSettled,
   busy,
   luckRemaining,
+  capability,
 }: {
   pending: PendingAttack;
   character: FullCharacter;
@@ -38,10 +39,12 @@ export function CombatCard({
   busy: boolean;
   /** Luck Points left this session — an attack roll is a Check like any other. */
   luckRemaining: number;
+  /** What the character can actually do; refusals become a weapon's gap. */
+  capability?: CapabilitySnapshot | null;
 }) {
   const options = useMemo<AttackOption[]>(
-    () => pending.weapons.map((w) => attackOption(pending, w, character)),
-    [pending, character],
+    () => pending.weapons.map((w) => attackOption(pending, w, character, capability)),
+    [pending, character, capability],
   );
   const usable = options.filter((o) => o.gap === null);
   const [chosenId, setChosenId] = useState<string | null>(usable[0]?.weapon.itemId ?? null);
