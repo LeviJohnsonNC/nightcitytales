@@ -30,6 +30,8 @@ export * from "./skillMatch";
 export * from "./combatTables";
 export * from "./combat";
 export * from "./weaponProfile";
+export * from "./capability";
+export * from "./legality";
 
 export * from "./encounter";
 export * from "./mission";
