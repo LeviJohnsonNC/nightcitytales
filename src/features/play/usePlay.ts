@@ -26,6 +26,7 @@ import {
   clampLuckSpend,
   luckAfterSpend,
   luckModifier,
+  TIME_COSTS,
   advanceClock,
   luckPoolMax,
   nextPhase,
@@ -526,6 +527,8 @@ async function narrate(
       });
     }
   }
+
+  await setCampaignClock(campaignId, clock);
 }
 
 /**
