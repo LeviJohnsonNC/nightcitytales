@@ -18,7 +18,7 @@ import content from "@/data/missions/job-content.json";
 import { seededRng } from "../dice";
 import { DIFFICULTY_VALUES } from "../checkDV";
 import { SKILLS } from "../rulesData";
-import type { Beat, BeatCheck, Mission } from "../mission";
+import { stableKey, type Beat, type BeatCheck, type Mission } from "../mission";
 import type { RNG } from "../types";
 
 /** Ids of generated jobs start with this, so they are recognisable on sight. */
@@ -223,6 +223,21 @@ export function generateJob(seed: number): Mission {
     subtitle: `${patron.name} — ${district.name}`,
     source: "Procedurally generated job",
     patron: `${patron.name} (${patron.org}), through ${fixer.name} — ${fixer.line}`,
+    // The offer is READ off the same draws the beats are built from, so what is
+    // pitched on the phone and what is waiting in the warehouse can never
+    // disagree. Nothing here draws from the rng: adding a draw would change
+    // every job every previously generated id names.
+    offer: {
+      brokerName: fixer.name,
+      brokerKey: stableKey(fixer.name),
+      brokerLine: fixer.line,
+      patronName: patron.name,
+      patronOrg: patron.org,
+      district: district.name,
+      opposition: `${opposition.name} — ${opposition.flavour}`,
+      pitch: fill(archetype.background),
+      ask: fill(archetype.objective),
+    },
     reward: {
       eurobucksPerHead: reward.eurobucksPerHead,
       upfront: reward.upfront,

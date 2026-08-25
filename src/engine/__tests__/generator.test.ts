@@ -8,6 +8,7 @@ import {
   isGeneratedJobId,
   jobFromId,
   jobIdForSeed,
+  missionOffer,
   missionPayout,
   rollJobSeed,
   seedFromJobId,
@@ -272,5 +273,39 @@ describe("variety", () => {
     );
     // Distinct jobs across 250 seeds — the pools multiply out to far more.
     expect(signatures.size).toBeGreaterThan(100);
+  });
+});
+
+describe("the offer a generated job is pitched as", () => {
+  it("gives every job a broker, a pitch and something being asked for", () => {
+    for (const seed of SEEDS) {
+      const offer = missionOffer(generateJob(seed));
+      expect(offer.brokerName).not.toBe("");
+      expect(offer.brokerKey).toMatch(/^[a-z0-9_]+$/);
+      expect(offer.pitch).not.toContain("{");
+      expect(offer.ask).not.toContain("{");
+      expect(offer.patronName).not.toBe("");
+      expect(offer.opposition).not.toBe("");
+    }
+  });
+
+  it("never names the client, or what is waiting, in the pitch", () => {
+    // The pitch is what the player hears for free. Both of these are what
+    // negotiating an offer BUYS (engine/negotiation.ts), so a template that
+    // leaks either one quietly makes an ask worthless. Guarded across every
+    // seed because it is a property of the content, not of one job.
+    for (const seed of SEEDS) {
+      const offer = missionOffer(generateJob(seed));
+      expect(offer.pitch).not.toContain(offer.patronName);
+      expect(offer.pitch).not.toContain(offer.patronOrg);
+      expect(offer.pitch).not.toContain(offer.opposition);
+    }
+  });
+
+  it("pays what the mission's printed reward pays", () => {
+    for (const seed of SEEDS.slice(0, 50)) {
+      const job = generateJob(seed);
+      expect(missionPayout(job)?.total).toBeGreaterThan(0);
+    }
   });
 });

@@ -16,6 +16,30 @@ export type LifePersonSummary = {
   notes?: string;
 };
 
+/**
+ * A job that EXISTS — generated, seeded and reloadable — waiting for the moment
+ * the fiction reaches for it. Only the part a broker would say out loud: who is
+ * calling, what they claim they want, and what they say it pays. Who is really
+ * paying and what is really waiting are deliberately absent, so the model cannot
+ * leak them even by accident.
+ */
+export type LifeWireOffer = {
+  title: string;
+  brokerName: string;
+  brokerKey: string;
+  brokerLine: string;
+  district: string;
+  pitch: string;
+  ask: string;
+  payout: number;
+};
+
+/** The same offer once it is on the table, plus anything the player has bought. */
+export type LifeHookOnTable = LifeWireOffer & {
+  /** Facts the player has already prised out of the broker or the street. */
+  learned: string[];
+};
+
 export type LifeContext = {
   clock: GameClock;
   character: {
@@ -41,6 +65,16 @@ export type LifeContext = {
   capabilities?: string[];
   /** What the engine already resolved, when this turn is a follow-up. */
   resolved?: string;
+  /**
+   * The job the engine has ready, shown only while the campaign is living and
+   * nothing is already on the table. Its presence does NOT mean work should be
+   * offered this turn; the prompt is explicit that most turns have none.
+   */
+  wire?: LifeWireOffer | null;
+  /** The offer the player is currently sitting on, during the hook phase. */
+  hookOnTable?: LifeHookOnTable | null;
+  /** True when the player asked what they could do, rather than doing it. */
+  optionsRequested?: boolean;
 };
 
 function line(label: string, value: string): string {
@@ -142,6 +176,51 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
   if (context.recentEvents.length) {
     parts.push("", "== RECENT ==");
     for (const e of context.recentEvents) parts.push(`- ${e}`);
+  }
+
+  if (context.wire) {
+    const w = context.wire;
+    parts.push(
+      "",
+      "== WORK ON THE WIRE (the ONLY job you may offer; offer it only if the moment reaches for it) ==",
+      line("Job", w.title),
+      line("Broker", `${w.brokerName} [${w.brokerKey}] — ${w.brokerLine}`),
+      line("Where", w.district),
+      line("Pays", `${w.payout}eb`),
+      line("What they are asking for", w.ask),
+      line("How they put it", w.pitch),
+      'To put it on the table, return {"kind":"hook_offer"} and voice this in the broker\'s mouth. ' +
+        "Change nothing: not the fee, not the name, not the ask.",
+    );
+  }
+
+  if (context.hookOnTable) {
+    const h = context.hookOnTable;
+    parts.push(
+      "",
+      "== OFFER ALREADY ON THE TABLE ==",
+      line("Job", `${h.title}, from ${h.brokerName} — ${h.payout}eb`),
+      line("What they are asking for", h.ask),
+    );
+    if (h.learned.length) {
+      parts.push("They have since found out:");
+      for (const fact of h.learned) parts.push(`- ${fact}`);
+    }
+    parts.push(
+      "The player has not agreed to anything. They may ask about it, push on the terms, sleep on " +
+        "it or walk. Taking it is a button only they can press, and nothing else about this job " +
+        "is yours to state.",
+    );
+  }
+
+  if (context.optionsRequested) {
+    parts.push(
+      "",
+      "== THEY ARE ASKING WHAT THEY COULD DO ==",
+      "Return 3-4 concrete actions drawn from the scene they are already standing in. Do not " +
+        "advance the fiction, do not propose a check, and set timeSpent to 0: thinking about it " +
+        "costs nothing.",
+    );
   }
 
   if (context.resolved) {

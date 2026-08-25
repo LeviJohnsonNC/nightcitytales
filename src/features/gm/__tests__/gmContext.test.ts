@@ -96,4 +96,14 @@ describe("renderGmUserPrompt", () => {
     expect(prompt).not.toContain("== RECENT ==");
     expect(prompt).not.toContain("Key skills");
   });
+
+  it("says nothing about options unless the player asked for them", () => {
+    expect(renderGmUserPrompt(context, "I go in the side door")).not.toContain(
+      "THEY ARE ASKING WHAT THEY COULD DO",
+    );
+    const asked = buildGmContext({ ...context, optionsRequested: true });
+    const prompt = renderGmUserPrompt(asked, "(What are my options here?)");
+    expect(prompt).toContain("THEY ARE ASKING WHAT THEY COULD DO");
+    expect(prompt).toContain("Do not advance the fiction");
+  });
 });

@@ -38,7 +38,10 @@ describe("normalizeLifeResponse", () => {
     expect(warnings).toHaveLength(3);
   });
 
-  it("reads a hook offer as an offer, never as a started job", () => {
+  it("strips everything a hook offer claims about the job", () => {
+    // The job on the wire was generated before the model spoke. Anything it
+    // attaches here is its own invention and is discarded, not merged: that is
+    // what keeps the offer and the mission it starts the same thing.
     const result = normalizeLifeResponse(
       {
         proposedActions: [
@@ -53,12 +56,20 @@ describe("normalizeLifeResponse", () => {
       },
       silent,
     );
-    expect(result.proposedActions[0]).toMatchObject({
-      kind: "hook_offer",
-      title: "Courier run",
-      npcKey: "dex",
-      payout: 1200,
-    });
+    expect(result.proposedActions).toEqual([{ kind: "hook_offer" }]);
+  });
+
+  it("reports the time an action took, clamped to one turn's worth", () => {
+    expect(normalizeLifeResponse({ timeSpent: 45 }, silent).timeSpent).toBe(45);
+    expect(normalizeLifeResponse({ timeSpent: 99999 }, silent).timeSpent).toBe(12 * 60);
+    expect(normalizeLifeResponse({ timeSpent: -30 }, silent).timeSpent).toBe(0);
+    // Nothing reported is no time spent, not a default nudge forward.
+    expect(normalizeLifeResponse({}, silent).timeSpent).toBe(0);
+  });
+
+  it("offers no actions unless the turn produced some", () => {
+    expect(normalizeLifeResponse({}, silent).actions).toEqual([]);
+    expect(normalizeLifeResponse({ actions: [] }, silent).actions).toEqual([]);
   });
 
   it("normalizes loose deltas and a single new situation", () => {

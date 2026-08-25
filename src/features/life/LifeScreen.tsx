@@ -1,7 +1,13 @@
 /**
- * LIFE — the screen between jobs. One situation at a time, three concrete
- * things to do about it, a free-text box, and a clock that costs something to
- * spend. A job can only appear here as an offer with an explicit Accept.
+ * LIFE — the screen between jobs. One situation at a time, a free-text box, and
+ * a clock that costs something to spend.
+ *
+ * There is deliberately NO menu. The scene describes what is there; what to do
+ * about it is the player's problem. Options exist only if they ask for them,
+ * behind a button, and asking costs no time.
+ *
+ * A job can only appear here as an offer, with terms the player can push on and
+ * an Accept they have to press themselves.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -13,14 +19,15 @@ import {
   formatDuration,
   formatLifeClock,
   getSkill,
+  knownTerms,
   luckModifier,
   luckPoolMax,
   luckRemaining,
   opposedCheckForCharacter,
+  openAsks,
   resolveSkillId,
   skillCheckForCharacter,
   woundActionPenalty,
-  TIME_COSTS,
   type WoundStateCode,
 } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
@@ -55,6 +62,12 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
           <span className="text-accent">◆</span> {text}
         </p>
       );
+    case "hook_negotiated":
+      return (
+        <p className="font-mono text-xs text-muted-foreground">
+          <span className="text-accent">◆</span> {text}
+        </p>
+      );
     case "hook_offered":
     case "hook_declined":
     case "mission_started":
@@ -77,6 +90,7 @@ const LIFE_EVENT_TYPES = new Set([
   "life_note",
   "skill_check",
   "hook_offered",
+  "hook_negotiated",
   "hook_declined",
   "mission_started",
   "mission_completed",
@@ -101,7 +115,7 @@ function LifeLog({ events, busy }: { events: CampaignEvent[]; busy: boolean }) {
   );
 }
 
-/** One of the three offered actions: what it costs in time, money and dice. */
+/** One option, shown only when the player asked: time, money and dice up front. */
 function ActionCard({
   action,
   character,
@@ -162,32 +176,96 @@ function ActionCard({
   );
 }
 
+/**
+ * The offer on the table.
+ *
+ * Everything shown here is read off the mission this offer will actually start:
+ * the title, the broker, the fee, the pitch. Pushing on the terms posts a real
+ * check the player rolls on the same card as any other, and the engine decides
+ * what it bought.
+ */
 function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
   const hook = life.hook;
   const [reason, setReason] = useState("");
   if (!hook) return null;
+
+  const { offer, terms, mission } = hook;
+  const raised = terms.payout !== terms.basePayout;
+  const learned = knownTerms(terms, offer);
+  const asks = openAsks(terms);
+  const blocked = life.busy || !!life.pendingCheck;
+
   return (
     <section className="space-y-3 border border-neon-pink bg-neon-pink/5 p-4">
       <Label>Work on the table</Label>
       <div>
-        <h3 className="text-base font-bold">{hook.title}</h3>
+        <h3 className="text-base font-bold">{mission.title}</h3>
         <p className="text-sm text-muted-foreground">
-          {hook.patron}
-          {hook.payout ? ` · ${hook.payout}eb` : ""}
+          {offer.brokerName}, {offer.brokerLine}
+        </p>
+        <p className="num mt-1 font-mono text-sm">
+          {raised && (
+            <span className="mr-2 text-muted-foreground line-through">{terms.basePayout}eb</span>
+          )}
+          <span className="font-bold text-neon-pink">{terms.payout}eb</span>
+          <span className="ml-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            {offer.district}
+          </span>
         </p>
       </div>
-      <p className="text-sm leading-relaxed">{hook.summary}</p>
+
+      <p className="text-sm leading-relaxed">{offer.pitch}</p>
+      <p className="text-sm">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          They want{" "}
+        </span>
+        {offer.ask}
+      </p>
+
+      {learned.length > 0 && (
+        <ul className="space-y-1 border-l-2 border-accent pl-3">
+          {learned.map((fact) => (
+            <li key={fact} className="text-sm text-accent">
+              {fact}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {asks.length > 0 && (
+        <div className="space-y-1">
+          <Label>Before you answer</Label>
+          <div className="flex flex-wrap gap-2">
+            {asks.map((spec) => (
+              <Button
+                key={spec.ask}
+                size="sm"
+                variant="outline"
+                disabled={blocked}
+                title={spec.blurb}
+                onClick={() => life.pushHook(spec.ask)}
+              >
+                {spec.label}
+                <span className="num ml-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {getSkill(spec.skillId).name} · {formatDuration(spec.minutes)}
+                </span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground">
         Nothing starts until you say yes. Ask questions, push for more, sleep on it, or walk.
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={life.busy} onClick={() => life.acceptHook()}>
+        <Button size="sm" disabled={blocked} onClick={() => life.acceptHook()}>
           Take the job
         </Button>
         <Button
           size="sm"
           variant="outline"
-          disabled={life.busy}
+          disabled={blocked}
           onClick={() => life.declineHook(reason || "Not this one.")}
         >
           Turn it down
@@ -197,26 +275,34 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
           onChange={(e) => setReason(e.target.value)}
           placeholder="…or say why (optional)"
           className="min-w-[12rem] flex-1 border border-border bg-background px-2 py-1 text-sm"
-          disabled={life.busy}
+          disabled={blocked}
         />
       </div>
     </section>
   );
 }
 
+/**
+ * The one thing the player always has: a place to say what they do.
+ *
+ * What they type is sent as what they typed. No engine note is stapled to it,
+ * because a nudge about when to roll belongs in the system prompt, not in the
+ * player's own words on their own log.
+ */
 function InputBar({
   onSend,
+  onAskOptions,
   busy,
 }: {
   onSend: (text: string) => Promise<boolean> | void;
+  onAskOptions: () => void;
   busy: boolean;
 }) {
   const [text, setText] = useState("");
   const send = async () => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    const payload = `${trimmed}\n(ENGINE: judge this case by case. If it could plausibly fail and failure would matter, propose a skill_check with a skillId from the SKILLS list and a DV from the published table, and stop. If it is routine, just narrate it. Do not start a job.)`;
-    const result = await onSend(payload);
+    const result = await onSend(trimmed);
     if (result !== false) setText("");
   };
   return (
@@ -230,14 +316,25 @@ function InputBar({
             void send();
           }
         }}
-        placeholder="What do you do with your evening? (Enter to act, Shift+Enter for a new line)"
+        placeholder="What do you do? (Enter to act, Shift+Enter for a new line)"
         rows={2}
         className="flex-1 resize-none"
         disabled={busy}
       />
-      <Button onClick={() => void send()} disabled={busy || !text.trim()}>
-        {busy ? "…" : "Act"}
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button onClick={() => void send()} disabled={busy || !text.trim()}>
+          {busy ? "…" : "Act"}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onAskOptions}
+          disabled={busy}
+          title="Ask what you could do here. Costs no time."
+        >
+          Options?
+        </Button>
+      </div>
     </div>
   );
 }
@@ -338,6 +435,8 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
             />
           )}
 
+          {/* Options, and only when they were asked for. An ordinary turn
+              returns none, so these clear themselves the moment the player acts. */}
           {!life.pendingCheck && life.actions.length > 0 && (
             <div className="grid gap-2 sm:grid-cols-3">
               {life.actions.map((action) => (
@@ -346,18 +445,17 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   action={action}
                   character={bundle.character as never}
                   busy={life.busy}
-                  onPick={() =>
-                    void life.act(
-                      `${action.label}. ${action.description}`.trim(),
-                      action.timeMinutes || TIME_COSTS.quick,
-                    )
-                  }
+                  onPick={() => void life.act(`${action.label}. ${action.description}`.trim())}
                 />
               ))}
             </div>
           )}
 
-          <InputBar onSend={(text) => life.act(text)} busy={life.busy || !!life.pendingCheck} />
+          <InputBar
+            onSend={(text) => life.act(text)}
+            onAskOptions={() => life.askOptions()}
+            busy={life.busy || !!life.pendingCheck}
+          />
         </div>
 
         <aside className="sticky top-6 h-fit space-y-4 self-start">

@@ -60,6 +60,43 @@ export type MissionReward = {
   notes?: string;
 };
 
+/**
+ * The job as it is PITCHED, before anyone has agreed to anything.
+ *
+ * A mission and its offer are the same object seen from two sides. The offer is
+ * what reaches the player over the phone: who is calling, what they claim they
+ * want, and what they say it pays. The rest of the beat graph is what is
+ * actually waiting.
+ *
+ * Splitting the two apart is what stops the Life loop offering one job and then
+ * running a different one: the offer is READ from the mission, never invented
+ * alongside it.
+ *
+ * `patronName`, `patronOrg` and `opposition` are deliberately part of the offer
+ * and deliberately NOT told to the player up front. They are what negotiating
+ * buys (see engine/negotiation.ts): the fixer knows who is paying, and the
+ * street knows what is waiting, and both cost something to find out.
+ */
+export type MissionOffer = {
+  /** The voice on the phone: whoever actually brings the player the work. */
+  brokerName: string;
+  /** Stable key for that person, so the same broker is the same NPC every time. */
+  brokerKey: string;
+  /** One line on who the broker is, in their own right. */
+  brokerLine: string;
+  /** Who is really paying, behind the broker. Not volunteered. */
+  patronName: string;
+  patronOrg: string;
+  /** Where the work is. */
+  district: string;
+  /** What is waiting when they get there. Not volunteered. */
+  opposition: string;
+  /** The pitch in the broker's words, as the player hears it. */
+  pitch: string;
+  /** The single thing they are being asked to achieve. */
+  ask: string;
+};
+
 export type Mission = {
   id: string;
   title: string;
@@ -67,6 +104,11 @@ export type Mission = {
   source: string;
   patron?: string;
   reward?: MissionReward;
+  /**
+   * How this job reaches a player who has not taken it yet. Optional because an
+   * authored mission may be started directly rather than offered.
+   */
+  offer?: MissionOffer;
   startBeatId: string;
   beats: Beat[];
 };
@@ -287,4 +329,42 @@ export function assertValidMission(mission: Mission): void {
   if (problems.length > 0) {
     throw new Error(`Mission "${mission.id}" is malformed:\n- ${problems.join("\n- ")}`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// The offer.
+// ---------------------------------------------------------------------------
+
+/**
+ * How this job reaches someone who has not taken it.
+ *
+ * A mission that records its own offer is read as written. One that does not
+ * (an authored mission handed straight to a campaign) gets a plain offer built
+ * from what it does record, so the Life loop never has to invent a patron or a
+ * fee to have something to put on the phone.
+ */
+export function missionOffer(mission: Mission): MissionOffer {
+  if (mission.offer) return mission.offer;
+  const broker = mission.patron?.trim() || "a fixer with your number";
+  return {
+    brokerName: broker,
+    brokerKey: stableKey(broker),
+    brokerLine: mission.source,
+    patronName: broker,
+    patronOrg: mission.subtitle ?? "",
+    district: mission.subtitle ?? "Night City",
+    opposition: "Unknown.",
+    pitch: mission.beats.find((b) => b.id === mission.startBeatId)?.readAloud ?? mission.title,
+    ask: mission.beats.find((b) => b.id === mission.startBeatId)?.objectives?.[0] ?? mission.title,
+  };
+}
+
+/** A lowercase, underscored key for a name. Stable for the same input. */
+export function stableKey(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "") || "unknown"
+  );
 }

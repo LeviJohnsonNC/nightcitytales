@@ -11,28 +11,38 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   advanceClock,
   ageSituations,
+  canAsk,
   clampActionMinutes,
+  clampDisposition,
   getMission,
   getSkill,
-  jobIdForSeed,
+  hookAskSpec,
   judgeAction,
+  knownTerms,
   luckPoolMax,
   mergeSituations,
+  missionOffer,
   nextPhase,
   resolveSkillId,
   rollJobSeed,
   selectSituation,
+  settleHookAsk,
   startMission,
   tickClock,
+  BROKER_DEFAULT_SKILL_LEVEL,
+  BROKER_DEFAULT_STAT,
   TIME_COSTS,
   type GameClock,
   type GamePhase,
+  type HookAsk,
   type LifeClock,
   type LifeSituation,
+  type Opposition,
   type WoundStateCode,
 } from "@/engine";
 import {
   appendCampaignEvent,
+  findCampaignNpc,
   getCampaign,
   getCharacter,
   listCampaignEvents,
@@ -49,6 +59,7 @@ import {
   upsertSituations,
   type Campaign,
   type CampaignEvent,
+  type CampaignFlag,
   type CampaignInventoryItem,
   type CampaignNpc,
   type CampaignVitals,
@@ -75,9 +86,27 @@ import {
   worstArmor,
   type DowntimeBundle,
 } from "@/features/downtime/downtimeOps";
-import { renderLifeUserPrompt, type LifeContext } from "./lifeContext";
+import { renderLifeUserPrompt, type LifeContext, type LifeWireOffer } from "./lifeContext";
 import { lifeTurnFn } from "./lifeTurn.server";
 import type { LifeActionCard, LifeResponse } from "./lifeResponse";
+import {
+  askTagFrom,
+  hookFromSituation,
+  hookKeyFor,
+  hookUpsert,
+  liveHookSituation,
+  nextJobSeedFrom,
+  offerTerms,
+  wireOfferFor,
+  JOB_PAYOUT_FLAG,
+  NEXT_JOB_SEED_FLAG,
+  type LifeHook,
+} from "./hookOffer";
+import {
+  oppositionProfileOf,
+  reconcileOpposition,
+  rememberOpposition,
+} from "@/features/campaign/npcOpposition";
 import {
   campaignPhase,
   clockFromRow,
@@ -88,14 +117,7 @@ import {
   situationToUpsert,
 } from "./lifeModel";
 
-export type LifeHook = {
-  situationKey: string;
-  title: string;
-  patron: string;
-  npcKey: string;
-  payout: number;
-  summary: string;
-};
+export type { LifeHook };
 
 export type LifeBundle = {
   campaign: Campaign;
@@ -112,22 +134,15 @@ export type LifeBundle = {
   current: LifeSituation | null;
   /** The offer on the table, when the campaign is in the hook phase. */
   hook: LifeHook | null;
+  /**
+   * The job that already exists, waiting for a moment that reaches for it. The
+   * model is shown its public half and may put THIS one on the table; it cannot
+   * invent another. Null while an offer is already live.
+   */
+  wire: LifeWireOffer | null;
+  /** The mission id behind that offer, so accepting starts the job that was pitched. */
+  wireMissionId: string | null;
 };
-
-/** Turn the persisted hook situation back into an offer the UI can render. */
-function hookFrom(situations: LifeSituation[]): LifeHook | null {
-  const hook = situations.find((s) => s.category === "hook" && s.status === "live");
-  if (!hook) return null;
-  const data = (hook.data ?? {}) as Record<string, unknown>;
-  return {
-    situationKey: hook.key,
-    title: hook.title,
-    patron: typeof data["patron"] === "string" ? data["patron"] : "someone with your number",
-    npcKey: hook.npcKey ?? "",
-    payout: typeof data["payout"] === "number" ? data["payout"] : 0,
-    summary: hook.summary,
-  };
-}
 
 async function loadLife(campaignId: string): Promise<LifeBundle> {
   const full = await getCampaign(campaignId);
@@ -168,6 +183,21 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     .map((e) => (e.data as { situationKey?: unknown } | null)?.situationKey)
     .find((k): k is string => typeof k === "string");
 
+  // There is always a job somewhere in Night City. Its seed is drawn once and
+  // stored, so the same work is still on the wire after a reload, and so the
+  // mission behind an offer exists BEFORE anyone pitches it.
+  const seed = await ensureNextJobSeed(campaignId, full.flags);
+  const { missionId: wireMissionId, wire } = wireOfferFor(seed);
+
+  const hookRow = liveHookSituation(merged);
+  let hook = hookRow ? hookFromSituation(hookRow) : null;
+  if (hookRow && !hook) {
+    // A hook written before offers carried a mission. Rather than guess at what
+    // job was meant, bind it to the one on the wire and roll a fresh one on:
+    // from here the offer and the job it starts are the same object.
+    hook = await bindLegacyHook(campaignId, hookRow, seed);
+  }
+
   return {
     ...input,
     events,
@@ -176,12 +206,53 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     situations: merged,
     clocks: clockRows.map(clockFromRow),
     current: selectSituation(merged, clock.day, lastShownKey),
-    hook: hookFrom(merged),
+    hook,
+    wire: hook ? null : wire,
+    wireMissionId: hook ? null : wireMissionId,
   };
 }
 
+/** The seed of the job on the wire, drawing and storing one the first time. */
+async function ensureNextJobSeed(campaignId: string, flags: CampaignFlag[]): Promise<number> {
+  const stored = nextJobSeedFrom(flags);
+  if (stored !== null) return stored;
+  const seed = rollJobSeed();
+  await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, seed as unknown as Json);
+  return seed;
+}
+
+/** Draw the next job onto the wire, so the one just offered is not offered twice. */
+async function rollWireForward(campaignId: string): Promise<void> {
+  await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, rollJobSeed() as unknown as Json);
+}
+
+/** Give an offer that predates offer-time generation the job it will start. */
+async function bindLegacyHook(
+  campaignId: string,
+  situation: LifeSituation,
+  seed: number,
+): Promise<LifeHook> {
+  const { missionId } = wireOfferFor(seed);
+  const mission = getMission(missionId);
+  const offer = missionOffer(mission);
+  const terms = offerTerms(mission);
+  await upsertSituations(campaignId, [hookUpsert(situation.key, mission, offer, terms)]);
+  await rollWireForward(campaignId);
+  return { situationKey: situation.key, missionId, mission, offer, terms };
+}
+
+/** What a single Life turn is: what the player did, and what already happened. */
+type TurnOptions = {
+  /** What the engine already resolved, when this turn narrates a result. */
+  resolved?: string;
+  /** True when the player asked what they could do rather than doing something. */
+  options?: boolean;
+  /** Minutes the engine has already decided this turn costs. */
+  minutes?: number;
+};
+
 /** The context slice the Life model reasons over. Deterministic and small. */
-function buildContext(bundle: LifeBundle, resolved?: string): LifeContext {
+function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
   const summary = characterSummary(bundle.character, bundle.vitals);
   const capability = buildCapabilitySnapshot({
     character: bundle.character,
@@ -219,7 +290,24 @@ function buildContext(bundle: LifeBundle, resolved?: string): LifeContext {
     people: lifePeople(bundle.npcs),
     recentEvents: recentLifeLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
-    ...(resolved ? { resolved } : {}),
+    ...(turn.resolved ? { resolved: turn.resolved } : {}),
+    ...(turn.options ? { optionsRequested: true } : {}),
+    // Work is only on the wire while the campaign is actually living. During a
+    // hook the offer on the table is the only job in the room.
+    wire: bundle.phase === "life" && !bundle.hook ? bundle.wire : null,
+    hookOnTable: bundle.hook
+      ? {
+          title: bundle.hook.mission.title,
+          brokerName: bundle.hook.offer.brokerName,
+          brokerKey: bundle.hook.offer.brokerKey,
+          brokerLine: bundle.hook.offer.brokerLine,
+          district: bundle.hook.offer.district,
+          pitch: bundle.hook.offer.pitch,
+          ask: bundle.hook.offer.ask,
+          payout: bundle.hook.terms.payout,
+          learned: knownTerms(bundle.hook.terms, bundle.hook.offer),
+        }
+      : null,
   };
 }
 
@@ -227,14 +315,28 @@ function buildContext(bundle: LifeBundle, resolved?: string): LifeContext {
 async function applyResponse(
   bundle: LifeBundle,
   response: LifeResponse,
-  minutes: number,
+  turn: TurnOptions,
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
-  const spent = clampActionMinutes(minutes);
+
+  // Time is spent by the engine, never claimed by the model. A turn that moves
+  // the character bodily (travel, rest) carries its own duration and is charged
+  // where it is applied; anything else costs what the model reports the action
+  // took, clamped to something a single Life turn is allowed to eat.
+  const carriesOwnTime =
+    !turn.options && response.proposedActions.some((a) => a.kind === "travel" || a.kind === "rest");
+  const spent =
+    turn.minutes !== undefined
+      ? clampActionMinutes(turn.minutes)
+      : carriesOwnTime
+        ? 0
+        : clampActionMinutes(response.timeSpent);
 
   await appendCampaignEvent({
     campaign_id: campaignId,
-    type: "life_narration",
+    // Options are answered on a row of their own: the scene has not moved, and
+    // restating it in the log would read as the world repeating itself.
+    type: turn.options ? "life_options" : "life_narration",
     summary: response.resolution ?? response.situation.description,
     data: {
       situationKey: bundle.current?.key ?? null,
@@ -275,7 +377,11 @@ async function applyResponse(
     return downtime;
   };
 
-  for (const action of response.proposedActions) {
+  // Asking what you could do is not doing it. Nothing mechanical is applied on
+  // an options turn, whatever the model attached to it.
+  const proposed = turn.options ? [] : response.proposedActions;
+
+  for (const action of proposed) {
     if (action.kind === "spend") {
       const legal = judgeAction(capability, {
         kind: "spend",
@@ -380,27 +486,25 @@ async function applyResponse(
         });
       }
     } else if (action.kind === "hook_offer") {
-      // A job OFFER, never a job. The phase moves to `hook`, which only unlocks
-      // an Accept button; nothing else about the campaign changes.
-      const key = `hook_${action.npcKey}_${bundle.clock.day}`;
-      await upsertSituations(campaignId, [
-        {
-          situationKey: key,
-          category: "hook",
-          title: action.title,
-          summary: action.summary,
-          npcKey: action.npcKey,
-          status: "live",
-          severity: 3,
-          data: { patron: action.patron, payout: action.payout } as unknown as Json,
-        },
-      ]);
+      // A job OFFER, never a job — and specifically the job that was already on
+      // the wire when this turn started. The model brought nothing to this: the
+      // mission, the broker and the fee were generated before it spoke, which is
+      // what makes the offer and the job it starts the same thing.
+      if (!bundle.wireMissionId || bundle.hook) continue;
+      const missionId = bundle.wireMissionId;
+      const mission = getMission(missionId);
+      const offer = missionOffer(mission);
+      const terms = offerTerms(mission);
+      const key = hookKeyFor(offer, missionId);
+      await upsertSituations(campaignId, [hookUpsert(key, mission, offer, terms)]);
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "hook_offered",
-        summary: `${action.patron} offers work: ${action.title} (${action.payout}eb)`,
-        data: { situationKey: key, payout: action.payout } as unknown as Json,
+        summary: `${offer.brokerName} offers work: ${mission.title} (${terms.payout}eb)`,
+        data: { situationKey: key, missionId, payout: terms.payout } as unknown as Json,
       });
+      // The wire moves on, so the same job is never offered twice.
+      await rollWireForward(campaignId);
       const to = nextPhase(bundle.phase, "offer_hook");
       if (to) await setCampaignPhase(campaignId, to);
     }
@@ -412,7 +516,9 @@ async function applyResponse(
     } else if (delta.kind === "npc_disposition") {
       const npc = bundle.npcs.find((n) => n.npc_id === delta.npcKey);
       if (npc) {
-        await setNpcDisposition(npc.id, Math.max(-5, Math.min(5, npc.disposition + delta.delta)));
+        // The engine, the schema and the column's CHECK all say -3..3. Clamping
+        // to a wider range here wrote values the database refuses.
+        await setNpcDisposition(npc.id, clampDisposition(npc.disposition + delta.delta));
       }
     } else if (delta.kind === "clock") {
       const existing = bundle.clocks.find((c) => c.key === delta.clockKey);
@@ -441,7 +547,7 @@ async function applyResponse(
     }
   }
 
-  if (response.newSituation) {
+  if (response.newSituation && !turn.options) {
     const s = response.newSituation;
     await upsertSituations(campaignId, [
       {
@@ -474,13 +580,8 @@ async function applyResponse(
   }
 }
 
-/** One Life turn: the player says (or picks) something, the world answers. */
-async function liveTurn(
-  bundle: LifeBundle,
-  input: string,
-  minutes: number,
-  resolved?: string,
-): Promise<void> {
+/** One Life turn: the player says something, the world answers. */
+async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {}): Promise<void> {
   if (input.trim()) {
     await appendCampaignEvent({
       campaign_id: bundle.campaign.id,
@@ -489,11 +590,14 @@ async function liveTurn(
       data: {} as Json,
     });
   }
-  const context = buildContext(bundle, resolved);
+  const context = buildContext(bundle, turn);
+  const opening = turn.options
+    ? "(the player is asking what they could do here)"
+    : "(open the moment)";
   const response = await lifeTurnFn({
-    data: { userPrompt: renderLifeUserPrompt(context, input || "(open the moment)") },
+    data: { userPrompt: renderLifeUserPrompt(context, input || opening) },
   });
-  await applyResponse(bundle, response, minutes);
+  await applyResponse(bundle, response, turn);
 }
 
 /** Roll a Life check the player pressed, then let the world answer it. */
@@ -503,6 +607,16 @@ async function commitLifeCheck(
   roll: CheckRoll,
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
+
+  // A check posted by a negotiation settles the TERMS, not just the fiction:
+  // the engine decides what the push bought and the model is only told the
+  // outcome afterwards.
+  const tag = askTagFrom(bundle.events.find((e) => e.id === pending.eventId));
+  if (tag && bundle.hook && bundle.hook.situationKey === tag.situationKey) {
+    await settleNegotiation(bundle, bundle.hook, tag.ask, pending, roll);
+    return;
+  }
+
   if (roll.kind === "opposed") {
     await logOpposedCheck(campaignId, roll.result, {
       skillId: pending.skillId,
@@ -518,12 +632,10 @@ async function commitLifeCheck(
         ? "FAILURE — tied, and a tie goes to the one resisting"
         : `FAILURE by ${Math.abs(roll.result.margin)}`;
     const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
-    await liveTurn(
-      fresh,
-      "",
-      0,
-      `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".`,
-    );
+    await liveTurn(fresh, "", {
+      minutes: 0,
+      resolved: `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".`,
+    });
     return;
   }
 
@@ -537,12 +649,10 @@ async function commitLifeCheck(
   const dv = pending.dv ?? 0;
   const verdict = roll.result.success ? "SUCCESS" : "FAILURE";
   const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
-  await liveTurn(
-    fresh,
-    "",
-    0,
-    `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".`,
-  );
+  await liveTurn(fresh, "", {
+    minutes: 0,
+    resolved: `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".`,
+  });
 }
 
 /**
@@ -551,29 +661,38 @@ async function commitLifeCheck(
  * point the existing play machinery owns the screen.
  */
 async function acceptHook(bundle: LifeBundle): Promise<void> {
-  if (!bundle.hook) throw new Error("There is no offer on the table.");
+  const hook = bundle.hook;
+  if (!hook) throw new Error("There is no offer on the table.");
   const campaignId = bundle.campaign.id;
   const to = nextPhase(bundle.phase, "accept_hook");
   if (!to) throw new Error("This campaign is not holding an offer right now.");
 
-  const missionId = jobIdForSeed(rollJobSeed());
-  const mission = getMission(missionId);
+  // THE job, not A job: the mission that was pitched, generated before the offer
+  // was ever made and carried on the hook ever since.
+  const { missionId, mission } = hook;
   await saveMissionRuntime(campaignId, startMission(mission));
   await updateCampaign(campaignId, {
     current_mission_id: missionId,
     ip_awarded: null,
     status: "active",
   });
+  // A fee that was argued upwards is carried on the campaign, so the job pays
+  // what was agreed rather than what was printed.
+  await setCampaignFlag(campaignId, JOB_PAYOUT_FLAG, hook.terms.payout as unknown as Json);
   // A job is a session: the Luck Pool refills on the same boundary IP is awarded on.
   await updateCampaignVitals(campaignId, {
     luck_current: luckPoolMax(statsRecord(bundle.character)),
   });
-  await setSituationStatus(campaignId, bundle.hook.situationKey, "resolved");
+  await setSituationStatus(campaignId, hook.situationKey, "resolved");
+  const negotiated =
+    hook.terms.payout !== hook.terms.basePayout
+      ? ` at ${hook.terms.payout}eb, up from ${hook.terms.basePayout}eb`
+      : ` at ${hook.terms.payout}eb`;
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "mission_started",
-    summary: `Took the job: ${bundle.hook.title} — ${bundle.hook.patron}`,
-    data: { missionId, payout: bundle.hook.payout } as unknown as Json,
+    summary: `Took the job: ${mission.title} — ${hook.offer.brokerName}${negotiated}`,
+    data: { missionId, payout: hook.terms.payout } as unknown as Json,
   });
   await setCampaignPhase(campaignId, to);
 }
@@ -582,22 +701,180 @@ async function acceptHook(bundle: LifeBundle): Promise<void> {
 async function declineHook(bundle: LifeBundle, reason: string): Promise<void> {
   if (!bundle.hook) return;
   const campaignId = bundle.campaign.id;
+  const title = bundle.hook.mission.title;
+  const broker = bundle.hook.offer.brokerName;
   await setSituationStatus(campaignId, bundle.hook.situationKey, "expired");
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "hook_declined",
-    summary: `Passed on ${bundle.hook.title}.`,
+    summary: `Passed on ${title}.`,
     data: { reason } as unknown as Json,
   });
   const to = nextPhase(bundle.phase, "decline_hook");
   if (to) await setCampaignPhase(campaignId, to);
-  const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
-  await liveTurn(
-    fresh,
-    `I turn the work down. ${reason}`.trim(),
-    TIME_COSTS.conversation,
-    `The player DECLINED the offer "${bundle.hook.title}". Let ${bundle.hook.patron} react in character and move on. Do not offer the same job again this turn.`,
-  );
+  const fresh = { ...bundle, events: await listCampaignEvents(campaignId), hook: null };
+  await liveTurn(fresh, `I turn the work down. ${reason}`.trim(), {
+    minutes: TIME_COSTS.conversation,
+    resolved: `The player DECLINED the offer "${title}". Let ${broker} react in character and move on. That job is gone; do not offer it again.`,
+  });
+}
+
+/**
+ * Push on the terms of an offer.
+ *
+ * Posts the check and stops, exactly like every other proposed check: the player
+ * rolls it themselves on the same card, and settleNegotiation below decides what
+ * it bought. The model is not in this path at all until there is a result to
+ * describe.
+ */
+async function pushHook(bundle: LifeBundle, ask: HookAsk): Promise<void> {
+  const hook = bundle.hook;
+  if (!hook) throw new Error("There is no offer on the table.");
+  if (!canAsk(hook.terms, ask)) throw new Error("You have already pushed on that.");
+
+  const campaignId = bundle.campaign.id;
+  const spec = hookAskSpec(ask);
+  const skillId = resolveSkillId(spec.skillId);
+  if (!skillId) throw new Error(`No printed Skill named "${spec.skillId}".`);
+  const skillName = getSkill(skillId).name;
+  const negotiation = { ask, situationKey: hook.situationKey };
+
+  if (!spec.opposedBy) {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "check_prompt",
+      summary: `${skillName} check — DV ${spec.dv}`,
+      data: { skillId, skillName, dv: spec.dv, intent: spec.blurb, negotiation } as unknown as Json,
+    });
+    return;
+  }
+
+  const opposingSkillId = resolveSkillId(spec.opposedBy);
+  if (!opposingSkillId) throw new Error(`No printed Skill named "${spec.opposedBy}".`);
+
+  // The broker's own numbers. A fixer the campaign has already seen resist
+  // something keeps the numbers they resisted with; a new one is written down
+  // now, so pushing them twice is pushing the same person twice.
+  const npc = await findCampaignNpc(campaignId, hook.offer.brokerKey);
+  const proposed: Opposition = {
+    name: hook.offer.brokerName,
+    skillId: opposingSkillId,
+    skillLevel: BROKER_DEFAULT_SKILL_LEVEL,
+    statValue: BROKER_DEFAULT_STAT,
+  };
+  const { opposition, remembered } = reconcileOpposition(proposed, oppositionProfileOf(npc));
+  await rememberOpposition({
+    campaignId,
+    npcKey: hook.offer.brokerKey,
+    npcName: hook.offer.brokerName,
+    npc,
+    opposition,
+  });
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "check_prompt",
+    summary: `${skillName} check — opposed by ${hook.offer.brokerName}`,
+    data: {
+      skillId,
+      skillName,
+      intent: spec.blurb,
+      negotiation,
+      opposition: {
+        npcKey: hook.offer.brokerKey,
+        npcName: hook.offer.brokerName,
+        skillId: opposition.skillId,
+        skillLevel: opposition.skillLevel,
+        statValue: opposition.statValue,
+        remembered,
+      },
+    } as unknown as Json,
+  });
+}
+
+/**
+ * What a push bought. The engine decides: the fee moves or it does not, the name
+ * is given up or it is not, and the model is handed the result to describe after
+ * the fact, exactly as it is for any other roll.
+ */
+async function settleNegotiation(
+  bundle: LifeBundle,
+  hook: LifeHook,
+  ask: HookAsk,
+  pending: PendingCheck,
+  roll: CheckRoll,
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const spec = hookAskSpec(ask);
+
+  let success: boolean;
+  let margin: number;
+  if (roll.kind === "opposed") {
+    await logOpposedCheck(campaignId, roll.result, {
+      skillId: pending.skillId,
+      skillName: pending.skillName,
+      intent: pending.intent,
+      promptEventId: pending.eventId,
+      luckSpent: roll.luckSpent,
+      npcKey: hook.offer.brokerKey,
+    });
+    success = roll.result.success;
+    margin = roll.result.margin;
+  } else {
+    await logSkillCheck(campaignId, roll.result, {
+      skillId: pending.skillId,
+      skillName: pending.skillName,
+      intent: pending.intent,
+      promptEventId: pending.eventId,
+      luckSpent: roll.luckSpent,
+    });
+    // A roll made against no DV has no verdict, and no verdict is not a win.
+    success = roll.result.success === true;
+    margin = roll.result.total - (pending.dv ?? 0);
+  }
+
+  const outcome = settleHookAsk(hook.terms, hook.offer, ask, { success, margin });
+
+  await upsertSituations(campaignId, [
+    hookUpsert(hook.situationKey, hook.mission, hook.offer, outcome.terms),
+  ]);
+
+  if (outcome.dispositionDelta !== 0) {
+    // Read the row rather than the bundle: a broker met for the first time was
+    // written when the check was posted, after this bundle was loaded.
+    const npc = await findCampaignNpc(campaignId, hook.offer.brokerKey);
+    if (npc) {
+      await setNpcDisposition(npc.id, clampDisposition(npc.disposition + outcome.dispositionDelta));
+    }
+  }
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "hook_negotiated",
+    summary: outcome.summary,
+    data: {
+      ask,
+      success,
+      payout: outcome.terms.payout,
+      situationKey: hook.situationKey,
+    } as unknown as Json,
+  });
+
+  const resolved = [
+    `The player pushed on the offer (${spec.label.toLowerCase()}) and the ${pending.skillName} check is RESOLVED: ${success ? "SUCCESS" : "FAILURE"}.`,
+    `The engine has already applied it: ${outcome.summary}`,
+    outcome.revealed ? `They now know this, and did not before: ${outcome.revealed}` : "",
+    `Narrate the exchange in ${hook.offer.brokerName}'s voice. Do not change the fee, do not add terms, and do not offer anything the engine did not.`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const fresh: LifeBundle = {
+    ...bundle,
+    events: await listCampaignEvents(campaignId),
+    hook: { ...hook, terms: outcome.terms },
+  };
+  await liveTurn(fresh, "", { minutes: spec.minutes, resolved });
 }
 
 export function useLife(campaignId: string) {
@@ -612,9 +889,9 @@ export function useLife(campaignId: string) {
   const bundle = query.data;
 
   const turn = useMutation({
-    mutationFn: ({ input, minutes }: { input: string; minutes: number }) => {
+    mutationFn: ({ input, ...rest }: { input: string } & TurnOptions) => {
       if (!bundle) throw new Error("Still loading.");
-      return liveTurn(bundle, input, minutes);
+      return liveTurn(bundle, input, rest);
     },
     onSuccess: invalidate,
   });
@@ -643,6 +920,14 @@ export function useLife(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const push = useMutation({
+    mutationFn: (ask: HookAsk) => {
+      if (!bundle) throw new Error("Still loading.");
+      return pushHook(bundle, ask);
+    },
+    onSuccess: invalidate,
+  });
+
   const pendingCheck = bundle
     ? (pendingChecksFrom(
         bundle.events,
@@ -651,12 +936,19 @@ export function useLife(campaignId: string) {
       )[0] ?? null)
     : null;
 
-  /** The three offered actions from the most recent Life turn. */
+  /**
+   * Options, when the player last asked for them. Empty on an ordinary turn:
+   * Life does not hand out a menu, so the next turn clears these by returning
+   * none of its own.
+   */
   const actions: LifeActionCard[] = (() => {
     if (!bundle) return [];
     for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
       const event = bundle.events[i];
-      if (!event || event.type !== "life_narration") continue;
+      if (!event) continue;
+      if (event.type !== "life_options" && event.type !== "life_narration") continue;
+      // Whichever came last wins, so acting on anything clears the list: an
+      // ordinary turn always answers with none of its own.
       const data = event.data as { actions?: unknown } | null;
       return Array.isArray(data?.actions) ? (data.actions as LifeActionCard[]) : [];
     }
@@ -691,22 +983,34 @@ export function useLife(campaignId: string) {
     narration: latestNarration,
     actions,
     pendingCheck,
-    busy: turn.isPending || check.isPending || accept.isPending || decline.isPending,
+    busy:
+      turn.isPending || check.isPending || accept.isPending || decline.isPending || push.isPending,
     actionError:
-      ((turn.error ?? check.error ?? accept.error ?? decline.error) as Error | null) ?? null,
-    /** Resolves true when the turn landed, false when it failed. */
-    act: async (input: string, minutes: number = TIME_COSTS.quick) => {
+      ((turn.error ??
+        check.error ??
+        accept.error ??
+        decline.error ??
+        push.error) as Error | null) ?? null,
+    /**
+     * Act on what the player typed. How long it took is the model's report of
+     * the action, clamped by the engine: there is no menu entry carrying a
+     * duration any more, because there is no menu.
+     */
+    act: async (input: string) => {
       try {
-        await turn.mutateAsync({ input, minutes });
+        await turn.mutateAsync({ input });
         return true;
       } catch {
         return false;
       }
     },
     openMoment: () => turn.mutate({ input: "", minutes: 0 }),
+    /** Ask what the angles are. Thinking about it costs no time. */
+    askOptions: () => turn.mutate({ input: "", minutes: 0, options: true }),
     commitCheck: (pending: PendingCheck, roll: CheckRoll) => check.mutate({ pending, roll }),
     checkBusy: check.isPending,
     acceptHook: () => accept.mutate(),
     declineHook: (reason: string) => decline.mutate(reason),
+    pushHook: (ask: HookAsk) => push.mutate(ask),
   };
 }

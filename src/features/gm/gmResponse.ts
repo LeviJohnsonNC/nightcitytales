@@ -140,7 +140,8 @@ export const GmWireResponseSchema = z.object({
   suggestedActions: z
     .array(z.unknown())
     .describe(
-      "Things the player could try right now. Each item is " +
+      "Empty on an ordinary turn. Filled with 3-4 things the player could try ONLY when the " +
+        "context says they asked what their options are. Each item is " +
         '{"label":"<short in-fiction action>","skill":"<skill id it would lean on, or null>"}.',
     )
     .nullish(),

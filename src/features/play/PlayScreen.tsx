@@ -494,17 +494,20 @@ function WrapUpCard({
 
 function InputBar({
   onSend,
+  onAskOptions,
   busy,
 }: {
   onSend: (text: string) => Promise<boolean> | void;
+  onAskOptions: () => void;
   busy: boolean;
 }) {
   const [text, setText] = useState("");
   const send = async () => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    const payload = `${trimmed}\n(ENGINE: judge this action case by case. If it is risky, opposed, or uncertain, propose a skill_check with a skillId from the SKILLS list and a DV from the published table, and stop. If it is routine, just narrate the outcome.)`;
-    const result = await onSend(payload);
+    // Sent as typed. When to reach for the dice is the GM prompt's job, not a
+    // note stapled to the player's own words and then shown back to them.
+    const result = await onSend(trimmed);
     // Keep the intent in the box when the turn failed, so it can be retried.
     if (result !== false) setText("");
   };
@@ -524,9 +527,20 @@ function InputBar({
         className="flex-1 resize-none"
         disabled={busy}
       />
-      <Button onClick={send} disabled={busy || !text.trim()}>
-        {busy ? "…" : "Act"}
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button onClick={send} disabled={busy || !text.trim()}>
+          {busy ? "…" : "Act"}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onAskOptions}
+          disabled={busy}
+          title="Ask the GM what angles it can see. The scene does not move."
+        >
+          Options?
+        </Button>
+      </div>
     </div>
   );
 }
@@ -622,6 +636,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         />
         <InputBar
           onSend={play.submit}
+          onAskOptions={play.askOptions}
           busy={
             play.busy ||
             play.opening ||
