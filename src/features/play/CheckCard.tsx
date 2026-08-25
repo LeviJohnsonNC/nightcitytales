@@ -304,7 +304,6 @@ function DvBody({
                 {describeOutlook(pending.base + luck - pending.woundPenalty, dv)}
               </p>
             </div>
-
           </div>
         </div>
       ) : (

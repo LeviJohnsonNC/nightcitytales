@@ -21,4 +21,3 @@ export function describeOutlook(base: number, dv: number): string {
   }
   return `A ${o.needed} or better clears DV ${dv}. A natural 1 subtracts a second d10, so it can still come apart.`;
 }
-
