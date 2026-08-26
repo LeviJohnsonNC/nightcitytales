@@ -148,25 +148,25 @@ const LIFE_EVENT_TYPES = new Set([
 ]);
 
 /**
- * The running log. The turn the player is standing in is already shown above in
- * its own block, so any narration text identical to it is dropped here: the same
+ * The running log. The current turn's narration is shown below the input in its
+ * own block, so any narration text identical to it is dropped here: the same
  * paragraph twice reads as a bug, because it is one.
  */
 function LifeLog({
   events,
   busy,
-  narration,
+  suppressText,
 }: {
   events: CampaignEvent[];
   busy: boolean;
-  narration: { title: string; text: string } | null;
+  suppressText?: string;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [events.length, narration?.text]);
+  }, [events.length]);
   const norm = (t: string) => t.replace(/\s+/g, " ").trim();
-  const suppressed = narration ? norm(narration.text) : null;
+  const suppressed = suppressText ? norm(suppressText) : null;
   const shown = events
     .filter((e) => LIFE_EVENT_TYPES.has(e.type))
     .filter(
@@ -176,18 +176,10 @@ function LifeLog({
   // One scroller on a phone (the page); the desktop column keeps its own.
   return (
     <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
-      {shown.length === 0 && !busy && !narration ? (
+      {shown.length === 0 && !busy ? (
         <p className="text-sm text-muted-foreground">The city hums on without you…</p>
       ) : (
         shown.map((e) => <LifeEvent key={e.id} event={e} />)
-      )}
-      {narration && (
-        <section className="border-l-2 border-accent bg-accent/5 p-3">
-          <Label>{narration.title}</Label>
-          <p className="mt-1 text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
-            {narration.text}
-          </p>
-        </section>
       )}
       {busy && <p className="text-sm italic text-muted-foreground">Night City turns…</p>}
       <div ref={endRef} />
@@ -673,7 +665,11 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               <SheetDrawer character={bundle.character} />
             </div>
 
-            <LifeLog events={bundle.events} busy={life.busy} narration={life.narration} />
+            <LifeLog
+              events={bundle.events}
+              busy={life.busy}
+              {...(life.narration ? { suppressText: life.narration.text } : {})}
+            />
 
             {life.actionError && (
               <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -708,6 +704,15 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   />
                 ))}
               </div>
+            )}
+
+            {life.narration && (
+              <section className="border-l-2 border-accent bg-accent/5 p-3">
+                <Label>{life.narration.title}</Label>
+                <p className="mt-1 text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
+                  {life.narration.text}
+                </p>
+              </section>
             )}
 
             <BottomDock>
