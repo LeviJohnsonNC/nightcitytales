@@ -289,6 +289,21 @@ export async function setInventoryQuantity(
 }
 
 /**
+ * Every flag on a campaign, read fresh.
+ *
+ * Callers that are about to WRITE a flag read it through this rather than
+ * through a bundle they were handed: a snapshot taken before an awaited call is
+ * a snapshot that may already be wrong, and a die rolled against a stale flag is
+ * a die rolled twice.
+ */
+export async function listCampaignFlags(campaignId: string): Promise<CampaignFlag[]> {
+  return (
+    unwrap(await backendClient.from("campaign_flags").select("*").eq("campaign_id", campaignId)) ??
+    []
+  );
+}
+
+/**
  * Record a world fact the GM established. The table is unique on
  * (campaign_id, flag), so setting the same flag twice is idempotent rather
  * than a second row.

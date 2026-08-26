@@ -19,10 +19,12 @@ import {
   hookAskSpec,
   judgeAction,
   knownTerms,
+  looksForWork,
   luckPoolMax,
   mergeSituations,
   missionOffer,
   nextPhase,
+  partOfDay,
   readsThePerson,
   resolveSkillId,
   rollJobSeed,
@@ -116,6 +118,15 @@ import {
   markDealtWith,
   revealNextFact,
 } from "@/features/campaign/castSeeding";
+import {
+  answerPendingQuestion,
+  askOracle,
+  consultStreet,
+  consultWire,
+  rollComplicationFor,
+  spendWire,
+  type OracleAnswer,
+} from "@/features/campaign/oracles";
 import {
   applyPressure,
   notableFrom,
@@ -286,6 +297,18 @@ type TurnOptions = {
   options?: boolean;
   /** Minutes the engine has already decided this turn costs. */
   minutes?: number;
+  /**
+   * What the oracles said before this turn ran. The model is handed these as
+   * facts; it never learns that a die was involved in producing them.
+   */
+  oracle?: {
+    /** True when tonight's wire roll actually produced work. */
+    wireOffers?: boolean;
+    /** What the street is doing, when it was rolled for. */
+    street?: string;
+    /** The answer to whatever the model asked last turn. */
+    answer?: OracleAnswer;
+  };
 };
 
 /** The context slice the Life model reasons over. Deterministic and small. */
@@ -330,9 +353,17 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     capabilities: renderCapabilityLines(capability),
     ...(turn.resolved ? { resolved: turn.resolved } : {}),
     ...(turn.options ? { optionsRequested: true } : {}),
-    // Work is only on the wire while the campaign is actually living. During a
-    // hook the offer on the table is the only job in the room.
-    wire: bundle.phase === "life" && !bundle.hook ? bundle.wire : null,
+    ...(turn.oracle?.street ? { street: turn.oracle.street } : {}),
+    ...(turn.oracle?.answer
+      ? { oracle: { question: turn.oracle.answer.question, answer: turn.oracle.answer.answer } }
+      : {}),
+    // Work reaches the model only on a night the wire oracle produced some.
+    // Before this gate the model decided when a job turned up, which is the one
+    // piece of pacing it was still quietly authoring.
+    wire:
+      bundle.phase === "life" && !bundle.hook && turn.oracle?.wireOffers === true
+        ? bundle.wire
+        : null,
     hookOnTable: bundle.hook
       ? {
           title: bundle.hook.mission.title,
@@ -382,6 +413,11 @@ async function applyResponse(
       actions: response.actions,
     } as unknown as Json,
   });
+
+  // A question the turn needed answered and could not answer itself. Held, not
+  // answered: the dice get thrown next turn, so the model writes this one
+  // genuinely not knowing. An options turn asks nothing — nobody lived it.
+  if (!turn.options) await askOracle(campaignId, response.question);
 
   // --- what the engine, not the model, applies -----------------------------
   let clock = bundle.clock;
@@ -528,7 +564,14 @@ async function applyResponse(
       // the wire when this turn started. The model brought nothing to this: the
       // mission, the broker and the fee were generated before it spoke, which is
       // what makes the offer and the job it starts the same thing.
+      // And specifically on a night the wire oracle said there was work. The
+      // block is withheld from the model on a quiet night, but withholding is
+      // not enforcement: a model that offers a job anyway is refused here.
       if (!bundle.wireMissionId || bundle.hook) continue;
+      if (turn.oracle?.wireOffers !== true) {
+        await refuse("Nobody called tonight. There is no work to put on the table.", "no_work");
+        continue;
+      }
       const missionId = bundle.wireMissionId;
       const mission = getMission(missionId);
       const offer = missionOffer(mission);
@@ -541,8 +584,11 @@ async function applyResponse(
         summary: `${offer.brokerName} offers work: ${mission.title} (${terms.payout}eb)`,
         data: { situationKey: key, missionId, payout: terms.payout } as unknown as Json,
       });
-      // The wire moves on, so the same job is never offered twice.
+      // The wire moves on, so the same job is never offered twice — and
+      // tonight's roll is spent, so the NEXT job does not turn up this evening
+      // too if the player walks away from this one.
       await rollWireForward(campaignId);
+      await spendWire(campaignId, clock.day);
       const to = nextPhase(bundle.phase, "offer_hook");
       if (to) await setCampaignPhase(campaignId, to);
     }
@@ -645,6 +691,57 @@ async function arrivePressure(
   ]);
 }
 
+/**
+ * Ask the oracles, before the model is asked anything.
+ *
+ * Everything here is rolled and written down BEFORE the prompt is built, so the
+ * model receives the answers as facts about a world that had already decided
+ * them. It never learns that a die was involved, and it is never in a position
+ * to decide whether the phone rings tonight.
+ *
+ * Nothing is rolled on an options turn: the player is thinking, not living, and
+ * an evening should not pass because they asked what an evening might contain.
+ */
+async function consultOracles(
+  bundle: LifeBundle,
+  input: string,
+  turn: TurnOptions,
+): Promise<TurnOptions["oracle"]> {
+  if (turn.options) return undefined;
+  const campaignId = bundle.campaign.id;
+  const oracle: NonNullable<TurnOptions["oracle"]> = {};
+
+  // A question the model asked last turn. Answered first, so the answer is in
+  // front of it before anything else about tonight is decided.
+  const answer = await answerPendingQuestion(campaignId);
+  if (answer) oracle.answer = answer;
+
+  // Living, and nothing already on the table: is anybody calling tonight?
+  if (bundle.phase === "life" && !bundle.hook) {
+    const wire = await consultWire({
+      campaignId,
+      day: bundle.clock.day,
+      eurobucks: bundle.vitals.eurobucks,
+      chasing: looksForWork(input),
+    });
+    oracle.wireOffers = wire.offered;
+
+    // And when nothing is already demanding attention, what the evening is —
+    // once per part of the day, so a player taking five turns in one evening
+    // does not get five chances at something walking into it.
+    if (!bundle.current) {
+      const street = await consultStreet({
+        campaignId,
+        day: bundle.clock.day,
+        part: partOfDay(bundle.clock.minute),
+      });
+      if (street) oracle.street = street.result.text;
+    }
+  }
+
+  return oracle;
+}
+
 /** One Life turn: the player says something, the world answers. */
 async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {}): Promise<void> {
   if (input.trim()) {
@@ -655,14 +752,16 @@ async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {
       data: {} as Json,
     });
   }
-  const context = buildContext(bundle, turn);
+  const oracle = turn.oracle ?? (await consultOracles(bundle, input, turn));
+  const asked: TurnOptions = oracle ? { ...turn, oracle } : turn;
+  const context = buildContext(bundle, asked);
   const opening = turn.options
     ? "(the player is asking what they could do here)"
     : "(open the moment)";
   const response = await lifeTurnFn({
     data: { userPrompt: renderLifeUserPrompt(context, input || opening) },
   });
-  await applyResponse(bundle, response, turn);
+  await applyResponse(bundle, response, asked);
 
   // Acting on a situation about a person IS dealing with them. Only a turn the
   // player actually typed counts: opening the moment, or asking what the
@@ -795,6 +894,11 @@ async function acceptHook(bundle: LifeBundle): Promise<void> {
   // A fee that was argued upwards is carried on the campaign, so the job pays
   // what was agreed rather than what was printed.
   await setCampaignFlag(campaignId, JOB_PAYOUT_FLAG, hook.terms.payout as unknown as Json);
+  // What the brief left out, rolled the moment they take the work and kept from
+  // everyone until the job is over. Neither the player nor the model knows
+  // whether this job has a lie in it, which is the only way "the employer lied"
+  // can land as a discovery rather than as a twist somebody chose to write.
+  await rollComplicationFor(campaignId, missionId);
   // A job is a session: the Luck Pool refills on the same boundary IP is awarded on.
   await updateCampaignVitals(campaignId, {
     luck_current: luckPoolMax(statsRecord(bundle.character)),

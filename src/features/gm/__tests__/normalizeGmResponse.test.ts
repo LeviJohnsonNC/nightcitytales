@@ -172,3 +172,27 @@ describe("opposed checks", () => {
     expect(onWarn).toHaveBeenCalledWith(expect.stringContaining("missing a side"));
   });
 });
+
+describe("the question the turn could not answer itself", () => {
+  it("keeps a real yes/no question", () => {
+    const result = normalizeGmResponse(
+      { narration: "n", question: " Is the side door already unlocked? " } as GmWireResponse,
+      quiet,
+    );
+    expect(result.question).toBe("Is the side door already unlocked?");
+  });
+
+  it("asks nothing on an ordinary turn", () => {
+    expect(normalizeGmResponse({ narration: "n" } as GmWireResponse, quiet).question).toBeNull();
+  });
+
+  it("drops a question no yes/no table could answer", () => {
+    for (const question of ["How many guards are inside?", "Is it?", 7]) {
+      const result = normalizeGmResponse(
+        { narration: "n", question } as unknown as GmWireResponse,
+        quiet,
+      );
+      expect(result.question).toBeNull();
+    }
+  });
+});

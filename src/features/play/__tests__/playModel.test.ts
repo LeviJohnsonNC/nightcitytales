@@ -242,3 +242,25 @@ describe("npcDispositionAfter", () => {
     expect(npcDispositionAfter({ disposition: 3 }, 4).disposition).toBe(3);
   });
 });
+
+describe("oracle rolls stay out of the rolling summary", () => {
+  const event = (type: string, summary: string): CampaignEvent =>
+    ({ type, summary }) as unknown as CampaignEvent;
+
+  it("keeps a secret roll out of what the GM is told happened recently", () => {
+    const lines = recentEventLines([
+      event("gm_narration", "The corridor is empty."),
+      event("oracle_secret", "Complication: 1d6(1) → The employer lied about something material."),
+      event("gm_narration", "A door closes somewhere below."),
+    ]);
+    expect(lines).toEqual(["The corridor is empty.", "A door closes somewhere below."]);
+  });
+
+  it("keeps an open roll out too — it is dice trace, not fiction", () => {
+    const lines = recentEventLines([
+      event("oracle_roll", "The street tonight: 1d6(2) = 2 → Nothing happens."),
+      event("life_narration", "Rain on the window."),
+    ]);
+    expect(lines).toEqual(["Rain on the window."]);
+  });
+});

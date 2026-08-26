@@ -122,3 +122,35 @@ describe("normalizeLifeResponse", () => {
     );
   });
 });
+
+describe("the question the turn could not answer itself", () => {
+  it("keeps a real yes/no question", () => {
+    const result = normalizeLifeResponse(
+      { question: "  Is Kiro already at the bar when they arrive?  " },
+      silent,
+    );
+    expect(result.question).toBe("Is Kiro already at the bar when they arrive?");
+  });
+
+  it("asks nothing on an ordinary turn", () => {
+    expect(normalizeLifeResponse({}, silent).question).toBeNull();
+    expect(normalizeLifeResponse({ question: null }, silent).question).toBeNull();
+    expect(normalizeLifeResponse({ question: "" }, silent).question).toBeNull();
+  });
+
+  it("drops a question no yes/no table could answer", () => {
+    expect(
+      normalizeLifeResponse({ question: "What is in the crate?" }, silent).question,
+    ).toBeNull();
+    expect(normalizeLifeResponse({ question: "Is it?" }, silent).question).toBeNull();
+    expect(normalizeLifeResponse({ question: 42 as never }, silent).question).toBeNull();
+  });
+
+  it("reads a question the model nested in an object", () => {
+    const result = normalizeLifeResponse(
+      { question: { question: "Has the landlord been by already?" } as never },
+      silent,
+    );
+    expect(result.question).toBe("Has the landlord been by already?");
+  });
+});
