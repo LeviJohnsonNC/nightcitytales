@@ -221,6 +221,12 @@ function ActionCard({
         {formatDuration(action.timeMinutes)}
         {action.knownCost ? ` · ${action.knownCost}eb` : ""}
       </span>
+      {/* Touch has no hover, so the skill hint is spelled out on small screens. */}
+      {hint && (
+        <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-neon-pink lg:hidden">
+          {hint.name}: {hint.base}
+        </span>
+      )}
     </Button>
   );
 
