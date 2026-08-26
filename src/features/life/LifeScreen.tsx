@@ -70,7 +70,11 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
         <p className="border-l-2 border-accent/60 pl-3 text-sm italic text-accent">&gt; {text}</p>
       );
     case "life_narration":
-      return <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>;
+      return (
+        <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
+          {text}
+        </p>
+      );
     case "skill_check":
       return (
         <p className="font-mono text-xs text-muted-foreground">

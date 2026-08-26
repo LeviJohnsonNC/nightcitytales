@@ -267,7 +267,7 @@ function DvBody({
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2 border-y border-border/60 py-2">
+      <div className="grid grid-cols-2 gap-2 border-y sm:grid-cols-4 border-border/60 py-2">
         <Stat label={pending.stat.toUpperCase()} value={String(pending.statValue)} />
         <Stat label="Skill" value={String(pending.skillLevel)} />
         <Stat label="Base" value={`+${pending.base}`} />

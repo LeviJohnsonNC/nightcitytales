@@ -320,3 +320,24 @@
 .dice-settle {
   animation: dice-settle 340ms cubic-bezier(0.22, 0.84, 0.44, 1);
 }
+
+/* ---- Touch ergonomics (play surfaces only) ----
+   Comfortable targets on a phone, and 16px inputs so iOS stops zooming the
+   page on focus. Desktop pointers are left exactly as they were. */
+@media (pointer: coarse) {
+  .touch-play button,
+  .touch-play [role="button"],
+  .touch-play a[href] {
+    min-height: 2.75rem;
+  }
+
+  .touch-play .luck-step {
+    min-width: 2.75rem;
+  }
+
+  .touch-play input,
+  .touch-play textarea,
+  .touch-play select {
+    font-size: 16px;
+  }
+}
