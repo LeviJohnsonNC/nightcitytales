@@ -79,8 +79,9 @@ function NarrativeLog({
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [events.length]);
+  // One scroller on a phone (the page); the desktop column keeps its own.
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto border border-border bg-card/40 p-4">
+    <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
       {readAloud && (
         <blockquote className="border-l-2 border-accent bg-accent/5 p-3 text-sm leading-relaxed text-foreground">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
