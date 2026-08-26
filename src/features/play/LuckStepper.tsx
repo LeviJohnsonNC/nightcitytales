@@ -46,7 +46,7 @@ export function LuckStepper({
           type="button"
           size="sm"
           variant="outline"
-          className="h-7 w-7 p-0"
+          className="luck-step h-9 w-9 p-0"
           disabled={!canRemove}
           aria-label="Dedicate one less Luck Point"
           onClick={() => onChange(Math.max(0, value - 1))}
@@ -60,7 +60,7 @@ export function LuckStepper({
           type="button"
           size="sm"
           variant="outline"
-          className="h-7 w-7 p-0"
+          className="luck-step h-9 w-9 p-0"
           disabled={!canAdd}
           aria-label="Dedicate one more Luck Point"
           onClick={() => onChange(Math.min(remaining, value + 1))}

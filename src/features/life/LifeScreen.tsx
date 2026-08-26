@@ -35,6 +35,7 @@ import {
 } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
+import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
 import { actorFor, gmSkillList, statsRecord } from "@/features/play/playModel";
 import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
 import type { CampaignEvent } from "@/lib/backend";
@@ -69,7 +70,11 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
         <p className="border-l-2 border-accent/60 pl-3 text-sm italic text-accent">&gt; {text}</p>
       );
     case "life_narration":
-      return <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>;
+      return (
+        <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
+          {text}
+        </p>
+      );
     case "skill_check":
       return (
         <p className="font-mono text-xs text-muted-foreground">
@@ -167,8 +172,11 @@ function LifeLog({
       (e) => !(suppressed && e.type === "life_narration" && norm(e.summary ?? "") === suppressed),
     )
     .slice(-40);
+  // One scroller on a phone (the page); the desktop column keeps its own.
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto border border-border bg-card/40 p-4">
+    <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
+
+
       {shown.length === 0 && !busy ? (
         <p className="text-sm text-muted-foreground">The city hums on without you…</p>
       ) : (
@@ -221,6 +229,12 @@ function ActionCard({
         {formatDuration(action.timeMinutes)}
         {action.knownCost ? ` · ${action.knownCost}eb` : ""}
       </span>
+      {/* Touch has no hover, so the skill hint is spelled out on small screens. */}
+      {hint && (
+        <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-neon-pink lg:hidden">
+          {hint.name}: {hint.base}
+        </span>
+      )}
     </Button>
   );
 
@@ -300,19 +314,23 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
       {asks.length > 0 && (
         <div className="space-y-1">
           <Label>Before you answer</Label>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2 sm:flex sm:flex-wrap">
             {asks.map((spec) => (
               <Button
                 key={spec.ask}
-                size="sm"
                 variant="outline"
                 disabled={blocked}
                 title={spec.blurb}
                 onClick={() => life.pushHook(spec.ask)}
+                className="h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left sm:w-auto"
               >
-                {spec.label}
-                <span className="num ml-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="text-sm font-semibold">{spec.label}</span>
+                <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
                   {getSkill(spec.skillId).name} · {formatDuration(spec.minutes)}
+                </span>
+                {/* Hover-only blurbs are invisible on touch, so it is written out here. */}
+                <span className="text-xs font-normal text-muted-foreground sm:hidden">
+                  {spec.blurb}
                 </span>
               </Button>
             ))}
@@ -371,7 +389,7 @@ function InputBar({
     if (result !== false) setText("");
   };
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row">
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -386,13 +404,17 @@ function InputBar({
         className="flex-1 resize-none"
         disabled={busy}
       />
-      <div className="flex flex-col gap-2">
-        <Button onClick={() => void send()} disabled={busy || !text.trim()}>
+      <div className="flex gap-2 sm:flex-col">
+        <Button
+          className="flex-1 sm:flex-none"
+          onClick={() => void send()}
+          disabled={busy || !text.trim()}
+        >
           {busy ? "…" : "Act"}
         </Button>
         <Button
-          variant="ghost"
-          size="sm"
+          variant="outline"
+          className="flex-1 sm:flex-none"
           onClick={onAskOptions}
           disabled={busy}
           title="Ask what you could do here. Costs no time."
@@ -401,6 +423,164 @@ function InputBar({
         </Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * The status rail. Rendered once as a desktop sidebar and once inside the
+ * mobile status sheet, so a phone never has to scroll past the whole log to
+ * find out how much HP is left.
+ */
+function LifeRail({
+  life,
+  bundle,
+  luckLeft,
+  luckMax,
+}: {
+  life: ReturnType<typeof useLife>;
+  bundle: NonNullable<ReturnType<typeof useLife>["bundle"]>;
+  luckLeft: number;
+  luckMax: number;
+}) {
+  return (
+    <>
+      <section className="space-y-3 border border-border bg-card p-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold leading-tight">{bundle.character.character.name}</h2>
+          <p className="text-sm text-muted-foreground">
+            {bundle.character.character.handle ? `"${bundle.character.character.handle}" · ` : ""}
+            {bundle.character.character.role}
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <Label>HP</Label>
+            <p className="num text-lg font-bold">
+              {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
+            </p>
+          </div>
+          <div>
+            <Label>Wound</Label>
+            <p className="text-sm font-semibold capitalize">{bundle.vitals.wound_state}</p>
+          </div>
+          <div>
+            <Label>Humanity</Label>
+            <p className="num text-lg font-bold">
+              {bundle.vitals.humanity_current}/{bundle.vitals.humanity_max}
+            </p>
+          </div>
+        </div>
+        <div>
+          <Label>Eurobucks</Label>
+          <p className="num text-base font-bold">{bundle.vitals.eurobucks}eb</p>
+        </div>
+        {luckMax > 0 && (
+          <div>
+            <Label>Luck</Label>
+            <p className="num text-base font-bold">
+              {luckLeft}/{luckMax}
+            </p>
+          </div>
+        )}
+      </section>
+
+      {life.situations.length > 0 && (
+        <section className="space-y-2 border border-border bg-card p-4">
+          <Label>On your plate</Label>
+          <ul className="space-y-2">
+            {life.situations.slice(0, 8).map((s) => (
+              <li key={s.key} className="text-sm">
+                <span
+                  className={
+                    s.key === life.situation?.key ? "font-semibold text-accent" : "font-medium"
+                  }
+                >
+                  {s.title}
+                </span>
+                <span className="block text-xs text-muted-foreground">{s.summary}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {life.people.length > 0 && (
+        <section className="space-y-2 border border-border bg-card p-4">
+          <Label>People</Label>
+          <ul className="space-y-2">
+            {life.people.slice(0, 8).map((person) => (
+              <li key={person.key} className="text-sm">
+                <span className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2">
+                  <span className="truncate font-medium">{person.name}</span>
+                  <span className="num shrink-0 font-mono text-[10px] uppercase tracking-[0.16em]">
+                    {dispositionLabel(person.disposition)} ({person.disposition})
+                  </span>
+                </span>
+                {person.standing && (
+                  <span className="block text-xs text-muted-foreground">{person.standing}</span>
+                )}
+                {(person.known ?? []).map((fact) => (
+                  <span key={fact} className="mt-1 block text-xs text-neon-pink">
+                    {fact}
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {life.clocks.length > 0 && (
+        <section className="space-y-2 border border-border bg-card p-4">
+          <Label>Pressure</Label>
+          {life.clocks.map((c) => (
+            <div key={c.key}>
+              <p className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-sm">
+                <span className="truncate">{c.label}</span>
+                <span className="num shrink-0 font-mono text-xs text-muted-foreground">
+                  {c.filled}/{c.segments}
+                </span>
+              </p>
+              <div className="mt-1 flex gap-1" aria-hidden>
+                {Array.from({ length: c.segments }, (_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 flex-1 ${i < c.filled ? "bg-destructive" : "bg-border"}`}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {life.standings.length > 0 && (
+        <section className="space-y-2 border border-border bg-card p-4">
+          <Label>Standing</Label>
+          <ul className="space-y-1">
+            {life.standings.map((s) => (
+              <li
+                key={s.factionId}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2"
+              >
+                <span className="truncate text-sm">{getFaction(s.factionId).name}</span>
+                <span
+                  className={`num shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] ${
+                    isHostile(s.standing) ? "text-destructive" : "text-muted-foreground"
+                  }`}
+                >
+                  {standingBand(s.standing).label} ({s.standing})
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <Button asChild variant="outline" size="sm" className="w-full">
+        <Link to="/roster">Back to the roster</Link>
+      </Button>
+    </>
   );
 }
 
@@ -427,6 +607,13 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
   const luckMax = luckPoolMax(statsRecord(bundle.character));
   const luckLeft = luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character));
+
+  const chips = [
+    { label: "HP", value: `${bundle.vitals.hp_current}/${bundle.vitals.hp_max}` },
+    { label: "Wound", value: bundle.vitals.wound_state },
+    { label: "eb", value: `${bundle.vitals.eurobucks}` },
+    ...(luckMax > 0 ? [{ label: "Luck", value: `${luckLeft}/${luckMax}` }] : []),
+  ];
 
   /** The engine rolls; the card only animates toward what it rolled. */
   const rollCheck = (pending: PendingCheck, luckSpend: number): CheckRoll => {
@@ -460,214 +647,88 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-h-[70vh] flex-col gap-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{bundle.campaign.name}</h1>
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-                Life · {formatLifeClock(bundle.clock)} · day {bundle.clock.day}
-              </p>
+      <div className="touch-play">
+        <MobileStatusBar title={bundle.character.character.name} chips={chips}>
+          <LifeRail life={life} bundle={bundle} luckLeft={luckLeft} luckMax={luckMax} />
+        </MobileStatusBar>
+
+        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="flex flex-col gap-3 lg:min-h-[70vh]">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+              <div className="min-w-0">
+                <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+                  {bundle.campaign.name}
+                </h1>
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+                  Life · {formatLifeClock(bundle.clock)} · day {bundle.clock.day}
+                </p>
+              </div>
+              <SheetDrawer character={bundle.character} />
             </div>
-            <SheetDrawer character={bundle.character} />
-          </div>
 
-          {life.narration && (
-            <section className="border-l-2 border-accent bg-accent/5 p-3">
-              <Label>{life.narration.title}</Label>
-              <p className="mt-1 text-sm leading-relaxed">{life.narration.text}</p>
-            </section>
-          )}
+            {life.narration && (
+              <section className="border-l-2 border-accent bg-accent/5 p-3">
+                <Label>{life.narration.title}</Label>
+                <p className="mt-1 text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
+                  {life.narration.text}
+                </p>
+              </section>
+            )}
 
-          <LifeLog
-            events={bundle.events}
-            busy={life.busy}
-            {...(life.narration ? { suppressText: life.narration.text } : {})}
-          />
-
-          {life.actionError && (
-            <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {life.actionError.message}
-            </p>
-          )}
-
-          {life.hook && <HookCard life={life} />}
-
-          {life.pendingCheck && (
-            <CheckCard
-              key={life.pendingCheck.eventId}
-              pending={life.pendingCheck}
-              roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
-              onSettled={(rolled) => life.commitCheck(life.pendingCheck!, rolled)}
-              busy={life.checkBusy}
-              luckRemaining={luckLeft}
+            <LifeLog
+              events={bundle.events}
+              busy={life.busy}
+              {...(life.narration ? { suppressText: life.narration.text } : {})}
             />
-          )}
 
-          {/* Options, and only when they were asked for. An ordinary turn
-              returns none, so these clear themselves the moment the player acts. */}
-          {!life.pendingCheck && life.actions.length > 0 && (
-            <div className="grid gap-2 sm:grid-cols-3">
-              {life.actions.map((action) => (
-                <ActionCard
-                  key={action.label}
-                  action={action}
-                  character={bundle.character as never}
-                  busy={life.busy}
-                  onPick={() => void life.act(`${action.label}. ${action.description}`.trim())}
-                />
-              ))}
-            </div>
-          )}
-
-          <InputBar
-            onSend={(text) => life.act(text)}
-            onAskOptions={() => life.askOptions()}
-            busy={life.busy || !!life.pendingCheck}
-          />
-        </div>
-
-        <aside className="sticky top-6 h-fit space-y-4 self-start">
-          <section className="space-y-3 border border-border bg-card p-4">
-            <div>
-              <h2 className="text-lg font-bold leading-tight">{bundle.character.character.name}</h2>
-              <p className="text-sm text-muted-foreground">
-                {bundle.character.character.handle
-                  ? `"${bundle.character.character.handle}" · `
-                  : ""}
-                {bundle.character.character.role}
+            {life.actionError && (
+              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {life.actionError.message}
               </p>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <Label>HP</Label>
-                <p className="num text-lg font-bold">
-                  {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
-                </p>
-              </div>
-              <div>
-                <Label>Wound</Label>
-                <p className="text-sm font-semibold capitalize">{bundle.vitals.wound_state}</p>
-              </div>
-              <div>
-                <Label>Humanity</Label>
-                <p className="num text-lg font-bold">
-                  {bundle.vitals.humanity_current}/{bundle.vitals.humanity_max}
-                </p>
-              </div>
-            </div>
-            <div>
-              <Label>Eurobucks</Label>
-              <p className="num text-base font-bold">{bundle.vitals.eurobucks}eb</p>
-            </div>
-            {luckMax > 0 && (
-              <div>
-                <Label>Luck</Label>
-                <p className="num text-base font-bold">
-                  {luckLeft}/{luckMax}
-                </p>
+            )}
+
+            {life.hook && <HookCard life={life} />}
+
+            {life.pendingCheck && (
+              <CheckCard
+                key={life.pendingCheck.eventId}
+                pending={life.pendingCheck}
+                roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
+                onSettled={(rolled) => life.commitCheck(life.pendingCheck!, rolled)}
+                busy={life.checkBusy}
+                luckRemaining={luckLeft}
+              />
+            )}
+
+            {/* Options, and only when they were asked for. An ordinary turn
+                returns none, so these clear themselves the moment the player acts. */}
+            {!life.pendingCheck && life.actions.length > 0 && (
+              <div className="grid gap-2 sm:grid-cols-3">
+                {life.actions.map((action) => (
+                  <ActionCard
+                    key={action.label}
+                    action={action}
+                    character={bundle.character as never}
+                    busy={life.busy}
+                    onPick={() => void life.act(`${action.label}. ${action.description}`.trim())}
+                  />
+                ))}
               </div>
             )}
-          </section>
 
-          {life.situations.length > 0 && (
-            <section className="space-y-2 border border-border bg-card p-4">
-              <Label>On your plate</Label>
-              <ul className="space-y-2">
-                {life.situations.slice(0, 8).map((s) => (
-                  <li key={s.key} className="text-sm">
-                    <span
-                      className={
-                        s.key === life.situation?.key ? "font-semibold text-accent" : "font-medium"
-                      }
-                    >
-                      {s.title}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">{s.summary}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+            <BottomDock>
+              <InputBar
+                onSend={(text) => life.act(text)}
+                onAskOptions={() => life.askOptions()}
+                busy={life.busy || !!life.pendingCheck}
+              />
+            </BottomDock>
+          </div>
 
-          {life.people.length > 0 && (
-            <section className="space-y-2 border border-border bg-card p-4">
-              <Label>People</Label>
-              <ul className="space-y-2">
-                {life.people.slice(0, 8).map((person) => (
-                  <li key={person.key} className="text-sm">
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="font-medium">{person.name}</span>
-                      <span
-                        className="num font-mono text-[10px] uppercase tracking-[0.16em]"
-                        title={`Disposition ${person.disposition}`}
-                      >
-                        {dispositionLabel(person.disposition)}
-                      </span>
-                    </span>
-                    {person.standing && (
-                      <span className="block text-xs text-muted-foreground">{person.standing}</span>
-                    )}
-                    {(person.known ?? []).map((fact) => (
-                      <span key={fact} className="mt-1 block text-xs text-neon-pink">
-                        {fact}
-                      </span>
-                    ))}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {life.clocks.length > 0 && (
-            <section className="space-y-2 border border-border bg-card p-4">
-              <Label>Pressure</Label>
-              {life.clocks.map((c) => (
-                <div key={c.key}>
-                  <p className="flex justify-between text-sm">
-                    <span>{c.label}</span>
-                    <span className="num font-mono text-xs text-muted-foreground">
-                      {c.filled}/{c.segments}
-                    </span>
-                  </p>
-                  <div className="mt-1 flex gap-1" aria-hidden>
-                    {Array.from({ length: c.segments }, (_, i) => (
-                      <span
-                        key={i}
-                        className={`h-1.5 flex-1 ${i < c.filled ? "bg-destructive" : "bg-border"}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </section>
-          )}
-
-          {life.standings.length > 0 && (
-            <section className="space-y-2 border border-border bg-card p-4">
-              <Label>Standing</Label>
-              <ul className="space-y-1">
-                {life.standings.map((s) => (
-                  <li key={s.factionId} className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm">{getFaction(s.factionId).name}</span>
-                    <span
-                      className={`num font-mono text-[10px] uppercase tracking-[0.16em] ${
-                        isHostile(s.standing) ? "text-destructive" : "text-muted-foreground"
-                      }`}
-                      title={`Standing ${s.standing}`}
-                    >
-                      {standingBand(s.standing).label}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <Link to="/roster">Back to the roster</Link>
-          </Button>
-        </aside>
+          <aside className="sticky top-6 hidden h-fit space-y-4 self-start lg:block">
+            <LifeRail life={life} bundle={bundle} luckLeft={luckLeft} luckMax={luckMax} />
+          </aside>
+        </div>
       </div>
     </TooltipProvider>
   );

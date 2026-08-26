@@ -79,7 +79,7 @@ export function CombatCard({
       )}
 
       {result === null && options.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
           {options.map((o) => {
             const active = o.weapon.itemId === chosenId;
             return (
@@ -106,7 +106,7 @@ export function CombatCard({
       )}
 
       {chosen && chosen.dv !== null && (
-        <div className="grid grid-cols-4 gap-2 border-y border-border/60 py-2">
+        <div className="grid grid-cols-2 gap-2 border-y sm:grid-cols-4 border-border/60 py-2">
           <Stat label={chosen.statLabel} value={String(chosen.statValue)} />
           <Stat label={chosen.skillLabel} value={String(chosen.skillValue)} />
           <Stat

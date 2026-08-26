@@ -18,6 +18,7 @@ import { DeathSaveCard } from "./DeathSaveCard";
 
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
+import { BottomDock, MobileStatusBar } from "./mobileShell";
 import { DowntimePanel } from "@/features/downtime/DowntimePanel";
 import { RoleAbilityPanel } from "./RoleAbilityPanel";
 import { gmSkillList, suggestionInput } from "./playModel";
@@ -32,7 +33,11 @@ function EventBlock({ event }: { event: CampaignEvent }) {
         <p className="border-l-2 border-accent/60 pl-3 text-sm italic text-accent">&gt; {text}</p>
       );
     case "gm_narration":
-      return <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>;
+      return (
+        <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
+          {text}
+        </p>
+      );
     case "skill_check":
     case "attack":
     case "death_save":
@@ -79,8 +84,9 @@ function NarrativeLog({
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [events.length]);
+  // One scroller on a phone (the page); the desktop column keeps its own.
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto border border-border bg-card/40 p-4">
+    <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
       {readAloud && (
         <blockquote className="border-l-2 border-accent bg-accent/5 p-3 text-sm leading-relaxed text-foreground">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
@@ -124,23 +130,28 @@ function SuggestionBar({
   if (suggestions.length === 0) return null;
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid gap-2 sm:flex sm:flex-wrap">
         {suggestions.map((s) => {
           const hint = s.skill ? skillHint(character, s.skill) : null;
           const isSkill = hint !== null;
           const button = (
             <Button
               variant="outline"
-              size="sm"
               disabled={busy}
-              className={`h-auto whitespace-normal py-2 text-left ${
+              className={`h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left sm:w-auto ${
                 isSkill
                   ? "border-neon-pink shadow-[0_0_8px_rgba(255,61,154,0.25)] hover:border-neon-pink/80"
                   : ""
               }`}
               onClick={() => onPick(s)}
             >
-              {s.label}
+              <span className="text-sm font-semibold">{s.label}</span>
+              {/* Touch has no hover: the skill hint is written out on small screens. */}
+              {hint && (
+                <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-neon-pink lg:hidden">
+                  {hint.name}: {hint.base ?? 0}
+                </span>
+              )}
             </Button>
           );
           if (!isSkill) return <span key={s.label}>{button}</span>;
@@ -558,7 +569,7 @@ function InputBar({
     if (result !== false) setText("");
   };
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row">
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -573,13 +584,13 @@ function InputBar({
         className="flex-1 resize-none"
         disabled={busy}
       />
-      <div className="flex flex-col gap-2">
-        <Button onClick={send} disabled={busy || !text.trim()}>
+      <div className="flex gap-2 sm:flex-col">
+        <Button className="flex-1 sm:flex-none" onClick={send} disabled={busy || !text.trim()}>
           {busy ? "…" : "Act"}
         </Button>
         <Button
-          variant="ghost"
-          size="sm"
+          variant="outline"
+          className="flex-1 sm:flex-none"
           onClick={onAskOptions}
           disabled={busy}
           title="Ask the GM what angles it can see. The scene does not move."
@@ -603,105 +614,128 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
   const bundle = play.bundle;
   if (!bundle) return null;
 
+  const chips = [
+    { label: "HP", value: `${bundle.vitals.hp_current}/${bundle.vitals.hp_max}` },
+    { label: "Wound", value: bundle.vitals.wound_state },
+    { label: "eb", value: `${bundle.vitals.eurobucks}` },
+    ...(play.luck.max > 0
+      ? [{ label: "Luck", value: `${play.luck.remaining}/${play.luck.max}` }]
+      : []),
+  ];
+
+  const rail = (
+    <>
+      <CharacterPanel bundle={bundle} luck={play.luck} />
+      <RoleAbilityPanel play={play} />
+      <RollHistory rolls={play.rolls} />
+      <CombatHud campaignId={campaignId} />
+      <PressurePanel pressure={bundle.pressure} />
+      <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
+      {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
+    </>
+  );
+
   return (
-    <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <div className="flex min-h-[70vh] flex-col gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{bundle.campaign.name}</h1>
-            {bundle.beat && (
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-                {bundle.mission?.title} · {bundle.beat.title}
-              </p>
-            )}
+    <div className="touch-play">
+      <MobileStatusBar title={bundle.character.character.name} chips={chips}>
+        {rail}
+      </MobileStatusBar>
+
+      <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex flex-col gap-3 lg:min-h-[70vh]">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+                {bundle.campaign.name}
+              </h1>
+              {bundle.beat && (
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+                  {bundle.mission?.title} · {bundle.beat.title}
+                </p>
+              )}
+            </div>
+            <SheetDrawer character={bundle.character} />
           </div>
-          <SheetDrawer character={bundle.character} />
-        </div>
-        <NarrativeLog
-          events={bundle.events}
-          readAloud={bundle.beat?.readAloud}
-          busy={play.busy || play.opening}
-        />
-        {play.actionError && (
-          <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
-            <p className="text-sm text-destructive">{play.actionError.message}</p>
-            {play.canRetry && (
-              <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
-                Retry
-              </Button>
-            )}
-          </div>
-        )}
-        {play.pendingCheck && (
-          <div className="space-y-1">
-            <CheckCard
-              key={play.pendingCheck.eventId}
-              pending={play.pendingCheck}
-              roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
-              onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
-              busy={play.checkBusy}
+          <NarrativeLog
+            events={bundle.events}
+            readAloud={bundle.beat?.readAloud}
+            busy={play.busy || play.opening}
+          />
+          {play.actionError && (
+            <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+              <p className="text-sm text-destructive">{play.actionError.message}</p>
+              {play.canRetry && (
+                <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
+                  Retry
+                </Button>
+              )}
+            </div>
+          )}
+          {play.pendingCheck && (
+            <div className="space-y-1">
+              <CheckCard
+                key={play.pendingCheck.eventId}
+                pending={play.pendingCheck}
+                roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
+                onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
+                busy={play.checkBusy}
+                luckRemaining={play.luck.remaining}
+              />
+              {play.pendingCheckCount > 1 && (
+                <p className="text-muted-foreground text-xs">
+                  {play.pendingCheckCount - 1} more check
+                  {play.pendingCheckCount - 1 === 1 ? "" : "s"} on the table after this one.
+                </p>
+              )}
+            </div>
+          )}
+          {play.pendingAttack && (
+            <CombatCard
+              key={play.pendingAttack.eventId}
+              pending={play.pendingAttack}
+              character={bundle.character}
+              roll={(option, luckSpend) => play.rollAttack(play.pendingAttack!, option, luckSpend)}
+              onSettled={(option, result, luckSpent) =>
+                play.commitAttack(play.pendingAttack!, option, result, luckSpent)
+              }
+              busy={play.combatBusy}
+              capability={play.capability}
               luckRemaining={play.luck.remaining}
             />
-            {play.pendingCheckCount > 1 && (
-              <p className="text-muted-foreground text-xs">
-                {play.pendingCheckCount - 1} more check
-                {play.pendingCheckCount - 1 === 1 ? "" : "s"} on the table after this one.
-              </p>
-            )}
-          </div>
-        )}
-        {play.pendingAttack && (
-          <CombatCard
-            key={play.pendingAttack.eventId}
-            pending={play.pendingAttack}
+          )}
+          {play.pendingDeathSave && (
+            <DeathSaveCard
+              key={play.pendingDeathSave.eventId}
+              pending={play.pendingDeathSave}
+              roll={() => play.rollDeathSave()}
+              onSettled={(result) => play.commitDeathSave(play.pendingDeathSave!, result)}
+              busy={play.deathBusy}
+            />
+          )}
+          {play.finished && <WrapUpCard bundle={bundle} status={play.finished} play={play} />}
+          <SuggestionBar
+            suggestions={play.finished ? [] : play.suggestions}
+            onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
+            busy={play.busy || play.opening}
             character={bundle.character}
-            roll={(option, luckSpend) => play.rollAttack(play.pendingAttack!, option, luckSpend)}
-            onSettled={(option, result, luckSpent) =>
-              play.commitAttack(play.pendingAttack!, option, result, luckSpent)
-            }
-            busy={play.combatBusy}
-            capability={play.capability}
-            luckRemaining={play.luck.remaining}
           />
-        )}
-        {play.pendingDeathSave && (
-          <DeathSaveCard
-            key={play.pendingDeathSave.eventId}
-            pending={play.pendingDeathSave}
-            roll={() => play.rollDeathSave()}
-            onSettled={(result) => play.commitDeathSave(play.pendingDeathSave!, result)}
-            busy={play.deathBusy}
-          />
-        )}
-        {play.finished && <WrapUpCard bundle={bundle} status={play.finished} play={play} />}
-        <SuggestionBar
-          suggestions={play.finished ? [] : play.suggestions}
-          onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
-          busy={play.busy || play.opening}
-          character={bundle.character}
-        />
-        <InputBar
-          onSend={play.submit}
-          onAskOptions={play.askOptions}
-          busy={
-            play.busy ||
-            play.opening ||
-            Boolean(play.finished) ||
-            Boolean(play.pendingCheck) ||
-            Boolean(play.pendingAttack) ||
-            Boolean(play.pendingDeathSave)
-          }
-        />
+          <BottomDock>
+            <InputBar
+              onSend={play.submit}
+              onAskOptions={play.askOptions}
+              busy={
+                play.busy ||
+                play.opening ||
+                Boolean(play.finished) ||
+                Boolean(play.pendingCheck) ||
+                Boolean(play.pendingAttack) ||
+                Boolean(play.pendingDeathSave)
+              }
+            />
+          </BottomDock>
+        </div>
+        <aside className="hidden space-y-4 lg:block">{rail}</aside>
       </div>
-      <aside className="space-y-4">
-        <CharacterPanel bundle={bundle} luck={play.luck} />
-        <RoleAbilityPanel play={play} />
-        <RollHistory rolls={play.rolls} />
-        <CombatHud campaignId={campaignId} />
-        <PressurePanel pressure={bundle.pressure} />
-        <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
-        {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
-      </aside>
     </div>
   );
 }
