@@ -558,7 +558,7 @@ function InputBar({
     if (result !== false) setText("");
   };
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row">
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -573,13 +573,13 @@ function InputBar({
         className="flex-1 resize-none"
         disabled={busy}
       />
-      <div className="flex flex-col gap-2">
-        <Button onClick={send} disabled={busy || !text.trim()}>
+      <div className="flex gap-2 sm:flex-col">
+        <Button className="flex-1 sm:flex-none" onClick={send} disabled={busy || !text.trim()}>
           {busy ? "…" : "Act"}
         </Button>
         <Button
-          variant="ghost"
-          size="sm"
+          variant="outline"
+          className="flex-1 sm:flex-none"
           onClick={onAskOptions}
           disabled={busy}
           title="Ask the GM what angles it can see. The scene does not move."
