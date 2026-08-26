@@ -35,6 +35,7 @@ import {
 } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
+import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
 import { actorFor, gmSkillList, statsRecord } from "@/features/play/playModel";
 import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
 import type { CampaignEvent } from "@/lib/backend";
