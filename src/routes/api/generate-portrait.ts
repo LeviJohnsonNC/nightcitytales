@@ -26,7 +26,6 @@ const Facts = z.object({
   stream: z.boolean().optional(),
 });
 
-
 const MODEL = "openai/gpt-image-1-mini";
 
 export const Route = createFileRoute("/api/generate-portrait")({

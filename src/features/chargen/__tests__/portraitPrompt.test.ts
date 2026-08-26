@@ -78,7 +78,14 @@ describe("portrait prompt", () => {
         lines: [
           { lineId: "a", kind: "cyberware", itemId: "cybereye", qty: 1, budget: "gear" },
           { lineId: "b", kind: "cyberware", itemId: "light_tattoo", qty: 1, budget: "gear" },
-          { lineId: "c", kind: "armor", itemId: "kevlar", qty: 1, budget: "gear", location: "body" },
+          {
+            lineId: "c",
+            kind: "armor",
+            itemId: "kevlar",
+            qty: 1,
+            budget: "gear",
+            location: "body",
+          },
           { lineId: "d", kind: "weapon", itemId: "heavy_pistol", qty: 1, budget: "gear" },
         ],
         packageChoices: {},
