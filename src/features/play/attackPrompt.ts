@@ -15,9 +15,10 @@ import {
   type EncounterState,
   type WeaponProfile,
 } from "@/engine";
-import type { CampaignEvent, FullCharacter } from "@/lib/backend";
+import type { CampaignEvent, CampaignInventoryItem, FullCharacter } from "@/lib/backend";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { weaponChoices } from "./encounterModel";
+import { liveInventory } from "./liveInventory";
 import { statsRecord } from "./playModel";
 
 export type PendingAttack = {
@@ -110,6 +111,8 @@ export function pendingAttackFrom(
   events: CampaignEvent[],
   character: FullCharacter,
   live: LiveEncounter | null,
+  /** The campaign's kit, so a gun bought mid-campaign can be fired. */
+  inventory: CampaignInventoryItem[] = [],
 ): PendingAttack | null {
   if (!live || live.state.status !== "active") return null;
   const attacker = Object.values(live.state.combatants).find((c) => c.isPlayer);
@@ -134,7 +137,7 @@ export function pendingAttackFrom(
       distance: typeof data.distance === "number" ? data.distance : 12,
       attacker,
       target,
-      weapons: weaponChoices(character),
+      weapons: weaponChoices(liveInventory(inventory, character)),
       woundPenalty: woundActionPenalty(attacker.woundState),
     };
   }

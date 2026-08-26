@@ -32,6 +32,7 @@ import type {
   CampaignVitals,
   FullCharacter,
 } from "@/lib/backend";
+import { liveInventory } from "./liveInventory";
 import { statsRecord } from "./playModel";
 
 /** Inventory rows that are ammunition, by campaign slot or catalog id. */
@@ -39,26 +40,8 @@ function isAmmunitionRow(row: CampaignInventoryItem): boolean {
   return row.slot === "ammunition" || row.item_id.endsWith("_ammo");
 }
 
-function inventoryFor(
-  inventory: CampaignInventoryItem[],
-  character: FullCharacter,
-): CampaignInventoryItem[] {
-  if (inventory.length > 0) return inventory;
-  // A campaign started before the kit was copied still plays off the sheet.
-  return character.gear.map((g) => ({
-    id: g.id,
-    campaign_id: "",
-    kind: "gear",
-    item_id: g.item_id,
-    quantity: g.quantity,
-    equipped: g.equipped,
-    slot: g.slot,
-    current_sp: g.current_sp,
-    notes: g.notes,
-    ammo_loaded: null,
-    condition: "ok",
-  }));
-}
+/** The rows to read: live inventory, or the sheet for a campaign without any. */
+const inventoryFor = liveInventory;
 
 /** Every carried weapon, with what is loaded in it and what is spare. */
 export function weaponCapabilities(rows: CampaignInventoryItem[]): WeaponCapability[] {

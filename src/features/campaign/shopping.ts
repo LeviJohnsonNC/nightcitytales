@@ -37,6 +37,7 @@ import {
   listCampaignEvents,
   setCampaignClock,
   setInventoryAmmo,
+  setInventoryEquipped,
   setInventoryQuantity,
   updateCampaignVitals,
   type CampaignEvent,
@@ -149,12 +150,27 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
     };
   }
 
-  await addInventoryItem(input.campaignId, {
+  const row = await addInventoryItem(input.campaignId, {
     kind: item.kind,
     itemId: item.itemId,
     quantity: allowed,
     stack: stacksInInventory(item.kind),
   });
+
+  // You put armor on when you buy it. Only worn armor gives SP, and asking the
+  // player to find a second button before their new vest does anything is how a
+  // purchase silently fails to matter. One piece per location: the old one comes
+  // off, because you cannot wear two vests and the best-of rule would otherwise
+  // hand out free protection that carries none of armor's REF penalty.
+  if (item.kind === "armor") {
+    const slot = slotFor(item.kind, item.itemId);
+    for (const worn of full.inventory) {
+      if (worn.id !== row.id && worn.equipped && worn.slot === slot) {
+        await setInventoryEquipped(worn.id, false);
+      }
+    }
+    await setInventoryEquipped(row.id, true);
+  }
   await updateCampaignVitals(input.campaignId, { eurobucks: eurobucks - cost });
   await appendCampaignEvent({
     campaign_id: input.campaignId,

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { singleShotDV, weaponProfile, type PerformAttackResult } from "@/engine";
 import type { CampaignEvent, FullCharacter } from "@/lib/backend";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
+import { liveInventory } from "../liveInventory";
 import { attackOption, findTarget, pendingAttackFrom } from "../attackPrompt";
 import { armorSp, weaponChoices } from "../encounterModel";
 import { describeAttack } from "../combatFlow";
@@ -149,12 +150,16 @@ describe("attackPrompt", () => {
 });
 
 describe("encounterModel", () => {
-  it("reads armor SP from equipped gear, preferring ablated current_sp", () => {
-    expect(armorSp(character)).toEqual({ head: 7, body: 9 });
+  // The sheet projected into inventory shape, which is what a campaign that
+  // started before the kit was copied across actually reads.
+  const fromSheet = () => liveInventory([], character);
+
+  it("reads armor SP from worn gear, preferring ablated current_sp", () => {
+    expect(armorSp(fromSheet())).toEqual({ head: 7, body: 9 });
   });
 
   it("offers only catalog weapons carried on the sheet", () => {
-    expect(weaponChoices(character).map((w) => w.itemId)).toEqual(["medium_pistol"]);
+    expect(weaponChoices(fromSheet()).map((w) => w.itemId)).toEqual(["medium_pistol"]);
   });
 });
 

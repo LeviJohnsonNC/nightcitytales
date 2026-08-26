@@ -525,6 +525,7 @@ async function narrate(
         name: action.name,
         character: bundle.character,
         vitals: bundle.vitals,
+        inventory: bundle.inventory,
         enemies: action.enemies,
         ...(awareness
           ? {
@@ -1402,7 +1403,7 @@ export function usePlay(campaignId: string) {
   const checkCandidate = checkQueue[0] ?? null;
   const attackCandidate =
     bundle && !pendingDeathSave
-      ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter)
+      ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter, bundle.inventory)
       : null;
   const newest = bundle ? newestPrompt(bundle.events, checkCandidate, attackCandidate) : null;
   const pendingCheck = newest === "check" ? checkCandidate : null;

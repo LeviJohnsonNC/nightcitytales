@@ -282,6 +282,26 @@ export async function setInventoryCondition(
 }
 
 /** Spend a quantity from a stacked line, floored at zero. */
+/**
+ * Put a piece of armor on, or take it off.
+ *
+ * Only worn armor gives SP (encounterModel.armorSp), so this is what makes a
+ * vest you bought actually stop a bullet.
+ */
+export async function setInventoryEquipped(
+  inventoryId: string,
+  equipped: boolean,
+): Promise<CampaignInventoryItem> {
+  return unwrap(
+    await backendClient
+      .from("campaign_inventory")
+      .update({ equipped })
+      .eq("id", inventoryId)
+      .select("*")
+      .single(),
+  );
+}
+
 export async function setInventoryQuantity(
   inventoryId: string,
   quantity: number,

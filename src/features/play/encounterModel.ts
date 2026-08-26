@@ -19,6 +19,7 @@ import {
 } from "@/engine";
 import type { GmEnemy } from "@/features/gm/gmResponse";
 import type {
+  CampaignInventoryItem,
   CampaignVitals,
   EncounterCombatant,
   FullCharacter,
@@ -26,6 +27,7 @@ import type {
   Json,
 } from "@/lib/backend";
 import type { StartEncounterPayload } from "@/lib/backend";
+import { liveInventory } from "./liveInventory";
 import { statsRecord } from "./playModel";
 
 /** Per-combatant turn bookkeeping: one Action and one Move a Round (CP:R pg. 165). */
@@ -80,12 +82,24 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
   };
 }
 
-/** Equipped armor SP by location, using ablated current_sp when present. */
-export function armorSp(character: FullCharacter): { head: number; body: number } {
+/**
+ * Worn armor SP by location, using ablated current_sp when present.
+ *
+ * Reads the CAMPAIGN's rows, not the character sheet. Reading the sheet meant
+ * armor bought during the campaign gave no protection at all, and that the
+ * `current_sp` armor repair writes was a number nothing computing protection
+ * ever looked at.
+ */
+export function armorSp(rows: CampaignInventoryItem[]): { head: number; body: number } {
   const out = { head: 0, body: 0 };
-  for (const row of character.gear) {
-    if (!row.equipped) continue;
-    const location = row.slot === "head" || row.slot === "body" ? row.slot : null;
+  for (const row of rows) {
+    // Only what is actually WORN. Counting everything owned would make the
+    // best armor in the kit protect you for free, and armor's REF penalty is
+    // not modelled in play yet — so owning heavy plate would be pure upside.
+    // Buying armor marks it worn (features/campaign/shopping.ts) instead.
+    if (!row.equipped || row.quantity <= 0) continue;
+    const location: "head" | "body" | null =
+      row.slot === "head" ? "head" : row.slot === "body" ? "body" : null;
     if (!location) continue;
     let sp: number | null = row.current_sp;
     if (sp === null) {
@@ -100,11 +114,16 @@ export function armorSp(character: FullCharacter): { head: number; body: number 
   return out;
 }
 
-/** Every catalog weapon the character is carrying, as combat profiles. */
-export function weaponChoices(character: FullCharacter): WeaponProfile[] {
+/**
+ * Every catalog weapon the character is carrying, as combat profiles.
+ *
+ * The campaign's rows again: a gun bought mid-campaign was previously never
+ * offered as something to attack with.
+ */
+export function weaponChoices(rows: CampaignInventoryItem[]): WeaponProfile[] {
   const profiles: WeaponProfile[] = [];
-  for (const row of character.gear) {
-    if (row.slot !== "weapon") continue;
+  for (const row of rows) {
+    if (row.slot !== "weapon" || row.quantity <= 0) continue;
     try {
       profiles.push(weaponProfile(row.item_id));
     } catch {
@@ -119,9 +138,10 @@ export function playerCombatant(
   character: FullCharacter,
   vitals: CampaignVitals,
   id: string,
+  inventory: CampaignInventoryItem[] = [],
 ): { combatant: Combatant; data: CombatantData } {
   const stats = statsRecord(character);
-  const sp = armorSp(character);
+  const sp = armorSp(liveInventory(inventory, character));
   const combatant: Combatant = {
     id,
     name: character.character.name,
