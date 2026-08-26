@@ -138,7 +138,8 @@ const LIFE_EVENT_TYPES = new Set([
   "hook_offered",
   "hook_negotiated",
   "npc_read",
-  "oracle_roll",
+  // "oracle_roll" is intentionally hidden for now; the raw die results were
+  // reading as noise next to the narration. Re-enable here to bring the box back.
   "pressure_moved",
   "pressure_arrived",
   "hook_declined",
