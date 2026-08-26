@@ -148,8 +148,8 @@ const LIFE_EVENT_TYPES = new Set([
 ]);
 
 /**
- * The running log. The turn the player is standing in is already shown above in
- * its own block, so any narration text identical to it is dropped here: the same
+ * The running log. The current turn's narration is shown below the input in its
+ * own block, so any narration text identical to it is dropped here: the same
  * paragraph twice reads as a bug, because it is one.
  */
 function LifeLog({
