@@ -169,7 +169,9 @@ function LifeLog({
     )
     .slice(-40);
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto border border-border bg-card/40 p-4">
+    {/* One scroller on a phone (the page), two columns on a desktop. */}
+    <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
+
       {shown.length === 0 && !busy ? (
         <p className="text-sm text-muted-foreground">The city hums on without you…</p>
       ) : (
