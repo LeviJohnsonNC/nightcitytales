@@ -4,6 +4,7 @@
  * resolves proposedActions; nothing here changes state on its own.
  */
 import { z } from "zod";
+import { isAnswerableQuestion } from "@/engine";
 
 /**
  * A hostile the GM brings into a fight. These are NPC stat blocks the GM
@@ -115,6 +116,12 @@ export const GmResponseSchema = z.object({
   suggestedActions: z.array(GmSuggestedActionSchema).default([]),
   stateDeltas: z.array(GmStateDeltaSchema).default([]),
   observations: z.array(GmObservationSchema).default([]),
+  /**
+   * One yes/no question about the world the turn needed answered and could not
+   * answer itself. The engine rolls for it and hands the answer back NEXT turn,
+   * so the turn that asked was written without knowing. Null on most turns.
+   */
+  question: z.string().nullable().default(null),
   endsWithDecision: z.boolean().default(false),
 });
 export type GmResponse = z.infer<typeof GmResponseSchema>;
@@ -167,6 +174,15 @@ export const GmWireResponseSchema = z.object({
       "What the city noticed this turn, using ONLY the engine's vocabulary. Each item is " +
         '{"observation":"<one of the listed words>","factionId":"<faction id or null>"}. ' +
         "Use [] on a turn where nothing was noticed, which is most of them.",
+    )
+    .nullish(),
+  question: z
+    .string()
+    .describe(
+      "One yes/no question about the world you needed answered and could not answer yourself, " +
+        'e.g. "Is the side door already unlocked when they reach it?". The dice answer it and you ' +
+        "are told next turn. Null on most turns, and never a question about the character's own " +
+        'sheet, plans or the numbers you were given. It cannot start with "what", "who", "how" or "why".',
     )
     .nullish(),
   endsWithDecision: z.boolean().nullish(),
@@ -441,6 +457,10 @@ export function normalizeGmResponse(
     // Left raw on purpose: the engine's vocabulary is checked in one place,
     // features/campaign/pressure.ts, rather than in every response normalizer.
     observations: normalizeObservations(wire.observations),
+    // Kept only if an oracle could actually answer it; the engine's own
+    // predicate decides, so an open-ended question is dropped here rather than
+    // handed a yes/no that means nothing.
+    question: isAnswerableQuestion(wire.question) ? wire.question.trim() : null,
     endsWithDecision: wire.endsWithDecision ?? false,
   };
 }

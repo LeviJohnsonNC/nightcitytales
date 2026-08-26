@@ -5,6 +5,7 @@
  * no advance_beat, and no way to accept a job.
  */
 import { z } from "zod";
+import { isAnswerableQuestion } from "@/engine";
 
 export const LIFE_ACTION_KINDS = [
   "skill_check",
@@ -110,6 +111,13 @@ export type LifeResponse = {
    */
   observations: LifeObservation[];
   newSituation: LifeNewSituation | null;
+  /**
+   * One thing the turn needed to know and could not: "Is the ripperdoc still
+   * open at this hour?" The engine rolls for it and hands the answer back on the
+   * NEXT turn, so the model writes this one without knowing. Null when the turn
+   * did not need to ask, which is most of them.
+   */
+  question: string | null;
 };
 
 /**
@@ -126,6 +134,7 @@ export const LifeWireResponseSchema = z.object({
   deltas: z.array(z.unknown()).nullish(),
   observations: z.array(z.unknown()).nullish(),
   newSituation: z.unknown().nullish(),
+  question: z.unknown().nullish(),
 });
 export type LifeWireResponse = z.infer<typeof LifeWireResponseSchema>;
 
@@ -340,6 +349,13 @@ function normalizeObservations(raw: unknown): LifeObservation[] {
   return out;
 }
 
+/** A question survives only if a yes/no table could answer it. */
+function normalizeQuestion(raw: unknown): string | null {
+  const text = typeof raw === "string" ? raw : str((raw as Loose | null)?.["question"]);
+  if (!text) return null;
+  return isAnswerableQuestion(text.trim()) ? text.trim() : null;
+}
+
 function normalizeNewSituation(raw: unknown): LifeNewSituation | null {
   if (!raw || typeof raw !== "object") return null;
   const s = raw as Loose;
@@ -389,5 +405,9 @@ export function normalizeLifeResponse(
     // features/campaign/pressure.ts is the one place it is checked against.
     observations: normalizeObservations(wire.observations),
     newSituation: normalizeNewSituation(wire.newSituation),
+    // Kept only if an oracle could actually answer it; the engine's own
+    // predicate decides, so a model asking "what is in the crate?" is dropped
+    // here rather than handed a yes/no that means nothing.
+    question: normalizeQuestion(wire.question),
   };
 }

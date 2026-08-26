@@ -78,6 +78,17 @@ export type GmContextInput = {
    * happened; the GM's job is to show it walking through the door.
    */
   arrived?: string | null;
+  /**
+   * What this job's brief left out, rolled in secret when the player took the
+   * work. The GM did not choose it and cannot roll it away: it is a fact about
+   * the job that has been true since before the first beat.
+   */
+  complication?: string | null;
+  /**
+   * A question the GM asked last turn, and what the dice said. It arrives as
+   * something that was always true.
+   */
+  oracle?: { question: string; answer: string } | null;
 };
 
 /** Turns without a roll before the context block starts calling it out. */
@@ -207,6 +218,29 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       "This is happening in this scene. The engine has already decided it: do not ask whether it " +
         "fits the beat, do not delay it to a better moment, and do not soften it. Show it arriving, " +
         "put the player in it, and stop.",
+    );
+  }
+
+  if (context.complication) {
+    parts.push(
+      "",
+      "== WHAT THE BRIEF LEFT OUT (the player does not know this) ==",
+      context.complication,
+      "This was rolled before the job started and it is true. Build the job around it: let it show " +
+        "in what is actually there — who is already inside, what is missing, who arrives — rather " +
+        "than announcing it. Do not state it outright, do not let an NPC conveniently confess it, " +
+        "and do not decide it is not true after all because the job is going well or badly.",
+    );
+  }
+
+  if (context.oracle) {
+    parts.push(
+      "",
+      "== YOU ASKED, AND THE WORLD ANSWERED ==",
+      `You asked: ${context.oracle.question}`,
+      `The answer is: ${context.oracle.answer}`,
+      "Treat that as established fact and narrate from it. Do not restate the question to the " +
+        "player, do not mention dice, and do not argue with the answer.",
     );
   }
 

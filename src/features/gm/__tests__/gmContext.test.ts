@@ -107,3 +107,49 @@ describe("renderGmUserPrompt", () => {
     expect(prompt).toContain("Do not advance the fiction");
   });
 });
+
+describe("the secret the job was built around", () => {
+  const mission = NIGHT_AT_THE_OPERA;
+  const beat = getBeat(mission, "getting_tickets");
+  const base = {
+    mission,
+    beat,
+    availableExits: beat.exits,
+    character,
+    objectives: [],
+    npcsPresent: [],
+    recentEvents: [],
+  };
+
+  it("says nothing when no complication was rolled", () => {
+    const prompt = renderGmUserPrompt(buildGmContext(base), "I look around");
+    expect(prompt).not.toContain("WHAT THE BRIEF LEFT OUT");
+  });
+
+  it("hands the GM the complication as a fact it may not roll away", () => {
+    const prompt = renderGmUserPrompt(
+      buildGmContext({
+        ...base,
+        complication: "Another crew is working the same target, and they got there first.",
+      }),
+      "I look around",
+    );
+    expect(prompt).toContain("WHAT THE BRIEF LEFT OUT");
+    expect(prompt).toContain("the player does not know this");
+    expect(prompt).toContain("Another crew is working the same target");
+    expect(prompt).toContain("Do not state it outright");
+  });
+
+  it("gives back the answer to a question the GM asked last turn", () => {
+    const prompt = renderGmUserPrompt(
+      buildGmContext({
+        ...base,
+        oracle: { question: "Is the side door already unlocked?", answer: "No." },
+      }),
+      "I try the side door",
+    );
+    expect(prompt).toContain("Is the side door already unlocked?");
+    expect(prompt).toContain("The answer is: No.");
+    expect(prompt).toContain("do not mention dice");
+  });
+});

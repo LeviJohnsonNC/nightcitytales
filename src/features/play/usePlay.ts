@@ -96,6 +96,13 @@ import {
   type LiveEncounter,
 } from "@/features/campaign/encounterState";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
+import {
+  answerPendingQuestion,
+  askOracle,
+  revealComplication,
+  secretComplicationFor,
+  type ComplicationMemory,
+} from "@/features/campaign/oracles";
 import { gmTurnFn } from "@/features/gm/gmTurn.server";
 import { renderIpJudgementPrompt, type IpJudgement } from "@/features/gm/ipJudgement";
 import { ipJudgementFn } from "@/features/gm/ipJudgement.server";
@@ -189,6 +196,12 @@ export type PlayBundle = {
   pressure: LivePressure[];
   /** Organisations with an opinion, already worded. */
   standings: string[];
+  /**
+   * What this job's brief left out, rolled in secret when the player took the
+   * work. Present only while it is still a secret; the GM builds the job around
+   * it and the player meets it as a discovery.
+   */
+  complication: ComplicationMemory | null;
 };
 
 async function loadPlay(campaignId: string): Promise<PlayBundle> {
@@ -227,6 +240,7 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     agreedPayout: agreedPayoutFrom(full.flags),
     pressure: pressureFrom(await listClocks(campaignId)),
     standings: standingLines(notableFrom(full.factions)),
+    complication: secretComplicationFor(full.flags, full.campaign.current_mission_id),
   };
 }
 
@@ -293,6 +307,10 @@ async function narrate(
   const fightRunning = bundle.encounter?.state.status === "active";
   const arrived = fightRunning ? null : await spendFiredClock(campaignId, { beatId });
 
+  // Whatever the GM asked last turn, answered by dice it never saw. Skipped on
+  // an options turn: the player is thinking, and nobody lived through anything.
+  const answered = options.optionsRequested ? null : await answerPendingQuestion(campaignId);
+
   const context = buildGmContext({
     mission: bundle.mission,
     beat: bundle.beat,
@@ -306,10 +324,16 @@ async function narrate(
     pressure: pressureLines(bundle.pressure),
     standings: bundle.standings,
     ...(arrived ? { arrived: arrived.payoff } : {}),
+    ...(bundle.complication ? { complication: bundle.complication.text } : {}),
+    ...(answered ? { oracle: { question: answered.question, answer: answered.answer } } : {}),
     ...(options.optionsRequested ? { optionsRequested: true } : {}),
   });
 
   const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
+
+  // Held, not answered: the dice are thrown on the next turn, so the turn that
+  // asked was written without knowing.
+  if (!options.optionsRequested) await askOracle(campaignId, gm.question);
 
   // The city keeps its own time during a job, not only between them. Each turn
   // costs a few minutes, so rent, bills and the calendar stay real while the
@@ -930,6 +954,12 @@ async function settleMission(
   // (witnesses, how loudly it was sold, a payout that goes wrong) belongs with
   // the aftermath work, and will feed the same rules this already uses.
   await settlePressure(bundle, mission);
+
+  // Now that it is over, show the player the die that was thrown before it
+  // began. A complication they never noticed is worth showing too, and so is a
+  // clean brief: it is the evidence that the job's shape was rolled, not
+  // written to suit how the job was going.
+  await revealComplication(campaignId, mission.id);
 
   // The campaign stays active: it is the character's run, not this one job.
   // The phase moves to aftermath — the wrap-up screen — and only the player's

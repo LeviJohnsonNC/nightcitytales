@@ -140,3 +140,43 @@ describe("the people block", () => {
     }
   });
 });
+
+describe("what the oracles decided, in the prompt", () => {
+  it("says nothing about the street when nothing was rolled", () => {
+    const prompt = renderLifeUserPrompt(BASE, "I go get a drink.");
+    expect(prompt).not.toContain("THE STREET TONIGHT");
+    expect(prompt).not.toContain("THE WORLD ANSWERED");
+  });
+
+  it("hands the quiet over as a fact, not a suggestion", () => {
+    const prompt = renderLifeUserPrompt(
+      {
+        ...BASE,
+        street: "Nothing happens. The city goes about its business without involving them.",
+      },
+      "I go home.",
+    );
+    expect(prompt).toContain("THE STREET TONIGHT");
+    expect(prompt).toContain("Nothing happens.");
+    expect(prompt).toContain("do not smuggle in a stranger");
+  });
+
+  it("tells the model the offer lands this turn, rather than leaving it the choice", () => {
+    const prompt = renderLifeUserPrompt({ ...BASE, wire: WIRE }, "");
+    expect(prompt).toContain("the phone rang tonight");
+    expect(prompt).toContain("this turn");
+  });
+
+  it("gives back an answer to what the model asked, as established fact", () => {
+    const prompt = renderLifeUserPrompt(
+      {
+        ...BASE,
+        oracle: { question: "Is the ripperdoc still open?", answer: "No, but not entirely." },
+      },
+      "I head for the clinic.",
+    );
+    expect(prompt).toContain("Is the ripperdoc still open?");
+    expect(prompt).toContain("No, but not entirely.");
+    expect(prompt).toContain("do not mention dice");
+  });
+});

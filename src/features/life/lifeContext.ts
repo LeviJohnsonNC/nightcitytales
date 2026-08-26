@@ -79,15 +79,27 @@ export type LifeContext = {
   /** What the engine already resolved, when this turn is a follow-up. */
   resolved?: string;
   /**
-   * The job the engine has ready, shown only while the campaign is living and
-   * nothing is already on the table. Its presence does NOT mean work should be
-   * offered this turn; the prompt is explicit that most turns have none.
+   * The job the engine has ready — present ONLY on a night the wire oracle
+   * actually produced work. Its presence therefore DOES mean the offer lands
+   * this turn; whether there was work at all stopped being the model's decision
+   * the day this field started being gated.
    */
   wire?: LifeWireOffer | null;
   /** The offer the player is currently sitting on, during the hook phase. */
   hookOnTable?: LifeHookOnTable | null;
   /** True when the player asked what they could do, rather than doing it. */
   optionsRequested?: boolean;
+  /**
+   * What the dice said the street is doing tonight, when nothing else was
+   * pressing. Rolled by the engine before this turn ran; the model dresses it
+   * and is not allowed to overrule it.
+   */
+  street?: string | null;
+  /**
+   * A question the model asked last turn, and the answer the dice gave. It
+   * arrives as something that was always true.
+   */
+  oracle?: { question: string; answer: string } | null;
 };
 
 function line(label: string, value: string): string {
@@ -214,7 +226,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     const w = context.wire;
     parts.push(
       "",
-      "== WORK ON THE WIRE (the ONLY job you may offer; offer it only if the moment reaches for it) ==",
+      "== WORK ON THE WIRE (the phone rang tonight: put THIS job on the table, this turn) ==",
       line("Job", w.title),
       line("Broker", `${w.brokerName} [${w.brokerKey}] — ${w.brokerLine}`),
       line("Where", w.district),
@@ -242,6 +254,28 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       "The player has not agreed to anything. They may ask about it, push on the terms, sleep on " +
         "it or walk. Taking it is a button only they can press, and nothing else about this job " +
         "is yours to state.",
+    );
+  }
+
+  if (context.street) {
+    parts.push(
+      "",
+      "== THE STREET TONIGHT (rolled; this is what the evening is) ==",
+      context.street,
+      "This is a fact about the world, not a suggestion. If it says nothing happens, then nothing " +
+        "happens: write the quiet honestly and do not smuggle in a stranger, a phone call or a " +
+        "noise in the corridor to fill it.",
+    );
+  }
+
+  if (context.oracle) {
+    parts.push(
+      "",
+      "== YOU ASKED, AND THE WORLD ANSWERED ==",
+      `You asked: ${context.oracle.question}`,
+      `The answer is: ${context.oracle.answer}`,
+      "Treat that as established fact and write from it. Do not restate the question to the " +
+        "player, do not mention dice, and do not argue with the answer.",
     );
   }
 

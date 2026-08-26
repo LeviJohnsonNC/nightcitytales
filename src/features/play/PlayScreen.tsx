@@ -41,6 +41,18 @@ function EventBlock({ event }: { event: CampaignEvent }) {
           <span className="text-accent">◆</span> {text}
         </p>
       );
+    case "oracle_roll":
+      // An oracle the player is allowed to watch: the die that decided the
+      // shape of the job, shown once the job is over.
+      return (
+        <p className="font-mono text-xs text-muted-foreground/80">
+          <span className="text-muted-foreground">⚄</span> {text}
+        </p>
+      );
+    // A secret roll is written to the ledger the moment it happens and shown to
+    // nobody. This case exists because the default branch below renders any
+    // unrecognised event, which would make a new secret type leak by omission.
+    case "oracle_secret":
     case "check_prompt":
       return null;
     case "beat_advanced":

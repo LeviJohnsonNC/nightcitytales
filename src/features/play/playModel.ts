@@ -153,8 +153,16 @@ export function findNpcByKey(npcs: CampaignNpc[], key: string, name?: string): C
 }
 
 /** The most recent ledger entries as short lines for the rolling GM summary. */
+/**
+ * Ledger rows that are dice trace rather than fiction, and have no business in
+ * a rolling summary. The secret ones especially: a GM handed its own oracle
+ * rolls back as "recent events" would be reading answers it was never told.
+ */
+const UNSUMMARIZED_EVENT_TYPES = new Set(["oracle_roll", "oracle_secret"]);
+
 export function recentEventLines(events: CampaignEvent[], limit = 8): string[] {
   return events
+    .filter((e) => !UNSUMMARIZED_EVENT_TYPES.has(e.type))
     .slice(-limit)
     .map((e) => e.summary ?? e.type)
     .filter((line): line is string => Boolean(line));

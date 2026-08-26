@@ -88,6 +88,15 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
           <span className="text-destructive">▲</span> {text}
         </p>
       );
+    case "oracle_roll":
+      // The pacing dice, shown. Seeing "Nobody calls" roll in is what makes a
+      // quiet evening read as a fact about the city rather than a lull the
+      // narrator chose, so these are deliberately never hidden.
+      return (
+        <p className="font-mono text-xs text-muted-foreground/80">
+          <span className="text-muted-foreground">⚄</span> {text}
+        </p>
+      );
     case "npc_read":
       return (
         <p className="border-l-2 border-neon-pink/60 pl-3 font-mono text-xs text-neon-pink">
@@ -124,6 +133,7 @@ const LIFE_EVENT_TYPES = new Set([
   "hook_offered",
   "hook_negotiated",
   "npc_read",
+  "oracle_roll",
   "pressure_moved",
   "pressure_arrived",
   "hook_declined",
