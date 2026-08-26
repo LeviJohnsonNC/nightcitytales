@@ -124,23 +124,28 @@ function SuggestionBar({
   if (suggestions.length === 0) return null;
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid gap-2 sm:flex sm:flex-wrap">
         {suggestions.map((s) => {
           const hint = s.skill ? skillHint(character, s.skill) : null;
           const isSkill = hint !== null;
           const button = (
             <Button
               variant="outline"
-              size="sm"
               disabled={busy}
-              className={`h-auto whitespace-normal py-2 text-left ${
+              className={`h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left sm:w-auto ${
                 isSkill
                   ? "border-neon-pink shadow-[0_0_8px_rgba(255,61,154,0.25)] hover:border-neon-pink/80"
                   : ""
               }`}
               onClick={() => onPick(s)}
             >
-              {s.label}
+              <span className="text-sm font-semibold">{s.label}</span>
+              {/* Touch has no hover: the skill hint is written out on small screens. */}
+              {hint && (
+                <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-neon-pink lg:hidden">
+                  {hint.name}: {hint.base ?? 0}
+                </span>
+              )}
             </Button>
           );
           if (!isSkill) return <span key={s.label}>{button}</span>;
