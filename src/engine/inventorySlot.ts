@@ -13,7 +13,7 @@
  * `slot: line.location ?? line.kind`), and this module is that same rule in one
  * named place, so the shop and the sheet cannot drift from chargen.
  */
-import { getArmor, type ItemKind } from "./catalog";
+import { AMMUNITION, ARMOR, CYBERWARE, GEAR, WEAPONS, getArmor, type ItemKind } from "./catalog";
 
 /**
  * The slot a given catalog item occupies.
@@ -40,4 +40,53 @@ export function slotFor(kind: ItemKind, itemId: string): string {
  */
 export function stacksInInventory(kind: ItemKind): boolean {
   return kind === "ammunition" || kind === "gear";
+}
+
+// ---------------------------------------------------------------------------
+// Recovering a kind from an id alone.
+// ---------------------------------------------------------------------------
+
+const KIND_INDEX: { kind: ItemKind; ids: Set<string> }[] = [
+  { kind: "weapon", ids: new Set(WEAPONS.map((w) => w.id)) },
+  { kind: "armor", ids: new Set(ARMOR.map((a) => a.id)) },
+  { kind: "ammunition", ids: new Set(AMMUNITION.map((a) => a.id)) },
+  { kind: "gear", ids: new Set(GEAR.map((g) => g.id)) },
+  { kind: "cyberware", ids: new Set(CYBERWARE.map((c) => c.id)) },
+];
+
+/**
+ * Which catalog namespace an item id belongs to, when nobody recorded it.
+ *
+ * Needed because rows exist that were written without a usable kind or slot —
+ * Role package gear is filed under a slot of "package:weaponsArmor", which is
+ * neither a weapon slot nor an armor location, so the character's starting
+ * rifle was never offered in a fight and their starting armor gave no SP.
+ *
+ * Searched in a fixed order. Nine ids appear in both gear and cyberware
+ * (an audio recorder you carry and one in your skull); gear is checked first,
+ * which is the right answer for a row that came out of a gear package. Nothing
+ * is ambiguous between weapon, armor and ammunition, which is where it matters.
+ */
+export function resolveItemKind(itemId: string): ItemKind | null {
+  for (const entry of KIND_INDEX) {
+    if (entry.ids.has(itemId)) return entry.kind;
+  }
+  return null;
+}
+
+/** True when a slot names a Role package bucket rather than a place on the body. */
+export function isPackageSlot(slot: string | null | undefined): boolean {
+  return typeof slot === "string" && slot.startsWith("package:");
+}
+
+/**
+ * The slot a stored row should be read at.
+ *
+ * Rows whose slot is a package bucket, or missing entirely, are placed from the
+ * catalog instead. Anything already sitting in a real slot is left alone.
+ */
+export function effectiveSlot(row: { item_id: string; slot: string | null }): string | null {
+  if (row.slot && !isPackageSlot(row.slot)) return row.slot;
+  const kind = resolveItemKind(row.item_id);
+  return kind ? slotFor(kind, row.item_id) : row.slot;
 }

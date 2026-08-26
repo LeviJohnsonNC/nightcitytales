@@ -10,6 +10,7 @@ let clock = { day: 1, minute: 18 * 60 };
 let ledgerEvents: CampaignEvent[] = [];
 const ammoWrites: { id: string; loaded: number }[] = [];
 const quantityWrites: { id: string; quantity: number }[] = [];
+const equippedWrites: { id: string; equipped: boolean }[] = [];
 
 vi.mock("@/lib/backend", () => ({
   addInventoryItem: vi.fn(
@@ -31,6 +32,7 @@ vi.mock("@/lib/backend", () => ({
         quantity: item.quantity,
         // The real addInventoryItem derives this; the fake records that it was asked to.
         slot: item.kind === "armor" ? "body" : item.kind,
+        equipped: false,
         ammo_loaded: null,
       } as unknown as CampaignInventoryItem;
       inventory.push(row);
@@ -49,6 +51,12 @@ vi.mock("@/lib/backend", () => ({
     ammoWrites.push({ id, loaded });
     const row = inventory.find((r) => r.id === id);
     if (row) row.ammo_loaded = loaded;
+    return {};
+  }),
+  setInventoryEquipped: vi.fn(async (id: string, equipped: boolean) => {
+    equippedWrites.push({ id, equipped });
+    const row = inventory.find((r) => r.id === id);
+    if (row) row.equipped = equipped;
     return {};
   }),
   setInventoryQuantity: vi.fn(async (id: string, quantity: number) => {
@@ -104,6 +112,7 @@ beforeEach(() => {
   ledger.length = 0;
   ammoWrites.length = 0;
   quantityWrites.length = 0;
+  equippedWrites.length = 0;
   eurobucks = 10000;
   clock = { day: 1, minute: 18 * 60 };
   ledgerEvents = [];
@@ -245,6 +254,76 @@ describe("buying something", () => {
       quantity: 1,
     });
     expect(10000 - eurobucks).toBe(vendorPrice(getVendor("fixer"), item.kind, item.itemId));
+  });
+});
+
+describe("armor you buy is armor you are wearing", () => {
+  const ARMORER = getVendor("armorer");
+  const vest = () => shelfFor(ARMORER).find((i) => i.kind === "armor")!;
+
+  it("puts the new piece on, so it actually stops a bullet", async () => {
+    const item = vest();
+    await purchase({
+      campaignId: "c",
+      vendorId: "armorer",
+      kind: "armor",
+      itemId: item.itemId,
+      quantity: 1,
+    });
+    // Only worn armor gives SP (encounterModel.armorSp), so a purchase that
+    // left equipped=false would be a vest that protects nothing.
+    expect(inventory[0]!.equipped).toBe(true);
+  });
+
+  it("takes the old piece off, because you cannot wear two vests", async () => {
+    inventory.push({
+      id: "old",
+      kind: "armor",
+      item_id: "light_armorjack",
+      slot: "body",
+      equipped: true,
+      quantity: 1,
+    } as unknown as CampaignInventoryItem);
+    const item = vest();
+    await purchase({
+      campaignId: "c",
+      vendorId: "armorer",
+      kind: "armor",
+      itemId: item.itemId,
+      quantity: 1,
+    });
+    expect(equippedWrites).toContainEqual({ id: "old", equipped: false });
+    expect(inventory.find((r) => r.id === "old")!.equipped).toBe(false);
+  });
+
+  it("leaves a helmet on when you buy a vest", async () => {
+    inventory.push({
+      id: "helmet",
+      kind: "armor",
+      item_id: "light_armorjack",
+      slot: "head",
+      equipped: true,
+      quantity: 1,
+    } as unknown as CampaignInventoryItem);
+    await purchase({
+      campaignId: "c",
+      vendorId: "armorer",
+      kind: "armor",
+      itemId: vest().itemId,
+      quantity: 1,
+    });
+    expect(inventory.find((r) => r.id === "helmet")!.equipped).toBe(true);
+  });
+
+  it("does not go fiddling with equipped for anything that is not armor", async () => {
+    await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: ORDINARY.kind,
+      itemId: ORDINARY.itemId,
+      quantity: 1,
+    });
+    expect(equippedWrites).toHaveLength(0);
   });
 });
 

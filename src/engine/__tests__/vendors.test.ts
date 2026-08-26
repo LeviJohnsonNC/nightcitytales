@@ -17,6 +17,7 @@ import {
   type ShelfItem,
 } from "../vendors";
 import { AMMUNITION, GEAR, WEAPONS, itemCost } from "../catalog";
+import { effectiveSlot, isPackageSlot, resolveItemKind } from "../inventorySlot";
 import { seededRng } from "../dice";
 
 /** An RNG pinned to one face of a d6. */
@@ -260,5 +261,40 @@ describe("the stock table itself", () => {
       expect(inStock(roll)).toBe(entry.key !== "out");
     }
     expect(inStock({ tableId: "street", key: "in" } as Parameters<typeof inStock>[0])).toBe(false);
+  });
+});
+
+describe("resolveItemKind and effectiveSlot", () => {
+  it("finds the namespace an id lives in", () => {
+    expect(resolveItemKind(WEAPONS[0]!.id)).toBe("weapon");
+    expect(resolveItemKind(AMMUNITION[0]!.id)).toBe("ammunition");
+    expect(resolveItemKind(GEAR[0]!.id)).toBe("gear");
+  });
+
+  it("returns nothing for an id the catalog has never heard of", () => {
+    expect(resolveItemKind("a_sharpened_spoon")).toBeNull();
+  });
+
+  it("prefers gear for the ids that exist as both gear and chrome", () => {
+    // An audio recorder you carry, and one in your skull. A row that came out
+    // of a gear package is the carried one.
+    expect(resolveItemKind("audio_recorder")).toBe("gear");
+  });
+
+  it("resolves every id in the catalog to something", () => {
+    for (const w of WEAPONS) expect(resolveItemKind(w.id)).toBe("weapon");
+    for (const a of AMMUNITION) expect(resolveItemKind(a.id)).toBe("ammunition");
+  });
+
+  it("leaves a real slot alone and places a package one", () => {
+    expect(effectiveSlot({ item_id: WEAPONS[0]!.id, slot: "weapon" })).toBe("weapon");
+    expect(effectiveSlot({ item_id: WEAPONS[0]!.id, slot: "package:weaponsArmor" })).toBe("weapon");
+    expect(effectiveSlot({ item_id: WEAPONS[0]!.id, slot: null })).toBe("weapon");
+  });
+
+  it("recognises a package bucket for what it is", () => {
+    expect(isPackageSlot("package:gear")).toBe(true);
+    expect(isPackageSlot("weapon")).toBe(false);
+    expect(isPackageSlot(null)).toBe(false);
   });
 });

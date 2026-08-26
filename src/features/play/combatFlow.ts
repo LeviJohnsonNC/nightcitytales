@@ -25,6 +25,7 @@ import {
 import type { GmEnemy } from "@/features/gm/gmResponse";
 import {
   appendCampaignEvent,
+  type CampaignInventoryItem,
   type CampaignVitals,
   type FullCharacter,
   type Json,
@@ -45,6 +46,8 @@ export async function beginEncounter(input: {
   name: string;
   character: FullCharacter;
   vitals: CampaignVitals;
+  /** The campaign's kit, so armor bought mid-campaign actually protects. */
+  inventory?: CampaignInventoryItem[];
   enemies: GmEnemy[];
   /**
    * What the player's Role Ability brings into the fight — a Solo's Combat
@@ -56,7 +59,12 @@ export async function beginEncounter(input: {
   const data: Record<string, CombatantData> = {};
   const combatants: Combatant[] = [];
 
-  const player = buildPlayerCombatant(input.character, input.vitals, crypto.randomUUID());
+  const player = buildPlayerCombatant(
+    input.character,
+    input.vitals,
+    crypto.randomUUID(),
+    input.inventory,
+  );
   if (input.roleEffects) player.combatant.roleEffects = input.roleEffects;
   combatants.push(player.combatant);
   data[player.combatant.id] = player.data;
