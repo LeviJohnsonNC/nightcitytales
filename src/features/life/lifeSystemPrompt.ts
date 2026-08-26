@@ -5,9 +5,17 @@
  * and cannot put the player inside a job: those shapes are not even expressible
  * in the Life response schema.
  */
+import { FACTIONS, OBSERVATIONS, OBSERVATION_MEANINGS } from "@/engine";
 import { CYBERPUNK_STYLE_GUIDE } from "@/lib/prose-style";
 
-export const LIFE_PROMPT_VERSION = "2.0.0";
+/** Built from the engine's own vocabulary, so the two can never drift apart. */
+const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_MEANINGS[o]}`).join(
+  "\n",
+);
+
+const FACTION_LIST = FACTIONS.map((f) => `"${f.id}" (${f.name})`).join(", ");
+
+export const LIFE_PROMPT_VERSION = "2.1.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -52,6 +60,14 @@ The context tells you when the player has asked what they could do. ONLY then:
 - Work does not appear merely because it is available. Most Life turns have no job in them. Offer it when the fiction reaches for it — they are broke, they put the word out, someone owes them a call, the night is quiet and the phone rings anyway — and never twice in one evening.
 - The block is what the broker is willing to say out loud. Who is really paying, and what is really waiting on the other end, are not in it, and you do not know them. Do not guess, and do not imply that you know.
 
+# WHAT THE CITY NOTICED
+The engine keeps the pressure: NCPD Heat, and a clock for every organisation the character has given a reason. You never state a segment count, never invent a clock, and never decide what something costs. What you DO is report what the fiction noticed, from this closed list and no other words:
+${OBSERVATION_LIST}
+- Report an observation only when it actually happened this turn, and only once each. A quiet evening reports nothing, which is the normal answer.
+- Name who it was done to with a factionId when an organisation was on the receiving end: ${FACTION_LIST}. Leave it null when nobody in particular was, which is most of the time.
+- "clean" is worth reporting. Getting away without a trace is the only thing that takes pressure back off.
+- The PRESSURE block tells you what is already on the dials. Treat those numbers as fact, mention them only as the character would feel them, and never claim one moved: the engine moves them and will tell you.
+
 # NIGHT CITY KEEPS MOVING
 - Prefer people the player already knows over inventing new faces. Relationships should deepen through repetition; the same fixer, ripperdoc, neighbour and enemy keep their names, voices and grudges.
 - NPCs act on their own motives and do not wait indefinitely. Consequences from earlier turns come back.
@@ -75,5 +91,6 @@ Return a structured object:
   - {"kind":"hook_offer"} — put the WORK ON THE WIRE job on the table. No other fields: the job, the broker and the fee are already decided.
   - {"kind":"none"}
   Return [] when nothing mechanical happened. You may NOT start a fight, run a mission beat, or accept a job.
-- "deltas": world changes to record: {"kind":"set_flag","flag":"..."} | {"kind":"npc_disposition","npcKey":"...","delta":-3..3} | {"kind":"clock","clockKey":"...","label":"...","delta":<integer>,"segments":<integer>,"hidden":true|false} | {"kind":"note","text":"..."}
+- "deltas": world changes to record: {"kind":"set_flag","flag":"..."} | {"kind":"npc_disposition","npcKey":"...","delta":-3..3} | {"kind":"note","text":"..."}
+- "observations": [] on a quiet turn. Otherwise what the city noticed, using ONLY the words above: [{"observation":"killed","factionId":"tyger_claws"},{"observation":"loud","factionId":null}]. You are reporting, not pricing: the engine decides what each one is worth.
 - "newSituation": at most ONE new persistent situation this turn, or null: { "key": stable snake_case id, "category": "need"|"people"|"opportunity"|"pressure", "title": "...", "summary": "...", "npcKey": "..."|null, "severity": 1-5, "dueDay": <in-world day it comes due>|null }`;

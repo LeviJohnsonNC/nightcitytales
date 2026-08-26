@@ -86,11 +86,39 @@ describe("normalizeLifeResponse", () => {
     );
     expect(result.deltas[0]).toMatchObject({ kind: "note" });
     expect(result.deltas[1]).toMatchObject({ kind: "npc_disposition", delta: 2 });
-    expect(result.deltas[2]).toMatchObject({ kind: "clock", delta: 6 });
+    // A clock delta is no longer a thing the model may send. Pressure is
+    // reported as observations and priced by the engine.
+    expect(result.deltas).toHaveLength(2);
     expect(result.newSituation).toMatchObject({
       key: "a_debt_to_the_ripperdoc",
       category: "opportunity",
       severity: 5,
     });
+  });
+
+  it("takes observations as reported and leaves the pricing to the engine", () => {
+    const result = normalizeLifeResponse(
+      {
+        observations: [
+          { observation: "killed", factionId: "tyger_claws" },
+          "loud",
+          { kind: "seen", faction: "Arasaka" },
+          { factionId: "arasaka" },
+        ],
+      },
+      silent,
+    );
+    expect(result.observations).toEqual([
+      { observation: "killed", factionId: "tyger_claws" },
+      { observation: "loud", factionId: null },
+      { observation: "seen", factionId: "Arasaka" },
+    ]);
+  });
+
+  it("reports nothing when the turn noticed nothing", () => {
+    expect(normalizeLifeResponse({}, silent).observations).toEqual([]);
+    expect(normalizeLifeResponse({ observations: "lots" as never }, silent).observations).toEqual(
+      [],
+    );
   });
 });

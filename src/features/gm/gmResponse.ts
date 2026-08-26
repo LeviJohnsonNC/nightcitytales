@@ -102,11 +102,19 @@ export const GmSuggestedActionSchema = z.object({
 });
 export type GmSuggestedAction = z.infer<typeof GmSuggestedActionSchema>;
 
+/** One thing the fiction noticed, for engine/clocks.ts to price. */
+export const GmObservationSchema = z.object({
+  observation: z.string(),
+  factionId: z.string().nullish(),
+});
+export type GmObservation = z.infer<typeof GmObservationSchema>;
+
 export const GmResponseSchema = z.object({
   narration: z.string(),
   proposedActions: z.array(GmProposedActionSchema).default([]),
   suggestedActions: z.array(GmSuggestedActionSchema).default([]),
   stateDeltas: z.array(GmStateDeltaSchema).default([]),
+  observations: z.array(GmObservationSchema).default([]),
   endsWithDecision: z.boolean().default(false),
 });
 export type GmResponse = z.infer<typeof GmResponseSchema>;
@@ -151,6 +159,14 @@ export const GmWireResponseSchema = z.object({
       "Narrative state changes to record. Each item is " +
         '{"kind":"set_flag","flag":"<name>"}, {"kind":"npc_disposition","npcKey":"<key>","delta":<number>}, ' +
         'or {"kind":"note","text":"<what happened>"}.',
+    )
+    .nullish(),
+  observations: z
+    .array(z.unknown())
+    .describe(
+      "What the city noticed this turn, using ONLY the engine's vocabulary. Each item is " +
+        '{"observation":"<one of the listed words>","factionId":"<faction id or null>"}. ' +
+        "Use [] on a turn where nothing was noticed, which is most of them.",
     )
     .nullish(),
   endsWithDecision: z.boolean().nullish(),
@@ -279,6 +295,28 @@ export type NormalizeOptions = {
 };
 
 /** Narrow the loose model output into the typed GM response the engine uses. */
+/** Shape-check only. Whether these name real observations is the engine's call. */
+function normalizeObservations(raw: unknown): GmObservation[] {
+  if (!Array.isArray(raw)) return [];
+  const out: GmObservation[] = [];
+  for (const item of raw) {
+    if (typeof item === "string") {
+      out.push({ observation: item, factionId: null });
+      continue;
+    }
+    if (!item || typeof item !== "object") continue;
+    const o = item as Loose;
+    const observation = str(o["observation"]) ?? str(o["kind"]) ?? str(o["what"]);
+    if (!observation) continue;
+    out.push({
+      observation,
+      factionId: str(o["factionId"]) ?? str(o["faction_id"]) ?? str(o["faction"]) ?? null,
+    });
+    if (out.length === 6) break;
+  }
+  return out;
+}
+
 export function normalizeGmResponse(
   wire: GmWireResponse,
   options: NormalizeOptions = {},
@@ -400,6 +438,9 @@ export function normalizeGmResponse(
     proposedActions,
     suggestedActions,
     stateDeltas,
+    // Left raw on purpose: the engine's vocabulary is checked in one place,
+    // features/campaign/pressure.ts, rather than in every response normalizer.
+    observations: normalizeObservations(wire.observations),
     endsWithDecision: wire.endsWithDecision ?? false,
   };
 }

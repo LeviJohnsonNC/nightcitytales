@@ -40,4 +40,6 @@ export * from "./encounter";
 export * from "./mission";
 export * from "./negotiation";
 export * from "./cast";
+export * from "./factions";
+export * from "./clocks";
 export * from "./missions";

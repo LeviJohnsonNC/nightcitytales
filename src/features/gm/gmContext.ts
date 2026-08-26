@@ -68,6 +68,16 @@ export type GmContextInput = {
    * The scene does not advance on such a turn: they are thinking, not acting.
    */
   optionsRequested?: boolean;
+  /** Clocks with something on them, already worded by the engine. */
+  pressure?: string[];
+  /** Organisations with an opinion, already worded by the engine. */
+  standings?: string[];
+  /**
+   * A clock that filled and has been SPENT: this is arriving now, in this scene,
+   * whether or not the beat graph expected it. The engine has already decided it
+   * happened; the GM's job is to show it walking through the door.
+   */
+  arrived?: string | null;
 };
 
 /** Turns without a roll before the context block starts calling it out. */
@@ -176,6 +186,27 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       "== DICE ==",
       `The player has not rolled in ${dry} turns. That is too long. Unless they are ` +
         "purely moving or talking, find the check in what they are about to do and propose it.",
+    );
+  }
+
+  if (context.pressure?.length) {
+    parts.push("", "== PRESSURE (the engine owns these; never state a number that disagrees) ==");
+    for (const line of context.pressure) parts.push(`- ${line}`);
+  }
+
+  if (context.standings?.length) {
+    parts.push("", "== WHO HAS AN OPINION ==");
+    for (const line of context.standings) parts.push(`- ${line}`);
+  }
+
+  if (context.arrived) {
+    parts.push(
+      "",
+      "== IT HAS CAUGHT UP WITH THEM, NOW ==",
+      context.arrived,
+      "This is happening in this scene. The engine has already decided it: do not ask whether it " +
+        "fits the beat, do not delay it to a better moment, and do not soften it. Show it arriving, " +
+        "put the player in it, and stop.",
     );
   }
 
