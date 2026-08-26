@@ -18,6 +18,7 @@ import { DeathSaveCard } from "./DeathSaveCard";
 
 import { JobCard } from "./JobCard";
 import { SheetDrawer } from "./SheetDrawer";
+import { BottomDock, MobileStatusBar } from "./mobileShell";
 import { DowntimePanel } from "@/features/downtime/DowntimePanel";
 import { RoleAbilityPanel } from "./RoleAbilityPanel";
 import { gmSkillList, suggestionInput } from "./playModel";
