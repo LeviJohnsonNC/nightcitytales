@@ -22,6 +22,7 @@ import { BottomDock, MobileStatusBar } from "./mobileShell";
 import { DowntimePanel } from "@/features/downtime/DowntimePanel";
 import { RoleAbilityPanel } from "./RoleAbilityPanel";
 import { gmSkillList, suggestionInput } from "./playModel";
+import { settlementFrom, wasShorted } from "./settlementReport";
 import { usePlay, type PlayBundle } from "./usePlay";
 import type { RollRecord } from "./checkPrompt";
 
@@ -400,6 +401,60 @@ function CombatHud({ campaignId }: { campaignId: string }) {
   );
 }
 
+/**
+ * What the job cost, itemised.
+ *
+ * Shown because a number that silently changed teaches nothing: seeing which
+ * observations the engine read off the ledger is what makes the pressure feel
+ * earned rather than arbitrary.
+ */
+function SettlementReport({ events }: { events: CampaignEvent[] }) {
+  const view = settlementFrom(events);
+  if (!view) return null;
+
+  return (
+    <section className="space-y-2 border border-border bg-card/50 p-3">
+      <Label>What the job cost</Label>
+
+      {view.payment && (
+        <p className={`num text-sm ${wasShorted(view) ? "text-destructive" : ""}`}>
+          {view.payment.paid}eb paid
+          {wasShorted(view) && (
+            <span className="text-muted-foreground"> of {view.payment.agreed}eb agreed</span>
+          )}
+        </p>
+      )}
+
+      {view.lines.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing the city noticed.</p>
+      ) : (
+        <ul className="space-y-1">
+          {view.lines.map((line) => (
+            <li key={line.observation} className="text-sm">
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent">
+                {line.count > 1 ? `${line.count}× ` : ""}
+                {line.observation}
+              </span>{" "}
+              <span className="text-muted-foreground">— {line.because || line.meaning}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {view.survivors.length > 0 && (
+        <p className="text-sm">
+          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-destructive">
+            Walked away
+          </span>{" "}
+          <span className="text-muted-foreground">
+            {view.survivors.join(", ")} — and remembers you.
+          </span>
+        </p>
+      )}
+    </section>
+  );
+}
+
 function IpPanel({ play }: { play: ReturnType<typeof usePlay> }) {
   const [primary, setPrimary] = useState<IpPlaystyle>("warrior");
   const [secondary, setSecondary] = useState<IpPlaystyle>("roleplayer");
@@ -511,6 +566,7 @@ function WrapUpCard({
         Eurobucks: <span className="font-bold">{bundle.vitals.eurobucks}eb</span> · HP{" "}
         {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
       </p>
+      <SettlementReport events={bundle.events} />
       <IpPanel play={play} />
       {died ? (
         <Button asChild variant="outline" size="sm">

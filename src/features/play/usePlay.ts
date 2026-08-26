@@ -20,6 +20,7 @@ import {
   getSkill,
   judgeAction,
   type LegalityVerdict,
+  clampDisposition,
   missionPayout,
   type IpAward,
   type IpPlaystyle,
@@ -63,6 +64,7 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  findCampaignNpc,
   saveCampaignNpc,
   setCampaignClock,
   listClocks,
@@ -96,6 +98,7 @@ import {
   type LiveEncounter,
 } from "@/features/campaign/encounterState";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
+import { brokerKeyFor, pressureReportsFor, settleAftermath } from "@/features/campaign/aftermath";
 import {
   answerPendingQuestion,
   askOracle,
@@ -933,28 +936,65 @@ async function settleMission(
       ? Math.max(printed.total, bundle.agreedPayout)
       : (printed?.total ?? bundle.agreedPayout ?? 0);
   const payout = printed ? { ...printed, total } : null;
-  if (payout && total > 0) {
-    await updateCampaignVitals(campaignId, {
-      eurobucks: bundle.vitals.eurobucks + total,
-    });
-  }
   const done = runtime.objectives.filter((o) => o.status === "done").length;
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "mission_completed",
+    // What was AGREED, not what arrived: the money is rolled for below, and a
+    // completion line claiming a fee that was then shorted would be the ledger
+    // contradicting the vitals. What actually landed is the settlement's line.
     summary: payout
-      ? `${mission.title} complete — ${payout.total}eb paid (${payout.upfront}eb up front, ${payout.onCompletion}eb on delivery); ${done}/${runtime.objectives.length} objectives closed.`
+      ? `${mission.title} complete — ${payout.total}eb agreed (${payout.upfront}eb up front, ${payout.onCompletion}eb on delivery); ${done}/${runtime.objectives.length} objectives closed.`
       : `${mission.title} complete — ${done}/${runtime.objectives.length} objectives closed. This job records no printed payout.`,
     data: { missionId: mission.id, payout } as unknown as Json,
     ...(runtime.currentBeatId ? { beat_id: runtime.currentBeatId } : {}),
   });
-  // What the job itself cost, read off the engine's own record rather than
-  // asked of the model. A body the combat engine dropped is a body whether or
-  // not the narration mentioned it, and the opposition a generated job names is
-  // who it was dropped on. Deliberately thin: the richer read of the ledger
-  // (witnesses, how loudly it was sold, a payout that goes wrong) belongs with
-  // the aftermath work, and will feed the same rules this already uses.
-  await settlePressure(bundle, mission);
+
+  // The trip home. What the job cost is read off its own ledger, the money is
+  // rolled for, whoever walked away becomes somebody the campaign remembers,
+  // and what is left over is written into Life with a day attached.
+  const aftermath = await settleAftermath(
+    {
+      campaignId,
+      events: bundle.events,
+      playerName: bundle.character.character.name,
+      agreed: total,
+      messy: done < runtime.objectives.length,
+      day: bundle.campaign.day,
+      inventory: bundle.inventory,
+    },
+    { current: bundle.vitals.hp_current, max: bundle.vitals.hp_max },
+  );
+
+  // A null report means this job had already been settled. Everything below is
+  // skipped — paying, promoting and charging the clocks twice is exactly what
+  // the guard exists to prevent — but the phase transition at the end of this
+  // function still runs, because a player stranded in a finished job is worse
+  // than a job settled once.
+  if (aftermath) {
+    // Money last, so a payout that went wrong is the number that actually lands.
+    if (aftermath.payment.paid > 0) {
+      await updateCampaignVitals(campaignId, {
+        eurobucks: bundle.vitals.eurobucks + aftermath.payment.paid,
+      });
+    }
+
+    // A broker who shorted you is a broker you now know shorts people. Who that
+    // is comes off the event that started the job, not off a guess.
+    const brokerKey = brokerKeyFor(bundle.events);
+    if (aftermath.payment.brokerStanding !== 0 && brokerKey) {
+      const broker = await findCampaignNpc(campaignId, brokerKey);
+      if (broker) {
+        await setNpcDisposition(
+          broker.id,
+          clampDisposition(broker.disposition + aftermath.payment.brokerStanding),
+        );
+      }
+    }
+
+    const reports = pressureReportsFor(aftermath, missionFaction(mission));
+    if (reports.length > 0) await applyPressure(campaignId, reports);
+  }
 
   // Now that it is over, show the player the die that was thrown before it
   // began. A complication they never noticed is worth showing too, and so is a
@@ -967,39 +1007,6 @@ async function settleMission(
   // press moves it on to Life. The AI never performs this transition.
   const after = nextPhase(phaseOf(bundle.campaign.phase), "end_job");
   if (after) await setCampaignPhase(campaignId, after);
-}
-
-/**
- * The pressure a finished job leaves behind.
- *
- * Counts the bodies the engine itself recorded and points them at whoever the
- * mission said was in the way. Nothing here asks the model anything: this is the
- * floor under the observations a turn may have reported, so a silent GM cannot
- * make a firefight cost nothing.
- */
-async function settlePressure(bundle: PlayBundle, mission: Mission): Promise<void> {
-  const opposedBy = missionFaction(mission);
-
-  // Only this job's dead. The ledger is the whole campaign's, so counting from
-  // the top would charge every later job for the bodies of every earlier one.
-  const startedAt = bundle.events.map((e) => e.type).lastIndexOf("mission_started");
-  const thisJob = startedAt === -1 ? bundle.events : bundle.events.slice(startedAt + 1);
-
-  // Death Saves the engine itself failed on somebody other than the player.
-  // That is the one record of a body that exists whatever the narration said.
-  const killed = thisJob.filter((event) => {
-    if (event.type !== "death_save") return false;
-    const data = (event.data ?? {}) as { died?: unknown; combatant?: unknown };
-    if (data.died !== true) return false;
-    return data.combatant !== bundle.character.character.name;
-  }).length;
-  if (!killed) return;
-
-  const reports: ObservationReport[] = Array.from({ length: Math.min(killed, 4) }, () => ({
-    observation: "killed" as const,
-    factionId: opposedBy,
-  }));
-  await applyPressure(bundle.campaign.id, reports);
 }
 
 /**

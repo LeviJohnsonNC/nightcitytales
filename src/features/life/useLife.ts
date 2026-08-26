@@ -912,7 +912,14 @@ async function acceptHook(bundle: LifeBundle): Promise<void> {
     campaign_id: campaignId,
     type: "mission_started",
     summary: `Took the job: ${mission.title} — ${hook.offer.brokerName}${negotiated}`,
-    data: { missionId, payout: hook.terms.payout } as unknown as Json,
+    // The broker rides on the event, so settlement can find the person who owes
+    // the money without having to reconstruct who offered the job.
+    data: {
+      missionId,
+      payout: hook.terms.payout,
+      brokerKey: hook.offer.brokerKey,
+      brokerName: hook.offer.brokerName,
+    } as unknown as Json,
   });
   await setCampaignPhase(campaignId, to);
 }
