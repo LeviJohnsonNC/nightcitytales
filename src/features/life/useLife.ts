@@ -410,7 +410,9 @@ async function applyResponse(
     data: {
       situationKey: bundle.current?.key ?? null,
       title: response.situation.title,
-      actions: response.actions,
+      // Options are advisory UI shown only when the player explicitly asks.
+      // Do not trust a normal turn's model response to clear them itself.
+      actions: turn.options ? response.actions : [],
     } as unknown as Json,
   });
 
