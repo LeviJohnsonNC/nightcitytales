@@ -14,10 +14,18 @@ const Facts = z.object({
   gender: z.enum(["female", "male", "non-binary", "unspecified"]),
   role: z.string().max(60).nullable(),
   roleAbility: z.string().max(60).nullable(),
-  facts: z.array(z.object({ label: z.string().max(60), value: z.string().max(300) })).max(12),
+  facts: z.array(z.object({ label: z.string().max(60), value: z.string().max(300) })).max(20),
+  build: z.string().max(80).nullable().default(null),
+  wardrobe: z.array(z.string().max(160)).max(20).default([]),
+  chrome: z.array(z.string().max(80)).max(20).default([]),
+  armor: z.array(z.string().max(120)).max(6).default([]),
+  weapon: z.string().max(80).nullable().default(null),
+  humanity: z.string().max(160).nullable().default(null),
+  home: z.string().max(160).nullable().default(null),
   selfDescription: z.string().max(400).default(""),
   stream: z.boolean().optional(),
 });
+
 
 const MODEL = "openai/gpt-image-1-mini";
 
