@@ -175,8 +175,6 @@ function LifeLog({
   // One scroller on a phone (the page); the desktop column keeps its own.
   return (
     <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
-
-
       {shown.length === 0 && !busy ? (
         <p className="text-sm text-muted-foreground">The city hums on without you…</p>
       ) : (

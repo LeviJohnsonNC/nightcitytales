@@ -22,7 +22,10 @@ export function SheetDrawer({ character }: { character: FullCharacter }) {
           Character sheet
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-3xl">
+      <SheetContent
+        side="right"
+        className="w-full overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-3xl"
+      >
         <SheetHeader>
           <SheetTitle>{character.character.name}</SheetTitle>
         </SheetHeader>
