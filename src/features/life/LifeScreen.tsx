@@ -665,15 +665,6 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               <SheetDrawer character={bundle.character} />
             </div>
 
-            {life.narration && (
-              <section className="border-l-2 border-accent bg-accent/5 p-3">
-                <Label>{life.narration.title}</Label>
-                <p className="mt-1 text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
-                  {life.narration.text}
-                </p>
-              </section>
-            )}
-
             <LifeLog
               events={bundle.events}
               busy={life.busy}
@@ -713,6 +704,15 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   />
                 ))}
               </div>
+            )}
+
+            {life.narration && (
+              <section className="border-l-2 border-accent bg-accent/5 p-3">
+                <Label>{life.narration.title}</Label>
+                <p className="mt-1 text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
+                  {life.narration.text}
+                </p>
+              </section>
             )}
 
             <BottomDock>
