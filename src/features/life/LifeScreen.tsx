@@ -306,19 +306,23 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
       {asks.length > 0 && (
         <div className="space-y-1">
           <Label>Before you answer</Label>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2 sm:flex sm:flex-wrap">
             {asks.map((spec) => (
               <Button
                 key={spec.ask}
-                size="sm"
                 variant="outline"
                 disabled={blocked}
                 title={spec.blurb}
                 onClick={() => life.pushHook(spec.ask)}
+                className="h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left sm:w-auto"
               >
-                {spec.label}
-                <span className="num ml-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="text-sm font-semibold">{spec.label}</span>
+                <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
                   {getSkill(spec.skillId).name} · {formatDuration(spec.minutes)}
+                </span>
+                {/* Hover-only blurbs are invisible on touch, so it is written out here. */}
+                <span className="text-xs font-normal text-muted-foreground sm:hidden">
+                  {spec.blurb}
                 </span>
               </Button>
             ))}
