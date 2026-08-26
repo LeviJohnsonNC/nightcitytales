@@ -3,6 +3,7 @@
  * /src/lib/backend, this is the only layer allowed to touch the Cloud client;
  * features and components call these functions, never the client directly.
  */
+import { slotFor, type ItemKind } from "@/engine";
 import { backendClient } from "./client";
 import type {
   Campaign,
@@ -188,8 +189,14 @@ export async function saveCampaignNpc(
  */
 export async function addInventoryItem(
   campaignId: string,
-  item: { kind: string; itemId: string; quantity: number; stack: boolean },
+  item: { kind: ItemKind; itemId: string; quantity: number; stack: boolean },
 ): Promise<CampaignInventoryItem> {
+  // Where it sits on the character, derived once from the catalog. Everything
+  // downstream keys off slot — weaponCapabilities skips any row whose slot is
+  // not "weapon", ammunition is counted by slot, armor is worn by location — so
+  // a row written without one is a row the game cannot see. Buying a gun used
+  // to produce exactly that: 500eb for an invisible database row.
+  const slot = slotFor(item.kind, item.itemId);
   if (item.stack) {
     const existing = await backendClient
       .from("campaign_inventory")
@@ -219,6 +226,7 @@ export async function addInventoryItem(
         kind: item.kind,
         item_id: item.itemId,
         quantity: item.quantity,
+        slot,
       })
       .select("*")
       .single(),

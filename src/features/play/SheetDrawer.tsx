@@ -1,16 +1,29 @@
 /**
- * The character sheet, one click away during play. Read-only: it renders the
- * same assembled sheet the roster shows, from the saved character rows.
+ * The character sheet, one click away during play.
+ *
+ * Read-only, and now in two halves that are honest about being different
+ * things: what the character is CARRYING, read live from the campaign's
+ * inventory, above the assembled sheet they were created with. A sheet alone
+ * cannot answer "do I still have a spare magazine", because it was written
+ * before the campaign started and never changes again.
  */
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { assembleCharacter } from "@/engine";
+import { CarriedKit } from "./CarriedKit";
 import { CharacterSheet } from "@/features/chargen/CharacterSheet";
 import { buildFromState } from "@/features/chargen/sheetModel";
 import { stateFromCharacter } from "@/features/roster/characterState";
-import type { FullCharacter } from "@/lib/backend";
+import type { CampaignInventoryItem, FullCharacter } from "@/lib/backend";
 
-export function SheetDrawer({ character }: { character: FullCharacter }) {
+export function SheetDrawer({
+  character,
+  inventory,
+}: {
+  character: FullCharacter;
+  /** The campaign's live kit. Omitted on surfaces that have no campaign. */
+  inventory?: CampaignInventoryItem[];
+}) {
   const state = stateFromCharacter(character);
   const build = buildFromState(state);
   const sheet = assembleCharacter(build);
@@ -29,6 +42,15 @@ export function SheetDrawer({ character }: { character: FullCharacter }) {
         <SheetHeader>
           <SheetTitle>{character.character.name}</SheetTitle>
         </SheetHeader>
+        {inventory && (
+          <section className="mt-4 border border-border bg-card/50 p-3">
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
+              Carrying now
+            </p>
+            <CarriedKit inventory={inventory} />
+          </section>
+        )}
+
         <div className="mt-4">
           <CharacterSheet
             state={state}

@@ -40,6 +40,7 @@ import { actorFor, gmSkillList, statsRecord } from "@/features/play/playModel";
 import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
+import { ShopSheet } from "./ShopSheet";
 import type { LifeActionCard } from "./lifeResponse";
 
 /** Where someone stands with the character, in words rather than a number. */
@@ -102,6 +103,13 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
           <span className="text-muted-foreground">⚄</span> {text}
         </p>
       );
+    case "purchase":
+    case "reload":
+      return (
+        <p className="font-mono text-xs text-muted-foreground">
+          <span className="text-accent">◆</span> {text}
+        </p>
+      );
     case "npc_read":
       return (
         <p className="border-l-2 border-neon-pink/60 pl-3 font-mono text-xs text-neon-pink">
@@ -145,6 +153,10 @@ const LIFE_EVENT_TYPES = new Set([
   "hook_declined",
   "mission_started",
   "mission_completed",
+  // What you bought and what you loaded: short, factual, and the record that
+  // the money actually turned into something.
+  "purchase",
+  "reload",
 ]);
 
 /**
@@ -576,6 +588,8 @@ function LifeRail({
         </section>
       )}
 
+      <ShopSheet bundle={bundle} />
+
       <Button asChild variant="outline" size="sm" className="w-full">
         <Link to="/roster">Back to the roster</Link>
       </Button>
@@ -662,7 +676,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   Life · {formatLifeClock(bundle.clock)} · day {bundle.clock.day}
                 </p>
               </div>
-              <SheetDrawer character={bundle.character} />
+              <SheetDrawer character={bundle.character} inventory={bundle.inventory} />
             </div>
 
             <LifeLog
