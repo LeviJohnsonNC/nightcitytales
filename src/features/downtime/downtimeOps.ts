@@ -8,7 +8,14 @@
  * callers share them. Every mechanical number still comes from the engine
  * through downtimeModel; nothing here decides a cost or a healing rate.
  */
-import { MINUTES_PER_DAY, advanceClock, canAfford, itemName, purchaseCost } from "@/engine";
+import {
+  MINUTES_PER_DAY,
+  advanceClock,
+  canAfford,
+  itemName,
+  purchaseCost,
+  stacksInInventory,
+} from "@/engine";
 import type { ItemKind } from "@/engine";
 import {
   addInventoryItem,
@@ -50,7 +57,7 @@ export async function loadDowntime(campaignId: string): Promise<DowntimeBundle> 
 
 /** Kinds that stack as a quantity rather than as separate tracked pieces. */
 export function stacks(kind: ItemKind): boolean {
-  return kind === "ammunition" || kind === "gear";
+  return stacksInInventory(kind);
 }
 
 /**

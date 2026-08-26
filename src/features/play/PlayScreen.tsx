@@ -654,7 +654,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
                 </p>
               )}
             </div>
-            <SheetDrawer character={bundle.character} />
+            <SheetDrawer character={bundle.character} inventory={bundle.inventory} />
           </div>
           <NarrativeLog
             events={bundle.events}
