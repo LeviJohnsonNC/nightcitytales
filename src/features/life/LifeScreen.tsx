@@ -103,6 +103,12 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
           <span className="text-muted-foreground">⚄</span> {text}
         </p>
       );
+    case "world_moved":
+      return (
+        <p className="my-1 border-l-2 border-neon-pink/60 bg-neon-pink/5 px-3 py-2 text-sm text-foreground">
+          {text}
+        </p>
+      );
     case "purchase":
     case "reload":
       return (
@@ -157,6 +163,8 @@ const LIFE_EVENT_TYPES = new Set([
   // the money actually turned into something.
   "purchase",
   "reload",
+  // Somebody moved while the character was not looking.
+  "world_moved",
 ]);
 
 /**
