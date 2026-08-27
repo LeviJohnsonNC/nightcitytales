@@ -12,8 +12,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChevronDown } from "lucide-react";
 import {
   clampLuckSpend,
   formatDuration,
@@ -286,6 +288,8 @@ function ActionCard({
 function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
   const hook = life.hook;
   const [reason, setReason] = useState("");
+  const [isOpen, setIsOpen] = useState(true);
+  const [isClosing, setIsClosing] = useState(false);
   if (!hook) return null;
 
   const { offer, terms, mission } = hook;
@@ -293,94 +297,131 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
   const learned = knownTerms(terms, offer);
   const asks = openAsks(terms);
   const blocked = life.busy || !!life.pendingCheck;
+  const expanded = isOpen && !isClosing;
 
   return (
-    <section className="space-y-3 border border-neon-pink bg-neon-pink/5 p-4">
-      <Label>Work on the table</Label>
-      <div>
-        <h3 className="text-base font-bold">{mission.title}</h3>
-        <p className="text-sm text-muted-foreground">
-          {offer.brokerName}, {offer.brokerLine}
-        </p>
-        <p className="num mt-1 font-mono text-sm">
-          {raised && (
-            <span className="mr-2 text-muted-foreground line-through">{terms.basePayout}eb</span>
-          )}
-          <span className="font-bold text-neon-pink">{terms.payout}eb</span>
-          <span className="ml-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            {offer.district}
-          </span>
-        </p>
-      </div>
+    <section className="border border-neon-pink bg-neon-pink/5">
+      <Collapsible open={expanded} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-start justify-between gap-3 p-4 text-left"
+            aria-label="Toggle job offer details"
+          >
+            <div className="min-w-0 flex-1">
+              <Label>Work on the table</Label>
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h3 className="text-base font-bold">{mission.title}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {offer.brokerName}, {offer.brokerLine}
+                </p>
+                <p className="num font-mono text-sm">
+                  {raised && (
+                    <span className="mr-2 text-muted-foreground line-through">
+                      {terms.basePayout}eb
+                    </span>
+                  )}
+                  <span className="font-bold text-neon-pink">{terms.payout}eb</span>
+                  <span className="ml-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    {offer.district}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <span className="mt-0.5 shrink-0 text-muted-foreground">
+              <ChevronDown
+                className={`h-5 w-5 transition-transform duration-200 ${
+                  expanded ? "rotate-180" : ""
+                }`}
+              />
+            </span>
+          </button>
+        </CollapsibleTrigger>
 
-      <p className="text-sm leading-relaxed">{offer.pitch}</p>
-      <p className="text-sm">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          They want{" "}
-        </span>
-        {offer.ask}
-      </p>
+        <CollapsibleContent className="px-4 pb-4">
+          <div className="space-y-3">
+            <p className="text-sm leading-relaxed">{offer.pitch}</p>
+            <p className="text-sm">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                They want{" "}
+              </span>
+              {offer.ask}
+            </p>
 
-      {learned.length > 0 && (
-        <ul className="space-y-1 border-l-2 border-accent pl-3">
-          {learned.map((fact) => (
-            <li key={fact} className="text-sm text-accent">
-              {fact}
-            </li>
-          ))}
-        </ul>
-      )}
+            {learned.length > 0 && (
+              <ul className="space-y-1 border-l-2 border-accent pl-3">
+                {learned.map((fact) => (
+                  <li key={fact} className="text-sm text-accent">
+                    {fact}
+                  </li>
+                ))}
+              </ul>
+            )}
 
-      {asks.length > 0 && (
-        <div className="space-y-1">
-          <Label>Before you answer</Label>
-          <div className="grid gap-2 sm:flex sm:flex-wrap">
-            {asks.map((spec) => (
+            {asks.length > 0 && (
+              <div className="space-y-1">
+                <Label>Before you answer</Label>
+                <div className="grid gap-2 sm:flex sm:flex-wrap">
+                  {asks.map((spec) => (
+                    <Button
+                      key={spec.ask}
+                      variant="outline"
+                      disabled={blocked}
+                      title={spec.blurb}
+                      onClick={() => life.pushHook(spec.ask)}
+                      className="h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left sm:w-auto"
+                    >
+                      <span className="text-sm font-semibold">{spec.label}</span>
+                      <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        {getSkill(spec.skillId).name} · {formatDuration(spec.minutes)}
+                      </span>
+                      {/* Hover-only blurbs are invisible on touch, so it is written out here. */}
+                      <span className="text-xs font-normal text-muted-foreground sm:hidden">
+                        {spec.blurb}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              Nothing starts until you say yes. Ask questions, push for more, sleep on it, or
+              walk.
+            </p>
+            <div className="flex flex-wrap gap-2">
               <Button
-                key={spec.ask}
+                size="sm"
+                disabled={blocked}
+                onClick={() => {
+                  setIsClosing(true);
+                  life.acceptHook();
+                }}
+              >
+                Take the job
+              </Button>
+              <Button
+                size="sm"
                 variant="outline"
                 disabled={blocked}
-                title={spec.blurb}
-                onClick={() => life.pushHook(spec.ask)}
-                className="h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left sm:w-auto"
+                onClick={() => {
+                  setIsClosing(true);
+                  life.declineHook(reason || "Not this one.");
+                }}
               >
-                <span className="text-sm font-semibold">{spec.label}</span>
-                <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                  {getSkill(spec.skillId).name} · {formatDuration(spec.minutes)}
-                </span>
-                {/* Hover-only blurbs are invisible on touch, so it is written out here. */}
-                <span className="text-xs font-normal text-muted-foreground sm:hidden">
-                  {spec.blurb}
-                </span>
+                Turn it down
               </Button>
-            ))}
+              <input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="…or say why (optional)"
+                className="min-w-[12rem] flex-1 border border-border bg-background px-2 py-1 text-sm"
+                disabled={blocked}
+              />
+            </div>
           </div>
-        </div>
-      )}
-
-      <p className="text-xs text-muted-foreground">
-        Nothing starts until you say yes. Ask questions, push for more, sleep on it, or walk.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={blocked} onClick={() => life.acceptHook()}>
-          Take the job
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={blocked}
-          onClick={() => life.declineHook(reason || "Not this one.")}
-        >
-          Turn it down
-        </Button>
-        <input
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          placeholder="…or say why (optional)"
-          className="min-w-[12rem] flex-1 border border-border bg-background px-2 py-1 text-sm"
-          disabled={blocked}
-        />
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
     </section>
   );
 }
@@ -702,8 +743,6 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               </p>
             )}
 
-            {life.hook && <HookCard life={life} />}
-
             {life.pendingCheck && (
               <CheckCard
                 key={life.pendingCheck.eventId}
@@ -739,6 +778,8 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                 ))}
               </div>
             )}
+
+            {life.hook && <HookCard life={life} />}
 
             <BottomDock>
               <InputBar
