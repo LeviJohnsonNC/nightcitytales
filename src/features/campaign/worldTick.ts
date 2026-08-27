@@ -117,10 +117,9 @@ export function situationFor(person: TickPerson, move: NpcMove, day: number): Si
     npcKey: person.key,
     status: "live",
     severity: MOVE_SEVERITY[move],
-    // Only the moves that actually have a clock on them get a due day. A live
-    // people or pressure situation whose day has passed escalates on EVERY
-    // load (engine/life.ts), so giving a favour request a deadline would grow
-    // it into a severity-5 emergency over a few turns.
+    // Only the moves that actually have a clock on them get a due day, because
+    // a deadline is a promise that something changes when it passes. Somebody
+    // going quiet has nothing to come due; a debt called in does.
     dueDay: MOVE_DEADLINE[move] ? day + MOVE_DUE_DAYS : null,
     data: { move, movedOnDay: day } as unknown as Json,
   };

@@ -3,8 +3,12 @@ import {
   MAX_PEOPLE_SITUATIONS,
   PEOPLE_INSISTENT_DAYS,
   PEOPLE_SILENCE_DAYS,
+  ageSituation,
+  ageSituations,
   deriveNeeds,
+  escalatedFor,
   type LifePerson,
+  type LifeSituation,
   type LifeStateInput,
 } from "@/engine";
 
@@ -158,5 +162,117 @@ describe("the rest of what Life notices", () => {
       people: [person({ key: "ilsa", lastSeenDay: 1 })],
     };
     expect(deriveNeeds(state).map((s) => s.key)).toEqual(deriveNeeds(state).map((s) => s.key));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ageing.
+// ---------------------------------------------------------------------------
+
+const situation = (over: Partial<LifeSituation> = {}): LifeSituation => ({
+  key: "grudge_vex",
+  category: "pressure",
+  title: "Vex is still owed a reckoning",
+  summary: "Somebody you left standing has not forgotten.",
+  status: "live",
+  severity: 3,
+  dueDay: 16,
+  ...over,
+});
+
+describe("a deadline passing", () => {
+  it("does nothing before the day it comes due", () => {
+    expect(ageSituation(situation(), 15)).toEqual(situation());
+  });
+
+  it("makes the situation one louder on the day it comes due", () => {
+    expect(ageSituation(situation(), 16).severity).toBe(4);
+  });
+
+  it("expires an opportunity rather than escalating it", () => {
+    const gig = situation({ category: "opportunity" });
+    expect(ageSituation(gig, 16).status).toBe("expired");
+    expect(ageSituation(gig, 16).severity).toBe(gig.severity);
+  });
+
+  it("leaves anything that is not live alone", () => {
+    const done = situation({ status: "resolved" });
+    expect(ageSituation(done, 99)).toEqual(done);
+  });
+
+  it("leaves a situation with no deadline alone forever", () => {
+    const { dueDay: _dueDay, ...open } = situation();
+    expect(ageSituation(open, 9999)).toEqual(open);
+  });
+});
+
+describe("escalating only once per deadline", () => {
+  it("does not climb again on the same day", () => {
+    // This is the bug: ageSituations runs on every load, so a screen mounted
+    // three times was three escalations of one deadline.
+    const once = ageSituation(situation(), 16);
+    expect(ageSituation(once, 16).severity).toBe(4);
+    expect(ageSituation(ageSituation(once, 16), 16).severity).toBe(4);
+  });
+
+  it("does not climb on the days after, either", () => {
+    let s = ageSituation(situation(), 16);
+    for (let day = 17; day < 40; day += 1) s = ageSituation(s, day);
+    expect(s.severity).toBe(4);
+  });
+
+  it("never reaches the top of the scale off one deadline", () => {
+    // The reason this matters: selectSituation weights severity first, so a
+    // world where everything old has climbed to 5 picks by category and then
+    // alphabetically — which is no selection at all.
+    let s = situation({ severity: 4 });
+    for (let day = 16; day < 60; day += 1) s = ageSituation(s, day);
+    expect(s.severity).toBe(5);
+    let other = situation({ key: "moved_wakako", severity: 2 });
+    for (let day = 16; day < 60; day += 1) other = ageSituation(other, day);
+    expect(other.severity).toBe(3);
+    expect(other.severity).toBeLessThan(s.severity);
+  });
+
+  it("escalates again when it is given a NEW deadline", () => {
+    // Rent is the case that matters: each billing period is its own deadline
+    // and its own missed payment, not one debt that only ever counts once.
+    const missed = ageSituation(situation({ key: "rent", severity: 2 }), 16);
+    expect(missed.severity).toBe(3);
+    const rebilled = { ...missed, dueDay: 46 };
+    expect(ageSituation(rebilled, 45).severity).toBe(3);
+    expect(ageSituation(rebilled, 46).severity).toBe(4);
+  });
+
+  it("records which deadline it answered to, not just that it did", () => {
+    const aged = ageSituation(situation(), 20);
+    expect(escalatedFor(aged)).toBe(16);
+    expect(aged.data?.["escalatedOnDay"]).toBe(20);
+  });
+
+  it("reads nothing out of a situation that has never escalated", () => {
+    expect(escalatedFor(situation())).toBeNull();
+    expect(escalatedFor(situation({ data: { escalatedForDueDay: "16" } }))).toBeNull();
+  });
+
+  it("leaves the deadline where it is, so the world tick can still act on it", () => {
+    // worldTick sends somebody to find you when dueDay <= day. Pushing the
+    // deadline out to stop the climbing would have quietly cancelled that.
+    expect(ageSituation(situation(), 16).dueDay).toBe(16);
+  });
+});
+
+describe("ageSituations", () => {
+  it("ages each one and leaves the rest of the list intact", () => {
+    const rows = [situation(), situation({ key: "moved_wakako", dueDay: 99 })];
+    const aged = ageSituations(rows, 16);
+    expect(aged).toHaveLength(2);
+    expect(aged[0]!.severity).toBe(4);
+    expect(aged[1]!.severity).toBe(3);
+  });
+
+  it("is idempotent, which is the whole point", () => {
+    const rows = [situation()];
+    expect(ageSituations(ageSituations(rows, 16), 16)).toEqual(ageSituations(rows, 16));
   });
 });
