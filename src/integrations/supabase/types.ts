@@ -851,6 +851,7 @@ export type Database = {
       encounters: {
         Row: {
           active_index: number
+          arena: string | null
           beat_id: string | null
           campaign_id: string
           created_at: string
@@ -863,6 +864,7 @@ export type Database = {
         }
         Insert: {
           active_index?: number
+          arena?: string | null
           beat_id?: string | null
           campaign_id: string
           created_at?: string
@@ -875,6 +877,7 @@ export type Database = {
         }
         Update: {
           active_index?: number
+          arena?: string | null
           beat_id?: string | null
           campaign_id?: string
           created_at?: string
