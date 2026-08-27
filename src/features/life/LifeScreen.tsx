@@ -743,8 +743,6 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               </p>
             )}
 
-            {life.hook && <HookCard life={life} />}
-
             {life.pendingCheck && (
               <CheckCard
                 key={life.pendingCheck.eventId}
@@ -780,6 +778,8 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                 ))}
               </div>
             )}
+
+            {life.hook && <HookCard life={life} />}
 
             <BottomDock>
               <InputBar
