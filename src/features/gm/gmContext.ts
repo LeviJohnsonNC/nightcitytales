@@ -129,6 +129,20 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
     );
   }
   if (beat.opposition?.length) parts.push(line("Opposition", beat.opposition.join("; ")));
+
+  // WHO is waiting, settled from the job's own seed when the job was generated
+  // — before the offer was pitched, argued over, or narrated. Handed over as
+  // fact, the way the chronicle is: the model casts the fight it is told about
+  // rather than inventing a roster to suit the scene.
+  const force = context.mission.force;
+  if (force && beat.encounter) {
+    parts.push(
+      line(
+        "OPPOSITION FORCE (this IS the fight — use these profiles, this many)",
+        force.members.map((m) => `${m.name} [${m.key}] profile:${m.profile.key}`).join(" | "),
+      ),
+    );
+  }
   if (context.availableExits.length) {
     parts.push(
       line(

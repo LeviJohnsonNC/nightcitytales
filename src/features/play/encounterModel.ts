@@ -13,6 +13,7 @@ import {
   arenaFor,
   getArmor,
   rangeMetres,
+  threatFor,
   weaponProfile,
   woundMovePenalty,
   woundStateFor,
@@ -122,9 +123,11 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
 }
 
 /**
- * How far a hostile can move in one Move Action, until #02 brings published
- * threat statblocks with their own MOVE. Engine-owned rather than prompted:
- * a model that can set MOVE can set how fast the fight closes.
+ * MOVE for a combatant row that predates anybody having one.
+ *
+ * Every hostile built today carries its own MOVE off its threat profile, and
+ * Backup carries the printed one off its tier. This is only the floor for rows
+ * written before either existed.
  */
 export const DEFAULT_HOSTILE_MOVE = 6;
 
@@ -241,38 +244,48 @@ export function playerCombatant(
   return { combatant, data };
 }
 
-/** A GM-authored hostile as an engine combatant, standing where the arena put them. */
+/**
+ * A hostile as an engine combatant, standing where the arena put them.
+ *
+ * The GM names them and picks a profile; every number comes off that profile.
+ * This used to read REF, BODY, HP, SP, skill, weapon and damage dice straight
+ * out of the model's response.
+ */
 export function hostileCombatant(
   enemy: GmEnemy,
   id: string,
   position: Point,
 ): { combatant: Combatant; data: CombatantData } {
-  const threshold = Math.ceil(enemy.hp / 2);
+  const profile = threatFor(enemy.profile);
+  const threshold = Math.ceil(profile.hp / 2);
   const combatant: Combatant = {
     id,
     name: enemy.name,
     side: "hostile",
     isPlayer: false,
-    ref: enemy.ref,
-    body: enemy.body,
-    hpMax: enemy.hp,
-    hp: enemy.hp,
+    ref: profile.ref,
+    body: profile.body,
+    hpMax: profile.hp,
+    hp: profile.hp,
     seriouslyWoundedThreshold: threshold,
     woundState: "none",
     deathSavePenalty: 0,
-    spHead: enemy.sp,
-    spBody: enemy.sp,
+    spHead: profile.sp,
+    spBody: profile.sp,
     defeated: false,
     initiative: null,
   };
   const data: CombatantData = {
     key: enemy.key,
-    weaponName: enemy.weaponName,
-    damageDice: enemy.damageDice,
-    rangeType: enemy.rangeType,
+    weaponName: profile.weaponName,
+    damageDice: profile.damageDice,
+    rangeType: profile.rangeType,
     position: { ...position },
-    move: DEFAULT_HOSTILE_MOVE,
-    attackSkill: enemy.attackSkill,
+    // Their own MOVE now, not one constant for everybody: a chromed booster
+    // covers 8 m and a renta-cop covers 4, which is the difference between a
+    // fight that closes and one that does not.
+    move: profile.move,
+    attackSkill: profile.attackSkill,
   };
   return { combatant, data };
 }

@@ -22,7 +22,7 @@ import {
 } from "@/engine";
 import { addCombatant, appendCampaignEvent, type Json } from "@/lib/backend";
 import { saveLiveEncounter, type LiveEncounter } from "@/features/campaign/encounterState";
-import { DEFAULT_HOSTILE_MOVE, type CombatantData } from "./encounterModel";
+import type { CombatantData } from "./encounterModel";
 
 /** What a landed call is waiting on, stored until the Round comes round. */
 export type PendingBackup = {
@@ -76,7 +76,10 @@ function backupCombatant(
     damageDice: 3,
     rangeType: "pistol",
     position,
-    move: DEFAULT_HOSTILE_MOVE,
+    // The tier's own printed MOVE. Backup has carried this number since the
+    // Lawman ability shipped and nothing had ever read it, because until
+    // positions existed nobody could walk anywhere.
+    move: tier.move,
     // The Combat Number already carries their Skill; adding it again would
     // count the same training twice.
     attackSkill: 0,

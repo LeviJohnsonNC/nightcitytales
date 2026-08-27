@@ -318,3 +318,57 @@ describe("hostiles moving on their own", () => {
     expect(line).toContain("34 m from Vela");
   });
 });
+
+describe("building a hostile from a profile", () => {
+  it("takes every number off the profile, not off the proposal", async () => {
+    const { hostileCombatant } = await import("../encounterModel");
+    const { threatFor } = await import("@/engine");
+    const profile = threatFor("corp_security");
+    const built = hostileCombatant(
+      { key: "guard_1", name: "Guard", profile: "corp_security" },
+      "id",
+      { x: 0, y: 0 },
+    );
+    expect(built.combatant.ref).toBe(profile.ref);
+    expect(built.combatant.body).toBe(profile.body);
+    expect(built.combatant.hpMax).toBe(profile.hp);
+    expect(built.combatant.spBody).toBe(profile.sp);
+    expect(built.data.attackSkill).toBe(profile.attackSkill);
+    expect(built.data.damageDice).toBe(profile.damageDice);
+    expect(built.data.rangeType).toBe(profile.rangeType);
+  });
+
+  it("keeps the name the fiction gave them", () => {
+    // The model may call a corp guard "Royce". That is fiction, not a stat.
+    return import("../encounterModel").then(({ hostileCombatant }) => {
+      const built = hostileCombatant(
+        { key: "royce", name: "Royce", profile: "corp_security" },
+        "id",
+        { x: 0, y: 0 },
+      );
+      expect(built.combatant.name).toBe("Royce");
+      expect(built.data.key).toBe("royce");
+    });
+  });
+
+  it("gives each hostile its own MOVE rather than one constant", async () => {
+    // A chromed booster covers 8 m and a renta-cop covers 4. That difference is
+    // whether a fight closes on you or stalls at range.
+    const { hostileCombatant } = await import("../encounterModel");
+    const at = { x: 0, y: 0 };
+    const booster = hostileCombatant({ key: "b", name: "B", profile: "booster" }, "1", at);
+    const guard = hostileCombatant({ key: "g", name: "G", profile: "corp_security" }, "2", at);
+    expect(booster.data.move).toBeGreaterThan(guard.data.move);
+  });
+
+  it("builds a street thug out of a profile nobody has heard of", async () => {
+    const { hostileCombatant } = await import("../encounterModel");
+    const { threatFor } = await import("@/engine");
+    const built = hostileCombatant(
+      { key: "d", name: "Cyber-Dragon", profile: "cyber_dragon" },
+      "id",
+      { x: 0, y: 0 },
+    );
+    expect(built.combatant.hpMax).toBe(threatFor("street_thug").hp);
+  });
+});

@@ -10,6 +10,7 @@
  * objectives); flags gate branches and mirror to campaign_flags in the app.
  */
 import type { MissionStatus } from "./campaign";
+import type { ForceSize, ThreatMember } from "./threats";
 
 export type BeatType = "background" | "hook" | "dev" | "opdev" | "cliff" | "climax" | "resolution";
 
@@ -97,6 +98,23 @@ export type MissionOffer = {
   ask: string;
 };
 
+/**
+ * Who is waiting, decided when the job was, not when it is described.
+ *
+ * Drawn from the mission's own seed at generation time — before the offer is
+ * pitched, argued over, or narrated. The GM used to author every hostile's REF,
+ * BODY, HP, SP, skill and damage dice inside prompt guidance, which meant the
+ * same job told twice could produce two different fights, and pushing the fee
+ * could quietly change what was in the building.
+ */
+export type MissionForce = {
+  /** Force template key from data/rules/threats.json. */
+  forceKey: string;
+  size: ForceSize;
+  /** The expanded roster, stat blocks and all. */
+  members: ThreatMember[];
+};
+
 export type Mission = {
   id: string;
   title: string;
@@ -109,6 +127,8 @@ export type Mission = {
    * authored mission may be started directly rather than offered.
    */
   offer?: MissionOffer;
+  /** The opposition waiting at the climax, seeded with everything else. */
+  force?: MissionForce;
   startBeatId: string;
   beats: Beat[];
 };
