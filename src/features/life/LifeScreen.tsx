@@ -718,7 +718,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="flex flex-col gap-3 lg:min-h-[70vh]">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:sticky lg:top-0 lg:z-20 lg:-mx-4 lg:border-b lg:border-border lg:bg-background/95 lg:px-4 lg:py-3 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70">
               <div className="min-w-0">
                 <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
                   {bundle.campaign.name}

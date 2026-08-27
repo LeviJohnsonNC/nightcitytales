@@ -9,6 +9,7 @@
  */
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { NotebookText } from "lucide-react";
 import { assembleCharacter } from "@/engine";
 import { CarriedKit } from "./CarriedKit";
 import { CharacterSheet } from "@/features/chargen/CharacterSheet";
