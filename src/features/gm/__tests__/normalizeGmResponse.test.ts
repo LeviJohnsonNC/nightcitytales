@@ -196,3 +196,107 @@ describe("the question the turn could not answer itself", () => {
     }
   });
 });
+
+describe("distance is not the model's to give", () => {
+  it("drops a distance the model sent with an attack", () => {
+    // Not clamped, not taken under advisement: DROPPED. Range is the DV, so a
+    // number here would be the narrator setting how hard the shot is.
+    const out = normalizeGmResponse(
+      wire([{ kind: "attack", targetId: "scav_1", intent: "two to the chest", distance: 4 }]),
+      quiet,
+    );
+    expect(out.proposedActions).toEqual([
+      { kind: "attack", targetId: "scav_1", intent: "two to the chest" },
+    ]);
+  });
+
+  it("drops a distance the model sent with a hostile", () => {
+    const out = normalizeGmResponse(
+      wire([
+        {
+          kind: "start_encounter",
+          name: "Ambush",
+          arena: "alley",
+          enemies: [{ key: "scav_1", name: "Scav", rangeType: "pistol", distance: 3 }],
+        },
+      ]),
+      quiet,
+    );
+    const started = out.proposedActions[0] as { enemies: Record<string, unknown>[] };
+    expect(started.enemies[0]).not.toHaveProperty("distance");
+  });
+});
+
+describe("where a fight happens", () => {
+  it("keeps an arena the engine knows", () => {
+    const out = normalizeGmResponse(
+      wire([
+        {
+          kind: "start_encounter",
+          name: "Ambush",
+          arena: "club_interior",
+          enemies: [{ key: "s", name: "Scav" }],
+        },
+      ]),
+      quiet,
+    );
+    expect(out.proposedActions[0]).toMatchObject({ arena: "club_interior" });
+  });
+
+  it("falls back to open ground for a place it invented", () => {
+    const out = normalizeGmResponse(
+      wire([
+        {
+          kind: "start_encounter",
+          name: "Ambush",
+          arena: "a floating casino above the bay",
+          enemies: [{ key: "s", name: "Scav" }],
+        },
+      ]),
+      quiet,
+    );
+    expect(out.proposedActions[0]).toMatchObject({ arena: "open_ground" });
+  });
+
+  it("falls back when no arena was named at all", () => {
+    const out = normalizeGmResponse(
+      wire([{ kind: "start_encounter", name: "Ambush", enemies: [{ key: "s", name: "Scav" }] }]),
+      quiet,
+    );
+    expect(out.proposedActions[0]).toMatchObject({ arena: "open_ground" });
+  });
+});
+
+describe("moving", () => {
+  it("reads a move", () => {
+    const out = normalizeGmResponse(
+      wire([{ kind: "move", targetId: "scav_1", towards: "closer", intent: "breaks for the bar" }]),
+      quiet,
+    );
+    expect(out.proposedActions).toEqual([
+      { kind: "move", targetId: "scav_1", towards: "closer", intent: "breaks for the bar" },
+    ]);
+  });
+
+  it("defaults an unreadable direction to closing", () => {
+    const out = normalizeGmResponse(
+      wire([{ kind: "move", targetId: "scav_1", towards: "sideways", intent: "moves" }]),
+      quiet,
+    );
+    expect(out.proposedActions[0]).toMatchObject({ towards: "closer" });
+  });
+
+  it("does not read a move as an attack just because it names a target", () => {
+    // Both carry a targetId. Reading this as an attack would fire a gun the
+    // player never raised.
+    expect(actionKindOf({ targetId: "scav_1", towards: "away" })).toBe("move");
+    expect(actionKindOf({ targetId: "scav_1" })).toBe("attack");
+  });
+
+  it("drops a move with nobody to move relative to", () => {
+    const warn = vi.fn();
+    const out = normalizeGmResponse(wire([{ kind: "move", towards: "closer" }]), { onWarn: warn });
+    expect(out.proposedActions).toEqual([]);
+    expect(warn).toHaveBeenCalled();
+  });
+});

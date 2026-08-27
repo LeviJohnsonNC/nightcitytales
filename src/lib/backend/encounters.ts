@@ -28,6 +28,8 @@ export type StartEncounterPayload = {
   beat_id?: string | null;
   active_index?: number;
   order_ids: string[];
+  /** Key from the engine's closed ARENAS list; null reads as open ground. */
+  arena?: string | null;
   combatants: Array<{
     id: string;
     character_id?: string | null;

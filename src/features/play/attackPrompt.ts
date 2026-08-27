@@ -17,7 +17,7 @@ import {
 } from "@/engine";
 import type { CampaignEvent, CampaignInventoryItem, FullCharacter } from "@/lib/backend";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
-import { weaponChoices } from "./encounterModel";
+import { metresApart, weaponChoices } from "./encounterModel";
 import { liveInventory } from "./liveInventory";
 import { statsRecord } from "./playModel";
 
@@ -89,6 +89,20 @@ function legalityGap(
 
 type PromptData = { targetId?: unknown; distance?: unknown; intent?: unknown };
 
+/**
+ * Metres from the player to a combatant, measured off their positions.
+ *
+ * The single place the Range DV comes from on the player's side. It used to be
+ * whatever number the model put in its response.
+ */
+export function distanceToTarget(live: LiveEncounter, targetId: string): number {
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  const from = player ? live.data[player.id] : null;
+  const to = live.data[targetId];
+  if (!from || !to) return 0;
+  return metresApart(from, to);
+}
+
 /** Resolve the GM's target key (or a combatant id, or a name) to a combatant. */
 export function findTarget(live: LiveEncounter, targetKey: string): Combatant | null {
   const state: EncounterState = live.state;
@@ -134,7 +148,9 @@ export function pendingAttackFrom(
       eventId: event.id,
       beatId: event.beat_id ?? null,
       intent: typeof data.intent === "string" ? data.intent : "",
-      distance: typeof data.distance === "number" ? data.distance : 12,
+      // Measured now, not read back off the prompt event: the player may have
+      // moved, or a hostile may have closed, since the GM proposed the shot.
+      distance: distanceToTarget(live, target.id),
       attacker,
       target,
       weapons: weaponChoices(liveInventory(inventory, character)),

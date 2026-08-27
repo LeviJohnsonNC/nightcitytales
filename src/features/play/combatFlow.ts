@@ -5,14 +5,23 @@
  */
 import {
   advanceTurn,
+  arenaFor,
   beginTurn,
   currentCombatant,
   performAttack,
+  clampToArena,
+  judgeAction,
+  metresBetween,
+  placeHostiles,
   singleShotDV,
   startEncounter as rollInitiativeOrder,
+  stepToRange,
+  tacticalStep,
+  type CapabilitySnapshot,
   type Combatant,
   type CombatantRoleEffects,
   type EncounterState,
+  type LegalityVerdict,
   type PerformAttackResult,
   type WeaponRangeType,
 } from "@/engine";
@@ -32,8 +41,11 @@ import {
 } from "@/lib/backend";
 import {
   hostileCombatant,
+  metresApart,
+  moveAllowance,
   playerCombatant as buildPlayerCombatant,
   type CombatantData,
+  type CombatantTurnState,
 } from "./encounterModel";
 
 const MAX_NPC_TURNS = 24;
@@ -49,6 +61,8 @@ export async function beginEncounter(input: {
   /** The campaign's kit, so armor bought mid-campaign actually protects. */
   inventory?: CampaignInventoryItem[];
   enemies: GmEnemy[];
+  /** Which of the engine's arenas this is happening in. */
+  arena?: string;
   /**
    * What the player's Role Ability brings into the fight — a Solo's Combat
    * Awareness division. Carried on their combatant so the engine applies it on
@@ -59,21 +73,32 @@ export async function beginEncounter(input: {
   const data: Record<string, CombatantData> = {};
   const combatants: Combatant[] = [];
 
+  // The place decides the opening ranges, and so the opening DVs. It is the
+  // engine's arena, chosen from a closed list — not a number the GM sent.
+  const arena = arenaFor(input.arena);
+  const spots = placeHostiles(arena, input.enemies.length);
+
   const player = buildPlayerCombatant(
     input.character,
     input.vitals,
     crypto.randomUUID(),
     input.inventory,
+    arena,
   );
   if (input.roleEffects) player.combatant.roleEffects = input.roleEffects;
   combatants.push(player.combatant);
   data[player.combatant.id] = player.data;
 
-  for (const enemy of input.enemies) {
-    const hostile = hostileCombatant(enemy, crypto.randomUUID());
+  input.enemies.forEach((enemy, index) => {
+    // Never the player's own start: a hostile at 0 m would read a melee DV off
+    // a rifle and put somebody inside the character. placeHostiles always
+    // returns one spot per enemy, so this is a floor, not a path.
+    const spot = spots[index] ??
+      arena.hostileSlots[0] ?? { x: arena.playerStart.x, y: arena.extent.height };
+    const hostile = hostileCombatant(enemy, crypto.randomUUID(), spot);
     combatants.push(hostile.combatant);
     data[hostile.combatant.id] = hostile.data;
-  }
+  });
 
   const state = rollInitiativeOrder(combatants);
   const live = await createLiveEncounter({
@@ -83,6 +108,7 @@ export async function beginEncounter(input: {
     name: input.name,
     state,
     data,
+    arena: arena.key,
   });
 
   await appendCampaignEvent({
@@ -127,6 +153,10 @@ export async function runNpcTurns(
   live: LiveEncounter,
 ): Promise<{ live: LiveEncounter; lines: string[] }> {
   let state = live.state;
+  // Positions change during these turns, so the data map is carried the same
+  // way state is rather than mutated in place.
+  let data = live.data;
+  const arena = arenaFor(live.arena);
   const lines: string[] = [];
 
   for (let i = 0; i < MAX_NPC_TURNS; i += 1) {
@@ -152,10 +182,35 @@ export async function runNpcTurns(
     const target = targetFor(state, live_actor);
     if (!target || target.defeated) break;
 
-    const stats = live.data[actor.id];
-    if (!stats) continue;
+    let stats = data[actor.id];
+    const targetStats = data[target.id];
+    if (!stats || !targetStats) continue;
+
+    // MOVE first, then shoot. A hostile with a pistol at 40m is standing in a
+    // band it can barely hit from; walking in is the difference between a fight
+    // and two people who happen to be outdoors. Deterministic and engine-owned
+    // — WHICH target, when to run and whether to beg is #07's problem.
+    if (stats.rangeType) {
+      const step = tacticalStep({
+        from: stats.position,
+        target: targetStats.position,
+        rangeType: stats.rangeType as WeaponRangeType,
+        allowance: moveAllowance(stats.move, live_actor.woundState),
+        arena,
+      });
+      if (step.metres > 0) {
+        stats = { ...stats, position: step.position };
+        data = { ...data, [actor.id]: stats };
+        lines.push(
+          `${actor.name} moves ${step.metres} m, now ${metresApart(stats, targetStats)} m from ${target.name}.`,
+        );
+      }
+    }
+
+    // The DV is MEASURED. This used to read a number the model wrote into its
+    // response, which made the narrator the author of every DV in the fight.
     const dv = stats.rangeType
-      ? singleShotDV(stats.rangeType as WeaponRangeType, stats.distance)
+      ? singleShotDV(stats.rangeType as WeaponRangeType, metresApart(stats, targetStats))
       : null;
     if (dv === null) continue; // No printed DV: the engine will not invent one.
 
@@ -185,7 +240,7 @@ export async function runNpcTurns(
     lines.push(describeAttack(actor.name, target.name, stats.weaponName, result));
   }
 
-  const next: LiveEncounter = { ...live, state };
+  const next: LiveEncounter = { ...live, state, data };
   await saveLiveEncounter(next);
   return { live: next, lines };
 }
@@ -216,4 +271,124 @@ export function describeAttack(
   }
   if (result.targetDefeated) parts.push(`${targetName} is out of the fight`);
   return `${parts.join("; ")}.`;
+}
+
+// ---------------------------------------------------------------------------
+// The player going somewhere.
+// ---------------------------------------------------------------------------
+
+/** The Move and the refusal it might have earned. */
+export type MovePlayerResult = {
+  live: LiveEncounter;
+  refusal: Extract<LegalityVerdict, { ok: false }> | null;
+};
+
+/**
+ * The character breaking for somewhere, relative to somebody.
+ *
+ * There is no board to click a destination on yet (#05), so the two things a
+ * player can say are "closer" and "away", and a Move spends the whole
+ * allowance. What matters is that the METRES are the engine's: the model names
+ * an intent and a person, and the distance that comes out of it — and therefore
+ * the Range DV of every shot after it — is measured here.
+ *
+ * The Move gate in engine/legality.ts has existed since the legality layer
+ * shipped and had never once been called, because nothing in the app could
+ * move. It is what refuses a second Move in the same Round.
+ */
+export async function movePlayer(input: {
+  campaignId: string;
+  beatId: string | null;
+  live: LiveEncounter;
+  capability: CapabilitySnapshot;
+  targetId: string;
+  targetName: string;
+  towards: "closer" | "away";
+  intent: string;
+}): Promise<MovePlayerResult> {
+  const { live } = input;
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  if (!player) return { live, refusal: null };
+  const from = live.data[player.id];
+  const to = live.data[input.targetId];
+  if (!from || !to) return { live, refusal: null };
+
+  // The LIVE sheet value, not the one frozen into the encounter when it
+  // started: judgeAction validates against snapshot.move, and two sources for
+  // one number is how they end up disagreeing.
+  const allowance = moveAllowance(input.capability.move, player.woundState);
+  if (allowance <= 0) {
+    return {
+      live,
+      refusal: { ok: false, code: "move_exceeded", reason: "They have no MOVE to spend." },
+    };
+  }
+  const verdict = judgeAction(input.capability, { kind: "move", metres: allowance });
+  if (!verdict.ok) return { live, refusal: verdict };
+
+  const arena = arenaFor(live.arena);
+  const before = metresApart(from, to);
+  // Closing walks toward them; backing off walks the same distance the other
+  // way. Either way it is bounded by MOVE and clamped to the arena, so a player
+  // cannot back out of a room that has walls.
+  const wanted = input.towards === "closer" ? Math.max(0, before - allowance) : before + allowance;
+  const step = stepToRange(from.position, to.position, wanted, allowance);
+  const position = clampToArena(arena, step.position);
+  const moved = Math.round(metresBetween(from.position, position));
+  if (moved <= 0) {
+    return {
+      live,
+      refusal: {
+        ok: false,
+        code: "move_exceeded",
+        reason: `There is nowhere to go — they are already at the edge of ${arena.label}.`,
+      },
+    };
+  }
+
+  const movedData = { ...from, position, turn: spentMove(from.turn, live.state.round, moved) };
+  const next: LiveEncounter = {
+    ...live,
+    data: { ...live.data, [player.id]: movedData },
+  };
+  await saveLiveEncounter(next);
+
+  const after = metresApart(movedData, to);
+  await appendCampaignEvent({
+    campaign_id: input.campaignId,
+    type: MOVE_EVENT,
+    summary:
+      `${player.name} moves ${moved} m ${input.towards === "closer" ? "toward" : "away from"} ` +
+      `${input.targetName} — ${before} m to ${after} m.`,
+    data: {
+      targetId: input.targetId,
+      metres: moved,
+      towards: input.towards,
+      from: before,
+      to: after,
+      intent: input.intent,
+    } as unknown as Json,
+    ...(input.beatId ? { beat_id: input.beatId } : {}),
+  });
+
+  return { live: next, refusal: null };
+}
+
+/** The ledger type a Move is written under. */
+export const MOVE_EVENT = "move";
+
+/** Spend a Move out of this Round's economy, starting a fresh Round if needed. */
+function spentMove(
+  turn: CombatantTurnState | undefined,
+  round: number,
+  metres: number,
+): CombatantTurnState {
+  const prior = turn?.round === round ? turn : null;
+  return {
+    round,
+    actionUsed: prior?.actionUsed ?? false,
+    shotsThisRound: prior?.shotsThisRound ?? 0,
+    shotWeaponId: prior?.shotWeaponId ?? null,
+    metresMoved: (prior?.metresMoved ?? 0) + metres,
+  };
 }

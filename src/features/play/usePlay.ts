@@ -123,8 +123,9 @@ import {
   recentEventLines,
   turnsSinceLastRoll,
 } from "./playModel";
-import { beginEncounter, describeAttack, runNpcTurns } from "./combatFlow";
+import { beginEncounter, describeAttack, movePlayer, runNpcTurns } from "./combatFlow";
 import {
+  distanceToTarget,
   findTarget,
   pendingAttackFrom,
   type AttackOption,
@@ -548,6 +549,7 @@ async function narrate(
         vitals: bundle.vitals,
         inventory: bundle.inventory,
         enemies: action.enemies,
+        arena: action.arena,
         ...(awareness
           ? {
               roleEffects: {
@@ -564,10 +566,13 @@ async function narrate(
       if (!live || live.state.status !== "active") continue;
       const target = findTarget(live, action.targetId);
       if (!target || target.defeated || target.isPlayer) continue;
+      // The range is measured off positions, not taken from the proposal. The
+      // model names WHO is being shot at; the engine knows how far away they are.
+      const metres = distanceToTarget(live, target.id);
       const legalAttack = judgeAction(capability, {
         kind: "attack",
         targetKey: action.targetId,
-        distance: action.distance,
+        distance: metres,
       });
       if (!legalAttack.ok) {
         await refuse(legalAttack);
@@ -577,15 +582,31 @@ async function narrate(
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "attack_prompt",
-        summary: `Attack ${target.name} at ${action.distance}m`,
+        summary: `Attack ${target.name} at ${metres}m`,
         data: {
           targetId: target.id,
           targetName: target.name,
-          distance: action.distance,
+          distance: metres,
           intent: action.intent,
         } as unknown as Json,
         ...beatFields,
       });
+    } else if (action.kind === "move") {
+      if (!live || live.state.status !== "active") continue;
+      const target = findTarget(live, action.targetId);
+      if (!target) continue;
+      const moved = await movePlayer({
+        campaignId,
+        beatId,
+        live,
+        capability,
+        targetId: target.id,
+        targetName: target.name,
+        towards: action.towards,
+        intent: action.intent,
+      });
+      if (moved.refusal) await refuse(moved.refusal);
+      live = moved.live;
     }
   }
 

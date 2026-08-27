@@ -30,6 +30,7 @@ export * from "./luck";
 export * from "./downtime";
 export * from "./roleAbility";
 export * from "./skillMatch";
+export * from "./battlefield";
 export * from "./combatTables";
 export * from "./combat";
 export * from "./weaponProfile";

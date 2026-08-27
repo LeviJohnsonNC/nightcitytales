@@ -22,14 +22,21 @@ import {
 export type LiveEncounter = {
   id: string;
   state: EncounterState;
-  /** Per-combatant extras (weapon, distance, GM key) keyed by combatant id. */
+  /** Per-combatant extras (weapon, position, GM key) keyed by combatant id. */
   data: Record<string, CombatantData>;
+  /** Which of the engine's arenas this fight is happening on. */
+  arena: string | null;
 };
 
 function liveFrom(full: FullEncounter): LiveEncounter {
   const data: Record<string, CombatantData> = {};
   for (const row of full.combatants) data[row.id] = combatantDataOf(row);
-  return { id: full.encounter.id, state: stateFromRows(full), data };
+  return {
+    id: full.encounter.id,
+    state: stateFromRows(full),
+    data,
+    arena: full.encounter.arena ?? null,
+  };
 }
 
 /** The campaign's fight in progress, if there is one. */
@@ -48,9 +55,10 @@ export async function createLiveEncounter(input: {
   characterId: string;
   state: EncounterState;
   data: Record<string, CombatantData>;
+  arena: string | null;
 }): Promise<LiveEncounter> {
   const id = await startEncounterRpc(startEncounterPayload(input));
-  return { id, state: input.state, data: input.data };
+  return { id, state: input.state, data: input.data, arena: input.arena };
 }
 
 /** Write the encounter's round/turn/status and every combatant's live numbers. */

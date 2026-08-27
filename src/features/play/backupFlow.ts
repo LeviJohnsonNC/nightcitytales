@@ -11,10 +11,18 @@
  * separately). It is carried as the whole of their attack, with the Skill half
  * zero, so the arithmetic matches the book exactly.
  */
-import { joinEncounter, type BackupCall, type BackupTier, type Combatant } from "@/engine";
+import {
+  arenaFor,
+  clampToArena,
+  joinEncounter,
+  type BackupCall,
+  type BackupTier,
+  type Combatant,
+  type Point,
+} from "@/engine";
 import { addCombatant, appendCampaignEvent, type Json } from "@/lib/backend";
 import { saveLiveEncounter, type LiveEncounter } from "@/features/campaign/encounterState";
-import type { CombatantData } from "./encounterModel";
+import { DEFAULT_HOSTILE_MOVE, type CombatantData } from "./encounterModel";
 
 /** What a landed call is waiting on, stored until the Round comes round. */
 export type PendingBackup = {
@@ -38,6 +46,7 @@ function backupCombatant(
   tier: BackupTier,
   index: number,
   id: string,
+  position: Point,
 ): {
   combatant: Combatant;
   data: CombatantData;
@@ -66,7 +75,8 @@ function backupCombatant(
     weaponName: "Backup sidearm",
     damageDice: 3,
     rangeType: "pistol",
-    distance: 12,
+    position,
+    move: DEFAULT_HOSTILE_MOVE,
     // The Combat Number already carries their Skill; adding it again would
     // count the same training twice.
     attackSkill: 0,
@@ -90,9 +100,20 @@ export async function arriveBackup(input: {
   const data = { ...input.live.data };
   const members = input.tier.count * Math.max(1, input.groups);
 
+  // Backup turns up where the character is, spread along the line they came in
+  // on. Nobody picks a distance: they arrive beside you and close from there
+  // like anyone else.
+  const arena = arenaFor(input.live.arena);
+  const player = Object.values(input.live.state.combatants).find((c) => c.isPlayer);
+  const rally = (player ? data[player.id]?.position : null) ?? arena.playerStart;
+
   for (let index = 0; index < members; index += 1) {
     const id = crypto.randomUUID();
-    const built = backupCombatant(input.tier, index, id);
+    const spot = clampToArena(arena, {
+      x: rally.x + (index % 2 === 0 ? 1 : -1) * (Math.floor(index / 2) + 1) * 2,
+      y: rally.y,
+    });
+    const built = backupCombatant(input.tier, index, id, spot);
     state = joinEncounter(state, built.combatant);
     data[id] = built.data;
     await addCombatant(input.live.id, {

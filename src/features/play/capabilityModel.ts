@@ -25,7 +25,7 @@ import {
   type WoundStateCode,
 } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
-import type { CombatantTurnState } from "./encounterModel";
+import { metresApart, type CombatantTurnState } from "./encounterModel";
 import type {
   CampaignEvent,
   CampaignInventoryItem,
@@ -127,6 +127,8 @@ export function cyberwareCapabilities(character: FullCharacter): CyberwareCapabi
 /** Who the player can currently see and shoot at. */
 export function targetCapabilities(live: LiveEncounter | null): TargetCapability[] {
   if (!live || live.state.status !== "active") return [];
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  const from = player ? live.data[player.id] : null;
   const out: TargetCapability[] = [];
   for (const combatant of Object.values(live.state.combatants)) {
     if (combatant.isPlayer) continue;
@@ -135,7 +137,9 @@ export function targetCapabilities(live: LiveEncounter | null): TargetCapability
       key: data?.key ?? combatant.id,
       id: combatant.id,
       name: combatant.name,
-      distance: data?.distance ?? 0,
+      // Measured, not remembered. The GM is TOLD how far away everyone is so it
+      // can describe the scene; it no longer gets to decide.
+      distance: from && data ? metresApart(from, data) : 0,
       defeated: combatant.defeated,
       perceivable: true,
     });
