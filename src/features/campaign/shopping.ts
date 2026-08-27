@@ -34,13 +34,14 @@ import {
   addInventoryItem,
   appendCampaignEvent,
   getCampaign,
-  listCampaignEvents,
+  setCampaignFlag,
   setCampaignClock,
   setInventoryAmmo,
   setInventoryEquipped,
   setInventoryQuantity,
   updateCampaignVitals,
   type CampaignEvent,
+  type CampaignFlag,
   type CampaignInventoryItem,
   type Json,
 } from "@/lib/backend";
@@ -71,17 +72,36 @@ export function stockedShelf(vendor: Vendor, eurobucks: number): StockedItem[] {
   return shelfFor(vendor).map((item) => ({ ...item, affordable: item.price <= eurobucks }));
 }
 
+/** The vendors the character has bought from before. */
+export const REGULARS_FLAG = "vendor_regulars";
+
+/** The stored set of vendors the character is known at. */
+export function regularsFrom(flags: CampaignFlag[]): string[] {
+  const value = flags.find((f) => f.flag === REGULARS_FLAG)?.value;
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+}
+
 /**
  * True when the character has dealt with this vendor before.
  *
- * Read off the ledger rather than stored, so it cannot drift from what actually
- * happened, and so it is true for campaigns that predate the flag existing.
+ * Stored rather than scanned. This used to walk the entire campaign ledger
+ * looking for a purchase, which meant every visit to a shop got more expensive
+ * for the rest of the campaign — and "have I ever bought here" is a fact about
+ * the character, not something to re-derive from history each time it is asked.
  */
-export function isRegularAt(events: CampaignEvent[], vendorId: string): boolean {
-  return events.some(
-    (e) =>
-      e.type === PURCHASE_EVENT && (e.data as { vendorId?: unknown } | null)?.vendorId === vendorId,
-  );
+export function isRegularAt(flags: CampaignFlag[], vendorId: string): boolean {
+  return regularsFrom(flags).includes(vendorId);
+}
+
+/** Remember that the character has now bought from this vendor. */
+async function rememberRegular(
+  campaignId: string,
+  flags: CampaignFlag[],
+  vendorId: string,
+): Promise<void> {
+  const known = regularsFrom(flags);
+  if (known.includes(vendorId)) return;
+  await setCampaignFlag(campaignId, REGULARS_FLAG, [...known, vendorId] as unknown as Json);
 }
 
 // ---------------------------------------------------------------------------
@@ -125,11 +145,10 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
   const full = await getCampaign(input.campaignId);
   if (!full?.vitals) return { ok: false, reason: "Campaign not found.", stockKey: "no_campaign" };
   const eurobucks = full.vitals.eurobucks;
-  const events = await listCampaignEvents(input.campaignId);
 
   // Is it here at all? Ordinary stock never asks; the unusual gets a die the
   // player watches, shifted by whether this vendor knows their face.
-  const stock = checkStock(vendor, item, { regular: isRegularAt(events, vendor.id) });
+  const stock = checkStock(vendor, item, { regular: isRegularAt(full.flags, vendor.id) });
   if (stock.roll) await logOpenOracle(input.campaignId, stock.roll);
   if (!stock.available) {
     return {
@@ -172,6 +191,7 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
     await setInventoryEquipped(row.id, true);
   }
   await updateCampaignVitals(input.campaignId, { eurobucks: eurobucks - cost });
+  await rememberRegular(input.campaignId, full.flags, vendor.id);
   await appendCampaignEvent({
     campaign_id: input.campaignId,
     type: PURCHASE_EVENT,

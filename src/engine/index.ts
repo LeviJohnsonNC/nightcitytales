@@ -49,4 +49,5 @@ export * from "./reload";
 export * from "./settlement";
 export * from "./payment";
 export * from "./worldTick";
+export * from "./chronicle";
 export * from "./missions";

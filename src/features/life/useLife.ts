@@ -118,7 +118,7 @@ import {
   markDealtWith,
   revealNextFact,
 } from "@/features/campaign/castSeeding";
-import { runWorldTick, settleMoves } from "@/features/campaign/worldTick";
+import { rememberDeclined, runWorldTick, settleMoves } from "@/features/campaign/worldTick";
 import {
   answerPendingQuestion,
   askOracle,
@@ -128,10 +128,13 @@ import {
   spendWire,
   type OracleAnswer,
 } from "@/features/campaign/oracles";
+import { chronicleFor } from "@/features/campaign/chronicleModel";
+import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
   applyPressure,
   notableFrom,
   pressureFrom,
+  pressureLines,
   readObservations,
   spendFiredClock,
   standingLines,
@@ -175,6 +178,8 @@ export type LifeBundle = {
   wire: LifeWireOffer | null;
   /** The mission id behind that offer, so accepting starts the job that was pitched. */
   wireMissionId: string | null;
+  /** Running totals that outlive a turn's ledger window. */
+  tally: CampaignTally;
 };
 
 async function loadLife(campaignId: string): Promise<LifeBundle> {
@@ -258,6 +263,7 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     hook,
     wire: hook ? null : wire,
     wireMissionId: hook ? null : wireMissionId,
+    tally: tallyFrom(full.flags),
   };
 }
 
@@ -349,6 +355,17 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     ),
     clocks: bundle.pressure.map((p) => p.clock),
     standings: standingLines(bundle.standings),
+    // The long memory, so a campaign forty hours deep is not still six lines
+    // of narration deep.
+    chronicle: chronicleFor({
+      day: bundle.clock.day,
+      events: bundle.events,
+      standings: bundle.standings,
+      pressure: pressureLines(bundle.pressure),
+      npcs: bundle.npcs,
+      situationKeys: bundle.situations.map((s) => s.key),
+      tally: bundle.tally,
+    }),
     people: lifePeople(bundle.npcs),
     recentEvents: recentLifeLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
@@ -942,6 +959,9 @@ async function acceptHook(bundle: LifeBundle): Promise<void> {
       brokerName: hook.offer.brokerName,
     } as unknown as Json,
   });
+  // Counted rather than re-derived: the record has to remember fifty sessions
+  // and a turn only reads the last 200 rows.
+  await addToTally(campaignId, { jobsTaken: 1 });
   await setCampaignPhase(campaignId, to);
 }
 
@@ -966,6 +986,10 @@ async function declineHook(bundle: LifeBundle, reason: string): Promise<void> {
       day: bundle.clock.day,
     } as unknown as Json,
   });
+  // Written down rather than left to be re-derived: the world tick used to scan
+  // the whole campaign for declines on every day that passed.
+  await rememberDeclined(campaignId, { title, day: bundle.clock.day });
+  await addToTally(campaignId, { jobsDeclined: 1 });
   const to = nextPhase(bundle.phase, "decline_hook");
   if (to) await setCampaignPhase(campaignId, to);
   const fresh = { ...bundle, events: await listCampaignEvents(campaignId), hook: null };
