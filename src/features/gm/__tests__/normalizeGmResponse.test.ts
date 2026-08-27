@@ -300,3 +300,69 @@ describe("moving", () => {
     expect(warn).toHaveBeenCalled();
   });
 });
+
+describe("enemy stats are not the model's to give", () => {
+  const encounter = (enemies: unknown[]) =>
+    normalizeGmResponse(
+      wire([{ kind: "start_encounter", name: "Ambush", arena: "alley", enemies }]),
+      quiet,
+    ).proposedActions[0] as { enemies: Record<string, unknown>[] };
+
+  it("keeps only the name, the key and the profile", () => {
+    const started = encounter([
+      {
+        key: "royce",
+        name: "Royce",
+        profile: "solo",
+        ref: 10,
+        body: 12,
+        hp: 80,
+        sp: 20,
+        attackSkill: 10,
+        weaponName: "Railgun",
+        damageDice: 8,
+        rangeType: "sniper_rifle",
+      },
+    ]);
+    expect(started.enemies[0]).toEqual({ key: "royce", name: "Royce", profile: "solo" });
+  });
+
+  it("drops the stats rather than clamping them", () => {
+    // Clamping would still let the model choose where inside the range a fight
+    // sits, which is the whole of the problem this replaced.
+    const started = encounter([{ key: "s", name: "Scav", profile: "scavver", hp: 25 }]);
+    expect(started.enemies[0]).not.toHaveProperty("hp");
+    expect(started.enemies[0]).not.toHaveProperty("ref");
+  });
+
+  it("reads a profile the engine knows", () => {
+    expect(encounter([{ key: "c", name: "Guard", profile: "corp_security" }]).enemies[0]).toEqual({
+      key: "c",
+      name: "Guard",
+      profile: "corp_security",
+    });
+  });
+
+  it("falls back for a threat it invented", () => {
+    const started = encounter([{ key: "d", name: "Cyber-Dragon", profile: "cyber_dragon" }]);
+    expect(started.enemies[0]).toMatchObject({ profile: "street_thug" });
+  });
+
+  it("falls back when no profile was named at all", () => {
+    expect(encounter([{ key: "x", name: "Somebody" }]).enemies[0]).toMatchObject({
+      profile: "street_thug",
+    });
+  });
+
+  it("still drops a hostile with no name to call them by", () => {
+    const warn = vi.fn();
+    const out = normalizeGmResponse(
+      wire([
+        { kind: "start_encounter", name: "Ambush", arena: "alley", enemies: [{ profile: "solo" }] },
+      ]),
+      { onWarn: warn },
+    );
+    expect(out.proposedActions).toEqual([]);
+    expect(warn).toHaveBeenCalled();
+  });
+});

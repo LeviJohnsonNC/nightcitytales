@@ -309,3 +309,58 @@ describe("the offer a generated job is pitched as", () => {
     }
   });
 });
+
+describe("the opposition waiting in a generated job", () => {
+  it("is decided when the job is, not when it is described", () => {
+    const job = generateJob(42);
+    expect(job.force).toBeTruthy();
+    expect(job.force!.members.length).toBeGreaterThan(0);
+  });
+
+  it("is the same fight every time the same job is read", () => {
+    // A job the campaign stores by id alone must reconstitute to the same
+    // people, or pushing the fee could quietly change what is in the building.
+    const a = generateJob(123456).force!;
+    const b = jobFromId(jobIdForSeed(123456))!.force!;
+    expect(b.forceKey).toBe(a.forceKey);
+    expect(b.size).toBe(a.size);
+    expect(b.members.map((m) => `${m.key}:${m.profile.key}`)).toEqual(
+      a.members.map((m) => `${m.key}:${m.profile.key}`),
+    );
+  });
+
+  it("matches the opposition the offer names", () => {
+    // The fiction picks who; the seed only picks how many. A job pitched as
+    // "corporate security" that fields a scavver crew is two different jobs.
+    for (let seed = 0; seed < 60; seed += 1) {
+      const job = generateJob(seed);
+      const named = job.offer!.opposition.toLowerCase();
+      const force = job.force!;
+      if (named.startsWith("corporate security")) expect(force.forceKey).toBe("corporate");
+      if (named.startsWith("a scavver crew")) expect(force.forceKey).toBe("scavvers");
+      if (named.startsWith("maelstrom")) expect(force.forceKey).toBe("boostergang");
+      if (named.startsWith("militech")) expect(force.forceKey).toBe("military");
+    }
+  });
+
+  it("carries real stat blocks, not names", () => {
+    const first = generateJob(7).force!.members[0]!;
+    expect(first.profile.hp).toBeGreaterThan(0);
+    expect(first.profile.ref).toBeGreaterThan(0);
+    expect(first.profile.rangeType.length).toBeGreaterThan(0);
+  });
+
+  it("fields fights of different sizes across seeds", () => {
+    const sizes = new Set<string>();
+    for (let seed = 0; seed < 200; seed += 1) sizes.add(generateJob(seed).force!.size);
+    expect(sizes.size).toBeGreaterThan(1);
+  });
+
+  it("never fields a fight nobody could survive, or nobody would notice", () => {
+    for (let seed = 0; seed < 200; seed += 1) {
+      const n = generateJob(seed).force!.members.length;
+      expect(n).toBeGreaterThanOrEqual(2);
+      expect(n).toBeLessThanOrEqual(8);
+    }
+  });
+});

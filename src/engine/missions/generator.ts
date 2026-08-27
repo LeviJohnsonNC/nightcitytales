@@ -18,6 +18,7 @@ import content from "@/data/missions/job-content.json";
 import { seededRng } from "../dice";
 import { DIFFICULTY_VALUES } from "../checkDV";
 import { SKILLS } from "../rulesData";
+import { buildForce, forceFor, rollForceSize } from "../threats";
 import { stableKey, type Beat, type BeatCheck, type Mission } from "../mission";
 import type { RNG } from "../types";
 
@@ -54,7 +55,8 @@ type JobContent = {
   patrons: { name: string; org: string; style: string; tell: string }[];
   districts: { name: string; colour: string }[];
   targets: { name: string; the: string; why: string }[];
-  opposition: { name: string; flavour: string }[];
+  /** `force` names a template in data/rules/threats.json — read, never drawn. */
+  opposition: { name: string; flavour: string; force: string }[];
   archetypes: Archetype[];
   rewardBands: { eurobucksPerHead: number; upfront: number }[];
 };
@@ -130,6 +132,11 @@ export function generateJob(seed: number): Mission {
   const opposition = pick(CONTENT.opposition, rng, "opposition");
   const fixer = pick(CONTENT.fixers, rng, "fixers");
   const reward = pick(CONTENT.rewardBands, rng, "rewardBands");
+  // APPENDED LAST, deliberately. Every draw above consumes from the same
+  // stream, so inserting this anywhere earlier would change the title, patron,
+  // district and opposition of every job every previously stored id names.
+  // Adding to the end only extends the stream: nothing before it moves.
+  const forceSize = rollForceSize(rng);
 
   const slots: Slots = {
     patron: patron.name,
@@ -217,6 +224,12 @@ export function generateJob(seed: number): Mission {
     },
   ];
 
+  // WHO is waiting comes from the fiction that was already drawn, and HOW MANY
+  // from the seed. Both are settled here, before the offer below is written and
+  // long before anybody narrates the room.
+  const force = forceFor(opposition.force);
+  const members = buildForce(force, forceSize);
+
   return {
     id: jobIdForSeed(seed),
     title: fill(archetype.title),
@@ -243,6 +256,7 @@ export function generateJob(seed: number): Mission {
       upfront: reward.upfront,
       notes: `${reward.upfront}eb on the handshake, the rest on delivery.`,
     },
+    force: { forceKey: force.key, size: forceSize, members },
     startBeatId: "background",
     beats,
   };

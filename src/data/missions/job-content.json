@@ -6,7 +6,8 @@
   },
   "_rules": {
     "dvs": "Every dv below must be a published Difficulty Value (dv-table.json): 9, 13, 15, 17, 21, 24, 29.",
-    "skills": "Every skill below must be a printed Skill name from skills.json, so the GM can map it to a real skill id."
+    "skills": "Every skill below must be a printed Skill name from skills.json, so the GM can map it to a real skill id.",
+    "force": "Every opposition entry names a force key from data/rules/threats.json. It is READ, never drawn, so adding this field changed no existing job: the fiction of who is against you decides the statblocks of who turns up, instead of the GM model inventing them."
   },
 
   "fixers": [
@@ -121,15 +122,36 @@
   ],
 
   "opposition": [
-    { "name": "Maelstrom", "flavour": "chromed past reason and twice as fast as they look" },
+    {
+      "name": "Maelstrom",
+      "flavour": "chromed past reason and twice as fast as they look",
+      "force": "boostergang"
+    },
     {
       "name": "a Tyger Claws crew",
-      "flavour": "disciplined, patient, and insulted by your presence"
+      "flavour": "disciplined, patient, and insulted by your presence",
+      "force": "disciplined_gang"
     },
-    { "name": "corporate security", "flavour": "salaried, armoured, and in no hurry" },
-    { "name": "6th Street", "flavour": "veterans playing at law and order with real ordnance" },
-    { "name": "a scavver crew", "flavour": "in it for the parts, and not particular about whose" },
-    { "name": "Militech contractors", "flavour": "expensive, professional, and here on a schedule" }
+    {
+      "name": "corporate security",
+      "flavour": "salaried, armoured, and in no hurry",
+      "force": "corporate"
+    },
+    {
+      "name": "6th Street",
+      "flavour": "veterans playing at law and order with real ordnance",
+      "force": "disciplined_gang"
+    },
+    {
+      "name": "a scavver crew",
+      "flavour": "in it for the parts, and not particular about whose",
+      "force": "scavvers"
+    },
+    {
+      "name": "Militech contractors",
+      "flavour": "expensive, professional, and here on a schedule",
+      "force": "military"
+    }
   ],
 
   "archetypes": [

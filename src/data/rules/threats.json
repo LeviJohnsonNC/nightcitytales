@@ -1,0 +1,273 @@
+{
+  "_note": {
+    "why": "Who is shooting at you, and how tough they are. This file exists so those numbers live in versioned data rather than in the GM model's response. The model used to write every hostile's REF, BODY, HP, SP, attack skill and damage dice inside prompt guidance ('Mooks are ordinary people: REF 5-7, BODY 5-6, HP 25-35...'), which meant the narrator set how hard each fight was, in the moment, knowing how the scene was going.",
+    "provenance": "These are house profiles, NOT verbatim book statblocks — do not cite a page for them. They are calibrated against the one published NPC ladder already transcribed in this repo: the Lawman's Backup tiers (roles.json, roles.lawman.roleAbility.mechanics.tiers), which run from Corporate Security at Combat 8 / SP 7 / HP 20 up to C-SWAT at Combat 15 / SP 18 / HP 35. Where a profile names one of those groups, its numbers match that table.",
+    "combatNumber": "The Backup table prints a single combined Combat Number that a d10 is added to. A hostile here splits it into ref + attackSkill because that is how engine/combat.ts builds an attack (STAT + Skill + 1d10). ref + attackSkill equals the Combat Number the ladder prints, so the arithmetic lands in the same place.",
+    "rangeType": "Must be one of the printed range types in engine/combatTables.ts. The engine reads the Range DV off that table and the measured distance; nothing here sets a DV.",
+    "move": "MOVE in metres per Move Action, matching the Backup table's move column. The engine bounds how far a hostile can walk with it."
+  },
+  "profiles": [
+    {
+      "key": "street_thug",
+      "name": "Street Thug",
+      "role": "mook",
+      "ref": 5,
+      "body": 5,
+      "hp": 20,
+      "sp": 7,
+      "attackSkill": 3,
+      "move": 5,
+      "weaponName": "Heavy Pistol",
+      "rangeType": "pistol",
+      "damageDice": 3,
+      "note": "Somebody's muscle, in a jacket that has been shot before. Combat 8, the bottom of the ladder."
+    },
+    {
+      "key": "scavver",
+      "name": "Scavver",
+      "role": "mook",
+      "ref": 5,
+      "body": 6,
+      "hp": 25,
+      "sp": 7,
+      "attackSkill": 3,
+      "move": 5,
+      "weaponName": "Shotgun",
+      "rangeType": "shotgun_slug",
+      "damageDice": 5,
+      "note": "In it for the parts. Hits hard up close and cannot reach past a room."
+    },
+    {
+      "key": "ganger",
+      "name": "Ganger",
+      "role": "mook",
+      "ref": 6,
+      "body": 5,
+      "hp": 25,
+      "sp": 7,
+      "attackSkill": 4,
+      "move": 6,
+      "weaponName": "SMG",
+      "rangeType": "smg",
+      "damageDice": 2,
+      "note": "Colours, a cheap SMG, and something to prove. Combat 10, level with a beat cop."
+    },
+    {
+      "key": "booster",
+      "name": "Boostergang Chromer",
+      "role": "mook",
+      "ref": 7,
+      "body": 6,
+      "hp": 30,
+      "sp": 11,
+      "attackSkill": 4,
+      "move": 8,
+      "weaponName": "Heavy Pistol",
+      "rangeType": "pistol",
+      "damageDice": 3,
+      "note": "Chromed past reason. Faster on their feet than anything else at this tier, and armoured for it."
+    },
+    {
+      "key": "corp_security",
+      "name": "Corporate Security",
+      "role": "mook",
+      "ref": 5,
+      "body": 4,
+      "hp": 20,
+      "sp": 7,
+      "attackSkill": 3,
+      "move": 4,
+      "weaponName": "Heavy Pistol",
+      "rangeType": "pistol",
+      "damageDice": 3,
+      "note": "Renta-cops on foot with Heavy Pistols and Kevlar. Straight off the published Backup ladder: Combat 8, SP 7, HP 20, MOVE 4."
+    },
+    {
+      "key": "beat_cop",
+      "name": "Beat Cop",
+      "role": "mook",
+      "ref": 5,
+      "body": 5,
+      "hp": 25,
+      "sp": 7,
+      "attackSkill": 5,
+      "move": 5,
+      "weaponName": "Heavy Pistol",
+      "rangeType": "pistol",
+      "damageDice": 3,
+      "note": "NCPD on the street. Published ladder: Combat 10, SP 7, HP 25, MOVE 5."
+    },
+    {
+      "key": "enforcer",
+      "name": "Enforcer",
+      "role": "lieutenant",
+      "ref": 6,
+      "body": 6,
+      "hp": 35,
+      "sp": 11,
+      "attackSkill": 6,
+      "move": 6,
+      "weaponName": "Assault Rifle",
+      "rangeType": "assault_rifle",
+      "damageDice": 5,
+      "note": "The one giving orders. A rifle changes the shape of a fight: it is the only tier here that shoots comfortably across a street."
+    },
+    {
+      "key": "contractor",
+      "name": "Militech Contractor",
+      "role": "lieutenant",
+      "ref": 6,
+      "body": 6,
+      "hp": 35,
+      "sp": 13,
+      "attackSkill": 8,
+      "move": 4,
+      "weaponName": "Assault Rifle",
+      "rangeType": "assault_rifle",
+      "damageDice": 5,
+      "note": "Expensive, professional, on a schedule. Calibrated to the Sheriff's Department rung: Combat 14, SP 13, HP 35."
+    },
+    {
+      "key": "solo",
+      "name": "Solo",
+      "role": "boss",
+      "ref": 8,
+      "body": 7,
+      "hp": 40,
+      "sp": 13,
+      "attackSkill": 8,
+      "move": 8,
+      "weaponName": "Very Heavy Pistol",
+      "rangeType": "pistol",
+      "damageDice": 4,
+      "note": "Somebody who does this for a living. Fast, armoured, and the reason the job went wrong."
+    },
+    {
+      "key": "sniper",
+      "name": "Overwatch",
+      "role": "boss",
+      "ref": 7,
+      "body": 5,
+      "hp": 30,
+      "sp": 7,
+      "attackSkill": 8,
+      "move": 6,
+      "weaponName": "Sniper Rifle",
+      "rangeType": "sniper_rifle",
+      "damageDice": 5,
+      "note": "Wants to be 100m away and will walk backwards to stay there — the printed sniper table is worst up close, which the engine reads without being told."
+    }
+  ],
+  "forces": [
+    {
+      "key": "street_crew",
+      "label": "a street crew",
+      "sizes": {
+        "small": [{ "profile": "street_thug", "count": 2 }],
+        "standard": [
+          { "profile": "street_thug", "count": 3 },
+          { "profile": "ganger", "count": 1 }
+        ],
+        "heavy": [
+          { "profile": "street_thug", "count": 3 },
+          { "profile": "ganger", "count": 2 },
+          { "profile": "enforcer", "count": 1 }
+        ]
+      }
+    },
+    {
+      "key": "scavvers",
+      "label": "a scavver crew",
+      "sizes": {
+        "small": [{ "profile": "scavver", "count": 2 }],
+        "standard": [
+          { "profile": "scavver", "count": 3 },
+          { "profile": "street_thug", "count": 1 }
+        ],
+        "heavy": [
+          { "profile": "scavver", "count": 4 },
+          { "profile": "enforcer", "count": 1 }
+        ]
+      }
+    },
+    {
+      "key": "boostergang",
+      "label": "a boostergang",
+      "sizes": {
+        "small": [{ "profile": "booster", "count": 2 }],
+        "standard": [
+          { "profile": "booster", "count": 3 },
+          { "profile": "enforcer", "count": 1 }
+        ],
+        "heavy": [
+          { "profile": "booster", "count": 4 },
+          { "profile": "enforcer", "count": 1 },
+          { "profile": "solo", "count": 1 }
+        ]
+      }
+    },
+    {
+      "key": "disciplined_gang",
+      "label": "a disciplined crew",
+      "sizes": {
+        "small": [{ "profile": "ganger", "count": 2 }],
+        "standard": [
+          { "profile": "ganger", "count": 3 },
+          { "profile": "enforcer", "count": 1 }
+        ],
+        "heavy": [
+          { "profile": "ganger", "count": 3 },
+          { "profile": "enforcer", "count": 2 },
+          { "profile": "sniper", "count": 1 }
+        ]
+      }
+    },
+    {
+      "key": "corporate",
+      "label": "corporate security",
+      "sizes": {
+        "small": [{ "profile": "corp_security", "count": 3 }],
+        "standard": [
+          { "profile": "corp_security", "count": 4 },
+          { "profile": "enforcer", "count": 1 }
+        ],
+        "heavy": [
+          { "profile": "corp_security", "count": 4 },
+          { "profile": "contractor", "count": 2 }
+        ]
+      }
+    },
+    {
+      "key": "military",
+      "label": "contractors",
+      "sizes": {
+        "small": [{ "profile": "contractor", "count": 2 }],
+        "standard": [
+          { "profile": "contractor", "count": 2 },
+          { "profile": "corp_security", "count": 2 }
+        ],
+        "heavy": [
+          { "profile": "contractor", "count": 3 },
+          { "profile": "sniper", "count": 1 },
+          { "profile": "solo", "count": 1 }
+        ]
+      }
+    },
+    {
+      "key": "the_law",
+      "label": "NCPD",
+      "sizes": {
+        "small": [{ "profile": "beat_cop", "count": 2 }],
+        "standard": [
+          { "profile": "beat_cop", "count": 4 },
+          { "profile": "enforcer", "count": 1 }
+        ],
+        "heavy": [
+          { "profile": "beat_cop", "count": 4 },
+          { "profile": "contractor", "count": 2 },
+          { "profile": "sniper", "count": 1 }
+        ]
+      }
+    }
+  ]
+}

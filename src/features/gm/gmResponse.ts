@@ -4,40 +4,32 @@
  * resolves proposedActions; nothing here changes state on its own.
  */
 import { z } from "zod";
-import { DEFAULT_ARENA_KEY, isAnswerableQuestion, isArenaKey } from "@/engine";
+import {
+  DEFAULT_ARENA_KEY,
+  DEFAULT_THREAT_KEY,
+  isAnswerableQuestion,
+  isArenaKey,
+  isThreatKey,
+} from "@/engine";
 
 /**
- * A hostile the GM brings into a fight. These are NPC stat blocks the GM
- * improvises (the core rules' mook numbers), not values read from the rules
- * data, so every field is clamped into a sane band before the engine sees it.
- * The weapon's range type must be one of the printed Range DV tables.
+ * A hostile, as much of one as the model is allowed to author.
+ *
+ * A NAME and a stable KEY, which are fiction, and a PROFILE key from the
+ * engine's closed threat list, which is a choice between things the engine
+ * already priced. Everything mechanical — REF, BODY, HP, SP, skill, weapon,
+ * damage dice, MOVE — comes off that profile in data/rules/threats.json.
+ *
+ * It used to carry all of them, inside prompt guidance ("Mooks are ordinary
+ * people: REF 5-7, BODY 5-6, HP 25-35..."), which made the narrator the author
+ * of how hard every fight was.
  */
-export const GM_RANGE_TYPES = [
-  "pistol",
-  "smg",
-  "shotgun_slug",
-  "assault_rifle",
-  "sniper_rifle",
-  "bow_crossbow",
-  "grenade_launcher",
-  "rocket_launcher",
-] as const;
-export type GmRangeType = (typeof GM_RANGE_TYPES)[number];
-
 export const GmEnemySchema = z.object({
   /** Stable key the GM uses to refer to this hostile in later attacks. */
   key: z.string(),
   name: z.string(),
-  ref: z.number().int(),
-  body: z.number().int(),
-  hp: z.number().int(),
-  /** Armor SP (used for both body and head). */
-  sp: z.number().int(),
-  /** The hostile's level in the skill their weapon uses. */
-  attackSkill: z.number().int(),
-  weaponName: z.string(),
-  damageDice: z.number().int(),
-  rangeType: z.enum(GM_RANGE_TYPES),
+  /** A key from the engine's THREATS list. Anything else reads as a street thug. */
+  profile: z.string(),
 });
 export type GmEnemy = z.infer<typeof GmEnemySchema>;
 
@@ -294,21 +286,14 @@ function normalizeEnemies(raw: unknown): GmEnemy[] {
     const e = item as Loose;
     const name = str(e["name"]) ?? str(e["label"]);
     if (!name) return;
-    const rangeRaw = str(e["rangeType"]) ?? str(e["weaponType"]);
-    const rangeType = (GM_RANGE_TYPES as readonly string[]).includes(rangeRaw ?? "")
-      ? (rangeRaw as GmEnemy["rangeType"])
-      : "pistol";
+    // Any stat the model sent anyway is DROPPED rather than clamped. Clamping
+    // would still let it pick where inside the range a fight sits, which is the
+    // whole of the authorship problem this replaced.
+    const named = str(e["profile"]) ?? str(e["type"]) ?? str(e["threat"]);
     out.push({
       key: str(e["key"]) ?? str(e["id"]) ?? `${name}-${index}`,
       name,
-      ref: clamp(num(e["ref"]) ?? 5, 1, 10),
-      body: clamp(num(e["body"]) ?? 5, 1, 12),
-      hp: clamp(num(e["hp"]) ?? 25, 1, 80),
-      sp: clamp(num(e["sp"]) ?? 7, 0, 20),
-      attackSkill: clamp(num(e["attackSkill"]) ?? num(e["skill"]) ?? 4, 0, 10),
-      weaponName: str(e["weaponName"]) ?? str(e["weapon"]) ?? "sidearm",
-      damageDice: clamp(num(e["damageDice"]) ?? 2, 1, 8),
-      rangeType,
+      profile: isThreatKey(named) ? named : DEFAULT_THREAT_KEY,
     });
   });
   return out;
