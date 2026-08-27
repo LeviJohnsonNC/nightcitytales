@@ -73,6 +73,12 @@ export type GmContextInput = {
   /** Organisations with an opinion, already worded by the engine. */
   standings?: string[];
   /**
+   * The campaign's long memory, assembled by the engine from what it knows for
+   * certain. The rolling summary is the right size for a turn and the wrong
+   * size for a campaign forty hours deep.
+   */
+  chronicle?: string[];
+  /**
    * A clock that filled and has been SPENT: this is arriving now, in this scene,
    * whether or not the beat graph expected it. The engine has already decided it
    * happened; the GM's job is to show it walking through the door.
@@ -219,6 +225,11 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
         "fits the beat, do not delay it to a better moment, and do not soften it. Show it arriving, " +
         "put the player in it, and stop.",
     );
+  }
+
+  if (context.chronicle?.length) {
+    parts.push("", "== THE RECORD SO FAR (facts; never contradict these) ==");
+    for (const line of context.chronicle) parts.push(line);
   }
 
   if (context.complication) {

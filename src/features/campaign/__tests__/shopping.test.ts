@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CampaignEvent, CampaignInventoryItem, Json } from "@/lib/backend";
+import type { CampaignEvent, CampaignFlag, CampaignInventoryItem, Json } from "@/lib/backend";
 
 /** A campaign's inventory, vitals and ledger, small enough to hold in one hand. */
 const inventory: CampaignInventoryItem[] = [];
 const ledger: { type: string; summary: string; data: Record<string, unknown> }[] = [];
 let eurobucks = 0;
+const flags = new Map<string, Json>();
 let clock = { day: 1, minute: 18 * 60 };
 /** What listCampaignEvents hands back, so "is a regular" can be exercised. */
 let ledgerEvents: CampaignEvent[] = [];
@@ -78,14 +79,19 @@ vi.mock("@/lib/backend", () => ({
     campaign: { id: "c", day: clock.day, minute: clock.minute },
     vitals: { eurobucks },
     inventory,
+    flags: [...flags.entries()].map(([flag, value]) => ({ flag, value })),
   })),
+  setCampaignFlag: vi.fn(async (_c: string, flag: string, value: Json) => {
+    flags.set(flag, value);
+    return { flag, value };
+  }),
   listCampaignFlags: vi.fn(async () => []),
-  setCampaignFlag: vi.fn(async (_id: string, flag: string, value: Json) => ({ flag, value })),
 }));
 
 const {
   PURCHASE_EVENT,
   RELOAD_EVENT,
+  REGULARS_FLAG,
   isRegularAt,
   purchase,
   reloadWeapon,
@@ -116,6 +122,7 @@ beforeEach(() => {
   eurobucks = 10000;
   clock = { day: 1, minute: 18 * 60 };
   ledgerEvents = [];
+  flags.clear();
 });
 
 describe("the shelf as the character sees it", () => {
@@ -375,13 +382,57 @@ describe("whether it is in stock", () => {
     expect(refusals).toBeGreaterThan(0);
   });
 
-  it("knows a regular from the ledger rather than from a stored flag", () => {
+  it("knows a regular from stored state, not by scanning the campaign", () => {
+    const stored = (vendors: string[]): CampaignFlag[] =>
+      [{ flag: REGULARS_FLAG, value: vendors }] as unknown as CampaignFlag[];
     expect(isRegularAt([], "gun_shop")).toBe(false);
-    expect(isRegularAt([event(PURCHASE_EVENT, { vendorId: "street" })], "gun_shop")).toBe(false);
-    expect(isRegularAt([event(PURCHASE_EVENT, { vendorId: "gun_shop" })], "gun_shop")).toBe(true);
-    expect(isRegularAt([event("life_narration", { vendorId: "gun_shop" })], "gun_shop")).toBe(
-      false,
-    );
+    expect(isRegularAt(stored([]), "gun_shop")).toBe(false);
+    expect(isRegularAt(stored(["street"]), "gun_shop")).toBe(false);
+    expect(isRegularAt(stored(["street", "gun_shop"]), "gun_shop")).toBe(true);
+  });
+
+  it("survives a stored value that is not a list of vendors", () => {
+    const junk = (value: unknown): CampaignFlag[] =>
+      [{ flag: REGULARS_FLAG, value }] as unknown as CampaignFlag[];
+    for (const value of [null, "gun_shop", 7, { gun_shop: true }, [1, 2]]) {
+      expect(isRegularAt(junk(value), "gun_shop")).toBe(false);
+    }
+  });
+
+  it("records the vendor on a successful buy, so the next visit knows them", async () => {
+    await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: ORDINARY.kind,
+      itemId: ORDINARY.itemId,
+      quantity: 1,
+    });
+    expect(flags.get(REGULARS_FLAG)).toEqual(["gun_shop"]);
+  });
+
+  it("does not record a vendor the character could not afford", async () => {
+    eurobucks = 1;
+    await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: ORDINARY.kind,
+      itemId: ORDINARY.itemId,
+      quantity: 1,
+    });
+    expect(flags.get(REGULARS_FLAG)).toBeUndefined();
+  });
+
+  it("does not file the same vendor twice", async () => {
+    for (let i = 0; i < 3; i += 1) {
+      await purchase({
+        campaignId: "c",
+        vendorId: "gun_shop",
+        kind: ORDINARY.kind,
+        itemId: ORDINARY.itemId,
+        quantity: 1,
+      });
+    }
+    expect(flags.get(REGULARS_FLAG)).toEqual(["gun_shop"]);
   });
 });
 

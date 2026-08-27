@@ -6,8 +6,17 @@ const situations: Record<string, unknown>[] = [];
 const ledger: { type: string; summary: string; data: Record<string, unknown> }[] = [];
 /** What listCampaignEvents hands back, so the settle-once guard can be tested. */
 let liveEvents: CampaignEvent[] = [];
+const flags = new Map<string, Json>();
 
 vi.mock("@/lib/backend", () => ({
+  EVENT_WINDOW: 200,
+  listCampaignFlags: vi.fn(async () =>
+    [...flags.entries()].map(([flag, value]) => ({ flag, value })),
+  ),
+  setCampaignFlag: vi.fn(async (_c: string, flag: string, value: Json) => {
+    flags.set(flag, value);
+    return { flag, value };
+  }),
   findCampaignNpc: vi.fn(
     async (_c: string, key: string) => npcs.find((n) => n.npc_id === key) ?? null,
   ),
@@ -63,10 +72,14 @@ const hit = (target: string) =>
   ev("attack", { attacker: PLAYER, target, hit: true, through_armor: 6 });
 const died = (name: string) => ev("death_save", { combatant: name, died: true });
 
+/** Settlement reads the live ledger, so the fixture drives that. */
+function withLedger(events: CampaignEvent[]) {
+  liveEvents = events;
+}
+
 function input(over: Partial<Parameters<typeof settleAftermath>[0]> = {}) {
   return {
     campaignId: "c",
-    events: [ev("mission_started")],
     playerName: PLAYER,
     agreed: 1000,
     messy: false,
@@ -81,6 +94,7 @@ beforeEach(() => {
   situations.length = 0;
   ledger.length = 0;
   liveEvents = [];
+  flags.clear();
 });
 
 describe("survivorKey", () => {
@@ -98,7 +112,8 @@ describe("survivorKey", () => {
 describe("promoting survivors", () => {
   it("turns somebody who walked away into an NPC who remembers", async () => {
     const events = [ev("mission_started"), hit("Vex")];
-    const report = (await settleAftermath(input({ events }), { current: 30, max: 30 }))!;
+    withLedger(events);
+    const report = (await settleAftermath(input(), { current: 30, max: 30 }))!;
     expect(report.survivors).toEqual(["Vex"]);
     expect(npcs).toHaveLength(1);
     expect(npcs[0]).toMatchObject({
@@ -110,14 +125,16 @@ describe("promoting survivors", () => {
 
   it("does not promote the dead", async () => {
     const events = [ev("mission_started"), hit("Vex"), died("Vex")];
-    const report = (await settleAftermath(input({ events }), { current: 30, max: 30 }))!;
+    withLedger(events);
+    const report = (await settleAftermath(input(), { current: 30, max: 30 }))!;
     expect(report.survivors).toEqual([]);
     expect(npcs).toHaveLength(0);
   });
 
   it("does not promote a job description", async () => {
     const events = [ev("mission_started"), hit("Guard"), hit("Ganger 2")];
-    const report = (await settleAftermath(input({ events }), { current: 30, max: 30 }))!;
+    withLedger(events);
+    const report = (await settleAftermath(input(), { current: 30, max: 30 }))!;
     expect(report.survivors).toEqual([]);
   });
 
@@ -131,7 +148,8 @@ describe("promoting survivors", () => {
       data: {},
     } as unknown as CampaignNpc);
     const events = [ev("mission_started"), hit("Vex")];
-    await settleAftermath(input({ events }), { current: 30, max: 30 });
+    withLedger(events);
+    await settleAftermath(input(), { current: 30, max: 30 });
     expect(npcs).toHaveLength(1);
     expect(npcs[0]!.disposition).toBe(0);
   });
@@ -191,7 +209,8 @@ describe("scars written into Life", () => {
 describe("settling", () => {
   it("writes the scars it decided on", async () => {
     const events = [ev("mission_started"), hit("Vex")];
-    await settleAftermath(input({ events }), { current: 5, max: 40 });
+    withLedger(events);
+    await settleAftermath(input(), { current: 5, max: 40 });
     const keys = situations.map((s) => s["situationKey"]);
     expect(keys).toContain("grudge_vex");
     expect(keys).toContain("aftermath_wounds");
@@ -199,7 +218,8 @@ describe("settling", () => {
 
   it("writes one settlement line showing the money and what it cost", async () => {
     const events = [ev("mission_started"), died("Vex")];
-    const report = (await settleAftermath(input({ events }), { current: 30, max: 30 }))!;
+    withLedger(events);
+    const report = (await settleAftermath(input(), { current: 30, max: 30 }))!;
     const row = ledger.find((e) => e.type === SETTLEMENT_EVENT)!;
     expect(row).toBeTruthy();
     expect(row.data["findings"]).toBeTruthy();
@@ -217,21 +237,21 @@ describe("settling", () => {
   });
 
   it("settles once — a second pass pays nothing and promotes nobody", async () => {
-    const events = [ev("mission_started"), hit("Vex")];
-    const first = await settleAftermath(input({ events }), { current: 30, max: 30 });
+    withLedger([ev("mission_started"), hit("Vex")]);
+    const first = await settleAftermath(input(), { current: 30, max: 30 });
     expect(first).not.toBeNull();
 
     // The ledger now carries the settlement, which is what the guard reads.
-    liveEvents = [ev("mission_started"), ev(SETTLEMENT_EVENT)];
+    withLedger([ev("mission_started"), ev(SETTLEMENT_EVENT)]);
     npcs.length = 0;
-    const second = await settleAftermath(input({ events }), { current: 30, max: 30 });
+    const second = await settleAftermath(input(), { current: 30, max: 30 });
     expect(second).toBeNull();
     expect(npcs).toHaveLength(0);
   });
 
   it("still settles the NEXT job after this one was settled", async () => {
     // A settlement before the current mission_started must not block it.
-    liveEvents = [ev(SETTLEMENT_EVENT), ev("mission_started")];
+    withLedger([ev(SETTLEMENT_EVENT), ev("mission_started")]);
     const report = await settleAftermath(input(), { current: 30, max: 30 });
     expect(report).not.toBeNull();
   });
@@ -279,5 +299,22 @@ describe("alreadySettled", () => {
 
   it("is false for a campaign that has never started a job", () => {
     expect(alreadySettled([])).toBe(false);
+  });
+});
+
+describe("how far settlement reads", () => {
+  it("reads a whole job, not a turn's window", async () => {
+    // A long job can start further back than the rows a turn reads. Counting
+    // from inside that window would silently charge for only part of the job.
+    const { JOB_LEDGER_LIMIT } = await import("../aftermath");
+    expect(JOB_LEDGER_LIMIT).toBeGreaterThan(200);
+  });
+
+  it("asks the ledger for that many rows, not for everything", async () => {
+    const { listCampaignEvents } = await import("@/lib/backend");
+    const { JOB_LEDGER_LIMIT } = await import("../aftermath");
+    withLedger([ev("mission_started")]);
+    await settleAftermath(input(), { current: 30, max: 30 });
+    expect(listCampaignEvents).toHaveBeenCalledWith("c", JOB_LEDGER_LIMIT);
   });
 });

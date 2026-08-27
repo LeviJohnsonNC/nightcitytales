@@ -27,12 +27,11 @@ import {
 } from "@/engine";
 import {
   appendCampaignEvent,
-  listCampaignEvents,
   listCampaignFlags,
   setCampaignFlag,
   setSituationStatus,
   upsertSituations,
-  type CampaignEvent,
+  type CampaignFlag,
   type CampaignNpc,
   type Json,
   type SituationUpsert,
@@ -131,26 +130,52 @@ export function situationFor(person: TickPerson, move: NpcMove, day: number): Si
 // Gigs somebody else took.
 // ---------------------------------------------------------------------------
 
-type DeclinedGig = { title: string; day: number };
+/** Jobs the character passed on that nobody has been reported taking yet. */
+export const COLD_GIGS_FLAG = "declined_gigs";
 
-/** Jobs the player passed on, that are old enough for somebody else to have done. */
-export function gigsGoneCold(events: CampaignEvent[], day: number): DeclinedGig[] {
-  const out: DeclinedGig[] = [];
-  const taken = new Set(
-    events
-      .filter((e) => e.type === MOVED_EVENT)
-      .map((e) => (e.data as { gigTaken?: unknown } | null)?.gigTaken)
-      .filter((t): t is string => typeof t === "string"),
-  );
-  for (const event of events) {
-    if (event.type !== "hook_declined") continue;
-    const data = (event.data ?? {}) as { title?: unknown; day?: unknown };
-    if (typeof data.title !== "string" || typeof data.day !== "number") continue;
-    if (taken.has(data.title)) continue;
-    if (day - data.day < GIG_TAKEN_AFTER_DAYS) continue;
-    out.push({ title: data.title, day: data.day });
-  }
-  return out;
+export type DeclinedGig = { title: string; day: number };
+
+/** The stored list of jobs still waiting for somebody else to do them. */
+export function coldGigsFrom(flags: CampaignFlag[]): DeclinedGig[] {
+  const value = flags.find((f) => f.flag === COLD_GIGS_FLAG)?.value;
+  if (!Array.isArray(value)) return [];
+  return value.filter((row): row is DeclinedGig => {
+    if (!row || typeof row !== "object") return false;
+    const gig = row as { title?: unknown; day?: unknown };
+    return typeof gig.title === "string" && typeof gig.day === "number";
+  });
+}
+
+/**
+ * Write down that the character walked away from a job.
+ *
+ * Stored rather than re-derived. This used to scan the whole campaign ledger
+ * for `hook_declined` rows on every world tick, cross-referenced against every
+ * tick that had ever fired — two full-history walks a day, growing forever, to
+ * answer a question that is really just a short list.
+ *
+ * Reads its own flags rather than taking a caller's snapshot, so two declines
+ * in quick succession cannot each write a list missing the other.
+ */
+export async function rememberDeclined(campaignId: string, gig: DeclinedGig): Promise<void> {
+  const known = coldGigsFrom(await listCampaignFlags(campaignId));
+  if (known.some((g) => g.title === gig.title)) return;
+  await setCampaignFlag(campaignId, COLD_GIGS_FLAG, [...known, gig] as unknown as Json);
+}
+
+/** Jobs old enough for somebody else to have finished them by now. */
+export function gigsGoneCold(flags: CampaignFlag[], day: number): DeclinedGig[] {
+  return coldGigsFrom(flags).filter((gig) => day - gig.day >= GIG_TAKEN_AFTER_DAYS);
+}
+
+/** Take a gig off the list once the player has heard somebody else did it. */
+async function forgetDeclined(
+  campaignId: string,
+  flags: CampaignFlag[],
+  title: string,
+): Promise<void> {
+  const left = coldGigsFrom(flags).filter((gig) => gig.title !== title);
+  await setCampaignFlag(campaignId, COLD_GIGS_FLAG, left as unknown as Json);
 }
 
 // ---------------------------------------------------------------------------
@@ -210,8 +235,7 @@ export async function runWorldTick(input: WorldTickInput): Promise<WorldTickResu
 
   // A gig you passed on that nobody ever does was never a choice. One per tick:
   // hearing about three at once is a news bulletin, not a consequence.
-  const events = await listCampaignEvents(input.campaignId);
-  const cold = gigsGoneCold(events, input.day)[0] ?? null;
+  const cold = gigsGoneCold(flags, input.day)[0] ?? null;
   if (cold) {
     situations.push({
       situationKey: `gig_taken_${cold.title.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`,
@@ -223,6 +247,8 @@ export async function runWorldTick(input: WorldTickInput): Promise<WorldTickResu
       dueDay: input.day + MOVE_DUE_DAYS,
     });
   }
+
+  if (cold) await forgetDeclined(input.campaignId, flags, cold.title);
 
   if (situations.length > 0) await upsertSituations(input.campaignId, situations);
 

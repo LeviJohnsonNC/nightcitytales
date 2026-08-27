@@ -34,6 +34,7 @@ vi.mock("@/lib/backend", () => ({
 }));
 
 const {
+  COLD_GIGS_FLAG,
   GIG_TAKEN_AFTER_DAYS,
   MOVED_EVENT,
   MOVE_DUE_DAYS,
@@ -41,6 +42,7 @@ const {
   gigsGoneCold,
   grudgeIsDue,
   peopleFor,
+  rememberDeclined,
   runWorldTick,
   settleMoves,
   situationFor,
@@ -152,30 +154,44 @@ describe("the situation a move produces", () => {
 });
 
 describe("gigs somebody else took", () => {
-  const declined = (title: string, day: number) =>
-    ev("hook_declined", { title, day, reason: "no" });
+  const stored = (gigs: { title: string; day: number }[]): CampaignFlag[] =>
+    [{ flag: COLD_GIGS_FLAG, value: gigs }] as unknown as CampaignFlag[];
 
   it("reports a job passed on long enough ago", () => {
-    const events = [declined("Watson retrieval", 5)];
-    expect(gigsGoneCold(events, 5 + GIG_TAKEN_AFTER_DAYS)).toEqual([
+    const gigs = stored([{ title: "Watson retrieval", day: 5 }]);
+    expect(gigsGoneCold(gigs, 5 + GIG_TAKEN_AFTER_DAYS)).toEqual([
       { title: "Watson retrieval", day: 5 },
     ]);
   });
 
   it("says nothing while the job is still warm", () => {
-    expect(gigsGoneCold([declined("Watson retrieval", 5)], 6)).toEqual([]);
+    expect(gigsGoneCold(stored([{ title: "Watson retrieval", day: 5 }]), 6)).toEqual([]);
   });
 
-  it("does not report the same job twice", () => {
-    const events = [
-      declined("Watson retrieval", 5),
-      ev(MOVED_EVENT, { gigTaken: "Watson retrieval" }),
-    ];
-    expect(gigsGoneCold(events, 20)).toEqual([]);
+  it("says nothing when the character has turned nothing down", () => {
+    expect(gigsGoneCold([], 20)).toEqual([]);
+    expect(gigsGoneCold(stored([]), 20)).toEqual([]);
   });
 
-  it("ignores a decline written before titles were recorded", () => {
-    expect(gigsGoneCold([ev("hook_declined", { reason: "no" })], 20)).toEqual([]);
+  it("survives a stored value that is not a list of gigs", () => {
+    const junk = (value: unknown): CampaignFlag[] =>
+      [{ flag: COLD_GIGS_FLAG, value }] as unknown as CampaignFlag[];
+    for (const value of [null, "Watson", 7, [{ title: 5 }], [{ day: 1 }], [null]]) {
+      expect(gigsGoneCold(junk(value), 20)).toEqual([]);
+    }
+  });
+
+  it("writes a decline down, once", async () => {
+    await rememberDeclined("c", { title: "Watson retrieval", day: 5 });
+    expect(flags.get(COLD_GIGS_FLAG)).toEqual([{ title: "Watson retrieval", day: 5 }]);
+    await rememberDeclined("c", { title: "Watson retrieval", day: 9 });
+    expect(flags.get(COLD_GIGS_FLAG)).toEqual([{ title: "Watson retrieval", day: 5 }]);
+  });
+
+  it("keeps more than one job on the list", async () => {
+    await rememberDeclined("c", { title: "One", day: 1 });
+    await rememberDeclined("c", { title: "Two", day: 2 });
+    expect(flags.get(COLD_GIGS_FLAG)).toHaveLength(2);
   });
 });
 
@@ -248,7 +264,7 @@ describe("running the day", () => {
   });
 
   it("tells the player somebody else took the job they passed on", async () => {
-    liveEvents = [ev("hook_declined", { title: "Watson retrieval", day: 1, reason: "no" })];
+    flags.set(COLD_GIGS_FLAG, [{ title: "Watson retrieval", day: 1 }] as unknown as Json);
     const out = await runWorldTick(input({ day: 10 }));
     expect(out.gigTaken).toBe("Watson retrieval");
     expect(situations.some((s) => String(s["situationKey"]).startsWith("gig_taken_"))).toBe(true);
@@ -256,11 +272,11 @@ describe("running the day", () => {
   });
 
   it("mentions one cold gig, not a news bulletin of three", async () => {
-    liveEvents = [
-      ev("hook_declined", { title: "One", day: 1, reason: "no" }),
-      ev("hook_declined", { title: "Two", day: 1, reason: "no" }),
-      ev("hook_declined", { title: "Three", day: 1, reason: "no" }),
-    ];
+    flags.set(COLD_GIGS_FLAG, [
+      { title: "One", day: 1 },
+      { title: "Two", day: 1 },
+      { title: "Three", day: 1 },
+    ] as unknown as Json);
     await runWorldTick(input({ day: 10 }));
     expect(
       situations.filter((s) => String(s["situationKey"]).startsWith("gig_taken_")),

@@ -73,6 +73,12 @@ export type LifeContext = {
   clocks: LifeClock[];
   /** Organisations with an opinion of the character, already worded. */
   standings?: string[];
+  /**
+   * The campaign's long memory, assembled by the engine from what it knows for
+   * certain. Six lines of recent narration is the right size for a turn and
+   * the wrong size for a fifty-hour campaign.
+   */
+  chronicle?: string[];
   people: LifePersonSummary[];
   recentEvents: string[];
   capabilities?: string[];
@@ -215,6 +221,11 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
         "histories you have not been told; play them as people with their own business, and never " +
         "invent a want, a fear or a secret for them and state it as fact.",
     );
+  }
+
+  if (context.chronicle?.length) {
+    parts.push("", "== THE RECORD SO FAR (facts; never contradict these) ==");
+    for (const line of context.chronicle) parts.push(line);
   }
 
   if (context.recentEvents.length) {

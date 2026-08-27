@@ -41,6 +41,7 @@ import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/pla
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
 import { ShopSheet } from "./ShopSheet";
+import { RecordSheet } from "./RecordSheet";
 import type { LifeActionCard } from "./lifeResponse";
 
 /** Where someone stands with the character, in words rather than a number. */
@@ -595,6 +596,8 @@ function LifeRail({
           </ul>
         </section>
       )}
+
+      <RecordSheet bundle={bundle} />
 
       <ShopSheet bundle={bundle} />
 

@@ -56,6 +56,7 @@ import {
   findFactionIn,
   type FactionId,
   type ObservationReport,
+  type FactionStanding,
 } from "@/engine";
 
 import {
@@ -98,7 +99,9 @@ import {
   type LiveEncounter,
 } from "@/features/campaign/encounterState";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
-import { brokerKeyFor, pressureReportsFor, settleAftermath } from "@/features/campaign/aftermath";
+import { pressureReportsFor, settleAftermath } from "@/features/campaign/aftermath";
+import { chronicleFor } from "@/features/campaign/chronicleModel";
+import { tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
   answerPendingQuestion,
   askOracle,
@@ -199,6 +202,10 @@ export type PlayBundle = {
   pressure: LivePressure[];
   /** Organisations with an opinion, already worded. */
   standings: string[];
+  /** The same opinions unworded, for the chronicle to rank and count. */
+  factionStandings: FactionStanding[];
+  /** Running totals that outlive a turn's ledger window. */
+  tally: CampaignTally;
   /**
    * What this job's brief left out, rolled in secret when the player took the
    * work. Present only while it is still a secret; the GM builds the job around
@@ -243,6 +250,8 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     agreedPayout: agreedPayoutFrom(full.flags),
     pressure: pressureFrom(await listClocks(campaignId)),
     standings: standingLines(notableFrom(full.factions)),
+    factionStandings: notableFrom(full.factions),
+    tally: tallyFrom(full.flags),
     complication: secretComplicationFor(full.flags, full.campaign.current_mission_id),
   };
 }
@@ -326,6 +335,15 @@ async function narrate(
     turnsSinceLastRoll: turnsSinceLastRoll(bundle.events),
     pressure: pressureLines(bundle.pressure),
     standings: bundle.standings,
+    chronicle: chronicleFor({
+      day: bundle.campaign.day,
+      events: bundle.events,
+      standings: bundle.factionStandings,
+      pressure: pressureLines(bundle.pressure),
+      npcs: bundle.npcs,
+      situationKeys: [],
+      tally: bundle.tally,
+    }),
     ...(arrived ? { arrived: arrived.payoff } : {}),
     ...(bundle.complication ? { complication: bundle.complication.text } : {}),
     ...(answered ? { oracle: { question: answered.question, answer: answered.answer } } : {}),
@@ -956,7 +974,6 @@ async function settleMission(
   const aftermath = await settleAftermath(
     {
       campaignId,
-      events: bundle.events,
       playerName: bundle.character.character.name,
       agreed: total,
       messy: done < runtime.objectives.length,
@@ -980,8 +997,9 @@ async function settleMission(
     }
 
     // A broker who shorted you is a broker you now know shorts people. Who that
-    // is comes off the event that started the job, not off a guess.
-    const brokerKey = brokerKeyFor(bundle.events);
+    // is comes off the event that started the job, found in settlement's own
+    // wide read rather than in this turn's window.
+    const brokerKey = aftermath.brokerKey;
     if (aftermath.payment.brokerStanding !== 0 && brokerKey) {
       const broker = await findCampaignNpc(campaignId, brokerKey);
       if (broker) {

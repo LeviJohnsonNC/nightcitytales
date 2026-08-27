@@ -371,11 +371,40 @@ export async function appendCampaignEvent(event: CampaignEventInsert): Promise<C
 }
 
 /** A campaign's event ledger in play order (oldest first). */
-export async function listCampaignEvents(campaignId: string): Promise<CampaignEvent[]> {
+/**
+ * How many ledger rows a turn reads.
+ *
+ * Every consumer of a turn's events is already bounded — the last six narration
+ * lines, the last eight, everything since the last `mission_started`, the last
+ * forty rendered in the log. Nothing needed the whole campaign, but the whole
+ * campaign is what was fetched, fifteen call sites' worth, several times a turn.
+ * At hour one that is forty rows; at hour forty it is thousands, and the cost of
+ * a turn grew with the length of the campaign forever.
+ *
+ * 200 comfortably holds a busy job — its beats, checks, a firefight and the
+ * narration around them — so "only this job" still resolves inside the window.
+ * Anything older than that is the chronicle's business, not a turn's.
+ */
+export const EVENT_WINDOW = 200;
+
+/**
+ * A campaign's recent ledger, newest-bounded and returned oldest-first.
+ *
+ * Reads descending against the (campaign_id, seq) index and reverses, so the
+ * database returns the newest N rather than scanning the campaign to find them.
+ * Callers that genuinely need more — settlement reads a whole job, and it runs
+ * once per job rather than once per turn — pass a wider limit.
+ */
+export async function listCampaignEvents(
+  campaignId: string,
+  limit: number = EVENT_WINDOW,
+): Promise<CampaignEvent[]> {
   const res = await backendClient
     .from("campaign_events")
     .select("*")
     .eq("campaign_id", campaignId)
-    .order("seq", { ascending: true });
-  return unwrap(res) ?? [];
+    .order("seq", { ascending: false })
+    .limit(Math.max(1, Math.trunc(limit)));
+  const rows = unwrap(res) ?? [];
+  return rows.reverse();
 }

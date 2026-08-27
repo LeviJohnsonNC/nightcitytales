@@ -43,9 +43,19 @@ import {
   type Json,
   type SituationUpsert,
 } from "@/lib/backend";
+import { addToTally } from "./tally";
 
 /** The ledger type a settlement report is written under. */
 export const SETTLEMENT_EVENT = "job_settled";
+
+/**
+ * How far back settlement reads.
+ *
+ * Wide enough that the `mission_started` marking the beginning of even a very
+ * long job is inside it. Settlement runs once when a job ends, not once a turn,
+ * so this never touches the cost of playing.
+ */
+export const JOB_LEDGER_LIMIT = 2000;
 
 /** How long a grudge takes to find you, in days. */
 export const GRUDGE_DUE_DAYS = 6;
@@ -58,7 +68,6 @@ export const SURVIVOR_DISPOSITION = -3;
 
 export type AftermathInput = {
   campaignId: string;
-  events: CampaignEvent[];
   playerName: string;
   /** What was agreed for the job, before the money was rolled for. */
   agreed: number;
@@ -77,6 +86,12 @@ export type AftermathReport = {
   survivors: string[];
   /** Situations written onto the Life queue, for the wrap-up screen to show. */
   scars: { title: string; dueDay: number | null }[];
+  /**
+   * The broker who owes for this job, found in the same wide read. Handed back
+   * so the caller does not have to look for a `mission_started` that may sit
+   * outside a turn's window.
+   */
+  brokerKey: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -206,13 +221,19 @@ export async function settleAftermath(
   // Settling twice would pay twice, promote twice and charge the clocks twice.
   // Both callers are guarded by the mission's own status, but money is worth a
   // second lock: the ledger already says whether this job has been settled.
-  const live = await listCampaignEvents(input.campaignId);
+  // A whole job, not a turn's window: settlement counts everything since the
+  // last `mission_started`, and a long job can outrun the 200 rows a turn
+  // reads. This runs once per job, so the wider read costs nothing per turn.
+  const live = await listCampaignEvents(input.campaignId, JOB_LEDGER_LIMIT);
   if (alreadySettled(live)) return null;
 
-  const findings = readSettlement({ events: input.events, playerName: input.playerName });
+  // Everything below reads `live`, not the caller's snapshot: what the job cost
+  // is counted from the last `mission_started`, and a turn's 200-row window can
+  // start after a long job began — which would silently count only part of it.
+  const findings = readSettlement({ events: live, playerName: input.playerName });
   const payment = rollPayment({ agreed: input.agreed, messy: input.messy });
 
-  const survivors = survivorsFrom({ events: input.events, playerName: input.playerName }).map(
+  const survivors = survivorsFrom({ events: live, playerName: input.playerName }).map(
     (s) => s.name,
   );
   const promoted = await promoteSurvivors(input, survivors);
@@ -233,11 +254,19 @@ export async function settleAftermath(
     } as unknown as Json,
   });
 
+  // Counted once, here, so the record's totals are exact however long the
+  // campaign runs and however short a turn's window is.
+  await addToTally(input.campaignId, {
+    jobsFinished: 1,
+    bodies: findings.find((f) => f.observation === "killed")?.count ?? 0,
+  });
+
   return {
     findings,
     payment,
     survivors: promoted,
     scars: scars.map((s) => ({ title: s.title, dueDay: s.dueDay ?? null })),
+    brokerKey: brokerKeyFor(live),
   };
 }
 
