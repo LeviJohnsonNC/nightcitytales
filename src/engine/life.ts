@@ -287,18 +287,52 @@ export function deriveNeeds(state: LifeStateInput): LifeSituation[] {
 // Ageing the world forward.
 // ---------------------------------------------------------------------------
 
-/** Escalate a situation whose deadline has passed; expire one that is spent. */
+/**
+ * The deadline a situation has already been escalated for.
+ *
+ * Written into the situation's own data, because a situation is the only thing
+ * that knows which of its deadlines it has already answered to.
+ */
+export const ESCALATED_FOR = "escalatedForDueDay";
+
+/** The deadline a situation has already grown louder for, if any. */
+export function escalatedFor(situation: LifeSituation): number | null {
+  const value = (situation.data ?? {})[ESCALATED_FOR];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Escalate a situation whose deadline has passed; expire one that is spent.
+ *
+ * A deadline passing is ONE event, and this runs on every load. Without a mark
+ * saying which deadline has already been answered to, a grudge due on day 16
+ * climbed a severity every time the screen mounted and sat at 5 within a couple
+ * of turns — along with everything else old, which flattens the whole board:
+ * selectSituation weights severity first, so a world where every live situation
+ * has escalated to maximum picks by category and then alphabetically.
+ *
+ * The mark is the deadline itself rather than a boolean, so a situation that is
+ * given a NEW deadline can escalate again. That is what makes rent work: each
+ * billing period is its own deadline and its own missed payment. Neglect is not
+ * modelled as a number climbing on its own — it is modelled by the world tick
+ * sending the person to come and find you.
+ */
 export function ageSituation(situation: LifeSituation, day: number): LifeSituation {
   if (situation.status !== "live") return situation;
   if (situation.dueDay === undefined || day < situation.dueDay) return situation;
   if (situation.category === "opportunity" || situation.category === "hook") {
     return { ...situation, status: "expired" };
   }
+  if (escalatedFor(situation) === situation.dueDay) return situation;
   return {
     ...situation,
     status: "live",
     severity: clampSeverity(situation.severity + 1),
-    data: { ...(situation.data ?? {}), escalatedOnDay: day },
+    data: {
+      ...(situation.data ?? {}),
+      escalatedOnDay: day,
+      [ESCALATED_FOR]: situation.dueDay,
+    },
   };
 }
 
