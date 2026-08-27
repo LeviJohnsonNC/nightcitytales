@@ -4,7 +4,7 @@
  * resolves proposedActions; nothing here changes state on its own.
  */
 import { z } from "zod";
-import { isAnswerableQuestion } from "@/engine";
+import { DEFAULT_ARENA_KEY, isAnswerableQuestion, isArenaKey } from "@/engine";
 
 /**
  * A hostile the GM brings into a fight. These are NPC stat blocks the GM
@@ -38,8 +38,6 @@ export const GmEnemySchema = z.object({
   weaponName: z.string(),
   damageDice: z.number().int(),
   rangeType: z.enum(GM_RANGE_TYPES),
-  /** Distance in metres from the player character right now. */
-  distance: z.number().int(),
 });
 export type GmEnemy = z.infer<typeof GmEnemySchema>;
 
@@ -73,13 +71,24 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     kind: z.literal("start_encounter"),
     name: z.string(),
     enemies: z.array(GmEnemySchema),
+    /** WHERE the fight is, from the engine's closed list. Never a distance. */
+    arena: z.string(),
   }),
   z.object({
     kind: z.literal("attack"),
     targetId: z.string(),
     intent: z.string(),
-    /** Distance in metres to the target; the engine reads the Range DV table with it. */
-    distance: z.number().int(),
+  }),
+  z.object({
+    /**
+     * The character going somewhere. The model names WHO they are moving
+     * relative to and whether they are closing or backing off; the engine
+     * measures the metres and refuses more than their MOVE covers.
+     */
+    kind: z.literal("move"),
+    targetId: z.string(),
+    towards: z.enum(["closer", "away"]),
+    intent: z.string(),
   }),
   z.object({ kind: z.literal("advance_beat"), to: z.string() }),
   z.object({ kind: z.literal("none") }),
@@ -147,8 +156,9 @@ export const GmWireResponseSchema = z.object({
         "and the fields that kind needs: " +
         '{"kind":"skill_check","skillId":"<id from the SKILLS list>","dv":<number>,"intent":"<what they are attempting>"}; ' +
         '{"kind":"opposed_check","skillId":"<id from the SKILLS list>","npcKey":"<stable key>","npcName":"<who resists>","opposingSkillId":"<printed skill id they resist with>","opposingSkillLevel":<0-10>,"opposingStatValue":<1-10>,"intent":"<what they are attempting>"}; ' +
-        '{"kind":"start_encounter","name":"<label>","enemies":[{"key","name","ref","body","hp","sp","attackSkill","weaponName","damageDice","rangeType","distance"}]}; ' +
-        '{"kind":"attack","targetId":"<enemy key>","intent":"<what they are doing>","distance":<metres>}; ' +
+        '{"kind":"start_encounter","name":"<label>","arena":"<one of the ARENAS ids>","enemies":[{"key","name","ref","body","hp","sp","attackSkill","weaponName","damageDice","rangeType"}]}; ' +
+        '{"kind":"attack","targetId":"<enemy key>","intent":"<what they are doing>"}; ' +
+        '{"kind":"move","targetId":"<enemy key>","towards":"closer"|"away","intent":"<what they are doing>"}; ' +
         '{"kind":"advance_beat","to":"<beat id>"}. Use [] when nothing is proposed.',
     )
     .nullish(),
@@ -236,6 +246,9 @@ const ACTION_KIND_ALIASES: Record<string, GmProposedAction["kind"]> = {
   start_combat: "start_encounter",
   combat: "start_encounter",
   attack: "attack",
+  move: "move",
+  reposition: "move",
+  movement: "move",
   melee_attack: "attack",
   ranged_attack: "attack",
   advance_beat: "advance_beat",
@@ -259,6 +272,9 @@ export function actionKindOf(item: Loose): GmProposedAction["kind"] | null {
     if (mapped) return mapped;
   }
   if (item["enemies"] ?? item["hostiles"] ?? item["combatants"]) return "start_encounter";
+  // Before the targetId rule below: a move also names a target, and reading it
+  // as an attack would fire a gun the player never raised.
+  if (str(item["towards"]) ?? str(item["direction"])) return "move";
   // Opposed before plain: an item carrying an opposing side is a contest, and
   // reading it as a DV check would silently invent a difficulty nobody set.
   if (str(item["opposingSkillId"]) ?? str(item["opposing_skill_id"]) ?? str(item["opposingSkill"]))
@@ -268,9 +284,6 @@ export function actionKindOf(item: Loose): GmProposedAction["kind"] | null {
   if (str(item["to"]) ?? str(item["beatId"]) ?? str(item["beat_id"])) return "advance_beat";
   return null;
 }
-
-/** Talking distance when the GM forgets to state one; still a printed range band. */
-export const DEFAULT_ATTACK_DISTANCE = 12;
 
 /** Narrow a loose list of GM-authored hostiles into clamped enemy stat blocks. */
 function normalizeEnemies(raw: unknown): GmEnemy[] {
@@ -296,7 +309,6 @@ function normalizeEnemies(raw: unknown): GmEnemy[] {
       weaponName: str(e["weaponName"]) ?? str(e["weapon"]) ?? "sidearm",
       damageDice: clamp(num(e["damageDice"]) ?? 2, 1, 8),
       rangeType,
-      distance: clamp(num(e["distance"]) ?? DEFAULT_ATTACK_DISTANCE, 1, 800),
     });
   });
   return out;
@@ -389,21 +401,26 @@ export function normalizeGmResponse(
       }
     } else if (kind === "attack") {
       const targetId = str(a["targetId"]) ?? str(a["target"]) ?? str(a["target_id"]);
-      const distance = num(a["distance"]) ?? num(a["range"]);
-      if (targetId)
-        proposedActions.push({
-          kind: "attack",
-          targetId,
-          intent,
-          distance: clamp(distance ?? DEFAULT_ATTACK_DISTANCE, 1, 800),
-        });
+      // A distance the model sent anyway is DROPPED, not clamped. It is not a
+      // hint the engine can take under advisement: range is the DV, and the
+      // whole point of positions is that this number is measured, not reported.
+      if (targetId) proposedActions.push({ kind: "attack", targetId, intent });
       else warn(`GM proposed an attack with no target, dropped: ${JSON.stringify(raw)}`);
+    } else if (kind === "move") {
+      const targetId = str(a["targetId"]) ?? str(a["target"]) ?? str(a["target_id"]);
+      const towards = str(a["towards"]) === "away" ? "away" : "closer";
+      if (targetId) proposedActions.push({ kind: "move", targetId, towards, intent });
+      else warn(`GM proposed a move with nobody to move relative to: ${JSON.stringify(raw)}`);
     } else if (kind === "start_encounter") {
       const enemies = normalizeEnemies(a["enemies"] ?? a["hostiles"] ?? a["combatants"]);
+      const named = str(a["arena"]) ?? str(a["place"]) ?? str(a["location"]);
       if (enemies.length)
         proposedActions.push({
           kind: "start_encounter",
           name: str(a["name"]) ?? "Firefight",
+          // An arena the engine does not know falls back to open ground rather
+          // than letting an invented place through as a real one.
+          arena: isArenaKey(named) ? named : DEFAULT_ARENA_KEY,
           enemies,
         });
       else warn(`GM proposed an encounter with no hostiles, dropped: ${JSON.stringify(raw)}`);

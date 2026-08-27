@@ -82,7 +82,8 @@ const live: LiveEncounter = {
       weaponName: "",
       damageDice: 0,
       rangeType: null,
-      distance: 0,
+      position: { x: 0, y: 0 },
+      move: 6,
       attackSkill: 0,
     },
     h: {
@@ -90,10 +91,13 @@ const live: LiveEncounter = {
       weaponName: "sidearm",
       damageDice: 2,
       rangeType: "pistol",
-      distance: 12,
+      // 12 m up the field from the player, which is where the DV now comes from.
+      position: { x: 0, y: 12 },
+      move: 6,
       attackSkill: 4,
     },
   },
+  arena: "open_ground",
 };
 
 describe("attackPrompt", () => {
@@ -109,22 +113,43 @@ describe("attackPrompt", () => {
       event({
         id: "b",
         type: "attack_prompt",
-        data: { targetId: "scav_1", distance: 20, intent: "two to the chest" } as never,
+        data: { targetId: "scav_1", intent: "two to the chest" } as never,
       }),
     ];
     const pending = pendingAttackFrom(events, character, live);
     expect(pending?.target.name).toBe("Scav Runner");
-    expect(pending?.distance).toBe(20);
+    expect(pending?.distance).toBe(12);
     expect(pending?.attacker.isPlayer).toBe(true);
   });
 
-  it("treats a resolved attack as no longer pending", () => {
+  it("measures the range instead of believing a number in the event", () => {
+    // The whole point of positions. A distance on the prompt is ignored: it is
+    // either stale (somebody moved after the GM proposed the shot) or it is the
+    // model setting the DV, which is the bug this replaced.
     const events = [
       event({
         id: "b",
         type: "attack_prompt",
-        data: { targetId: "scav_1", distance: 20 } as never,
+        data: { targetId: "scav_1", distance: 400, intent: "a long one" } as never,
       }),
+    ];
+    expect(pendingAttackFrom(events, character, live)?.distance).toBe(12);
+  });
+
+  it("re-measures after somebody has moved", () => {
+    const closed = {
+      ...live,
+      data: { ...live.data, h: { ...live.data["h"]!, position: { x: 0, y: 4 } } },
+    };
+    const events = [
+      event({ id: "b", type: "attack_prompt", data: { targetId: "scav_1" } as never }),
+    ];
+    expect(pendingAttackFrom(events, character, closed)?.distance).toBe(4);
+  });
+
+  it("treats a resolved attack as no longer pending", () => {
+    const events = [
+      event({ id: "b", type: "attack_prompt", data: { targetId: "scav_1" } as never }),
       event({ id: "c", type: "attack" }),
     ];
     expect(pendingAttackFrom(events, character, live)).toBeNull();
@@ -132,11 +157,7 @@ describe("attackPrompt", () => {
 
   it("builds the option from the sheet and the printed Range DV table", () => {
     const events = [
-      event({
-        id: "b",
-        type: "attack_prompt",
-        data: { targetId: "scav_1", distance: 20 } as never,
-      }),
+      event({ id: "b", type: "attack_prompt", data: { targetId: "scav_1" } as never }),
     ];
     const pending = pendingAttackFrom(events, character, live)!;
     const option = attackOption(pending, weaponProfile("medium_pistol"), character);
@@ -144,8 +165,31 @@ describe("attackPrompt", () => {
     expect(option.statValue).toBe(7);
     expect(option.skillValue).toBe(5);
     expect(option.damageDice).toBe(2);
-    expect(option.dv).toBe(singleShotDV("pistol", 20));
+    expect(option.dv).toBe(singleShotDV("pistol", 12));
     expect(option.gap).toBeNull();
+  });
+
+  it("moves the DV when the target does", () => {
+    // Position is not decoration: closing from 12 m to 4 m with a pistol is the
+    // difference between DV 15 and DV 13, and nobody had to say so.
+    const events = [
+      event({ id: "b", type: "attack_prompt", data: { targetId: "scav_1" } as never }),
+    ];
+    const far = attackOption(
+      pendingAttackFrom(events, character, live)!,
+      weaponProfile("medium_pistol"),
+      character,
+    );
+    const closed = {
+      ...live,
+      data: { ...live.data, h: { ...live.data["h"]!, position: { x: 0, y: 4 } } },
+    };
+    const near = attackOption(
+      pendingAttackFrom(events, character, closed)!,
+      weaponProfile("medium_pistol"),
+      character,
+    );
+    expect(near.dv!).toBeLessThan(far.dv!);
   });
 });
 

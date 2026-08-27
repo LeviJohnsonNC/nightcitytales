@@ -9,11 +9,17 @@
  * fight survives a reload.
  */
 import {
+  DEFAULT_ARENA_KEY,
+  arenaFor,
   getArmor,
+  rangeMetres,
   weaponProfile,
+  woundMovePenalty,
   woundStateFor,
+  type Arena,
   type Combatant,
   type EncounterState,
+  type Point,
   type WeaponProfile,
   type WoundStateCode,
 } from "@/engine";
@@ -47,8 +53,16 @@ export type CombatantData = {
   weaponName: string;
   damageDice: number;
   rangeType: string | null;
-  /** Distance in metres between this combatant and the player character. */
-  distance: number;
+  /**
+   * Where this combatant is standing, in metres.
+   *
+   * Every Range DV is MEASURED from this. It used to be a `distance` the model
+   * wrote into its response, which made the narrator the author of every DV in
+   * the fight — see engine/battlefield.ts.
+   */
+  position: Point;
+  /** MOVE, in metres per Move Action. Bounds how far this combatant can go. */
+  move: number;
   /** Skill level used for this combatant's attacks (hostiles only). */
   attackSkill: number;
   /** What this combatant has spent of the current Round, when tracked. */
@@ -68,18 +82,67 @@ function turnStateOf(raw: unknown): CombatantTurnState | undefined {
   };
 }
 
+/** A stored position, or nothing if this row predates positions existing. */
+function positionOf(raw: Record<string, unknown>): Point | null {
+  const value = raw["position"];
+  if (!value || typeof value !== "object") return null;
+  const { x, y } = value as { x?: unknown; y?: unknown };
+  if (typeof x !== "number" || typeof y !== "number") return null;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x, y };
+}
+
+/**
+ * A place to stand for a fight that started before positions existed.
+ *
+ * Those rows carry the old model-authored `distance` instead. Rather than drop
+ * a live encounter on the floor mid-round, put them that many metres up the
+ * arena from the player's start — the same distance they had, now as a place.
+ */
+function legacyPosition(raw: Record<string, unknown>, isPlayer: boolean): Point {
+  const arena = arenaFor(DEFAULT_ARENA_KEY);
+  if (isPlayer) return { ...arena.playerStart };
+  const distance = typeof raw["distance"] === "number" ? Math.max(0, raw["distance"]) : 12;
+  return { x: arena.playerStart.x, y: arena.playerStart.y + distance };
+}
+
 export function combatantDataOf(row: EncounterCombatant): CombatantData {
-  const raw = (row.data ?? {}) as Partial<CombatantData>;
+  const raw = (row.data ?? {}) as Record<string, unknown> & Partial<CombatantData>;
   const turn = turnStateOf(raw.turn);
   return {
     key: typeof raw.key === "string" ? raw.key : row.id,
     weaponName: typeof raw.weaponName === "string" ? raw.weaponName : "sidearm",
     damageDice: typeof raw.damageDice === "number" ? raw.damageDice : 2,
     rangeType: typeof raw.rangeType === "string" ? raw.rangeType : null,
-    distance: typeof raw.distance === "number" ? raw.distance : 12,
+    position: positionOf(raw) ?? legacyPosition(raw, row.is_player),
+    move: typeof raw.move === "number" ? raw.move : DEFAULT_HOSTILE_MOVE,
     attackSkill: typeof raw.attackSkill === "number" ? raw.attackSkill : 0,
     ...(turn ? { turn } : {}),
   };
+}
+
+/**
+ * How far a hostile can move in one Move Action, until #02 brings published
+ * threat statblocks with their own MOVE. Engine-owned rather than prompted:
+ * a model that can set MOVE can set how fast the fight closes.
+ */
+export const DEFAULT_HOSTILE_MOVE = 6;
+
+/** Metres between two combatants, which is the only place a Range DV comes from. */
+export function metresApart(a: CombatantData, b: CombatantData): number {
+  return rangeMetres(a.position, b.position);
+}
+
+/**
+ * How far this combatant can actually go this Round.
+ *
+ * Mortally Wounded is −6 MOVE with a floor of 1 (CP:R pg. 186); the rules put
+ * the floor on the caller, and this is the caller.
+ */
+export function moveAllowance(move: number, wound: WoundStateCode): number {
+  const base = Math.max(0, move);
+  if (base <= 0) return 0;
+  return Math.max(1, base + woundMovePenalty(wound));
 }
 
 /**
@@ -139,6 +202,7 @@ export function playerCombatant(
   vitals: CampaignVitals,
   id: string,
   inventory: CampaignInventoryItem[] = [],
+  arena: Arena = arenaFor(DEFAULT_ARENA_KEY),
 ): { combatant: Combatant; data: CombatantData } {
   const stats = statsRecord(character);
   const sp = armorSp(liveInventory(inventory, character));
@@ -168,16 +232,20 @@ export function playerCombatant(
     weaponName: "",
     damageDice: 0,
     rangeType: null,
-    distance: 0,
+    position: { ...arena.playerStart },
+    // MOVE is a stat on the sheet. A wounded character's MOVE penalty is
+    // applied where the movement is spent, not baked in here.
+    move: Math.max(0, stats["move"] ?? 0),
     attackSkill: 0,
   };
   return { combatant, data };
 }
 
-/** A GM-authored hostile as an engine combatant. */
+/** A GM-authored hostile as an engine combatant, standing where the arena put them. */
 export function hostileCombatant(
   enemy: GmEnemy,
   id: string,
+  position: Point,
 ): { combatant: Combatant; data: CombatantData } {
   const threshold = Math.ceil(enemy.hp / 2);
   const combatant: Combatant = {
@@ -202,7 +270,8 @@ export function hostileCombatant(
     weaponName: enemy.weaponName,
     damageDice: enemy.damageDice,
     rangeType: enemy.rangeType,
-    distance: enemy.distance,
+    position: { ...position },
+    move: DEFAULT_HOSTILE_MOVE,
     attackSkill: enemy.attackSkill,
   };
   return { combatant, data };
@@ -250,6 +319,7 @@ export function startEncounterPayload(input: {
   characterId: string;
   state: EncounterState;
   data: Record<string, CombatantData>;
+  arena: string | null;
 }): StartEncounterPayload {
   return {
     campaign_id: input.campaignId,
@@ -257,6 +327,7 @@ export function startEncounterPayload(input: {
     beat_id: input.beatId,
     active_index: input.state.activeIndex,
     order_ids: input.state.order,
+    arena: input.arena,
     combatants: input.state.order.map((id) => {
       const c = input.state.combatants[id]!;
       return {
