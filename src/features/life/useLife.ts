@@ -118,6 +118,7 @@ import {
   markDealtWith,
   revealNextFact,
 } from "@/features/campaign/castSeeding";
+import { runWorldTick, settleMoves } from "@/features/campaign/worldTick";
 import {
   answerPendingQuestion,
   askOracle,
@@ -709,6 +710,22 @@ async function consultOracles(
 ): Promise<TurnOptions["oracle"]> {
   if (turn.options) return undefined;
   const campaignId = bundle.campaign.id;
+
+  // The world gets its turn before anything else is asked. Once per in-world
+  // day, guarded inside runWorldTick, so the night cannot be re-rolled by a
+  // refetch.
+  //
+  // What it writes lands on the NEXT turn rather than this one, because this
+  // turn's board was built before the roll. That is the right shape: the night
+  // passed, the player's turn resolves, and the scene that opens after it is
+  // the consequence walking in.
+  await runWorldTick({
+    campaignId,
+    day: bundle.clock.day,
+    minute: bundle.clock.minute,
+    npcs: bundle.npcs,
+    situations: bundle.situations,
+  });
   const oracle: NonNullable<TurnOptions["oracle"]> = {};
 
   // A question the model asked last turn. Answered first, so the answer is in
@@ -770,6 +787,10 @@ async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {
   if (npcKey && input.trim() && !turn.options) {
     const npc = bundle.npcs.find((n) => n.npc_id === npcKey);
     if (npc) await markDealtWith(bundle.campaign.id, npc, bundle.clock.day);
+    // A move the world made is answered by dealing with the person who made it.
+    // Unlike the derived `person_` situations, a move is written rather than
+    // re-derived, so nothing else would ever take it off the board.
+    await settleMoves(bundle.campaign.id, npcKey);
   }
 }
 
@@ -935,7 +956,15 @@ async function declineHook(bundle: LifeBundle, reason: string): Promise<void> {
     campaign_id: campaignId,
     type: "hook_declined",
     summary: `Passed on ${title}.`,
-    data: { reason } as unknown as Json,
+    // The title and the day ride along so the world tick can have somebody else
+    // take the job later. A gig you passed on that nobody ever does was never a
+    // choice, just a reroll.
+    data: {
+      reason,
+      title,
+      missionId: bundle.hook.missionId,
+      day: bundle.clock.day,
+    } as unknown as Json,
   });
   const to = nextPhase(bundle.phase, "decline_hook");
   if (to) await setCampaignPhase(campaignId, to);

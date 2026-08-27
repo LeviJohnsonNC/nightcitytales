@@ -15,7 +15,7 @@ const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_M
 
 const FACTION_LIST = FACTIONS.map((f) => `"${f.id}" (${f.name})`).join(", ");
 
-export const LIFE_PROMPT_VERSION = "2.2.0";
+export const LIFE_PROMPT_VERSION = "2.3.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -77,6 +77,12 @@ ${OBSERVATION_LIST}
 - Name who it was done to with a factionId when an organisation was on the receiving end: ${FACTION_LIST}. Leave it null when nobody in particular was, which is most of the time.
 - "clean" is worth reporting. Getting away without a trace is the only thing that takes pressure back off.
 - The PRESSURE block tells you what is already on the dials. Treat those numbers as fact, mention them only as the character would feel them, and never claim one moved: the engine moves them and will tell you.
+
+# WHEN SOMEBODY HAS MOVED ON THEIR OWN
+The city acts while the character is not looking. When a situation says somebody has done something — asked for something, come collecting, gone quiet, come looking — that already happened. It was decided before this turn ran.
+- Play it as a fact they walk into: the message that was waiting, the person on the step, the call that did not come back. Do not have the character be told about it by a narrator.
+- You are told WHAT they did. You are NOT told why, and you do not know. Voice them wanting something without stating what; let them be evasive, or blunt, or halfway through the ask when the scene opens. Never have them explain their motive, and never invent one and state it as fact — these people have interiors you have not been shown.
+- Do not soften it, do not delay it to a better moment, and do not have them turn out to be joking. If it says they came looking, they are here.
 
 # NIGHT CITY KEEPS MOVING
 - Prefer people the player already knows over inventing new faces. Relationships should deepen through repetition; the same fixer, ripperdoc, neighbour and enemy keep their names, voices and grudges.
