@@ -17,7 +17,7 @@ export function NpcDossier({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[92vw] border border-hairline bg-surface p-0 sm:max-w-lg">
+      <DialogContent className="max-h-[88vh] max-w-[92vw] overflow-y-auto border border-hairline bg-surface p-0 sm:max-w-lg">
         <DialogTitle className="sr-only">{npc.name}</DialogTitle>
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
           <img
