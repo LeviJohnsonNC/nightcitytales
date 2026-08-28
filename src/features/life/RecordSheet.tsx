@@ -7,13 +7,22 @@
  * written, what you read here is exactly what the GM is working from.
  */
 import { Button } from "@/components/ui/button";
+import { NpcName } from "@/features/cast/NpcName";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { getFaction, isFactionId, standingBand } from "@/engine";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { pressureLines } from "@/features/campaign/pressure";
 import type { LifeBundle } from "./useLife";
 
-function Row({ label, value, tone }: { label: string; value: string; tone?: "bad" | "good" }) {
+function Row({
+  label,
+  value,
+  tone,
+}: {
+  label: React.ReactNode;
+  value: string;
+  tone?: "bad" | "good";
+}) {
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 text-sm">
       <span className="truncate">{label}</span>
@@ -89,7 +98,7 @@ export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
               {people.map((npc) => (
                 <Row
                   key={npc.id}
-                  label={npc.name}
+                  label={<NpcName name={npc.name} />}
                   value={npc.disposition > 0 ? `+${npc.disposition}` : `${npc.disposition}`}
                   {...(npc.disposition <= -2
                     ? { tone: "bad" as const }

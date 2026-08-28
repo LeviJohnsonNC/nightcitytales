@@ -35,6 +35,7 @@ import {
   woundActionPenalty,
   type WoundStateCode,
 } from "@/engine";
+import { NpcName } from "@/features/cast/NpcName";
 import { NpcText } from "@/features/cast/NpcText";
 import { CheckCard } from "@/features/play/CheckCard";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
@@ -315,7 +316,7 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
               <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h3 className="text-base font-bold">{mission.title}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {offer.brokerName}, {offer.brokerLine}
+                  <NpcName name={offer.brokerName} />, {offer.brokerLine}
                 </p>
                 <p className="num font-mono text-sm">
                   {raised && (
@@ -342,7 +343,9 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
 
         <CollapsibleContent className="px-4 pb-4">
           <div className="space-y-3">
-            <p className="text-sm leading-relaxed">{offer.pitch}</p>
+            <p className="text-sm leading-relaxed">
+              <NpcText text={offer.pitch} />
+            </p>
             <p className="text-sm">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 They want{" "}
