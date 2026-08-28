@@ -23,6 +23,7 @@ import { DowntimePanel } from "@/features/downtime/DowntimePanel";
 import { RoleAbilityPanel } from "./RoleAbilityPanel";
 import { gmSkillList, suggestionInput } from "./playModel";
 import { settlementFrom, wasShorted } from "./settlementReport";
+import { NpcText } from "@/features/cast/NpcText";
 import { usePlay, type PlayBundle } from "./usePlay";
 import type { RollRecord } from "./checkPrompt";
 
