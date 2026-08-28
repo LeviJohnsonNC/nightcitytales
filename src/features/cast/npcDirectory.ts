@@ -10,6 +10,9 @@
  * imported by the engine.
  */
 
+import { CAST_BIOS } from "./castBios";
+import { WORLD_BIOS } from "./worldBios";
+
 export type NpcKind = "cast" | "broker" | "patron" | "target" | "faction" | "threat";
 
 export interface NpcEntry {
@@ -33,7 +36,7 @@ function entry(
   role: string,
   aliases: string[] = [],
 ): NpcEntry {
-  return { id, name, kind, role, aliases, bio: null };
+  return { id, name, kind, role, aliases, bio: CAST_BIOS[id] ?? WORLD_BIOS[id] ?? null };
 }
 
 export const NPC_DIRECTORY: NpcEntry[] = [
