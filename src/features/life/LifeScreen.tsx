@@ -37,6 +37,7 @@ import {
 } from "@/engine";
 
 import { NpcText } from "@/features/cast/NpcText";
+import { NpcName } from "@/features/cast/NpcName";
 import { CheckCard } from "@/features/play/CheckCard";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
@@ -576,7 +577,9 @@ function LifeRail({
             {life.people.slice(0, 8).map((person) => (
               <li key={person.key} className="text-sm">
                 <span className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2">
-                  <span className="truncate font-medium">{person.name}</span>
+                  <span className="min-w-0 truncate font-medium">
+                    <NpcName name={person.name} />
+                  </span>
                   <span className="num shrink-0 font-mono text-[10px] uppercase tracking-[0.16em]">
                     {dispositionLabel(person.disposition)} ({person.disposition})
                   </span>
