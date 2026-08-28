@@ -76,9 +76,10 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
     case "life_narration":
       return (
         <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
-          {text}
+          <NpcText text={text} />
         </p>
       );
+
     case "skill_check":
       return (
         <p className="font-mono text-xs text-muted-foreground">
