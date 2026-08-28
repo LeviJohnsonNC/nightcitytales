@@ -316,7 +316,7 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
               <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h3 className="text-base font-bold">{mission.title}</h3>
                 <p className="text-sm text-muted-foreground">
-                  <NpcName name={offer.brokerName} />, {offer.brokerLine}
+                  {offer.brokerName}, {offer.brokerLine}
                 </p>
                 <p className="num font-mono text-sm">
                   {raised && (
