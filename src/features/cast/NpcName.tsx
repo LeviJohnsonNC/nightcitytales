@@ -34,7 +34,14 @@ export function NpcDossier({
           </p>
           <h2 className="text-lg font-bold leading-tight">{npc.name}</h2>
           {npc.bio ? (
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{npc.bio}</p>
+            <div className="space-y-3 pt-1">
+              {npc.bio.split("\n\n").map((para, i) => (
+                <p key={i} className="text-sm leading-relaxed text-foreground/90">
+                  {para}
+                </p>
+              ))}
+            </div>
+
           ) : (
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Dossier pending
