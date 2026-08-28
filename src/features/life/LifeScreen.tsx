@@ -35,6 +35,8 @@ import {
   woundActionPenalty,
   type WoundStateCode,
 } from "@/engine";
+
+import { NpcText } from "@/features/cast/NpcText";
 import { CheckCard } from "@/features/play/CheckCard";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
@@ -76,9 +78,10 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
     case "life_narration":
       return (
         <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
-          {text}
+          <NpcText text={text} />
         </p>
       );
+
     case "skill_check":
       return (
         <p className="font-mono text-xs text-muted-foreground">
@@ -340,7 +343,9 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
 
         <CollapsibleContent className="px-4 pb-4">
           <div className="space-y-3">
-            <p className="text-sm leading-relaxed">{offer.pitch}</p>
+            <p className="text-sm leading-relaxed">
+              <NpcText text={offer.pitch} />
+            </p>
             <p className="text-sm">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 They want{" "}
