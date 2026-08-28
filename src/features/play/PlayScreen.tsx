@@ -36,9 +36,10 @@ function EventBlock({ event }: { event: CampaignEvent }) {
     case "gm_narration":
       return (
         <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
-          {text}
+          <NpcText text={text} />
         </p>
       );
+
     case "skill_check":
     case "attack":
     case "death_save":
