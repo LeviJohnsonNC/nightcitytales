@@ -35,6 +35,7 @@ import {
   woundActionPenalty,
   type WoundStateCode,
 } from "@/engine";
+import { NpcText } from "@/features/cast/NpcText";
 import { CheckCard } from "@/features/play/CheckCard";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
