@@ -46,7 +46,9 @@
   --color-ember-dim: #9c2a6b;
   --color-danger: #ff4d4d;
   --color-cool: #34d5e6;
+  --color-amber: #ffb14d;
   --color-success: #6fe3a4;
+
 
   /* Neon signature colors (used by glow utilities + accents). */
   --color-neon-pink: #ff3d9a;
