@@ -25,7 +25,6 @@ export function Atmosphere({ rain = true, av = true }: { rain?: boolean; av?: bo
             }}
           />
         </div>
-
       ) : null}
     </div>
   );

@@ -222,7 +222,9 @@ function Index() {
                     <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-dim">
                       {chip.label}
                     </p>
-                    <p className={`num mt-1 text-[13px] font-semibold ${chip.tone}`}>{chip.value}</p>
+                    <p className={`num mt-1 text-[13px] font-semibold ${chip.tone}`}>
+                      {chip.value}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -486,7 +488,10 @@ function Index() {
       </section>
 
       {/* ====================== 7. FREEFORM ACTIONS ====================== */}
-      <section className="relative overflow-hidden border-t border-hairline/50" style={{ background: "#040309" }}>
+      <section
+        className="relative overflow-hidden border-t border-hairline/50"
+        style={{ background: "#040309" }}
+      >
         <img
           src={streetArt.url}
           alt=""
@@ -603,7 +608,11 @@ function Index() {
                 b: "Broken Ribs · Armor SP 4/11 · 7 rounds remaining",
                 tone: "cool",
               },
-              { t: "2:14 AM", b: "Your landlord messages: \u201cWe need to talk.\u201d", tone: "amber" },
+              {
+                t: "2:14 AM",
+                b: "Your landlord messages: \u201cWe need to talk.\u201d",
+                tone: "amber",
+              },
             ].map((row, i) => (
               <Reveal key={row.t} delay={i * 70}>
                 <li className="grid grid-cols-[5.5rem_auto_minmax(0,1fr)] items-start gap-4 py-3">
