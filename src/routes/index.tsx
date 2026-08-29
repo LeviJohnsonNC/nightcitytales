@@ -107,6 +107,28 @@ function Index() {
           className="right-[32%] top-[38%] h-10 w-8 rounded-full"
           color="rgba(255,61,154,0.65)"
         />
+        <SignFlicker
+          className="right-[6%] top-[48%] h-8 w-14 rounded-full"
+          color="rgba(161,92,255,0.7)"
+        />
+        <SignFlicker
+          slow
+          className="right-[24%] top-[58%] h-6 w-16 rounded-full"
+          color="rgba(255,177,77,0.55)"
+        />
+        <SignFlicker
+          className="right-[42%] top-[30%] h-12 w-6 rounded-full"
+          color="rgba(52,213,230,0.6)"
+        />
+        <SignFlicker
+          slow
+          className="left-[8%] top-[24%] h-9 w-12 rounded-full"
+          color="rgba(255,61,154,0.5)"
+        />
+        <SignFlicker
+          className="left-[22%] top-[52%] h-5 w-10 rounded-full"
+          color="rgba(52,213,230,0.5)"
+        />
         <Atmosphere />
 
         <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl items-center px-5 py-24 sm:px-8">
