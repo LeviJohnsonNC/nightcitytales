@@ -115,7 +115,7 @@ function Index() {
         />
         <SignFlicker
           slow
-          className="right-[26%] top-[9%] h-5 w-14 rounded-full"
+          className="left-[44%] top-[7%] h-5 w-14 rounded-full"
           color="rgba(255,177,77,0.5)"
         />
         <SignFlicker
