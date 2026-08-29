@@ -90,10 +90,8 @@ const GLINTS: Array<{
   { left: "30%", top: "13%", size: 3, delay: "5.1s", duration: "8s", color: "rgba(255,200,130,0.9)" },
   { left: "38%", top: "7%", size: 2, delay: "1.2s", duration: "11s", color: "rgba(255,235,200,0.8)" },
   { left: "47%", top: "10%", size: 2, delay: "6.8s", duration: "7s", color: "rgba(255,214,150,0.9)" },
-  { left: "55%", top: "6%", size: 3, delay: "3.3s", duration: "10s", color: "rgba(255,225,170,0.85)" },
-  { left: "63%", top: "12%", size: 2, delay: "0.9s", duration: "8s", color: "rgba(255,200,130,0.9)" },
-  { left: "71%", top: "8%", size: 2, delay: "4.7s", duration: "12s", color: "rgba(255,235,200,0.8)" },
-  { left: "79%", top: "5%", size: 2, delay: "7.9s", duration: "9s", color: "rgba(255,214,150,0.9)" },
+  { left: "51%", top: "4%", size: 2, delay: "3.3s", duration: "10s", color: "rgba(255,225,170,0.8)" },
+  { left: "84%", top: "5%", size: 2, delay: "7.9s", duration: "9s", color: "rgba(255,214,150,0.9)" },
   { left: "88%", top: "11%", size: 3, delay: "1.8s", duration: "8s", color: "rgba(255,225,170,0.85)" },
   // Left mid-ground towers (behind the copy scrim — reads as distant city).
   { left: "6%", top: "32%", size: 2, delay: "3.9s", duration: "10s", color: "rgba(255,214,150,0.7)" },
