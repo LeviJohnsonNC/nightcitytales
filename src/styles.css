@@ -344,44 +344,9 @@
 }
 
 /* ---- Landing page atmosphere ----
-   Restrained, ambient motion only: drifting rain, slow fog, a rare signage
-   flicker, an occasional AV headlight sweep, and a one-shot load settle.
+   Restrained, ambient motion only: slow fog, a rare signage flicker,
+   occasional AV headlight sweeps, and a one-shot load settle.
    All of it is neutralized by the prefers-reduced-motion rule above. */
-@keyframes lp-rain {
-  0% {
-    background-position:
-      0 0,
-      0 0;
-  }
-  100% {
-    background-position:
-      -120px 900px,
-      -260px 1400px;
-  }
-}
-.lp-rain {
-  background-image:
-    repeating-linear-gradient(
-      104deg,
-      rgba(206, 222, 255, 0.16) 0px,
-      rgba(206, 222, 255, 0.16) 1px,
-      transparent 1px,
-      transparent 7px
-    ),
-    repeating-linear-gradient(
-      100deg,
-      rgba(206, 222, 255, 0.09) 0px,
-      rgba(206, 222, 255, 0.09) 1px,
-      transparent 1px,
-      transparent 13px
-    );
-  background-size:
-    420px 620px,
-    700px 900px;
-  animation: lp-rain 2.6s linear infinite;
-  opacity: 0.35;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.25));
-}
 
 @keyframes lp-fog {
   0% {
@@ -440,7 +405,7 @@
     opacity: 0.85;
   }
   100% {
-    transform: translate3d(120vw, -3vh, 0);
+    transform: translate3d(120vw, var(--lp-av-drift, -3vh), 0);
     opacity: 0;
   }
 }
