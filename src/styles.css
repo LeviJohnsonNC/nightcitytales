@@ -429,6 +429,25 @@
   animation: lp-drift 22s ease-in-out infinite;
 }
 
+/* A window catching the light: mostly dark, flaring briefly, then gone. */
+@keyframes lp-glint {
+  0%,
+  100% {
+    opacity: 0.06;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  16% {
+    opacity: 0.12;
+  }
+}
+.lp-glint {
+  animation-name: lp-glint;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
 @keyframes lp-boot {
   0% {
     opacity: 0;

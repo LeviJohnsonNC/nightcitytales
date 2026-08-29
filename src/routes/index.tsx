@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, onAuthChange, type AuthUser } from "@/lib/backend";
-import { Atmosphere, SignFlicker } from "@/features/landing/Atmosphere";
+import { Atmosphere, SignFlicker, WindowGlints } from "@/features/landing/Atmosphere";
 import { Reveal } from "@/features/landing/Reveal";
 import { LandingNav } from "@/features/landing/LandingNav";
 import heroArt from "@/assets/hero-one.jpg.asset.json";
@@ -101,24 +101,26 @@ function Index() {
               "linear-gradient(to top, rgba(8,6,20,0.92) 0%, rgba(8,6,20,0.3) 32%, transparent 65%)",
           }}
         />
-        <SignFlicker className="right-[14%] top-[22%] h-16 w-10 rounded-full" />
+        {/* Signage glow — kept to the skyline and copy-side scrim, never on the
+            character (the jacket occupies the center-right of the frame). */}
+        <SignFlicker className="right-[3%] top-[14%] h-14 w-8 rounded-full" />
         <SignFlicker
           slow
-          className="right-[32%] top-[38%] h-10 w-8 rounded-full"
-          color="rgba(255,61,154,0.65)"
+          className="right-[10%] top-[6%] h-8 w-12 rounded-full"
+          color="rgba(255,61,154,0.6)"
         />
         <SignFlicker
-          className="right-[6%] top-[48%] h-8 w-14 rounded-full"
-          color="rgba(161,92,255,0.7)"
+          className="right-[2%] top-[34%] h-6 w-10 rounded-full"
+          color="rgba(161,92,255,0.6)"
         />
         <SignFlicker
           slow
-          className="right-[24%] top-[58%] h-6 w-16 rounded-full"
-          color="rgba(255,177,77,0.55)"
+          className="left-[44%] top-[7%] h-5 w-14 rounded-full"
+          color="rgba(255,177,77,0.5)"
         />
         <SignFlicker
-          className="right-[42%] top-[30%] h-12 w-6 rounded-full"
-          color="rgba(52,213,230,0.6)"
+          className="right-[44%] top-[5%] h-10 w-5 rounded-full"
+          color="rgba(52,213,230,0.55)"
         />
         <SignFlicker
           slow
@@ -129,6 +131,12 @@ function Index() {
           className="left-[22%] top-[52%] h-5 w-10 rounded-full"
           color="rgba(52,213,230,0.5)"
         />
+        <SignFlicker
+          slow
+          className="left-[4%] top-[70%] h-6 w-8 rounded-full"
+          color="rgba(255,177,77,0.45)"
+        />
+        <WindowGlints />
         <Atmosphere />
 
         <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl items-center px-5 py-24 sm:px-8">
