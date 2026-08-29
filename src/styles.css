@@ -410,7 +410,10 @@
   }
 }
 .lp-av {
-  animation: lp-av 17s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation-name: lp-av;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  animation-iteration-count: infinite;
+  animation-duration: 17s;
 }
 
 @keyframes lp-drift {
