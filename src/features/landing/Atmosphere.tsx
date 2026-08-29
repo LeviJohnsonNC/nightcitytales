@@ -69,3 +69,62 @@ export function SignFlicker({
     />
   );
 }
+
+/*
+ * Windows catching the last of the light: tiny warm specks that glint on and
+ * off at staggered intervals. Kept to the skyline — the band across the top
+ * and the far edges — so none of them land on the character in the hero.
+ * Positions are percentages of the hero frame.
+ */
+const GLINTS: Array<{
+  left: string;
+  top: string;
+  size: number;
+  delay: string;
+  duration: string;
+  color: string;
+}> = [
+  // Top skyline band, across the frame.
+  { left: "12%", top: "11%", size: 2, delay: "0s", duration: "7s", color: "rgba(255,214,150,0.9)" },
+  { left: "21%", top: "8%", size: 2, delay: "2.4s", duration: "9s", color: "rgba(255,230,190,0.85)" },
+  { left: "30%", top: "13%", size: 3, delay: "5.1s", duration: "8s", color: "rgba(255,200,130,0.9)" },
+  { left: "38%", top: "7%", size: 2, delay: "1.2s", duration: "11s", color: "rgba(255,235,200,0.8)" },
+  { left: "47%", top: "10%", size: 2, delay: "6.8s", duration: "7s", color: "rgba(255,214,150,0.9)" },
+  { left: "55%", top: "6%", size: 3, delay: "3.3s", duration: "10s", color: "rgba(255,225,170,0.85)" },
+  { left: "63%", top: "12%", size: 2, delay: "0.9s", duration: "8s", color: "rgba(255,200,130,0.9)" },
+  { left: "71%", top: "8%", size: 2, delay: "4.7s", duration: "12s", color: "rgba(255,235,200,0.8)" },
+  { left: "79%", top: "5%", size: 2, delay: "7.9s", duration: "9s", color: "rgba(255,214,150,0.9)" },
+  { left: "88%", top: "11%", size: 3, delay: "1.8s", duration: "8s", color: "rgba(255,225,170,0.85)" },
+  // Left mid-ground towers (behind the copy scrim — reads as distant city).
+  { left: "6%", top: "32%", size: 2, delay: "3.9s", duration: "10s", color: "rgba(255,214,150,0.7)" },
+  { left: "15%", top: "41%", size: 2, delay: "6.2s", duration: "7s", color: "rgba(255,200,130,0.7)" },
+  { left: "26%", top: "28%", size: 2, delay: "0.4s", duration: "11s", color: "rgba(255,235,200,0.65)" },
+  { left: "33%", top: "47%", size: 2, delay: "8.6s", duration: "9s", color: "rgba(255,214,150,0.7)" },
+  // Far right edge — the sliver of skyline past the character's shoulder.
+  { left: "96%", top: "22%", size: 2, delay: "2.1s", duration: "8s", color: "rgba(255,230,190,0.85)" },
+  { left: "98%", top: "38%", size: 2, delay: "5.6s", duration: "10s", color: "rgba(255,200,130,0.8)" },
+  { left: "95%", top: "52%", size: 2, delay: "1.5s", duration: "7s", color: "rgba(255,214,150,0.75)" },
+];
+
+export function WindowGlints() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {GLINTS.map((g) => (
+        <div
+          key={`${g.left}-${g.top}`}
+          className="lp-glint absolute rounded-full"
+          style={{
+            left: g.left,
+            top: g.top,
+            width: g.size,
+            height: g.size,
+            background: g.color,
+            boxShadow: `0 0 ${g.size * 3}px ${g.size}px ${g.color}`,
+            animationDelay: g.delay,
+            animationDuration: g.duration,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
