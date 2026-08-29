@@ -15,16 +15,17 @@ export function Atmosphere({ rain = true, av = true }: { rain?: boolean; av?: bo
       />
       {rain ? <div className="lp-rain absolute -inset-[20%]" /> : null}
       {av ? (
-        <div className="lp-av absolute left-0 top-[26%] h-px w-[26vw]">
+        <div className="lp-av absolute left-0 top-[44%] h-px w-[14vw] opacity-40">
           <div
             className="h-px w-full"
             style={{
               background:
-                "linear-gradient(90deg, transparent, rgba(255,235,200,0.0) 20%, rgba(255,225,180,0.55) 70%, rgba(255,255,255,0.9) 100%)",
-              boxShadow: "0 0 10px 2px rgba(255,220,170,0.35)",
+                "linear-gradient(90deg, transparent, rgba(255,225,180,0.35) 75%, rgba(255,245,220,0.6) 100%)",
+              boxShadow: "0 0 8px 1px rgba(255,220,170,0.2)",
             }}
           />
         </div>
+
       ) : null}
     </div>
   );
