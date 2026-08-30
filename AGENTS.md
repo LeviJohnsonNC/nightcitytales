@@ -15,13 +15,20 @@
 
 ## Product
 
-Night City Tales is a Cyberpunk RED companion with two connected experiences:
+Night City Tales is a solo Cyberpunk RED game with two connected experiences:
 
 - A rules-driven character creator supporting Streetrat, Edgerunner, and
   Complete Package creation methods.
-- A solo adventure mode in which an AI GM narrates a predefined mission while
-  deterministic TypeScript code owns dice, checks, combat math, and mission
-  transitions.
+- A persistent campaign that cycles through Life, Hook, Job, and Aftermath, in
+  which an AI GM narrates and parses intent while deterministic TypeScript code
+  owns dice, checks, combat math, positions, money, time, pressure, and every
+  phase transition.
+
+`PRODUCT.md` is the product compass: what the game is for, where the line
+between the engine and the model sits and why, and how to resolve an ambiguous
+design request. Read it before making gameplay, UX, AI, or content decisions.
+This file stays authoritative on architecture; `PRODUCT.md` is authoritative on
+intent.
 
 The top-level `README.md` describes the original scaffold and is not a reliable
 description of the current product or route set.
