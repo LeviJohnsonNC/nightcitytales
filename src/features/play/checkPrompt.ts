@@ -14,7 +14,15 @@ import {
   type Opposition,
   type SkillCheckResult,
 } from "@/engine";
-import type { CampaignEvent, FullCharacter } from "@/lib/backend";
+import type {
+  CampaignEvent,
+  CampaignInventoryItem,
+  CampaignVitals,
+  FullCharacter,
+} from "@/lib/backend";
+import { effectiveStatsRecord } from "./playModel";
+
+type LiveCheckContext = { vitals: CampaignVitals; inventory: CampaignInventoryItem[] };
 
 /** The published DV bands, lowest first (src/data/rules/dv-table.json). */
 export const DV_BANDS = [...DIFFICULTY_VALUES].sort((a, b) => a.dv - b.dv);
@@ -151,6 +159,7 @@ export function describePendingCheck(
   event: CampaignEvent,
   character: FullCharacter,
   woundState: WoundStateCode = "none",
+  context?: LiveCheckContext,
 ): PendingCheck | null {
   const data = (event.data ?? {}) as PromptData;
   const skillId = typeof data.skillId === "string" ? data.skillId : null;
@@ -170,7 +179,9 @@ export function describePendingCheck(
     return null;
   }
 
-  const stats = character.stats as Record<string, unknown> | null;
+  const stats = context
+    ? effectiveStatsRecord(character, context)
+    : (character.stats as Record<string, unknown> | null);
   const statValue =
     stats && typeof stats[skill.stat] === "number" ? (stats[skill.stat] as number) : null;
   if (statValue === null) return null;
@@ -214,6 +225,7 @@ export function pendingChecksFrom(
   events: CampaignEvent[],
   character: FullCharacter,
   woundState: WoundStateCode = "none",
+  context?: LiveCheckContext,
 ): PendingCheck[] {
   const resolvedIds = new Set<string>();
   const unlinkedBySkill = new Map<string, number>();
@@ -235,7 +247,7 @@ export function pendingChecksFrom(
   for (const event of events) {
     if (event?.type !== "check_prompt") continue;
     if (resolvedIds.has(event.id)) continue;
-    const described = describePendingCheck(event, character, woundState);
+    const described = describePendingCheck(event, character, woundState, context);
     if (!described) continue;
     const bySkill = unlinkedBySkill.get(described.skillId) ?? 0;
     if (bySkill > 0) {
@@ -256,8 +268,9 @@ export function pendingCheckFrom(
   events: CampaignEvent[],
   character: FullCharacter,
   woundState: WoundStateCode = "none",
+  context?: LiveCheckContext,
 ): PendingCheck | null {
-  return pendingChecksFrom(events, character, woundState)[0] ?? null;
+  return pendingChecksFrom(events, character, woundState, context)[0] ?? null;
 }
 
 /** One line of the session's dice record. */

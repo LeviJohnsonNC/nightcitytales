@@ -15,15 +15,17 @@ import { CarriedKit } from "./CarriedKitView";
 import { CharacterSheet } from "@/features/chargen/CharacterSheet";
 import { buildFromState } from "@/features/chargen/sheetModel";
 import { stateFromCharacter } from "@/features/roster/characterState";
-import type { CampaignInventoryItem, FullCharacter } from "@/lib/backend";
+import type { CampaignCyberware, CampaignInventoryItem, FullCharacter } from "@/lib/backend";
 
 export function SheetDrawer({
   character,
   inventory,
+  cyberware,
 }: {
   character: FullCharacter;
   /** The campaign's live kit. Omitted on surfaces that have no campaign. */
   inventory?: CampaignInventoryItem[];
+  cyberware?: CampaignCyberware[];
 }) {
   const state = stateFromCharacter(character);
   const build = buildFromState(state);
@@ -49,7 +51,7 @@ export function SheetDrawer({
             <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
               Carrying now
             </p>
-            <CarriedKit inventory={inventory} />
+            <CarriedKit inventory={inventory} {...(cyberware ? { cyberware } : {})} />
           </section>
         )}
 

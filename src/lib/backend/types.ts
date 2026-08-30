@@ -67,6 +67,9 @@ export type CampaignVitalsUpdate = Update<"campaign_vitals">;
 export type CampaignInventoryItem = Row<"campaign_inventory">;
 export type CampaignInventoryInsert = Insert<"campaign_inventory">;
 
+export type CampaignCyberware = Row<"campaign_cyberware">;
+export type CampaignCyberwareInsert = Insert<"campaign_cyberware">;
+
 export type CampaignNpc = Row<"campaign_npcs">;
 export type CampaignNpcInsert = Insert<"campaign_npcs">;
 
@@ -95,6 +98,7 @@ export type FullCampaign = {
   campaign: Campaign;
   vitals: CampaignVitals | null;
   inventory: CampaignInventoryItem[];
+  cyberware: CampaignCyberware[];
   npcs: CampaignNpc[];
   factions: CampaignFaction[];
   flags: CampaignFlag[];

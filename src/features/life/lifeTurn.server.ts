@@ -6,6 +6,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { LIFE_SYSTEM_PROMPT } from "./lifeSystemPrompt";
 import { LifeWireResponseSchema, normalizeLifeResponse, type LifeResponse } from "./lifeResponse";
 
@@ -32,6 +33,7 @@ function lifeError(error: unknown, model: string): Error {
 }
 
 export const lifeTurnFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => LifeTurnInput.parse(input))
   .handler(async ({ data }): Promise<LifeResponse> => {
     const key = process.env["LOVABLE_API_KEY"];

@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./dice";
 export * from "./derived";
+export * from "./effectiveStats";
 export * from "./derivedColumns";
 export * from "./rollLog";
 export * from "./rulesData";
@@ -8,6 +9,7 @@ export * from "./checkDV";
 export * from "./statGeneration";
 export * from "./skillAllocation";
 export * from "./humanity";
+export * from "./cyberwareInstall";
 export * from "./improvementPoints";
 export * from "./advancement";
 export * from "./lifepath";

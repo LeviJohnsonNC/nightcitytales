@@ -121,6 +121,27 @@ export function getFashion(id: string): CatalogFashion {
 
 export const CATALOG_RULES = catalogData._rules;
 
+export type InstallLevel = "Mall" | "Clinic" | "Hospital";
+
+export type RipperdocRules = {
+  procedureMinutesPerInstall: number;
+  procedureSource: string;
+  recoveryDays: Record<InstallLevel, number>;
+  recoverySource: string;
+  appointmentDelayDaysByDisposition: {
+    hostile: null;
+    cold: number;
+    neutral: number;
+    warm: number;
+  };
+  appointmentSource: string;
+  paired: string[];
+  exclusiveGroups: Record<string, string[]>;
+  requiresAnyFoundation: Record<string, string[]>;
+};
+
+export const RIPPERDOC_RULES = CATALOG_RULES.ripperdoc as RipperdocRules;
+
 /** Row counts the file itself flags as not yet extracted. */
 export const CATALOG_PENDING = catalogData._pending as string[];
 

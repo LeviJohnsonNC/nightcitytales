@@ -28,12 +28,13 @@ import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { metresApart, type CombatantTurnState } from "./encounterModel";
 import type {
   CampaignEvent,
+  CampaignCyberware,
   CampaignInventoryItem,
   CampaignVitals,
   FullCharacter,
 } from "@/lib/backend";
 import { liveInventory } from "./liveInventory";
-import { statsRecord } from "./playModel";
+import { effectiveStatsRecord } from "./playModel";
 
 /** Inventory rows that are ammunition, by campaign slot or catalog id. */
 function isAmmunitionRow(row: CampaignInventoryItem): boolean {
@@ -103,9 +104,9 @@ export function itemCapabilities(rows: CampaignInventoryItem[]): ItemCapability[
 }
 
 /** Installed chrome, with whether each piece's printed requirement is met. */
-export function cyberwareCapabilities(character: FullCharacter): CyberwareCapability[] {
-  const installed = new Set(character.cyberware.map((c) => c.item_id));
-  return character.cyberware.map((row) => {
+export function cyberwareCapabilities(rows: CampaignCyberware[]): CyberwareCapability[] {
+  const installed = new Set(rows.map((c) => c.item_id));
+  return rows.map((row) => {
     let name = row.item_id;
     let requires: string | null = null;
     try {
@@ -187,13 +188,17 @@ export type SnapshotInput = {
   character: FullCharacter;
   vitals: CampaignVitals;
   inventory: CampaignInventoryItem[];
+  cyberware: CampaignCyberware[];
   encounter: LiveEncounter | null;
   events: CampaignEvent[];
   beatId: string | null;
 };
 
 export function buildCapabilitySnapshot(input: SnapshotInput): CapabilitySnapshot {
-  const stats = statsRecord(input.character);
+  const stats = effectiveStatsRecord(input.character, {
+    vitals: input.vitals,
+    inventory: input.inventory,
+  });
   const rows = inventoryFor(input.inventory, input.character);
   const move = stats["move"] ?? 0;
   const ability = roleAbilityOf(input.character.character.role);
@@ -209,7 +214,7 @@ export function buildCapabilitySnapshot(input: SnapshotInput): CapabilitySnapsho
     move,
     weapons: weaponCapabilities(rows),
     items: itemCapabilities(rows),
-    cyberware: cyberwareCapabilities(input.character),
+    cyberware: cyberwareCapabilities(input.cyberware),
     roleAbility: ability
       ? {
           abilityId: ability.abilityId,

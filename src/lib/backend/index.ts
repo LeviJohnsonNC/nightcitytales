@@ -4,6 +4,7 @@ export * from "./characters";
 export * from "./drafts";
 export * from "./portraits";
 export * from "./campaigns";
+export * from "./cyberware";
 export * from "./life";
 export * from "./encounters";
 export * from "./missions";

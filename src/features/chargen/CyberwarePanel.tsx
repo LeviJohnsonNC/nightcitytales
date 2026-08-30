@@ -9,6 +9,7 @@ import {
   categorySlotUsage,
   foundations,
   getCyberware,
+  installQuantity,
 } from "@/engine";
 import {
   BudgetBars,
@@ -46,6 +47,8 @@ function CyberwareRow({ state, id }: { state: ChargenState; id: string }) {
   const result = check({ kind: "cyberware", itemId: item.id, budget });
   const installed = loadout.lines.filter((l) => l.itemId === item.id).length;
   const requires = item.requires ? getCyberware(item.requires) : null;
+  const quantity = installQuantity(item.id);
+  const quotedCost = item.cost * quantity;
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 p-3">
@@ -82,6 +85,7 @@ function CyberwareRow({ state, id }: { state: ChargenState; id: string }) {
             INSTALL <span className="text-text-muted">{item.install}</span>
           </span>
           {requires ? <span className="text-text-muted">REQUIRES {requires.name}</span> : null}
+          {quantity > 1 ? <span className="text-text-muted">PAIRED ×{quantity}</span> : null}
         </div>
         {item.notes ? <p className="mt-1 text-xs text-text-dim">{item.notes}</p> : null}
         {!result.ok && result.reason ? (
@@ -89,7 +93,7 @@ function CyberwareRow({ state, id }: { state: ChargenState; id: string }) {
         ) : null}
       </div>
       <div className="flex items-center gap-3">
-        <span className="font-mono text-sm tabular-nums text-ember">{eb(item.cost)}</span>
+        <span className="font-mono text-sm tabular-nums text-ember">{eb(quotedCost)}</span>
         <Button
           size="sm"
           disabled={!result.ok}

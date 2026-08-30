@@ -35,7 +35,7 @@ import type {
 } from "@/lib/backend";
 import type { StartEncounterPayload } from "@/lib/backend";
 import { liveInventory } from "./liveInventory";
-import { statsRecord } from "./playModel";
+import { effectiveStatsRecord } from "./playModel";
 
 /** Per-combatant turn bookkeeping: one Action and one Move a Round (CP:R pg. 165). */
 export type CombatantTurnState = {
@@ -248,7 +248,7 @@ export function playerCombatant(
   inventory: CampaignInventoryItem[] = [],
   arena: Arena = arenaFor(DEFAULT_ARENA_KEY),
 ): { combatant: Combatant; data: CombatantData } {
-  const stats = statsRecord(character);
+  const stats = effectiveStatsRecord(character, { vitals, inventory });
   const sp = armorLoadout(liveInventory(inventory, character));
   const combatant: Combatant = {
     id,

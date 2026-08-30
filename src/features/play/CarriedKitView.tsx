@@ -4,10 +4,16 @@
  * Presentational only; the reading of the rows lives in carriedKit.ts.
  */
 import { carriedKit } from "./carriedKit";
-import type { CampaignInventoryItem } from "@/lib/backend";
+import type { CampaignCyberware, CampaignInventoryItem } from "@/lib/backend";
 
-export function CarriedKit({ inventory }: { inventory: CampaignInventoryItem[] }) {
-  const groups = carriedKit(inventory);
+export function CarriedKit({
+  inventory,
+  cyberware = [],
+}: {
+  inventory: CampaignInventoryItem[];
+  cyberware?: CampaignCyberware[];
+}) {
+  const groups = carriedKit(inventory, cyberware);
 
   if (groups.length === 0) {
     return <p className="text-sm text-muted-foreground">Carrying nothing at all.</p>;

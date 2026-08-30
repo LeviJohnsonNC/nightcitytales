@@ -16,6 +16,42 @@
     "humanityLossAtCreation": "At Character Generation, Humanity Loss is the PRESET flat number. The dice in parentheses apply only AFTER creation. Do not roll HL during chargen.",
     "installLevels": ["Mall", "Clinic", "Hospital"],
     "installNote": "Installation surgery is always included at no extra charge, including at Character Generation.",
+    "ripperdoc": {
+      "procedureMinutesPerInstall": 240,
+      "procedureSource": "Core Rulebook p. 226: installing found cyberware takes four hours. Applied here to a purchased installation scene; purchase still includes surgery.",
+      "recoveryDays": {
+        "Mall": 0,
+        "Clinic": 1,
+        "Hospital": 3
+      },
+      "recoverySource": "Night City Tales pacing rule. The Core Rulebook does not prescribe routine post-install recovery days.",
+      "appointmentDelayDaysByDisposition": {
+        "hostile": null,
+        "cold": 2,
+        "neutral": 1,
+        "warm": 0
+      },
+      "appointmentSource": "Night City Tales relationship rule. Disposition changes access and waiting time, never the printed price.",
+      "paired": [
+        "anti_dazzle",
+        "image_enhance",
+        "low_light_infrared_uv",
+        "virtuality",
+        "grip_foot",
+        "jump_booster",
+        "skate_foot",
+        "web_foot"
+      ],
+      "exclusiveGroups": {
+        "speedware": ["kerenzikov", "sandevistan"]
+      },
+      "requiresAnyFoundation": {
+        "hardened_shielding": ["cyberarm", "cyberleg"],
+        "plastic_covering": ["cyberarm", "cyberleg"],
+        "realskinn_covering": ["cyberarm", "cyberleg"],
+        "superchrome_covering": ["cyberarm", "cyberleg"]
+      }
+    },
     "optionSlots": {
       "foundational": {
         "neural_link": {

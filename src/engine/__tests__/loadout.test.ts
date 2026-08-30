@@ -121,6 +121,23 @@ describe("cyberware install rules", () => {
     expect(check.reason).toMatch(/Neural Link/);
   });
 
+  it("installs and charges paired options as two physical implants", () => {
+    let loadout = buy(EMPTY_LOADOUT, {
+      kind: "cyberware",
+      itemId: "cybereye",
+      budget: "gear",
+    });
+    loadout = buy(loadout, { kind: "cyberware", itemId: "cybereye", budget: "gear" });
+    loadout = buy(loadout, { kind: "cyberware", itemId: "anti_dazzle", budget: "gear" });
+
+    const paired = loadout.lines.filter((line) => line.itemId === "anti_dazzle");
+    expect(paired).toHaveLength(2);
+    expect(new Set(paired.map((line) => line.foundationLineId)).size).toBe(2);
+    expect(
+      budgetStates("complete_package", loadout).find((budget) => budget.id === "gear")?.spent,
+    ).toBe(itemCost("cyberware", "cybereye") * 2 + itemCost("cyberware", "anti_dazzle") * 2);
+  });
+
   it("fills foundation slots and refuses the overflow", () => {
     let loadout = buy(EMPTY_LOADOUT, { kind: "cyberware", itemId: "neural_link", budget: "gear" });
     for (const id of ["braindance_recorder", "chipware_socket", "interface_plugs", "sandevistan"]) {
