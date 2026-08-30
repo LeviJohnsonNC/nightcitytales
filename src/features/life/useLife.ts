@@ -66,6 +66,7 @@ import {
   type CampaignEvent,
   type CampaignFlag,
   type CampaignInventoryItem,
+  type CampaignCyberware,
   type CampaignNpc,
   type CampaignVitals,
   type FullCharacter,
@@ -157,6 +158,7 @@ export type LifeBundle = {
   vitals: CampaignVitals;
   character: FullCharacter;
   inventory: CampaignInventoryItem[];
+  cyberware: CampaignCyberware[];
   npcs: CampaignNpc[];
   events: CampaignEvent[];
   phase: GamePhase;
@@ -213,6 +215,7 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     vitals: full.vitals,
     character,
     inventory: full.inventory,
+    cyberware: full.cyberware,
     npcs: cast.npcs,
   };
 
@@ -304,6 +307,8 @@ type TurnOptions = {
   options?: boolean;
   /** Minutes the engine has already decided this turn costs. */
   minutes?: number;
+  /** Narrate a committed engine result without applying model-authored actions. */
+  fixedResult?: boolean;
   /**
    * What the oracles said before this turn ran. The model is handed these as
    * facts; it never learns that a die was involved in producing them.
@@ -320,11 +325,12 @@ type TurnOptions = {
 
 /** The context slice the Life model reasons over. Deterministic and small. */
 function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
-  const summary = characterSummary(bundle.character, bundle.vitals);
+  const summary = characterSummary(bundle.character, bundle.vitals, bundle.inventory);
   const capability = buildCapabilitySnapshot({
     character: bundle.character,
     vitals: bundle.vitals,
     inventory: bundle.inventory,
+    cyberware: bundle.cyberware,
     encounter: null,
     events: bundle.events,
     beatId: null,
@@ -343,7 +349,10 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
       humanityMax: bundle.vitals.humanity_max,
       eurobucks: bundle.vitals.eurobucks,
       stats: summary.stats,
-      skills: gmSkillList(bundle.character).map((s) => ({
+      skills: gmSkillList(bundle.character, 40, {
+        vitals: bundle.vitals,
+        inventory: bundle.inventory,
+      }).map((s) => ({
         skill: getSkill(s.id).name,
         id: s.id,
         base: s.base,
@@ -428,9 +437,14 @@ async function applyResponse(
     data: {
       situationKey: bundle.current?.key ?? null,
       title: response.situation.title,
-      actions: response.actions,
+      actions: turn.fixedResult ? [] : response.actions,
     } as unknown as Json,
   });
+
+  // The transaction already committed every consequence. The narrator gets
+  // prose and nothing else: no question, time, pressure, delta, spend, or phase
+  // transition can leak out of a fixed-result follow-up.
+  if (turn.fixedResult) return;
 
   // A question the turn needed answered and could not answer itself. Held, not
   // answered: the dice get thrown next turn, so the model writes this one
@@ -449,6 +463,7 @@ async function applyResponse(
     character: bundle.character,
     vitals: bundle.vitals,
     inventory: bundle.inventory,
+    cyberware: bundle.cyberware,
     encounter: null,
     events: bundle.events,
     beatId: null,
@@ -786,7 +801,9 @@ async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {
       data: {} as Json,
     });
   }
-  const oracle = turn.oracle ?? (await consultOracles(bundle, input, turn));
+  const oracle = turn.fixedResult
+    ? undefined
+    : (turn.oracle ?? (await consultOracles(bundle, input, turn)));
   const asked: TurnOptions = oracle ? { ...turn, oracle } : turn;
   const context = buildContext(bundle, asked);
   const opening = turn.options
@@ -1214,11 +1231,22 @@ export function useLife(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const fixedNarration = useMutation({
+    mutationFn: async (resolved: string) => {
+      // Installation has already moved money, Humanity, phase, and the clock.
+      // Reload before prompting so the model never sees the pre-op vitals.
+      const fresh = await loadLife(campaignId);
+      return liveTurn(fresh, "", { minutes: 0, resolved, fixedResult: true });
+    },
+    onSuccess: invalidate,
+  });
+
   const pendingCheck = bundle
     ? (pendingChecksFrom(
         bundle.events,
         bundle.character,
         bundle.vitals.wound_state as WoundStateCode,
+        { vitals: bundle.vitals, inventory: bundle.inventory },
       )[0] ?? null)
     : null;
 
@@ -1274,13 +1302,19 @@ export function useLife(campaignId: string) {
     actions,
     pendingCheck,
     busy:
-      turn.isPending || check.isPending || accept.isPending || decline.isPending || push.isPending,
+      turn.isPending ||
+      check.isPending ||
+      accept.isPending ||
+      decline.isPending ||
+      push.isPending ||
+      fixedNarration.isPending,
     actionError:
       ((turn.error ??
         check.error ??
         accept.error ??
         decline.error ??
-        push.error) as Error | null) ?? null,
+        push.error ??
+        fixedNarration.error) as Error | null) ?? null,
     /**
      * Act on what the player typed. How long it took is the model's report of
      * the action, clamped by the engine: there is no menu entry carrying a
@@ -1302,5 +1336,13 @@ export function useLife(campaignId: string) {
     acceptHook: () => accept.mutate(),
     declineHook: (reason: string) => decline.mutate(reason),
     pushHook: (ask: HookAsk) => push.mutate(ask),
+    narrateFixedResult: async (resolved: string) => {
+      try {
+        await fixedNarration.mutateAsync(resolved);
+        return true;
+      } catch {
+        return false;
+      }
+    },
   };
 }

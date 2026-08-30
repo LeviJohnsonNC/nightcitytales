@@ -9,8 +9,8 @@
  * This is the live half — `campaign_inventory`, the same rows combat spends,
  * the shop writes and armor repair patches. Pure: rows in, groups out.
  */
-import { catalogItem, weaponProfile, type ItemKind } from "@/engine";
-import type { CampaignInventoryItem } from "@/lib/backend";
+import { catalogItem, getCyberware, weaponProfile, type ItemKind } from "@/engine";
+import type { CampaignCyberware, CampaignInventoryItem } from "@/lib/backend";
 
 export type KitLine = {
   id: string;
@@ -84,8 +84,23 @@ export function nameFor(kind: ItemKind, itemId: string): string {
 }
 
 /** Everything the character is carrying, grouped and ordered for display. */
-export function carriedKit(inventory: CampaignInventoryItem[]): KitGroup[] {
+export function carriedKit(
+  inventory: CampaignInventoryItem[],
+  cyberware: CampaignCyberware[] = [],
+): KitGroup[] {
   return GROUP_ORDER.map(({ kind, label }) => {
+    if (kind === "cyberware" && cyberware.length > 0) {
+      return {
+        kind,
+        label,
+        lines: cyberware.map((row) => ({
+          id: row.id,
+          name: getCyberware(row.item_id).name,
+          detail: `installed day ${row.installed_day}`,
+          quantity: 1,
+        })),
+      };
+    }
     const lines: KitLine[] = [];
     for (const row of inventory) {
       if (kindOf(row) !== kind || row.quantity <= 0) continue;

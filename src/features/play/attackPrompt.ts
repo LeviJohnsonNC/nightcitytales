@@ -15,11 +15,16 @@ import {
   type EncounterState,
   type WeaponProfile,
 } from "@/engine";
-import type { CampaignEvent, CampaignInventoryItem, FullCharacter } from "@/lib/backend";
+import type {
+  CampaignEvent,
+  CampaignInventoryItem,
+  CampaignVitals,
+  FullCharacter,
+} from "@/lib/backend";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { metresApart, weaponChoices } from "./encounterModel";
 import { liveInventory } from "./liveInventory";
-import { statsRecord } from "./playModel";
+import { effectiveStatsRecord, statsRecord } from "./playModel";
 
 export type PendingAttack = {
   eventId: string;
@@ -32,6 +37,8 @@ export type PendingAttack = {
   weapons: WeaponProfile[];
   /** −2 / −4 for the attacker's wound state (CP:R pg. 186). */
   woundPenalty: number;
+  /** Current REF/DEX after Humanity and worn armor, when live vitals were supplied. */
+  effectiveStats?: Record<string, number>;
 };
 
 /** What one weapon choice would mean for this attack. */
@@ -54,7 +61,7 @@ export function attackOption(
   /** What the character can actually do; a refusal becomes the option's gap. */
   capability?: CapabilitySnapshot | null,
 ): AttackOption {
-  const stats = statsRecord(character);
+  const stats = pending.effectiveStats ?? statsRecord(character);
   const statKey = weapon.statKey ?? "ref";
   const skillLevel = weapon.skillId
     ? (character.skills.find((s) => s.skill_id === weapon.skillId)?.level ?? 0)
@@ -127,6 +134,7 @@ export function pendingAttackFrom(
   live: LiveEncounter | null,
   /** The campaign's kit, so a gun bought mid-campaign can be fired. */
   inventory: CampaignInventoryItem[] = [],
+  vitals?: CampaignVitals,
 ): PendingAttack | null {
   if (!live || live.state.status !== "active") return null;
   const attacker = Object.values(live.state.combatants).find((c) => c.isPlayer);
@@ -155,6 +163,7 @@ export function pendingAttackFrom(
       target,
       weapons: weaponChoices(liveInventory(inventory, character)),
       woundPenalty: woundActionPenalty(attacker.woundState),
+      ...(vitals ? { effectiveStats: effectiveStatsRecord(character, { vitals, inventory }) } : {}),
     };
   }
   return null;

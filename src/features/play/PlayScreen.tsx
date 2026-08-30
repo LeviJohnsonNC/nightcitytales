@@ -749,7 +749,11 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
                 </p>
               )}
             </div>
-            <SheetDrawer character={bundle.character} inventory={bundle.inventory} />
+            <SheetDrawer
+              character={bundle.character}
+              inventory={bundle.inventory}
+              cyberware={bundle.cyberware}
+            />
           </div>
           <NarrativeLog
             events={bundle.events}

@@ -149,21 +149,14 @@ export function buildLifeState(input: LifeBundleInput): Omit<LifeStateInput, "pe
     restDays: 0,
   });
   const { empty, broken } = weaponStates(input.inventory);
-  const stats = (input.character.stats ?? {}) as {
-    humanity_current?: number | null;
-    humanity_max?: number | null;
-  };
-
   return {
     day: view.day,
     eurobucks: view.eurobucks,
     hpCurrent: view.hpCurrent,
     hpMax: view.hpMax,
     woundState: input.vitals.wound_state,
-    ...(typeof stats.humanity_current === "number"
-      ? { humanityCurrent: stats.humanity_current }
-      : {}),
-    ...(typeof stats.humanity_max === "number" ? { humanityMax: stats.humanity_max } : {}),
+    humanityCurrent: input.vitals.humanity_current,
+    humanityMax: input.vitals.humanity_max,
     billsOwed: view.bills.total,
     billsDueDay: view.paidThrough + view.daysToNextBill,
     damagedArmor: view.repairs.map((r) => ({

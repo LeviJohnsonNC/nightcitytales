@@ -17,6 +17,7 @@ import {
 } from "./catalog";
 import { PACKAGE_FREE_EUROBUCKS, PACKAGE_UNSPENT_KEPT } from "./gearPackages";
 import { applyCyberwareHumanityLoss, type HumanityLossResult } from "./humanity";
+import { installQuantity, planCyberwarePlacement } from "./cyberwareInstall";
 import type { CreationMethod } from "./types";
 
 export type BudgetId = "free" | "gear" | "fashion";
@@ -215,12 +216,26 @@ export type PurchaseRequest = {
 
 export type PurchaseCheck = { ok: boolean; reason: string | null };
 
+function placementRows(loadout: Loadout) {
+  return loadout.lines
+    .filter((line) => line.kind === "cyberware")
+    .flatMap((line) =>
+      Array.from({ length: line.qty }, (_, index) => ({
+        id: line.qty === 1 ? line.lineId : `${line.lineId}:${index}`,
+        itemId: line.itemId,
+        foundationId: line.foundationLineId ?? null,
+      })),
+    );
+}
+
 export function canPurchase(
   method: CreationMethod,
   loadout: Loadout,
   request: PurchaseRequest,
 ): PurchaseCheck {
-  const qty = request.qty ?? 1;
+  const requestedQty = request.qty ?? 1;
+  const qty =
+    request.kind === "cyberware" ? requestedQty * installQuantity(request.itemId) : requestedQty;
   const budget = budgetStates(method, loadout).find((b) => b.id === request.budget);
   if (!budget) {
     return { ok: false, reason: `This creation method has no "${request.budget}" budget.` };
@@ -260,63 +275,13 @@ export function canPurchase(
 
   if (request.kind === "cyberware") {
     const item = getCyberware(request.itemId);
-
-    if (item.foundational) {
-      const rule = foundationRule(item.id);
-      if (rule.maxInstalls !== undefined) {
-        const installed = loadout.lines.filter((l) => l.itemId === item.id).length;
-        if (installed >= rule.maxInstalls) {
-          return {
-            ok: false,
-            reason: `You can only install ${rule.maxInstalls} ${item.name}.`,
-          };
-        }
-      }
-    } else if (item.requires) {
-      const foundationItem = getCyberware(item.requires);
-      if (!foundationItem.foundational) {
-        // A prerequisite that is not itself a foundation (e.g. a Chipware
-        // Socket) only has to be present; it provides no Option Slots.
-        const present = loadout.lines.some((l) => l.itemId === item.requires);
-        if (!present) {
-          return {
-            ok: false,
-            reason: `${name} requires a ${foundationItem.name}. Install a ${foundationItem.name} first.`,
-          };
-        }
-        return { ok: true, reason: null };
-      }
-      const available = foundations(loadout).filter((f) => f.itemId === item.requires);
-      if (available.length === 0) {
-        return {
-          ok: false,
-          reason: `${name} slots into a ${foundationItem.name}. Install a ${foundationItem.name} first.`,
-        };
-      }
-      const target = request.foundationLineId
-        ? available.find((f) => f.line.lineId === request.foundationLineId)
-        : available.find((f) => f.free >= item.slotsUsed);
-      if (!target) {
-        return {
-          ok: false,
-          reason: `Every ${foundationItem.name} is full. ${name} needs ${item.slotsUsed} Option Slot(s).`,
-        };
-      }
-      if (target.free < item.slotsUsed) {
-        return {
-          ok: false,
-          reason: `That ${foundationItem.name} has ${target.free} of ${target.slots} Option Slots free and ${name} needs ${item.slotsUsed}.`,
-        };
-      }
-    } else if (NON_FOUNDATIONAL_CATEGORY_SLOT_CAP !== null && item.slotsUsed > 0) {
-      const used = categorySlotUsage(loadout)[item.category] ?? 0;
-      if (used + item.slotsUsed * qty > NON_FOUNDATIONAL_CATEGORY_SLOT_CAP) {
-        return {
-          ok: false,
-          reason: `You may only implant ${NON_FOUNDATIONAL_CATEGORY_SLOT_CAP} Option Slots of ${item.category} and you have used ${used}.`,
-        };
-      }
-    }
+    const placement = planCyberwarePlacement(
+      placementRows(loadout),
+      item.id,
+      qty,
+      request.foundationLineId ? [request.foundationLineId] : [],
+    );
+    if (!placement.ok) return { ok: false, reason: placement.reason };
   }
 
   return { ok: true, reason: null };
@@ -337,7 +302,9 @@ export function addPurchase(
   const check = canPurchase(method, loadout, request);
   if (!check.ok) throw new Error(check.reason ?? "Purchase not allowed");
 
-  const qty = request.qty ?? 1;
+  const requestedQty = request.qty ?? 1;
+  const qty =
+    request.kind === "cyberware" ? requestedQty * installQuantity(request.itemId) : requestedQty;
   const line: CartLine = {
     lineId: nextLineId(),
     kind: request.kind,
@@ -355,16 +322,20 @@ export function addPurchase(
   }
 
   if (request.kind === "cyberware") {
-    const item = getCyberware(request.itemId);
-    if (!item.foundational && item.requires && getCyberware(item.requires).foundational) {
-      const available = foundations(loadout).filter((f) => f.itemId === item.requires);
-      const target = request.foundationLineId
-        ? available.find((f) => f.line.lineId === request.foundationLineId)
-        : available.find((f) => f.free >= item.slotsUsed);
-      line.foundationLineId = target?.line.lineId ?? null;
-    } else {
-      line.foundationLineId = null;
-    }
+    const placement = planCyberwarePlacement(
+      placementRows(loadout),
+      request.itemId,
+      qty,
+      request.foundationLineId ? [request.foundationLineId] : [],
+    );
+    if (!placement.ok) throw new Error(placement.reason);
+    const lines = placement.placements.map((placed) => ({
+      ...line,
+      lineId: nextLineId(),
+      qty: 1,
+      foundationLineId: placed.foundationId,
+    }));
+    return { ...loadout, lines: [...loadout.lines, ...lines] };
   }
 
   return { ...loadout, lines: [...loadout.lines, line] };

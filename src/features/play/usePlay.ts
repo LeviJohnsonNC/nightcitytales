@@ -79,6 +79,7 @@ import {
   type Campaign,
   type CampaignEvent,
   type CampaignInventoryItem,
+  type CampaignCyberware,
   type CampaignNpc,
   type CampaignVitals,
   type FullCharacter,
@@ -192,6 +193,7 @@ export type PlayBundle = {
   npcs: CampaignNpc[];
   /** The campaign's live kit — what is carried, loaded, and left. */
   inventory: CampaignInventoryItem[];
+  cyberware: CampaignCyberware[];
   /** The fight in progress, if the GM has started one. */
   encounter: LiveEncounter | null;
   /**
@@ -247,6 +249,7 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
     events,
     npcs: full.npcs,
     inventory: full.inventory,
+    cyberware: full.cyberware,
     encounter,
     agreedPayout: agreedPayoutFrom(full.flags),
     pressure: pressureFrom(await listClocks(campaignId)),
@@ -293,6 +296,7 @@ async function narrate(
     character: bundle.character,
     vitals: bundle.vitals,
     inventory: bundle.inventory,
+    cyberware: bundle.cyberware,
     encounter: bundle.encounter,
     events: bundle.events,
     beatId,
@@ -328,7 +332,7 @@ async function narrate(
     mission: bundle.mission,
     beat: bundle.beat,
     availableExits: bundle.availableExits,
-    character: characterSummary(bundle.character, bundle.vitals),
+    character: characterSummary(bundle.character, bundle.vitals, bundle.inventory),
     objectives: bundle.runtime.objectives,
     npcsPresent: npcSummaries(bundle.npcs),
     recentEvents: recentEventLines(bundle.events),
@@ -405,6 +409,7 @@ async function narrate(
     bundle.events,
     bundle.character,
     bundle.vitals.wound_state as WoundStateCode,
+    { vitals: bundle.vitals, inventory: bundle.inventory },
   ).length;
   const checkBudget = Math.max(0, MAX_CHECKS_PER_TURN - outstanding);
 
@@ -1398,12 +1403,19 @@ export function usePlay(campaignId: string) {
           bundle.events,
           bundle.character,
           bundle.vitals.wound_state as WoundStateCode,
+          { vitals: bundle.vitals, inventory: bundle.inventory },
         )
       : [];
   const checkCandidate = checkQueue[0] ?? null;
   const attackCandidate =
     bundle && !pendingDeathSave
-      ? pendingAttackFrom(bundle.events, bundle.character, bundle.encounter, bundle.inventory)
+      ? pendingAttackFrom(
+          bundle.events,
+          bundle.character,
+          bundle.encounter,
+          bundle.inventory,
+          bundle.vitals,
+        )
       : null;
   const newest = bundle ? newestPrompt(bundle.events, checkCandidate, attackCandidate) : null;
   const pendingCheck = newest === "check" ? checkCandidate : null;
@@ -1522,6 +1534,7 @@ export function usePlay(campaignId: string) {
           character: bundle.character,
           vitals: bundle.vitals,
           inventory: bundle.inventory,
+          cyberware: bundle.cyberware,
           encounter: bundle.encounter,
           events: bundle.events,
           beatId: bundle.beat?.id ?? null,
@@ -1539,7 +1552,10 @@ export function usePlay(campaignId: string) {
      */
     rollCheck: (pending: PendingCheck, luckSpend = 0): CheckRoll => {
       if (!bundle) throw new Error("Still loading.");
-      const actor = actorFor(bundle.character);
+      const actor = actorFor(bundle.character, {
+        vitals: bundle.vitals,
+        inventory: bundle.inventory,
+      });
       // Clamp against the live pool, not against what the card offered: the
       // stepper cannot talk the engine into spending points that are not there.
       const luckSpent = clampLuckSpend(

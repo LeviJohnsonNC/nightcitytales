@@ -46,6 +46,7 @@ import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/pla
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
 import { ShopSheet } from "./ShopSheet";
+import { RipperdocSheet } from "./RipperdocSheet";
 import { RecordSheet } from "./RecordSheet";
 import type { LifeActionCard } from "./lifeResponse";
 
@@ -118,6 +119,7 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
       );
     case "purchase":
     case "reload":
+    case "cyberware_installed":
       return (
         <p className="font-mono text-xs text-muted-foreground">
           <span className="text-accent">◆</span> {text}
@@ -170,6 +172,7 @@ const LIFE_EVENT_TYPES = new Set([
   // the money actually turned into something.
   "purchase",
   "reload",
+  "cyberware_installed",
   // Somebody moved while the character was not looking.
   "world_moved",
 ]);
@@ -649,6 +652,8 @@ function LifeRail({
 
       <ShopSheet bundle={bundle} />
 
+      <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
+
       <Button asChild variant="outline" size="sm" className="w-full">
         <Link to="/roster">Back to the roster</Link>
       </Button>
@@ -689,7 +694,10 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
   /** The engine rolls; the card only animates toward what it rolled. */
   const rollCheck = (pending: PendingCheck, luckSpend: number): CheckRoll => {
-    const actor = actorFor(bundle.character);
+    const actor = actorFor(bundle.character, {
+      vitals: bundle.vitals,
+      inventory: bundle.inventory,
+    });
     const luckSpent = clampLuckSpend(luckSpend, luckLeft);
     const spend = luckModifier(luckSpent);
     const wounds = woundActionPenalty(bundle.vitals.wound_state as WoundStateCode);
@@ -735,7 +743,11 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   Life · {formatLifeClock(bundle.clock)} · day {bundle.clock.day}
                 </p>
               </div>
-              <SheetDrawer character={bundle.character} inventory={bundle.inventory} />
+              <SheetDrawer
+                character={bundle.character}
+                inventory={bundle.inventory}
+                cyberware={bundle.cyberware}
+              />
             </div>
 
             <LifeLog

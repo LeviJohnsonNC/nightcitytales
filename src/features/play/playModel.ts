@@ -6,6 +6,7 @@
 import {
   BASIC_SKILL_IDS,
   clampDisposition,
+  currentStats,
   getSkill,
   STAT_ORDER,
   type MissionStatus,
@@ -14,7 +15,19 @@ import {
 } from "@/engine";
 import type { GmCharacterSummary, GmNpcSummary } from "@/features/gm/gmContext";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
-import type { CampaignEvent, CampaignNpc, CampaignVitals, FullCharacter } from "@/lib/backend";
+import type {
+  CampaignEvent,
+  CampaignInventoryItem,
+  CampaignNpc,
+  CampaignVitals,
+  FullCharacter,
+} from "@/lib/backend";
+import { liveInventory } from "./liveInventory";
+
+export type CurrentStatsContext = {
+  vitals: CampaignVitals;
+  inventory: CampaignInventoryItem[];
+};
 
 /** The STATs as a plain record, skipping any that aren't set. */
 export function statsRecord(full: FullCharacter): Record<string, number> {
@@ -28,14 +41,29 @@ export function statsRecord(full: FullCharacter): Record<string, number> {
   return out;
 }
 
+/** Saved STATs projected through the campaign's current body and worn armor. */
+export function effectiveStatsRecord(
+  full: FullCharacter,
+  context?: CurrentStatsContext,
+): Record<string, number> {
+  const base = statsRecord(full);
+  if (!context) return base;
+  return currentStats({
+    base,
+    humanityCurrent: context.vitals.humanity_current,
+    wornArmorIds: liveInventory(context.inventory, { ...full, gear: full.gear ?? [] })
+      .filter((row) => row.equipped && (row.slot === "head" || row.slot === "body"))
+      .map((row) => row.item_id),
+  }) as Record<string, number>;
+}
+
 /** The minimal actor a skill check needs, from the saved character. */
-export function actorFor(full: FullCharacter): SkillCheckActor {
+export function actorFor(full: FullCharacter, context?: CurrentStatsContext): SkillCheckActor {
   const stats: Partial<Record<StatKey, number>> = {};
-  if (full.stats) {
-    for (const key of STAT_ORDER) {
-      const value = full.stats[key as keyof typeof full.stats];
-      if (typeof value === "number") stats[key] = value;
-    }
+  const projected = effectiveStatsRecord(full, context);
+  for (const key of STAT_ORDER) {
+    const value = projected[key];
+    if (typeof value === "number") stats[key] = value;
   }
   return {
     stats,
@@ -47,8 +75,9 @@ export function actorFor(full: FullCharacter): SkillCheckActor {
 export function keySkills(
   full: FullCharacter,
   limit = 8,
+  context?: CurrentStatsContext,
 ): { skill: string; id: string; base: number }[] {
-  const stats = statsRecord(full);
+  const stats = effectiveStatsRecord(full, context);
   return full.skills
     .filter((s) => s.level > 0)
     .map((s) => {
@@ -73,9 +102,10 @@ export function keySkills(
 export function gmSkillList(
   full: FullCharacter,
   limit = 40,
+  context?: CurrentStatsContext,
 ): { skill: string; id: string; base: number }[] {
-  const stats = statsRecord(full);
-  const trained = keySkills(full, limit);
+  const stats = effectiveStatsRecord(full, context);
+  const trained = keySkills(full, limit, context);
   const known = new Set(trained.map((s) => s.id));
   const untrainedBasics = BASIC_SKILL_IDS.filter((id) => !known.has(id)).map((id) => {
     const def = getSkill(id);
@@ -85,7 +115,12 @@ export function gmSkillList(
 }
 
 /** The GM's compact view of the player character, from the sheet + live vitals. */
-export function characterSummary(full: FullCharacter, vitals: CampaignVitals): GmCharacterSummary {
+export function characterSummary(
+  full: FullCharacter,
+  vitals: CampaignVitals,
+  inventory: CampaignInventoryItem[] = [],
+): GmCharacterSummary {
+  const context = { vitals, inventory };
   return {
     name: full.character.name,
     role: full.character.role,
@@ -95,9 +130,9 @@ export function characterSummary(full: FullCharacter, vitals: CampaignVitals): G
     humanity: vitals.humanity_current,
     humanityMax: vitals.humanity_max,
     eurobucks: vitals.eurobucks,
-    stats: statsRecord(full),
-    keySkills: keySkills(full),
-    availableSkills: gmSkillList(full),
+    stats: effectiveStatsRecord(full, context),
+    keySkills: keySkills(full, 8, context),
+    availableSkills: gmSkillList(full, 40, context),
     ...(full.character.handle ? { handle: full.character.handle } : {}),
   };
 }

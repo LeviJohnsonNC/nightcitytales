@@ -50,9 +50,10 @@ export async function getCampaign(id: string): Promise<FullCampaign | null> {
   const campaign = unwrap(campaignRes);
   if (!campaign) return null;
 
-  const [vitals, inventory, npcs, factions, flags, missions] = await Promise.all([
+  const [vitals, inventory, cyberware, npcs, factions, flags, missions] = await Promise.all([
     backendClient.from("campaign_vitals").select("*").eq("campaign_id", id).maybeSingle(),
     backendClient.from("campaign_inventory").select("*").eq("campaign_id", id),
+    backendClient.from("campaign_cyberware").select("*").eq("campaign_id", id),
     backendClient.from("campaign_npcs").select("*").eq("campaign_id", id),
     backendClient.from("campaign_factions").select("*").eq("campaign_id", id),
     backendClient.from("campaign_flags").select("*").eq("campaign_id", id),
@@ -63,6 +64,7 @@ export async function getCampaign(id: string): Promise<FullCampaign | null> {
     campaign,
     vitals: unwrap(vitals),
     inventory: unwrap(inventory) ?? [],
+    cyberware: unwrap(cyberware) ?? [],
     npcs: unwrap(npcs) ?? [],
     factions: unwrap(factions) ?? [],
     flags: unwrap(flags) ?? [],
