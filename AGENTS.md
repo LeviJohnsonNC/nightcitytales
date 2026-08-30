@@ -83,6 +83,18 @@ The important transactional database boundaries are:
   state.
 - `start_encounter(payload)`: persists an engine-created encounter and its
   combatants.
+- `save_encounter_state(payload)`: persists encounter combatants together with
+  the player's HP, wound state, Death Save failures, equipped armor SP, and
+  loaded ammunition in one transaction.
+- `settle_job(payload)`: idempotently commits job closeout — payment, NPC
+  promotion and disposition, faction standing, clocks, persistent situations,
+  tallies, the `job_settled` receipt, and the transition to Aftermath.
+- `close_aftermath(payload)`: clears the mission, refills Luck, appends the
+  phase event, and moves the campaign back to Life together.
+
+These closeout functions apply a plan computed in TypeScript. They validate
+ownership, phase, job identity, expected values, and ranges, but they must not
+recompute game rules; RED mechanics stay in `src/engine/`.
 
 `campaign_events` is an append-only session ledger. Authenticated application
 code may read and append events, but should not update or delete them.
@@ -235,14 +247,47 @@ Keep these in mind when changing adjacent code:
   are also not part of the saved-character schema.
 - Portrait storage policies exist in migrations, but the repository does not
   create the `portraits` bucket.
-- The play loop resolves skill checks, but proposed attacks and most structured
-  world-state deltas are not yet wired into persistence.
-- Combat has an engine, schema, adapter, tests, and read-only HUD, but is not yet
-  fully connected to mission encounter beats.
 - Mission objectives, rewards, and final campaign status are not fully updated
   by the current play loop.
-- A play turn spans multiple writes, so error handling must account for partial
-  turns in the immutable ledger.
+- Non-combat structured world-state deltas proposed by the GM are still only
+  partially wired into persistence.
+- Combat is connected to campaign state and job closeout, but is still resolved
+  through narration plus the read-only HUD; there is no interactive tactical
+  movement or targeting layer over the continuous-metre engine.
+- Settlement reads a bounded job ledger window (`JOB_LEDGER_LIMIT`, 2000 events)
+  rather than querying the exact `mission_started` → `mission_completed` range.
+  An exceptionally long job could exceed it.
+- Encounters created before the atomic-closeout migration do not record which
+  inventory rows supplied head and body armor, so their remaining SP cannot be
+  written back to inventory.
+- Immediate in-job pressure reports and engine-derived settlement pricing are
+  not causally deduplicated. Engine-derived settlement is the authoritative
+  pricing pass.
+- `campaign_npcs` has no uniqueness constraint on `(campaign_id, npc_id)`.
+  Settlement serializes survivor promotion behind the campaign lock, but
+  concurrent writes elsewhere can still duplicate a recurring NPC.
+- The append-only ledger is auditable, not tamper-proof: authenticated users can
+  insert arbitrary event types into campaigns they own. Do not treat it as an
+  anti-cheat boundary.
+- `bun run lint` still fails on a pre-existing `prefer-const` error in
+  `src/integrations/supabase/previewAuthStorage.ts`, plus existing Fast Refresh
+  warnings.
+
+Resolved by the Tomorrow Test closeout work (see
+`supabase/migrations/20260830020000_atomic_combat_and_closeout.sql`):
+
+- Combat costs — HP, wound state, Death Save failures, armor ablation, and
+  ammunition — now reach canonical campaign rows instead of living only on the
+  encounter.
+- Job settlement is a single locked, idempotent transaction, so a partial write
+  can no longer lose a payout or leave tallies, pressure, or phase half-applied.
+- Settlement re-reads fresh canonical state before planning closeout instead of
+  trusting a mid-turn bundle snapshot.
+- Wounds and armor are no longer duplicated as `aftermath_*` situations; Life
+  derives them from vitals and inventory.
+- Attack ledger entries carry enough trace to reconstruct HP loss, armor
+  ablation, ammunition use, and critical injuries, and Aftermath shows that
+  receipt.
 
 Do not silently paper over these gaps by moving mechanical authority into the
 LLM or UI.
