@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { NotebookText } from "lucide-react";
 import { assembleCharacter } from "@/engine";
-import { CarriedKit } from "./CarriedKit";
+import { CarriedKit } from "./CarriedKitView";
 import { CharacterSheet } from "@/features/chargen/CharacterSheet";
 import { buildFromState } from "@/features/chargen/sheetModel";
 import { stateFromCharacter } from "@/features/roster/characterState";

@@ -370,6 +370,74 @@ export async function appendCampaignEvent(event: CampaignEventInsert): Promise<C
   return unwrap(await backendClient.from("campaign_events").insert(event).select("*").single());
 }
 
+export type SettleJobPayload = {
+  campaign_id: string;
+  job_event_id: string;
+  mission_id: string;
+  summary: string;
+  roll: Json;
+  receipt: Json;
+  completion: { summary: string; beat_id: string | null; data: Json };
+  payment: { agreed: number; paid: number };
+  npcs: Array<{
+    id?: string;
+    npc_key: string;
+    name: string;
+    disposition: number;
+    data?: Json;
+  }>;
+  situations: Array<{
+    situation_key: string;
+    category: string;
+    title: string;
+    summary: string;
+    npc_key?: string | null;
+    severity: number;
+    due_day?: number | null;
+    data?: Json;
+  }>;
+  clocks: Array<{
+    clock_key: string;
+    label: string;
+    filled: number;
+    segments: number;
+    hidden: boolean;
+    data: Json;
+  }>;
+  factions: Array<{ faction_id: string; name: string; standing: number }>;
+  tally: Json;
+};
+
+export type SettleJobResult = { eventId: string; receipt: Json; alreadySettled: boolean };
+
+/** Commit one job's closeout exactly once, in one database transaction. */
+export async function settleJob(payload: SettleJobPayload): Promise<SettleJobResult> {
+  const { data, error } = await backendClient.rpc("settle_job", {
+    payload: payload as unknown as Json,
+  });
+  if (error) throw new Error(error.message);
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("settle_job returned an invalid result.");
+  }
+  const result = data as Record<string, unknown>;
+  if (typeof result["event_id"] !== "string") {
+    throw new Error("settle_job did not return a settlement event id.");
+  }
+  return {
+    eventId: result["event_id"],
+    receipt: (result["receipt"] ?? {}) as Json,
+    alreadySettled: result["already_settled"] === true,
+  };
+}
+
+/** Finish the player-controlled Aftermath step without exposing partial state. */
+export async function closeAftermath(campaignId: string, luckCurrent: number): Promise<void> {
+  const { error } = await backendClient.rpc("close_aftermath", {
+    payload: { campaign_id: campaignId, luck_current: luckCurrent } as unknown as Json,
+  });
+  if (error) throw new Error(error.message);
+}
+
 /** A campaign's event ledger in play order (oldest first). */
 /**
  * How many ledger rows a turn reads.

@@ -6,6 +6,7 @@ import {
   eventsForThisJob,
   looksLikeAPerson,
   readSettlement,
+  readMechanicalCost,
   reportsFrom,
   survivorsFrom,
   type SettlementEvent,
@@ -46,6 +47,47 @@ describe("only this job", () => {
   it("does not charge this job for the last one's bodies", () => {
     const events = [ev("mission_started"), died("a"), died("b"), ev("mission_started"), died("c")];
     expect(countOf(events, "killed")).toBe(1);
+  });
+});
+
+describe("the physical bill", () => {
+  it("reconstructs player harm, armor ablation, ammunition and criticals", () => {
+    const result = readMechanicalCost({
+      playerName: PLAYER,
+      events: [
+        ev("mission_started"),
+        ev("attack", {
+          attacker: "Vex",
+          target: PLAYER,
+          hp_before: 40,
+          hp_after: 34,
+          sp_before: 11,
+          sp_after: 10,
+          armor_location: "body",
+          critical_injury: true,
+        }),
+        ev("attack", {
+          attacker: PLAYER,
+          target: "Vex",
+          weapon: "Very Heavy Pistol",
+          ammo: { inventoryId: "weapon-1", before: 8, after: 7 },
+        }),
+      ],
+    });
+    expect(result).toEqual({
+      hp: { before: 40, after: 34, lost: 6 },
+      armor: [{ location: "body", before: 11, after: 10, ablated: 1 }],
+      ammunition: [
+        {
+          inventoryId: "weapon-1",
+          weapon: "Very Heavy Pistol",
+          before: 8,
+          after: 7,
+          spent: 1,
+        },
+      ],
+      criticalInjuries: 1,
+    });
   });
 });
 

@@ -22,6 +22,8 @@ export type AttackLogContext = {
   targetWoundState?: string;
   beatId?: string | null;
   weapon?: string;
+  ammo?: { inventoryId: string; before: number; after: number };
+  armorLocation?: "head" | "body";
 };
 
 /** Build the ledger row for a resolved attack. */
@@ -38,11 +40,16 @@ export function attackEvent(
     margin: attack.margin,
   };
   if (context.weapon) data["weapon"] = context.weapon;
+  if (context.ammo) data["ammo"] = context.ammo;
   if (damage) data["damage"] = damage.total;
   if (applied) {
     data["through_armor"] = applied.damageThroughArmor;
     data["bonus_damage"] = applied.bonusDamage;
+    data["hp_before"] = applied.hpAfter + applied.totalHpLoss;
     data["hp_after"] = applied.hpAfter;
+    data["sp_before"] = applied.spBefore;
+    data["sp_after"] = applied.spAfter;
+    data["armor_location"] = context.armorLocation ?? "body";
     data["ablated"] = applied.ablated;
     data["critical_injury"] = applied.criticalInjury;
   }
