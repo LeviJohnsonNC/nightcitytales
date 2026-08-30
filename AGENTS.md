@@ -30,6 +30,10 @@ design request. Read it before making gameplay, UX, AI, or content decisions.
 This file stays authoritative on architecture; `PRODUCT.md` is authoritative on
 intent.
 
+`ROADMAP.md` says what to build next and why, and records what the current
+Known implementation gaps below are blocking. Update it when a milestone lands
+or the ordering changes.
+
 The top-level `README.md` describes the original scaffold and is not a reliable
 description of the current product or route set.
 
@@ -91,6 +95,10 @@ The important transactional database boundaries are:
   tallies, the `job_settled` receipt, and the transition to Aftermath.
 - `close_aftermath(payload)`: clears the mission, refills Luck, appends the
   phase event, and moves the campaign back to Life together.
+- `install_cyberware(payload)`: commits one ripperdoc installation — payment,
+  Humanity, the implants and their foundations, elapsed time, ripperdoc state,
+  the ledger receipt, and passing on an active hook. Idempotent on the caller's
+  request id, which is also the receipt event's id.
 
 These closeout functions apply a plan computed in TypeScript. They validate
 ownership, phase, job identity, expected values, and ranges, but they must not
@@ -182,6 +190,10 @@ Generated player-facing prose should use the house voice from
   deterministic position within it.
 - `CampaignEvent`: one immutable narrative or mechanical ledger entry.
 - `EncounterState`: deterministic combat order and combatant state.
+- `CampaignCyberware`: the chrome the character is carrying _now_, in
+  `campaign_cyberware`. Installation writes here; the saved character is
+  historical and is never mutated by play. `start_campaign` snapshots the
+  saved character's cyberware into it.
 
 The current starter mission is `A Night at the Opera`, defined in
 `src/engine/missions/nightAtTheOpera.ts` as a beat graph.
@@ -272,6 +284,13 @@ Keep these in mind when changing adjacent code:
 - Ordinary play turns still span multiple writes; only encounter saves, job
   settlement, and Aftermath closeout are transactional, so error handling must
   still account for partial turns in the immutable ledger.
+- `src/integrations/supabase/types.ts` was hand-synchronized for
+  `install_cyberware` and `campaign_cyberware` rather than regenerated.
+  Regenerate it from the applied schema.
+- Ripperdoc pacing — 0/1/3 recovery days by install level, four surgery hours
+  per physical implant, appointment delay by disposition — is a house rule, and
+  `catalog.json` labels it as one beside the RED-sourced values. Tune it there,
+  not in code.
 - `bun run lint` still fails on a pre-existing `prefer-const` error in
   `src/integrations/supabase/previewAuthStorage.ts`, plus existing Fast Refresh
   warnings.
