@@ -38,8 +38,27 @@ export type CoverPiece = {
   label: string;
   /** A material key from data/rules/cover.json. */
   material: string;
+  /** Which column of the printed HP table this reads (CP:R pg. 182). */
+  thickness: "thick" | "thin";
+  /**
+   * Its footprint, in metres.
+   *
+   * pg. 182 makes a 2 m by 2 m section the unit that "can be attacked just
+   * like you can", so every authored piece is one such section and a longer
+   * object is authored as several adjacent ones. COVER_SECTION_METRES is the
+   * cap, and a test holds every arena to it.
+   */
   rect: Rect;
 };
+
+/**
+ * The size of one attackable section of cover (CP:R pg. 182).
+ *
+ * Authoring pieces at this size is what makes "one piece is one section" true
+ * by construction, so nothing downstream has to subdivide a wall to work out
+ * which part of it somebody just shot.
+ */
+export const COVER_SECTION_METRES = 2;
 
 /** Straight-line metres between two positions. */
 export function metresBetween(a: Point, b: Point): number {
@@ -102,17 +121,20 @@ export const ARENAS: Arena[] = [
       { x: 7, y: 24 },
     ],
     cover: [
+      // A dumpster is thin steel, the way the book files a refrigerator.
       {
         id: "dumpster",
         label: "a dumpster",
-        material: "dumpster",
-        rect: { x: 1.5, y: 8, width: 2.5, height: 3 },
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 1.5, y: 8, width: 2, height: 2 },
       },
       {
         id: "pallets",
         label: "a stack of pallets",
-        material: "crate",
-        rect: { x: 8.5, y: 13, width: 2, height: 3 },
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 8.5, y: 13, width: 2, height: 2 },
       },
     ],
   },
@@ -129,22 +151,40 @@ export const ARENAS: Arena[] = [
       { x: 6, y: 15 },
     ],
     cover: [
+      // The bar is one object in the fiction and three attackable sections in the rules (pg. 182), so it is authored as three.
       {
-        id: "bar",
-        label: "the bar",
-        material: "steel",
-        rect: { x: 3, y: 10, width: 8, height: 1.5 },
+        id: "bar_west",
+        label: "the west end of the bar",
+        material: "wood",
+        thickness: "thick",
+        rect: { x: 3, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "bar_middle",
+        label: "the middle of the bar",
+        material: "wood",
+        thickness: "thick",
+        rect: { x: 5, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "bar_east",
+        label: "the east end of the bar",
+        material: "wood",
+        thickness: "thick",
+        rect: { x: 7, y: 10, width: 2, height: 2 },
       },
       {
         id: "table_north",
         label: "an overturned table",
-        material: "furniture",
+        material: "wood",
+        thickness: "thin",
         rect: { x: 15, y: 6, width: 2, height: 2 },
       },
       {
         id: "table_south",
         label: "an overturned table",
-        material: "furniture",
+        material: "wood",
+        thickness: "thin",
         rect: { x: 18, y: 12.5, width: 2, height: 2 },
       },
     ],
@@ -165,20 +205,38 @@ export const ARENAS: Arena[] = [
       {
         id: "crates_west",
         label: "a stack of crates",
-        material: "crate",
-        rect: { x: 9.5, y: 14, width: 6, height: 4 },
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 9.5, y: 14, width: 2, height: 2 },
       },
       {
         id: "crates_east",
         label: "a stack of crates",
-        material: "crate",
-        rect: { x: 26, y: 26, width: 5, height: 5 },
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 26, y: 26, width: 2, height: 2 },
+      },
+      // A shipping container is thin steel, and long enough to be three sections of it.
+      {
+        id: "container_west",
+        label: "the near end of a shipping container",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 17, y: 38, width: 2, height: 2 },
       },
       {
-        id: "container",
-        label: "a shipping container",
+        id: "container_middle",
+        label: "the middle of a shipping container",
         material: "steel",
-        rect: { x: 17, y: 38, width: 10, height: 3 },
+        thickness: "thin",
+        rect: { x: 19, y: 38, width: 2, height: 2 },
+      },
+      {
+        id: "container_east",
+        label: "the far end of a shipping container",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 21, y: 38, width: 2, height: 2 },
       },
     ],
   },
@@ -195,23 +253,41 @@ export const ARENAS: Arena[] = [
       { x: 25, y: 50 },
     ],
     cover: [
+      // A car door is thin steel; the engine block behind it is thick steel and twice as tough. Two sections, not one.
       {
-        id: "car_west",
-        label: "a parked car",
-        material: "vehicle",
-        rect: { x: 5.5, y: 20, width: 4.5, height: 2 },
+        id: "car_west_door",
+        label: "the door of a parked car",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 5.5, y: 20, width: 2, height: 2 },
       },
       {
-        id: "car_east",
-        label: "a parked car",
-        material: "vehicle",
-        rect: { x: 19.5, y: 36, width: 4.5, height: 2 },
+        id: "car_west_engine",
+        label: "the engine block of a parked car",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 7.5, y: 20, width: 2, height: 2 },
+      },
+      {
+        id: "car_east_door",
+        label: "the door of a parked car",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 19.5, y: 36, width: 2, height: 2 },
+      },
+      {
+        id: "car_east_engine",
+        label: "the engine block of a parked car",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 21.5, y: 36, width: 2, height: 2 },
       },
       {
         id: "vending",
         label: "a vending machine",
-        material: "machine",
-        rect: { x: 12, y: 13.5, width: 1.5, height: 1 },
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 11.5, y: 13, width: 2, height: 2 },
       },
     ],
   },
@@ -227,29 +303,41 @@ export const ARENAS: Arena[] = [
       { x: 34, y: 31 },
     ],
     cover: [
+      // Thick concrete is 25 HP: less than steel or stone, which is worth knowing before treating a pillar as the safe option.
       {
         id: "pillar_west",
         label: "a concrete pillar",
         material: "concrete",
+        thickness: "thick",
         rect: { x: 9, y: 12, width: 1.5, height: 1.5 },
       },
       {
         id: "pillar_east",
         label: "a concrete pillar",
         material: "concrete",
+        thickness: "thick",
         rect: { x: 25.5, y: 18, width: 1.5, height: 1.5 },
       },
       {
         id: "pillar_mid",
         label: "a concrete pillar",
         material: "concrete",
+        thickness: "thick",
         rect: { x: 17, y: 25.5, width: 1.5, height: 1.5 },
       },
       {
-        id: "car",
-        label: "a parked car",
-        material: "vehicle",
-        rect: { x: 30, y: 28, width: 4.5, height: 2 },
+        id: "car_door",
+        label: "the door of a parked car",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 30, y: 28, width: 2, height: 2 },
+      },
+      {
+        id: "car_engine",
+        label: "the engine block of a parked car",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 32, y: 28, width: 2, height: 2 },
       },
     ],
   },
@@ -270,13 +358,22 @@ export const ARENAS: Arena[] = [
         id: "hvac",
         label: "an air handler",
         material: "steel",
-        rect: { x: 21, y: 30, width: 6, height: 4 },
+        thickness: "thin",
+        rect: { x: 21, y: 30, width: 2, height: 2 },
       },
       {
-        id: "parapet",
+        id: "parapet_west",
         label: "a low parapet",
         material: "concrete",
-        rect: { x: 39, y: 48, width: 8, height: 2 },
+        thickness: "thick",
+        rect: { x: 39, y: 48, width: 2, height: 2 },
+      },
+      {
+        id: "parapet_east",
+        label: "a low parapet",
+        material: "concrete",
+        thickness: "thick",
+        rect: { x: 41, y: 48, width: 2, height: 2 },
       },
     ],
   },
@@ -550,6 +647,14 @@ export function coverBetween(
     if (rectContains(piece.rect, a) || rectContains(piece.rect, b)) return false;
     return segmentIntersectsRect(a, b, piece.rect);
   });
+}
+
+/** The point on a box nearest to somewhere — where a shot at it lands. */
+export function nearestPointOn(rect: Rect, from: Point): Point {
+  return {
+    x: Math.min(Math.max(from.x, rect.x), rect.x + rect.width),
+    y: Math.min(Math.max(from.y, rect.y), rect.y + rect.height),
+  };
 }
 
 /** Whether one combatant can see — and therefore shoot — another. */

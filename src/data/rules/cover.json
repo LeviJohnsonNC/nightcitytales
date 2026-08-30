@@ -1,60 +1,56 @@
 {
   "_note": {
     "why": "What is between you and the person shooting at you. Positions without cover are a number line: every metre is the same metre, and the only decision a fight offers is which range band to stand in. Cover is what makes a position a choice, and cover that comes apart is what stops a firefight becoming two people trading dice from behind permanent walls.",
-    "provenance": "These are HOUSE VALUES, not verbatim book statblocks — do not cite a page for them. The Core Rulebook's cover rules were not transcribed into this repository when these were written, so nothing here should be read as the printed rule. They follow the same discipline as data/rules/threats.json: invented numbers, said out loud to be invented, kept in versioned data rather than in code or in a prompt.",
-    "model": "Cover is binary for line of sight: while a piece stands between two combatants, neither can shoot the other, and the engine refuses the shot rather than pricing it as a penalty. A to-hit modifier was deliberately NOT used — inventing a '-2 for cover' would put a number nobody printed into the dice, which is the exact failure engine/battlefield.ts and data/rules/threats.json exist to prevent.",
-    "damage": "Fire that cannot reach a person hits what is in the way. Damage is reduced by the cover's SP and the remainder comes off its HP; at 0 HP the piece is gone and the firing line opens. Cover SP does not ablate — one fewer moving part, and the HP already carries the sense of a thing coming apart.",
-    "tuning": "sp is how much of a single hit the material simply eats; hp is how much punishment it takes before it stops being cover. Concrete is meant to outlast a fight; a vending machine is meant to be the interesting one — real protection that visibly will not last."
+    "provenance": "TRANSCRIBED from the Cyberpunk RED Core Rulebook, Friday Night Firefight, pg. 182-183 (Taking Cover / Cover Hit Points / Cover Material and Thickness Examples). The HP table below is the printed one. Unlike data/rules/threats.json, these are NOT house numbers.",
+    "goldenRules": "pg. 182, quoted: 'You are considered to be in cover if you are fully behind something that could stop a bullet. If they have line of sight on you, you aren't in cover. There is no partial cover. It can either stop a bullet or it can't. If it cannot stop a bullet, it provides no cover and thus has no HP.'",
+    "noSP": "Cover has HP and NOTHING ELSE. It has no SP and does not ablate: the printed example takes a 17-damage sniper round against a Thick Concrete barricade (25 HP) and leaves it at 8, with nothing subtracted first. An SP step would be an invented rule that made every piece of cover tougher than the book's.",
+    "attackingIt": "pg. 182: 'a 2 m/yds by 2 m/yds (1 square) section of it can be attacked just like you can.' The printed example rolls a Shoulder Arms Check against a DV read off the weapon and the range, exactly as if shooting a person. So cover is SHOT AT, not merely damaged — a miss does nothing. Every authored piece in engine/battlefield.ts is one such 2 m section; a longer object is authored as several, because each section is separately attackable.",
+    "excessLost": "pg. 182: 'If a cover's HP drops to 0, excess damage is lost and doesn't harm any targets hiding behind it. You can hurt them with your next Attack.' The one exception is explosives (pg. 174), which this repository does not model yet.",
+    "zeroHp": "Plaster/Foam/Plastic at Thin thickness is printed as '0 HP (Not Cover)', and the golden rule says a thing that cannot stop a bullet provides no cover. The engine therefore treats a 0 HP piece as not being there at all: it never blocks a line of sight and can never be shot at.",
+    "notModelledYet": "Thin cover being moved in a pinch, Thick cover needing BODY 10+ to shift, Steel being immune to Martial Arts and Brawling without a Cyberarm or BODY 10+, shields (pg. 183), and the explosives exception (pg. 174)."
   },
   "materials": [
     {
-      "key": "concrete",
-      "label": "concrete",
-      "sp": 15,
-      "hp": 60,
-      "note": "A pillar, a loading dock, a structural wall. Outlasts most fights, which is what makes the fights that chew through it memorable."
-    },
-    {
       "key": "steel",
       "label": "steel",
-      "sp": 12,
-      "hp": 40,
-      "note": "A shipping container, a security shutter, an engine block. Hard, and it holds."
+      "thickHp": 50,
+      "thinHp": 25,
+      "note": "Thick: a bank vault door, an engine block, a hydrant. Thin: a car door, a refrigerator, a shipping container."
     },
     {
-      "key": "vehicle",
-      "label": "a parked car",
-      "sp": 8,
-      "hp": 30,
-      "note": "Doors and glass over an engine. Stops rounds until it does not."
+      "key": "stone",
+      "label": "stone",
+      "thickHp": 40,
+      "thinHp": 20,
+      "note": "Thick: a boulder. Thin: a statue."
     },
     {
-      "key": "dumpster",
-      "label": "a dumpster",
-      "sp": 7,
-      "hp": 25,
-      "note": "Sheet steel and whatever is inside it. The alley's only honest answer."
+      "key": "bulletproof_glass",
+      "label": "bulletproof glass",
+      "thickHp": 30,
+      "thinHp": 15,
+      "note": "Thick: a bank window. Thin: prison visitation glass."
     },
     {
-      "key": "machine",
-      "label": "a vending machine",
-      "sp": 5,
-      "hp": 18,
-      "note": "The interesting one: enough to hide behind, not enough to stay behind."
+      "key": "concrete",
+      "label": "concrete",
+      "thickHp": 25,
+      "thinHp": 10,
+      "note": "Thick: a utility pole, a data term. Weaker than steel or stone in the printed table, which is worth knowing before authoring a fight around a pillar."
     },
     {
-      "key": "crate",
-      "label": "a stack of crates",
-      "sp": 4,
-      "hp": 15,
-      "note": "Freight and pallets. Cover in the sense that nobody can see you."
+      "key": "wood",
+      "label": "wood",
+      "thickHp": 20,
+      "thinHp": 5,
+      "note": "Thick: a bar, a tree, a log cabin wall. Thin: an overturned table, a wooden door, a wardrobe."
     },
     {
-      "key": "furniture",
-      "label": "an overturned table",
-      "sp": 3,
-      "hp": 10,
-      "note": "A club's furniture. Buys a Round, maybe two."
+      "key": "plaster",
+      "label": "plaster, foam or plastic",
+      "thickHp": 15,
+      "thinHp": 0,
+      "note": "Thick: an office wall, a sofa. Thin is printed as 0 HP (Not Cover) — an office cubicle or a windshield stops nothing."
     }
   ]
 }

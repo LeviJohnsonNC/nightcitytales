@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import {
   ARENAS,
   COVER_MATERIALS,
+  COVER_SECTION_METRES,
   applyCoverDamage,
   arenaFor,
   coverBetween,
@@ -22,6 +23,7 @@ import {
   coverMaxHp,
   coverStatuses,
   hasLineOfSight,
+  isCover,
   rectContains,
   segmentIntersectsRect,
   type Arena,
@@ -30,9 +32,19 @@ import {
 
 const WALL: CoverPiece = {
   id: "wall",
-  label: "a concrete wall",
+  label: "a concrete barricade",
   material: "concrete",
-  rect: { x: 4, y: 4, width: 4, height: 2 },
+  thickness: "thick",
+  rect: { x: 4, y: 4, width: 2, height: 2 },
+};
+
+/** Thin plaster is printed as "0 HP (Not Cover)" — an office cubicle. */
+const CUBICLE: CoverPiece = {
+  id: "cubicle",
+  label: "an office cubicle",
+  material: "plaster",
+  thickness: "thin",
+  rect: { x: 4, y: 8, width: 2, height: 2 },
 };
 
 /** A small square arena with one wall across the middle. */
@@ -42,7 +54,7 @@ const ROOM: Arena = {
   extent: { width: 12, height: 12 },
   playerStart: { x: 6, y: 1 },
   hostileSlots: [{ x: 6, y: 10 }],
-  cover: [WALL],
+  cover: [WALL, CUBICLE],
 };
 
 describe("cover geometry", () => {
@@ -51,7 +63,7 @@ describe("cover geometry", () => {
   });
 
   it("lets a line past the edge of the box through", () => {
-    // Down the side of the room: the wall spans x 4..8, this runs at x 1.
+    // Down the side of the room: the barricade spans x 4..6, this runs at x 1.
     expect(segmentIntersectsRect({ x: 1, y: 1 }, { x: 1, y: 10 }, WALL.rect)).toBe(false);
   });
 
@@ -81,7 +93,7 @@ describe("cover geometry", () => {
   });
 
   it("reports the piece that is in the way", () => {
-    const blocking = coverBetween(ROOM, { x: 6, y: 1 }, { x: 6, y: 10 });
+    const blocking = coverBlocking(ROOM, { x: 6, y: 1 }, { x: 6, y: 10 }, {});
     expect(blocking.map((p) => p.id)).toEqual(["wall"]);
     expect(hasLineOfSight(ROOM, { x: 6, y: 1 }, { x: 6, y: 10 })).toBe(false);
   });
@@ -128,6 +140,24 @@ describe("authored arenas", () => {
     }
   });
 
+  it("authors every piece as one attackable 2 m section", () => {
+    // pg. 182 makes a 2 m by 2 m section the unit that can be attacked. Pieces
+    // are authored at that size so one piece is one section; a longer object
+    // (a bar, a shipping container) is several adjacent ones.
+    for (const arena of ARENAS) {
+      for (const piece of arena.cover ?? []) {
+        expect(piece.rect.width).toBeLessThanOrEqual(COVER_SECTION_METRES);
+        expect(piece.rect.height).toBeLessThanOrEqual(COVER_SECTION_METRES);
+      }
+    }
+  });
+
+  it("only authors cover that could actually stop a bullet", () => {
+    for (const arena of ARENAS) {
+      for (const piece of arena.cover ?? []) expect(isCover(piece)).toBe(true);
+    }
+  });
+
   it("keeps every piece on the ground it is standing on", () => {
     for (const arena of ARENAS) {
       for (const piece of arena.cover ?? []) {
@@ -140,41 +170,75 @@ describe("authored arenas", () => {
   });
 });
 
-describe("cover materials", () => {
-  it("falls back rather than throwing on a key nobody authored", () => {
-    expect(coverMaterial("not_a_material").key).toBe("crate");
+describe("the printed HP table (CP:R pg. 182)", () => {
+  it("transcribes the book's numbers exactly", () => {
+    const hp = (key: string, thickness: "thick" | "thin") =>
+      coverMaxHp({ id: "x", label: "x", material: key, thickness, rect: ROOM.extent as never });
+    expect(hp("steel", "thick")).toBe(50);
+    expect(hp("steel", "thin")).toBe(25);
+    expect(hp("stone", "thick")).toBe(40);
+    expect(hp("stone", "thin")).toBe(20);
+    expect(hp("bulletproof_glass", "thick")).toBe(30);
+    expect(hp("bulletproof_glass", "thin")).toBe(15);
+    expect(hp("concrete", "thick")).toBe(25);
+    expect(hp("concrete", "thin")).toBe(10);
+    expect(hp("wood", "thick")).toBe(20);
+    expect(hp("wood", "thin")).toBe(5);
+    expect(hp("plaster", "thick")).toBe(15);
+    expect(hp("plaster", "thin")).toBe(0);
   });
 
-  it("makes concrete outlast the vending machine", () => {
-    const concrete = coverMaterial("concrete");
-    const machine = coverMaterial("machine");
-    expect(concrete.hp).toBeGreaterThan(machine.hp);
-    expect(concrete.sp).toBeGreaterThan(machine.sp);
+  it("makes steel the tough one, not concrete", () => {
+    // Worth pinning: the intuitive ordering is wrong. Thick Concrete is 25 HP
+    // and Thick Steel is 50, so a pillar is half an engine block.
+    expect(coverMaterial("steel").thickHp).toBeGreaterThan(coverMaterial("concrete").thickHp);
+    expect(coverMaterial("stone").thickHp).toBeGreaterThan(coverMaterial("concrete").thickHp);
+  });
+
+  it("gives cover no SP at all", () => {
+    // pg. 182's own example: a 17-damage round against a 25 HP Thick Concrete
+    // barricade leaves it at 8. Nothing is subtracted first.
+    const hit = applyCoverDamage(WALL, {}, 17);
+    expect(hit.hpBefore).toBe(25);
+    expect(hit.hpAfter).toBe(8);
+    expect(hit.applied).toBe(17);
+  });
+
+  it("falls back rather than throwing on a key nobody authored", () => {
+    expect(coverMaterial("not_a_material").key).toBe("wood");
+  });
+});
+
+describe("a thing that cannot stop a bullet", () => {
+  // pg. 182: "If it cannot stop a bullet, it provides no cover and thus has no
+  // HP." The table prints Thin Plaster/Foam/Plastic as 0 HP (Not Cover).
+  it("is not cover", () => {
+    expect(isCover(CUBICLE)).toBe(false);
+    expect(coverMaxHp(CUBICLE)).toBe(0);
+  });
+
+  it("never blocks a line of sight, even standing squarely in it", () => {
+    // Straight through where the cubicle is: it is scenery, not cover.
+    expect(segmentIntersectsRect({ x: 5, y: 7 }, { x: 5, y: 11 }, CUBICLE.rect)).toBe(true);
+    expect(coverBlocking(ROOM, { x: 5, y: 7 }, { x: 5, y: 11 }, {})).toEqual([]);
+  });
+
+  it("is left out of the read model entirely", () => {
+    expect(coverStatuses(ROOM, {}).map((c) => c.piece.id)).toEqual(["wall"]);
   });
 });
 
 describe("shooting cover apart", () => {
-  it("eats damage up to its SP without shortening its life", () => {
-    const sp = coverMaterial("concrete").sp;
-    const hit = applyCoverDamage(WALL, {}, sp);
-    expect(hit.through).toBe(0);
-    expect(hit.absorbed).toBe(sp);
-    expect(hit.hpAfter).toBe(coverMaxHp(WALL));
-    expect(hit.destroyed).toBe(false);
-  });
-
-  it("takes the remainder off its HP", () => {
-    const sp = coverMaterial("concrete").sp;
-    const hit = applyCoverDamage(WALL, {}, sp + 6);
-    expect(hit.through).toBe(6);
+  it("takes damage straight off HP", () => {
+    const hit = applyCoverDamage(WALL, {}, 6);
     expect(hit.hpAfter).toBe(coverMaxHp(WALL) - 6);
-    expect(hit.damage["wall"]).toBe(6);
+    expect(hit.damageMap["wall"]).toBe(6);
   });
 
   it("accumulates damage across hits and then is gone", () => {
     let damage = {};
     for (let i = 0; i < 40; i += 1) {
-      damage = applyCoverDamage(WALL, damage, 100).damage;
+      damage = applyCoverDamage(WALL, damage, 8).damageMap;
       if (coverDestroyed(WALL, damage)) break;
     }
     expect(coverDestroyed(WALL, damage)).toBe(true);
@@ -183,10 +247,22 @@ describe("shooting cover apart", () => {
     expect(coverBlocking(ROOM, { x: 6, y: 1 }, { x: 6, y: 10 }, damage)).toEqual([]);
   });
 
-  it("never drops below zero HP however hard it is hit", () => {
+  it("loses the excess rather than passing it through", () => {
+    // pg. 182: "If a cover's HP drops to 0, excess damage is lost and doesn't
+    // harm any targets hiding behind it."
     const hit = applyCoverDamage(WALL, {}, 10_000);
+    expect(hit.damage).toBe(10_000);
+    expect(hit.applied).toBe(coverMaxHp(WALL));
     expect(hit.hpAfter).toBe(0);
-    expect(coverHpRemaining(WALL, hit.damage)).toBe(0);
+    expect(hit.destroyed).toBe(true);
+    expect(hit.damageMap["wall"]).toBe(coverMaxHp(WALL));
+  });
+
+  it("never books more damage than the piece had left", () => {
+    const almost = applyCoverDamage(WALL, {}, coverMaxHp(WALL) - 1).damageMap;
+    const finish = applyCoverDamage(WALL, almost, 50);
+    expect(finish.applied).toBe(1);
+    expect(finish.damageMap["wall"]).toBe(coverMaxHp(WALL));
   });
 });
 
@@ -212,11 +288,12 @@ describe("reading persisted damage", () => {
 
 describe("the read model", () => {
   it("reports what each piece is currently worth", () => {
-    const damage = applyCoverDamage(WALL, {}, coverMaterial("concrete").sp + 10).damage;
+    const damage = applyCoverDamage(WALL, {}, 10).damageMap;
     const [status] = coverStatuses(ROOM, damage);
     expect(status).toMatchObject({
-      label: "a concrete wall",
+      label: "a concrete barricade",
       material: "concrete",
+      thickness: "thick",
       hp: coverMaxHp(WALL) - 10,
       hpMax: coverMaxHp(WALL),
       destroyed: false,

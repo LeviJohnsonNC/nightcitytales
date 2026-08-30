@@ -420,7 +420,7 @@ function CombatHud({ campaignId }: { campaignId: string }) {
                 <span className="text-[10px] uppercase text-muted-foreground">cover</span>
               </span>
               <span className="num font-mono text-xs">
-                {piece.destroyed ? "gone" : `${piece.hp}/${piece.hpMax} · SP ${piece.sp}`}
+                {piece.destroyed ? "gone" : `${piece.hp}/${piece.hpMax} HP · ${piece.thickness}`}
               </span>
             </li>
           ))}

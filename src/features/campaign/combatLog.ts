@@ -127,25 +127,41 @@ export type CoverLogContext = {
   beatId?: string | null;
 };
 
-/** Record fire that hit what was in the way instead of who was behind it. */
-export async function logCoverDamage(
-  campaignId: string,
-  hit: {
+export type CoverShot = {
+  attack: AttackResult;
+  /** Absent on a miss: nothing was done to it. */
+  hit?: {
     pieceId: string;
     label: string;
     material: string;
-    sp: number;
-    absorbed: number;
-    through: number;
+    thickness: string;
+    damage: number;
+    applied: number;
     hpBefore: number;
     hpAfter: number;
     destroyed: boolean;
-  },
+  } | null;
+};
+
+/**
+ * Record a shot at cover.
+ *
+ * CP:R pg. 182 makes a section of cover something that "can be attacked just
+ * like you can", so this carries the full To-Hit trace the way an attack on a
+ * person does — a miss is a real outcome, not an absence.
+ */
+export async function logCoverDamage(
+  campaignId: string,
+  shot: CoverShot,
   context: CoverLogContext,
 ): Promise<CampaignEvent> {
-  const summary = hit.destroyed
-    ? `${context.attackerName} shoots ${hit.label} apart.`
-    : `${context.attackerName} hits ${hit.label} — ${hit.hpBefore} to ${hit.hpAfter}.`;
+  const hit = shot.hit ?? null;
+  const label = hit?.label ?? "cover";
+  const summary = !hit
+    ? `${context.attackerName} shoots at ${label} and misses.`
+    : hit.destroyed
+      ? `${context.attackerName} shoots ${label} apart.`
+      : `${context.attackerName} hits ${label} — ${hit.hpBefore} to ${hit.hpAfter}.`;
   return appendCampaignEvent({
     campaign_id: campaignId,
     type: COVER_DAMAGE_EVENT,
@@ -154,15 +170,23 @@ export async function logCoverDamage(
       attacker: context.attackerName,
       ...(context.targetName ? { intended_target: context.targetName } : {}),
       ...(context.weapon ? { weapon: context.weapon } : {}),
-      cover: hit.pieceId,
-      label: hit.label,
-      material: hit.material,
-      sp: hit.sp,
-      absorbed: hit.absorbed,
-      through: hit.through,
-      hp_before: hit.hpBefore,
-      hp_after: hit.hpAfter,
-      destroyed: hit.destroyed,
+      hit: shot.attack.hit,
+      formula: shot.attack.formula,
+      margin: shot.attack.margin,
+      ...(hit
+        ? {
+            cover: hit.pieceId,
+            label: hit.label,
+            material: hit.material,
+            thickness: hit.thickness,
+            damage: hit.damage,
+            // Excess past the last point of HP is lost (pg. 182).
+            applied: hit.applied,
+            hp_before: hit.hpBefore,
+            hp_after: hit.hpAfter,
+            destroyed: hit.destroyed,
+          }
+        : {}),
     } as unknown as Json,
     ...(context.beatId ? { beat_id: context.beatId } : {}),
   });

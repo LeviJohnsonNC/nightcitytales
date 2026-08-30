@@ -7,7 +7,7 @@
  * tests pin the replacement: positions the engine placed, distances it
  * measured, and a Move it refuses to let anyone spend twice.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ledger: { type: string; summary: string; data: Record<string, unknown> }[] = [];
 const saved: unknown[] = [];
@@ -30,7 +30,7 @@ vi.mock("@/features/campaign/encounterState", () => ({
   }),
 }));
 
-const coverLog: { label: string; through: number; destroyed: boolean }[] = [];
+const coverLog: { label: string; applied: number; destroyed: boolean; hit: boolean }[] = [];
 const attackLog: string[] = [];
 
 vi.mock("@/features/campaign/combatLog", () => ({
@@ -38,8 +38,19 @@ vi.mock("@/features/campaign/combatLog", () => ({
     attackLog.push(ctx.targetName);
   }),
   logCoverDamage: vi.fn(
-    async (_id: string, hit: { label: string; through: number; destroyed: boolean }) => {
-      coverLog.push({ label: hit.label, through: hit.through, destroyed: hit.destroyed });
+    async (
+      _id: string,
+      shot: {
+        attack: { hit: boolean };
+        hit?: { label: string; applied: number; destroyed: boolean } | null;
+      },
+    ) => {
+      coverLog.push({
+        label: shot.hit?.label ?? "(missed)",
+        applied: shot.hit?.applied ?? 0,
+        destroyed: shot.hit?.destroyed ?? false,
+        hit: shot.attack.hit,
+      });
     },
   ),
   logDeathSave: vi.fn(async () => {}),
@@ -62,6 +73,7 @@ function fight(over: {
   playerTurn?: CombatantData["turn"];
   cover?: Record<string, number>;
   hostileDamage?: number;
+  hostileMove?: number;
 }): LiveEncounter {
   const round = over.round ?? 1;
   return {
@@ -127,7 +139,7 @@ function fight(over: {
         damageDice: over.hostileDamage ?? 2,
         rangeType: over.hostileRange === undefined ? "pistol" : over.hostileRange,
         position: over.hostileAt ?? { x: 15, y: 45 },
-        move: 6,
+        move: over.hostileMove ?? 6,
         attackSkill: 4,
       },
     },
@@ -400,52 +412,77 @@ describe("building a hostile from a profile", () => {
  * it on x = 22 puts it squarely in the line.
  */
 describe("cover in a hostile's line", () => {
+  /**
+   * "street" carries a parked car at y 36-38: a thin-steel door at x 19.5-21.5
+   * and a thick-steel engine block at x 21.5-23.5. Standing either side of the
+   * engine block on x = 22 puts it squarely in the line.
+   */
   const BEHIND = { playerAt: { x: 22, y: 20 }, hostileAt: { x: 22, y: 50 } };
-  /** A car is SP 8: a sidearm plinks off it, a rifle takes pieces out. */
-  const HEAVY = { ...BEHIND, hostileDamage: 6 };
+
+  /**
+   * Cover is SHOT AT (CP:R pg. 182), so a hostile can miss it. These tests
+   * force the die rather than hoping: `high` always hits, `low` never does.
+   */
+  const forceRolls = (value: number) => vi.spyOn(Math, "random").mockReturnValue(value);
+  const alwaysHits = () => forceRolls(0.99);
+  const alwaysMisses = () => forceRolls(0);
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("shoots the car instead of the person behind it", async () => {
+    alwaysHits();
     const { lines } = await runNpcTurns("c", null, fight(BEHIND));
     expect(coverLog).toHaveLength(1);
-    expect(coverLog[0]!.label).toBe("a parked car");
+    expect(coverLog[0]!.label).toBe("the engine block of a parked car");
     // And it is NOT filed as an attack: settlement counts those as people.
     expect(attackLog).toEqual([]);
-    expect(lines.join(" ")).toContain("a parked car");
+    expect(lines.join(" ")).toContain("engine block");
+  });
+
+  it("can miss the cover, and then nothing happens to it", async () => {
+    alwaysMisses();
+    const { live } = await runNpcTurns("c", null, fight(BEHIND));
+    expect(coverLog).toHaveLength(1);
+    expect(coverLog[0]!.hit).toBe(false);
+    expect(live.cover).toEqual({});
   });
 
   it("persists the damage as damage taken, keyed by the piece", async () => {
-    const { live } = await runNpcTurns("c", null, fight(HEAVY));
-    expect(Object.keys(live.cover)).toEqual(["car_east"]);
-    expect(live.cover["car_east"]).toBeGreaterThan(0);
+    alwaysHits();
+    const { live } = await runNpcTurns("c", null, fight(BEHIND));
+    expect(Object.keys(live.cover)).toEqual(["car_east_engine"]);
+    expect(live.cover["car_east_engine"]).toBeGreaterThan(0);
     expect(saved).toHaveLength(1);
   });
 
-  it("leaves no mark when the material eats the whole round", async () => {
-    // A sidearm against a car: it is hit, and it does not care. Writing a 0
-    // would file damage against a piece nothing happened to.
-    const { live } = await runNpcTurns("c", null, fight(BEHIND));
-    expect(coverLog).toHaveLength(1);
-    if (coverLog[0]!.through === 0) expect(live.cover).toEqual({});
-  });
-
   it("accumulates across rounds rather than starting over", async () => {
-    const first = await runNpcTurns("c", null, fight(HEAVY));
+    alwaysHits();
+    // MOVE 0: left to walk, a hostile closes on the car and ends up standing
+    // AT it, at which point it is their own cover and stops blocking them.
+    const first = await runNpcTurns("c", null, fight({ ...BEHIND, hostileMove: 0 }));
     const second = await runNpcTurns("c", null, {
       ...first.live,
       state: { ...first.live.state, activeIndex: 0 },
     });
-    expect(second.live.cover["car_east"]!).toBeGreaterThanOrEqual(first.live.cover["car_east"]!);
+    expect(second.live.cover["car_east_engine"]!).toBeGreaterThan(
+      first.live.cover["car_east_engine"]!,
+    );
   });
 
-  it("shoots the person once the car is gone", async () => {
-    // A car already shot to pieces stops standing in the way.
-    const wrecked = fight({ ...BEHIND, cover: { car_east: 999 } });
+  it("shoots the person once the cover is gone", async () => {
+    alwaysHits();
+    // Thick steel is 50 HP (pg. 182); a piece already shot to bits stops
+    // standing in the way.
+    const wrecked = fight({ ...BEHIND, cover: { car_east_engine: 50 } });
     await runNpcTurns("c", null, wrecked);
     expect(coverLog).toEqual([]);
     expect(attackLog).toEqual(["Vela"]);
   });
 
   it("leaves a clear line alone", async () => {
+    alwaysHits();
     // The default positions have nothing between them.
     await runNpcTurns("c", null, fight({}));
     expect(coverLog).toEqual([]);

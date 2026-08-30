@@ -6,10 +6,14 @@
 -- stops a firefight becoming two people trading dice from behind permanent
 -- walls.
 --
+-- The rules are the printed ones: Cyberpunk RED, Friday Night Firefight,
+-- pg. 182-183. Cover is binary (no partial cover, no to-hit penalty), it has HP
+-- and no SP, and a 2 m section of it is shot at exactly as a person is.
+--
 -- What is stored here is ONLY the damage each piece has taken, keyed by the
--- piece's authored id — { "dumpster": 12 }. The geometry (where cover stands,
--- how big it is, what it is made of) lives in src/engine/battlefield.ts and
--- src/data/rules/cover.json, exactly as the arena itself does. Storing the
+-- piece's authored id — { "car_east_engine": 12 }. The geometry (where cover
+-- stands, how big it is, what it is made of) lives in src/engine/battlefield.ts
+-- and src/data/rules/cover.json, exactly as the arena itself does. Storing the
 -- shape would give a fight in progress its own copy of a thing the engine
 -- authors, and editing an arena would then silently disagree with every
 -- encounter already running.

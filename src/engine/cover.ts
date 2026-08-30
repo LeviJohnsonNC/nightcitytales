@@ -2,17 +2,25 @@
  * What is between you and the person shooting at you.
  *
  * engine/battlefield.ts owns the GEOMETRY — where cover stands and whether a
- * line crosses it. This owns the RULES: what a material is worth, what fire
- * does to it, and when it stops being cover at all.
+ * line crosses it. This owns the RULES, and they are the printed ones:
+ * Cyberpunk RED, Friday Night Firefight, pg. 182-183.
  *
- * Two decisions worth stating, because both could have gone the other way:
+ * The Golden Rules of Cover (pg. 182) decide the shape of this module:
  *
- * Cover is binary, not a modifier. While a piece stands in the way the engine
- * REFUSES the shot; it does not price it as a penalty. A "-2 for cover" would
- * be a number nobody printed reaching the dice, which is the exact failure
- * battlefield.ts and threats.json exist to prevent. The Core Rulebook's cover
- * rules are not transcribed in this repository, so data/rules/cover.json says
- * out loud that its numbers are house values rather than citing a page.
+ *   "You are considered to be in cover if you are fully behind something that
+ *    could stop a bullet. If they have line of sight on you, you aren't in
+ *    cover. There is no 'partial' cover. It can either stop a bullet or it
+ *    can't. If it cannot stop a bullet, it provides no cover and thus has no
+ *    HP."
+ *
+ * So cover is binary and never a modifier on the dice. A piece either takes the
+ * shot away or it is not there.
+ *
+ * Cover has HP and nothing else — no SP, no ablation. The book's own example
+ * puts a 17-damage sniper round into a Thick Concrete barricade of 25 HP and
+ * leaves it at 8, with nothing subtracted first. And a section is SHOT AT
+ * rather than merely damaged: the example rolls a Shoulder Arms Check against
+ * a DV read off the weapon and the range, exactly as if shooting a person.
  *
  * Only DAMAGE is persisted, keyed by the piece's authored id. Geometry stays in
  * the engine, the way an arena key does: if a stored fight carried its own
@@ -25,13 +33,14 @@ import coverData from "@/data/rules/cover.json";
 import type { Arena, CoverPiece } from "./battlefield";
 import { coverBetween } from "./battlefield";
 
+/** How much of a thing is in the way (pg. 182: the HP table is by thickness). */
+export type CoverThickness = "thick" | "thin";
+
 export type CoverMaterial = {
   key: string;
   label: string;
-  /** How much of a single hit the material simply eats. */
-  sp: number;
-  /** How much punishment it takes before it is no longer cover. */
-  hp: number;
+  thickHp: number;
+  thinHp: number;
   note: string;
 };
 
@@ -39,8 +48,8 @@ export const COVER_MATERIALS: CoverMaterial[] = (
   coverData.materials as unknown as CoverMaterial[]
 ).map((m) => ({ ...m }));
 
-/** The plainest thing worth hiding behind, and the fallback for a bad key. */
-export const DEFAULT_COVER_MATERIAL_KEY = "crate";
+/** The fallback for a key nobody authored. Thin wood is the book's flimsiest real cover. */
+export const DEFAULT_COVER_MATERIAL_KEY = "wood";
 
 export const COVER_MATERIAL_KEYS: string[] = COVER_MATERIALS.map((m) => m.key);
 
@@ -68,12 +77,22 @@ export function coverMaterial(key: string | null | undefined): CoverMaterial {
  */
 export type CoverDamage = Record<string, number>;
 
+/** The printed HP for this piece's material and thickness (pg. 182). */
 export function coverMaxHp(piece: CoverPiece): number {
-  return coverMaterial(piece.material).hp;
+  const material = coverMaterial(piece.material);
+  return piece.thickness === "thick" ? material.thickHp : material.thinHp;
 }
 
-export function coverSp(piece: CoverPiece): number {
-  return coverMaterial(piece.material).sp;
+/**
+ * Whether this is cover at all.
+ *
+ * pg. 182: a thing that cannot stop a bullet "provides no cover and thus has no
+ * HP" — the table prints Thin Plaster/Foam/Plastic as "0 HP (Not Cover)". Such
+ * a piece is not weak cover, it is scenery: it never blocks a line and can
+ * never be shot at.
+ */
+export function isCover(piece: CoverPiece): boolean {
+  return coverMaxHp(piece) > 0;
 }
 
 export function coverHpRemaining(piece: CoverPiece, damage: CoverDamage): number {
@@ -81,68 +100,70 @@ export function coverHpRemaining(piece: CoverPiece, damage: CoverDamage): number
   return Math.max(0, coverMaxHp(piece) - taken);
 }
 
-/** Shot to bits: it no longer blocks anything. */
+/** At 0 HP cover is destroyed (pg. 182) and stops blocking anything. */
 export function coverDestroyed(piece: CoverPiece, damage: CoverDamage): boolean {
   return coverHpRemaining(piece, damage) <= 0;
 }
 
-/** The cover actually blocking a shot, ignoring anything already destroyed. */
+/**
+ * The cover actually blocking a shot.
+ *
+ * Ignores anything destroyed, and anything that was never cover to begin with.
+ */
 export function coverBlocking(
   arena: Arena,
   from: { x: number; y: number },
   to: { x: number; y: number },
   damage: CoverDamage,
 ): CoverPiece[] {
-  return coverBetween(arena, from, to, (piece) => coverDestroyed(piece, damage));
+  return coverBetween(arena, from, to, (piece) => !isCover(piece) || coverDestroyed(piece, damage));
 }
 
 export type CoverHit = {
   pieceId: string;
   label: string;
   material: string;
-  sp: number;
-  absorbed: number;
-  through: number;
+  thickness: CoverThickness;
+  /** Damage rolled. Anything past the last point of HP is lost (pg. 182). */
+  damage: number;
+  applied: number;
   hpBefore: number;
   hpAfter: number;
   destroyed: boolean;
   /** The damage map after the hit; the caller persists this. */
-  damage: CoverDamage;
+  damageMap: CoverDamage;
 };
 
 /**
- * Fire that could not reach a person hits what was in the way.
+ * Damage from a shot that HIT this section.
  *
- * Damage is reduced by the material's SP and the remainder comes off its HP.
- * SP does not ablate: one fewer moving part, and the HP already carries the
- * sense of a thing coming apart. A hit that the SP eats entirely still reads as
- * a hit — it just does not shorten the wall's life.
+ * Straight off HP: cover has no SP and does not ablate. Excess damage past 0 is
+ * lost and never reaches whoever is behind it (pg. 182) — "You can hurt them
+ * with your next Attack."
  */
 export function applyCoverDamage(
   piece: CoverPiece,
   damage: CoverDamage,
   incoming: number,
 ): CoverHit {
-  const sp = coverSp(piece);
+  const rolled = Math.max(0, Math.round(incoming));
   const hpBefore = coverHpRemaining(piece, damage);
-  const through = Math.max(0, Math.round(incoming) - sp);
-  const absorbed = Math.max(0, Math.round(incoming)) - through;
-  const hpAfter = Math.max(0, hpBefore - through);
-  // A hit the SP ate entirely leaves no mark: writing a 0 would put a key in
-  // the damage map for a piece nothing has actually happened to.
-  const taken = Math.max(0, damage[piece.id] ?? 0) + through;
-  const nextDamage = through > 0 ? { ...damage, [piece.id]: taken } : { ...damage };
+  const applied = Math.min(rolled, hpBefore);
+  const hpAfter = hpBefore - applied;
+  const taken = Math.max(0, damage[piece.id] ?? 0) + applied;
   return {
     pieceId: piece.id,
     label: piece.label,
     material: piece.material,
-    sp,
-    absorbed,
-    through,
+    thickness: piece.thickness,
+    damage: rolled,
+    applied,
     hpBefore,
     hpAfter,
     destroyed: hpAfter <= 0,
-    damage: nextDamage,
+    // A hit that applied nothing leaves no mark: writing a 0 would file damage
+    // against a piece nothing has actually happened to.
+    damageMap: applied > 0 ? { ...damage, [piece.id]: taken } : { ...damage },
   };
 }
 
@@ -159,20 +180,20 @@ export type CoverStatus = {
   piece: CoverPiece;
   label: string;
   material: string;
-  sp: number;
+  thickness: CoverThickness;
   hp: number;
   hpMax: number;
   destroyed: boolean;
 };
 
 export function coverStatuses(arena: Arena, damage: CoverDamage): CoverStatus[] {
-  return (arena.cover ?? []).map((piece) => {
+  return (arena.cover ?? []).filter(isCover).map((piece) => {
     const hp = coverHpRemaining(piece, damage);
     return {
       piece,
       label: piece.label,
       material: piece.material,
-      sp: coverSp(piece),
+      thickness: piece.thickness,
       hp,
       hpMax: coverMaxHp(piece),
       destroyed: hp <= 0,
@@ -190,15 +211,13 @@ export function coverStatuses(arena: Arena, damage: CoverDamage): CoverStatus[] 
  */
 export function coverDamageFrom(arena: Arena, raw: unknown): CoverDamage {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const known = new Set((arena.cover ?? []).map((piece) => piece.id));
+  const pieces = arena.cover ?? [];
   const out: CoverDamage = {};
   for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (!known.has(id)) continue;
+    const piece = pieces.find((p) => p.id === id);
+    if (!piece) continue;
     if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) continue;
-    out[id] = Math.min(
-      Math.round(value),
-      coverMaxHp((arena.cover ?? []).find((p) => p.id === id)!),
-    );
+    out[id] = Math.min(Math.round(value), coverMaxHp(piece));
   }
   return out;
 }
