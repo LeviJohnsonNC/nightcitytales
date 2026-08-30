@@ -8,6 +8,9 @@ boundaries are load-bearing. This is the compass: what the software is _for_.
 When the two disagree, `AGENTS.md` wins on structure and this document wins on
 intent. When neither settles it, the priority ladder below does.
 
+`ROADMAP.md` applies this document to the current code: what is built, what is
+next, and what is deferred on purpose.
+
 It is written for anyone working in this repository, human or agent. It exists
 because the failure mode here is not bad code. It is a large amount of clean,
 well-typed, well-tested functionality that moves the product somewhere it should

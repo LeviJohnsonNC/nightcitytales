@@ -30,6 +30,10 @@ design request. Read it before making gameplay, UX, AI, or content decisions.
 This file stays authoritative on architecture; `PRODUCT.md` is authoritative on
 intent.
 
+`ROADMAP.md` says what to build next and why, and records what the current
+Known implementation gaps below are blocking. Update it when a milestone lands
+or the ordering changes.
+
 The top-level `README.md` describes the original scaffold and is not a reliable
 description of the current product or route set.
 
