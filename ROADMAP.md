@@ -45,6 +45,41 @@ settlement.
 
 ---
 
+## Also shipped: the ripperdoc
+
+Chrome was the one thing the shop deliberately would not sell. It now has its
+own scene in Life: the full cyberware catalog, your ripperdoc's waiting list,
+surgery, and recovery.
+
+Shipped:
+
+- Foundations, Option Slots, paired implants, mutually exclusive systems and
+  affordability are decided in `engine/cyberwareInstall.ts`. The scene asks the
+  engine what is legal; it never asks the model.
+- Humanity Loss is rolled after creation the way RED says, including the
+  round-up `1d6/2` form, and the loss moves current EMP — so chrome shows up in
+  Social checks, in combat, and in what the GM is told about you.
+- Installation commits atomically through `install_cyberware`: payment,
+  Humanity, the implants and their foundations, elapsed time, ripperdoc state,
+  and the ledger receipt. Idempotent on the caller's request id.
+- **Chrome competes with the job.** Going under the knife during a live hook
+  passes on that job, in the same transaction that installs the implant. Time
+  on the table is time you did not spend working.
+- Play reads live chrome from `campaign_cyberware` rather than mutating the
+  saved character, and a new campaign snapshots its starting cyberware into it.
+- Armor's REF penalty now reaches play through the same helper, so heavy plate
+  finally costs something.
+
+Pacing — 0/1/3 recovery days by install level, four surgery hours per physical
+implant, appointment delay by disposition — is a house rule, and `catalog.json`
+labels it as one beside the values it takes from the Core Rulebook. Tune it
+there rather than in code.
+
+Disposition buys an earlier appointment, never a better price. That is
+deliberate: a person's opinion of you changes access, not the printed cost.
+
+---
+
 ## Next: make Life feel like the actual game
 
 Life is where the player spends most of their time and is currently the weakest
@@ -125,6 +160,9 @@ Deferred on purpose, so that deferring them stays a decision:
 
 - The full RED Critical Injury subsystem. Settlement records that a critical
   occurred; the mechanics deserve their own feature.
+- Cyberpsychosis as something that happens to you. The threshold is read from
+  the rules file and Life raises a `humanity_low` situation, but crossing it
+  carries no mechanical consequence of its own yet.
 - Netrunning as a first-class mode.
 - What happens after a character death.
 - General inventory consumption beyond ammunition.
