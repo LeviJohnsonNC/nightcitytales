@@ -61,6 +61,70 @@ export type Database = {
           },
         ]
       }
+      campaign_cyberware: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          foundational_for: string | null
+          humanity_loss_rolled: number
+          id: string
+          install_location: string | null
+          installed_by_npc_id: string | null
+          installed_day: number
+          item_id: string
+          request_id: string | null
+          source_character_cyberware_id: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          foundational_for?: string | null
+          humanity_loss_rolled?: number
+          id?: string
+          install_location?: string | null
+          installed_by_npc_id?: string | null
+          installed_day: number
+          item_id: string
+          request_id?: string | null
+          source_character_cyberware_id?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          foundational_for?: string | null
+          humanity_loss_rolled?: number
+          id?: string
+          install_location?: string | null
+          installed_by_npc_id?: string | null
+          installed_day?: number
+          item_id?: string
+          request_id?: string | null
+          source_character_cyberware_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_cyberware_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_cyberware_campaign_id_foundational_for_fkey"
+            columns: ["campaign_id", "foundational_for"]
+            isOneToOne: false
+            referencedRelation: "campaign_cyberware"
+            referencedColumns: ["campaign_id", "id"]
+          },
+          {
+            foreignKeyName: "campaign_cyberware_installed_by_same_campaign_fkey"
+            columns: ["campaign_id", "installed_by_npc_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_npcs"
+            referencedColumns: ["campaign_id", "id"]
+          },
+        ]
+      }
       campaign_events: {
         Row: {
           beat_id: string | null
@@ -216,70 +280,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "campaigns"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      campaign_cyberware: {
-        Row: {
-          campaign_id: string
-          created_at: string
-          foundational_for: string | null
-          humanity_loss_rolled: number
-          id: string
-          install_location: string | null
-          installed_by_npc_id: string | null
-          installed_day: number
-          item_id: string
-          request_id: string | null
-          source_character_cyberware_id: string | null
-        }
-        Insert: {
-          campaign_id: string
-          created_at?: string
-          foundational_for?: string | null
-          humanity_loss_rolled?: number
-          id?: string
-          install_location?: string | null
-          installed_by_npc_id?: string | null
-          installed_day: number
-          item_id: string
-          request_id?: string | null
-          source_character_cyberware_id?: string | null
-        }
-        Update: {
-          campaign_id?: string
-          created_at?: string
-          foundational_for?: string | null
-          humanity_loss_rolled?: number
-          id?: string
-          install_location?: string | null
-          installed_by_npc_id?: string | null
-          installed_day?: number
-          item_id?: string
-          request_id?: string | null
-          source_character_cyberware_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campaign_cyberware_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "campaign_cyberware_campaign_id_foundational_for_fkey"
-            columns: ["campaign_id", "foundational_for"]
-            isOneToOne: false
-            referencedRelation: "campaign_cyberware"
-            referencedColumns: ["campaign_id", "id"]
-          },
-          {
-            foreignKeyName: "campaign_cyberware_installed_by_same_campaign_fkey"
-            columns: ["campaign_id", "installed_by_npc_id"]
-            isOneToOne: false
-            referencedRelation: "campaign_npcs"
-            referencedColumns: ["campaign_id", "id"]
           },
         ]
       }
