@@ -269,6 +269,9 @@ Keep these in mind when changing adjacent code:
 - The append-only ledger is auditable, not tamper-proof: authenticated users can
   insert arbitrary event types into campaigns they own. Do not treat it as an
   anti-cheat boundary.
+- Ordinary play turns still span multiple writes; only encounter saves, job
+  settlement, and Aftermath closeout are transactional, so error handling must
+  still account for partial turns in the immutable ledger.
 - `bun run lint` still fails on a pre-existing `prefer-const` error in
   `src/integrations/supabase/previewAuthStorage.ts`, plus existing Fast Refresh
   warnings.
