@@ -98,6 +98,7 @@ const live: LiveEncounter = {
     },
   },
   arena: "open_ground",
+  cover: {},
 };
 
 describe("attackPrompt", () => {

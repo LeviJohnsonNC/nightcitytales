@@ -107,3 +107,63 @@ export async function logDeathSave(
 ): Promise<CampaignEvent> {
   return appendCampaignEvent(deathSaveEvent(campaignId, result, context));
 }
+
+/**
+ * The ledger type cover damage is written under.
+ *
+ * Deliberately NOT "attack". engine/settlement.ts replays the job's own ledger
+ * and reads every `attack` event where the player hit something with damage
+ * through armor as a PERSON put in hospital, and counts every `attack` toward
+ * how loud the job was. Filing a shot-up vending machine as an attack would
+ * quietly cost faction standing for wounding a snack dispenser.
+ */
+export const COVER_DAMAGE_EVENT = "cover_damaged";
+
+export type CoverLogContext = {
+  attackerName: string;
+  /** Who the shot was meant for, when it was meant for somebody. */
+  targetName?: string;
+  weapon?: string;
+  beatId?: string | null;
+};
+
+/** Record fire that hit what was in the way instead of who was behind it. */
+export async function logCoverDamage(
+  campaignId: string,
+  hit: {
+    pieceId: string;
+    label: string;
+    material: string;
+    sp: number;
+    absorbed: number;
+    through: number;
+    hpBefore: number;
+    hpAfter: number;
+    destroyed: boolean;
+  },
+  context: CoverLogContext,
+): Promise<CampaignEvent> {
+  const summary = hit.destroyed
+    ? `${context.attackerName} shoots ${hit.label} apart.`
+    : `${context.attackerName} hits ${hit.label} — ${hit.hpBefore} to ${hit.hpAfter}.`;
+  return appendCampaignEvent({
+    campaign_id: campaignId,
+    type: COVER_DAMAGE_EVENT,
+    summary,
+    data: {
+      attacker: context.attackerName,
+      ...(context.targetName ? { intended_target: context.targetName } : {}),
+      ...(context.weapon ? { weapon: context.weapon } : {}),
+      cover: hit.pieceId,
+      label: hit.label,
+      material: hit.material,
+      sp: hit.sp,
+      absorbed: hit.absorbed,
+      through: hit.through,
+      hp_before: hit.hpBefore,
+      hp_after: hit.hpAfter,
+      destroyed: hit.destroyed,
+    } as unknown as Json,
+    ...(context.beatId ? { beat_id: context.beatId } : {}),
+  });
+}

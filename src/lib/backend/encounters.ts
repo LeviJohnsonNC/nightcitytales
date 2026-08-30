@@ -62,6 +62,13 @@ export type SaveEncounterPayload = {
   active_index: number;
   order_ids: string[];
   status: string;
+  /**
+   * Damage taken by each piece of arena cover, keyed by its authored id.
+   * Geometry is never sent: it lives in engine/battlefield.ts. The transaction
+   * merges this by element-wise maximum rather than replacing it, so a save
+   * built on a stale read can never un-damage a wall.
+   */
+  cover?: Record<string, number>;
   combatants: Array<{
     id: string;
     hp_current: number;

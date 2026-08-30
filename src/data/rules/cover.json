@@ -1,0 +1,60 @@
+{
+  "_note": {
+    "why": "What is between you and the person shooting at you. Positions without cover are a number line: every metre is the same metre, and the only decision a fight offers is which range band to stand in. Cover is what makes a position a choice, and cover that comes apart is what stops a firefight becoming two people trading dice from behind permanent walls.",
+    "provenance": "These are HOUSE VALUES, not verbatim book statblocks — do not cite a page for them. The Core Rulebook's cover rules were not transcribed into this repository when these were written, so nothing here should be read as the printed rule. They follow the same discipline as data/rules/threats.json: invented numbers, said out loud to be invented, kept in versioned data rather than in code or in a prompt.",
+    "model": "Cover is binary for line of sight: while a piece stands between two combatants, neither can shoot the other, and the engine refuses the shot rather than pricing it as a penalty. A to-hit modifier was deliberately NOT used — inventing a '-2 for cover' would put a number nobody printed into the dice, which is the exact failure engine/battlefield.ts and data/rules/threats.json exist to prevent.",
+    "damage": "Fire that cannot reach a person hits what is in the way. Damage is reduced by the cover's SP and the remainder comes off its HP; at 0 HP the piece is gone and the firing line opens. Cover SP does not ablate — one fewer moving part, and the HP already carries the sense of a thing coming apart.",
+    "tuning": "sp is how much of a single hit the material simply eats; hp is how much punishment it takes before it stops being cover. Concrete is meant to outlast a fight; a vending machine is meant to be the interesting one — real protection that visibly will not last."
+  },
+  "materials": [
+    {
+      "key": "concrete",
+      "label": "concrete",
+      "sp": 15,
+      "hp": 60,
+      "note": "A pillar, a loading dock, a structural wall. Outlasts most fights, which is what makes the fights that chew through it memorable."
+    },
+    {
+      "key": "steel",
+      "label": "steel",
+      "sp": 12,
+      "hp": 40,
+      "note": "A shipping container, a security shutter, an engine block. Hard, and it holds."
+    },
+    {
+      "key": "vehicle",
+      "label": "a parked car",
+      "sp": 8,
+      "hp": 30,
+      "note": "Doors and glass over an engine. Stops rounds until it does not."
+    },
+    {
+      "key": "dumpster",
+      "label": "a dumpster",
+      "sp": 7,
+      "hp": 25,
+      "note": "Sheet steel and whatever is inside it. The alley's only honest answer."
+    },
+    {
+      "key": "machine",
+      "label": "a vending machine",
+      "sp": 5,
+      "hp": 18,
+      "note": "The interesting one: enough to hide behind, not enough to stay behind."
+    },
+    {
+      "key": "crate",
+      "label": "a stack of crates",
+      "sp": 4,
+      "hp": 15,
+      "note": "Freight and pallets. Cover in the sense that nobody can see you."
+    },
+    {
+      "key": "furniture",
+      "label": "an overturned table",
+      "sp": 3,
+      "hp": 10,
+      "note": "A club's furniture. Buys a Round, maybe two."
+    }
+  ]
+}

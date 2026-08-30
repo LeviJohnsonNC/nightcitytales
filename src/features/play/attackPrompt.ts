@@ -5,6 +5,8 @@
  * from the engine or the rules data; nothing here invents a DV or a damage die.
  */
 import {
+  arenaFor,
+  coverBlocking,
   getSkill,
   judgeAction,
   type CapabilitySnapshot,
@@ -39,6 +41,15 @@ export type PendingAttack = {
   woundPenalty: number;
   /** Current REF/DEX after Humanity and worn armor, when live vitals were supplied. */
   effectiveStats?: Record<string, number>;
+  /**
+   * What is standing in the way, if anything is.
+   *
+   * A proposal against somebody behind cover is refused before it becomes a
+   * prompt, so this is the narrow case where cover arrived AFTER the shot was
+   * proposed — a hostile stepped behind a pillar, or the player moved. It is
+   * one fact about the shot rather than a repeated gap on every weapon row.
+   */
+  blockedBy?: string;
 };
 
 /** What one weapon choice would mean for this attack. */
@@ -152,6 +163,15 @@ export function pendingAttackFrom(
     const target = findTarget(live, targetKey);
     if (!target || target.defeated) return null;
 
+    // Re-measured now, like the distance: cover the shot has to go through is
+    // whatever stands there when the trigger is pulled, not when the GM spoke.
+    const player = live.data[attacker.id];
+    const targetData = live.data[target.id];
+    const blocking =
+      player && targetData
+        ? coverBlocking(arenaFor(live.arena), player.position, targetData.position, live.cover)
+        : [];
+
     return {
       eventId: event.id,
       beatId: event.beat_id ?? null,
@@ -163,6 +183,7 @@ export function pendingAttackFrom(
       target,
       weapons: weaponChoices(liveInventory(inventory, character)),
       woundPenalty: woundActionPenalty(attacker.woundState),
+      ...(blocking[0] ? { blockedBy: blocking[0].label } : {}),
       ...(vitals ? { effectiveStats: effectiveStatsRecord(character, { vitals, inventory }) } : {}),
     };
   }

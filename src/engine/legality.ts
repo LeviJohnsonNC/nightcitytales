@@ -194,7 +194,10 @@ export function judgeAction(
       if (!target.perceivable) {
         return no(
           "target_not_perceived",
-          `${target.name} cannot be seen or located right now — they have to be found first.`,
+          target.coverLabel
+            ? `There is no shot at ${target.name}: ${target.coverLabel} is in the way. ` +
+                `They have to be moved on, or it has to come apart.`
+            : `${target.name} cannot be seen or located right now — they have to be found first.`,
         );
       }
       if (

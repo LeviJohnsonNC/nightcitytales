@@ -21,6 +21,26 @@ import { SINGLE_SHOT_DV, RANGE_BAND_MAX, singleShotDV, type WeaponRangeType } fr
 
 export type Point = { x: number; y: number };
 
+/** An axis-aligned box on the ground, in metres. */
+export type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * One thing worth standing behind.
+ *
+ * Authored per arena, exactly as the arena itself is: the id is stable and the
+ * geometry lives here, so a fight in progress reads its cover out of this file
+ * rather than out of a row somebody could have written a different shape into.
+ * Only the DAMAGE a piece has taken is persisted — see engine/cover.ts.
+ */
+export type CoverPiece = {
+  /** Stable within its arena; what persisted damage is keyed by. */
+  id: string;
+  label: string;
+  /** A material key from data/rules/cover.json. */
+  material: string;
+  rect: Rect;
+};
+
 /** Straight-line metres between two positions. */
 export function metresBetween(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -59,6 +79,14 @@ export type Arena = {
   playerStart: Point;
   /** Where hostiles stand, in order. Cycled when there are more of them. */
   hostileSlots: Point[];
+  /**
+   * What is standing on the ground. Absent means open sightlines everywhere.
+   *
+   * Hostile slots are placed to USE this: an arena with cover puts its
+   * attackers near it, so enemies benefit from cover without anybody writing
+   * cover-seeking AI. Choosing WHERE to go is a later feature.
+   */
+  cover?: CoverPiece[];
 };
 
 export const ARENAS: Arena[] = [
@@ -73,6 +101,20 @@ export const ARENAS: Arena[] = [
       { x: 4, y: 19 },
       { x: 7, y: 24 },
     ],
+    cover: [
+      {
+        id: "dumpster",
+        label: "a dumpster",
+        material: "dumpster",
+        rect: { x: 1.5, y: 8, width: 2.5, height: 3 },
+      },
+      {
+        id: "pallets",
+        label: "a stack of pallets",
+        material: "crate",
+        rect: { x: 8.5, y: 13, width: 2, height: 3 },
+      },
+    ],
   },
   {
     key: "club_interior",
@@ -85,6 +127,26 @@ export const ARENAS: Arena[] = [
       { x: 13, y: 13 },
       { x: 20, y: 16 },
       { x: 6, y: 15 },
+    ],
+    cover: [
+      {
+        id: "bar",
+        label: "the bar",
+        material: "steel",
+        rect: { x: 3, y: 10, width: 8, height: 1.5 },
+      },
+      {
+        id: "table_north",
+        label: "an overturned table",
+        material: "furniture",
+        rect: { x: 15, y: 6, width: 2, height: 2 },
+      },
+      {
+        id: "table_south",
+        label: "an overturned table",
+        material: "furniture",
+        rect: { x: 18, y: 12.5, width: 2, height: 2 },
+      },
     ],
   },
   {
@@ -99,6 +161,26 @@ export const ARENAS: Arena[] = [
       { x: 8, y: 30 },
       { x: 37, y: 36 },
     ],
+    cover: [
+      {
+        id: "crates_west",
+        label: "a stack of crates",
+        material: "crate",
+        rect: { x: 9.5, y: 14, width: 6, height: 4 },
+      },
+      {
+        id: "crates_east",
+        label: "a stack of crates",
+        material: "crate",
+        rect: { x: 26, y: 26, width: 5, height: 5 },
+      },
+      {
+        id: "container",
+        label: "a shipping container",
+        material: "steel",
+        rect: { x: 17, y: 38, width: 10, height: 3 },
+      },
+    ],
   },
   {
     key: "street",
@@ -112,6 +194,26 @@ export const ARENAS: Arena[] = [
       { x: 5, y: 39 },
       { x: 25, y: 50 },
     ],
+    cover: [
+      {
+        id: "car_west",
+        label: "a parked car",
+        material: "vehicle",
+        rect: { x: 5.5, y: 20, width: 4.5, height: 2 },
+      },
+      {
+        id: "car_east",
+        label: "a parked car",
+        material: "vehicle",
+        rect: { x: 19.5, y: 36, width: 4.5, height: 2 },
+      },
+      {
+        id: "vending",
+        label: "a vending machine",
+        material: "machine",
+        rect: { x: 12, y: 13.5, width: 1.5, height: 1 },
+      },
+    ],
   },
   {
     key: "parking_structure",
@@ -123,6 +225,32 @@ export const ARENAS: Arena[] = [
       { x: 28, y: 21 },
       { x: 20, y: 28 },
       { x: 34, y: 31 },
+    ],
+    cover: [
+      {
+        id: "pillar_west",
+        label: "a concrete pillar",
+        material: "concrete",
+        rect: { x: 9, y: 12, width: 1.5, height: 1.5 },
+      },
+      {
+        id: "pillar_east",
+        label: "a concrete pillar",
+        material: "concrete",
+        rect: { x: 25.5, y: 18, width: 1.5, height: 1.5 },
+      },
+      {
+        id: "pillar_mid",
+        label: "a concrete pillar",
+        material: "concrete",
+        rect: { x: 17, y: 25.5, width: 1.5, height: 1.5 },
+      },
+      {
+        id: "car",
+        label: "a parked car",
+        material: "vehicle",
+        rect: { x: 30, y: 28, width: 4.5, height: 2 },
+      },
     ],
   },
   {
@@ -136,6 +264,20 @@ export const ARENAS: Arena[] = [
       { x: 30, y: 70 },
       { x: 10, y: 62 },
       { x: 52, y: 88 },
+    ],
+    cover: [
+      {
+        id: "hvac",
+        label: "an air handler",
+        material: "steel",
+        rect: { x: 21, y: 30, width: 6, height: 4 },
+      },
+      {
+        id: "parapet",
+        label: "a low parapet",
+        material: "concrete",
+        rect: { x: 39, y: 48, width: 8, height: 2 },
+      },
     ],
   },
   {
@@ -336,4 +478,86 @@ export function tacticalStep(input: {
     dvBefore,
     dvAfter: singleShotDV(input.rangeType, rangeMetres(position, input.target)),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Line of sight.
+// ---------------------------------------------------------------------------
+
+/** Whether a point is inside (or on the edge of) a box. */
+export function rectContains(rect: Rect, p: Point): boolean {
+  return (
+    p.x >= rect.x && p.x <= rect.x + rect.width && p.y >= rect.y && p.y <= rect.y + rect.height
+  );
+}
+
+/**
+ * Whether the straight line between two points crosses a box.
+ *
+ * The slab test: clip the segment against each pair of parallel edges and see
+ * whether any of it survives. Continuous, like everything else here — a shot
+ * grazing the corner of a crate is decided by the geometry rather than by which
+ * grid square somebody rounded to.
+ */
+export function segmentIntersectsRect(a: Point, b: Point, rect: Rect): boolean {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return false;
+
+  // Liang-Barsky: clip the parameter range [0, 1] against each of the four
+  // edges. Anything left over is the part of the segment inside the box.
+  let t0 = 0;
+  let t1 = 1;
+  const clip = (p: number, q: number): boolean => {
+    if (Math.abs(p) < 1e-9) return q >= 0; // parallel to this edge
+    const t = q / p;
+    if (p < 0) {
+      if (t > t1) return false;
+      if (t > t0) t0 = t;
+    } else {
+      if (t < t0) return false;
+      if (t < t1) t1 = t;
+    }
+    return true;
+  };
+
+  return (
+    clip(-dx, a.x - rect.x) &&
+    clip(dx, rect.x + rect.width - a.x) &&
+    clip(-dy, a.y - rect.y) &&
+    clip(dy, rect.y + rect.height - a.y) &&
+    t0 <= t1
+  );
+}
+
+/**
+ * The cover standing between two people.
+ *
+ * A piece that either of them is standing at does NOT block: you do not lose
+ * the shot because of the crate you are crouched behind. `isGone` lets the
+ * caller drop pieces that have been shot to bits — the engine keeps the
+ * geometry, the encounter keeps the damage.
+ */
+export function coverBetween(
+  arena: Arena,
+  a: Point,
+  b: Point,
+  isGone: (piece: CoverPiece) => boolean = () => false,
+): CoverPiece[] {
+  const pieces = arena.cover ?? [];
+  return pieces.filter((piece) => {
+    if (isGone(piece)) return false;
+    if (rectContains(piece.rect, a) || rectContains(piece.rect, b)) return false;
+    return segmentIntersectsRect(a, b, piece.rect);
+  });
+}
+
+/** Whether one combatant can see — and therefore shoot — another. */
+export function hasLineOfSight(
+  arena: Arena,
+  a: Point,
+  b: Point,
+  isGone: (piece: CoverPiece) => boolean = () => false,
+): boolean {
+  return coverBetween(arena, a, b, isGone).length === 0;
 }

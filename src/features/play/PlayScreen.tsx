@@ -9,7 +9,15 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
-import { getSkill, resolveSkillId, IP_PLAYSTYLES, type IpPlaystyle } from "@/engine";
+import {
+  arenaFor,
+  coverDamageFrom,
+  coverStatuses,
+  getSkill,
+  resolveSkillId,
+  IP_PLAYSTYLES,
+  type IpPlaystyle,
+} from "@/engine";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
@@ -384,6 +392,10 @@ function CombatHud({ campaignId }: { campaignId: string }) {
     },
   });
   if (!data) return null;
+  // The read model, rendered as text because there is no board yet. When one
+  // arrives it consumes coverStatuses() too and nothing in the engine moves.
+  const arena = arenaFor(data.encounter.arena ?? null);
+  const cover = coverStatuses(arena, coverDamageFrom(arena, data.encounter.cover));
   return (
     <section className="space-y-2 border border-destructive/50 bg-destructive/5 p-4">
       <Label>Combat — round {data.encounter.round}</Label>
@@ -399,6 +411,21 @@ function CombatHud({ campaignId }: { campaignId: string }) {
           </li>
         ))}
       </ul>
+      {cover.length > 0 && (
+        <ul className="space-y-1 border-t border-border/60 pt-2 text-sm">
+          {cover.map((piece) => (
+            <li key={piece.piece.id} className="flex justify-between gap-2">
+              <span className={piece.destroyed ? "text-muted-foreground line-through" : ""}>
+                {piece.label}{" "}
+                <span className="text-[10px] uppercase text-muted-foreground">cover</span>
+              </span>
+              <span className="num font-mono text-xs">
+                {piece.destroyed ? "gone" : `${piece.hp}/${piece.hpMax} · SP ${piece.sp}`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

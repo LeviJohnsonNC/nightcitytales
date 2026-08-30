@@ -72,6 +72,17 @@ export function CombatCard({
       </h3>
       {pending.intent && <p className="text-sm italic text-muted-foreground">{pending.intent}</p>}
 
+      {/*
+        Cover arrived after the shot was called. Said once, about the shot,
+        rather than repeated as a gap on every weapon in the kit — the reason
+        is the same whichever gun is raised.
+      */}
+      {pending.blockedBy && (
+        <p className="text-sm text-destructive">
+          No shot: {pending.blockedBy} is in the way. Move, or take it apart.
+        </p>
+      )}
+
       {options.length === 0 && (
         <p className="text-sm text-destructive">
           No catalog weapon on the sheet to resolve this attack with.

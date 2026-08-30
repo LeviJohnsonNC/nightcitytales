@@ -70,6 +70,14 @@ export type TargetCapability = {
   defeated: boolean;
   /** False when the fiction has put them out of sight (smoke, cover, gone). */
   perceivable: boolean;
+  /**
+   * What is standing in the way, when cover is why they cannot be shot.
+   *
+   * Named so the refusal can say "the dumpster is between you" rather than the
+   * generic out-of-sight line, and so the GM is told the shape of the problem
+   * instead of being left to invent one.
+   */
+  coverLabel?: string;
 };
 
 /** What is left of the player's Turn (CP:R pg. 165: one Action, one Move). */

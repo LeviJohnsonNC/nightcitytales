@@ -30,8 +30,18 @@ vi.mock("@/features/campaign/encounterState", () => ({
   }),
 }));
 
+const coverLog: { label: string; through: number; destroyed: boolean }[] = [];
+const attackLog: string[] = [];
+
 vi.mock("@/features/campaign/combatLog", () => ({
-  logAttack: vi.fn(async () => {}),
+  logAttack: vi.fn(async (_id: string, _parts: unknown, ctx: { targetName: string }) => {
+    attackLog.push(ctx.targetName);
+  }),
+  logCoverDamage: vi.fn(
+    async (_id: string, hit: { label: string; through: number; destroyed: boolean }) => {
+      coverLog.push({ label: hit.label, through: hit.through, destroyed: hit.destroyed });
+    },
+  ),
   logDeathSave: vi.fn(async () => {}),
 }));
 
@@ -50,11 +60,14 @@ function fight(over: {
   hostileRange?: string | null;
   round?: number;
   playerTurn?: CombatantData["turn"];
+  cover?: Record<string, number>;
+  hostileDamage?: number;
 }): LiveEncounter {
   const round = over.round ?? 1;
   return {
     id: "e",
     arena: ARENA.key,
+    cover: over.cover ?? {},
     state: {
       round,
       order: ["p", "h"],
@@ -111,7 +124,7 @@ function fight(over: {
       h: {
         key: "scav_1",
         weaponName: "sidearm",
-        damageDice: 2,
+        damageDice: over.hostileDamage ?? 2,
         rangeType: over.hostileRange === undefined ? "pistol" : over.hostileRange,
         position: over.hostileAt ?? { x: 15, y: 45 },
         move: 6,
@@ -151,6 +164,8 @@ const metres = (live: LiveEncounter) =>
 beforeEach(() => {
   ledger.length = 0;
   saved.length = 0;
+  coverLog.length = 0;
+  attackLog.length = 0;
 });
 
 const move = (live: LiveEncounter, towards: "closer" | "away", cap = capability()) =>
@@ -370,5 +385,70 @@ describe("building a hostile from a profile", () => {
       { x: 0, y: 0 },
     );
     expect(built.combatant.hpMax).toBe(threatFor("street_thug").hp);
+  });
+});
+
+/**
+ * Cover, from the far side of it.
+ *
+ * The failure this guards against is a player who steps behind concrete and
+ * becomes unkillable: line of sight that refuses shots, with nothing able to
+ * break the thing doing the refusing, is worse than no cover at all. Hostiles
+ * that cannot reach somebody shoot what is in the way instead, and it goes.
+ *
+ * "street" carries a parked car at x 19.5-24, y 36-38. Standing either side of
+ * it on x = 22 puts it squarely in the line.
+ */
+describe("cover in a hostile's line", () => {
+  const BEHIND = { playerAt: { x: 22, y: 20 }, hostileAt: { x: 22, y: 50 } };
+  /** A car is SP 8: a sidearm plinks off it, a rifle takes pieces out. */
+  const HEAVY = { ...BEHIND, hostileDamage: 6 };
+
+  it("shoots the car instead of the person behind it", async () => {
+    const { lines } = await runNpcTurns("c", null, fight(BEHIND));
+    expect(coverLog).toHaveLength(1);
+    expect(coverLog[0]!.label).toBe("a parked car");
+    // And it is NOT filed as an attack: settlement counts those as people.
+    expect(attackLog).toEqual([]);
+    expect(lines.join(" ")).toContain("a parked car");
+  });
+
+  it("persists the damage as damage taken, keyed by the piece", async () => {
+    const { live } = await runNpcTurns("c", null, fight(HEAVY));
+    expect(Object.keys(live.cover)).toEqual(["car_east"]);
+    expect(live.cover["car_east"]).toBeGreaterThan(0);
+    expect(saved).toHaveLength(1);
+  });
+
+  it("leaves no mark when the material eats the whole round", async () => {
+    // A sidearm against a car: it is hit, and it does not care. Writing a 0
+    // would file damage against a piece nothing happened to.
+    const { live } = await runNpcTurns("c", null, fight(BEHIND));
+    expect(coverLog).toHaveLength(1);
+    if (coverLog[0]!.through === 0) expect(live.cover).toEqual({});
+  });
+
+  it("accumulates across rounds rather than starting over", async () => {
+    const first = await runNpcTurns("c", null, fight(HEAVY));
+    const second = await runNpcTurns("c", null, {
+      ...first.live,
+      state: { ...first.live.state, activeIndex: 0 },
+    });
+    expect(second.live.cover["car_east"]!).toBeGreaterThanOrEqual(first.live.cover["car_east"]!);
+  });
+
+  it("shoots the person once the car is gone", async () => {
+    // A car already shot to pieces stops standing in the way.
+    const wrecked = fight({ ...BEHIND, cover: { car_east: 999 } });
+    await runNpcTurns("c", null, wrecked);
+    expect(coverLog).toEqual([]);
+    expect(attackLog).toEqual(["Vela"]);
+  });
+
+  it("leaves a clear line alone", async () => {
+    // The default positions have nothing between them.
+    await runNpcTurns("c", null, fight({}));
+    expect(coverLog).toEqual([]);
+    expect(attackLog).toEqual(["Vela"]);
   });
 });

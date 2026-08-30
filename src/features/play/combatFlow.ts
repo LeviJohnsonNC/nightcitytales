@@ -5,7 +5,9 @@
  */
 import {
   advanceTurn,
+  applyCoverDamage,
   arenaFor,
+  coverBlocking,
   beginTurn,
   currentCombatant,
   performAttack,
@@ -15,6 +17,7 @@ import {
   placeHostiles,
   singleShotDV,
   startEncounter as rollInitiativeOrder,
+  rollDamage,
   stepToRange,
   tacticalStep,
   type CapabilitySnapshot,
@@ -25,7 +28,7 @@ import {
   type PerformAttackResult,
   type WeaponRangeType,
 } from "@/engine";
-import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
+import { logAttack, logCoverDamage, logDeathSave } from "@/features/campaign/combatLog";
 import {
   createLiveEncounter,
   saveLiveEncounter,
@@ -156,6 +159,8 @@ export async function runNpcTurns(
   // Positions change during these turns, so the data map is carried the same
   // way state is rather than mutated in place.
   let data = live.data;
+  // So does the cover, once somebody starts shooting it.
+  let cover = live.cover;
   const arena = arenaFor(live.arena);
   const lines: string[] = [];
 
@@ -214,6 +219,30 @@ export async function runNpcTurns(
       : null;
     if (dv === null) continue; // No printed DV: the engine will not invent one.
 
+    // Something in the way takes the round instead. This is what stops a
+    // player who steps behind concrete from being unkillable: the cover is
+    // what gets shot, and eventually it stops being cover.
+    const blocking = coverBlocking(arena, stats.position, targetStats.position, cover);
+    const shielding = blocking[0];
+    if (shielding) {
+      const incoming = rollDamage(stats.damageDice);
+      const hit = applyCoverDamage(shielding, cover, incoming.total);
+      cover = hit.damage;
+      await logCoverDamage(campaignId, hit, {
+        attackerName: actor.name,
+        targetName: target.name,
+        weapon: stats.weaponName,
+        beatId,
+      });
+      lines.push(
+        hit.destroyed
+          ? `${actor.name} fires at ${target.name}; ${hit.label} comes apart and is gone.`
+          : `${actor.name} fires at ${target.name}; ${hit.label} takes it ` +
+              `(${hit.hpBefore} to ${hit.hpAfter}).`,
+      );
+      continue;
+    }
+
     const result = performAttack(state, {
       attackerId: actor.id,
       targetId: target.id,
@@ -240,7 +269,7 @@ export async function runNpcTurns(
     lines.push(describeAttack(actor.name, target.name, stats.weaponName, result));
   }
 
-  const next: LiveEncounter = { ...live, state, data };
+  const next: LiveEncounter = { ...live, state, data, cover };
   await saveLiveEncounter(next);
   return { live: next, lines };
 }
