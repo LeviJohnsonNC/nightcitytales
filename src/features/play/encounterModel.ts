@@ -68,6 +68,13 @@ export type CombatantData = {
   attackSkill: number;
   /** What this combatant has spent of the current Round, when tracked. */
   turn?: CombatantTurnState;
+  /**
+   * The live inventory rows supplying the player's armor. Encounter SP is the
+   * tactical truth during a fight; these ids let persistence carry ablation
+   * back into the campaign kit without guessing which of several worn pieces
+   * took the hit.
+   */
+  armor?: { headInventoryId?: string; bodyInventoryId?: string };
 };
 
 function turnStateOf(raw: unknown): CombatantTurnState | undefined {
@@ -110,6 +117,20 @@ function legacyPosition(raw: Record<string, unknown>, isPlayer: boolean): Point 
 export function combatantDataOf(row: EncounterCombatant): CombatantData {
   const raw = (row.data ?? {}) as Record<string, unknown> & Partial<CombatantData>;
   const turn = turnStateOf(raw.turn);
+  const armorRaw = raw.armor;
+  const armor =
+    armorRaw && typeof armorRaw === "object"
+      ? {
+          ...((armorRaw as { headInventoryId?: unknown }).headInventoryId &&
+          typeof (armorRaw as { headInventoryId?: unknown }).headInventoryId === "string"
+            ? { headInventoryId: (armorRaw as { headInventoryId: string }).headInventoryId }
+            : {}),
+          ...((armorRaw as { bodyInventoryId?: unknown }).bodyInventoryId &&
+          typeof (armorRaw as { bodyInventoryId?: unknown }).bodyInventoryId === "string"
+            ? { bodyInventoryId: (armorRaw as { bodyInventoryId: string }).bodyInventoryId }
+            : {}),
+        }
+      : null;
   return {
     key: typeof raw.key === "string" ? raw.key : row.id,
     weaponName: typeof raw.weaponName === "string" ? raw.weaponName : "sidearm",
@@ -119,6 +140,7 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
     move: typeof raw.move === "number" ? raw.move : DEFAULT_HOSTILE_MOVE,
     attackSkill: typeof raw.attackSkill === "number" ? raw.attackSkill : 0,
     ...(turn ? { turn } : {}),
+    ...(armor && Object.keys(armor).length > 0 ? { armor } : {}),
   };
 }
 
@@ -156,8 +178,15 @@ export function moveAllowance(move: number, wound: WoundStateCode): number {
  * `current_sp` armor repair writes was a number nothing computing protection
  * ever looked at.
  */
-export function armorSp(rows: CampaignInventoryItem[]): { head: number; body: number } {
-  const out = { head: 0, body: 0 };
+export type ArmorLoadout = {
+  head: number;
+  body: number;
+  headInventoryId?: string;
+  bodyInventoryId?: string;
+};
+
+export function armorLoadout(rows: CampaignInventoryItem[]): ArmorLoadout {
+  const out: ArmorLoadout = { head: 0, body: 0 };
   for (const row of rows) {
     // Only what is actually WORN. Counting everything owned would make the
     // best armor in the kit protect you for free, and armor's REF penalty is
@@ -175,9 +204,21 @@ export function armorSp(rows: CampaignInventoryItem[]): { head: number; body: nu
         sp = null;
       }
     }
-    if (typeof sp === "number") out[location] = Math.max(out[location], sp);
+    if (typeof sp !== "number" || sp <= out[location]) continue;
+    out[location] = sp;
+    // Sheet-fallback rows have no campaign id and cannot be updated as live kit.
+    if (row.campaign_id) {
+      if (location === "head") out.headInventoryId = row.id;
+      else out.bodyInventoryId = row.id;
+    }
   }
   return out;
+}
+
+/** Worn armor SP by location, retained for callers that only need the numbers. */
+export function armorSp(rows: CampaignInventoryItem[]): { head: number; body: number } {
+  const { head, body } = armorLoadout(rows);
+  return { head, body };
 }
 
 /**
@@ -208,7 +249,7 @@ export function playerCombatant(
   arena: Arena = arenaFor(DEFAULT_ARENA_KEY),
 ): { combatant: Combatant; data: CombatantData } {
   const stats = statsRecord(character);
-  const sp = armorSp(liveInventory(inventory, character));
+  const sp = armorLoadout(liveInventory(inventory, character));
   const combatant: Combatant = {
     id,
     name: character.character.name,
@@ -240,6 +281,14 @@ export function playerCombatant(
     // applied where the movement is spent, not baked in here.
     move: Math.max(0, stats["move"] ?? 0),
     attackSkill: 0,
+    ...(sp.headInventoryId || sp.bodyInventoryId
+      ? {
+          armor: {
+            ...(sp.headInventoryId ? { headInventoryId: sp.headInventoryId } : {}),
+            ...(sp.bodyInventoryId ? { bodyInventoryId: sp.bodyInventoryId } : {}),
+          },
+        }
+      : {}),
   };
   return { combatant, data };
 }

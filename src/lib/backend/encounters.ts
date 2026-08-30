@@ -51,6 +51,40 @@ export type StartEncounterPayload = {
   }>;
 };
 
+/**
+ * The complete mutable encounter projection. The database writes the fight and
+ * the player's long-lived campaign state in one transaction, so a reload can
+ * never restore HP from one version of the exchange and armor from another.
+ */
+export type SaveEncounterPayload = {
+  encounter_id: string;
+  round: number;
+  active_index: number;
+  order_ids: string[];
+  status: string;
+  combatants: Array<{
+    id: string;
+    hp_current: number;
+    wound_state: string;
+    death_save_penalty: number;
+    sp_head: number;
+    sp_body: number;
+    defeated: boolean;
+    initiative: number | null;
+    data: Json;
+  }>;
+  player: {
+    hp_current: number;
+    wound_state: string;
+    mortal_save_failures: number;
+    head_inventory_id?: string | null;
+    head_sp?: number | null;
+    body_inventory_id?: string | null;
+    body_sp?: number | null;
+  };
+  ammo?: { inventory_id: string; loaded: number } | null;
+};
+
 /** Persist a fight in one transaction. Returns the new encounter id. */
 export async function startEncounter(payload: StartEncounterPayload): Promise<string> {
   const { data, error } = await backendClient.rpc("start_encounter", {
@@ -61,6 +95,14 @@ export async function startEncounter(payload: StartEncounterPayload): Promise<st
     throw new Error("start_encounter did not return an encounter id.");
   }
   return data;
+}
+
+/** Persist an exchange and its campaign consequences atomically. */
+export async function saveEncounter(payload: SaveEncounterPayload): Promise<void> {
+  const { error } = await backendClient.rpc("save_encounter_state", {
+    payload: payload as unknown as Json,
+  });
+  if (error) throw new Error(error.message);
 }
 
 /**

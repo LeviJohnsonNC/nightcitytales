@@ -76,6 +76,104 @@ export type SettlementReadInput = {
   playerName: string;
 };
 
+export type JobMechanicalCost = {
+  hp: { before: number; after: number; lost: number } | null;
+  armor: Array<{
+    location: "head" | "body";
+    before: number;
+    after: number;
+    ablated: number;
+  }>;
+  ammunition: Array<{
+    inventoryId: string;
+    weapon: string;
+    before: number;
+    after: number;
+    spent: number;
+  }>;
+  criticalInjuries: number;
+};
+
+/**
+ * The physical bill from a job, reconstructed from resolved attack events.
+ * These values are for the receipt; live HP, SP and ammunition are persisted
+ * when the encounter state is saved and remain the canonical current state.
+ */
+export function readMechanicalCost(input: SettlementReadInput): JobMechanicalCost {
+  const events = eventsForThisJob(input.events);
+  const playerHits = events.filter(
+    (event) => event.type === "attack" && bag(event)["target"] === input.playerName,
+  );
+  const hpRows = playerHits.flatMap((event) => {
+    const data = bag(event);
+    return typeof data["hp_before"] === "number" && typeof data["hp_after"] === "number"
+      ? [{ before: data["hp_before"], after: data["hp_after"] }]
+      : [];
+  });
+
+  const armorByLocation = new Map<
+    "head" | "body",
+    { before: number; after: number; ablated: number }
+  >();
+  for (const event of playerHits) {
+    const data = bag(event);
+    const location = data["armor_location"] === "head" ? "head" : "body";
+    const before = data["sp_before"];
+    const after = data["sp_after"];
+    if (typeof before !== "number" || typeof after !== "number") continue;
+    const prior = armorByLocation.get(location);
+    armorByLocation.set(location, {
+      before: prior?.before ?? before,
+      after,
+      ablated: (prior?.ablated ?? 0) + Math.max(0, before - after),
+    });
+  }
+
+  const ammoByInventory = new Map<
+    string,
+    { weapon: string; before: number; after: number; spent: number }
+  >();
+  for (const event of events) {
+    if (event.type !== "attack") continue;
+    const data = bag(event);
+    const ammo = bag({ type: "ammo", data: data["ammo"] });
+    const inventoryId = ammo["inventoryId"];
+    const before = ammo["before"];
+    const after = ammo["after"];
+    if (
+      typeof inventoryId !== "string" ||
+      typeof before !== "number" ||
+      typeof after !== "number"
+    ) {
+      continue;
+    }
+    const prior = ammoByInventory.get(inventoryId);
+    ammoByInventory.set(inventoryId, {
+      weapon: typeof data["weapon"] === "string" ? data["weapon"] : (prior?.weapon ?? "Weapon"),
+      before: prior?.before ?? before,
+      after,
+      spent: (prior?.spent ?? 0) + Math.max(0, before - after),
+    });
+  }
+
+  return {
+    hp:
+      hpRows.length > 0
+        ? {
+            before: hpRows[0]!.before,
+            after: hpRows[hpRows.length - 1]!.after,
+            lost: Math.max(0, hpRows[0]!.before - hpRows[hpRows.length - 1]!.after),
+          }
+        : null,
+    armor: [...armorByLocation.entries()].map(([location, value]) => ({ location, ...value })),
+    ammunition: [...ammoByInventory.entries()].map(([inventoryId, value]) => ({
+      inventoryId,
+      ...value,
+    })),
+    criticalInjuries: playerHits.filter((event) => bag(event)["critical_injury"] === true).length,
+  };
+}
+
 /**
  * Read a finished job.
  *

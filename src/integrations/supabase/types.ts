@@ -954,6 +954,7 @@ export type Database = {
       owns_character: { Args: { _character_id: string }; Returns: boolean }
       owns_encounter: { Args: { _encounter_id: string }; Returns: boolean }
       save_character: { Args: { payload: Json }; Returns: string }
+      save_encounter_state: { Args: { payload: Json }; Returns: undefined }
       spend_ip_on_skill: {
         Args: {
           p_character_id: string
@@ -966,6 +967,8 @@ export type Database = {
       }
       start_campaign: { Args: { payload: Json }; Returns: string }
       start_encounter: { Args: { payload: Json }; Returns: string }
+      settle_job: { Args: { payload: Json }; Returns: Json }
+      close_aftermath: { Args: { payload: Json }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

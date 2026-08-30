@@ -62,6 +62,7 @@ import {
 import {
   addImprovementPoints,
   appendCampaignEvent,
+  closeAftermath,
   getCampaign,
   getCharacter,
   listCampaignEvents,
@@ -72,7 +73,6 @@ import {
   setCampaignFlag,
   type CampaignFlag,
   setCampaignPhase,
-  setInventoryAmmo,
   setNpcDisposition,
   updateCampaign,
   updateCampaignVitals,
@@ -99,7 +99,7 @@ import {
   type LiveEncounter,
 } from "@/features/campaign/encounterState";
 import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
-import { pressureReportsFor, settleAftermath } from "@/features/campaign/aftermath";
+import { settleAftermath } from "@/features/campaign/aftermath";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
@@ -881,9 +881,11 @@ export async function commitAttack(
       option.weapon.itemId,
     ),
   };
-  await saveLiveEncounter(live);
   const spent = ammoAfterShot(bundle.inventory, option.weapon.itemId);
-  if (spent) await setInventoryAmmo(spent.inventoryId, spent.ammoLoaded);
+  await saveLiveEncounter(
+    live,
+    spent ? { inventoryId: spent.inventoryId, loaded: spent.ammoLoaded } : null,
+  );
   await logAttack(
     campaignId,
     { attack: result.attack, damage: result.damage, applied: result.applied },
@@ -891,6 +893,15 @@ export async function commitAttack(
       attackerName: pending.attacker.name,
       targetName: pending.target.name,
       weapon: option.weapon.name,
+      ...(spent
+        ? {
+            ammo: {
+              inventoryId: spent.inventoryId,
+              before: spent.ammoLoaded + 1,
+              after: spent.ammoLoaded,
+            },
+          }
+        : {}),
       ...(result.targetWoundState ? { targetWoundState: result.targetWoundState } : {}),
       beatId,
     },
@@ -924,12 +935,6 @@ export async function commitAttack(
     await updateCampaign(campaignId, {
       role_state: withAbilityState(bundle.campaign, "backup", {}) as Json,
     });
-  }
-
-  // The player's HP in the fight is the campaign's HP.
-  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
-  if (player && player.hp !== bundle.vitals.hp_current) {
-    await updateCampaignVitals(campaignId, { hp_current: player.hp });
   }
 
   const status = await closeOutFight(campaignId, beatId, live);
@@ -976,65 +981,32 @@ async function settleMission(
       : (printed?.total ?? bundle.agreedPayout ?? 0);
   const payout = printed ? { ...printed, total } : null;
   const done = runtime.objectives.filter((o) => o.status === "done").length;
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "mission_completed",
-    // What was AGREED, not what arrived: the money is rolled for below, and a
-    // completion line claiming a fee that was then shorted would be the ledger
-    // contradicting the vitals. What actually landed is the settlement's line.
-    summary: payout
-      ? `${mission.title} complete — ${payout.total}eb agreed (${payout.upfront}eb up front, ${payout.onCompletion}eb on delivery); ${done}/${runtime.objectives.length} objectives closed.`
-      : `${mission.title} complete — ${done}/${runtime.objectives.length} objectives closed. This job records no printed payout.`,
-    data: { missionId: mission.id, payout } as unknown as Json,
-    ...(runtime.currentBeatId ? { beat_id: runtime.currentBeatId } : {}),
-  });
+  // What was AGREED, not what arrived: the settlement receipt records the
+  // amount that actually lands. Completion and settlement are committed in the
+  // same transaction so a retry cannot duplicate either ledger row.
+  const completionSummary = payout
+    ? `${mission.title} complete — ${payout.total}eb agreed (${payout.upfront}eb up front, ${payout.onCompletion}eb on delivery); ${done}/${runtime.objectives.length} objectives closed.`
+    : `${mission.title} complete — ${done}/${runtime.objectives.length} objectives closed. This job records no printed payout.`;
 
   // The trip home. What the job cost is read off its own ledger, the money is
   // rolled for, whoever walked away becomes somebody the campaign remembers,
   // and what is left over is written into Life with a day attached.
-  const aftermath = await settleAftermath(
-    {
-      campaignId,
-      playerName: bundle.character.character.name,
-      agreed: total,
-      messy: done < runtime.objectives.length,
-      day: bundle.campaign.day,
-      inventory: bundle.inventory,
+  const aftermath = await settleAftermath({
+    campaignId,
+    missionId: mission.id,
+    playerName: bundle.character.character.name,
+    agreed: total,
+    messy: done < runtime.objectives.length,
+    factionId: missionFaction(mission),
+    completion: {
+      summary: completionSummary,
+      beatId: runtime.currentBeatId,
+      data: { missionId: mission.id, payout } as unknown as Json,
     },
-    { current: bundle.vitals.hp_current, max: bundle.vitals.hp_max },
-  );
+  });
 
-  // A null report means this job had already been settled. Everything below is
-  // skipped — paying, promoting and charging the clocks twice is exactly what
-  // the guard exists to prevent — but the phase transition at the end of this
-  // function still runs, because a player stranded in a finished job is worse
-  // than a job settled once.
-  if (aftermath) {
-    // Money last, so a payout that went wrong is the number that actually lands.
-    if (aftermath.payment.paid > 0) {
-      await updateCampaignVitals(campaignId, {
-        eurobucks: bundle.vitals.eurobucks + aftermath.payment.paid,
-      });
-    }
-
-    // A broker who shorted you is a broker you now know shorts people. Who that
-    // is comes off the event that started the job, found in settlement's own
-    // wide read rather than in this turn's window.
-    const brokerKey = aftermath.brokerKey;
-    if (aftermath.payment.brokerStanding !== 0 && brokerKey) {
-      const broker = await findCampaignNpc(campaignId, brokerKey);
-      if (broker) {
-        await setNpcDisposition(
-          broker.id,
-          clampDisposition(broker.disposition + aftermath.payment.brokerStanding),
-        );
-      }
-    }
-
-    const reports = pressureReportsFor(aftermath, missionFaction(mission));
-    if (reports.length > 0) await applyPressure(campaignId, reports);
-  }
-
+  // A null report means this job had already been settled. The phase fallback
+  // below can repair an older campaign that was stranded before Aftermath.
   // Now that it is over, show the player the die that was thrown before it
   // began. A complication they never noticed is worth showing too, and so is a
   // clean brief: it is the evidence that the job's shape was rolled, not
@@ -1044,8 +1016,12 @@ async function settleMission(
   // The campaign stays active: it is the character's run, not this one job.
   // The phase moves to aftermath — the wrap-up screen — and only the player's
   // press moves it on to Life. The AI never performs this transition.
-  const after = nextPhase(phaseOf(bundle.campaign.phase), "end_job");
-  if (after) await setCampaignPhase(campaignId, after);
+  // The settlement transaction owns the normal phase transition. The fallback
+  // only repairs an older already-settled campaign that was left in Job.
+  if (!aftermath) {
+    const after = nextPhase(phaseOf(bundle.campaign.phase), "end_job");
+    if (after) await setCampaignPhase(campaignId, after);
+  }
 }
 
 /**
@@ -1153,29 +1129,7 @@ async function settleDeath(bundle: PlayBundle): Promise<void> {
  * are dropped into.
  */
 async function returnToLife(bundle: PlayBundle): Promise<void> {
-  const campaignId = bundle.campaign.id;
-
-  await updateCampaign(campaignId, {
-    current_mission_id: null,
-    ip_awarded: null,
-    status: "active",
-  });
-  // Terms belong to the job they were agreed for. Clearing the fee here stops a
-  // number argued out of one fixer following the character into the next job.
-  await setCampaignFlag(campaignId, JOB_PAYOUT_FLAG, 0 as unknown as Json);
-  // One job is one session — the unit Improvement Points are awarded on — so
-  // the Luck Pool refills as the session closes.
-  await updateCampaignVitals(campaignId, {
-    luck_current: luckPoolMax(statsRecord(bundle.character)),
-  });
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "phase_changed",
-    summary: `${bundle.character.character.name} goes back to the street.`,
-    data: { phase: "life" } as unknown as Json,
-  });
-  const back = nextPhase(phaseOf(bundle.campaign.phase), "close_out");
-  await setCampaignPhase(campaignId, back ?? "life");
+  await closeAftermath(bundle.campaign.id, luckPoolMax(statsRecord(bundle.character)));
 }
 
 /** Announce a finished fight in the ledger, and describe it for the GM. */

@@ -15,6 +15,16 @@ const FULL = {
   ],
   payment: { key: "short", agreed: 1000, paid: 600 },
   survivors: ["Vex"],
+  mechanical: {
+    hp: { before: 40, after: 31, lost: 9 },
+    armor: [{ location: "body", before: 11, after: 9, ablated: 2 }],
+    ammunition: [
+      { inventoryId: "weapon-1", weapon: "Very Heavy Pistol", before: 8, after: 5, spent: 3 },
+    ],
+    criticalInjuries: 1,
+  },
+  pressure: [{ kind: "clock", key: "heat", label: "Heat", before: 1, after: 3 }],
+  people: [{ key: "vex", name: "Vex", before: null, after: -3 }],
 };
 
 describe("settlementFrom", () => {
@@ -29,6 +39,11 @@ describe("settlementFrom", () => {
     expect(view.lines[0]).toMatchObject({ count: 2, because: "2 died" });
     expect(view.payment).toEqual({ key: "short", agreed: 1000, paid: 600 });
     expect(view.survivors).toEqual(["Vex"]);
+    expect(view.mechanical.hp).toEqual({ before: 40, after: 31, lost: 9 });
+    expect(view.mechanical.armor[0]).toMatchObject({ location: "body", ablated: 2 });
+    expect(view.mechanical.ammunition[0]).toMatchObject({ weapon: "Very Heavy Pistol", spent: 3 });
+    expect(view.pressure[0]).toMatchObject({ label: "Heat", before: 1, after: 3 });
+    expect(view.people[0]).toMatchObject({ name: "Vex", before: null, after: -3 });
   });
 
   it("explains the vocabulary rather than assuming the player knows it", () => {

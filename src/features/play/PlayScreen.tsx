@@ -427,6 +427,33 @@ function SettlementReport({ events }: { events: CampaignEvent[] }) {
         </p>
       )}
 
+      {(view.mechanical.hp ||
+        view.mechanical.armor.length > 0 ||
+        view.mechanical.ammunition.length > 0 ||
+        view.mechanical.criticalInjuries > 0) && (
+        <div className="space-y-1 text-sm text-muted-foreground">
+          {view.mechanical.hp && (
+            <p>
+              HP {view.mechanical.hp.before} → {view.mechanical.hp.after}
+              {view.mechanical.hp.lost > 0 ? ` (−${view.mechanical.hp.lost})` : ""}
+            </p>
+          )}
+          {view.mechanical.armor.map((armor) => (
+            <p key={armor.location}>
+              {armor.location === "head" ? "Head" : "Body"} armor {armor.before} → {armor.after}
+            </p>
+          ))}
+          {view.mechanical.ammunition.map((ammo) => (
+            <p key={ammo.inventoryId}>
+              {ammo.weapon}: {ammo.spent} rounds spent, {ammo.after} loaded
+            </p>
+          ))}
+          {view.mechanical.criticalInjuries > 0 && (
+            <p>{view.mechanical.criticalInjuries} critical injuries suffered</p>
+          )}
+        </div>
+      )}
+
       {view.lines.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nothing the city noticed.</p>
       ) : (
@@ -452,6 +479,16 @@ function SettlementReport({ events }: { events: CampaignEvent[] }) {
             {view.survivors.join(", ")} — and remembers you.
           </span>
         </p>
+      )}
+
+      {view.pressure.length > 0 && (
+        <ul className="space-y-1 text-sm text-muted-foreground">
+          {view.pressure.map((change) => (
+            <li key={`${change.kind}-${change.key}`}>
+              {change.label}: {change.before} → {change.after}
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

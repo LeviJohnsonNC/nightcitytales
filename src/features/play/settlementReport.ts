@@ -9,7 +9,12 @@
  *
  * Pure: the ledger row in, a shape the screen can render out.
  */
-import { OBSERVATION_MEANINGS, isObservation, type Observation } from "@/engine";
+import {
+  OBSERVATION_MEANINGS,
+  isObservation,
+  type JobMechanicalCost,
+  type Observation,
+} from "@/engine";
 import { SETTLEMENT_EVENT as SETTLED } from "@/features/campaign/aftermath";
 import type { CampaignEvent } from "@/lib/backend";
 
@@ -28,12 +33,106 @@ export type SettlementView = {
   lines: SettlementLine[];
   payment: { key: string; agreed: number; paid: number } | null;
   survivors: string[];
+  mechanical: JobMechanicalCost;
+  pressure: Array<{
+    kind: "clock" | "standing";
+    key: string;
+    label: string;
+    before: number;
+    after: number;
+  }>;
+  people: Array<{ key: string; name: string; before: number | null; after: number }>;
 };
 
 function bag(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function number(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function mechanicalFrom(value: unknown): JobMechanicalCost {
+  const raw = bag(value);
+  const hp = bag(raw["hp"]);
+  const hpBefore = number(hp["before"]);
+  const hpAfter = number(hp["after"]);
+  const armor = Array.isArray(raw["armor"])
+    ? raw["armor"].flatMap((entry) => {
+        const row = bag(entry);
+        const location = row["location"];
+        const before = number(row["before"]);
+        const after = number(row["after"]);
+        const ablated = number(row["ablated"]);
+        return (location === "head" || location === "body") &&
+          before !== null &&
+          after !== null &&
+          ablated !== null
+          ? [{ location: location as "head" | "body", before, after, ablated }]
+          : [];
+      })
+    : [];
+  const ammunition = Array.isArray(raw["ammunition"])
+    ? raw["ammunition"].flatMap((entry) => {
+        const row = bag(entry);
+        const inventoryId = row["inventoryId"];
+        const weapon = row["weapon"];
+        const before = number(row["before"]);
+        const after = number(row["after"]);
+        const spent = number(row["spent"]);
+        return typeof inventoryId === "string" &&
+          typeof weapon === "string" &&
+          before !== null &&
+          after !== null &&
+          spent !== null
+          ? [{ inventoryId, weapon, before, after, spent }]
+          : [];
+      })
+    : [];
+  return {
+    hp:
+      hpBefore !== null && hpAfter !== null
+        ? { before: hpBefore, after: hpAfter, lost: number(hp["lost"]) ?? 0 }
+        : null,
+    armor,
+    ammunition,
+    criticalInjuries: number(raw["criticalInjuries"]) ?? 0,
+  };
+}
+
+function changesFrom(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    const row = bag(entry);
+    const kind = row["kind"];
+    const key = row["key"];
+    const label = row["label"];
+    const before = number(row["before"]);
+    const after = number(row["after"]);
+    return (kind === "clock" || kind === "standing") &&
+      typeof key === "string" &&
+      typeof label === "string" &&
+      before !== null &&
+      after !== null
+      ? [{ kind: kind as "clock" | "standing", key, label, before, after }]
+      : [];
+  });
+}
+
+function peopleFrom(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    const row = bag(entry);
+    const key = row["key"];
+    const name = row["name"];
+    const after = number(row["after"]);
+    const before = row["before"] === null ? null : number(row["before"]);
+    return typeof key === "string" && typeof name === "string" && after !== null
+      ? [{ key, name, before, after }]
+      : [];
+  });
 }
 
 /**
@@ -82,6 +181,9 @@ export function settlementFrom(events: CampaignEvent[]): SettlementView | null {
             }
           : null,
       survivors,
+      mechanical: mechanicalFrom(data["mechanical"]),
+      pressure: changesFrom(data["pressure"]),
+      people: peopleFrom(data["people"]),
     };
   }
   return null;
