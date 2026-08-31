@@ -75,11 +75,27 @@ const EDGE = 1.5;
  * and `preserveAspectRatio` would letterbox a tall arena into a wide dark panel
  * — a 12x40 m alley as a narrow strip floating in empty background. Capping the
  * width at what the aspect needs AT this height makes the board hug instead.
+ *
+ * The value leaves room for the rest of the section. The whole thing — map,
+ * roster, weapons, controls, cover — is now sticky to the top of the viewport,
+ * so it has to fit one screen or the End Turn button at the bottom of it ends
+ * up behind a scrollbar inside a panel that is itself pinned to the screen.
  */
-const BOARD_MAX_VH = 50;
+const BOARD_MAX_VH = 42;
 
 /** One combatant, paired with where they are standing. */
 type Marker = { combatant: Combatant; data: CombatantData };
+
+/**
+ * What the cursor is over: a spot on the ground, or somebody standing on it.
+ *
+ * A marker sits on top of the ground, so both fire — the person wins, because
+ * clicking them is what would actually happen.
+ */
+type HoverTarget =
+  | { kind: "ground"; point: Point; metres: number; ok: boolean }
+  | { kind: "target"; id: string }
+  | null;
 
 function markersOf(live: LiveEncounter): Marker[] {
   // Initiative order, so the number drawn on a marker is the number beside the
@@ -155,6 +171,15 @@ export function CombatBoard({
 }) {
   // Before the early return: a hook cannot sit behind a condition.
   const [weaponId, setWeaponId] = useState<string | null>(null);
+  // What the cursor is currently over, so the board can say what a click would
+  // DO before it is clicked.
+  //
+  // A top-down board is only half legible while the rules for clicking it are
+  // invisible: the same pixel is a Move, an attack, or nothing at all depending
+  // on whose Turn it is, how much MOVE is left and what is in the way. The
+  // `title` tooltips said some of that, a second late and never on a phone.
+  // This says it continuously, in the line that was already there.
+  const [hover, setHover] = useState<HoverTarget>(null);
 
   if (!live) return null;
 
@@ -249,6 +274,48 @@ export function CombatBoard({
       ? refusals[0]
       : null;
 
+  const hoverGround = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (!player) return setHover(null);
+    const to = pointAt(event.currentTarget, event);
+    // Off the ground entirely — the letterboxed band beside a tall arena.
+    if (!to || to.x < 0 || to.y < 0 || to.x > width || to.y > height) return setHover(null);
+    // The same rounding the click uses, so the readout cannot promise a step
+    // the click then refuses.
+    const metres = Math.round(metresBetween(player.data.position, to));
+    setHover({ kind: "ground", point: to, metres, ok: canMove && metres > 0 && metres <= reach });
+  };
+
+  /**
+   * What a click right here would do, in one line.
+   *
+   * Every branch is a fact already established above — `attackRefusal` is the
+   * gate's own answer, `reach` is `moveAllowance`, the DV is `weaponDvAt`. It
+   * reads them out; it decides none of them.
+   */
+  const hoverLine = (): string | null => {
+    if (!hover) return null;
+    if (hover.kind === "target") {
+      const marker = markers.find((m) => m.combatant.id === hover.id);
+      const target = targets.get(hover.id);
+      if (!marker || marker.combatant.defeated) return null;
+      if (!target) return null;
+      const refusal = attackRefusal(target);
+      if (refusal) return refusal;
+      if (!canAct) return `${active?.name ?? "Someone else"} is acting`;
+      return `Shoot ${marker.combatant.name} · ${weapon?.name ?? "no weapon"}${
+        weapon ? dvLabel(weapon, target.distance) : ""
+      }`;
+    }
+    if (hover.ok) return `Move here · ${hover.metres} m of ${reach}`;
+    // Not a legal step, and the three reasons do not mean the same thing.
+    if (!active?.isPlayer) return `${active?.name ?? "Someone else"} is acting`;
+    if (moveSpent) return "Move spent this Round";
+    if (hover.metres > reach) return `${hover.metres} m — further than ${reach} m of MOVE`;
+    return null;
+  };
+
+  const hovering = hoverLine();
+
   const clickBoard = (event: React.MouseEvent<SVGSVGElement>) => {
     if (!canMove || !player) return;
     const to = pointAt(event.currentTarget, event);
@@ -288,6 +355,8 @@ export function CombatBoard({
         role="img"
         aria-label={`Top-down view of ${arena.label}, ${width} by ${height} metres.`}
         onClick={clickBoard}
+        onMouseMove={hoverGround}
+        onMouseLeave={() => setHover(null)}
       >
         {/* The ground. */}
         <rect
@@ -398,6 +467,43 @@ export function CombatBoard({
             );
           })}
 
+        {/* Where the cursor would put them. Drawn only when the step is one the
+            engine would actually allow, so the ghost is a promise rather than a
+            suggestion — and under the markers, because a person standing on
+            that spot is the more important thing to see. */}
+        {player && hover?.kind === "ground" && hover.ok && (
+          <g className="pointer-events-none">
+            <line
+              x1={player.data.position.x}
+              y1={player.data.position.y}
+              x2={hover.point.x}
+              y2={hover.point.y}
+              className="stroke-neon-cyan/70"
+              strokeWidth={HAIRLINE}
+              strokeDasharray="2 3"
+              vectorEffect="non-scaling-stroke"
+            />
+            <circle
+              cx={hover.point.x}
+              cy={hover.point.y}
+              r={unit * 1.1}
+              className="fill-neon-cyan/15 stroke-neon-cyan/80"
+              strokeWidth={EDGE}
+              strokeDasharray="3 3"
+              vectorEffect="non-scaling-stroke"
+            />
+            <text
+              x={hover.point.x}
+              y={hover.point.y - unit * 1.6}
+              textAnchor="middle"
+              fontSize={unit * 1.2}
+              className="fill-neon-cyan font-mono"
+            >
+              {hover.metres} m
+            </text>
+          </g>
+        )}
+
         {/* Everybody standing on it. A hostile you could shoot is a target:
             clicking one calls the shot, and the card that already resolves
             attacks takes it from there. */}
@@ -415,6 +521,14 @@ export function CombatBoard({
                 className={`${markerClass(combatant)} ${shootable ? "cursor-pointer" : ""}`}
                 strokeWidth={EDGE}
                 vectorEffect="non-scaling-stroke"
+                onMouseMove={(e) => {
+                  if (combatant.isPlayer) return; // no readout for standing on yourself
+                  // The marker sits ON the ground, so this same movement also
+                  // reaches the board's own handler, which would immediately
+                  // overwrite the person with the metres underneath them.
+                  e.stopPropagation();
+                  setHover({ kind: "target", id: combatant.id });
+                }}
                 onClick={(e) => {
                   if (!shootable || !weapon) return;
                   // The board's own click must not also be a Move to the spot
@@ -531,14 +645,23 @@ export function CombatBoard({
             which is invisible until hovered and absent entirely on a phone.
           */}
           <div className="space-y-0.5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              {!active?.isPlayer
-                ? `${active?.name ?? "Someone else"} is acting`
-                : canMove
-                  ? `Click to move · ${reach} m`
-                  : moveSpent
-                    ? "Move spent this Round"
-                    : "Cannot move"}
+            {/* Live while the cursor is on the board, and the standing state
+                of the Turn when it is not — so the line never goes blank, and
+                a touch device (which has no hover at all) still gets the
+                second half of it. */}
+            <p
+              className={`font-mono text-[10px] uppercase tracking-[0.18em] ${
+                hovering ? "text-neon-cyan" : "text-muted-foreground"
+              }`}
+            >
+              {hovering ??
+                (!active?.isPlayer
+                  ? `${active?.name ?? "Someone else"} is acting`
+                  : canMove
+                    ? `Click to move · ${reach} m`
+                    : moveSpent
+                      ? "Move spent this Round"
+                      : "Cannot move")}
             </p>
             {active?.isPlayer && shootingRefusal && (
               <p className="text-[11px] leading-snug text-muted-foreground">{shootingRefusal}</p>
