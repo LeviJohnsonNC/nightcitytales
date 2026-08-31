@@ -25,14 +25,24 @@
  * 2. NUMBERS ARE HTML, NOT SVG. Names, HP and distances live in the lists under
  *    the board, where they are selectable, legible at any arena scale and
  *    reachable by a screen reader. The SVG carries shape and position only.
+ *
+ * Clicking it moves. The board sends a POINT and nothing else: how far of that
+ * they actually get, what it costs and whether it is allowed at all are the
+ * engine's (features/play/combatFlow.ts, movePlayerTo). The dashed circle is
+ * the same `moveAllowance` the Move is bounded by, so it cannot offer a step
+ * that would be refused.
  */
 import {
   arenaFor,
   coverStatuses,
+  currentCombatant,
+  metresBetween,
   type CapabilitySnapshot,
   type Combatant,
+  type Point,
   type TargetCapability,
 } from "@/engine";
+import { Button } from "@/components/ui/button";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { moveAllowance, type CombatantData } from "./encounterModel";
 
@@ -56,6 +66,21 @@ function markersOf(live: LiveEncounter): Marker[] {
   });
 }
 
+/**
+ * Where a click landed, in the arena's own metres.
+ *
+ * The screen CTM does the conversion, so the letterboxing that
+ * `preserveAspectRatio` introduces is accounted for rather than approximated —
+ * a click has to mean the metre it is over, because that metre becomes a Range
+ * DV two lines later.
+ */
+function pointAt(svg: SVGSVGElement, event: { clientX: number; clientY: number }): Point | null {
+  const screen = svg.getScreenCTM();
+  if (!screen) return null;
+  const local = new DOMPoint(event.clientX, event.clientY).matrixTransform(screen.inverse());
+  return { x: local.x, y: local.y };
+}
+
 /** Board colours by side, so who is who survives being a dot. */
 function markerClass(combatant: Combatant): string {
   if (combatant.defeated) return "fill-muted-foreground/25 stroke-muted-foreground/40";
@@ -67,10 +92,18 @@ function markerClass(combatant: Combatant): string {
 export function CombatBoard({
   live,
   capability,
+  onMoveTo,
+  onEndTurn,
+  busy = false,
 }: {
   live: LiveEncounter | null;
   /** Supplies the measured distance and whether the shot is there at all. */
   capability: CapabilitySnapshot | null;
+  /** Walk to a spot. Omitted, the board stays the read-only view it was. */
+  onMoveTo?: (to: Point) => void;
+  /** Give up the rest of the Turn. */
+  onEndTurn?: () => void;
+  busy?: boolean;
 }) {
   if (!live) return null;
 
@@ -95,6 +128,37 @@ export function CombatBoard({
     (capability?.targets ?? []).map((t) => [t.id, t]),
   );
 
+  // The board acts only on the player's own Turn, and only while nothing else
+  // is being written. A Move already spent this Round closes it until the
+  // Round turns over — the same fact `judgeAction` refuses on, read here so the
+  // board stops offering what the gate would reject.
+  const active = currentCombatant(live.state);
+  const moveSpent = (capability?.turn.metresMoved ?? 0) > 0;
+  const canMove =
+    Boolean(onMoveTo) &&
+    !busy &&
+    Boolean(active?.isPlayer) &&
+    Boolean(player) &&
+    !player?.combatant.defeated &&
+    reach > 0 &&
+    !moveSpent;
+
+  const clickBoard = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (!canMove || !player) return;
+    const to = pointAt(event.currentTarget, event);
+    if (!to) return;
+    // `preserveAspectRatio` letterboxes, so a click in the empty band beside a
+    // tall arena maps to a point OFF the ground. The engine would clamp it to
+    // the edge and move them somewhere they did not pick, so it is dropped.
+    if (to.x < 0 || to.y < 0 || to.x > width || to.y > height) return;
+    // Out of reach is not a short move to somewhere they did not pick: the
+    // engine would refuse it, and the board declines to ask. Rounded, because
+    // the gate reads whole metres — an unrounded compare here would make a
+    // sliver of legal destinations unclickable.
+    if (Math.round(metresBetween(player.data.position, to)) > reach) return;
+    onMoveTo?.(to);
+  };
+
   return (
     <section className="space-y-2 border border-destructive/50 bg-destructive/5 p-4">
       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -106,9 +170,10 @@ export function CombatBoard({
         // The arena's own proportions, letterboxed rather than stretched: a
         // stretched board would put a combatant somewhere they are not.
         preserveAspectRatio="xMidYMid meet"
-        className="max-h-[46vh] w-full bg-background"
+        className={`max-h-[46vh] w-full bg-background ${canMove ? "cursor-crosshair" : ""}`}
         role="img"
         aria-label={`Top-down view of ${arena.label}, ${width} by ${height} metres.`}
+        onClick={clickBoard}
       >
         {/* The ground. */}
         <rect
@@ -128,7 +193,11 @@ export function CombatBoard({
             cx={player.data.position.x}
             cy={player.data.position.y}
             r={reach}
-            className="fill-neon-cyan/5 stroke-neon-cyan/40"
+            className={
+              canMove
+                ? "fill-neon-cyan/10 stroke-neon-cyan/60"
+                : "fill-neon-cyan/5 stroke-neon-cyan/20"
+            }
             strokeWidth={HAIRLINE}
             strokeDasharray="4 4"
             vectorEffect="non-scaling-stroke"
@@ -241,6 +310,23 @@ export function CombatBoard({
           );
         })}
       </ul>
+
+      {(onMoveTo || onEndTurn) && active?.isPlayer && (
+        <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            {canMove
+              ? `Click to move · ${reach} m`
+              : moveSpent
+                ? "Move spent this Round"
+                : "\u2014"}
+          </p>
+          {onEndTurn && (
+            <Button size="sm" variant="outline" onClick={onEndTurn} disabled={busy}>
+              End Turn
+            </Button>
+          )}
+        </div>
+      )}
 
       {cover.length > 0 && (
         <ul className="space-y-1 border-t border-border/60 pt-2 text-sm">

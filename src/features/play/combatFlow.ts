@@ -18,19 +18,23 @@ import {
   clampToArena,
   judgeAction,
   metresBetween,
+  moveToward,
   placeHostiles,
   singleShotDV,
   startEncounter as rollInitiativeOrder,
   rollDamage,
   stepToRange,
   tacticalStep,
+  type ActionCost,
   type CapabilitySnapshot,
   type Combatant,
   type CombatantRoleEffects,
   type EncounterState,
   type LegalityVerdict,
   type PerformAttackResult,
+  type Point,
   type WeaponRangeType,
+  type WoundStateCode,
 } from "@/engine";
 import { logAttack, logCoverDamage, logDeathSave } from "@/features/campaign/combatLog";
 import {
@@ -344,18 +348,81 @@ export type MovePlayerResult = {
   refusal: Extract<LegalityVerdict, { ok: false }> | null;
 };
 
+/** A Move the gate allowed, priced and clamped — or the refusal it earned. */
+type PlannedStep =
+  | { ok: true; position: Point; moved: number; cost: ActionCost }
+  | { ok: false; refusal: Extract<LegalityVerdict, { ok: false }> };
+
 /**
- * The character breaking for somewhere, relative to somebody.
+ * Where a Move actually ends, and what it costs.
  *
- * There is no board to click a destination on yet (#05), so the two things a
- * player can say are "closer" and "away", and a Move spends the whole
- * allowance. What matters is that the METRES are the engine's: the model names
- * an intent and a person, and the distance that comes out of it — and therefore
- * the Range DV of every shot after it — is measured here.
+ * Shared by both ways a character can be told to go: the model naming a person
+ * and a direction, and the player clicking a spot on the board. Neither of them
+ * decides a single metre — this does, out of MOVE, the arena's walls and the
+ * legality gate, so the two entry points cannot drift into two different
+ * answers about how far somebody got.
  *
  * The Move gate in engine/legality.ts has existed since the legality layer
  * shipped and had never once been called, because nothing in the app could
  * move. It is what refuses a second Move in the same Round.
+ */
+function planStep(input: {
+  live: LiveEncounter;
+  capability: CapabilitySnapshot;
+  from: Point;
+  woundState: WoundStateCode;
+  /** Where they are trying to get to. */
+  to: Point;
+  /**
+   * How far the caller is asking to travel, for the gate to price. The
+   * closer/away path asks for the whole allowance because that is what it
+   * spends; the board asks for the distance to the spot that was clicked, so
+   * that clicking out of reach is REFUSED with a reason rather than silently
+   * becoming a shorter move somewhere the player did not choose.
+   */
+  requested: number;
+}): PlannedStep {
+  const { live, capability } = input;
+  // The LIVE sheet value, not the one frozen into the encounter when it
+  // started: judgeAction validates against snapshot.move, and two sources for
+  // one number is how they end up disagreeing.
+  const allowance = moveAllowance(capability.move, input.woundState);
+  if (allowance <= 0) {
+    return {
+      ok: false,
+      refusal: { ok: false, code: "move_exceeded", reason: "They have no MOVE to spend." },
+    };
+  }
+  const verdict = judgeAction(capability, { kind: "move", metres: input.requested });
+  if (!verdict.ok) return { ok: false, refusal: verdict };
+
+  const arena = arenaFor(live.arena);
+  const step = moveToward(input.from, input.to, allowance);
+  const position = clampToArena(arena, step.position);
+  const moved = Math.round(metresBetween(input.from, position));
+  if (moved <= 0) {
+    return {
+      ok: false,
+      refusal: {
+        ok: false,
+        code: "move_exceeded",
+        reason: `There is nowhere to go — they are already at the edge of ${arena.label}.`,
+      },
+    };
+  }
+  // Charged at what was actually covered, not at what was asked for: the gate
+  // priced the request, and the arena's edge may have stopped them short. The
+  // refusal of a SECOND Move does not depend on the number — any metres spent
+  // this Round is what closes it — so this only has to be true.
+  return { ok: true, position, moved, cost: { ...verdict.cost, metres: moved } };
+}
+
+/**
+ * The character breaking for somewhere, relative to somebody.
+ *
+ * What the model can ask for: a person and a direction. A Move here spends the
+ * whole allowance, because "closer" without a destination has no other natural
+ * length. The board's own path (movePlayerTo) is where a player picks the spot.
  */
 export async function movePlayer(input: {
   campaignId: string;
@@ -374,47 +441,28 @@ export async function movePlayer(input: {
   const to = live.data[input.targetId];
   if (!from || !to) return { live, refusal: null };
 
-  // The LIVE sheet value, not the one frozen into the encounter when it
-  // started: judgeAction validates against snapshot.move, and two sources for
-  // one number is how they end up disagreeing.
   const allowance = moveAllowance(input.capability.move, player.woundState);
-  if (allowance <= 0) {
-    return {
-      live,
-      refusal: { ok: false, code: "move_exceeded", reason: "They have no MOVE to spend." },
-    };
-  }
-  const verdict = judgeAction(input.capability, { kind: "move", metres: allowance });
-  if (!verdict.ok) return { live, refusal: verdict };
-
-  const arena = arenaFor(live.arena);
   const before = metresApart(from, to);
   // Closing walks toward them; backing off walks the same distance the other
   // way. Either way it is bounded by MOVE and clamped to the arena, so a player
   // cannot back out of a room that has walls.
   const wanted = input.towards === "closer" ? Math.max(0, before - allowance) : before + allowance;
-  const step = stepToRange(from.position, to.position, wanted, allowance);
-  const position = clampToArena(arena, step.position);
-  const moved = Math.round(metresBetween(from.position, position));
-  if (moved <= 0) {
-    return {
-      live,
-      refusal: {
-        ok: false,
-        code: "move_exceeded",
-        reason: `There is nowhere to go — they are already at the edge of ${arena.label}.`,
-      },
-    };
-  }
+  const aim = stepToRange(from.position, to.position, wanted, allowance);
+  const plan = planStep({
+    live,
+    capability: input.capability,
+    from: from.position,
+    woundState: player.woundState,
+    to: aim.position,
+    requested: allowance,
+  });
+  if (!plan.ok) return { live, refusal: plan.refusal };
+  const { position, moved } = plan;
 
-  // Charged at what was actually covered, not at what was asked for: the gate
-  // priced the whole allowance, and the arena's edge may have stopped them
-  // short. The refusal of a SECOND Move does not depend on the number — any
-  // metres spent this Round is what closes it — so this only has to be true.
   const movedData = {
     ...from,
     position,
-    turn: spendTurn(from.turn, live.state.round, { ...verdict.cost, metres: moved }),
+    turn: spendTurn(from.turn, live.state.round, plan.cost),
   };
   const next: LiveEncounter = {
     ...live,
@@ -436,6 +484,92 @@ export async function movePlayer(input: {
       from: before,
       to: after,
       intent: input.intent,
+    } as unknown as Json,
+    ...(input.beatId ? { beat_id: input.beatId } : {}),
+  });
+
+  return { live: next, refusal: null };
+}
+
+/**
+ * The character going to a spot the player picked on the board.
+ *
+ * The other half of cover, finally reachable. RED's cover is not a stance you
+ * adopt (engine/cover.ts, pg. 182: "if they have line of sight on you, you
+ * aren't in cover"), so taking cover deliberately is not a flag — it is
+ * STANDING somewhere a piece of cover is between you and them, and the engine
+ * answering that question the same way it always has. Which is why this
+ * function has no notion of cover in it at all: it moves them, and then asks
+ * coverBlocking what that changed.
+ */
+export async function movePlayerTo(input: {
+  campaignId: string;
+  beatId: string | null;
+  live: LiveEncounter;
+  capability: CapabilitySnapshot;
+  /** Where on the board they were sent, in metres. */
+  to: Point;
+  intent: string;
+}): Promise<MovePlayerResult> {
+  const { live } = input;
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  if (!player) return { live, refusal: null };
+  const from = live.data[player.id];
+  if (!from) return { live, refusal: null };
+
+  const arena = arenaFor(live.arena);
+  const wanted = clampToArena(arena, input.to);
+  const plan = planStep({
+    live,
+    capability: input.capability,
+    from: from.position,
+    woundState: player.woundState,
+    to: wanted,
+    // What was actually asked for. Clicking beyond MOVE is refused with the
+    // gate's own reason rather than quietly becoming a shorter move to
+    // somewhere the player did not pick.
+    requested: Math.round(metresBetween(from.position, wanted)),
+  });
+  if (!plan.ok) return { live, refusal: plan.refusal };
+  const { position, moved } = plan;
+
+  const movedData = {
+    ...from,
+    position,
+    turn: spendTurn(from.turn, live.state.round, plan.cost),
+  };
+  const next: LiveEncounter = { ...live, data: { ...live.data, [player.id]: movedData } };
+  await saveLiveEncounter(next);
+
+  // What the ground they chose is worth: who can still see them, and what is
+  // standing in the way of everyone who cannot. Measured after the fact by the
+  // same function the attack gate reads, so the board, the refusal and the
+  // ledger cannot disagree about whether there is a shot.
+  const blocked: string[] = [];
+  let shielding: string | null = null;
+  for (const other of Object.values(live.state.combatants)) {
+    if (other.isPlayer || other.defeated || other.side !== "hostile") continue;
+    const theirs = live.data[other.id];
+    if (!theirs) continue;
+    const between = coverBlocking(arena, position, theirs.position, live.cover);
+    if (between.length === 0) continue;
+    blocked.push(other.name);
+    shielding = shielding ?? between[0]!.label;
+  }
+
+  await appendCampaignEvent({
+    campaign_id: input.campaignId,
+    type: MOVE_EVENT,
+    summary:
+      `${player.name} moves ${moved} m.` +
+      (shielding
+        ? ` ${shielding} is now between them and ${blocked.join(", ")} — no shot either way.`
+        : ""),
+    data: {
+      metres: moved,
+      to: position,
+      intent: input.intent,
+      ...(blocked.length > 0 ? { coveredFrom: blocked, behind: shielding } : {}),
     } as unknown as Json,
     ...(input.beatId ? { beat_id: input.beatId } : {}),
   });
