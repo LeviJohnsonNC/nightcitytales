@@ -438,10 +438,16 @@ the death, the collapse, the surrender.
 
 **Currently shipped:** continuous-metre positioning, arenas, threat profiles,
 initiative, attacks, damage, ablation, Death Saves, ammunition, a legality layer,
-and a read-only combat HUD. **Direction, not yet built:** cover, line of sight,
-walls and doors, destructible and interactive scenery, hazards, in-fight
-objectives, a fully interactive tactical map. New combat work should move toward
-that list without ever routing a mechanic through the model to get there.
+cover and line of sight, and a read-only combat HUD. Cover follows the printed
+rules (pg. 182-183): it is all-or-nothing rather than a penalty, it has hit
+points and no SP, and a section of it is shot at exactly as a person is — so a
+firefight is not two people trading dice from behind permanent walls.
+**Direction, not yet built:** walls and doors as their own geometry, interactive
+scenery, hazards, in-fight objectives, a fully interactive tactical map, and the
+half of cover the player cannot yet reach — deliberately taking cover, and
+shooting a section apart, both of which need somewhere to click. New combat work
+should move toward that list without ever routing a mechanic through the model
+to get there.
 
 ---
 
