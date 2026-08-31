@@ -926,6 +926,7 @@ export type Database = {
           round: number
           status: string
           updated_at: string
+          version: number
         }
         Insert: {
           active_index?: number
@@ -940,6 +941,7 @@ export type Database = {
           round?: number
           status?: string
           updated_at?: string
+          version?: number
         }
         Update: {
           active_index?: number
@@ -954,6 +956,7 @@ export type Database = {
           round?: number
           status?: string
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {

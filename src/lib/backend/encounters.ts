@@ -69,6 +69,12 @@ export type SaveEncounterPayload = {
    * built on a stale read can never un-damage a wall.
    */
   cover?: Record<string, number>;
+  /**
+   * The version the caller read. The transaction refuses the write if the row
+   * has moved on since — see 20260901000000_encounter_version.sql. Omitting it
+   * writes unchecked, which is what a client running an older bundle does.
+   */
+  version?: number;
   combatants: Array<{
     id: string;
     hp_current: number;

@@ -25,8 +25,12 @@ vi.mock("@/lib/backend", () => ({
 
 vi.mock("@/features/campaign/encounterState", () => ({
   createLiveEncounter: vi.fn(),
-  saveLiveEncounter: vi.fn(async (live: unknown) => {
+  // Returns the encounter it was given, at the next version — the real one
+  // advances the token so a multi-save sequence does not refuse its own second
+  // write, and callers now use what comes back.
+  saveLiveEncounter: vi.fn(async (live: { version?: number }) => {
     saved.push(live);
+    return { ...live, version: (live.version ?? 0) + 1 };
   }),
 }));
 
@@ -80,6 +84,7 @@ function fight(over: {
     id: "e",
     arena: ARENA.key,
     cover: over.cover ?? {},
+    version: 0,
     state: {
       round,
       order: ["p", "h"],

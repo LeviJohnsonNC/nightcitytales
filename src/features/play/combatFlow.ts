@@ -305,8 +305,7 @@ export async function runNpcTurns(
     lines.push(describeAttack(actor.name, target.name, stats.weaponName, result));
   }
 
-  const next: LiveEncounter = { ...live, state, data, cover };
-  await saveLiveEncounter(next);
+  const next = await saveLiveEncounter({ ...live, state, data, cover });
   return { live: next, lines };
 }
 
@@ -464,11 +463,10 @@ export async function movePlayer(input: {
     position,
     turn: spendTurn(from.turn, live.state.round, plan.cost),
   };
-  const next: LiveEncounter = {
+  const next = await saveLiveEncounter({
     ...live,
     data: { ...live.data, [player.id]: movedData },
-  };
-  await saveLiveEncounter(next);
+  });
 
   const after = metresApart(movedData, to);
   await appendCampaignEvent({
@@ -538,8 +536,10 @@ export async function movePlayerTo(input: {
     position,
     turn: spendTurn(from.turn, live.state.round, plan.cost),
   };
-  const next: LiveEncounter = { ...live, data: { ...live.data, [player.id]: movedData } };
-  await saveLiveEncounter(next);
+  const next = await saveLiveEncounter({
+    ...live,
+    data: { ...live.data, [player.id]: movedData },
+  });
 
   // What the ground they chose is worth: who can still see them, and what is
   // standing in the way of everyone who cannot. Measured after the fact by the
