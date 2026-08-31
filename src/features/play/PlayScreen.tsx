@@ -343,6 +343,57 @@ function ScenePanel({
   );
 }
 
+/**
+ * One rolled die, collapsed.
+ *
+ * `22 vs 15 · HIT` by default, opening to `8 + REF 8 + Handgun 6` and what the
+ * hit cost. Length is earned: the player wants to know whether it landed far
+ * more often than they want to audit the addition, and burying the first in the
+ * second is how a roll log stops being read at all.
+ */
+function RollRow({ roll }: { roll: RollRecord }) {
+  const [open, setOpen] = useState(false);
+  const verdict = roll.success === null ? "—" : roll.success ? "HIT" : "MISS";
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        disabled={roll.detail.length === 0}
+        aria-expanded={open}
+        className="flex w-full items-baseline justify-between gap-2 text-left text-sm disabled:cursor-default"
+      >
+        <span className="truncate">
+          {roll.skillName}
+          {roll.opposedBy ? (
+            <span className="text-muted-foreground"> vs {roll.opposedBy}</span>
+          ) : null}
+        </span>
+        <span className="num shrink-0 font-mono text-xs text-muted-foreground">
+          {roll.total}
+          {roll.dv !== null ? ` vs ${roll.dv}` : ""}{" "}
+          <span
+            className={
+              roll.critical ? "text-neon-pink" : roll.success ? "text-accent" : "text-destructive"
+            }
+          >
+            {verdict}
+          </span>
+        </span>
+      </button>
+      {open && roll.detail.length > 0 && (
+        <div className="mt-1 space-y-0.5 border-l border-border/60 pl-2">
+          {roll.detail.map((line, i) => (
+            <p key={i} className="font-mono text-[11px] leading-snug text-muted-foreground">
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+    </li>
+  );
+}
+
 function RollHistory({ rolls }: { rolls: RollRecord[] }) {
   if (rolls.length === 0) return null;
   return (
@@ -350,25 +401,7 @@ function RollHistory({ rolls }: { rolls: RollRecord[] }) {
       <Label>Rolls · {rolls.length}</Label>
       <ul className="space-y-1">
         {rolls.map((r) => (
-          <li key={r.id} className="flex items-baseline justify-between gap-2 text-sm">
-            <span className="truncate">
-              {r.skillName}
-              {r.opposedBy ? (
-                <span className="text-muted-foreground"> vs {r.opposedBy}</span>
-              ) : null}
-            </span>
-            <span className="num font-mono text-xs text-muted-foreground">
-              {r.total}
-              {r.dv !== null ? ` vs ${r.dv}` : ""}{" "}
-              <span
-                className={
-                  r.critical ? "text-neon-pink" : r.success ? "text-accent" : "text-destructive"
-                }
-              >
-                {r.success === null ? "—" : r.success ? "HIT" : "MISS"}
-              </span>
-            </span>
-          </li>
+          <RollRow key={r.id} roll={r} />
         ))}
       </ul>
     </section>

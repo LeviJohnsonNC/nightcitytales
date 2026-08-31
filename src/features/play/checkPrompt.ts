@@ -284,7 +284,41 @@ export type RollRecord = {
   critical: "success" | "failure" | null;
   /** Who opposed it, when the target number was another character's roll. */
   opposedBy: string | null;
+  /**
+   * The arithmetic, and what it cost — the lines behind the headline.
+   *
+   * A roll reads `22 vs 15 · HIT` by default and opens to its working, because
+   * length should be earned: the player wants to know whether it landed far
+   * more often than they want to audit the addition, and both have to be
+   * available without one burying the other.
+   */
+  detail: string[];
 };
+
+/** `16 damage · SP 7 → 6 · 9 HP lost`, from what the attack actually applied. */
+function damageLines(data: Record<string, unknown>): string[] {
+  const num = (key: string): number | null =>
+    typeof data[key] === "number" ? (data[key] as number) : null;
+  const lines: string[] = [];
+  const damage = num("damage");
+  const spBefore = num("sp_before");
+  const spAfter = num("sp_after");
+  const hpBefore = num("hp_before");
+  const hpAfter = num("hp_after");
+  if (damage !== null) {
+    const parts = [`${damage} damage`];
+    if (spBefore !== null && spAfter !== null && spBefore !== spAfter) {
+      parts.push(`SP ${spBefore} → ${spAfter}`);
+    }
+    if (hpBefore !== null && hpAfter !== null) parts.push(`${hpBefore - hpAfter} HP lost`);
+    lines.push(parts.join(" · "));
+  }
+  if (data["critical_injury"] === true) lines.push("Critical Injury — +5 straight to HP");
+  if (typeof data["target_wound_state"] === "string" && data["target_wound_state"] !== "none") {
+    lines.push(`${data["target"]} is ${String(data["target_wound_state"]).replace("_", " ")}`);
+  }
+  return lines;
+}
 
 /**
  * One rolled check as the rail shows it. An opposed roll is logged with both
@@ -292,7 +326,13 @@ export type RollRecord = {
  * actually up against — the opposing roll IS the number they had to beat.
  */
 function recordFrom(event: CampaignEvent, name: string): RollRecord {
-  const roll = event.roll as (Partial<SkillCheckResult> & Partial<OpposedCheckResult>) | null;
+  const roll = event.roll as
+    (Partial<SkillCheckResult> & Partial<OpposedCheckResult> & { formula?: unknown }) | null;
+  const data = (event.data ?? {}) as Record<string, unknown>;
+  // The engine already wrote the arithmetic out; the UI never recomputes it.
+  const formula = typeof roll?.formula === "string" ? [roll.formula] : [];
+  const detail = event.type === "attack" ? [...formula, ...damageLines(data)] : formula;
+
   if (roll?.actor && roll.opponent) {
     return {
       id: event.id,
@@ -302,6 +342,12 @@ function recordFrom(event: CampaignEvent, name: string): RollRecord {
       success: roll.success ?? null,
       critical: roll.actor.critical ?? null,
       opposedBy: roll.opponentSide?.name ?? null,
+      detail: [
+        ...(typeof roll.actor.formula === "string" ? [roll.actor.formula] : []),
+        ...(typeof roll.opponent.formula === "string"
+          ? [`opposed by ${roll.opponent.formula}`]
+          : []),
+      ],
     };
   }
   return {
@@ -312,6 +358,7 @@ function recordFrom(event: CampaignEvent, name: string): RollRecord {
     success: typeof roll?.success === "boolean" ? roll.success : null,
     critical: roll?.critical ?? null,
     opposedBy: null,
+    detail,
   };
 }
 
@@ -319,14 +366,27 @@ export function rollHistory(events: CampaignEvent[], limit = 10): RollRecord[] {
   const out: RollRecord[] = [];
   for (let i = events.length - 1; i >= 0 && out.length < limit; i -= 1) {
     const event = events[i];
-    if (!event || event.type !== "skill_check") continue;
-    const data = (event.data ?? {}) as { skill_name?: unknown; skill_id?: unknown };
+    if (!event) continue;
+    // Attacks belong here. They are the rolls the player cares most about
+    // auditing and the only ones the rail did not show, which made the roll
+    // log quietly untrue about the loudest part of the game.
+    if (event.type !== "skill_check" && event.type !== "attack") continue;
+    const data = (event.data ?? {}) as {
+      skill_name?: unknown;
+      skill_id?: unknown;
+      weapon?: unknown;
+      target?: unknown;
+    };
     const name =
-      typeof data.skill_name === "string"
-        ? data.skill_name
-        : typeof data.skill_id === "string"
-          ? data.skill_id
-          : "Check";
+      event.type === "attack"
+        ? [data.weapon, data.target].every((v) => typeof v === "string")
+          ? `${data.weapon as string} → ${data.target as string}`
+          : "Attack"
+        : typeof data.skill_name === "string"
+          ? data.skill_name
+          : typeof data.skill_id === "string"
+            ? data.skill_id
+            : "Check";
     out.push(recordFrom(event, name));
   }
   return out;
