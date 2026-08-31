@@ -738,7 +738,12 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         // Inert while any turn is being written, not only the board's own: a
         // click resolved against a bundle the server has moved past would be
         // computed from stale positions.
-        busy={play.busy || play.opening}
+        //
+        // Inert after a FAILED one too. A write that threw leaves the screen
+        // showing a fight that did not happen — the dice were rolled in the
+        // browser, so a miss still reads as a miss — and letting the player keep
+        // acting on it buries the error under a fight nothing is recording.
+        busy={play.busy || play.opening || Boolean(play.actionError)}
       />
       <PressurePanel pressure={bundle.pressure} />
       <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />

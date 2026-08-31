@@ -2066,6 +2066,10 @@ export function usePlay(campaignId: string) {
       death.isPending,
     actionError,
     retry,
-    canRetry: Boolean(actionError) && Boolean(bundle),
+    // Only what `retry` can actually re-run. It re-fires the opening scene, the
+    // turn and the beat choice; offering the button for a failed encounter
+    // write put a dead control under the error, which reads as "we tried" and
+    // is worse than no button at all.
+    canRetry: Boolean(bundle) && Boolean(open.error ?? turn.error ?? choose.error),
   };
 }

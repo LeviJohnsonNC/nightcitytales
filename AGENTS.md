@@ -264,6 +264,18 @@ match the later schema rather than all earlier migrations. Do not assume a clean
 database reset works until this has been reconciled with the deployed migration
 history.
 
+This has already cost one silent outage. `encounter_combatants` is created twice
+— with a `campaign_id` in `20260823024230` and without one in `20260823033846` —
+and `save_encounter_state` filtered on that column from `20260830020000` until
+`20260901120000`. Every encounter save raised `column "campaign_id" does not
+exist`, so no fight persisted movement, damage, hostile turns or its own ending,
+and nothing failed loudly: the engine is pure, the type checker never reads
+inside a SQL string, and CI has no database.
+`src/features/campaign/__tests__/encounterSchema.test.ts` now compares the
+newest definition of that function against the generated row types. Extend it
+when a transaction starts writing a new table rather than trusting the next one
+to be luckier.
+
 ## Known implementation gaps
 
 Keep these in mind when changing adjacent code:
