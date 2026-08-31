@@ -189,9 +189,10 @@ export function armorLoadout(rows: CampaignInventoryItem[]): ArmorLoadout {
   const out: ArmorLoadout = { head: 0, body: 0 };
   for (const row of rows) {
     // Only what is actually WORN. Counting everything owned would make the
-    // best armor in the kit protect you for free, and armor's REF penalty is
-    // not modelled in play yet — so owning heavy plate would be pure upside.
-    // Buying armor marks it worn (features/campaign/shopping.ts) instead.
+    // best armor in the kit protect you for free — and since the REF penalty
+    // now lands in play (engine/effectiveStats.ts), heavy plate has to be worn
+    // to protect you AND worn to cost you. Buying armor marks it worn
+    // (features/campaign/shopping.ts) instead.
     if (!row.equipped || row.quantity <= 0) continue;
     const location: "head" | "body" | null =
       row.slot === "head" ? "head" : row.slot === "body" ? "body" : null;
