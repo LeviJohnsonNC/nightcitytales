@@ -733,6 +733,8 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         capability={play.capability}
         onMoveTo={play.moveTo}
         onEndTurn={play.endTurn}
+        onReload={play.reload}
+        onAttack={play.callShot}
         // Inert while any turn is being written, not only the board's own: a
         // click resolved against a bundle the server has moved past would be
         // computed from stale positions.

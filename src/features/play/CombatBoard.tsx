@@ -44,6 +44,7 @@ import {
   arenaFor,
   coverStatuses,
   currentCombatant,
+  judgeAction,
   metresBetween,
   usableWeapons,
   weaponBands,
@@ -123,6 +124,8 @@ export function CombatBoard({
   capability,
   onMoveTo,
   onEndTurn,
+  onReload,
+  onAttack,
   busy = false,
 }: {
   live: LiveEncounter | null;
@@ -132,6 +135,10 @@ export function CombatBoard({
   onMoveTo?: (to: Point) => void;
   /** Give up the rest of the Turn. */
   onEndTurn?: () => void;
+  /** Put rounds back in the selected weapon, spending the Action. */
+  onReload?: (weaponItemId: string) => void;
+  /** Call the shot on a target with the selected weapon. */
+  onAttack?: (targetId: string, weaponItemId: string) => void;
   busy?: boolean;
 }) {
   // Before the early return: a hook cannot sit behind a condition.
@@ -186,6 +193,34 @@ export function CombatBoard({
     reach > 0 &&
     !moveSpent;
 
+  // What the gate would say, asked rather than guessed.
+  //
+  // The board declines to offer what would be refused — but the rules for that
+  // are the gate's and only the gate's. Re-deriving them here (a spent Action,
+  // but not when the weapon's ROF still has a shot in it; an empty magazine;
+  // cover in the line; a target past the printed range) is how a button ends up
+  // disagreeing with the engine behind it. judgeAction is pure, and the
+  // snapshot is already in hand, so the board simply asks.
+  const refusalFor = (action: Parameters<typeof judgeAction>[1]): string | null => {
+    if (!capability) return null;
+    const verdict = judgeAction(capability, action);
+    return verdict.ok ? null : verdict.reason;
+  };
+
+  const canAct = !busy && Boolean(active?.isPlayer) && !player?.combatant.defeated;
+
+  const attackRefusal = (target: TargetCapability): string | null =>
+    weapon
+      ? refusalFor({
+          kind: "attack",
+          targetKey: target.id,
+          distance: target.distance,
+          weapon: weapon.itemId,
+        })
+      : "No weapon selected.";
+
+  const reloadRefusal = weapon ? refusalFor({ kind: "reload", weapon: weapon.itemId }) : null;
+
   const clickBoard = (event: React.MouseEvent<SVGSVGElement>) => {
     if (!canMove || !player) return;
     const to = pointAt(event.currentTarget, event);
@@ -198,7 +233,11 @@ export function CombatBoard({
     // engine would refuse it, and the board declines to ask. Rounded, because
     // the gate reads whole metres — an unrounded compare here would make a
     // sliver of legal destinations unclickable.
-    if (Math.round(metresBetween(player.data.position, to)) > reach) return;
+    const metres = Math.round(metresBetween(player.data.position, to));
+    // Clicking your own marker, or anywhere that rounds to standing still. The
+    // engine refuses a zero-metre Move; asking it to would write a refusal into
+    // the ledger for a misclick.
+    if (metres <= 0 || metres > reach) return;
     onMoveTo?.(to);
   };
 
@@ -327,35 +366,57 @@ export function CombatBoard({
             );
           })}
 
-        {/* Everybody standing on it. */}
-        {markers.map(({ combatant, data }, index) => (
-          <g key={combatant.id}>
-            <circle
-              cx={data.position.x}
-              cy={data.position.y}
-              r={unit * 1.1}
-              className={markerClass(combatant)}
-              strokeWidth={EDGE}
-              vectorEffect="non-scaling-stroke"
-            >
-              <title>
-                {combatant.name} — {combatant.hp}/{combatant.hpMax} HP
-                {combatant.defeated ? ", out of the fight" : ""}
-              </title>
-            </circle>
-            <text
-              x={data.position.x}
-              y={data.position.y + unit * 0.5}
-              textAnchor="middle"
-              fontSize={unit * 1.4}
-              className={`pointer-events-none font-mono font-bold ${
-                combatant.defeated ? "fill-muted-foreground" : "fill-background"
-              }`}
-            >
-              {index + 1}
-            </text>
-          </g>
-        ))}
+        {/* Everybody standing on it. A hostile you could shoot is a target:
+            clicking one calls the shot, and the card that already resolves
+            attacks takes it from there. */}
+        {markers.map(({ combatant, data }, index) => {
+          const target = targets.get(combatant.id);
+          const refusal = target ? attackRefusal(target) : "Nothing to shoot at.";
+          const shootable =
+            Boolean(onAttack) && canAct && !combatant.isPlayer && Boolean(target) && !refusal;
+          return (
+            <g key={combatant.id}>
+              <circle
+                cx={data.position.x}
+                cy={data.position.y}
+                r={unit * 1.1}
+                className={`${markerClass(combatant)} ${shootable ? "cursor-pointer" : ""}`}
+                strokeWidth={EDGE}
+                vectorEffect="non-scaling-stroke"
+                onClick={(e) => {
+                  if (!shootable || !weapon) return;
+                  // The board's own click must not also be a Move to the spot
+                  // under the marker.
+                  e.stopPropagation();
+                  onAttack?.(combatant.id, weapon.itemId);
+                }}
+              >
+                <title>
+                  {combatant.name} — {combatant.hp}/{combatant.hpMax} HP
+                  {combatant.defeated ? ", out of the fight" : ""}
+                  {combatant.isPlayer
+                    ? ""
+                    : shootable && weapon
+                      ? `. Click to shoot with ${weapon.name}.`
+                      : refusal
+                        ? `. ${refusal}`
+                        : ""}
+                </title>
+              </circle>
+              <text
+                x={data.position.x}
+                y={data.position.y + unit * 0.5}
+                textAnchor="middle"
+                fontSize={unit * 1.4}
+                className={`pointer-events-none font-mono font-bold ${
+                  combatant.defeated ? "fill-muted-foreground" : "fill-background"
+                }`}
+              >
+                {index + 1}
+              </text>
+            </g>
+          );
+        })}
       </svg>
 
       {/* The numbers, as text. */}
@@ -435,11 +496,27 @@ export function CombatBoard({
                 ? "Move spent this Round"
                 : "\u2014"}
           </p>
-          {onEndTurn && (
-            <Button size="sm" variant="outline" onClick={onEndTurn} disabled={busy}>
-              End Turn
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {onReload && weapon && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onReload(weapon.itemId)}
+                // Full, empty of spares, or the Action already spent: the gate
+                // refuses all three, and refuses again if this is pressed
+                // anyway. Greying it out only saves the round trip.
+                title={reloadRefusal ?? `Reload the ${weapon.name}`}
+                disabled={!canAct || Boolean(reloadRefusal)}
+              >
+                Reload
+              </Button>
+            )}
+            {onEndTurn && (
+              <Button size="sm" variant="outline" onClick={onEndTurn} disabled={busy}>
+                End Turn
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
