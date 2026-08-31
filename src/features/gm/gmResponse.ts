@@ -466,3 +466,122 @@ export function normalizeGmResponse(
     endsWithDecision: wire.endsWithDecision ?? false,
   };
 }
+
+// ---------------------------------------------------------------------------
+// When the model does not return an object at all.
+// ---------------------------------------------------------------------------
+
+/**
+ * The narration inside a response that failed structured output.
+ *
+ * `generateObject` throws "No object generated: response did not match schema"
+ * when what came back is not parseable as the wire shape at all — most often a
+ * long combat turn whose JSON was cut off mid-string, occasionally a model that
+ * answered in prose. The SDK hands the raw text back on the error, and losing a
+ * whole turn over a missing closing brace is the wrong trade: by the time the
+ * GM is asked to narrate, the dice have already been rolled, the damage applied
+ * and the encounter saved. The turn HAPPENED. Only the telling of it failed.
+ *
+ * So this reads what it safely can and nothing more:
+ *
+ *  - Complete JSON that simply missed the schema → parse it properly, keep
+ *    everything, including the proposed actions.
+ *  - Truncated JSON → take the narration string and DROP the actions. A half-
+ *    read payload could carry half a `start_encounter`; the fiction is worth
+ *    salvaging, a fight the model may not have finished proposing is not.
+ *  - No JSON at all → the whole text is the narration, actions dropped.
+ *
+ * Returns null when there is nothing worth showing, and the caller raises the
+ * original error.
+ */
+export function salvageGmResponse(text: unknown): GmResponse | null {
+  const raw = typeof text === "string" ? text.trim() : "";
+  if (!raw) return null;
+
+  // A complete object that merely disagreed with the schema. The wire shape is
+  // loose enough that this usually parses, and when it does nothing is lost.
+  const whole = parseOutermostObject(raw);
+  if (whole) {
+    const parsed = GmWireResponseSchema.safeParse(whole);
+    if (parsed.success && parsed.data.narration.trim()) return normalizeGmResponse(parsed.data);
+    // It parsed as JSON but not as a response. The narration field may still be
+    // in there, in which case the branch below finds it.
+  }
+
+  const narration = jsonStringField(raw, "narration") ?? plainProse(raw);
+  if (!narration) return null;
+  return {
+    narration,
+    // Deliberately empty. See above: a payload this broken has not earned the
+    // right to start a fight or call for a roll.
+    proposedActions: [],
+    suggestedActions: [],
+    stateDeltas: [],
+    observations: [],
+    question: null,
+    endsWithDecision: false,
+  };
+}
+
+/** The outermost {...} in a blob, parsed, or null if there isn't one. */
+function parseOutermostObject(raw: string): unknown {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  try {
+    return JSON.parse(raw.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One JSON string field, read out of text that may stop mid-value.
+ *
+ * Walks the escapes by hand rather than reaching for a regex, because the thing
+ * being read is narration: it is full of quotes and newlines, and the whole
+ * reason this function exists is that the closing quote may never arrive.
+ */
+function jsonStringField(raw: string, key: string): string | null {
+  const at = raw.indexOf(`"${key}"`);
+  if (at === -1) return null;
+  let i = raw.indexOf('"', at + key.length + 2);
+  if (i === -1) return null;
+  i += 1;
+
+  let out = "";
+  while (i < raw.length) {
+    const ch = raw[i]!;
+    if (ch === "\\") {
+      const next = raw[i + 1];
+      if (next === undefined) break; // cut off mid-escape
+      out +=
+        next === "n"
+          ? "\n"
+          : next === "t"
+            ? "\t"
+            : next === "r"
+              ? "\r"
+              : next === "u"
+                ? String.fromCharCode(parseInt(raw.slice(i + 2, i + 6), 16) || 0)
+                : next;
+      i += next === "u" ? 6 : 2;
+      continue;
+    }
+    if (ch === '"') break; // the field ended properly
+    out += ch;
+    i += 1;
+  }
+  return out.trim() || null;
+}
+
+/**
+ * Text that was never JSON — a model that answered the prompt in prose.
+ *
+ * Anything with a brace in it is a broken payload rather than prose, and
+ * showing a player a wall of half-JSON is worse than showing them the error.
+ */
+function plainProse(raw: string): string | null {
+  if (raw.includes("{") || raw.includes('"narration"')) return null;
+  return raw;
+}

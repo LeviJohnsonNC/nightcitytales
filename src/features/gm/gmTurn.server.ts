@@ -10,7 +10,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { GM_SYSTEM_PROMPT } from "./gmSystemPrompt";
-import { GmWireResponseSchema, normalizeGmResponse, type GmResponse } from "./gmResponse";
+import {
+  GmWireResponseSchema,
+  normalizeGmResponse,
+  salvageGmResponse,
+  type GmResponse,
+} from "./gmResponse";
 
 const DEFAULT_GM_MODEL = "google/gemini-3.7-flash";
 
@@ -34,6 +39,19 @@ function gmError(error: unknown, model: string): Error {
   return error instanceof Error ? error : new Error(detail);
 }
 
+/**
+ * The model's actual output, off a structured-output failure.
+ *
+ * The AI SDK attaches it to NoObjectGeneratedError as `text`. Read by shape
+ * rather than by importing the error class: the class is not part of the
+ * contract this file depends on, and a version that renames it should degrade
+ * to "no salvage" rather than to a crash inside the error handler.
+ */
+function rawTextOf(error: unknown): string | null {
+  const text = (error as { text?: unknown })?.text;
+  return typeof text === "string" ? text : null;
+}
+
 export const gmTurnFn = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => GmTurnInput.parse(input))
   .handler(async ({ data }): Promise<GmResponse> => {
@@ -54,6 +72,21 @@ export const gmTurnFn = createServerFn({ method: "POST" })
       });
       return normalizeGmResponse(object);
     } catch (error) {
+      // Structured output failed, but the turn did not.
+      //
+      // By the time the GM is asked to narrate, the engine has already rolled
+      // the dice, applied the damage and saved the encounter. Throwing here
+      // leaves the player looking at "response did not match schema" over a
+      // fight that really did advance — the state moved and the telling of it
+      // is what went missing. Usually the JSON was simply cut off mid-sentence
+      // on a long combat turn.
+      //
+      // So the narration is recovered from the raw text when there is any, and
+      // the error is raised only when there is nothing to show. What CANNOT be
+      // recovered — the proposed actions — is dropped rather than guessed; see
+      // salvageGmResponse.
+      const salvaged = salvageGmResponse(rawTextOf(error));
+      if (salvaged) return salvaged;
       throw gmError(error, model);
     }
   });

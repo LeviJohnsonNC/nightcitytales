@@ -753,7 +753,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
 
       <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex flex-col gap-3 lg:min-h-[70vh]">
-          <div className="-order-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:order-none lg:sticky lg:top-0 lg:z-20 lg:-mx-4 lg:border-b lg:border-border lg:bg-background/95 lg:px-4 lg:py-3 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:sticky lg:top-0 lg:z-20 lg:-mx-4 lg:border-b lg:border-border lg:bg-background/95 lg:px-4 lg:py-3 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70">
             <div className="min-w-0">
               <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
                 {bundle.campaign.name}
@@ -770,29 +770,30 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
               cyberware={bundle.cyberware}
             />
           </div>
-          <NarrativeLog
-            events={bundle.events}
-            readAloud={bundle.beat?.readAloud}
-            busy={play.busy || play.opening}
-          />
           {/*
-            The battlefield, in the column rather than the rail.
+            The battlefield, anchored.
 
-            Placed AFTER the log in the DOM, which on a desktop is what anchors
-            it: the log is the column's only scroller, so everything below it
-            stays put — and the board ends up beside the card that rolls its
-            dice, rather than a screenful of narration away from it.
+            It sits ABOVE the narration and sticks to the top of the viewport,
+            just under the header, so the map is on screen for the whole fight
+            and the story scrolls past underneath it. Which is what "anchored"
+            has to mean here: the column has no bounded height, so the log is
+            not a scroller and never was — the page is. Placing the board after
+            the log therefore did not pin it, it just put it further down a page
+            that kept growing, and every narrated turn pushed the fight further
+            out of sight.
 
-            On a phone the log is not a scroller and the page is, so "after the
-            log" would bury the board under an arbitrarily long transcript. The
-            order flips it above instead. One element, two readings.
+            z-10, under the header's z-20: if the two ever overlap, the header
+            wins rather than the map bleeding through it. The height cap is a
+            floor under the worst case — a tall arena plus a long roster plus
+            the cover list — so the End Turn button at the bottom of the section
+            can always be reached, scrolling inside the section if it must.
 
-            Only mounted during a fight, so the column out of combat is exactly
-            what it was — an always-present wrapper would leave an empty flex
-            child and a stray gap.
+            No sticky on a phone, where the viewport cannot spare the room; the
+            board is simply the first thing under the header, which is where it
+            already was.
           */}
           {play.encounter && (
-            <div className="-order-1 lg:order-none">
+            <div className="lg:sticky lg:top-[4.5rem] lg:z-10 lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-y-auto lg:bg-background">
               <CombatBoard
                 live={play.encounter}
                 capability={play.capability}
@@ -822,6 +823,11 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
               />
             </div>
           )}
+          <NarrativeLog
+            events={bundle.events}
+            readAloud={bundle.beat?.readAloud}
+            busy={play.busy || play.opening}
+          />
           {play.actionError && (
             <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
               <p className="text-sm text-destructive">{play.actionError.message}</p>
