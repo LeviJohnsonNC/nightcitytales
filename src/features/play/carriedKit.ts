@@ -95,10 +95,13 @@ export function carriedKit(
         label,
         lines: cyberware.map((row) => ({
           id: row.id,
-          name: getCyberware(row.item_id).name,
+          // Legacy rows may hold a printed label rather than a catalog id.
+          // Showing the stored value beats blanking the whole screen.
+          name: nameFor("cyberware", row.item_id),
           detail: `installed day ${row.installed_day}`,
           quantity: 1,
         })),
+
       };
     }
     const lines: KitLine[] = [];
