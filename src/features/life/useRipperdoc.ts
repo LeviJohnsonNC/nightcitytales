@@ -4,6 +4,7 @@ import {
   RIPPERDOC_RULES,
   appointmentDelayDays,
   getCyberware,
+  hasCyberware,
   installQuantity,
   planCyberwarePlacement,
 } from "@/engine";
