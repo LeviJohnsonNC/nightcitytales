@@ -918,7 +918,6 @@ export type Database = {
           arena: string | null
           beat_id: string | null
           campaign_id: string
-          cover: Json
           created_at: string
           id: string
           name: string | null
@@ -932,7 +931,6 @@ export type Database = {
           arena?: string | null
           beat_id?: string | null
           campaign_id: string
-          cover?: Json
           created_at?: string
           id?: string
           name?: string | null
@@ -946,7 +944,6 @@ export type Database = {
           arena?: string | null
           beat_id?: string | null
           campaign_id?: string
-          cover?: Json
           created_at?: string
           id?: string
           name?: string | null
