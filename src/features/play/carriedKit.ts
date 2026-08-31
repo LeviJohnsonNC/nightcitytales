@@ -9,7 +9,7 @@
  * This is the live half — `campaign_inventory`, the same rows combat spends,
  * the shop writes and armor repair patches. Pure: rows in, groups out.
  */
-import { catalogItem, getCyberware, weaponProfile, type ItemKind } from "@/engine";
+import { catalogItem, weaponProfile, type ItemKind } from "@/engine";
 import type { CampaignCyberware, CampaignInventoryItem } from "@/lib/backend";
 
 export type KitLine = {
