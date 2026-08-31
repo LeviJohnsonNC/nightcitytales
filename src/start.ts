@@ -3,7 +3,7 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
-const errorMiddleware = createMiddleware().server(async ({ next }) => {
+const errorMiddleware = createMiddleware().server(async ({ next, ...ctx }) => {
   try {
     return await next();
   } catch (error) {
@@ -11,12 +11,18 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
       throw error;
     }
     console.error(error);
+    // Only a document request can be answered with an error page. A server
+    // function throwing — the GM stumbling, a refused stale write — must stay a
+    // rethrow, or the browser gets HTML where it expected a payload and the
+    // whole screen falls into "This page didn't load" instead of a toast.
+    if ((ctx as { handlerType?: string }).handlerType === "serverFn") throw error;
     return new Response(renderErrorPage(), {
       status: 500,
       headers: { "content-type": "text/html; charset=utf-8" },
     });
   }
 });
+
 
 // Start installs this automatically when src/start.ts is absent; defining the
 // file opts out, so re-add it explicitly to keep server functions protected
