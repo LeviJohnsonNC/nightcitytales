@@ -286,6 +286,7 @@ export type Database = {
       campaign_npcs: {
         Row: {
           campaign_id: string
+          created_at: string
           data: Json
           disposition: number
           id: string
@@ -294,9 +295,11 @@ export type Database = {
           notes: string | null
           npc_id: string | null
           status: string
+          updated_at: string
         }
         Insert: {
           campaign_id: string
+          created_at?: string
           data?: Json
           disposition?: number
           id?: string
@@ -305,9 +308,11 @@ export type Database = {
           notes?: string | null
           npc_id?: string | null
           status?: string
+          updated_at?: string
         }
         Update: {
           campaign_id?: string
+          created_at?: string
           data?: Json
           disposition?: number
           id?: string
@@ -316,6 +321,7 @@ export type Database = {
           notes?: string | null
           npc_id?: string | null
           status?: string
+          updated_at?: string
         }
         Relationships: [
           {
