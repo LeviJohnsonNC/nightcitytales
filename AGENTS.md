@@ -64,6 +64,11 @@ Supabase, or backend adapters. It takes plain objects and returns plain objects.
   call.
 - `src/features/campaign/` maps pure engine campaign state to persisted rows and
   append-only ledger events.
+- `src/features/dev/` holds developer tooling, currently the `/combat`
+  battlefield harness. It contains no game logic: it seeds a fixture through the
+  same calls the play loop makes and hands off to `/play/:id`, so what it
+  exercises is the shipping code rather than a parallel one. Keep it that way —
+  a harness with its own turn loop verifies a driver production never runs.
 
 Prefer keeping rule decisions in the engine, persistence details in the backend
 adapter, and feature modules focused on orchestration and presentation.
@@ -132,6 +137,9 @@ Routes under `src/routes/_authenticated/` require a Supabase user session:
 - `/roster`
 - `/character/:id`
 - `/play/:id`
+- `/combat` — the battlefield harness, a developer tool. Deliberately unlinked
+  from navigation and deliberately not gated on `import.meta.env.DEV`, because
+  it has to work on the deployed preview. It writes to real campaign data.
 
 The protected layout currently performs a client-side session check with SSR
 disabled. Database authorization must still rely on RLS rather than the route

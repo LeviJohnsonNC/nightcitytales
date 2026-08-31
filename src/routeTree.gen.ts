@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as StyleRouteImport } from './routes/style'
+import { Route as AuthenticatedCombatRouteImport } from './routes/_authenticated/combat'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedRosterRouteImport } from './routes/_authenticated/roster'
 import { Route as ApiGeneratePortraitRouteImport } from './routes/api/generate-portrait'
@@ -37,6 +38,11 @@ const StyleRoute = StyleRouteImport.update({
   id: '/style',
   path: '/style',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedCombatRoute = AuthenticatedCombatRouteImport.update({
+  id: '/combat',
+  path: '/combat',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
   id: '/create',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/style': typeof StyleRoute
+  '/combat': typeof AuthenticatedCombatRoute
   '/create': typeof AuthenticatedCreateRoute
   '/roster': typeof AuthenticatedRosterRoute
   '/api/generate-portrait': typeof ApiGeneratePortraitRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/style': typeof StyleRoute
+  '/combat': typeof AuthenticatedCombatRoute
   '/create': typeof AuthenticatedCreateRoute
   '/roster': typeof AuthenticatedRosterRoute
   '/api/generate-portrait': typeof ApiGeneratePortraitRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/style': typeof StyleRoute
+  '/_authenticated/combat': typeof AuthenticatedCombatRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/roster': typeof AuthenticatedRosterRoute
   '/api/generate-portrait': typeof ApiGeneratePortraitRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/style'
+    | '/combat'
     | '/create'
     | '/roster'
     | '/api/generate-portrait'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/style'
+    | '/combat'
     | '/create'
     | '/roster'
     | '/api/generate-portrait'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/style'
+    | '/_authenticated/combat'
     | '/_authenticated/create'
     | '/_authenticated/roster'
     | '/api/generate-portrait'
@@ -169,6 +181,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StyleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/combat': {
+      id: '/_authenticated/combat'
+      path: '/combat'
+      fullPath: '/combat'
+      preLoaderRoute: typeof AuthenticatedCombatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/create': {
       id: '/_authenticated/create'
       path: '/create'
@@ -208,6 +227,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCombatRoute: typeof AuthenticatedCombatRoute
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedRosterRoute: typeof AuthenticatedRosterRoute
   AuthenticatedCharacterIdRoute: typeof AuthenticatedCharacterIdRoute
@@ -215,6 +235,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCombatRoute: AuthenticatedCombatRoute,
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedRosterRoute: AuthenticatedRosterRoute,
   AuthenticatedCharacterIdRoute: AuthenticatedCharacterIdRoute,
