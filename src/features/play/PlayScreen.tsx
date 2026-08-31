@@ -57,11 +57,20 @@ function EventBlock({ event }: { event: CampaignEvent }) {
           <span className="text-muted-foreground">⚄</span> {text}
         </p>
       );
-    // A secret roll is written to the ledger the moment it happens and shown to
-    // nobody. This case exists because the default branch below renders any
-    // unrecognised event, which would make a new secret type leak by omission.
+    // Rows the log has no business printing. They are listed rather than left
+    // to the default branch because that branch renders anything it does not
+    // recognise, which would make a new one of these leak by omission.
+    //
+    // A secret oracle roll is written the moment it happens and shown to
+    // nobody. The prompts are plumbing: each exists so a dice card can render,
+    // and the card is already on the screen — printed as well, they read as a
+    // running commentary of every target the player considered, three lines
+    // deep after three clicks. What actually happened arrives as the roll that
+    // resolves them, which is printed.
     case "oracle_secret":
     case "check_prompt":
+    case "attack_prompt":
+    case "death_save_prompt":
       return null;
     case "beat_advanced":
       return (
@@ -800,7 +809,16 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
                 // rolled in the browser, so a miss still reads as a miss — and
                 // letting the player keep acting on it buries the error under a
                 // fight nothing is recording.
-                busy={play.busy || play.opening || Boolean(play.actionError)}
+                //
+                // Inert while a Death Save is owed. The save comes first on a
+                // Mortally Wounded character's Turn (CP:R pg. 187), so the card
+                // is the only live control until it is rolled.
+                busy={
+                  play.busy ||
+                  play.opening ||
+                  Boolean(play.actionError) ||
+                  Boolean(play.pendingDeathSave)
+                }
               />
             </div>
           )}

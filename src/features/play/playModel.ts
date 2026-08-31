@@ -193,7 +193,17 @@ export function findNpcByKey(npcs: CampaignNpc[], key: string, name?: string): C
  * a rolling summary. The secret ones especially: a GM handed its own oracle
  * rolls back as "recent events" would be reading answers it was never told.
  */
-const UNSUMMARIZED_EVENT_TYPES = new Set(["oracle_roll", "oracle_secret"]);
+const UNSUMMARIZED_EVENT_TYPES = new Set([
+  "oracle_roll",
+  "oracle_secret",
+  // The prompt rows behind the dice cards. The GM proposed the attack itself,
+  // or the player clicked a target on the board; either way what the GM needs
+  // is the RESULT, which arrives as its own row. Left in, a handful of prompts
+  // fills the whole window and the fiction falls out of the bottom of it.
+  "check_prompt",
+  "attack_prompt",
+  "death_save_prompt",
+]);
 
 export function recentEventLines(events: CampaignEvent[], limit = 8): string[] {
   return events
