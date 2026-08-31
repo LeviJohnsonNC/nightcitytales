@@ -88,8 +88,10 @@ function NarrativeLog({
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [events.length]);
   // One scroller on a phone (the page); the desktop column keeps its own.
+  // lg:min-h-40 is a floor, so a fight that fills the column with a board and a
+  // dice card cannot squeeze the narration down to nothing.
   return (
-    <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
+    <div className="space-y-3 border border-border bg-card/40 p-4 lg:min-h-40 lg:flex-1 lg:overflow-y-auto">
       {readAloud && (
         <blockquote className="border-l-2 border-accent bg-accent/5 p-3 text-sm leading-relaxed text-foreground">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
@@ -728,23 +730,6 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
       <CharacterPanel bundle={bundle} luck={play.luck} />
       <RoleAbilityPanel play={play} />
       <RollHistory rolls={play.rolls} />
-      <CombatBoard
-        live={play.encounter}
-        capability={play.capability}
-        onMoveTo={play.moveTo}
-        onEndTurn={play.endTurn}
-        onReload={play.reload}
-        onAttack={play.callShot}
-        // Inert while any turn is being written, not only the board's own: a
-        // click resolved against a bundle the server has moved past would be
-        // computed from stale positions.
-        //
-        // Inert after a FAILED one too. A write that threw leaves the screen
-        // showing a fight that did not happen — the dice were rolled in the
-        // browser, so a miss still reads as a miss — and letting the player keep
-        // acting on it buries the error under a fight nothing is recording.
-        busy={play.busy || play.opening || Boolean(play.actionError)}
-      />
       <PressurePanel pressure={bundle.pressure} />
       <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
       {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
@@ -759,7 +744,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
 
       <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex flex-col gap-3 lg:min-h-[70vh]">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:sticky lg:top-0 lg:z-20 lg:-mx-4 lg:border-b lg:border-border lg:bg-background/95 lg:px-4 lg:py-3 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70">
+          <div className="-order-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:order-none lg:sticky lg:top-0 lg:z-20 lg:-mx-4 lg:border-b lg:border-border lg:bg-background/95 lg:px-4 lg:py-3 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70">
             <div className="min-w-0">
               <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
                 {bundle.campaign.name}
@@ -781,6 +766,44 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             readAloud={bundle.beat?.readAloud}
             busy={play.busy || play.opening}
           />
+          {/*
+            The battlefield, in the column rather than the rail.
+
+            Placed AFTER the log in the DOM, which on a desktop is what anchors
+            it: the log is the column's only scroller, so everything below it
+            stays put — and the board ends up beside the card that rolls its
+            dice, rather than a screenful of narration away from it.
+
+            On a phone the log is not a scroller and the page is, so "after the
+            log" would bury the board under an arbitrarily long transcript. The
+            order flips it above instead. One element, two readings.
+
+            Only mounted during a fight, so the column out of combat is exactly
+            what it was — an always-present wrapper would leave an empty flex
+            child and a stray gap.
+          */}
+          {play.encounter && (
+            <div className="-order-1 lg:order-none">
+              <CombatBoard
+                live={play.encounter}
+                capability={play.capability}
+                onMoveTo={play.moveTo}
+                onEndTurn={play.endTurn}
+                onReload={play.reload}
+                onAttack={play.callShot}
+                // Inert while any turn is being written, not only the board's
+                // own: a click resolved against a bundle the server has moved
+                // past would be computed from stale positions.
+                //
+                // Inert after a FAILED one too. A write that threw leaves the
+                // screen showing a fight that did not happen — the dice were
+                // rolled in the browser, so a miss still reads as a miss — and
+                // letting the player keep acting on it buries the error under a
+                // fight nothing is recording.
+                busy={play.busy || play.opening || Boolean(play.actionError)}
+              />
+            </div>
+          )}
           {play.actionError && (
             <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
               <p className="text-sm text-destructive">{play.actionError.message}</p>

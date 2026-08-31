@@ -66,6 +66,18 @@ import { moveAllowance, type CombatantData } from "./encounterModel";
 const HAIRLINE = 1;
 const EDGE = 1.5;
 
+/**
+ * How much of the viewport's height the board may take.
+ *
+ * One number, used for BOTH the height cap and the width cap, so the board is
+ * sized by its own proportions rather than by whatever box it lands in. In the
+ * side rail the binding constraint was width; in the main column it is height,
+ * and `preserveAspectRatio` would letterbox a tall arena into a wide dark panel
+ * — a 12x40 m alley as a narrow strip floating in empty background. Capping the
+ * width at what the aspect needs AT this height makes the board hug instead.
+ */
+const BOARD_MAX_VH = 50;
+
 /** One combatant, paired with where they are standing. */
 type Marker = { combatant: Combatant; data: CombatantData };
 
@@ -268,7 +280,11 @@ export function CombatBoard({
         // The arena's own proportions, letterboxed rather than stretched: a
         // stretched board would put a combatant somewhere they are not.
         preserveAspectRatio="xMidYMid meet"
-        className={`max-h-[46vh] w-full bg-background ${canMove ? "cursor-crosshair" : ""}`}
+        className={`mx-auto w-full bg-background ${canMove ? "cursor-crosshair" : ""}`}
+        style={{
+          maxHeight: `${BOARD_MAX_VH}vh`,
+          maxWidth: `${(width / height) * BOARD_MAX_VH}vh`,
+        }}
         role="img"
         aria-label={`Top-down view of ${arena.label}, ${width} by ${height} metres.`}
         onClick={clickBoard}
