@@ -18,6 +18,7 @@ import {
   getMission,
   failMission,
   getSkill,
+  currentCombatant,
   judgeAction,
   type CapabilitySnapshot,
   type LegalityVerdict,
@@ -567,7 +568,7 @@ async function narrate(
       if (live) continue; // one fight at a time
       // A Solo brings their Combat Awareness division into the fight with them.
       const awareness = combatAwarenessFor(bundle.campaign, bundle.character);
-      live = await beginEncounter({
+      const opened = await beginEncounter({
         campaignId,
         characterId: bundle.campaign.character_id,
         beatId,
@@ -588,6 +589,10 @@ async function narrate(
             }
           : {}),
       });
+      // Anyone who beat the player on Initiative has already acted; what they
+      // did is on the encounter_started event, so the GM reads it with the
+      // scene rather than having it surface a turn late.
+      live = opened.live;
     } else if (action.kind === "attack") {
       if (attackPosted || postedSkillIds.size > 0) continue;
       if (!live || live.state.status !== "active") continue;
@@ -1090,6 +1095,11 @@ async function endPlayerTurn(bundle: PlayBundle): Promise<void> {
   if (!live || live.state.status !== "active") return;
   const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
   if (!player) return;
+  // Only the player's own Turn is theirs to give up. The board disables the
+  // button off-turn, but a Turn belonging to somebody else must not be endable
+  // through any path — handing it over would walk the order past whoever is
+  // actually on the clock.
+  if (!currentCombatant(live.state)?.isPlayer) return;
   // A Mortally Wounded character rolls their Death Save before anything else
   // happens on their Turn (CP:R pg. 187). Handing the Turn over here would
   // walk the order straight past a save they owe.

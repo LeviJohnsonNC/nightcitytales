@@ -78,6 +78,9 @@ function fight(over: {
   cover?: Record<string, number>;
   hostileDamage?: number;
   hostileMove?: number;
+  /** Who is on the clock. The player is first unless a test says otherwise. */
+  order?: string[];
+  activeIndex?: number;
 }): LiveEncounter {
   const round = over.round ?? 1;
   return {
@@ -87,8 +90,8 @@ function fight(over: {
     version: 0,
     state: {
       round,
-      order: ["p", "h"],
-      activeIndex: 0,
+      order: over.order ?? ["p", "h"],
+      activeIndex: over.activeIndex ?? 0,
       status: "active",
       combatants: {
         p: {
@@ -395,6 +398,44 @@ describe("the player moving to a spot on the board", () => {
     const row = ledger.find((e) => e.type === MOVE_EVENT)!;
     expect(row.data["coveredFrom"]).toBeUndefined();
     expect(row.summary).not.toContain("no shot");
+  });
+});
+
+/**
+ * Who acts first.
+ *
+ * `startEncounter` parks the order on its highest Initiative roll, which is
+ * usually not the player. Nothing else advanced it — handOverTheTurn only runs
+ * off an action the player takes, and they cannot take one when it is not their
+ * turn — so a fight opened on a hostile and STAYED there: the board went inert
+ * because the order said so, and the only way out was the GM path, which never
+ * checked whose turn it was. beginEncounter now hands over before it returns.
+ */
+describe("opening the fight on whoever won Initiative", () => {
+  it("gives the Turn to a hostile who is on the clock, rather than skipping them", async () => {
+    // The hostile is first in the order and has not acted.
+    const live = fight({ order: ["h", "p"], activeIndex: 0, hostileAt: { x: 15, y: 20 } });
+    const result = await runNpcTurns("c", null, live, "current");
+    expect(attackLog.length + coverLog.length).toBeGreaterThan(0);
+    // And it stops on the player, whose Turn it now is.
+    expect(result.live.state.order[result.live.state.activeIndex]).toBe("p");
+  });
+
+  it("skips the combatant on the clock when the player has just acted", async () => {
+    // The ordinary case: the order moves OFF the player before anybody acts.
+    const live = fight({ order: ["p", "h"], activeIndex: 0, hostileAt: { x: 15, y: 20 } });
+    const result = await runNpcTurns("c", null, live, "next");
+    expect(result.live.state.order[result.live.state.activeIndex]).toBe("p");
+    expect(attackLog.length + coverLog.length).toBeGreaterThan(0);
+  });
+
+  it("hands straight back when the player is the one on the clock", async () => {
+    // They won Initiative: nobody acts before them.
+    const live = fight({ order: ["p", "h"], activeIndex: 0 });
+    const result = await runNpcTurns("c", null, live, "current");
+    expect(attackLog).toHaveLength(0);
+    expect(coverLog).toHaveLength(0);
+    expect(result.live.state.activeIndex).toBe(0);
   });
 });
 

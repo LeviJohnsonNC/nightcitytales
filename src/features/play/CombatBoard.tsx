@@ -221,6 +221,22 @@ export function CombatBoard({
 
   const reloadRefusal = weapon ? refusalFor({ kind: "reload", weapon: weapon.itemId }) : null;
 
+  // Why nothing on the board can be shot, said once.
+  //
+  // Only when EVERY standing hostile refuses for the same reason — a spent
+  // Action, an empty gun, a Rate of Fire already used — because that is a fact
+  // about the Turn rather than about a target. A reason that differs per target
+  // belongs on that target, where its tooltip already is.
+  const standing = markers.filter((m) => !m.combatant.isPlayer && !m.combatant.defeated);
+  const refusals = standing.map(({ combatant }) => {
+    const target = targets.get(combatant.id);
+    return target ? attackRefusal(target) : null;
+  });
+  const shootingRefusal =
+    standing.length > 0 && refusals.every((r) => r !== null && r === refusals[0])
+      ? refusals[0]
+      : null;
+
   const clickBoard = (event: React.MouseEvent<SVGSVGElement>) => {
     if (!canMove || !player) return;
     const to = pointAt(event.currentTarget, event);
@@ -487,15 +503,31 @@ export function CombatBoard({
         </div>
       )}
 
-      {(onMoveTo || onEndTurn) && active?.isPlayer && (
+      {(onMoveTo || onEndTurn) && (
         <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            {canMove
-              ? `Click to move · ${reach} m`
-              : moveSpent
-                ? "Move spent this Round"
-                : "\u2014"}
-          </p>
+          {/*
+            What the board will and will not do, in words.
+
+            It used to say nothing at all unless it was the player's Turn, so a
+            board that had correctly gone quiet — someone else on the clock, a
+            Move already spent, a Rate of Fire used up — was indistinguishable
+            from one that was broken. The refusals were only ever in a `title`,
+            which is invisible until hovered and absent entirely on a phone.
+          */}
+          <div className="space-y-0.5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {!active?.isPlayer
+                ? `${active?.name ?? "Someone else"} is acting`
+                : canMove
+                  ? `Click to move · ${reach} m`
+                  : moveSpent
+                    ? "Move spent this Round"
+                    : "Cannot move"}
+            </p>
+            {active?.isPlayer && shootingRefusal && (
+              <p className="text-[11px] leading-snug text-muted-foreground">{shootingRefusal}</p>
+            )}
+          </div>
           <div className="flex gap-2">
             {onReload && weapon && (
               <Button
@@ -512,7 +544,11 @@ export function CombatBoard({
               </Button>
             )}
             {onEndTurn && (
-              <Button size="sm" variant="outline" onClick={onEndTurn} disabled={busy}>
+              // Only on the player's own Turn. The controls render on anyone's
+              // now, so that the board can say whose it is — which would
+              // otherwise have made this button able to hand over a Turn that
+              // was never the player's to give up.
+              <Button size="sm" variant="outline" onClick={onEndTurn} disabled={!canAct}>
                 End Turn
               </Button>
             )}

@@ -171,7 +171,9 @@ export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
   if (!sheet) throw new Error("This campaign's character no longer exists.");
 
   const members = buildForce(forceFor(options.force.key), options.force.size);
-  const encounter = await beginEncounter({
+  // Whoever beat the character on Initiative has already acted by the time this
+  // returns, so the harness lands on the player's own Turn with a live board.
+  const opened = await beginEncounter({
     campaignId,
     characterId: options.characterId,
     beatId: SANDBOX_BEAT_ID,
@@ -183,7 +185,7 @@ export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
     arena: arenaKeyOr(options.arena),
   });
 
-  return { campaignId, encounterId: encounter.id };
+  return { campaignId, encounterId: opened.live.id };
 }
 
 /** Close the fight in progress so another can be seeded over it. */
