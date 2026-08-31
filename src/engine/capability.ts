@@ -13,7 +13,7 @@
  * ./legality.ts, which never refuses on an unknown).
  */
 import type { WeaponRangeType } from "./combatTables";
-import { singleShotDV } from "./combatTables";
+import { RANGE_BAND_MAX, singleShotDV } from "./combatTables";
 import type { WoundStateCode } from "./campaign";
 
 /** One weapon the character is carrying, as the legality layer sees it. */
@@ -195,6 +195,46 @@ export function usableWeapons(snapshot: CapabilitySnapshot): WeaponCapability[] 
   return snapshot.weapons.filter(
     (w) => !w.broken && (w.roundsLoaded === null || w.roundsLoaded > 0),
   );
+}
+
+/**
+ * The Range DV for this weapon at this distance, or null when there is none.
+ *
+ * The single answer to "how hard is this shot", in the shape the capability
+ * layer holds a weapon in. Melee is null because RED resolves it as an opposed
+ * roll rather than against a printed DV, and a weapon the core rules give no
+ * table entry is null rather than approximated to a similar gun.
+ */
+export function weaponDvAt(weapon: WeaponCapability, metres: number): number | null {
+  if (weapon.melee || !weapon.rangeType) return null;
+  return singleShotDV(weapon.rangeType, metres);
+}
+
+/** One printed range band: everything out to `max` metres is this hard to hit. */
+export type WeaponBand = {
+  /** Upper bound of the band, in metres (CP:R pg. 173). */
+  max: number;
+  dv: number;
+};
+
+/**
+ * Every band this weapon has a printed DV for, nearest first.
+ *
+ * Read straight off the table in combatTables.ts rather than described
+ * anywhere, so the rings a board paints are the same numbers the To-Hit is
+ * rolled against and cannot drift from them. Bands the table leaves blank are
+ * OUT OF RANGE and are simply absent — a weapon's furthest ring is the edge of
+ * what it can reach, which is the fact worth seeing.
+ */
+export function weaponBands(weapon: WeaponCapability): WeaponBand[] {
+  if (weapon.melee || !weapon.rangeType) return [];
+  const out: WeaponBand[] = [];
+  for (const max of RANGE_BAND_MAX) {
+    const dv = singleShotDV(weapon.rangeType, max);
+    if (dv === null) continue;
+    out.push({ max, dv });
+  }
+  return out;
 }
 
 /** A one-line description of a weapon for the GM's context block. */

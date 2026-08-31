@@ -31,16 +31,28 @@
  * engine's (features/play/combatFlow.ts, movePlayerTo). The dashed circle is
  * the same `moveAllowance` the Move is bounded by, so it cannot offer a step
  * that would be refused.
+ *
+ * Picking a weapon paints its RANGE BANDS. This is the lookup RED makes you do
+ * by hand and the one thing a computer should obviously be doing for you: the
+ * rings are `weaponBands`, read straight off the printed table, and the DV
+ * beside each target is `weaponDvAt` at the distance the engine measured. The
+ * player sees which band they are standing in, what it would cost to be in a
+ * better one, and — because the ground is clickable — can go there.
  */
+import { useState } from "react";
 import {
   arenaFor,
   coverStatuses,
   currentCombatant,
   metresBetween,
+  usableWeapons,
+  weaponBands,
+  weaponDvAt,
   type CapabilitySnapshot,
   type Combatant,
   type Point,
   type TargetCapability,
+  type WeaponCapability,
 } from "@/engine";
 import { Button } from "@/components/ui/button";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
@@ -81,6 +93,23 @@ function pointAt(svg: SVGSVGElement, event: { clientX: number; clientY: number }
   return { x: local.x, y: local.y };
 }
 
+/**
+ * How hard the shot is, or why there is no number for it.
+ *
+ * Three different nulls, and they do not mean the same thing. Melee has no
+ * Range DV because RED resolves it as an OPPOSED roll, not against a printed
+ * table. A weapon the core rules never put on the table has no entry to read at
+ * any distance. And a weapon that has a table simply cannot reach this far.
+ * Collapsing all three into "out of range" would tell the player something
+ * false about two of them.
+ */
+function dvLabel(weapon: WeaponCapability, metres: number): string {
+  if (weapon.melee) return " · melee, opposed";
+  if (!weapon.rangeType) return " · no printed range";
+  const dv = weaponDvAt(weapon, metres);
+  return dv === null ? " · out of range" : ` · DV ${dv}`;
+}
+
 /** Board colours by side, so who is who survives being a dot. */
 function markerClass(combatant: Combatant): string {
   if (combatant.defeated) return "fill-muted-foreground/25 stroke-muted-foreground/40";
@@ -105,6 +134,9 @@ export function CombatBoard({
   onEndTurn?: () => void;
   busy?: boolean;
 }) {
+  // Before the early return: a hook cannot sit behind a condition.
+  const [weaponId, setWeaponId] = useState<string | null>(null);
+
   if (!live) return null;
 
   const arena = arenaFor(live.arena);
@@ -127,6 +159,17 @@ export function CombatBoard({
   const targets = new Map<string, TargetCapability>(
     (capability?.targets ?? []).map((t) => [t.id, t]),
   );
+
+  // Only what could actually be fired: the empty and the broken are not a
+  // tactical choice, and `usableWeapons` already knows which is which.
+  const weapons: WeaponCapability[] = capability ? usableWeapons(capability) : [];
+  const weapon =
+    weapons.find((w) => w.itemId === weaponId) ??
+    // Nothing picked yet: show the first thing with a printed table rather than
+    // an empty board. A melee weapon has no bands to paint, so it is not it.
+    weapons.find((w) => weaponBands(w).length > 0) ??
+    null;
+  const bands = weapon ? weaponBands(weapon) : [];
 
   // The board acts only on the player's own Turn, and only while nothing else
   // is being written. A Move already spent this Round closes it until the
@@ -185,6 +228,38 @@ export function CombatBoard({
           strokeWidth={HAIRLINE}
           vectorEffect="non-scaling-stroke"
         />
+
+        {/* The chosen weapon's printed range bands, nearest DV first. Drawn
+            furthest-first so the near rings sit on top, and labelled where the
+            ring crosses due north of the shooter — a DV belongs on the circle
+            it applies to, not in a legend the eye has to travel to. */}
+        {player &&
+          [...bands].reverse().map((band) => (
+            <g key={`band-${band.max}`}>
+              <circle
+                cx={player.data.position.x}
+                cy={player.data.position.y}
+                r={band.max}
+                className="fill-none stroke-neon-purple/35"
+                strokeWidth={HAIRLINE}
+                strokeDasharray="2 6"
+                vectorEffect="non-scaling-stroke"
+              >
+                <title>
+                  out to {band.max} m — DV {band.dv}
+                </title>
+              </circle>
+              <text
+                x={player.data.position.x}
+                y={player.data.position.y - band.max + unit * 1.2}
+                textAnchor="middle"
+                fontSize={unit * 1.1}
+                className="pointer-events-none fill-neon-purple/70 font-mono"
+              >
+                {band.dv}
+              </text>
+            </g>
+          ))}
 
         {/* Where a Move could reach. Drawn under everything: it is context for
             the pieces on top of it, not a thing in its own right. */}
@@ -301,7 +376,12 @@ export function CombatBoard({
                   <span
                     className={target.perceivable ? "text-muted-foreground" : "text-destructive"}
                   >
-                    {target.distance}m{target.perceivable ? "" : " · no shot"} ·{" "}
+                    {target.distance}m
+                    {/* The shot's difficulty, at the distance the engine
+                        measured, off the table the To-Hit is rolled against.
+                        Absent means this weapon cannot reach them at all. */}
+                    {target.perceivable && weapon ? dvLabel(weapon, target.distance) : ""}
+                    {target.perceivable ? "" : " · no shot"} ·{" "}
                   </span>
                 ) : null}
                 {combatant.hp}/{combatant.hpMax} · {combatant.woundState}
@@ -310,6 +390,41 @@ export function CombatBoard({
           );
         })}
       </ul>
+
+      {weapons.length > 0 && (
+        <div className="flex flex-wrap gap-1 border-t border-border/60 pt-2">
+          {weapons.map((w) => {
+            const chosen = w.itemId === weapon?.itemId;
+            const paints = weaponBands(w).length > 0;
+            return (
+              <button
+                key={w.itemId}
+                type="button"
+                onClick={() => setWeaponId(w.itemId)}
+                title={
+                  paints
+                    ? `${w.name} — reaches ${weaponBands(w).at(-1)?.max} m`
+                    : w.melee
+                      ? `${w.name} — melee, resolved as an opposed roll rather than against a Range DV`
+                      : `${w.name} — the core rules give it no Range DV table`
+                }
+                className={`border px-2 py-1 text-left font-mono text-[10px] transition-colors ${
+                  chosen
+                    ? "border-neon-purple text-neon-purple"
+                    : "border-border/60 text-muted-foreground hover:border-accent"
+                }`}
+              >
+                {w.name}
+                {w.roundsLoaded !== null && (
+                  <span className="ml-1 opacity-70">
+                    {w.roundsLoaded}/{w.magazine ?? "?"}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {(onMoveTo || onEndTurn) && active?.isPlayer && (
         <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2">
