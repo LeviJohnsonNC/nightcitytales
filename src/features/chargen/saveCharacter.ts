@@ -48,17 +48,34 @@ export function savePayload(
             ? (build.loadout.packageChoices[`${field}.${index}`] ?? entry.choice[0]!)
             : entry.item;
           const variant = build.loadout.packageVariants?.[`${field}.${index}`];
+          const notes = (variant ? `Role package · ${variant}` : "Role package") as string | null;
+          const printedQty = isChoice(entry) ? 1 : entry.qty;
+          // The package tables print display labels; the engine only knows
+          // canonical catalog ids. Resolve here so live play sees a rifle
+          // rather than the words "Assault Rifle".
+          const resolved = resolvePackageItem(picked);
+          if (!resolved) {
+            return {
+              item_id: picked,
+              quantity: printedQty,
+              equipped: false,
+              slot: `package:${field}`,
+              current_sp: null,
+              notes,
+            };
+          }
           return {
-            item_id: picked,
-            quantity: isChoice(entry) ? 1 : entry.qty,
-            equipped: false,
-            slot: `package:${field}`,
+            item_id: resolved.id,
+            quantity: resolved.qty ?? printedQty,
+            equipped: resolved.kind === "armor",
+            slot: resolved.location ?? slotFor(resolved.kind, resolved.id),
             current_sp: null,
-            notes: (variant ? `Role package · ${variant}` : "Role package") as string | null,
+            notes,
           };
         },
       ),
     ),
+
     ...sheet.packageOutfit.map((item) => ({
       item_id: item,
       quantity: 1,
