@@ -877,7 +877,7 @@ export async function commitAttack(
 
   // The Round's bookkeeping: the Action is spent, the shot counts against the
   // weapon's ROF, and a round comes out of the magazine.
-  let live: LiveEncounter = {
+  const live: LiveEncounter = {
     ...bundle.encounter,
     state: result.state,
     data: withAttackSpent(
@@ -913,9 +913,68 @@ export async function commitAttack(
   );
   await payLuck(bundle, luckSpent);
 
-  const lines = [
+  await handOverTheTurn(bundle, live, beatId, [
     describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
-  ];
+  ]);
+}
+
+/**
+ * Keys for player turns this session has already handed over.
+ *
+ * A double-submitted mutation would run the hostile Turns twice — free damage,
+ * silently, because nothing downstream is idempotent: `save_encounter_state`
+ * takes a row lock but no version, and the ledger appends whatever it is given.
+ * The encounter's own (round, activeIndex) identifies the turn being ended, so
+ * a second call with the same one is a duplicate and does nothing.
+ *
+ * Deliberately session-local and deliberately not a lock. It closes the
+ * double-click and the retried mutation, which is what actually happens; two
+ * TABS in the same fight would still race, and that needs a version token on
+ * the encounter row rather than a Set (see AGENTS.md on partial turns).
+ */
+const handedOver = new Set<string>();
+
+/**
+ * The player's Turn is over: the hostiles take theirs, Backup arrives if its
+ * Round has come, the fight closes if it is finished, a Death Save is posted
+ * if one is owed, and the GM narrates the lot — once.
+ *
+ * Extracted from commitAttack so that attacking is no longer the ONLY way a
+ * Round can advance. Everything a player does that ends their Turn comes
+ * through here, which is what stops a Move-and-pass from leaving the hostiles
+ * standing still. `lines` is what the player just did, in the engine's own
+ * words; every line this adds joins it, and the model narrates the whole
+ * exchange in one call rather than one call per action.
+ */
+async function handOverTheTurn(
+  bundle: PlayBundle,
+  from: LiveEncounter,
+  beatId: string | null,
+  lines: string[],
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const key = `${from.id}:${from.state.round}:${from.state.activeIndex}`;
+  if (handedOver.has(key)) return;
+  handedOver.add(key);
+  try {
+    await runTheTurnOver(bundle, from, beatId, lines, campaignId);
+  } catch (error) {
+    // A turn that FAILED has not been handed over. Leaving the key behind
+    // would make the fight unretryable — the player presses Retry, this
+    // returns silently, and the hostiles never move again.
+    handedOver.delete(key);
+    throw error;
+  }
+}
+
+async function runTheTurnOver(
+  bundle: PlayBundle,
+  from: LiveEncounter,
+  beatId: string | null,
+  lines: string[],
+  campaignId: string,
+): Promise<void> {
+  let live = from;
   const npc = await runNpcTurns(campaignId, beatId, live);
   live = npc.live;
   lines.push(...npc.lines);

@@ -8,6 +8,7 @@
  * not print is left null for the gate to allow.
  */
 import {
+  ATTACK_COST,
   EMPTY_TURN_ECONOMY,
   arenaFor,
   coverBlocking,
@@ -27,7 +28,7 @@ import {
   type WoundStateCode,
 } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
-import { metresApart, type CombatantTurnState } from "./encounterModel";
+import { metresApart, spendTurn, type CombatantTurnState } from "./encounterModel";
 import type {
   CampaignEvent,
   CampaignCyberware,
@@ -295,6 +296,9 @@ export function renderCapabilityLines(snapshot: CapabilitySnapshot): string[] {
  * Record that the attacker spent an attack this Round, so the ROF cap and the
  * one-Action rule have something real to read. Returns the encounter's `data`
  * map with the attacker's turn counters advanced; the caller persists it.
+ *
+ * What an attack COSTS is the gate's (engine/legality.ts, ATTACK_COST); this
+ * only charges it.
  */
 export function withAttackSpent(
   live: LiveEncounter,
@@ -303,19 +307,11 @@ export function withAttackSpent(
 ): Record<string, (typeof live.data)[string]> {
   const existing = live.data[attackerId];
   if (!existing) return live.data;
-  const round = live.state.round;
-  const prior = existing.turn?.round === round ? existing.turn : null;
   return {
     ...live.data,
     [attackerId]: {
       ...existing,
-      turn: {
-        round,
-        actionUsed: true,
-        shotsThisRound: (prior?.shotsThisRound ?? 0) + 1,
-        shotWeaponId: weaponItemId,
-        metresMoved: prior?.metresMoved ?? 0,
-      },
+      turn: spendTurn(existing.turn, live.state.round, ATTACK_COST, weaponItemId),
     },
   };
 }

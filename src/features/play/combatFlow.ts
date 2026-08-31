@@ -51,8 +51,8 @@ import {
   metresApart,
   moveAllowance,
   playerCombatant as buildPlayerCombatant,
+  spendTurn,
   type CombatantData,
-  type CombatantTurnState,
 } from "./encounterModel";
 
 const MAX_NPC_TURNS = 24;
@@ -407,7 +407,15 @@ export async function movePlayer(input: {
     };
   }
 
-  const movedData = { ...from, position, turn: spentMove(from.turn, live.state.round, moved) };
+  // Charged at what was actually covered, not at what was asked for: the gate
+  // priced the whole allowance, and the arena's edge may have stopped them
+  // short. The refusal of a SECOND Move does not depend on the number — any
+  // metres spent this Round is what closes it — so this only has to be true.
+  const movedData = {
+    ...from,
+    position,
+    turn: spendTurn(from.turn, live.state.round, { ...verdict.cost, metres: moved }),
+  };
   const next: LiveEncounter = {
     ...live,
     data: { ...live.data, [player.id]: movedData },
@@ -437,19 +445,3 @@ export async function movePlayer(input: {
 
 /** The ledger type a Move is written under. */
 export const MOVE_EVENT = "move";
-
-/** Spend a Move out of this Round's economy, starting a fresh Round if needed. */
-function spentMove(
-  turn: CombatantTurnState | undefined,
-  round: number,
-  metres: number,
-): CombatantTurnState {
-  const prior = turn?.round === round ? turn : null;
-  return {
-    round,
-    actionUsed: prior?.actionUsed ?? false,
-    shotsThisRound: prior?.shotsThisRound ?? 0,
-    shotWeaponId: prior?.shotWeaponId ?? null,
-    metresMoved: (prior?.metresMoved ?? 0) + metres,
-  };
-}
