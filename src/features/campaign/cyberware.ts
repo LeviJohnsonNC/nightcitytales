@@ -5,6 +5,7 @@
  */
 import {
   defaultRng,
+  hasCyberware,
   planCyberwareInstall,
   type CyberwareInstallPlan,
   type GamePhase,
