@@ -56,7 +56,7 @@ vi.mock("@/features/campaign/combatLog", () => ({
   logDeathSave: vi.fn(async () => {}),
 }));
 
-const { MOVE_EVENT, movePlayer, runNpcTurns } = await import("../combatFlow");
+const { MOVE_EVENT, movePlayer, movePlayerTo, runNpcTurns } = await import("../combatFlow");
 const { EMPTY_TURN_ECONOMY, arenaFor, singleShotDV } = await import("@/engine");
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import type { CapabilitySnapshot } from "@/engine";
@@ -303,6 +303,93 @@ describe("the player moving", () => {
   it("persists, so the position survives a reload", async () => {
     await move(fight({}), "closer");
     expect(saved).toHaveLength(1);
+  });
+});
+
+/**
+ * The board's own Move: a point, not a direction. Same gate, same clamp, same
+ * economy — the only thing that changes is who chose the destination.
+ */
+describe("the player moving to a spot on the board", () => {
+  const goTo = (live: LiveEncounter, to: { x: number; y: number }, cap = capability()) =>
+    movePlayerTo({
+      campaignId: "c",
+      beatId: null,
+      live,
+      capability: cap,
+      to,
+      intent: "moves on the board",
+    });
+
+  it("walks to the spot that was picked", async () => {
+    const live = fight({ playerAt: { x: 15, y: 20 } });
+    const result = await goTo(live, { x: 15, y: 26 });
+    expect(result.refusal).toBeNull();
+    expect(result.live.data["p"]!.position).toEqual({ x: 15, y: 26 });
+    expect(result.live.data["p"]!.turn).toMatchObject({ round: 1, metresMoved: 6 });
+  });
+
+  it("refuses a spot further than MOVE rather than stopping short of it", async () => {
+    // Silently walking part-way would put them somewhere nobody chose, and the
+    // Range DV of every shot afterwards is measured from wherever that is.
+    const live = fight({ playerAt: { x: 15, y: 20 } });
+    const result = await goTo(live, { x: 15, y: 45 });
+    expect(result.refusal?.code).toBe("move_exceeded");
+    expect(result.live.data["p"]!.position).toEqual({ x: 15, y: 20 });
+  });
+
+  it("refuses a second Move in the same Round", async () => {
+    const spent = capability({
+      turn: { ...EMPTY_TURN_ECONOMY, inCombat: true, move: 8, metresMoved: 8 },
+    });
+    const result = await goTo(fight({ playerAt: { x: 15, y: 20 } }), { x: 15, y: 24 }, spent);
+    expect(result.refusal?.code).toBe("movement_spent");
+  });
+
+  it("does not spend the Action: the Turn still has one", async () => {
+    const result = await goTo(fight({ playerAt: { x: 15, y: 20 } }), { x: 15, y: 24 });
+    expect(result.live.data["p"]!.turn?.actionUsed).toBe(false);
+  });
+
+  it("cannot be clicked outside the arena", async () => {
+    const live = fight({ playerAt: { x: 15, y: 3 } });
+    const result = await goTo(live, { x: 15, y: -40 });
+    expect(result.live.data["p"]!.position.y).toBeGreaterThanOrEqual(0);
+  });
+
+  it("persists, and writes the metres to the ledger", async () => {
+    await goTo(fight({ playerAt: { x: 15, y: 20 } }), { x: 15, y: 25 });
+    expect(saved).toHaveLength(1);
+    const row = ledger.find((e) => e.type === MOVE_EVENT)!;
+    expect(row.data["metres"]).toBe(5);
+  });
+
+  /**
+   * Taking cover, which is the half of cover the player could never reach.
+   * There is no flag for it and there must not be one: pg. 182 makes cover a
+   * question about line of sight, so "in cover" is the answer coverBlocking
+   * gives about where you are standing.
+   */
+  it("reports the cover it put between them, without storing a stance", async () => {
+    // The street's parked car sits at x 19.5-23.5, y 36-38. Standing due south
+    // of it puts it between the player and a hostile due north.
+    const live = fight({ playerAt: { x: 21.5, y: 20 }, hostileAt: { x: 21.5, y: 50 } });
+    const result = await goTo(live, { x: 21.5, y: 26 });
+    expect(result.refusal).toBeNull();
+    const row = ledger.find((e) => e.type === MOVE_EVENT)!;
+    expect(row.data["coveredFrom"]).toEqual(["Scav"]);
+    expect(row.summary).toContain("no shot either way");
+    // Nothing about cover was written onto the combatant: it is a fact about
+    // where they are, re-measured, not a state anybody has to remember to clear.
+    expect(result.live.data["p"]).not.toHaveProperty("inCover");
+  });
+
+  it("says nothing about cover when the line is clear", async () => {
+    const live = fight({ playerAt: { x: 5, y: 20 }, hostileAt: { x: 5, y: 50 } });
+    await goTo(live, { x: 5, y: 26 });
+    const row = ledger.find((e) => e.type === MOVE_EVENT)!;
+    expect(row.data["coveredFrom"]).toBeUndefined();
+    expect(row.summary).not.toContain("no shot");
   });
 });
 

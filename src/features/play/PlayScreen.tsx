@@ -695,7 +695,16 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
       <CharacterPanel bundle={bundle} luck={play.luck} />
       <RoleAbilityPanel play={play} />
       <RollHistory rolls={play.rolls} />
-      <CombatBoard live={play.encounter} capability={play.capability} />
+      <CombatBoard
+        live={play.encounter}
+        capability={play.capability}
+        onMoveTo={play.moveTo}
+        onEndTurn={play.endTurn}
+        // Inert while any turn is being written, not only the board's own: a
+        // click resolved against a bundle the server has moved past would be
+        // computed from stale positions.
+        busy={play.busy || play.opening}
+      />
       <PressurePanel pressure={bundle.pressure} />
       <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
       {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}

@@ -19,7 +19,9 @@ import {
   failMission,
   getSkill,
   judgeAction,
+  type CapabilitySnapshot,
   type LegalityVerdict,
+  type Point,
   clampDisposition,
   missionPayout,
   type IpAward,
@@ -124,7 +126,13 @@ import {
   recentEventLines,
   turnsSinceLastRoll,
 } from "./playModel";
-import { beginEncounter, describeAttack, movePlayer, runNpcTurns } from "./combatFlow";
+import {
+  beginEncounter,
+  describeAttack,
+  movePlayer,
+  movePlayerTo,
+  runNpcTurns,
+} from "./combatFlow";
 import {
   distanceToTarget,
   findTarget,
@@ -261,6 +269,25 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
 }
 
 /** The negotiated fee on the campaign's books, if this job carries one. */
+/**
+ * What the character can actually do right now, off one bundle.
+ *
+ * One builder for every caller — the GM's context, the cards' greying-out, and
+ * the board's own actions. Three copies of these seven fields is three chances
+ * for one of them to be reading a different beat than the gate it feeds.
+ */
+function snapshotFor(bundle: PlayBundle): CapabilitySnapshot {
+  return buildCapabilitySnapshot({
+    character: bundle.character,
+    vitals: bundle.vitals,
+    inventory: bundle.inventory,
+    cyberware: bundle.cyberware,
+    encounter: bundle.encounter,
+    events: bundle.events,
+    beatId: bundle.beat?.id ?? null,
+  });
+}
+
 function agreedPayoutFrom(flags: CampaignFlag[]): number | null {
   const value = flags.find((f) => f.flag === JOB_PAYOUT_FLAG)?.value;
   return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
@@ -292,15 +319,7 @@ async function narrate(
   // What the character can actually do right now. The GM sees it so it stops
   // proposing the impossible; the gate below still refuses anything that slips
   // through, because a model is not an enforcement layer.
-  const capability = buildCapabilitySnapshot({
-    character: bundle.character,
-    vitals: bundle.vitals,
-    inventory: bundle.inventory,
-    cyberware: bundle.cyberware,
-    encounter: bundle.encounter,
-    events: bundle.events,
-    beatId,
-  });
+  const capability = snapshotFor(bundle);
 
   /**
    * Refuse an impossible action in the fiction rather than silently dropping
@@ -919,6 +938,59 @@ export async function commitAttack(
 }
 
 /**
+ * The player walking to a spot they picked on the board.
+ *
+ * The first player action in the game that never goes near the model: the
+ * board hands the engine a point, the engine prices and clamps it, and the GM
+ * is told afterwards. Moving does not end the Turn — the Action is still
+ * theirs — so nothing is handed over here.
+ */
+async function commitBoardMove(bundle: PlayBundle, to: Point): Promise<void> {
+  if (!bundle.encounter) throw new Error("There is no fight to move in.");
+  const beatId = bundle.beat?.id ?? null;
+  const moved = await movePlayerTo({
+    campaignId: bundle.campaign.id,
+    beatId,
+    live: bundle.encounter,
+    capability: snapshotFor(bundle),
+    to,
+    intent: "moves on the board",
+  });
+  if (moved.refusal) {
+    await appendCampaignEvent({
+      campaign_id: bundle.campaign.id,
+      type: "action_refused",
+      // The same shape narrate()'s own refusals take, so the GM reads one
+      // kind of refusal rather than two.
+      summary: `Not possible: ${moved.refusal.reason}`,
+      data: { code: moved.refusal.code } as unknown as Json,
+      ...(beatId ? { beat_id: beatId } : {}),
+    });
+  }
+}
+
+/**
+ * The player giving up the rest of their Turn.
+ *
+ * What `handOverTheTurn` was built for and nothing could call: until the board
+ * existed, attacking was the only thing that advanced a Round, so a character
+ * who moved and chose not to shoot left the hostiles standing still.
+ */
+async function endPlayerTurn(bundle: PlayBundle): Promise<void> {
+  const live = bundle.encounter;
+  if (!live || live.state.status !== "active") return;
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  if (!player) return;
+  // A Mortally Wounded character rolls their Death Save before anything else
+  // happens on their Turn (CP:R pg. 187). Handing the Turn over here would
+  // walk the order straight past a save they owe.
+  if (deathSaveOwed(live)) return;
+  await handOverTheTurn(bundle, live, bundle.beat?.id ?? null, [
+    `${player.name} takes no further action and ends their Turn.`,
+  ]);
+}
+
+/**
  * Keys for player turns this session has already handed over.
  *
  * A double-submitted mutation would run the hostile Turns twice — free damage,
@@ -1415,6 +1487,24 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  // The board's own actions. Neither goes near the model on the way in: the
+  // engine prices and resolves them, and the GM is told what happened after.
+  const boardMove = useMutation({
+    mutationFn: (to: Point) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitBoardMove(query.data, to);
+    },
+    onSuccess: invalidate,
+  });
+
+  const endTurn = useMutation({
+    mutationFn: () => {
+      if (!query.data) throw new Error("Still loading.");
+      return endPlayerTurn(query.data);
+    },
+    onSuccess: invalidate,
+  });
+
   const death = useMutation({
     mutationFn: ({ pending, result }: { pending: PendingDeathSave; result: BeginTurnResult }) => {
       if (!query.data) throw new Error("Still loading.");
@@ -1588,17 +1678,7 @@ export function usePlay(campaignId: string) {
      * What the character can actually do right now, so the cards can grey out
      * the impossible instead of letting the player roll for it.
      */
-    capability: bundle
-      ? buildCapabilitySnapshot({
-          character: bundle.character,
-          vitals: bundle.vitals,
-          inventory: bundle.inventory,
-          cyberware: bundle.cyberware,
-          encounter: bundle.encounter,
-          events: bundle.events,
-          beatId: bundle.beat?.id ?? null,
-        })
-      : null,
+    capability: bundle ? snapshotFor(bundle) : null,
 
     /** The check waiting on the player's die, if any. */
     pendingCheck,
@@ -1732,8 +1812,22 @@ export function usePlay(campaignId: string) {
     checkBusy: check.isPending,
     /** The attack waiting on the player's dice, if any. */
     pendingAttack,
-    /** The live fight, for the initiative/status rail. */
+    /** The live fight, for the board and the initiative/status rail. */
     encounter: bundle?.encounter ?? null,
+    /**
+     * Walk to a spot on the board. The engine decides how far they get; a
+     * Move does not end the Turn, so the Action is still theirs afterwards.
+     */
+    moveTo: (to: Point) => boardMove.mutate(to),
+    /** Give up the rest of the Turn and let the hostiles take theirs. */
+    endTurn: () => endTurn.mutate(),
+    /**
+     * True while a Turn is being spent or handed over. The board is inert
+     * throughout: a click landing mid-narration would be computed against a
+     * bundle the server has already moved past, and combatant positions are
+     * written last-write-wins.
+     */
+    turnBusy: boardMove.isPending || endTurn.isPending,
     /** Roll the attack — the engine resolves To-Hit, damage and armor. */
     rollAttack: (
       pending: PendingAttack,
@@ -1812,6 +1906,8 @@ export function usePlay(campaignId: string) {
       open.isPending ||
       check.isPending ||
       combat.isPending ||
+      boardMove.isPending ||
+      endTurn.isPending ||
       death.isPending,
     actionError,
     retry,
