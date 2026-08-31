@@ -245,6 +245,98 @@ describe("rollHistory", () => {
     ]);
     expect(rolls[0]).toMatchObject({ total: 18, dv: 15, success: true, opposedBy: null });
   });
+
+  it("shows attacks, which it used to leave out entirely", () => {
+    const rolls = rollHistory([
+      event({
+        id: "a1",
+        type: "attack",
+        data: {
+          weapon: "Heavy Pistol",
+          target: "Scav",
+          damage: 16,
+          sp_before: 7,
+          sp_after: 6,
+          hp_before: 30,
+          hp_after: 21,
+          critical_injury: false,
+          target_wound_state: "serious",
+        } as never,
+        roll: {
+          total: 22,
+          dv: 15,
+          success: true,
+          critical: null,
+          formula: "1d10(8) + REF(8) + Handgun(6) = 22 vs DV15 → SUCCESS by 7",
+        } as never,
+      }),
+    ]);
+    expect(rolls[0]).toMatchObject({
+      skillName: "Heavy Pistol → Scav",
+      total: 22,
+      dv: 15,
+      success: true,
+    });
+  });
+
+  it("carries the working and what the hit cost, for the row to open onto", () => {
+    const rolls = rollHistory([
+      event({
+        id: "a2",
+        type: "attack",
+        data: {
+          weapon: "Heavy Pistol",
+          target: "Scav",
+          damage: 16,
+          sp_before: 7,
+          sp_after: 6,
+          hp_before: 30,
+          hp_after: 21,
+          critical_injury: true,
+        } as never,
+        roll: { total: 22, dv: 15, success: true, formula: "the working" } as never,
+      }),
+    ]);
+    // The engine's own formula, never rebuilt here, and the cost in the shape
+    // PRODUCT asks for.
+    expect(rolls[0]?.detail).toEqual([
+      "the working",
+      "16 damage · SP 7 → 6 · 9 HP lost",
+      "Critical Injury — +5 straight to HP",
+    ]);
+  });
+
+  it("says nothing about armor that did not ablate", () => {
+    const rolls = rollHistory([
+      event({
+        id: "a3",
+        type: "attack",
+        data: {
+          weapon: "Bat",
+          target: "Scav",
+          damage: 4,
+          sp_before: 7,
+          sp_after: 7,
+          hp_before: 30,
+          hp_after: 26,
+        } as never,
+        roll: { total: 14, dv: 13, success: true, formula: "w" } as never,
+      }),
+    ]);
+    expect(rolls[0]?.detail).toEqual(["w", "4 damage · 4 HP lost"]);
+  });
+
+  it("has nothing to open when the roll carried no working", () => {
+    const rolls = rollHistory([
+      event({
+        id: "r3",
+        type: "skill_check",
+        data: { skill_name: "Perception" } as never,
+        roll: { total: 12, dv: 15, success: false } as never,
+      }),
+    ]);
+    expect(rolls[0]?.detail).toEqual([]);
+  });
 });
 
 describe("wound penalties on checks", () => {
