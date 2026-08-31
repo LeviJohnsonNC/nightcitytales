@@ -179,7 +179,6 @@ export function hasCyberware(id: string): boolean {
   return CYBER_BY_ID.has(id);
 }
 
-
 export function getGear(id: string): CatalogGear {
   const g = GEAR_BY_ID.get(id);
   if (!g) throw new Error(`Unknown gear "${id}" (src/data/rules/catalog.json → gear)`);

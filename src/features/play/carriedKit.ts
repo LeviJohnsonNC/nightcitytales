@@ -101,7 +101,6 @@ export function carriedKit(
           detail: `installed day ${row.installed_day}`,
           quantity: 1,
         })),
-
       };
     }
     const lines: KitLine[] = [];

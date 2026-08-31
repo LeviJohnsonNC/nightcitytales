@@ -112,7 +112,6 @@ export function savePayload(
         humanity_loss_rolled: id ? getCyberware(id).humanityLoss : null,
       };
     }),
-
   ];
 
   return {
