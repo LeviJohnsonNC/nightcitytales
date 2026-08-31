@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   judgeAction,
   spendCost,
+  weaponBands,
+  weaponDvAt,
   type CapabilitySnapshot,
   type TurnSpend,
   type WeaponCapability,
@@ -374,5 +376,62 @@ describe("spendCost", () => {
     expect(third.ok).toBe(false);
     if (third.ok) throw new Error("unreachable");
     expect(third.code).toBe("rof_exceeded");
+  });
+});
+
+/**
+ * The printed Range DV table, in the shape a board can paint. These pin the
+ * numbers to CP:R pg. 173 so a ring on the screen cannot drift from the DV the
+ * To-Hit is actually rolled against.
+ */
+describe("range bands", () => {
+  it("reads a pistol's bands straight off the printed table", () => {
+    // pg. 173: 13/15/20/25/30/30, then nothing past 200 m.
+    expect(weaponBands(pistol)).toEqual([
+      { max: 6, dv: 13 },
+      { max: 12, dv: 15 },
+      { max: 25, dv: 20 },
+      { max: 50, dv: 25 },
+      { max: 100, dv: 30 },
+      { max: 200, dv: 30 },
+    ]);
+  });
+
+  it("stops at the weapon's reach rather than inventing a far band", () => {
+    const bands = weaponBands(pistol);
+    // A pistol has no printed entry at 400 m or 800 m, so its furthest ring is
+    // the edge of what it can reach.
+    expect(bands.at(-1)?.max).toBe(200);
+    expect(bands.some((b) => b.max > 200)).toBe(false);
+  });
+
+  it("gives a sniper rifle bands a pistol does not have", () => {
+    const sniper: WeaponCapability = {
+      ...pistol,
+      itemId: "sniper_rifle",
+      name: "Sniper Rifle",
+      rangeType: "sniper_rifle",
+    };
+    expect(weaponBands(sniper).at(-1)).toEqual({ max: 800, dv: 20 });
+    // And is WORSE up close than the pistol is, which is the whole point of
+    // seeing the bands before choosing where to stand.
+    expect(weaponDvAt(sniper, 6)).toBe(30);
+    expect(weaponDvAt(pistol, 6)).toBe(13);
+  });
+
+  it("has no bands for melee or for a weapon the rules give no table", () => {
+    const bat: WeaponCapability = { ...pistol, melee: true, rangeType: null };
+    expect(weaponBands(bat)).toEqual([]);
+    expect(weaponDvAt(bat, 2)).toBeNull();
+    const exotic: WeaponCapability = { ...pistol, melee: false, rangeType: null };
+    expect(weaponBands(exotic)).toEqual([]);
+    expect(weaponDvAt(exotic, 10)).toBeNull();
+  });
+
+  it("agrees with the DV the gate prices an attack at", () => {
+    // The ring and the shot read the same table: 12 m is band 1, DV 15.
+    expect(weaponDvAt(pistol, 12)).toBe(15);
+    expect(weaponDvAt(pistol, 13)).toBe(20);
+    expect(weaponDvAt(pistol, 201)).toBeNull();
   });
 });
