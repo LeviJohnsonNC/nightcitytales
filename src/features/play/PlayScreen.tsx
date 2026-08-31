@@ -1,26 +1,18 @@
 /**
  * The play screen: the narrative log and input in the center, with the
  * always-visible constructs (character vitals, the current scene + objectives +
- * choices, and a combat HUD) alongside — all reading live campaign state.
+ * choices, and the battlefield) alongside — all reading live campaign state.
  */
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { getActiveEncounter, getEncounter, type CampaignEvent } from "@/lib/backend";
-import {
-  arenaFor,
-  coverDamageFrom,
-  coverStatuses,
-  getSkill,
-  resolveSkillId,
-  IP_PLAYSTYLES,
-  type IpPlaystyle,
-} from "@/engine";
+import type { CampaignEvent } from "@/lib/backend";
+import { getSkill, resolveSkillId, IP_PLAYSTYLES, type IpPlaystyle } from "@/engine";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
+import { CombatBoard } from "./CombatBoard";
 import { CombatCard } from "./CombatCard";
 import { DeathSaveCard } from "./DeathSaveCard";
 
@@ -383,53 +375,6 @@ function RollHistory({ rolls }: { rolls: RollRecord[] }) {
   );
 }
 
-function CombatHud({ campaignId }: { campaignId: string }) {
-  const { data } = useQuery({
-    queryKey: ["play-encounter", campaignId],
-    queryFn: async () => {
-      const active = await getActiveEncounter(campaignId);
-      return active ? getEncounter(active.id) : null;
-    },
-  });
-  if (!data) return null;
-  // The read model, rendered as text because there is no board yet. When one
-  // arrives it consumes coverStatuses() too and nothing in the engine moves.
-  const arena = arenaFor(data.encounter.arena ?? null);
-  const cover = coverStatuses(arena, coverDamageFrom(arena, data.encounter.cover));
-  return (
-    <section className="space-y-2 border border-destructive/50 bg-destructive/5 p-4">
-      <Label>Combat — round {data.encounter.round}</Label>
-      <ul className="space-y-1 text-sm">
-        {data.combatants.map((c) => (
-          <li key={c.id} className="flex justify-between gap-2">
-            <span className={c.defeated ? "text-muted-foreground line-through" : ""}>
-              {c.name} <span className="text-[10px] uppercase text-muted-foreground">{c.side}</span>
-            </span>
-            <span className="num font-mono text-xs">
-              {c.hp_current}/{c.hp_max} · {c.wound_state}
-            </span>
-          </li>
-        ))}
-      </ul>
-      {cover.length > 0 && (
-        <ul className="space-y-1 border-t border-border/60 pt-2 text-sm">
-          {cover.map((piece) => (
-            <li key={piece.piece.id} className="flex justify-between gap-2">
-              <span className={piece.destroyed ? "text-muted-foreground line-through" : ""}>
-                {piece.label}{" "}
-                <span className="text-[10px] uppercase text-muted-foreground">cover</span>
-              </span>
-              <span className="num font-mono text-xs">
-                {piece.destroyed ? "gone" : `${piece.hp}/${piece.hpMax} HP · ${piece.thickness}`}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 /**
  * What the job cost, itemised.
  *
@@ -750,7 +695,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
       <CharacterPanel bundle={bundle} luck={play.luck} />
       <RoleAbilityPanel play={play} />
       <RollHistory rolls={play.rolls} />
-      <CombatHud campaignId={campaignId} />
+      <CombatBoard live={play.encounter} capability={play.capability} />
       <PressurePanel pressure={bundle.pressure} />
       <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
       {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
