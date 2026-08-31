@@ -137,8 +137,7 @@ export async function arriveBackup(input: {
     });
   }
 
-  const live: LiveEncounter = { ...input.live, state, data };
-  await saveLiveEncounter(live);
+  const live = await saveLiveEncounter({ ...input.live, state, data });
 
   const line =
     `${input.tier.name} arrives — ${members} of them, ` +

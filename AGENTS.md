@@ -89,7 +89,13 @@ The important transactional database boundaries are:
   combatants.
 - `save_encounter_state(payload)`: persists encounter combatants together with
   the player's HP, wound state, Death Save failures, equipped armor SP, and
-  loaded ammunition in one transaction.
+  loaded ammunition in one transaction. Carries an optimistic-concurrency
+  token: a caller sends the `version` it read and the transaction refuses a
+  stale write with `encounter changed`. Omitting `version` writes unchecked, so
+  a client running an older bundle keeps working. Callers must carry the
+  returned version forward — `saveLiveEncounter` returns the encounter at its
+  new version, and a sequence that saves more than once would otherwise refuse
+  its own second write.
 - `settle_job(payload)`: idempotently commits job closeout — payment, NPC
   promotion and disposition, faction standing, clocks, persistent situations,
   tallies, the `job_settled` receipt, and the transition to Aftermath.
@@ -285,8 +291,8 @@ Keep these in mind when changing adjacent code:
   settlement, and Aftermath closeout are transactional, so error handling must
   still account for partial turns in the immutable ledger.
 - `src/integrations/supabase/types.ts` was hand-synchronized for
-  `install_cyberware` and `campaign_cyberware` rather than regenerated.
-  Regenerate it from the applied schema.
+  `install_cyberware`, `campaign_cyberware` and `encounters.version` rather than
+  regenerated. Regenerate it from the applied schema.
 - Ripperdoc pacing — 0/1/3 recovery days by install level, four surgery hours
   per physical implant, appointment delay by disposition — is a house rule, and
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,

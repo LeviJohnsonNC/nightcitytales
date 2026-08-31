@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-const saveEncounter = vi.fn(async () => undefined);
+const saveEncounter = vi.fn<(payload: unknown) => Promise<undefined>>(async () => undefined);
 vi.mock("@/lib/backend", () => ({ saveEncounter }));
 
-const { saveLiveEncounter } = await import("../encounterState");
+const { EncounterChangedError, saveLiveEncounter } = await import("../encounterState");
 
 describe("saveLiveEncounter", () => {
   it("persists the exchange and all durable player consequences together", async () => {
@@ -12,6 +12,7 @@ describe("saveLiveEncounter", () => {
         id: "encounter-1",
         arena: null,
         cover: {},
+        version: 3,
         state: {
           round: 2,
           activeIndex: 0,
@@ -68,5 +69,88 @@ describe("saveLiveEncounter", () => {
         ammo: { inventory_id: "weapon-1", loaded: 6 },
       }),
     );
+  });
+});
+
+describe("the version token", () => {
+  it("sends the version it read, and advances it once the write lands", async () => {
+    saveEncounter.mockClear();
+    const live = {
+      id: "encounter-2",
+      arena: null,
+      cover: {},
+      version: 7,
+      state: {
+        round: 1,
+        activeIndex: 0,
+        order: ["player"],
+        status: "active" as const,
+        combatants: {
+          player: {
+            id: "player",
+            name: "Vela Ruiz",
+            side: "friendly" as const,
+            isPlayer: true,
+            ref: 8,
+            body: 6,
+            hp: 30,
+            hpMax: 40,
+            seriouslyWoundedThreshold: 20,
+            woundState: "none" as const,
+            deathSavePenalty: 0,
+            spHead: 7,
+            spBody: 7,
+            defeated: false,
+            initiative: 12,
+          },
+        },
+      },
+      data: {},
+    };
+    const after = await saveLiveEncounter(live as never);
+    expect(saveEncounter.mock.calls[0]?.[0]).toMatchObject({ version: 7 });
+    // Advanced locally rather than read back: the transaction sets it to
+    // exactly the version it checked plus one.
+    expect(after.version).toBe(8);
+  });
+
+  it("names a refused stale write as its own kind of failure", async () => {
+    saveEncounter.mockClear();
+    saveEncounter.mockRejectedValueOnce(new Error("encounter changed"));
+    const live = {
+      id: "encounter-3",
+      arena: null,
+      cover: {},
+      version: 1,
+      state: {
+        round: 1,
+        activeIndex: 0,
+        order: ["player"],
+        status: "active" as const,
+        combatants: {
+          player: {
+            id: "player",
+            name: "Vela Ruiz",
+            side: "friendly" as const,
+            isPlayer: true,
+            ref: 8,
+            body: 6,
+            hp: 30,
+            hpMax: 40,
+            seriouslyWoundedThreshold: 20,
+            woundState: "none" as const,
+            deathSavePenalty: 0,
+            spHead: 7,
+            spBody: 7,
+            defeated: false,
+            initiative: 12,
+          },
+        },
+      },
+      data: {},
+    };
+    // Distinguishable, because the caller's answer is specific: re-read, never
+    // retry the same payload.
+    await expect(saveLiveEncounter(live as never)).rejects.toBeInstanceOf(EncounterChangedError);
   });
 });

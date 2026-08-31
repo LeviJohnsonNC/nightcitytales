@@ -99,6 +99,7 @@ const live: LiveEncounter = {
   },
   arena: "open_ground",
   cover: {},
+  version: 0,
 };
 
 describe("attackPrompt", () => {

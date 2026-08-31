@@ -34,6 +34,16 @@ export type LiveEncounter = {
    * arena it is being fought on.
    */
   cover: CoverDamage;
+  /**
+   * The row version this state was read at.
+   *
+   * Sent back with every save; the transaction refuses the write if the row has
+   * moved on since (20260901000000_encounter_version.sql). Positions live in
+   * `data`, and a lost update there does not stale a number — it puts a
+   * character back on ground they have already left, and every Range DV
+   * afterwards is measured from where they are standing.
+   */
+  version: number;
 };
 
 function liveFrom(full: FullEncounter): LiveEncounter {
@@ -49,6 +59,7 @@ function liveFrom(full: FullEncounter): LiveEncounter {
     // than trusted into a live fight. The database validated shape and sign;
     // identity is this layer's to check.
     cover: coverDamageFrom(arenaFor(arena), full.encounter.cover),
+    version: full.encounter.version ?? 0,
   };
 }
 
@@ -71,14 +82,38 @@ export async function createLiveEncounter(input: {
   arena: string | null;
 }): Promise<LiveEncounter> {
   const id = await startEncounterRpc(startEncounterPayload(input));
-  return { id, state: input.state, data: input.data, arena: input.arena, cover: {} };
+  // A row nobody has saved yet is at the column's default.
+  return { id, state: input.state, data: input.data, arena: input.arena, cover: {}, version: 0 };
 }
 
-/** Write the fight and the player's durable campaign state in one transaction. */
+/**
+ * The write refused because somebody else moved the fight on first.
+ *
+ * Its own type because the caller's answer is specific: re-read and try again,
+ * never retry the same payload — the state it was computed from is gone.
+ */
+export class EncounterChangedError extends Error {
+  constructor() {
+    super("The fight moved on while that was being sent. Reloading it.");
+    this.name = "EncounterChangedError";
+  }
+}
+
+/** The Postgres message the transaction refuses a stale write with. */
+const CHANGED = "encounter changed";
+
+/**
+ * Write the fight and the player's durable campaign state in one transaction.
+ *
+ * Returns the encounter at its NEW version. Every caller must carry that
+ * forward: a sequence that saves more than once — an attack, then the hostile
+ * Turns it triggers, then Backup arriving — would otherwise send the same stale
+ * token on its second write and refuse itself.
+ */
 export async function saveLiveEncounter(
   live: LiveEncounter,
   ammo: { inventoryId: string; loaded: number } | null = null,
-): Promise<void> {
+): Promise<LiveEncounter> {
   const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
   if (!player) throw new Error("The encounter has no player combatant.");
   const armor = live.data[player.id]?.armor;
@@ -117,7 +152,18 @@ export async function saveLiveEncounter(
         ? { body_inventory_id: armor.bodyInventoryId, body_sp: player.spBody }
         : {}),
     },
+    version: live.version,
     ...(ammo ? { ammo: { inventory_id: ammo.inventoryId, loaded: ammo.loaded } } : {}),
   };
-  await saveEncounter(payload);
+  try {
+    await saveEncounter(payload);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(CHANGED)) {
+      throw new EncounterChangedError();
+    }
+    throw error;
+  }
+  // The transaction sets version to exactly the one it checked plus one, so the
+  // caller can advance its own token without a round trip for it.
+  return { ...live, version: live.version + 1 };
 }

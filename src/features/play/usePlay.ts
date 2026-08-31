@@ -98,6 +98,7 @@ import {
 import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
 import {
   loadLiveEncounter,
+  EncounterChangedError,
   saveLiveEncounter,
   type LiveEncounter,
 } from "@/features/campaign/encounterState";
@@ -906,7 +907,10 @@ export async function commitAttack(
     ),
   };
   const spent = ammoAfterShot(bundle.inventory, option.weapon.itemId);
-  await saveLiveEncounter(
+  // The saved encounter, at its new version: the hostile Turns this attack
+  // triggers save again, and sending the pre-attack token there would refuse
+  // the fight's own next write.
+  const saved = await saveLiveEncounter(
     live,
     spent ? { inventoryId: spent.inventoryId, loaded: spent.ammoLoaded } : null,
   );
@@ -932,7 +936,7 @@ export async function commitAttack(
   );
   await payLuck(bundle, luckSpent);
 
-  await handOverTheTurn(bundle, live, beatId, [
+  await handOverTheTurn(bundle, saved, beatId, [
     describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
   ]);
 }
@@ -1319,8 +1323,7 @@ export async function commitDeathSave(
   const save = result.deathSave;
   if (!save) throw new Error("The engine did not roll a Death Save.");
 
-  const live: LiveEncounter = { ...bundle.encounter, state: result.state };
-  await saveLiveEncounter(live);
+  const live = await saveLiveEncounter({ ...bundle.encounter, state: result.state });
   await logDeathSave(campaignId, save, {
     combatantName: pending.combatant.name,
     died: result.died,
@@ -1469,7 +1472,20 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  /**
+   * A write the fight moved on past.
+   *
+   * The state it was computed from is gone, so the answer is never to retry the
+   * same payload — it is to re-read. Invalidating here is what makes the next
+   * attempt work; without it the bundle keeps its stale version token and every
+   * retry refuses itself.
+   */
+  const onWriteError = (error: unknown) => {
+    if (error instanceof EncounterChangedError) invalidate();
+  };
+
   const combat = useMutation({
+    onError: onWriteError,
     mutationFn: ({
       pending,
       option,
@@ -1490,6 +1506,7 @@ export function usePlay(campaignId: string) {
   // The board's own actions. Neither goes near the model on the way in: the
   // engine prices and resolves them, and the GM is told what happened after.
   const boardMove = useMutation({
+    onError: onWriteError,
     mutationFn: (to: Point) => {
       if (!query.data) throw new Error("Still loading.");
       return commitBoardMove(query.data, to);
@@ -1498,6 +1515,7 @@ export function usePlay(campaignId: string) {
   });
 
   const endTurn = useMutation({
+    onError: onWriteError,
     mutationFn: () => {
       if (!query.data) throw new Error("Still loading.");
       return endPlayerTurn(query.data);
@@ -1506,6 +1524,7 @@ export function usePlay(campaignId: string) {
   });
 
   const death = useMutation({
+    onError: onWriteError,
     mutationFn: ({ pending, result }: { pending: PendingDeathSave; result: BeginTurnResult }) => {
       if (!query.data) throw new Error("Still loading.");
       return commitDeathSave(query.data, pending, result);
@@ -1541,6 +1560,10 @@ export function usePlay(campaignId: string) {
     (open.error as Error | null) ??
     (check.error as Error | null) ??
     (combat.error as Error | null) ??
+    // The board's own actions failed silently before this: they were never in
+    // the list the screen reads.
+    (boardMove.error as Error | null) ??
+    (endTurn.error as Error | null) ??
     (death.error as Error | null);
 
   // Exactly one card is ever live: a Death Save outranks everything (you cannot
