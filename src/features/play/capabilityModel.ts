@@ -9,6 +9,8 @@
  */
 import {
   EMPTY_TURN_ECONOMY,
+  arenaFor,
+  coverBlocking,
   describeWeapon,
   getCyberware,
   itemName,
@@ -130,10 +132,16 @@ export function targetCapabilities(live: LiveEncounter | null): TargetCapability
   if (!live || live.state.status !== "active") return [];
   const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
   const from = player ? live.data[player.id] : null;
+  const arena = arenaFor(live.arena);
   const out: TargetCapability[] = [];
   for (const combatant of Object.values(live.state.combatants)) {
     if (combatant.isPlayer) continue;
     const data = live.data[combatant.id];
+    // Line of sight is MEASURED against the arena's cover, the same way the
+    // range is measured against its positions. A piece already shot to bits
+    // stops blocking, which is the whole point of it having HP.
+    const blocking =
+      from && data ? coverBlocking(arena, from.position, data.position, live.cover) : [];
     out.push({
       key: data?.key ?? combatant.id,
       id: combatant.id,
@@ -142,7 +150,8 @@ export function targetCapabilities(live: LiveEncounter | null): TargetCapability
       // can describe the scene; it no longer gets to decide.
       distance: from && data ? metresApart(from, data) : 0,
       defeated: combatant.defeated,
-      perceivable: true,
+      perceivable: blocking.length === 0,
+      ...(blocking[0] ? { coverLabel: blocking[0].label } : {}),
     });
   }
   return out;
@@ -262,7 +271,16 @@ export function renderCapabilityLines(snapshot: CapabilitySnapshot): string[] {
     if (snapshot.targets.length) {
       lines.push(
         `Targets in the fight: ${snapshot.targets
-          .map((t2) => `${t2.name} [${t2.key}] at ${t2.distance} m${t2.defeated ? " (down)" : ""}`)
+          .map(
+            (t2) =>
+              `${t2.name} [${t2.key}] at ${t2.distance} m${t2.defeated ? " (down)" : ""}` +
+              // Withholding, not only refusing. A model told somebody is
+              // standing there will keep proposing the shot the engine keeps
+              // refusing, and the turn becomes a loop.
+              (t2.perceivable
+                ? ""
+                : ` — NO SHOT: ${t2.coverLabel ?? "out of sight"} is in the way`),
+          )
           .join(", ")}`,
       );
     }

@@ -3,7 +3,7 @@
  * transitions; this module loads the rows into engine state and writes the
  * changed combatants back. It never decides anything mechanical.
  */
-import type { EncounterState } from "@/engine";
+import { arenaFor, coverDamageFrom, type CoverDamage, type EncounterState } from "@/engine";
 import {
   getActiveEncounter,
   getEncounter,
@@ -26,16 +26,29 @@ export type LiveEncounter = {
   data: Record<string, CombatantData>;
   /** Which of the engine's arenas this fight is happening on. */
   arena: string | null;
+  /**
+   * Damage taken by each piece of that arena's cover, keyed by its authored id.
+   *
+   * Only the damage: where cover stands and what it is made of is authored in
+   * engine/battlefield.ts, so a fight in progress cannot disagree with the
+   * arena it is being fought on.
+   */
+  cover: CoverDamage;
 };
 
 function liveFrom(full: FullEncounter): LiveEncounter {
   const data: Record<string, CombatantData> = {};
   for (const row of full.combatants) data[row.id] = combatantDataOf(row);
+  const arena = full.encounter.arena ?? null;
   return {
     id: full.encounter.id,
     state: stateFromRows(full),
     data,
-    arena: full.encounter.arena ?? null,
+    arena,
+    // Read against the authored arena: an id no arena knows is dropped rather
+    // than trusted into a live fight. The database validated shape and sign;
+    // identity is this layer's to check.
+    cover: coverDamageFrom(arenaFor(arena), full.encounter.cover),
   };
 }
 
@@ -58,7 +71,7 @@ export async function createLiveEncounter(input: {
   arena: string | null;
 }): Promise<LiveEncounter> {
   const id = await startEncounterRpc(startEncounterPayload(input));
-  return { id, state: input.state, data: input.data, arena: input.arena };
+  return { id, state: input.state, data: input.data, arena: input.arena, cover: {} };
 }
 
 /** Write the fight and the player's durable campaign state in one transaction. */
@@ -72,6 +85,7 @@ export async function saveLiveEncounter(
   const payload: SaveEncounterPayload = {
     encounter_id: live.id,
     round: live.state.round,
+    cover: live.cover,
     active_index: live.state.activeIndex,
     order_ids: live.state.order,
     status: live.state.status,

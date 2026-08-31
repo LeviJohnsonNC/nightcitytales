@@ -21,6 +21,45 @@ import { SINGLE_SHOT_DV, RANGE_BAND_MAX, singleShotDV, type WeaponRangeType } fr
 
 export type Point = { x: number; y: number };
 
+/** An axis-aligned box on the ground, in metres. */
+export type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * One thing worth standing behind.
+ *
+ * Authored per arena, exactly as the arena itself is: the id is stable and the
+ * geometry lives here, so a fight in progress reads its cover out of this file
+ * rather than out of a row somebody could have written a different shape into.
+ * Only the DAMAGE a piece has taken is persisted — see engine/cover.ts.
+ */
+export type CoverPiece = {
+  /** Stable within its arena; what persisted damage is keyed by. */
+  id: string;
+  label: string;
+  /** A material key from data/rules/cover.json. */
+  material: string;
+  /** Which column of the printed HP table this reads (CP:R pg. 182). */
+  thickness: "thick" | "thin";
+  /**
+   * Its footprint, in metres.
+   *
+   * pg. 182 makes a 2 m by 2 m section the unit that "can be attacked just
+   * like you can", so every authored piece is one such section and a longer
+   * object is authored as several adjacent ones. COVER_SECTION_METRES is the
+   * cap, and a test holds every arena to it.
+   */
+  rect: Rect;
+};
+
+/**
+ * The size of one attackable section of cover (CP:R pg. 182).
+ *
+ * Authoring pieces at this size is what makes "one piece is one section" true
+ * by construction, so nothing downstream has to subdivide a wall to work out
+ * which part of it somebody just shot.
+ */
+export const COVER_SECTION_METRES = 2;
+
 /** Straight-line metres between two positions. */
 export function metresBetween(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -59,6 +98,14 @@ export type Arena = {
   playerStart: Point;
   /** Where hostiles stand, in order. Cycled when there are more of them. */
   hostileSlots: Point[];
+  /**
+   * What is standing on the ground. Absent means open sightlines everywhere.
+   *
+   * Hostile slots are placed to USE this: an arena with cover puts its
+   * attackers near it, so enemies benefit from cover without anybody writing
+   * cover-seeking AI. Choosing WHERE to go is a later feature.
+   */
+  cover?: CoverPiece[];
 };
 
 export const ARENAS: Arena[] = [
@@ -73,6 +120,23 @@ export const ARENAS: Arena[] = [
       { x: 4, y: 19 },
       { x: 7, y: 24 },
     ],
+    cover: [
+      // A dumpster is thin steel, the way the book files a refrigerator.
+      {
+        id: "dumpster",
+        label: "a dumpster",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 1.5, y: 8, width: 2, height: 2 },
+      },
+      {
+        id: "pallets",
+        label: "a stack of pallets",
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 8.5, y: 13, width: 2, height: 2 },
+      },
+    ],
   },
   {
     key: "club_interior",
@@ -85,6 +149,44 @@ export const ARENAS: Arena[] = [
       { x: 13, y: 13 },
       { x: 20, y: 16 },
       { x: 6, y: 15 },
+    ],
+    cover: [
+      // The bar is one object in the fiction and three attackable sections in the rules (pg. 182), so it is authored as three.
+      {
+        id: "bar_west",
+        label: "the west end of the bar",
+        material: "wood",
+        thickness: "thick",
+        rect: { x: 3, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "bar_middle",
+        label: "the middle of the bar",
+        material: "wood",
+        thickness: "thick",
+        rect: { x: 5, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "bar_east",
+        label: "the east end of the bar",
+        material: "wood",
+        thickness: "thick",
+        rect: { x: 7, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "table_north",
+        label: "an overturned table",
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 15, y: 6, width: 2, height: 2 },
+      },
+      {
+        id: "table_south",
+        label: "an overturned table",
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 18, y: 12.5, width: 2, height: 2 },
+      },
     ],
   },
   {
@@ -99,6 +201,44 @@ export const ARENAS: Arena[] = [
       { x: 8, y: 30 },
       { x: 37, y: 36 },
     ],
+    cover: [
+      {
+        id: "crates_west",
+        label: "a stack of crates",
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 9.5, y: 14, width: 2, height: 2 },
+      },
+      {
+        id: "crates_east",
+        label: "a stack of crates",
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 26, y: 26, width: 2, height: 2 },
+      },
+      // A shipping container is thin steel, and long enough to be three sections of it.
+      {
+        id: "container_west",
+        label: "the near end of a shipping container",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 17, y: 38, width: 2, height: 2 },
+      },
+      {
+        id: "container_middle",
+        label: "the middle of a shipping container",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 19, y: 38, width: 2, height: 2 },
+      },
+      {
+        id: "container_east",
+        label: "the far end of a shipping container",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 21, y: 38, width: 2, height: 2 },
+      },
+    ],
   },
   {
     key: "street",
@@ -112,6 +252,44 @@ export const ARENAS: Arena[] = [
       { x: 5, y: 39 },
       { x: 25, y: 50 },
     ],
+    cover: [
+      // A car door is thin steel; the engine block behind it is thick steel and twice as tough. Two sections, not one.
+      {
+        id: "car_west_door",
+        label: "the door of a parked car",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 5.5, y: 20, width: 2, height: 2 },
+      },
+      {
+        id: "car_west_engine",
+        label: "the engine block of a parked car",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 7.5, y: 20, width: 2, height: 2 },
+      },
+      {
+        id: "car_east_door",
+        label: "the door of a parked car",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 19.5, y: 36, width: 2, height: 2 },
+      },
+      {
+        id: "car_east_engine",
+        label: "the engine block of a parked car",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 21.5, y: 36, width: 2, height: 2 },
+      },
+      {
+        id: "vending",
+        label: "a vending machine",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 11.5, y: 13, width: 2, height: 2 },
+      },
+    ],
   },
   {
     key: "parking_structure",
@@ -123,6 +301,44 @@ export const ARENAS: Arena[] = [
       { x: 28, y: 21 },
       { x: 20, y: 28 },
       { x: 34, y: 31 },
+    ],
+    cover: [
+      // Thick concrete is 25 HP: less than steel or stone, which is worth knowing before treating a pillar as the safe option.
+      {
+        id: "pillar_west",
+        label: "a concrete pillar",
+        material: "concrete",
+        thickness: "thick",
+        rect: { x: 9, y: 12, width: 1.5, height: 1.5 },
+      },
+      {
+        id: "pillar_east",
+        label: "a concrete pillar",
+        material: "concrete",
+        thickness: "thick",
+        rect: { x: 25.5, y: 18, width: 1.5, height: 1.5 },
+      },
+      {
+        id: "pillar_mid",
+        label: "a concrete pillar",
+        material: "concrete",
+        thickness: "thick",
+        rect: { x: 17, y: 25.5, width: 1.5, height: 1.5 },
+      },
+      {
+        id: "car_door",
+        label: "the door of a parked car",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 30, y: 28, width: 2, height: 2 },
+      },
+      {
+        id: "car_engine",
+        label: "the engine block of a parked car",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 32, y: 28, width: 2, height: 2 },
+      },
     ],
   },
   {
@@ -136,6 +352,29 @@ export const ARENAS: Arena[] = [
       { x: 30, y: 70 },
       { x: 10, y: 62 },
       { x: 52, y: 88 },
+    ],
+    cover: [
+      {
+        id: "hvac",
+        label: "an air handler",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 21, y: 30, width: 2, height: 2 },
+      },
+      {
+        id: "parapet_west",
+        label: "a low parapet",
+        material: "concrete",
+        thickness: "thick",
+        rect: { x: 39, y: 48, width: 2, height: 2 },
+      },
+      {
+        id: "parapet_east",
+        label: "a low parapet",
+        material: "concrete",
+        thickness: "thick",
+        rect: { x: 41, y: 48, width: 2, height: 2 },
+      },
     ],
   },
   {
@@ -336,4 +575,94 @@ export function tacticalStep(input: {
     dvBefore,
     dvAfter: singleShotDV(input.rangeType, rangeMetres(position, input.target)),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Line of sight.
+// ---------------------------------------------------------------------------
+
+/** Whether a point is inside (or on the edge of) a box. */
+export function rectContains(rect: Rect, p: Point): boolean {
+  return (
+    p.x >= rect.x && p.x <= rect.x + rect.width && p.y >= rect.y && p.y <= rect.y + rect.height
+  );
+}
+
+/**
+ * Whether the straight line between two points crosses a box.
+ *
+ * The slab test: clip the segment against each pair of parallel edges and see
+ * whether any of it survives. Continuous, like everything else here — a shot
+ * grazing the corner of a crate is decided by the geometry rather than by which
+ * grid square somebody rounded to.
+ */
+export function segmentIntersectsRect(a: Point, b: Point, rect: Rect): boolean {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return false;
+
+  // Liang-Barsky: clip the parameter range [0, 1] against each of the four
+  // edges. Anything left over is the part of the segment inside the box.
+  let t0 = 0;
+  let t1 = 1;
+  const clip = (p: number, q: number): boolean => {
+    if (Math.abs(p) < 1e-9) return q >= 0; // parallel to this edge
+    const t = q / p;
+    if (p < 0) {
+      if (t > t1) return false;
+      if (t > t0) t0 = t;
+    } else {
+      if (t < t0) return false;
+      if (t < t1) t1 = t;
+    }
+    return true;
+  };
+
+  return (
+    clip(-dx, a.x - rect.x) &&
+    clip(dx, rect.x + rect.width - a.x) &&
+    clip(-dy, a.y - rect.y) &&
+    clip(dy, rect.y + rect.height - a.y) &&
+    t0 <= t1
+  );
+}
+
+/**
+ * The cover standing between two people.
+ *
+ * A piece that either of them is standing at does NOT block: you do not lose
+ * the shot because of the crate you are crouched behind. `isGone` lets the
+ * caller drop pieces that have been shot to bits — the engine keeps the
+ * geometry, the encounter keeps the damage.
+ */
+export function coverBetween(
+  arena: Arena,
+  a: Point,
+  b: Point,
+  isGone: (piece: CoverPiece) => boolean = () => false,
+): CoverPiece[] {
+  const pieces = arena.cover ?? [];
+  return pieces.filter((piece) => {
+    if (isGone(piece)) return false;
+    if (rectContains(piece.rect, a) || rectContains(piece.rect, b)) return false;
+    return segmentIntersectsRect(a, b, piece.rect);
+  });
+}
+
+/** The point on a box nearest to somewhere — where a shot at it lands. */
+export function nearestPointOn(rect: Rect, from: Point): Point {
+  return {
+    x: Math.min(Math.max(from.x, rect.x), rect.x + rect.width),
+    y: Math.min(Math.max(from.y, rect.y), rect.y + rect.height),
+  };
+}
+
+/** Whether one combatant can see — and therefore shoot — another. */
+export function hasLineOfSight(
+  arena: Arena,
+  a: Point,
+  b: Point,
+  isGone: (piece: CoverPiece) => boolean = () => false,
+): boolean {
+  return coverBetween(arena, a, b, isGone).length === 0;
 }

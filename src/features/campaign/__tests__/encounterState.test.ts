@@ -11,6 +11,7 @@ describe("saveLiveEncounter", () => {
       {
         id: "encounter-1",
         arena: null,
+        cover: {},
         state: {
           round: 2,
           activeIndex: 0,

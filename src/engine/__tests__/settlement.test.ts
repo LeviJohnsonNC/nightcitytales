@@ -318,3 +318,48 @@ describe("looksLikeAPerson", () => {
     expect(looksLikeAPerson("a".repeat(60))).toBe(false);
   });
 });
+
+describe("cover damage is not a person", () => {
+  // engine/settlement.ts reads every `attack` event where the player got damage
+  // through armor as somebody put in hospital, and counts every `attack` toward
+  // how loud the job was. Filing shot-up scenery under that type would cost
+  // faction standing for wounding a vending machine — so cover damage has its
+  // own event type, and this pins that it stays out of the pricing.
+  const coverHit = (label: string) =>
+    ev("cover_damaged", {
+      attacker: PLAYER,
+      cover: "vending",
+      label,
+      through: 9,
+      hp_before: 18,
+      hp_after: 9,
+      destroyed: false,
+    });
+
+  it("does not put a vending machine in hospital", () => {
+    const events = [ev("mission_started"), coverHit("a vending machine")];
+    expect(countOf(events, "wounded")).toBe(0);
+    expect(keys(events)).not.toContain("wounded");
+  });
+
+  it("does not count shot-up scenery toward the noise", () => {
+    const events = [
+      ev("mission_started"),
+      ...Array.from({ length: LOUD_SHOT_THRESHOLD + 3 }, () => coverHit("a dumpster")),
+    ];
+    expect(countOf(events, "loud")).toBe(0);
+  });
+
+  it("still reads a job that shot cover AND people exactly as loud as the people", () => {
+    const shots = Array.from({ length: LOUD_SHOT_THRESHOLD }, () => hit("Guard Captain Reyes"));
+    const withCover = [ev("mission_started"), ...shots, coverHit("a parked car")];
+    const withoutCover = [ev("mission_started"), ...shots];
+    expect(countOf(withCover, "loud")).toBe(countOf(withoutCover, "loud"));
+    expect(countOf(withCover, "wounded")).toBe(countOf(withoutCover, "wounded"));
+  });
+
+  it("leaves the survivor list to people", () => {
+    const events = [ev("mission_started"), coverHit("a shipping container")];
+    expect(survivorsFrom({ events, playerName: PLAYER })).toEqual([]);
+  });
+});

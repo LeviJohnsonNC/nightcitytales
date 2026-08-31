@@ -5,7 +5,13 @@
  */
 import {
   advanceTurn,
+  applyCoverDamage,
   arenaFor,
+  coverBlocking,
+  nearestPointOn,
+  rangeMetres,
+  resolveAttack,
+  woundActionPenalty,
   beginTurn,
   currentCombatant,
   performAttack,
@@ -15,6 +21,7 @@ import {
   placeHostiles,
   singleShotDV,
   startEncounter as rollInitiativeOrder,
+  rollDamage,
   stepToRange,
   tacticalStep,
   type CapabilitySnapshot,
@@ -25,7 +32,7 @@ import {
   type PerformAttackResult,
   type WeaponRangeType,
 } from "@/engine";
-import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
+import { logAttack, logCoverDamage, logDeathSave } from "@/features/campaign/combatLog";
 import {
   createLiveEncounter,
   saveLiveEncounter,
@@ -156,6 +163,8 @@ export async function runNpcTurns(
   // Positions change during these turns, so the data map is carried the same
   // way state is rather than mutated in place.
   let data = live.data;
+  // So does the cover, once somebody starts shooting it.
+  let cover = live.cover;
   const arena = arenaFor(live.arena);
   const lines: string[] = [];
 
@@ -214,6 +223,58 @@ export async function runNpcTurns(
       : null;
     if (dv === null) continue; // No printed DV: the engine will not invent one.
 
+    // Something in the way takes the round instead. This is what stops a
+    // player who steps behind concrete from being unkillable: the cover is
+    // what gets shot, and eventually it stops being cover.
+    //
+    // CP:R pg. 182: a section of cover "can be attacked just like you can", and
+    // the printed example rolls a Shoulder Arms Check against a DV read off the
+    // weapon and the range. So this is a real attack that can MISS, taken at
+    // the DV for the distance to the COVER rather than to the person behind it.
+    const blocking = coverBlocking(arena, stats.position, targetStats.position, cover);
+    const shielding = blocking[0];
+    if (shielding) {
+      const aimPoint = nearestPointOn(shielding.rect, stats.position);
+      const coverDv = singleShotDV(
+        stats.rangeType as WeaponRangeType,
+        rangeMetres(stats.position, aimPoint),
+      );
+      if (coverDv === null) continue;
+      const woundPenalty = woundActionPenalty(live_actor.woundState);
+      const shot = resolveAttack({
+        statLabel: "REF",
+        statValue: live_actor.ref,
+        skillLabel: stats.weaponName,
+        skillValue: stats.attackSkill,
+        dv: coverDv,
+        ...(woundPenalty !== 0 ? { modifiers: [{ label: "Wound", value: woundPenalty }] } : {}),
+      });
+      const hit = shot.hit
+        ? applyCoverDamage(shielding, cover, rollDamage(stats.damageDice).total)
+        : null;
+      if (hit) cover = hit.damageMap;
+      await logCoverDamage(
+        campaignId,
+        { attack: shot, hit },
+        {
+          attackerName: actor.name,
+          targetName: target.name,
+          weapon: stats.weaponName,
+          beatId,
+        },
+      );
+      lines.push(
+        !hit
+          ? `${actor.name} fires at ${target.name} and hits nothing but the air around ` +
+              `${shielding.label} (${shot.formula}).`
+          : hit.destroyed
+            ? `${actor.name} fires at ${target.name}; ${hit.label} comes apart and is gone.`
+            : `${actor.name} fires at ${target.name}; ${hit.label} takes it ` +
+              `(${hit.hpBefore} to ${hit.hpAfter}).`,
+      );
+      continue;
+    }
+
     const result = performAttack(state, {
       attackerId: actor.id,
       targetId: target.id,
@@ -240,7 +301,7 @@ export async function runNpcTurns(
     lines.push(describeAttack(actor.name, target.name, stats.weaponName, result));
   }
 
-  const next: LiveEncounter = { ...live, state, data };
+  const next: LiveEncounter = { ...live, state, data, cover };
   await saveLiveEncounter(next);
   return { live: next, lines };
 }
