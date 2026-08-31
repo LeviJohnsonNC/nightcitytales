@@ -50,6 +50,7 @@ import {
   type FullCharacter,
   type Json,
 } from "@/lib/backend";
+import { deathSaveOwed } from "./deathSavePrompt";
 import {
   hostileCombatant,
   metresApart,
@@ -147,6 +148,17 @@ export async function beginEncounter(input: {
     data: { encounterId: live.id } as unknown as Json,
     ...(input.beatId ? { beat_id: input.beatId } : {}),
   });
+
+  // The same bookkeeping any stretch of NPC Turns earns — the opening is just
+  // the one that happens before the player has acted once.
+  //
+  // Without it, a fight that opens on a Mortally Wounded character arrives at
+  // their Turn owing a Death Save with nothing to roll it: the card renders off
+  // a `death_save_prompt` row in the ledger, and no path had written one. The
+  // board said it was their Turn and every action was refused, with no card and
+  // no explanation. Seed a mortal character from /combat and it is the first
+  // thing that happens.
+  await settleNpcTurns(input.campaignId, input.beatId, opened.live);
 
   return opened;
 }
@@ -362,6 +374,79 @@ export function describeAttack(
   }
   if (result.targetDefeated) parts.push(`${targetName} is out of the fight`);
   return `${parts.join("; ")}.`;
+}
+
+// ---------------------------------------------------------------------------
+// The bookkeeping that follows a stretch of NPC Turns.
+//
+// Both callers need it: the play loop after the player ends their Turn, and
+// beginEncounter after the OPENING Turns. It lives here rather than in
+// usePlay.ts because the opening is not a hook — the harness seeds a fight
+// through combatFlow alone — and a fight that ends, or a save that comes due,
+// must be written down whichever door it came through.
+// ---------------------------------------------------------------------------
+
+/**
+ * What the ledger owes after a stretch of NPC Turns has run.
+ *
+ * Two things, and they are the same two whether the stretch was the OPENING —
+ * everyone who beat the player on Initiative, before the player has acted once
+ * — or the ordinary handover after the player ends their Turn. A fight that
+ * finished gets said so; a Mortally Wounded player whose Turn has come round
+ * gets the prompt their Death Save card is rendered from.
+ *
+ * The opening did neither, and the second one was reachable: seed a Mortally
+ * Wounded character from /combat and the fight arrived at their Turn owing a
+ * save with no card to roll it and every action silently refused.
+ *
+ * Returns what the caller needs to tell the GM: the closing line, if the fight
+ * closed, and the combatant who owes a save, if one does.
+ */
+export async function settleNpcTurns(
+  campaignId: string,
+  beatId: string | null,
+  live: LiveEncounter,
+): Promise<{ status: string; owed: Combatant | null }> {
+  const status = await closeOutFight(campaignId, beatId, live);
+  const owed = deathSaveOwed(live);
+  if (owed) await promptDeathSave(campaignId, beatId, owed.name);
+  return { status, owed };
+}
+
+/** Announce a finished fight in the ledger, and describe it for the GM. */
+export async function closeOutFight(
+  campaignId: string,
+  beatId: string | null,
+  live: LiveEncounter,
+): Promise<string> {
+  if (live.state.status === "active") return "";
+  const won = live.state.status === "friendlies_won";
+  const summary = won
+    ? "The hostiles are all down; the fight is over."
+    : "The player is down; the fight is over.";
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "encounter_ended",
+    summary,
+    data: { encounterId: live.id, status: live.state.status } as unknown as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
+  });
+  return ` ${summary}`;
+}
+
+/** Post the prompt the DeathSaveCard renders. */
+async function promptDeathSave(
+  campaignId: string,
+  beatId: string | null,
+  name: string,
+): Promise<void> {
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "death_save_prompt",
+    summary: `${name} must roll a Death Save`,
+    data: {} as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
+  });
 }
 
 // ---------------------------------------------------------------------------

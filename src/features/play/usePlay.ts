@@ -131,10 +131,12 @@ import {
 } from "./playModel";
 import {
   beginEncounter,
+  closeOutFight,
   describeAttack,
   movePlayer,
   movePlayerTo,
   runNpcTurns,
+  settleNpcTurns,
 } from "./combatFlow";
 import {
   distanceToTarget,
@@ -949,6 +951,19 @@ export async function commitAttack(
 }
 
 /**
+ * Is the player standing on their own Turn with a Death Save unrolled?
+ *
+ * CP:R pg. 187: a Mortally Wounded character makes the save at the start of
+ * their Turn, before they do anything else. The board is disabled while one is
+ * owed, but the rule belongs behind the buttons as well as on them — every
+ * board action is a write, and a refusal that only lives in the component is
+ * one stale render away from being no refusal at all.
+ */
+function owesASave(bundle: PlayBundle): boolean {
+  return Boolean(deathSaveOwed(bundle.encounter));
+}
+
+/**
  * The player walking to a spot they picked on the board.
  *
  * The first player action in the game that never goes near the model: the
@@ -958,6 +973,7 @@ export async function commitAttack(
  */
 async function commitBoardMove(bundle: PlayBundle, to: Point): Promise<void> {
   if (!bundle.encounter) throw new Error("There is no fight to move in.");
+  if (owesASave(bundle)) return;
   const beatId = bundle.beat?.id ?? null;
   const moved = await movePlayerTo({
     campaignId: bundle.campaign.id,
@@ -996,8 +1012,26 @@ async function commitCallShot(
 ): Promise<void> {
   const live = bundle.encounter;
   if (!live || live.state.status !== "active") return;
+  if (owesASave(bundle)) return;
   const target = live.state.combatants[targetId];
   if (!target || target.defeated || target.isPlayer) return;
+
+  // Clicking the same person twice is one shot, not two prompts.
+  //
+  // The ledger is append-only and the card reads the NEWEST unresolved prompt,
+  // so a second identical row changed nothing anybody could see — it just sat
+  // in the log, and in the eight lines of recent events the GM is handed, where
+  // a few impatient clicks push the actual fiction out of the window. Asked
+  // through the same function the card is rendered from, so "already prompted"
+  // and "already showing" cannot mean two different things.
+  const showing = pendingAttackFrom(
+    bundle.events,
+    bundle.character,
+    live,
+    bundle.inventory,
+    bundle.vitals,
+  );
+  if (showing && showing.target.id === target.id) return;
   const campaignId = bundle.campaign.id;
   const beatId = bundle.beat?.id ?? null;
   const beatFields = beatId ? { beat_id: beatId } : {};
@@ -1045,6 +1079,7 @@ async function commitCallShot(
  * left to load — and then spends what the gate priced.
  */
 async function commitReload(bundle: PlayBundle, weaponItemId: string): Promise<void> {
+  if (owesASave(bundle)) return;
   const campaignId = bundle.campaign.id;
   const beatId = bundle.beat?.id ?? null;
   const verdict = judgeAction(snapshotFor(bundle), { kind: "reload", weapon: weaponItemId });
@@ -1103,7 +1138,7 @@ async function endPlayerTurn(bundle: PlayBundle): Promise<void> {
   // A Mortally Wounded character rolls their Death Save before anything else
   // happens on their Turn (CP:R pg. 187). Handing the Turn over here would
   // walk the order straight past a save they owe.
-  if (deathSaveOwed(live)) return;
+  if (owesASave(bundle)) return;
   await handOverTheTurn(bundle, live, bundle.beat?.id ?? null, [
     `${player.name} takes no further action and ends their Turn.`,
   ]);
@@ -1192,11 +1227,9 @@ async function runTheTurnOver(
     });
   }
 
-  const status = await closeOutFight(campaignId, beatId, live);
-
-  // A Mortally Wounded player owes a Death Save before they can act again.
-  const owed = deathSaveOwed(live);
-  if (owed) await promptDeathSave(campaignId, beatId, owed.name);
+  // The fight's ending, and the Death Save a Mortally Wounded player owes
+  // before they can act again — the same pair the opening writes.
+  const { status, owed } = await settleNpcTurns(campaignId, beatId, live);
 
   const fresh: PlayBundle = {
     ...bundle,
@@ -1387,42 +1420,6 @@ async function returnToLife(bundle: PlayBundle): Promise<void> {
   await closeAftermath(bundle.campaign.id, luckPoolMax(statsRecord(bundle.character)));
 }
 
-/** Announce a finished fight in the ledger, and describe it for the GM. */
-async function closeOutFight(
-  campaignId: string,
-  beatId: string | null,
-  live: LiveEncounter,
-): Promise<string> {
-  if (live.state.status === "active") return "";
-  const won = live.state.status === "friendlies_won";
-  const summary = won
-    ? "The hostiles are all down; the fight is over."
-    : "The player is down; the fight is over.";
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "encounter_ended",
-    summary,
-    data: { encounterId: live.id, status: live.state.status } as unknown as Json,
-    ...(beatId ? { beat_id: beatId } : {}),
-  });
-  return ` ${summary}`;
-}
-
-/** Post the prompt the DeathSaveCard renders. */
-async function promptDeathSave(
-  campaignId: string,
-  beatId: string | null,
-  name: string,
-): Promise<void> {
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "death_save_prompt",
-    summary: `${name} must roll a Death Save`,
-    data: {} as Json,
-    ...(beatId ? { beat_id: beatId } : {}),
-  });
-}
-
 /**
  * Persist the player's rolled Death Save. The engine already applied it; this
  * writes it down and hands the GM the exact outcome to narrate.
@@ -1445,6 +1442,10 @@ export async function commitDeathSave(
     beatId,
   });
 
+  // closeOutFight alone, never settleNpcTurns: the save has just been ROLLED.
+  // Surviving one leaves the player Mortally Wounded and still on their own
+  // Turn, so asking for the prompt again here would owe them a second save for
+  // passing the first, forever.
   const status = await closeOutFight(campaignId, beatId, live);
   const line = result.died
     ? `${pending.combatant.name} failed the Death Save and is DEAD (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}${save.autoFail ? ", a natural 10" : ""}).`

@@ -87,6 +87,24 @@ describe("npcSummaries & recentEventLines", () => {
     ]);
     expect(lines).toEqual(["Campaign started in Night City.", "beat_advanced"]);
   });
+
+  it("leaves the prompt rows out of the window it hands the GM", () => {
+    // A prompt is the row a dice card is rendered from, not a thing that
+    // happened in the fiction — and clicking three people on the board writes
+    // three of them. The window is eight lines wide, so left in they push the
+    // narration out of it and the GM starts the next turn having forgotten the
+    // scene. What actually happened arrives as the roll that resolves them.
+    const row = (type: string, summary: string) => ({ type, summary }) as CampaignEvent;
+    const lines = recentEventLines([
+      row("gm_narration", "The alley goes quiet."),
+      row("attack_prompt", "Attack Scav at 12m"),
+      row("attack_prompt", "Attack Booster at 9m"),
+      row("check_prompt", "Roll Perception"),
+      row("death_save_prompt", "Vela must roll a Death Save"),
+      row("attack", "Vela attacks Scav: HIT."),
+    ]);
+    expect(lines).toEqual(["The alley goes quiet.", "Vela attacks Scav: HIT."]);
+  });
 });
 
 describe("turnsSinceLastRoll", () => {
