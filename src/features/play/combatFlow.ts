@@ -80,7 +80,7 @@ export async function beginEncounter(input: {
    * their own attacks AND on the ones they take.
    */
   roleEffects?: CombatantRoleEffects;
-}): Promise<LiveEncounter> {
+}): Promise<{ live: LiveEncounter; lines: string[] }> {
   const data: Record<string, CombatantData> = {};
   const combatants: Combatant[] = [];
 
@@ -122,17 +122,33 @@ export async function beginEncounter(input: {
     arena: arena.key,
   });
 
+  // Everyone who beat the player on Initiative acts before the player does.
+  //
+  // startEncounter parks the order on its highest roll, which is usually NOT
+  // the player. Nothing else advances it: handOverTheTurn only runs off an
+  // action the player takes, and they cannot take one when it is not their
+  // turn. So a fight opened on a hostile and stayed there — the board was inert
+  // because the order said so, and the only way out was the GM path, which
+  // never checked whose turn it was and so let the player act out of order.
+  //
+  // Handing over HERE means a fight always arrives at the player's own Turn
+  // with the initiative order already honoured, whoever rolled highest.
+  const opened = await runNpcTurns(input.campaignId, input.beatId, live, "current");
+
+  // Written after the opening, so one event carries the whole start of the
+  // fight: who rolled what, and what the people who won the roll did with it.
   await appendCampaignEvent({
     campaign_id: input.campaignId,
     type: "encounter_started",
-    summary: `${input.name} — initiative: ${state.order
-      .map((id) => `${state.combatants[id]!.name} (${state.combatants[id]!.initiative ?? 0})`)
-      .join(", ")}`,
+    summary:
+      `${input.name} — initiative: ${state.order
+        .map((id) => `${state.combatants[id]!.name} (${state.combatants[id]!.initiative ?? 0})`)
+        .join(", ")}` + (opened.lines.length > 0 ? ` ${opened.lines.join(" ")}` : ""),
     data: { encounterId: live.id } as unknown as Json,
     ...(input.beatId ? { beat_id: input.beatId } : {}),
   });
 
-  return live;
+  return opened;
 }
 
 /**
@@ -162,6 +178,15 @@ export async function runNpcTurns(
   campaignId: string,
   beatId: string | null,
   live: LiveEncounter,
+  /**
+   * Whether the combatant currently on the clock acts, or the next one does.
+   *
+   * "next" is the ordinary case: the player has just taken their Turn, so the
+   * order moves off them first. "current" is how a fight OPENS — initiative has
+   * been rolled, nobody has acted, and whoever is at the top of the order is
+   * owed their Turn rather than skipped.
+   */
+  from: "current" | "next" = "next",
 ): Promise<{ live: LiveEncounter; lines: string[] }> {
   let state = live.state;
   // Positions change during these turns, so the data map is carried the same
@@ -174,7 +199,9 @@ export async function runNpcTurns(
 
   for (let i = 0; i < MAX_NPC_TURNS; i += 1) {
     if (state.status !== "active") break;
-    state = advanceTurn(state);
+    // Everyone after the first, always. The first only when the caller says the
+    // combatant on the clock has not acted yet.
+    if (i > 0 || from === "next") state = advanceTurn(state);
     const actor = currentCombatant(state);
     if (!actor) break;
     if (actor.isPlayer) break;
