@@ -6,10 +6,14 @@ import {
   derivedStatColumns,
   getCyberware,
   isChoice,
+  resolvePackageCyberware,
+  resolvePackageItem,
+  slotFor,
   type AssembledCharacter,
   type CharacterBuild,
   type StatBlock,
 } from "@/engine";
+
 import { saveCompleteCharacter, type SaveCharacterPayload } from "@/lib/backend";
 import type { ChargenState } from "./store";
 
