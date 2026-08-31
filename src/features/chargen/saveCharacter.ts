@@ -99,15 +99,20 @@ export function savePayload(
           humanity_loss_rolled: item.humanityLoss,
         };
       }),
-    ...sheet.packageCyberware.map((entry, index) => ({
-      key: `package.cyberware.${index}`,
-      foundation_key: null,
-      item_id: isChoice(entry)
+    ...sheet.packageCyberware.map((entry, index) => {
+      const label = isChoice(entry)
         ? (build.loadout.packageChoices[`cyberware.${index}`] ?? entry.choice[0]!)
-        : entry.item,
-      install_location: null,
-      humanity_loss_rolled: null,
-    })),
+        : entry.item;
+      const id = resolvePackageCyberware(label);
+      return {
+        key: `package.cyberware.${index}`,
+        foundation_key: null,
+        item_id: id ?? label,
+        install_location: id ? getCyberware(id).install : null,
+        humanity_loss_rolled: id ? getCyberware(id).humanityLoss : null,
+      };
+    }),
+
   ];
 
   return {
