@@ -20,6 +20,10 @@
  *   already models;
  * - Netrunning: no Net rules data exists, so the only refusal is the physical
  *   one — no Interface Plugs and no Cyberdeck.
+ *
+ * An allowed action also carries its PRICE — see ActionCost. The gate is the
+ * only place that decides what a thing costs, so a board button and a GM
+ * proposal cannot disagree about whether shooting spends your Action.
  */
 import {
   findCyberware,
@@ -81,8 +85,45 @@ export type CandidateAction =
   | { kind: "netrun" }
   | { kind: "spend"; resource: "eurobucks" | "luck"; amount: number };
 
+/**
+ * What one action spends out of a Turn (CP:R pg. 165: one Move, one Action).
+ *
+ * The gate returns this with every allowed action, so there is exactly one
+ * place in the codebase that knows shooting costs your Action and walking
+ * costs metres. Anything that spends a Turn reads it from here rather than
+ * hardcoding the same rule again at the call site.
+ *
+ * `shots` is separate from `action` because Rate of Fire is a second, printed
+ * budget: a weapon with ROF 2 makes two attacks on ONE Action, so the Action
+ * being spent must not be what stops the second shot. The ROF cap in
+ * judgeWeaponForAttack is what stops it.
+ */
+export type ActionCost = {
+  /** True when this spends the Round's single Action. */
+  action: boolean;
+  /** Attacks this counts against the weapon's printed Rate of Fire. */
+  shots: number;
+  /** Metres this spends out of the Move allowance. */
+  metres: number;
+};
+
+/** Costs nothing: declaring Luck on a roll you are already making. */
+export const FREE_ACTION: ActionCost = { action: false, shots: 0, metres: 0 };
+
+/**
+ * The Action, and nothing else.
+ *
+ * This is also the CONSERVATIVE DEFAULT for the kinds the printed rules data
+ * does not price per-piece — using cyberware, and Role Abilities. RED prices
+ * those individually (some are free, some are an Action) and catalog.json
+ * carries no action-cost field, so rather than invent one per item the gate
+ * charges the Action and says so here. When that data lands, price them from
+ * it; do not special-case them in a caller.
+ */
+export const ONE_ACTION: ActionCost = { action: true, shots: 0, metres: 0 };
+
 export type LegalityVerdict =
-  | { ok: true }
+  | { ok: true; cost: ActionCost }
   | {
       ok: false;
       code: LegalityCode;
@@ -90,7 +131,43 @@ export type LegalityVerdict =
       reason: string;
     };
 
-const OK: LegalityVerdict = { ok: true };
+/** The counters one Turn's spending accumulates into. */
+export type TurnSpend = {
+  actionUsed: boolean;
+  shotsThisRound: number;
+  shotWeaponId: string | null;
+  metresMoved: number;
+};
+
+/**
+ * Charge an allowed action's cost against a Turn.
+ *
+ * The single spend path. `withAttackSpent` and the Move both went through
+ * their own copy of this arithmetic, which is how two callers end up
+ * disagreeing about what a Round has left.
+ */
+export function spendCost(
+  prior: TurnSpend,
+  cost: ActionCost,
+  weaponItemId: string | null = null,
+): TurnSpend {
+  return {
+    actionUsed: prior.actionUsed || cost.action,
+    shotsThisRound: prior.shotsThisRound + cost.shots,
+    shotWeaponId: cost.shots > 0 ? weaponItemId : prior.shotWeaponId,
+    metresMoved: prior.metresMoved + Math.max(0, cost.metres),
+  };
+}
+
+/** An attack spends the Action and counts one shot against the weapon's ROF. */
+export const ATTACK_COST: ActionCost = { action: true, shots: 1, metres: 0 };
+
+/** Allowed, at the default price: it costs the Action and nothing else. */
+const OK: LegalityVerdict = { ok: true, cost: ONE_ACTION };
+
+function allow(cost: ActionCost): LegalityVerdict {
+  return { ok: true, cost };
+}
 
 function no(code: LegalityCode, reason: string): LegalityVerdict {
   return { ok: false, code, reason };
@@ -160,7 +237,7 @@ function judgeWeaponForAttack(
       `${weapon.name} has no printed ranged attack profile, so it cannot make an Aimed Shot.`,
     );
   }
-  return OK;
+  return allow(ATTACK_COST);
 }
 
 /**
@@ -225,7 +302,7 @@ export function judgeAction(
         const first = snapshot.weapons[0]!;
         return judgeWeaponForAttack(snapshot, first, action.distance, action.aimed ?? false);
       }
-      return OK;
+      return allow(ATTACK_COST);
     }
 
     case "skill_check":
@@ -300,7 +377,8 @@ export function judgeAction(
           `That is ${action.metres} m in one Move; their MOVE covers ${allowance} m.`,
         );
       }
-      return OK;
+      // A Move is not the Action. Spending metres is what stops a second one.
+      return allow({ action: false, shots: 0, metres: Math.max(0, action.metres) });
     }
 
     case "netrun": {
@@ -327,7 +405,9 @@ export function judgeAction(
             : `They have ${have}eb, not ${action.amount}eb.`,
         );
       }
-      return OK;
+      // Declaring Luck rides on a roll already being made, and paying for
+      // something is not an Action. Neither costs a Turn.
+      return allow(FREE_ACTION);
     }
 
     default:

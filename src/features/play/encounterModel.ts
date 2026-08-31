@@ -15,8 +15,10 @@ import {
   rangeMetres,
   threatFor,
   weaponProfile,
+  spendCost,
   woundMovePenalty,
   woundStateFor,
+  type ActionCost,
   type Arena,
   type Combatant,
   type EncounterState,
@@ -76,6 +78,30 @@ export type CombatantData = {
    */
   armor?: { headInventoryId?: string; bodyInventoryId?: string };
 };
+
+/**
+ * Charge one action's cost against a combatant's Round.
+ *
+ * The ONLY place a Turn's counters advance. The Round reset lives here too: a
+ * `turn` block belonging to an earlier Round is spent from zero rather than
+ * carried, which is what makes a new Round give the Action and the Move back
+ * without anything having to remember to clear a flag.
+ *
+ * What the cost IS comes from engine/legality.ts, so a board button and a GM
+ * proposal cannot disagree about whether a thing spends your Action.
+ */
+export function spendTurn(
+  turn: CombatantTurnState | undefined,
+  round: number,
+  cost: ActionCost,
+  weaponItemId: string | null = null,
+): CombatantTurnState {
+  const prior =
+    turn?.round === round
+      ? turn
+      : { actionUsed: false, shotsThisRound: 0, shotWeaponId: null, metresMoved: 0 };
+  return { round, ...spendCost(prior, cost, weaponItemId) };
+}
 
 function turnStateOf(raw: unknown): CombatantTurnState | undefined {
   if (!raw || typeof raw !== "object") return undefined;

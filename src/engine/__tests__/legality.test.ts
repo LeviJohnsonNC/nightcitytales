@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { judgeAction, type CapabilitySnapshot, type WeaponCapability } from "../index";
+import {
+  judgeAction,
+  spendCost,
+  type CapabilitySnapshot,
+  type TurnSpend,
+  type WeaponCapability,
+} from "../index";
 
 const pistol: WeaponCapability = {
   itemId: "heavy_pistol",
@@ -254,5 +260,119 @@ describe("judgeAction", () => {
     const v = judgeAction(down, { kind: "attack", targetKey: "scav_1", distance: 12 });
     if (!v.ok) expect(v.code).toBe("physically_incapable");
     expect(v.ok).toBe(false);
+  });
+});
+
+/**
+ * What an action COSTS, which is now the gate's answer rather than something
+ * each caller decides for itself. These pin the prices; the two spend paths
+ * (an attack, a Move) read them rather than repeating the rule.
+ */
+describe("what an action costs", () => {
+  const cost = (action: Parameters<typeof judgeAction>[1]) => {
+    const verdict = judgeAction(base, action);
+    if (!verdict.ok) throw new Error(`expected allowed, got: ${verdict.reason}`);
+    return verdict.cost;
+  };
+
+  it("charges an attack the Action and one shot against ROF", () => {
+    expect(cost({ kind: "attack", targetKey: "scav_1", distance: 12 })).toEqual({
+      action: true,
+      shots: 1,
+      metres: 0,
+    });
+  });
+
+  it("charges a Move metres, never the Action — you get both in a Turn", () => {
+    expect(cost({ kind: "move", metres: 4 })).toEqual({ action: false, shots: 0, metres: 4 });
+  });
+
+  it("charges Luck and money nothing: neither is an Action", () => {
+    expect(cost({ kind: "spend", resource: "luck", amount: 1 })).toEqual({
+      action: false,
+      shots: 0,
+      metres: 0,
+    });
+  });
+
+  it("charges everything else the Action, and only the Action", () => {
+    expect(cost({ kind: "use_item", item: "airhypo" })).toEqual({
+      action: true,
+      shots: 0,
+      metres: 0,
+    });
+    expect(cost({ kind: "skill_check", skillId: "athletics", intent: "vault the bar" })).toEqual({
+      action: true,
+      shots: 0,
+      metres: 0,
+    });
+  });
+});
+
+describe("spendCost", () => {
+  const fresh: TurnSpend = {
+    actionUsed: false,
+    shotsThisRound: 0,
+    shotWeaponId: null,
+    metresMoved: 0,
+  };
+
+  it("spends an attack's Action and records the weapon the ROF counts against", () => {
+    expect(spendCost(fresh, { action: true, shots: 1, metres: 0 }, "heavy_pistol")).toEqual({
+      actionUsed: true,
+      shotsThisRound: 1,
+      shotWeaponId: "heavy_pistol",
+      metresMoved: 0,
+    });
+  });
+
+  it("keeps a Move out of the Action, so a Turn can hold both", () => {
+    const moved = spendCost(fresh, { action: false, shots: 0, metres: 6 });
+    expect(moved).toEqual({
+      actionUsed: false,
+      shotsThisRound: 0,
+      shotWeaponId: null,
+      metresMoved: 6,
+    });
+    const andShot = spendCost(moved, { action: true, shots: 1, metres: 0 }, "heavy_pistol");
+    expect(andShot).toEqual({
+      actionUsed: true,
+      shotsThisRound: 1,
+      shotWeaponId: "heavy_pistol",
+      metresMoved: 6,
+    });
+  });
+
+  it("never forgets the weapon a Round's shots were made with", () => {
+    const shot = spendCost(fresh, { action: true, shots: 1, metres: 0 }, "heavy_pistol");
+    // A second, non-attack action must not blank the id the ROF cap reads.
+    expect(spendCost(shot, { action: true, shots: 0, metres: 0 }).shotWeaponId).toBe(
+      "heavy_pistol",
+    );
+  });
+
+  it("an allowed action's cost is what the Turn is actually charged", () => {
+    const verdict = judgeAction(base, { kind: "attack", targetKey: "scav_1", distance: 12 });
+    if (!verdict.ok) throw new Error("expected allowed");
+    const after = spendCost(fresh, verdict.cost, "heavy_pistol");
+    // And the gate then refuses the follow-up its own price bought: ROF 2, so
+    // the second shot is legal and the third is not.
+    const second = judgeAction(snap({ turn: { ...base.turn, ...after } }), {
+      kind: "attack",
+      targetKey: "scav_1",
+      distance: 12,
+      weapon: "heavy_pistol",
+    });
+    expect(second.ok).toBe(true);
+    const spentTwice = spendCost(after, { action: true, shots: 1, metres: 0 }, "heavy_pistol");
+    const third = judgeAction(snap({ turn: { ...base.turn, ...spentTwice } }), {
+      kind: "attack",
+      targetKey: "scav_1",
+      distance: 12,
+      weapon: "heavy_pistol",
+    });
+    expect(third.ok).toBe(false);
+    if (third.ok) throw new Error("unreachable");
+    expect(third.code).toBe("rof_exceeded");
   });
 });
