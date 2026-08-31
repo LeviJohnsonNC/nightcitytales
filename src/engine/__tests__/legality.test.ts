@@ -435,3 +435,63 @@ describe("range bands", () => {
     expect(weaponDvAt(pistol, 201)).toBeNull();
   });
 });
+
+/**
+ * Reloading, which had never been an Action because it had never been
+ * reachable in a fight — it lived in Life's shop, where nothing budgets a Turn.
+ */
+describe("reloading", () => {
+  const half: WeaponCapability = { ...pistol, roundsLoaded: 3, spareRounds: 20 };
+
+  it("costs the Action, like anything else you do with your Turn", () => {
+    const v = judgeAction(snap({ weapons: [half] }), { kind: "reload", weapon: "heavy_pistol" });
+    expect(v.ok).toBe(true);
+    if (!v.ok) throw new Error("unreachable");
+    expect(v.cost).toEqual({ action: true, shots: 0, metres: 0 });
+  });
+
+  it("refuses once the Action is spent", () => {
+    const v = judgeAction(snap({ weapons: [half], turn: { ...base.turn, actionUsed: true } }), {
+      kind: "reload",
+      weapon: "heavy_pistol",
+    });
+    expect(v.ok).toBe(false);
+    if (v.ok) throw new Error("unreachable");
+    expect(v.code).toBe("action_spent");
+  });
+
+  it("refuses a gun that is already full, in the words engine/reload.ts uses", () => {
+    const v = judgeAction(snap({ weapons: [pistol] }), { kind: "reload", weapon: "heavy_pistol" });
+    expect(v.ok).toBe(false);
+    if (v.ok) throw new Error("unreachable");
+    expect(v.code).toBe("resource_unavailable");
+    expect(v.reason).toContain("already full");
+  });
+
+  it("refuses when there is nothing left to load", () => {
+    const dry: WeaponCapability = { ...pistol, roundsLoaded: 0, spareRounds: 0 };
+    const v = judgeAction(snap({ weapons: [dry] }), { kind: "reload", weapon: "heavy_pistol" });
+    expect(v.ok).toBe(false);
+    if (v.ok) throw new Error("unreachable");
+    expect(v.reason).toContain("No spare rounds");
+  });
+
+  it("refuses a weapon they are not carrying, and a broken one", () => {
+    expect(judgeAction(base, { kind: "reload", weapon: "sniper_rifle" }).ok).toBe(false);
+    const broken = judgeAction(snap({ weapons: [{ ...half, broken: true }] }), {
+      kind: "reload",
+      weapon: "heavy_pistol",
+    });
+    expect(broken.ok).toBe(false);
+    if (broken.ok) throw new Error("unreachable");
+    expect(broken.code).toBe("weapon_broken");
+  });
+
+  it("is allowed outside a fight, where no Turn is being budgeted", () => {
+    const resting = snap({
+      weapons: [{ ...half, roundsLoaded: 0 }],
+      turn: { ...base.turn, inCombat: false, actionUsed: true },
+    });
+    expect(judgeAction(resting, { kind: "reload", weapon: "heavy_pistol" }).ok).toBe(true);
+  });
+});

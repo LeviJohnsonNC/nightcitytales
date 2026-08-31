@@ -34,6 +34,7 @@ import {
   type CapabilitySnapshot,
   type WeaponCapability,
 } from "./capability";
+import { planReload } from "./reload";
 
 export const MOVE_METRES_NOTE =
   "Movement is measured against the raw MOVE score in metres; the metres-per-Move-Action rule is not in the rules data.";
@@ -81,6 +82,7 @@ export type CandidateAction =
   | { kind: "use_item"; item: string; quantity?: number }
   | { kind: "use_cyberware"; cyberware: string }
   | { kind: "role_ability"; abilityId: string; rank?: number }
+  | { kind: "reload"; weapon: string }
   | { kind: "move"; metres: number }
   | { kind: "netrun" }
   | { kind: "spend"; resource: "eurobucks" | "luck"; amount: number };
@@ -361,6 +363,31 @@ export function judgeAction(
           "rank_too_low",
           `${ability.abilityName} is Rank ${ability.rank}; that takes Rank ${action.rank}.`,
         );
+      }
+      return OK;
+    }
+
+    case "reload": {
+      const weapon = findWeapon(snapshot, action.weapon);
+      if (!weapon) {
+        return no("weapon_not_carried", `They are not carrying a ${action.weapon}.`);
+      }
+      if (weapon.broken) {
+        return no("weapon_broken", `${weapon.name} is broken; loading it changes nothing.`);
+      }
+      if (snapshot.turn.inCombat && snapshot.turn.actionUsed) {
+        return no("action_spent", "Their Action for this Round is already spent.");
+      }
+      // Whether there is anything TO load is engine/reload.ts's answer, not a
+      // second opinion written here: it already knows the magazine, the
+      // untracked-is-full rule, and how to say why not.
+      const plan = planReload({
+        itemId: weapon.itemId,
+        loaded: weapon.roundsLoaded,
+        spareRounds: weapon.spareRounds,
+      });
+      if (!plan.possible) {
+        return no("resource_unavailable", plan.reason ?? `The ${weapon.name} cannot be reloaded.`);
       }
       return OK;
     }

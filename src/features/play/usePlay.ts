@@ -96,6 +96,7 @@ import {
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
 import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
+import { reloadWeapon } from "@/features/campaign/shopping";
 import {
   loadLiveEncounter,
   EncounterChangedError,
@@ -182,6 +183,7 @@ import {
   renderCapabilityLines,
   withAttackSpent,
 } from "./capabilityModel";
+import { spendTurn } from "./encounterModel";
 
 /**
  * How many checks one turn may put on the table at once. Two lets a compound
@@ -974,6 +976,109 @@ async function commitBoardMove(bundle: PlayBundle, to: Point): Promise<void> {
 }
 
 /**
+ * The player calling a shot by clicking somebody on the board.
+ *
+ * Deliberately the SMALLEST possible change to how an attack happens: it posts
+ * the same attack_prompt the GM's proposal posts, so the card, the dice, the
+ * Luck stepper and the whole resolution path behind them are untouched. Only
+ * who started it moves — from the model naming a target to the player pointing
+ * at one — and the gate judges it either way.
+ */
+async function commitCallShot(
+  bundle: PlayBundle,
+  targetId: string,
+  weaponItemId: string,
+): Promise<void> {
+  const live = bundle.encounter;
+  if (!live || live.state.status !== "active") return;
+  const target = live.state.combatants[targetId];
+  if (!target || target.defeated || target.isPlayer) return;
+  const campaignId = bundle.campaign.id;
+  const beatId = bundle.beat?.id ?? null;
+  const beatFields = beatId ? { beat_id: beatId } : {};
+
+  // Measured, never asserted — the same distance the DV on the board was read
+  // at, and the same one the card will re-measure when the trigger is pulled.
+  const metres = distanceToTarget(live, targetId);
+  const verdict = judgeAction(snapshotFor(bundle), {
+    kind: "attack",
+    targetKey: targetId,
+    distance: metres,
+    weapon: weaponItemId,
+  });
+  if (!verdict.ok) {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "action_refused",
+      summary: `Not possible: ${verdict.reason}`,
+      data: { code: verdict.code } as unknown as Json,
+      ...beatFields,
+    });
+    return;
+  }
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "attack_prompt",
+    summary: `Attack ${target.name} at ${metres}m`,
+    data: {
+      targetId: target.id,
+      targetName: target.name,
+      distance: metres,
+      intent: "takes the shot",
+    } as unknown as Json,
+    ...beatFields,
+  });
+}
+
+/**
+ * Putting rounds back in the gun, mid-fight.
+ *
+ * Reloading existed only in Life's shop, where nothing budgets a Turn. In a
+ * firefight it is an Action like any other, so it goes through the gate — which
+ * refuses it when the Action is spent, the gun is full, or there is nothing
+ * left to load — and then spends what the gate priced.
+ */
+async function commitReload(bundle: PlayBundle, weaponItemId: string): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const beatId = bundle.beat?.id ?? null;
+  const verdict = judgeAction(snapshotFor(bundle), { kind: "reload", weapon: weaponItemId });
+  if (!verdict.ok) {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "action_refused",
+      summary: `Not possible: ${verdict.reason}`,
+      data: { code: verdict.code } as unknown as Json,
+      ...(beatId ? { beat_id: beatId } : {}),
+    });
+    return;
+  }
+
+  const row = bundle.inventory.find((r) => r.slot === "weapon" && r.item_id === weaponItemId);
+  if (!row) return;
+  const done = await reloadWeapon(campaignId, row.id);
+  if (!done.ok) return;
+
+  // The Action, charged out of the fight's own economy. Outside combat there is
+  // no Turn to spend and nothing to write.
+  const live = bundle.encounter;
+  if (!live || live.state.status !== "active") return;
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  const existing = player ? live.data[player.id] : null;
+  if (!player || !existing) return;
+  await saveLiveEncounter({
+    ...live,
+    data: {
+      ...live.data,
+      [player.id]: {
+        ...existing,
+        turn: spendTurn(existing.turn, live.state.round, verdict.cost, weaponItemId),
+      },
+    },
+  });
+}
+
+/**
  * The player giving up the rest of their Turn.
  *
  * What `handOverTheTurn` was built for and nothing could call: until the board
@@ -1514,6 +1619,24 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const callShot = useMutation({
+    onError: onWriteError,
+    mutationFn: ({ targetId, weaponItemId }: { targetId: string; weaponItemId: string }) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitCallShot(query.data, targetId, weaponItemId);
+    },
+    onSuccess: invalidate,
+  });
+
+  const reload = useMutation({
+    onError: onWriteError,
+    mutationFn: (weaponItemId: string) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitReload(query.data, weaponItemId);
+    },
+    onSuccess: invalidate,
+  });
+
   const endTurn = useMutation({
     onError: onWriteError,
     mutationFn: () => {
@@ -1564,6 +1687,8 @@ export function usePlay(campaignId: string) {
     // the list the screen reads.
     (boardMove.error as Error | null) ??
     (endTurn.error as Error | null) ??
+    (reload.error as Error | null) ??
+    (callShot.error as Error | null) ??
     (death.error as Error | null);
 
   // Exactly one card is ever live: a Death Save outranks everything (you cannot
@@ -1842,6 +1967,11 @@ export function usePlay(campaignId: string) {
      * Move does not end the Turn, so the Action is still theirs afterwards.
      */
     moveTo: (to: Point) => boardMove.mutate(to),
+    /** Put rounds back in a gun, spending the Action the gate prices it at. */
+    reload: (weaponItemId: string) => reload.mutate(weaponItemId),
+    /** Call a shot on somebody, which posts the prompt the card resolves. */
+    callShot: (targetId: string, weaponItemId: string) =>
+      callShot.mutate({ targetId, weaponItemId }),
     /** Give up the rest of the Turn and let the hostiles take theirs. */
     endTurn: () => endTurn.mutate(),
     /**
@@ -1850,7 +1980,7 @@ export function usePlay(campaignId: string) {
      * bundle the server has already moved past, and combatant positions are
      * written last-write-wins.
      */
-    turnBusy: boardMove.isPending || endTurn.isPending,
+    turnBusy: boardMove.isPending || endTurn.isPending || reload.isPending || callShot.isPending,
     /** Roll the attack — the engine resolves To-Hit, damage and armor. */
     rollAttack: (
       pending: PendingAttack,
@@ -1931,6 +2061,8 @@ export function usePlay(campaignId: string) {
       combat.isPending ||
       boardMove.isPending ||
       endTurn.isPending ||
+      reload.isPending ||
+      callShot.isPending ||
       death.isPending,
     actionError,
     retry,
