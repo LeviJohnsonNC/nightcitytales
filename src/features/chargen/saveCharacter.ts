@@ -6,10 +6,14 @@ import {
   derivedStatColumns,
   getCyberware,
   isChoice,
+  resolvePackageCyberware,
+  resolvePackageItem,
+  slotFor,
   type AssembledCharacter,
   type CharacterBuild,
   type StatBlock,
 } from "@/engine";
+
 import { saveCompleteCharacter, type SaveCharacterPayload } from "@/lib/backend";
 import type { ChargenState } from "./store";
 
@@ -44,17 +48,34 @@ export function savePayload(
             ? (build.loadout.packageChoices[`${field}.${index}`] ?? entry.choice[0]!)
             : entry.item;
           const variant = build.loadout.packageVariants?.[`${field}.${index}`];
+          const notes = (variant ? `Role package · ${variant}` : "Role package") as string | null;
+          const printedQty = isChoice(entry) ? 1 : entry.qty;
+          // The package tables print display labels; the engine only knows
+          // canonical catalog ids. Resolve here so live play sees a rifle
+          // rather than the words "Assault Rifle".
+          const resolved = resolvePackageItem(picked);
+          if (!resolved) {
+            return {
+              item_id: picked,
+              quantity: printedQty,
+              equipped: false,
+              slot: `package:${field}`,
+              current_sp: null,
+              notes,
+            };
+          }
           return {
-            item_id: picked,
-            quantity: isChoice(entry) ? 1 : entry.qty,
-            equipped: false,
-            slot: `package:${field}`,
+            item_id: resolved.id,
+            quantity: resolved.qty ?? printedQty,
+            equipped: resolved.kind === "armor",
+            slot: resolved.location ?? slotFor(resolved.kind, resolved.id),
             current_sp: null,
-            notes: (variant ? `Role package · ${variant}` : "Role package") as string | null,
+            notes,
           };
         },
       ),
     ),
+
     ...sheet.packageOutfit.map((item) => ({
       item_id: item,
       quantity: 1,
@@ -78,15 +99,20 @@ export function savePayload(
           humanity_loss_rolled: item.humanityLoss,
         };
       }),
-    ...sheet.packageCyberware.map((entry, index) => ({
-      key: `package.cyberware.${index}`,
-      foundation_key: null,
-      item_id: isChoice(entry)
+    ...sheet.packageCyberware.map((entry, index) => {
+      const label = isChoice(entry)
         ? (build.loadout.packageChoices[`cyberware.${index}`] ?? entry.choice[0]!)
-        : entry.item,
-      install_location: null,
-      humanity_loss_rolled: null,
-    })),
+        : entry.item;
+      const id = resolvePackageCyberware(label);
+      return {
+        key: `package.cyberware.${index}`,
+        foundation_key: null,
+        item_id: id ?? label,
+        install_location: id ? getCyberware(id).install : null,
+        humanity_loss_rolled: id ? getCyberware(id).humanityLoss : null,
+      };
+    }),
+
   ];
 
   return {

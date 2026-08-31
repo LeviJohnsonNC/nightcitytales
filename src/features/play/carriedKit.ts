@@ -9,7 +9,7 @@
  * This is the live half — `campaign_inventory`, the same rows combat spends,
  * the shop writes and armor repair patches. Pure: rows in, groups out.
  */
-import { catalogItem, getCyberware, weaponProfile, type ItemKind } from "@/engine";
+import { catalogItem, weaponProfile, type ItemKind } from "@/engine";
 import type { CampaignCyberware, CampaignInventoryItem } from "@/lib/backend";
 
 export type KitLine = {
@@ -95,10 +95,13 @@ export function carriedKit(
         label,
         lines: cyberware.map((row) => ({
           id: row.id,
-          name: getCyberware(row.item_id).name,
+          // Legacy rows may hold a printed label rather than a catalog id.
+          // Showing the stored value beats blanking the whole screen.
+          name: nameFor("cyberware", row.item_id),
           detail: `installed day ${row.installed_day}`,
           quantity: 1,
         })),
+
       };
     }
     const lines: KitLine[] = [];

@@ -4,6 +4,7 @@ import {
   RIPPERDOC_RULES,
   appointmentDelayDays,
   getCyberware,
+  hasCyberware,
   installQuantity,
   planCyberwarePlacement,
 } from "@/engine";
@@ -34,14 +35,19 @@ export function quoteCyberware(bundle: LifeBundle, itemId: string): RipperdocQuo
     : null;
   const appointmentDays = ripperdoc ? appointmentDelayDays(ripperdoc.disposition) : null;
   const placement = planCyberwarePlacement(
-    bundle.cyberware.map((row) => ({
-      id: row.id,
-      itemId: row.item_id,
-      foundationId: row.foundational_for,
-    })),
+    // A legacy row can hold a printed label instead of a catalog id. Dropping
+    // it keeps the ripperdoc usable instead of crashing the Life screen.
+    bundle.cyberware
+      .filter((row) => hasCyberware(row.item_id))
+      .map((row) => ({
+        id: row.id,
+        itemId: row.item_id,
+        foundationId: row.foundational_for,
+      })),
     itemId,
     quantity,
   );
+
   const cost = item.cost * quantity;
   let reason: string | null = null;
   if (!ripperdoc) reason = "No ripperdoc is in your standing cast.";

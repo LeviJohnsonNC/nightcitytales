@@ -5,6 +5,7 @@
  */
 import {
   defaultRng,
+  hasCyberware,
   planCyberwareInstall,
   type CyberwareInstallPlan,
   type GamePhase,
@@ -109,11 +110,14 @@ export function describeRipperdocResult(plan: CyberwareInstallPlan, ripperdocNam
 export function prepareRipperdocInstall(input: RipperdocInstallInput): PreparedRipperdocInstall {
   const requestId = input.requestId ?? crypto.randomUUID();
   const plan = planCyberwareInstall({
-    installed: input.cyberware.map((row) => ({
-      id: row.id,
-      itemId: row.item_id,
-      foundationId: row.foundational_for,
-    })),
+    installed: input.cyberware
+      .filter((row) => hasCyberware(row.item_id))
+      .map((row) => ({
+        id: row.id,
+        itemId: row.item_id,
+        foundationId: row.foundational_for,
+      })),
+
     itemId: input.itemId,
     humanityCurrent: input.vitals.humanity_current,
     eurobucks: input.vitals.eurobucks,
