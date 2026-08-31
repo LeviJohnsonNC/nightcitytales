@@ -6,6 +6,7 @@ import {
   failMission,
   getBeat,
   isTerminal,
+  runtimeAtBeat,
   startMission,
   type Mission,
 } from "../mission";
@@ -152,5 +153,43 @@ describe("A Night at the Opera — content integrity", () => {
     expect(rt.flags).toContain("knows_ruthven");
     rt = advance(m, rt, "epilogue");
     expect(rt.status).toBe("completed");
+  });
+});
+
+/**
+ * Standing on a beat without playing to it. Only a developer harness does this;
+ * the play loop still moves through `advance`.
+ */
+describe("runtimeAtBeat", () => {
+  it("parks on the named beat with that beat's own objectives", () => {
+    const runtime = runtimeAtBeat(NIGHT_AT_THE_OPERA, "monster_hunt");
+    expect(runtime.currentBeatId).toBe("monster_hunt");
+    expect(runtime.missionId).toBe(NIGHT_AT_THE_OPERA.id);
+    expect(currentBeat(NIGHT_AT_THE_OPERA, runtime).id).toBe("monster_hunt");
+  });
+
+  it("claims no history, because none was played", () => {
+    const runtime = runtimeAtBeat(NIGHT_AT_THE_OPERA, "monster_hunt");
+    expect(runtime.completedBeats).toEqual([]);
+    expect(runtime.branchChoices).toEqual({});
+    expect(runtime.flags).toEqual([]);
+    expect(runtime.status).toBe("active");
+  });
+
+  it("produces a runtime the rest of the engine accepts", () => {
+    // The point of going through the engine rather than hand-writing the object:
+    // the exits read from it have to be real ones.
+    const runtime = runtimeAtBeat(NIGHT_AT_THE_OPERA, "monster_hunt");
+    const exits = availableExits(NIGHT_AT_THE_OPERA, runtime);
+    expect(exits.length).toBeGreaterThan(0);
+    expect(exits.every((e) => typeof e.to === "string")).toBe(true);
+  });
+
+  it("throws on a beat the mission does not have", () => {
+    expect(() => runtimeAtBeat(NIGHT_AT_THE_OPERA, "not_a_beat")).toThrow();
+  });
+
+  it("agrees with startMission when asked for the opening beat", () => {
+    expect(runtimeAtBeat(demo, "a")).toEqual(startMission(demo));
   });
 });

@@ -186,6 +186,36 @@ export function startMission(mission: Mission): MissionRuntime {
   };
 }
 
+/**
+ * A runtime parked on a named beat, without playing the beats before it.
+ *
+ * `startMission` puts a job at its opening. Reaching a beat in the middle of
+ * one normally means playing there, which is correct for a player and useless
+ * for a harness that wants to stand on the climax and look at it.
+ *
+ * Deliberately NOT a shortcut a player can take: nothing in the play loop calls
+ * this, and mission movement still goes through `advance`. It exists so a
+ * developer tool can construct a position the engine agrees is well-formed
+ * rather than hand-writing a runtime object and hoping.
+ *
+ * Throws on a beat this mission does not have, because a typo'd beat id should
+ * fail where it is written rather than resolve to somewhere plausible.
+ */
+export function runtimeAtBeat(mission: Mission, beatId: string): MissionRuntime {
+  const beat = getBeat(mission, beatId);
+  return {
+    missionId: mission.id,
+    currentBeatId: beat.id,
+    // Nothing was played to get here, so nothing is completed. The objectives
+    // are this beat's own — a harness has no history to merge.
+    completedBeats: [],
+    branchChoices: {},
+    objectives: objectivesFor(beat),
+    flags: [],
+    status: "active",
+  };
+}
+
 export function currentBeat(mission: Mission, runtime: MissionRuntime): Beat {
   return getBeat(mission, runtime.currentBeatId);
 }
