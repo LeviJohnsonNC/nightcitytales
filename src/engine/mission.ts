@@ -88,8 +88,10 @@ export type MissionOffer = {
   /** Who is really paying, behind the broker. Not volunteered. */
   patronName: string;
   patronOrg: string;
-  /** Where the work is. */
+  /** Where the work is, as printed. */
   district: string;
+  /** The Night City Atlas district key the work sits in, when the job names one. */
+  districtKey?: string;
   /** What is waiting when they get there. Not volunteered. */
   opposition: string;
   /** The pitch in the broker's words, as the player hears it. */

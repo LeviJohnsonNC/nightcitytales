@@ -53,7 +53,7 @@ type Archetype = {
 type JobContent = {
   fixers: { name: string; line: string }[];
   patrons: { name: string; org: string; style: string; tell: string }[];
-  districts: { name: string; colour: string }[];
+  districts: { key: string; name: string; colour: string }[];
   targets: { name: string; the: string; why: string }[];
   /** `force` names a template in data/rules/threats.json — read, never drawn. */
   opposition: { name: string; flavour: string; force: string }[];
@@ -247,6 +247,7 @@ export function generateJob(seed: number): Mission {
       patronName: patron.name,
       patronOrg: patron.org,
       district: district.name,
+      districtKey: district.key,
       opposition: `${opposition.name} — ${opposition.flavour}`,
       pitch: fill(archetype.background),
       ask: fill(archetype.objective),
