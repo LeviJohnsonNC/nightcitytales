@@ -574,7 +574,22 @@ async function applyResponse(
         }
       }
     } else if (action.kind === "travel") {
-      clock = advanceClock(clock, clampActionMinutes(action.minutes));
+      // A move in the fiction is a move on the map. The engine resolves the
+      // name against the atlas, prices the trip from the house-rule table, and
+      // commits the same way the map's own travel button does — so the pin, the
+      // header and the ledger all agree with the narration.
+      const destination = resolveDestination(action.destination);
+      if (!destination) {
+        await refuse(
+          `"${action.destination}" is not a place on the Night City map.`,
+          "impossible",
+        );
+        continue;
+      }
+      const moved = await travelTo({ campaign: bundle.campaign, clock, to: destination });
+      bundle.campaign = moved.campaign;
+      clock = moved.clock;
+
     } else if (action.kind === "rest") {
       // Sleeping IS resting: the hours move the clock, and every whole day the
       // character crossed heals at the printed rate through the same Downtime
