@@ -353,7 +353,22 @@ async function narrate(
   // an options turn: the player is thinking, and nobody lived through anything.
   const answered = options.optionsRequested ? null : await answerPendingQuestion(campaignId);
 
+  const jobPosition = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+  const jobDistrict = jobPosition ? getDistrict(jobPosition.districtKey) : undefined;
   const context = buildGmContext({
+    ...(jobDistrict
+      ? {
+          place: {
+            where: describePosition(bundle.campaign.location_key ?? DEFAULT_START),
+            district: jobDistrict.name,
+            area: areaOf(jobDistrict.key)?.name ?? "Night City",
+            security: jobDistrict.security,
+            gangs: jobDistrict.gangs,
+            combatZone: isCombatZone(jobDistrict.key),
+            nearby: jobDistrict.locations.slice(0, 8).map((l) => l.name),
+          },
+        }
+      : {}),
     mission: bundle.mission,
     beat: bundle.beat,
     availableExits: bundle.availableExits,
