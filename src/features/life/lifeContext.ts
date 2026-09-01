@@ -157,11 +157,19 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
     if (p.combatZone) parts.push(line("Note", "This is a Combat Zone. No law worth the name."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
+    if (p.destinations?.length) {
+      parts.push(
+        line("Places you may travel to (use the exact name)", p.destinations.join(", ")),
+      );
+    }
     parts.push(
       "Narrate this location by name and use only these canonical places. " +
-        "Do not move the character to another district yourself; travel is the player's call and the engine's clock.",
+        "Do not move the character to another district yourself; travel is the player's call and the engine's clock. " +
+        'When the player says they are going somewhere, propose {"kind":"travel","destination":"<exact name from the list above>"}. ' +
+        "A destination that is not on that list is refused by the engine.",
     );
   }
+
 
   parts.push("", "== CHARACTER ==");
   parts.push(
