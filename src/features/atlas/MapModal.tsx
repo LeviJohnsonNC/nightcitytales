@@ -220,15 +220,19 @@ export function MapModal({
               {DISTRICTS.map((district) => {
                 const isHere = currentDistrict?.key === district.key;
                 const isKnown = known.has(district.key);
+                // Standing in a named venue puts the pin on the venue itself.
+                const point = isHere && youAreHere ? youAreHere : district.map;
                 return (
                   <button
                     key={district.key}
                     type="button"
                     onClick={() => setDossier(district.key)}
                     aria-label={`${district.name} district`}
+                    data-here={isHere ? "true" : undefined}
                     className="absolute -translate-x-1/2 -translate-y-1/2"
-                    style={{ left: `${district.map.x}%`, top: `${district.map.y}%` }}
+                    style={{ left: `${point.x}%`, top: `${point.y}%` }}
                   >
+
                     <span className="relative flex h-4 w-4 items-center justify-center">
                       {isHere ? (
                         <span className="absolute h-6 w-6 animate-ping rounded-full bg-accent/60" />
