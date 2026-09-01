@@ -30,13 +30,22 @@
       "blurb": "A district divided between classes and times, with old brick buildings standing next to futuristic skyscrapers.",
       "cityManager": "Amanda Polishchuk (elected by property owners)",
       "security": "NCPD",
-      "gangs": ["6th Street", "Eurotrashers", "Maelstrom", "Undertow"],
+      "gangs": [
+        "6th Street",
+        "Eurotrashers",
+        "Maelstrom",
+        "Undertow"
+      ],
       "locations": [
         {
           "key": "a1",
           "code": "A1",
           "name": "Camden Court",
-          "blurb": "A secure apartment complex favored by Solos and Execs."
+          "blurb": "A secure apartment complex favored by Solos and Execs.",
+          "map": {
+            "x": 35.958,
+            "y": 39.772
+          }
         },
         {
           "key": "a2",
@@ -44,8 +53,8 @@
           "name": "Chopper’s",
           "blurb": "Formerly a butcher’s shop, now a bar. The meat grinder still works if you want to get rid of a body.",
           "map": {
-            "x": 35.045,
-            "y": 45.787
+            "x": 38.014,
+            "y": 44.222
           }
         },
         {
@@ -54,15 +63,19 @@
           "name": "Continental Brands Vertical Neighborhood",
           "blurb": "Housing for Continental Brands employees. A nightmare to navigate due to its “flavors of the world” theming.",
           "map": {
-            "x": 34.947,
-            "y": 43.267
+            "x": 34.958,
+            "y": 43.262
           }
         },
         {
           "key": "a4",
           "code": "A4",
           "name": "Cube-A-Rama",
-          "blurb": "A cube hotel with an original brick exterior."
+          "blurb": "A cube hotel with an original brick exterior.",
+          "map": {
+            "x": 39.153,
+            "y": 42.509
+          }
         },
         {
           "key": "a5",
@@ -70,8 +83,8 @@
           "name": "Danger Gal Housing Facility",
           "blurb": "Housing for Danger Gal employees. Pink and full of life.",
           "map": {
-            "x": 29.78,
-            "y": 41.104
+            "x": 29.806,
+            "y": 41.109
           }
         },
         {
@@ -80,8 +93,8 @@
           "name": "Danger Gal Offices",
           "blurb": "Home base for Danger Gal, a private investigation and security Neocorp.",
           "map": {
-            "x": 30.561,
-            "y": 41.559
+            "x": 30.569,
+            "y": 41.558
           }
         },
         {
@@ -90,15 +103,19 @@
           "name": "Fiddler’s Green",
           "blurb": "An “Irish” pub that’s about as Irish as green beer on Saint Patty’s day.",
           "map": {
-            "x": 35.47,
-            "y": 40.967
+            "x": 35.486,
+            "y": 40.974
           }
         },
         {
           "key": "a8",
           "code": "A8",
           "name": "Greta’s",
-          "blurb": "The best pool hall in Night City, with a strong lesbian client base."
+          "blurb": "The best pool hall in Night City, with a strong lesbian client base.",
+          "map": {
+            "x": 42.556,
+            "y": 41.199
+          }
         },
         {
           "key": "a9",
@@ -106,33 +123,49 @@
           "name": "Holy Angels Church",
           "blurb": "A Catholic church run by Father Kevin and Father Paul. Known far and wide as neutral ground in Night City.",
           "map": {
-            "x": 33.212,
-            "y": 41.153
+            "x": 33.208,
+            "y": 41.163
           }
         },
         {
           "key": "a10",
           "code": "A10",
           "name": "Paradiso Terrestre",
-          "blurb": "An upscale Southern Neo-Italian dining experience. Meals by appointment only."
+          "blurb": "An upscale Southern Neo-Italian dining experience. Meals by appointment only.",
+          "map": {
+            "x": 35.694,
+            "y": 43.908
+          }
         },
         {
           "key": "a11",
           "code": "A11",
           "name": "Short Circuit",
-          "blurb": "Night City’s premiere Tech and Netrunner bar. Owned and operated by Brain and his husband 3-Piece."
+          "blurb": "Night City’s premiere Tech and Netrunner bar. Owned and operated by Brain and his husband 3-Piece.",
+          "map": {
+            "x": 40.431,
+            "y": 44.276
+          }
         },
         {
           "key": "a12",
           "code": "A12",
           "name": "Soprano’s",
-          "blurb": "An Italian restaurant that leans heavily into its mafioso theming. The real mob gives it a pass."
+          "blurb": "An Italian restaurant that leans heavily into its mafioso theming. The real mob gives it a pass.",
+          "map": {
+            "x": 35.056,
+            "y": 45.792
+          }
         },
         {
           "key": "a13",
           "code": "A13",
           "name": "Torrell and Chiang’s",
-          "blurb": "Considered by many to be the best tailors in Night City."
+          "blurb": "Considered by many to be the best tailors in Night City.",
+          "map": {
+            "x": 36.417,
+            "y": 46.465
+          }
         }
       ],
       "map": {
@@ -148,13 +181,21 @@
       "blurb": "A bustling district with a mix of old industrial zones and gentrified neighborhoods built around a series of docks and small marinas.",
       "cityManager": "Kabria Chung (elected by property owners)",
       "security": "NCPD",
-      "gangs": ["Maelstrom", "Prime-Time Players", "Street Queens"],
+      "gangs": [
+        "Maelstrom",
+        "Prime-Time Players",
+        "Street Queens"
+      ],
       "locations": [
         {
           "key": "b1",
           "code": "B1",
           "name": "The Afterlife",
-          "blurb": "The premiere edgerunner bar in Night City. Owned by the legendary Solo, Rogue."
+          "blurb": "The premiere edgerunner bar in Night City. Owned by the legendary Solo, Rogue.",
+          "map": {
+            "x": 51.653,
+            "y": 42.311
+          }
         },
         {
           "key": "b2",
@@ -162,7 +203,7 @@
           "name": "Buffalo’s",
           "blurb": "The latest in a long line of failing restaurants opened in this location. Serves global fusion cuisine.",
           "map": {
-            "x": 44.583,
+            "x": 44.569,
             "y": 40.624
           }
         },
@@ -172,8 +213,8 @@
           "name": "City Medical Center",
           "blurb": "An enormous hospital complex housing some of the best medical staff and technology in Night City.",
           "map": {
-            "x": 56.947,
-            "y": 44.373
+            "x": 56.944,
+            "y": 44.375
           }
         },
         {
@@ -182,21 +223,29 @@
           "name": "The Garden of Earthly Delights",
           "blurb": "A full hedonistic experience brothel. A visit starts with dinner and ends with time spent with meat puppets programmed to the client’s specifications.",
           "map": {
-            "x": 54.553,
-            "y": 33.147
+            "x": 54.653,
+            "y": 33.151
           }
         },
         {
           "key": "b5",
           "code": "B5",
           "name": "GraffitiX",
-          "blurb": "An art gallery displaying the work of Night City’s best up-and-coming artists."
+          "blurb": "An art gallery displaying the work of Night City’s best up-and-coming artists.",
+          "map": {
+            "x": 57.708,
+            "y": 42.823
+          }
         },
         {
           "key": "b6",
           "code": "B6",
           "name": "La Lune Blue",
-          "blurb": "A high-end French restaurant."
+          "blurb": "A high-end French restaurant.",
+          "map": {
+            "x": 58.931,
+            "y": 42.652
+          }
         },
         {
           "key": "b7",
@@ -204,15 +253,19 @@
           "name": "Marina FloatHomes",
           "blurb": "A collection of small houseboats for rent.",
           "map": {
-            "x": 45.727,
-            "y": 38.975
+            "x": 45.736,
+            "y": 38.974
           }
         },
         {
           "key": "b8",
           "code": "B8",
           "name": "McCartney Cubes",
-          "blurb": "A cube hotel near the stadium."
+          "blurb": "A cube hotel near the stadium.",
+          "map": {
+            "x": 51.111,
+            "y": 40.032
+          }
         },
         {
           "key": "b9",
@@ -220,33 +273,49 @@
           "name": "McCartney Field Stadium",
           "blurb": "A 75,000 seat stadium and the heart of Night City’s sports and concert scene. Franchises calling the stadium home include the Slammers (Baseball), Heat (Basketball), Death Dealers (Combat Soccer), Nuke (Murderball), and the New Battlegrounds Championship Wrestling League.",
           "map": {
-            "x": 48.705,
-            "y": 40.527
+            "x": 48.708,
+            "y": 40.526
           }
         },
         {
           "key": "b10",
           "code": "B10",
           "name": "Night City Bubbles",
-          "blurb": "A high-end spa. Some employees can be hired as escorts for the evening."
+          "blurb": "A high-end spa. Some employees can be hired as escorts for the evening.",
+          "map": {
+            "x": 56.944,
+            "y": 43.316
+          }
         },
         {
           "key": "b11",
           "code": "B11",
           "name": "REO Meatwagon Offices",
-          "blurb": "Home of Night City’s second-biggest EMS operation."
+          "blurb": "Home of Night City’s second-biggest EMS operation.",
+          "map": {
+            "x": 61.611,
+            "y": 43.235
+          }
         },
         {
           "key": "b12",
           "code": "B12",
           "name": "TravlStay CityCenter",
-          "blurb": "A cube hotel with paper-thin walls and absolutely no security."
+          "blurb": "A cube hotel with paper-thin walls and absolutely no security.",
+          "map": {
+            "x": 43.667,
+            "y": 41.118
+          }
         },
         {
           "key": "b13",
           "code": "B13",
           "name": "Ziggurat Offices",
-          "blurb": "The headquarters of Ziggurat, the company responsible for building and maintaining Citinets across the continent. Attached is the Hanging Gardens, which provides housing for employees."
+          "blurb": "The headquarters of Ziggurat, the company responsible for building and maintaining Citinets across the continent. Attached is the Hanging Gardens, which provides housing for employees.",
+          "map": {
+            "x": 59.514,
+            "y": 41.531
+          }
         }
       ],
       "map": {
@@ -262,19 +331,31 @@
       "blurb": "A new district carved out of Little Europe by Mister Kernighan and a consortium of Fixers and Execs known as the Chamber of Commerce. Downtown is preparing for Night City’s full rebirth by creating the most commercially friendly district on the Island.",
       "cityManager": "Emilia Ortega (appointed by Chamber of Commerce)",
       "security": "Whitewater Security",
-      "gangs": ["Eastern Tigers Triad", "Skiv Family", "Undertow"],
+      "gangs": [
+        "Eastern Tigers Triad",
+        "Skiv Family",
+        "Undertow"
+      ],
       "locations": [
         {
           "key": "c1",
           "code": "C1",
           "name": "Acadia Way",
-          "blurb": "A single street containing restored bungalows, gated away from the rest of the world."
+          "blurb": "A single street containing restored bungalows, gated away from the rest of the world.",
+          "map": {
+            "x": 32.931,
+            "y": 45.218
+          }
         },
         {
           "key": "c2",
           "code": "C2",
           "name": "Continental Brands Offices",
-          "blurb": "The Night City headquarters of food juggernaut Continental Brands. Also home to the Oasis Megamart, the largest grocery store in the city."
+          "blurb": "The Night City headquarters of food juggernaut Continental Brands. Also home to the Oasis Megamart, the largest grocery store in the city.",
+          "map": {
+            "x": 32.764,
+            "y": 43.298
+          }
         },
         {
           "key": "c3",
@@ -282,7 +363,7 @@
           "name": "Cortex Complex",
           "blurb": "An ugly office building that vaguely resembles a human brain. Home to Jack Skorkowski Real Estate and DizCom, an industrial design firm.",
           "map": {
-            "x": 30.909,
+            "x": 30.917,
             "y": 45.263
           }
         },
@@ -292,15 +373,19 @@
           "name": "Delirium",
           "blurb": "A gothpunk virtuality club.",
           "map": {
-            "x": 31.545,
-            "y": 46.893
+            "x": 31.528,
+            "y": 46.896
           }
         },
         {
           "key": "c5",
           "code": "C5",
           "name": "Night City Firestation #2",
-          "blurb": "The most wellfunded firestation in Night City. It is well fortified, well equipped, and employs a number of FBC firefighters."
+          "blurb": "The most wellfunded firestation in Night City. It is well fortified, well equipped, and employs a number of FBC firefighters.",
+          "map": {
+            "x": 30.028,
+            "y": 45.263
+          }
         }
       ],
       "map": {
@@ -316,13 +401,22 @@
       "blurb": "Formerly the central city Corporate Zone. Now, a bleak landscape riddles with twisted, wrecked skyscrapers. It shrinks a bit each year as the edges are cleared and rebuilt.",
       "cityManager": "None",
       "security": "NCPD (in theory)",
-      "gangs": ["Lightning Cats", "Maelstrom", "Reckoners", "various Scavver groups"],
+      "gangs": [
+        "Lightning Cats",
+        "Maelstrom",
+        "Reckoners",
+        "various Scavver groups"
+      ],
       "locations": [
         {
           "key": "d1",
           "code": "D1",
           "name": "The Ashcroft Hotel",
-          "blurb": "Once the most luxurious hotel in Night City. Now the center of Maelstrom’s Hot Zone scavenging operations."
+          "blurb": "Once the most luxurious hotel in Night City. Now the center of Maelstrom’s Hot Zone scavenging operations.",
+          "map": {
+            "x": 52.028,
+            "y": 45.936
+          }
         },
         {
           "key": "d2",
@@ -330,8 +424,8 @@
           "name": "The N54",
           "blurb": "The former home of Network 54 in Night City. The tallest structure still standing in the Hot Zone – climbing it and tagging the top has become a tradition among urbanauts.",
           "map": {
-            "x": 45.591,
-            "y": 47.563
+            "x": 45.597,
+            "y": 47.56
           }
         },
         {
@@ -340,8 +434,8 @@
           "name": "Toggle’s Temple",
           "blurb": "An underground firearms range and obstacle course run by a conspiracy theorist named Toggle.",
           "map": {
-            "x": 41.712,
-            "y": 43.658
+            "x": 41.708,
+            "y": 43.657
           }
         },
         {
@@ -350,8 +444,8 @@
           "name": "Totentanz",
           "blurb": "A chrome metal club and home base for Maelstrom. You smell like a cop. Know what we do to cops we catch sniffing around Totentanz ? We feed ‘em to The Pit! — Quake Maelstrom Lieutenant",
           "map": {
-            "x": 45.886,
-            "y": 42.107
+            "x": 45.875,
+            "y": 42.105
           }
         }
       ],
@@ -368,19 +462,31 @@
       "blurb": "A struggling community attempting to crawl its way out of the combat zones and into the rebuilding urban center.",
       "cityManager": "David Ling Po (appointed by the Little China Redevelopment Association)",
       "security": "Gold Dragons",
-      "gangs": ["Gold Dragons", "Red Chrome Legion", "Weng Fang Tong"],
+      "gangs": [
+        "Gold Dragons",
+        "Red Chrome Legion",
+        "Weng Fang Tong"
+      ],
       "locations": [
         {
           "key": "e1",
           "code": "E1",
           "name": "Bridgetown",
-          "blurb": "A cargo container community stacked under the end of the Pelican Boulevard overpass. It isn’t uncommon for bodies to wash up on the waterfront nearby."
+          "blurb": "A cargo container community stacked under the end of the Pelican Boulevard overpass. It isn’t uncommon for bodies to wash up on the waterfront nearby.",
+          "map": {
+            "x": 64.514,
+            "y": 46.582
+          }
         },
         {
           "key": "e2",
           "code": "E2",
           "name": "Chrome Cross",
-          "blurb": "A dive bar frequented by the Red Chrome Legion."
+          "blurb": "A dive bar frequented by the Red Chrome Legion.",
+          "map": {
+            "x": 57.764,
+            "y": 48.609
+          }
         },
         {
           "key": "e3",
@@ -389,20 +495,28 @@
           "blurb": "The home of The Forlorn Hope, a venerable edgerunner bar and Night City institution (before the events of Tales of the RED: Hope Reborn).",
           "map": {
             "x": 60.667,
-            "y": 49.432
+            "y": 49.426
           }
         },
         {
           "key": "e4",
           "code": "E4",
           "name": "Guăngbō Tower",
-          "blurb": "A symbol of Little China’s aspirations for the future, this restored tower houses a number of organizations and businesses, including the Ling Po Public Library and Virtex’s Virtuality Venue."
+          "blurb": "A symbol of Little China’s aspirations for the future, this restored tower houses a number of organizations and businesses, including the Ling Po Public Library and Virtex’s Virtuality Venue.",
+          "map": {
+            "x": 60.917,
+            "y": 46.008
+          }
         },
         {
           "key": "e5",
           "code": "E5",
           "name": "Prosperity Gardens Tenements",
-          "blurb": "A block of mixed-use apartments holding way too many people. For mysterious reasons, it is also one of the safest places to live in Little China."
+          "blurb": "A block of mixed-use apartments holding way too many people. For mysterious reasons, it is also one of the safest places to live in Little China.",
+          "map": {
+            "x": 60.042,
+            "y": 46.824
+          }
         }
       ],
       "map": {
@@ -418,13 +532,20 @@
       "blurb": "A slim district housing the city’s only traditional institution of higher learning.",
       "cityManager": "Doctor Edward Michaels (self-appointed)",
       "security": "NCU Campus Security",
-      "gangs": ["Philharmonic Vampyres", "Princesses of Justice"],
+      "gangs": [
+        "Philharmonic Vampyres",
+        "Princesses of Justice"
+      ],
       "locations": [
         {
           "key": "f1",
           "code": "F1",
           "name": "Biotechnica Campus",
-          "blurb": "The headquarters of Biotechnica in Night City. Strange sounds can be heard from the campus at night."
+          "blurb": "The headquarters of Biotechnica in Night City. Strange sounds can be heard from the campus at night.",
+          "map": {
+            "x": 40.0,
+            "y": 48.484
+          }
         },
         {
           "key": "f2",
@@ -432,8 +553,8 @@
           "name": "Biotechnica Habitation Sphere Alpha",
           "blurb": "A geodesic dome serving as housing for Biotechnica employees.",
           "map": {
-            "x": 38.894,
-            "y": 47.749
+            "x": 38.903,
+            "y": 47.757
           }
         },
         {
@@ -442,7 +563,7 @@
           "name": "Night City Symphony Hall",
           "blurb": "A performance space owned and operated by the Philharmonic Vampyres.",
           "map": {
-            "x": 33.591,
+            "x": 33.597,
             "y": 49.3
           }
         },
@@ -450,19 +571,31 @@
           "key": "f4",
           "code": "F4",
           "name": "Night City University",
-          "blurb": "A college campus built up into something of a fortified monastery. The center of higher education in Night City."
+          "blurb": "A college campus built up into something of a fortified monastery. The center of higher education in Night City.",
+          "map": {
+            "x": 30.181,
+            "y": 48.896
+          }
         },
         {
           "key": "f5",
           "code": "F5",
           "name": "Parkside Living",
-          "blurb": "Apartments occupied primarily by NCU students and some faculty. Always loud and boisterous."
+          "blurb": "Apartments occupied primarily by NCU students and some faculty. Always loud and boisterous.",
+          "map": {
+            "x": 42.264,
+            "y": 49.193
+          }
         },
         {
           "key": "f6",
           "code": "F6",
           "name": "Princessland!",
-          "blurb": "An abandoned carnival themed around an old animated show. Now home to the Princesses of Justice."
+          "blurb": "An abandoned carnival themed around an old animated show. Now home to the Princesses of Justice.",
+          "map": {
+            "x": 35.361,
+            "y": 48.726
+          }
         },
         {
           "key": "f7",
@@ -470,8 +603,8 @@
           "name": "Stems & Seeds",
           "blurb": "A guerilla gardening operation run by Lily Larson, a former researcher for Petrochem.",
           "map": {
-            "x": 27.394,
-            "y": 49.491
+            "x": 27.403,
+            "y": 49.489
           }
         },
         {
@@ -480,15 +613,19 @@
           "name": "University Cubes",
           "blurb": "Cheap rooms for university students on a budget.",
           "map": {
-            "x": 27.394,
-            "y": 48.18
+            "x": 27.403,
+            "y": 48.188
           }
         },
         {
           "key": "f9",
           "code": "F9",
           "name": "Yewtree",
-          "blurb": "A neo-hipster bar working in collusion with NCU Security to keep students quiet while drinking in the district."
+          "blurb": "A neo-hipster bar working in collusion with NCU Security to keep students quiet while drinking in the district.",
+          "map": {
+            "x": 34.847,
+            "y": 49.803
+          }
         }
       ],
       "map": {
@@ -504,13 +641,22 @@
       "blurb": "The administrative center of Night City; full of movers, shakers, and power players.",
       "cityManager": "Zohara Freeman (appointed by Night Corp)",
       "security": "NCPD",
-      "gangs": ["DeadWoods", "Kill Krashers", "The Reckoners", "Weng Fang Tong"],
+      "gangs": [
+        "DeadWoods",
+        "Kill Krashers",
+        "The Reckoners",
+        "Weng Fang Tong"
+      ],
       "locations": [
         {
           "key": "g1",
           "code": "G1",
           "name": "1st Night City Bank",
-          "blurb": "The largest bank in Night City and the most likely source of loan money for local projects (usually lent to people with plenty of money of their own)."
+          "blurb": "The largest bank in Night City and the most likely source of loan money for local projects (usually lent to people with plenty of money of their own).",
+          "map": {
+            "x": 41.708,
+            "y": 54.692
+          }
         },
         {
           "key": "g2",
@@ -518,75 +664,119 @@
           "name": "Air",
           "blurb": "An oxygen bar for those who can afford the fresh stuff.",
           "map": {
-            "x": 42.477,
-            "y": 50.92
+            "x": 46.167,
+            "y": 51.292
           }
         },
         {
           "key": "g3",
           "code": "G3",
           "name": "Bear’s",
-          "blurb": "Famous for its microbrew selection and the moth-eaten bear head sitting above the bar."
+          "blurb": "Famous for its microbrew selection and the moth-eaten bear head sitting above the bar.",
+          "map": {
+            "x": 40.361,
+            "y": 50.673
+          }
         },
         {
           "key": "g4",
           "code": "G4",
           "name": "City Hall",
-          "blurb": "The seat of local government in Night City."
+          "blurb": "The seat of local government in Night City.",
+          "map": {
+            "x": 43.056,
+            "y": 55.886
+          }
         },
         {
           "key": "g5",
           "code": "G5",
           "name": "City Police Precinct #1",
-          "blurb": "The first line of defense against the gangs of the combat zones … for those who can afford it."
+          "blurb": "The first line of defense against the gangs of the combat zones … for those who can afford it.",
+          "map": {
+            "x": 48.667,
+            "y": 51.974
+          }
         },
         {
           "key": "g6",
           "code": "G6",
           "name": "Club Atlantis",
-          "blurb": "A glamorous, multi-level club with a flashy, avant-garde, and disorienting style."
+          "blurb": "A glamorous, multi-level club with a flashy, avant-garde, and disorienting style.",
+          "map": {
+            "x": 47.722,
+            "y": 51.005
+          }
         },
         {
           "key": "g7",
           "code": "G7",
           "name": "Glenlife Perfected",
-          "blurb": "An apartment building. Looks great on the outside. Not so great on the inside."
+          "blurb": "An apartment building. Looks great on the outside. Not so great on the inside.",
+          "map": {
+            "x": 38.847,
+            "y": 53.795
+          }
         },
         {
           "key": "g8",
           "code": "G8",
           "name": "Hall of Justice",
-          "blurb": "Courthouse and jail all in one. An imposing, brutalist structure."
+          "blurb": "Courthouse and jail all in one. An imposing, brutalist structure.",
+          "map": {
+            "x": 45.444,
+            "y": 55.742
+          }
         },
         {
           "key": "g9",
           "code": "G9",
           "name": "Kasim’s",
-          "blurb": "A Turkish coffee and tobacco bar. Closed on Fridays so the owner and his family can attend prayers."
+          "blurb": "A Turkish coffee and tobacco bar. Closed on Fridays so the owner and his family can attend prayers.",
+          "map": {
+            "x": 40.903,
+            "y": 53.804
+          }
         },
         {
           "key": "g10",
           "code": "G10",
           "name": "Merrill, Asukaga & Finch Offices",
-          "blurb": "The Night City headquarters of the world’s largest independent financial and investment institution. The tall skyscraper houses additional businesses."
+          "blurb": "The Night City headquarters of the world’s largest independent financial and investment institution. The tall skyscraper houses additional businesses.",
+          "map": {
+            "x": 44.625,
+            "y": 54.549
+          }
         },
         {
           "key": "g11",
           "code": "G11",
           "name": "Night City Plaza",
-          "blurb": "A beautiful park open to the public. The largest green space in Night City."
+          "blurb": "A beautiful park open to the public. The largest green space in Night City.",
+          "map": {
+            "x": 40.333,
+            "y": 52.099
+          }
         },
         {
           "key": "g12",
           "code": "G12",
           "name": "Raven Microcybernetics",
-          "blurb": "Night City headquarters for a major cybernetics company. The skyscraper also houses some of the company’s close business partners."
+          "blurb": "Night City headquarters for a major cybernetics company. The skyscraper also houses some of the company’s close business partners.",
+          "map": {
+            "x": 42.472,
+            "y": 50.924
+          }
         },
         {
           "key": "g13",
           "code": "G13",
           "name": "Seafoam",
-          "blurb": "A cube hotel close to Club Atlantis. The party never stops here, though revelers sometimes wake up after a bender missing money, inventory, or chrome courtesy of the Reckoners."
+          "blurb": "A cube hotel close to Club Atlantis. The party never stops here, though revelers sometimes wake up after a bender missing money, inventory, or chrome courtesy of the Reckoners.",
+          "map": {
+            "x": 46.014,
+            "y": 50.009
+          }
         }
       ],
       "map": {
@@ -602,13 +792,23 @@
       "blurb": "Most of Night City’s ethnic Japanese population has moved north, but enough still cling together here to form islands of civilization in a sea of combat zone chaos.",
       "cityManager": "Adriane Casselle (elected by local family heads)",
       "security": "Kimen-Gumi",
-      "gangs": ["Iron Sights", "Maelstrom", "Red Chrome Legion", "The Shroomers", "Tyger Claws"],
+      "gangs": [
+        "Iron Sights",
+        "Maelstrom",
+        "Red Chrome Legion",
+        "The Shroomers",
+        "Tyger Claws"
+      ],
       "locations": [
         {
           "key": "h1",
           "code": "H1",
           "name": "Crisis Medical Center",
-          "blurb": "A no-questions asked medical center supplied with surprisingly advanced technology. Multiple Corps use it as a staging ground to run medical experiments."
+          "blurb": "A no-questions asked medical center supplied with surprisingly advanced technology. Multiple Corps use it as a staging ground to run medical experiments.",
+          "map": {
+            "x": 53.083,
+            "y": 51.983
+          }
         },
         {
           "key": "h2",
@@ -616,7 +816,7 @@
           "name": "Highcourt Plaza Hotel",
           "blurb": "A classy and well-defended hotel providing excellent service. Most guests arrive via AV to avoid driving through a combat zone.",
           "map": {
-            "x": 53.689,
+            "x": 53.694,
             "y": 48.968
           }
         },
@@ -624,7 +824,11 @@
           "key": "h3",
           "code": "H3",
           "name": "Honest Hiro’s Used Cars",
-          "blurb": "A used car dealership supplied by the Steel Vaqueros (and other nomads) and protected by edgerunners who trade service for vehicles."
+          "blurb": "A used car dealership supplied by the Steel Vaqueros (and other nomads) and protected by edgerunners who trade service for vehicles.",
+          "map": {
+            "x": 54.583,
+            "y": 51.498
+          }
         },
         {
           "key": "h4",
@@ -632,8 +836,8 @@
           "name": "Mrs. Suzuki’s Bodega",
           "blurb": "The most secure and stable market in Old Japantown. Known for being the only distribution point for mushrooms grown by the Shroomers.",
           "map": {
-            "x": 54.598,
-            "y": 50.509
+            "x": 54.583,
+            "y": 50.511
           }
         },
         {
@@ -642,7 +846,7 @@
           "name": "The Precipice",
           "blurb": "A cargo container community. Many of the residents earn extra cash by volunteering for experiments at Crisis Medical.",
           "map": {
-            "x": 51.939,
+            "x": 51.944,
             "y": 48.654
           }
         },
@@ -650,7 +854,11 @@
           "key": "h6",
           "code": "H6",
           "name": "Unnamed Cube Hotel",
-          "blurb": "The rooms are cleaned out by ceiling-mounted water jets, and the locks on the doors are dodgy, but at least there are no cameras and no questions."
+          "blurb": "The rooms are cleaned out by ceiling-mounted water jets, and the locks on the doors are dodgy, but at least there are no cameras and no questions.",
+          "map": {
+            "x": 55.736,
+            "y": 51.57
+          }
         }
       ],
       "map": {
@@ -682,7 +890,11 @@
           "key": "i1",
           "code": "I1",
           "name": "The Boneyard",
-          "blurb": "Formerly the Night City Garden of Rest. Now a shanty town and home to the Sinful Adams. They run an annual festival on Halloween for the district’s residents."
+          "blurb": "Formerly the Night City Garden of Rest. Now a shanty town and home to the Sinful Adams. They run an annual festival on Halloween for the district’s residents.",
+          "map": {
+            "x": 37.569,
+            "y": 50.718
+          }
         },
         {
           "key": "i2",
@@ -690,8 +902,8 @@
           "name": "MindNutz Lover",
           "blurb": "The hottest braindance club in South Night City.",
           "map": {
-            "x": 36.008,
-            "y": 50.48
+            "x": 36.0,
+            "y": 50.484
           }
         },
         {
@@ -700,21 +912,29 @@
           "name": "Savage Docs",
           "blurb": "A multi-ripperdoc operation of good reputation protected by both the Yakuza and the Tyger Claws (despite their differences).",
           "map": {
-            "x": 35.364,
-            "y": 48.728
+            "x": 37.167,
+            "y": 52.324
           }
         },
         {
           "key": "i4",
           "code": "I4",
           "name": "Silverhand Studios",
-          "blurb": "Apartments and studio space rented out to artists and musicians. Run by the cousin of legendary Rockerboy Kerry Eurodyne."
+          "blurb": "Apartments and studio space rented out to artists and musicians. Run by the cousin of legendary Rockerboy Kerry Eurodyne.",
+          "map": {
+            "x": 39.403,
+            "y": 58.882
+          }
         },
         {
           "key": "i5",
           "code": "I5",
           "name": "The Slammer",
-          "blurb": "A ganger bar. Home of the Arena, a no-holds-barred combat ring gangers can step into to settle their disputes without murder."
+          "blurb": "A ganger bar. Home of the Arena, a no-holds-barred combat ring gangers can step into to settle their disputes without murder.",
+          "map": {
+            "x": 35.889,
+            "y": 60.111
+          }
         },
         {
           "key": "i6",
@@ -722,21 +942,29 @@
           "name": "South Cargo Village",
           "blurb": "A cargo container community. Despite being on the border of The Glen, it is still in a combat zone, and the cops treat it as such.",
           "map": {
-            "x": 43.992,
-            "y": 57.82
+            "x": 43.889,
+            "y": 57.823
           }
         },
         {
           "key": "i7",
           "code": "I7",
           "name": "Union Chapel Building",
-          "blurb": "Once an architectural landmark. Now abandoned, in theory. Some think the Reckoners use the basement as a refuge."
+          "blurb": "Once an architectural landmark. Now abandoned, in theory. Some think the Reckoners use the basement as a refuge.",
+          "map": {
+            "x": 34.611,
+            "y": 51.292
+          }
         },
         {
           "key": "i8",
           "code": "I8",
           "name": "University Cargo Bay",
-          "blurb": "Cargo container housing for university students."
+          "blurb": "Cargo container housing for university students.",
+          "map": {
+            "x": 30.056,
+            "y": 51.13
+          }
         }
       ],
       "map": {
@@ -752,13 +980,20 @@
       "blurb": "A central location for cargo entering and leaving Night City by sea. Run by nomads from the Thelas Nation.",
       "cityManager": "Calypso (appointed by Thelas elders)",
       "security": "Thelas Marines",
-      "gangs": ["Consortium", "DeadWoods"],
+      "gangs": [
+        "Consortium",
+        "DeadWoods"
+      ],
       "locations": [
         {
           "key": "j1",
           "code": "J1",
           "name": "Dock 13",
-          "blurb": "The storefront (and occasional night market) of marketing genius Willy “Mister Amaaaze” Maze."
+          "blurb": "The storefront (and occasional night market) of marketing genius Willy “Mister Amaaaze” Maze.",
+          "map": {
+            "x": 29.903,
+            "y": 57.465
+          }
         },
         {
           "key": "j2",
@@ -766,27 +1001,39 @@
           "name": "Dock 14 Studio Apartments",
           "blurb": "An apartment building just one dock away from the always loud Dock 13.",
           "map": {
-            "x": 30.439,
-            "y": 58.064
+            "x": 30.444,
+            "y": 58.066
           }
         },
         {
           "key": "j3",
           "code": "J3",
           "name": "Dock Cargo Community",
-          "blurb": "A cargo container community nestled between the docks."
+          "blurb": "A cargo container community nestled between the docks.",
+          "map": {
+            "x": 30.444,
+            "y": 58.64
+          }
         },
         {
           "key": "j4",
           "code": "J4",
           "name": "Flotsam",
-          "blurb": "A small drift town just off the coast. It consists of several larger vessels run aground connected by smaller boats, rafts, and walkways. The Randy Dandy, a mobile bar, often docks here."
+          "blurb": "A small drift town just off the coast. It consists of several larger vessels run aground connected by smaller boats, rafts, and walkways. The Randy Dandy, a mobile bar, often docks here.",
+          "map": {
+            "x": 25.764,
+            "y": 53.338
+          }
         },
         {
           "key": "j5",
           "code": "J5",
           "name": "Medical Technologies",
-          "blurb": "A body bank specializing in growing replacement limbs. Known for buying and selling dodgy cyberware as well."
+          "blurb": "A body bank specializing in growing replacement limbs. Known for buying and selling dodgy cyberware as well.",
+          "map": {
+            "x": 29.569,
+            "y": 53.903
+          }
         },
         {
           "key": "j6",
@@ -794,8 +1041,8 @@
           "name": "Rusty’s Dive Shack",
           "blurb": "A rough-and-tumble bar for sea-faring types. Built out of the bridge of an old container sub.",
           "map": {
-            "x": 30.697,
-            "y": 55.456
+            "x": 30.694,
+            "y": 55.455
           }
         },
         {
@@ -804,7 +1051,7 @@
           "name": "South Night City Reclaimed Studio",
           "blurb": "An apartment building near the water. Leaving the building risks encountering gangers visiting Medical Technologies.",
           "map": {
-            "x": 29.045,
+            "x": 29.056,
             "y": 54.477
           }
         }
@@ -822,13 +1069,19 @@
       "blurb": "A small enclave run by nomads turned reclaimers. They’ve taken over the operation of Night City’s public transportation, exchanging their technical and motor skills for the land.",
       "cityManager": "Santos Dorado (elected by district residents)",
       "security": "Los Perros Guardianes",
-      "gangs": ["Tombstone Preservers"],
+      "gangs": [
+        "Tombstone Preservers"
+      ],
       "locations": [
         {
           "key": "k1",
           "code": "K1",
           "name": "Herschel’s Crematorium",
-          "blurb": "A funeral home run by an undertaker who truly believes everyone deserves a dignified sendoff into the next life."
+          "blurb": "A funeral home run by an undertaker who truly believes everyone deserves a dignified sendoff into the next life.",
+          "map": {
+            "x": 37.375,
+            "y": 57.33
+          }
         }
       ],
       "map": {
@@ -844,31 +1097,53 @@
       "blurb": "In the late 2010s and early 2020s, Night City began expanding the Island by filling in land to the southeast. In the aftermath of the 4th Corporate War, what was intended to be a shining beacon of industrial might devolved into the worst combat zone Night City had ever seen. Slowly, inch by inch, groups of edgerunners have strived to rebuild it.",
       "cityManager": "Brick Coleman (as leader of Edgerunners Inc)",
       "security": "Edgerunners Inc",
-      "gangs": ["Edgerunners Inc", "The Faded", "Generation Red", "Iron Sights", "The Shroomers"],
+      "gangs": [
+        "Edgerunners Inc",
+        "The Faded",
+        "Generation Red",
+        "Iron Sights",
+        "The Shroomers"
+      ],
       "locations": [
         {
           "key": "l1",
           "code": "L1",
           "name": "From the Ashes",
-          "blurb": "A sliding scale clinic run by Phoenix Redwyne."
+          "blurb": "A sliding scale clinic run by Phoenix Redwyne.",
+          "map": {
+            "x": 51.306,
+            "y": 53.445
+          }
         },
         {
           "key": "l2",
           "code": "L2",
           "name": "Jesse James’ Kosher Deli",
-          "blurb": "More of a saloon than a deli, though for a small fortune you can get a pretty good corned beef on rye."
+          "blurb": "More of a saloon than a deli, though for a small fortune you can get a pretty good corned beef on rye.",
+          "map": {
+            "x": 48.903,
+            "y": 58.263
+          }
         },
         {
           "key": "l3",
           "code": "L3",
           "name": "NC Ionic Semiconductor Building",
-          "blurb": "A factory-turned-cargo community. Many Iron Sights stash family members here for safety."
+          "blurb": "A factory-turned-cargo community. Many Iron Sights stash family members here for safety.",
+          "map": {
+            "x": 54.847,
+            "y": 54.262
+          }
         },
         {
           "key": "l4",
           "code": "L4",
           "name": "The Underground",
-          "blurb": "The home of the Shroomers, located deep beneath the streets of Night City. N orthside n o r t h s i d e n o r t h s i d e The land to the north of the island. Once home to forest and parks, now home to megabuildings, the masses, and the military."
+          "blurb": "The home of the Shroomers, located deep beneath the streets of Night City. N orthside n o r t h s i d e n o r t h s i d e The land to the north of the island. Once home to forest and parks, now home to megabuildings, the masses, and the military.",
+          "map": {
+            "x": 53.194,
+            "y": 53.436
+          }
         }
       ],
       "map": {
@@ -884,13 +1159,19 @@
       "blurb": "Home of the Estero Bay Military COG (a mixture of various military units into a single organized group). In theory, the COG is loyal to NorCal and the Pacifica Confederation, but they’ve also made a deal with Militech, trading land and access for training and munitions.",
       "cityManager": "General Ash Giovanni (base commander)",
       "security": "NorCal Military Police",
-      "gangs": ["Culper Ring"],
+      "gangs": [
+        "Culper Ring"
+      ],
       "locations": [
         {
           "key": "m1",
           "code": "M1",
           "name": "Militech Corporate Operatives Housing",
-          "blurb": "Secure housing for Militech employees."
+          "blurb": "Secure housing for Militech employees.",
+          "map": {
+            "x": 44.319,
+            "y": 26.27
+          }
         },
         {
           "key": "m2",
@@ -898,8 +1179,8 @@
           "name": "Militech Offices",
           "blurb": "Night City headquarters for Militech, a one-stop shop for all your military and security needs.",
           "map": {
-            "x": 39.273,
-            "y": 26.923
+            "x": 39.278,
+            "y": 26.924
           }
         }
       ],
@@ -929,7 +1210,11 @@
           "key": "n1",
           "code": "N1",
           "name": "City Police Precinct #3",
-          "blurb": "A large, well-armed police precinct. The egos of some cops here took a bruising when they were unable to break up the labor strike."
+          "blurb": "A large, well-armed police precinct. The egos of some cops here took a bruising when they were unable to break up the labor strike.",
+          "map": {
+            "x": 39.278,
+            "y": 31.823
+          }
         },
         {
           "key": "n2",
@@ -937,8 +1222,8 @@
           "name": "HTown",
           "blurb": "A tent city built outside the walls of a gated community. Tensions are high.",
           "map": {
-            "x": 36.538,
-            "y": 28.455
+            "x": 46.347,
+            "y": 18.85
           }
         },
         {
@@ -947,8 +1232,8 @@
           "name": "Petrochem & SovOil Joint Temporary Housing Solution",
           "blurb": "In a twist of irony, both Petrochem and SovOil provide employee housing in the same building. No one is happy about it.",
           "map": {
-            "x": 44.273,
-            "y": 35.075
+            "x": 49.569,
+            "y": 26.763
           }
         },
         {
@@ -957,39 +1242,59 @@
           "name": "Petrochem Offices",
           "blurb": "The heavily defended headquarters of Petrochem in Night City. There’s a small museum dedicated to the history of petroleum. Across the street from the SovOil Offices.",
           "map": {
-            "x": 50.462,
-            "y": 27.735
+            "x": 50.472,
+            "y": 27.741
           }
         },
         {
           "key": "n5",
           "code": "N5",
           "name": "Red Oktober",
-          "blurb": "A Soviet-themed bar built into an old subway station."
+          "blurb": "A Soviet-themed bar built into an old subway station.",
+          "map": {
+            "x": 44.278,
+            "y": 35.071
+          }
         },
         {
           "key": "n6",
           "code": "N6",
           "name": "Redline",
-          "blurb": "Home of the most thrilling bloodsport in Night City and the Wild Things, a gang dedicated to organized competitive violence."
+          "blurb": "Home of the most thrilling bloodsport in Night City and the Wild Things, a gang dedicated to organized competitive violence.",
+          "map": {
+            "x": 46.639,
+            "y": 36.497
+          }
         },
         {
           "key": "n7",
           "code": "N7",
           "name": "Sakura’s",
-          "blurb": "A Night City interpretation of an izakaya, an informal bar."
+          "blurb": "A Night City interpretation of an izakaya, an informal bar.",
+          "map": {
+            "x": 47.917,
+            "y": 32.334
+          }
         },
         {
           "key": "n8",
           "code": "N8",
           "name": "Smash/Cut",
-          "blurb": "An EDM club where the chromed up go to dance, do drugs, and have anonymous sex."
+          "blurb": "An EDM club where the chromed up go to dance, do drugs, and have anonymous sex.",
+          "map": {
+            "x": 49.556,
+            "y": 25.157
+          }
         },
         {
           "key": "n9",
           "code": "N9",
           "name": "SovOil Offices",
-          "blurb": "Night City headquarters for SovOil. Completely off-limits to the public. Across the street from the Petrochem Offices."
+          "blurb": "Night City headquarters for SovOil. Completely off-limits to the public. Across the street from the Petrochem Offices.",
+          "map": {
+            "x": 49.181,
+            "y": 27.849
+          }
         },
         {
           "key": "n10",
@@ -997,27 +1302,39 @@
           "name": "Trauma Team Corporate Living Center",
           "blurb": "Housing for Trauma Team employees.",
           "map": {
-            "x": 45.886,
-            "y": 29.923
+            "x": 45.875,
+            "y": 29.921
           }
         },
         {
           "key": "n11",
           "code": "N11",
           "name": "Trauma Team Tower",
-          "blurb": "Night City headquarters for Trauma Team. Includes an AV repair bay and a hospital for the exclusive use of Executive-level clients."
+          "blurb": "Night City headquarters for Trauma Team. Includes an AV repair bay and a hospital for the exclusive use of Executive-level clients.",
+          "map": {
+            "x": 47.139,
+            "y": 28.611
+          }
         },
         {
           "key": "n12",
           "code": "N12",
           "name": "Vargtimmen",
-          "blurb": "A neo-pagan mead bar. Famous for their solstice and equinox parties."
+          "blurb": "A neo-pagan mead bar. Famous for their solstice and equinox parties.",
+          "map": {
+            "x": 36.542,
+            "y": 28.459
+          }
         },
         {
           "key": "n13",
           "code": "N13",
           "name": "Watson Central Cubelife",
-          "blurb": "A bog standard cube hotel. Let’s all welcome Manager Lucius Rhyne to the Council. I’m sure we all look forward to working with him. With that out of the way, let ’s begin the vote on Manager Lee’s bill to authorize the use of lethal force when dealing with labor strikes. — From the Night City Council Records"
+          "blurb": "A bog standard cube hotel. Let’s all welcome Manager Lucius Rhyne to the Council. I’m sure we all look forward to working with him. With that out of the way, let ’s begin the vote on Manager Lee’s bill to authorize the use of lethal force when dealing with labor strikes. — From the Night City Council Records",
+          "map": {
+            "x": 45.361,
+            "y": 29.248
+          }
         }
       ],
       "map": {
@@ -1033,19 +1350,30 @@
       "blurb": "A small district centered around the Nakagawa Kabuki Theater. Common wisdom holds that while Watson acts as the arms and legs of the Night City Co-Prosperity Sphere, Kabuki is its brain and heart.",
       "cityManager": "Yoshiki Murakami (appointed by the NCCS)",
       "security": "Kimen-Gumi",
-      "gangs": ["G3", "Tyger Claws"],
+      "gangs": [
+        "G3",
+        "Tyger Claws"
+      ],
       "locations": [
         {
           "key": "o1",
           "code": "O1",
           "name": "Nakagawa Kabuki Theater",
-          "blurb": "The most magnificent building in Northside. Home to a Kabuki troupe said to be the equal of any in Japan, as well as a museum and the central offices of the Tyger Claws leadership."
+          "blurb": "The most magnificent building in Northside. Home to a Kabuki troupe said to be the equal of any in Japan, as well as a museum and the central offices of the Tyger Claws leadership.",
+          "map": {
+            "x": 49.431,
+            "y": 34.622
+          }
         },
         {
           "key": "o2",
           "code": "O2",
           "name": "Yum Seng",
-          "blurb": "A host and hostess bar famous for its seafood and soundproof karaoke boxes. M ainland m a i n l a n d m a i n l a n d The overpacked suburbs, struggling to rebuild in the Time of the Red."
+          "blurb": "A host and hostess bar famous for its seafood and soundproof karaoke boxes. M ainland m a i n l a n d m a i n l a n d The overpacked suburbs, struggling to rebuild in the Time of the Red.",
+          "map": {
+            "x": 49.486,
+            "y": 31.186
+          }
         }
       ],
       "map": {
@@ -1061,25 +1389,42 @@
       "blurb": "An urban sprawl built in the remains of an upscale suburb. It mixes glitz and glam with tent cities and lowrent housing. Most of the northern part of the district is occupied by a walled-off fake city where Network 54 runs and films The Combat Zone, a battle royale “game show” in which fifty people enter and only one gets to leave alive with a year’s worth of real chicken dinners as the prize.",
       "cityManager": "Belkis Abera (appointed by WorldSat and Network 54)",
       "security": "NCPD",
-      "gangs": ["Arzin Tynon", "Prime-Time Players", "Street Queens", "Tombstone Preservers"],
+      "gangs": [
+        "Arzin Tynon",
+        "Prime-Time Players",
+        "Street Queens",
+        "Tombstone Preservers"
+      ],
       "locations": [
         {
           "key": "p1",
           "code": "P1",
           "name": "Canalside Plaza",
-          "blurb": "A strip mall. Home to the Sizzle Jams Talent Agency, a Rickshaws, a Capitán Caliente restaurant, the Mane Event hair and nail salon, and an Oasis."
+          "blurb": "A strip mall. Home to the Sizzle Jams Talent Agency, a Rickshaws, a Capitán Caliente restaurant, the Mane Event hair and nail salon, and an Oasis.",
+          "map": {
+            "x": 71.472,
+            "y": 47.47
+          }
         },
         {
           "key": "p2",
           "code": "P2",
           "name": "Chatelaine’s",
-          "blurb": "An early 20th-century style cabaret and burlesque queer club so popular it attracts a number of straight tourists."
+          "blurb": "An early 20th-century style cabaret and burlesque queer club so popular it attracts a number of straight tourists.",
+          "map": {
+            "x": 64.625,
+            "y": 34.838
+          }
         },
         {
           "key": "p3",
           "code": "P3",
           "name": "Dilly’s",
-          "blurb": "A love hotel with a unique mascot – a cartoon pickle wearing a rolled-up condom as a beanie."
+          "blurb": "A love hotel with a unique mascot – a cartoon pickle wearing a rolled-up condom as a beanie.",
+          "map": {
+            "x": 62.222,
+            "y": 31.563
+          }
         },
         {
           "key": "p4",
@@ -1087,21 +1432,29 @@
           "name": "Evergreen Apartments",
           "blurb": "A former big box store transformed into a cube hotel. For the right price, the landlord is more than happy to evict existing tenants for you.",
           "map": {
-            "x": 59.689,
-            "y": 33.363
+            "x": 59.694,
+            "y": 33.366
           }
         },
         {
           "key": "p5",
           "code": "P5",
           "name": "Network 54 Offices",
-          "blurb": "The Night City headquarters and broadcasting tower for Network 54."
+          "blurb": "The Night City headquarters and broadcasting tower for Network 54.",
+          "map": {
+            "x": 64.833,
+            "y": 32.873
+          }
         },
         {
           "key": "p6",
           "code": "P6",
           "name": "Network 54 Westbrook Private Acres",
-          "blurb": "A gated community of duplexes for the use of Network 54 employees."
+          "blurb": "A gated community of duplexes for the use of Network 54 employees.",
+          "map": {
+            "x": 66.958,
+            "y": 34.093
+          }
         },
         {
           "key": "p7",
@@ -1109,8 +1462,8 @@
           "name": "Night City Firestation #1",
           "blurb": "A well-supplied firestation. It specializes in AV-based firefighting.",
           "map": {
-            "x": 71.25,
-            "y": 46.007
+            "x": 71.236,
+            "y": 46.008
           }
         },
         {
@@ -1119,8 +1472,8 @@
           "name": "North Cargo Village",
           "blurb": "A cargo container community stacked in an abandoned parking lot.",
           "map": {
-            "x": 56.098,
-            "y": 32.061
+            "x": 56.097,
+            "y": 32.056
           }
         },
         {
@@ -1129,8 +1482,8 @@
           "name": "Rocklin Augmentics Campus",
           "blurb": "Night City headquarters of Rocklin Augmentics, including offices, meeting spaces, and a research hospital.",
           "map": {
-            "x": 68.341,
-            "y": 45.841
+            "x": 68.333,
+            "y": 45.837
           }
         },
         {
@@ -1139,15 +1492,19 @@
           "name": "Rocklin Augmentics Innovation Hub",
           "blurb": "Corporate housing for Rocklin Augmentics employees. They are encouraged to use the various maker spaces built inside.",
           "map": {
-            "x": 70.106,
-            "y": 46.658
+            "x": 70.111,
+            "y": 46.654
           }
         },
         {
           "key": "p11",
           "code": "P11",
           "name": "WorldSat Offices",
-          "blurb": "A heavily defended compound on the edge of the city. It is not only the local headquarters of WorldSat but also the junction point for satellite communications between Night City and the outside world."
+          "blurb": "A heavily defended compound on the edge of the city. It is not only the local headquarters of WorldSat but also the junction point for satellite communications between Night City and the outside world.",
+          "map": {
+            "x": 64.931,
+            "y": 27.418
+          }
         }
       ],
       "map": {
@@ -1163,31 +1520,51 @@
       "blurb": "A small but influential community. On a clear day, the residents of Charter Hill can see the walls of the Exec Zone and dream of climbing even higher on the Corporate ladder.",
       "cityManager": "Symon Featherstonehaugh (elected by property owners)",
       "security": "Militech",
-      "gangs": ["Prime-Time Players", "Tombstone Preservers", "Tyger Claws"],
+      "gangs": [
+        "Prime-Time Players",
+        "Tombstone Preservers",
+        "Tyger Claws"
+      ],
       "locations": [
         {
           "key": "q1",
           "code": "Q1",
           "name": "Anjelika’s",
-          "blurb": "A host and hostess bar catering to clients with a heavy cyberware fetish."
+          "blurb": "A host and hostess bar catering to clients with a heavy cyberware fetish.",
+          "map": {
+            "x": 68.708,
+            "y": 39.153
+          }
         },
         {
           "key": "q2",
           "code": "Q2",
           "name": "Bella Mia",
-          "blurb": "A club where the affluent and most fashionable residents of Night City go to be seen."
+          "blurb": "A club where the affluent and most fashionable residents of Night City go to be seen.",
+          "map": {
+            "x": 69.153,
+            "y": 38.148
+          }
         },
         {
           "key": "q3",
           "code": "Q3",
           "name": "L’Ermitage",
-          "blurb": "A high-end apartment complex. Most of the units are rented on a short-term basis by Execs visiting Night City for a prolonged period of time."
+          "blurb": "A high-end apartment complex. Most of the units are rented on a short-term basis by Execs visiting Night City for a prolonged period of time.",
+          "map": {
+            "x": 69.542,
+            "y": 41.172
+          }
         },
         {
           "key": "q4",
           "code": "Q4",
           "name": "Seral Grove",
-          "blurb": "An art installation turned high-end burial ground located beneath the district. Burial packages include digital reconstructions of the deceased so visitors can “speak” to their loved ones."
+          "blurb": "An art installation turned high-end burial ground located beneath the district. Burial packages include digital reconstructions of the deceased so visitors can “speak” to their loved ones.",
+          "map": {
+            "x": 73.653,
+            "y": 34.021
+          }
         }
       ],
       "map": {
@@ -1218,7 +1595,10 @@
       "blurb": "As the world returns to normal, Corporations are looking to cut the nomad nations out of the shipping and logistics equation. Larger vessels can’t use the Heywood Docks, but smaller, Corporate-sponsored ships moving up and down the West Coast can.",
       "cityManager": "Andrea Lee (appointed by SK Security)",
       "security": "SK Security",
-      "gangs": ["DeadWoods", "Skiv Family"],
+      "gangs": [
+        "DeadWoods",
+        "Skiv Family"
+      ],
       "locations": [
         {
           "key": "s1",
@@ -1226,8 +1606,8 @@
           "name": "Greenbox Storage Units",
           "blurb": "Technically a secure storage facility, but customers have been known to live inside the units.",
           "map": {
-            "x": 65.545,
-            "y": 54.663
+            "x": 65.556,
+            "y": 54.665
           }
         }
       ],
@@ -1244,25 +1624,42 @@
       "blurb": "Over the past decade, Heywood has been divided into two districts. In the north are workaday residents, many of whom have found jobs in the nearby Heywood Industrial Zone.",
       "cityManager": "Barry “Big Deal” Delvecchio (appointed by district council)",
       "security": "6th Street",
-      "gangs": ["6th Street", "Inquisitors", "The Muses", "The Toecutters"],
+      "gangs": [
+        "6th Street",
+        "Inquisitors",
+        "The Muses",
+        "The Toecutters"
+      ],
       "locations": [
         {
           "key": "t1",
           "code": "T1",
           "name": "Acorn Towers",
-          "blurb": "A dual-tower apartment complex housing Dynalar employees."
+          "blurb": "A dual-tower apartment complex housing Dynalar employees.",
+          "map": {
+            "x": 76.208,
+            "y": 50.09
+          }
         },
         {
           "key": "t2",
           "code": "T2",
           "name": "The Armory",
-          "blurb": "A former National Guard armory transformed into the headquarters of 6th Street."
+          "blurb": "A former National Guard armory transformed into the headquarters of 6th Street.",
+          "map": {
+            "x": 69.139,
+            "y": 55.311
+          }
         },
         {
           "key": "t3",
           "code": "T3",
           "name": "Biotechnica Palm Grove",
-          "blurb": "A grove of experimental palm trees owned and monitored by Biotechnica."
+          "blurb": "A grove of experimental palm trees owned and monitored by Biotechnica.",
+          "map": {
+            "x": 75.236,
+            "y": 49.112
+          }
         },
         {
           "key": "t4",
@@ -1270,45 +1667,69 @@
           "name": "Converted Motel Studio Apartments",
           "blurb": "A no-name motel transformed into no-name apartments on the edge of the city.",
           "map": {
-            "x": 84.288,
-            "y": 53.543
+            "x": 84.278,
+            "y": 53.535
           }
         },
         {
           "key": "t5",
           "code": "T5",
           "name": "Dynalar Campus",
-          "blurb": "The regional headquarters of Dynalar, a popular cyberware and electronics company."
+          "blurb": "The regional headquarters of Dynalar, a popular cyberware and electronics company.",
+          "map": {
+            "x": 73.347,
+            "y": 49.596
+          }
         },
         {
           "key": "t6",
           "code": "T6",
           "name": "Forlorn Hope",
-          "blurb": "The home of The Forlorn Hope, a venerable edgerunner bar and Night City institution (after the events of Tales of the RED: Hope Reborn)."
+          "blurb": "The home of The Forlorn Hope, a venerable edgerunner bar and Night City institution (after the events of Tales of the RED: Hope Reborn).",
+          "map": {
+            "x": 73.347,
+            "y": 48.699
+          }
         },
         {
           "key": "t7",
           "code": "T7",
           "name": "Nana Meow’s Nursery",
-          "blurb": "Not a guerilla garden itself but a shop that supplies gear and seeds to guerilla gardeners."
+          "blurb": "Not a guerilla garden itself but a shop that supplies gear and seeds to guerilla gardeners.",
+          "map": {
+            "x": 71.319,
+            "y": 53.212
+          }
         },
         {
           "key": "t8",
           "code": "T8",
           "name": "Night City Animal Shelter",
-          "blurb": "A former veterinarian clinic now occupied by a ripperdoc. It specializes in Exotics and Bioexotics."
+          "blurb": "A former veterinarian clinic now occupied by a ripperdoc. It specializes in Exotics and Bioexotics.",
+          "map": {
+            "x": 76.625,
+            "y": 52.557
+          }
         },
         {
           "key": "t9",
           "code": "T9",
           "name": "Woodland Park",
-          "blurb": "A small neighborhood near the Dynalar campus. Highlights include the Burning Bright Bodega, Breeze (a mom and pop drug store), the Palms cargo container community, the Shark apartment building, and the Zolletta cube hotel."
+          "blurb": "A small neighborhood near the Dynalar campus. Highlights include the Burning Bright Bodega, Breeze (a mom and pop drug store), the Palms cargo container community, the Shark apartment building, and the Zolletta cube hotel.",
+          "map": {
+            "x": 74.097,
+            "y": 48.95
+          }
         },
         {
           "key": "t10",
           "code": "T10",
           "name": "Xanadu",
-          "blurb": "A roller derby rink and disco tech. Home of the Muses."
+          "blurb": "A roller derby rink and disco tech. Home of the Muses.",
+          "map": {
+            "x": 75.056,
+            "y": 50.018
+          }
         }
       ],
       "map": {
@@ -1324,7 +1745,12 @@
       "blurb": "The largest industrial zone in Night City, overflowing with warehouses, construction equipment, factories, and even some derelict cargo ships.",
       "cityManager": "Theo Walker (appointed by the Arroyo Concern)",
       "security": "NCPD",
-      "gangs": ["Consortium", "DeadWoods", "The Enhanced", "Fixie’s Couriers"],
+      "gangs": [
+        "Consortium",
+        "DeadWoods",
+        "The Enhanced",
+        "Fixie’s Couriers"
+      ],
       "locations": [
         {
           "key": "u1",
@@ -1332,15 +1758,19 @@
           "name": "D.V. Rambling Rose",
           "blurb": "An ancient vessel stuck in dry dock. Home base for Fixie’s Couriers.",
           "map": {
-            "x": 59.788,
-            "y": 61.24
+            "x": 59.806,
+            "y": 61.233
           }
         },
         {
           "key": "u2",
           "code": "U2",
           "name": "Old Ironworks Building",
-          "blurb": "The inside has been converted into apartments, and the landlords have stacked cargo container housing on the roof."
+          "blurb": "The inside has been converted into apartments, and the landlords have stacked cargo container housing on the roof.",
+          "map": {
+            "x": 61.319,
+            "y": 61.538
+          }
         },
         {
           "key": "u3",
@@ -1348,8 +1778,8 @@
           "name": "Yang’s Wheels",
           "blurb": "The headquarters, manufacturing factory, and warehouse of Yang’s Wheels, Night City’s biggest provider of inexpensive wheeled transportation.",
           "map": {
-            "x": 64.152,
-            "y": 57.761
+            "x": 64.139,
+            "y": 57.77
           }
         },
         {
@@ -1358,15 +1788,19 @@
           "name": "Zhirafa Office Park",
           "blurb": "The Night City headquarters of Zhirafa. Drones are used for both labor and S security.",
           "map": {
-            "x": 62.386,
-            "y": 56.293
+            "x": 62.389,
+            "y": 56.298
           }
         },
         {
           "key": "u5",
           "code": "U5",
           "name": "Zhirafa Office Park MicroVillage",
-          "blurb": "Corporate housing for Zhirafa employees, colorfully disguised as cargo containers."
+          "blurb": "Corporate housing for Zhirafa employees, colorfully disguised as cargo containers.",
+          "map": {
+            "x": 65.278,
+            "y": 57.276
+          }
         }
       ],
       "map": {
@@ -1382,13 +1816,22 @@
       "blurb": "South Heywood is better known by the locals as Santo Domino. The nomad camp near the dam heavily influences the district, but the Aldecaldos power may be waning. Theresa Valentino, an independent candidate, recently won the election for City Manager thanks to backing from the El Norte cartel.",
       "cityManager": "Theresa Valentino (elected by residents)",
       "security": "Aldecaldo Peacekeepers",
-      "gangs": ["El Norte Cartel", "Kill Krashers", "Rat Kings", "Steel Vaqueros"],
+      "gangs": [
+        "El Norte Cartel",
+        "Kill Krashers",
+        "Rat Kings",
+        "Steel Vaqueros"
+      ],
       "locations": [
         {
           "key": "v1",
           "code": "V1",
           "name": "Aldecaldo Camp",
-          "blurb": "A large multi-cultural encampment sitting at the base of the Petrochem dam. While all nomads are welcome, the camp is primarily dominated by the Aldecaldos."
+          "blurb": "A large multi-cultural encampment sitting at the base of the Petrochem dam. While all nomads are welcome, the camp is primarily dominated by the Aldecaldos.",
+          "map": {
+            "x": 76.903,
+            "y": 66.652
+          }
         },
         {
           "key": "v2",
@@ -1396,8 +1839,8 @@
           "name": "City Police Precinct #2",
           "blurb": "Large but overworked, the cops here rely heavily on drones to patrol their beats.",
           "map": {
-            "x": 56.955,
-            "y": 65.673
+            "x": 56.958,
+            "y": 65.674
           }
         },
         {
@@ -1406,8 +1849,8 @@
           "name": "East Cargo Village",
           "blurb": "A dusty cargo container community located near the edge of the city.",
           "map": {
-            "x": 70.591,
-            "y": 66.079
+            "x": 70.583,
+            "y": 66.078
           }
         },
         {
@@ -1416,8 +1859,8 @@
           "name": "Heywood Suites",
           "blurb": "An apartment complex situated beneath one of the most heavily trafficked overpasses in Night City. Many residents have level-dampening cyberware installed.",
           "map": {
-            "x": 66.295,
-            "y": 63.143
+            "x": 66.306,
+            "y": 63.144
           }
         },
         {
@@ -1426,8 +1869,8 @@
           "name": "María’s",
           "blurb": "A family-owned beer tent located just inside the city limits.",
           "map": {
-            "x": 67.053,
-            "y": 70.077
+            "x": 67.056,
+            "y": 70.079
           }
         },
         {
@@ -1436,8 +1879,8 @@
           "name": "MetalStorm",
           "blurb": "A seemingly indestructible bar located under the Pacifica Bridge. Popular with FBCs.",
           "map": {
-            "x": 44.364,
-            "y": 63.643
+            "x": 44.361,
+            "y": 63.646
           }
         },
         {
@@ -1446,8 +1889,8 @@
           "name": "Woodchipper’s Garage",
           "blurb": "The home base of Woodchipper, the most influential nomad Fixer in Night City. She throws her famous Night Markets/ block parties in the cul-de-sac to the southwest. S outhside s o u t h s i d e s o u t h s i d e One part vacation spot, one part urban wasteland.",
           "map": {
-            "x": 69.705,
-            "y": 60.535
+            "x": 69.708,
+            "y": 60.542
           }
         }
       ],
@@ -1477,13 +1920,21 @@
           "key": "w1",
           "code": "W1",
           "name": "Bits’n’Bolts",
-          "blurb": "A hole-in-the-wall tech shop with connections to weaponsmith and inventor Faisal."
+          "blurb": "A hole-in-the-wall tech shop with connections to weaponsmith and inventor Faisal.",
+          "map": {
+            "x": 41.083,
+            "y": 65.082
+          }
         },
         {
           "key": "w2",
           "code": "W2",
           "name": "Cubeland by the Sea",
-          "blurb": "A shoddy cube hotel a stone’s throw away from Playland by the Sea."
+          "blurb": "A shoddy cube hotel a stone’s throw away from Playland by the Sea.",
+          "map": {
+            "x": 35.264,
+            "y": 64.193
+          }
         },
         {
           "key": "w3",
@@ -1491,8 +1942,8 @@
           "name": "Mister Rice Guy",
           "blurb": "An upscale sushi restaurant. Famous for its mascot, Hime Cat.",
           "map": {
-            "x": 30.97,
-            "y": 70.224
+            "x": 30.972,
+            "y": 70.231
           }
         },
         {
@@ -1501,8 +1952,8 @@
           "name": "Playhouse",
           "blurb": "An apartment complex with a shady past. Rumors suggest it is haunted.",
           "map": {
-            "x": 37.159,
-            "y": 66.309
+            "x": 37.153,
+            "y": 66.311
           }
         },
         {
@@ -1511,15 +1962,19 @@
           "name": "Playland by the Sea",
           "blurb": "Night City’s premiere tourist destination. An amusement park sponsored by various Corporations. The Piranahs hold sway here, and it is home to a surprising number of yogangs (often used by the park as free labor).",
           "map": {
-            "x": 24.53,
-            "y": 67.371
+            "x": 24.528,
+            "y": 67.369
           }
         },
         {
           "key": "w6",
           "code": "W6",
           "name": "Pleasant Valley Apartments",
-          "blurb": "An apartment building designed for neo-luddites who want to escape from technoshock overload."
+          "blurb": "An apartment building designed for neo-luddites who want to escape from technoshock overload.",
+          "map": {
+            "x": 32.111,
+            "y": 69.98
+          }
         },
         {
           "key": "w7",
@@ -1527,8 +1982,8 @@
           "name": "Scenic Cubes",
           "blurb": "A cube hotel covered in some of the most expressive graffiti in Night City.",
           "map": {
-            "x": 28.439,
-            "y": 66.329
+            "x": 28.444,
+            "y": 66.338
           }
         },
         {
@@ -1537,8 +1992,8 @@
           "name": "The XX (The Twenty)",
           "blurb": "A dive punk bar. Breakfist, the owner, serves juice instead of booze.",
           "map": {
-            "x": 41.705,
-            "y": 65.903
+            "x": 41.694,
+            "y": 65.898
           }
         }
       ],
@@ -1567,7 +2022,11 @@
           "key": "x1",
           "code": "X1",
           "name": "Albino Alligator Carwash",
-          "blurb": "Home base for the Albino Alligators. Also one of the most reliable places to find clean drinking water in the district."
+          "blurb": "Home base for the Albino Alligators. Also one of the most reliable places to find clean drinking water in the district.",
+          "map": {
+            "x": 40.042,
+            "y": 73.246
+          }
         },
         {
           "key": "x2",
@@ -1575,8 +2034,8 @@
           "name": "Coronado Heights",
           "blurb": "An apartment building so close to Pacifica that it might as well be part of it.",
           "map": {
-            "x": 39.841,
-            "y": 69.148
+            "x": 39.847,
+            "y": 69.155
           }
         },
         {
@@ -1585,8 +2044,8 @@
           "name": "Eagle Rock Stadium",
           "blurb": "A former football field transformed into a cargo container community.",
           "map": {
-            "x": 49.78,
-            "y": 65.659
+            "x": 49.778,
+            "y": 65.656
           }
         },
         {
@@ -1595,7 +2054,7 @@
           "name": "Jack ‘N’ the Green",
           "blurb": "A guerilla gardening outfit run by reclaimers.",
           "map": {
-            "x": 55.72,
+            "x": 55.708,
             "y": 67.45
           }
         },
@@ -1605,8 +2064,8 @@
           "name": "Minimallism",
           "blurb": "Once a mall catering to eager beaverville consumers, now an empty husk claimed on one side by reclaimers and on the other by a consortium of Fixers who take turns running Night Markets there. Also known as the RC Night Market by residents. N ight City Gangs n i g h t c i t y g a n A brief guide to Night City’s gangs and criminal orgag s nizations. This list is likely incomplete since old gangs die and new gangs rise up all the time. 6th Street: Formed by veterans of the 4th Corporate War, 6th Street tries to earn money through security contracts but has been forced to move into extortion and smuggling to pay the bills. Albino Alligators: A party gang with a surprisingly significant influence on Rancho Coronado. Famous for their white alligator cartoon mascot and popped shirt collars. The Andersons: An aging yogang with a family theme. In danger of being swallowed up by the Piranhas. Arzin Tynon: An older boostergang operating on the northern edges of Night City. The Bozos: A prankster gang (for a certain deadly definition of prankster) with a clown theme. Currently engaged in a civil war of pranks and mayhem. Consortium: A tightly organized Russian mob group with ties to the Thelas nomad nation. Culper Ring: A secret sect within the Estero Bay Military COG dedicated to reuniting NorCal with the US. DeadWoods: A cowboy-themed gang. They act as self-appointed protectors of Night City’s railways. The Dirty Hippies: A group of guerilla gardeners who specialize in the growing and sale of herbs laced with various drugs, collectively known as ganga. Dragula Racers: A monster-themed racing gogang. Eastern Tigers Triad: An organized crime ring recently arrived from China. Edgerunners Inc: A group of younger edgerunners seeking to reconnect the Old Combat Zone to Night City. Named after a pre-war company. El Norte Cartel: A Mexican criminal organization establishing itself in Night City. Said to be connected to Theresa Valentino, the Santo Domingo City Manager. The Enhanced: A cult that believes cyberpsychosis represents the next stage of human evolution. Eurotrashers: A party gang in Little Europe. All members speak with a “European” accent no one can identify. The Faded: A group of older edgerunners who want to keep Night City from interfering with the Old Combat Zone. Fixie’s Couriers: A collective of bicycle messengers and couriers guided (not led) by a Fixer known as Fixie. G3: A disturbingly violent anime-themed poser gang. Generation Red: A yogang operating out of the Old Combat Zone. Gold Dragons: A gang under the control of David Ling Po, providing protection in Little China. Inquisitors: A cult centered on the belief that cyberware is evil and ripping it out of others saves their souls. Iron Sights: A brutal combat gang. Their new sponsor, a Fixer named Hornet, has built them into a force to be reckoned with. Kanzaki Family: The only surviving faction of Yakuza left in Night City. At odds with the Tyger Claws. Kill Krashers: A relatively new gang glorifying violence above all else. Growing with surprising speed. Lightning Cats: A Bioexotic cat gang operating out of the Hot Zone. Maelstrom: A combat gang with a might makes right philosophy. Their leader, Warlock, has transformed Maelstom into a surprisingly effective criminal enterprise. Mudang Gumi: A gang of Netrunners and burglars focused on data theft. The Muses: A poser gang and roller derby squad with a fusion disco/Greek mythology theme. Philharmonic Vampyres: A gang with a split personality, trying to decide if it should lean into its artistic goth side or stick to its prankster roots. Piranhas: Night City’s premiere party gang. These days they don’t just attend the best parties. They throw them. Princesses of Justice: A poser gang based on an old animated show. Offers protection to those victims of abuse. Rat Kings: A small boostergang operating out of the still-under-construction H4 Megabuilding. Reckoners: A nihilistic cult preaching about an upcoming Harvest of Souls. Always looking for donations, often from someone’s unconscious body. Red Chrome Legion: A neo-nazi hate group locked in a war of attrition with the Iron Sights. Scavvers: Not a single gang but a group of them, all surviving by scavenging tech from ruins and combat zones. The Sinful Adams: A goth poser gang living in the South Night City boneyard. Skiv Family: Night City’s dominant mafia family. They control the Heywood Docks. Steel Vaqueros: A nomad pack operating up and down the west coast. They recruit locals to act as junior members of the pack and “hold down the fort” while they are on the road. The Prime-Time Players: A poser gang, usually inspired by old sitcoms and television shows. Broken up into a number of different factions based on theme. The Shroomers: Part survivalist group, part guerilla gardener collective. The Shroomers live beneath the streets of the Old Combat Zone, where they grow various fungi. The Street Queens: A guardian gang dedicated to protecting the queer residents and neighborhoods of Night City. The Toecutters: A Raffen Shiv clan operating on the eastern edges of Night City. Said by some to be cannibals. Tombstone Preservers: A guardian gang dedicated to protecting the sanctity of the dead. Tyger Claws: A former Araska proxy gang, the Tyger Claws are now a dominant force in Kabuki and Old Japantown where they control both security and the criminal element. Undertow: A gang operating in Little Europe and Downtown. They claim to be fighting against gentrification, but their violence often harms the very neighborhoods they’re trying to protect. Voodoo Boys: Posers who drape themselves in Hollywood-style “voodoo” trappings. Violent and focused primarily on the drug trade. Weng Fang Tong: A major crime syndicate with fingers in gambling and sex work across Night City. Run by David Ling Po. Wild Things: A boostergang that channels its violent impulses through gladiatorial combat at the Redline. Willows: Less a gang and more a therapy group made up of female combat veterans. Yellow Brick Road Gang: A poser gang modeled after The Wizard of Oz. The Zoners: A movement dedicated to improving the living conditions in South Night City through community organization and protest.",
           "map": {
-            "x": 43.598,
-            "y": 67.043
+            "x": 43.597,
+            "y": 67.046
           }
         }
       ],
@@ -1618,8 +2077,8 @@
   ],
   "map": {
     "image": "/images/map/night-city.jpg",
-    "width": 6600,
-    "height": 10218,
+    "width": 3600,
+    "height": 5573,
     "note": "Marker coordinates are percentages of the stitched Night City Atlas map (pages 4-5)."
   },
   "travel": {
