@@ -156,6 +156,8 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
 
 const LIFE_EVENT_TYPES = new Set([
   "player_input",
+  "travelled",
+
   "life_narration",
   "life_action",
   "life_note",
