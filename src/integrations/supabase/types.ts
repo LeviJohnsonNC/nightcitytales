@@ -451,6 +451,8 @@ export type Database = {
           day: number
           id: string
           ip_awarded: number | null
+          known_places: Json
+          location_key: string | null
           minute: number
           name: string
           phase: string
@@ -467,6 +469,8 @@ export type Database = {
           day?: number
           id?: string
           ip_awarded?: number | null
+          known_places?: Json
+          location_key?: string | null
           minute?: number
           name: string
           phase?: string
@@ -483,6 +487,8 @@ export type Database = {
           day?: number
           id?: string
           ip_awarded?: number | null
+          known_places?: Json
+          location_key?: string | null
           minute?: number
           name?: string
           phase?: string
