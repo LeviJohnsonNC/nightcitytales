@@ -16,9 +16,12 @@ import {
   currentCombatant,
   performAttack,
   clampToArena,
+  combatGoalFor,
   defeatCombatant,
+  describeGoalMet,
   describeMorale,
   describeVerdict,
+  goalSatisfiedBy,
   judgeAction,
   mentalityFor,
   moraleTriggerFor,
@@ -35,6 +38,7 @@ import {
   weighForce,
   type ActionCost,
   type CapabilitySnapshot,
+  type CombatGoal,
   type Combatant,
   type CombatantRoleEffects,
   type EncounterState,
@@ -84,6 +88,12 @@ export async function beginEncounter(input: {
   /** Which of the engine's arenas this is happening in. */
   arena?: string;
   /**
+   * What the opposition came for. Decides when they stop: a crew that came to
+   * rob you has what it wanted once you are down, and leaves. Omitted, they
+   * came to kill, which is what every fight here used to assume.
+   */
+  goal?: CombatGoal;
+  /**
    * What the player's Role Ability brings into the fight — a Solo's Combat
    * Awareness division. Carried on their combatant so the engine applies it on
    * their own attacks AND on the ones they take.
@@ -97,6 +107,10 @@ export async function beginEncounter(input: {
   // engine's arena, chosen from a closed list — not a number the GM sent.
   const arena = arenaFor(input.arena);
   const spots = placeHostiles(arena, input.enemies.length);
+  // Why they are here. The caller knows — a force template carries it, and a
+  // GM-composed fight falls back to the old implicit answer rather than
+  // silently acquiring a mercy nobody asked for.
+  const goal = combatGoalFor(input.goal);
 
   const player = buildPlayerCombatant(
     input.character,
@@ -115,7 +129,7 @@ export async function beginEncounter(input: {
     // returns one spot per enemy, so this is a floor, not a path.
     const spot = spots[index] ??
       arena.hostileSlots[0] ?? { x: arena.playerStart.x, y: arena.extent.height };
-    const hostile = hostileCombatant(enemy, crypto.randomUUID(), spot);
+    const hostile = hostileCombatant(enemy, crypto.randomUUID(), spot, goal);
     combatants.push(hostile.combatant);
     data[hostile.combatant.id] = hostile.data;
   });
@@ -283,10 +297,28 @@ export async function runNpcTurns(
       }
     }
 
+    let stats = data[actor.id];
+
     const target = targetFor(state, live_actor);
     if (!target || target.defeated) break;
 
-    let stats = data[actor.id];
+    // Do they still have a reason to shoot this person?
+    //
+    // Every fight here used to answer "yes, always": the opposition existed to
+    // reduce the player to zero and then keep going. For a character with no
+    // Medtech and no crew to drag them out, that is not grit — it is the only
+    // failure state there is. A force that came to rob you has what it came for
+    // once you are on the ground, and leaves.
+    //
+    // They leave THE FIGHT, not the fiction: what they take with them is the
+    // narrator's, the same line drawn everywhere else in this module.
+    const goal = combatGoalFor(stats?.combatGoal);
+    if (target.isPlayer && goalSatisfiedBy(goal, target)) {
+      state = defeatCombatant(state, actor.id);
+      lines.push(describeGoalMet(actor.name, goal));
+      continue;
+    }
+
     const targetStats = data[target.id];
     if (!stats || !targetStats) continue;
 
@@ -473,8 +505,11 @@ export async function closeOutFight(
 ): Promise<string> {
   if (live.state.status === "active") return "";
   const won = live.state.status === "friendlies_won";
+  // "All down" is no longer true of every win. They may have broken and run,
+  // or taken what they came for and gone — and the ledger already carries which
+  // it was, line by line. This says only the thing that is true in all three.
   const summary = won
-    ? "The hostiles are all down; the fight is over."
+    ? "The opposition is finished; the fight is over."
     : "The player is down; the fight is over.";
   await appendCampaignEvent({
     campaign_id: campaignId,

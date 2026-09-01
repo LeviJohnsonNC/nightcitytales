@@ -122,6 +122,8 @@ describe("settleNpcTurns", () => {
   it("closes a won fight too", async () => {
     const result = await settleNpcTurns("c", null, fight({ status: "friendlies_won" }));
     expect(types()).toEqual(["encounter_ended"]);
-    expect(result.status).toContain("hostiles are all down");
+    // Not "all down": a win can now mean they broke and ran, or took what they
+    // came for and left. The line has to be true of all three.
+    expect(result.status).toContain("opposition is finished");
   });
 });
