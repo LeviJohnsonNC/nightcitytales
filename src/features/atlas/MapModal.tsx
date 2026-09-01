@@ -213,8 +213,10 @@ export function MapModal({
                 src={MAP_IMAGE.image}
                 alt="Map of Night City from the Night City Atlas"
                 draggable={false}
+                onLoad={centreOnMe}
                 className="pointer-events-none absolute inset-0 h-full w-full object-fill"
               />
+
               {DISTRICTS.map((district) => {
                 const isHere = currentDistrict?.key === district.key;
                 const isKnown = known.has(district.key);
