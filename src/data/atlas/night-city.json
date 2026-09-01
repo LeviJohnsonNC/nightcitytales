@@ -1707,7 +1707,9 @@
     "withinDistrict": 10,
     "betweenDistrictsSameArea": 25,
     "betweenAreas": 45,
-    "acrossCity": 60
+    "acrossCity": 60,
+    "defaultStart": "little_europe",
+    "defaultStartNote": "House rule: a character with no recorded address starts in Little Europe, the atlas's dense mixed-income residential district. The atlas does not assign starting addresses."
   },
   "source": {
     "title": "Night City Atlas v1.01",
