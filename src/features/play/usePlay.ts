@@ -60,6 +60,12 @@ import {
   type FactionId,
   type ObservationReport,
   type FactionStanding,
+  DEFAULT_START,
+  areaOf,
+  describePosition,
+  getDistrict,
+  isCombatZone,
+  resolvePosition,
 } from "@/engine";
 
 import {
