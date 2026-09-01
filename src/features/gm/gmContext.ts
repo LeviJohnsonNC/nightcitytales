@@ -72,6 +72,8 @@ export type GmContextInput = {
     gangs: string[];
     combatZone: boolean;
     nearby: string[];
+    /** Neighbouring districts with their real compass heading and travel time. */
+    neighbours?: string[];
   } | null;
   /**
    * True when the player asked what they could do rather than doing something.
@@ -171,6 +173,11 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
     if (p.combatZone) parts.push(line("Note", "Combat Zone. Nobody is coming when it goes loud."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
+    if (p.neighbours?.length) {
+      parts.push("Which way is which (from the atlas, not from you):");
+      for (const n of p.neighbours) parts.push(`  - ${n}`);
+      parts.push("Never state a compass direction that is not in that list.");
+    }
     parts.push("Use these canonical names. Do not invent districts or relocate the job.");
   }
 
