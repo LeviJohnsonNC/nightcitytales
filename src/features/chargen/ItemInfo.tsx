@@ -204,3 +204,28 @@ export function ItemDialog({
     </>
   );
 }
+
+/** A small "?" button that opens a modal explaining a catalog item. */
+export function ItemInfo({
+  kind,
+  item,
+}: {
+  kind: ItemKindLabel;
+  item: { id: string; name: string } & Record<string, unknown>;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`What is ${item.name}?`}
+        title={`What is ${item.name}?`}
+        className="grid size-5 shrink-0 place-items-center rounded-full border border-hairline font-mono text-[11px] leading-none text-text-dim transition-colors hover:border-ember hover:text-ember"
+      >
+        ?
+      </button>
+      <ItemDialog kind={kind} item={item} open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
