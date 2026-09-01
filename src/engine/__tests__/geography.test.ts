@@ -8,6 +8,7 @@ import {
   directionBetween,
   districtsInDirection,
   furthestInDirection,
+  limitInDirection,
   neighboursOf,
   parseDirection,
   resolveTravelIntent,
@@ -20,6 +21,7 @@ import {
   resolveDestination,
   resolvePlaceMention,
   resolvePosition,
+  walkFrom,
   travelMinutes,
 } from "../geography";
 
@@ -122,24 +124,49 @@ describe("destinations", () => {
 describe("the compass", () => {
   it("reads bearings off the atlas coordinates", () => {
     expect(directionBetween("little_europe", "upper_marina")).toBe("E");
+    expect(directionBetween("little_europe", "downtown")).toBe("SW");
     expect(parseDirection("West")).toBe("W");
     expect(parseDirection("nw")).toBe("NW");
     expect(parseDirection("sideways")).toBeUndefined();
   });
 
-  it("only offers districts that genuinely lie that way", () => {
-    const west = districtsInDirection("little_europe", "W").map((d) => d.key);
-    expect(west.length).toBeGreaterThan(0);
-    expect(west).not.toContain("upper_marina");
-    const furthest = furthestInDirection("little_europe", "W");
-    expect(furthest).toBeDefined();
-    expect(getDistrict(furthest!)!.map.x).toBeLessThan(getDistrict("little_europe")!.map.x);
+  it("only offers districts the walk actually goes through", () => {
+    // Due west out of Little Europe is Little Europe until the bay: no other
+    // district lies that way at that latitude, and the walk says so rather than
+    // reaching for the nearest district whose centre point is left of here.
+    expect(districtsInDirection("little_europe", "W")).toEqual([]);
+    expect(limitInDirection("little_europe", "W")).toBe("water");
+
+    // South, though, really does cross districts, in the order you meet them.
+    const south = districtsInDirection("little_europe", "S").map((d) => d.key);
+    expect(south[0]).toBe("university_district");
+    expect(south).not.toContain("upper_marina");
+    for (const key of south) {
+      expect(getDistrict(key)!.map.y).toBeGreaterThan(getDistrict("little_europe")!.map.y);
+    }
+    expect(furthestInDirection("little_europe", "S")).toBe(south[south.length - 1]);
+  });
+
+  it("walks through a district rather than around it", () => {
+    const journey = walkFrom("little_europe", "E");
+    expect(journey).toBeDefined();
+    expect(journey!.legs.map((l) => l.key)).toEqual([
+      "little_europe",
+      "the_hot_zone",
+      "upper_marina",
+    ]);
+    expect(journey!.stoppedBy).toBe("water");
   });
 
   it("tags neighbours with a heading and a price", () => {
     const near = neighboursOf("little_europe");
     expect(near.length).toBeGreaterThan(0);
     for (const n of near) expect(n.minutes).toBeGreaterThanOrEqual(0);
+    // Only districts Little Europe actually borders. Old Japantown is a short
+    // hop across the island but shares no boundary with it.
+    const keys = near.map((n) => n.key);
+    expect(keys).toContain("downtown");
+    expect(keys).not.toContain("old_japantown");
   });
 });
 
@@ -157,14 +184,44 @@ describe("travel intent", () => {
   it("picks the destination itself when the player named a heading", () => {
     const decision = resolveTravelIntent({
       from: "little_europe",
-      direction: "west",
+      direction: "south",
       extent: "far",
     });
     expect(decision.ok).toBe(true);
     if (decision.ok) {
-      expect(decision.direction).toBe("W");
-      expect(getDistrict(decision.to)!.map.x).toBeLessThan(getDistrict("little_europe")!.map.x);
+      expect(decision.direction).toBe("S");
+      expect(getDistrict(decision.to)!.map.y).toBeGreaterThan(getDistrict("little_europe")!.map.y);
     }
+  });
+
+  it("walking as far west as you can gets you to the waterfront, not nowhere", () => {
+    // There is no district west of Little Europe, but there is a walk: across
+    // the district to the bay. That is a move, it costs time, and the narrator
+    // is told where it ended.
+    const decision = resolveTravelIntent({
+      from: "a8",
+      direction: "west",
+      extent: "far",
+    });
+    expect(decision).toMatchObject({
+      ok: true,
+      to: "little_europe",
+      direction: "W",
+      stoppedAt: "water",
+    });
+  });
+
+  it("refuses a landmark it cannot place, even when a heading came with it", () => {
+    // The San Morro Bridge is printed on the map but is not in the atlas data.
+    // Dropping the name and setting off on the heading instead is how a request
+    // to go to the bridge became a trip to a district nobody mentioned.
+    const decision = resolveTravelIntent({
+      from: "downtown",
+      destination: "San Morro Bridge",
+      direction: "northeast",
+    });
+    expect(decision.ok).toBe(false);
+    if (!decision.ok) expect(decision.reason).toContain("San Morro Bridge");
   });
 
   it("still honours a plain named destination", () => {
