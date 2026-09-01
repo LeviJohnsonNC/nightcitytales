@@ -30,12 +30,7 @@
       "blurb": "A district divided between classes and times, with old brick buildings standing next to futuristic skyscrapers.",
       "cityManager": "Amanda Polishchuk (elected by property owners)",
       "security": "NCPD",
-      "gangs": [
-        "6th Street",
-        "Eurotrashers",
-        "Maelstrom",
-        "Undertow"
-      ],
+      "gangs": ["6th Street", "Eurotrashers", "Maelstrom", "Undertow"],
       "locations": [
         {
           "key": "a1",
@@ -181,11 +176,7 @@
       "blurb": "A bustling district with a mix of old industrial zones and gentrified neighborhoods built around a series of docks and small marinas.",
       "cityManager": "Kabria Chung (elected by property owners)",
       "security": "NCPD",
-      "gangs": [
-        "Maelstrom",
-        "Prime-Time Players",
-        "Street Queens"
-      ],
+      "gangs": ["Maelstrom", "Prime-Time Players", "Street Queens"],
       "locations": [
         {
           "key": "b1",
@@ -331,11 +322,7 @@
       "blurb": "A new district carved out of Little Europe by Mister Kernighan and a consortium of Fixers and Execs known as the Chamber of Commerce. Downtown is preparing for Night City’s full rebirth by creating the most commercially friendly district on the Island.",
       "cityManager": "Emilia Ortega (appointed by Chamber of Commerce)",
       "security": "Whitewater Security",
-      "gangs": [
-        "Eastern Tigers Triad",
-        "Skiv Family",
-        "Undertow"
-      ],
+      "gangs": ["Eastern Tigers Triad", "Skiv Family", "Undertow"],
       "locations": [
         {
           "key": "c1",
@@ -401,12 +388,7 @@
       "blurb": "Formerly the central city Corporate Zone. Now, a bleak landscape riddles with twisted, wrecked skyscrapers. It shrinks a bit each year as the edges are cleared and rebuilt.",
       "cityManager": "None",
       "security": "NCPD (in theory)",
-      "gangs": [
-        "Lightning Cats",
-        "Maelstrom",
-        "Reckoners",
-        "various Scavver groups"
-      ],
+      "gangs": ["Lightning Cats", "Maelstrom", "Reckoners", "various Scavver groups"],
       "locations": [
         {
           "key": "d1",
@@ -462,11 +444,7 @@
       "blurb": "A struggling community attempting to crawl its way out of the combat zones and into the rebuilding urban center.",
       "cityManager": "David Ling Po (appointed by the Little China Redevelopment Association)",
       "security": "Gold Dragons",
-      "gangs": [
-        "Gold Dragons",
-        "Red Chrome Legion",
-        "Weng Fang Tong"
-      ],
+      "gangs": ["Gold Dragons", "Red Chrome Legion", "Weng Fang Tong"],
       "locations": [
         {
           "key": "e1",
@@ -532,10 +510,7 @@
       "blurb": "A slim district housing the city’s only traditional institution of higher learning.",
       "cityManager": "Doctor Edward Michaels (self-appointed)",
       "security": "NCU Campus Security",
-      "gangs": [
-        "Philharmonic Vampyres",
-        "Princesses of Justice"
-      ],
+      "gangs": ["Philharmonic Vampyres", "Princesses of Justice"],
       "locations": [
         {
           "key": "f1",
@@ -641,12 +616,7 @@
       "blurb": "The administrative center of Night City; full of movers, shakers, and power players.",
       "cityManager": "Zohara Freeman (appointed by Night Corp)",
       "security": "NCPD",
-      "gangs": [
-        "DeadWoods",
-        "Kill Krashers",
-        "The Reckoners",
-        "Weng Fang Tong"
-      ],
+      "gangs": ["DeadWoods", "Kill Krashers", "The Reckoners", "Weng Fang Tong"],
       "locations": [
         {
           "key": "g1",
@@ -792,13 +762,7 @@
       "blurb": "Most of Night City’s ethnic Japanese population has moved north, but enough still cling together here to form islands of civilization in a sea of combat zone chaos.",
       "cityManager": "Adriane Casselle (elected by local family heads)",
       "security": "Kimen-Gumi",
-      "gangs": [
-        "Iron Sights",
-        "Maelstrom",
-        "Red Chrome Legion",
-        "The Shroomers",
-        "Tyger Claws"
-      ],
+      "gangs": ["Iron Sights", "Maelstrom", "Red Chrome Legion", "The Shroomers", "Tyger Claws"],
       "locations": [
         {
           "key": "h1",
@@ -980,10 +944,7 @@
       "blurb": "A central location for cargo entering and leaving Night City by sea. Run by nomads from the Thelas Nation.",
       "cityManager": "Calypso (appointed by Thelas elders)",
       "security": "Thelas Marines",
-      "gangs": [
-        "Consortium",
-        "DeadWoods"
-      ],
+      "gangs": ["Consortium", "DeadWoods"],
       "locations": [
         {
           "key": "j1",
@@ -1069,9 +1030,7 @@
       "blurb": "A small enclave run by nomads turned reclaimers. They’ve taken over the operation of Night City’s public transportation, exchanging their technical and motor skills for the land.",
       "cityManager": "Santos Dorado (elected by district residents)",
       "security": "Los Perros Guardianes",
-      "gangs": [
-        "Tombstone Preservers"
-      ],
+      "gangs": ["Tombstone Preservers"],
       "locations": [
         {
           "key": "k1",
@@ -1097,13 +1056,7 @@
       "blurb": "In the late 2010s and early 2020s, Night City began expanding the Island by filling in land to the southeast. In the aftermath of the 4th Corporate War, what was intended to be a shining beacon of industrial might devolved into the worst combat zone Night City had ever seen. Slowly, inch by inch, groups of edgerunners have strived to rebuild it.",
       "cityManager": "Brick Coleman (as leader of Edgerunners Inc)",
       "security": "Edgerunners Inc",
-      "gangs": [
-        "Edgerunners Inc",
-        "The Faded",
-        "Generation Red",
-        "Iron Sights",
-        "The Shroomers"
-      ],
+      "gangs": ["Edgerunners Inc", "The Faded", "Generation Red", "Iron Sights", "The Shroomers"],
       "locations": [
         {
           "key": "l1",
@@ -1159,9 +1112,7 @@
       "blurb": "Home of the Estero Bay Military COG (a mixture of various military units into a single organized group). In theory, the COG is loyal to NorCal and the Pacifica Confederation, but they’ve also made a deal with Militech, trading land and access for training and munitions.",
       "cityManager": "General Ash Giovanni (base commander)",
       "security": "NorCal Military Police",
-      "gangs": [
-        "Culper Ring"
-      ],
+      "gangs": ["Culper Ring"],
       "locations": [
         {
           "key": "m1",
@@ -1350,10 +1301,7 @@
       "blurb": "A small district centered around the Nakagawa Kabuki Theater. Common wisdom holds that while Watson acts as the arms and legs of the Night City Co-Prosperity Sphere, Kabuki is its brain and heart.",
       "cityManager": "Yoshiki Murakami (appointed by the NCCS)",
       "security": "Kimen-Gumi",
-      "gangs": [
-        "G3",
-        "Tyger Claws"
-      ],
+      "gangs": ["G3", "Tyger Claws"],
       "locations": [
         {
           "key": "o1",
@@ -1389,12 +1337,7 @@
       "blurb": "An urban sprawl built in the remains of an upscale suburb. It mixes glitz and glam with tent cities and lowrent housing. Most of the northern part of the district is occupied by a walled-off fake city where Network 54 runs and films The Combat Zone, a battle royale “game show” in which fifty people enter and only one gets to leave alive with a year’s worth of real chicken dinners as the prize.",
       "cityManager": "Belkis Abera (appointed by WorldSat and Network 54)",
       "security": "NCPD",
-      "gangs": [
-        "Arzin Tynon",
-        "Prime-Time Players",
-        "Street Queens",
-        "Tombstone Preservers"
-      ],
+      "gangs": ["Arzin Tynon", "Prime-Time Players", "Street Queens", "Tombstone Preservers"],
       "locations": [
         {
           "key": "p1",
@@ -1520,11 +1463,7 @@
       "blurb": "A small but influential community. On a clear day, the residents of Charter Hill can see the walls of the Exec Zone and dream of climbing even higher on the Corporate ladder.",
       "cityManager": "Symon Featherstonehaugh (elected by property owners)",
       "security": "Militech",
-      "gangs": [
-        "Prime-Time Players",
-        "Tombstone Preservers",
-        "Tyger Claws"
-      ],
+      "gangs": ["Prime-Time Players", "Tombstone Preservers", "Tyger Claws"],
       "locations": [
         {
           "key": "q1",
@@ -1595,10 +1534,7 @@
       "blurb": "As the world returns to normal, Corporations are looking to cut the nomad nations out of the shipping and logistics equation. Larger vessels can’t use the Heywood Docks, but smaller, Corporate-sponsored ships moving up and down the West Coast can.",
       "cityManager": "Andrea Lee (appointed by SK Security)",
       "security": "SK Security",
-      "gangs": [
-        "DeadWoods",
-        "Skiv Family"
-      ],
+      "gangs": ["DeadWoods", "Skiv Family"],
       "locations": [
         {
           "key": "s1",
@@ -1624,12 +1560,7 @@
       "blurb": "Over the past decade, Heywood has been divided into two districts. In the north are workaday residents, many of whom have found jobs in the nearby Heywood Industrial Zone.",
       "cityManager": "Barry “Big Deal” Delvecchio (appointed by district council)",
       "security": "6th Street",
-      "gangs": [
-        "6th Street",
-        "Inquisitors",
-        "The Muses",
-        "The Toecutters"
-      ],
+      "gangs": ["6th Street", "Inquisitors", "The Muses", "The Toecutters"],
       "locations": [
         {
           "key": "t1",
@@ -1745,12 +1676,7 @@
       "blurb": "The largest industrial zone in Night City, overflowing with warehouses, construction equipment, factories, and even some derelict cargo ships.",
       "cityManager": "Theo Walker (appointed by the Arroyo Concern)",
       "security": "NCPD",
-      "gangs": [
-        "Consortium",
-        "DeadWoods",
-        "The Enhanced",
-        "Fixie’s Couriers"
-      ],
+      "gangs": ["Consortium", "DeadWoods", "The Enhanced", "Fixie’s Couriers"],
       "locations": [
         {
           "key": "u1",
@@ -1816,12 +1742,7 @@
       "blurb": "South Heywood is better known by the locals as Santo Domino. The nomad camp near the dam heavily influences the district, but the Aldecaldos power may be waning. Theresa Valentino, an independent candidate, recently won the election for City Manager thanks to backing from the El Norte cartel.",
       "cityManager": "Theresa Valentino (elected by residents)",
       "security": "Aldecaldo Peacekeepers",
-      "gangs": [
-        "El Norte Cartel",
-        "Kill Krashers",
-        "Rat Kings",
-        "Steel Vaqueros"
-      ],
+      "gangs": ["El Norte Cartel", "Kill Krashers", "Rat Kings", "Steel Vaqueros"],
       "locations": [
         {
           "key": "v1",

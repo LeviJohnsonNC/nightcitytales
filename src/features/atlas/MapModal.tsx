@@ -110,7 +110,6 @@ export function MapModal({
     };
   }, [open, youAreHere, scrollToPoint]);
 
-
   /** Zooming holds whatever was in the middle of the screen. */
   function changeZoom(delta: number) {
     const el = scroller.current;
