@@ -5,10 +5,13 @@
  */
 import { Fragment, useMemo } from "react";
 import { PLACE_MATCH_KEYS } from "@/engine";
+import { ItemText } from "@/features/items/ItemText";
 import { PlaceName } from "./PlaceName";
 
+// Curly and straight apostrophes are interchangeable: the atlas prints "Fiddler’s
+// Green" while the model usually writes "Fiddler's Green".
 function escape(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/['\u2018\u2019]/g, "['\u2018\u2019]");
 }
 
 // Longest key first, so "Night City Firestation #2" wins over "Night City".
