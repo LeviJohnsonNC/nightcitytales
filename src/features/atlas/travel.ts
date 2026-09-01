@@ -6,6 +6,8 @@
 import {
   canTravel,
   describePosition,
+  directionBetween,
+  directionName,
   resolvePosition,
   travelMinutes,
   type GameClock,
@@ -50,11 +52,14 @@ export async function travelTo(args: {
     known_places: [...known],
   });
 
+  // The heading is recorded as fact, so the next narration cannot describe a
+  // trip east as heading west.
+  const heading = directionBetween(from, key);
   await appendCampaignEvent({
     campaign_id: campaign.id,
     type: "travelled",
-    summary: `Travelled to ${describePosition(key)}${minutes ? ` (${minutes} min)` : ""}.`,
-    data: { from, to: key, minutes },
+    summary: `Travelled ${heading ? `${directionName(heading)} ` : ""}to ${describePosition(key)}${minutes ? ` (${minutes} min)` : ""}.`,
+    data: { from, to: key, minutes, ...(heading ? { direction: heading } : {}) },
   });
 
   return { campaign: updated, clock: nextClock, minutes };

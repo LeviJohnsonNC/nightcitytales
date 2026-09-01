@@ -66,6 +66,8 @@ import {
   getDistrict,
   isCombatZone,
   resolvePosition,
+  directionName,
+  neighboursOf,
 } from "@/engine";
 
 import {
@@ -372,6 +374,9 @@ async function narrate(
             gangs: jobDistrict.gangs,
             combatZone: isCombatZone(jobDistrict.key),
             nearby: jobDistrict.locations.slice(0, 8).map((l) => l.name),
+            neighbours: neighboursOf(bundle.campaign.location_key ?? DEFAULT_START).map(
+              (n) => `${n.name} — ${directionName(n.direction)}, ${n.minutes} min`,
+            ),
           },
         }
       : {}),

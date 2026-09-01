@@ -108,6 +108,8 @@ export type LifeContext = {
     nearby: string[];
     /** Canonical names a travel proposal is allowed to name. Nothing else. */
     destinations?: string[];
+    /** Neighbouring districts with their real compass heading and travel time. */
+    neighbours?: string[];
   } | null;
   /** True when the player asked what they could do, rather than doing it. */
   optionsRequested?: boolean;
@@ -156,6 +158,13 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
     if (p.combatZone) parts.push(line("Note", "This is a Combat Zone. No law worth the name."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
+    if (p.neighbours?.length) {
+      parts.push("Which way is which (from the atlas, not from you):");
+      for (const n of p.neighbours) parts.push(`  - ${n}`);
+      parts.push(
+        "Never state a compass direction that is not in that list. If the player names a direction, propose travel with \"direction\" and let the engine pick the district.",
+      );
+    }
     if (p.destinations?.length) {
       parts.push(line("Places you may travel to (use the exact name)", p.destinations.join(", ")));
     }

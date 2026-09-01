@@ -15,7 +15,7 @@ const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_M
 
 const FACTION_LIST = FACTIONS.map((f) => `"${f.id}" (${f.name})`).join(", ");
 
-export const LIFE_PROMPT_VERSION = "2.3.0";
+export const LIFE_PROMPT_VERSION = "2.4.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -100,7 +100,7 @@ Return a structured object:
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}
   - {"kind":"use_item","item":"<the thing they are using, as the kit list names it>","quantity":<integer>}
-  - {"kind":"travel","destination":"<EXACT name from the travel list in WHERE YOU ARE>","minutes":<integer>} — propose this whenever the player says they are heading somewhere. The engine owns the trip's cost and refuses any destination not on that list.
+  - {"kind":"travel","destination":"<EXACT name from the travel list in WHERE YOU ARE>","direction":"north|northeast|east|southeast|south|southwest|west|northwest","extent":"near|far","minutes":<integer>} — propose this whenever the player says they are heading somewhere. When they name a DIRECTION rather than a place ("head west", "as far south as I can"), set "direction" (and "extent":"far" for "as far as I can") and LEAVE "destination" OUT: the engine picks the district off the map. Never guess which place lies which way. The engine owns the trip's cost, its direction and refuses anything that does not fit.
   - {"kind":"rest","hours":<integer>}
   - {"kind":"pay_bills"} — settling rent and Lifestyle. Never state the amount yourself; the engine reads it and pays it.
   - {"kind":"repair_armor"} — having chewed armor patched. The engine picks the piece and the printed cost.

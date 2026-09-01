@@ -43,6 +43,9 @@ import {
   type LifeSituation,
   type Opposition,
   type WoundStateCode,
+  directionName,
+  neighboursOf,
+  resolveTravelIntent,
 } from "@/engine";
 import {
   appendCampaignEvent,
@@ -138,7 +141,6 @@ import {
   getDistrict,
   isCombatZone,
   resolvePosition,
-  resolveDestination,
   reachableDestinations,
   canTravel,
 } from "@/engine";
@@ -365,6 +367,9 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           destinations: reachableDestinations(bundle.campaign.location_key ?? DEFAULT_START).map(
             (d) => d.name,
           ),
+          neighbours: neighboursOf(bundle.campaign.location_key ?? DEFAULT_START).map(
+            (n) => `${n.name} — ${directionName(n.direction)}, ${n.minutes} min`,
+          ),
         }
       : null,
     character: {
@@ -579,12 +584,17 @@ async function applyResponse(
       // name against the atlas, prices the trip from the house-rule table, and
       // commits the same way the map's own travel button does — so the pin, the
       // header and the ledger all agree with the narration.
-      const destination = resolveDestination(action.destination);
-      if (!destination) {
-        await refuse(`"${action.destination}" is not a place on the Night City map.`, "impossible");
+      const decision = resolveTravelIntent({
+        from: bundle.campaign.location_key ?? DEFAULT_START,
+        ...(action.destination ? { destination: action.destination } : {}),
+        ...(action.direction ? { direction: action.direction } : {}),
+        ...(action.extent ? { extent: action.extent } : {}),
+      });
+      if (!decision.ok) {
+        await refuse(decision.reason, "impossible");
         continue;
       }
-      const moved = await travelTo({ campaign: bundle.campaign, clock, to: destination });
+      const moved = await travelTo({ campaign: bundle.campaign, clock, to: decision.to });
       bundle.campaign = moved.campaign;
       clock = moved.clock;
     } else if (action.kind === "rest") {

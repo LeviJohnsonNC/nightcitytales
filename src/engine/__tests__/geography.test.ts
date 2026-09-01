@@ -5,6 +5,12 @@ import {
   areaOf,
   canTravel,
   describePosition,
+  directionBetween,
+  districtsInDirection,
+  furthestInDirection,
+  neighboursOf,
+  parseDirection,
+  resolveTravelIntent,
   districtOfPlace,
   getDistrict,
   getPlace,
@@ -110,5 +116,63 @@ describe("destinations", () => {
     expect(names).toContain("The Afterlife");
     expect(names).toContain("Kabuki");
     expect(reachableDestinations(null).length).toBe(DISTRICTS.length);
+  });
+});
+
+describe("the compass", () => {
+  it("reads bearings off the atlas coordinates", () => {
+    expect(directionBetween("little_europe", "upper_marina")).toBe("E");
+    expect(parseDirection("West")).toBe("W");
+    expect(parseDirection("nw")).toBe("NW");
+    expect(parseDirection("sideways")).toBeUndefined();
+  });
+
+  it("only offers districts that genuinely lie that way", () => {
+    const west = districtsInDirection("little_europe", "W").map((d) => d.key);
+    expect(west.length).toBeGreaterThan(0);
+    expect(west).not.toContain("upper_marina");
+    const furthest = furthestInDirection("little_europe", "W");
+    expect(furthest).toBeDefined();
+    expect(getDistrict(furthest!)!.map.x).toBeLessThan(getDistrict("little_europe")!.map.x);
+  });
+
+  it("tags neighbours with a heading and a price", () => {
+    const near = neighboursOf("little_europe");
+    expect(near.length).toBeGreaterThan(0);
+    for (const n of near) expect(n.minutes).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("travel intent", () => {
+  it("refuses a named destination that points the wrong way", () => {
+    const decision = resolveTravelIntent({
+      from: "little_europe",
+      destination: "Upper Marina",
+      direction: "west",
+      extent: "far",
+    });
+    expect(decision.ok).toBe(false);
+  });
+
+  it("picks the destination itself when the player named a heading", () => {
+    const decision = resolveTravelIntent({
+      from: "little_europe",
+      direction: "west",
+      extent: "far",
+    });
+    expect(decision.ok).toBe(true);
+    if (decision.ok) {
+      expect(decision.direction).toBe("W");
+      expect(getDistrict(decision.to)!.map.x).toBeLessThan(getDistrict("little_europe")!.map.x);
+    }
+  });
+
+  it("still honours a plain named destination", () => {
+    const decision = resolveTravelIntent({ from: "little_europe", destination: "The Afterlife" });
+    expect(decision).toMatchObject({ ok: true, to: "b1" });
+  });
+
+  it("refuses a name that is not on the map", () => {
+    expect(resolveTravelIntent({ from: "little_europe", destination: "Atlantis" }).ok).toBe(false);
   });
 });
