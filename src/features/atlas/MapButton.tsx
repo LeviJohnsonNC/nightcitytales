@@ -12,9 +12,9 @@ export function MapButton({
   knownPlaces,
   className,
 }: {
-  locationKey?: string | null;
-  knownPlaces?: string[];
-  className?: string;
+  locationKey?: string | null | undefined;
+  knownPlaces?: string[] | undefined;
+  className?: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
   return (

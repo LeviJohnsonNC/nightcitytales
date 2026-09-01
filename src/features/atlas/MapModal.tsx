@@ -31,8 +31,8 @@ export function MapModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  locationKey?: string | null;
-  knownPlaces?: string[];
+  locationKey?: string | null | undefined;
+  knownPlaces?: string[] | undefined;
 }) {
   const [zoom, setZoom] = useState(1.4);
   const [dossier, setDossier] = useState<string | null>(null);
