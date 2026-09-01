@@ -9,9 +9,11 @@ publisher makes, so they are what this script reads. Nothing here draws a
 boundary by hand.
 
 Output: src/data/atlas/night-city-map.json — a district raster over the same
-percentage coordinate space the atlas JSON already uses. It also rewrites each
-district's own map point in night-city.json to a spot the trace proves is inside
-that district, replacing the mean of its venue pins.
+percentage coordinate space the atlas JSON already uses. It also rewrites two
+things in night-city.json: each district's own map point, to a spot the trace
+proves is inside that district rather than the mean of its venue pins; and the
+`landmarks` list, the city's named geography placed by the labels the map prints
+for it.
 
 Usage:
     pip install pillow numpy scipy
@@ -71,6 +73,33 @@ ATOM_MIN_PX = 20_000
 # One cell is 20 master pixels, about 0.3% of the map's width.
 CELL = 20
 
+# The map prints the names of the city's geography — its bays, its canal, its
+# bridges, the rock offshore — in large white capitals, unlike the small grey
+# street names. Those labels are the atlas's own statement of where each feature
+# is, so the label is where the feature goes. The names below are read off the
+# map; the coordinates are not, they are measured. A label is matched to its
+# name by being the closest one to the position recorded here, and the trace
+# fails rather than guesses if a name has no label near it.
+LABEL_MIN_PX = 8_000
+LABEL_MIN_HEIGHT = 40
+LABEL_MAX_HEIGHT = 200
+# A feature label may be set over two lines; both are listed, and the feature
+# sits at their midpoint.
+LANDMARKS = [
+    ("estero_bay", "Estero Bay", "bay", [(37.49, 16.19)]),
+    ("del_coronado_bay", "Del Coronado Bay", "bay", [(34.97, 36.66)]),
+    ("coronado_bay_bridge", "Coronado Bay Bridge", "bridge", [(43.07, 37.47), (43.06, 38.26)]),
+    ("morro_rock", "Morro Rock", "island", [(20.98, 38.30)]),
+    ("san_morro_bridge", "San Morro Bridge", "bridge", [(64.00, 50.70), (64.02, 51.49)]),
+    ("morro_canal", "Morro Canal", "canal", [(54.17, 57.96), (54.17, 58.74)]),
+    ("pacifica_bridge", "Pacifica Bridge", "bridge", [(44.83, 61.30), (44.83, 62.09)]),
+    ("san_morro_bay", "San Morro Bay", "bay", [(32.44, 61.38)]),
+    ("laguna_reservoir", "Laguna Reservoir", "reservoir", [(87.02, 63.18), (87.00, 63.97)]),
+]
+# How far a detected label may sit from the position recorded above and still be
+# taken for the same label, as a percentage of the map's width.
+LABEL_TOLERANCE = 0.5
+
 # A district the atlas gives no locations at all cannot be seeded by a venue pin.
 # There is exactly one — Exec Zone — and it turns out to be an enclave: a
 # sizeable land atom completely surrounded by one other district. That is what
@@ -129,6 +158,78 @@ def boundary_network(red):
     lab, n = ndi.label(grown, np.ones((3, 3)))
     sizes = ndi.sum(grown, lab, range(1, n + 1))
     return (sizes >= NETWORK_MIN_PX)[lab - 1] & (lab > 0)
+
+
+def label_positions(rgb):
+    """Where the map prints a large white name, as percentages of the map."""
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    white = (r > 225) & (g > 225) & (b > 225)
+    height, width = white.shape
+    # Close along the line so the letters of a word read as one blob.
+    lines = ndi.binary_closing(white, np.ones((5, 45)))
+    lab, n = ndi.label(lines)
+    sizes = ndi.sum(lines, lab, range(1, n + 1))
+    out = []
+    for index, box in enumerate(ndi.find_objects(lab)):
+        if sizes[index] < LABEL_MIN_PX:
+            continue
+        tall = box[0].stop - box[0].start
+        if tall < LABEL_MIN_HEIGHT or tall > LABEL_MAX_HEIGHT:
+            continue
+        out.append(
+            (
+                100 * (box[1].start + box[1].stop) / 2 / width,
+                100 * (box[0].start + box[0].stop) / 2 / height,
+            )
+        )
+    return out
+
+
+def landmarks_from(rgb, grid, keys, cell_width, cell_height):
+    """The city's named geography, placed by its own printed labels."""
+    printed = label_positions(rgb)
+    rows, columns = np.nonzero(grid)
+    values = grid[rows, columns]
+    # Both axes in the same unit — percent of the map's width — so a distance
+    # means the same thing horizontally and vertically.
+    aspect = cell_height / cell_width
+    district_x = columns / cell_width * 100
+    district_y = rows / cell_height * 100 * aspect
+
+    out = []
+    for key, name, kind, label_points in LANDMARKS:
+        found = []
+        for want_x, want_y in label_points:
+            best = min(printed, key=lambda p: (p[0] - want_x) ** 2 + (p[1] - want_y) ** 2)
+            gap = ((best[0] - want_x) ** 2 + (best[1] - want_y) ** 2) ** 0.5
+            if gap > LABEL_TOLERANCE:
+                raise SystemExit(
+                    f"no printed label within {LABEL_TOLERANCE}% of where {name} was recorded "
+                    f"({want_x}, {want_y}); nearest is {best} at {gap:.2f}%"
+                )
+            found.append(best)
+        x = sum(p[0] for p in found) / len(found)
+        y = sum(p[1] for p in found) / len(found)
+
+        distance = np.hypot(district_x - x, district_y - (y * aspect))
+        nearest = {}
+        for index in np.argsort(distance)[:400]:
+            near_key = keys[values[index] - 1]
+            nearest.setdefault(near_key, float(distance[index]))
+        ranked = sorted(nearest, key=nearest.get)
+        entry = {
+            "key": key,
+            "name": name,
+            "kind": kind,
+            # Where you are standing when you are at this feature.
+            "districtKey": ranked[0],
+            "map": {"x": round(x, 3), "y": round(y, 3)},
+        }
+        if kind == "bridge":
+            # A span has a district at each end, and they are the two closest.
+            entry["connects"] = ranked[:2]
+        out.append(entry)
+    return out
 
 
 def pins_of(atlas, height, width):
@@ -331,6 +432,11 @@ def main():
             "x": round((cx + 0.5) / gw * 100, 3),
             "y": round((cy + 0.5) / gh * 100, 3),
         }
+
+    print("placing the city's named geography off its printed labels ...")
+    atlas["landmarks"] = landmarks_from(rgb, grid, keys, gw, gh)
+    for landmark in atlas["landmarks"]:
+        print(f"  {landmark['name']} ({landmark['kind']}) -> {landmark['districtKey']}")
 
     runs = []
     flat = grid.reshape(-1)

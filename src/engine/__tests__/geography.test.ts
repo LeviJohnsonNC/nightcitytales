@@ -8,6 +8,7 @@ import {
   directionBetween,
   districtsInDirection,
   furthestInDirection,
+  LANDMARKS,
   limitInDirection,
   neighboursOf,
   parseDirection,
@@ -105,7 +106,6 @@ describe("narration mentions", () => {
 
 describe("destinations", () => {
   it("resolves whatever the narration called the place", () => {
-    expect(resolveDestination("Estero Bay")).toBe(getDistrict("Estero Bay")?.key);
     expect(resolveDestination("The Afterlife")).toBe("b1");
     expect(resolveDestination("b1")).toBe("b1");
     expect(resolveDestination("O")).toBe("kabuki");
@@ -113,11 +113,41 @@ describe("destinations", () => {
     expect(resolveDestination("")).toBeUndefined();
   });
 
-  it("offers every district plus the venues underfoot", () => {
+  it("resolves the geography the map names but the location list does not", () => {
+    // These are printed on the atlas map. A player can read them off it, so the
+    // engine has to know them or it refuses somewhere that plainly exists.
+    expect(resolveDestination("San Morro Bridge")).toBe("san_morro_bridge");
+    expect(resolveDestination("Estero Bay")).toBe("estero_bay");
+    expect(resolveDestination("the Morro Canal")).toBe("morro_canal");
+    expect(describePosition("san_morro_bridge")).toBe("San Morro Bridge, Heywood Docks (Mainland)");
+  });
+
+  it("offers the venues underfoot, the geography, and every district", () => {
     const names = reachableDestinations("b1").map((d) => d.name);
     expect(names).toContain("The Afterlife");
     expect(names).toContain("Kabuki");
-    expect(reachableDestinations(null).length).toBe(DISTRICTS.length);
+    expect(names).toContain("San Morro Bridge");
+    // Morro Rock is on the map and is not somewhere you can walk to, so it is
+    // never offered as a destination.
+    expect(names).not.toContain("Morro Rock");
+    const reachableLandmarks = LANDMARKS.filter((l) => l.kind !== "island").length;
+    expect(reachableDestinations(null).length).toBe(DISTRICTS.length + reachableLandmarks);
+  });
+
+  it("offers somewhere the character has already been, from anywhere", () => {
+    // Standing in Kabuki, "back to Greta's" is a place they know, in a district
+    // they are not in. Before, only the venues underfoot could be named.
+    const gretas = getPlace("a8")!.name;
+    const cold = reachableDestinations("kabuki").map((d) => d.name);
+    expect(cold).not.toContain(gretas);
+    const warm = reachableDestinations("kabuki", ["a8"]).map((d) => d.name);
+    expect(warm).toContain(gretas);
+  });
+
+  it("refuses to walk out to an island", () => {
+    const decision = resolveTravelIntent({ from: "little_europe", destination: "Morro Rock" });
+    expect(decision.ok).toBe(false);
+    if (!decision.ok) expect(decision.reason).toContain("Morro Rock");
   });
 });
 

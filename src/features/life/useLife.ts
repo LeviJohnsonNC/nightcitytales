@@ -337,6 +337,13 @@ type TurnOptions = {
   };
 };
 
+/** Everywhere the campaign has recorded standing, as stored location keys. */
+function knownPlacesOf(campaign: Campaign): string[] {
+  const known = campaign.known_places;
+  if (!Array.isArray(known)) return [];
+  return (known as unknown[]).filter((v): v is string => typeof v === "string");
+}
+
 /** The context slice the Life model reasons over. Deterministic and small. */
 function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
   const summary = characterSummary(bundle.character, bundle.vitals, bundle.inventory);
@@ -364,9 +371,10 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           gangs: positionDistrict.gangs,
           combatZone: isCombatZone(positionDistrict.key),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
-          destinations: reachableDestinations(bundle.campaign.location_key ?? DEFAULT_START).map(
-            (d) => d.name,
-          ),
+          destinations: reachableDestinations(
+            bundle.campaign.location_key ?? DEFAULT_START,
+            knownPlacesOf(bundle.campaign),
+          ).map((d) => d.name),
           neighbours: neighboursOf(bundle.campaign.location_key ?? DEFAULT_START).map(
             (n) => `${n.name} — ${directionName(n.direction)}, ${n.minutes} min`,
           ),

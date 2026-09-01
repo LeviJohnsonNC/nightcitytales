@@ -63,9 +63,27 @@ export type MapImage = {
   note: string;
 };
 
+/**
+ * A named piece of the city's geography — a bridge, a bay, the canal, the rock
+ * offshore. The map prints these names; the atlas's location list does not, so
+ * before this existed the player could read "San Morro Bridge" off the map and
+ * the engine had never heard of it.
+ */
+export type Landmark = {
+  key: string;
+  name: string;
+  kind: "bridge" | "bay" | "canal" | "reservoir" | "island";
+  /** Where you are standing when you are at it. */
+  districtKey: string;
+  map: MapPoint;
+  /** For a bridge, the district at each end. */
+  connects?: string[];
+};
+
 type AtlasFile = {
   areas: Area[];
   districts: District[];
+  landmarks: Landmark[];
   map: MapImage;
   travel: {
     houseRule: boolean;
@@ -84,12 +102,14 @@ const ATLAS = atlas as unknown as AtlasFile;
 
 export const AREAS: Area[] = ATLAS.areas;
 export const DISTRICTS: District[] = ATLAS.districts;
+export const LANDMARKS: Landmark[] = ATLAS.landmarks;
 export const MAP_IMAGE: MapImage = ATLAS.map;
 export const ATLAS_SOURCE = ATLAS.source;
 
 const DISTRICT_BY_KEY = new Map<string, District>();
 const DISTRICT_BY_CODE = new Map<string, District>();
 const PLACE_BY_KEY = new Map<string, { place: Place; district: District }>();
+const LANDMARK_BY_KEY = new Map<string, Landmark>(LANDMARKS.map((l) => [l.key, l]));
 
 for (const district of DISTRICTS) {
   DISTRICT_BY_KEY.set(district.key, district);
@@ -111,6 +131,29 @@ export function getDistrict(keyOrCode: string): District | undefined {
 /** A named location by its code key ("b1"). Undefined when unknown. */
 export function getPlace(key: string): Place | undefined {
   return PLACE_BY_KEY.get(key.trim().toLowerCase())?.place;
+}
+
+/** A named piece of geography by its key ("san_morro_bridge"). */
+export function getLandmark(key: string): Landmark | undefined {
+  return LANDMARK_BY_KEY.get(key.trim().toLowerCase());
+}
+
+/**
+ * Whether a landmark is somewhere a character can actually get to. An island in
+ * the bay is not: Morro Rock is on the map, and reaching it needs a boat nobody
+ * has written rules for yet.
+ */
+export function isReachable(landmark: Landmark): boolean {
+  return landmark.kind !== "island";
+}
+
+/** Every named landmark that stands in a district. */
+export function landmarksIn(districtKeyOrCode: string): Landmark[] {
+  const district = getDistrict(districtKeyOrCode);
+  if (!district) return [];
+  return LANDMARKS.filter(
+    (l) => l.districtKey === district.key || l.connects?.includes(district.key),
+  );
 }
 
 /** The district a location sits in. */
@@ -137,6 +180,8 @@ export function areaOf(districtKeyOrCode: string): Area | undefined {
 export type Position = {
   districtKey: string;
   placeKey?: string;
+  /** Set when the character is at a named piece of geography rather than a venue. */
+  landmarkKey?: string;
 };
 
 /** Resolve a stored location string ("b1" or "upper_marina") into a Position. */
@@ -145,6 +190,8 @@ export function resolvePosition(stored: string | null | undefined): Position | u
   const value = stored.trim().toLowerCase();
   const entry = PLACE_BY_KEY.get(value);
   if (entry) return { districtKey: entry.district.key, placeKey: entry.place.key };
+  const landmark = LANDMARK_BY_KEY.get(value);
+  if (landmark) return { districtKey: landmark.districtKey, landmarkKey: landmark.key };
   const district = getDistrict(value);
   return district ? { districtKey: district.key } : undefined;
 }
@@ -156,9 +203,11 @@ export function describePosition(stored: string | null | undefined): string {
   const district = getDistrict(position.districtKey);
   if (!district) return "Somewhere in Night City";
   const area = areaOf(district.key);
-  const venue = position.placeKey ? getPlace(position.placeKey)?.name : undefined;
+  const here =
+    (position.placeKey ? getPlace(position.placeKey)?.name : undefined) ??
+    (position.landmarkKey ? getLandmark(position.landmarkKey)?.name : undefined);
   const tail = `${district.name}${area ? ` (${area.name})` : ""}`;
-  return venue ? `${venue}, ${tail}` : tail;
+  return here ? `${here}, ${tail}` : tail;
 }
 
 /**
@@ -185,7 +234,8 @@ export function travelMinutes(from: string | null | undefined, to: string): numb
   if (!b) return 0;
   if (!a) return t.betweenDistrictsSameArea;
   if (a.districtKey === b.districtKey) {
-    return a.placeKey === b.placeKey ? 0 : t.withinDistrict;
+    const same = a.placeKey === b.placeKey && a.landmarkKey === b.landmarkKey;
+    return same ? 0 : t.withinDistrict;
   }
   const areaA = getDistrict(a.districtKey)?.area;
   const areaB = getDistrict(b.districtKey)?.area;
@@ -230,24 +280,57 @@ export function resolveDestination(input: string | null | undefined): string | u
       if (norm(place.name) === needle) return place.key;
     }
   }
+  for (const landmark of LANDMARKS) {
+    if (norm(landmark.name) === needle) return landmark.key;
+  }
   return undefined;
 }
 
 /**
- * The destinations a Life turn is allowed to name: every district, plus the
- * named venues in the district the character is standing in. The list the model
- * gets, and the list the engine checks against.
+ * The destinations worth putting in front of the narrator: the venues underfoot,
+ * the named geography within reach, every district, and anywhere the character
+ * has already been.
+ *
+ * This is a prompt list, not a gate. The engine resolves a destination against
+ * the whole atlas, so a player naming somewhere they have never been still gets
+ * taken there — the list exists so the narrator has good options to hand, not to
+ * fence the player in.
  */
-export function reachableDestinations(from: string | null | undefined): Array<{
-  key: string;
-  name: string;
-}> {
+export function reachableDestinations(
+  from: string | null | undefined,
+  known: readonly string[] = [],
+): Array<{ key: string; name: string }> {
   const out: Array<{ key: string; name: string }> = [];
+  const seen = new Set<string>();
+  const add = (key: string, name: string) => {
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ key, name });
+  };
+
   const here = resolvePosition(from);
   if (here) {
-    for (const place of placesIn(here.districtKey)) out.push({ key: place.key, name: place.name });
+    for (const place of placesIn(here.districtKey)) add(place.key, place.name);
+    for (const landmark of landmarksIn(here.districtKey)) {
+      if (isReachable(landmark)) add(landmark.key, landmark.name);
+    }
   }
-  for (const district of DISTRICTS) out.push({ key: district.key, name: district.name });
+  // Somewhere they have stood before, they can name and go back to.
+  for (const stored of known) {
+    const position = resolvePosition(stored);
+    if (!position) continue;
+    if (position.placeKey) {
+      const place = getPlace(position.placeKey);
+      if (place) add(place.key, place.name);
+    } else if (position.landmarkKey) {
+      const landmark = getLandmark(position.landmarkKey);
+      if (landmark) add(landmark.key, landmark.name);
+    }
+  }
+  for (const landmark of LANDMARKS) {
+    if (isReachable(landmark)) add(landmark.key, landmark.name);
+  }
+  for (const district of DISTRICTS) add(district.key, district.name);
   return out;
 }
 
@@ -295,6 +378,10 @@ export function mapPointOf(stored: string | null | undefined): MapPoint | undefi
   if (!position) return undefined;
   if (position.placeKey) {
     const point = getPlace(position.placeKey)?.map;
+    if (point) return point;
+  }
+  if (position.landmarkKey) {
+    const point = getLandmark(position.landmarkKey)?.map;
     if (point) return point;
   }
   return getDistrict(position.districtKey)?.map;
@@ -500,6 +587,15 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
   const asked = intent.destination?.trim();
   const named = asked ? resolveDestination(asked) : undefined;
 
+  // Some of the map is on the map without being somewhere you can walk to.
+  const landmark = named ? getLandmark(named) : undefined;
+  if (landmark && !isReachable(landmark)) {
+    return {
+      ok: false,
+      reason: `${landmark.name} is out in the water. There is no getting to it on foot or by cab.`,
+    };
+  }
+
   // A destination was named and it is not on the map. That is the answer, and
   // it stays the answer even when a heading came with it: quietly dropping the
   // name and setting off on the heading instead lands the character somewhere
@@ -574,11 +670,14 @@ export const PLACE_MATCH_KEYS: string[] = (() => {
     keys.add(district.name);
     for (const place of district.locations) keys.add(place.name);
   }
+  for (const landmark of LANDMARKS) keys.add(landmark.name);
   return [...keys].filter((k) => k.length >= 4).sort((a, b) => b.length - a.length);
 })();
 
 export type PlaceMention =
-  { kind: "district"; district: District } | { kind: "place"; place: Place; district: District };
+  | { kind: "district"; district: District }
+  | { kind: "place"; place: Place; district: District }
+  | { kind: "landmark"; landmark: Landmark; district: District };
 
 /** Curly and straight apostrophes are the same character for lookups. */
 function normalizeName(text: string): string {
@@ -598,6 +697,11 @@ export function resolvePlaceMention(text: string): PlaceMention | undefined {
     for (const place of district.locations) {
       if (normalizeName(place.name) === needle) return { kind: "place", place, district };
     }
+  }
+  for (const landmark of LANDMARKS) {
+    if (normalizeName(landmark.name) !== needle) continue;
+    const district = getDistrict(landmark.districtKey);
+    if (district) return { kind: "landmark", landmark, district };
   }
   return undefined;
 }

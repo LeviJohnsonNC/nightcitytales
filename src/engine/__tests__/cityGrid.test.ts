@@ -9,7 +9,7 @@ import {
   isCity,
   walk,
 } from "@/engine/cityGrid";
-import { DISTRICTS, getDistrict } from "@/engine/geography";
+import { DISTRICTS, describePosition, districtOfPlace, getDistrict } from "@/engine/geography";
 
 const NORTH = { x: 0, y: -1 };
 const SOUTH = { x: 0, y: 1 };
@@ -34,16 +34,14 @@ describe("the traced city", () => {
   it("puts every canonical venue in the district the atlas files it under", () => {
     // The atlas's venue coordinates and the atlas's printed boundaries are two
     // separate statements by the same publisher, so this is a real check that
-    // they agree. Two venues sit a single cell — a fifth of a city block — on
-    // the wrong side of a line they are drawn on top of; that is the line's
-    // thickness, not a disagreement. One is genuinely adrift.
-    const KNOWN_ADRIFT = ["w5"];
-    const ON_THE_LINE = ["f5", "i6"];
+    // they agree. Three do not, and each is the publisher's own inconsistency
+    // rather than a fault in the trace — see the tests below.
+    const DISPUTED = ["f5", "i6", "w5"];
     const misplaced: string[] = [];
     for (const district of DISTRICTS) {
       for (const place of district.locations) {
         if (!place.map) continue;
-        if (KNOWN_ADRIFT.includes(place.key) || ON_THE_LINE.includes(place.key)) continue;
+        if (DISPUTED.includes(place.key)) continue;
         if (districtNearPoint(place.map) !== district.key) {
           misplaced.push(`${place.code} ${place.name} (${district.name})`);
         }
@@ -52,13 +50,28 @@ describe("the traced city", () => {
     expect(misplaced).toEqual([]);
   });
 
-  it("has one venue the atlas plots out at sea", () => {
-    // Playland by the Sea is pinned about 3.5% of the map's width west of any
-    // ground, well past the Pacifica shoreline. Recorded rather than papered
-    // over: if the coordinate is ever corrected, this test should fail and go.
-    const playland = DISTRICTS.flatMap((d) => d.locations).find((p) => p.key === "w5");
-    expect(playland).toBeDefined();
-    expect(districtNearPoint(playland!.map!)).toBeUndefined();
+  it("keeps two venues drawn on a boundary line filed where the atlas files them", () => {
+    // Parkside Living and South Cargo Village are each drawn a single cell — a
+    // fifth of a city block — on the far side of a line they sit on top of.
+    // That is the width of the line, not a disagreement worth acting on, and
+    // the district still comes from the atlas's own location list.
+    for (const key of ["f5", "i6"]) {
+      const place = DISTRICTS.flatMap((d) => d.locations).find((p) => p.key === key)!;
+      const filed = DISTRICTS.find((d) => d.locations.some((p) => p.key === key))!;
+      expect(districtNearPoint(place.map!)).not.toBe(filed.key);
+      expect(districtOfPlace(key)!.key).toBe(filed.key);
+    }
+  });
+
+  it("has one venue the atlas draws outside the district it lists it under", () => {
+    // Playland by the Sea is marked on a spit of land reaching north into San
+    // Morro Bay, and Pacifica Playground's printed boundary does not take that
+    // spit in. The marker is exactly where the map draws it; the two statements
+    // simply disagree, and the location list is the one that decides.
+    const playland = DISTRICTS.flatMap((d) => d.locations).find((p) => p.key === "w5")!;
+    expect(districtNearPoint(playland.map!)).toBeUndefined();
+    expect(districtOfPlace("w5")!.key).toBe("pacifica_playground");
+    expect(describePosition("w5")).toContain("Pacifica Playground");
   });
 
   it("is water off the coast and city on it", () => {

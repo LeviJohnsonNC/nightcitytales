@@ -106,7 +106,11 @@ export type LifeContext = {
     gangs: string[];
     combatZone: boolean;
     nearby: string[];
-    /** Canonical names a travel proposal is allowed to name. Nothing else. */
+    /**
+     * Good destinations to have in mind: what is underfoot, the named geography
+     * within reach, everywhere already visited, and every district. Not a fence
+     * — the engine resolves any canonical place in the city.
+     */
     destinations?: string[];
     /** Neighbouring districts with their real compass heading and travel time. */
     neighbours?: string[];
@@ -168,15 +172,17 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       );
     }
     if (p.destinations?.length) {
-      parts.push(line("Places you may travel to (use the exact name)", p.destinations.join(", ")));
+      parts.push(line("Places worth naming (use the exact name)", p.destinations.join(", ")));
     }
     parts.push(
       "Narrate this location by name and use only these canonical places. " +
         "Do not move the character to another district yourself; travel is the player's call and the engine's clock. " +
         'When the player says they are going somewhere, propose {"kind":"travel","destination":"<exact name from the list above>"}. ' +
-        "A destination that is not on that list is refused by the engine — pass the player's own words " +
-        "through anyway rather than swapping in a heading, so they are told the place is unknown " +
-        "instead of being taken somewhere else.",
+        "That list is what is worth suggesting, not the limit of where they can go: the engine " +
+        "knows every district, venue, bridge, bay and canal in Night City. If the player names " +
+        'somewhere that is not on it, put THEIR words in "destination" and let the engine ' +
+        "resolve or refuse them. Never swap a place they named for a heading, and never invent a " +
+        "street, bar or building that is not in the atlas.",
     );
   }
 
