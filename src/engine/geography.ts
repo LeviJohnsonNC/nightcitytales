@@ -262,7 +262,10 @@ export type PlaceMention =
 
 /** Curly and straight apostrophes are the same character for lookups. */
 function normalizeName(text: string): string {
-  return text.trim().toLowerCase().replace(/[\u2018\u2019]/g, "'");
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[\u2018\u2019]/g, "'");
 }
 
 /** Look up what a piece of narration text is naming, if anything. */
