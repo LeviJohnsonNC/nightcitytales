@@ -66,25 +66,44 @@
 
   "districts": [
     {
-      "name": "Watson",
-      "colour": "market stalls, Maelstrom tags, and a smell of hot plastic and fish"
+      "key": "watson_development",
+      "name": "Watson Development",
+      "colour": "half-finished megablocks, Maelstrom tags on the scaffolding, and rebar where a lobby should be"
     },
     {
-      "name": "Heywood",
-      "colour": "Valentino murals, mariachi bleeding out of a corner bar, family everywhere"
+      "key": "kabuki",
+      "name": "Kabuki",
+      "colour": "Tyger Claw neon, market noise off the Ganymede, and cameras nobody admits to owning"
     },
     {
-      "name": "Pacifica",
-      "colour": "a drowned resort city, Voodoo Boys graffiti, no grid to speak of"
+      "key": "pacifica_playground",
+      "name": "Pacifica Playground",
+      "colour": "a resort that never opened, salt rot in the concrete, and no grid worth the name"
     },
     {
+      "key": "santo_domingo",
       "name": "Santo Domingo",
-      "colour": "smokestacks, shift whistles, and workers too tired to look up"
+      "colour": "shift whistles, cargo-container streets, and workers too tired to look up"
     },
-    { "name": "Westbrook", "colour": "chrome, money, and doormen paid to forget faces" },
     {
-      "name": "the Badlands fringe",
-      "colour": "dust, nomad convoys, and a horizon with nothing kind on it"
+      "key": "upper_marina",
+      "name": "Upper Marina",
+      "colour": "dock money, Afterlife regulars, and doormen paid to forget faces"
+    },
+    {
+      "key": "south_night_city",
+      "name": "South Night City",
+      "colour": "a combat zone with a city manager who bills for the privilege; boneyard on one side, Bozos on the other"
+    },
+    {
+      "key": "heywood_industrial_zone",
+      "name": "Heywood Industrial Zone",
+      "colour": "dry docks, dead cranes, and couriers cutting through the rust"
+    },
+    {
+      "key": "rancho_coronado",
+      "name": "Rancho Coronado",
+      "colour": "the city's ragged southern edge, dust off the Badlands and nobody official in sight"
     }
   ],
 
