@@ -360,6 +360,10 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           gangs: positionDistrict.gangs,
           combatZone: isCombatZone(positionDistrict.key),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
+          destinations: reachableDestinations(
+            bundle.campaign.location_key ?? DEFAULT_START,
+          ).map((d) => d.name),
+
         }
       : null,
     character: {
