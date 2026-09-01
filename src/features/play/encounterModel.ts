@@ -27,6 +27,8 @@ import {
   type EncounterState,
   type Point,
   type WeaponCapability,
+  DEFAULT_COMBAT_GOAL,
+  type CombatGoal,
   type ThreatProfile,
   type WeaponProfile,
   type WoundStateCode,
@@ -98,6 +100,12 @@ export type CombatantData = {
    * JSON — no migration, and a fight in progress simply has no entry yet.
    */
   moraleSpent?: string[];
+  /**
+   * Why this hostile is fighting. Absent means the old implicit answer, which
+   * is "kill" — so a fight already in progress when this shipped keeps behaving
+   * exactly as it did.
+   */
+  combatGoal?: CombatGoal;
 };
 
 /**
@@ -352,6 +360,8 @@ export function hostileCombatant(
   enemy: GmEnemy,
   id: string,
   position: Point,
+  /** Why they are fighting. Defaults to the old implicit answer: kill. */
+  goal: CombatGoal = DEFAULT_COMBAT_GOAL,
 ): { combatant: Combatant; data: CombatantData } {
   const profile = threatFor(enemy.profile);
   const threshold = Math.ceil(profile.hp / 2);
@@ -384,6 +394,7 @@ export function hostileCombatant(
     move: profile.move,
     attackSkill: profile.attackSkill,
     threatRole: profile.role,
+    combatGoal: goal,
   };
   return { combatant, data };
 }

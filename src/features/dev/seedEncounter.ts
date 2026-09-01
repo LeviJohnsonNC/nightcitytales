@@ -170,7 +170,8 @@ export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
   const sheet = await getCharacter(fresh.campaign.character_id);
   if (!sheet) throw new Error("This campaign's character no longer exists.");
 
-  const members = buildForce(forceFor(options.force.key), options.force.size);
+  const template = forceFor(options.force.key);
+  const members = buildForce(template, options.force.size);
   // Whoever beat the character on Initiative has already acted by the time this
   // returns, so the harness lands on the player's own Turn with a live board.
   const opened = await beginEncounter({
@@ -183,6 +184,9 @@ export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
     inventory: fresh.inventory,
     enemies: enemiesFrom(members),
     arena: arenaKeyOr(options.arena),
+    // What this lot came for. A scavver crew that has what it wanted stops
+    // shooting, which is the difference between a bad night and a dead run.
+    goal: template.goal,
   });
 
   return { campaignId, encounterId: opened.live.id };

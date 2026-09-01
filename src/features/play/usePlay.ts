@@ -601,6 +601,7 @@ async function narrate(
         inventory: bundle.inventory,
         enemies: action.enemies,
         arena: action.arena,
+        goal: action.goal,
         ...(awareness
           ? {
               roleEffects: {

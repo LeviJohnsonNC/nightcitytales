@@ -15,6 +15,7 @@
  * plainest mook rather than becoming a real one.
  */
 import threatsData from "@/data/rules/threats.json";
+import type { CombatGoal } from "./combatGoal";
 import type { WeaponRangeType } from "./combatTables";
 import type { RNG } from "./types";
 
@@ -91,6 +92,11 @@ type ForceEntry = { profile: string; count: number };
 export type ForceTemplate = {
   key: string;
   label: string;
+  /**
+   * Why this lot are fighting. A street crew wants your money and stops when
+   * they have it; Militech came to kill. See engine/combatGoal.ts.
+   */
+  goal: CombatGoal;
   sizes: Record<ForceSize, ForceEntry[]>;
 };
 

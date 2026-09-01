@@ -5,7 +5,8 @@
     "combatNumber": "The Backup table prints a single combined Combat Number that a d10 is added to. A hostile here splits it into ref + attackSkill because that is how engine/combat.ts builds an attack (STAT + Skill + 1d10). ref + attackSkill equals the Combat Number the ladder prints, so the arithmetic lands in the same place.",
     "rangeType": "Must be one of the printed range types in engine/combatTables.ts. The engine reads the Range DV off that table and the measured distance; nothing here sets a DV.",
     "move": "MOVE in metres per Move Action, matching the Backup table's move column. The engine bounds how far a hostile can walk with it.",
-    "forceBudget": "Force sizes are budgeted for ONE Edgerunner, because that is who plays this game. Cyberpunk RED: Single Player Mode gives the encounter guideline as roughly one Mook per PC for a challenging but generally winnable fight, one Lieutenant per two PCs, and one Mini-Boss per three. A solo protagonist therefore tops out at one Mook before a fight stops being fair. These sizes used to be built for a crew — 'small' was two Mooks and 'standard' was four — which is where the action economy that killed the character in playtesting came from: four hostile Actions for every one of theirs, before a single Morale check could ever fire. The old sets are kept as 'overwhelming', which is not an encounter. It is a problem to be solved another way."
+    "forceBudget": "Force sizes are budgeted for ONE Edgerunner, because that is who plays this game. Cyberpunk RED: Single Player Mode gives the encounter guideline as roughly one Mook per PC for a challenging but generally winnable fight, one Lieutenant per two PCs, and one Mini-Boss per three. A solo protagonist therefore tops out at one Mook before a fight stops being fair. These sizes used to be built for a crew — 'small' was two Mooks and 'standard' was four — which is where the action economy that killed the character in playtesting came from: four hostile Actions for every one of theirs, before a single Morale check could ever fire. The old sets are kept as 'overwhelming', which is not an encounter. It is a problem to be solved another way.",
+    "forceGoal": "Why they are fighting, per Cyberpunk RED: Single Player Mode, which tells the solo player to establish the opposition's reason before the shooting. Every fight in this app used to have the same implicit answer — reduce the player to zero and keep going — which for a character with no Medtech and no crew is how a campaign ends rather than how a fight goes. A force with a goal stops when the goal is met. The engine reads only 'is there still a reason to shoot'; what they take with them is the narrator's."
   },
   "profiles": [
     {
@@ -163,6 +164,7 @@
     {
       "key": "street_crew",
       "label": "a street crew",
+      "goal": "rob",
       "sizes": {
         "small": [
           {
@@ -205,6 +207,7 @@
     {
       "key": "scavvers",
       "label": "a scavver crew",
+      "goal": "rob",
       "sizes": {
         "small": [
           {
@@ -243,6 +246,7 @@
     {
       "key": "boostergang",
       "label": "a boostergang",
+      "goal": "kill",
       "sizes": {
         "small": [
           {
@@ -285,6 +289,7 @@
     {
       "key": "disciplined_gang",
       "label": "a disciplined crew",
+      "goal": "repel",
       "sizes": {
         "small": [
           {
@@ -327,6 +332,7 @@
     {
       "key": "corporate",
       "label": "corporate security",
+      "goal": "capture",
       "sizes": {
         "small": [
           {
@@ -365,6 +371,7 @@
     {
       "key": "military",
       "label": "contractors",
+      "goal": "kill",
       "sizes": {
         "small": [
           {
@@ -411,6 +418,7 @@
     {
       "key": "the_law",
       "label": "NCPD",
+      "goal": "capture",
       "sizes": {
         "small": [
           {

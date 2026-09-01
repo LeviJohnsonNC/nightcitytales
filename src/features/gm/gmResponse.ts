@@ -5,7 +5,9 @@
  */
 import { z } from "zod";
 import {
+  COMBAT_GOALS,
   DEFAULT_ARENA_KEY,
+  combatGoalFor,
   DEFAULT_THREAT_KEY,
   isAnswerableQuestion,
   isArenaKey,
@@ -65,6 +67,14 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     enemies: z.array(GmEnemySchema),
     /** WHERE the fight is, from the engine's closed list. Never a distance. */
     arena: z.string(),
+    /**
+     * WHY they are fighting, from the engine's closed list. This is fiction the
+     * model is the right author of — a shakedown is a shakedown — and the
+     * engine reads exactly one thing off it: whether there is still a reason to
+     * shoot someone already on the ground. Anything else falls back to "kill",
+     * which is what every fight here assumed before goals existed.
+     */
+    goal: z.enum(COMBAT_GOALS),
   }),
   z.object({
     kind: z.literal("attack"),
@@ -148,7 +158,7 @@ export const GmWireResponseSchema = z.object({
         "and the fields that kind needs: " +
         '{"kind":"skill_check","skillId":"<id from the SKILLS list>","dv":<number>,"intent":"<what they are attempting>"}; ' +
         '{"kind":"opposed_check","skillId":"<id from the SKILLS list>","npcKey":"<stable key>","npcName":"<who resists>","opposingSkillId":"<printed skill id they resist with>","opposingSkillLevel":<0-10>,"opposingStatValue":<1-10>,"intent":"<what they are attempting>"}; ' +
-        '{"kind":"start_encounter","name":"<label>","arena":"<one of the ARENAS ids>","enemies":[{"key","name","ref","body","hp","sp","attackSkill","weaponName","damageDice","rangeType"}]}; ' +
+        '{"kind":"start_encounter","name":"<label>","arena":"<one of the ARENAS ids>","goal":"kill"|"capture"|"repel"|"rob"|"delay"|"protect","enemies":[{"key":"<stable id>","name":"<what they are called>","profile":"<one of the THREATS ids>"}]}; ' +
         '{"kind":"attack","targetId":"<enemy key>","intent":"<what they are doing>"}; ' +
         '{"kind":"move","targetId":"<enemy key>","towards":"closer"|"away","intent":"<what they are doing>"}; ' +
         '{"kind":"advance_beat","to":"<beat id>"}. Use [] when nothing is proposed.',
@@ -406,6 +416,10 @@ export function normalizeGmResponse(
           // An arena the engine does not know falls back to open ground rather
           // than letting an invented place through as a real one.
           arena: isArenaKey(named) ? named : DEFAULT_ARENA_KEY,
+          // A goal outside the closed list is not a goal. Falling back rather
+          // than dropping the fight: the shooting still happens, at an
+          // objective the engine chose.
+          goal: combatGoalFor(a["goal"] ?? a["objective"] ?? a["intent"]),
           enemies,
         });
       else warn(`GM proposed an encounter with no hostiles, dropped: ${JSON.stringify(raw)}`);
