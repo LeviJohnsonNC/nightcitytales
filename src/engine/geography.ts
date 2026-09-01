@@ -199,6 +199,53 @@ export function canTravel(to: string): boolean {
 }
 
 /**
+ * Resolve whatever the narrator called the destination — a stored key ("b1"),
+ * a printed code ("B1", "O"), a district name ("Kabuki") or a venue name
+ * ("The Afterlife") — into a canonical stored location key. Undefined when the
+ * name is not on the map; nothing here guesses.
+ */
+export function resolveDestination(input: string | null | undefined): string | undefined {
+  if (!input) return undefined;
+  const raw = input.trim();
+  if (!raw) return undefined;
+
+  const direct = resolvePosition(raw);
+  if (direct) return direct.placeKey ?? direct.districtKey;
+
+  const needle = raw.toLowerCase().replace(/^the\s+/, "");
+  const norm = (s: string) => s.toLowerCase().replace(/^the\s+/, "");
+
+  for (const district of DISTRICTS) {
+    if (norm(district.name) === needle) return district.key;
+  }
+  for (const district of DISTRICTS) {
+    for (const place of district.locations) {
+      if (norm(place.name) === needle) return place.key;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The destinations a Life turn is allowed to name: every district, plus the
+ * named venues in the district the character is standing in. The list the model
+ * gets, and the list the engine checks against.
+ */
+export function reachableDestinations(from: string | null | undefined): Array<{
+  key: string;
+  name: string;
+}> {
+  const out: Array<{ key: string; name: string }> = [];
+  const here = resolvePosition(from);
+  if (here) {
+    for (const place of placesIn(here.districtKey)) out.push({ key: place.key, name: place.name });
+  }
+  for (const district of DISTRICTS) out.push({ key: district.key, name: district.name });
+  return out;
+}
+
+
+/**
  * Every match key for narration linking: district names first, then location
  * names. Longest first so "Night City Firestation #2" beats "Night City".
  */
