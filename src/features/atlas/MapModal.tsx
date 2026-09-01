@@ -6,8 +6,8 @@
  * Presentation only: every coordinate, name and fact comes from the engine's
  * geography module.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Crosshair, Minus, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,9 +15,11 @@ import {
   MAP_IMAGE,
   describePosition,
   getDistrict,
+  getPlace,
   resolvePosition,
   travelMinutes,
   type District,
+  type MapPoint,
 } from "@/engine";
 import { PlaceDossier } from "./PlaceDossier";
 
@@ -44,6 +46,8 @@ export function MapModal({
   const [dossier, setDossier] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
   const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  /** Fraction of the map to hold in the middle of the viewport across a zoom. */
+  const pendingCenter = useRef<MapPoint | null>(null);
 
   const here = resolvePosition(locationKey);
   const known = useMemo(() => {
@@ -57,29 +61,74 @@ export function MapModal({
 
   const currentDistrict: District | undefined = here ? getDistrict(here.districtKey) : undefined;
 
-  // When the map opens, centre the view on the player's marker. The content
-  // is `zoom * 100%` of the scroller's width and keeps the image's aspect
-  // ratio, so a percentage coordinate converts straight to scroll offsets.
+  // Where the pin actually sits: the venue's own point when the atlas places
+  // it, otherwise the district centroid.
+  const youAreHere: MapPoint | null = useMemo(() => {
+    const venue = here?.placeKey ? getPlace(here.placeKey) : undefined;
+    if (venue?.map) return venue.map;
+    return currentDistrict ? currentDistrict.map : null;
+  }, [here?.placeKey, currentDistrict]);
+
+  /** Scroll so a percentage point on the map lands in the middle of the view. */
+  const scrollToPoint = useCallback((point: MapPoint) => {
+    const el = scroller.current;
+    if (!el) return false;
+    const contentWidth = el.scrollWidth;
+    const contentHeight = el.scrollHeight;
+    if (contentWidth <= 0 || contentHeight <= 0) return false;
+    el.scrollLeft = Math.max(0, (point.x / 100) * contentWidth - el.clientWidth / 2);
+    el.scrollTop = Math.max(0, (point.y / 100) * contentHeight - el.clientHeight / 2);
+    return true;
+  }, []);
+
+  const centreOnMe = useCallback(() => {
+    if (youAreHere) scrollToPoint(youAreHere);
+  }, [youAreHere, scrollToPoint]);
+
+  // Centre when the map opens. The scroll area is only measurable once the
+  // dialog has laid out and the image has a box, so we keep trying on every
+  // resize of the content until the numbers are real, rather than betting on a
+  // single animation frame.
   useEffect(() => {
-    if (!open || !currentDistrict) return;
+    if (!open || !youAreHere) return;
     const el = scroller.current;
     if (!el) return;
-    const frame = requestAnimationFrame(() => {
-      const contentWidth = el.scrollWidth;
-      const contentHeight = el.scrollHeight;
-      el.scrollLeft = Math.max(
-        0,
-        (currentDistrict.map.x / 100) * contentWidth - el.clientWidth / 2,
-      );
-      el.scrollTop = Math.max(
-        0,
-        (currentDistrict.map.y / 100) * contentHeight - el.clientHeight / 2,
-      );
-    });
-    return () => cancelAnimationFrame(frame);
-    // Only on open — re-running on zoom would fight the player's own panning.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    let settled = false;
+    const attempt = () => {
+      if (settled) return;
+      if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
+        if (scrollToPoint(youAreHere)) settled = true;
+      }
+    };
+    attempt();
+    const observer = new ResizeObserver(attempt);
+    observer.observe(el);
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
+    const timer = window.setTimeout(attempt, 250);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, [open, youAreHere, scrollToPoint]);
+
+  /** Zooming holds whatever was in the middle of the screen. */
+  function changeZoom(delta: number) {
+    const el = scroller.current;
+    if (el && el.scrollWidth > 0 && el.scrollHeight > 0) {
+      pendingCenter.current = {
+        x: ((el.scrollLeft + el.clientWidth / 2) / el.scrollWidth) * 100,
+        y: ((el.scrollTop + el.clientHeight / 2) / el.scrollHeight) * 100,
+      };
+    }
+    setZoom((z) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +(z + delta).toFixed(2))));
+  }
+
+  useLayoutEffect(() => {
+    const point = pendingCenter.current;
+    if (!point) return;
+    pendingCenter.current = null;
+    scrollToPoint(point);
+  }, [zoom, scrollToPoint]);
 
   function onPointerDown(e: React.PointerEvent) {
     const el = scroller.current;
@@ -98,6 +147,7 @@ export function MapModal({
     drag.current = null;
     scroller.current?.releasePointerCapture(e.pointerId);
   }
+
 
   return (
     <>
