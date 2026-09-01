@@ -96,11 +96,11 @@ function NarrativeLog({
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [events.length]);
-  // One scroller on a phone (the page); the desktop column keeps its own.
-  // lg:min-h-40 is a floor, so a fight that fills the column with a board and a
-  // dice card cannot squeeze the narration down to nothing.
+  // Not a scroller itself: on a desktop it sits inside the column's one scroll
+  // region, alongside the dice cards, so the card that answers the last line of
+  // the log scrolls with it. On a phone the page scrolls and this is just a box.
   return (
-    <div className="space-y-3 border border-border bg-card/40 p-4 lg:min-h-40 lg:flex-1 lg:overflow-y-auto">
+    <div className="space-y-3 border border-border bg-card/40 p-4">
       {readAloud && (
         <blockquote className="border-l-2 border-accent bg-accent/5 p-3 text-sm leading-relaxed text-foreground">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
@@ -752,8 +752,8 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
       </MobileStatusBar>
 
       <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex flex-col gap-3 lg:min-h-[70vh]">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:sticky lg:top-0 lg:z-20 lg:-mx-4 lg:border-b lg:border-border lg:bg-background/95 lg:px-4 lg:py-3 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70">
+        <div className="flex flex-col gap-3 lg:h-[calc(100dvh-3rem)]">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:-mx-4 lg:flex-none lg:border-b lg:border-border lg:bg-background lg:px-4 lg:py-3">
             <div className="min-w-0">
               <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
                 {bundle.campaign.name}
@@ -771,29 +771,27 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             />
           </div>
           {/*
-            The battlefield, anchored.
+            The battlefield, anchored — by the column, not by position: sticky.
 
-            It sits ABOVE the narration and sticks to the top of the viewport,
-            just under the header, so the map is on screen for the whole fight
-            and the story scrolls past underneath it. Which is what "anchored"
-            has to mean here: the column has no bounded height, so the log is
-            not a scroller and never was — the page is. Placing the board after
-            the log therefore did not pin it, it just put it further down a page
-            that kept growing, and every narrated turn pushed the fight further
-            out of sight.
+            The column has a HEIGHT now, so its children are placed rather than
+            stacked: header, board, one scroll region, input. The board simply
+            does not move, with no z-index to lose and no offset to guess. The
+            sticky version needed the header's height as a magic number and put
+            a translucent header over scrolling text, which smeared.
 
-            z-10, under the header's z-20: if the two ever overlap, the header
-            wins rather than the map bleeding through it. The height cap is a
-            floor under the worst case — a tall arena plus a long roster plus
-            the cover list — so the End Turn button at the bottom of the section
-            can always be reached, scrolling inside the section if it must.
+            The panel itself is the other half of it. A portrait arena drawn to
+            fit the viewport's height is a narrow strip, and the roster, weapons,
+            controls and cover used to stack underneath it — three hundred pixels
+            of text pinned to the screen next to three hundred pixels of empty
+            background. They sit BESIDE the map now, so the panel is as tall as
+            the map rather than the map plus everything else, and the narration
+            gets that height back. See CombatBoard's own notes.
 
-            No sticky on a phone, where the viewport cannot spare the room; the
-            board is simply the first thing under the header, which is where it
-            already was.
+            Only mounted during a fight, so the column out of combat is exactly
+            what it was.
           */}
           {play.encounter && (
-            <div className="lg:sticky lg:top-[4.5rem] lg:z-10 lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-y-auto lg:bg-background">
+            <div className="lg:flex-none">
               <CombatBoard
                 live={play.encounter}
                 capability={play.capability}
@@ -823,63 +821,82 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
               />
             </div>
           )}
-          <NarrativeLog
-            events={bundle.events}
-            readAloud={bundle.beat?.readAloud}
-            busy={play.busy || play.opening}
-          />
-          {play.actionError && (
-            <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
-              <p className="text-sm text-destructive">{play.actionError.message}</p>
-              {play.canRetry && (
-                <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
-                  Retry
-                </Button>
-              )}
-            </div>
-          )}
-          {play.pendingCheck && (
-            <div className="space-y-1">
-              <CheckCard
-                key={play.pendingCheck.eventId}
-                pending={play.pendingCheck}
-                roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
-                onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
-                busy={play.checkBusy}
+          {/*
+            Everything that grows, in one scroller.
+
+            The narration and the dice cards belong together: a card is the
+            answer to the last line of the log, and the log auto-scrolls to the
+            bottom, so the card the player has to act on arrives in view on its
+            own. Splitting them left the card below the fold on the very turn it
+            mattered.
+
+            min-h-0 is what makes it scroll rather than push: a flex child's
+            default minimum is its content, so without it this region would grow
+            the column past the viewport and take the input bar with it.
+          */}
+          <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+            <NarrativeLog
+              events={bundle.events}
+              readAloud={bundle.beat?.readAloud}
+              busy={play.busy || play.opening}
+            />
+            {play.actionError && (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+                <p className="text-sm text-destructive">{play.actionError.message}</p>
+                {play.canRetry && (
+                  <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
+                    Retry
+                  </Button>
+                )}
+              </div>
+            )}
+            {play.pendingCheck && (
+              <div className="space-y-1">
+                <CheckCard
+                  key={play.pendingCheck.eventId}
+                  pending={play.pendingCheck}
+                  roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
+                  onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
+                  busy={play.checkBusy}
+                  luckRemaining={play.luck.remaining}
+                />
+                {play.pendingCheckCount > 1 && (
+                  <p className="text-muted-foreground text-xs">
+                    {play.pendingCheckCount - 1} more check
+                    {play.pendingCheckCount - 1 === 1 ? "" : "s"} on the table after this one.
+                  </p>
+                )}
+              </div>
+            )}
+            {play.pendingAttack && (
+              <CombatCard
+                key={play.pendingAttack.eventId}
+                pending={play.pendingAttack}
+                character={bundle.character}
+                roll={(option, luckSpend) =>
+                  play.rollAttack(play.pendingAttack!, option, luckSpend)
+                }
+                onSettled={(option, result, luckSpent) =>
+                  play.commitAttack(play.pendingAttack!, option, result, luckSpent)
+                }
+                busy={play.combatBusy}
+                capability={play.capability}
                 luckRemaining={play.luck.remaining}
               />
-              {play.pendingCheckCount > 1 && (
-                <p className="text-muted-foreground text-xs">
-                  {play.pendingCheckCount - 1} more check
-                  {play.pendingCheckCount - 1 === 1 ? "" : "s"} on the table after this one.
-                </p>
-              )}
-            </div>
-          )}
-          {play.pendingAttack && (
-            <CombatCard
-              key={play.pendingAttack.eventId}
-              pending={play.pendingAttack}
-              character={bundle.character}
-              roll={(option, luckSpend) => play.rollAttack(play.pendingAttack!, option, luckSpend)}
-              onSettled={(option, result, luckSpent) =>
-                play.commitAttack(play.pendingAttack!, option, result, luckSpent)
-              }
-              busy={play.combatBusy}
-              capability={play.capability}
-              luckRemaining={play.luck.remaining}
-            />
-          )}
-          {play.pendingDeathSave && (
-            <DeathSaveCard
-              key={play.pendingDeathSave.eventId}
-              pending={play.pendingDeathSave}
-              roll={() => play.rollDeathSave()}
-              onSettled={(result) => play.commitDeathSave(play.pendingDeathSave!, result)}
-              busy={play.deathBusy}
-            />
-          )}
-          {play.finished && <WrapUpCard bundle={bundle} status={play.finished} play={play} />}
+            )}
+            {play.pendingDeathSave && (
+              <DeathSaveCard
+                key={play.pendingDeathSave.eventId}
+                pending={play.pendingDeathSave}
+                roll={() => play.rollDeathSave()}
+                onSettled={(result) => play.commitDeathSave(play.pendingDeathSave!, result)}
+                busy={play.deathBusy}
+              />
+            )}
+            {play.finished && <WrapUpCard bundle={bundle} status={play.finished} play={play} />}
+          </div>
+          {/* Pinned under the scroller: the two things the player acts THROUGH
+              must never be the things they have to go looking for. */}
           <SuggestionBar
             suggestions={play.finished ? [] : play.suggestions}
             onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
@@ -901,7 +918,9 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             />
           </BottomDock>
         </div>
-        <aside className="hidden space-y-4 lg:block">{rail}</aside>
+        <aside className="hidden space-y-4 lg:block lg:h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:pr-1">
+          {rail}
+        </aside>
       </div>
     </div>
   );
