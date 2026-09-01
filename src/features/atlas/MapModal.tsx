@@ -121,7 +121,10 @@ export function MapModal({
           >
             <div
               className="relative select-none"
-              style={{ width: `${zoom * 100}%`, aspectRatio: `${MAP_IMAGE.width} / ${MAP_IMAGE.height}` }}
+              style={{
+                width: `${zoom * 100}%`,
+                aspectRatio: `${MAP_IMAGE.width} / ${MAP_IMAGE.height}`,
+              }}
             >
               <img
                 src={MAP_IMAGE.image}

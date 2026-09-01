@@ -212,8 +212,7 @@ export const PLACE_MATCH_KEYS: string[] = (() => {
 })();
 
 export type PlaceMention =
-  | { kind: "district"; district: District }
-  | { kind: "place"; place: Place; district: District };
+  { kind: "district"; district: District } | { kind: "place"; place: Place; district: District };
 
 /** Look up what a piece of narration text is naming, if anything. */
 export function resolvePlaceMention(text: string): PlaceMention | undefined {

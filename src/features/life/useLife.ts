@@ -971,7 +971,9 @@ async function acceptHook(bundle: LifeBundle): Promise<void> {
   const moveTo = jobDistrict && canTravel(jobDistrict) ? jobDistrict : null;
   const knownNow = new Set<string>(
     Array.isArray(bundle.campaign.known_places)
-      ? (bundle.campaign.known_places as unknown[]).filter((v): v is string => typeof v === "string")
+      ? (bundle.campaign.known_places as unknown[]).filter(
+          (v): v is string => typeof v === "string",
+        )
       : [],
   );
   if (moveTo) knownNow.add(moveTo);
