@@ -63,6 +63,16 @@ export type GmContextInput = {
    */
   capabilities?: string[];
   clock?: string;
+  /** Where the job is happening, out of the Night City Atlas. */
+  place?: {
+    where: string;
+    district: string;
+    area: string;
+    security: string;
+    gangs: string[];
+    combatZone: boolean;
+    nearby: string[];
+  } | null;
   /**
    * True when the player asked what they could do rather than doing something.
    * The scene does not advance on such a turn: they are thinking, not acting.
@@ -150,6 +160,18 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
         context.availableExits.map((e) => `[${e.to}] ${e.label}`).join(" | "),
       ),
     );
+  }
+
+  if (context.place) {
+    const p = context.place;
+    parts.push("", "== WHERE YOU ARE ==");
+    parts.push(line("Here", p.where));
+    parts.push(line("District", `${p.district} (${p.area})`));
+    if (p.security) parts.push(line("Security", p.security));
+    if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
+    if (p.combatZone) parts.push(line("Note", "Combat Zone. Nobody is coming when it goes loud."));
+    if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
+    parts.push("Use these canonical names. Do not invent districts or relocate the job.");
   }
 
   parts.push("", "== CHARACTER ==");
