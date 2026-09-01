@@ -141,7 +141,6 @@ import {
   resolveDestination,
   reachableDestinations,
   canTravel,
-
 } from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
@@ -363,10 +362,9 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           gangs: positionDistrict.gangs,
           combatZone: isCombatZone(positionDistrict.key),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
-          destinations: reachableDestinations(
-            bundle.campaign.location_key ?? DEFAULT_START,
-          ).map((d) => d.name),
-
+          destinations: reachableDestinations(bundle.campaign.location_key ?? DEFAULT_START).map(
+            (d) => d.name,
+          ),
         }
       : null,
     character: {
@@ -583,16 +581,12 @@ async function applyResponse(
       // header and the ledger all agree with the narration.
       const destination = resolveDestination(action.destination);
       if (!destination) {
-        await refuse(
-          `"${action.destination}" is not a place on the Night City map.`,
-          "impossible",
-        );
+        await refuse(`"${action.destination}" is not a place on the Night City map.`, "impossible");
         continue;
       }
       const moved = await travelTo({ campaign: bundle.campaign, clock, to: destination });
       bundle.campaign = moved.campaign;
       clock = moved.clock;
-
     } else if (action.kind === "rest") {
       // Sleeping IS resting: the hours move the clock, and every whole day the
       // character crossed heals at the printed rate through the same Downtime

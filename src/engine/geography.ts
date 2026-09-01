@@ -244,7 +244,6 @@ export function reachableDestinations(from: string | null | undefined): Array<{
   return out;
 }
 
-
 /**
  * Every match key for narration linking: district names first, then location
  * names. Longest first so "Night City Firestation #2" beats "Night City".

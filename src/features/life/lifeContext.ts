@@ -108,7 +108,6 @@ export type LifeContext = {
     nearby: string[];
     /** Canonical names a travel proposal is allowed to name. Nothing else. */
     destinations?: string[];
-
   } | null;
   /** True when the player asked what they could do, rather than doing it. */
   optionsRequested?: boolean;
@@ -158,9 +157,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.combatZone) parts.push(line("Note", "This is a Combat Zone. No law worth the name."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
     if (p.destinations?.length) {
-      parts.push(
-        line("Places you may travel to (use the exact name)", p.destinations.join(", ")),
-      );
+      parts.push(line("Places you may travel to (use the exact name)", p.destinations.join(", ")));
     }
     parts.push(
       "Narrate this location by name and use only these canonical places. " +
@@ -169,7 +166,6 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
         "A destination that is not on that list is refused by the engine.",
     );
   }
-
 
   parts.push("", "== CHARACTER ==");
   parts.push(

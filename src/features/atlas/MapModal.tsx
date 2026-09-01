@@ -148,7 +148,6 @@ export function MapModal({
     scroller.current?.releasePointerCapture(e.pointerId);
   }
 
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -193,7 +192,6 @@ export function MapModal({
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-
           </div>
 
           <div
@@ -232,7 +230,6 @@ export function MapModal({
                     className="absolute -translate-x-1/2 -translate-y-1/2"
                     style={{ left: `${point.x}%`, top: `${point.y}%` }}
                   >
-
                     <span className="relative flex h-4 w-4 items-center justify-center">
                       {isHere ? (
                         <span className="absolute h-6 w-6 animate-ping rounded-full bg-accent/60" />
