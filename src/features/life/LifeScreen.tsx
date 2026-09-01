@@ -147,8 +147,15 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
           — {text} —
         </p>
       );
+    case "travelled":
+      return (
+        <p className="font-mono text-xs text-accent">
+          <span className="text-accent">➜</span> <NpcText text={text} />
+        </p>
+      );
     case "check_prompt":
       return null;
+
     default:
       return <p className="font-mono text-xs text-muted-foreground">{text}</p>;
   }
