@@ -130,6 +130,7 @@ import {
   type OracleAnswer,
 } from "@/features/campaign/oracles";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
+import { travelTo } from "@/features/atlas/travel";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
   applyPressure,
@@ -1231,6 +1232,14 @@ export function useLife(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const travel = useMutation({
+    mutationFn: (to: string) => {
+      if (!bundle) throw new Error("Still loading.");
+      return travelTo({ campaign: bundle.campaign, clock: bundle.clock, to });
+    },
+    onSuccess: invalidate,
+  });
+
   const fixedNarration = useMutation({
     mutationFn: async (resolved: string) => {
       // Installation has already moved money, Humanity, phase, and the clock.
@@ -1307,6 +1316,7 @@ export function useLife(campaignId: string) {
       accept.isPending ||
       decline.isPending ||
       push.isPending ||
+      travel.isPending ||
       fixedNarration.isPending,
     actionError:
       ((turn.error ??
@@ -1314,6 +1324,7 @@ export function useLife(campaignId: string) {
         accept.error ??
         decline.error ??
         push.error ??
+        travel.error ??
         fixedNarration.error) as Error | null) ?? null,
     /**
      * Act on what the player typed. How long it took is the model's report of
@@ -1336,6 +1347,9 @@ export function useLife(campaignId: string) {
     acceptHook: () => accept.mutate(),
     declineHook: (reason: string) => decline.mutate(reason),
     pushHook: (ask: HookAsk) => push.mutate(ask),
+    /** Cross the city. The engine prices the trip; the clock pays for it. */
+    travelTo: (to: string) => travel.mutate(to),
+    travelBusy: travel.isPending,
     narrateFixedResult: async (resolved: string) => {
       try {
         await fixedNarration.mutateAsync(resolved);
