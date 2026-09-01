@@ -4,7 +4,8 @@
     "provenance": "These are house profiles, NOT verbatim book statblocks — do not cite a page for them. They are calibrated against the one published NPC ladder already transcribed in this repo: the Lawman's Backup tiers (roles.json, roles.lawman.roleAbility.mechanics.tiers), which run from Corporate Security at Combat 8 / SP 7 / HP 20 up to C-SWAT at Combat 15 / SP 18 / HP 35. Where a profile names one of those groups, its numbers match that table.",
     "combatNumber": "The Backup table prints a single combined Combat Number that a d10 is added to. A hostile here splits it into ref + attackSkill because that is how engine/combat.ts builds an attack (STAT + Skill + 1d10). ref + attackSkill equals the Combat Number the ladder prints, so the arithmetic lands in the same place.",
     "rangeType": "Must be one of the printed range types in engine/combatTables.ts. The engine reads the Range DV off that table and the measured distance; nothing here sets a DV.",
-    "move": "MOVE in metres per Move Action, matching the Backup table's move column. The engine bounds how far a hostile can walk with it."
+    "move": "MOVE in metres per Move Action, matching the Backup table's move column. The engine bounds how far a hostile can walk with it.",
+    "forceBudget": "Force sizes are budgeted for ONE Edgerunner, because that is who plays this game. Cyberpunk RED: Single Player Mode gives the encounter guideline as roughly one Mook per PC for a challenging but generally winnable fight, one Lieutenant per two PCs, and one Mini-Boss per three. A solo protagonist therefore tops out at one Mook before a fight stops being fair. These sizes used to be built for a crew — 'small' was two Mooks and 'standard' was four — which is where the action economy that killed the character in playtesting came from: four hostile Actions for every one of theirs, before a single Morale check could ever fire. The old sets are kept as 'overwhelming', which is not an encounter. It is a problem to be solved another way."
   },
   "profiles": [
     {
@@ -163,15 +164,41 @@
       "key": "street_crew",
       "label": "a street crew",
       "sizes": {
-        "small": [{ "profile": "street_thug", "count": 2 }],
+        "small": [
+          {
+            "profile": "street_thug",
+            "count": 1
+          }
+        ],
         "standard": [
-          { "profile": "street_thug", "count": 3 },
-          { "profile": "ganger", "count": 1 }
+          {
+            "profile": "street_thug",
+            "count": 2
+          }
         ],
         "heavy": [
-          { "profile": "street_thug", "count": 3 },
-          { "profile": "ganger", "count": 2 },
-          { "profile": "enforcer", "count": 1 }
+          {
+            "profile": "street_thug",
+            "count": 2
+          },
+          {
+            "profile": "ganger",
+            "count": 1
+          }
+        ],
+        "overwhelming": [
+          {
+            "profile": "street_thug",
+            "count": 3
+          },
+          {
+            "profile": "ganger",
+            "count": 2
+          },
+          {
+            "profile": "enforcer",
+            "count": 1
+          }
         ]
       }
     },
@@ -179,14 +206,37 @@
       "key": "scavvers",
       "label": "a scavver crew",
       "sizes": {
-        "small": [{ "profile": "scavver", "count": 2 }],
+        "small": [
+          {
+            "profile": "scavver",
+            "count": 1
+          }
+        ],
         "standard": [
-          { "profile": "scavver", "count": 3 },
-          { "profile": "street_thug", "count": 1 }
+          {
+            "profile": "scavver",
+            "count": 2
+          }
         ],
         "heavy": [
-          { "profile": "scavver", "count": 4 },
-          { "profile": "enforcer", "count": 1 }
+          {
+            "profile": "scavver",
+            "count": 2
+          },
+          {
+            "profile": "street_thug",
+            "count": 1
+          }
+        ],
+        "overwhelming": [
+          {
+            "profile": "scavver",
+            "count": 4
+          },
+          {
+            "profile": "enforcer",
+            "count": 1
+          }
         ]
       }
     },
@@ -194,15 +244,41 @@
       "key": "boostergang",
       "label": "a boostergang",
       "sizes": {
-        "small": [{ "profile": "booster", "count": 2 }],
+        "small": [
+          {
+            "profile": "booster",
+            "count": 1
+          }
+        ],
         "standard": [
-          { "profile": "booster", "count": 3 },
-          { "profile": "enforcer", "count": 1 }
+          {
+            "profile": "booster",
+            "count": 2
+          }
         ],
         "heavy": [
-          { "profile": "booster", "count": 4 },
-          { "profile": "enforcer", "count": 1 },
-          { "profile": "solo", "count": 1 }
+          {
+            "profile": "booster",
+            "count": 2
+          },
+          {
+            "profile": "enforcer",
+            "count": 1
+          }
+        ],
+        "overwhelming": [
+          {
+            "profile": "booster",
+            "count": 4
+          },
+          {
+            "profile": "enforcer",
+            "count": 1
+          },
+          {
+            "profile": "solo",
+            "count": 1
+          }
         ]
       }
     },
@@ -210,15 +286,41 @@
       "key": "disciplined_gang",
       "label": "a disciplined crew",
       "sizes": {
-        "small": [{ "profile": "ganger", "count": 2 }],
+        "small": [
+          {
+            "profile": "ganger",
+            "count": 1
+          }
+        ],
         "standard": [
-          { "profile": "ganger", "count": 3 },
-          { "profile": "enforcer", "count": 1 }
+          {
+            "profile": "ganger",
+            "count": 2
+          }
         ],
         "heavy": [
-          { "profile": "ganger", "count": 3 },
-          { "profile": "enforcer", "count": 2 },
-          { "profile": "sniper", "count": 1 }
+          {
+            "profile": "ganger",
+            "count": 2
+          },
+          {
+            "profile": "enforcer",
+            "count": 1
+          }
+        ],
+        "overwhelming": [
+          {
+            "profile": "ganger",
+            "count": 3
+          },
+          {
+            "profile": "enforcer",
+            "count": 2
+          },
+          {
+            "profile": "sniper",
+            "count": 1
+          }
         ]
       }
     },
@@ -226,14 +328,37 @@
       "key": "corporate",
       "label": "corporate security",
       "sizes": {
-        "small": [{ "profile": "corp_security", "count": 3 }],
+        "small": [
+          {
+            "profile": "corp_security",
+            "count": 1
+          }
+        ],
         "standard": [
-          { "profile": "corp_security", "count": 4 },
-          { "profile": "enforcer", "count": 1 }
+          {
+            "profile": "corp_security",
+            "count": 2
+          }
         ],
         "heavy": [
-          { "profile": "corp_security", "count": 4 },
-          { "profile": "contractor", "count": 2 }
+          {
+            "profile": "corp_security",
+            "count": 2
+          },
+          {
+            "profile": "enforcer",
+            "count": 1
+          }
+        ],
+        "overwhelming": [
+          {
+            "profile": "corp_security",
+            "count": 4
+          },
+          {
+            "profile": "contractor",
+            "count": 2
+          }
         ]
       }
     },
@@ -241,15 +366,45 @@
       "key": "military",
       "label": "contractors",
       "sizes": {
-        "small": [{ "profile": "contractor", "count": 2 }],
+        "small": [
+          {
+            "profile": "contractor",
+            "count": 1
+          }
+        ],
         "standard": [
-          { "profile": "contractor", "count": 2 },
-          { "profile": "corp_security", "count": 2 }
+          {
+            "profile": "contractor",
+            "count": 1
+          },
+          {
+            "profile": "corp_security",
+            "count": 1
+          }
         ],
         "heavy": [
-          { "profile": "contractor", "count": 3 },
-          { "profile": "sniper", "count": 1 },
-          { "profile": "solo", "count": 1 }
+          {
+            "profile": "contractor",
+            "count": 1
+          },
+          {
+            "profile": "corp_security",
+            "count": 2
+          }
+        ],
+        "overwhelming": [
+          {
+            "profile": "contractor",
+            "count": 3
+          },
+          {
+            "profile": "sniper",
+            "count": 1
+          },
+          {
+            "profile": "solo",
+            "count": 1
+          }
         ]
       }
     },
@@ -257,17 +412,58 @@
       "key": "the_law",
       "label": "NCPD",
       "sizes": {
-        "small": [{ "profile": "beat_cop", "count": 2 }],
+        "small": [
+          {
+            "profile": "beat_cop",
+            "count": 1
+          }
+        ],
         "standard": [
-          { "profile": "beat_cop", "count": 4 },
-          { "profile": "enforcer", "count": 1 }
+          {
+            "profile": "beat_cop",
+            "count": 2
+          }
         ],
         "heavy": [
-          { "profile": "beat_cop", "count": 4 },
-          { "profile": "contractor", "count": 2 },
-          { "profile": "sniper", "count": 1 }
+          {
+            "profile": "beat_cop",
+            "count": 2
+          },
+          {
+            "profile": "enforcer",
+            "count": 1
+          }
+        ],
+        "overwhelming": [
+          {
+            "profile": "beat_cop",
+            "count": 4
+          },
+          {
+            "profile": "contractor",
+            "count": 2
+          },
+          {
+            "profile": "sniper",
+            "count": 1
+          }
         ]
       }
     }
-  ]
+  ],
+  "budget": {
+    "_note": {
+      "source": "Cyberpunk RED: Single Player Mode (R. Talsorian Games, 2025) — encounter composition guidance.",
+      "why": "The guideline is given per PC: about one Mook each for a challenging but winnable fight, one Lieutenant per two, one Mini-Boss per three. This expresses the same ratio as a MOOK-EQUIVALENT cost so a mixed force can be weighed in one number.",
+      "derivation": "A Lieutenant budgeted at one per two PCs costs what two Mooks cost. A Mini-Boss at one per three costs three. This repo has no Mini-Boss tier, so its bosses take the 3 slot. The arithmetic is ours; the ratios it encodes are the book’s.",
+      "use": "Never to refuse a fight. Cyberpunk is allowed to put six Tyger Claws in front of one person — the point is that the game should KNOW that is not a fair fight, and say so, rather than presenting it as an encounter to be won by standing still and shooting."
+    },
+    "mookEquivalents": {
+      "mook": 1,
+      "lieutenant": 2,
+      "boss": 3
+    },
+    "perEdgerunner": 1,
+    "dangerousAt": 2
+  }
 }

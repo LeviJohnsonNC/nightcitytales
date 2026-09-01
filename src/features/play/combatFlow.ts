@@ -16,7 +16,13 @@ import {
   currentCombatant,
   performAttack,
   clampToArena,
+  defeatCombatant,
+  describeMorale,
+  describeVerdict,
   judgeAction,
+  mentalityFor,
+  moraleTriggerFor,
+  rollMorale,
   metresBetween,
   moveToward,
   placeHostiles,
@@ -25,6 +31,8 @@ import {
   rollDamage,
   stepToRange,
   tacticalStep,
+  threatFor,
+  weighForce,
   type ActionCost,
   type CapabilitySnapshot,
   type Combatant,
@@ -36,7 +44,7 @@ import {
   type WeaponRangeType,
   type WoundStateCode,
 } from "@/engine";
-import { logAttack, logCoverDamage, logDeathSave } from "@/features/campaign/combatLog";
+import { logAttack, logCoverDamage, logDeathSave, logMorale } from "@/features/campaign/combatLog";
 import {
   createLiveEncounter,
   saveLiveEncounter,
@@ -136,6 +144,19 @@ export async function beginEncounter(input: {
   // with the initiative order already honoured, whoever rolled highest.
   const opened = await runNpcTurns(input.campaignId, input.beatId, live, "current");
 
+  // What the player has walked into, weighed against what one Edgerunner can
+  // take, and said OUT LOUD.
+  //
+  // The engine never refuses a fight over this — Night City is entitled to put
+  // four Tyger Claws around a corner. What it may not do is present that as an
+  // encounter and let the player find out over four Rounds, which is exactly
+  // what happened in playtesting: four hostiles, four Actions to the player's
+  // one, and 5 HP left by Round 3. The verdict goes in the ledger where the GM
+  // reads it, so the narration can carry the weight the numbers already have.
+  const weight = weighForce(
+    input.enemies.map((e) => ({ key: e.key, name: e.name, profile: threatFor(e.profile) })),
+  );
+
   // Written after the opening, so one event carries the whole start of the
   // fight: who rolled what, and what the people who won the roll did with it.
   await appendCampaignEvent({
@@ -144,8 +165,16 @@ export async function beginEncounter(input: {
     summary:
       `${input.name} — initiative: ${state.order
         .map((id) => `${state.combatants[id]!.name} (${state.combatants[id]!.initiative ?? 0})`)
-        .join(", ")}` + (opened.lines.length > 0 ? ` ${opened.lines.join(" ")}` : ""),
-    data: { encounterId: live.id } as unknown as Json,
+        .join(", ")} — ${describeVerdict(weight.verdict)}.` +
+      (opened.lines.length > 0 ? ` ${opened.lines.join(" ")}` : ""),
+    data: {
+      encounterId: live.id,
+      verdict: weight.verdict,
+      load: weight.load,
+      mooks: weight.mooks,
+      lieutenants: weight.lieutenants,
+      bosses: weight.bosses,
+    } as unknown as Json,
     ...(input.beatId ? { beat_id: input.beatId } : {}),
   });
 
@@ -230,6 +259,29 @@ export async function runNpcTurns(
     }
     const live_actor = state.combatants[actor.id];
     if (!live_actor || live_actor.defeated) continue;
+
+    // Do they still want to be here?
+    //
+    // Checked at the top of their own Turn, before they act: a Mook who has
+    // just watched half their crew go down gets to leave BEFORE taking another
+    // shot at the player, which is the entire point. The engine decides only
+    // that they are out — bolted or surrendered are both "no longer shooting at
+    // you", and which of the two it was is the narrator's to say.
+    const spent = (data[actor.id]?.moraleSpent ?? []) as string[];
+    const trigger = moraleTriggerFor(state, live_actor, spent);
+    if (trigger) {
+      const check = rollMorale(mentalityFor(data[actor.id]?.threatRole ?? "mook"), trigger);
+      data = {
+        ...data,
+        [actor.id]: { ...data[actor.id]!, moraleSpent: [...spent, trigger] },
+      };
+      await logMorale(campaignId, actor.name, check, beatId);
+      lines.push(describeMorale(actor.name, check));
+      if (check.broke) {
+        state = defeatCombatant(state, actor.id);
+        continue;
+      }
+    }
 
     const target = targetFor(state, live_actor);
     if (!target || target.defeated) break;

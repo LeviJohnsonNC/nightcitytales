@@ -1,0 +1,55 @@
+{
+  "_note": {
+    "what": "Whether an enemy keeps fighting, or bolts, or gives up.",
+    "source": "Cyberpunk RED: Single Player Mode (R. Talsorian Games, 2025), Morale.",
+    "provenance": "Unlike threats.json, these ARE printed values. The five mentalities and their d10 End Fight ranges are transcribed from the published Morale table and may be cited as such. Do not tune them to taste — tune which mentality a profile gets, which is our choice, or the stress point, which the book explicitly leaves to the table.",
+    "printedRule": "At the beginning of combat, decide on the stress point for the opposition. Maybe the group as a whole might run once more than half of their number are incapacitated or dead. Each enemy may run as soon as they reach Seriously Wounded. Maybe they're more likely to run once combat hits Round 5. Once the opposition reaches their stress point, roll 1d10 and consult the Morale table. If your roll falls within a specific range of numbers, the enemy bolts or gives up. If it's higher, they grit their teeth and stay in the fight.",
+    "whyItMatters": "A solo Edgerunner cannot out-shoot four people taking four Actions to their one. This is the printed answer to that, and it is not a buff: the character's HP, armour, damage and Death Saves are untouched. The opposition simply stops being a stack of hit points that fights to the last man, because people do not do that.",
+    "flightOrSurrender": "The engine decides only THAT they are out of the fight — the table's own two outcomes are both 'no longer shooting at you'. Whether this one ran and that one knelt is the narrator's, which is the same line every other module here draws.",
+    "stressPoints": "The book names three examples and leaves the choice open. All three are enabled, checked in the order below; each fires at most once per combatant, so a fight cannot become a Morale treadmill."
+  },
+  "mentalities": [
+    {
+      "key": "fanatical",
+      "label": "Lost to violence / fully dedicated",
+      "endFightUpTo": 2,
+      "examples": "raging cyberpsycho, ganger hopped up on combat drugs, Boss making a last stand"
+    },
+    {
+      "key": "driven",
+      "label": "Experienced combatant with a mission or a deathwish",
+      "endFightUpTo": 4,
+      "examples": "hardened ganger or elite security, Mini-Boss"
+    },
+    {
+      "key": "trained",
+      "label": "Trained combatant",
+      "endFightUpTo": 6,
+      "examples": "experienced ganger or regular security, Lieutenant"
+    },
+    {
+      "key": "inexperienced",
+      "label": "Inexperienced combatant",
+      "endFightUpTo": 8,
+      "examples": "newbie ganger or security, Hardened Mook"
+    },
+    {
+      "key": "streetrat",
+      "label": "Unsure streetrat",
+      "endFightUpTo": 9,
+      "examples": "cannon fodder, mook"
+    }
+  ],
+  "byRole": {
+    "_note": "Which mentality a threat profile fights with. OURS, not the book's — the table names example archetypes and we map our three tiers onto them. A Mook is the 'cannon fodder' row; a Lieutenant is the 'Trained combatant' row the table names outright; this repo's bosses are closest to the 'experienced combatant with a mission' row, since it names Mini-Boss.",
+    "mook": "streetrat",
+    "lieutenant": "trained",
+    "boss": "driven"
+  },
+  "stress": {
+    "_note": "The book's three examples, all enabled, in the order they are tested. Each fires at most once for a given combatant.",
+    "seriouslyWounded": true,
+    "halfTheSideDown": true,
+    "fromRound": 5
+  }
+}

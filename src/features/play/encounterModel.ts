@@ -27,6 +27,7 @@ import {
   type EncounterState,
   type Point,
   type WeaponCapability,
+  type ThreatProfile,
   type WeaponProfile,
   type WoundStateCode,
 } from "@/engine";
@@ -81,6 +82,22 @@ export type CombatantData = {
    * took the hit.
    */
   armor?: { headInventoryId?: string; bodyInventoryId?: string };
+  /**
+   * Which tier of threat this is, for Morale. Stored rather than looked up,
+   * because the profile key is not kept and a fight that has already started
+   * must keep answering the same way even if the threat data is edited under it.
+   */
+  threatRole?: ThreatProfile["role"];
+  /**
+   * Morale stress points this combatant has already been checked on.
+   *
+   * "Once the opposition reaches their stress point" is a moment, not a
+   * standing condition: without this, a Seriously Wounded Mook would roll again
+   * every Round until it broke, and the room would empty by attrition rather
+   * than by anything that happened. Lives in `data` because that column is
+   * JSON — no migration, and a fight in progress simply has no entry yet.
+   */
+  moraleSpent?: string[];
 };
 
 /**
@@ -366,6 +383,7 @@ export function hostileCombatant(
     // fight that closes and one that does not.
     move: profile.move,
     attackSkill: profile.attackSkill,
+    threatRole: profile.role,
   };
   return { combatant, data };
 }

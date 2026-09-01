@@ -34,6 +34,7 @@ export * from "./roleAbility";
 export * from "./skillMatch";
 export * from "./battlefield";
 export * from "./cover";
+export * from "./morale";
 export * from "./threats";
 export * from "./combatTables";
 export * from "./combat";
