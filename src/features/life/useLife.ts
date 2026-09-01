@@ -138,7 +138,10 @@ import {
   getDistrict,
   isCombatZone,
   resolvePosition,
+  resolveDestination,
+  reachableDestinations,
   canTravel,
+
 } from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
