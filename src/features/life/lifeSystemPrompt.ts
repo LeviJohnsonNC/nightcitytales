@@ -100,7 +100,7 @@ Return a structured object:
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}
   - {"kind":"use_item","item":"<the thing they are using, as the kit list names it>","quantity":<integer>}
-  - {"kind":"travel","destination":"...","minutes":<integer>}
+  - {"kind":"travel","destination":"<EXACT name from the travel list in WHERE YOU ARE>","minutes":<integer>} — propose this whenever the player says they are heading somewhere. The engine owns the trip's cost and refuses any destination not on that list.
   - {"kind":"rest","hours":<integer>}
   - {"kind":"pay_bills"} — settling rent and Lifestyle. Never state the amount yourself; the engine reads it and pays it.
   - {"kind":"repair_armor"} — having chewed armor patched. The engine picks the piece and the printed cost.
