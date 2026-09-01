@@ -10,6 +10,8 @@ import {
   getPlace,
   isCombatZone,
   placesIn,
+  reachableDestinations,
+  resolveDestination,
   resolvePlaceMention,
   resolvePosition,
   travelMinutes,
@@ -90,5 +92,23 @@ describe("narration mentions", () => {
     expect(resolvePlaceMention("The Afterlife")?.kind).toBe("place");
     expect(resolvePlaceMention("kabuki")?.kind).toBe("district");
     expect(resolvePlaceMention("The Moon")).toBeUndefined();
+  });
+});
+
+describe("destinations", () => {
+  it("resolves whatever the narration called the place", () => {
+    expect(resolveDestination("Estero Bay")).toBe(getDistrict("Estero Bay")?.key);
+    expect(resolveDestination("The Afterlife")).toBe("b1");
+    expect(resolveDestination("b1")).toBe("b1");
+    expect(resolveDestination("O")).toBe("kabuki");
+    expect(resolveDestination("Atlantis")).toBeUndefined();
+    expect(resolveDestination("")).toBeUndefined();
+  });
+
+  it("offers every district plus the venues underfoot", () => {
+    const names = reachableDestinations("b1").map((d) => d.name);
+    expect(names).toContain("The Afterlife");
+    expect(names).toContain("Kabuki");
+    expect(reachableDestinations(null).length).toBe(DISTRICTS.length);
   });
 });
