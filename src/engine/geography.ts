@@ -67,6 +67,8 @@ type AtlasFile = {
     betweenDistrictsSameArea: number;
     betweenAreas: number;
     acrossCity: number;
+    defaultStart: string;
+    defaultStartNote: string;
   };
   source: { title: string; publisher: string; note: string };
 };
@@ -184,6 +186,12 @@ export function travelMinutes(from: string | null | undefined, to: string): numb
   if (areaA === "island" || areaB === "island") return t.betweenAreas;
   return t.acrossCity;
 }
+
+/**
+ * Where a character stands when nothing has said otherwise. A house rule, held
+ * in the atlas JSON beside the travel table rather than hardcoded here.
+ */
+export const DEFAULT_START: string = ATLAS.travel.defaultStart;
 
 /** Whether a destination exists on the map at all. Unknown places are refused. */
 export function canTravel(to: string): boolean {
