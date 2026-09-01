@@ -7,11 +7,18 @@
  * `src/data/atlas/night-city.json`. Nothing in this module invents a place, a
  * name or a boundary; if a value is missing it is missing from that file.
  *
+ * District SHAPES live next door, in `src/data/atlas/night-city-map.json`, and
+ * are reached through `./cityGrid`. They were traced from the red dotted
+ * boundaries the atlas prints over its own map, so they are the publisher's
+ * lines too. Anything about direction, extent or "how far can I get" is decided
+ * by walking that ground rather than by comparing two points.
+ *
  * The only house rule is travel time, which the atlas does not print. It lives
  * in the `travel` block of the same JSON, flagged `houseRule: true`, so it is
  * tuned there rather than in code.
  */
 import atlas from "@/data/atlas/night-city.json";
+import { adjacentDistricts, walk, type Walk } from "./cityGrid";
 
 export type AreaKey = "island" | "northside" | "mainland" | "southside";
 
@@ -339,21 +346,26 @@ export type Neighbour = {
   distance: number;
 };
 
-/** The nearest districts, each tagged with its heading and travel time. */
+/**
+ * The districts this one actually borders, each tagged with its heading and
+ * travel time. Sharing a boundary is the test, not being a short hop away
+ * across a bay: this is the list the narrator is told to describe directions
+ * from, and "north, 25 min" should mean somewhere you can walk to.
+ */
 export function neighboursOf(from: string | null | undefined, limit = 6): Neighbour[] {
   const here = resolvePosition(from);
   if (!here) return [];
   const out: Neighbour[] = [];
-  for (const district of DISTRICTS) {
-    if (district.key === here.districtKey) continue;
-    const direction = directionBetween(from, district.key);
-    const distance = mapDistance(from, district.key);
-    if (!direction || distance === undefined) continue;
+  for (const key of adjacentDistricts(here.districtKey)) {
+    const district = getDistrict(key);
+    const direction = directionBetween(here.districtKey, key);
+    const distance = mapDistance(here.districtKey, key);
+    if (!district || !direction || distance === undefined) continue;
     out.push({
-      key: district.key,
+      key,
       name: district.name,
       direction,
-      minutes: travelMinutes(from, district.key),
+      minutes: travelMinutes(from, key),
       distance,
     });
   }
@@ -361,6 +373,7 @@ export function neighboursOf(from: string | null | undefined, limit = 6): Neighb
   return out.slice(0, limit);
 }
 
+/** How the eight headings point in map space, where y grows southwards. */
 const DIRECTION_VECTORS: Record<Compass, { x: number; y: number }> = {
   N: { x: 0, y: -1 },
   NE: { x: Math.SQRT1_2, y: -Math.SQRT1_2 },
@@ -373,39 +386,49 @@ const DIRECTION_VECTORS: Record<Compass, { x: number; y: number }> = {
 };
 
 /**
- * Every district that genuinely lies in a heading (within 45 degrees of it),
- * nearest first. Anything that would move you backwards is not a candidate.
+ * Set off from a location on a heading and see how far the city lets you get.
+ * This is the walk itself: which districts it passes through, where it ends,
+ * and whether it ended at the water or at the edge of the map.
+ */
+export function walkFrom(from: string | null | undefined, direction: Compass): Walk | undefined {
+  const origin = mapPointOf(from);
+  if (!origin) return undefined;
+  return walk(origin, DIRECTION_VECTORS[direction]);
+}
+
+/**
+ * The districts you would actually walk into heading that way, in the order you
+ * reach them. Nothing is here because its centre point happens to lie at the
+ * right bearing; everything is here because the walk goes through it.
  */
 export function districtsInDirection(
   from: string | null | undefined,
   direction: Compass,
 ): Array<{ key: string; name: string; reach: number; minutes: number }> {
-  const origin = mapPointOf(from);
-  if (!origin) return [];
-  const here = resolvePosition(from);
-  const vector = DIRECTION_VECTORS[direction];
+  const journey = walkFrom(from, direction);
+  if (!journey) return [];
+  const here = resolvePosition(from)?.districtKey;
   const out: Array<{ key: string; name: string; reach: number; minutes: number }> = [];
-  for (const district of DISTRICTS) {
-    if (here && district.key === here.districtKey) continue;
-    const dx = district.map.x - origin.x;
-    const dy = district.map.y - origin.y;
-    const length = Math.hypot(dx, dy);
-    if (length < 0.01) continue;
-    const reach = dx * vector.x + dy * vector.y;
-    // cos(45 degrees) — the same wedge the eight-point compass divides into.
-    if (reach / length < Math.SQRT1_2 - 1e-9) continue;
+  for (const leg of journey.legs) {
+    if (leg.key === here) continue;
+    if (out.some((d) => d.key === leg.key)) continue;
+    const district = getDistrict(leg.key);
+    if (!district) continue;
     out.push({
-      key: district.key,
+      key: leg.key,
       name: district.name,
-      reach,
-      minutes: travelMinutes(from, district.key),
+      reach: leg.reached,
+      minutes: travelMinutes(from, leg.key),
     });
   }
-  out.sort((a, b) => a.reach - b.reach);
   return out;
 }
 
-/** The district furthest along a heading — "as far west as I can go". */
+/**
+ * Where "as far west as I can go" ends up: the last district the walk reaches
+ * before the water or the city limits. Undefined when the very next step off
+ * this spot already leaves the city.
+ */
 export function furthestInDirection(
   from: string | null | undefined,
   direction: Compass,
@@ -414,7 +437,7 @@ export function furthestInDirection(
   return candidates.length ? candidates[candidates.length - 1]!.key : undefined;
 }
 
-/** The nearest district along a heading — one step that way. */
+/** The first district the walk crosses into — one step that way. */
 export function nextInDirection(
   from: string | null | undefined,
   direction: Compass,
@@ -422,6 +445,24 @@ export function nextInDirection(
   const candidates = districtsInDirection(from, direction);
   return candidates.length ? candidates[0]!.key : undefined;
 }
+
+/**
+ * What stops you heading that way, when nothing does: the water, or the edge of
+ * the map. Only meaningful when the heading yields no district at all.
+ */
+export function limitInDirection(
+  from: string | null | undefined,
+  direction: Compass,
+): "water" | "edge" | undefined {
+  return walkFrom(from, direction)?.stoppedBy;
+}
+
+/**
+ * How far a walk has to cover before it counts as having gone somewhere, as a
+ * percentage of the map's width. Below this the character is already standing
+ * at the edge and heading that way is not a move.
+ */
+const WALK_WORTH_TAKING = 2;
 
 export type TravelIntent = {
   from: string | null | undefined;
@@ -434,7 +475,20 @@ export type TravelIntent = {
 };
 
 export type TravelDecision =
-  { ok: true; to: string; direction?: Compass; minutes: number } | { ok: false; reason: string };
+  | {
+      ok: true;
+      to: string;
+      direction?: Compass;
+      minutes: number;
+      /**
+       * Set when the heading ran out before any district did: the character
+       * walked as far that way as the city allows and is standing at the edge
+       * of it. The narration is told, so "as far west as I can" reads as
+       * arriving at the waterfront rather than as nothing happening.
+       */
+      stoppedAt?: "water" | "edge";
+    }
+  | { ok: false; reason: string };
 
 /**
  * Decide a move. When the player named a heading the engine picks the district;
@@ -443,7 +497,19 @@ export type TravelDecision =
  */
 export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
   const direction = parseDirection(intent.direction);
-  const named = intent.destination ? resolveDestination(intent.destination) : undefined;
+  const asked = intent.destination?.trim();
+  const named = asked ? resolveDestination(asked) : undefined;
+
+  // A destination was named and it is not on the map. That is the answer, and
+  // it stays the answer even when a heading came with it: quietly dropping the
+  // name and setting off on the heading instead lands the character somewhere
+  // nobody asked to go, which is worse than being told the place is unknown.
+  if (asked && !named) {
+    return {
+      ok: false,
+      reason: `"${asked}" is not a place on the Night City map.`,
+    };
+  }
 
   if (direction) {
     if (named) {
@@ -463,19 +529,31 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
         ? furthestInDirection(intent.from, direction)
         : nextInDirection(intent.from, direction);
     if (!picked) {
+      // No district that way, but that does not mean no walk. A district is
+      // wide, and heading for its far edge is a real thing to do: the character
+      // crosses it and fetches up against the water or the city limits.
+      const journey = walkFrom(intent.from, direction);
+      const here = resolvePosition(intent.from)?.districtKey;
+      if (journey && here && journey.distance >= WALK_WORTH_TAKING) {
+        return {
+          ok: true,
+          to: here,
+          direction,
+          minutes: travelMinutes(intent.from, here),
+          stoppedAt: journey.stoppedBy,
+        };
+      }
+      const edge = journey?.stoppedBy === "water" ? "the water" : "the edge of the city";
       return {
         ok: false,
-        reason: `There is nothing further ${directionName(direction)} of here — that way is water or the city limits.`,
+        reason: `There is no going ${directionName(direction)} from here — ${edge} is right there.`,
       };
     }
     return { ok: true, to: picked, direction, minutes: travelMinutes(intent.from, picked) };
   }
 
   if (!named) {
-    return {
-      ok: false,
-      reason: `"${intent.destination ?? "there"}" is not a place on the Night City map.`,
-    };
+    return { ok: false, reason: "Nowhere was named and no heading was given." };
   }
   const bearing = directionBetween(intent.from, named);
   const decision: TravelDecision = {
