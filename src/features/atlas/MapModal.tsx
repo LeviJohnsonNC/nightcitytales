@@ -168,8 +168,18 @@ export function MapModal({
                 type="button"
                 size="icon"
                 variant="outline"
+                aria-label="Centre on me"
+                disabled={!youAreHere}
+                onClick={centreOnMe}
+              >
+                <Crosshair className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
                 aria-label="Zoom out"
-                onClick={() => setZoom((z) => Math.max(MIN_ZOOM, +(z - 0.4).toFixed(2)))}
+                onClick={() => changeZoom(-0.4)}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -178,11 +188,12 @@ export function MapModal({
                 size="icon"
                 variant="outline"
                 aria-label="Zoom in"
-                onClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.4).toFixed(2)))}
+                onClick={() => changeZoom(0.4)}
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+
           </div>
 
           <div
