@@ -18,7 +18,14 @@
  * tuned there rather than in code.
  */
 import atlas from "@/data/atlas/night-city.json";
-import { adjacentDistricts, walk, type Walk } from "./cityGrid";
+import {
+  adjacentDistricts,
+  borderingDistricts,
+  routeBetween,
+  walk,
+  type Route,
+  type Walk,
+} from "./cityGrid";
 
 export type AreaKey = "island" | "northside" | "mainland" | "southside";
 
@@ -56,6 +63,16 @@ export type District = {
   map: MapPoint;
 };
 
+/** How fast one way of getting about the city is. A house rule, held in data. */
+export type TravelModeRule = {
+  label: string;
+  kmh: number;
+  /** Minutes spent before moving at all — hailing a cab and waiting for it. */
+  readyMinutes: number;
+  /** Minutes added for each bridge the route crosses. */
+  spanMinutes: number;
+};
+
 export type MapImage = {
   image: string;
   width: number;
@@ -88,10 +105,11 @@ type AtlasFile = {
   travel: {
     houseRule: boolean;
     note: string;
-    withinDistrict: number;
-    betweenDistrictsSameArea: number;
-    betweenAreas: number;
-    acrossCity: number;
+    scale: { metresPerPercent: number; note: string };
+    modes: Record<string, TravelModeRule>;
+    defaultMode: string;
+    withinDistrictPercent: number;
+    withinDistrictNote: string;
     defaultStart: string;
     defaultStartNote: string;
   };
@@ -104,6 +122,18 @@ export const AREAS: Area[] = ATLAS.areas;
 export const DISTRICTS: District[] = ATLAS.districts;
 export const LANDMARKS: Landmark[] = ATLAS.landmarks;
 export const MAP_IMAGE: MapImage = ATLAS.map;
+
+/**
+ * The map is taller than it is wide, and every coordinate here is a percentage
+ * of its own axis. One percent down the page is therefore a longer step than one
+ * percent across it, so anything measuring a distance or a bearing has to put
+ * both onto the same ruler first. This is that ruler: percentages of the width.
+ */
+const ASPECT = MAP_IMAGE.height / MAP_IMAGE.width;
+
+function inWidthUnits(point: MapPoint): MapPoint {
+  return { x: point.x, y: point.y * ASPECT };
+}
 export const ATLAS_SOURCE = ATLAS.source;
 
 const DISTRICT_BY_KEY = new Map<string, District>();
@@ -222,26 +252,98 @@ export function isCombatZone(districtKeyOrCode: string): boolean {
   return /combat zone/i.test(district.blurb) || /combat zone/i.test(district.name);
 }
 
+const DEFAULT_START_DISTRICT: string = ATLAS.travel.defaultStart;
+
+/** The ways of getting about that the atlas's house rules define. */
+export const TRAVEL_MODES: string[] = Object.keys(ATLAS.travel.modes);
+export const DEFAULT_MODE: string = ATLAS.travel.defaultMode;
+
+/** "on foot", "by cab" — how to say a mode in a sentence. */
+export function modeLabel(mode: string): string {
+  return ATLAS.travel.modes[mode]?.label ?? mode;
+}
+
+/** "walking", "cab", "taxi" -> a mode the rules know. Undefined when unclear. */
+export function parseMode(input: string | null | undefined): string | undefined {
+  if (!input) return undefined;
+  const raw = input.trim().toLowerCase();
+  if (!raw) return undefined;
+  if (/\b(foot|walk|walking|walked|hoof|stroll)\b/.test(raw)) return "foot";
+  if (/\b(cab|taxi|car|drive|driving|drove|ride|rode|bike|motorbike)\b/.test(raw)) return "cab";
+  return TRAVEL_MODES.includes(raw) ? raw : undefined;
+}
+
+function modeRule(mode: string | null | undefined): TravelModeRule {
+  const rules = ATLAS.travel.modes;
+  return rules[mode ?? ""] ?? rules[ATLAS.travel.defaultMode]!;
+}
+
+/** Map distance to minutes, at the speed the mode moves. */
+function minutesFor(percent: number, rule: TravelModeRule): number {
+  const metres = percent * ATLAS.travel.scale.metresPerPercent;
+  return metres / ((rule.kmh * 1000) / 60);
+}
+
+export type Trip = {
+  minutes: number;
+  mode: string;
+  /** The districts crossed on the way, when the trip leaves this one. */
+  route?: Route;
+};
+
 /**
- * House-rule travel time in minutes between two stored locations. Same venue is
- * free; same district is a short hop; crossing areas costs more. Values come
- * from the atlas JSON `travel` block, which is labelled as a house rule.
+ * What a trip actually costs.
+ *
+ * The city is a graph of districts joined by streets and bridges, so a trip is a
+ * route through it and its price is the distance covered at the speed of
+ * whatever the character is travelling by, plus what it costs to get going and
+ * to cross each span. All of it is a house rule and all of it lives in the
+ * atlas JSON's `travel` block, which says so.
  */
-export function travelMinutes(from: string | null | undefined, to: string): number {
-  const t = ATLAS.travel;
+export function travelTrip(
+  from: string | null | undefined,
+  to: string,
+  mode: string | null | undefined = undefined,
+): Trip {
+  const chosen = mode && ATLAS.travel.modes[mode] ? mode : ATLAS.travel.defaultMode;
+  const rule = modeRule(chosen);
   const a = resolvePosition(from);
   const b = resolvePosition(to);
-  if (!b) return 0;
-  if (!a) return t.betweenDistrictsSameArea;
-  if (a.districtKey === b.districtKey) {
-    const same = a.placeKey === b.placeKey && a.landmarkKey === b.landmarkKey;
-    return same ? 0 : t.withinDistrict;
+  if (!b) return { minutes: 0, mode: chosen };
+  const origin = a?.districtKey ?? DEFAULT_START_DISTRICT;
+
+  if (origin === b.districtKey) {
+    // Still in the same district. Standing in the same doorway costs nothing;
+    // anything else is an errand across part of one district.
+    const same = a?.placeKey === b.placeKey && a?.landmarkKey === b.landmarkKey;
+    if (a && same) return { minutes: 0, mode: chosen };
+    const minutes = minutesFor(ATLAS.travel.withinDistrictPercent, rule) + rule.readyMinutes;
+    return { minutes: Math.round(minutes), mode: chosen };
   }
-  const areaA = getDistrict(a.districtKey)?.area;
-  const areaB = getDistrict(b.districtKey)?.area;
-  if (areaA === areaB) return t.betweenDistrictsSameArea;
-  if (areaA === "island" || areaB === "island") return t.betweenAreas;
-  return t.acrossCity;
+
+  const route = routeBetween(origin, b.districtKey);
+  if (!route) return { minutes: Math.round(rule.readyMinutes), mode: chosen };
+  const minutes =
+    minutesFor(route.lengthPercent, rule) +
+    rule.readyMinutes +
+    route.spans.length * rule.spanMinutes;
+  return { minutes: Math.round(minutes), mode: chosen, route };
+}
+
+/** Just the minutes, for the callers that only want the price. */
+export function travelMinutes(
+  from: string | null | undefined,
+  to: string,
+  mode: string | null | undefined = undefined,
+): number {
+  return travelTrip(from, to, mode).minutes;
+}
+
+/** The way from one place to another, as districts and the joins between them. */
+export function routeTo(from: string | null | undefined, to: string): Route | undefined {
+  const a = resolvePosition(from)?.districtKey ?? DEFAULT_START_DISTRICT;
+  const b = resolvePosition(to)?.districtKey;
+  return b ? routeBetween(a, b) : undefined;
 }
 
 /**
@@ -392,9 +494,11 @@ export function bearingBetween(
   from: string | null | undefined,
   to: string | null | undefined,
 ): number | undefined {
-  const a = mapPointOf(from);
-  const b = mapPointOf(to);
-  if (!a || !b) return undefined;
+  const start = mapPointOf(from);
+  const end = mapPointOf(to);
+  if (!start || !end) return undefined;
+  const a = inWidthUnits(start);
+  const b = inWidthUnits(end);
   const dx = b.x - a.x;
   const dy = -(b.y - a.y);
   if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) return undefined;
@@ -419,9 +523,11 @@ export function mapDistance(
   from: string | null | undefined,
   to: string | null | undefined,
 ): number | undefined {
-  const a = mapPointOf(from);
-  const b = mapPointOf(to);
-  if (!a || !b) return undefined;
+  const start = mapPointOf(from);
+  const end = mapPointOf(to);
+  if (!start || !end) return undefined;
+  const a = inWidthUnits(start);
+  const b = inWidthUnits(end);
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
@@ -484,37 +590,54 @@ export function walkFrom(from: string | null | undefined, direction: Compass): W
 }
 
 /**
- * The districts you would actually walk into heading that way, in the order you
- * reach them. Nothing is here because its centre point happens to lie at the
- * right bearing; everything is here because the walk goes through it.
+ * The districts that genuinely lie that way and that you can actually get to,
+ * nearest first.
+ *
+ * Two things have to hold. The district has to actually bear that way — the
+ * test is `directionBetween`, the same function that names a heading, so a
+ * district is west of here exactly when the engine would call it west. There is
+ * one definition of direction and this is it; a wider cone would let "go west"
+ * pick somewhere the engine itself calls southwest, which is how this went
+ * wrong before. And a route has to exist across the city's streets and bridges,
+ * so a heading cannot pick somewhere on the far side of a bay with no way over.
+ *
+ * The route is what makes this different from marching in a straight line: the
+ * water stops a walk, and a bridge does not stop a journey.
  */
 export function districtsInDirection(
   from: string | null | undefined,
   direction: Compass,
 ): Array<{ key: string; name: string; reach: number; minutes: number }> {
-  const journey = walkFrom(from, direction);
-  if (!journey) return [];
+  const start = mapPointOf(from);
+  if (!start) return [];
+  const origin = inWidthUnits(start);
   const here = resolvePosition(from)?.districtKey;
+  const vector = DIRECTION_VECTORS[direction];
   const out: Array<{ key: string; name: string; reach: number; minutes: number }> = [];
-  for (const leg of journey.legs) {
-    if (leg.key === here) continue;
-    if (out.some((d) => d.key === leg.key)) continue;
-    const district = getDistrict(leg.key);
-    if (!district) continue;
+  for (const district of DISTRICTS) {
+    if (district.key === here) continue;
+    const point = inWidthUnits(district.map);
+    const dx = point.x - origin.x;
+    const dy = point.y - origin.y;
+    if (Math.hypot(dx, dy) < 0.01) continue;
+    if (directionBetween(from, district.key) !== direction) continue;
+    if (!routeTo(from, district.key)) continue;
+    const reach = dx * vector.x + dy * vector.y;
     out.push({
-      key: leg.key,
+      key: district.key,
       name: district.name,
-      reach: leg.reached,
-      minutes: travelMinutes(from, leg.key),
+      reach,
+      minutes: travelMinutes(from, district.key),
     });
   }
+  out.sort((a, b) => a.reach - b.reach);
   return out;
 }
 
 /**
- * Where "as far west as I can go" ends up: the last district the walk reaches
- * before the water or the city limits. Undefined when the very next step off
- * this spot already leaves the city.
+ * Where "as far east as I can go" ends up: the district furthest along the
+ * heading that the city can actually carry you to. Undefined when the heading
+ * leads nowhere, which is when the walk to the edge takes over.
  */
 export function furthestInDirection(
   from: string | null | undefined,
@@ -524,7 +647,7 @@ export function furthestInDirection(
   return candidates.length ? candidates[candidates.length - 1]!.key : undefined;
 }
 
-/** The first district the walk crosses into — one step that way. */
+/** The first district that way — one step along the heading. */
 export function nextInDirection(
   from: string | null | undefined,
   direction: Compass,
@@ -553,6 +676,8 @@ const WALK_WORTH_TAKING = 2;
 
 export type TravelIntent = {
   from: string | null | undefined;
+  /** How they said they were getting there: "walk", "cab". Cab if unsaid. */
+  mode?: string | null | undefined;
   /** A name the narrator proposed, if any. */
   destination?: string | null | undefined;
   /** A heading the player asked for, if any. */
@@ -561,21 +686,25 @@ export type TravelIntent = {
   extent?: "near" | "far" | null | undefined;
 };
 
-export type TravelDecision =
-  | {
-      ok: true;
-      to: string;
-      direction?: Compass;
-      minutes: number;
-      /**
-       * Set when the heading ran out before any district did: the character
-       * walked as far that way as the city allows and is standing at the edge
-       * of it. The narration is told, so "as far west as I can" reads as
-       * arriving at the waterfront rather than as nothing happening.
-       */
-      stoppedAt?: "water" | "edge";
-    }
-  | { ok: false; reason: string };
+export type Arrival = {
+  ok: true;
+  to: string;
+  direction?: Compass;
+  minutes: number;
+  /** How they travelled, and what it was priced as. */
+  mode: string;
+  /** The districts crossed and the bridges taken, when the trip leaves this one. */
+  route?: Route;
+  /**
+   * Set when the heading ran out before any district did: the character
+   * walked as far that way as the city allows and is standing at the edge
+   * of it. The narration is told, so "as far west as I can" reads as
+   * arriving at the waterfront rather than as nothing happening.
+   */
+  stoppedAt?: "water" | "edge";
+};
+
+export type TravelDecision = Arrival | { ok: false; reason: string };
 
 /**
  * Decide a move. When the player named a heading the engine picks the district;
@@ -584,6 +713,18 @@ export type TravelDecision =
  */
 export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
   const direction = parseDirection(intent.direction);
+  const mode = parseMode(intent.mode) ?? DEFAULT_MODE;
+  const arrive = (to: string, heading?: Compass): Arrival => {
+    const trip = travelTrip(intent.from, to, mode);
+    return {
+      ok: true,
+      to,
+      minutes: trip.minutes,
+      mode: trip.mode,
+      ...(heading ? { direction: heading } : {}),
+      ...(trip.route ? { route: trip.route } : {}),
+    };
+  };
   const asked = intent.destination?.trim();
   const named = asked ? resolveDestination(asked) : undefined;
 
@@ -616,9 +757,7 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
           reason: `${describePosition(named)} lies ${directionName(bearing)} of here, not ${directionName(direction)}.`,
         };
       }
-      if (bearing === direction) {
-        return { ok: true, to: named, direction, minutes: travelMinutes(intent.from, named) };
-      }
+      if (bearing === direction) return arrive(named, direction);
     }
     const picked =
       intent.extent === "far"
@@ -631,13 +770,7 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
       const journey = walkFrom(intent.from, direction);
       const here = resolvePosition(intent.from)?.districtKey;
       if (journey && here && journey.distance >= WALK_WORTH_TAKING) {
-        return {
-          ok: true,
-          to: here,
-          direction,
-          minutes: travelMinutes(intent.from, here),
-          stoppedAt: journey.stoppedBy,
-        };
+        return { ...arrive(here, direction), stoppedAt: journey.stoppedBy };
       }
       const edge = journey?.stoppedBy === "water" ? "the water" : "the edge of the city";
       return {
@@ -645,19 +778,14 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
         reason: `There is no going ${directionName(direction)} from here — ${edge} is right there.`,
       };
     }
-    return { ok: true, to: picked, direction, minutes: travelMinutes(intent.from, picked) };
+    return arrive(picked, direction);
   }
 
   if (!named) {
     return { ok: false, reason: "Nowhere was named and no heading was given." };
   }
   const bearing = directionBetween(intent.from, named);
-  const decision: TravelDecision = {
-    ok: true,
-    to: named,
-    minutes: travelMinutes(intent.from, named),
-  };
-  return bearing ? { ...decision, direction: bearing } : decision;
+  return arrive(named, bearing);
 }
 
 /**

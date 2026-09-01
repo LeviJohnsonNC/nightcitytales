@@ -72,6 +72,13 @@ FRAGMENT_MAX_PX = 60_000
 ATOM_MIN_PX = 20_000
 # One cell is 20 master pixels, about 0.3% of the map's width.
 CELL = 20
+# How far from open water a join may stand and still count as being over it. A
+# bridge deck is drawn on top of the channel it crosses, so the deck itself is
+# not water; what marks it out is the water immediately either side.
+SPAN_WATER_REACH = 25
+# Below this many pixels a join is two districts brushing at a corner, not a
+# border anybody crosses.
+BORDER_MIN_PX = 400
 
 # The map prints the names of the city's geography — its bays, its canal, its
 # bridges, the rock offshore — in large white capitals, unlike the small grey
@@ -230,6 +237,77 @@ def landmarks_from(rgb, grid, keys, cell_width, cell_height):
             entry["connects"] = ranked[:2]
         out.append(entry)
     return out
+
+
+def borders_between(labelled, water, keys):
+    """Which districts touch on dry ground, and how big the join is.
+
+    A join standing over water is not a border anybody walks across — a bridge
+    deck is drawn on top of its channel and reads as ground to the raster, so
+    the water mask is what tells them apart. Crossings come from the bridges the
+    map names, added separately.
+    """
+    wet = ndi.binary_dilation(water, np.ones((3, 3)), iterations=SPAN_WATER_REACH)
+    joins = {}
+    # Compare each pixel with its neighbour to the east and to the south; every
+    # boundary between two districts is caught by one or the other.
+    for shift_y, shift_x in ((0, 1), (1, 0)):
+        here = labelled[: labelled.shape[0] - shift_y, : labelled.shape[1] - shift_x]
+        there = labelled[shift_y:, shift_x:]
+        touching = (here > 0) & (there > 0) & (here != there)
+        rows, columns = np.nonzero(touching)
+        if not len(rows):
+            continue
+        low = np.minimum(here[touching], there[touching])
+        high = np.maximum(here[touching], there[touching])
+        over_water = wet[rows, columns]
+        for a, b, y, x, damp in zip(low, high, rows, columns, over_water):
+            pair = (int(a), int(b))
+            entry = joins.setdefault(pair, {"dry": 0, "wet": 0, "at": None})
+            entry["wet" if damp else "dry"] += 1
+            if not damp and entry["at"] is None:
+                entry["at"] = (int(x), int(y))
+            elif entry["at"] is None:
+                entry["at"] = (int(x), int(y))
+
+    out = []
+    for (a, b), entry in sorted(joins.items()):
+        total = entry["dry"] + entry["wet"]
+        if total < BORDER_MIN_PX or entry["dry"] < entry["wet"]:
+            continue
+        out.append({"districts": sorted([keys[a - 1], keys[b - 1]]), "kind": "land"})
+    return out
+
+
+def with_spans(borders, landmarks):
+    """Add the crossings. A bridge is an edge the districts' own ground is not."""
+    joined = {tuple(b["districts"]) for b in borders}
+    for landmark in landmarks:
+        ends = landmark.get("connects")
+        if not ends or len(ends) != 2:
+            continue
+        pair = tuple(sorted(ends))
+        if pair in joined:
+            raise SystemExit(
+                f"{landmark['name']} spans {pair}, but those two already share dry ground; "
+                "one of the two readings of the map is wrong."
+            )
+        joined.add(pair)
+        borders.append({"districts": list(pair), "kind": "span", "via": landmark["key"]})
+    return borders
+
+
+def measure_borders(borders, atlas):
+    """How far apart the two ends of each join are, as a percentage of the map."""
+    points = {d["key"]: d["map"] for d in atlas["districts"]}
+    for border in borders:
+        a, b = (points[k] for k in border["districts"])
+        # y is a percentage of the height, so convert it before measuring.
+        aspect = atlas["map"]["height"] / atlas["map"]["width"]
+        border["lengthPercent"] = round(
+            ((a["x"] - b["x"]) ** 2 + ((a["y"] - b["y"]) * aspect) ** 2) ** 0.5, 3
+        )
+    return borders
 
 
 def pins_of(atlas, height, width):
@@ -438,6 +516,30 @@ def main():
     for landmark in atlas["landmarks"]:
         print(f"  {landmark['name']} ({landmark['kind']}) -> {landmark['districtKey']}")
 
+    print("working out which districts touch ...")
+    borders = with_spans(borders_between(labelled, water, keys), atlas["landmarks"])
+    borders = measure_borders(borders, atlas)
+    spans = [b for b in borders if b["kind"] == "span"]
+    print(f"  {len(borders)} joins: {len(borders) - len(spans)} on dry ground, {len(spans)} spans")
+    for border in spans:
+        print(f"    {border['via']}: {border['districts'][0]} <-> {border['districts'][1]}")
+    reachable = {keys[0]}
+    frontier = [keys[0]]
+    while frontier:
+        here = frontier.pop()
+        for border in borders:
+            if here in border["districts"]:
+                other = [k for k in border["districts"] if k != here][0]
+                if other not in reachable:
+                    reachable.add(other)
+                    frontier.append(other)
+    if len(reachable) != len(keys):
+        raise SystemExit(
+            f"the city does not hang together: {sorted(set(keys) - reachable)} cannot be "
+            "reached from " + keys[0]
+        )
+    print(f"  every district reachable from {keys[0]}")
+
     runs = []
     flat = grid.reshape(-1)
     value, length = int(flat[0]), 0
@@ -462,6 +564,7 @@ def main():
         },
         "grid": {"width": gw, "height": gh},
         "districts": keys,
+        "borders": borders,
         "runs": runs,
     }
     with open(OUT_JSON, "w") as fh:

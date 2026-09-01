@@ -48,6 +48,8 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
     /** A compass heading the player asked for; the engine picks the district. */
     direction: z.string().optional(),
     extent: z.enum(["near", "far"]).optional(),
+    /** How they said they were getting there: "foot" or "cab". */
+    mode: z.string().optional(),
     minutes: z.number().int(),
   }),
   z.object({ kind: z.literal("rest"), hours: z.number().int() }),
@@ -252,10 +254,12 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
       const destination = str(a["destination"]) ?? str(a["to"]);
       const direction = str(a["direction"]) ?? str(a["heading"]) ?? str(a["bearing"]);
       const extentRaw = (str(a["extent"]) ?? "").toLowerCase();
+      const mode = str(a["mode"]) ?? str(a["by"]) ?? str(a["transport"]);
       out.push({
         kind: "travel",
         ...(destination ? { destination } : {}),
         ...(direction ? { direction } : {}),
+        ...(mode ? { mode } : {}),
         ...(extentRaw === "far" || extentRaw === "near"
           ? { extent: extentRaw as "near" | "far" }
           : {}),

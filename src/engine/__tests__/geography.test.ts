@@ -21,7 +21,9 @@ import {
   reachableDestinations,
   resolveDestination,
   resolvePlaceMention,
+  parseMode,
   resolvePosition,
+  routeTo,
   walkFrom,
   travelMinutes,
 } from "../geography";
@@ -75,12 +77,40 @@ describe("positions", () => {
 });
 
 describe("travel", () => {
-  it("costs nothing to stay put and more to cross the city", () => {
+  it("costs nothing to stay put and more the further you go", () => {
     expect(travelMinutes("b1", "b1")).toBe(0);
-    expect(travelMinutes("b1", "b3")).toBe(10);
-    expect(travelMinutes("upper_marina", "downtown")).toBe(25);
-    expect(travelMinutes("upper_marina", "kabuki")).toBe(45);
-    expect(travelMinutes("kabuki", "rancho_coronado")).toBe(60);
+    // Distance is what a trip costs now, so a longer route costs more than a
+    // shorter one rather than both landing in the same band.
+    const nextDoor = travelMinutes("little_europe", "downtown");
+    const acrossTown = travelMinutes("little_europe", "north_heywood");
+    const cornerToCorner = travelMinutes("kabuki", "rancho_coronado");
+    expect(nextDoor).toBeGreaterThan(0);
+    expect(acrossTown).toBeGreaterThan(nextDoor);
+    expect(cornerToCorner).toBeGreaterThan(acrossTown);
+  });
+
+  it("prices the same trip differently depending on how you make it", () => {
+    // Across town a cab wins comfortably.
+    const far = "north_heywood";
+    expect(travelMinutes("little_europe", far, "foot")).toBeGreaterThan(
+      travelMinutes("little_europe", far, "cab") * 2,
+    );
+    // Round the corner it does not: you spend longer waiting for it than the
+    // walk would have taken.
+    expect(travelMinutes("little_europe", "a8", "foot")).toBeLessThan(
+      travelMinutes("little_europe", "a8", "cab"),
+    );
+    // Unsaid means a cab, which is what the atlas's house rule assumes.
+    expect(travelMinutes("little_europe", far)).toBe(travelMinutes("little_europe", far, "cab"));
+  });
+
+  it("reads how the character said they were travelling", () => {
+    expect(parseMode("I'll walk")).toBe("foot");
+    expect(parseMode("grab a cab")).toBe("cab");
+    expect(parseMode("on foot")).toBe("foot");
+    expect(parseMode("by taxi")).toBe("cab");
+    expect(parseMode("teleport")).toBeUndefined();
+    expect(parseMode(null)).toBeUndefined();
   });
 
   it("refuses destinations that are not on the map", () => {
@@ -160,21 +190,33 @@ describe("the compass", () => {
     expect(parseDirection("sideways")).toBeUndefined();
   });
 
-  it("only offers districts the walk actually goes through", () => {
-    // Due west out of Little Europe is Little Europe until the bay: no other
-    // district lies that way at that latitude, and the walk says so rather than
-    // reaching for the nearest district whose centre point is left of here.
+  it("only offers districts that bear that way and can be reached", () => {
+    // Nothing bears due west of Little Europe — Downtown is southwest, and the
+    // engine calls it southwest, so "go west" may not quietly pick it. Past the
+    // district's own western edge there is only the bay.
     expect(districtsInDirection("little_europe", "W")).toEqual([]);
     expect(limitInDirection("little_europe", "W")).toBe("water");
 
-    // South, though, really does cross districts, in the order you meet them.
-    const south = districtsInDirection("little_europe", "S").map((d) => d.key);
-    expect(south[0]).toBe("university_district");
-    expect(south).not.toContain("upper_marina");
-    for (const key of south) {
-      expect(getDistrict(key)!.map.y).toBeGreaterThan(getDistrict("little_europe")!.map.y);
+    // Every candidate is named that heading by the same function that names a
+    // heading anywhere else. One definition of direction, used everywhere.
+    for (const heading of ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const) {
+      for (const found of districtsInDirection("little_europe", heading)) {
+        expect(directionBetween("little_europe", found.key)).toBe(heading);
+      }
     }
-    expect(furthestInDirection("little_europe", "S")).toBe(south[south.length - 1]);
+  });
+
+  it("lets a heading cross water where a bridge does", () => {
+    // Due east out of Little Europe the ground runs out at Del Coronado Bay, so
+    // a walk stops there. A journey does not: the Coronado Bay Bridge carries it
+    // on, and the districts beyond are reachable and so are offered.
+    expect(walkFrom("little_europe", "E")!.stoppedBy).toBe("water");
+    const east = districtsInDirection("little_europe", "E").map((d) => d.key);
+    expect(east.length).toBeGreaterThan(0);
+    const furthest = furthestInDirection("little_europe", "E")!;
+    expect(east).toContain(furthest);
+    // And getting there really does involve a span.
+    expect(routeTo("little_europe", furthest)!.spans.length).toBeGreaterThan(0);
   });
 
   it("walks through a district rather than around it", () => {

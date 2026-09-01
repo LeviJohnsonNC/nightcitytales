@@ -2004,11 +2004,28 @@
   },
   "travel": {
     "houseRule": true,
-    "note": "Travel times are a Night City Tales house rule, not a Cyberpunk RED printed value. Minutes are one-way by cab or AV-less street transport.",
-    "withinDistrict": 10,
-    "betweenDistrictsSameArea": 25,
-    "betweenAreas": 45,
-    "acrossCity": 60,
+    "note": "Travel times are a Night City Tales house rule, not a Cyberpunk RED printed value. They are no longer a flat table: the engine routes across the district graph in night-city-map.json and prices the distance at the speed of whatever the character is travelling by.",
+    "scale": {
+      "metresPerPercent": 90,
+      "note": "House rule. The atlas prints no scale bar, so this comes off the map's own street grid: a city block in the University District measures about 1.33% of the map's width, which at a 120m block puts 1% at roughly 90m. That makes the drawn city about 7km across and 9km top to bottom."
+    },
+    "modes": {
+      "foot": {
+        "label": "on foot",
+        "kmh": 4.5,
+        "readyMinutes": 0,
+        "spanMinutes": 4
+      },
+      "cab": {
+        "label": "by cab",
+        "kmh": 20,
+        "readyMinutes": 7,
+        "spanMinutes": 3
+      }
+    },
+    "defaultMode": "cab",
+    "withinDistrictPercent": 5,
+    "withinDistrictNote": "Crossing part of one district without leaving it. Half a district's width is the house-rule distance for an errand close to home.",
     "defaultStart": "little_europe",
     "defaultStartNote": "House rule: a character with no recorded address starts in Little Europe, the atlas's dense mixed-income residential district. The atlas does not assign starting addresses."
   },

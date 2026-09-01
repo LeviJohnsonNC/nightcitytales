@@ -9,6 +9,7 @@ import {
   describePosition,
   directionBetween,
   directionName,
+  modeLabel,
   resolvePosition,
   travelMinutes,
   type GameClock,
@@ -29,6 +30,10 @@ export async function travelTo(args: {
   campaign: Campaign;
   clock: GameClock;
   to: string;
+  /** What the engine already priced the trip at, when it has. */
+  minutes?: number;
+  /** How they got there, for the ledger line. */
+  mode?: string;
 }): Promise<TravelResult> {
   const { campaign, clock, to } = args;
   if (!canTravel(to)) throw new Error(`"${to}" is not a place on the Night City map.`);
@@ -38,7 +43,9 @@ export async function travelTo(args: {
   // first trip of every campaign off a missing origin and left its heading out
   // of the ledger.
   const from = campaign.location_key ?? DEFAULT_START;
-  const minutes = travelMinutes(from, to);
+  // The caller has usually already routed and priced the trip; re-pricing it
+  // here would quietly disagree with what the player was told.
+  const minutes = args.minutes ?? travelMinutes(from, to, args.mode);
   const destination = resolvePosition(to);
   const key = destination?.placeKey ?? destination?.districtKey ?? to;
 
@@ -63,8 +70,16 @@ export async function travelTo(args: {
   await appendCampaignEvent({
     campaign_id: campaign.id,
     type: "travelled",
-    summary: `Travelled ${heading ? `${directionName(heading)} ` : ""}to ${describePosition(key)}${minutes ? ` (${minutes} min)` : ""}.`,
-    data: { from, to: key, minutes, ...(heading ? { direction: heading } : {}) },
+    summary:
+      `Travelled ${heading ? `${directionName(heading)} ` : ""}to ${describePosition(key)}` +
+      `${args.mode ? ` ${modeLabel(args.mode)}` : ""}${minutes ? ` (${minutes} min)` : ""}.`,
+    data: {
+      from,
+      to: key,
+      minutes,
+      ...(args.mode ? { mode: args.mode } : {}),
+      ...(heading ? { direction: heading } : {}),
+    },
   });
 
   return { campaign: updated, clock: nextClock, minutes };
