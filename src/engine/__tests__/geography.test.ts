@@ -155,7 +155,11 @@ describe("travel intent", () => {
   });
 
   it("picks the destination itself when the player named a heading", () => {
-    const decision = resolveTravelIntent({ from: "little_europe", direction: "west", extent: "far" });
+    const decision = resolveTravelIntent({
+      from: "little_europe",
+      direction: "west",
+      extent: "far",
+    });
     expect(decision.ok).toBe(true);
     if (decision.ok) {
       expect(decision.direction).toBe("W");

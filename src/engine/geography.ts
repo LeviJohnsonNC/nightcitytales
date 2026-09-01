@@ -266,7 +266,10 @@ const COMPASS_NAMES: Record<Compass, string> = {
 /** "west" -> "W". Accepts full words, abbreviations and casing. */
 export function parseDirection(input: string | null | undefined): Compass | undefined {
   if (!input) return undefined;
-  const raw = input.trim().toLowerCase().replace(/[^a-z]/g, "");
+  const raw = input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
   if (!raw) return undefined;
   for (const [code, name] of Object.entries(COMPASS_NAMES)) {
     if (raw === name || raw === code.toLowerCase()) return code as Compass;
@@ -431,8 +434,7 @@ export type TravelIntent = {
 };
 
 export type TravelDecision =
-  | { ok: true; to: string; direction?: Compass; minutes: number }
-  | { ok: false; reason: string };
+  { ok: true; to: string; direction?: Compass; minutes: number } | { ok: false; reason: string };
 
 /**
  * Decide a move. When the player named a heading the engine picks the district;
@@ -483,8 +485,6 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
   };
   return bearing ? { ...decision, direction: bearing } : decision;
 }
-
-
 
 /**
  * Every match key for narration linking: district names first, then location
