@@ -39,6 +39,7 @@ import {
 import { NpcText } from "@/features/cast/NpcText";
 import { NpcName } from "@/features/cast/NpcName";
 import { CheckCard } from "@/features/play/CheckCard";
+import { MapButton } from "@/features/atlas/MapButton";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
 import { actorFor, gmSkillList, statsRecord } from "@/features/play/playModel";
@@ -743,11 +744,19 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   Life · {formatLifeClock(bundle.clock)} · day {bundle.clock.day}
                 </p>
               </div>
-              <SheetDrawer
-                character={bundle.character}
-                inventory={bundle.inventory}
-                cyberware={bundle.cyberware}
-              />
+              <div className="flex items-center gap-2">
+                <MapButton
+                  locationKey={bundle.campaign.location_key ?? DEFAULT_START}
+                  knownPlaces={knownPlaces}
+                  onTravel={life.travelTo}
+                  travelBusy={life.travelBusy}
+                />
+                <SheetDrawer
+                  character={bundle.character}
+                  inventory={bundle.inventory}
+                  cyberware={bundle.cyberware}
+                />
+              </div>
             </div>
 
             <LifeLog
