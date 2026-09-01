@@ -17,6 +17,7 @@ import { CombatCard } from "./CombatCard";
 import { DeathSaveCard } from "./DeathSaveCard";
 
 import { JobCard } from "./JobCard";
+import { MapButton } from "@/features/atlas/MapButton";
 import { SheetDrawer } from "./SheetDrawer";
 import { BottomDock, MobileStatusBar } from "./mobileShell";
 import { DowntimePanel } from "@/features/downtime/DowntimePanel";
@@ -778,11 +779,23 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
                 </p>
               )}
             </div>
-            <SheetDrawer
-              character={bundle.character}
-              inventory={bundle.inventory}
-              cyberware={bundle.cyberware}
-            />
+            <div className="flex items-center gap-2">
+              <MapButton
+                locationKey={bundle.campaign.location_key ?? DEFAULT_START}
+                knownPlaces={
+                  Array.isArray(bundle.campaign.known_places)
+                    ? (bundle.campaign.known_places as unknown[]).filter(
+                        (v): v is string => typeof v === "string",
+                      )
+                    : []
+                }
+              />
+              <SheetDrawer
+                character={bundle.character}
+                inventory={bundle.inventory}
+                cyberware={bundle.cyberware}
+              />
+            </div>
           </div>
           {/*
             The battlefield, anchored — by the column, not by position: sticky.
