@@ -93,6 +93,20 @@ export type LifeContext = {
   wire?: LifeWireOffer | null;
   /** The offer the player is currently sitting on, during the hook phase. */
   hookOnTable?: LifeHookOnTable | null;
+  /**
+   * Where the character physically is, out of the Night City Atlas. Canonical
+   * geography: the model narrates this place, and may not relocate the
+   * character on its own.
+   */
+  place?: {
+    where: string;
+    district: string;
+    area: string;
+    security: string;
+    gangs: string[];
+    combatZone: boolean;
+    nearby: string[];
+  } | null;
   /** True when the player asked what they could do, rather than doing it. */
   optionsRequested?: boolean;
   /**
@@ -130,6 +144,21 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       `${formatLifeClock(context.clock)} (day ${context.clock.day}, ${partOfDay(context.clock.minute)})`,
     ),
   );
+
+  if (context.place) {
+    const p = context.place;
+    parts.push("", "== WHERE YOU ARE ==");
+    parts.push(line("Here", p.where));
+    parts.push(line("District", `${p.district} (${p.area})`));
+    if (p.security) parts.push(line("Security", p.security));
+    if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
+    if (p.combatZone) parts.push(line("Note", "This is a Combat Zone. No law worth the name."));
+    if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
+    parts.push(
+      "Narrate this location by name and use only these canonical places. " +
+        "Do not move the character to another district yourself; travel is the player's call and the engine's clock.",
+    );
+  }
 
   parts.push("", "== CHARACTER ==");
   parts.push(

@@ -131,6 +131,15 @@ import {
 } from "@/features/campaign/oracles";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { travelTo } from "@/features/atlas/travel";
+import {
+  DEFAULT_START,
+  areaOf,
+  describePosition,
+  getDistrict,
+  isCombatZone,
+  resolvePosition,
+  canTravel,
+} from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
   applyPressure,
@@ -337,8 +346,22 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     beatId: null,
   });
 
+  const position = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+  const positionDistrict = position ? getDistrict(position.districtKey) : undefined;
+
   return {
     clock: bundle.clock,
+    place: positionDistrict
+      ? {
+          where: describePosition(bundle.campaign.location_key ?? DEFAULT_START),
+          district: positionDistrict.name,
+          area: areaOf(positionDistrict.key)?.name ?? "Night City",
+          security: positionDistrict.security,
+          gangs: positionDistrict.gangs,
+          combatZone: isCombatZone(positionDistrict.key),
+          nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
+        }
+      : null,
     character: {
       name: bundle.character.character.name,
       ...(bundle.character.character.handle ? { handle: bundle.character.character.handle } : {}),
@@ -942,10 +965,21 @@ async function acceptHook(bundle: LifeBundle): Promise<void> {
   // was ever made and carried on the hook ever since.
   const { missionId, mission } = hook;
   await saveMissionRuntime(campaignId, startMission(mission));
+  // Taking the work puts the character where the work is: the offer names a
+  // canonical atlas district, so the job starts on the real map.
+  const jobDistrict = hook.offer.districtKey;
+  const moveTo = jobDistrict && canTravel(jobDistrict) ? jobDistrict : null;
+  const knownNow = new Set<string>(
+    Array.isArray(bundle.campaign.known_places)
+      ? (bundle.campaign.known_places as unknown[]).filter((v): v is string => typeof v === "string")
+      : [],
+  );
+  if (moveTo) knownNow.add(moveTo);
   await updateCampaign(campaignId, {
     current_mission_id: missionId,
     ip_awarded: null,
     status: "active",
+    ...(moveTo ? { location_key: moveTo, known_places: [...knownNow] } : {}),
   });
   // A fee that was argued upwards is carried on the campaign, so the job pays
   // what was agreed rather than what was printed.
