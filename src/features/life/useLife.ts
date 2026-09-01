@@ -43,6 +43,9 @@ import {
   type LifeSituation,
   type Opposition,
   type WoundStateCode,
+  directionName,
+  neighboursOf,
+  resolveTravelIntent,
 } from "@/engine";
 import {
   appendCampaignEvent,

@@ -66,6 +66,8 @@ import {
   getDistrict,
   isCombatZone,
   resolvePosition,
+  directionName,
+  neighboursOf,
 } from "@/engine";
 
 import {
