@@ -1,10 +1,12 @@
 /**
  * Prose with the cast wired up. Any known name inside the text becomes a
- * clickable dossier link; everything else renders untouched.
+ * clickable dossier link, and whatever is left runs through PlaceText so
+ * canonical Night City districts and locations link to the atlas too.
  */
 import { Fragment, useMemo } from "react";
 import { NPC_MATCH_KEYS } from "./npcDirectory";
 import { NpcName } from "./NpcName";
+import { PlaceText } from "@/features/atlas/PlaceText";
 
 function escape(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -42,7 +44,9 @@ export function NpcText({ text }: { text: string }) {
     <>
       {parts.map((p, i) =>
         typeof p === "string" ? (
-          <Fragment key={i}>{p}</Fragment>
+          <Fragment key={i}>
+            <PlaceText text={p} />
+          </Fragment>
         ) : (
           <NpcName key={i} name={p.match}>
             {p.match}
