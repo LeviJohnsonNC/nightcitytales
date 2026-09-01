@@ -1700,5 +1700,18 @@
     "width": 6600,
     "height": 10218,
     "note": "Marker coordinates are percentages of the stitched Night City Atlas map (pages 4-5)."
+  },
+  "travel": {
+    "houseRule": true,
+    "note": "Travel times are a Night City Tales house rule, not a Cyberpunk RED printed value. Minutes are one-way by cab or AV-less street transport.",
+    "withinDistrict": 10,
+    "betweenDistrictsSameArea": 25,
+    "betweenAreas": 45,
+    "acrossCity": 60
+  },
+  "source": {
+    "title": "Night City Atlas v1.01",
+    "publisher": "R. Talsorian Games",
+    "note": "District, location, city manager, security and gang data transcribed from the official atlas."
   }
 }
