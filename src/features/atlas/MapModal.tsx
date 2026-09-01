@@ -12,10 +12,11 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   DISTRICTS,
+  LANDMARKS,
   MAP_IMAGE,
   describePosition,
   getDistrict,
-  getPlace,
+  mapPointOf,
   resolvePosition,
   travelMinutes,
   type District,
@@ -61,13 +62,9 @@ export function MapModal({
 
   const currentDistrict: District | undefined = here ? getDistrict(here.districtKey) : undefined;
 
-  // Where the pin actually sits: the venue's own point when the atlas places
-  // it, otherwise the district centroid.
-  const youAreHere: MapPoint | null = useMemo(() => {
-    const venue = here?.placeKey ? getPlace(here.placeKey) : undefined;
-    if (venue?.map) return venue.map;
-    return currentDistrict ? currentDistrict.map : null;
-  }, [here?.placeKey, currentDistrict]);
+  // Where the pin actually sits: the venue or the landmark's own point when the
+  // atlas places it there, otherwise the district's.
+  const youAreHere: MapPoint | null = useMemo(() => mapPointOf(locationKey) ?? null, [locationKey]);
 
   /** Scroll so a percentage point on the map lands in the middle of the view. */
   const scrollToPoint = useCallback((point: MapPoint) => {
@@ -215,6 +212,19 @@ export function MapModal({
                 onLoad={centreOnMe}
                 className="pointer-events-none absolute inset-0 h-full w-full object-fill"
               />
+
+              {/* The city's named geography: the bridges, the bays, the canal.
+                  Drawn small and quiet — they orient the player, they are not
+                  the districts. */}
+              {LANDMARKS.map((landmark) => (
+                <span
+                  key={landmark.key}
+                  aria-hidden
+                  title={landmark.name}
+                  className="pointer-events-none absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 border border-foreground/50 bg-background/70"
+                  style={{ left: `${landmark.map.x}%`, top: `${landmark.map.y}%` }}
+                />
+              ))}
 
               {DISTRICTS.map((district) => {
                 const isHere = currentDistrict?.key === district.key;

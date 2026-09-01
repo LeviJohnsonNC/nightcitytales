@@ -2016,5 +2016,100 @@
     "title": "Night City Atlas v1.01",
     "publisher": "R. Talsorian Games",
     "note": "District, location, city manager, security and gang data transcribed from the official atlas."
-  }
+  },
+  "landmarks": [
+    {
+      "key": "estero_bay",
+      "name": "Estero Bay",
+      "kind": "bay",
+      "districtKey": "norcal_military_base",
+      "map": {
+        "x": 37.492,
+        "y": 16.187
+      }
+    },
+    {
+      "key": "del_coronado_bay",
+      "name": "Del Coronado Bay",
+      "kind": "bay",
+      "districtKey": "watson_development",
+      "map": {
+        "x": 34.97,
+        "y": 36.661
+      }
+    },
+    {
+      "key": "coronado_bay_bridge",
+      "name": "Coronado Bay Bridge",
+      "kind": "bridge",
+      "districtKey": "watson_development",
+      "map": {
+        "x": 43.064,
+        "y": 37.865
+      },
+      "connects": ["watson_development", "little_europe"]
+    },
+    {
+      "key": "morro_rock",
+      "name": "Morro Rock",
+      "kind": "island",
+      "districtKey": "little_europe",
+      "map": {
+        "x": 20.985,
+        "y": 38.295
+      }
+    },
+    {
+      "key": "san_morro_bridge",
+      "name": "San Morro Bridge",
+      "kind": "bridge",
+      "districtKey": "heywood_docks",
+      "map": {
+        "x": 64.011,
+        "y": 51.096
+      },
+      "connects": ["heywood_docks", "little_china"]
+    },
+    {
+      "key": "morro_canal",
+      "name": "Morro Canal",
+      "kind": "canal",
+      "districtKey": "old_combat_zone",
+      "map": {
+        "x": 54.17,
+        "y": 58.348
+      }
+    },
+    {
+      "key": "pacifica_bridge",
+      "name": "Pacifica Bridge",
+      "kind": "bridge",
+      "districtKey": "santo_domingo",
+      "map": {
+        "x": 44.83,
+        "y": 61.695
+      },
+      "connects": ["santo_domingo", "south_night_city"]
+    },
+    {
+      "key": "san_morro_bay",
+      "name": "San Morro Bay",
+      "kind": "bay",
+      "districtKey": "south_night_city",
+      "map": {
+        "x": 32.439,
+        "y": 61.382
+      }
+    },
+    {
+      "key": "laguna_reservoir",
+      "name": "Laguna Reservoir",
+      "kind": "reservoir",
+      "districtKey": "santo_domingo",
+      "map": {
+        "x": 87.008,
+        "y": 63.574
+      }
+    }
+  ]
 }

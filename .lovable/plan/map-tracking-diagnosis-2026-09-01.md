@@ -50,7 +50,7 @@ a four-value constant table.
 | F2 | An unrecognised destination is dropped, not refused | Critical | `geography.ts:434–470` |
 | F3 | Narration is written before the engine decides where you go | Critical | `useLife.ts:466–600` |
 | F4 | Refused moves are invisible to both player and model | Critical | `useLife.ts:505`, `LifeScreen.tsx`, `lifeModel.ts` |
-| F5 | The map's landmarks (bridges, bays, streets) don't exist in the data | Major | `night-city.json` |
+| F5 | The map's named geography (bridges, bays, canal, streets) doesn't exist in the data | Major | `night-city.json` |
 | F6 | Two contradictory definitions of "in a direction" | Major | `geography.ts:295–310` vs `380–400` |
 | F7 | No adjacency, no water, no bridges — every district is one hop from every other | Major | `geography.ts` |
 | F8 | Transport mode is ignored (walk and cab cost the same) | Major | `geography.ts`, atlas `travel` block |
@@ -110,7 +110,27 @@ unblocks F1, F6, F7 and the coastline answer together.
 **Landmarks and streets as first-class places.** F5 and F9 are a data-model question.
 Bridges, bays and named arterials are already printed on the image; adding them as
 non-venue map features would let a player say "the San Morro Bridge" and be taken
-there, and let the engine refuse "Camden Court" instead of inventing it.
+there.
+
+> **Correction (later the same day).** Two claims above were wrong, and are
+> corrected here rather than edited away.
+>
+> This section originally added "and let the engine refuse 'Camden Court' instead
+> of inventing it", and F5 said the model "cheerfully narrates Camden Court and
+> Cube-A-Rama, which are also not in the data". Both **are** canonical Little
+> Europe venues in `night-city.json`. The model was using real places; nothing
+> was invented. What was genuinely missing from the data was the city's named
+> geography — the bridges, the bays, the canal, Morro Rock — and the street
+> layer, which is still missing.
+>
+> A third claim, made in the pull request that acted on this document rather
+> than here, said Playland by the Sea (W5) was "pinned about 3.5% of the map's
+> width out to sea" and looked like a coordinate error. It is not adrift: its
+> marker is exactly where the atlas draws it, on a spit of land reaching north
+> into San Morro Bay. What is true is that Pacifica Playground's printed
+> boundary does not take that spit in, so the atlas's location list and the
+> atlas's own boundary disagree about it. The location list decides, and the
+> coordinate stands.
 
 ## What could not be checked
 
@@ -121,3 +141,11 @@ JSON and the code — sufficient for every finding here, since the failures are 
 contradictions rather than disagreements with the source. Dropping the PDF or the
 boundary-marked map variant into the repo would let the polygon work be traced against
 the publisher's own lines.
+
+> **Resolved.** The PDF was supplied. It turned out to carry the boundaries
+> directly: the atlas prints them as red dotted lines over its own map, at a
+> resolution more than three times the copy in the repo. They are now traced by
+> `tools/atlas/trace_districts.py` rather than approximated, which settled F1 and
+> F6 and made the coastline answerable. The one thing the PDF does not settle is
+> the street layer — several hundred named roads, printed but not transcribed,
+> and still absent from the data.
