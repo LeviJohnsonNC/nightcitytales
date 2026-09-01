@@ -85,31 +85,31 @@ export function MapModal({
     if (youAreHere) scrollToPoint(youAreHere);
   }, [youAreHere, scrollToPoint]);
 
-  // Centre when the map opens. The scroll area is only measurable once the
-  // dialog has laid out and the image has a box, so we keep trying on every
-  // resize of the content until the numbers are real, rather than betting on a
-  // single animation frame.
+  // Centre every time the map opens. The dialog animates in and the image
+  // loads after mount, so a single frame is never enough: keep re-centring on
+  // every resize and on a short schedule until the layout has stopped moving.
   useEffect(() => {
     if (!open || !youAreHere) return;
     const el = scroller.current;
     if (!el) return;
-    let settled = false;
+    const until = Date.now() + 900;
     const attempt = () => {
-      if (settled) return;
-      if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
-        if (scrollToPoint(youAreHere)) settled = true;
-      }
+      if (el.clientWidth > 0 && el.scrollWidth > el.clientWidth) scrollToPoint(youAreHere);
     };
     attempt();
     const observer = new ResizeObserver(attempt);
     observer.observe(el);
     if (el.firstElementChild) observer.observe(el.firstElementChild);
-    const timer = window.setTimeout(attempt, 250);
+    const tick = window.setInterval(() => {
+      attempt();
+      if (Date.now() > until) window.clearInterval(tick);
+    }, 80);
     return () => {
       observer.disconnect();
-      window.clearTimeout(timer);
+      window.clearInterval(tick);
     };
   }, [open, youAreHere, scrollToPoint]);
+
 
   /** Zooming holds whatever was in the middle of the screen. */
   function changeZoom(delta: number) {
