@@ -162,7 +162,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       parts.push("Which way is which (from the atlas, not from you):");
       for (const n of p.neighbours) parts.push(`  - ${n}`);
       parts.push(
-        "Never state a compass direction that is not in that list. If the player names a direction, propose travel with \"direction\" and let the engine pick the district.",
+        'Never state a compass direction that is not in that list. If the player names a direction, propose travel with "direction" and let the engine pick the district.',
       );
     }
     if (p.destinations?.length) {
