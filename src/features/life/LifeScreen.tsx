@@ -32,6 +32,7 @@ import {
   resolveSkillId,
   skillCheckForCharacter,
   standingBand,
+  DEFAULT_START,
   woundActionPenalty,
   type WoundStateCode,
 } from "@/engine";
@@ -725,6 +726,10 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
       result: skillCheckForCharacter(actor, pending.skillId, pending.dv, undefined, modifiers),
     };
   };
+
+  const knownPlaces = Array.isArray(bundle.campaign.known_places)
+    ? (bundle.campaign.known_places as unknown[]).filter((v): v is string => typeof v === "string")
+    : [];
 
   return (
     <TooltipProvider delayDuration={150}>
