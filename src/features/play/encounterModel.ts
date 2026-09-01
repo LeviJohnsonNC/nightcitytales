@@ -16,13 +16,17 @@ import {
   threatFor,
   weaponProfile,
   spendCost,
+  usableWeapons,
+  weaponBands,
   woundMovePenalty,
   woundStateFor,
   type ActionCost,
   type Arena,
+  type CapabilitySnapshot,
   type Combatant,
   type EncounterState,
   type Point,
+  type WeaponCapability,
   type WeaponProfile,
   type WoundStateCode,
 } from "@/engine";
@@ -440,4 +444,29 @@ export function startEncounterPayload(input: {
       };
     }),
   };
+}
+
+/**
+ * Which weapon is raised, given what the caller has selected.
+ *
+ * It lives here, rather than in the board that draws it, because two places
+ * must agree on it and neither may guess: the board
+ * paints this weapon's range bands and calls shots with it, and the attack card
+ * rolls it. A default computed twice is a default that drifts.
+ *
+ * Nothing selected falls back to the first gun with a printed range table
+ * rather than to nothing, so a fight opens with the bands already drawn. A
+ * melee weapon has no bands, so it is never the fallback — but it is a perfectly
+ * good explicit choice.
+ */
+export function raisedWeapon(
+  capability: CapabilitySnapshot | null,
+  weaponId: string | null,
+): WeaponCapability | null {
+  const weapons = capability ? usableWeapons(capability) : [];
+  return (
+    weapons.find((w) => w.itemId === weaponId) ??
+    weapons.find((w) => weaponBands(w).length > 0) ??
+    null
+  );
 }

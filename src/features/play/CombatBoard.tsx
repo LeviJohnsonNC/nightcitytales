@@ -57,7 +57,7 @@ import {
 } from "@/engine";
 import { Button } from "@/components/ui/button";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
-import { moveAllowance, type CombatantData } from "./encounterModel";
+import { moveAllowance, raisedWeapon, type CombatantData } from "./encounterModel";
 
 /**
  * Stroke widths, in SCREEN pixels — every stroke below carries
@@ -156,6 +156,9 @@ export function CombatBoard({
   onEndTurn,
   onReload,
   onAttack,
+  weaponId,
+  onWeaponId,
+  dice,
   busy = false,
 }: {
   live: LiveEncounter | null;
@@ -169,10 +172,27 @@ export function CombatBoard({
   onReload?: (weaponItemId: string) => void;
   /** Call the shot on a target with the selected weapon. */
   onAttack?: (targetId: string, weaponItemId: string) => void;
+  /**
+   * Which weapon is raised, owned by the caller.
+   *
+   * It used to be local, which was fine while the board was the only thing that
+   * cared. The attack card carried a SECOND picker with its own answer, so
+   * clicking a target with the pistol selected could open a card defaulting to
+   * something else — two controls inches apart, disagreeing. One selection now
+   * paints the bands, calls the shot and rolls it.
+   */
+  weaponId: string | null;
+  onWeaponId: (itemId: string) => void;
+  /**
+   * The dice for whatever the board just started, rendered under the cover
+   * list. A node rather than the attack itself: placement is the board's, but
+   * resolving an attack needs the sheet, the Luck pool and the mutations, and
+   * none of that is any of the board's business.
+   */
+  dice?: React.ReactNode;
   busy?: boolean;
 }) {
   // Before the early return: a hook cannot sit behind a condition.
-  const [weaponId, setWeaponId] = useState<string | null>(null);
   // What the cursor is currently over, so the board can say what a click would
   // DO before it is clicked.
   //
@@ -209,12 +229,7 @@ export function CombatBoard({
   // Only what could actually be fired: the empty and the broken are not a
   // tactical choice, and `usableWeapons` already knows which is which.
   const weapons: WeaponCapability[] = capability ? usableWeapons(capability) : [];
-  const weapon =
-    weapons.find((w) => w.itemId === weaponId) ??
-    // Nothing picked yet: show the first thing with a printed table rather than
-    // an empty board. A melee weapon has no bands to paint, so it is not it.
-    weapons.find((w) => weaponBands(w).length > 0) ??
-    null;
+  const weapon = raisedWeapon(capability, weaponId);
   const bands = weapon ? weaponBands(weapon) : [];
 
   // The board acts only on the player's own Turn, and only while nothing else
@@ -655,7 +670,7 @@ export function CombatBoard({
                   <button
                     key={w.itemId}
                     type="button"
-                    onClick={() => setWeaponId(w.itemId)}
+                    onClick={() => onWeaponId(w.itemId)}
                     title={
                       paints
                         ? `${w.name} — reaches ${weaponBands(w).at(-1)?.max} m`
@@ -762,6 +777,10 @@ export function CombatBoard({
               ))}
             </ul>
           )}
+
+          {/* The dice, under the cover — the last thing in the panel, and the
+              only thing in it that is a decision rather than a fact. */}
+          {dice}
         </div>
       </div>
     </section>

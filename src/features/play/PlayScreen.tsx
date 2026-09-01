@@ -21,6 +21,7 @@ import { SheetDrawer } from "./SheetDrawer";
 import { BottomDock, MobileStatusBar } from "./mobileShell";
 import { DowntimePanel } from "@/features/downtime/DowntimePanel";
 import { RoleAbilityPanel } from "./RoleAbilityPanel";
+import { raisedWeapon } from "./encounterModel";
 import { gmSkillList, suggestionInput } from "./playModel";
 import { settlementFrom, wasShorted } from "./settlementReport";
 import { NpcText } from "@/features/cast/NpcText";
@@ -715,6 +716,19 @@ function InputBar({
 
 export function PlayScreen({ campaignId }: { campaignId: string }) {
   const play = usePlay(campaignId);
+  /**
+   * The gun that is raised, for the whole fight.
+   *
+   * Here rather than inside the board because two things read it now: the board
+   * paints its range bands and calls shots with it, and the attack card rolls
+   * it. It used to live in each of them separately, which meant clicking a
+   * target with one weapon selected could open a card offering another.
+   *
+   * A plain id, not a resolved weapon — `raisedWeapon` turns it into one, in
+   * one place, so the fallback for "nothing picked yet" cannot differ between
+   * the two readers.
+   */
+  const [weaponId, setWeaponId] = useState<string | null>(null);
 
   if (play.isPending) {
     return <p className="p-8 text-sm text-muted-foreground">Loading the campaign…</p>;
@@ -799,6 +813,30 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
                 onEndTurn={play.endTurn}
                 onReload={play.reload}
                 onAttack={play.callShot}
+                weaponId={weaponId}
+                onWeaponId={setWeaponId}
+                // The attack, resolved where it was called. Passed as a node so
+                // the board never learns what a Luck Point is: it decides only
+                // that the dice go under the cover list.
+                dice={
+                  play.pendingAttack ? (
+                    <CombatCard
+                      key={play.pendingAttack.eventId}
+                      pending={play.pendingAttack}
+                      character={bundle.character}
+                      roll={(option, luckSpend) =>
+                        play.rollAttack(play.pendingAttack!, option, luckSpend)
+                      }
+                      onSettled={(option, result, luckSpent) =>
+                        play.commitAttack(play.pendingAttack!, option, result, luckSpent)
+                      }
+                      busy={play.combatBusy}
+                      capability={play.capability}
+                      luckRemaining={play.luck.remaining}
+                      weaponItemId={raisedWeapon(play.capability, weaponId)?.itemId ?? null}
+                    />
+                  ) : null
+                }
                 // Inert while any turn is being written, not only the board's
                 // own: a click resolved against a bundle the server has moved
                 // past would be computed from stale positions.
@@ -867,22 +905,6 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
                   </p>
                 )}
               </div>
-            )}
-            {play.pendingAttack && (
-              <CombatCard
-                key={play.pendingAttack.eventId}
-                pending={play.pendingAttack}
-                character={bundle.character}
-                roll={(option, luckSpend) =>
-                  play.rollAttack(play.pendingAttack!, option, luckSpend)
-                }
-                onSettled={(option, result, luckSpent) =>
-                  play.commitAttack(play.pendingAttack!, option, result, luckSpent)
-                }
-                busy={play.combatBusy}
-                capability={play.capability}
-                luckRemaining={play.luck.remaining}
-              />
             )}
             {play.pendingDeathSave && (
               <DeathSaveCard
