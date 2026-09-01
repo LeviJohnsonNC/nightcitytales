@@ -77,15 +77,18 @@ function statLine(kind: ItemKindLabel, item: AnyItem): { label: string; value: s
   return rows;
 }
 
-/** A small "?" button that opens a modal explaining a catalog item. */
-export function ItemInfo({
+/** The catalog entry for one item: art, stats, flavor and how it works. */
+export function ItemDialog({
   kind,
   item,
+  open,
+  onOpenChange,
 }: {
   kind: ItemKindLabel;
   item: { id: string; name: string } & Record<string, unknown>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const it = item as AnyItem;
   const flavor = ITEM_FLAVOR[it.id];
   const mechanical = it.notes ?? it.description ?? null;
@@ -98,17 +101,7 @@ export function ItemInfo({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={`What is ${item.name}?`}
-        title={`What is ${item.name}?`}
-        className="grid size-5 shrink-0 place-items-center rounded-full border border-hairline font-mono text-[11px] leading-none text-text-dim transition-colors hover:border-ember hover:text-ember"
-      >
-        ?
-      </button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-display tracking-tight">{item.name}</DialogTitle>
