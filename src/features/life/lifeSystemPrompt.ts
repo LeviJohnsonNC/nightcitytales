@@ -15,7 +15,7 @@ const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_M
 
 const FACTION_LIST = FACTIONS.map((f) => `"${f.id}" (${f.name})`).join(", ");
 
-export const LIFE_PROMPT_VERSION = "2.4.0";
+export const LIFE_PROMPT_VERSION = "2.5.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -95,12 +95,15 @@ Return a structured object:
 - "timeSpent": whole minutes the player's action took, from their side of it. A call is about 15, a conversation 20, an errand 45, crossing town 40, shopping 90, an evening somewhere 240, a night's sleep 480. Use 0 when they have not acted yet (opening a moment, or asking what their options are), and 0 whenever you also propose "travel" or "rest", which carry their own duration. The engine clamps this and owns the clock.
 - "actions": [] on an ordinary turn; 3-4 objects ONLY when the context says they asked for options: { "label": under ~6 words, "description": one short line of what it means, "timeMinutes": integer minutes, "knownCost": eurobucks the character knows up front or null, "skillId": the skill id from the SKILLS list or null }
 - "resolution": when the context reports a resolved action, the sentences describing it; otherwise null.
+- Travel is settled AFTER you write. You propose it; the engine decides where the trip ends and then asks you to narrate the arrival with the destination and heading fixed. So while proposing, do not write the character arriving anywhere, and do not name the place you expect them to reach — describe them setting off, and let the arrival be its own moment.
 - "proposedActions": what the engine should resolve, using EXACTLY these shapes:
   - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"..."}
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}
   - {"kind":"use_item","item":"<the thing they are using, as the kit list names it>","quantity":<integer>}
-  - {"kind":"travel","destination":"<EXACT name from the travel list in WHERE YOU ARE>","direction":"north|northeast|east|southeast|south|southwest|west|northwest","extent":"near|far","minutes":<integer>} — propose this whenever the player says they are heading somewhere. When they name a DIRECTION rather than a place ("head west", "as far south as I can"), set "direction" (and "extent":"far" for "as far as I can") and LEAVE "destination" OUT: the engine picks the district off the map. Never guess which place lies which way. The engine owns the trip's cost, its direction and refuses anything that does not fit.
+  - {"kind":"travel","destination":"<EXACT name from the travel list in WHERE YOU ARE>","direction":"north|northeast|east|southeast|south|southwest|west|northwest","extent":"near|far","minutes":<integer>} — propose this whenever the player says they are heading somewhere. When they name a DIRECTION rather than a place ("head west", "as far south as I can"), set "direction" (and "extent":"far" for "as far as I can") and LEAVE "destination" OUT: the engine walks the map and picks where they end up. Never guess which place lies which way. The engine owns the trip's cost, its direction and refuses anything that does not fit.
+    If the player names somewhere that is NOT on the travel list — a bridge, a street, a bar you have not been given — put their words in "destination" anyway and leave "direction" out. The engine will say it cannot place it, and that refusal is the honest answer. Do NOT convert their landmark into a heading and let the engine choose a district instead: that carries them somewhere they never asked to go.
+    A heading can also simply run out. Walking west from the western edge of the Island ends at the water, not in another district, and the engine will tell you so. That is a real outcome, not a failure.
   - {"kind":"rest","hours":<integer>}
   - {"kind":"pay_bills"} — settling rent and Lifestyle. Never state the amount yourself; the engine reads it and pays it.
   - {"kind":"repair_armor"} — having chewed armor patched. The engine picks the piece and the printed cost.

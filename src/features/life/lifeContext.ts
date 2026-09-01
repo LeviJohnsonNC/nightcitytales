@@ -159,10 +159,12 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.combatZone) parts.push(line("Note", "This is a Combat Zone. No law worth the name."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
     if (p.neighbours?.length) {
-      parts.push("Which way is which (from the atlas, not from you):");
+      parts.push(
+        "Districts this one BORDERS, and which way they lie (from the atlas, not from you):",
+      );
       for (const n of p.neighbours) parts.push(`  - ${n}`);
       parts.push(
-        'Never state a compass direction that is not in that list. If the player names a direction, propose travel with "direction" and let the engine pick the district.',
+        'Never state a compass direction that is not in that list. If the player names a direction, propose travel with "direction" and let the engine walk the map. Districts not on this list are elsewhere in the city: reachable, but not next door, and not somewhere you may point to.',
       );
     }
     if (p.destinations?.length) {
@@ -172,7 +174,9 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       "Narrate this location by name and use only these canonical places. " +
         "Do not move the character to another district yourself; travel is the player's call and the engine's clock. " +
         'When the player says they are going somewhere, propose {"kind":"travel","destination":"<exact name from the list above>"}. ' +
-        "A destination that is not on that list is refused by the engine.",
+        "A destination that is not on that list is refused by the engine — pass the player's own words " +
+        "through anyway rather than swapping in a heading, so they are told the place is unknown " +
+        "instead of being taken somewhere else.",
     );
   }
 

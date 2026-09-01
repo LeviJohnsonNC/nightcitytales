@@ -5,6 +5,7 @@
  */
 import {
   canTravel,
+  DEFAULT_START,
   describePosition,
   directionBetween,
   directionName,
@@ -32,7 +33,11 @@ export async function travelTo(args: {
   const { campaign, clock, to } = args;
   if (!canTravel(to)) throw new Error(`"${to}" is not a place on the Night City map.`);
 
-  const from = campaign.location_key ?? null;
+  // Where a campaign with no recorded address stands, the same way every other
+  // reader of location_key resolves it. Reading this as null instead priced the
+  // first trip of every campaign off a missing origin and left its heading out
+  // of the ledger.
+  const from = campaign.location_key ?? DEFAULT_START;
   const minutes = travelMinutes(from, to);
   const destination = resolvePosition(to);
   const key = destination?.placeKey ?? destination?.districtKey ?? to;

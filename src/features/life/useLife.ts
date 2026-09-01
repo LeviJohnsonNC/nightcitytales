@@ -441,13 +441,30 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
   };
 }
 
+/**
+ * What the engine actually did with a turn, as opposed to what the model wrote.
+ * The two can differ — the model proposes a move and the engine picks the
+ * destination — and where they do, the fiction has to be told.
+ */
+type TurnOutcome = {
+  travelled?: {
+    from: string;
+    to: string;
+    minutes: number;
+    direction?: string;
+    stoppedAt?: "water" | "edge";
+  };
+  travelRefused?: string;
+};
+
 /** Persist a clock delta and the situations/flags the turn produced. */
 async function applyResponse(
   bundle: LifeBundle,
   response: LifeResponse,
   turn: TurnOptions,
-): Promise<void> {
+): Promise<TurnOutcome> {
   const campaignId = bundle.campaign.id;
+  const outcome: TurnOutcome = {};
 
   // Time is spent by the engine, never claimed by the model. A turn that moves
   // the character bodily (travel, rest) carries its own duration and is charged
@@ -478,7 +495,7 @@ async function applyResponse(
   // The transaction already committed every consequence. The narrator gets
   // prose and nothing else: no question, time, pressure, delta, spend, or phase
   // transition can leak out of a fixed-result follow-up.
-  if (turn.fixedResult) return;
+  if (turn.fixedResult) return {};
 
   // A question the turn needed answered and could not answer itself. Held, not
   // answered: the dice get thrown next turn, so the model writes this one
@@ -592,11 +609,20 @@ async function applyResponse(
       });
       if (!decision.ok) {
         await refuse(decision.reason, "impossible");
+        outcome.travelRefused = decision.reason;
         continue;
       }
+      const before = bundle.campaign.location_key ?? DEFAULT_START;
       const moved = await travelTo({ campaign: bundle.campaign, clock, to: decision.to });
       bundle.campaign = moved.campaign;
       clock = moved.clock;
+      outcome.travelled = {
+        from: describePosition(before),
+        to: describePosition(decision.to),
+        minutes: moved.minutes,
+        ...(decision.direction ? { direction: directionName(decision.direction) } : {}),
+        ...(decision.stoppedAt ? { stoppedAt: decision.stoppedAt } : {}),
+      };
     } else if (action.kind === "rest") {
       // Sleeping IS resting: the hours move the clock, and every whole day the
       // character crossed heals at the printed rate through the same Downtime
@@ -740,6 +766,7 @@ async function applyResponse(
   if (clock.day !== bundle.clock.day || clock.minute !== bundle.clock.minute) {
     await setCampaignClock(campaignId, clock);
   }
+  return outcome;
 }
 
 /**
@@ -862,7 +889,19 @@ async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {
   const response = await lifeTurnFn({
     data: { userPrompt: renderLifeUserPrompt(context, input || opening) },
   });
-  await applyResponse(bundle, response, asked);
+  const outcome = await applyResponse(bundle, response, asked);
+
+  // The model wrote its prose before the engine had decided anything, so a trip
+  // it described is its own guess at where the player ended up. Now that the
+  // move is committed, tell it what actually happened and let it write the
+  // arrival. Without this the narration can walk you east while the pin, the
+  // header and the ledger all say you went west.
+  const correction = describeTravelOutcome(outcome);
+  if (correction && !turn.fixedResult) {
+    const fresh = { ...bundle, events: await listCampaignEvents(bundle.campaign.id) };
+    await liveTurn(fresh, "", { minutes: 0, resolved: correction, fixedResult: true });
+    return;
+  }
 
   // Acting on a situation about a person IS dealing with them. Only a turn the
   // player actually typed counts: opening the moment, or asking what the
@@ -876,6 +915,39 @@ async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {
     // re-derived, so nothing else would ever take it off the board.
     await settleMoves(bundle.campaign.id, npcKey);
   }
+}
+
+/** What to tell the narrator about a move the engine has already committed. */
+function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
+  if (outcome.travelRefused) {
+    return (
+      `The character did NOT travel. ${outcome.travelRefused} They are still where they were. ` +
+      "Narrate that in a sentence or two: the trip did not happen, and say why in the fiction " +
+      "rather than as a rule. Do not describe arriving anywhere."
+    );
+  }
+  const trip = outcome.travelled;
+  if (!trip) return undefined;
+  if (trip.stoppedAt) {
+    const edge =
+      trip.stoppedAt === "water"
+        ? "the waterfront, with nothing but water beyond it"
+        : "the edge of the city, where the streets give out";
+    return (
+      `The character walked ${trip.direction ? `${trip.direction} ` : ""}as far as that way goes ` +
+      `and came up against ${edge}. It took ${trip.minutes} minutes and they are still in ` +
+      `${trip.to} — that is how far the city extends in that direction, and it is a fact. ` +
+      "Narrate reaching that edge in two or three sentences: what is in front of them, what is " +
+      "behind. Do not put them in another district and do not send them onwards."
+    );
+  }
+  return (
+    `The character has ARRIVED. They travelled ${trip.direction ? `${trip.direction} ` : ""}` +
+    `from ${trip.from} to ${trip.to}, and it took ${trip.minutes} minutes. ` +
+    "That destination and that heading are facts — the engine chose them, not you. Narrate the " +
+    "arrival in two or three sentences: where they are standing now, what is in front of them. " +
+    "Do not name a different place, do not contradict the heading, and do not send them onwards."
+  );
 }
 
 /**
