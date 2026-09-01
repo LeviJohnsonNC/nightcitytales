@@ -106,6 +106,9 @@ export type LifeContext = {
     gangs: string[];
     combatZone: boolean;
     nearby: string[];
+    /** Canonical names a travel proposal is allowed to name. Nothing else. */
+    destinations?: string[];
+
   } | null;
   /** True when the player asked what they could do, rather than doing it. */
   optionsRequested?: boolean;
