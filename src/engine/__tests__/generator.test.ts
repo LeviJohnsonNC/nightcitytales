@@ -16,6 +16,7 @@ import {
   validateMission,
   NIGHT_AT_THE_OPERA,
   type Mission,
+  weighForce,
 } from "../index";
 import { seededRng } from "../dice";
 import { fillSlots } from "../missions/generator";
@@ -359,8 +360,32 @@ describe("the opposition waiting in a generated job", () => {
   it("never fields a fight nobody could survive, or nobody would notice", () => {
     for (let seed = 0; seed < 200; seed += 1) {
       const n = generateJob(seed).force!.members.length;
-      expect(n).toBeGreaterThanOrEqual(2);
+      // ONE is now a real fight, not an empty room. The floor used to be two,
+      // from when force sizes were budgeted for a crew; against a single
+      // Edgerunner one Mook is the printed baseline for a challenging but
+      // winnable encounter, and two is already over their share.
+      expect(n).toBeGreaterThanOrEqual(1);
       expect(n).toBeLessThanOrEqual(8);
     }
+  });
+
+  it("keeps generated opposition inside the rollable ladder", () => {
+    // Deliberately NOT "never a situation". For one Edgerunner the printed
+    // ratio leaves only two fair rungs — a Mook is fair, two is dangerous, and
+    // three is already a situation — so a "heavy" job genuinely is one, and
+    // pretending otherwise would be the fudge this whole change exists to
+    // avoid. What must never be rolled is the crew-sized set above it, and what
+    // must never happen is a situation arriving UNANNOUNCED: beginEncounter
+    // writes the verdict into the ledger before the first shot.
+    const seen = new Set<string>();
+    for (let seed = 0; seed < 200; seed += 1) {
+      const members = generateJob(seed).force!.members;
+      const weight = weighForce(members);
+      seen.add(weight.verdict);
+      // The old crew "heavy" was six bodies and 8+ Mook-equivalents.
+      expect(weight.load).toBeLessThanOrEqual(4);
+    }
+    // And the ladder is a ladder: not every night in Night City is the same.
+    expect(seen.size).toBeGreaterThan(1);
   });
 });

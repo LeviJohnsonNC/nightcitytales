@@ -2,7 +2,14 @@
  * Recording combat resolutions to the campaign event ledger. Attacks and Death
  * Saves carry their full roll trace, so every combat die stays inspectable.
  */
-import type { ApplyDamageResult, AttackResult, DamageRoll, DeathSaveResult } from "@/engine";
+import {
+  describeMorale,
+  type ApplyDamageResult,
+  type AttackResult,
+  type DamageRoll,
+  type DeathSaveResult,
+  type MoraleCheck,
+} from "@/engine";
 import {
   appendCampaignEvent,
   type CampaignEvent,
@@ -189,5 +196,46 @@ export async function logCoverDamage(
         : {}),
     } as unknown as Json,
     ...(context.beatId ? { beat_id: context.beatId } : {}),
+  });
+}
+
+/**
+ * The ledger type a Morale check is written under.
+ *
+ * Its own type, not "attack" and not "death_save": engine/settlement.ts replays
+ * the job's ledger and counts every `attack` as a person put in hospital and as
+ * noise made. A Mook deciding tonight is not worth it is the opposite of both —
+ * nobody was shot, and the loudest thing that happened was somebody leaving.
+ */
+export const MORALE_EVENT = "morale";
+
+/**
+ * Write a Morale check down with its die showing.
+ *
+ * The whole trace, like every other roll in this file: which stress point set
+ * it off, which row of the printed table they were read on, what the d10 said
+ * and what it had to beat. A fight that empties out has to be inspectable, or
+ * it reads as the game quietly deciding to go easy on the player — which is
+ * exactly what it is not doing.
+ */
+export async function logMorale(
+  campaignId: string,
+  combatantName: string,
+  check: MoraleCheck,
+  beatId?: string | null,
+): Promise<CampaignEvent> {
+  return appendCampaignEvent({
+    campaign_id: campaignId,
+    type: MORALE_EVENT,
+    summary: describeMorale(combatantName, check),
+    data: {
+      combatant: combatantName,
+      trigger: check.trigger,
+      mentality: check.mentality,
+      roll: check.roll,
+      end_fight_up_to: check.endFightUpTo,
+      broke: check.broke,
+    } as unknown as Json,
+    ...(beatId ? { beat_id: beatId } : {}),
   });
 }

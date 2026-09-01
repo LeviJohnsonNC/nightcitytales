@@ -184,21 +184,31 @@ describe("rollForceSize", () => {
     expect(rollForceSize(seededRng(7))).toBe(rollForceSize(seededRng(7)));
   });
 
-  it("produces every size across many seeds, and mostly standard", () => {
+  it("produces every rollable size across many seeds, and mostly standard", () => {
     // A run of jobs that are all trivial or all a bloodbath reads as noise.
-    const counts: Record<string, number> = { small: 0, standard: 0, heavy: 0 };
+    const counts: Record<string, number> = { small: 0, standard: 0, heavy: 0, overwhelming: 0 };
     for (let seed = 0; seed < 400; seed += 1) counts[rollForceSize(seededRng(seed))]! += 1;
-    for (const size of FORCE_SIZES) expect(counts[size]!).toBeGreaterThan(0);
+    for (const size of ["small", "standard", "heavy"]) expect(counts[size]!).toBeGreaterThan(0);
     expect(counts["standard"]!).toBeGreaterThan(counts["small"]!);
     expect(counts["standard"]!).toBeGreaterThan(counts["heavy"]!);
+  });
+
+  it("never rolls the one that is not a fight", () => {
+    // "overwhelming" is the old crew-sized set, kept because Night City may put
+    // six people in front of one — but it is placed deliberately or not at all.
+    // Arriving by an unseen die is how a player learns the difference the hard
+    // way, four Rounds in.
+    for (let seed = 0; seed < 400; seed += 1) {
+      expect(rollForceSize(seededRng(seed))).not.toBe("overwhelming");
+    }
   });
 });
 
 describe("describeForce", () => {
   it("counts repeats rather than listing them", () => {
-    const line = describeForce(buildForce(forceFor("corporate"), "standard"));
+    const line = describeForce(buildForce(forceFor("corporate"), "overwhelming"));
     expect(line).toContain("4× Corporate Security");
-    expect(line).toContain("Enforcer");
+    expect(line).toContain("2× Militech Contractor");
   });
 
   it("says so when nobody is waiting", () => {
