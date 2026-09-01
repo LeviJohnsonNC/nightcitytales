@@ -16,6 +16,7 @@ import {
   describePosition,
   getDistrict,
   resolvePosition,
+  travelMinutes,
   type District,
 } from "@/engine";
 import { PlaceDossier } from "./PlaceDossier";
@@ -28,11 +29,16 @@ export function MapModal({
   onOpenChange,
   locationKey,
   knownPlaces = [],
+  onTravel,
+  travelBusy = false,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   locationKey?: string | null | undefined;
   knownPlaces?: string[] | undefined;
+  /** When given, districts other than the current one offer a trip. */
+  onTravel?: ((districtKey: string) => void) | undefined;
+  travelBusy?: boolean | undefined;
 }) {
   const [zoom, setZoom] = useState(1.4);
   const [dossier, setDossier] = useState<string | null>(null);
@@ -166,6 +172,26 @@ export function MapModal({
           targetKey={dossier}
           open={dossier !== null}
           onOpenChange={(v) => !v && setDossier(null)}
+          {...(onTravel && dossier !== currentDistrict?.key
+            ? {
+                action: (
+                  <Button
+                    type="button"
+                    className="w-full"
+                    disabled={travelBusy}
+                    onClick={() => {
+                      onTravel(dossier);
+                      setDossier(null);
+                      onOpenChange(false);
+                    }}
+                  >
+                    {travelBusy
+                      ? "On the move…"
+                      : `Travel here · ${travelMinutes(locationKey, dossier)} min`}
+                  </Button>
+                ),
+              }
+            : {})}
         />
       ) : null}
     </>

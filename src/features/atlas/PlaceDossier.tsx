@@ -88,10 +88,13 @@ export function PlaceDossier({
   targetKey,
   open,
   onOpenChange,
+  action,
 }: {
   targetKey: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Optional footer control, e.g. "Travel here". */
+  action?: React.ReactNode;
 }) {
   const placeDistrict = districtOfPlace(targetKey);
   const district = placeDistrict ?? getDistrict(targetKey);
@@ -103,6 +106,7 @@ export function PlaceDossier({
       <DialogContent className="max-h-[88vh] max-w-[92vw] overflow-y-auto border border-hairline bg-surface p-5 sm:max-w-lg">
         <DialogTitle className="sr-only">{title}</DialogTitle>
         {place ? <PlaceBody place={place} district={district} /> : <DistrictBody district={district} />}
+        {action ? <div className="border-t border-hairline pt-3">{action}</div> : null}
         <p className="border-t border-hairline pt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           Night City Atlas
         </p>

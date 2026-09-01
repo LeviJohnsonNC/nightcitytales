@@ -11,10 +11,14 @@ export function MapButton({
   locationKey,
   knownPlaces,
   className,
+  onTravel,
+  travelBusy,
 }: {
   locationKey?: string | null | undefined;
   knownPlaces?: string[] | undefined;
   className?: string | undefined;
+  onTravel?: ((districtKey: string) => void) | undefined;
+  travelBusy?: boolean | undefined;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -35,6 +39,8 @@ export function MapButton({
         onOpenChange={setOpen}
         locationKey={locationKey}
         knownPlaces={knownPlaces}
+        onTravel={onTravel}
+        travelBusy={travelBusy}
       />
     </>
   );
