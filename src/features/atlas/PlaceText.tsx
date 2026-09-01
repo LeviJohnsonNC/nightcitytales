@@ -45,7 +45,9 @@ export function PlaceText({ text }: { text: string }) {
     <>
       {parts.map((p, i) =>
         typeof p === "string" ? (
-          <Fragment key={i}>{p}</Fragment>
+          <Fragment key={i}>
+            <ItemText text={p} />
+          </Fragment>
         ) : (
           <PlaceName key={i} name={p.match}>
             {p.match}
