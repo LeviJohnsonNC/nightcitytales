@@ -57,6 +57,30 @@ export function MapModal({
 
   const currentDistrict: District | undefined = here ? getDistrict(here.districtKey) : undefined;
 
+  // When the map opens, centre the view on the player's marker. The content
+  // is `zoom * 100%` of the scroller's width and keeps the image's aspect
+  // ratio, so a percentage coordinate converts straight to scroll offsets.
+  useEffect(() => {
+    if (!open || !currentDistrict) return;
+    const el = scroller.current;
+    if (!el) return;
+    const frame = requestAnimationFrame(() => {
+      const contentWidth = el.scrollWidth;
+      const contentHeight = el.scrollHeight;
+      el.scrollLeft = Math.max(
+        0,
+        (currentDistrict.map.x / 100) * contentWidth - el.clientWidth / 2,
+      );
+      el.scrollTop = Math.max(
+        0,
+        (currentDistrict.map.y / 100) * contentHeight - el.clientHeight / 2,
+      );
+    });
+    return () => cancelAnimationFrame(frame);
+    // Only on open — re-running on zoom would fight the player's own panning.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   function onPointerDown(e: React.PointerEvent) {
     const el = scroller.current;
     if (!el) return;
