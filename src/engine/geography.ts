@@ -260,15 +260,20 @@ export const PLACE_MATCH_KEYS: string[] = (() => {
 export type PlaceMention =
   { kind: "district"; district: District } | { kind: "place"; place: Place; district: District };
 
+/** Curly and straight apostrophes are the same character for lookups. */
+function normalizeName(text: string): string {
+  return text.trim().toLowerCase().replace(/[\u2018\u2019]/g, "'");
+}
+
 /** Look up what a piece of narration text is naming, if anything. */
 export function resolvePlaceMention(text: string): PlaceMention | undefined {
-  const needle = text.trim().toLowerCase();
+  const needle = normalizeName(text);
   for (const district of DISTRICTS) {
-    if (district.name.toLowerCase() === needle) return { kind: "district", district };
+    if (normalizeName(district.name) === needle) return { kind: "district", district };
   }
   for (const district of DISTRICTS) {
     for (const place of district.locations) {
-      if (place.name.toLowerCase() === needle) return { kind: "place", place, district };
+      if (normalizeName(place.name) === needle) return { kind: "place", place, district };
     }
   }
   return undefined;
