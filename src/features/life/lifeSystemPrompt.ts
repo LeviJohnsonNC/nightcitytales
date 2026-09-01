@@ -15,7 +15,7 @@ const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_M
 
 const FACTION_LIST = FACTIONS.map((f) => `"${f.id}" (${f.name})`).join(", ");
 
-export const LIFE_PROMPT_VERSION = "2.6.0";
+export const LIFE_PROMPT_VERSION = "2.7.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -101,7 +101,8 @@ Return a structured object:
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}
   - {"kind":"use_item","item":"<the thing they are using, as the kit list names it>","quantity":<integer>}
-  - {"kind":"travel","destination":"<EXACT name from the travel list in WHERE YOU ARE>","direction":"north|northeast|east|southeast|south|southwest|west|northwest","extent":"near|far","minutes":<integer>} — propose this whenever the player says they are heading somewhere. When they name a DIRECTION rather than a place ("head west", "as far south as I can"), set "direction" (and "extent":"far" for "as far as I can") and LEAVE "destination" OUT: the engine walks the map and picks where they end up. Never guess which place lies which way. The engine owns the trip's cost, its direction and refuses anything that does not fit.
+  - {"kind":"travel","destination":"<EXACT name from the travel list in WHERE YOU ARE>","direction":"north|northeast|east|southeast|south|southwest|west|northwest","extent":"near|far","mode":"foot|cab","minutes":<integer>} — propose this whenever the player says they are heading somewhere.
+    Set "mode" to how THEY said they were getting there — "foot" when they say they are walking, "cab" when they hail one or say they can take one. Leave it out when they did not say; the engine assumes a cab. It changes what the trip costs: walking is slow and free, a cab is quicker over distance but you wait for it, so a short errand is often faster on foot. The engine owns those numbers. When they name a DIRECTION rather than a place ("head west", "as far south as I can"), set "direction" (and "extent":"far" for "as far as I can") and LEAVE "destination" OUT: the engine walks the map and picks where they end up. Never guess which place lies which way. The engine owns the trip's cost, its direction and refuses anything that does not fit.
     The travel list is a shortlist, not a fence. The engine knows every district, every canonical venue and every named piece of geography in the city — the bridges, the bays, the canal — whether or not they are on the list. If the player names somewhere that is not on it, put THEIR words in "destination" and leave "direction" out; the engine either takes them there or says it cannot place it, and either answer is honest. Do NOT convert a place they named into a heading: that carries them somewhere they never asked to go.
     A heading can also simply run out. Walking west from the western edge of the Island ends at the water, not in another district, and the engine will tell you so. That is a real outcome, not a failure.
   - {"kind":"rest","hours":<integer>}

@@ -44,6 +44,8 @@ import {
   type Opposition,
   type WoundStateCode,
   directionName,
+  getLandmark,
+  modeLabel,
   neighboursOf,
   resolveTravelIntent,
 } from "@/engine";
@@ -461,6 +463,9 @@ type TurnOutcome = {
     minutes: number;
     direction?: string;
     stoppedAt?: "water" | "edge";
+    mode: string;
+    /** Bridges the route crossed, by name, in order. */
+    bridges?: string[];
   };
   travelRefused?: string;
 };
@@ -614,6 +619,7 @@ async function applyResponse(
         ...(action.destination ? { destination: action.destination } : {}),
         ...(action.direction ? { direction: action.direction } : {}),
         ...(action.extent ? { extent: action.extent } : {}),
+        ...(action.mode ? { mode: action.mode } : {}),
       });
       if (!decision.ok) {
         await refuse(decision.reason, "impossible");
@@ -621,7 +627,13 @@ async function applyResponse(
         continue;
       }
       const before = bundle.campaign.location_key ?? DEFAULT_START;
-      const moved = await travelTo({ campaign: bundle.campaign, clock, to: decision.to });
+      const moved = await travelTo({
+        campaign: bundle.campaign,
+        clock,
+        to: decision.to,
+        minutes: decision.minutes,
+        mode: decision.mode,
+      });
       bundle.campaign = moved.campaign;
       clock = moved.clock;
       outcome.travelled = {
@@ -630,6 +642,10 @@ async function applyResponse(
         minutes: moved.minutes,
         ...(decision.direction ? { direction: directionName(decision.direction) } : {}),
         ...(decision.stoppedAt ? { stoppedAt: decision.stoppedAt } : {}),
+        mode: modeLabel(decision.mode),
+        ...(decision.route?.spans.length
+          ? { bridges: decision.route.spans.map((k) => getLandmark(k)?.name ?? k) }
+          : {}),
       };
     } else if (action.kind === "rest") {
       // Sleeping IS resting: the hours move the clock, and every whole day the
@@ -942,19 +958,24 @@ function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
         ? "the waterfront, with nothing but water beyond it"
         : "the edge of the city, where the streets give out";
     return (
-      `The character walked ${trip.direction ? `${trip.direction} ` : ""}as far as that way goes ` +
-      `and came up against ${edge}. It took ${trip.minutes} minutes and they are still in ` +
-      `${trip.to} — that is how far the city extends in that direction, and it is a fact. ` +
-      "Narrate reaching that edge in two or three sentences: what is in front of them, what is " +
-      "behind. Do not put them in another district and do not send them onwards."
+      `The character went ${trip.direction ? `${trip.direction} ` : ""}${trip.mode} as far as ` +
+      `that way goes and came up against ${edge}. It took ${trip.minutes} minutes and they are ` +
+      `still in ${trip.to} — that is how far the city extends in that direction, and it is a ` +
+      "fact. Narrate reaching that edge in two or three sentences: what is in front of them, " +
+      "what is behind. Do not put them in another district and do not send them onwards."
     );
   }
+  const crossing = trip.bridges?.length
+    ? ` The way there crossed ${trip.bridges.join(", then ")}, so that is on the route and ` +
+      "worth a line."
+    : "";
   return (
     `The character has ARRIVED. They travelled ${trip.direction ? `${trip.direction} ` : ""}` +
-    `from ${trip.from} to ${trip.to}, and it took ${trip.minutes} minutes. ` +
-    "That destination and that heading are facts — the engine chose them, not you. Narrate the " +
-    "arrival in two or three sentences: where they are standing now, what is in front of them. " +
-    "Do not name a different place, do not contradict the heading, and do not send them onwards."
+    `from ${trip.from} to ${trip.to} ${trip.mode}, and it took ${trip.minutes} minutes.` +
+    `${crossing} That destination, that heading and how they got there are facts — the engine ` +
+    "chose them, not you. Narrate the arrival in two or three sentences: where they are standing " +
+    "now, what is in front of them. Do not name a different place, do not contradict the " +
+    "heading, and do not send them onwards."
   );
 }
 

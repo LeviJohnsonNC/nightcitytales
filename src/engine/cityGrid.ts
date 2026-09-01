@@ -16,10 +16,21 @@ import raster from "@/data/atlas/night-city-map.json";
 
 export type MapPoint = { x: number; y: number };
 
+/** One join between two districts: a street you cross, or a span you take. */
+export type Border = {
+  districts: [string, string];
+  kind: "land" | "span";
+  /** The bridge carrying a span, by landmark key. */
+  via?: string;
+  /** Distance between the two districts' map points, as a percentage of width. */
+  lengthPercent: number;
+};
+
 type RasterFile = {
   source: { note: string; cellPixels: number; masterWidth: number; masterHeight: number };
   grid: { width: number; height: number };
   districts: string[];
+  borders: Border[];
   runs: Array<[number, number]>;
 };
 
@@ -43,6 +54,22 @@ const CELLS: Uint8Array = (() => {
 })();
 
 const VALUE_BY_KEY = new Map<string, number>(KEYS.map((key, i) => [key, i + 1]));
+
+/**
+ * Every join between two districts, traced from the map: where their ground
+ * meets, plus the bridges the map names. This is the whole of how the city
+ * connects, so a trip across town is a route through it rather than a hop.
+ */
+export const BORDERS: Border[] = RASTER.borders;
+
+const EDGES = new Map<string, Border[]>();
+for (const border of BORDERS) {
+  for (const key of border.districts) {
+    const list = EDGES.get(key);
+    if (list) list.push(border);
+    else EDGES.set(key, [border]);
+  }
+}
 
 /** How much of the map one cell covers, as a percentage. Useful as a step size. */
 export const CELL_SIZE_PERCENT = 100 / GRID_WIDTH;
@@ -94,29 +121,91 @@ export function isCity(point: MapPoint): boolean {
   return districtAtPoint(point) !== undefined;
 }
 
-/** Every district that shares a border with this one. */
+/** The other district at the far end of a join. */
+function acrossFrom(border: Border, key: string): string {
+  return border.districts[0] === key ? border.districts[1] : border.districts[0];
+}
+
+/**
+ * Every district you can get to from this one without passing through a third:
+ * its neighbours on the ground, and anywhere a bridge reaches directly.
+ */
 export function adjacentDistricts(key: string): string[] {
-  const value = VALUE_BY_KEY.get(key);
-  if (!value) return [];
-  const found = new Set<number>();
-  for (let row = 0; row < GRID_HEIGHT; row++) {
-    for (let column = 0; column < GRID_WIDTH; column++) {
-      if (valueAt(column, row) !== value) continue;
-      for (const [dx, dy] of NEIGHBOUR_OFFSETS) {
-        const other = valueAt(column + dx, row + dy);
-        if (other && other !== value) found.add(other);
+  return (EDGES.get(key) ?? []).map((border) => acrossFrom(border, key));
+}
+
+/** Only the districts whose ground actually touches this one. */
+export function borderingDistricts(key: string): string[] {
+  return (EDGES.get(key) ?? [])
+    .filter((border) => border.kind === "land")
+    .map((border) => acrossFrom(border, key));
+}
+
+export type Route = {
+  /** The districts passed through, starting where you are and ending where you go. */
+  districts: string[];
+  /** The joins taken, in order. */
+  borders: Border[];
+  /** Total distance as a percentage of the map's width. */
+  lengthPercent: number;
+  /** The bridges crossed, by landmark key, in the order they were taken. */
+  spans: string[];
+};
+
+/**
+ * The shortest way from one district to another across the city's joins.
+ *
+ * Plain Dijkstra over 24 nodes — the graph is small enough that nothing cleverer
+ * would earn its keep. Undefined only if the two are not connected at all, which
+ * the trace refuses to produce.
+ */
+export function routeBetween(from: string, to: string): Route | undefined {
+  if (!VALUE_BY_KEY.has(from) || !VALUE_BY_KEY.has(to)) return undefined;
+  if (from === to) return { districts: [from], borders: [], lengthPercent: 0, spans: [] };
+
+  const best = new Map<string, number>([[from, 0]]);
+  const cameBy = new Map<string, Border>();
+  const settled = new Set<string>();
+
+  for (;;) {
+    let here: string | undefined;
+    let bestSoFar = Infinity;
+    for (const [key, cost] of best) {
+      if (!settled.has(key) && cost < bestSoFar) {
+        here = key;
+        bestSoFar = cost;
+      }
+    }
+    if (here === undefined) return undefined;
+    if (here === to) break;
+    settled.add(here);
+    for (const border of EDGES.get(here) ?? []) {
+      const next = acrossFrom(border, here);
+      const cost = bestSoFar + border.lengthPercent;
+      if (cost < (best.get(next) ?? Infinity)) {
+        best.set(next, cost);
+        cameBy.set(next, border);
       }
     }
   }
-  return [...found].map((v) => KEYS[v - 1]!);
-}
 
-const NEIGHBOUR_OFFSETS: Array<[number, number]> = [
-  [1, 0],
-  [-1, 0],
-  [0, 1],
-  [0, -1],
-];
+  const districts = [to];
+  const borders: Border[] = [];
+  let walk = to;
+  while (walk !== from) {
+    const border = cameBy.get(walk);
+    if (!border) return undefined;
+    borders.unshift(border);
+    walk = acrossFrom(border, walk);
+    districts.unshift(walk);
+  }
+  return {
+    districts,
+    borders,
+    lengthPercent: best.get(to) ?? 0,
+    spans: borders.filter((b) => b.kind === "span").map((b) => b.via!),
+  };
+}
 
 export type WalkLeg = {
   /** The district this stretch of the walk crosses. */

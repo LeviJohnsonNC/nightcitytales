@@ -3,8 +3,11 @@ import {
   CELL_SIZE_PERCENT,
   GRID_HEIGHT,
   GRID_WIDTH,
+  BORDERS,
   adjacentDistricts,
+  borderingDistricts,
   districtAtPoint,
+  routeBetween,
   districtNearPoint,
   isCity,
   walk,
@@ -116,6 +119,64 @@ describe("walking the ground", () => {
     const journey = walk(getDistrict("the_glen")!.map, SOUTH);
     expect(journey.legs.map((l) => l.key)).toContain("the_glen");
     expect(journey.distance).toBeGreaterThan(0);
+  });
+});
+
+describe("how the city joins up", () => {
+  it("connects every district to every other", () => {
+    // If the graph came apart, somewhere in Night City would be unreachable and
+    // the engine would have no answer for how to get there.
+    for (const district of DISTRICTS) {
+      for (const other of DISTRICTS) {
+        expect(
+          routeBetween(district.key, other.key),
+          `${district.key} -> ${other.key}`,
+        ).toBeDefined();
+      }
+    }
+  });
+
+  it("crosses the water only where a bridge does", () => {
+    // The island and the mainland do not touch. Every route between them has to
+    // use one of the three spans the map draws.
+    const route = routeBetween("little_europe", "north_heywood")!;
+    expect(route.spans.length).toBeGreaterThan(0);
+    for (const span of route.spans) {
+      expect(BORDERS.some((b) => b.kind === "span" && b.via === span)).toBe(true);
+    }
+    // Nothing on the island borders the mainland on dry ground.
+    expect(borderingDistricts("little_europe")).not.toContain("watson_development");
+    expect(adjacentDistricts("little_europe")).toContain("watson_development");
+  });
+
+  it("takes no route to get where you already are", () => {
+    const route = routeBetween("kabuki", "kabuki")!;
+    expect(route.districts).toEqual(["kabuki"]);
+    expect(route.lengthPercent).toBe(0);
+    expect(route.spans).toEqual([]);
+  });
+
+  it("returns a route that is a real chain of joins", () => {
+    const route = routeBetween("norcal_military_base", "rancho_coronado")!;
+    expect(route.districts[0]).toBe("norcal_military_base");
+    expect(route.districts[route.districts.length - 1]).toBe("rancho_coronado");
+    expect(route.borders.length).toBe(route.districts.length - 1);
+    // Each step is a border the map actually traced, joining the two districts
+    // it sits between in the chain.
+    route.borders.forEach((border, index) => {
+      expect(border.districts).toContain(route.districts[index]);
+      expect(border.districts).toContain(route.districts[index + 1]);
+      expect(BORDERS).toContain(border);
+    });
+    const summed = route.borders.reduce((total, b) => total + b.lengthPercent, 0);
+    expect(route.lengthPercent).toBeCloseTo(summed, 6);
+  });
+
+  it("finds no shorter way than the direct one between neighbours", () => {
+    for (const border of BORDERS) {
+      const [a, b] = border.districts;
+      expect(routeBetween(a, b)!.lengthPercent).toBeLessThanOrEqual(border.lengthPercent + 1e-9);
+    }
   });
 });
 

@@ -32,6 +32,92 @@
     "pacifica_playground",
     "rancho_coronado"
   ],
+  "borders": [
+    { "districts": ["downtown", "little_europe"], "kind": "land", "lengthPercent": 6.98 },
+    { "districts": ["little_europe", "the_hot_zone"], "kind": "land", "lengthPercent": 9.776 },
+    {
+      "districts": ["little_europe", "university_district"],
+      "kind": "land",
+      "lengthPercent": 12.7
+    },
+    { "districts": ["the_hot_zone", "upper_marina"], "kind": "land", "lengthPercent": 10.984 },
+    { "districts": ["little_china", "upper_marina"], "kind": "land", "lengthPercent": 9.771 },
+    { "districts": ["new_westbrook", "upper_marina"], "kind": "land", "lengthPercent": 19.483 },
+    { "districts": ["downtown", "university_district"], "kind": "land", "lengthPercent": 6.256 },
+    { "districts": ["the_glen", "the_hot_zone"], "kind": "land", "lengthPercent": 12.325 },
+    { "districts": ["old_japantown", "the_hot_zone"], "kind": "land", "lengthPercent": 10.617 },
+    { "districts": ["little_china", "old_japantown"], "kind": "land", "lengthPercent": 8.998 },
+    { "districts": ["the_glen", "university_district"], "kind": "land", "lengthPercent": 16.268 },
+    {
+      "districts": ["south_night_city", "university_district"],
+      "kind": "land",
+      "lengthPercent": 7.407
+    },
+    { "districts": ["old_japantown", "the_glen"], "kind": "land", "lengthPercent": 9.234 },
+    { "districts": ["south_night_city", "the_glen"], "kind": "land", "lengthPercent": 10.374 },
+    { "districts": ["old_combat_zone", "the_glen"], "kind": "land", "lengthPercent": 8.339 },
+    { "districts": ["old_combat_zone", "old_japantown"], "kind": "land", "lengthPercent": 6.404 },
+    {
+      "districts": ["port_of_night_city", "south_night_city"],
+      "kind": "land",
+      "lengthPercent": 5.596
+    },
+    {
+      "districts": ["reclamation_zone", "south_night_city"],
+      "kind": "land",
+      "lengthPercent": 8.256
+    },
+    {
+      "districts": ["port_of_night_city", "reclamation_zone"],
+      "kind": "land",
+      "lengthPercent": 4.373
+    },
+    {
+      "districts": ["norcal_military_base", "watson_development"],
+      "kind": "land",
+      "lengthPercent": 12.624
+    },
+    { "districts": ["kabuki", "watson_development"], "kind": "land", "lengthPercent": 8.62 },
+    {
+      "districts": ["new_westbrook", "watson_development"],
+      "kind": "land",
+      "lengthPercent": 18.386
+    },
+    { "districts": ["kabuki", "new_westbrook"], "kind": "land", "lengthPercent": 9.773 },
+    { "districts": ["charter_hill", "new_westbrook"], "kind": "land", "lengthPercent": 15.404 },
+    { "districts": ["charter_hill", "exec_zone"], "kind": "land", "lengthPercent": 6.988 },
+    { "districts": ["heywood_docks", "north_heywood"], "kind": "land", "lengthPercent": 8.43 },
+    { "districts": ["north_heywood", "santo_domingo"], "kind": "land", "lengthPercent": 16.577 },
+    {
+      "districts": ["heywood_industrial_zone", "santo_domingo"],
+      "kind": "land",
+      "lengthPercent": 12.667
+    },
+    { "districts": ["rancho_coronado", "santo_domingo"], "kind": "land", "lengthPercent": 22.377 },
+    {
+      "districts": ["pacifica_playground", "rancho_coronado"],
+      "kind": "land",
+      "lengthPercent": 15.821
+    },
+    {
+      "districts": ["little_europe", "watson_development"],
+      "kind": "span",
+      "via": "coronado_bay_bridge",
+      "lengthPercent": 17.191
+    },
+    {
+      "districts": ["heywood_docks", "little_china"],
+      "kind": "span",
+      "via": "san_morro_bridge",
+      "lengthPercent": 11.699
+    },
+    {
+      "districts": ["santo_domingo", "south_night_city"],
+      "kind": "span",
+      "via": "pacifica_bridge",
+      "lengthPercent": 41.085
+    }
+  ],
   "runs": [
     [0, 24905],
     [14, 6],
