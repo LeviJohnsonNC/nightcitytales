@@ -153,6 +153,15 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
           <span className="text-accent">➜</span> <NpcText text={text} />
         </p>
       );
+    // Something the character tried and could not do. Shown for the same reason
+    // a travel line is: without it the prose says they went and the map says
+    // they did not, and the player has no way to tell which is true.
+    case "action_refused":
+      return (
+        <p className="font-mono text-xs text-ember">
+          <span>✕</span> {text}
+        </p>
+      );
     case "check_prompt":
       return null;
 
@@ -164,6 +173,7 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
 const LIFE_EVENT_TYPES = new Set([
   "player_input",
   "travelled",
+  "action_refused",
 
   "life_narration",
   "life_action",
