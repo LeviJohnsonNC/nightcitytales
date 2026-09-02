@@ -339,7 +339,6 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
     );
   }
 
-
   return (
     <section className="border border-neon-pink bg-neon-pink/5">
       <Collapsible open={expanded} onOpenChange={setIsOpen}>
