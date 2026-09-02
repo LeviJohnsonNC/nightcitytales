@@ -55,6 +55,35 @@ function Portrait({
   );
 }
 
+/**
+ * A paragraph of dossier prose, with its emphasis rendered.
+ *
+ * The entries are written in the house voice with **bold** for the line that
+ * lands and *italic* for a word held at arm's length. Only those two, and only
+ * ever within a line — anything more would be a Markdown renderer, which this
+ * is deliberately not.
+ */
+function Prose({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+          return (
+            <strong key={i} className="font-semibold text-foreground">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+          return <em key={i}>{part.slice(1, -1)}</em>;
+        }
+        return part;
+      })}
+    </>
+  );
+}
+
 /** The written entry for a place, falling back to the atlas's own one-liner. */
 function Entry({ dossierKey, blurb }: { dossierKey: string; blurb: string }) {
   const entry = placeDossier(dossierKey);
@@ -65,7 +94,7 @@ function Entry({ dossierKey, blurb }: { dossierKey: string; blurb: string }) {
     <div className="space-y-3">
       {entry.text.split("\n\n").map((para, i) => (
         <p key={i} className="text-sm leading-relaxed text-foreground/90">
-          {para}
+          <Prose text={para} />
         </p>
       ))}
     </div>
