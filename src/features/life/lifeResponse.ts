@@ -50,6 +50,8 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
     extent: z.enum(["near", "far"]).optional(),
     /** How they said they were getting there: "foot" or "cab". */
     mode: z.string().optional(),
+    /** How far they said to go, in city blocks, when they put a distance on it. */
+    blocks: z.number().optional(),
     minutes: z.number().int(),
   }),
   z.object({ kind: z.literal("rest"), hours: z.number().int() }),
@@ -255,11 +257,13 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
       const direction = str(a["direction"]) ?? str(a["heading"]) ?? str(a["bearing"]);
       const extentRaw = (str(a["extent"]) ?? "").toLowerCase();
       const mode = str(a["mode"]) ?? str(a["by"]) ?? str(a["transport"]);
+      const blocks = num(a["blocks"]) ?? num(a["distanceBlocks"]);
       out.push({
         kind: "travel",
         ...(destination ? { destination } : {}),
         ...(direction ? { direction } : {}),
         ...(mode ? { mode } : {}),
+        ...(blocks && blocks > 0 ? { blocks: clamp(blocks, 1, 200) } : {}),
         ...(extentRaw === "far" || extentRaw === "near"
           ? { extent: extentRaw as "near" | "far" }
           : {}),

@@ -21,6 +21,7 @@ import atlas from "@/data/atlas/night-city.json";
 import {
   adjacentDistricts,
   borderingDistricts,
+  districtNearPoint,
   routeBetween,
   walk,
   type Route,
@@ -120,7 +121,7 @@ type AtlasFile = {
   travel: {
     houseRule: boolean;
     note: string;
-    scale: { metresPerPercent: number; note: string };
+    scale: { metresPerPercent: number; metresPerBlock: number; note: string };
     modes: Record<string, TravelModeRule>;
     defaultMode: string;
     withinDistrictPercent: number;
@@ -249,12 +250,68 @@ export type Position = {
   landmarkKey?: string;
   /** Set when the character is out on a named road rather than at an address. */
   streetKey?: string;
+  /**
+   * Exactly where they are standing, when that is not a named place. A district
+   * is a kilometre across; "in Little Europe" and "on the waterfront at the
+   * western edge of Little Europe" are not the same spot, and a walk between
+   * them takes a quarter of an hour.
+   */
+  point?: MapPoint;
 };
+
+/**
+ * How a position is written down. A stored location is a place key — a district,
+ * a venue, a landmark, a road — optionally followed by an exact point:
+ *
+ *     little_europe                  the district, no finer
+ *     a8                             Greta's
+ *     little_europe@27.42,42.26      the waterfront at its western edge
+ *
+ * Every value written before points existed still reads correctly, which is why
+ * the point rides along on the same column rather than beside it.
+ */
+const POINT_MARK = "@";
+
+/** Write a position down: the place, and the exact spot when there is one. */
+export function positionKey(place: string, point?: MapPoint | null): string {
+  if (!point) return place;
+  return `${place}${POINT_MARK}${point.x.toFixed(3)},${point.y.toFixed(3)}`;
+}
+
+/** The place half of a stored location, without any point. */
+export function placeKeyOf(stored: string | null | undefined): string | undefined {
+  if (!stored) return undefined;
+  const place = stored.split(POINT_MARK)[0]!.trim().toLowerCase();
+  return place || undefined;
+}
+
+function parsePoint(text: string): MapPoint | undefined {
+  const [x, y] = text.split(",").map((n) => Number.parseFloat(n));
+  if (x === undefined || y === undefined || !Number.isFinite(x) || !Number.isFinite(y)) {
+    return undefined;
+  }
+  if (x < 0 || x > 100 || y < 0 || y > 100) return undefined;
+  return { x, y };
+}
 
 /** Resolve a stored location string ("b1" or "upper_marina") into a Position. */
 export function resolvePosition(stored: string | null | undefined): Position | undefined {
   if (!stored) return undefined;
-  const value = stored.trim().toLowerCase();
+  const raw = stored.trim().toLowerCase();
+
+  const mark = raw.indexOf(POINT_MARK);
+  if (mark >= 0) {
+    const point = parsePoint(raw.slice(mark + 1));
+    const base = resolvePosition(raw.slice(0, mark));
+    if (!point) return base;
+    // The district comes from where they actually are, so the two halves of a
+    // stored location can never contradict each other.
+    const districtKey = districtNearPoint(point) ?? base?.districtKey;
+    if (!districtKey) return base;
+    return { districtKey, point };
+  }
+
+  const value = raw;
   const entry = PLACE_BY_KEY.get(value);
   if (entry) return { districtKey: entry.district.key, placeKey: entry.place.key };
   const landmark = LANDMARK_BY_KEY.get(value);
@@ -277,8 +334,35 @@ export function describePosition(stored: string | null | undefined): string {
     (position.landmarkKey ? getLandmark(position.landmarkKey)?.name : undefined) ??
     (position.streetKey ? getStreet(position.streetKey)?.name : undefined);
   const tail = `${district.name}${area ? ` (${area.name})` : ""}`;
-  return here ? `${here}, ${tail}` : tail;
+  if (here) return `${here}, ${tail}`;
+  // Standing somewhere in a district that is a kilometre across. Say which part
+  // of it, when they are far enough from the middle for that to mean something.
+  const quarter = position.point ? quarterOf(position.point, district) : undefined;
+  return quarter ? `${quarter} ${tail}` : tail;
 }
+
+/**
+ * "the west of" — which part of a district a point is in, or nothing when it is
+ * near enough to the middle that naming a quarter would be false precision.
+ */
+function quarterOf(point: MapPoint, district: District): string | undefined {
+  const a = inWidthUnits(district.map);
+  const b = inWidthUnits(point);
+  const dx = b.x - a.x;
+  const dy = -(b.y - a.y);
+  if (Math.hypot(dx, dy) < QUARTER_MIN_OFFSET) return undefined;
+  const degrees = ((Math.atan2(dx, dy) * 180) / Math.PI + 360) % 360;
+  const order: Compass[] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const heading = order[Math.round(degrees / 45) % 8]!;
+  return `the ${COMPASS_NAMES[heading]} of`;
+}
+
+/**
+ * How far from a district's own map point a spot has to be before it counts as
+ * being in one part of it rather than just in it, as a percentage of the map's
+ * width. Two blocks; less than that and "the west of" is noise.
+ */
+const QUARTER_MIN_OFFSET = 2.7;
 
 /**
  * A district counts as a combat zone when the atlas gives it no city manager
@@ -324,6 +408,12 @@ function minutesFor(percent: number, rule: TravelModeRule): number {
   return metres / ((rule.kmh * 1000) / 60);
 }
 
+/**
+ * Two spots closer together than this are the same spot: a tenth of a block, and
+ * nobody spends a minute crossing it. A percentage of the map's width.
+ */
+const SAME_SPOT = 0.15;
+
 export type Trip = {
   minutes: number;
   mode: string;
@@ -353,15 +443,20 @@ export function travelTrip(
   const origin = a?.districtKey ?? DEFAULT_START_DISTRICT;
 
   if (origin === b.districtKey) {
-    // Still in the same district. Standing in the same doorway costs nothing;
-    // anything else is an errand across part of one district. All three have to
-    // match: a road through the district you are already in is somewhere else
-    // in it, not where you are standing.
-    const same =
-      a?.placeKey === b.placeKey &&
-      a?.landmarkKey === b.landmarkKey &&
-      a?.streetKey === b.streetKey;
-    if (a && same) return { minutes: 0, mode: chosen };
+    // Still in the same district, which is a kilometre across. When both ends
+    // are pinned to a spot, the distance between those spots is what the trip
+    // costs; a walk to the far edge is not the same as crossing the road.
+    const here = mapPointOf(from);
+    const there = mapPointOf(to);
+    const apart =
+      here && there ? Math.hypot(there.x - here.x, (there.y - here.y) * ASPECT) : undefined;
+    if (apart !== undefined) {
+      if (apart < SAME_SPOT) return { minutes: 0, mode: chosen };
+      return {
+        minutes: Math.max(1, Math.round(minutesFor(apart, rule) + rule.readyMinutes)),
+        mode: chosen,
+      };
+    }
     const minutes = minutesFor(ATLAS.travel.withinDistrictPercent, rule) + rule.readyMinutes;
     return { minutes: Math.round(minutes), mode: chosen };
   }
@@ -540,6 +635,7 @@ export function mapPointOf(stored: string | null | undefined): MapPoint | undefi
     const point = street ? streetPointIn(street, position.districtKey) : undefined;
     if (point) return point;
   }
+  if (position.point) return position.point;
   return getDistrict(position.districtKey)?.map;
 }
 
@@ -637,10 +733,14 @@ const DIRECTION_VECTORS: Record<Compass, { x: number; y: number }> = {
  * This is the walk itself: which districts it passes through, where it ends,
  * and whether it ended at the water or at the edge of the map.
  */
-export function walkFrom(from: string | null | undefined, direction: Compass): Walk | undefined {
+export function walkFrom(
+  from: string | null | undefined,
+  direction: Compass,
+  goFar?: number,
+): Walk | undefined {
   const origin = mapPointOf(from);
   if (!origin) return undefined;
-  return walk(origin, DIRECTION_VECTORS[direction]);
+  return walk(origin, DIRECTION_VECTORS[direction], goFar);
 }
 
 /**
@@ -718,7 +818,9 @@ export function limitInDirection(
   from: string | null | undefined,
   direction: Compass,
 ): "water" | "edge" | undefined {
-  return walkFrom(from, direction)?.stoppedBy;
+  const stoppedBy = walkFrom(from, direction)?.stoppedBy;
+  // With no distance asked for a walk never "arrives"; it runs until stopped.
+  return stoppedBy === "arrived" ? undefined : stoppedBy;
 }
 
 /**
@@ -728,10 +830,25 @@ export function limitInDirection(
  */
 const WALK_WORTH_TAKING = 2;
 
+/** A city block, as a percentage of the map's width. Measured, not guessed. */
+export const BLOCK_PERCENT =
+  ATLAS.travel.scale.metresPerBlock / ATLAS.travel.scale.metresPerPercent;
+
+/** Turn a distance in blocks into one in percent of the map's width. */
+export function blocksToPercent(blocks: number): number {
+  return blocks * BLOCK_PERCENT;
+}
+
 export type TravelIntent = {
   from: string | null | undefined;
   /** How they said they were getting there: "walk", "cab". Cab if unsaid. */
   mode?: string | null | undefined;
+  /**
+   * How far they said to go, in city blocks. Set when the player put a distance
+   * on it — "about seven blocks", "a couple of streets down". The heading then
+   * carries them that far rather than to the next district.
+   */
+  blocks?: number | null | undefined;
   /** A name the narrator proposed, if any. */
   destination?: string | null | undefined;
   /** A heading the player asked for, if any. */
@@ -755,7 +872,9 @@ export type Arrival = {
    * of it. The narration is told, so "as far west as I can" reads as
    * arriving at the waterfront rather than as nothing happening.
    */
-  stoppedAt?: "water" | "edge";
+  stoppedAt?: "water" | "edge" | "arrived";
+  /** How far the trip covered on the ground, in city blocks, when it was a walk along a heading. */
+  blocks?: number;
 };
 
 export type TravelDecision = Arrival | { ok: false; reason: string };
@@ -802,17 +921,35 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
     };
   }
 
+  // Somewhere was named, so that is where they are going. A heading offered
+  // alongside it is how the player pictured the way there, not a condition on
+  // it — "south to the Pacifica Bridge" is a request for the bridge, and
+  // refusing it because the bridge is south-EAST is answering the wrong
+  // question. The true heading is reported back instead.
+  if (named) return arrive(named, directionBetween(intent.from, named) ?? undefined);
+
   if (direction) {
-    if (named) {
-      const bearing = directionBetween(intent.from, named);
-      if (bearing && bearing !== direction) {
+    const here = resolvePosition(intent.from)?.districtKey;
+
+    // A distance was asked for. Go that far along the heading and stop, which
+    // is the only way "about seven blocks south" can mean seven blocks.
+    if (intent.blocks && intent.blocks > 0 && here) {
+      const wanted = blocksToPercent(intent.blocks);
+      const journey = bestWayAlong(intent.from, direction, wanted);
+      if (!journey || journey.distance < SAME_SPOT) {
         return {
           ok: false,
-          reason: `${describePosition(named)} lies ${directionName(bearing)} of here, not ${directionName(direction)}.`,
+          reason: `There is no going ${directionName(direction)} from here — ${edgeName(journey?.stoppedBy)} is right there.`,
         };
       }
-      if (bearing === direction) return arrive(named, direction);
+      const landed = districtNearPoint(journey.end) ?? here;
+      return {
+        ...arrive(positionKey(landed, journey.end), journey.heading),
+        ...(journey.stoppedBy === "arrived" ? {} : { stoppedAt: journey.stoppedBy }),
+        blocks: Math.round((journey.distance / BLOCK_PERCENT) * 10) / 10,
+      };
     }
+
     const picked =
       intent.extent === "far"
         ? furthestInDirection(intent.from, direction)
@@ -820,26 +957,64 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
     if (!picked) {
       // No district that way, but that does not mean no walk. A district is
       // wide, and heading for its far edge is a real thing to do: the character
-      // crosses it and fetches up against the water or the city limits.
+      // crosses it and fetches up against the water or the city limits, and
+      // ends up standing there rather than back where they started.
       const journey = walkFrom(intent.from, direction);
-      const here = resolvePosition(intent.from)?.districtKey;
       if (journey && here && journey.distance >= WALK_WORTH_TAKING) {
-        return { ...arrive(here, direction), stoppedAt: journey.stoppedBy };
+        const landed = districtNearPoint(journey.end) ?? here;
+        return {
+          ...arrive(positionKey(landed, journey.end), direction),
+          stoppedAt: journey.stoppedBy,
+          blocks: Math.round((journey.distance / BLOCK_PERCENT) * 10) / 10,
+        };
       }
-      const edge = journey?.stoppedBy === "water" ? "the water" : "the edge of the city";
       return {
         ok: false,
-        reason: `There is no going ${directionName(direction)} from here — ${edge} is right there.`,
+        reason: `There is no going ${directionName(direction)} from here — ${edgeName(journey?.stoppedBy)} is right there.`,
       };
     }
     return arrive(picked, direction);
   }
 
-  if (!named) {
-    return { ok: false, reason: "Nowhere was named and no heading was given." };
+  return { ok: false, reason: "Nowhere was named and no heading was given." };
+}
+
+/**
+ * Going a set distance a given way, allowing for the fact that streets do not
+ * run in perfect compass lines.
+ *
+ * Straight is tried first. If the water cuts it short — and on a coast that
+ * bends, due south from the waterfront is cut short almost at once — the two
+ * neighbouring headings are tried too, and the one that gets furthest wins. The
+ * heading it actually took comes back with it, so nothing claims to have gone
+ * due south when it went south-east.
+ */
+function bestWayAlong(
+  from: string | null | undefined,
+  direction: Compass,
+  goFar: number,
+): (Walk & { heading: Compass }) | undefined {
+  const order: Compass[] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const at = order.indexOf(direction);
+  const straight = walkFrom(from, direction, goFar);
+  if (!straight) return undefined;
+  if (straight.stoppedBy === "arrived") return { ...straight, heading: direction };
+
+  let best: Walk & { heading: Compass } = { ...straight, heading: direction };
+  for (const step of [-1, 1]) {
+    const heading = order[(at + step + 8) % 8]!;
+    const tried = walkFrom(from, heading, goFar);
+    if (!tried) continue;
+    // Only worth taking if it genuinely gets further along.
+    if (tried.distance > best.distance + SAME_SPOT) best = { ...tried, heading };
+    if (best.stoppedBy === "arrived") break;
   }
-  const bearing = directionBetween(intent.from, named);
-  return arrive(named, bearing);
+  return best;
+}
+
+/** What stopped a walk, said the way a person would say it. */
+function edgeName(stoppedBy: Walk["stoppedBy"] | undefined): string {
+  return stoppedBy === "water" ? "the water" : "the edge of the city";
 }
 
 /**

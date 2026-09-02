@@ -2007,7 +2007,8 @@
     "note": "Travel times are a Night City Tales house rule, not a Cyberpunk RED printed value. They are no longer a flat table: the engine routes across the district graph in night-city-map.json and prices the distance at the speed of whatever the character is travelling by.",
     "scale": {
       "metresPerPercent": 90,
-      "note": "House rule. The atlas prints no scale bar, so this comes off the map's own street grid: a city block in the University District measures about 1.33% of the map's width, which at a 120m block puts 1% at roughly 90m. That makes the drawn city about 7km across and 9km top to bottom."
+      "note": "House rule. The atlas prints no scale bar, so this comes off the map's own street grid: a city block in the University District measures about 1.33% of the map's width, which at a 120m block puts 1% at roughly 90m. That makes the drawn city about 7km across and 9km top to bottom, and it is what lets a player say \"seven blocks\" and be taken seven blocks.",
+      "metresPerBlock": 120
     },
     "modes": {
       "foot": {

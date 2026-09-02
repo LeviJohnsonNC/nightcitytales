@@ -25,7 +25,12 @@ import {
   reachableDestinations,
   resolveDestination,
   resolvePlaceMention,
+  mapDistance,
+  blocksToPercent,
   parseMode,
+  placeKeyOf,
+  positionKey,
+  mapPointOf,
   resolvePosition,
   routeTo,
   walkFrom,
@@ -240,6 +245,60 @@ describe("destinations", () => {
   });
 });
 
+describe("where exactly you are standing", () => {
+  it("reads back everything written before points existed", () => {
+    // location_key has held plain place keys for the life of the game. Every one
+    // of them still has to resolve, or every saved campaign loses its position.
+    expect(resolvePosition("little_europe")).toMatchObject({ districtKey: "little_europe" });
+    expect(resolvePosition("a8")).toMatchObject({ districtKey: "little_europe", placeKey: "a8" });
+    expect(resolvePosition("san_morro_bridge")).toMatchObject({ landmarkKey: "san_morro_bridge" });
+    expect(resolvePosition("republic_way")).toMatchObject({ streetKey: "republic_way" });
+    expect(resolvePosition("little_europe")!.point).toBeUndefined();
+  });
+
+  it("carries an exact spot alongside the place", () => {
+    const key = positionKey("little_europe", { x: 27.424, y: 42.255 });
+    expect(key).toBe("little_europe@27.424,42.255");
+    const position = resolvePosition(key)!;
+    expect(position.districtKey).toBe("little_europe");
+    expect(position.point).toEqual({ x: 27.424, y: 42.255 });
+    expect(mapPointOf(key)).toEqual({ x: 27.424, y: 42.255 });
+    expect(placeKeyOf(key)).toBe("little_europe");
+  });
+
+  it("takes the district from the spot, so the two can never disagree", () => {
+    // A point in Downtown labelled little_europe is still in Downtown.
+    const downtown = getDistrict("downtown")!.map;
+    expect(resolvePosition(positionKey("little_europe", downtown))!.districtKey).toBe("downtown");
+  });
+
+  it("shrugs off a spot it cannot use", () => {
+    expect(resolvePosition("little_europe@")).toMatchObject({ districtKey: "little_europe" });
+    expect(resolvePosition("little_europe@nonsense")).toMatchObject({
+      districtKey: "little_europe",
+    });
+    expect(resolvePosition("little_europe@999,999")).toMatchObject({
+      districtKey: "little_europe",
+    });
+  });
+
+  it("says which part of a district you are in, when that means something", () => {
+    const west = positionKey("little_europe", { x: 27.424, y: 42.255 });
+    expect(describePosition(west)).toBe("the west of Little Europe (The Island)");
+    // Near the middle there is no quarter worth naming.
+    expect(describePosition(positionKey("little_europe", getDistrict("little_europe")!.map))).toBe(
+      "Little Europe (The Island)",
+    );
+  });
+
+  it("charges for crossing a district, and nothing for standing still", () => {
+    const middle = getDistrict("little_europe")!.map;
+    const west = positionKey("little_europe", { x: 27.424, y: 42.255 });
+    expect(travelMinutes(positionKey("little_europe", middle), west, "foot")).toBeGreaterThan(5);
+    expect(travelMinutes(west, west, "foot")).toBe(0);
+  });
+});
+
 describe("the compass", () => {
   it("reads bearings off the atlas coordinates", () => {
     expect(directionBetween("little_europe", "upper_marina")).toBe("E");
@@ -302,14 +361,20 @@ describe("the compass", () => {
 });
 
 describe("travel intent", () => {
-  it("refuses a named destination that points the wrong way", () => {
+  it("goes where the player named, even when they got the compass wrong", () => {
+    // Naming a place is a request for that place. A heading said alongside it is
+    // how they pictured the way there, not a condition on it — refusing "south
+    // to the Pacifica Bridge" because the bridge is south-EAST answers a
+    // question nobody asked. The true heading comes back instead.
     const decision = resolveTravelIntent({
       from: "little_europe",
       destination: "Upper Marina",
       direction: "west",
       extent: "far",
     });
-    expect(decision.ok).toBe(false);
+    expect(decision).toMatchObject({ ok: true, to: "upper_marina" });
+    if (decision.ok)
+      expect(decision.direction).toBe(directionBetween("little_europe", "upper_marina"));
   });
 
   it("picks the destination itself when the player named a heading", () => {
@@ -333,26 +398,62 @@ describe("travel intent", () => {
       from: "a8",
       direction: "west",
       extent: "far",
+      mode: "foot",
     });
-    expect(decision).toMatchObject({
-      ok: true,
-      to: "little_europe",
-      direction: "W",
-      stoppedAt: "water",
-    });
+    expect(decision).toMatchObject({ ok: true, direction: "W", stoppedAt: "water" });
+    if (!decision.ok) return;
+    // They end up at the waterfront, not back where they started, and it costs
+    // them the walk. Leaving them at the district's own point was the bug.
+    expect(placeKeyOf(decision.to)).toBe("little_europe");
+    expect(resolvePosition(decision.to)!.point).toBeDefined();
+    expect(decision.minutes).toBeGreaterThan(0);
+    const started = mapPointOf("a8")!;
+    const ended = mapPointOf(decision.to)!;
+    expect(ended.x).toBeLessThan(started.x);
+    expect(limitInDirection(decision.to, "W")).toBe("water");
   });
 
-  it("refuses a landmark it cannot place, even when a heading came with it", () => {
-    // The San Morro Bridge is printed on the map but is not in the atlas data.
+  it("refuses a place it cannot put on the map, even when a heading came with it", () => {
     // Dropping the name and setting off on the heading instead is how a request
-    // to go to the bridge became a trip to a district nobody mentioned.
+    // to go somewhere became a trip to a district nobody mentioned. Corporations
+    // St is a real Night City street the atlas never transcribed, so the honest
+    // answer is that the engine cannot place it.
     const decision = resolveTravelIntent({
       from: "downtown",
-      destination: "San Morro Bridge",
+      destination: "Corporations St",
       direction: "northeast",
     });
     expect(decision.ok).toBe(false);
-    if (!decision.ok) expect(decision.reason).toContain("San Morro Bridge");
+    if (!decision.ok) expect(decision.reason).toContain("Corporations St");
+  });
+
+  it("goes the distance the player asked for, in blocks", () => {
+    const decision = resolveTravelIntent({
+      from: "little_europe",
+      direction: "south",
+      blocks: 7,
+      mode: "cab",
+    });
+    expect(decision.ok).toBe(true);
+    if (!decision.ok) return;
+    // Seven blocks is seven blocks, not "the next district south".
+    expect(decision.blocks).toBeGreaterThan(5);
+    expect(decision.blocks).toBeLessThan(9);
+    const moved = mapDistance("little_europe", decision.to)!;
+    expect(moved).toBeGreaterThan(blocksToPercent(4));
+    expect(moved).toBeLessThan(blocksToPercent(10));
+    expect(decision.minutes).toBeGreaterThan(0);
+  });
+
+  it("does not turn a short hop into a district hop", () => {
+    const near = resolveTravelIntent({ from: "little_europe", direction: "south", blocks: 2 });
+    const far = resolveTravelIntent({ from: "little_europe", direction: "south", blocks: 12 });
+    expect(near.ok && far.ok).toBe(true);
+    if (!near.ok || !far.ok) return;
+    // Asking for less gets you less. Before, both were "South Night City".
+    expect(mapDistance("little_europe", near.to)!).toBeLessThan(
+      mapDistance("little_europe", far.to)!,
+    );
   });
 
   it("still honours a plain named destination", () => {

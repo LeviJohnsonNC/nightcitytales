@@ -222,29 +222,33 @@ export type Walk = {
   end: MapPoint;
   /** How far the walk got, as a percentage of the map's width. */
   distance: number;
-  /** Why it stopped: the water's edge, or the edge of the mapped city. */
-  stoppedBy: "water" | "edge";
+  /** Why it stopped: the water, the edge of the map, or the distance asked for. */
+  stoppedBy: "water" | "edge" | "arrived";
 };
 
 /**
- * Walk from a point along a heading until the city runs out.
+ * Walk from a point along a heading until the city runs out, or until a given
+ * distance has been covered when one is asked for.
  *
  * The unit vector is in map space, where y grows southwards, so north is
  * {x: 0, y: -1}. Distances come back as a percentage of the map's width, the
  * same scale every other coordinate here uses.
  */
-export function walk(from: MapPoint, heading: MapPoint): Walk {
+export function walk(from: MapPoint, heading: MapPoint, goFar?: number): Walk {
   const step = CELL_SIZE_PERCENT / 2;
   const aspect = GRID_HEIGHT / GRID_WIDTH;
   const legs: WalkLeg[] = [];
   let end = from;
   let distance = 0;
   let stoppedBy: Walk["stoppedBy"] = "edge";
+  // Why the walk would have ended, when it stepped over a gap and carried on.
+  let wouldHaveBeen: Walk["stoppedBy"] | undefined;
   let current: string | undefined = districtNearPoint(from);
   if (current) legs.push({ key: current, from, reached: 0 });
 
-  // Twice the map's diagonal is further than any walk inside it can go.
-  const limit = 200 * aspect;
+  // Twice the map's diagonal is further than any walk inside it can go, so with
+  // no distance asked for the walk runs until the city stops it.
+  const limit = goFar !== undefined ? goFar : 200 * aspect;
   for (let travelled = step; travelled <= limit; travelled += step) {
     const point = {
       x: from.x + heading.x * travelled,
@@ -265,14 +269,31 @@ export function walk(from: MapPoint, heading: MapPoint): Walk {
         stoppedBy = isWaterAhead(point) ? "water" : "edge";
         break;
       }
+      // Crossing a bridge deck or a drawn-in channel. Remember what this gap is
+      // in case the distance asked for runs out before the far side.
+      wouldHaveBeen = isWaterAhead(point) ? "water" : "edge";
       continue;
     }
+    wouldHaveBeen = undefined;
     end = point;
     distance = travelled;
     if (here !== current) {
       legs.push({ key: here, from: point, reached: travelled });
       current = here;
     }
+    // Went as far as was asked for, with city still under foot.
+    if (goFar !== undefined && travelled >= goFar - 1e-9) {
+      stoppedBy = "arrived";
+      break;
+    }
+  }
+  // The loop can also run out rather than break, when the distance asked for
+  // lands inside a gap. Whether that counts as arriving depends on how much of
+  // the distance was actually covered on the ground.
+  if (goFar !== undefined && stoppedBy !== "arrived" && distance >= goFar - step) {
+    stoppedBy = "arrived";
+  } else if (goFar !== undefined && wouldHaveBeen) {
+    stoppedBy = wouldHaveBeen;
   }
   return { legs, end, distance, stoppedBy };
 }

@@ -464,8 +464,10 @@ type TurnOutcome = {
     to: string;
     minutes: number;
     direction?: string;
-    stoppedAt?: "water" | "edge";
+    stoppedAt?: "water" | "edge" | "arrived";
     mode: string;
+    /** How far the trip covered, in city blocks, when it was a walk along a heading. */
+    blocks?: number;
     /** Bridges the route crossed, by name, in order. */
     bridges?: string[];
   };
@@ -622,6 +624,7 @@ async function applyResponse(
         ...(action.direction ? { direction: action.direction } : {}),
         ...(action.extent ? { extent: action.extent } : {}),
         ...(action.mode ? { mode: action.mode } : {}),
+        ...(action.blocks ? { blocks: action.blocks } : {}),
       });
       if (!decision.ok) {
         await refuse(decision.reason, "impossible");
@@ -644,6 +647,7 @@ async function applyResponse(
         minutes: moved.minutes,
         ...(decision.direction ? { direction: directionName(decision.direction) } : {}),
         ...(decision.stoppedAt ? { stoppedAt: decision.stoppedAt } : {}),
+        ...(decision.blocks ? { blocks: decision.blocks } : {}),
         mode: modeLabel(decision.mode),
         ...(decision.route?.spans.length
           ? { bridges: decision.route.spans.map((k) => getLandmark(k)?.name ?? k) }
@@ -954,17 +958,18 @@ function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
   }
   const trip = outcome.travelled;
   if (!trip) return undefined;
-  if (trip.stoppedAt) {
+  const far = trip.blocks ? `${trip.blocks} block${trip.blocks === 1 ? "" : "s"}` : undefined;
+  if (trip.stoppedAt === "water" || trip.stoppedAt === "edge") {
     const edge =
       trip.stoppedAt === "water"
         ? "the waterfront, with nothing but water beyond it"
         : "the edge of the city, where the streets give out";
     return (
       `The character went ${trip.direction ? `${trip.direction} ` : ""}${trip.mode} as far as ` +
-      `that way goes and came up against ${edge}. It took ${trip.minutes} minutes and they are ` +
-      `still in ${trip.to} — that is how far the city extends in that direction, and it is a ` +
-      "fact. Narrate reaching that edge in two or three sentences: what is in front of them, " +
-      "what is behind. Do not put them in another district and do not send them onwards."
+      `that way goes${far ? ` — ${far}` : ""} and came up against ${edge}. It took ` +
+      `${trip.minutes} minutes and they are now at ${trip.to}, which is a different spot from ` +
+      "where they set off even if it is the same district. Narrate reaching that edge in two or " +
+      "three sentences: what is in front of them, what is behind. Do not send them onwards."
     );
   }
   const crossing = trip.bridges?.length
@@ -973,7 +978,8 @@ function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
     : "";
   return (
     `The character has ARRIVED. They travelled ${trip.direction ? `${trip.direction} ` : ""}` +
-    `from ${trip.from} to ${trip.to} ${trip.mode}, and it took ${trip.minutes} minutes.` +
+    `${far ? `${far} ` : ""}from ${trip.from} to ${trip.to} ${trip.mode}, and it took ` +
+    `${trip.minutes} minutes.` +
     `${crossing} That destination, that heading and how they got there are facts — the engine ` +
     "chose them, not you. Narrate the arrival in two or three sentences: where they are standing " +
     "now, what is in front of them. Do not name a different place, do not contradict the " +
