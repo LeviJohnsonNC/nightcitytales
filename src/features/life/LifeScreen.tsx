@@ -318,6 +318,8 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
   const [reason, setReason] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
+  const [passed, setPassed] = useState(false);
+  if (!hook && !passed) return null;
   if (!hook) return null;
 
   const { offer, terms, mission } = hook;
@@ -325,7 +327,18 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
   const learned = knownTerms(terms, offer);
   const asks = openAsks(terms);
   const blocked = life.busy || !!life.pendingCheck;
-  const expanded = isOpen && !isClosing;
+  const expanded = isOpen && !isClosing && !passed;
+
+  if (passed) {
+    return (
+      <section className="border border-neon-pink/40 bg-neon-pink/5 px-4 py-3">
+        <p className="text-sm text-muted-foreground">
+          Passed on <span className="font-semibold text-foreground">{mission.title}</span>
+        </p>
+      </section>
+    );
+  }
+
 
   return (
     <section className="border border-neon-pink bg-neon-pink/5">
@@ -435,6 +448,7 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
                 disabled={blocked}
                 onClick={() => {
                   setIsClosing(true);
+                  setPassed(true);
                   life.declineHook(reason || "Not this one.");
                 }}
               >
