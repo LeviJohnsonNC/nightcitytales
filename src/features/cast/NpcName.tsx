@@ -19,33 +19,41 @@ export function NpcDossier({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88vh] max-w-[92vw] overflow-y-auto border border-hairline bg-surface p-0 sm:max-w-lg">
         <DialogTitle className="sr-only">{npc.name}</DialogTitle>
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
-          <img
-            src={npcImage(npc)}
-            alt={npc.name}
-            className="h-full w-full object-cover object-top"
-          />
-          <div className="pointer-events-none absolute inset-0 border border-ember/40" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent" />
-        </div>
-        <div className="space-y-2 p-5 pt-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            {npc.role}
-          </p>
-          <h2 className="text-lg font-bold leading-tight">{npc.name}</h2>
-          {npc.bio ? (
-            <div className="space-y-3 pt-1">
-              {npc.bio.split("\n\n").map((para, i) => (
-                <p key={i} className="text-sm leading-relaxed text-foreground/90">
-                  {para}
-                </p>
-              ))}
-            </div>
-          ) : (
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Dossier pending
+        {/*
+          One child, deliberately. DialogContent lays its children out in a
+          grid, and a grid row sized automatically around a child whose height
+          comes from an aspect-ratio comes up short — which drops the portrait
+          over the name printed underneath it.
+        */}
+        <div>
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
+            <img
+              src={npcImage(npc)}
+              alt={npc.name}
+              className="h-full w-full object-cover object-top"
+            />
+            <div className="pointer-events-none absolute inset-0 border border-ember/40" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent" />
+          </div>
+          <div className="space-y-2 p-5 pt-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+              {npc.role}
             </p>
-          )}
+            <h2 className="text-lg font-bold leading-tight">{npc.name}</h2>
+            {npc.bio ? (
+              <div className="space-y-3 pt-1">
+                {npc.bio.split("\n\n").map((para, i) => (
+                  <p key={i} className="text-sm leading-relaxed text-foreground/90">
+                    {para}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Dossier pending
+              </p>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

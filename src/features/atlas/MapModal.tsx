@@ -272,24 +272,29 @@ export function MapModal({
           targetKey={dossier}
           open={dossier !== null}
           onOpenChange={(v) => !v && setDossier(null)}
-          {...(onTravel && dossier !== currentDistrict?.key
+          {...(onTravel
             ? {
-                action: (
-                  <Button
-                    type="button"
-                    className="w-full"
-                    disabled={travelBusy}
-                    onClick={() => {
-                      onTravel(dossier);
-                      setDossier(null);
-                      onOpenChange(false);
-                    }}
-                  >
-                    {travelBusy
-                      ? "On the move…"
-                      : `Travel here · ${travelMinutes(locationKey, dossier)} min`}
-                  </Button>
-                ),
+                // The reader can follow a district into one of its locations,
+                // so the button is built from what is on show, not from what
+                // opened the dialog. Nowhere to travel to when it is where the
+                // character already stands.
+                action: (showing: string) =>
+                  showing === currentDistrict?.key ? null : (
+                    <Button
+                      type="button"
+                      className="w-full"
+                      disabled={travelBusy}
+                      onClick={() => {
+                        onTravel(showing);
+                        setDossier(null);
+                        onOpenChange(false);
+                      }}
+                    >
+                      {travelBusy
+                        ? "On the move…"
+                        : `Travel here · ${travelMinutes(locationKey, showing)} min`}
+                    </Button>
+                  ),
               }
             : {})}
         />
