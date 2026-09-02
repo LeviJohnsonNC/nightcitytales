@@ -47,6 +47,7 @@ import {
   getLandmark,
   modeLabel,
   neighboursOf,
+  streetsIn,
   resolveTravelIntent,
 } from "@/engine";
 import {
@@ -373,6 +374,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           gangs: positionDistrict.gangs,
           combatZone: isCombatZone(positionDistrict.key),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
+          streets: streetsIn(positionDistrict.key).map((s) => s.name),
           destinations: reachableDestinations(
             bundle.campaign.location_key ?? DEFAULT_START,
             knownPlacesOf(bundle.campaign),

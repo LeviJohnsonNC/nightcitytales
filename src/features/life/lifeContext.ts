@@ -114,6 +114,8 @@ export type LifeContext = {
     destinations?: string[];
     /** Neighbouring districts with their real compass heading and travel time. */
     neighbours?: string[];
+    /** The major roads through this district, by name. */
+    streets?: string[];
   } | null;
   /** True when the player asked what they could do, rather than doing it. */
   optionsRequested?: boolean;
@@ -162,6 +164,13 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
     if (p.combatZone) parts.push(line("Note", "This is a Combat Zone. No law worth the name."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
+    if (p.streets?.length) {
+      parts.push(line("Major roads through here", p.streets.join(", ")));
+      parts.push(
+        "Those are the arterials the atlas prints names for. The minor streets of Night City " +
+          "are not written down anywhere you can see, so name one only if the player did.",
+      );
+    }
     if (p.neighbours?.length) {
       parts.push(
         "Districts this one BORDERS, and which way they lie (from the atlas, not from you):",
