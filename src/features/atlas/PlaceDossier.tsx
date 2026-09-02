@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import {
   areaOf,
   districtOfPlace,
@@ -34,11 +35,19 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 /** The picture for a place, when one has been made for it. */
-function Portrait({ dossierKey, alt }: { dossierKey: string; alt: string }) {
+function Portrait({
+  dossierKey,
+  alt,
+  className,
+}: {
+  dossierKey: string;
+  alt: string;
+  className?: string;
+}) {
   const entry = placeDossier(dossierKey);
   if (!entry) return null;
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
+    <div className={cn("relative aspect-[4/3] w-full overflow-hidden bg-background", className)}>
       <img src={placeImage(entry)} alt={alt} className="h-full w-full object-cover object-center" />
       <div className="pointer-events-none absolute inset-0 border border-ember/40" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent" />
@@ -199,11 +208,13 @@ export function PlaceDossier({
   const place = placeDistrict?.locations.find((l) => l.key === showing.toLowerCase());
   const title = place ? place.name : district.name;
   const footer = action?.(place ? place.key : district.key);
+  const portraitKey = place ? place.key : district.key;
+  const hasPortrait = !!placeDossier(portraitKey);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         ref={scroller}
-        className="max-h-[88vh] max-w-[92vw] overflow-y-auto border border-hairline bg-surface p-0 sm:max-w-lg"
+        className="max-h-[85vh] max-w-[96vw] overflow-y-auto border border-hairline bg-surface p-0 sm:max-w-4xl"
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         {/*
@@ -212,8 +223,8 @@ export function PlaceDossier({
           comes from an aspect-ratio collapses to nothing — which drops the
           picture on top of the text underneath it.
         */}
-        <div>
-          <Portrait dossierKey={place ? place.key : district.key} alt={title} />
+        <div className={cn("flex flex-col", hasPortrait && "sm:grid sm:grid-cols-[1.4fr_1fr]")}>
+          <Portrait dossierKey={portraitKey} alt={title} className="shrink-0" />
           <div className="space-y-3 p-5 pt-4">
             {place ? (
               <PlaceBody place={place} district={district} onOpenDistrict={setShowing} />
