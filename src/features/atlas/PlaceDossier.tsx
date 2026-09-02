@@ -208,11 +208,13 @@ export function PlaceDossier({
   const place = placeDistrict?.locations.find((l) => l.key === showing.toLowerCase());
   const title = place ? place.name : district.name;
   const footer = action?.(place ? place.key : district.key);
+  const portraitKey = place ? place.key : district.key;
+  const hasPortrait = !!placeDossier(portraitKey);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         ref={scroller}
-        className="max-h-[88vh] max-w-[92vw] overflow-y-auto border border-hairline bg-surface p-0 sm:max-w-lg"
+        className="max-h-[85vh] max-w-[96vw] overflow-y-auto border border-hairline bg-surface p-0 sm:max-w-4xl"
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         {/*
@@ -221,8 +223,8 @@ export function PlaceDossier({
           comes from an aspect-ratio collapses to nothing — which drops the
           picture on top of the text underneath it.
         */}
-        <div>
-          <Portrait dossierKey={place ? place.key : district.key} alt={title} />
+        <div className={cn("flex flex-col", hasPortrait && "sm:grid sm:grid-cols-[1.4fr_1fr]")}>
+          <Portrait dossierKey={portraitKey} alt={title} className="shrink-0" />
           <div className="space-y-3 p-5 pt-4">
             {place ? (
               <PlaceBody place={place} district={district} onOpenDistrict={setShowing} />
