@@ -448,6 +448,7 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
                 disabled={blocked}
                 onClick={() => {
                   setIsClosing(true);
+                  setPassed(true);
                   life.declineHook(reason || "Not this one.");
                 }}
               >
