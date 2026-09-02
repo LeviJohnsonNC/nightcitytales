@@ -35,11 +35,19 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 /** The picture for a place, when one has been made for it. */
-function Portrait({ dossierKey, alt }: { dossierKey: string; alt: string }) {
+function Portrait({
+  dossierKey,
+  alt,
+  className,
+}: {
+  dossierKey: string;
+  alt: string;
+  className?: string;
+}) {
   const entry = placeDossier(dossierKey);
   if (!entry) return null;
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
+    <div className={cn("relative aspect-[4/3] w-full overflow-hidden bg-background", className)}>
       <img src={placeImage(entry)} alt={alt} className="h-full w-full object-cover object-center" />
       <div className="pointer-events-none absolute inset-0 border border-ember/40" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent" />
