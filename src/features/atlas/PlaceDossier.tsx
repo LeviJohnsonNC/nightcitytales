@@ -1,8 +1,16 @@
 /**
  * The dossier for a piece of Night City: what the atlas says about a district
- * or one of its named locations. Presentation only — every fact comes from the
- * engine's geography module, which reads the official atlas data.
+ * or one of its named locations, and the long-form entry written for it.
+ *
+ * Presentation only. Every fact comes from the engine's geography module, which
+ * reads the official atlas data; the prose and the pictures come from
+ * placeDossiers.ts, which the engine never imports.
+ *
+ * A district entry lists its locations rather than describing them, and each one
+ * opens in place, so the dialog reads like turning a page rather than a wall of
+ * every venue at once.
  */
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   areaOf,
@@ -12,6 +20,7 @@ import {
   type District,
   type Place,
 } from "@/engine";
+import { placeDossier, placeImage } from "./placeDossiers";
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -24,7 +33,44 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function DistrictBody({ district }: { district: District }) {
+/** The picture for a place, when one has been made for it. */
+function Portrait({ dossierKey, alt }: { dossierKey: string; alt: string }) {
+  const entry = placeDossier(dossierKey);
+  if (!entry) return null;
+  return (
+    <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
+      <img src={placeImage(entry)} alt={alt} className="h-full w-full object-cover object-center" />
+      <div className="pointer-events-none absolute inset-0 border border-ember/40" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent" />
+    </div>
+  );
+}
+
+/** The written entry for a place, falling back to the atlas's own one-liner. */
+function Entry({ dossierKey, blurb }: { dossierKey: string; blurb: string }) {
+  const entry = placeDossier(dossierKey);
+  if (!entry) {
+    return blurb ? <p className="text-sm leading-relaxed text-foreground/90">{blurb}</p> : null;
+  }
+  return (
+    <div className="space-y-3">
+      {entry.text.split("\n\n").map((para, i) => (
+        <p key={i} className="text-sm leading-relaxed text-foreground/90">
+          {para}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+export function DistrictBody({
+  district,
+  onOpenPlace,
+}: {
+  district: District;
+  /** Open one of this district's locations in place. */
+  onOpenPlace?: (key: string) => void;
+}) {
   const area = areaOf(district.key);
   return (
     <div className="space-y-3">
@@ -36,7 +82,7 @@ export function DistrictBody({ district }: { district: District }) {
         </p>
         <h2 className="text-lg font-bold leading-tight">{district.name}</h2>
       </div>
-      <p className="text-sm leading-relaxed text-foreground/90">{district.blurb}</p>
+      <Entry dossierKey={district.key} blurb={district.blurb} />
       {district.cityManager ? <Field label="City Manager" value={district.cityManager} /> : null}
       {district.security ? <Field label="Security" value={district.security} /> : null}
       {district.gangs.length ? <Field label="Gangs" value={district.gangs.join(", ")} /> : null}
@@ -45,12 +91,27 @@ export function DistrictBody({ district }: { district: District }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
             Known locations
           </p>
-          <ul className="space-y-1">
+          <ul>
             {district.locations.map((l) => (
-              <li key={l.key} className="text-sm leading-relaxed">
-                <span className="font-mono text-[10px] text-accent">{l.code}</span>{" "}
-                <span className="font-semibold">{l.name}</span>
-                {l.blurb ? <span className="text-foreground/70"> — {l.blurb}</span> : null}
+              <li key={l.key}>
+                {onOpenPlace ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenPlace(l.key)}
+                    className="w-full cursor-pointer py-1 text-left text-sm leading-relaxed transition-colors hover:text-ember"
+                    aria-label={`Open the atlas entry for ${l.name}`}
+                  >
+                    <span className="font-mono text-[10px] text-accent">{l.code}</span>{" "}
+                    <span className="font-semibold border-b border-dotted border-ember/60">
+                      {l.name}
+                    </span>
+                  </button>
+                ) : (
+                  <span className="block py-1 text-sm leading-relaxed">
+                    <span className="font-mono text-[10px] text-accent">{l.code}</span>{" "}
+                    <span className="font-semibold">{l.name}</span>
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -60,20 +121,39 @@ export function DistrictBody({ district }: { district: District }) {
   );
 }
 
-export function PlaceBody({ place, district }: { place: Place; district: District }) {
+export function PlaceBody({
+  place,
+  district,
+  onOpenDistrict,
+}: {
+  place: Place;
+  district: District;
+  /** Go back up to the district this location sits in. */
+  onOpenDistrict?: (key: string) => void;
+}) {
   const area = areaOf(district.key);
   return (
     <div className="space-y-3">
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-          {place.code} · {district.name}
+          {place.code} ·{" "}
+          {onOpenDistrict ? (
+            <button
+              type="button"
+              onClick={() => onOpenDistrict(district.key)}
+              className="cursor-pointer uppercase tracking-[0.24em] text-accent transition-colors hover:text-ember"
+              aria-label={`Back to ${district.name}`}
+            >
+              {district.name}
+            </button>
+          ) : (
+            district.name
+          )}
           {area ? ` · ${area.name}` : ""}
         </p>
         <h2 className="text-lg font-bold leading-tight">{place.name}</h2>
       </div>
-      {place.blurb ? (
-        <p className="text-sm leading-relaxed text-foreground/90">{place.blurb}</p>
-      ) : null}
+      <Entry dossierKey={place.key} blurb={place.blurb} />
       <div className="space-y-2 border-t border-hairline pt-3">
         <p className="text-sm leading-relaxed text-foreground/80">{district.blurb}</p>
         {district.security ? <Field label="Security" value={district.security} /> : null}
@@ -93,27 +173,59 @@ export function PlaceDossier({
   targetKey: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  /** Optional footer control, e.g. "Travel here". */
-  action?: React.ReactNode;
+  /**
+   * Optional footer control, e.g. "Travel here". Given the key on show rather
+   * than the key the dialog opened on, so it follows the reader in.
+   */
+  action?: (key: string) => React.ReactNode;
 }) {
-  const placeDistrict = districtOfPlace(targetKey);
-  const district = placeDistrict ?? getDistrict(targetKey);
+  // What is on show. Starts at whatever opened the dialog and moves as the
+  // reader follows a district into one of its locations, or back out again.
+  const [showing, setShowing] = useState(targetKey);
+  useEffect(() => setShowing(targetKey), [targetKey]);
+
+  // Turning to a new entry means starting at the top of it. Without this the
+  // dialog keeps the scroll position it had, so following a location from the
+  // bottom of a district's list drops the reader into the middle of the new
+  // text with its picture and heading already scrolled past.
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: 0 });
+  }, [showing]);
+
+  const placeDistrict = districtOfPlace(showing);
+  const district = placeDistrict ?? getDistrict(showing);
   if (!district) return null;
-  const place = placeDistrict?.locations.find((l) => l.key === targetKey.toLowerCase());
+  const place = placeDistrict?.locations.find((l) => l.key === showing.toLowerCase());
   const title = place ? place.name : district.name;
+  const footer = action?.(place ? place.key : district.key);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-[92vw] overflow-y-auto border border-hairline bg-surface p-5 sm:max-w-lg">
+      <DialogContent
+        ref={scroller}
+        className="max-h-[88vh] max-w-[92vw] overflow-y-auto border border-hairline bg-surface p-0 sm:max-w-lg"
+      >
         <DialogTitle className="sr-only">{title}</DialogTitle>
-        {place ? (
-          <PlaceBody place={place} district={district} />
-        ) : (
-          <DistrictBody district={district} />
-        )}
-        {action ? <div className="border-t border-hairline pt-3">{action}</div> : null}
-        <p className="border-t border-hairline pt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          Night City Atlas
-        </p>
+        {/*
+          One child, deliberately. DialogContent lays its children out in a
+          grid, and a grid row sized automatically around a child whose height
+          comes from an aspect-ratio collapses to nothing — which drops the
+          picture on top of the text underneath it.
+        */}
+        <div>
+          <Portrait dossierKey={place ? place.key : district.key} alt={title} />
+          <div className="space-y-3 p-5 pt-4">
+            {place ? (
+              <PlaceBody place={place} district={district} onOpenDistrict={setShowing} />
+            ) : (
+              <DistrictBody district={district} onOpenPlace={setShowing} />
+            )}
+            {footer ? <div className="border-t border-hairline pt-3">{footer}</div> : null}
+            <p className="border-t border-hairline pt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Night City Atlas
+            </p>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
