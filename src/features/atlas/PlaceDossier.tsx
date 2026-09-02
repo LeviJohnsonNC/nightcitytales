@@ -163,11 +163,6 @@ export function PlaceBody({
         <h2 className="text-lg font-bold leading-tight">{place.name}</h2>
       </div>
       <Entry dossierKey={place.key} blurb={place.blurb} />
-      <div className="space-y-2 border-t border-hairline pt-3">
-        <p className="text-sm leading-relaxed text-foreground/80">{district.blurb}</p>
-        {district.security ? <Field label="Security" value={district.security} /> : null}
-        {district.gangs.length ? <Field label="Gangs" value={district.gangs.join(", ")} /> : null}
-      </div>
     </div>
   );
 }
