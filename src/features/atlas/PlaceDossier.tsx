@@ -223,7 +223,7 @@ export function PlaceDossier({
           comes from an aspect-ratio collapses to nothing — which drops the
           picture on top of the text underneath it.
         */}
-        <div className={cn("flex flex-col", hasPortrait && "sm:grid sm:grid-cols-[1.4fr_1fr]")}>
+        <div className="flex flex-col">
           <Portrait dossierKey={portraitKey} alt={title} className="shrink-0" />
           <div className="space-y-3 p-5 pt-4">
             {place ? (
