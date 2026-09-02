@@ -144,8 +144,7 @@ export function PlaceBody({
   return (
     <div className="space-y-3">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-          {place.code} ·{" "}
+        <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
           {onOpenDistrict ? (
             <button
               type="button"
