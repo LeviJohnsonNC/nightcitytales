@@ -69,6 +69,12 @@ describe("place dossiers", () => {
       "the_hot_zone",
       "little_china",
       "university_district",
+      "the_glen",
+      "old_japantown",
+      "south_night_city",
+      "port_of_night_city",
+      "reclamation_zone",
+      "old_combat_zone",
     ]);
   });
 
