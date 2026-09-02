@@ -18,6 +18,7 @@ roads, placed by the labels the map prints for them.
 Usage:
     pip install pillow numpy scipy
     python tools/atlas/trace_districts.py /path/to/RTG-CPR-DLC-NightCityAtlasv1.01.pdf
+    npx prettier --write src/data/atlas    # this writes compact JSON; the repo does not
 
 Requires poppler-utils (pdfimages) on PATH.
 
@@ -450,7 +451,7 @@ def pins_of(atlas, height, width):
     return out
 
 
-def claim_atoms(atoms, n_atoms, pins, width, keys):
+def claim_atoms(atoms, n_atoms, pins, width, keys, water):
     """Which district owns each atom. Returns {atom_id: district_key}."""
     sizes = np.array(ndi.sum(atoms > 0, atoms, range(1, n_atoms + 1)))
     # Everything outside the city is one enormous atom. A marker that lands in it
@@ -519,11 +520,28 @@ def claim_atoms(atoms, n_atoms, pins, width, keys):
             distance = float(np.min((xs - px) ** 2 + (ys - py) ** 2) ** 0.5)
             if distance < best_distance:
                 best_key, best_distance = key, distance
-        if best_distance <= cutoff and sizes[atom - 1] < FRAGMENT_MAX_PX:
+        coastal = best_distance <= cutoff and sizes[atom - 1] < FRAGMENT_MAX_PX
+        if coastal and not marooned(atoms, atom, water):
             owner[atom] = best_key
         else:
             unclaimed.append(atom)
     return owner, background, unclaimed
+
+
+def marooned(atoms, atom, water):
+    """Whether an atom has nothing but water on every side of it.
+
+    The map letters each bay's name across the middle of the bay, and that
+    lettering is not blue, so the water mask leaves it behind as an atom
+    floating in open water. It is near enough to the far shore to pass the
+    coastal-fragment test, which is how "SAN MORRO BAY" became a strip of dry
+    land in the middle of the bay -- dry enough for the engine to stand a
+    character on it. A fragment of a district has that district on the other
+    side of it; a word printed in a bay has water all the way round.
+    """
+    collar = ndi.binary_dilation(atoms == atom, np.ones((3, 3)), iterations=DASH_BRIDGE)
+    collar &= atoms != atom
+    return bool(collar.any()) and bool(water[collar].all())
 
 
 def adjoining_districts(atoms, owner, atom, water):
@@ -561,7 +579,7 @@ def main():
 
     atoms, n_atoms = ndi.label(~(network | water))
     pins = pins_of(atlas, height, width)
-    owner, background, unclaimed = claim_atoms(atoms, n_atoms, pins, width, keys)
+    owner, background, unclaimed = claim_atoms(atoms, n_atoms, pins, width, keys, water)
     sizes = np.array(ndi.sum(atoms > 0, atoms, range(1, n_atoms + 1)))
 
     # Whatever is left is either a district the atlas never gave locations to, or
@@ -604,7 +622,17 @@ def main():
         labelled[atoms == atom] = index[key]
     # Every land pixel belongs to somebody: hand the dotted lines themselves to
     # whichever district they run alongside.
-    land = ~water
+    #
+    # "Land" here has to mean ground you could stand on, not merely anything the
+    # water mask did not catch. The map prints each bay's name across the middle
+    # of it, and that lettering is not blue, so it reads as a hole in the water.
+    # Filled from the nearest district it becomes a strip of dry land out in the
+    # bay -- which is how a character asking to see San Morro Bay ended up
+    # standing in it. A stretch of non-water is only land if it joins up with
+    # ground some district already claims; a word floating in a bay does not.
+    parts, _ = ndi.label(~water, np.ones((3, 3)))
+    grounded = np.unique(parts[labelled > 0])
+    land = np.isin(parts, grounded[grounded > 0])
     holes = land & (labelled == 0)
     _, (iy, ix) = ndi.distance_transform_edt(labelled == 0, return_indices=True)
     filled = labelled.copy()

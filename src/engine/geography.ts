@@ -22,6 +22,7 @@ import {
   adjacentDistricts,
   borderingDistricts,
   districtNearPoint,
+  nearestCity,
   routeBetween,
   walk,
   type Route,
@@ -187,12 +188,66 @@ export function getLandmark(key: string): Landmark | undefined {
 }
 
 /**
+ * How far to look for ground, in grid cells, when a point lands on water. Four
+ * cells is about a city block: enough to pull a spot off a pier or a bridge
+ * approach, and not enough to move it somewhere the player would not recognise.
+ */
+const SHORE_SEARCH_CELLS = 4;
+
+/**
+ * How far to look for the shore of a named stretch of water. The map prints a
+ * bay's name across the middle of the bay, so the shore is genuinely a few
+ * hundred metres off — 200 m for San Morro Bay, 560 m for Laguna Reservoir.
+ * Thirty-two cells covers the widest of them and stops well short of anywhere
+ * that could be called somewhere else.
+ */
+const SHORE_REACH_CELLS = 32;
+
+/**
  * Whether a landmark is somewhere a character can actually get to. An island in
  * the bay is not: Morro Rock is on the map, and reaching it needs a boat nobody
  * has written rules for yet.
  */
 export function isReachable(landmark: Landmark): boolean {
   return landmark.kind !== "island";
+}
+
+/**
+ * Whether a landmark is water. A bay, the canal and the reservoir are named on
+ * the map and are perfectly good things to go and see, but nobody stands on
+ * them: the map point is where the name is printed, out in the middle.
+ */
+export function isWater(landmark: Landmark): boolean {
+  return landmark.kind === "bay" || landmark.kind === "canal" || landmark.kind === "reservoir";
+}
+
+/**
+ * Where a character stands when they go to a landmark.
+ *
+ * For a bridge that is the bridge itself. For water it is the nearest shore on
+ * the side the atlas files the landmark under, which is what "let's go and see
+ * San Morro Bay" actually means. Nothing here can return a spot that is not
+ * ground: if no shore is close enough the landmark has no standing point, and
+ * the caller falls back to the district.
+ */
+export function standingPointFor(landmark: Landmark): MapPoint | undefined {
+  if (!isWater(landmark)) return nearestCity(landmark.map, SHORE_SEARCH_CELLS);
+  return (
+    nearestCity(landmark.map, SHORE_REACH_CELLS, landmark.districtKey) ??
+    nearestCity(landmark.map, SHORE_REACH_CELLS)
+  );
+}
+
+/**
+ * A point pulled onto ground somebody could stand on.
+ *
+ * Every position the engine commits goes through this. A walk already stops on
+ * dry land, so in practice it changes nothing — it is here so that a coordinate
+ * arriving from anywhere else (a landmark printed over a bay, an older saved
+ * game, a future data slip) cannot put a character in the water.
+ */
+export function groundedPoint(point: MapPoint): MapPoint | undefined {
+  return nearestCity(point, SHORE_SEARCH_CELLS);
 }
 
 /** A major road by its key ("republic_way"). */
@@ -308,7 +363,15 @@ export function resolvePosition(stored: string | null | undefined): Position | u
     // stored location can never contradict each other.
     const districtKey = districtNearPoint(point) ?? base?.districtKey;
     if (!districtKey) return base;
-    return { districtKey, point };
+    // The name in front of the mark still says what the spot is — the shore of
+    // San Morro Bay is on the shore and is still San Morro Bay.
+    return {
+      districtKey,
+      point,
+      ...(base?.placeKey ? { placeKey: base.placeKey } : {}),
+      ...(base?.landmarkKey ? { landmarkKey: base.landmarkKey } : {}),
+      ...(base?.streetKey ? { streetKey: base.streetKey } : {}),
+    };
   }
 
   const value = raw;
@@ -329,9 +392,15 @@ export function describePosition(stored: string | null | undefined): string {
   const district = getDistrict(position.districtKey);
   if (!district) return "Somewhere in Night City";
   const area = areaOf(district.key);
+  const landmark = position.landmarkKey ? getLandmark(position.landmarkKey) : undefined;
   const here =
     (position.placeKey ? getPlace(position.placeKey)?.name : undefined) ??
-    (position.landmarkKey ? getLandmark(position.landmarkKey)?.name : undefined) ??
+    // You are never on the bay, so say where you are: looking at it.
+    (landmark
+      ? isWater(landmark)
+        ? `the shore of ${landmark.name}`
+        : landmark.name
+      : undefined) ??
     (position.streetKey ? getStreet(position.streetKey)?.name : undefined);
   const tail = `${district.name}${area ? ` (${area.name})` : ""}`;
   if (here) return `${here}, ${tail}`;
@@ -618,25 +687,39 @@ export function directionName(direction: Compass): string {
   return COMPASS_NAMES[direction];
 }
 
-/** The map point for a stored location: its own pin, or its district's. */
+/**
+ * The map point for a stored location: the exact spot when one was written
+ * down, otherwise its own pin, otherwise its district's.
+ *
+ * This is what the pin renders on, so it is the last place a character can be
+ * put somewhere they could not be. An exact spot comes first — it is the most
+ * that is known about where they are — and anything that would land in open
+ * water gives way to the district instead.
+ */
 export function mapPointOf(stored: string | null | undefined): MapPoint | undefined {
   const position = resolvePosition(stored);
+  const district = position ? getDistrict(position.districtKey)?.map : undefined;
   if (!position) return undefined;
-  if (position.placeKey) {
-    const point = getPlace(position.placeKey)?.map;
-    if (point) return point;
-  }
-  if (position.landmarkKey) {
-    const point = getLandmark(position.landmarkKey)?.map;
-    if (point) return point;
-  }
-  if (position.streetKey) {
-    const street = getStreet(position.streetKey);
-    const point = street ? streetPointIn(street, position.districtKey) : undefined;
-    if (point) return point;
-  }
-  if (position.point) return position.point;
-  return getDistrict(position.districtKey)?.map;
+  const named = (): MapPoint | undefined => {
+    if (position.point) return position.point;
+    if (position.placeKey) return getPlace(position.placeKey)?.map;
+    if (position.landmarkKey) {
+      const landmark = getLandmark(position.landmarkKey);
+      // A bay's pin is the middle of the bay, where its name is printed. Where
+      // you would be standing is the shore.
+      if (landmark) return standingPointFor(landmark) ?? landmark.map;
+    }
+    if (position.streetKey) {
+      const street = getStreet(position.streetKey);
+      return street ? streetPointIn(street, position.districtKey) : undefined;
+    }
+    return undefined;
+  };
+  const point = named();
+  if (!point) return district;
+  // A dock, a pier or a bridge approach sits on a cell the trace reads as
+  // water, and belongs there. Somewhere with no city near it at all does not.
+  return districtNearPoint(point) ? point : district;
 }
 
 /** Compass bearing in degrees clockwise from north. Map y grows southwards. */
@@ -926,7 +1009,13 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
   // it — "south to the Pacifica Bridge" is a request for the bridge, and
   // refusing it because the bridge is south-EAST is answering the wrong
   // question. The true heading is reported back instead.
-  if (named) return arrive(named, directionBetween(intent.from, named) ?? undefined);
+  if (named) {
+    // Going to see a bay means going to its shore. Writing the shore down as
+    // part of the position is what stops the pin from ending up in the water.
+    const shore = landmark ? standingPointFor(landmark) : undefined;
+    const to = shore ? positionKey(named, shore) : named;
+    return arrive(to, directionBetween(intent.from, named) ?? undefined);
+  }
 
   if (direction) {
     const here = resolvePosition(intent.from)?.districtKey;
@@ -936,15 +1025,22 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
     if (intent.blocks && intent.blocks > 0 && here) {
       const wanted = blocksToPercent(intent.blocks);
       const journey = bestWayAlong(intent.from, direction, wanted);
-      if (!journey || journey.distance < SAME_SPOT) {
+      // Asking for seven blocks and getting a cell and a half is not a short
+      // trip, it is a refusal wearing a trip's clothes: the cab still charges
+      // the seven minutes it takes to turn up. Say the water is there instead.
+      // A journey that covers a block or more is a real one however short of
+      // the asking it falls, so only the standing-still case is refused.
+      const gotNowhere = !journey || journey.distance < Math.min(BLOCK_PERCENT, wanted);
+      if (gotNowhere) {
         return {
           ok: false,
           reason: `There is no going ${directionName(direction)} from here — ${edgeName(journey?.stoppedBy)} is right there.`,
         };
       }
-      const landed = districtNearPoint(journey.end) ?? here;
+      const end = groundedPoint(journey.end) ?? journey.end;
+      const landed = districtNearPoint(end) ?? here;
       return {
-        ...arrive(positionKey(landed, journey.end), journey.heading),
+        ...arrive(positionKey(landed, end), journey.heading),
         ...(journey.stoppedBy === "arrived" ? {} : { stoppedAt: journey.stoppedBy }),
         blocks: Math.round((journey.distance / BLOCK_PERCENT) * 10) / 10,
       };
@@ -961,9 +1057,10 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
       // ends up standing there rather than back where they started.
       const journey = walkFrom(intent.from, direction);
       if (journey && here && journey.distance >= WALK_WORTH_TAKING) {
-        const landed = districtNearPoint(journey.end) ?? here;
+        const end = groundedPoint(journey.end) ?? journey.end;
+        const landed = districtNearPoint(end) ?? here;
         return {
-          ...arrive(positionKey(landed, journey.end), direction),
+          ...arrive(positionKey(landed, end), direction),
           stoppedAt: journey.stoppedBy,
           blocks: Math.round((journey.distance / BLOCK_PERCENT) * 10) / 10,
         };

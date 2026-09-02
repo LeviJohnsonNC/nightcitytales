@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { districtNearPoint } from "@/engine/cityGrid";
+import { districtAtPoint, districtNearPoint, nearestCity } from "@/engine/cityGrid";
 import {
   AREAS,
   DISTRICTS,
@@ -35,6 +35,11 @@ import {
   routeTo,
   walkFrom,
   travelMinutes,
+  getLandmark,
+  isReachable,
+  isWater,
+  standingPointFor,
+  groundedPoint,
 } from "../geography";
 
 describe("night city atlas data", () => {
@@ -463,5 +468,154 @@ describe("travel intent", () => {
 
   it("refuses a name that is not on the map", () => {
     expect(resolveTravelIntent({ from: "little_europe", destination: "Atlantis" }).ok).toBe(false);
+  });
+});
+
+describe("nobody stands in the water", () => {
+  // The map names three bays, a canal and a reservoir, and each name is printed
+  // across the middle of the water it names. Asking to go and see one is a
+  // perfectly ordinary thing to do; ending up floating in it is not, and it is
+  // what happened before this. Every rule below is one of the ways that could
+  // still happen, closed off.
+
+  it("reads a bay's printed name as water, not as ground", () => {
+    // "SAN MORRO BAY" is lettering, and lettering is not blue, so the trace
+    // used to leave it behind as a strip of dry land out in the bay.
+    for (const landmark of LANDMARKS) {
+      if (!isWater(landmark)) continue;
+      expect(districtAtPoint(landmark.map), `${landmark.name} is drawn as land`).toBeUndefined();
+    }
+  });
+
+  it("puts you on the shore when you go to see a stretch of water", () => {
+    for (const landmark of LANDMARKS) {
+      if (!isWater(landmark)) continue;
+      const decision = resolveTravelIntent({ from: "little_europe", destination: landmark.name });
+      expect(decision.ok, landmark.name).toBe(true);
+      if (!decision.ok) continue;
+      const point = mapPointOf(decision.to)!;
+      expect(districtAtPoint(point), `${landmark.name} pin`).toBeDefined();
+      expect(describePosition(decision.to)).toContain(`the shore of ${landmark.name}`);
+    }
+  });
+
+  it("keeps the shore on the side of the water the atlas files it under", () => {
+    // Half the point of going to see San Morro Bay is being where the atlas
+    // says the bay belongs, rather than on whichever shore happens to be near.
+    for (const landmark of LANDMARKS) {
+      if (!isWater(landmark)) continue;
+      const point = standingPointFor(landmark)!;
+      expect(districtAtPoint(point), landmark.name).toBe(landmark.districtKey);
+    }
+  });
+
+  it("gives every landmark you can reach somewhere to stand", () => {
+    for (const landmark of LANDMARKS) {
+      const point = standingPointFor(landmark);
+      if (!isReachable(landmark)) {
+        // Morro Rock is an island. There is nowhere on it to stand.
+        expect(point, landmark.name).toBeUndefined();
+        continue;
+      }
+      expect(point, landmark.name).toBeDefined();
+      expect(districtAtPoint(point!), landmark.name).toBeDefined();
+    }
+  });
+
+  it("never renders a pin on open water, whatever it is handed", () => {
+    // Everything the engine can put in location_key, including the forms saved
+    // before a position could carry a point.
+    const stored: string[] = [
+      ...DISTRICTS.map((d) => d.key),
+      ...DISTRICTS.flatMap((d) => d.locations.map((p) => p.key)),
+      ...LANDMARKS.filter(isReachable).map((l) => l.key),
+      ...STREETS.map((s) => s.key),
+    ];
+    const adrift: string[] = [];
+    for (const key of stored) {
+      const point = mapPointOf(key);
+      // A dock or a bridge approach sits on the waterline and belongs there;
+      // what must never happen is a pin with no city anywhere near it.
+      if (!point || !districtNearPoint(point)) adrift.push(key);
+    }
+    expect(adrift).toEqual([]);
+  });
+
+  it("falls back to the district rather than pinning a point out at sea", () => {
+    // A saved game from before this, or any future slip in the data.
+    const pin = mapPointOf("little_europe@4.0,45.0")!;
+    expect(pin).toEqual(getDistrict("little_europe")!.map);
+  });
+
+  it("still stands you on a bridge, which is not the same as water", () => {
+    const decision = resolveTravelIntent({
+      from: "little_europe",
+      destination: "San Morro Bridge",
+    });
+    expect(decision.ok).toBe(true);
+    if (!decision.ok) return;
+    expect(describePosition(decision.to)).toContain("San Morro Bridge");
+    expect(describePosition(decision.to)).not.toContain("the shore of");
+    expect(mapPointOf(decision.to)).toEqual(getLandmark("san_morro_bridge")!.map);
+  });
+
+  it("still refuses the island in the bay", () => {
+    const decision = resolveTravelIntent({ from: "little_europe", destination: "Morro Rock" });
+    expect(decision.ok).toBe(false);
+  });
+
+  it("keeps the name of the place when a point is written down with it", () => {
+    const key = positionKey("san_morro_bay", { x: 33.485, y: 60.098 });
+    const position = resolvePosition(key)!;
+    expect(position.landmarkKey).toBe("san_morro_bay");
+    expect(position.districtKey).toBe("south_night_city");
+    expect(position.point).toEqual({ x: 33.485, y: 60.098 });
+    expect(placeKeyOf(key)).toBe("san_morro_bay");
+  });
+
+  it("pulls a spot onto ground, and leaves one that is already on it alone", () => {
+    const onGround = { x: 33.485, y: 60.098 };
+    expect(groundedPoint(onGround)).toEqual(onGround);
+    const inTheBay = getLandmark("san_morro_bay")!.map;
+    expect(districtAtPoint(inTheBay)).toBeUndefined();
+    // The middle of a bay is further from the shore than the grounding guard
+    // reaches, and pretending otherwise would move somebody across the water.
+    expect(groundedPoint(inTheBay)).toBeUndefined();
+  });
+
+  it("does not sell a seven-block cab ride that goes one cell", () => {
+    // The shore of San Morro Bay has water due south of it, and southeast and
+    // southwest too. Committing the cell and a half that was left would have
+    // charged the seven minutes a cab takes to arrive for thirteen metres.
+    const decision = resolveTravelIntent({
+      from: "san_morro_bay@33.485,60.098",
+      direction: "south",
+      blocks: 7,
+      mode: "cab",
+    });
+    expect(decision.ok).toBe(false);
+    if (decision.ok) return;
+    expect(decision.reason).toContain("the water");
+  });
+
+  it("still takes a short hop that covers real ground", () => {
+    const decision = resolveTravelIntent({
+      from: "little_europe",
+      direction: "south",
+      blocks: 2,
+      mode: "foot",
+    });
+    expect(decision.ok).toBe(true);
+    if (!decision.ok) return;
+    expect(decision.blocks).toBeGreaterThanOrEqual(1);
+  });
+
+  it("finds the nearest ground, on the side asked for", () => {
+    const bay = getLandmark("san_morro_bay")!.map;
+    expect(nearestCity(bay, 32, "south_night_city")).toBeDefined();
+    expect(districtAtPoint(nearestCity(bay, 32, "south_night_city")!)).toBe("south_night_city");
+    // Nothing within a block of the middle of the bay.
+    expect(nearestCity(bay, 4)).toBeUndefined();
+    expect(nearestCity(bay, 32, "not_a_district")).toBeUndefined();
   });
 });
