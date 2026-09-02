@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { districtNearPoint } from "@/engine/cityGrid";
 import {
   AREAS,
   DISTRICTS,
@@ -9,6 +10,9 @@ import {
   districtsInDirection,
   furthestInDirection,
   LANDMARKS,
+  STREETS,
+  streetsIn,
+  streetPointIn,
   limitInDirection,
   neighboursOf,
   parseDirection,
@@ -172,6 +176,61 @@ describe("destinations", () => {
     expect(cold).not.toContain(gretas);
     const warm = reachableDestinations("kabuki", ["a8"]).map((d) => d.name);
     expect(warm).toContain(gretas);
+  });
+
+  it("resolves the major roads the map prints names along", () => {
+    expect(resolveDestination("Republic Way")).toBe("republic_way");
+    expect(resolveDestination("morro rock blvd")).toBe("morro_rock_blvd");
+    expect(resolveDestination("Interstate 9")).toBe("interstate_9");
+    expect(describePosition("republic_way")).toBe("Republic Way, Little Europe (The Island)");
+    expect(resolvePlaceMention("Morro Rock Blvd")?.kind).toBe("street");
+  });
+
+  it("still refuses a minor street, because none are transcribed", () => {
+    // Corporations St is printed on the map in outlined white lettering that
+    // resisted every reading. Being honest about not knowing it beats guessing.
+    expect(resolveDestination("Corporations St")).toBeUndefined();
+    expect(resolveTravelIntent({ from: "little_europe", destination: "Corporations St" }).ok).toBe(
+      false,
+    );
+  });
+
+  it("charges for crossing to a road in the district you are already in", () => {
+    // Pacific Blvd runs through The Glen. Standing in The Glen is not standing
+    // on Pacific Blvd, and getting there takes a few minutes.
+    const decision = resolveTravelIntent({
+      from: "the_glen",
+      destination: "Pacific Blvd",
+      mode: "walk",
+    });
+    expect(decision).toMatchObject({ ok: true, to: "pacific_blvd" });
+    if (decision.ok) expect(decision.minutes).toBeGreaterThan(0);
+  });
+
+  it("puts a road in every district the map labels it in", () => {
+    for (const street of STREETS) {
+      expect(street.districts.length).toBeGreaterThan(0);
+      expect(street.marks.length).toBeGreaterThanOrEqual(street.districts.length);
+      for (const key of street.districts) {
+        expect(getDistrict(key), `${street.name} names ${key}`).toBeDefined();
+        expect(streetsIn(key).map((s) => s.key)).toContain(street.key);
+        // The point the map writes the name at is on that district's ground —
+        // except for the interstate, whose name is printed out on the highway
+        // east of the city, past where any district reaches.
+        const point = streetPointIn(street, key)!;
+        const on =
+          street.key === "interstate_9" ? districtNearPoint(point, 30) : districtNearPoint(point);
+        expect(on, `${street.name} in ${key}`).toBe(key);
+      }
+    }
+  });
+
+  it("keeps the one road whose name is printed outside the city", () => {
+    // Interstate 9 leaves Night City eastward and the map labels it out there,
+    // past the last district. It still belongs to the district it runs out of.
+    const interstate = STREETS.find((s) => s.key === "interstate_9")!;
+    expect(districtNearPoint(interstate.marks[0]!)).toBeUndefined();
+    expect(interstate.districts).toEqual(["north_heywood"]);
   });
 
   it("refuses to walk out to an island", () => {

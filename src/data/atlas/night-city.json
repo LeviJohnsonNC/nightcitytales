@@ -2128,5 +2128,372 @@
         "y": 63.574
       }
     }
+  ],
+  "streets": [
+    {
+      "key": "industrial_st",
+      "name": "Industrial St",
+      "districts": ["watson_development"],
+      "marks": [
+        {
+          "x": 48.727,
+          "y": 17.489
+        }
+      ]
+    },
+    {
+      "key": "longshore_dr",
+      "name": "Longshore Dr",
+      "districts": ["new_westbrook"],
+      "marks": [
+        {
+          "x": 57.008,
+          "y": 22.26
+        }
+      ]
+    },
+    {
+      "key": "ganymede_st",
+      "name": "Ganymede St",
+      "districts": ["kabuki"],
+      "marks": [
+        {
+          "x": 50.773,
+          "y": 30.867
+        }
+      ]
+    },
+    {
+      "key": "kennedy_ave",
+      "name": "Kennedy Ave",
+      "districts": ["kabuki"],
+      "marks": [
+        {
+          "x": 50.924,
+          "y": 33.759
+        }
+      ]
+    },
+    {
+      "key": "california_ave",
+      "name": "California Ave",
+      "districts": ["watson_development"],
+      "marks": [
+        {
+          "x": 39.189,
+          "y": 33.881
+        }
+      ]
+    },
+    {
+      "key": "watson_blvd",
+      "name": "Watson Blvd",
+      "districts": ["watson_development"],
+      "marks": [
+        {
+          "x": 46.083,
+          "y": 34.542
+        }
+      ]
+    },
+    {
+      "key": "capitola_st",
+      "name": "Capitola St",
+      "districts": ["upper_marina"],
+      "marks": [
+        {
+          "x": 55.803,
+          "y": 35.232
+        }
+      ]
+    },
+    {
+      "key": "skyline_east",
+      "name": "Skyline East",
+      "districts": ["new_westbrook", "little_china"],
+      "marks": [
+        {
+          "x": 63.197,
+          "y": 35.149
+        },
+        {
+          "x": 60.591,
+          "y": 48.214
+        }
+      ]
+    },
+    {
+      "key": "silk_rd",
+      "name": "Silk Rd",
+      "districts": ["new_westbrook"],
+      "marks": [
+        {
+          "x": 61.992,
+          "y": 38.349
+        }
+      ]
+    },
+    {
+      "key": "lincoln_blvd",
+      "name": "Lincoln Blvd",
+      "districts": ["new_westbrook"],
+      "marks": [
+        {
+          "x": 63.871,
+          "y": 38.917
+        }
+      ]
+    },
+    {
+      "key": "ferris_blvd",
+      "name": "Ferris Blvd",
+      "districts": ["little_europe"],
+      "marks": [
+        {
+          "x": 41.939,
+          "y": 40.933
+        }
+      ]
+    },
+    {
+      "key": "marina_blvd",
+      "name": "Marina Blvd",
+      "districts": ["upper_marina"],
+      "marks": [
+        {
+          "x": 53.477,
+          "y": 41.853
+        }
+      ]
+    },
+    {
+      "key": "ruggels_way",
+      "name": "Ruggels Way",
+      "districts": ["upper_marina"],
+      "marks": [
+        {
+          "x": 59.402,
+          "y": 42.371
+        }
+      ]
+    },
+    {
+      "key": "republic_way",
+      "name": "Republic Way",
+      "districts": ["little_europe"],
+      "marks": [
+        {
+          "x": 37.977,
+          "y": 42.141
+        }
+      ]
+    },
+    {
+      "key": "morro_rock_blvd",
+      "name": "Morro Rock Blvd",
+      "districts": ["little_europe"],
+      "marks": [
+        {
+          "x": 34.174,
+          "y": 42.606
+        },
+        {
+          "x": 36.886,
+          "y": 42.866
+        }
+      ]
+    },
+    {
+      "key": "mlk_blvd",
+      "name": "MLK Blvd",
+      "districts": ["little_europe"],
+      "marks": [
+        {
+          "x": 40.576,
+          "y": 43.693
+        }
+      ]
+    },
+    {
+      "key": "skyline_west",
+      "name": "Skyline West",
+      "districts": ["little_europe"],
+      "marks": [
+        {
+          "x": 34.333,
+          "y": 44.505
+        },
+        {
+          "x": 34.341,
+          "y": 45.87
+        }
+      ]
+    },
+    {
+      "key": "grant_st",
+      "name": "Grant St",
+      "districts": ["new_westbrook"],
+      "marks": [
+        {
+          "x": 67.818,
+          "y": 46.217
+        }
+      ]
+    },
+    {
+      "key": "del_coronado_overpass",
+      "name": "Del Coronado Overpass",
+      "districts": ["little_china"],
+      "marks": [
+        {
+          "x": 57.659,
+          "y": 48.219
+        }
+      ]
+    },
+    {
+      "key": "bonita_st",
+      "name": "Bonita St",
+      "districts": ["north_heywood"],
+      "marks": [
+        {
+          "x": 76.689,
+          "y": 51.307
+        }
+      ]
+    },
+    {
+      "key": "eighth_st",
+      "name": "8th St",
+      "districts": ["heywood_docks"],
+      "marks": [
+        {
+          "x": 70.955,
+          "y": 52.236
+        }
+      ]
+    },
+    {
+      "key": "seventh_st",
+      "name": "7th St",
+      "districts": ["heywood_docks"],
+      "marks": [
+        {
+          "x": 67.864,
+          "y": 52.54
+        }
+      ]
+    },
+    {
+      "key": "interstate_9",
+      "name": "Interstate 9",
+      "districts": ["north_heywood"],
+      "marks": [
+        {
+          "x": 91.182,
+          "y": 52.833
+        }
+      ]
+    },
+    {
+      "key": "cargo_way",
+      "name": "Cargo Way",
+      "districts": ["heywood_docks"],
+      "marks": [
+        {
+          "x": 68.917,
+          "y": 53.425
+        }
+      ]
+    },
+    {
+      "key": "pacific_blvd",
+      "name": "Pacific Blvd",
+      "districts": ["the_glen", "pacifica_playground"],
+      "marks": [
+        {
+          "x": 47.068,
+          "y": 53.993
+        },
+        {
+          "x": 33.939,
+          "y": 68.795
+        }
+      ]
+    },
+    {
+      "key": "sequoia_st",
+      "name": "Sequoia St",
+      "districts": ["north_heywood"],
+      "marks": [
+        {
+          "x": 78.076,
+          "y": 54.296
+        }
+      ]
+    },
+    {
+      "key": "jon_walter_williams_overpass",
+      "name": "Jon Walter Williams Overpass",
+      "districts": ["old_combat_zone"],
+      "marks": [
+        {
+          "x": 49.902,
+          "y": 54.605
+        },
+        {
+          "x": 49.856,
+          "y": 56.332
+        }
+      ]
+    },
+    {
+      "key": "ulysses_st",
+      "name": "Ulysses St",
+      "districts": ["north_heywood"],
+      "marks": [
+        {
+          "x": 72.432,
+          "y": 56.166
+        }
+      ]
+    },
+    {
+      "key": "skyline_south",
+      "name": "Skyline South",
+      "districts": ["south_night_city", "the_glen"],
+      "marks": [
+        {
+          "x": 39.129,
+          "y": 56.723
+        },
+        {
+          "x": 41.379,
+          "y": 56.748
+        }
+      ]
+    },
+    {
+      "key": "new_pacific_highway",
+      "name": "New Pacific Highway (101)",
+      "districts": ["rancho_coronado"],
+      "marks": [
+        {
+          "x": 55.523,
+          "y": 73.356
+        }
+      ]
+    },
+    {
+      "key": "playland_overpass",
+      "name": "Playland Overpass",
+      "districts": ["rancho_coronado"],
+      "marks": [
+        {
+          "x": 45.098,
+          "y": 74.599
+        }
+      ]
+    }
   ]
 }

@@ -97,10 +97,25 @@ export type Landmark = {
   connects?: string[];
 };
 
+/**
+ * A major road. The map prints these names in black on the yellow carriageway;
+ * the minor streets it sets in outlined white lettering, which no reader of the
+ * image has managed to transcribe, so they are not here.
+ */
+export type Street = {
+  key: string;
+  name: string;
+  /** Every district the road is labelled in, in the order the map labels them. */
+  districts: string[];
+  /** The points where the map writes the name. A road is a line; these are on it. */
+  marks: MapPoint[];
+};
+
 type AtlasFile = {
   areas: Area[];
   districts: District[];
   landmarks: Landmark[];
+  streets: Street[];
   map: MapImage;
   travel: {
     houseRule: boolean;
@@ -121,6 +136,7 @@ const ATLAS = atlas as unknown as AtlasFile;
 export const AREAS: Area[] = ATLAS.areas;
 export const DISTRICTS: District[] = ATLAS.districts;
 export const LANDMARKS: Landmark[] = ATLAS.landmarks;
+export const STREETS: Street[] = ATLAS.streets;
 export const MAP_IMAGE: MapImage = ATLAS.map;
 
 /**
@@ -140,6 +156,7 @@ const DISTRICT_BY_KEY = new Map<string, District>();
 const DISTRICT_BY_CODE = new Map<string, District>();
 const PLACE_BY_KEY = new Map<string, { place: Place; district: District }>();
 const LANDMARK_BY_KEY = new Map<string, Landmark>(LANDMARKS.map((l) => [l.key, l]));
+const STREET_BY_KEY = new Map<string, Street>(STREETS.map((s) => [s.key, s]));
 
 for (const district of DISTRICTS) {
   DISTRICT_BY_KEY.set(district.key, district);
@@ -177,6 +194,24 @@ export function isReachable(landmark: Landmark): boolean {
   return landmark.kind !== "island";
 }
 
+/** A major road by its key ("republic_way"). */
+export function getStreet(key: string): Street | undefined {
+  return STREET_BY_KEY.get(key.trim().toLowerCase());
+}
+
+/** The major roads running through a district. */
+export function streetsIn(districtKeyOrCode: string): Street[] {
+  const district = getDistrict(districtKeyOrCode);
+  if (!district) return [];
+  return STREETS.filter((s) => s.districts.includes(district.key));
+}
+
+/** Where a road meets a district: the point the map labels it at there. */
+export function streetPointIn(street: Street, districtKey: string): MapPoint | undefined {
+  const at = street.districts.indexOf(districtKey);
+  return at >= 0 ? street.marks[at] : street.marks[0];
+}
+
 /** Every named landmark that stands in a district. */
 export function landmarksIn(districtKeyOrCode: string): Landmark[] {
   const district = getDistrict(districtKeyOrCode);
@@ -212,6 +247,8 @@ export type Position = {
   placeKey?: string;
   /** Set when the character is at a named piece of geography rather than a venue. */
   landmarkKey?: string;
+  /** Set when the character is out on a named road rather than at an address. */
+  streetKey?: string;
 };
 
 /** Resolve a stored location string ("b1" or "upper_marina") into a Position. */
@@ -222,6 +259,8 @@ export function resolvePosition(stored: string | null | undefined): Position | u
   if (entry) return { districtKey: entry.district.key, placeKey: entry.place.key };
   const landmark = LANDMARK_BY_KEY.get(value);
   if (landmark) return { districtKey: landmark.districtKey, landmarkKey: landmark.key };
+  const street = STREET_BY_KEY.get(value);
+  if (street) return { districtKey: street.districts[0]!, streetKey: street.key };
   const district = getDistrict(value);
   return district ? { districtKey: district.key } : undefined;
 }
@@ -235,7 +274,8 @@ export function describePosition(stored: string | null | undefined): string {
   const area = areaOf(district.key);
   const here =
     (position.placeKey ? getPlace(position.placeKey)?.name : undefined) ??
-    (position.landmarkKey ? getLandmark(position.landmarkKey)?.name : undefined);
+    (position.landmarkKey ? getLandmark(position.landmarkKey)?.name : undefined) ??
+    (position.streetKey ? getStreet(position.streetKey)?.name : undefined);
   const tail = `${district.name}${area ? ` (${area.name})` : ""}`;
   return here ? `${here}, ${tail}` : tail;
 }
@@ -314,8 +354,13 @@ export function travelTrip(
 
   if (origin === b.districtKey) {
     // Still in the same district. Standing in the same doorway costs nothing;
-    // anything else is an errand across part of one district.
-    const same = a?.placeKey === b.placeKey && a?.landmarkKey === b.landmarkKey;
+    // anything else is an errand across part of one district. All three have to
+    // match: a road through the district you are already in is somewhere else
+    // in it, not where you are standing.
+    const same =
+      a?.placeKey === b.placeKey &&
+      a?.landmarkKey === b.landmarkKey &&
+      a?.streetKey === b.streetKey;
     if (a && same) return { minutes: 0, mode: chosen };
     const minutes = minutesFor(ATLAS.travel.withinDistrictPercent, rule) + rule.readyMinutes;
     return { minutes: Math.round(minutes), mode: chosen };
@@ -385,6 +430,9 @@ export function resolveDestination(input: string | null | undefined): string | u
   for (const landmark of LANDMARKS) {
     if (norm(landmark.name) === needle) return landmark.key;
   }
+  for (const street of STREETS) {
+    if (norm(street.name) === needle) return street.key;
+  }
   return undefined;
 }
 
@@ -416,6 +464,7 @@ export function reachableDestinations(
     for (const landmark of landmarksIn(here.districtKey)) {
       if (isReachable(landmark)) add(landmark.key, landmark.name);
     }
+    for (const street of streetsIn(here.districtKey)) add(street.key, street.name);
   }
   // Somewhere they have stood before, they can name and go back to.
   for (const stored of known) {
@@ -484,6 +533,11 @@ export function mapPointOf(stored: string | null | undefined): MapPoint | undefi
   }
   if (position.landmarkKey) {
     const point = getLandmark(position.landmarkKey)?.map;
+    if (point) return point;
+  }
+  if (position.streetKey) {
+    const street = getStreet(position.streetKey);
+    const point = street ? streetPointIn(street, position.districtKey) : undefined;
     if (point) return point;
   }
   return getDistrict(position.districtKey)?.map;
@@ -799,13 +853,15 @@ export const PLACE_MATCH_KEYS: string[] = (() => {
     for (const place of district.locations) keys.add(place.name);
   }
   for (const landmark of LANDMARKS) keys.add(landmark.name);
+  for (const street of STREETS) keys.add(street.name);
   return [...keys].filter((k) => k.length >= 4).sort((a, b) => b.length - a.length);
 })();
 
 export type PlaceMention =
   | { kind: "district"; district: District }
   | { kind: "place"; place: Place; district: District }
-  | { kind: "landmark"; landmark: Landmark; district: District };
+  | { kind: "landmark"; landmark: Landmark; district: District }
+  | { kind: "street"; street: Street; district: District };
 
 /** Curly and straight apostrophes are the same character for lookups. */
 function normalizeName(text: string): string {
@@ -830,6 +886,11 @@ export function resolvePlaceMention(text: string): PlaceMention | undefined {
     if (normalizeName(landmark.name) !== needle) continue;
     const district = getDistrict(landmark.districtKey);
     if (district) return { kind: "landmark", landmark, district };
+  }
+  for (const street of STREETS) {
+    if (normalizeName(street.name) !== needle) continue;
+    const district = getDistrict(street.districts[0]!);
+    if (district) return { kind: "street", street, district };
   }
   return undefined;
 }

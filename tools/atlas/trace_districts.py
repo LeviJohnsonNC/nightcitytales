@@ -12,8 +12,8 @@ Output: src/data/atlas/night-city-map.json — a district raster over the same
 percentage coordinate space the atlas JSON already uses. It also rewrites two
 things in night-city.json: each district's own map point, to a spot the trace
 proves is inside that district rather than the mean of its venue pins; and the
-`landmarks` list, the city's named geography placed by the labels the map prints
-for it.
+`landmarks` and `streets` lists — the city's named geography and its major
+roads, placed by the labels the map prints for them.
 
 Usage:
     pip install pillow numpy scipy
@@ -106,6 +106,57 @@ LANDMARKS = [
 # How far a detected label may sit from the position recorded above and still be
 # taken for the same label, as a percentage of the map's width.
 LABEL_TOLERANCE = 0.5
+
+# The major roads. The map sets their names in black on the yellow carriageway,
+# unlike the minor streets, which are outlined white lettering the eye reads
+# easily and OCR does not. So these are the ones the trace can find: it locates
+# every name printed on a yellow road, and the names below — read off the map —
+# say which is which. A street the map labels more than once carries a position
+# for each label, and a name set over two lines carries one for each line.
+#
+# The atlas singles these roads out: "Major roadways (marked in yellow on the
+# map) are of special interest to not only the city government but the state of
+# NorCal and the Pacific Confederation since they represent major routes through
+# Night City. They are maintained, even in combat zones."
+ARTERIALS = [
+    ("industrial_st", "Industrial St", [(48.7, 17.5)]),
+    ("longshore_dr", "Longshore Dr", [(57.0, 22.3)]),
+    ("ganymede_st", "Ganymede St", [(50.8, 30.9)]),
+    ("kennedy_ave", "Kennedy Ave", [(50.9, 33.8)]),
+    ("california_ave", "California Ave", [(39.2, 33.9)]),
+    ("watson_blvd", "Watson Blvd", [(46.1, 34.5)]),
+    ("capitola_st", "Capitola St", [(55.8, 35.2)]),
+    ("skyline_east", "Skyline East", [(63.2, 35.1), (60.6, 48.2)]),
+    ("silk_rd", "Silk Rd", [(62.0, 38.3)]),
+    ("lincoln_blvd", "Lincoln Blvd", [(63.9, 38.9)]),
+    ("ferris_blvd", "Ferris Blvd", [(41.9, 40.9)]),
+    ("marina_blvd", "Marina Blvd", [(53.5, 41.9)]),
+    ("ruggels_way", "Ruggels Way", [(59.4, 42.4)]),
+    ("republic_way", "Republic Way", [(38.0, 42.1)]),
+    ("morro_rock_blvd", "Morro Rock Blvd", [(34.2, 42.6), (36.9, 42.9)]),
+    ("mlk_blvd", "MLK Blvd", [(40.6, 43.7)]),
+    ("skyline_west", "Skyline West", [(34.3, 44.5), (34.3, 45.9)]),
+    ("grant_st", "Grant St", [(67.8, 46.2)]),
+    ("del_coronado_overpass", "Del Coronado Overpass", [(57.7, 48.2)]),
+    ("bonita_st", "Bonita St", [(76.7, 51.3)]),
+    ("eighth_st", "8th St", [(71.0, 52.2)]),
+    ("seventh_st", "7th St", [(67.9, 52.5)]),
+    ("interstate_9", "Interstate 9", [(91.2, 52.8)]),
+    ("cargo_way", "Cargo Way", [(68.9, 53.4)]),
+    ("pacific_blvd", "Pacific Blvd", [(47.1, 54.0), (33.9, 68.8)]),
+    ("sequoia_st", "Sequoia St", [(78.1, 54.3)]),
+    ("jon_walter_williams_overpass", "Jon Walter Williams Overpass", [(49.9, 54.6), (49.9, 56.3)]),
+    ("ulysses_st", "Ulysses St", [(72.4, 56.2)]),
+    ("skyline_south", "Skyline South", [(39.1, 56.7), (41.4, 56.7)]),
+    ("new_pacific_highway", "New Pacific Highway (101)", [(55.5, 73.4)]),
+    ("playland_overpass", "Playland Overpass", [(45.1, 74.6)]),
+]
+# Letters are holes punched in the yellow carriageway; closing the band back up
+# fills them in, and the difference is the lettering.
+ARTERIAL_CLOSE = 51
+ARTERIAL_JOIN = 15
+ARTERIAL_MIN_PX = 1100
+STREET_TOLERANCE = 0.5
 
 # A district the atlas gives no locations at all cannot be seeded by a venue pin.
 # There is exactly one — Exec Zone — and it turns out to be an enclave: a
@@ -236,6 +287,82 @@ def landmarks_from(rgb, grid, keys, cell_width, cell_height):
             # A span has a district at each end, and they are the two closest.
             entry["connects"] = ranked[:2]
         out.append(entry)
+    return out
+
+
+def arterial_labels(rgb):
+    """Where a name is printed on a yellow carriageway, and how it is angled.
+
+    The lettering is punched out of the road, so the letters are holes in the
+    yellow band: close the band back up and the difference is the text.
+    """
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    height, width = r.shape
+    yellow = (r > 150) & (g > 130) & (b < 110) & (r - b > 70)
+    dark = (r < 115) & (g < 115)
+    letters = ndi.binary_closing(yellow, np.ones((ARTERIAL_CLOSE, ARTERIAL_CLOSE)))
+    letters &= ~yellow & dark
+    letters = ndi.binary_opening(letters, np.ones((3, 3)))
+    joined = ndi.binary_dilation(letters, np.ones((ARTERIAL_JOIN, ARTERIAL_JOIN)))
+    lab, n = ndi.label(joined)
+    sizes = ndi.sum(joined, lab, range(1, n + 1))
+    out = []
+    for index, box in enumerate(ndi.find_objects(lab)):
+        if sizes[index] < ARTERIAL_MIN_PX:
+            continue
+        tall = box[0].stop - box[0].start
+        wide = box[1].stop - box[1].start
+        if max(tall, wide) < 64 or min(tall, wide) > 150:
+            continue
+        out.append(
+            (
+                100 * (box[1].start + box[1].stop) / 2 / width,
+                100 * (box[0].start + box[0].stop) / 2 / height,
+            )
+        )
+    return out
+
+
+def streets_from(rgb, grid, keys, cell_width, cell_height):
+    """The major roads, placed by the names printed along them."""
+    printed = arterial_labels(rgb)
+    if not printed:
+        raise SystemExit("found no lettering on any yellow road")
+    aspect = cell_height / cell_width
+    rows, columns = np.nonzero(grid)
+    values = grid[rows, columns]
+    district_x = columns / cell_width * 100
+    district_y = rows / cell_height * 100 * aspect
+
+    out = []
+    for key, name, label_points in ARTERIALS:
+        marks = []
+        for want_x, want_y in label_points:
+            best = min(printed, key=lambda p: (p[0] - want_x) ** 2 + (p[1] - want_y) ** 2)
+            gap = ((best[0] - want_x) ** 2 + (best[1] - want_y) ** 2) ** 0.5
+            if gap > STREET_TOLERANCE:
+                raise SystemExit(
+                    f"no name printed on a yellow road within {STREET_TOLERANCE}% of where "
+                    f"{name} was recorded ({want_x}, {want_y}); nearest is {best} at {gap:.2f}%"
+                )
+            marks.append(best)
+        # A street runs through every district it is labelled in.
+        districts = []
+        for x, y in marks:
+            distance = np.hypot(district_x - x, district_y - (y * aspect))
+            near = keys[values[int(np.argmin(distance))] - 1]
+            if near not in districts:
+                districts.append(near)
+        out.append(
+            {
+                "key": key,
+                "name": name,
+                "districts": districts,
+                # Where the map writes the name. A street is a line, and this is
+                # a point on it; the atlas draws no centreline to trace.
+                "marks": [{"x": round(x, 3), "y": round(y, 3)} for x, y in marks],
+            }
+        )
     return out
 
 
@@ -515,6 +642,10 @@ def main():
     atlas["landmarks"] = landmarks_from(rgb, grid, keys, gw, gh)
     for landmark in atlas["landmarks"]:
         print(f"  {landmark['name']} ({landmark['kind']}) -> {landmark['districtKey']}")
+
+    print("reading the names printed along the major roads ...")
+    atlas["streets"] = streets_from(rgb, grid, keys, gw, gh)
+    print(f"  {len(atlas['streets'])} arterials placed")
 
     print("working out which districts touch ...")
     borders = with_spans(borders_between(labelled, water, keys), atlas["landmarks"])
