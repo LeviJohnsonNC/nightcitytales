@@ -116,6 +116,73 @@ export function districtNearPoint(point: MapPoint, searchCells = 4): string | un
   return undefined;
 }
 
+function centreOf(column: number, row: number): MapPoint {
+  return { x: ((column + 0.5) / GRID_WIDTH) * 100, y: ((row + 0.5) / GRID_HEIGHT) * 100 };
+}
+
+/**
+ * The nearest spot in the city to a point, or nothing when there is no city
+ * near it at all.
+ *
+ * The map names a good deal of water — three bays, a canal, a reservoir — and
+ * those names are places a character can ask to go and see. Where they end up
+ * is the shore, because nobody stands in a bay. Pass `inDistrict` to keep the
+ * answer on one particular side of the water.
+ */
+export function nearestCity(
+  point: MapPoint,
+  within = 8,
+  inDistrict?: string,
+): MapPoint | undefined {
+  const wanted = inDistrict === undefined ? undefined : VALUE_BY_KEY.get(inDistrict);
+  if (inDistrict !== undefined && wanted === undefined) return undefined;
+  const suits = (value: number) => value !== 0 && (wanted === undefined || value === wanted);
+
+  const column = columnOf(point.x);
+  const row = rowOf(point.y);
+  if (suits(valueAt(column, row))) return point;
+
+  const aspect = GRID_HEIGHT / GRID_WIDTH;
+  let best: MapPoint | undefined;
+  let bestApart = Infinity;
+  for (let ring = 1; ring <= within; ring++) {
+    for (let dy = -ring; dy <= ring; dy++) {
+      for (let dx = -ring; dx <= ring; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;
+        if (!suits(valueAt(column + dx, row + dy))) continue;
+        const at = centreOf(column + dx, row + dy);
+        // A percentage of the height covers more ground than one of the width,
+        // so the two have to be brought to the same units before comparing.
+        const apart = Math.hypot(at.x - point.x, (at.y - point.y) * aspect);
+        if (apart < bestApart) {
+          best = at;
+          bestApart = apart;
+        }
+      }
+    }
+    // Rings are squares, so the nearest cell of all can be one ring further out
+    // than the first one found. Take that ring too, then stop.
+    if (best) {
+      if (ring === within) break;
+      const edge = ring + 1;
+      for (let dy = -edge; dy <= edge; dy++) {
+        for (let dx = -edge; dx <= edge; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== edge) continue;
+          if (!suits(valueAt(column + dx, row + dy))) continue;
+          const at = centreOf(column + dx, row + dy);
+          const apart = Math.hypot(at.x - point.x, (at.y - point.y) * aspect);
+          if (apart < bestApart) {
+            best = at;
+            bestApart = apart;
+          }
+        }
+      }
+      break;
+    }
+  }
+  return best;
+}
+
 /** Whether a point is anywhere in the city at all, rather than water or edge. */
 export function isCity(point: MapPoint): boolean {
   return districtAtPoint(point) !== undefined;
