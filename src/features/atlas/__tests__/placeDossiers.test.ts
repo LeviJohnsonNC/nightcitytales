@@ -27,11 +27,14 @@ describe("place dossiers", () => {
     }
   });
 
-  it("covers Little Europe and every location in it", () => {
-    const district = getDistrict("little_europe")!;
-    expect(placeDossier(district.key), district.name).toBeDefined();
-    for (const place of district.locations) {
-      expect(placeDossier(place.key), `${place.code} ${place.name}`).toBeDefined();
+  it("covers every location of every district it covers at all", () => {
+    // A district with an entry but a location without one is the case that
+    // reads worst: the list offers a name, and the name opens a one-liner.
+    for (const district of DISTRICTS) {
+      if (!placeDossier(district.key)) continue;
+      for (const place of district.locations) {
+        expect(placeDossier(place.key), `${place.code} ${place.name}`).toBeDefined();
+      }
     }
   });
 
@@ -59,6 +62,44 @@ describe("place dossiers", () => {
     // Not a gap to fix: the fallback is the point, and this records which
     // districts are still waiting for an entry.
     const written = DISTRICTS.filter((d) => placeDossier(d.key)).map((d) => d.key);
-    expect(written).toEqual(["little_europe"]);
+    expect(written).toEqual([
+      "little_europe",
+      "upper_marina",
+      "downtown",
+      "the_hot_zone",
+      "little_china",
+      "university_district",
+    ]);
+  });
+
+  it("gives every picture to exactly one place", () => {
+    // Two entries sharing a slug means somebody pasted a line and forgot to
+    // change it, and the second place quietly wears the first one's face.
+    const seen = new Map<string, string>();
+    for (const [key, entry] of Object.entries(PLACE_DOSSIERS)) {
+      expect(seen.get(entry.image), `${key} reuses ${entry.image}`).toBeUndefined();
+      seen.set(entry.image, key);
+    }
+  });
+
+  it("closes every emphasis mark it opens", () => {
+    // The prose carries **bold** and *italic*, which the dossier renders. An
+    // unclosed mark would show the reader a literal asterisk.
+    for (const [key, entry] of Object.entries(PLACE_DOSSIERS)) {
+      const bare = entry.text.replace(/\*\*[^*]+\*\*/g, "").replace(/\*[^*]+\*/g, "");
+      expect(bare.includes("*"), `${key} has an unpaired emphasis mark`).toBe(false);
+    }
+  });
+
+  it("keeps the prose out of Markdown it cannot render", () => {
+    // Only inline emphasis is rendered. A heading, a list or a table pasted in
+    // from the source document would reach the reader as raw punctuation.
+    for (const [key, entry] of Object.entries(PLACE_DOSSIERS)) {
+      for (const para of entry.text.split("\n\n")) {
+        expect(para.startsWith("#"), `${key} has a Markdown heading`).toBe(false);
+        expect(para.startsWith("|"), `${key} has a Markdown table row`).toBe(false);
+        expect(para.includes("<br"), `${key} has an HTML line break`).toBe(false);
+      }
+    }
   });
 });
