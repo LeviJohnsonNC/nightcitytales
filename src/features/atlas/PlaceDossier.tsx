@@ -232,9 +232,6 @@ export function PlaceDossier({
               <DistrictBody district={district} onOpenPlace={setShowing} />
             )}
             {footer ? <div className="border-t border-hairline pt-3">{footer}</div> : null}
-            <p className="border-t border-hairline pt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Night City Atlas
-            </p>
           </div>
         </div>
       </DialogContent>
