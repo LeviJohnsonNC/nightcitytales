@@ -144,8 +144,7 @@ export function PlaceBody({
   return (
     <div className="space-y-3">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-          {place.code} ·{" "}
+        <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
           {onOpenDistrict ? (
             <button
               type="button"
@@ -163,11 +162,6 @@ export function PlaceBody({
         <h2 className="text-lg font-bold leading-tight">{place.name}</h2>
       </div>
       <Entry dossierKey={place.key} blurb={place.blurb} />
-      <div className="space-y-2 border-t border-hairline pt-3">
-        <p className="text-sm leading-relaxed text-foreground/80">{district.blurb}</p>
-        {district.security ? <Field label="Security" value={district.security} /> : null}
-        {district.gangs.length ? <Field label="Gangs" value={district.gangs.join(", ")} /> : null}
-      </div>
     </div>
   );
 }
@@ -232,9 +226,6 @@ export function PlaceDossier({
               <DistrictBody district={district} onOpenPlace={setShowing} />
             )}
             {footer ? <div className="border-t border-hairline pt-3">{footer}</div> : null}
-            <p className="border-t border-hairline pt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Night City Atlas
-            </p>
           </div>
         </div>
       </DialogContent>
