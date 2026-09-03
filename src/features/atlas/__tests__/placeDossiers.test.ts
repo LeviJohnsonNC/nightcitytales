@@ -79,24 +79,16 @@ describe("place dossiers", () => {
     expect(unwritten).toEqual([]);
   });
 
-  it("records which entries are still waiting for a picture", () => {
-    // Text and pictures arrive separately, so this is a running list rather
-    // than a fault. It shrinks as pictures land, and fails loudly if a picture
-    // is added to the repository without being wired to its entry.
+  it("has a picture for every entry", () => {
+    // Text and pictures arrived separately, and for a while this held a list of
+    // the entries still waiting. Every one of them now has a picture, so the
+    // list is empty and stays that way: an entry added later without a picture,
+    // or one whose picture is added to the repository but never wired up, shows
+    // up here first.
     const pending = Object.entries(PLACE_DOSSIERS)
       .filter(([, entry]) => !entry.image)
       .map(([key]) => key);
-    expect(pending).toEqual([
-      "heywood_industrial_zone",
-      "u1",
-      "u2",
-      "u3",
-      "u4",
-      "u5",
-      "v1",
-      "v2",
-      "v3",
-    ]);
+    expect(pending).toEqual([]);
   });
 
   it("keeps the district list it was written against", () => {
