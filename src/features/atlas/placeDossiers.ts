@@ -969,6 +969,7 @@ The Shroomers began years ago as **Night City University students growing halluc
 They aren't completely cut off. At eighteen, Shroomers are allowed to make a **pilgrimage topside**, experiencing the wider city and deciding whether to return. Some do. Some don't. Those journeys keep the Underground connected to contacts, trade, news, and the strange world above. Their mushrooms eventually reach customers elsewhere in Night City, including distribution through Mrs. Suzuki's Bodega in Old Japantown. But outsiders don't simply wander into the Underground because they heard the fungus is excellent. Finding the right entrance is one challenge. Being trusted after you find it is another. For an edgerunner, the tunnels invite all sorts of possibilities: someone disappears below and doesn't return; contamination threatens a crop; an old sealed section of NCART suddenly opens; excavation reveals something buried before the War. **Night City keeps trying to rebuild upward. The Shroomers looked beneath its feet and found an entire future nobody else wanted.**`,
   },
   norcal_military_base: {
+    image: "norcal-military-base",
     text: `The NorCal Military Base is where Night City stops improvising. Beyond the fences, concrete barriers, checkpoints, armored patrols, radar arrays, hangars, docks, motor pools, and razor wire sits an entire society built around the assumption that **somebody, eventually, is going to attack it**. The base predates the Time of the Red, but the Fourth Corporate War transformed its purpose completely. When Night City's infrastructure collapsed and supply lines to the United States became increasingly unreliable, the soldiers stationed here faced a choice familiar to everyone in 2020s California: cling to the old world until the supplies ran out, or adapt. In 2027, the base formally reorganized as the **Estero Bay Military Combined Operations Group**, or COG, swearing allegiance to Northern California and the Pacifica Confederation. The uniforms remained. The chain of command remained. The flag above them changed.
 
 Under **General Ash Giovanni**, the COG combines soldiers, sailors, air personnel, engineers, armored units, military intelligence, drone operators, and other surviving formations into something closer to a miniature national armed force than a conventional military installation. Military Police hold sole jurisdiction inside the perimeter, and once a visitor passes the gates, Night City's normal rules become largely irrelevant. The Uniform Code of Military Justice governs instead. Civilians require escorts. Drugs are tightly controlled. Restricted areas are actually restricted. Even people who merely live or work on base are generally required to enlist in the COG Reserve and maintain enough training to report for duty if called. Children grow up inside the system too, entering the **COG Training Corps** once they're old enough for school. Most Night City neighborhoods teach kids which gang controls the block. Here, they teach formations.
@@ -981,6 +982,7 @@ And even that isn't the deepest loyalty problem. Hidden among the COG is the **C
   },
 
   m1: {
+    image: "militech-corporate-operatives-housing",
     text: `Militech Corporate Operatives Housing is corporate accommodation designed by a company that apparently considers **incoming missile fire a reasonable residential planning assumption**. The reinforced conapt building houses roughly half of Militech's personnel assigned to the NorCal Military Base, particularly employees working at the nearby regional headquarters. The apartments themselves are spartan rather than luxurious. Furniture is limited, practical, and built from the sort of durable materials chosen because somebody at Militech probably asked whether a sofa really needs to survive fragmentation damage and received the answer *yes*. The entire structure is hardened enough that it is reportedly capable of surviving a missile strike. Home sweet hardened target.
 
 The building has its own gate onto **Norton III Drive**, guarded by Militech personnel and separated physically from the rest of the military complex. Outside visitors can enter, assuming they're willing to endure a thorough security screening. Moving from corporate housing deeper into the COG base is another matter entirely, requiring passage through a Military Police checkpoint. That physical arrangement mirrors the politics perfectly. Militech lives **inside** the military base without quite being **of** the military base, a corporate island surrounded by another institution's guns. Employees can use non-critical base infrastructure and mingle with COG personnel, but everyone understands where one jurisdiction ends and another begins.
@@ -989,6 +991,7 @@ The third-floor **cigar lounge** is where the building becomes genuinely interes
   },
 
   m2: {
+    image: "militech-offices",
     text: `From the outside, Militech's Night City headquarters is almost disappointing. The structure on **Mary E. Walker Street** rises only seven stories in a severe modern corporate style, looking far too small to serve as the Pacifica regional headquarters of one of the most powerful military corporations on Earth. That's because most of the building isn't above ground. Beneath those seven floors descend roughly **twenty additional sublevels**, packed with conference facilities, cafeterias, recreation areas, infirmaries, firing ranges, technical laboratories, security suites, an auditorium, an AV garage, and a state-of-the-art war room. The visible building is effectively the cap on a corporate bunker. **Militech didn't build an office. It buried a fortress and put reception on top.**
 
 Visitors are treated accordingly. Militech maintains its own external gate, allowing authorized civilians to reach the parking area and headquarters without passing freely through the rest of the COG base. People without sufficient clearance are escorted into an ancillary facility near the perimeter containing meeting rooms and a showroom where select customers can inspect Militech products. Anyone permitted into the headquarters itself remains under escort and only sees areas relevant to their business. When the meeting ends, so does the access. Deeper inside, security becomes draconian. Somewhere below ground are weapons programs, operational planning rooms, customer records, technical research, military contracts, personnel files, and exactly the sort of information governments employ intelligence agencies to acquire.
@@ -1345,6 +1348,7 @@ For an edgerunner, that makes Heywood Docks less a neighborhood than **a frontie
   },
 
   s1: {
+    image: "greenbox-storage-units",
     text: `Greenbox Storage Units promises **secure, climate-controlled storage**, and by Night City standards it actually delivers. The facility is considered one of the better storage operations in the city, consisting of rows upon rows of individual cubes measuring roughly **two meters by two meters by two meters**. Pay the monthly fee, receive access, and Greenbox provides a clean little box where temperature, weather, and casual theft become somebody else's problem. Businesses use them for inventory. Nomads store equipment between runs. Techs fill them with parts. Fixers keep things they would prefer not to explain to landlords. In a city where an intact warehouse can be a strategic asset, reliable storage is surprisingly close to luxury.
 
 The complication is that two meters by two meters by two meters is also, technically, **enough room for a human being**. Greenbox management insists the units are not residences. Some customers have responded to this policy by closing the doors and continuing to live there anyway. A mattress fits. So does a sleeping bag, an Agent, a battery lamp, several possessions, and approximately none of the dignity real-estate advertising usually includes in the floor plan. The only proper toilet and food facilities belong to the guard station, staffed by security personnel who are underpaid, bored, denied full-time status and benefits, and therefore magnificently ill-equipped to develop passionate opinions about what renters do after the doors close. Greenbox may prohibit residential occupancy. **Greenbox does not pay anybody enough to investigate snoring.**
@@ -1353,6 +1357,7 @@ That combination has given Greenbox an almost mythical reputation in Night City'
   },
 
   north_heywood: {
+    image: "north-heywood",
     text: `North Heywood is the part of Heywood that still gets up in the morning and goes to work. **Not because Night City has become kinder, but because this district never had the luxury of waiting for it to.** Over the past decade, Heywood has split into two increasingly different worlds, and the northern half has become the home of clerks, laborers, maintenance techs, warehouse hands, service workers, line specialists, cyberware installers, couriers, mechanics, and families trying to hold together something recognizably ordinary in a city with very little respect for ordinary life. A great many of them work in the nearby **Heywood Industrial Zone**, which means North Heywood lives by shift changes, freight movement, factory schedules, and the uneasy rhythm of people whose rent depends on systems larger than themselves continuing to function one more week.
 
 That gives the district a grounded quality rare in Night City. North Heywood does not gleam. It does not posture. It is not trying to look richer than it is. Apartment towers stand beside old motels converted into permanent housing. Cargo-container communities fill awkward spaces where development stalled or never arrived. Corner stores know their regulars. Local bars have more history than polish. The streets carry the smell of food carts, machine oil, old concrete, cheap synthcafe, and the faint chemical edge drifting over from the industrial corridor. **People here don't usually talk about reinventing themselves. They talk about making it to Friday.** And because this is Night City, making it to Friday is often a respectable ambition.
@@ -1365,6 +1370,7 @@ For an edgerunner, that makes North Heywood extremely dangerous in a very human 
   },
 
   t1: {
+    image: "acorn-towers",
     text: `Acorn Towers is the kind of corporate housing that tells you exactly how a company sees its people: valuable enough to keep close, not important enough to treat luxuriously. The dual-tower complex houses **Dynalar employees**, which means it is filled with junior engineers, cyberware techs, electronics specialists, administrators, support staff, and ambitious corporate climbers whose careers are still young enough to fit inside a company apartment. The towers are respectable, clean, and functional, with enough amenities to make residents feel looked after and enough surveillance to remind them who is doing the looking after.
 
 Inside, life is organized around work in that subtle corporate way that stops just short of admitting it owns your time. Neighbors work together, ride together, gossip about management together, and quietly compare promotions, assignments, and bonus rumors over vending-machine coffee. Doors close at night, but the building never quite stops feeling like an extension of the office. A resident can come home, ride an elevator with their project lead, pass three coworkers in the laundry room, and hear the same workplace argument resume in the hall the next morning. **Acorn Towers is where Dynalar employees go to leave work without ever fully escaping it.**
@@ -1373,6 +1379,7 @@ For players, that makes the place ideal for quiet corporate trouble. Somebody is
   },
 
   t2: {
+    image: "the-armory",
     text: `The Armory used to belong to the **National Guard**. Now it belongs to **6th Street**, which is the sort of sentence that tells you everything necessary about both Night City and American decline. The old structure still carries the bones of its original purpose: thick walls, wide interior floors, hardened storage spaces, drill-ready open areas, and the institutional feel of a place built to issue weapons and organize force. 6th Street has turned it into headquarters, recruiting ground, political symbol, and neighborhood fortress all at once.
 
 To their supporters, this is proof the gang stands for order, patriotism, local defense, and protecting ordinary people from Night City's endless parade of predators. To their critics, it is a heavily armed nostalgia cult wrapping extortion, vigilantism, and territorial power in the flag. Both readings contain enough truth to be uncomfortable. Members drill, drink, posture, clean guns, tell old war stories whether or not they were actually in the military, and speak the language of civic virtue while preparing for violence. **The Armory is where 6th Street turns grievance into identity and identity into jurisdiction.**
@@ -1381,6 +1388,7 @@ For an edgerunner, it is a pressure cooker. A job might involve infiltrating a r
   },
 
   t3: {
+    image: "biotechnica-palm-grove",
     text: `Biotechnica Palm Grove is one of those places that seems harmless until you remember who owns it. On the surface, it is simply a stand of **experimental palm trees**, neat and almost serene, a little patch of cultivated green in a district better known for labor, asphalt, and improvised housing. The trees sway. Sensors watch them. Maintenance crews visit. Security does not overreact unless given a reason. **It looks like landscaping. It feels like a laboratory.**
 
 That is the unsettling part. In Night City, when Biotechnica plants something, it is never just a plant. The grove is monitored, studied, and maintained with corporate attention because these palms are assets before they are flora. Perhaps they are drought-resistant, pollutant-resistant, genetically tuned for carbon capture, salt tolerance, biofuel extraction, or some other product-friendly breakthrough. Perhaps they are merely ornamental proof that Biotechnica can make life flourish where nature had the decency to give up. Either way, the district gets a reminder that even shade can be proprietary.
@@ -1389,6 +1397,7 @@ For players, the Palm Grove is a marvelous small mystery. Why did Biotechnica re
   },
 
   t4: {
+    image: "converted-motel-studio-apartments",
     text: `The Converted Motel Studio Apartments don't even bother pretending to have a proper name anymore. Whatever branding the place once had has worn off with the decades, leaving behind a low, tired roadside structure on the edge of the city that has been transformed from temporary lodging into permanent life. The old motel bones remain visible everywhere: exterior-facing doors, narrow parking access, thin walls, awkward plumbing, and rooms designed for overnight guests now serving as homes for people who may stay for years. **North Heywood specializes in turning the provisional into the permanent. This place is practically a district monument.**
 
 The studios are small, cheap by local standards, and occupied by the people who need cheap more than they need dignity: industrial workers, gig laborers, recent arrivals, divorced parents, older residents on fixed income, burnouts, and people between better options for so long that "between" has become a lifestyle. Residents know which units are quiet, which ones cook good food, which tenant can fix appliances, and which door to avoid after midnight. In a city obsessed with reinvention, the motel apartments are refreshingly honest. Nobody here is living a fantasy.
@@ -1397,6 +1406,7 @@ That honesty makes them playable. A room gets rented in cash to someone using th
   },
 
   t5: {
+    image: "dynalar-campus",
     text: `The Dynalar Campus is North Heywood's cleanest expression of upward mobility. **Dynalar** is one of the more recognizable names in cyberware and consumer electronics, and its regional headquarters brings a distinctly corporate layer to a district otherwise built around shift work and practical survival. The campus includes offices, meeting spaces, and the sort of polished research and clinical environment designed to reassure investors, employees, and patients that technology is both the future and under control. Glass, steel, bright interiors, access badges, and quiet competence define the space.
 
 Yet unlike some more insulated corporate compounds in Night City, Dynalar does not float completely above the district around it. Its workers live nearby. Its products pass through local hands. Its service and medical functions intersect with a population already steeped in chrome culture because this is Night City and cyberware is not luxury here so much as infrastructure. That creates a fascinating blur between corporate image and neighborhood reality. Dynalar wants to be the friendly, reliable face of augmentation. North Heywood knows that even "friendly" corporations still count profit first. **The campus is where cyberware gets presented as progress instead of need, aspiration instead of desperation.**
@@ -1405,6 +1415,7 @@ For players, it offers all the right tensions: prototype theft, patient data, co
   },
 
   t6: {
+    image: "forlorn-hope-bar",
     text: `The **Forlorn Hope** is not merely a bar. It is one of those rare Night City institutions that has survived long enough to become almost mythic, a veterans' and edgerunners' refuge where history clings to the walls whether management wants it to or not. After the events of *Tales of the RED: Hope Reborn*, the Hope stands renewed but unchanged in spirit: still a place for mercs, soldiers, burned-out heroes, unlucky survivors, and people who have seen enough violence to prefer drinking among others who won't ask for simplifications. **If the Afterlife is where legends become visible, the Forlorn Hope is where the scar tissue goes to sit down.**
 
 The clientele gives the place its gravity. Veterans swap stories with bartenders who have heard them before. Old grudges get aired, old comrades get toasted, and new crews learn quickly that disrespecting the room is a poor survival strategy. There is a sort of weary honor here, not clean enough to become romantic, but real enough to matter. A favor earned at the Hope may count more than a corporate contract because it was given by somebody who knows what promises cost. The drinks help. So does the understanding that everyone in the room has probably buried someone.
@@ -1413,6 +1424,7 @@ For edgerunners, the Hope is pure gold: a source of jobs, contacts, rumors, hist
   },
 
   t7: {
+    image: "nana-meows-nursery",
     text: `Nana Meow's Nursery is not itself a guerrilla garden. That would be too obvious. Instead, it supplies the people who turn abandoned planters, traffic medians, vacant lots, cracked courtyards, and forgotten edges of North Heywood into living acts of defiance. Seeds, tools, soil enhancers, planters, lamps, nutrient packs, irrigation fixes, advice, and probably a few things not strictly intended for legal horticultural use all pass through this wonderfully subversive little shop. **In a city that monetizes every square meter, growing something where it wasn't invited is almost political theology.**
 
 Nana Meow herself, or at least the persona and culture around the shop, gives the place its warmth. Customers include community gardeners, aging idealists, local kids, eco-radicals, retirees, people trying to grow food, and residents simply tired of living in a world made entirely of concrete and menu screens. The shop doesn't need to wave a banner to make its values clear. It believes neighborhoods should bloom. It believes ordinary people should know how to coax life out of bad conditions. In Night City, that is nearly a revolutionary position.
@@ -1421,6 +1433,7 @@ For players, the hooks are excellent. Somebody is poisoning community plots. A B
   },
 
   t8: {
+    image: "night-city-animal-shelter",
     text: `The Night City Animal Shelter is one of the more charming lies in North Heywood, because it is **no longer an animal shelter and not really a veterinary clinic either**. The former vet facility is now occupied by a ripperdoc who specializes in **Exotics and Bioexotics**, which means it caters to the wonderfully Night City intersection between body modification, species fantasy, identity expression, and medical necessity. If a patient wants claws, muzzles, tails, fur patterns, feline optics, scaled dermal effects, or more extensive bio-sculpted transformation, this is the sort of place they end up.
 
 The building's old purpose lingers in the atmosphere. Treatment rooms once meant for animals now host people becoming something adjacent to them. Kennels and exam areas have been repurposed into surgical spaces, recovery rooms, and storage. The clientele ranges from committed Exotics living full-time transformed identities to performers, posers, fetishists, and those whose desired self no longer sits neatly inside the word *human*. There is tenderness in that work as well as risk. In a city happy to commodify the body, a clinic like this can become one of the few places where radical self-expression is treated as care rather than pathology. **The chrome may be strange, but the need to be seen is very ordinary.**
@@ -1429,6 +1442,7 @@ That makes it fertile ground for jobs. A patient is being hunted by someone who 
   },
 
   t9: {
+    image: "woodland-park",
     text: `Woodland Park is the kind of neighborhood that reveals North Heywood's real personality better than any corporate brochure could. It sits near the Dynalar campus, but its identity is resolutely local: part modest neighborhood, part survival network, part little ecosystem of ordinary people making do beside larger powers. Highlights include the **Burning Bright Bodega**, the mom-and-pop drug store **Breeze**, the **Palms** cargo-container community, the **Shark** apartment building, and the **Zolletta** cube hotel. None of these would qualify as a landmark in wealthier districts. Here, together, they form a whole life.
 
 The bodega is where people hear things first. Breeze is where they try to solve health problems before those problems require hospitals or debt. The Palms container community shows the district's talent for turning hard edges into homes. The Shark houses people who managed to get one rung higher than the cubes. The Zolletta reminds everyone how thin that distance can be. Woodland Park isn't glamorous, but it has density in the best narrative sense: everyone is close enough for problems to spread and kindness to do the same. **This is where neighborhood becomes infrastructure.**
@@ -1437,6 +1451,7 @@ For players, Woodland Park works beautifully as a recurring home base or job clu
   },
 
   t10: {
+    image: "xanadu",
     text: `Xanadu is what happens when North Heywood decides that if the world insists on being ugly, **people may as well lace up skates and make the ugliness work for it**. The venue is part roller derby rink, part disco tech, part neighborhood spectacle, and fully committed to the proposition that speed, music, bruises, glitter, and attitude can still qualify as culture. By day, or at least by quieter hours, it is a sporting venue. By night, it becomes a feverish blend of competition and nightlife, with lights, music, collisions, sweat, and bodies moving in deliberate defiance of restraint.
 
 It is also home to **the Muses**, a gang with deep roots in performance, image, and feminine-coded ferocity. That gives Xanadu a distinct energy. This is not a sterile sports arena. It is a place where identity and aggression become choreography. Rivalries matter. Aesthetic matters. The crowd matters. The line between athlete, performer, ganger, and local hero can get very thin very quickly. People come to watch the action, flirt recklessly, support their favorites, place bets, and bask in the kind of collective energy Night City so rarely allows without monetizing into extinction. **Xanadu turns impact into applause.**
@@ -1497,6 +1512,7 @@ For edgerunners, the MicroVillage is almost perfect social infiltration territor
   },
 
   santo_domingo: {
+    image: "santo-domingo",
     text: `Nobody officially renamed South Heywood. **The people living there did, which is considerably harder to reverse.** Over the 2030s, the southeastern edge of Night City became a natural gathering point for Nomads moving into and out of the metropolis. Caravans stopped beneath the Petrochem dam. Families lingered. Trade followed. Repair crews, merchants, drivers, guides, smugglers, scouts, and people who had spent years crossing the broken roads of America began turning temporary camps into something resembling permanent civic infrastructure. Eventually *South Heywood* sounded less like a neighborhood and more like something written on an old municipal map. Locals increasingly called it **Santo Domingo**, and by 2045 the name had stuck firmly enough that the city might as well learn to live with it.
 
 For years, the **Aldecaldos** were the gravitational center of that new Santo Domingo. Their huge enclave beneath the Coronado Dam became one of Night City's most important gateways to the Badlands, a place where Nomads could find food, repairs, shelter, trade, medical care, work, news, and people who understood exactly how dangerous the road outside could become. Their Peacekeepers still provide security across the district, patrolling on roadbikes and maintaining enough authority that their headquarters is considered a meaningful counterpart to the local NCPD precinct. The Aldecaldos are not merely another faction operating here. **For a long time, they were part transportation network, part police force, part economic engine, and part unwritten government.**
@@ -1533,6 +1549,7 @@ For edgerunners, East Cargo Village has the appeal of a place where seemingly sm
   },
 
   v4: {
+    image: "heywood-suites",
     text: `Whoever named **Heywood Suites** either possessed a fine sense of irony or worked in property marketing. The apartment complex sits directly beneath one of Night City's busiest highway overpasses, where heavy trucks thunder toward the Heywood Industrial Zone every morning and return every evening. The building is extensively soundproofed. It doesn't matter. Noise can be muffled; **physics remains unionized**. Vibrations travel through the structure strongly enough to rattle furniture unless residents bolt it down. Cups migrate across tables. Pictures slowly straighten themselves into new positions. Sleep becomes an engineering problem.
 
 The residents have adapted with the peculiar technological pragmatism characteristic of Night City. Many have installed **Level Dampener cyberware**, converting an urban-planning failure into a medical purchasing decision. Others simply live in ear protection. Some residents, including workers from nearby Zhirafa facilities and Precinct #2, have begun learning **American Sign Language** because communicating visually can be easier than trying to overpower the freight traffic. The result is an apartment building developing its own accidental culture around silence in one of the loudest places in Night City.

@@ -87,32 +87,15 @@ describe("place dossiers", () => {
       .filter(([, entry]) => !entry.image)
       .map(([key]) => key);
     expect(pending).toEqual([
-      "norcal_military_base",
-      "m1",
-      "m2",
-      "s1",
-      "north_heywood",
-      "t1",
-      "t2",
-      "t3",
-      "t4",
-      "t5",
-      "t6",
-      "t7",
-      "t8",
-      "t9",
-      "t10",
       "heywood_industrial_zone",
       "u1",
       "u2",
       "u3",
       "u4",
       "u5",
-      "santo_domingo",
       "v1",
       "v2",
       "v3",
-      "v4",
     ]);
   });
 
