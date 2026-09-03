@@ -45,10 +45,12 @@ function Portrait({
   className?: string;
 }) {
   const entry = placeDossier(dossierKey);
-  if (!entry) return null;
+  const src = entry ? placeImage(entry) : undefined;
+  // An entry written before its picture was made simply reads as text.
+  if (!src) return null;
   return (
     <div className={cn("relative aspect-[4/3] w-full overflow-hidden bg-background", className)}>
-      <img src={placeImage(entry)} alt={alt} className="h-full w-full object-cover object-center" />
+      <img src={src} alt={alt} className="h-full w-full object-cover object-center" />
       <div className="pointer-events-none absolute inset-0 border border-ember/40" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent" />
     </div>
@@ -232,7 +234,8 @@ export function PlaceDossier({
   const title = place ? place.name : district.name;
   const footer = action?.(place ? place.key : district.key);
   const portraitKey = place ? place.key : district.key;
-  const hasPortrait = !!placeDossier(portraitKey);
+  const entry = placeDossier(portraitKey);
+  const hasPortrait = !!entry?.image;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent

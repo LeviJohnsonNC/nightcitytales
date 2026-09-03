@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { DISTRICTS, districtOfPlace, getDistrict, getPlace } from "@/engine";
@@ -16,15 +16,29 @@ describe("place dossiers", () => {
     }
   });
 
-  it("has a picture on disk for every entry", () => {
+  it("has a picture on disk for every entry that names one", () => {
     // The slug is written by hand and the file is added by hand, so nothing but
     // this stops the two from drifting apart into a broken image.
     for (const [key, entry] of Object.entries(PLACE_DOSSIERS)) {
-      const path = join(PUBLIC, placeImage(entry));
-      expect(existsSync(path), `${key} points at ${placeImage(entry)}, which is missing`).toBe(
-        true,
-      );
+      const url = placeImage(entry);
+      if (!url) continue;
+      expect(existsSync(join(PUBLIC, url)), `${key} points at ${url}, which is missing`).toBe(true);
     }
+  });
+
+  it("uses every picture on disk", () => {
+    // The other direction: a file nobody points at is a picture that was made
+    // and then never reached a reader, usually because a slug was misspelt.
+    const named = new Set(
+      Object.values(PLACE_DOSSIERS)
+        .map((e) => e.image)
+        .filter(Boolean),
+    );
+    const orphans = readdirSync(join(PUBLIC, "images", "places"))
+      .filter((f) => f.endsWith(".png"))
+      .map((f) => f.slice(0, -4))
+      .filter((slug) => !named.has(slug));
+    expect(orphans).toEqual([]);
   });
 
   it("covers every location of every district it covers at all", () => {
@@ -58,9 +72,51 @@ describe("place dossiers", () => {
     }
   });
 
-  it("leaves the rest of the city on its atlas blurb until it is written", () => {
-    // Not a gap to fix: the fallback is the point, and this records which
-    // districts are still waiting for an entry.
+  it("covers every district in the atlas", () => {
+    // The whole city is written. A district added later without an entry, or an
+    // entry keyed on a name the atlas does not use, shows up here first.
+    const unwritten = DISTRICTS.filter((d) => !placeDossier(d.key)).map((d) => d.key);
+    expect(unwritten).toEqual([]);
+  });
+
+  it("records which entries are still waiting for a picture", () => {
+    // Text and pictures arrive separately, so this is a running list rather
+    // than a fault. It shrinks as pictures land, and fails loudly if a picture
+    // is added to the repository without being wired to its entry.
+    const pending = Object.entries(PLACE_DOSSIERS)
+      .filter(([, entry]) => !entry.image)
+      .map(([key]) => key);
+    expect(pending).toEqual([
+      "norcal_military_base",
+      "m1",
+      "m2",
+      "s1",
+      "north_heywood",
+      "t1",
+      "t2",
+      "t3",
+      "t4",
+      "t5",
+      "t6",
+      "t7",
+      "t8",
+      "t9",
+      "t10",
+      "heywood_industrial_zone",
+      "u1",
+      "u2",
+      "u3",
+      "u4",
+      "u5",
+      "santo_domingo",
+      "v1",
+      "v2",
+      "v3",
+      "v4",
+    ]);
+  });
+
+  it("keeps the district list it was written against", () => {
     const written = DISTRICTS.filter((d) => placeDossier(d.key)).map((d) => d.key);
     expect(written).toEqual([
       "little_europe",
@@ -75,6 +131,18 @@ describe("place dossiers", () => {
       "port_of_night_city",
       "reclamation_zone",
       "old_combat_zone",
+      "norcal_military_base",
+      "watson_development",
+      "kabuki",
+      "new_westbrook",
+      "charter_hill",
+      "exec_zone",
+      "heywood_docks",
+      "north_heywood",
+      "heywood_industrial_zone",
+      "santo_domingo",
+      "pacifica_playground",
+      "rancho_coronado",
     ]);
   });
 
@@ -83,6 +151,7 @@ describe("place dossiers", () => {
     // change it, and the second place quietly wears the first one's face.
     const seen = new Map<string, string>();
     for (const [key, entry] of Object.entries(PLACE_DOSSIERS)) {
+      if (!entry.image) continue;
       expect(seen.get(entry.image), `${key} reuses ${entry.image}`).toBeUndefined();
       seen.set(entry.image, key);
     }
