@@ -26,6 +26,25 @@ export function getMission(id: string): Mission {
   throw new Error(`No registered mission "${id}".`);
 }
 
+/**
+ * The same lookup, for callers that would rather have nothing than an
+ * exception.
+ *
+ * getMission throws because a play loop that has lost its mission is broken and
+ * should say so loudly. But some callers only want to KNOW something about the
+ * job if it happens to be knowable — where it was, for instance, so the place
+ * can remember it — and a missing mission there should not take a settlement
+ * down with it.
+ */
+export function findMission(id: string | null | undefined): Mission | null {
+  if (!id) return null;
+  try {
+    return getMission(id);
+  } catch {
+    return null;
+  }
+}
+
 /** All registered missions. Generated jobs are not listed — there are 2^32 of them. */
 export function listMissions(): Mission[] {
   return Object.values(MISSIONS);

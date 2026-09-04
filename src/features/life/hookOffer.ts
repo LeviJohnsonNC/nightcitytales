@@ -11,8 +11,11 @@
  * React, no dice.
  */
 import {
+  generateJob,
   getMission,
+  placeIntel,
   jobIdForSeed,
+  rollJobSeed,
   missionOffer,
   missionPayout,
   startingTerms,
@@ -23,6 +26,7 @@ import {
   type Mission,
   type MissionOffer,
 } from "@/engine";
+import type { PlaceState, RNG } from "@/engine";
 import type { CampaignEvent, CampaignFlag, Json } from "@/lib/backend";
 import type { SituationUpsert } from "@/lib/backend";
 import type { LifeWireOffer } from "./lifeContext";
@@ -203,10 +207,15 @@ export function offerThrough(offer: MissionOffer, broker: CastMember | null): Mi
 export function wireOfferFor(
   seed: number,
   broker: CastMember | null = null,
+  places: Record<string, PlaceState> = {},
 ): { missionId: string; wire: LifeWireOffer } {
   const missionId = jobIdForSeed(seed);
   const mission = getMission(missionId);
   const offer = offerThrough(missionOffer(mission), broker);
+  // What the character already knows about the building, because they have
+  // been there. Absent for somewhere they have never set foot, which is the
+  // honest answer rather than an empty readout.
+  const intel = offer.placeKey ? placeIntel(offer.placeKey, places[offer.placeKey]) : null;
   return {
     missionId,
     wire: {
@@ -215,6 +224,8 @@ export function wireOfferFor(
       brokerKey: offer.brokerKey,
       brokerLine: offer.brokerLine,
       district: offer.district,
+      ...(offer.placeName ? { placeName: offer.placeName } : {}),
+      ...(intel?.known.length ? { familiar: intel.known } : {}),
       pitch: offer.pitch,
       ask: offer.ask,
       payout: printedPayout(mission),
@@ -243,4 +254,33 @@ export function askTagFrom(event: CampaignEvent | undefined): HookAskTag | null 
   if (typeof situationKey !== "string") return null;
   if (ask !== "pay" && ask !== "patron" && ask !== "risk") return null;
   return { ask, situationKey };
+}
+
+/**
+ * How many candidate seeds to look at before settling on one.
+ *
+ * The wire prefers work on ground the character knows, because "the target is
+ * holed up in Coronado Heights" only lands if they have been to Coronado
+ * Heights. This is done by CHOOSING AMONG SEEDS rather than by steering the
+ * generator: every draw inside generateJob is deterministic from its seed, and
+ * biasing the district there would change every job every stored id names.
+ */
+export const SEED_CANDIDATES = 6;
+
+/**
+ * Draw a seed for the next job, preferring one whose work lands somewhere the
+ * character has been.
+ *
+ * Falls through to the first candidate when nothing matches, which is the
+ * common case early on: a character who has been nowhere gets work anywhere,
+ * and the city opens up as they do.
+ */
+export function pickJobSeed(knownDistricts: Set<string>, rng: RNG = Math.random): number {
+  const seeds = Array.from({ length: SEED_CANDIDATES }, () => rollJobSeed(rng));
+  if (!knownDistricts.size) return seeds[0]!;
+  const familiar = seeds.find((seed) => {
+    const district = generateJob(seed).offer?.districtKey;
+    return district ? knownDistricts.has(district) : false;
+  });
+  return familiar ?? seeds[0]!;
 }

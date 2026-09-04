@@ -15,6 +15,8 @@ import {
   beginTurn,
   currentBeat,
   getBeat,
+  arenaForPlace,
+  findMission,
   getMission,
   failMission,
   getSkill,
@@ -599,6 +601,15 @@ async function narrate(
       }
     } else if (action.kind === "start_encounter") {
       if (live) continue; // one fight at a time
+      const standingIn = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+      const jobPlace = bundle.campaign.current_mission_id
+        ? findMission(bundle.campaign.current_mission_id)?.offer?.placeKey
+        : undefined;
+      const arenaHere = standingIn?.placeKey
+        ? arenaForPlace(standingIn.placeKey)
+        : jobPlace
+          ? arenaForPlace(jobPlace)
+          : undefined;
       // A Solo brings their Combat Awareness division into the fight with them.
       const awareness = combatAwarenessFor(bundle.campaign, bundle.character);
       const opened = await beginEncounter({
@@ -610,7 +621,11 @@ async function narrate(
         vitals: bundle.vitals,
         inventory: bundle.inventory,
         enemies: action.enemies,
-        arena: action.arena,
+        // Where the fight is decides its geometry. The model may still name an
+        // arena — it can see the room and this cannot — but when it does not,
+        // the ground answers instead of falling through to open ground: a club
+        // interior at a bar, a parking structure under a garage.
+        arena: action.arena ?? arenaHere,
         goal: action.goal,
         ...(awareness
           ? {

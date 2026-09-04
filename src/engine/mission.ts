@@ -92,6 +92,10 @@ export type MissionOffer = {
   district: string;
   /** The Night City Atlas district key the work sits in, when the job names one. */
   districtKey?: string;
+  /** The location code the work is actually at, when the job names a building. */
+  placeKey?: string;
+  /** That building's printed name, for the pitch. */
+  placeName?: string;
   /** What is waiting when they get there. Not volunteered. */
   opposition: string;
   /** The pitch in the broker's words, as the player hears it. */
