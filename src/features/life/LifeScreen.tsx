@@ -40,6 +40,8 @@ import {
   resolvePosition,
   placeActions,
   describePlaceAction,
+  peopleAtHaunts,
+  districtOfPlace,
   type PlaceAction,
 } from "@/engine";
 
@@ -53,6 +55,7 @@ import { actorFor, gmSkillList, statsRecord } from "@/features/play/playModel";
 import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
+import { hauntPeople } from "./lifeModel";
 import { ShopSheet } from "./ShopSheet";
 import { RipperdocSheet } from "./RipperdocSheet";
 import { RecordSheet } from "./RecordSheet";
@@ -796,6 +799,19 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
       if (at) known.add(at.districtKey);
     }
     return placeSignals({
+      // People you know, where they actually are tonight. Derived rather than
+      // stored, and filtered to districts the character knows on the same rule
+      // as the beats: somebody drinking in a neighbourhood you have never been
+      // to is not news that reaches you.
+      peopleAt: peopleAtHaunts({
+        people: hauntPeople(bundle.npcs, bundle.campaign),
+        day: bundle.clock.day,
+        minute: bundle.clock.minute,
+        seed: bundle.campaign.id,
+      }).filter((p) => {
+        const at = districtOfPlace(p.placeKey);
+        return at ? known.has(at.key) : false;
+      }),
       situations: [
         ...bundle.situations,
         ...cityBeats({
