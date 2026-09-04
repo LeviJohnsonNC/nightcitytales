@@ -213,7 +213,25 @@ function clampTurn(value: number, limit: number): number {
  * Aggregated per clock, so three bodies are one tick of six clamped to the turn
  * limit rather than three separate rows racing each other into the database.
  */
-export function applyObservations(reports: ObservationReport[]): PressureChange {
+export type ObservationOptions = {
+  /**
+   * What noise costs where it happened, from the district's response profile
+   * (see places.ts). One is the ordinary city. Zero is a district nobody
+   * polices, where being loud genuinely does not reach the NCPD — which is the
+   * whole mechanical difference between the Exec Zone and Rancho Coronado.
+   *
+   * It scales HEAT only. Being seen by Arasaka costs Arasaka's file exactly the
+   * same wherever it happened: a corporation does not stop keeping records
+   * because the neighbourhood is poor.
+   */
+  heatMultiplier?: number;
+};
+
+export function applyObservations(
+  reports: ObservationReport[],
+  options: ObservationOptions = {},
+): PressureChange {
+  const heatScale = options.heatMultiplier ?? 1;
   const byClock = new Map<string, ClockTick>();
   const byFaction = new Map<FactionId, number>();
   const notes: string[] = [];
@@ -244,12 +262,15 @@ export function applyObservations(reports: ObservationReport[]): PressureChange 
     // Heat is the city's own attention and moves whether or not anyone in
     // particular was on the receiving end. When the receiving end WAS the NCPD,
     // their clock is this clock, and the faction cost above already moved it.
-    if (report.factionId !== "ncpd") tick(heatClock(), cost.heat);
+    if (report.factionId !== "ncpd") tick(heatClock(), cost.heat * heatScale);
   }
 
   return {
     ticks: [...byClock.values()]
-      .map((t) => ({ ...t, delta: clampTurn(t.delta, MAX_TURN_TICK) }))
+      // Rounded once, at the end. A scaled heat cost can land on a half
+      // segment, and a clock is whole segments: rounding each report as it
+      // arrives would let three half-ticks come to nothing.
+      .map((t) => ({ ...t, delta: clampTurn(Math.round(t.delta), MAX_TURN_TICK) }))
       .filter((t) => t.delta !== 0),
     standings: [...byFaction.entries()]
       .map(([factionId, delta]) => ({ factionId, delta: clampTurn(delta, MAX_TURN_STANDING) }))

@@ -105,6 +105,15 @@ export type LifeContext = {
     security: string;
     gangs: string[];
     combatZone: boolean;
+    /**
+     * Who answers when the street notices, and how fast — from the district's
+     * own printed security provider. "Militech, at once" and "NCPD (in theory),
+     * nobody comes" are the same field, and the difference between them is most
+     * of what makes one district feel unlike another.
+     */
+    response?: string;
+    /** What the money looks like here, and how busy the street is. */
+    character?: string;
     nearby: string[];
     /**
      * Good destinations to have in mind: what is underfoot, the named geography
@@ -136,6 +145,14 @@ function line(label: string, value: string): string {
   return `${label}: ${value}`;
 }
 
+/** The venue a situation belongs to, when it is one the ground produced. */
+function placeOf(situation: LifeSituation): { name: string; atPlace: boolean } | null {
+  const data = situation.data ?? {};
+  const name = data["placeName"];
+  if (typeof name !== "string" || !name) return null;
+  return { name, atPlace: data["atPlace"] === true };
+}
+
 /** Render the Life context + the player's input into the model's user prompt. */
 export function renderLifeUserPrompt(context: LifeContext, playerInput: string): string {
   const parts: string[] = [];
@@ -161,6 +178,8 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     parts.push(line("Here", p.where));
     parts.push(line("District", `${p.district} (${p.area})`));
     if (p.security) parts.push(line("Security", p.security));
+    if (p.response) parts.push(line("If the street notices", p.response));
+    if (p.character) parts.push(line("The look of the place", p.character));
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
     if (p.combatZone) parts.push(line("Note", "This is a Combat Zone. No law worth the name."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
@@ -238,6 +257,17 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
         (s.dueDay !== undefined ? ` (comes due on day ${s.dueDay})` : "") +
         ` (severity ${s.severity}/5)`,
     );
+    // A situation that belongs to a place says so. Without this the narrator
+    // gets "the water truck did not make it" with no idea that the water is at
+    // the carwash, and invents somewhere for it to be.
+    const where = placeOf(s);
+    if (where) {
+      parts.push(
+        where.atPlace
+          ? `This is happening at ${where.name}, and the character is there. Narrate it in front of them.`
+          : `This is happening at ${where.name}, elsewhere in this district. The character is not there: they have heard about it, or can see it from where they are. Getting to it is their decision, not yours.`,
+      );
+    }
   } else {
     parts.push(
       "Nothing is pressing. Give them a quiet, specific moment in their own life and three " +

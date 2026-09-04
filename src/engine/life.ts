@@ -437,6 +437,10 @@ const DERIVED_PREFIXES = [
   "humanity_low",
   "broke",
   "person_",
+  // Where the character is standing (see placeBeats.ts). Derived like the rest,
+  // which is what makes a local situation local: walk away from the night
+  // market and it stops being true, come back next week and it is true again.
+  "place_",
 ];
 
 function isDerivedKey(key: string): boolean {

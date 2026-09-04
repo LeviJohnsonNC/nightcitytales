@@ -428,7 +428,12 @@ async function narrate(
   // recorded is treated as the same event restated, not a second one.
   const observed = readObservations(gm.observations);
   if (observed.length) {
-    await applyPressure(campaignId, observed, { beatId, notAgainAfter: bundle.events });
+    await applyPressure(campaignId, observed, {
+      beatId,
+      notAgainAfter: bundle.events,
+      districtKey:
+        resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+    });
   }
 
   await appendCampaignEvent({
