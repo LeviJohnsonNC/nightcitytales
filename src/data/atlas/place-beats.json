@@ -1,0 +1,131 @@
+{
+  "houseRule": true,
+  "note": "What a place can put in front of a character. A beat is anchored to a location and is true while the character is in that location's district; the engine picks it deterministically from the day, so nothing here is a roll and nothing here is the narrator's decision. Anchored by TAG rather than by key wherever the beat is not about one specific venue, so a beat written once works in every district that has the ground for it.",
+  "cap": 2,
+  "capNote": "How many place beats may be live at once. Two. The Life funnel scores them against rent, wounds and people like everything else, and a place that offers four things at once is a quest board.",
+  "beats": [
+    {
+      "key": "water_truck",
+      "places": ["x1"],
+      "category": "need",
+      "title": "The water truck didn't make it today",
+      "summary": "The carwash is selling clean drinking water. The line runs half the block and it is not getting shorter.",
+      "severity": 3,
+      "everyDays": 9
+    },
+    {
+      "key": "dead_elevator",
+      "places": ["x2"],
+      "category": "need",
+      "title": "The elevator is dead again",
+      "summary": "The building manager wants thirty a resident toward parts. Until somebody pays, it is the stairs.",
+      "severity": 2,
+      "everyDays": 13
+    },
+    {
+      "key": "container_neighbour",
+      "places": ["x3"],
+      "category": "people",
+      "title": "Somebody is moving in two containers down",
+      "summary": "A family, by the look of the load. Half the terrace has come out to watch and nobody is offering to help.",
+      "severity": 1,
+      "everyDays": 11,
+      "parts": ["morning", "afternoon"]
+    },
+    {
+      "key": "wrecked_beds",
+      "places": ["x4"],
+      "category": "opportunity",
+      "title": "The reclaimers need hands",
+      "summary": "Somebody destroyed three of the rooftop growing beds in the night. Nobody there thinks it was random.",
+      "severity": 2,
+      "everyDays": 17
+    },
+    {
+      "key": "night_market",
+      "places": ["x5"],
+      "category": "opportunity",
+      "title": "Night market in the west concourse",
+      "summary": "One of the Fixers running the place has opened it up for the evening. Word is somebody is carrying military-grade optics.",
+      "severity": 2,
+      "everyDays": 7,
+      "parts": ["evening", "night"]
+    },
+
+    {
+      "key": "water_queue",
+      "tags": ["water"],
+      "category": "need",
+      "title": "The queue for clean water goes round the block",
+      "summary": "Whatever went wrong upstream, it has not been fixed, and the people at the front got there hours ago.",
+      "severity": 2,
+      "everyDays": 19
+    },
+    {
+      "key": "cancellation",
+      "tags": ["ripperdoc", "clinic"],
+      "category": "opportunity",
+      "title": "There has been a cancellation",
+      "summary": "Somebody with an appointment did not turn up, and somebody else is going to take the slot.",
+      "severity": 1,
+      "everyDays": 23
+    },
+    {
+      "key": "stripping_copper",
+      "tags": ["derelict"],
+      "category": "opportunity",
+      "title": "Somebody has been stripping the place",
+      "summary": "Copper, mostly, and whatever else came away with it. The work is recent enough to still be going on.",
+      "severity": 1,
+      "everyDays": 21
+    },
+    {
+      "key": "street_toll",
+      "tags": ["gang_turf"],
+      "category": "pressure",
+      "title": "There is a toll on this street today",
+      "summary": "Not a robbery. A price, quoted politely, by people who are standing where you need to walk.",
+      "severity": 2,
+      "everyDays": 14
+    },
+    {
+      "key": "no_pressure",
+      "tags": ["container_housing"],
+      "category": "need",
+      "title": "The water pressure has gone again",
+      "summary": "Everyone on this side of the stack is carrying bottles up. Somebody says it is the pump; somebody says it is the bill.",
+      "severity": 1,
+      "everyDays": 16
+    },
+    {
+      "key": "short_handed",
+      "tags": ["farm"],
+      "category": "opportunity",
+      "title": "They are short of hands",
+      "summary": "Not enough people for what needs doing before dark, and they are asking anyone standing nearby.",
+      "severity": 1,
+      "everyDays": 18,
+      "parts": ["morning", "afternoon"]
+    },
+    {
+      "key": "unpapered_container",
+      "tags": ["docks", "warehouse"],
+      "category": "opportunity",
+      "title": "A container came in that nobody has papers for",
+      "summary": "It is sitting where it was dropped. Two people are already arguing about whose problem that makes it.",
+      "severity": 2,
+      "everyDays": 15,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "someone_asking",
+      "tags": ["bar", "club"],
+      "category": "pressure",
+      "title": "Somebody has been asking about you in here",
+      "summary": "Not by name. By description, which is worse, and whoever it was did not leave one of their own.",
+      "severity": 3,
+      "everyDays": 26,
+      "parts": ["evening", "night"]
+    }
+  ]
+}

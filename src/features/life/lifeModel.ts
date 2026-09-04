@@ -4,9 +4,12 @@
  * Life loop can be reasoned about (and tested) without a campaign in the cloud.
  */
 import {
+  DEFAULT_START,
   clampSeverity,
+  derivePlaceBeats,
   deriveNeeds,
   phaseOf,
+  resolvePosition,
   type GamePhase,
   type LifeClock,
   type LifeSituation,
@@ -169,10 +172,31 @@ export function buildLifeState(input: LifeBundleInput): Omit<LifeStateInput, "pe
   };
 }
 
-/** Candidate situations for this exact state. Deterministic. */
+/**
+ * Candidate situations for this exact state. Deterministic.
+ *
+ * Two sources, folded together: what is true of the CHARACTER (money, wounds,
+ * kit, people they have not dealt with) and what is true of the GROUND they are
+ * standing on. Both go into the same funnel and are scored against each other,
+ * so a night market competes with the rent and usually loses.
+ */
 export function derivedSituations(input: LifeBundleInput): LifeSituation[] {
   const state = buildLifeState(input);
-  return deriveNeeds({ ...state, people: lifePeople(input.npcs) });
+  const needs = deriveNeeds({ ...state, people: lifePeople(input.npcs) });
+  const position = resolvePosition(input.campaign.location_key ?? DEFAULT_START);
+  if (!position) return needs;
+  return [
+    ...needs,
+    ...derivePlaceBeats({
+      districtKey: position.districtKey,
+      placeKey: position.placeKey,
+      day: input.campaign.day,
+      minute: input.campaign.minute,
+      // Per campaign, so two players in the same district are not handed the
+      // same week.
+      seed: input.campaign.id,
+    }),
+  ];
 }
 
 /** The last few things that happened, for continuity in the prompt. */

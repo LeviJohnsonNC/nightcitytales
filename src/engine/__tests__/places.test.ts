@@ -3,6 +3,7 @@ import gameplay from "@/data/atlas/places.gameplay.json";
 import {
   ARENA_KEYS,
   DEFAULT_ARENA_KEY,
+  applyObservations,
   DISTRICTS,
   PLACES_ARE_HOUSE_RULE,
   PLACE_TAGS,
@@ -19,6 +20,7 @@ import {
   placesWithTag,
   tagMeaning,
   tagsOf,
+  type ObservationReport,
 } from "@/engine";
 
 const FILE = gameplay as unknown as {
@@ -186,5 +188,40 @@ describe("where a fight would happen", () => {
 
   it("falls back to open ground rather than guessing", () => {
     expect(arenaForPlace("zz9")).toBe(DEFAULT_ARENA_KEY);
+  });
+});
+
+describe("what noise costs where it happens", () => {
+  it("scales heat by the district and leaves faction files alone", () => {
+    // A corporation does not stop keeping records because the neighbourhood is
+    // poor. The city's own attention is the part that varies.
+    const loud: ObservationReport[] = [{ observation: "loud", factionId: "arasaka" }];
+
+    const ordinary = applyObservations(loud);
+    const nowhere = applyObservations(loud, { heatMultiplier: heatMultiplier("rancho_coronado") });
+    const watched = applyObservations(loud, { heatMultiplier: heatMultiplier("exec_zone") });
+
+    const heat = (change: ReturnType<typeof applyObservations>) =>
+      change.ticks.find((t) => t.definition.key === "heat")?.delta ?? 0;
+    const file = (change: ReturnType<typeof applyObservations>) =>
+      change.ticks.find((t) => t.definition.key !== "heat")?.delta ?? 0;
+
+    expect(heat(ordinary)).toBe(2);
+    expect(heat(nowhere)).toBe(0);
+    expect(heat(watched)).toBeGreaterThan(heat(ordinary));
+
+    expect(file(nowhere)).toBe(file(ordinary));
+    expect(file(watched)).toBe(file(ordinary));
+  });
+
+  it("rounds a scaled cost once, so half a segment is not lost twice over", () => {
+    // Two half-ticks are a segment. Rounding each report as it arrived would
+    // quietly throw both away.
+    const twice: ObservationReport[] = [
+      { observation: "loud", factionId: null },
+      { observation: "loud", factionId: null },
+    ];
+    const change = applyObservations(twice, { heatMultiplier: 0.5 });
+    expect(change.ticks.find((t) => t.definition.key === "heat")?.delta).toBe(2);
   });
 });

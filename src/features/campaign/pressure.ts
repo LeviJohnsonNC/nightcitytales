@@ -22,6 +22,7 @@ import {
   fired,
   getFaction,
   heatClock,
+  heatMultiplier,
   isFactionId,
   isObservation,
   notableStandings,
@@ -191,12 +192,24 @@ export type PressureResult = {
 export async function applyPressure(
   campaignId: string,
   reports: ObservationReport[],
-  options: { beatId?: string | null; notAgainAfter?: CampaignEvent[] } = {},
+  options: {
+    beatId?: string | null;
+    notAgainAfter?: CampaignEvent[];
+    /**
+     * Where this happened. Noise in a district nobody polices does not reach
+     * the NCPD, and noise in the Exec Zone reaches them twice as fast; the
+     * district's own response profile decides which (see engine/places.ts).
+     * Omitted, it is the ordinary city.
+     */
+    districtKey?: string | null;
+  } = {},
 ): Promise<PressureResult> {
   if (options.notAgainAfter && repeatsLastReport(reports, options.notAgainAfter)) {
     return { pressure: pressureFrom(await listClocks(campaignId)), moved: [] };
   }
-  const change = applyObservations(reports);
+  const change = applyObservations(reports, {
+    heatMultiplier: options.districtKey ? heatMultiplier(options.districtKey) : 1,
+  });
   if (!change.ticks.length && !change.standings.length) {
     return { pressure: pressureFrom(await listClocks(campaignId)), moved: [] };
   }

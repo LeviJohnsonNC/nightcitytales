@@ -141,6 +141,7 @@ import {
   DEFAULT_START,
   areaOf,
   describePosition,
+  districtProfile,
   getDistrict,
   isCombatZone,
   resolvePosition,
@@ -341,6 +342,25 @@ type TurnOptions = {
 };
 
 /** Everywhere the campaign has recorded standing, as stored location keys. */
+/**
+ * How a district's money and traffic are put to the narrator.
+ *
+ * Words rather than the engine's own levels, because "poor" in a prompt reads
+ * as an instruction to write squalor. What is wanted is the texture: what is on
+ * the street, not a verdict on the people living there.
+ */
+const WEALTH_WORDS: Record<string, string> = {
+  poor: "little money about, and what there is is spent carefully",
+  mixed: "some money about, unevenly",
+  rich: "money everywhere, and it shows",
+};
+
+const CROWD_WORDS: Record<string, string> = {
+  empty: "hardly anybody around",
+  steady: "people about, going somewhere",
+  busy: "crowded, at most hours",
+};
+
 function knownPlacesOf(campaign: Campaign): string[] {
   const known = campaign.known_places;
   if (!Array.isArray(known)) return [];
@@ -362,6 +382,10 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
 
   const position = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
   const positionDistrict = position ? getDistrict(position.districtKey) : undefined;
+  // What the streets around them are like, and who turns up if they are loud
+  // on them. Read off the atlas's own security provider by the engine; the
+  // model is told the consequence, never asked to imagine it.
+  const profile = positionDistrict ? districtProfile(positionDistrict.key) : undefined;
 
   return {
     clock: bundle.clock,
@@ -373,6 +397,12 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           security: positionDistrict.security,
           gangs: positionDistrict.gangs,
           combatZone: isCombatZone(positionDistrict.key),
+          ...(profile
+            ? {
+                response: `${profile.response.who}, ${profile.response.label}`,
+                character: `${WEALTH_WORDS[profile.wealth]}, ${CROWD_WORDS[profile.crowd]}`,
+              }
+            : {}),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
           streets: streetsIn(positionDistrict.key).map((s) => s.name),
           destinations: reachableDestinations(
@@ -760,7 +790,12 @@ async function applyResponse(
   if (!turn.options) {
     const reports = readObservations(response.observations);
     if (reports.length) {
-      const { pressure } = await applyPressure(campaignId, reports);
+      const { pressure } = await applyPressure(campaignId, reports, {
+        // Where it happened decides what the city hears. A district with no
+        // response profile is the ordinary city; one nobody polices is not.
+        districtKey:
+          resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+      });
       await arrivePressure(campaignId, pressure, clock.day);
     }
   }
