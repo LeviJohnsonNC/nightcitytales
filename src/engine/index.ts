@@ -63,3 +63,4 @@ export * from "./places";
 export * from "./placeBeats";
 export * from "./placeSignals";
 export * from "./placeActions";
+export * from "./haunts";

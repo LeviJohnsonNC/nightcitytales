@@ -120,6 +120,13 @@ export type LifeContext = {
      * short of inventing a counter to buy something across.
      */
     business?: string[];
+    /**
+     * Somebody the character knows, who happens to be here. At most one — you
+     * run into a person, you do not walk into a room containing your whole
+     * address book. Presence only: they are here, they want nothing, and
+     * whether that becomes anything is the player's move.
+     */
+    whoIsHere?: { name: string; key: string } | undefined;
     nearby: string[];
     /**
      * Good destinations to have in mind: what is underfoot, the named geography
@@ -186,6 +193,15 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.security) parts.push(line("Security", p.security));
     if (p.response) parts.push(line("If the street notices", p.response));
     if (p.character) parts.push(line("The look of the place", p.character));
+    if (p.whoIsHere) {
+      parts.push(
+        line("Somebody you know is here", `${p.whoIsHere.name} [${p.whoIsHere.key}]`),
+        "They are simply here. They did not come to find the character and they want nothing " +
+          "from them: write them into the scene as somebody who was already in it. Do not give " +
+          "them an errand, a warning or a favour to ask — if they had one, you would have been " +
+          "told.",
+      );
+    }
     if (p.business?.length) {
       parts.push(line("Ordinary business here", p.business.join(", ")));
       parts.push(

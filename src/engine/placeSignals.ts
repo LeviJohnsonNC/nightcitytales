@@ -83,6 +83,17 @@ export const MAX_SIGNALS = 3;
 /** And never two in the same district, however busy it is. */
 export const MAX_SIGNALS_PER_DISTRICT = 1;
 
+/**
+ * And never more than one person, in the whole city.
+ *
+ * Presence at a haunt is deliberately reliable — a bar you know somebody drinks
+ * at is not much use if they are hardly ever in — but six people with reliable
+ * haunts means somebody is findable almost every evening, and the map would
+ * carry a face on it permanently. One is a hint about where to find a friend.
+ * Six is a staff roster.
+ */
+export const MAX_PERSON_SIGNALS = 1;
+
 export type SignalInput = {
   /** The campaign's situations. Only live ones anchored to a place can signal. */
   situations: LifeSituation[];
@@ -164,11 +175,16 @@ export function placeSignals(input: SignalInput): PlaceSignal[] {
 
   const perDistrict = new Map<string, number>();
   const out: PlaceSignal[] = [];
+  let people = 0;
   for (const candidate of candidates) {
     if (out.length >= MAX_SIGNALS) break;
     const district = candidate.signal.districtKey;
     const used = perDistrict.get(district) ?? 0;
     if (used >= MAX_SIGNALS_PER_DISTRICT) continue;
+    if (candidate.signal.kind === "person") {
+      if (people >= MAX_PERSON_SIGNALS) continue;
+      people += 1;
+    }
     perDistrict.set(district, used + 1);
     out.push(candidate.signal);
   }

@@ -6,6 +6,7 @@
 import {
   DEFAULT_START,
   clampSeverity,
+  hauntsFor,
   derivePlaceBeats,
   deriveNeeds,
   phaseOf,
@@ -18,6 +19,7 @@ import {
 import { publicView } from "@/engine";
 import { downtimeView } from "@/features/downtime/downtimeModel";
 import { castMemberFrom, knownFactsOf } from "@/features/campaign/castSeeding";
+import type { HauntPerson } from "@/engine";
 import type {
   Campaign,
   CampaignClock,
@@ -223,4 +225,40 @@ export function recentLifeLines(events: CampaignEvent[], limit = 6): string[] {
 /** The phase the campaign is in right now, defaulting to Life. */
 export function campaignPhase(campaign: Campaign): GamePhase {
   return phaseOf((campaign as { phase?: unknown }).phase);
+}
+
+/**
+ * The standing cast as people who are somewhere, for the haunt lookup.
+ *
+ * Their places are DERIVED rather than stored: the same campaign always draws
+ * the same haunts, so nothing has to be written down, nothing can drift out of
+ * step with the atlas, and no campaign started before this existed is missing a
+ * column. `campaign_npcs.location` is left alone deliberately — a second answer
+ * to where somebody is would be a second source of truth.
+ *
+ * Rows are deduplicated by npc id on the way through. `campaign_npcs` has no
+ * uniqueness constraint on (campaign_id, npc_id), and a duplicated row would
+ * otherwise put one person in two places at once, which is exactly the kind of
+ * thing that reads as a ghost rather than as a bug.
+ */
+export function hauntPeople(npcs: CampaignNpc[], campaign: Campaign): HauntPerson[] {
+  const seen = new Set<string>();
+  const out: HauntPerson[] = [];
+  for (const npc of npcs) {
+    if (npc.status === "dead") continue;
+    const member = castMemberFrom(npc);
+    if (!member) continue;
+    const key = npc.npc_id ?? npc.name;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      key,
+      name: npc.name,
+      role: member.role,
+      // Home is where the campaign began, which is where the character lives
+      // and therefore where they should be able to run into people.
+      haunts: hauntsFor(member.role, DEFAULT_START, campaign.id),
+    });
+  }
+  return out;
 }

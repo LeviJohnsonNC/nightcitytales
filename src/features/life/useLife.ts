@@ -143,6 +143,7 @@ import {
   describePosition,
   districtProfile,
   placeActions,
+  whoIsAt,
   getDistrict,
   isCombatZone,
   resolvePosition,
@@ -168,6 +169,7 @@ import {
   recentLifeLines,
   situationFromRow,
   situationToUpsert,
+  hauntPeople,
 } from "./lifeModel";
 
 export type { LifeHook };
@@ -403,6 +405,20 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
                 response: `${profile.response.who}, ${profile.response.label}`,
                 character: `${WEALTH_WORDS[profile.wealth]}, ${CROWD_WORDS[profile.crowd]}`,
               }
+            : {}),
+          // Presence, not a summons. Only ever asked about a venue: a district
+          // is not somewhere you run into somebody.
+          ...(position?.placeKey
+            ? (() => {
+                const met = whoIsAt({
+                  placeKey: position.placeKey,
+                  people: hauntPeople(bundle.npcs, bundle.campaign),
+                  day: bundle.clock.day,
+                  minute: bundle.clock.minute,
+                  seed: bundle.campaign.id,
+                });
+                return met ? { whoIsHere: { name: met.name, key: met.key } } : {};
+              })()
             : {}),
           business: placeActions({
             districtKey: positionDistrict.key,
