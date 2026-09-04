@@ -51,6 +51,8 @@ type BeatFile = {
     severity: number;
     everyDays: number;
     parts?: string[];
+    /** The mark it wears on the map, when it asks for one. See placeSignals.ts. */
+    signal?: string;
   }[];
 };
 
@@ -143,6 +145,31 @@ function anchorsIn(beat: PlaceBeat, districtKey: string): string[] {
   return out;
 }
 
+/**
+ * The places a beat may actually be tested at in a district today.
+ *
+ * A beat anchored to a NAMED VENUE is tested there: the water truck fails at
+ * the carwash or it does not.
+ *
+ * A beat anchored to a TAG gets ONE anchor for the whole district, chosen from
+ * the ground that qualifies. This is not a detail. Half of North Heywood is
+ * container housing, so testing the beat at each of eleven addresses gives it
+ * eleven chances a day and "the water pressure has gone again" becomes a
+ * fixture of the neighbourhood rather than an event in it. One district, one
+ * chance, and which address it happens at moves around the district over time.
+ */
+function anchorsFor(beat: PlaceBeat, districtKey: string, day: number, seed: string): string[] {
+  const all = anchorsIn(beat, districtKey);
+  if (all.length <= 1 || beat.places?.length) return all;
+  // Which address, this time round. Keyed on the period rather than the day so
+  // it does not wander mid-event, and so a beat lasting into a second day is
+  // still happening in the same place.
+  const period = Math.max(1, Math.floor(beat.everyDays));
+  const round = Math.floor(day / period);
+  const pick = hash(`${seed}:${districtKey}:${beat.key}:${round}`) % all.length;
+  return [all[pick]!];
+}
+
 /** Every district any of this beat's anchors sit in. For tests and tooling. */
 export function districtsForBeat(beat: PlaceBeat): string[] {
   return DISTRICTS.filter((d) => anchorsIn(beat, d.key).length).map((d) => d.key);
@@ -184,7 +211,7 @@ export function derivePlaceBeats(input: PlaceBeatInput): LifeSituation[] {
 
   for (const beat of PLACE_BEATS) {
     if (!beatFitsHour(beat, input.minute)) continue;
-    for (const placeKey of anchorsIn(beat, district.key)) {
+    for (const placeKey of anchorsFor(beat, district.key, input.day, input.seed)) {
       if (!beatIsLive(beat, placeKey, input.day, input.seed)) continue;
       const place = getPlace(placeKey);
       if (!place) continue;
@@ -204,6 +231,7 @@ export function derivePlaceBeats(input: PlaceBeatInput): LifeSituation[] {
             districtKey: district.key,
             beat: beat.key,
             atPlace,
+            ...(beat.signal ? { signal: beat.signal } : {}),
           },
         },
       });
@@ -236,3 +264,42 @@ export function derivePlaceBeats(input: PlaceBeatInput): LifeSituation[] {
 
 /** True when the beats are what they claim to be: a tunable house rule. */
 export const PLACE_BEATS_ARE_HOUSE_RULE: boolean = FILE.houseRule;
+
+/**
+ * What is on across a set of districts, for the map.
+ *
+ * The beats a campaign PERSISTS are only ever the ones where the character is
+ * standing — those are situations, and a situation you are not present for is
+ * not yours. But the map wants to say that the night market is running in
+ * Rancho Coronado while you are drinking in Little Europe, and that is a fact
+ * about the city rather than a situation of yours: the derivation is
+ * deterministic, so it can be asked about anywhere without anything being
+ * written down.
+ *
+ * Which districts to pass is the caller's rule, and the one this game uses is
+ * districts the character KNOWS. You do not hear what is happening in a
+ * neighbourhood you have never been to, and going somewhere new quietly makes
+ * the map a little more useful for the rest of the campaign.
+ */
+export function cityBeats(input: {
+  districtKeys: string[];
+  day: number;
+  minute: number;
+  seed: string;
+}): LifeSituation[] {
+  const seen = new Set<string>();
+  const out: LifeSituation[] = [];
+  for (const districtKey of input.districtKeys) {
+    for (const beat of derivePlaceBeats({
+      districtKey,
+      day: input.day,
+      minute: input.minute,
+      seed: input.seed,
+    })) {
+      if (seen.has(beat.key)) continue;
+      seen.add(beat.key);
+      out.push(beat);
+    }
+  }
+  return out;
+}

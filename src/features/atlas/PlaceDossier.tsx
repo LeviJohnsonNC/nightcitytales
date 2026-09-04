@@ -21,7 +21,30 @@ import {
   type District,
   type Place,
 } from "@/engine";
+import type { PlaceSignal } from "@/engine";
 import { placeDossier, placeImage } from "./placeDossiers";
+
+/**
+ * What is true here at this moment, as opposed to what this place is.
+ *
+ * The entry below it is the written character of the place and does not change.
+ * This line does, and it is the difference between an encyclopedia and somewhere
+ * worth going tonight.
+ */
+function RightNow({ signal }: { signal: PlaceSignal }) {
+  return (
+    <div className="flex items-start gap-2 border border-ember/40 bg-ember/5 px-3 py-2">
+      <span aria-hidden className="text-sm leading-6">
+        {signal.icon}
+      </span>
+      <div className="min-w-0">
+        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-ember">Right now</p>
+        <p className="text-sm leading-relaxed text-foreground">{signal.label}</p>
+        <p className="text-xs text-muted-foreground">at {signal.placeName}</p>
+      </div>
+    </div>
+  );
+}
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -203,6 +226,7 @@ export function PlaceDossier({
   open,
   onOpenChange,
   action,
+  rightNow,
 }: {
   targetKey: string;
   open: boolean;
@@ -212,6 +236,8 @@ export function PlaceDossier({
    * than the key the dialog opened on, so it follows the reader in.
    */
   action?: (key: string) => React.ReactNode;
+  /** What is happening at the key on show, when the engine says anything is. */
+  rightNow?: (key: string) => PlaceSignal | undefined;
 }) {
   // What is on show. Starts at whatever opened the dialog and moves as the
   // reader follows a district into one of its locations, or back out again.
@@ -233,6 +259,7 @@ export function PlaceDossier({
   const place = placeDistrict?.locations.find((l) => l.key === showing.toLowerCase());
   const title = place ? place.name : district.name;
   const footer = action?.(place ? place.key : district.key);
+  const now = rightNow?.(place ? place.key : district.key);
   const portraitKey = place ? place.key : district.key;
   const entry = placeDossier(portraitKey);
   const hasPortrait = !!entry?.image;
@@ -252,6 +279,7 @@ export function PlaceDossier({
         <div className="flex flex-col">
           <Portrait dossierKey={portraitKey} alt={title} className="shrink-0" />
           <div className="space-y-3 p-5 pt-4">
+            {now ? <RightNow signal={now} /> : null}
             {place ? (
               <PlaceBody place={place} district={district} onOpenDistrict={setShowing} />
             ) : (

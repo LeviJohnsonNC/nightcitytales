@@ -9,7 +9,7 @@
  * A job can only appear here as an offer, with terms the player can push on and
  * an Accept they have to press themselves.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -35,6 +35,9 @@ import {
   DEFAULT_START,
   woundActionPenalty,
   type WoundStateCode,
+  placeSignals,
+  cityBeats,
+  resolvePosition,
 } from "@/engine";
 
 import { NpcText } from "@/features/cast/NpcText";
@@ -478,10 +481,13 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
 function InputBar({
   onSend,
   onAskOptions,
+  onGoSomewhere,
   busy,
 }: {
   onSend: (text: string) => Promise<boolean> | void;
   onAskOptions: () => void;
+  /** Open the city and pick a destination off it. */
+  onGoSomewhere: () => void;
   busy: boolean;
 }) {
   const [text, setText] = useState("");
@@ -523,6 +529,15 @@ function InputBar({
           title="Ask what you could do here. Costs no time."
         >
           Options?
+        </Button>
+        <Button
+          variant="outline"
+          className="flex-1 sm:flex-none"
+          onClick={onGoSomewhere}
+          disabled={busy}
+          title="Open the city and pick somewhere to go."
+        >
+          Go somewhere
         </Button>
       </div>
     </div>
@@ -695,9 +710,47 @@ function LifeRail({
   );
 }
 
+/** The places this campaign has actually been, as written on the campaign row. */
+function knownPlacesOf(campaign: { known_places: unknown }): string[] {
+  return Array.isArray(campaign.known_places)
+    ? (campaign.known_places as unknown[]).filter((v): v is string => typeof v === "string")
+    : [];
+}
+
 export function LifeScreen({ campaignId }: { campaignId: string }) {
   const life = useLife(campaignId);
   const bundle = life.bundle;
+
+  // The map is opened from two places — the header pin and Go somewhere — and
+  // they are the same map, so the screen owns whether it is showing.
+  const [mapOpen, setMapOpen] = useState(false);
+
+  // What is worth knowing about somewhere tonight. The engine applies the
+  // budget: three across the whole city, one per district, each tracing to a
+  // row. Most pins carry nothing, which is the intended reading.
+  const signals = useMemo(() => {
+    if (!bundle) return [];
+    // What the character is standing in the middle of, plus what is on in the
+    // districts they know. The second half is not persisted and does not need
+    // to be: the derivation is deterministic, so the city can be asked what it
+    // is doing tonight without anything being written down.
+    const known = new Set<string>();
+    for (const raw of knownPlacesOf(bundle.campaign)) {
+      const at = resolvePosition(raw);
+      if (at) known.add(at.districtKey);
+    }
+    return placeSignals({
+      situations: [
+        ...bundle.situations,
+        ...cityBeats({
+          districtKeys: [...known],
+          day: bundle.clock.day,
+          minute: bundle.clock.minute,
+          seed: bundle.campaign.id,
+        }),
+      ],
+    });
+  }, [bundle]);
 
   // Open the first moment automatically, once, so Life is never a blank page.
   const opened = useRef<string | null>(null);
@@ -759,9 +812,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
     };
   };
 
-  const knownPlaces = Array.isArray(bundle.campaign.known_places)
-    ? (bundle.campaign.known_places as unknown[]).filter((v): v is string => typeof v === "string")
-    : [];
+  const knownPlaces = knownPlacesOf(bundle.campaign);
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -787,6 +838,9 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   knownPlaces={knownPlaces}
                   onTravel={life.travelTo}
                   travelBusy={life.travelBusy}
+                  signals={signals}
+                  open={mapOpen}
+                  onOpenChange={setMapOpen}
                 />
                 <SheetDrawer
                   character={bundle.character}
@@ -850,6 +904,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               <InputBar
                 onSend={(text) => life.act(text)}
                 onAskOptions={() => life.askOptions()}
+                onGoSomewhere={() => setMapOpen(true)}
                 busy={life.busy || !!life.pendingCheck}
               />
             </BottomDock>
