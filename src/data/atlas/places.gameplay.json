@@ -1,0 +1,683 @@
+{
+  "houseRule": true,
+  "note": "Gameplay metadata for the Night City Atlas. Every key here names a district or location in night-city.json and nothing here changes what that file says. The atlas is what the publisher printed; this is what the game makes of it, so it is tuned here rather than in code.",
+  "responseNote": "Who comes when the street notices you. Read off each district's printed security provider: heat is scaled by the tier, so being loud in the Exec Zone costs what being loud in Rancho Coronado does not. The tiers and their multipliers are app pacing numbers, not Cyberpunk RED rules values.",
+  "responseTiers": {
+    "none": {
+      "label": "nobody comes",
+      "heat": 0,
+      "minutes": 0
+    },
+    "slow": {
+      "label": "eventually",
+      "heat": 0.5,
+      "minutes": 25
+    },
+    "prompt": {
+      "label": "before you finish",
+      "heat": 1,
+      "minutes": 10
+    },
+    "immediate": {
+      "label": "at once",
+      "heat": 2,
+      "minutes": 4
+    }
+  },
+  "tags": {
+    "market": "a market, formal or otherwise, where things change hands in the open",
+    "fence": "somewhere the provenance of a thing is nobody's business",
+    "shop": "a counter you can buy across",
+    "bank": "money, held for other people",
+    "bar": "somewhere to drink and be seen drinking",
+    "club": "music, a door, and a reason to be let through it",
+    "restaurant": "a sit-down meal",
+    "food": "something to eat, at any price",
+    "leisure": "somewhere people go to spend money on being pleased",
+    "hotel": "a bed for the night, rented",
+    "housing": "people live here",
+    "luxury_housing": "people live here, and it cost them",
+    "container_housing": "people live here, in what used to be freight",
+    "flophouse": "people sleep here, which is not the same thing",
+    "clinic": "someone who can close a wound",
+    "hospital": "a real medical facility with a real bill",
+    "ripperdoc": "chrome, installed",
+    "garage": "vehicles, and the people who keep them running",
+    "repair": "something broken can be made less broken",
+    "warehouse": "goods, stacked, in quantity",
+    "docks": "the water's edge, working",
+    "factory": "things are made here",
+    "office": "somebody's desks",
+    "corp_hq": "a corporation's own front door",
+    "lab": "research, and whatever it is researching",
+    "farm": "food grown rather than shipped",
+    "studio": "art, performance, or the making of either",
+    "media": "the city talks to itself from here",
+    "school": "somewhere people are taught",
+    "stadium": "a venue built for a crowd",
+    "park": "open ground the city left alone",
+    "religious": "the sacred, and the dead",
+    "government": "the city, acting as itself",
+    "police": "law, with a building",
+    "transit": "how people get in and out",
+    "crowd": "reliably busy with people",
+    "derelict": "abandoned, or most of the way there",
+    "secure": "getting in is a problem to be solved",
+    "gang_turf": "somebody claims this ground",
+    "nomad": "nomad families, and their business",
+    "water": "the waterfront, or water itself",
+    "rooftop": "the action here is above street level"
+  },
+  "arenaByTag": [
+    ["club", "club_interior"],
+    ["bar", "club_interior"],
+    ["restaurant", "club_interior"],
+    ["warehouse", "warehouse"],
+    ["factory", "warehouse"],
+    ["docks", "warehouse"],
+    ["garage", "parking_structure"],
+    ["transit", "parking_structure"],
+    ["rooftop", "rooftop"],
+    ["market", "street"],
+    ["shop", "street"],
+    ["crowd", "street"],
+    ["derelict", "alley"],
+    ["flophouse", "alley"],
+    ["housing", "alley"],
+    ["farm", "open_ground"],
+    ["park", "open_ground"],
+    ["stadium", "open_ground"]
+  ],
+  "districts": {
+    "little_europe": {
+      "response": "prompt",
+      "wealth": "mixed",
+      "crowd": "steady"
+    },
+    "upper_marina": {
+      "response": "prompt",
+      "wealth": "rich",
+      "crowd": "busy"
+    },
+    "downtown": {
+      "response": "immediate",
+      "wealth": "rich",
+      "crowd": "busy"
+    },
+    "the_hot_zone": {
+      "response": "none",
+      "wealth": "poor",
+      "crowd": "empty"
+    },
+    "little_china": {
+      "response": "prompt",
+      "wealth": "mixed",
+      "crowd": "busy"
+    },
+    "university_district": {
+      "response": "prompt",
+      "wealth": "mixed",
+      "crowd": "busy"
+    },
+    "the_glen": {
+      "response": "prompt",
+      "wealth": "rich",
+      "crowd": "busy"
+    },
+    "old_japantown": {
+      "response": "prompt",
+      "wealth": "mixed",
+      "crowd": "steady"
+    },
+    "south_night_city": {
+      "response": "slow",
+      "wealth": "poor",
+      "crowd": "steady"
+    },
+    "port_of_night_city": {
+      "response": "prompt",
+      "wealth": "mixed",
+      "crowd": "steady"
+    },
+    "reclamation_zone": {
+      "response": "slow",
+      "wealth": "poor",
+      "crowd": "empty"
+    },
+    "old_combat_zone": {
+      "response": "slow",
+      "wealth": "poor",
+      "crowd": "empty"
+    },
+    "norcal_military_base": {
+      "response": "immediate",
+      "wealth": "mixed",
+      "crowd": "empty"
+    },
+    "watson_development": {
+      "response": "prompt",
+      "wealth": "mixed",
+      "crowd": "busy"
+    },
+    "kabuki": {
+      "response": "prompt",
+      "wealth": "mixed",
+      "crowd": "busy"
+    },
+    "new_westbrook": {
+      "response": "prompt",
+      "wealth": "rich",
+      "crowd": "steady"
+    },
+    "charter_hill": {
+      "response": "immediate",
+      "wealth": "rich",
+      "crowd": "steady"
+    },
+    "exec_zone": {
+      "response": "immediate",
+      "wealth": "rich",
+      "crowd": "empty"
+    },
+    "heywood_docks": {
+      "response": "slow",
+      "wealth": "poor",
+      "crowd": "steady"
+    },
+    "north_heywood": {
+      "response": "slow",
+      "wealth": "mixed",
+      "crowd": "busy"
+    },
+    "heywood_industrial_zone": {
+      "response": "slow",
+      "wealth": "poor",
+      "crowd": "steady"
+    },
+    "santo_domingo": {
+      "response": "slow",
+      "wealth": "poor",
+      "crowd": "steady"
+    },
+    "pacifica_playground": {
+      "response": "prompt",
+      "wealth": "mixed",
+      "crowd": "busy"
+    },
+    "rancho_coronado": {
+      "response": "none",
+      "wealth": "poor",
+      "crowd": "steady"
+    }
+  },
+  "places": {
+    "a1": {
+      "tags": ["housing", "secure"]
+    },
+    "a2": {
+      "tags": ["bar", "food", "shop"]
+    },
+    "a3": {
+      "tags": ["housing"]
+    },
+    "a4": {
+      "tags": ["hotel", "container_housing"]
+    },
+    "a5": {
+      "tags": ["housing"]
+    },
+    "a6": {
+      "tags": ["office", "corp_hq", "secure"]
+    },
+    "a7": {
+      "tags": ["bar"]
+    },
+    "a8": {
+      "tags": ["bar", "leisure", "crowd"]
+    },
+    "a9": {
+      "tags": ["religious"]
+    },
+    "a10": {
+      "tags": ["restaurant", "food"]
+    },
+    "a11": {
+      "tags": ["bar", "crowd"]
+    },
+    "a12": {
+      "tags": ["restaurant"]
+    },
+    "a13": {
+      "tags": ["shop", "repair"]
+    },
+    "b1": {
+      "tags": ["bar", "crowd"]
+    },
+    "b2": {
+      "tags": ["restaurant", "food"]
+    },
+    "b3": {
+      "tags": ["hospital"]
+    },
+    "b4": {
+      "tags": ["leisure", "restaurant"]
+    },
+    "b5": {
+      "tags": ["studio"]
+    },
+    "b6": {
+      "tags": ["restaurant"]
+    },
+    "b7": {
+      "tags": ["housing", "docks", "water"]
+    },
+    "b8": {
+      "tags": ["hotel", "container_housing"]
+    },
+    "b9": {
+      "tags": ["stadium", "studio"]
+    },
+    "b10": {
+      "tags": ["leisure", "shop"]
+    },
+    "b11": {
+      "tags": ["office", "clinic"]
+    },
+    "b12": {
+      "tags": ["hotel", "container_housing"]
+    },
+    "b13": {
+      "tags": ["corp_hq", "office"]
+    },
+    "c1": {
+      "tags": ["luxury_housing", "housing"]
+    },
+    "c2": {
+      "tags": ["corp_hq", "shop", "food"]
+    },
+    "c3": {
+      "tags": ["office", "studio"]
+    },
+    "c4": {
+      "tags": ["club"]
+    },
+    "c5": {
+      "tags": ["secure"]
+    },
+    "d1": {
+      "tags": ["gang_turf", "hotel", "luxury_housing"]
+    },
+    "d2": {
+      "tags": ["media"]
+    },
+    "d3": {
+      "tags": ["repair", "shop", "secure"]
+    },
+    "d4": {
+      "tags": ["gang_turf", "club"]
+    },
+    "e1": {
+      "tags": ["warehouse", "container_housing", "water"]
+    },
+    "e2": {
+      "tags": ["bar"]
+    },
+    "e3": {
+      "tags": ["bar", "crowd"]
+    },
+    "e4": {
+      "tags": ["office", "crowd"]
+    },
+    "e5": {
+      "tags": ["housing"]
+    },
+    "f1": {
+      "tags": ["school", "lab", "corp_hq"]
+    },
+    "f2": {
+      "tags": ["lab", "housing"]
+    },
+    "f3": {
+      "tags": ["studio", "crowd"]
+    },
+    "f4": {
+      "tags": ["school", "secure", "crowd"]
+    },
+    "f5": {
+      "tags": ["school", "housing"]
+    },
+    "f6": {
+      "tags": ["derelict"]
+    },
+    "f7": {
+      "tags": ["farm", "lab"]
+    },
+    "f8": {
+      "tags": ["school", "flophouse"]
+    },
+    "f9": {
+      "tags": ["school", "bar"]
+    },
+    "g1": {
+      "tags": ["bank"]
+    },
+    "g2": {
+      "tags": ["bar"]
+    },
+    "g3": {
+      "tags": ["bar", "crowd"]
+    },
+    "g4": {
+      "tags": ["government"]
+    },
+    "g5": {
+      "tags": ["police", "secure"]
+    },
+    "g6": {
+      "tags": ["club"]
+    },
+    "g7": {
+      "tags": ["housing"]
+    },
+    "g8": {
+      "tags": ["government"]
+    },
+    "g9": {
+      "tags": ["bar"]
+    },
+    "g10": {
+      "tags": ["corp_hq", "crowd"]
+    },
+    "g11": {
+      "tags": ["park"]
+    },
+    "g12": {
+      "tags": ["corp_hq"]
+    },
+    "g13": {
+      "tags": ["club", "hotel", "container_housing"]
+    },
+    "h1": {
+      "tags": ["hospital"]
+    },
+    "h2": {
+      "tags": ["hotel"]
+    },
+    "h3": {
+      "tags": ["gang_turf", "nomad", "garage", "shop"]
+    },
+    "h4": {
+      "tags": ["market", "warehouse", "secure"]
+    },
+    "h5": {
+      "tags": ["warehouse", "container_housing", "housing"]
+    },
+    "h6": {
+      "tags": ["hotel", "container_housing", "flophouse"]
+    },
+    "i1": {
+      "tags": ["housing"]
+    },
+    "i2": {
+      "tags": ["club"]
+    },
+    "i3": {
+      "tags": ["ripperdoc", "gang_turf"]
+    },
+    "i4": {
+      "tags": ["studio", "housing", "crowd"]
+    },
+    "i5": {
+      "tags": ["stadium", "bar"]
+    },
+    "i6": {
+      "tags": ["warehouse", "container_housing"]
+    },
+    "i7": {
+      "tags": ["derelict"]
+    },
+    "i8": {
+      "tags": ["school", "warehouse", "container_housing", "housing"]
+    },
+    "j1": {
+      "tags": ["shop", "market"]
+    },
+    "j2": {
+      "tags": ["docks", "housing"]
+    },
+    "j3": {
+      "tags": ["docks", "warehouse", "container_housing"]
+    },
+    "j4": {
+      "tags": ["docks", "bar"]
+    },
+    "j5": {
+      "tags": ["ripperdoc", "fence"]
+    },
+    "j6": {
+      "tags": ["bar"]
+    },
+    "j7": {
+      "tags": ["housing"]
+    },
+    "k1": {
+      "tags": ["religious"]
+    },
+    "l1": {
+      "tags": ["clinic"]
+    },
+    "l2": {
+      "tags": ["bar", "restaurant", "food"]
+    },
+    "l3": {
+      "tags": ["factory", "warehouse"]
+    },
+    "l4": {
+      "tags": ["housing"]
+    },
+    "m1": {
+      "tags": ["housing", "secure"]
+    },
+    "m2": {
+      "tags": ["corp_hq", "office", "secure"]
+    },
+    "n1": {
+      "tags": ["police"]
+    },
+    "n2": {
+      "tags": ["luxury_housing"]
+    },
+    "n3": {
+      "tags": ["housing"]
+    },
+    "n4": {
+      "tags": ["corp_hq", "office", "secure", "studio"]
+    },
+    "n5": {
+      "tags": ["transit", "bar"]
+    },
+    "n6": {
+      "tags": ["gang_turf"]
+    },
+    "n7": {
+      "tags": ["bar"]
+    },
+    "n8": {
+      "tags": ["club"]
+    },
+    "n9": {
+      "tags": ["corp_hq", "office"]
+    },
+    "n10": {
+      "tags": ["hospital", "housing"]
+    },
+    "n11": {
+      "tags": ["hospital", "repair", "corp_hq", "luxury_housing"]
+    },
+    "n12": {
+      "tags": ["bar", "crowd"]
+    },
+    "n13": {
+      "tags": ["hotel", "container_housing"]
+    },
+    "o1": {
+      "tags": ["studio", "crowd", "gang_turf"]
+    },
+    "o2": {
+      "tags": ["bar", "crowd"]
+    },
+    "p1": {
+      "tags": ["restaurant", "shop", "office"]
+    },
+    "p2": {
+      "tags": ["club", "crowd"]
+    },
+    "p3": {
+      "tags": ["hotel", "housing"]
+    },
+    "p4": {
+      "tags": ["hotel", "container_housing", "housing"]
+    },
+    "p5": {
+      "tags": ["media", "corp_hq"]
+    },
+    "p6": {
+      "tags": ["media", "luxury_housing"]
+    },
+    "p7": {
+      "tags": ["government", "secure"]
+    },
+    "p8": {
+      "tags": ["warehouse", "container_housing", "derelict"]
+    },
+    "p9": {
+      "tags": ["hospital", "lab", "corp_hq", "office"]
+    },
+    "p10": {
+      "tags": ["office", "housing"]
+    },
+    "p11": {
+      "tags": ["corp_hq"]
+    },
+    "q1": {
+      "tags": ["ripperdoc", "bar"]
+    },
+    "q2": {
+      "tags": ["club", "crowd"]
+    },
+    "q3": {
+      "tags": ["housing"]
+    },
+    "q4": {
+      "tags": ["park", "religious", "luxury_housing"]
+    },
+    "s1": {
+      "tags": ["warehouse", "secure"]
+    },
+    "t1": {
+      "tags": ["housing"]
+    },
+    "t2": {
+      "tags": ["gang_turf", "corp_hq", "shop"]
+    },
+    "t3": {
+      "tags": ["lab"]
+    },
+    "t4": {
+      "tags": ["hotel", "housing"]
+    },
+    "t5": {
+      "tags": ["ripperdoc", "corp_hq", "crowd"]
+    },
+    "t6": {
+      "tags": ["bar", "crowd"]
+    },
+    "t7": {
+      "tags": ["shop"]
+    },
+    "t8": {
+      "tags": ["ripperdoc", "clinic"]
+    },
+    "t9": {
+      "tags": ["housing", "shop", "food"]
+    },
+    "t10": {
+      "tags": ["club", "stadium", "crowd"]
+    },
+    "u1": {
+      "tags": ["docks", "derelict", "housing"]
+    },
+    "u2": {
+      "tags": ["warehouse", "container_housing", "housing", "rooftop"]
+    },
+    "u3": {
+      "tags": ["factory", "garage", "shop"]
+    },
+    "u4": {
+      "tags": ["corp_hq"]
+    },
+    "u5": {
+      "tags": ["container_housing", "housing", "office"]
+    },
+    "v1": {
+      "tags": ["nomad"]
+    },
+    "v2": {
+      "tags": ["police"]
+    },
+    "v3": {
+      "tags": ["warehouse", "container_housing"]
+    },
+    "v4": {
+      "tags": ["housing"]
+    },
+    "v5": {
+      "tags": ["bar", "food"]
+    },
+    "v6": {
+      "tags": ["bar", "crowd"]
+    },
+    "v7": {
+      "tags": ["garage", "market", "nomad", "crowd"]
+    },
+    "w1": {
+      "tags": ["shop"]
+    },
+    "w2": {
+      "tags": ["hotel", "container_housing"]
+    },
+    "w3": {
+      "tags": ["restaurant", "food", "crowd"]
+    },
+    "w4": {
+      "tags": ["housing"]
+    },
+    "w5": {
+      "tags": ["leisure", "park", "crowd"]
+    },
+    "w6": {
+      "tags": ["housing"]
+    },
+    "w7": {
+      "tags": ["hotel", "container_housing"]
+    },
+    "w8": {
+      "tags": ["bar", "food"]
+    },
+    "x1": {
+      "tags": ["garage", "water", "gang_turf", "shop"]
+    },
+    "x2": {
+      "tags": ["housing", "container_housing", "derelict"]
+    },
+    "x3": {
+      "tags": ["container_housing", "stadium", "crowd"]
+    },
+    "x4": {
+      "tags": ["farm", "food", "rooftop"]
+    },
+    "x5": {
+      "tags": ["market", "derelict", "farm", "fence"]
+    }
+  }
+}
