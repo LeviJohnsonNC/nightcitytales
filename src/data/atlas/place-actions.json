@@ -1,0 +1,193 @@
+{
+  "houseRule": true,
+  "note": "What there is to do at a place, derived from its tags. These are the common verbs made fast — never the limit of what can be attempted, which stays whatever the player types. Each one names a venue, because a named counter at a named place beats a Socialize button.",
+  "costNote": "Cyberpunk RED prints no price for a bowl of noodles or a jug of water, so these are house-rule prices anchored to the published cost ladder the Night Market uses: Cheap 10, Everyday 20, Costly 50, Premium 100. Nothing here may sit between rungs — a test holds them to the ladder — and anything the engine already prices (a repair, a ripperdoc's bill, a night's stock) is left at null for the engine to answer.",
+  "cap": 5,
+  "capNote": "How many things a place offers at once. Five. A location that lists everything it could conceivably support is a menu, and the player stops reading menus.",
+  "actions": [
+    {
+      "key": "eat_cheap",
+      "tags": ["food"],
+      "label": "Get something to eat",
+      "description": "Whatever is hot and quick.",
+      "minutes": 30,
+      "cost": 10
+    },
+    {
+      "key": "eat_sitting",
+      "tags": ["restaurant"],
+      "label": "Sit down and eat",
+      "description": "A proper meal, at a table, with time to think.",
+      "minutes": 75,
+      "cost": 20
+    },
+    {
+      "key": "drink",
+      "tags": ["bar"],
+      "label": "Have a drink",
+      "description": "Nurse one at the bar and see who else is in.",
+      "minutes": 60,
+      "cost": 10
+    },
+    {
+      "key": "stay_for_music",
+      "tags": ["club"],
+      "label": "Stay for the music",
+      "description": "Pay the door and let the evening go somewhere.",
+      "minutes": 120,
+      "cost": 20
+    },
+    {
+      "key": "browse",
+      "tags": ["market", "shop"],
+      "label": "See what's for sale",
+      "description": "Walk the stalls without committing to anything.",
+      "minutes": 30,
+      "cost": null
+    },
+    {
+      "key": "water",
+      "tags": ["water"],
+      "label": "Fill your bottles",
+      "description": "However long the line is, you still need the water.",
+      "minutes": 45,
+      "cost": 10
+    },
+    {
+      "key": "vegetables",
+      "tags": ["farm"],
+      "label": "Buy vegetables",
+      "description": "Grown here, which is rarer than it should be.",
+      "minutes": 20,
+      "cost": 10
+    },
+    {
+      "key": "lend_a_hand",
+      "tags": ["farm"],
+      "label": "Lend a hand",
+      "description": "There is always more to do here than there are people to do it.",
+      "minutes": 120,
+      "cost": null
+    },
+    {
+      "key": "ripperdoc",
+      "tags": ["ripperdoc"],
+      "label": "See about chrome",
+      "description": "Ask what they have in and what it would cost you.",
+      "minutes": 30,
+      "cost": null
+    },
+    {
+      "key": "patched_up",
+      "tags": ["clinic", "hospital"],
+      "label": "Get looked at",
+      "description": "Somebody here can close a wound properly.",
+      "minutes": 60,
+      "cost": null
+    },
+    {
+      "key": "repair",
+      "tags": ["garage", "repair"],
+      "label": "Get something fixed",
+      "description": "Hand it over and find out what it will take.",
+      "minutes": 60,
+      "cost": null
+    },
+    {
+      "key": "ask_around",
+      "tags": ["crowd", "market", "bar"],
+      "label": "Ask around",
+      "description": "Enough people through here that somebody knows something.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "neighbours",
+      "tags": ["housing", "container_housing"],
+      "label": "Look in on the neighbours",
+      "description": "People who live where you live, and notice when you don't.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "look_round",
+      "tags": ["derelict"],
+      "label": "Have a look round",
+      "description": "Nobody is stopping you. That is not the same as nobody being here.",
+      "minutes": 60,
+      "cost": null
+    },
+    {
+      "key": "sit_a_while",
+      "tags": ["park"],
+      "label": "Sit for a while",
+      "description": "Open ground, and nothing that needs you in it.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "go_up_top",
+      "tags": ["rooftop"],
+      "label": "Go up top",
+      "description": "Everything looks manageable from above it.",
+      "minutes": 30,
+      "cost": null
+    },
+    {
+      "key": "watch_whats_on",
+      "tags": ["studio", "stadium"],
+      "label": "See what's on",
+      "description": "Somebody is performing, or playing, or pretending to.",
+      "minutes": 120,
+      "cost": 20
+    },
+    {
+      "key": "a_room",
+      "tags": ["hotel"],
+      "label": "Take a room",
+      "description": "Somewhere that is not yours, for a night that is.",
+      "minutes": 30,
+      "cost": 20
+    },
+    {
+      "key": "pay_respects",
+      "tags": ["religious"],
+      "label": "Pay respects",
+      "description": "Somewhere the city keeps its dead, and stays quiet about it.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "whats_moving",
+      "tags": ["warehouse", "docks"],
+      "label": "See what's moving",
+      "description": "Freight tells you things about a city that people will not.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "spend_the_evening",
+      "tags": ["leisure"],
+      "label": "Spend the evening",
+      "description": "Somewhere built to take money off you pleasantly.",
+      "minutes": 150,
+      "cost": 20
+    },
+    {
+      "key": "fell_off_a_truck",
+      "tags": ["fence"],
+      "label": "Ask what came in",
+      "description": "Nobody here asks where anything came from, which cuts both ways.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "sit_with_the_families",
+      "tags": ["nomad"],
+      "label": "Sit with the families",
+      "description": "Food, an argument about a route, and nobody asking what you do.",
+      "minutes": 90,
+      "cost": null
+    }
+  ]
+}

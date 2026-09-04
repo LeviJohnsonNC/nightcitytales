@@ -142,6 +142,7 @@ import {
   areaOf,
   describePosition,
   districtProfile,
+  placeActions,
   getDistrict,
   isCombatZone,
   resolvePosition,
@@ -403,6 +404,10 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
                 character: `${WEALTH_WORDS[profile.wealth]}, ${CROWD_WORDS[profile.crowd]}`,
               }
             : {}),
+          business: placeActions({
+            districtKey: positionDistrict.key,
+            placeKey: position?.placeKey,
+          }).map((a) => `${a.label} (${a.placeName})`),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
           streets: streetsIn(positionDistrict.key).map((s) => s.name),
           destinations: reachableDestinations(
