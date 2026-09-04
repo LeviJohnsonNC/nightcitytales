@@ -42,6 +42,8 @@ import {
   describePlaceAction,
   peopleAtHaunts,
   districtOfPlace,
+  whoIsAt,
+  flagMeaning,
   type PlaceAction,
 } from "@/engine";
 
@@ -56,6 +58,7 @@ import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/pla
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
 import { hauntPeople } from "./lifeModel";
+import { placeHistory } from "@/features/campaign/placeState";
 import { ShopSheet } from "./ShopSheet";
 import { RipperdocSheet } from "./RipperdocSheet";
 import { RecordSheet } from "./RecordSheet";
@@ -888,11 +891,62 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
   const knownPlaces = knownPlacesOf(bundle.campaign);
 
+  /**
+   * Everything the campaign knows about a place, for the dossier's live panels.
+   *
+   * Assembled from rows that already exist: the campaign's place row for what
+   * has happened there, haunts for who is in, the location's own tags for what
+   * is open, and the ledger for what the character has done. Nothing here is
+   * generated and nothing here asks the model anything.
+   */
+  const placeHere = (key: string) => {
+    if (!bundle) return undefined;
+    const state = bundle.places[key];
+    const met = whoIsAt({
+      placeKey: key,
+      people: hauntPeople(bundle.npcs, bundle.campaign),
+      day: bundle.clock.day,
+      minute: bundle.clock.minute,
+      seed: bundle.campaign.id,
+    });
+    const district = districtOfPlace(key);
+    const business = district
+      ? placeActions({ districtKey: district.key, placeKey: key, places: bundle.places })
+          .filter((a) => a.placeKey === key)
+          .map((a) => ({
+            label: a.label,
+            detail: `${formatDuration(a.minutes)}${a.cost ? ` · ${a.cost}eb` : ""}`,
+          }))
+      : [];
+    const since = state?.lastVisitDay != null ? bundle.clock.day - state.lastVisitDay : null;
+    return {
+      conditions: (state?.flags ?? []).map((flag) => flagMeaning(flag) ?? flag),
+      people: met ? [met.name] : [],
+      business,
+      history: placeHistory(bundle.events, key),
+      visits: state?.visits ?? 0,
+      ...(since !== null
+        ? {
+            lastVisit:
+              since === 0
+                ? "You were here today."
+                : since === 1
+                  ? "Last visit: yesterday."
+                  : `Last visit: ${since} days ago.`,
+          }
+        : {}),
+    };
+  };
+
   // The ordinary business of being here. Derived from the ground the character
   // is standing on, so it is the same list the narrator was handed.
   const here = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
   const placeActionsHere = here
-    ? placeActions({ districtKey: here.districtKey, placeKey: here.placeKey })
+    ? placeActions({
+        districtKey: here.districtKey,
+        placeKey: here.placeKey,
+        places: bundle.places,
+      })
     : [];
 
   return (
@@ -920,6 +974,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   onTravel={life.travelTo}
                   travelBusy={life.travelBusy}
                   signals={signals}
+                  placeHere={placeHere}
                   open={mapOpen}
                   onOpenChange={setMapOpen}
                 />

@@ -10,6 +10,8 @@ import {
   isPlaceTag,
   placeActions,
   placesWithTag,
+  startingState,
+  type PlaceState,
 } from "@/engine";
 
 const FILE = actionFile as unknown as { costNote: string };
@@ -136,5 +138,26 @@ describe("what a place offers", () => {
   it("reads as something the character does, at somewhere they can name", () => {
     const [action] = placeActions({ districtKey: "rancho_coronado", placeKey: "x4" });
     expect(describePlaceAction(action!)).toBe("Get something to eat at Jack ‘N’ the Green.");
+  });
+});
+
+describe("a shut place is shut", () => {
+  it("offers nothing once the ground has been closed", () => {
+    // The counter a beat closed should not still be offering to serve you: the
+    // live half of the location page reads this, and an open-business panel on
+    // a raided market would be the state saying one thing and the screen
+    // another.
+    const open = placeActions({ districtKey: "rancho_coronado", placeKey: "x5" });
+    expect(open.some((a) => a.placeKey === "x5")).toBe(true);
+
+    const shut: PlaceState = { ...startingState("x5"), flags: ["shut"] };
+    const closed = placeActions({
+      districtKey: "rancho_coronado",
+      placeKey: "x5",
+      places: { x5: shut },
+    });
+    expect(closed.some((a) => a.placeKey === "x5")).toBe(false);
+    // And the rest of the district carries on regardless.
+    expect(closed.length).toBeGreaterThan(0);
   });
 });
