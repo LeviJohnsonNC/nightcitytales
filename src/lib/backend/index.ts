@@ -6,5 +6,6 @@ export * from "./portraits";
 export * from "./campaigns";
 export * from "./cyberware";
 export * from "./life";
+export * from "./places";
 export * from "./encounters";
 export * from "./missions";

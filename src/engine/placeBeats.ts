@@ -33,6 +33,7 @@ import data from "@/data/atlas/place-beats.json";
 import { partOfDay } from "./clock";
 import { DISTRICTS, getDistrict, getPlace } from "./geography";
 import { tagsOf } from "./places";
+import { beatAllowedAt, type PlaceState } from "./placeState";
 import type { LifeCategory, LifeSituation } from "./life";
 
 type BeatFile = {
@@ -192,6 +193,15 @@ export type PlaceBeatInput = {
    * in the same district should not be handed the same week.
    */
   seed: string;
+  /**
+   * What has happened to these places, by key, when the campaign knows. A place
+   * with no entry is a place at its starting condition — not a blank one.
+   *
+   * This is the link that makes state matter: a night market runs while the
+   * place is still a market, and stops when the law has been through enough
+   * times to close it.
+   */
+  places?: Record<string, PlaceState> | undefined;
 };
 
 /**
@@ -213,6 +223,7 @@ export function derivePlaceBeats(input: PlaceBeatInput): LifeSituation[] {
     if (!beatFitsHour(beat, input.minute)) continue;
     for (const placeKey of anchorsFor(beat, district.key, input.day, input.seed)) {
       if (!beatIsLive(beat, placeKey, input.day, input.seed)) continue;
+      if (!beatAllowedAt(beat.key, placeKey, input.places?.[placeKey])) continue;
       const place = getPlace(placeKey);
       if (!place) continue;
       const atPlace = input.placeKey === placeKey;
@@ -286,6 +297,7 @@ export function cityBeats(input: {
   day: number;
   minute: number;
   seed: string;
+  places?: Record<string, PlaceState> | undefined;
 }): LifeSituation[] {
   const seen = new Set<string>();
   const out: LifeSituation[] = [];
@@ -295,6 +307,7 @@ export function cityBeats(input: {
       day: input.day,
       minute: input.minute,
       seed: input.seed,
+      places: input.places,
     })) {
       if (seen.has(beat.key)) continue;
       seen.add(beat.key);
