@@ -49,9 +49,9 @@
       "summary": "One of the Fixers running the place has opened it up for the evening. Word is somebody is carrying military-grade optics.",
       "severity": 2,
       "everyDays": 7,
-      "parts": ["evening", "night"]
+      "parts": ["evening", "night"],
+      "signal": "market"
     },
-
     {
       "key": "water_queue",
       "tags": ["water"],
@@ -68,7 +68,8 @@
       "title": "There has been a cancellation",
       "summary": "Somebody with an appointment did not turn up, and somebody else is going to take the slot.",
       "severity": 1,
-      "everyDays": 23
+      "everyDays": 23,
+      "signal": "trade"
     },
     {
       "key": "stripping_copper",
@@ -127,5 +128,6 @@
       "everyDays": 26,
       "parts": ["evening", "night"]
     }
-  ]
+  ],
+  "signalNote": "The mark a beat wears on the map, from the closed list in placeSignals.ts. Omitted, a beat is an event (or a person, when its category is people) — a beat has to ask to be anything more eye-catching than a warning."
 }

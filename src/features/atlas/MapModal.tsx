@@ -18,14 +18,20 @@ import {
   getDistrict,
   mapPointOf,
   resolvePosition,
+  signalForDistrict,
+  signalForPlace,
   travelMinutes,
   type District,
   type MapPoint,
+  type PlaceSignal,
 } from "@/engine";
 import { PlaceDossier } from "./PlaceDossier";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
+
+/** How far a pointer must travel before the gesture stops being a tap. */
+const PAN_THRESHOLD_PX = 4;
 
 export function MapModal({
   open,
@@ -34,6 +40,7 @@ export function MapModal({
   knownPlaces = [],
   onTravel,
   travelBusy = false,
+  signals = [],
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -42,11 +49,24 @@ export function MapModal({
   /** When given, districts other than the current one offer a trip. */
   onTravel?: ((districtKey: string) => void) | undefined;
   travelBusy?: boolean | undefined;
+  /**
+   * What is worth knowing about somewhere, from the engine. Deliberately few:
+   * the budget is three across the whole city (see engine/placeSignals.ts), so
+   * most pins carry nothing and the map reads quiet.
+   */
+  signals?: PlaceSignal[] | undefined;
 }) {
   const [zoom, setZoom] = useState(1.4);
   const [dossier, setDossier] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
-  const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+    /** True once the gesture has moved far enough to be a pan rather than a tap. */
+    panning: boolean;
+  } | null>(null);
   /** Fraction of the map to hold in the middle of the viewport across a zoom. */
   const pendingCenter = useRef<MapPoint | null>(null);
 
@@ -129,19 +149,39 @@ export function MapModal({
   function onPointerDown(e: React.PointerEvent) {
     const el = scroller.current;
     if (!el) return;
-    drag.current = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop };
-    el.setPointerCapture(e.pointerId);
+    // Deliberately NOT capturing the pointer yet. Capturing on pointerdown
+    // retargets the whole gesture to the scroller, so the pointerup never
+    // reaches the pin underneath and the click that opens a district's dossier
+    // is never dispatched — the map became unusable as anything but a picture.
+    // Capture starts when a drag actually starts, below.
+    drag.current = {
+      x: e.clientX,
+      y: e.clientY,
+      left: el.scrollLeft,
+      top: el.scrollTop,
+      panning: false,
+    };
   }
   function onPointerMove(e: React.PointerEvent) {
     const el = scroller.current;
     const start = drag.current;
     if (!el || !start) return;
-    el.scrollLeft = start.left - (e.clientX - start.x);
-    el.scrollTop = start.top - (e.clientY - start.y);
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    // A tap wanders a pixel or two, especially on a touchscreen. Below the
+    // threshold this is still a tap and the pin keeps its click.
+    if (!start.panning) {
+      if (Math.abs(dx) < PAN_THRESHOLD_PX && Math.abs(dy) < PAN_THRESHOLD_PX) return;
+      start.panning = true;
+      el.setPointerCapture(e.pointerId);
+    }
+    el.scrollLeft = start.left - dx;
+    el.scrollTop = start.top - dy;
   }
   function endDrag(e: React.PointerEvent) {
+    const panning = drag.current?.panning ?? false;
     drag.current = null;
-    scroller.current?.releasePointerCapture(e.pointerId);
+    if (panning) scroller.current?.releasePointerCapture(e.pointerId);
   }
 
   return (
@@ -229,6 +269,9 @@ export function MapModal({
               {DISTRICTS.map((district) => {
                 const isHere = currentDistrict?.key === district.key;
                 const isKnown = known.has(district.key);
+                // At most one per district, and three in the whole city. The
+                // engine has already applied that budget; this only draws it.
+                const signal = signalForDistrict(signals, district.key);
                 // Standing in a named venue puts the pin on the venue itself.
                 const point = isHere && youAreHere ? youAreHere : district.map;
                 return (
@@ -236,7 +279,11 @@ export function MapModal({
                     key={district.key}
                     type="button"
                     onClick={() => setDossier(district.key)}
-                    aria-label={`${district.name} district`}
+                    aria-label={
+                      signal
+                        ? `${district.name} district — ${signal.label}, at ${signal.placeName}`
+                        : `${district.name} district`
+                    }
                     data-here={isHere ? "true" : undefined}
                     className="absolute -translate-x-1/2 -translate-y-1/2"
                     style={{ left: `${point.x}%`, top: `${point.y}%` }}
@@ -254,6 +301,12 @@ export function MapModal({
                               : "h-2 w-2 rounded-full border border-background/70 bg-foreground/40"
                         }
                       />
+                      {signal ? (
+                        <span className="pointer-events-none absolute bottom-full left-1/2 mb-1 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap border border-ember/60 bg-background/95 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-foreground">
+                          <span aria-hidden>{signal.icon}</span>
+                          {signal.placeName}
+                        </span>
+                      ) : null}
                     </span>
                   </button>
                 );
@@ -272,6 +325,7 @@ export function MapModal({
           targetKey={dossier}
           open={dossier !== null}
           onOpenChange={(v) => !v && setDossier(null)}
+          rightNow={(key) => signalForPlace(signals, key) ?? signalForDistrict(signals, key)}
           {...(onTravel
             ? {
                 // The reader can follow a district into one of its locations,

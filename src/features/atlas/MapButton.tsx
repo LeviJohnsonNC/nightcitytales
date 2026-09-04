@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { MapPin } from "lucide-react";
-import { describePosition } from "@/engine";
+import { describePosition, type PlaceSignal } from "@/engine";
 import { MapModal } from "./MapModal";
 
 export function MapButton({
@@ -13,14 +13,27 @@ export function MapButton({
   className,
   onTravel,
   travelBusy,
+  signals,
+  open: openProp,
+  onOpenChange,
 }: {
   locationKey?: string | null | undefined;
   knownPlaces?: string[] | undefined;
   className?: string | undefined;
   onTravel?: ((districtKey: string) => void) | undefined;
   travelBusy?: boolean | undefined;
+  signals?: PlaceSignal[] | undefined;
+  /**
+   * The map can also be opened from elsewhere — Go somewhere, during a Life
+   * turn — and it is the same map. Given these, the caller owns whether it is
+   * showing; without them the button keeps its own state as before.
+   */
+  open?: boolean | undefined;
+  onOpenChange?: ((v: boolean) => void) | undefined;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = openProp ?? ownOpen;
+  const setOpen = onOpenChange ?? setOwnOpen;
   return (
     <>
       <button
@@ -41,6 +54,7 @@ export function MapButton({
         knownPlaces={knownPlaces}
         onTravel={onTravel}
         travelBusy={travelBusy}
+        signals={signals}
       />
     </>
   );
