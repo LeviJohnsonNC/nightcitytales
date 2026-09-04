@@ -16,6 +16,7 @@
  */
 import content from "@/data/missions/job-content.json";
 import { seededRng } from "../dice";
+import { getDistrict, getPlace } from "../geography";
 import { DIFFICULTY_VALUES } from "../checkDV";
 import { SKILLS } from "../rulesData";
 import { buildForce, forceFor, rollForceSize } from "../threats";
@@ -98,6 +99,25 @@ function checkFrom(check: BeatCheck, where: string): BeatCheck {
   return { skill: check.skill, dv: check.dv, ...(check.note ? { note: check.note } : {}) };
 }
 
+/**
+ * Which building in that district the work is actually at.
+ *
+ * The district was always enough to place a job on the map and never enough to
+ * make one land: "a warehouse in Santo Domingo" is a set piece, and "the
+ * Greenbox Storage Units" is somewhere the player may already have been. Every
+ * location in the atlas is a candidate, so the whole city can host work rather
+ * than the few places anybody has written up.
+ *
+ * Returns null for a district the atlas gives no locations — the Exec Zone has
+ * none, and a job there is still a job in the Exec Zone.
+ */
+function pickPlaceIn(districtKey: string, rng: RNG): string | null {
+  const district = getDistrict(districtKey);
+  if (!district?.locations.length) return null;
+  const index = Math.floor(rng() * district.locations.length);
+  return district.locations[Math.min(index, district.locations.length - 1)]?.key ?? null;
+}
+
 /** A stable job id for a seed. */
 export function jobIdForSeed(seed: number): string {
   return `${GENERATED_JOB_PREFIX}${(seed >>> 0).toString(16).padStart(8, "0")}`;
@@ -137,6 +157,11 @@ export function generateJob(seed: number): Mission {
   // district and opposition of every job every previously stored id names.
   // Adding to the end only extends the stream: nothing before it moves.
   const forceSize = rollForceSize(rng);
+  // APPENDED AFTER forceSize, for the same reason it was appended after
+  // everything else: extending the stream leaves every draw above it untouched,
+  // so a job id stored before this existed still names the same job — it simply
+  // also names the building now.
+  const placeKey = pickPlaceIn(district.key, rng);
 
   const slots: Slots = {
     patron: patron.name,
@@ -248,6 +273,7 @@ export function generateJob(seed: number): Mission {
       patronOrg: patron.org,
       district: district.name,
       districtKey: district.key,
+      ...(placeKey ? { placeKey, placeName: getPlace(placeKey)?.name ?? "" } : {}),
       opposition: `${opposition.name} — ${opposition.flavour}`,
       pitch: fill(archetype.background),
       ask: fill(archetype.objective),

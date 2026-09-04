@@ -244,6 +244,27 @@ ARENA_BY_TAG = [
     ["farm", "open_ground"],
     ["park", "open_ground"],
     ["stadium", "open_ground"],
+    # Interiors, last: anything that is a building somebody works or sleeps in
+    # is a room with furniture in it, which is what club_interior models. Better
+    # than open ground, which is a field.
+    ["hotel", "club_interior"],
+    ["office", "club_interior"],
+    ["corp_hq", "club_interior"],
+    ["lab", "club_interior"],
+    ["clinic", "club_interior"],
+    ["hospital", "club_interior"],
+    ["ripperdoc", "club_interior"],
+    ["school", "club_interior"],
+    ["police", "club_interior"],
+    ["government", "club_interior"],
+    ["bank", "club_interior"],
+    ["studio", "club_interior"],
+    ["leisure", "club_interior"],
+    ["media", "club_interior"],
+    ["religious", "club_interior"],
+    ["luxury_housing", "club_interior"],
+    ["secure", "club_interior"],
+    ["gang_turf", "street"],
 ]
 
 out = {

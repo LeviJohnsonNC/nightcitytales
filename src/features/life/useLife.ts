@@ -27,7 +27,6 @@ import {
   partOfDay,
   readsThePerson,
   resolveSkillId,
-  rollJobSeed,
   selectSituation,
   settleHookAsk,
   standingBand,
@@ -108,6 +107,7 @@ import {
   hookUpsert,
   liveHookSituation,
   nextJobSeedFrom,
+  pickJobSeed,
   offerTerms,
   wireOfferFor,
   JOB_PAYOUT_FLAG,
@@ -272,11 +272,12 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
   // There is always a job somewhere in Night City. Its seed is drawn once and
   // stored, so the same work is still on the wire after a reload, and so the
   // mission behind an offer exists BEFORE anyone pitches it.
-  const seed = await ensureNextJobSeed(campaignId, full.flags);
+  const seed = await ensureNextJobSeed(campaignId, full.flags, knownDistrictsOf(full.campaign));
   // Work comes through the fixer the character actually has, not a new name.
   const { missionId: wireMissionId, wire } = wireOfferFor(
     seed,
     castMemberInRole(cast.npcs, "fixer"),
+    places,
   );
 
   const hookRow = liveHookSituation(merged);
@@ -285,7 +286,7 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     // A hook written before offers carried a mission. Rather than guess at what
     // job was meant, bind it to the one on the wire and roll a fresh one on:
     // from here the offer and the job it starts are the same object.
-    hook = await bindLegacyHook(campaignId, hookRow, seed);
+    hook = await bindLegacyHook(campaignId, hookRow, seed, knownDistrictsOf(full.campaign));
   }
 
   return {
@@ -306,17 +307,23 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
 }
 
 /** The seed of the job on the wire, drawing and storing one the first time. */
-async function ensureNextJobSeed(campaignId: string, flags: CampaignFlag[]): Promise<number> {
+async function ensureNextJobSeed(
+  campaignId: string,
+  flags: CampaignFlag[],
+  known: Set<string>,
+): Promise<number> {
   const stored = nextJobSeedFrom(flags);
   if (stored !== null) return stored;
-  const seed = rollJobSeed();
+  // Prefer work on ground the character has walked. "The target is holed up in
+  // Coronado Heights" only lands if they have been to Coronado Heights.
+  const seed = pickJobSeed(known);
   await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, seed as unknown as Json);
   return seed;
 }
 
 /** Draw the next job onto the wire, so the one just offered is not offered twice. */
-async function rollWireForward(campaignId: string): Promise<void> {
-  await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, rollJobSeed() as unknown as Json);
+async function rollWireForward(campaignId: string, known: Set<string>): Promise<void> {
+  await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, pickJobSeed(known) as unknown as Json);
 }
 
 /** Give an offer that predates offer-time generation the job it will start. */
@@ -324,13 +331,14 @@ async function bindLegacyHook(
   campaignId: string,
   situation: LifeSituation,
   seed: number,
+  known: Set<string>,
 ): Promise<LifeHook> {
   const { missionId } = wireOfferFor(seed);
   const mission = getMission(missionId);
   const offer = missionOffer(mission);
   const terms = offerTerms(mission);
   await upsertSituations(campaignId, [hookUpsert(situation.key, mission, offer, terms)]);
-  await rollWireForward(campaignId);
+  await rollWireForward(campaignId, known);
   return { situationKey: situation.key, missionId, mission, offer, terms };
 }
 
@@ -377,6 +385,16 @@ const CROWD_WORDS: Record<string, string> = {
   steady: "people about, going somewhere",
   busy: "crowded, at most hours",
 };
+
+/** The districts this campaign has actually set foot in. */
+function knownDistrictsOf(campaign: Campaign): Set<string> {
+  const out = new Set<string>();
+  for (const raw of knownPlacesOf(campaign)) {
+    const at = resolvePosition(raw);
+    if (at) out.add(at.districtKey);
+  }
+  return out;
+}
 
 function knownPlacesOf(campaign: Campaign): string[] {
   const known = campaign.known_places;
@@ -803,7 +821,7 @@ async function applyResponse(
       // The wire moves on, so the same job is never offered twice — and
       // tonight's roll is spent, so the NEXT job does not turn up this evening
       // too if the player walks away from this one.
-      await rollWireForward(campaignId);
+      await rollWireForward(campaignId, knownDistrictsOf(bundle.campaign));
       await spendWire(campaignId, clock.day);
       const to = nextPhase(bundle.phase, "offer_hook");
       if (to) await setCampaignPhase(campaignId, to);

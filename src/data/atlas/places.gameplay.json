@@ -86,7 +86,25 @@
     ["housing", "alley"],
     ["farm", "open_ground"],
     ["park", "open_ground"],
-    ["stadium", "open_ground"]
+    ["stadium", "open_ground"],
+    ["hotel", "club_interior"],
+    ["office", "club_interior"],
+    ["corp_hq", "club_interior"],
+    ["lab", "club_interior"],
+    ["clinic", "club_interior"],
+    ["hospital", "club_interior"],
+    ["ripperdoc", "club_interior"],
+    ["school", "club_interior"],
+    ["police", "club_interior"],
+    ["government", "club_interior"],
+    ["bank", "club_interior"],
+    ["studio", "club_interior"],
+    ["leisure", "club_interior"],
+    ["media", "club_interior"],
+    ["religious", "club_interior"],
+    ["luxury_housing", "club_interior"],
+    ["secure", "club_interior"],
+    ["gang_turf", "street"]
   ],
   "districts": {
     "little_europe": {

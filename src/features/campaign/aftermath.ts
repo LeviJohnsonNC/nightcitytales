@@ -9,6 +9,7 @@
  */
 import {
   applyObservations,
+  findMission,
   clampDisposition,
   clampStanding,
   describePayment,
@@ -35,6 +36,7 @@ import {
   type Json,
   type SettleJobPayload,
 } from "@/lib/backend";
+import { applyPlaceObservations } from "./placeState";
 import { tallyFrom, type CampaignTally } from "./tally";
 
 export const SETTLEMENT_EVENT = "job_settled";
@@ -279,5 +281,20 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
     factions,
     tally: tally as unknown as Json,
   });
-  return result.alreadySettled ? null : receipt;
+  if (result.alreadySettled) return null;
+
+  // The job happened somewhere, and that somewhere remembers it. Applied AFTER
+  // the settlement transaction rather than inside it: settle_job is the
+  // idempotent money-and-pressure commit, and a place's dials are neither.
+  // Worst case on a failure here is a building that does not know what happened
+  // in it, which is recoverable; a half-applied payout is not.
+  const jobPlace = findMission(input.missionId)?.offer?.placeKey;
+  if (jobPlace) {
+    await applyPlaceObservations({
+      campaignId: input.campaignId,
+      placeKey: jobPlace,
+      observations: findings.map((finding) => finding.observation),
+    });
+  }
+  return receipt;
 }

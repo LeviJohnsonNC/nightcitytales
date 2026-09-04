@@ -40,6 +40,14 @@ export type LifeWireOffer = {
   brokerKey: string;
   brokerLine: string;
   district: string;
+  /** The building, when the job names one. */
+  placeName?: string | undefined;
+  /**
+   * What the character already knows about that building, because they have
+   * been there. Information rather than a die modifier: RED's DVs are printed,
+   * and a home-field bonus would be an invented rule.
+   */
+  familiar?: string[] | undefined;
   pitch: string;
   ask: string;
   payout: number;
@@ -363,10 +371,18 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       "== WORK ON THE WIRE (the phone rang tonight: put THIS job on the table, this turn) ==",
       line("Job", w.title),
       line("Broker", `${w.brokerName} [${w.brokerKey}] — ${w.brokerLine}`),
-      line("Where", w.district),
+      line("Where", w.placeName ? `${w.placeName}, ${w.district}` : w.district),
       line("Pays", `${w.payout}eb`),
       line("What they are asking for", w.ask),
       line("How they put it", w.pitch),
+      ...(w.familiar?.length
+        ? [
+            "The character has been to this building before, and knows things about it that the " +
+              "broker did not mention. Work what they know into how they hear the pitch; it is " +
+              "recognition, not a hint, and it gives them no advantage they have not earned:",
+            ...w.familiar.map((fact) => `  - ${fact}`),
+          ]
+        : []),
       'To put it on the table, return {"kind":"hook_offer"} and voice this in the broker\'s mouth. ' +
         "Change nothing: not the fee, not the name, not the ask.",
     );
