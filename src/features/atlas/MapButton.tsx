@@ -6,6 +6,7 @@ import { useState } from "react";
 import { MapPin } from "lucide-react";
 import { describePosition, type PlaceSignal } from "@/engine";
 import { MapModal } from "./MapModal";
+import type { PlaceHere } from "./PlaceDossier";
 
 export function MapButton({
   locationKey,
@@ -14,6 +15,7 @@ export function MapButton({
   onTravel,
   travelBusy,
   signals,
+  placeHere,
   open: openProp,
   onOpenChange,
 }: {
@@ -23,6 +25,7 @@ export function MapButton({
   onTravel?: ((districtKey: string) => void) | undefined;
   travelBusy?: boolean | undefined;
   signals?: PlaceSignal[] | undefined;
+  placeHere?: ((key: string) => PlaceHere | undefined) | undefined;
   /**
    * The map can also be opened from elsewhere — Go somewhere, during a Life
    * turn — and it is the same map. Given these, the caller owns whether it is
@@ -55,6 +58,7 @@ export function MapButton({
         onTravel={onTravel}
         travelBusy={travelBusy}
         signals={signals}
+        placeHere={placeHere}
       />
     </>
   );

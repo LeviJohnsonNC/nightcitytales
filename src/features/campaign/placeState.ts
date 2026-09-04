@@ -17,6 +17,7 @@ import {
   appendCampaignEvent,
   listCampaignPlaces,
   upsertCampaignPlace,
+  type CampaignEvent,
   type CampaignPlace,
   type Json,
 } from "@/lib/backend";
@@ -102,4 +103,21 @@ export async function notePlaceVisit(args: {
   const after = recordVisit(before, args.day);
   await save(args.campaignId, after);
   return after;
+}
+
+/**
+ * What the campaign's own ledger says happened at a place.
+ *
+ * Read off events the ENGINE wrote — the same discipline settlement uses when
+ * it prices a job from the ledger rather than from the narration. Nothing here
+ * is a summary of anything: each line was written at the moment it happened.
+ */
+export function placeHistory(events: CampaignEvent[], placeKey: string, limit = 4): string[] {
+  const out: string[] = [];
+  for (const event of events) {
+    const data = (event.data ?? {}) as { placeKey?: unknown };
+    if (data.placeKey !== placeKey) continue;
+    if (event.summary) out.push(event.summary);
+  }
+  return out.slice(-limit);
 }

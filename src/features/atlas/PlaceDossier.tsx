@@ -25,23 +25,112 @@ import type { PlaceSignal } from "@/engine";
 import { placeDossier, placeImage } from "./placeDossiers";
 
 /**
- * What is true here at this moment, as opposed to what this place is.
+ * Everything the campaign knows about the place on show, gathered by the caller.
  *
- * The entry below it is the written character of the place and does not change.
- * This line does, and it is the difference between an encyclopedia and somewhere
- * worth going tonight.
+ * All of it is READ from rows that already exist — flags on the campaign's place
+ * row, people from their haunts, business from the location's own tags, history
+ * from the ledger. Nothing on this screen is generated, and nothing on it asks
+ * the model anything. That is what turns a lore page into a place: the entry
+ * says what somewhere IS, and these say what is true about it tonight.
  */
-function RightNow({ signal }: { signal: PlaceSignal }) {
+export type PlaceHere = {
+  signal?: PlaceSignal | undefined;
+  /** What has happened here, in the engine's own words. */
+  conditions?: string[] | undefined;
+  /** People the character knows who are here now. */
+  people?: string[] | undefined;
+  /** What can be done here, from the ground's own tags. */
+  business?: { label: string; detail: string }[] | undefined;
+  /** Lines the ledger wrote about this place, oldest first. */
+  history?: string[] | undefined;
+  visits?: number | undefined;
+  /** "Last visit: 12 days ago", when they have been. */
+  lastVisit?: string | undefined;
+};
+
+function Panel({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 border border-ember/40 bg-ember/5 px-3 py-2">
-      <span aria-hidden className="text-sm leading-6">
-        {signal.icon}
-      </span>
-      <div className="min-w-0">
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-ember">Right now</p>
-        <p className="text-sm leading-relaxed text-foreground">{signal.label}</p>
-        <p className="text-xs text-muted-foreground">at {signal.placeName}</p>
-      </div>
+    <section className="space-y-1">
+      <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+        {label}
+      </p>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * The live half of the page: what is true here, who is in, what is open, and
+ * what the character has already done here.
+ *
+ * Every panel disappears when it has nothing to say. A place nobody has been to
+ * shows no history, and a quiet afternoon shows no conditions — an empty
+ * heading is worse than no heading, because it reads as something missing
+ * rather than as a quiet day.
+ */
+function RightNowPanels({ here }: { here: PlaceHere }) {
+  const conditions = here.conditions ?? [];
+  const people = here.people ?? [];
+  const business = here.business ?? [];
+  const history = here.history ?? [];
+  if (!here.signal && !conditions.length && !people.length && !business.length && !history.length) {
+    return null;
+  }
+  return (
+    <div className="space-y-3 border-b border-hairline pb-3">
+      {here.signal || conditions.length ? (
+        <Panel label="Right now">
+          <div className="space-y-1">
+            {here.signal ? (
+              <p className="text-sm leading-relaxed text-foreground">
+                <span aria-hidden>{here.signal.icon}</span> {here.signal.label}
+                <span className="text-muted-foreground"> · {here.signal.placeName}</span>
+              </p>
+            ) : null}
+            {conditions.map((line) => (
+              <p key={line} className="text-sm leading-relaxed text-muted-foreground">
+                {line}
+              </p>
+            ))}
+          </div>
+        </Panel>
+      ) : null}
+
+      {people.length ? (
+        <Panel label="People you know here">
+          <p className="text-sm leading-relaxed text-foreground">{people.join(" · ")}</p>
+        </Panel>
+      ) : null}
+
+      {business.length ? (
+        <Panel label="Open business">
+          <ul className="space-y-0.5">
+            {business.map((item) => (
+              <li key={item.label} className="text-sm leading-relaxed">
+                <span className="text-foreground">{item.label}</span>{" "}
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  {item.detail}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
+
+      {history.length || here.lastVisit ? (
+        <Panel label="Your history">
+          <div className="space-y-0.5">
+            {history.map((line, i) => (
+              <p key={i} className="text-sm leading-relaxed text-foreground/90">
+                {line}
+              </p>
+            ))}
+            {here.lastVisit ? (
+              <p className="text-xs text-muted-foreground">{here.lastVisit}</p>
+            ) : null}
+          </div>
+        </Panel>
+      ) : null}
     </div>
   );
 }
@@ -236,8 +325,11 @@ export function PlaceDossier({
    * than the key the dialog opened on, so it follows the reader in.
    */
   action?: (key: string) => React.ReactNode;
-  /** What is happening at the key on show, when the engine says anything is. */
-  rightNow?: (key: string) => PlaceSignal | undefined;
+  /**
+   * Everything the campaign knows about the key on show. Absent outside a
+   * campaign — the atlas reader on its own is still just an atlas.
+   */
+  rightNow?: (key: string) => PlaceHere | undefined;
 }) {
   // What is on show. Starts at whatever opened the dialog and moves as the
   // reader follows a district into one of its locations, or back out again.
@@ -279,7 +371,7 @@ export function PlaceDossier({
         <div className="flex flex-col">
           <Portrait dossierKey={portraitKey} alt={title} className="shrink-0" />
           <div className="space-y-3 p-5 pt-4">
-            {now ? <RightNow signal={now} /> : null}
+            {now ? <RightNowPanels here={now} /> : null}
             {place ? (
               <PlaceBody place={place} district={district} onOpenDistrict={setShowing} />
             ) : (

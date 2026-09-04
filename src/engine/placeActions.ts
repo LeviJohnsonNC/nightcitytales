@@ -37,6 +37,7 @@
 import data from "@/data/atlas/place-actions.json";
 import { getDistrict, getPlace } from "./geography";
 import { tagsOf, type PlaceTag } from "./places";
+import { SILENCING_FLAGS, type PlaceState } from "./placeState";
 
 type ActionFile = {
   houseRule: boolean;
@@ -101,6 +102,11 @@ export type PlaceActionInput = {
   districtKey: string;
   /** The venue they are standing in, when they are standing in one. */
   placeKey?: string | undefined;
+  /**
+   * What has happened to these places. A shut place sells nothing: the counter
+   * a beat closed should not still be offering to serve you.
+   */
+  places?: Record<string, PlaceState> | undefined;
 };
 
 /**
@@ -123,6 +129,8 @@ export function placeActions(input: PlaceActionInput): PlaceAction[] {
   const offer = (placeKey: string, here: boolean) => {
     const place = getPlace(placeKey);
     if (!place) return;
+    // Somewhere the law closed is not open for business.
+    if (SILENCING_FLAGS.some((flag) => input.places?.[placeKey]?.flags.includes(flag))) return;
     for (const template of templatesFor(tagsOf(placeKey))) {
       // One offer of a verb at a time. Six bars in a district is not six
       // chances to have a drink, it is one drink and a choice of bar, and the

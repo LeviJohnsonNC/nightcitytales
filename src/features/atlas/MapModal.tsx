@@ -25,7 +25,7 @@ import {
   type MapPoint,
   type PlaceSignal,
 } from "@/engine";
-import { PlaceDossier } from "./PlaceDossier";
+import { PlaceDossier, type PlaceHere } from "./PlaceDossier";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -41,6 +41,7 @@ export function MapModal({
   onTravel,
   travelBusy = false,
   signals = [],
+  placeHere,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -55,6 +56,11 @@ export function MapModal({
    * most pins carry nothing and the map reads quiet.
    */
   signals?: PlaceSignal[] | undefined;
+  /**
+   * Everything the campaign knows about a place, for the dossier's live panels.
+   * Absent outside a campaign: the atlas reader on its own is still an atlas.
+   */
+  placeHere?: ((key: string) => PlaceHere | undefined) | undefined;
 }) {
   const [zoom, setZoom] = useState(1.4);
   const [dossier, setDossier] = useState<string | null>(null);
@@ -325,7 +331,12 @@ export function MapModal({
           targetKey={dossier}
           open={dossier !== null}
           onOpenChange={(v) => !v && setDossier(null)}
-          rightNow={(key) => signalForPlace(signals, key) ?? signalForDistrict(signals, key)}
+          rightNow={(key) => {
+            const known = placeHere?.(key);
+            const signal = signalForPlace(signals, key) ?? signalForDistrict(signals, key);
+            if (!known) return signal ? { signal } : undefined;
+            return signal ? { ...known, signal } : known;
+          }}
           {...(onTravel
             ? {
                 // The reader can follow a district into one of its locations,
