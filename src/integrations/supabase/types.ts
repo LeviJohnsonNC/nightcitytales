@@ -333,6 +333,53 @@ export type Database = {
           },
         ]
       }
+      campaign_places: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          dials: Json
+          first_visit_day: number | null
+          flags: string[]
+          id: string
+          last_visit_day: number | null
+          place_key: string
+          updated_at: string
+          visits: number
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          dials?: Json
+          first_visit_day?: number | null
+          flags?: string[]
+          id?: string
+          last_visit_day?: number | null
+          place_key: string
+          updated_at?: string
+          visits?: number
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          dials?: Json
+          first_visit_day?: number | null
+          flags?: string[]
+          id?: string
+          last_visit_day?: number | null
+          place_key?: string
+          updated_at?: string
+          visits?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_places_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_situations: {
         Row: {
           campaign_id: string
