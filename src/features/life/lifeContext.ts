@@ -114,6 +114,12 @@ export type LifeContext = {
     response?: string;
     /** What the money looks like here, and how busy the street is. */
     character?: string;
+    /**
+     * The ordinary business of being here, from the engine: what these places
+     * actually support, each at a named venue. Given to the model so it stops
+     * short of inventing a counter to buy something across.
+     */
+    business?: string[];
     nearby: string[];
     /**
      * Good destinations to have in mind: what is underfoot, the named geography
@@ -180,6 +186,13 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.security) parts.push(line("Security", p.security));
     if (p.response) parts.push(line("If the street notices", p.response));
     if (p.character) parts.push(line("The look of the place", p.character));
+    if (p.business?.length) {
+      parts.push(line("Ordinary business here", p.business.join(", ")));
+      parts.push(
+        "That is what these places support, not a list of what the player may do. They can try " +
+          "anything; those are simply the things the engine already knows are possible here.",
+      );
+    }
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
     if (p.combatZone) parts.push(line("Note", "This is a Combat Zone. No law worth the name."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
