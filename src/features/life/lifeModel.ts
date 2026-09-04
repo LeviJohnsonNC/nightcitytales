@@ -19,7 +19,7 @@ import {
 import { publicView } from "@/engine";
 import { downtimeView } from "@/features/downtime/downtimeModel";
 import { castMemberFrom, knownFactsOf } from "@/features/campaign/castSeeding";
-import type { HauntPerson } from "@/engine";
+import type { HauntPerson, PlaceState } from "@/engine";
 import type {
   Campaign,
   CampaignClock,
@@ -138,6 +138,12 @@ export type LifeBundleInput = {
   character: FullCharacter;
   inventory: CampaignInventoryItem[];
   npcs: CampaignNpc[];
+  /**
+   * What has happened to the places this campaign has touched. Sparse — an
+   * absent entry is a place at its authored starting condition — and passed
+   * through so a beat can stop firing somewhere it no longer belongs.
+   */
+  places?: Record<string, PlaceState> | undefined;
 };
 
 /**
@@ -194,6 +200,9 @@ export function derivedSituations(input: LifeBundleInput): LifeSituation[] {
       placeKey: position.placeKey,
       day: input.campaign.day,
       minute: input.campaign.minute,
+      // A night market runs while the place is still a market. Bring the law
+      // down on it enough times and this is what stops the beat.
+      places: input.places,
       // Per campaign, so two players in the same district are not handed the
       // same week.
       seed: input.campaign.id,

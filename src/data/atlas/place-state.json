@@ -1,0 +1,81 @@
+{
+  "houseRule": true,
+  "note": "What can change about a place, and where it starts. The lore in placeDossiers is the starting condition, not the eternal condition: this is the machinery that lets a place stop being what was written about it. Dials are attached by TAG so the whole city has them, with per-place overrides where a location has been written up specifically.",
+  "dialNote": "Segments are the house standard six unless a dial says otherwise. These are local pressures, not the pressure rail: the rail means something is coming for you, and a market's police attention is a fact about a market.",
+  "dials": {
+    "police_attention": {
+      "label": "Police attention",
+      "segments": 8,
+      "tags": ["market", "fence", "gang_turf", "derelict", "club", "bar"],
+      "start": 0,
+      "meaning": "How interested the law has become in what goes on here."
+    },
+    "gang_pressure": {
+      "label": "Gang pressure",
+      "segments": 8,
+      "tags": ["gang_turf", "market", "shop", "garage"],
+      "start": 2,
+      "meaning": "How much somebody is leaning on the people who work here."
+    },
+    "goodwill": {
+      "label": "Goodwill",
+      "segments": 8,
+      "tags": ["housing", "container_housing", "farm", "food", "clinic"],
+      "start": 4,
+      "meaning": "Whether the people here are glad to see the character."
+    },
+    "reclaimer_control": {
+      "label": "Reclaimer control",
+      "segments": 8,
+      "tags": ["farm"],
+      "start": 6,
+      "meaning": "How much of this ground the people who work it still hold."
+    }
+  },
+  "flagNote": "Closed vocabulary. A flag is set by the engine when a dial crosses, or by a beat that resolves; nothing else may write one, and the model may not name one at all.",
+  "flags": {
+    "market_open": "Trade runs here as usual.",
+    "gang_extortion": "Somebody is taking a cut of everything that moves through.",
+    "raided": "The law has been through, and recently.",
+    "shut": "Closed. Not temporarily, as far as anyone here knows.",
+    "rebuilt": "Put back together after something took it apart.",
+    "power_out": "No power, and no date for its return."
+  },
+  "thresholdNote": "What happens when a dial fills. This is where a place stops being what the atlas described: a market that draws enough police attention stops being a market, and the entry the player read in week one is now history.",
+  "thresholds": [
+    {
+      "dial": "police_attention",
+      "at": 8,
+      "sets": ["raided"],
+      "clears": ["market_open"],
+      "resets": 3,
+      "note": "The law comes through. Trade stops, and the attention drops back but not to nothing: they know about this place now."
+    },
+    {
+      "dial": "gang_pressure",
+      "at": 8,
+      "sets": ["gang_extortion"],
+      "clears": [],
+      "resets": 5,
+      "note": "Somebody has taken the place over in all but name."
+    },
+    {
+      "dial": "reclaimer_control",
+      "at": 0,
+      "sets": ["shut"],
+      "clears": [],
+      "resets": 0,
+      "note": "The people who worked this ground are not working it any more."
+    }
+  ],
+  "startNote": "Where a specific location starts, when the writing said something specific. Everything not named here starts wherever its tags put it.",
+  "places": {
+    "x5": {
+      "dials": { "reclaimer_control": 6, "gang_pressure": 5, "police_attention": 2 },
+      "flags": ["market_open"]
+    },
+    "x4": { "dials": { "reclaimer_control": 7, "goodwill": 5 }, "flags": [] },
+    "x1": { "dials": { "gang_pressure": 7, "police_attention": 1 }, "flags": [] },
+    "x2": { "dials": { "goodwill": 3 }, "flags": ["power_out"] }
+  }
+}

@@ -138,12 +138,18 @@ import {
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { travelTo } from "@/features/atlas/travel";
 import {
+  applyPlaceObservations,
+  loadPlaceStates,
+  notePlaceVisit,
+} from "@/features/campaign/placeState";
+import {
   DEFAULT_START,
   areaOf,
   describePosition,
   districtProfile,
   placeActions,
   whoIsAt,
+  type PlaceState,
   getDistrict,
   isCombatZone,
   resolvePosition,
@@ -203,6 +209,12 @@ export type LifeBundle = {
   wireMissionId: string | null;
   /** Running totals that outlive a turn's ledger window. */
   tally: CampaignTally;
+  /**
+   * What has happened to the places this campaign has touched. Sparse: a place
+   * with no entry is a place at its authored starting condition, not a blank
+   * one.
+   */
+  places: Record<string, PlaceState>;
 };
 
 async function loadLife(campaignId: string): Promise<LifeBundle> {
@@ -213,11 +225,12 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
   const character = await getCharacter(full.campaign.character_id);
   if (!character) throw new Error("This campaign's character no longer exists.");
 
-  const [events, situationRows, clockRows, factionRows] = await Promise.all([
+  const [events, situationRows, clockRows, factionRows, places] = await Promise.all([
     listCampaignEvents(campaignId),
     listSituations(campaignId),
     listClocks(campaignId),
     listCampaignFactions(campaignId),
+    loadPlaceStates(campaignId),
   ]);
 
   // The six the campaign lives among. Seeded once, from the character's own
@@ -244,7 +257,7 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
   // The result is persisted, so a situation survives a reload rather than being
   // re-invented (or forgotten) each turn.
   const persisted = ageSituations(situationRows.map(situationFromRow), clock.day);
-  const merged = mergeSituations(persisted, derivedSituations(input));
+  const merged = mergeSituations(persisted, derivedSituations({ ...input, places }));
   const changed = merged.filter((s) => {
     const prior = persisted.find((p) => p.key === s.key);
     return !prior || JSON.stringify(prior) !== JSON.stringify(s);
@@ -288,6 +301,7 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     wire: hook ? null : wire,
     wireMissionId: hook ? null : wireMissionId,
     tally: tallyFrom(full.flags),
+    places,
   };
 }
 
@@ -692,6 +706,18 @@ async function applyResponse(
       });
       bundle.campaign = moved.campaign;
       clock = moved.clock;
+      // Being somewhere is the beginning of knowing it. Step seven reads these
+      // back at a job briefing: the elevator, the way onto the roof, who runs
+      // the carwash across the road.
+      const arrived = resolvePosition(moved.campaign.location_key);
+      if (arrived?.placeKey) {
+        await notePlaceVisit({
+          campaignId,
+          placeKey: arrived.placeKey,
+          day: clock.day,
+          known: bundle.places,
+        });
+      }
       outcome.travelled = {
         from: describePosition(before),
         to: describePosition(decision.to),
@@ -811,11 +837,21 @@ async function applyResponse(
   if (!turn.options) {
     const reports = readObservations(response.observations);
     if (reports.length) {
+      // The same reports, read a second way: what this did to the character's
+      // standing with the city, and what it did to THIS ADDRESS.
+      const where = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+      if (where?.placeKey) {
+        await applyPlaceObservations({
+          campaignId,
+          placeKey: where.placeKey,
+          observations: reports.map((r) => r.observation),
+          known: bundle.places,
+        });
+      }
       const { pressure } = await applyPressure(campaignId, reports, {
         // Where it happened decides what the city hears. A district with no
         // response profile is the ordinary city; one nobody polices is not.
-        districtKey:
-          resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+        districtKey: where?.districtKey ?? null,
       });
       await arrivePressure(campaignId, pressure, clock.day);
     }

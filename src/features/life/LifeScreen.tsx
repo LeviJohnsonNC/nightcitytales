@@ -819,6 +819,8 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
           day: bundle.clock.day,
           minute: bundle.clock.minute,
           seed: bundle.campaign.id,
+          // A market the law has closed does not light a pin saying it is on.
+          places: bundle.places,
         }),
       ],
     });
