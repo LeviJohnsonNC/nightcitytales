@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { arenaFor, coverStatuses } from "@/engine";
+import { arenaFor, coverStatuses, tileKey, TILE_METRES, type Point, type Tile } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { battlefieldProjection } from "../battlefieldProjection";
 import { frameDuration, type PlaybackFrame } from "../combatPlayback";
@@ -18,6 +18,7 @@ import { createCharacterAtlas } from "./characterTextures";
 
 import { createPropTextures, propSource } from "./propTextures";
 import {
+  GRID_DEPTH,
   PROP_KINDS,
   hasYardProps,
   propKind,
@@ -26,11 +27,29 @@ import {
   propPlacement,
 } from "./propPresentation";
 
+/**
+ * The movement overlay, painted INTO the scene rather than over it.
+ *
+ * The accessible SVG sits on top of this canvas, so anything it draws is drawn
+ * over the art — a lit square would cross a crate and a body standing on the
+ * ground behind it. Handing the squares to Phaser instead puts them on the
+ * floor at a depth below everything standing on it, and the scene's own
+ * painter's sort keeps them there while a unit walks.
+ */
+export type GridOverlay = {
+  squares: { tile: Tile; sheltered: boolean }[];
+  /** The square under the cursor, drawn brighter. */
+  chosen: Tile | null;
+  /** The walked route, in metres. */
+  route: Point[] | null;
+};
+
 export type CourtyardModel = {
   live: LiveEncounter;
   playback?: PlaybackFrame | null | undefined;
   aimTargetId?: string | null;
   camera: { x: number; y: number; zoom: number };
+  grid?: GridOverlay | null;
 };
 export type CourtyardRenderer = { sync: (model: CourtyardModel) => void; destroy: () => void };
 
@@ -65,9 +84,25 @@ export function createCourtyard(
   let previousFrame: PlaybackFrame | null | undefined;
   const units = new Map<string, Unit>();
   const scenery: Phaser.GameObjects.Image[] = [];
+  // Phaser's polygon helpers want its own vectors, not plain points.
+  const screen = (p: Point) => {
+    const q = project(p);
+    return new Phaser.Math.Vector2(q.x, q.y);
+  };
+  const squareCorners = (tile: Tile) => {
+    const x = tile.col * TILE_METRES,
+      y = tile.row * TILE_METRES;
+    return [
+      { x, y },
+      { x: x + TILE_METRES, y },
+      { x: x + TILE_METRES, y: y + TILE_METRES },
+      { x, y: y + TILE_METRES },
+    ].map(screen);
+  };
   let renderedCover: LiveEncounter["cover"] | null = null;
 
   class CourtyardScene extends Phaser.Scene {
+    grid!: Phaser.GameObjects.Graphics;
     weather!: Phaser.GameObjects.Graphics;
     flash!: Phaser.GameObjects.Graphics;
     preload() {
@@ -95,10 +130,15 @@ export function createCourtyard(
         .ellipse(295, 330, 300, 170, 0x17cced, 0.025)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setDepth(-900);
+      // Above the baked ground and its light pools, below everything standing
+      // on the floor — which is every prop and every body, all of them sorted
+      // by their own projected y.
+      this.grid = this.add.graphics().setDepth(GRID_DEPTH);
       this.weather = this.add.graphics().setDepth(2000);
       this.flash = this.add.graphics().setDepth(1500);
       ready = true;
       reconcile(this);
+      paintGrid(this);
       resize();
       onReady();
     }
@@ -313,6 +353,39 @@ export function createCourtyard(
       });
     }
   }
+  /**
+   * The movement overlay on the floor.
+   *
+   * Repainted on every sync rather than inside reconcile, because hovering a
+   * square changes none of the encounter state reconcile watches.
+   */
+  function paintGrid(current: CourtyardScene) {
+    const g = current.grid;
+    if (!g) return;
+    g.clear();
+    const overlay = model.grid;
+    if (!overlay) return;
+    const fill = (corners: Phaser.Math.Vector2[], colour: number, alpha: number) =>
+      g.fillStyle(colour, alpha).fillPoints(corners, true);
+    const outline = (corners: Phaser.Math.Vector2[], colour: number, alpha: number, w = 1) =>
+      g.lineStyle(w, colour, alpha).strokePoints(corners, true);
+    const CYAN = 0x65eee0,
+      AMBER = 0xf9bd72;
+    const chosen = overlay.chosen ? tileKey(overlay.chosen) : null;
+    for (const { tile, sheltered } of overlay.squares) {
+      const corners = squareCorners(tile);
+      const colour = sheltered ? AMBER : CYAN;
+      const here = chosen === tileKey(tile);
+      fill(corners, colour, here ? 0.3 : 0.1);
+      outline(corners, here ? 0xa9fff5 : colour, here ? 0.9 : 0.3, here ? 1.8 : 0.8);
+    }
+    if (overlay.route?.length) {
+      const path = overlay.route.map(screen);
+      g.lineStyle(3, CYAN, 0.95);
+      g.strokePoints(path, false);
+    }
+  }
+
   function paintCover(current: CourtyardScene, damage: LiveEncounter["cover"]) {
     if (renderedCover === damage) return;
     renderedCover = damage;
@@ -367,6 +440,7 @@ export function createCourtyard(
     sync(next) {
       model = next;
       reconcile(scene);
+      if (ready) paintGrid(scene);
       resize();
     },
     destroy() {

@@ -12,7 +12,13 @@ import {
   placeHostiles,
   SELECTABLE_ARENAS,
 } from "@/engine";
-import { YARD_PROPS, propCondition, propKind, propPlacement } from "../courtyard/propPresentation";
+import {
+  GRID_DEPTH,
+  YARD_PROPS,
+  propCondition,
+  propKind,
+  propPlacement,
+} from "../courtyard/propPresentation";
 import { battlefieldProjection } from "../battlefieldProjection";
 
 const arena = arenaFor("night_shift_grid");
@@ -87,5 +93,22 @@ describe("courtyard props tell the same truth as the engine", () => {
       );
       expect(b.depth).toBeLessThan(project({ x: r.x, y: r.y + r.height }).y);
     }
+  });
+  it("keeps the movement overlay under everything standing on the floor", () => {
+    // The lit squares are painted into the scene at GRID_DEPTH so the art
+    // occludes them. That only holds while nothing standing on the ground
+    // sorts below it — props by their projected centre, wreckage by a fixed
+    // -500, and units by their own projected y.
+    const { project } = battlefieldProjection(arena.extent.width, arena.extent.height);
+    for (const status of coverStatuses(arena, {})) {
+      expect(propPlacement(status, project).depth).toBeGreaterThan(GRID_DEPTH);
+      const wrecked = coverStatuses(
+        arena,
+        applyCoverDamage(status.piece, {}, status.hpMax).damageMap,
+      ).find((s) => s.piece.id === status.piece.id)!;
+      expect(propPlacement(wrecked, project).depth).toBeGreaterThan(GRID_DEPTH);
+    }
+    for (const point of [arena.playerStart, ...placeHostiles(arena, 6)])
+      expect(project(point).y).toBeGreaterThan(GRID_DEPTH);
   });
 });

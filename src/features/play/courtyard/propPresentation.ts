@@ -46,6 +46,17 @@ export function propCondition(status: CoverStatus): PropCondition {
 export function propTexture(kind: PropKind, condition: PropCondition) {
   return `prop-${kind}-${condition}`;
 }
+/**
+ * Where the movement overlay sits in the scene's painter's order.
+ *
+ * Above the baked ground (−1000) and its light pools (−900), below every prop
+ * and every body — which sort by their own projected y, and by −500 when a
+ * prop is walkable wreckage. A lit square must never draw over a crate or a
+ * person, which is the whole reason it is painted here rather than in the SVG
+ * layer sitting on top of the canvas.
+ */
+export const GRID_DEPTH = -800;
+
 /** Register the sprite to the same front corner and width as the clickable footprint. */
 export function propPlacement(status: CoverStatus, project: (p: Point) => Point) {
   const r = status.piece.rect;

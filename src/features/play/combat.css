@@ -1040,6 +1040,72 @@
   position: relative;
   z-index: 1;
 }
+/* ---------------------------------------------------------------------------
+   Holding the screen while the courtyard renders.
+
+   The scenic layer needs a beat to build its atlases, and the SVG diagram is
+   sitting right there underneath — so without this the player watches a
+   wireframe resolve into a photograph, which reads as a mistake rather than as
+   loading. This covers both until the art says it is ready, then dissolves. It
+   is painted opaque, so nothing shows through it, and it is removed from the
+   tree entirely if the renderer fails: the diagram is the real view then.
+--------------------------------------------------------------------------- */
+.combat-boot {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 55%, #12242f 0%, #0a151e 55%, #060d14 100%);
+  transition:
+    opacity 480ms ease-out,
+    visibility 0s linear 480ms;
+}
+.combat-boot.is-live {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.combat-boot-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.combat-boot-label strong {
+  font:
+    600 15px Archivo,
+    sans-serif;
+  color: #9dc3cb;
+  letter-spacing: 0.02em;
+}
+.combat-boot .combat-eyebrow {
+  color: var(--tac-cyan);
+}
+/* A survey line running the floor, on the same isometric diagonal the board is
+   drawn on, so the wait belongs to this screen rather than to a spinner. */
+.combat-boot-scan {
+  position: absolute;
+  inset: -40%;
+  background: repeating-linear-gradient(-30deg, transparent 0 22px, #65eee00e 22px 23px);
+  animation: combat-boot-sweep 2.4s linear infinite;
+}
+@keyframes combat-boot-sweep {
+  to {
+    transform: translateX(26px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .combat-boot-scan {
+    animation: none;
+  }
+  .combat-boot {
+    transition-duration: 1ms;
+    transition-delay: 0s;
+  }
+}
 .combat-view-toggle {
   padding: 0 12px;
   background: #09141de8;
@@ -1390,38 +1456,142 @@
   align-items: stretch;
   min-width: 0;
 }
+/* ---------------------------------------------------------------------------
+   The action dock.
+
+   Cut plate rather than card: the corners are chamfered, the bezel is a lit
+   edge a fill sits 1px inside of, and the plate carries a faint diagonal
+   hatch. The bezel is the state — it warms on hover and burns cyan when the
+   mode is live — so a mode you are IN is legible from across the room instead
+   of being a one-pixel underline.
+
+   Built with clip-path, which clips a child pseudo-element too. That is what
+   makes the bezel work: ::before is the fill, inset 1px and clipped a notch
+   smaller, so the plate's own colour shows through as the edge.
+--------------------------------------------------------------------------- */
+:root {
+  --plate-notch: 12px;
+}
 .combat-actions > button {
+  position: relative;
   flex-direction: column;
-  gap: 10px;
-  padding: 13px 6px;
+  gap: 9px;
+  padding: 14px 8px 12px;
   min-width: 0;
-  background: linear-gradient(160deg, #19313c, #0c1b25);
+  border: 0;
+  /* The plate's own colour IS the bezel; ::before covers all but 1px of it. */
+  background: #33535f;
+  color: #a8c0ca;
+  clip-path: polygon(
+    var(--plate-notch) 0,
+    100% 0,
+    100% calc(100% - var(--plate-notch)),
+    calc(100% - var(--plate-notch)) 100%,
+    0 100%,
+    0 var(--plate-notch)
+  );
+  transition:
+    background 0.18s,
+    color 0.18s,
+    filter 0.18s;
+}
+.combat-actions > button::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  background:
+    repeating-linear-gradient(-45deg, #ffffff08 0 1px, transparent 1px 7px),
+    linear-gradient(158deg, #1c3644 0%, #102029 58%, #091620 100%);
+  clip-path: polygon(
+    calc(var(--plate-notch) - 1px) 0,
+    100% 0,
+    100% calc(100% - var(--plate-notch) + 1px),
+    calc(100% - var(--plate-notch) + 1px) 100%,
+    0 100%,
+    0 calc(var(--plate-notch) - 1px)
+  );
+  transition: background 0.18s;
+}
+/* Everything the button actually says sits above the fill. */
+.combat-actions > button > * {
+  position: relative;
+  z-index: 1;
+}
+.combat-actions > button:hover:not(:disabled) {
+  background: #7fc9cd;
+  color: #d8f6f2;
+}
+.combat-actions > button:hover:not(:disabled)::before {
+  background:
+    repeating-linear-gradient(-45deg, #ffffff0a 0 1px, transparent 1px 7px),
+    linear-gradient(158deg, #235061 0%, #12303c 58%, #0a1d28 100%);
 }
 .combat-actions > button.is-selected {
-  box-shadow:
-    inset 0 -3px #65eee0,
-    0 0 18px #65eee015;
+  background: var(--tac-cyan);
+  color: #eafffb;
+  filter: drop-shadow(0 0 10px #65eee055);
 }
+.combat-actions > button.is-selected::before {
+  background:
+    repeating-linear-gradient(-45deg, #65eee014 0 1px, transparent 1px 7px),
+    linear-gradient(158deg, #1c4f56 0%, #113440 58%, #09202b 100%);
+}
+.combat-actions > button.is-selected svg {
+  filter: drop-shadow(0 0 7px #65eee0);
+}
+/* Improvisation is the off-script one, and reads warm rather than tactical. */
 .combat-actions > button.combat-improvise {
-  border-color: #bda17e70;
-  color: #ebd1ad;
-  background: linear-gradient(160deg, #30312d, #15212a);
+  background: #6b5a3e;
+  color: #e2caa6;
   flex: 1.4;
 }
-.combat-actions > button.combat-improvise:hover {
-  border-color: #ebd1ad;
+.combat-actions > button.combat-improvise::before {
+  background:
+    repeating-linear-gradient(-45deg, #ffd9a608 0 1px, transparent 1px 7px),
+    linear-gradient(158deg, #33301f 0%, #1e2426 58%, #101c24 100%);
+}
+.combat-actions > button.combat-improvise:hover:not(:disabled) {
+  background: #ebd1ad;
+  color: #fbecd4;
+}
+.combat-actions > button:disabled {
+  background: #2b3d45;
+  filter: grayscale(0.45);
 }
 .combat-actions span {
   text-align: center;
-  font-size: 12px;
+  font:
+    600 12px Archivo,
+    sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .combat-actions small {
-  font-size: 8px;
+  display: block;
+  font:
+    8px "IBM Plex Mono",
+    monospace;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #7e97a2;
   margin-top: 5px;
 }
+.combat-actions > button.is-selected small {
+  color: #8fd4cd;
+}
 .combat-actions svg {
-  width: 27px;
-  height: 27px;
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.6;
+  transition: filter 0.18s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .combat-actions > button,
+  .combat-actions > button::before,
+  .combat-actions svg {
+    transition: none;
+  }
 }
 .combat-equipped {
   position: relative;
@@ -1446,10 +1616,14 @@
   inset: 0;
   background: linear-gradient(180deg, transparent, #08131c 90%);
 }
+/* The whole weapon, not a crop of its middle. Contained and pushed up into the
+   card's top half, so the barrel is not sitting behind the name and the stats. */
 .combat-weapon-art img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  padding: 6px 10px 34px;
+  object-fit: contain;
+  object-position: center top;
 }
 .combat-weapon-art > svg {
   width: 65px;
