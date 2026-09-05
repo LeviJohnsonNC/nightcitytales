@@ -80,21 +80,85 @@ deliberate: a person's opinion of you changes access, not the printed cost.
 
 ---
 
+## Also shipped: the location layer
+
+The atlas was finished — 24 districts, 156 locations, 180 illustrated entries —
+and none of it could change what happened to a character. Location reached the
+model as prose, so where you were changed how a night was described and never
+what the night was. Eight steps closed that.
+
+1. **Gameplay metadata** on every location: 42 tags, district profiles, and a
+   response tier read off each district's own printed security provider
+   (`places.gameplay.json`, `engine/places.ts`).
+2. **The ground produces situations.** `derivePlaceBeats` sits beside
+   `deriveNeeds` and feeds the same funnel, so a night market is scored against
+   the rent and usually loses. No new die: a beat is simply true on some days,
+   deterministically, because the world tick, the wire and the street are
+   already three rolls a night.
+3. **The map is a board**, not an encyclopedia. Go somewhere sits beside Act and
+   Options?; pins carry signals from a closed list, three in the city and one
+   per district, each tracing to a row.
+4. **Places have business.** Contextual actions from tags, every one naming a
+   venue, capped at five and never the menu — the freeform line is still where
+   the strange thing happens.
+5. **The cast keep places.** Haunts with presence by part of day, one face per
+   arrival, derived rather than stored.
+6. **Places change.** `campaign_places` holds dials and flags; observations
+   priced against the place can close a market, and the beat that ran it stops
+   firing.
+7. **Jobs land on ground you know.** Generated work names a building, the wire
+   prefers districts you have walked, settlement writes back to the place, and
+   familiarity pays in information rather than dice.
+8. **The location page** shows Right Now, People You Know Here, Open Business
+   and Your History — every panel from rows that already exist, none of it
+   generated.
+
+Two rulings are worth keeping in mind before extending any of it. **Location
+changes access, never printed price**, and **familiarity pays in information,
+never in dice** — both are in `PRODUCT.md` under "The city", and both exist
+because the alternative would have invented a rule Cyberpunk RED does not print.
+
+Not yet done, and the honest next step: **nobody has played it.** The acceptance
+test written for this work was seven in-game days inside one district, counting
+situations, counting quiet evenings, and seeing whether the beats read as a
+neighbourhood or as a rotation. Everything above is verified by test and by
+browser, and none of it is verified by play.
+
+Three things should wait for that week rather than be argued in advance:
+
+- `PLACE_OBSERVATION_EFFECTS` and the thresholds in `place-state.json` are
+  pacing guesses. Four loud nights closing a market may be far too fast.
+- `goodwill` and `gang_pressure` move and no threshold reads them, so two dials
+  currently accumulate in silence. Giving `goodwill` a threshold is the missing
+  half of the favour loop.
+- The Life prompt gained the response profile, the look of the place, the
+  ordinary business and who is here. Worth measuring before anything else is
+  added to it.
+
+Authoring beats for more districts is the content mountain, and it is much
+cheaper to find out the model is wrong before climbing it.
+
+---
+
 ## Next: make Life feel like the actual game
 
 Life is where the player spends most of their time and is currently the weakest
 expression of the product's identity. It still reads closer to a conversation
 with statistics attached than to living another life.
 
-The work:
+The work, with what the location layer already covered marked:
 
 - Lead with one concrete situation, not a narrative transcript.
 - Show time, location, immediate need, the person involved, and the pressure.
-- Add contextual actions — Pay, Repair, Rest, Call, Meet, Shop, Leave — while
-  keeping freeform input prominent for everything unconventional.
+- ~~Add contextual actions~~ — done for the ground the character is standing on
+  (Here you can…), still open for the character's own verbs: Pay, Repair, Rest,
+  Call. Freeform input stays prominent for everything unconventional.
 - Show mechanical deltas visually after resolution.
-- Make a quiet evening playable and short.
+- ~~Make a quiet evening playable~~ — a quiet evening now has somewhere to go
+  and something to do when it gets there. Whether it is playable is what the
+  week in one district will say.
 - Strengthen recurring-person presentation: portraits, relationship signals.
+  The cast now have places to be; they still have no faces on screen.
 - Let the player inspect campaign state without burying the active situation.
 
 Success: the player opens the game, understands their immediate problem in
@@ -142,6 +206,11 @@ interrupt.
 
 Not features, but they get more expensive with time. Full detail in `AGENTS.md`.
 
+- `campaign_places` (migration `20260904030000`) has to be applied to any
+  database that predates it. Until it exists, the first Life turn throws: no
+  backfill is needed, but the table is not optional.
+- `src/integrations/supabase/types.ts` was hand-synchronised again for
+  `campaign_places` rather than regenerated.
 - The `portraits` storage bucket is never created by a migration.
 - Lifepath narrative, pronouns and self-description have nowhere to persist.
 - Mission objectives, rewards and final campaign status are not fully updated by

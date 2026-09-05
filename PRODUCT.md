@@ -107,7 +107,7 @@ state: money owed, wounds, empty magazines, people neglected, pressures coming
 due) and the model only dresses the one that won. The model never remembers,
 escalates, or expires anything.
 
-Situations come from four places, and the mix is the pacing:
+Situations come from five places, and the mix is the pacing:
 
 - **Needs** the character must eventually deal with. Rent, wounds, ammunition,
   armor, chrome, food, transport, replacing what was lost.
@@ -117,6 +117,10 @@ Situations come from four places, and the mix is the pacing:
   in a basement, a favor that will cost more than it pays.
 - **Pressure** pushing back. Retaliation, an investigation, a collector, a
   deadline, a promise that came due.
+- **The ground** they are standing on. The water truck did not make it today.
+  The elevator is dead again. There is a toll on this street. See "The city"
+  below: these are not descriptions of a place, they are situations it
+  produced, and they are scored against the rent like everything else.
 
 Routine Life resolves fast: one to three sentences, visible deltas, time spent.
 
@@ -185,14 +189,15 @@ violated by a well-meaning change.
 **The AI describes consequences. The rules decide uncertainty. The player decides
 actions.**
 
-| The engine owns                                    | The model owns                                 |
-| -------------------------------------------------- | ---------------------------------------------- |
-| Dice, DVs, damage, armor, HP, Death Saves          | How the hit looks and what it costs to watch   |
-| Positions, distance, range, MOVE, initiative       | Who these people are and how they talk         |
-| Money, inventory, ammunition, time, phase          | Interpreting what the player meant             |
-| Relationships, standings, clocks, pressure         | Improvising an answer to something unplanned   |
-| What a job cost and who noticed                    | Connective tissue, texture, voice              |
-| Whether work exists tonight, and what is behind it | The room, the hour, the noise through the wall |
+| The engine owns                                           | The model owns                                 |
+| --------------------------------------------------------- | ---------------------------------------------- |
+| Dice, DVs, damage, armor, HP, Death Saves                 | How the hit looks and what it costs to watch   |
+| Positions, distance, range, MOVE, initiative              | Who these people are and how they talk         |
+| Money, inventory, ammunition, time, phase                 | Interpreting what the player meant             |
+| Relationships, standings, clocks, pressure                | Improvising an answer to something unplanned   |
+| What a job cost and who noticed                           | Connective tissue, texture, voice              |
+| Where places are, what is on there, what they have become | Why this street feels like this one            |
+| Whether work exists tonight, and what is behind it        | The room, the hour, the noise through the wall |
 
 The engine is authoritative wherever it is practical to be authoritative, and the
 project has repeatedly chosen to make it practical. Five patterns, already
@@ -302,6 +307,51 @@ Rent due               3 days
 
 `clean` is worth reporting. Getting away without a trace is the only thing that
 takes pressure back off, which is what makes a quiet exit a real objective.
+
+---
+
+## The city
+
+Night City is a system, not a setting. The atlas — 24 districts and 156
+locations, transcribed from the publisher's own book — is the ground the other
+systems stand on, and four rules keep it that way.
+
+**Where you are is a game variable.** The ground produces situations
+(`engine/placeBeats.ts`), the district decides what noise costs you
+(`engine/places.ts` reads each district's printed security provider, so being
+loud in the Exec Zone is answered by Lazarus and being loud in Rancho Coronado
+is answered by "NCPD (in theory)"), the location's tags decide what there is to
+do (`engine/placeActions.ts`) and which arena a fight starts in.
+
+**Location changes access, never printed price.** The Night Market cost ladder
+IS the availability ladder, so a district decides what is on the shelf, whether
+the unusual thing is in tonight, and how far you must travel to reach it. This
+is the same ruling as the ripperdoc's: disposition buys an earlier appointment,
+never a better price.
+
+**What was written is a starting condition, not an eternal one.** Places carry
+dials and flags (`engine/placeState.ts`) that move only when the engine prices
+an observation against them. Bring the law down on the night market often
+enough and the market closes, the beat that ran it stops firing, and the entry
+the player read in week one is history. A dial that changes nothing the player
+meets is decoration; every dial should reach something.
+
+**Quiet is enforced, not hoped for.** The map may light three pins in the whole
+city and one per district, every signal must trace to a row, and there is no
+interestingness score — anything that measures how interesting a place is will
+always find something, and then every pin is lit and this is a quest board with
+a skin on. A place with nothing on it is the normal case. Going somewhere on an
+ordinary afternoon and buying vegetables has to be a supported way for the
+afternoon to go, because a game whose quiet moments are dead ends will
+manufacture noise to avoid them.
+
+Two further things fall out of the same line. **Familiarity pays in
+information, never in dice**: visits open rungs on facts the engine already
+holds about a place, because RED's DVs are printed and a home-field bonus is an
+invented rule. And **presence is not a summons**: the standing cast keep places
+(`engine/haunts.ts`), so if you go to the bar somebody drinks at, they are
+probably in — but that puts nothing on the board and asks nothing of you. The
+world tick still owns people acting.
 
 ---
 
@@ -513,6 +563,10 @@ Practical smells, in roughly descending severity.
 - An NPC is invented when a member of the standing cast would have served.
 - A quiet evening has been filled with a stranger, a phone call, or a noise in
   the corridor because the turn felt empty.
+- Every pin on the map has something on it.
+- A place's dial moves and nothing the player could ever meet depends on it.
+- A location is described rather than played: the entry changed, and what the
+  place does did not.
 - The player is reading more than they are deciding.
 
 ---
@@ -532,7 +586,17 @@ Honest ambiguity, recorded so that it gets decided rather than defaulted into.
   chore is a pacing question that only playtesting answers.
 - **How much state to show.** Disposition, standings and clocks are all
   legible-in-principle. Which of them the player should see as numbers is a live
-  question, and the default is fewer.
+  question, and the default is fewer. A place's dials are currently hidden
+  outright — you learn the market has gone quiet by finding it gone quiet — and
+  whether that reads as depth or as nothing happening is unsettled.
+- **How fast a place should change.** Four loud nights closes a market
+  (`place-state.json`). Those numbers are pacing guesses that have not been
+  played, and the honest way to settle them is a week in one district rather
+  than an argument.
+- **How much of the city to author.** Beats compose from tags so the whole city
+  has something, but only Rancho Coronado is written up specifically. Whether
+  composed beats carry enough weight to leave it there is the question that
+  decides how big the content job is.
 
 ---
 
