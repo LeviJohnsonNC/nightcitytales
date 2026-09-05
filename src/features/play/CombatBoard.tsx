@@ -1,3 +1,5 @@
+import { CombatPortrait } from "./CombatPortrait";
+import { itemArt } from "@/features/chargen/art";
 import { useCombatFeedback } from "./useCombatFeedback";
 import { playbackHeading } from "./combatFeedback";
 import { isCourtyard } from "./courtyard/propPresentation";
@@ -39,6 +41,7 @@ import { CourtyardLayer } from "./courtyard/CourtyardLayer";
 import "./combat.css";
 
 type Props = {
+  playerPortrait?: string | null;
   live: LiveEncounter | null;
   capability: CapabilitySnapshot | null;
   onMoveTo?: (point: Point) => void;
@@ -63,6 +66,7 @@ const points = (path: Point[]) => path.map((p) => `${p.x},${p.y}`).join(" ");
 
 /** The tactical screen owns selection and camera only. Every actionable preview comes from the engine. */
 export function CombatBoard({
+  playerPortrait,
   live,
   capability,
   onMoveTo,
@@ -84,6 +88,7 @@ export function CombatBoard({
   onSkipPlayback,
 }: Props) {
   const effects = useCombatFeedback(playback);
+  const [failedWeaponArt, setFailedWeaponArt] = useState<string | null>(null);
   const [artReady, setArtReady] = useState(false);
   const [artEnabled, setArtEnabled] = useState(true);
   const handleArtFailure = useCallback(() => {
@@ -123,12 +128,19 @@ export function CombatBoard({
   const canAct =
     !busy && active?.isPlayer && !player?.actor.defeated && live.state.status === "active";
   const weapon = raisedWeapon(capability, weaponId);
+  const weaponArt = weapon ? itemArt(`weapon.${weapon.itemId}`, weapon.name) : null;
   const targets = actors.filter(({ actor }) => !actor.isPlayer && !actor.defeated);
   const target = targets.find(({ actor }) => actor.id === selected) ?? targets[0];
   const shot =
     capability && weapon && target
       ? previewAttack(capability, target.actor.id, weapon.itemId)
       : null;
+  const targetCover = capability?.targets.find((t) => t.id === target?.actor.id)?.coverLabel;
+  const targetReadout = !shot
+    ? "Select a usable weapon to assess this target."
+    : shot.gap && targetCover
+      ? `Blocked by ${targetCover}.`
+      : (shot.gap ?? `${shot.distance} m · clear shot`);
   const spot = destination ?? hover;
   const route =
     capability && player && spot
@@ -266,19 +278,16 @@ export function CombatBoard({
           </span>
         )}
         <ol className="combat-initiative" aria-label="Initiative order">
-          {actors.map(({ actor }, index) => (
+          {actors.map(({ actor }) => (
             <li
               key={actor.id}
               className={`${actor.id === acting?.id ? "is-active" : ""} ${actor.defeated ? "is-out" : ""}`}
             >
-              {scenic ? (
-                <span
-                  className={`combat-proof-portrait ${actor.isPlayer ? "is-player" : "is-hostile"}`}
-                  aria-hidden="true"
-                />
-              ) : (
-                <span>{index + 1}</span>
-              )}
+              <CombatPortrait
+                name={actor.name}
+                src={actor.isPlayer ? (playerPortrait ?? null) : undefined}
+                hostile={actor.side === "hostile"}
+              />
               {actor.isPlayer ? "YOU" : actor.name}
             </li>
           ))}
@@ -942,17 +951,29 @@ export function CombatBoard({
               </button>
             </div>
           ) : target ? (
-            <div className="combat-assessment">
-              <h2>{target.actor.name}</h2>
+            <div className="combat-assessment combat-target-assessment">
+              <div className="combat-target-identity">
+                <CombatPortrait
+                  name={target.actor.name}
+                  src={target.actor.isPlayer ? (playerPortrait ?? null) : undefined}
+                  hostile={target.actor.side === "hostile"}
+                />
+                <div>
+                  <span className="combat-eyebrow">Selected target</span>
+                  <h2>{target.actor.name}</h2>
+                </div>
+              </div>
               <span className="combat-eyebrow">
                 {target.actor.side} /{" "}
-                {target.actor.woundState === "none" ? "unwounded" : target.actor.woundState}
+                {target.actor.woundState === "none"
+                  ? "unwounded"
+                  : target.actor.woundState.replaceAll("_", " ")}
               </span>
               <div className="combat-big-number">
                 {shot?.dv ?? "—"}
                 <small>range DV</small>
               </div>
-              <p>{shot?.gap ?? `${shot?.distance ?? "—"} m · clear shot`}</p>
+              <p>{targetReadout}</p>
               <div className="combat-target-stats">
                 <span>
                   {target.actor.hp}/{target.actor.hpMax} HP
@@ -988,13 +1009,14 @@ export function CombatBoard({
               return (
                 <button
                   key={actor.id}
+                  disabled={busy || !!dice}
                   className={target?.actor.id === actor.id ? "is-selected" : ""}
                   onClick={() => {
                     setSelected(actor.id);
                     selectMode("shoot");
                   }}
                 >
-                  <span className="combat-target-dot" />
+                  <CombatPortrait name={actor.name} hostile={actor.side === "hostile"} />
                   <span>
                     {actor.name}
                     <small>{preview?.gap ? "No shot" : `${preview?.distance ?? "—"} m`}</small>
@@ -1007,30 +1029,24 @@ export function CombatBoard({
         </aside>
       </div>
       <footer className="combat-command">
-        <div className="combat-loadout">
-          <div>
-            <span className="combat-eyebrow">{player?.actor.name ?? "Loadout"}</span>
+        <div className="combat-operator">
+          <CombatPortrait name={player?.actor.name ?? "Player"} src={playerPortrait ?? null} />
+          <div className="combat-operator-info">
+            <span className="combat-eyebrow">Your character</span>
+            <strong>{player?.actor.name ?? "Player"}</strong>
             <span className="combat-vitals">
-              {player?.actor.hp}/{player?.actor.hpMax} HP <span>SP {player?.actor.spBody}</span>
+              {player?.actor.hp ?? "—"} / {player?.actor.hpMax ?? "—"} <small>HP</small>{" "}
+              <span>SP {player?.actor.spBody ?? "—"}</span>
+            </span>
+            {player && (
+              <progress aria-label="Health" value={player.actor.hp} max={player.actor.hpMax} />
+            )}
+            <span className="combat-condition">
+              {player?.actor.woundState === "none"
+                ? "Unwounded"
+                : player?.actor.woundState.replaceAll("_", " ")}
             </span>
           </div>
-          <label>
-            <span className="sr-only">Weapon</span>
-            <select
-              aria-label="Weapon"
-              value={weapon?.itemId ?? ""}
-              disabled={busy || !!dice}
-              onChange={(e) => onWeaponId(e.target.value)}
-            >
-              {!weapon && <option value="">No weapon</option>}
-              {capability?.weapons.map((w) => (
-                <option key={w.itemId} value={w.itemId}>
-                  {w.name}{" "}
-                  {w.roundsLoaded !== null ? `· ${w.roundsLoaded}/${w.magazine ?? "?"}` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
         <div className="combat-actions" aria-label="Combat actions">
           <button
@@ -1073,15 +1089,59 @@ export function CombatBoard({
           </button>
           <button
             disabled={!canAct || !improvisation || !!dice}
+            className="combat-improvise"
             onClick={() => setPanel("improvise")}
           >
             <MessageSquare />
             <span>
-              Improvise<small>Your own idea</small>
+              Try something…<small>Your own idea</small>
             </span>
           </button>
         </div>
-        <button className="combat-end" disabled={!canAct || !onEndTurn} onClick={onEndTurn}>
+        <div className="combat-equipped">
+          <div className="combat-weapon-art" aria-hidden="true">
+            {weaponArt?.src && failedWeaponArt !== weaponArt.src ? (
+              <img src={weaponArt.src} alt="" onError={() => setFailedWeaponArt(weaponArt.src)} />
+            ) : (
+              <Crosshair />
+            )}
+          </div>
+          <label>
+            <span className="combat-eyebrow">Equipped weapon</span>
+            <select
+              aria-label="Weapon"
+              value={weapon?.itemId ?? ""}
+              disabled={busy || !!dice}
+              onChange={(e) => onWeaponId(e.target.value)}
+            >
+              {!weapon && <option value="">No weapon</option>}
+              {capability?.weapons.map((w) => (
+                <option key={w.itemId} value={w.itemId}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="combat-weapon-stats">
+            <span>
+              <small>DMG</small> {weapon?.damageDice ? `${weapon.damageDice}d6` : "—"}
+            </span>
+            <span>
+              <small>ROF</small> {weapon?.rof ?? "—"}
+            </span>
+            <span>
+              <small>AMMO</small>{" "}
+              {weapon?.roundsLoaded != null
+                ? `${weapon.roundsLoaded}/${weapon.magazine ?? "—"}`
+                : "—"}
+            </span>
+          </div>
+        </div>
+        <button
+          className="combat-end"
+          disabled={!canAct || !!dice || !onEndTurn}
+          onClick={onEndTurn}
+        >
           <SkipForward size={19} />
           <span>
             End turn
