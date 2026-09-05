@@ -71,6 +71,43 @@ that requires it to invent a number does not ship (1 over everything).
 
 ---
 
+## Before you build
+
+**Do not equate more implementation with a better product.**
+
+The failure mode this document exists to prevent is not bad code. It is a large
+amount of clean, well-tested functionality that moves the product somewhere it
+should not go — and the commonest way that happens is a new mechanism arriving
+where an existing one would have served.
+
+Before introducing a new abstraction, table, service, state machine, prompt or
+framework:
+
+1. **Inspect whether an existing system can serve the purpose.** Most of what
+   this codebase needs, it already has: a situation funnel, a closed
+   observation vocabulary, a clock shape, an oracle, a cast with dossiers, a
+   deterministic seed. Reaching for one of those is nearly always better than
+   standing up its cousin.
+2. **Explain what player experience the change improves.** If the answer is
+   only that the architecture would be tidier, it is not a change to this
+   product. Name the moment at the table it makes better.
+3. **Prefer the smallest implementation that meaningfully advances things.**
+   Smallest that _advances_ — not the smallest that compiles, and not the
+   complete version of an idea nobody has played yet.
+4. **Preserve deterministic systems as authoritative where possible.** When a
+   new feature seems to need the model to own something the engine could own,
+   the answer is almost always a new closed vocabulary rather than an
+   exception.
+5. **Treat AI as a way to make the game reactive and open-ended, not as a
+   replacement for game design.** The model is how an unplanned action gets an
+   answer. It is not how a system gets designed, and prose is not a substitute
+   for a rule.
+
+A change that cannot answer these is usually a change that wanted to exist more
+than the game wanted it.
+
+---
+
 ## The loop
 
 ```

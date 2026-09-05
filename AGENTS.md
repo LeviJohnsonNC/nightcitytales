@@ -26,7 +26,9 @@ Night City Tales is a solo Cyberpunk RED game with two connected experiences:
 
 `PRODUCT.md` is the product compass: what the game is for, where the line
 between the engine and the model sits and why, and how to resolve an ambiguous
-design request. Read it before making gameplay, UX, AI, or content decisions.
+design request. Read it before making gameplay, UX, AI, or content decisions —
+in particular "Before you build", which is the checklist any new abstraction,
+table, service, state machine, prompt or framework has to answer first.
 This file stays authoritative on architecture; `PRODUCT.md` is authoritative on
 intent.
 
