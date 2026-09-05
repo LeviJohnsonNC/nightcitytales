@@ -194,17 +194,21 @@ those decisions visible and directly playable.
    bar. Camera zoom/pan, keyboard selection, compact phone readouts and landscape
    controls support different screen sizes. The journal and freeform entry open
    on demand; required rolls take over the tactical readout.
-3. **Next: immediate playback:** resolve and show routine actions without waiting for
-   generated narration; make player/enemy turn transitions unmistakable.
-4. **Improvisation:** freeform intent previews a concrete, engine-validated cost
+3. **Immediate playback implemented:** saved movement, attacks, cover damage,
+   reloads and enemy turns play in sequence with factual result lines, visible
+   impacts and a skip control. Routine exchanges append an engine-written report
+   instead of calling the model. Input remains locked through playback and query
+   refresh; reduced-motion playback is brief and does not animate movement.
+4. **Next: improvisation:** freeform intent previews a concrete, engine-validated cost
    and consequence alongside the common actions.
 5. **Tactical and mobile refinement:** encounter readability, meaningful terrain,
    pacing and touch verification.
 
 Milestone 1 retains the existing one-Move policy and MOVE-to-metres allowance;
 it does not introduce XCOM action points, split movement or cover bonuses. The
-angled board is a presentation of the existing geometry; exhausted-turn
-narration still waits for the model until milestone 3.
+angled board is a presentation of the existing geometry. Freeform check
+responses still use the GM; routine combat no longer waits for generated prose.
+Playback is ephemeral and never writes state or replays historical turns on load.
 
 Success: the player wins by repositioning into the right range band, managing
 ammunition, and choosing the right target — not by describing an impressive

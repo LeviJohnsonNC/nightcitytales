@@ -34,7 +34,9 @@ LIFE → HOOK → JOB → AFTERMATH → LIFE
 - **Job** runs a mission as a beat graph, with combat as a mode inside it rather
   than a phase of its own. Combat fills the screen with an angled battlefield,
   movement and targeting previews, and a persistent command bar; the journal
-  and freeform intent stay within reach.
+  and freeform intent stay within reach. Saved actions play in sequence with
+  skippable movement and shot feedback; routine exchanges use engine-written
+  reports without waiting for generated narration.
 - **Aftermath** is the receipt: what the job paid, what it cost, who noticed,
   and what is still bleeding.
 

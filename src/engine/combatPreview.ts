@@ -125,20 +125,26 @@ export function walkingPath(
 }
 
 /** Walk as much of a planned route as the allowance permits (NPC movement). */
-export function walkRoute(path: Point[], allowance: number): { position: Point; metres: number } {
+export function walkRoute(
+  path: Point[],
+  allowance: number,
+): { position: Point; metres: number; path: Point[] } {
   let position = path[0]!;
   let spent = 0;
+  const walked = [position];
   for (const next of path.slice(1)) {
     const length = metresBetween(position, next);
     if (length > allowance - spent) {
       position = moveToward(position, next, allowance - spent).position;
       spent = allowance;
+      walked.push(position);
       break;
     }
     spent += length;
     position = next;
+    walked.push(position);
   }
-  return { position, metres: Math.round(spent) };
+  return { position, metres: Math.round(spent), path: walked };
 }
 
 export function previewMovement(input: {
