@@ -1,0 +1,53 @@
+/**
+ * The neon wordmark's light. Two stroke layers plus stacked drop-shadows: a
+ * compositor-friendly glow, and no SVG filter region to rasterise.
+ */
+.night-city-mark {
+  --neon: #ff2f6e;
+  --neon-core: #ffe3ec;
+  display: block;
+  height: 42px;
+  width: auto;
+  overflow: visible;
+  filter: drop-shadow(0 0 2px #ff2f6ecc) drop-shadow(0 0 9px #ff1e63a6)
+    drop-shadow(0 0 22px #ff0f5b73);
+}
+.night-city-tube {
+  stroke: var(--neon);
+  stroke-width: 7;
+}
+.night-city-tube circle {
+  r: 3.5;
+  fill: var(--neon);
+}
+.night-city-core {
+  stroke: var(--neon-core);
+  stroke-width: 2.2;
+}
+.night-city-core circle {
+  r: 1.1;
+  fill: var(--neon-core);
+}
+/* The one letter whose transformer is going. Slow, shallow, and never on a
+   loop tight enough to read as a fault in the page. */
+.night-city-flicker {
+  animation: night-city-flicker 7s steps(1, end) infinite;
+}
+@keyframes night-city-flicker {
+  0%,
+  86%,
+  90%,
+  94%,
+  100% {
+    opacity: 1;
+  }
+  88%,
+  92% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .night-city-flicker {
+    animation: none;
+  }
+}

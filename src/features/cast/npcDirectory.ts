@@ -36,7 +36,17 @@ function entry(
   role: string,
   aliases: string[] = [],
 ): NpcEntry {
-  return { id, name, kind, role, aliases, bio: CAST_BIOS[id] ?? WORLD_BIOS[id] ?? null };
+  // A numbered variant of an archetype reads the archetype's dossier: they are
+  // the second thug, not a second person with a life of their own.
+  const archetype = id.replace(/-\d+$/, "");
+  return {
+    id,
+    name,
+    kind,
+    role,
+    aliases,
+    bio: CAST_BIOS[id] ?? WORLD_BIOS[id] ?? CAST_BIOS[archetype] ?? WORLD_BIOS[archetype] ?? null,
+  };
 }
 
 export const NPC_DIRECTORY: NpcEntry[] = [
@@ -154,6 +164,10 @@ export const NPC_DIRECTORY: NpcEntry[] = [
 
   // ── Hostile archetypes ────────────────────────────────────────────────────
   entry("street-thug", "Street Thug", "threat", "Hostile archetype", ["street thugs"]),
+  // buildForce() numbers a crew per profile ("Street Thug 1"), so a crew of two
+  // is two faces rather than the same one twice. See findNpcNumbered below.
+  entry("street-thug-1", "Street Thug 1", "threat", "Hostile archetype"),
+  entry("street-thug-2", "Street Thug 2", "threat", "Hostile archetype"),
   entry("scavver", "Scavver", "threat", "Hostile archetype", ["scavvers", "scavver crew"]),
   entry("ganger", "Ganger", "threat", "Hostile archetype", ["gangers"]),
   entry("boostergang-chromer", "Boostergang Chromer", "threat", "Hostile archetype", ["chromer"]),
@@ -173,4 +187,30 @@ export function findNpc(name: string): NpcEntry | null {
 
 export function npcImage(npc: NpcEntry): string {
   return `/images/cast/${npc.id}.png`;
+}
+
+/** Numbered variants of one archetype, in order: "Street Thug 1", "Street Thug 2". */
+const VARIANTS = new Map<string, NpcEntry[]>();
+for (const npc of NPC_DIRECTORY) {
+  const numbered = /^(.*?)\s+(\d+)$/.exec(npc.name);
+  if (!numbered) continue;
+  const base = numbered[1]!.toLowerCase();
+  VARIANTS.set(base, [...(VARIANTS.get(base) ?? []), npc]);
+}
+
+/**
+ * The face for a combatant a force template numbered.
+ *
+ * A crew of three thugs with two portraits on file is two faces and a repeat,
+ * not two faces and a grey silhouette — and a crew of one is still the plain
+ * archetype, because buildForce does not number a lone anything.
+ */
+export function findNpcNumbered(name: string): NpcEntry | null {
+  const exact = findNpc(name);
+  if (exact) return exact;
+  const numbered = /^(.*?)\s+(\d+)$/.exec(name.trim());
+  if (!numbered) return null;
+  const variants = VARIANTS.get(numbered[1]!.toLowerCase());
+  if (variants?.length) return variants[(Number(numbered[2]) - 1) % variants.length]!;
+  return findNpc(numbered[1]!);
 }

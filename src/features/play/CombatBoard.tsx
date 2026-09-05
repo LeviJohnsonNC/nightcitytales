@@ -1,9 +1,12 @@
 import { CombatPortrait } from "./CombatPortrait";
+import { NightCityMark } from "@/components/brand/NightCityMark";
+import { NpcDossier } from "@/features/cast/NpcName";
+import { findNpcNumbered } from "@/features/cast/npcDirectory";
 import { itemArt } from "@/features/chargen/art";
 import { useCombatFeedback } from "./useCombatFeedback";
 import { playbackHeading } from "./combatFeedback";
 import { isCourtyard } from "./courtyard/propPresentation";
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Volume2,
   VolumeX,
@@ -22,14 +25,22 @@ import {
 } from "lucide-react";
 import {
   arenaFor,
+  centreOf,
+  coverBlocking,
   coverStatuses,
   currentCombatant,
   judgeAction,
+  movementField,
   previewMovement,
   previewAttack,
   remainingCombatTurn,
+  snapToGrid,
+  tileKey,
+  tileOf,
+  TILE_METRES,
   type CapabilitySnapshot,
   type Point,
+  type Tile,
 } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { raisedWeapon } from "./encounterModel";
@@ -63,6 +74,17 @@ type Props = {
   onSkipPlayback?: () => void;
 };
 const points = (path: Point[]) => path.map((p) => `${p.x},${p.y}`).join(" ");
+/** The four ground corners of one battlemat square, in metres. */
+const squareCorners = (tile: Tile): Point[] => {
+  const x = tile.col * TILE_METRES,
+    y = tile.row * TILE_METRES;
+  return [
+    { x, y },
+    { x: x + TILE_METRES, y },
+    { x: x + TILE_METRES, y: y + TILE_METRES },
+    { x, y: y + TILE_METRES },
+  ];
+};
 
 /** The tactical screen owns selection and camera only. Every actionable preview comes from the engine. */
 export function CombatBoard({
@@ -101,6 +123,8 @@ export function CombatBoard({
   const [selected, setSelected] = useState<string | null>(null);
   const [inspected, setInspected] = useState<string | null>(null);
   const [panel, setPanel] = useState<"journal" | "improvise" | null>(null);
+  /** The combatant whose dossier is open. Their art is on file; the fight is not. */
+  const [dossier, setDossier] = useState<string | null>(null);
   const [camera, setCamera] = useState({
     x: 0,
     y: 0,
@@ -111,6 +135,50 @@ export function CombatBoard({
   useEffect(() => {
     if (dice) setPanel((current) => (current === "improvise" ? null : current));
   }, [dice]);
+  /**
+   * Every square this Move Action reaches, walked once by the engine.
+   *
+   * The highlight and the route come out of the same traversal, so a square
+   * that lights up is a square the gate will accept — the board cannot offer
+   * ground the rules refuse.
+   */
+  const moveField = useMemo(() => {
+    if (!live || !capability || mode !== "move") return null;
+    const you = Object.values(live.state.combatants).find((c) => c.isPlayer);
+    const standing = you ? live.data[you.id] : null;
+    if (!standing) return null;
+    return movementField({
+      arena: arenaFor(live.arena),
+      cover: live.cover,
+      from: standing.position,
+      capability,
+      occupied: Object.values(live.state.combatants).flatMap((c) =>
+        c.isPlayer || c.defeated || !live.data[c.id] ? [] : [live.data[c.id]!.position],
+      ),
+    });
+  }, [live, capability, mode]);
+  /**
+   * The squares in the reach field that no standing hostile has a line into.
+   *
+   * RED's cover is not a stance (pg. 182) — it is where you are standing — so
+   * this is the same coverBlocking the attack gate reads, asked once per
+   * square. It marks ground worth walking to rather than inventing a rule.
+   */
+  const sheltered = useMemo(() => {
+    if (!live || !moveField) return null;
+    const ground = arenaFor(live.arena);
+    const hostiles = Object.values(live.state.combatants).flatMap((c) =>
+      c.side === "hostile" && !c.defeated && live.data[c.id] ? [live.data[c.id]!.position] : [],
+    );
+    if (!hostiles.length) return null;
+    const safe = new Set<string>();
+    for (const { tile } of moveField.values()) {
+      const centre = centreOf(tile);
+      if (hostiles.every((at) => coverBlocking(ground, centre, at, live.cover).length > 0))
+        safe.add(tileKey(tile));
+    }
+    return safe;
+  }, [live, moveField]);
   if (!live) return null;
   const arena = arenaFor(live.arena);
   const courtyard = isCourtyard(arena.key);
@@ -142,6 +210,8 @@ export function CombatBoard({
       ? `Blocked by ${targetCover}.`
       : (shot.gap ?? `${shot.distance} m · clear shot`);
   const spot = destination ?? hover;
+  const spotTile = spot ? tileOf(arena, spot) : null;
+  const spotSquares = spotTile ? moveField?.get(tileKey(spotTile))?.cost : undefined;
   const route =
     capability && player && spot
       ? previewMovement({
@@ -150,6 +220,7 @@ export function CombatBoard({
           from: player.data.position,
           to: spot,
           capability,
+          ...(moveField ? { field: moveField } : {}),
         })
       : null;
   const there =
@@ -181,12 +252,13 @@ export function CombatBoard({
     const matrix = svg.getScreenCTM();
     return matrix ? new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse()) : null;
   };
+  /** Where on the board this pointer is, as the centre of the square it hit. */
   const groundPoint = (svg: SVGSVGElement, e: { clientX: number; clientY: number }) => {
     const p = svgPoint(svg, e);
     if (!p) return null;
     const to = unproject(p);
     return to.x >= 0 && to.y >= 0 && to.x <= arena.extent.width && to.y <= arena.extent.height
-      ? to
+      ? snapToGrid(arena, to)
       : null;
   };
   const selectMode = (next: typeof mode) => {
@@ -218,6 +290,7 @@ export function CombatBoard({
       : `${acting?.side === "hostile" ? "Enemy" : "Ally"} turn · ${acting?.name ?? "Combatant"}`
     : null;
   const turnKey = `${live.id}:${live.state.round}:${active?.id}`;
+  const dossierNpc = dossier ? findNpcNumbered(dossier) : null;
   return (
     <section
       className={`combat-screen ${scenic ? "combat-scenic" : ""}`}
@@ -225,7 +298,10 @@ export function CombatBoard({
     >
       <header className="combat-header">
         <div className="combat-brand">
-          <span className="combat-eyebrow">Night City / combat</span>
+          <span className="combat-lockup">
+            <NightCityMark />
+            <span className="combat-eyebrow">Combat</span>
+          </span>
           <h1>{title ?? "Contact"}</h1>
           <p>{objective ?? arena.label}</p>
         </div>
@@ -269,7 +345,7 @@ export function CombatBoard({
         </div>
         {!playback && (
           <span className="combat-mobile-budget">
-            Move {remaining?.movement ?? 0} m ·{" "}
+            Move {remaining?.movementSquares ?? 0} sq ·{" "}
             {remaining?.action
               ? "Action ready"
               : remaining?.attacks
@@ -358,8 +434,8 @@ export function CombatBoard({
             </button>
           </div>
           <span className="sr-only" id={`${patternId}-keyboard`}>
-            In Move mode, use arrow keys to preview a destination, Enter to confirm, and Escape to
-            clear. Targets and cover can also be selected with Tab and Enter.
+            In Move mode, use arrow keys to preview a destination one square at a time, Enter to
+            confirm, and Escape to clear. Targets and cover can also be selected with Tab and Enter.
           </span>
           <svg
             className={`combat-arena ${scenic ? "combat-arena-overlay" : ""}`}
@@ -391,10 +467,14 @@ export function CombatBoard({
               e.preventDefault();
               const from = destination ?? player.data.position;
               setInspected(null);
-              setDestination({
-                x: Math.max(0, Math.min(arena.extent.width, from.x + shift.x)),
-                y: Math.max(0, Math.min(arena.extent.height, from.y + shift.y)),
-              });
+              // One square per press, so the keyboard walks the same lattice
+              // the pointer does.
+              setDestination(
+                snapToGrid(arena, {
+                  x: from.x + shift.x * TILE_METRES,
+                  y: from.y + shift.y * TILE_METRES,
+                }),
+              );
             }}
             aria-label={`Angled battlefield: ${arena.label}. Select units or ground to preview an action.`}
             onPointerDown={(e) => {
@@ -432,6 +512,17 @@ export function CombatBoard({
             }}
           >
             <defs>
+              <marker
+                id={`${patternId}-arrow`}
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="5"
+                markerHeight="5"
+                orient="auto-start-reverse"
+              >
+                <path d="M0 1L9 5L0 9z" fill="#65eee0" />
+              </marker>
               <clipPath id={`${patternId}-floor`}>
                 <polygon points={points(boardCorners)} />
               </clipPath>
@@ -510,7 +601,8 @@ export function CombatBoard({
                   </text>
                 </g>
               </g>
-              {/* Cosmetic grid: no snapping, tiles or mechanics are introduced. */}
+              {/* The 2 m battlemat lattice itself. Squares are the unit a Move
+                  Action spends; the metres underneath stay what range is read at. */}
               <g stroke="#a7cccf" strokeOpacity=".085" strokeWidth=".7" pointerEvents="none">
                 {Array.from({ length: Math.ceil(arena.extent.width / 2) - 1 }, (_, i) => (
                   <polyline
@@ -557,23 +649,22 @@ export function CombatBoard({
                 pointerEvents="none"
               />
             )}
-            {player && remaining && remaining.movement > 0 && mode === "move" && (
-              <polygon
-                points={points(
-                  Array.from({ length: 81 }, (_, i) => {
-                    const angle = (i / 80) * Math.PI * 2;
-                    return project({
-                      x: player.data.position.x + Math.cos(angle) * remaining.movement,
-                      y: player.data.position.y + Math.sin(angle) * remaining.movement,
-                    });
-                  }),
-                )}
-                clipPath={`url(#${patternId}-floor)`}
-                className="combat-reach"
-                pointerEvents="none"
-              >
-                <title>Move distance limit; obstacles can make routes longer.</title>
-              </polygon>
+            {mode === "move" && canAct && moveField && !!remaining?.movementSquares && (
+              <g className="combat-squares" pointerEvents="none">
+                {[...moveField.values()].map(({ tile, cost }) => {
+                  if (cost === 0) return null;
+                  const key = tileKey(tile);
+                  return (
+                    <polygon
+                      key={key}
+                      className={`combat-square ${sheltered?.has(key) ? "is-sheltered" : ""} ${
+                        spotTile && tileKey(spotTile) === key ? "is-chosen" : ""
+                      }`}
+                      points={points(squareCorners(tile).map(project))}
+                    />
+                  );
+                })}
+              </g>
             )}
             {mode === "shoot" && player && target && (
               <line
@@ -587,29 +678,17 @@ export function CombatBoard({
                 pointerEvents="none"
               />
             )}
-            {route?.ok && mode === "move" && (
+            {route?.ok && mode === "move" && spotTile && (
               <g pointerEvents="none">
                 <polyline
                   points={points(route.path.map(project))}
                   fill="none"
-                  stroke="#65eee0"
-                  strokeWidth="3"
-                  strokeDasharray="5 5"
                   className="combat-route"
+                  markerEnd={`url(#${patternId}-arrow)`}
                 />
-                <ellipse
-                  cx={project(route.position).x}
-                  cy={project(route.position).y}
-                  rx="15"
-                  ry="8"
-                  fill="#65eee030"
-                  stroke="#65eee0"
-                  strokeWidth="2"
-                />
-                <path
-                  d={`M${project(route.position).x} ${project(route.position).y - 15}v-10`}
-                  stroke="#65eee0"
-                  strokeWidth="2"
+                <polygon
+                  className="combat-destination"
+                  points={points(squareCorners(spotTile).map(project))}
                 />
               </g>
             )}
@@ -880,7 +959,7 @@ export function CombatBoard({
                   ? "Drag to look around"
                   : mode === "shoot"
                     ? "Select a target · review the shot"
-                    : "Select ground · preview your route · confirm"}
+                    : "Select a square · preview your route · confirm"}
               </>
             )}
           </div>
@@ -925,15 +1004,20 @@ export function CombatBoard({
             <div className="combat-assessment">
               <h2>{route?.ok ? "Reposition" : "Cannot move here"}</h2>
               <div className="combat-big-number">
-                {route?.ok ? route.moved : "—"}
-                <small>metres</small>
+                {route?.ok && spotSquares !== undefined ? spotSquares : "—"}
+                <small>
+                  squares
+                  {route?.ok ? ` · ${route.moved} m` : ""}
+                </small>
               </div>
               <p>
                 {route?.ok
-                  ? "Costs your Move. Your Action budget stays unchanged."
+                  ? spotTile && sheltered?.has(tileKey(spotTile))
+                    ? "Costs your Move. Nothing standing has a line into that square."
+                    : "Costs your Move. Your Action budget stays unchanged."
                   : route && !route.ok
                     ? route.reason
-                    : "Select a destination."}
+                    : "Select a square."}
               </p>
               {futureShot && target && (
                 <p className="combat-future">
@@ -953,11 +1037,25 @@ export function CombatBoard({
           ) : target ? (
             <div className="combat-assessment combat-target-assessment">
               <div className="combat-target-identity">
-                <CombatPortrait
-                  name={target.actor.name}
-                  src={target.actor.isPlayer ? (playerPortrait ?? null) : undefined}
-                  hostile={target.actor.side === "hostile"}
-                />
+                {findNpcNumbered(target.actor.name) ? (
+                  <button
+                    type="button"
+                    className="combat-dossier-open"
+                    onClick={() => setDossier(target.actor.name)}
+                    aria-label={`Open dossier for ${target.actor.name}`}
+                  >
+                    <CombatPortrait
+                      name={target.actor.name}
+                      hostile={target.actor.side === "hostile"}
+                    />
+                  </button>
+                ) : (
+                  <CombatPortrait
+                    name={target.actor.name}
+                    src={target.actor.isPlayer ? (playerPortrait ?? null) : undefined}
+                    hostile={target.actor.side === "hostile"}
+                  />
+                )}
                 <div>
                   <span className="combat-eyebrow">Selected target</span>
                   <h2>{target.actor.name}</h2>
@@ -1057,7 +1155,11 @@ export function CombatBoard({
             <Footprints />
             <span>
               Move
-              <small>{remaining?.movement ? `${remaining.movement} m available` : "Spent"}</small>
+              <small>
+                {remaining?.movementSquares
+                  ? `${remaining.movementSquares} squares · ${remaining.movement} m`
+                  : "Spent"}
+              </small>
             </span>
           </button>
           <button
@@ -1155,6 +1257,15 @@ export function CombatBoard({
           </span>
         </button>
       </footer>
+      {dossierNpc && (
+        <NpcDossier
+          npc={dossierNpc}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setDossier(null);
+          }}
+        />
+      )}
       <Dialog
         open={panel !== null}
         onOpenChange={(open) => {
