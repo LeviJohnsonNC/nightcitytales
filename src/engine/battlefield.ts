@@ -112,6 +112,48 @@ export type Arena = {
 
 export const ARENAS: Arena[] = [
   {
+    key: "night_shift",
+    label: "Night Shift courtyard",
+    extent: { width: 24, height: 24 },
+    playerStart: { x: 5, y: 5 },
+    hostileSlots: [
+      { x: 16, y: 15 },
+      { x: 20, y: 10 },
+      { x: 9, y: 19 },
+    ],
+    // Each crate is one RED cover section. Art reads these same footprints.
+    cover: [
+      {
+        id: "cargo_west",
+        label: "a sealed cargo crate",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 6, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "cargo_middle",
+        label: "a freight crate",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 12, y: 11, width: 2, height: 2 },
+      },
+      {
+        id: "cargo_east",
+        label: "an armored cargo crate",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 17, y: 7, width: 2, height: 2 },
+      },
+      {
+        id: "cargo_rear",
+        label: "a loading bay crate",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 10, y: 17, width: 2, height: 2 },
+      },
+    ],
+  },
+  {
     key: "alley",
     label: "a service alley",
     extent: { width: 12, height: 40 },

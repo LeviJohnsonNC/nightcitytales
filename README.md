@@ -72,7 +72,10 @@ authored starting condition instead.
 
 React 19 and TypeScript on TanStack Start, Tailwind v4 with shadcn/ui, Zustand
 for wizard state, Supabase (via Lovable Cloud) for auth and persistence, Vitest
-for tests. Bun is the package manager — `bun.lock` is what CI installs from.
+for tests. Phaser 4 supplies the optional Night Shift courtyard art layer; React/SVG
+retains tactical controls and the pure engine retains all combat authority. See
+[the visual proof notes](docs/combat-visual-proof.md) for scope and how to test it.
+Bun is the package manager — `bun.lock` is what CI installs from.
 
 ## Layout
 
