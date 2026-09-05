@@ -31,7 +31,7 @@ function columnsInMigration(): string[] {
 function columnsInTypes(): string[] {
   const source = readFileSync(TYPES, "utf8");
   const table = source.slice(source.indexOf("      campaign_places: {"));
-  const row = /Row: \{([\s\S]*?)\n        \}/.exec(table)?.[1] ?? "";
+  const row = /Row: \{([\s\S]*?)\n {8}\}/.exec(table)?.[1] ?? "";
   return row
     .split("\n")
     .map((line) => line.trim().split(":")[0]?.trim() ?? "")
