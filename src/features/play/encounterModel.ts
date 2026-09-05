@@ -484,7 +484,8 @@ export function startEncounterPayload(input: {
  * Nothing selected falls back to the first gun with a printed range table
  * rather than to nothing, so a fight opens with the bands already drawn. A
  * melee weapon has no bands, so it is never the fallback — but it is a perfectly
- * good explicit choice.
+ * good explicit choice. An explicitly raised empty gun stays selected so the
+ * action bar can reload it; an empty ranged gun is the last fallback.
  */
 export function raisedWeapon(
   capability: CapabilitySnapshot | null,
@@ -492,8 +493,9 @@ export function raisedWeapon(
 ): WeaponCapability | null {
   const weapons = capability ? usableWeapons(capability) : [];
   return (
-    weapons.find((w) => w.itemId === weaponId) ??
+    capability?.weapons.find((w) => w.itemId === weaponId) ??
     weapons.find((w) => weaponBands(w).length > 0) ??
+    capability?.weapons.find((w) => weaponBands(w).length > 0) ??
     null
   );
 }

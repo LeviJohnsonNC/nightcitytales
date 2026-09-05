@@ -32,7 +32,9 @@ LIFE → HOOK → JOB → AFTERMATH → LIFE
 - **Hook** is an offer. `accept_hook` is the only door into a job, and only the
   player presses it.
 - **Job** runs a mission as a beat graph, with combat as a mode inside it rather
-  than a phase of its own.
+  than a phase of its own. Combat fills the screen with an angled battlefield,
+  movement and targeting previews, and a persistent command bar; the journal
+  and freeform intent stay within reach.
 - **Aftermath** is the receipt: what the job paid, what it cost, who noticed,
   and what is still bleeding.
 

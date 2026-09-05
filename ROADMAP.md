@@ -188,10 +188,13 @@ those decisions visible and directly playable.
    are exhausted or the player ends the turn. Fixed-result narration cannot
    propose another action or change state. Regression tests cover the shipping
    handlers, including stale attack previews.
-2. **Next: angled battlefield:** a dedicated combat layout, click-to-move,
-   targeting previews and an always-visible action bar. Desktop first, with
-   usable touch controls.
-3. **Immediate playback:** resolve and show routine actions without waiting for
+2. **Angled battlefield implemented:** a dedicated full-height combat screen,
+   orthographic arena, upright units, raised cover, route confirmation and target
+   previews. Move, Shoot, Reload, Improvise and End Turn remain in the command
+   bar. Camera zoom/pan, keyboard selection, compact phone readouts and landscape
+   controls support different screen sizes. The journal and freeform entry open
+   on demand; required rolls take over the tactical readout.
+3. **Next: immediate playback:** resolve and show routine actions without waiting for
    generated narration; make player/enemy turn transitions unmistakable.
 4. **Improvisation:** freeform intent previews a concrete, engine-validated cost
    and consequence alongside the common actions.
@@ -200,8 +203,8 @@ those decisions visible and directly playable.
 
 Milestone 1 retains the existing one-Move policy and MOVE-to-metres allowance;
 it does not introduce XCOM action points, split movement or cover bonuses. The
-current board remains top-down, and exhausted-turn narration still waits for
-the model until milestone 3.
+angled board is a presentation of the existing geometry; exhausted-turn
+narration still waits for the model until milestone 3.
 
 Success: the player wins by repositioning into the right range band, managing
 ammunition, and choosing the right target — not by describing an impressive

@@ -1,0 +1,918 @@
+.combat-screen {
+  --tac-cyan: #65eee0;
+  --tac-red: #ff7770;
+  --tac-muted: #879ca6;
+  color: #e6eeec;
+  background: #0b141c;
+  font-family: "IBM Plex Sans", sans-serif;
+  height: 100dvh;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.combat-screen button,
+.combat-screen select {
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.combat-screen button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+.combat-screen button:focus-visible,
+.combat-screen select:focus-visible,
+.combat-arena [tabindex]:focus-visible {
+  outline: 2px solid var(--tac-cyan);
+  outline-offset: 3px;
+}
+.combat-eyebrow {
+  font:
+    10px "IBM Plex Mono",
+    monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.17em;
+  color: var(--tac-muted);
+}
+.combat-header {
+  padding: 20px 30px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ffffff12;
+  background: #0d1922;
+}
+.combat-brand h1 {
+  font-family: Archivo, sans-serif;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+  margin: 3px 0;
+}
+.combat-brand p {
+  font-size: 12px;
+  color: #adbec4;
+}
+.combat-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.combat-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #8199a333;
+  background: #0c1821d9;
+  color: #c1d1d5;
+}
+.combat-icon:hover,
+.combat-icon.is-selected {
+  color: var(--tac-cyan);
+  border-color: var(--tac-cyan);
+  background: #17363d;
+}
+.combat-turn-strip {
+  display: flex;
+  align-items: center;
+  min-height: 49px;
+  border-bottom: 1px solid #ffffff16;
+  background: #101e27;
+}
+.combat-turn {
+  padding: 0 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.combat-turn strong {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tac-cyan);
+}
+.combat-turn > span:last-child {
+  font: 10px monospace;
+  color: var(--tac-muted);
+  margin-left: 10px;
+}
+.combat-status-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--tac-cyan);
+  box-shadow: 0 0 12px #65eee088;
+}
+.is-busy .combat-status-dot {
+  animation: combat-pulse 1s infinite;
+}
+.combat-initiative {
+  display: flex;
+  gap: 1px;
+  overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font:
+    10px "IBM Plex Mono",
+    monospace;
+}
+.combat-initiative li {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 15px 18px;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  color: var(--tac-muted);
+}
+.combat-initiative li span {
+  opacity: 0.4;
+}
+.combat-initiative .is-active {
+  border-color: var(--tac-cyan);
+  background: #65eee008;
+  color: #d6efec;
+}
+.combat-initiative .is-out {
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+.combat-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 272px;
+}
+.combat-stage {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 46% 50%, #1a303b 0%, #0e1d28 45%, #09141d 85%);
+}
+.combat-stage:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 100px #050e1770;
+}
+.combat-map-caption {
+  position: absolute;
+  top: 22px;
+  left: 30px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.combat-map-caption > span:last-child {
+  font: 10px monospace;
+  color: #54717f;
+}
+.combat-camera {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+.combat-arena {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  touch-action: none;
+  user-select: none;
+}
+.mode-move .combat-arena {
+  cursor: crosshair;
+}
+.mode-pan .combat-arena {
+  cursor: grab;
+}
+.mode-pan .combat-arena:active {
+  cursor: grabbing;
+}
+.combat-reach {
+  fill: #65eee009;
+  stroke: #65eee067;
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+}
+.combat-unit {
+  cursor: pointer;
+}
+.combat-unit-label {
+  font:
+    600 10px "IBM Plex Mono",
+    monospace;
+  paint-order: stroke;
+  stroke: #0d1c26;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  letter-spacing: 0.06em;
+}
+.combat-unit.is-out {
+  opacity: 0.45;
+}
+.combat-unit:hover > ellipse {
+  stroke-width: 3;
+}
+.combat-cover {
+  cursor: help;
+}
+.combat-cover:hover {
+  filter: brightness(1.3);
+}
+.combat-route {
+  animation: combat-dash 1.5s linear infinite;
+}
+.combat-map-hint {
+  position: absolute;
+  bottom: 18px;
+  left: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11px;
+  color: #afc3c9;
+  pointer-events: none;
+}
+.combat-map-hint .combat-eyebrow {
+  color: var(--tac-cyan);
+}
+.combat-intel {
+  border-left: 1px solid #8199a323;
+  background: #101d26;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #405960 transparent;
+}
+.combat-intel-heading {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ffffff0d;
+  color: #a0b7bf;
+}
+.combat-assessment {
+  padding: 22px 20px;
+}
+.combat-assessment h2 {
+  font:
+    700 21px Archivo,
+    sans-serif;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+.combat-big-number {
+  font:
+    600 64px "IBM Plex Mono",
+    monospace;
+  letter-spacing: -0.08em;
+  line-height: 1.2;
+  margin: 22px 0 8px;
+  color: #f9bd72;
+}
+.combat-big-number small {
+  display: block;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 10px;
+  color: var(--tac-muted);
+}
+.combat-assessment p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #b0c3c9;
+  margin: 12px 0;
+}
+.combat-target-stats {
+  display: flex;
+  gap: 20px;
+  font: 11px monospace;
+  color: #b8c8cd;
+  margin: 20px 0;
+}
+.combat-target-stats span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.combat-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 13px 14px;
+  background: #65eee015;
+  border: 1px solid #65eee070;
+  color: var(--tac-cyan);
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.combat-confirm:hover {
+  background: #65eee027;
+}
+.combat-confirm.is-fire {
+  color: #f9bd72;
+  background: #f9bd720b;
+  border-color: #f9bd7255;
+}
+.combat-future {
+  border-left: 2px solid #65eee060;
+  padding-left: 12px;
+}
+.combat-target-list {
+  padding: 18px 20px;
+  border-top: 1px solid #ffffff12;
+}
+.combat-target-list > span {
+  display: block;
+  margin-bottom: 12px;
+}
+.combat-target-list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  width: 100%;
+  padding: 12px 9px;
+  border: 1px solid transparent;
+  color: #bed0d5;
+}
+.combat-target-list button:hover,
+.combat-target-list button.is-selected {
+  background: #ffffff04;
+  border-color: #ffffff14;
+}
+.combat-target-list button > span:nth-child(2) {
+  flex: 1;
+  font-size: 12px;
+}
+.combat-target-list small {
+  display: block;
+  font: 10px monospace;
+  color: var(--tac-muted);
+  margin-top: 4px;
+}
+.combat-target-list strong {
+  font: 10px monospace;
+  color: #e9b279;
+}
+.combat-target-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--tac-red);
+  transform: rotate(45deg);
+}
+.combat-resolution {
+  margin: 0 14px 16px;
+  padding: 14px;
+  border: 1px solid #f9bd7240;
+  background: #070f16;
+}
+.combat-resolution section {
+  border-top: 0;
+  padding-top: 0;
+}
+.combat-command {
+  padding: 18px 24px max(18px, env(safe-area-inset-bottom));
+  background: #0c1821;
+  border-top: 1px solid #9ac3cb40;
+  display: flex;
+  align-items: stretch;
+  gap: 22px;
+  box-shadow: 0 -12px 40px #0003;
+  z-index: 3;
+  flex-shrink: 0;
+}
+.combat-loadout {
+  width: 230px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+.combat-loadout > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.combat-loadout .combat-eyebrow {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-vitals {
+  font: 11px monospace;
+  color: var(--tac-cyan);
+  white-space: nowrap;
+}
+.combat-vitals > span {
+  color: var(--tac-muted);
+  margin-left: 8px;
+}
+.combat-loadout select {
+  border: 0;
+  border-bottom: 1px solid #ffffff20;
+  color: #e0e8e6;
+  font-size: 12px;
+  width: 100%;
+  background: #101e28;
+  padding: 7px 5px;
+  min-height: 36px;
+}
+.combat-actions {
+  display: flex;
+  flex: 1;
+  gap: 7px;
+}
+.combat-actions > button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border: 1px solid #809aa333;
+  background: #13242e;
+  color: #a6bdc6;
+  min-width: 80px;
+}
+.combat-actions > button:hover,
+.combat-actions > button.is-selected {
+  border-color: #65eee080;
+  background: #65eee00d;
+  color: var(--tac-cyan);
+}
+.combat-actions svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.5;
+}
+.combat-actions span,
+.combat-end span {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.combat-actions small,
+.combat-end small {
+  display: block;
+  font:
+    9px "IBM Plex Mono",
+    monospace;
+  color: var(--tac-muted);
+  margin-top: 6px;
+}
+.combat-end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  min-width: 140px;
+  border: 1px solid #65eee050;
+  background: #24494c;
+  color: #d5f6ed;
+}
+.combat-end:hover {
+  background: #326064;
+}
+.combat-dialog {
+  max-width: 700px !important;
+  background: #101d26 !important;
+  border-color: #405b64 !important;
+}
+.combat-dialog-body {
+  max-height: 65dvh;
+  overflow: auto;
+}
+.combat-dialog-body > div {
+  margin-bottom: 10px;
+}
+@keyframes combat-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes combat-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+@media (min-width: 1500px) {
+  .combat-main {
+    grid-template-columns: minmax(0, 1fr) 310px;
+  }
+  .combat-assessment {
+    padding: 28px;
+  }
+  .combat-intel-heading,
+  .combat-target-list {
+    padding: 24px 28px;
+  }
+  .combat-command {
+    gap: 30px;
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+  .combat-loadout {
+    width: 270px;
+  }
+}
+@media (max-width: 1000px) {
+  .combat-command {
+    gap: 10px;
+    padding: 12px;
+  }
+  .combat-loadout {
+    width: 190px;
+  }
+  .combat-actions > button {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 8px;
+    min-width: 60px;
+  }
+  .combat-actions span {
+    text-align: center;
+  }
+  .combat-actions small {
+    font-size: 8px;
+  }
+  .combat-end {
+    min-width: 90px;
+    padding: 12px;
+  }
+  .combat-main {
+    grid-template-columns: minmax(0, 1fr) 230px;
+  }
+  .combat-header {
+    padding: 14px 20px;
+  }
+  .combat-turn {
+    padding: 0 20px;
+  }
+  .combat-header h1 {
+    font-size: 20px;
+  }
+  .combat-big-number {
+    font-size: 48px;
+    margin-top: 15px;
+  }
+}
+@media (max-width: 900px) {
+  .combat-screen {
+    min-height: 0;
+  }
+  .combat-header {
+    padding: 10px 14px;
+  }
+  .combat-brand h1 {
+    font-size: 17px;
+  }
+  .combat-brand p {
+    font-size: 10px;
+    max-width: 230px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .combat-brand > .combat-eyebrow {
+    font-size: 8px;
+  }
+  .combat-header-tools {
+    gap: 4px;
+  }
+  .combat-header-tools .combat-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .combat-turn-strip {
+    min-height: 39px;
+    display: block;
+  }
+  .combat-turn {
+    padding: 11px 14px;
+  }
+  .combat-turn strong {
+    font-size: 10px;
+  }
+  .combat-initiative {
+    display: none;
+  }
+  .combat-main {
+    display: flex;
+    flex-direction: column;
+  }
+  .combat-stage {
+    flex: 1;
+    min-height: 140px;
+  }
+  .combat-map-caption {
+    top: 12px;
+    left: 14px;
+  }
+  .combat-map-caption .combat-eyebrow {
+    font-size: 8px;
+  }
+  .combat-map-caption > span:last-child {
+    display: none;
+  }
+  .combat-camera {
+    right: 10px;
+    top: 10px;
+    gap: 2px;
+  }
+  .combat-camera .combat-icon {
+    width: 32px;
+    height: 36px;
+  }
+  .combat-map-hint {
+    left: 14px;
+    bottom: 10px;
+    font-size: 9px;
+    gap: 4px;
+  }
+  .combat-map-hint .combat-eyebrow {
+    font-size: 8px;
+  }
+  .combat-intel {
+    max-height: 27dvh;
+    flex-shrink: 0;
+    border-top: 1px solid #8199a323;
+    border-left: 0;
+  }
+  .combat-intel-heading {
+    display: none;
+  }
+  .combat-assessment {
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 130px;
+    column-gap: 14px;
+    align-items: center;
+  }
+  .combat-assessment h2 {
+    font-size: 16px;
+    margin: 0 0 3px;
+  }
+  .combat-assessment > .combat-eyebrow {
+    display: none;
+  }
+  .combat-assessment .combat-big-number {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-size: 30px;
+    margin: 0;
+    text-align: right;
+  }
+  .combat-big-number small {
+    display: inline;
+    margin-left: 7px;
+    font-size: 8px;
+    letter-spacing: 0;
+  }
+  .combat-assessment p {
+    margin: 3px 0;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .combat-assessment .combat-target-stats {
+    margin: 4px 0;
+    font-size: 10px;
+    gap: 12px;
+  }
+  .combat-confirm {
+    grid-column: 2;
+    grid-row: 3 / span 2;
+    min-height: 40px;
+    padding: 10px;
+    font-size: 11px;
+  }
+  .combat-future {
+    grid-column: 1;
+  }
+  .combat-target-list {
+    display: flex;
+    overflow: auto;
+    gap: 5px;
+    padding: 8px 14px;
+  }
+  .combat-target-list > span {
+    display: none;
+  }
+  .combat-target-list button {
+    min-width: 135px;
+    width: auto;
+    padding: 6px;
+  }
+  .combat-target-list button > span:nth-child(2) {
+    font-size: 10px;
+  }
+  .combat-target-list strong {
+    font-size: 9px;
+  }
+  .combat-target-list small {
+    font-size: 9px;
+  }
+  .combat-resolution {
+    margin: 8px 14px;
+  }
+  .combat-command {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 80px;
+    gap: 8px;
+    padding: 9px 10px max(9px, env(safe-area-inset-bottom));
+  }
+  .combat-loadout {
+    grid-column: 1 / -1;
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .combat-loadout > div {
+    flex-direction: column;
+    align-items: start;
+    gap: 4px;
+  }
+  .combat-loadout select {
+    max-width: 210px;
+    font-size: 11px;
+    min-height: 32px;
+    padding: 5px;
+  }
+  .combat-vitals {
+    font-size: 10px;
+  }
+  .combat-loadout .combat-eyebrow {
+    font-size: 8px;
+    max-width: 130px;
+  }
+  .combat-actions {
+    gap: 4px;
+  }
+  .combat-actions > button {
+    padding: 9px 4px;
+    min-width: 0;
+    gap: 5px;
+  }
+  .combat-actions svg {
+    width: 19px;
+    height: 19px;
+  }
+  .combat-actions span {
+    font-size: 10px;
+  }
+  .combat-actions small {
+    display: none;
+  }
+  .combat-end {
+    min-width: 0;
+    padding: 8px 4px;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .combat-end span {
+    font-size: 10px;
+  }
+  .combat-end small {
+    display: none;
+  }
+  .combat-dialog {
+    width: calc(100% - 20px) !important;
+    padding: 20px !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .combat-route,
+  .is-busy .combat-status-dot {
+    animation: none;
+  }
+  .combat-screen * {
+    transition: none !important;
+  }
+}
+
+.combat-initiative {
+  scrollbar-width: none;
+}
+.combat-initiative::-webkit-scrollbar {
+  display: none;
+}
+
+.combat-mobile-budget {
+  display: none;
+}
+.combat-target-list {
+  scrollbar-width: none;
+}
+.combat-target-list::-webkit-scrollbar {
+  display: none;
+}
+@media (max-width: 900px) {
+  .combat-turn-strip {
+    position: relative;
+  }
+  .combat-mobile-budget {
+    display: block;
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    font: 8px monospace;
+    color: #879ca6;
+  }
+  .combat-turn > span:last-child {
+    display: none;
+  }
+  .combat-resolution {
+    margin-top: 12px;
+  }
+}
+@media (max-width: 900px) {
+  .combat-turn-strip {
+    display: flex;
+    justify-content: space-between;
+  }
+  .combat-mobile-budget {
+    position: static;
+    margin-right: 14px;
+    white-space: nowrap;
+  }
+  .combat-turn {
+    min-width: 0;
+  }
+  .combat-turn strong {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .combat-camera .combat-icon {
+    width: 36px;
+    height: 40px;
+  }
+}
+@media (max-width: 900px) and (max-height: 500px) {
+  .combat-header {
+    padding: 7px 14px;
+  }
+  .combat-brand > .combat-eyebrow,
+  .combat-brand p {
+    display: none;
+  }
+  .combat-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+  .combat-stage {
+    min-height: 0;
+  }
+  .combat-intel {
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid #8199a323;
+  }
+  .combat-command {
+    display: flex;
+    padding: 7px 10px max(7px, env(safe-area-inset-bottom));
+  }
+  .combat-loadout {
+    width: 165px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .combat-loadout > div {
+    flex-direction: row;
+    align-items: center;
+  }
+  .combat-loadout .combat-eyebrow {
+    max-width: 65px;
+  }
+  .combat-vitals > span {
+    display: none;
+  }
+  .combat-actions {
+    flex: 1;
+  }
+  .combat-end {
+    min-width: 75px;
+  }
+  .combat-map-hint {
+    font-size: 8px;
+  }
+}

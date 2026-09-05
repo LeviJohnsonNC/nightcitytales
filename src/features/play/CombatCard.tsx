@@ -60,6 +60,7 @@ export function CombatCard({
   luckRemaining,
   capability,
   weaponItemId,
+  onCancel,
 }: {
   pending: PendingAttack;
   character: FullCharacter;
@@ -81,6 +82,7 @@ export function CombatCard({
    * stay in their hand; it is never quietly swapped for one that can.
    */
   weaponItemId: string | null;
+  onCancel?: () => void;
 }) {
   const options = useMemo<AttackOption[]>(
     () => pending.weapons.map((w) => attackOption(pending, w, character, capability)),
@@ -153,6 +155,16 @@ export function CombatCard({
             </p>
           )}
 
+          {onCancel && (
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline underline-offset-4 disabled:opacity-40"
+              disabled={busy}
+              onClick={onCancel}
+            >
+              Cancel shot · no Action spent
+            </button>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <DiceRoll
               sides={10}

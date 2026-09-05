@@ -1761,6 +1761,18 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const cancelShot = useMutation({
+    mutationFn: async (promptId: string) => {
+      if (!query.data) throw new Error("Still loading.");
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "attack_cancelled",
+        data: { promptId },
+      });
+    },
+    onSuccess: invalidate,
+  });
+
   const reload = useMutation({
     onError: onWriteError,
     mutationFn: (weaponItemId: string) => {
@@ -1821,6 +1833,7 @@ export function usePlay(campaignId: string) {
     (boardMove.error as Error | null) ??
     (endTurn.error as Error | null) ??
     (reload.error as Error | null) ??
+    (cancelShot.error as Error | null) ??
     (callShot.error as Error | null) ??
     (death.error as Error | null);
 
@@ -2103,6 +2116,9 @@ export function usePlay(campaignId: string) {
     /** Put rounds back in a gun, spending the Action the gate prices it at. */
     reload: (weaponItemId: string) => reload.mutate(weaponItemId),
     /** Call a shot on somebody, which posts the prompt the card resolves. */
+    cancelShot: () => {
+      if (pendingAttack) cancelShot.mutate(pendingAttack.eventId);
+    },
     callShot: (targetId: string, weaponItemId: string) =>
       callShot.mutate({ targetId, weaponItemId }),
     /** Give up the rest of the Turn and let the hostiles take theirs. */
@@ -2199,6 +2215,7 @@ export function usePlay(campaignId: string) {
       endTurn.isPending ||
       reload.isPending ||
       callShot.isPending ||
+      cancelShot.isPending ||
       death.isPending,
     actionError,
     retry,
