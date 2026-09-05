@@ -326,9 +326,9 @@ Keep these in mind when changing adjacent code:
   by the current play loop.
 - Non-combat structured world-state deltas proposed by the GM are still only
   partially wired into persistence.
-- Combat has a top-down interactive board and shared engine movement/targeting
-  previews. The angled battlefield and persistent action bar remain ahead;
-  exhausted-turn narration still blocks input until the model responds.
+- Combat has an angled interactive board, persistent command bar, and shared
+  engine movement/targeting previews. Exhausted-turn narration still blocks
+  input until the model responds; immediate playback remains ahead.
 - Settlement reads a bounded job ledger window (`JOB_LEDGER_LIMIT`, 2000 events)
   rather than querying the exact `mission_started` → `mission_completed` range.
   An exceptionally long job could exceed it.

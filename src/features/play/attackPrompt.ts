@@ -149,11 +149,18 @@ export function pendingAttackFrom(
   const attacker = Object.values(live.state.combatants).find((c) => c.isPlayer);
   if (!attacker || attacker.defeated) return null;
 
+  const cancelled = new Set<string>();
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i];
     if (!event) continue;
-    if (event.type === "attack" || event.type === "turn_ended") return null; // the newest prompt is already rolled
+    if (event.type === "attack" || event.type === "turn_ended") return null;
+    if (event.type === "attack_cancelled") {
+      const promptId = (event.data as { promptId?: unknown } | null)?.promptId;
+      if (typeof promptId === "string") cancelled.add(promptId);
+      continue;
+    }
     if (event.type !== "attack_prompt") continue;
+    if (cancelled.has(event.id)) return null;
 
     const data = (event.data ?? {}) as PromptData;
     const targetKey = typeof data.targetId === "string" ? data.targetId : null;

@@ -244,6 +244,19 @@ describe("shipping turn orchestration", () => {
     await expect(commitAttack(b, pending, option, {} as PerformAttackResult)).rejects.toThrow();
     expect(io.save).not.toHaveBeenCalled();
   });
+  it("cancels only the named shot preview without resurrecting an older prompt", () => {
+    const b = bundle();
+    const events = [
+      { id: "older", type: "attack_prompt", data: { targetId: "h" } },
+      { id: "chosen", type: "attack_prompt", data: { targetId: "h" } },
+      { id: "cancel", type: "attack_cancelled", data: { promptId: "chosen" } },
+    ];
+    expect(pendingAttackFrom(events as never, b.character, b.encounter, b.inventory)).toBeNull();
+    events[2]!.data = { promptId: "older" };
+    expect(pendingAttackFrom(events as never, b.character, b.encounter, b.inventory)?.eventId).toBe(
+      "chosen",
+    );
+  });
   it("discards an unrolled attack when its turn ends", () => {
     const b = bundle();
     expect(

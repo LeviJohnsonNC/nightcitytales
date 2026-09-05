@@ -666,10 +666,12 @@ function InputBar({
   onSend,
   onAskOptions,
   busy,
+  showOptions = true,
 }: {
   onSend: (text: string) => Promise<boolean> | void;
   onAskOptions: () => void;
   busy: boolean;
+  showOptions?: boolean;
 }) {
   const [text, setText] = useState("");
   const send = async () => {
@@ -701,15 +703,17 @@ function InputBar({
         <Button className="flex-1 sm:flex-none" onClick={send} disabled={busy || !text.trim()}>
           {busy ? "…" : "Act"}
         </Button>
-        <Button
-          variant="outline"
-          className="flex-1 sm:flex-none"
-          onClick={onAskOptions}
-          disabled={busy}
-          title="Ask the GM what angles it can see. The scene does not move."
-        >
-          Options?
-        </Button>
+        {showOptions && (
+          <Button
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            onClick={onAskOptions}
+            disabled={busy}
+            title="Ask the GM what angles it can see. The scene does not move."
+          >
+            Options?
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -730,6 +734,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
    * the two readers.
    */
   const [weaponId, setWeaponId] = useState<string | null>(null);
+  const [rollingAttack, setRollingAttack] = useState(false);
 
   if (play.isPending) {
     return <p className="p-8 text-sm text-muted-foreground">Loading the campaign…</p>;
@@ -759,6 +764,127 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
       {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
     </>
   );
+
+  if (play.encounter) {
+    const locked =
+      rollingAttack ||
+      play.busy ||
+      play.opening ||
+      Boolean(play.actionError) ||
+      Boolean(play.pendingDeathSave) ||
+      Boolean(play.pendingCheck);
+    return (
+      <CombatBoard
+        key={play.encounter.id}
+        live={play.encounter}
+        capability={play.capability}
+        title={bundle.campaign.name}
+        objective={bundle.beat?.title ?? "Contact"}
+        onMoveTo={play.moveTo}
+        onEndTurn={play.endTurn}
+        onReload={play.reload}
+        onAttack={play.callShot}
+        weaponId={weaponId}
+        onWeaponId={setWeaponId}
+        busy={locked}
+        statusText={
+          play.actionError
+            ? "Action not saved"
+            : play.pendingDeathSave
+              ? "Death save required"
+              : play.pendingCheck
+                ? "Check ready"
+                : play.pendingAttack && !play.combatBusy && !rollingAttack
+                  ? "Shot ready"
+                  : undefined
+        }
+        tools={
+          <SheetDrawer
+            character={bundle.character}
+            inventory={bundle.inventory}
+            cyberware={bundle.cyberware}
+          />
+        }
+        improvisation={
+          <>
+            <NarrativeLog events={bundle.events.slice(-6)} busy={play.busy || play.opening} />
+            <InputBar
+              onSend={play.submit}
+              onAskOptions={play.askOptions}
+              showOptions={false}
+              busy={locked || Boolean(play.pendingAttack)}
+            />
+          </>
+        }
+        journal={
+          <>
+            <NarrativeLog
+              events={bundle.events}
+              readAloud={bundle.beat?.readAloud}
+              busy={play.busy || play.opening}
+            />
+            {rail}
+          </>
+        }
+        dice={
+          play.actionError || play.pendingAttack || play.pendingCheck || play.pendingDeathSave ? (
+            <>
+              {play.actionError && (
+                <div role="alert">
+                  <p className="text-sm text-destructive">{play.actionError.message}</p>
+                  {play.canRetry && (
+                    <Button size="sm" onClick={play.retry} disabled={play.busy}>
+                      Retry
+                    </Button>
+                  )}
+                </div>
+              )}
+              {play.pendingAttack && (
+                <CombatCard
+                  key={play.pendingAttack.eventId}
+                  pending={play.pendingAttack}
+                  character={bundle.character}
+                  roll={(option, luckSpend) => {
+                    const result = play.rollAttack(play.pendingAttack!, option, luckSpend);
+                    setRollingAttack(true);
+                    return result;
+                  }}
+                  onSettled={(option, result, luckSpent) => {
+                    setRollingAttack(false);
+                    play.commitAttack(play.pendingAttack!, option, result, luckSpent);
+                  }}
+                  onCancel={play.cancelShot}
+                  busy={locked}
+                  capability={play.capability}
+                  luckRemaining={play.luck.remaining}
+                  weaponItemId={raisedWeapon(play.capability, weaponId)?.itemId ?? null}
+                />
+              )}
+              {play.pendingCheck && (
+                <CheckCard
+                  key={play.pendingCheck.eventId}
+                  pending={play.pendingCheck}
+                  roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
+                  onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
+                  busy={play.checkBusy}
+                  luckRemaining={play.luck.remaining}
+                />
+              )}
+              {play.pendingDeathSave && (
+                <DeathSaveCard
+                  key={play.pendingDeathSave.eventId}
+                  pending={play.pendingDeathSave}
+                  roll={() => play.rollDeathSave()}
+                  onSettled={(result) => play.commitDeathSave(play.pendingDeathSave!, result)}
+                  busy={play.deathBusy}
+                />
+              )}
+            </>
+          ) : null
+        }
+      />
+    );
+  }
 
   return (
     <div className="touch-play">
@@ -797,82 +923,6 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
               />
             </div>
           </div>
-          {/*
-            The battlefield, anchored — by the column, not by position: sticky.
-
-            The column has a HEIGHT now, so its children are placed rather than
-            stacked: header, board, one scroll region, input. The board simply
-            does not move, with no z-index to lose and no offset to guess. The
-            sticky version needed the header's height as a magic number and put
-            a translucent header over scrolling text, which smeared.
-
-            The panel itself is the other half of it. A portrait arena drawn to
-            fit the viewport's height is a narrow strip, and the roster, weapons,
-            controls and cover used to stack underneath it — three hundred pixels
-            of text pinned to the screen next to three hundred pixels of empty
-            background. They sit BESIDE the map now, so the panel is as tall as
-            the map rather than the map plus everything else, and the narration
-            gets that height back. See CombatBoard's own notes.
-
-            Only mounted during a fight, so the column out of combat is exactly
-            what it was.
-          */}
-          {play.encounter && (
-            <div className="lg:flex-none">
-              <CombatBoard
-                live={play.encounter}
-                capability={play.capability}
-                onMoveTo={play.moveTo}
-                onEndTurn={play.endTurn}
-                onReload={play.reload}
-                onAttack={play.callShot}
-                weaponId={weaponId}
-                onWeaponId={setWeaponId}
-                // The attack, resolved where it was called. Passed as a node so
-                // the board never learns what a Luck Point is: it decides only
-                // that the dice go under the cover list.
-                dice={
-                  play.pendingAttack ? (
-                    <CombatCard
-                      key={play.pendingAttack.eventId}
-                      pending={play.pendingAttack}
-                      character={bundle.character}
-                      roll={(option, luckSpend) =>
-                        play.rollAttack(play.pendingAttack!, option, luckSpend)
-                      }
-                      onSettled={(option, result, luckSpent) =>
-                        play.commitAttack(play.pendingAttack!, option, result, luckSpent)
-                      }
-                      busy={play.combatBusy}
-                      capability={play.capability}
-                      luckRemaining={play.luck.remaining}
-                      weaponItemId={raisedWeapon(play.capability, weaponId)?.itemId ?? null}
-                    />
-                  ) : null
-                }
-                // Inert while any turn is being written, not only the board's
-                // own: a click resolved against a bundle the server has moved
-                // past would be computed from stale positions.
-                //
-                // Inert after a FAILED one too. A write that threw leaves the
-                // screen showing a fight that did not happen — the dice were
-                // rolled in the browser, so a miss still reads as a miss — and
-                // letting the player keep acting on it buries the error under a
-                // fight nothing is recording.
-                //
-                // Inert while a Death Save is owed. The save comes first on a
-                // Mortally Wounded character's Turn (CP:R pg. 187), so the card
-                // is the only live control until it is rolled.
-                busy={
-                  play.busy ||
-                  play.opening ||
-                  Boolean(play.actionError) ||
-                  Boolean(play.pendingDeathSave) ||
-                  Boolean(play.pendingCheck)
-                }
-              />
-            </div>
-          )}
           {/*
             Everything that grows, in one scroller.
 
