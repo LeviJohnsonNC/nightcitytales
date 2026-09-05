@@ -1,6 +1,10 @@
+import { useCombatFeedback } from "./useCombatFeedback";
+import { playbackHeading } from "./combatFeedback";
 import { isCourtyard } from "./courtyard/propPresentation";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
+  Volume2,
+  VolumeX,
   Crosshair,
   Footprints,
   RotateCcw,
@@ -79,6 +83,7 @@ export function CombatBoard({
   feedback,
   onSkipPlayback,
 }: Props) {
+  const effects = useCombatFeedback(playback);
   const [artReady, setArtReady] = useState(false);
   const [artEnabled, setArtEnabled] = useState(true);
   const handleArtFailure = useCallback(() => {
@@ -154,7 +159,12 @@ export function CombatBoard({
   ].map(project);
   const cameraWidth = 1100 / camera.zoom,
     cameraHeight = 680 / camera.zoom;
-  const viewBox = `${550 - cameraWidth / 2 + camera.x} ${340 - cameraHeight / 2 + camera.y} ${cameraWidth} ${cameraHeight}`;
+  const displayCamera = {
+    ...camera,
+    x: camera.x + effects.offset.x,
+    y: camera.y + effects.offset.y,
+  };
+  const viewBox = `${550 - cameraWidth / 2 + displayCamera.x} ${340 - cameraHeight / 2 + displayCamera.y} ${cameraWidth} ${cameraHeight}`;
   const svgPoint = (svg: SVGSVGElement, e: { clientX: number; clientY: number }) => {
     const matrix = svg.getScreenCTM();
     return matrix ? new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse()) : null;
@@ -189,14 +199,11 @@ export function CombatBoard({
   const playbackActor = playback?.actorId ? live.data[playback.actorId] : null;
   const impactPoint =
     playback?.aim ?? (playback?.targetId ? live.data[playback.targetId]?.position : null);
+  const acting = playback?.actorId ? (live.state.combatants[playback.actorId] ?? active) : active;
   const playbackStatus = playback
-    ? live.state.status !== "active"
-      ? "Combat resolved"
-      : active?.isPlayer
-        ? playback.kind === "turn"
-          ? "Your turn"
-          : "Your action"
-        : `${active?.name ?? "Opponent"} acting`
+    ? acting?.isPlayer
+      ? "Your action"
+      : `${acting?.side === "hostile" ? "Enemy" : "Ally"} turn · ${acting?.name ?? "Combatant"}`
     : null;
   const turnKey = `${live.id}:${live.state.round}:${active?.id}`;
   return (
@@ -214,6 +221,24 @@ export function CombatBoard({
           {tools}
           <button
             className="combat-icon"
+            aria-label={effects.muted ? "Unmute combat sounds" : "Mute combat sounds"}
+            aria-pressed={effects.muted}
+            onClick={effects.toggleMute}
+          >
+            {effects.muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+          <input
+            className="combat-volume"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={effects.volume}
+            onChange={(e) => effects.changeVolume(Number(e.target.value))}
+            aria-label="Combat sound volume"
+          />
+          <button
+            className="combat-icon"
             aria-label="Open combat journal"
             onClick={() => setPanel("journal")}
           >
@@ -223,26 +248,28 @@ export function CombatBoard({
       </header>
       <div className="combat-turn-strip">
         <div
-          className={`combat-turn ${busy && !statusText ? "is-busy" : ""} ${active && !active.isPlayer ? "is-enemy" : ""}`}
+          className={`combat-turn ${busy && !statusText ? "is-busy" : ""} ${acting?.side === "hostile" ? "is-enemy" : ""}`}
           key={turnKey}
         >
           <span className="combat-status-dot" />
-          <strong aria-live="polite">{playbackStatus ?? status}</strong>
+          <strong aria-live={playback ? "off" : "polite"}>{playbackStatus ?? status}</strong>
           <span>ROUND {String(live.state.round).padStart(2, "0")}</span>
         </div>
-        <span className="combat-mobile-budget">
-          Move {remaining?.movement ?? 0} m ·{" "}
-          {remaining?.action
-            ? "Action ready"
-            : remaining?.attacks
-              ? `${remaining.attacks} shot left`
-              : "Action spent"}
-        </span>
+        {!playback && (
+          <span className="combat-mobile-budget">
+            Move {remaining?.movement ?? 0} m ·{" "}
+            {remaining?.action
+              ? "Action ready"
+              : remaining?.attacks
+                ? `${remaining.attacks} shot left`
+                : "Action spent"}
+          </span>
+        )}
         <ol className="combat-initiative" aria-label="Initiative order">
           {actors.map(({ actor }, index) => (
             <li
               key={actor.id}
-              className={`${actor.id === active?.id ? "is-active" : ""} ${actor.defeated ? "is-out" : ""}`}
+              className={`${actor.id === acting?.id ? "is-active" : ""} ${actor.defeated ? "is-out" : ""}`}
             >
               {scenic ? (
                 <span
@@ -264,7 +291,7 @@ export function CombatBoard({
               key={arena.key}
               live={live}
               playback={playback}
-              camera={camera}
+              camera={displayCamera}
               aimTargetId={mode === "shoot" ? (target?.actor.id ?? null) : null}
               onReady={setArtReady}
               onFailure={handleArtFailure}
@@ -823,8 +850,14 @@ export function CombatBoard({
               <SkipForward size={14} /> Skip playback
             </button>
           )}
+          {playback && (
+            <div className="combat-playback-report" role="status" key={playback.sequence}>
+              <span>{playbackHeading(playback)}</span>
+              <p>{playback.text}</p>
+            </div>
+          )}
           <div className={`combat-map-hint ${feedback ? "has-feedback" : ""}`}>
-            {feedback && (
+            {feedback && !playback && (
               <p className="combat-feedback" role="status">
                 {feedback}
               </p>

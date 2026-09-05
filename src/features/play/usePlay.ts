@@ -1048,6 +1048,8 @@ export async function commitAttack(
       actorId: pending.attacker.id,
       targetId: pending.target.id,
       targetHpBefore: pending.target.hp,
+      hit: result.attack.hit,
+      weaponRange: option.weapon.rangeType,
       attackStyle: option.weapon.melee ? "melee" : "ranged",
       text: describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
       impact: result.attack.hit

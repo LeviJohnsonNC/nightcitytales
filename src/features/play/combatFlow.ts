@@ -393,6 +393,7 @@ export async function runNpcTurns(
         dv: coverDv,
         ...(woundPenalty !== 0 ? { modifiers: [{ label: "Wound", value: woundPenalty }] } : {}),
       });
+      const coverBefore = cover;
       const hit = shot.hit
         ? applyCoverDamage(shielding, cover, rollDamage(stats.damageDice).total)
         : null;
@@ -419,6 +420,10 @@ export async function runNpcTurns(
       capture("cover", lines.at(-1)!, {
         actorId: actor.id,
         aim: aimPoint,
+        hit: shot.hit,
+        weaponRange: stats.rangeType,
+        coverPieceId: shielding.id,
+        coverBefore,
         impact: hit
           ? hit.destroyed
             ? "COVER DESTROYED"
@@ -456,6 +461,8 @@ export async function runNpcTurns(
       actorId: actor.id,
       targetId: target.id,
       targetHpBefore: target.hp,
+      hit: result.attack.hit,
+      weaponRange: stats.rangeType,
       attackStyle: stats.rangeType ? "ranged" : "melee",
       impact: result.attack.hit
         ? `HIT · ${target.hp} → ${state.combatants[target.id]?.hp} HP`

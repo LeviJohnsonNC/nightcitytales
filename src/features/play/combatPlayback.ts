@@ -1,4 +1,4 @@
-import type { Point } from "@/engine";
+import type { Point, CoverDamage } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 
 /** Ephemeral presentation of already-saved results. Never used as input to a command. */
@@ -14,6 +14,10 @@ export type CombatFrame = {
   /** Engine snapshot before this attack; presentation never parses the impact prose. */
   targetHpBefore?: number;
   attackStyle?: "ranged" | "melee";
+  hit?: boolean;
+  weaponRange?: string | null;
+  coverPieceId?: string;
+  coverBefore?: CoverDamage;
 };
 export type PlaybackFrame = CombatFrame & {
   sequence: number;

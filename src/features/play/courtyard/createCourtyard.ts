@@ -64,6 +64,7 @@ export function createCourtyard(
   let previousFrame: PlaybackFrame | null | undefined;
   const units = new Map<string, Unit>();
   const scenery: Phaser.GameObjects.Image[] = [];
+  let renderedCover: LiveEncounter["cover"] | null = null;
 
   class CourtyardScene extends Phaser.Scene {
     weather!: Phaser.GameObjects.Graphics;
@@ -105,6 +106,15 @@ export function createCourtyard(
       const frame = model.playback;
       const elapsed = Math.max(0, Date.now() - (frame?.startedAt ?? started));
       const duration = frame ? frameDuration(frame) : 0;
+      paintCover(
+        this,
+        frame?.coverBefore &&
+          frame.animate !== false &&
+          !motion.matches &&
+          elapsed < SHOT_TIMING.impact
+          ? frame.coverBefore
+          : model.live.cover,
+      );
       for (const [id, unit] of units) {
         const actor = model.live.state.combatants[id],
           data = model.live.data[id];
@@ -215,9 +225,41 @@ export function createCourtyard(
             y = unit.container.y + unit.sprite.y + muzzle.y;
           this.flash
             .lineStyle(2, 0xffd599, 0.8)
-            .lineBetween(x, y, p.x, p.y - (frame.kind === "cover" ? 16 : 42));
+            .lineBetween(
+              x,
+              y,
+              p.x + (frame.hit === false ? 32 : 0),
+              p.y - (frame.kind === "cover" ? 16 : 42),
+            );
           this.flash.fillStyle(0xffd599, 0.24).fillCircle(x, y, 18);
           this.flash.fillStyle(0xfff4cb, 0.95).fillCircle(x, y, 4);
+        }
+      }
+      if (
+        frame?.hit === true &&
+        frame.animate !== false &&
+        !motion.matches &&
+        elapsed >= SHOT_TIMING.impact &&
+        elapsed < SHOT_TIMING.impact + 250
+      ) {
+        const aim =
+          frame.aim ?? (frame.targetId ? model.live.data[frame.targetId]?.position : null);
+        if (aim) {
+          const point = project(aim),
+            progress = (elapsed - SHOT_TIMING.impact) / 250;
+          const color = frame.kind === "cover" ? 0xffc783 : 0xc69587;
+          this.flash.fillStyle(color, (1 - progress) * 0.85);
+          for (let i = 0; i < 7; i++) {
+            const angle = i * 2.4;
+            this.flash.fillCircle(
+              point.x + Math.cos(angle) * progress * 22,
+              point.y -
+                (frame.kind === "cover" ? 16 : 42) +
+                Math.sin(angle) * progress * 15 +
+                progress * progress * 12,
+              (1 - progress) * 2.3,
+            );
+          }
         }
       }
     }
@@ -237,30 +279,11 @@ export function createCourtyard(
     }
     previousLive = model.live;
     previousFrame = model.playback;
-    for (const object of scenery) object.destroy();
-    scenery.length = 0;
     for (const [id, unit] of units)
       if (!model.live.state.combatants[id]) {
         unit.container.destroy();
         units.delete(id);
       }
-    for (const status of coverStatuses(arena, model.live.cover)) {
-      const condition = propCondition(status);
-      const kind = propKind(arena.key, status.piece.id);
-      const placement = propPlacement(status, project);
-      const texture = propTexture(kind, condition);
-      const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
-      const height = status.destroyed
-        ? placement.groundDepth + 5
-        : (placement.width * image.height) / image.width;
-      const prop = current.add
-        .image(placement.x, placement.y, texture)
-        .setOrigin(0.5, 1)
-        .setDisplaySize(placement.width, height)
-        .setDepth(placement.depth);
-      prop.setData("destroyed", status.destroyed);
-      scenery.push(prop);
-    }
     for (const id of model.live.state.order) {
       const actor = model.live.state.combatants[id];
       const data = model.live.data[id];
@@ -287,6 +310,29 @@ export function createCourtyard(
             ? "ne"
             : "sw",
       });
+    }
+  }
+  function paintCover(current: CourtyardScene, damage: LiveEncounter["cover"]) {
+    if (renderedCover === damage) return;
+    renderedCover = damage;
+    for (const object of scenery) object.destroy();
+    scenery.length = 0;
+    for (const status of coverStatuses(arena, damage)) {
+      const condition = propCondition(status);
+      const kind = propKind(arena.key, status.piece.id);
+      const placement = propPlacement(status, project);
+      const texture = propTexture(kind, condition);
+      const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
+      const height = status.destroyed
+        ? placement.groundDepth + 5
+        : (placement.width * image.height) / image.width;
+      const prop = current.add
+        .image(placement.x, placement.y, texture)
+        .setOrigin(0.5, 1)
+        .setDisplaySize(placement.width, height)
+        .setDepth(placement.depth);
+      prop.setData("destroyed", status.destroyed);
+      scenery.push(prop);
     }
   }
   function resize() {
