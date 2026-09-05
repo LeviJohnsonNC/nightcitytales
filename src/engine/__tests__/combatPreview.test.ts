@@ -8,7 +8,6 @@ import {
   previewMovement,
   remainingCombatTurn,
   spendCost,
-  walkingPath,
   type Arena,
   type CapabilitySnapshot,
   type WeaponCapability,
@@ -42,11 +41,13 @@ const snapshot = (): CapabilitySnapshot => ({
   failedAttempts: [],
   turn: { ...EMPTY_TURN_ECONOMY, inCombat: true, isPlayerTurn: true, move: 8 },
 });
+// 10x10 squares. The wall fills one column of three, so the only way past it
+// is round an end — the point of the fixture, on the lattice.
 const arena: Arena = {
   key: "test",
   label: "test",
   extent: { width: 20, height: 20 },
-  playerStart: { x: 2, y: 5 },
+  playerStart: { x: 3, y: 5 },
   hostileSlots: [],
   cover: [
     {
@@ -54,86 +55,94 @@ const arena: Arena = {
       label: "wall",
       material: "concrete",
       thickness: "thick",
-      rect: { x: 4, y: 3, width: 2, height: 4 },
+      rect: { x: 4, y: 2, width: 2, height: 6 },
     },
   ],
 };
+/** Squares 1 and 4 of row 2, with the wall's column 2 between them. */
+const START = { x: 3, y: 5 };
+const FINISH = { x: 9, y: 5 };
 const move = (patch: Partial<Parameters<typeof previewMovement>[0]> = {}) =>
   previewMovement({
     arena,
     cover: {},
-    from: { x: 2, y: 5 },
-    to: { x: 8, y: 5 },
+    from: START,
+    to: FINISH,
     capability: snapshot(),
     ...patch,
   });
 
-describe("continuous movement previews", () => {
-  it("routes around solid cover and charges the route rather than the straight line", () => {
+describe("movement previews on the battlemat grid", () => {
+  it("stands on square centres and routes around solid cover", () => {
     const result = move();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.path).toHaveLength(4);
-    expect(result.path[0]).toEqual({ x: 2, y: 5 });
-    expect(result.position).toEqual({ x: 8, y: 5 });
-    expect(result.moved).toBe(8); // round(2*sqrt(8)+2), versus a 6 m straight line
+    expect(result.path[0]).toEqual(START);
+    expect(result.position).toEqual(FINISH);
+    // Every step is a square centre: odd metres, on a 2 m lattice.
+    for (const p of result.path) {
+      expect(p.x % 2).toBe(1);
+      expect(p.y % 2).toBe(1);
+    }
+    // Nobody walks through the wall, and the detour costs more than the 6 m
+    // straight line it replaces.
+    expect(result.path.some((p) => p.x === 5 && p.y >= 3 && p.y <= 7)).toBe(false);
+    expect(result.moved).toBeGreaterThan(6);
     expect(result.cost.metres).toBe(result.moved);
-    expect(result.path.slice(1, -1).every((p) => p.y === 3 || p.y === 7)).toBe(true);
   });
-  it("refuses a detour that costs more than the available Move", () => {
+  it("prices a diagonal step above an orthogonal one", () => {
+    // Four squares of open ground: straight is 4 squares, the dogleg is 3.5.
+    const open = { ...arena, cover: [] };
+    const straight = move({ arena: open, to: { x: 11, y: 5 } });
+    const diagonal = move({ arena: open, to: { x: 11, y: 7 } });
+    expect(straight.ok && diagonal.ok).toBe(true);
+    if (!straight.ok || !diagonal.ok) return;
+    expect(diagonal.moved).toBeGreaterThan(straight.moved);
+  });
+  it("refuses a detour that costs more squares than the Move covers", () => {
     const cap = snapshot();
-    cap.move = 7;
+    cap.move = 5;
     expect(move({ capability: cap }).ok).toBe(false);
   });
   it("does not allow destinations inside cover, outside the arena or non-finite", () => {
     for (const to of [
       { x: 5, y: 5 },
       { x: -1, y: 0 },
+      { x: 40, y: 5 },
       { x: NaN, y: 0 },
     ])
       expect(move({ to }).ok).toBe(false);
   });
+  it("will not slip diagonally through the corner where two crates touch", () => {
+    const pinch = {
+      ...arena,
+      cover: [
+        { ...arena.cover![0]!, id: "a", rect: { x: 4, y: 4, width: 2, height: 2 } },
+        { ...arena.cover![0]!, id: "b", rect: { x: 6, y: 6, width: 2, height: 2 } },
+      ],
+    };
+    const through = move({ arena: pinch, from: { x: 3, y: 7 }, to: { x: 7, y: 5 } });
+    expect(through.ok).toBe(true);
+    if (!through.ok) return;
+    // The route exists, but it goes the long way rather than between the corners.
+    expect(through.path).not.toContainEqual({ x: 5, y: 7 });
+  });
   it("opens the direct route after destruction", () => {
     expect(move({ cover: { wall: 1000 } })).toMatchObject({
       ok: true,
-      path: [
-        { x: 2, y: 5 },
-        { x: 8, y: 5 },
-      ],
+      moved: 6,
+      path: [START, { x: 5, y: 5 }, { x: 7, y: 5 }, FINISH],
     });
   });
   it("supports explicitly walkable scenery", () => {
     expect(
       move({ arena: { ...arena, cover: [{ ...arena.cover![0]!, blocksMovement: false }] } }),
-    ).toMatchObject({
-      ok: true,
-      path: [
-        { x: 2, y: 5 },
-        { x: 8, y: 5 },
-      ],
-    });
-  });
-  it("refuses a room-spanning barrier with no route", () => {
-    const closed = {
-      ...arena,
-      cover: [{ ...arena.cover![0]!, rect: { x: 4, y: 0, width: 2, height: 20 } }],
-    };
-    // Boundaries are point-walkable, so test a destination fully enclosed by four overlapping walls.
-    const box = {
-      ...closed,
-      cover: [
-        { ...arena.cover![0]!, rect: { x: 4, y: 4, width: 6, height: 1 } },
-        { ...arena.cover![0]!, rect: { x: 4, y: 9, width: 6, height: 1 } },
-        { ...arena.cover![0]!, rect: { x: 4, y: 4, width: 1, height: 6 } },
-        { ...arena.cover![0]!, rect: { x: 9, y: 4, width: 1, height: 6 } },
-      ],
-    };
-    expect(walkingPath(box, {}, { x: 2, y: 7 }, { x: 7, y: 7 })).toBeNull();
+    ).toMatchObject({ ok: true, path: [START, { x: 5, y: 5 }, { x: 7, y: 5 }, FINISH] });
   });
   it("uses live wounds and stats, never encounter-start MOVE", () => {
     const cap = snapshot();
-    cap.move = 6;
-    cap.woundState = "serious";
+    cap.move = 7;
+    cap.woundState = "mortal"; // -6 MOVE, floored at 1 square
     expect(move({ capability: cap })).toMatchObject({ ok: false, code: "move_exceeded" });
   });
   it("refuses movement off-turn and after a Move, without spending the Action", () => {
@@ -152,7 +161,8 @@ describe("remaining combat choices", () => {
     const cap = snapshot();
     Object.assign(cap.turn, spendCost(cap.turn, ATTACK_COST, pistol.itemId));
     expect(remainingCombatTurn(cap)).toEqual({
-      movement: 8,
+      movement: 16,
+      movementSquares: 8,
       action: false,
       attacks: 1,
       exhausted: false,
@@ -191,7 +201,8 @@ describe("remaining combat choices", () => {
     const cap = snapshot();
     Object.assign(cap.turn, spendCost(cap.turn, ONE_ACTION));
     expect(remainingCombatTurn(cap)).toMatchObject({
-      movement: 8,
+      movement: 16,
+      movementSquares: 8,
       action: false,
       attacks: 0,
       exhausted: false,

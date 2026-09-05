@@ -32,8 +32,10 @@ LIFE → HOOK → JOB → AFTERMATH → LIFE
 - **Hook** is an offer. `accept_hook` is the only door into a job, and only the
   player presses it.
 - **Job** runs a mission as a beat graph, with combat as a mode inside it rather
-  than a phase of its own. Combat fills the screen with an angled battlefield,
-  movement and targeting previews, and a persistent command bar; the journal
+  than a phase of its own. Combat fills the screen with an angled battlefield on
+  RED's 2 m battlemat grid — every square a Move Action reaches is lit, with the
+  route into the one under the cursor — plus targeting previews and a persistent
+  command bar; the journal
   and freeform intent stay within reach. Saved actions play in sequence with
   skippable movement and shot feedback; routine exchanges use engine-written
   reports without waiting for generated narration.

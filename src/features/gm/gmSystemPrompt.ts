@@ -9,7 +9,7 @@
 export const GM_PROMPT_VERSION = "2.4.0";
 
 import {
-  ARENAS,
+  SELECTABLE_ARENAS,
   FACTIONS,
   OBSERVATIONS,
   OBSERVATION_MEANINGS,
@@ -31,7 +31,7 @@ const FACTION_LIST = FACTIONS.map((f) => `"${f.id}" (${f.name})`).join(", ");
  * hand-typed list in a prompt drifts from the code, and an arena the engine
  * does not know silently becomes open ground.
  */
-const ARENA_LIST = ARENAS.map((a) => `  - "${a.key}" — ${a.label}`).join("\n");
+const ARENA_LIST = SELECTABLE_ARENAS.map((a) => `  - "${a.key}" — ${a.label}`).join("\n");
 
 /**
  * Who can be shooting at you, from the engine's own table.

@@ -1,150 +1,96 @@
 /** Shared, pure decisions for the board, intent parser and committed actions. */
+import { type Arena, type Point, metresBetween } from "./battlefield";
+import type { CoverDamage } from "./cover";
 import {
-  type Arena,
-  type Point,
-  metresBetween,
-  moveToward,
-  segmentIntersectsRect,
-} from "./battlefield";
-import { coverDestroyed, type CoverDamage } from "./cover";
+  centreOf,
+  pathTo,
+  reachableTiles,
+  tileKey,
+  tileOf,
+  type ReachField,
+  type Tile,
+} from "./grid";
 import { findTargetCapability, findWeapon, type CapabilitySnapshot } from "./capability";
 import { judgeAction, type ActionCost, type LegalityVerdict } from "./legality";
+import { combatMoveSquares } from "./combat";
 import { weaponAttackDv, weaponAttackGap, weaponProfile } from "./weaponProfile";
 
 type Refusal = Extract<LegalityVerdict, { ok: false }>;
 export type MovementPreview =
   { ok: true; position: Point; path: Point[]; moved: number; cost: ActionCost } | Refusal;
 
-const EPSILON = 0.000001;
-const inside = (r: { x: number; y: number; width: number; height: number }, p: Point) =>
-  p.x > r.x + EPSILON &&
-  p.x < r.x + r.width - EPSILON &&
-  p.y > r.y + EPSILON &&
-  p.y < r.y + r.height - EPSILON;
-
-/** Shortest walk around intact footprints, with continuous-metre endpoints.
- * Boundary edges are walkable. Legacy actors inside a footprint can leave it.
- * No grid, actor collision, climbing or new movement-rate rule is introduced.
+/**
+ * Everywhere a Move Action can put this character, walked over the 2m lattice.
+ *
+ * One traversal answers both questions the board asks — which squares to light
+ * up, and the route into any one of them — so the highlight and the path can
+ * never disagree.
  */
-export function walkingPath(
-  arena: Arena,
-  damage: CoverDamage,
-  from: Point,
-  to: Point,
-): Point[] | null {
-  const onBoard = (p: Point) =>
-    Number.isFinite(p.x) &&
-    Number.isFinite(p.y) &&
-    p.x >= 0 &&
-    p.y >= 0 &&
-    p.x <= arena.extent.width &&
-    p.y <= arena.extent.height;
-  if (!onBoard(from) || !onBoard(to)) return null;
-  const obstacles = (arena.cover ?? []).filter(
-    (p) => p.blocksMovement !== false && !coverDestroyed(p, damage),
-  );
-  if (obstacles.some((p) => inside(p.rect, to))) return null;
-  const rects = obstacles.filter((p) => !inside(p.rect, from)).map((p) => ({ ...p.rect }));
-  // Adjacent authored sections form one solid footprint, not a zero-width passage.
-  for (let i = 0; i < rects.length; i++) {
-    for (let j = i + 1; j < rects.length; j++) {
-      const a = rects[i]!,
-        b = rects[j]!;
-      if (a.y === b.y && a.height === b.height && a.x <= b.x + b.width && b.x <= a.x + a.width) {
-        const right = Math.max(a.x + a.width, b.x + b.width);
-        a.x = Math.min(a.x, b.x);
-        a.width = right - a.x;
-      } else if (
-        a.x === b.x &&
-        a.width === b.width &&
-        a.y <= b.y + b.height &&
-        b.y <= a.y + a.height
-      ) {
-        const bottom = Math.max(a.y + a.height, b.y + b.height);
-        a.y = Math.min(a.y, b.y);
-        a.height = bottom - a.y;
-      } else continue;
-      rects.splice(j, 1);
-      i = -1;
-      break;
-    }
-  }
-  const clear = (a: Point, b: Point) =>
-    !rects.some((r) =>
-      segmentIntersectsRect(a, b, {
-        x: r.x === 0 ? -EPSILON : r.x + EPSILON,
-        y: r.y === 0 ? -EPSILON : r.y + EPSILON,
-        width:
-          r.width -
-          EPSILON * 2 +
-          (r.x === 0 ? EPSILON * 2 : 0) +
-          (r.x + r.width === arena.extent.width ? EPSILON * 2 : 0),
-        height:
-          r.height -
-          EPSILON * 2 +
-          (r.y === 0 ? EPSILON * 2 : 0) +
-          (r.y + r.height === arena.extent.height ? EPSILON * 2 : 0),
-      }),
-    );
-  if (clear(from, to)) return [from, to];
-  const corners = rects
-    .flatMap((r) => [
-      { x: r.x, y: r.y },
-      { x: r.x + r.width, y: r.y },
-      { x: r.x, y: r.y + r.height },
-      { x: r.x + r.width, y: r.y + r.height },
-    ])
-    .filter((p) => onBoard(p) && !rects.some((r) => inside(r, p)));
-  const nodes = [from, to, ...corners];
-  const distances = nodes.map(() => Infinity);
-  const previous = nodes.map(() => -1);
-  const visited = new Set<number>();
-  distances[0] = 0;
-  while (visited.size < nodes.length) {
-    let current = -1;
-    for (let i = 0; i < nodes.length; i++) {
-      if (!visited.has(i) && (current === -1 || distances[i]! < distances[current]!)) current = i;
-    }
-    if (current < 0 || !Number.isFinite(distances[current]!)) return null;
-    if (current === 1) {
-      const path: Point[] = [];
-      for (let i = 1; i !== -1; i = previous[i]!) path.unshift(nodes[i]!);
-      return path;
-    }
-    visited.add(current);
-    for (let i = 0; i < nodes.length; i++) {
-      if (visited.has(i) || !clear(nodes[current]!, nodes[i]!)) continue;
-      const distance = distances[current]! + metresBetween(nodes[current]!, nodes[i]!);
-      if (distance < distances[i]!) {
-        distances[i] = distance;
-        previous[i] = current;
-      }
-    }
-  }
-  return null;
+export function movementField(input: {
+  arena: Arena;
+  cover: CoverDamage;
+  from: Point;
+  capability: CapabilitySnapshot;
+  /** Where everybody else is standing. */
+  occupied?: Point[];
+}): ReachField {
+  return reachableTiles({
+    arena: input.arena,
+    cover: input.cover,
+    from: tileOf(input.arena, input.from),
+    allowance: combatMoveSquares(input.capability.move, input.capability.woundState),
+    ...(input.occupied ? { occupied: input.occupied } : {}),
+  });
 }
 
-/** Walk as much of a planned route as the allowance permits (NPC movement). */
-export function walkRoute(
-  path: Point[],
-  allowance: number,
-): { position: Point; metres: number; path: Point[] } {
-  let position = path[0]!;
-  let spent = 0;
-  const walked = [position];
-  for (const next of path.slice(1)) {
-    const length = metresBetween(position, next);
-    if (length > allowance - spent) {
-      position = moveToward(position, next, allowance - spent).position;
-      spent = allowance;
-      walked.push(position);
-      break;
+const onGround = (arena: Arena, p: Point) =>
+  Number.isFinite(p.x) &&
+  Number.isFinite(p.y) &&
+  p.x >= 0 &&
+  p.y >= 0 &&
+  p.x <= arena.extent.width &&
+  p.y <= arena.extent.height;
+
+/** Metres walked along a route of tile centres. What the Move actually spends. */
+export function routeMetres(path: Point[]): number {
+  return path.slice(1).reduce((sum, p, i) => sum + metresBetween(path[i]!, p), 0);
+}
+
+/**
+ * The square nearest a destination that this Move can actually reach.
+ *
+ * Hostiles want to close to their weapon's band; they get the same lattice, the
+ * same diagonal price and the same corner rule the player does, so nobody ends
+ * a turn standing between squares or inside a crate.
+ */
+export function walkTowardTile(input: {
+  arena: Arena;
+  cover: CoverDamage;
+  from: Point;
+  toward: Point;
+  /** Squares, not metres. */
+  squares: number;
+  occupied?: Point[];
+}): { position: Point; path: Point[]; metres: number } {
+  const origin = tileOf(input.arena, input.from);
+  const field = reachableTiles({
+    arena: input.arena,
+    cover: input.cover,
+    from: origin,
+    allowance: input.squares,
+    ...(input.occupied ? { occupied: input.occupied } : {}),
+  });
+  let best = field.get(tileKey(origin))!;
+  let bestGap = metresBetween(centreOf(origin), input.toward);
+  for (const reached of field.values()) {
+    const gap = metresBetween(centreOf(reached.tile), input.toward);
+    if (gap < bestGap - 1e-9 || (gap < bestGap + 1e-9 && reached.cost < best.cost)) {
+      best = reached;
+      bestGap = gap;
     }
-    spent += length;
-    position = next;
-    walked.push(position);
   }
-  return { position, metres: Math.round(spent), path: walked };
+  const path = (pathTo(field, best.tile) ?? [origin]).map(centreOf);
+  return { position: path[path.length - 1]!, path, metres: Math.round(routeMetres(path)) };
 }
 
 export function previewMovement(input: {
@@ -153,18 +99,34 @@ export function previewMovement(input: {
   from: Point;
   to: Point;
   capability: CapabilitySnapshot;
+  occupied?: Point[];
+  /** Reuse a field already computed for the same origin, rather than re-walking it. */
+  field?: ReachField;
 }): MovementPreview {
-  const path = walkingPath(input.arena, input.cover, input.from, input.to);
-  if (!path)
-    return { ok: false, code: "move_exceeded", reason: "There is no walking route to that spot." };
-  const moved = Math.round(
-    path.slice(1).reduce((sum, p, i) => sum + metresBetween(path[i]!, p), 0),
-  );
-  if (moved <= 0)
+  // tileOf clamps, which is what an intent wants and not what a board click
+  // wants: a destination off the ground is a refusal, not the nearest corner.
+  if (!onGround(input.arena, input.to))
+    return { ok: false, code: "move_exceeded", reason: "That is not on this ground." };
+  const destination: Tile = tileOf(input.arena, input.to);
+  const origin = tileOf(input.arena, input.from);
+  if (tileKey(destination) === tileKey(origin))
     return { ok: false, code: "move_exceeded", reason: "That would leave you where you are." };
+  const field = input.field ?? movementField(input);
+  const tiles = pathTo(field, destination);
+  if (!tiles)
+    return {
+      ok: false,
+      code: "move_exceeded",
+      reason: "That square is beyond this Move, or nothing walks to it.",
+    };
+  // The route is metres between square centres; the Move is priced in squares,
+  // which the reach field has already bounded. Rounding is for the readout.
+  const path = tiles.map(centreOf);
+  const position = path[path.length - 1]!;
+  const moved = Math.max(1, Math.round(routeMetres(path)));
   const verdict = judgeAction(input.capability, { kind: "move", metres: moved });
   if (!verdict.ok) return verdict;
-  return { ok: true, position: input.to, path, moved, cost: verdict.cost };
+  return { ok: true, position, path, moved, cost: verdict.cost };
 }
 
 /** The very same ranged-shot support and DV used by the attack card. */
@@ -185,4 +147,30 @@ export function previewAttack(capability: CapabilitySnapshot, targetKey: string,
     gap: weaponAttackGap(profile, distance),
     verdict,
   };
+}
+
+/**
+ * "Get closer" / "back off": walk as far toward a spot as the Move allows.
+ *
+ * previewMovement refuses a square it cannot reach, which is right for a board
+ * click and wrong for an intent — a player who says "close on him" means as
+ * close as they can get, not nothing at all.
+ */
+export function previewMovementToward(input: {
+  arena: Arena;
+  cover: CoverDamage;
+  from: Point;
+  toward: Point;
+  capability: CapabilitySnapshot;
+  occupied?: Point[];
+}): MovementPreview {
+  const walked = walkTowardTile({
+    arena: input.arena,
+    cover: input.cover,
+    from: input.from,
+    toward: input.toward,
+    squares: combatMoveSquares(input.capability.move, input.capability.woundState),
+    ...(input.occupied ? { occupied: input.occupied } : {}),
+  });
+  return previewMovement({ ...input, to: walked.position });
 }

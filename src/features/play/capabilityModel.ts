@@ -8,6 +8,7 @@
  * not print is left null for the gate to allow.
  */
 import {
+  TILE_METRES,
   ATTACK_COST,
   currentCombatant,
   EMPTY_TURN_ECONOMY,
@@ -268,7 +269,11 @@ export function renderCapabilityLines(snapshot: CapabilitySnapshot): string[] {
       `Role Ability: ${snapshot.roleAbility.abilityName} at Rank ${snapshot.roleAbility.rank} — nothing above that Rank.`,
     );
   }
-  lines.push(`MOVE ${snapshot.move}, Luck ${snapshot.luck} left, ${snapshot.eurobucks}eb.`);
+  // MOVE is squares; the metres it buys are what the range table is read at.
+  lines.push(
+    `MOVE ${snapshot.move} (${snapshot.move} squares, ${snapshot.move * TILE_METRES} m per Move Action), ` +
+      `Luck ${snapshot.luck} left, ${snapshot.eurobucks}eb.`,
+  );
   if (snapshot.turn.inCombat) {
     const t = snapshot.turn;
     lines.push(

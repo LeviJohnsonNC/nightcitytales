@@ -29,8 +29,8 @@ import {
   rollMorale,
   metresBetween,
   previewMovement,
-  walkingPath,
-  walkRoute,
+  previewMovementToward,
+  walkTowardTile,
   placeHostiles,
   singleShotDV,
   startEncounter as rollInitiativeOrder,
@@ -70,6 +70,7 @@ import {
   hostileCombatant,
   metresApart,
   moveAllowance,
+  moveSquares,
   playerCombatant as buildPlayerCombatant,
   spendTurn,
   type CombatantData,
@@ -346,11 +347,19 @@ export async function runNpcTurns(
         allowance: moveAllowance(stats.move, live_actor.woundState),
         arena,
       });
-      const path = walkingPath(arena, cover, stats.position, step.position);
-      const walked = path
-        ? walkRoute(path, moveAllowance(stats.move, live_actor.woundState))
-        : null;
-      if (walked && walked.metres > 0) {
+      // Hostiles walk the same 2m lattice the player does; the tactical step
+      // says where they want to be, the grid says which square they get.
+      const walked = walkTowardTile({
+        arena,
+        cover,
+        from: stats.position,
+        toward: step.position,
+        squares: moveSquares(stats.move, live_actor.woundState),
+        occupied: Object.entries(data).flatMap(([id, d]) =>
+          id === actor.id || live.state.combatants[id]?.defeated ? [] : [d.position],
+        ),
+      });
+      if (walked.metres > 0) {
         stats = { ...stats, position: walked.position };
         data = { ...data, [actor.id]: stats };
         lines.push(
@@ -588,6 +597,16 @@ async function promptDeathSave(
 // ---------------------------------------------------------------------------
 
 /** The Move and the refusal it might have earned. */
+/** Everybody except this one, so nobody walks onto an occupied square. */
+function othersStanding(live: LiveEncounter, selfId: string): Point[] {
+  return Object.values(live.state.combatants)
+    .filter((c) => c.id !== selfId && !c.defeated)
+    .flatMap((c) => {
+      const at = live.data[c.id];
+      return at ? [at.position] : [];
+    });
+}
+
 export type MovePlayerResult = {
   live: LiveEncounter;
   refusal: Extract<LegalityVerdict, { ok: false }> | null;
@@ -604,6 +623,7 @@ function planStep(input: {
   capability: CapabilitySnapshot;
   from: Point;
   to: Point;
+  occupied: Point[];
 }): PlannedStep {
   const plan = previewMovement({
     arena: arenaFor(input.live.arena),
@@ -611,6 +631,7 @@ function planStep(input: {
     from: input.from,
     to: input.to,
     capability: input.capability,
+    occupied: input.occupied,
   });
   return plan.ok ? plan : { ok: false, refusal: plan };
 }
@@ -646,12 +667,15 @@ export async function movePlayer(input: {
   // cannot back out of a room that has walls.
   const wanted = input.towards === "closer" ? Math.max(0, before - allowance) : before + allowance;
   const aim = stepToRange(from.position, to.position, wanted, allowance);
-  const plan = planStep({
-    live,
-    capability: input.capability,
+  const reached = previewMovementToward({
+    arena: arenaFor(live.arena),
+    cover: live.cover,
     from: from.position,
-    to: clampToArena(arenaFor(live.arena), aim.position),
+    toward: clampToArena(arenaFor(live.arena), aim.position),
+    capability: input.capability,
+    occupied: othersStanding(live, player.id),
   });
+  const plan: PlannedStep = reached.ok ? reached : { ok: false, refusal: reached };
   if (!plan.ok) return { live, refusal: plan.refusal };
   const { position, moved } = plan;
 
@@ -728,6 +752,7 @@ export async function movePlayerTo(input: {
     capability: input.capability,
     from: from.position,
     to: wanted,
+    occupied: othersStanding(live, player.id),
   });
   if (!plan.ok) return { live, refusal: plan.refusal };
   const { position, moved } = plan;

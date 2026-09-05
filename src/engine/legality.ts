@@ -10,9 +10,6 @@
  * hole is visible instead of silently enforced with a made-up value.
  *
  * NOT enforced yet, for want of printed data in src/data/rules/:
- * - metres per Move Action from a MOVE score (so "moved farther than MOVE"
- *   only refuses movement that exceeds MOVE metres, which is the raw stat and
- *   is deliberately conservative — see MOVE_METRES_NOTE);
  * - melee reach in metres (so a melee attack is refused only when the weapon is
  *   melee and the target is beyond MELEE_REACH_UNKNOWN handling, i.e. never on
  *   distance alone);
@@ -34,11 +31,8 @@ import {
   type CapabilitySnapshot,
   type WeaponCapability,
 } from "./capability";
-import { combatMoveAllowance } from "./combat";
+import { combatMoveAllowance, combatMoveSquares } from "./combat";
 import { planReload } from "./reload";
-
-export const MOVE_METRES_NOTE =
-  "Movement is measured against the raw MOVE score in metres; the metres-per-Move-Action rule is not in the rules data.";
 
 /** Cyberware that physically lets a character jack into the Net. */
 export const NETRUN_CYBERWARE = ["interface_plugs", "neural_link"];
@@ -406,10 +400,11 @@ export function judgeAction(
         return no("movement_spent", "They have already moved this Round.");
       }
       const allowance = combatMoveAllowance(snapshot.move, snapshot.woundState);
+      const squares = combatMoveSquares(snapshot.move, snapshot.woundState);
       if (!Number.isFinite(action.metres) || action.metres <= 0 || action.metres > allowance) {
         return no(
           "move_exceeded",
-          `That is ${action.metres} m in one Move; their MOVE covers ${allowance} m.`,
+          `That is ${action.metres} m in one Move; their MOVE covers ${squares} squares (${allowance} m).`,
         );
       }
       // A Move is not the Action. Spending metres is what stops a second one.
@@ -468,6 +463,11 @@ export function remainingCombatTurn(snapshot: CapabilitySnapshot) {
     enabled && snapshot.turn.metresMoved === 0
       ? combatMoveAllowance(snapshot.move, snapshot.woundState)
       : 0;
+  // The board spends squares; the readout and the range table stay in metres.
+  const movementSquares =
+    enabled && snapshot.turn.metresMoved === 0
+      ? combatMoveSquares(snapshot.move, snapshot.woundState)
+      : 0;
   const action = enabled && !snapshot.turn.actionUsed;
   const attacks =
     enabled && (action || snapshot.turn.shotsThisRound > 0)
@@ -485,6 +485,7 @@ export function remainingCombatTurn(snapshot: CapabilitySnapshot) {
       : 0;
   return {
     movement,
+    movementSquares,
     action,
     attacks,
     exhausted: enabled && movement === 0 && !action && attacks === 0,

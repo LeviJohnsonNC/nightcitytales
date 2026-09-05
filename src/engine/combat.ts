@@ -16,6 +16,7 @@ import type { RollModifier } from "./rollLog";
 import type { RNG } from "./types";
 import { AUTOFIRE_MAX_MULTIPLIER, type AutofireRangeType } from "./combatTables";
 import type { WoundStateCode } from "./campaign";
+import { TILE_METRES } from "./grid";
 
 // ===========================================================================
 // Initiative — REF + 1d10, acting from highest to lowest (CP:R pg. 165).
@@ -269,7 +270,21 @@ export function rollDeathSave(
   return { roll, penalty, effective, autoFail, survived, penaltyAfter: penalty + 1 };
 }
 
-/** Retains the existing MOVE allowance; rules conversion is not a rendering decision. */
-export function combatMoveAllowance(move: number, wound: WoundStateCode): number {
+/**
+ * Squares a Move Action covers (CP:R pg. 168): "a number of squares (if playing
+ * on a grid) equal to their MOVE". The Mortally Wounded −6 floors at MOVE 1,
+ * and it is a penalty to the STAT, so it is applied before the metre
+ * conversion rather than after it.
+ */
+export function combatMoveSquares(move: number, wound: WoundStateCode): number {
   return move <= 0 ? 0 : Math.max(1, move + woundMovePenalty(wound));
+}
+
+/**
+ * The same allowance in metres: "MOVE x 2 m/yds" off the grid, one 2 m square
+ * on it. The engine measures in metres, so everything that spends movement
+ * spends these.
+ */
+export function combatMoveAllowance(move: number, wound: WoundStateCode): number {
+  return combatMoveSquares(move, wound) * TILE_METRES;
 }

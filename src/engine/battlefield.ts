@@ -9,11 +9,12 @@
  * invisibly. This module takes that away: distance is MEASURED between two
  * positions the engine placed and the engine moves.
  *
- * Positions are continuous metres rather than grid squares on purpose. RED's
- * range bands are 6/12/25/50/100/200/400/800 and MOVE is a raw metre score, so
- * a 2m grid would quantise both — MOVE 6 becomes 3 tiles, MOVE 7 becomes three
- * and a half. A UI is free to draw squares over this; the numbers underneath
- * stay the printed ones.
+ * Positions are metres, and RANGE is measured in continuous metres on purpose:
+ * RED's bands are 6/12/25/50/100/200/400/800, and a tile size would quantise
+ * them. MOVEMENT is the other half, and the book does grid it — a Move Action
+ * covers MOVE squares of 2 m each (pg. 168) — so ./grid.ts lays that lattice
+ * over these same metres. Bodies stand on square centres; the distance between
+ * two of them is still measured, not counted.
  *
  * Pure: no React, no backend, no randomness that is not handed in.
  */
@@ -108,14 +109,95 @@ export type Arena = {
    * cover-seeking AI. Choosing WHERE to go is a later feature.
    */
   cover?: CoverPiece[];
+  /**
+   * Superseded. Still resolvable, because a fight already in progress keeps the
+   * ground it started on, but no longer offered to the GM as somewhere new to
+   * start one.
+   */
+  retired?: boolean;
 };
 
 export const ARENAS: Arena[] = [
+  // The courtyard on the 2m battlemat lattice (CP:R pg. 168): every section sits
+  // on whole squares and every standing position is a square's centre, so the
+  // grid the player is shown is the geometry the engine walks. Cover keeps its
+  // ids and its tactical shape; each piece moved at most 1.5m to land on the
+  // lattice. The two earlier layouts are retired below rather than edited.
+  {
+    key: "night_shift_grid",
+    label: "Night Shift courtyard",
+    extent: { width: 24, height: 24 },
+    playerStart: { x: 5, y: 5 },
+    hostileSlots: [
+      { x: 17, y: 15 },
+      { x: 21, y: 11 },
+      { x: 9, y: 19 },
+    ],
+    cover: [
+      {
+        id: "cargo_west",
+        label: "a sealed cargo crate",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 6, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "generator",
+        label: "a yellow generator housing",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 12, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "cargo_east",
+        label: "an armored cargo crate",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 16, y: 6, width: 2, height: 2 },
+      },
+      {
+        id: "dumpster",
+        label: "a loading bay dumpster",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 10, y: 16, width: 2, height: 2 },
+      },
+      {
+        id: "truck_cargo",
+        label: "the delivery truck's cargo section",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 12, y: 2, width: 2, height: 2 },
+      },
+      {
+        id: "truck_cab",
+        label: "the delivery truck's cab and engine block",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 14, y: 2, width: 2, height: 2 },
+      },
+      {
+        id: "concrete",
+        label: "a concrete roadblock",
+        material: "concrete",
+        thickness: "thick",
+        rect: { x: 8, y: 4, width: 2, height: 2 },
+      },
+      {
+        id: "pallets",
+        label: "a timber packing case on pallets",
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 4, y: 14, width: 2, height: 2 },
+      },
+    ],
+  },
   // A new key freezes the original courtyard for encounters already in progress.
   // Vehicle halves remain independent 2m RED sections, never one shared HP pool.
   {
     key: "night_shift_yard",
-    label: "Night Shift courtyard",
+    label: "Night Shift courtyard (pre-grid layout)",
+    retired: true,
     extent: { width: 24, height: 24 },
     playerStart: { x: 5, y: 5 },
     hostileSlots: [
@@ -185,6 +267,7 @@ export const ARENAS: Arena[] = [
   {
     key: "night_shift",
     label: "Night Shift courtyard (original layout)",
+    retired: true,
     extent: { width: 24, height: 24 },
     playerStart: { x: 5, y: 5 },
     hostileSlots: [
@@ -512,6 +595,9 @@ export const DEFAULT_ARENA_KEY = "open_ground";
 
 /** Every arena key, for building the model's closed list from the data itself. */
 export const ARENA_KEYS: string[] = ARENAS.map((a) => a.key);
+
+/** The arenas a NEW fight may start in. Retired layouts resolve but are not offered. */
+export const SELECTABLE_ARENAS: Arena[] = ARENAS.filter((a) => !a.retired);
 
 export function isArenaKey(value: unknown): value is string {
   return typeof value === "string" && ARENA_KEYS.includes(value);
