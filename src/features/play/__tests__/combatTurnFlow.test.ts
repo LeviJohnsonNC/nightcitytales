@@ -220,6 +220,23 @@ beforeEach(() => {
 });
 
 describe("shipping turn orchestration", () => {
+  it("publishes player attack HP from before the saved outcome", async () => {
+    const { subscribeCombatFrames } = await import("../combatPlayback");
+    const b = bundle();
+    const listener = vi.fn();
+    const stop = subscribeCombatFrames(b.campaign.id, listener);
+    try {
+      await shoot(b);
+      expect(listener.mock.calls[0]?.[0][0]).toMatchObject({
+        targetId: "h",
+        targetHpBefore: b.encounter!.state.combatants["h"]!.hp,
+        attackStyle: "ranged",
+        live: { version: 1 },
+      });
+    } finally {
+      stop();
+    }
+  });
   it("shoots without handing over or asking the GM for the next action", async () => {
     await shoot(bundle());
     expect(io.npc).not.toHaveBeenCalled();

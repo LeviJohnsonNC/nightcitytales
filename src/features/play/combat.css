@@ -1150,3 +1150,10 @@
     margin-top: 10px;
   }
 }
+/* Scenic shots originate at the directional sprite's muzzle in Phaser. */
+.combat-scenic .combat-tracer {
+  visibility: hidden;
+}
+.combat-scenic .combat-impact {
+  animation-delay: 220ms;
+}

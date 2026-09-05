@@ -1,6 +1,6 @@
 # Night Shift courtyard — visual proof
 
-Review the look before expanding the map or investing in full animation sets.
+The courtyard visual proof now includes the first character animation pass.
 Open `/combat`, select **Night Shift courtyard**, choose a character/opposition,
 and launch. This uses the existing campaign encounter creation and `/play/:id`
 turn loop. The harness writes real campaign data, as it did before this change.
@@ -19,6 +19,13 @@ Existing encounters on other maps retain the diagram renderer.
   camera reproduces SVG letterboxing, zoom and pan exactly.
 - Saved playback frames animate along the real path, at constant speed. Camera
   changes do not restart playback. The renderer cannot move, damage or save a unit.
+- Four screen-facing directions, a four-pose walking cycle, target-facing aim,
+  firing recoil, HP-loss reactions, and a hurt-to-prone death transition. Persistent
+  unit objects retain facing through saved snapshots; pose changes never move feet
+  off the engine path. Firing effects use the registered barrel position.
+- Death poses require a resolved Death Save receipt (`exitReason: dead`) saved in
+  combatant JSON. Zero HP, withdrawal/surrender, and legacy defeated units are not
+  assumed dead. Skipping or reloading keeps the saved outcome without replaying it.
 - Diagram toggle; the diagram also stays available during loading, asset failure,
   or WebGL context loss. Select Scenic view to retry after a graphics failure.
 - Reduced-motion preference suppresses ambient rain, interpolated movement and
@@ -26,26 +33,31 @@ Existing encounters on other maps retain the diagram renderer.
 
 ## Deliberately provisional
 
-This is the first visual review, not the completed art milestone. Characters are
-static representative mercenary poses, not the player's saved appearance or
-finished directional animation sheets. Hostiles share one art proxy. Movement is
-sprite translation, not a walk cycle. Destroyed crates flatten and darken; authored
-wreckage, a vehicle, additional prop variety, attack/death animations, sound and the
-full HUD redesign follow the visual review. Lighting is primarily baked into the
-art; this is not a 3D renderer or a demonstration of real-time normal-map lighting.
+This remains a small pre-rendered sprite set, not a fully rigged character system.
+The player and hostiles use representative mercenaries rather than the player's
+saved appearance. Four directions and four walking poses establish movement;
+firing and hurt are single authored poses with small recoil/settle motion, and
+death transitions from hurt into an authored prone pose. The hostile's east views
+mirror inspected west-facing rows. Weapon-specific silhouettes and melee attack
+poses remain future art work; melee playback does not emit gunfire effects.
+Destroyed crates flatten and darken. Authored wreckage, a vehicle, additional prop
+variety, sound and the full HUD redesign follow this character pass. Lighting is
+primarily baked into the art, not real-time normal-map lighting.
 
 The environment image contains only unobstructed floor and perimeter architecture.
 A faint dashed boundary marks the playable inset, which is smaller than the illustrated floor. New cover is always a
 separate object; never paint a gameplay obstacle into that background. Its four
 crates are the engine's cover sections, not independently positioned decorations.
 
-The four PNGs are proof sources (7.5 MB total). The separate renderer chunk is
-360 KB gzipped in the production build and is excluded from the server bundle. At upload, character/prop textures
-are reduced to 192/256 pixels wide and their edge-connected light matte is keyed
-out. Original GPU sprite textures are released after that conversion. This keeps
-white details enclosed by a silhouette, but future animation sheets should have
-proper authored alpha and compressed delivery assets. Desktop rendering targets
-60 fps; this is a target, not a measured guarantee on players' devices.
+Source PNGs remain unchanged. The renderer loads ground, crate and two animation
+sheets; the original standalone character PNGs remain as art references. On upload,
+edge-connected light matte is keyed out and each animation sheet is normalized into
+one 1024 × 512 atlas (32 cells). Curated crop boundaries avoid clipped heads and
+prone bodies, torso registration stabilizes horizontal placement, and a common
+standing height anchors the feet. The crate uploads at 256 pixels wide. Source GPU
+textures are released after conversion. Proper authored alpha and compressed delivery
+assets remain useful follow-up work. Desktop rendering targets 60 fps; this is a
+target, not a measured guarantee on players' devices.
 
 ## Asset provenance and prompts
 
@@ -76,14 +88,30 @@ renderer handles it as described above.
 
 > Use case: stylized-concept. One isolated square industrial cargo crate for a realistic pre-rendered isometric cyberpunk tactics game. Orthographic elevated 30 degree view, front corner pointing down, symmetrical left and right faces, square footprint, low squat height. Dark weathered blue steel frame with olive polymer panels, metal latches, chipped paint, tiny amber identification label, fine rain droplets. Cyan rim on left, crimson rim on right, top readable. No text beyond small illegible serial markings. Full object centered, generous margin, entirely visible. On a solid PURE WHITE background with NO shadow, NO glow outside silhouette, NO floor, no other objects. 1024x1024. Crisp game-ready silhouette, highest material detail.
 
+**mercenary-animation.png** and **hostile-animation.png** — generated with the
+built-in image tool using the corresponding standalone character above as the
+appearance reference. Output is 1448 × 1086, eight columns by four rows. The
+runtime metadata follows inspected art rather than trusting requested row labels.
+
+Mercenary prompt:
+
+> Use case: stylized-concept. Create a production SPRITE SHEET derived from the reference mercenary, same navy armor, cyan trim, male face and compact rifle, realistic pre-rendered 3D isometric game art. Reference is appearance only. EXACTLY 8 columns and 4 rows of equally sized cells, 32 complete sprites, on uniform pure white background. Wide landscape 2048x1536 image. No grid lines or labels. Every sprite fits wholly inside its own cell with generous white margin and identical scale. Feet centered horizontally at 85% of cell height; heads at 15%. Orthographic tactical camera elevated 30 degrees. Row 1 faces upper-right (back three-quarter). Row 2 faces lower-right (front three-quarter). Row 3 faces lower-left (front three-quarter). Row 4 faces upper-left (back three-quarter). IN EACH ROW columns left-to-right: 1 standing aiming rifle; 2 walking left foot forward and right foot back; 3 walking passing pose feet near together; 4 walking right foot forward left foot back; 5 walking opposite passing pose; 6 firing rifle with small recoil lean (NO muzzle flash); 7 recoiling from torso impact knees bent (NO blood); 8 collapsed on ground lying prone, body fully in cell. Keep exact same outfit, body size and camera across all cells. Walking arms hold rifle stable but legs visibly change. Rows must be perfectly aligned in four equal horizontal bands. No cropped bodies, no extra sprites, no shadows, no floor, no background graphics.
+
+Hostile prompt: identical except replacing “reference mercenary, same navy armor,
+cyan trim, male face and compact rifle” with “reference hostile, same black armor,
+crimson panels, shaved head, red cybernetic eye and compact rifle”.
+
 ## Verification
 
-- 1,628 tests pass, including camera alignment for desktop and both mobile shapes,
+- 1,640 tests pass. Regression coverage includes animation timing, route-corner facing, saved HP
+  snapshots, death versus withdrawal receipts, skip and reduced motion, plus camera alignment for desktop and both mobile shapes,
   path interpolation, valid spawn placement, and the existing combat flow tests.
 - Type checking and production build pass. Changed-file lint passes; repository
   lint retains the existing errors in `gen_routes.cjs` and `previewAuthStorage.ts`.
 - Browser inspection used the shipping CombatBoard with a temporary rendering
   fixture: scenic rendering, zoom, keyboard movement preview/confirmation, cover
   inspection/destruction, portrait and landscape frames, and forced WebGL loss.
+  The character pass additionally inspected walking around a corner, firing/hit
+  poses, muzzle alignment at zoom, death, withdrawal and skipped playback.
   The fixture was removed. Authenticated database persistence was not browser-tested
   in this environment; its existing code paths and regression tests are retained.

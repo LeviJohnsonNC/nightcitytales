@@ -11,8 +11,15 @@ export type CombatFrame = {
   path?: Point[];
   aim?: Point;
   impact?: string;
+  /** Engine snapshot before this attack; presentation never parses the impact prose. */
+  targetHpBefore?: number;
+  attackStyle?: "ranged" | "melee";
 };
-export type PlaybackFrame = CombatFrame & { sequence: number; animate?: boolean };
+export type PlaybackFrame = CombatFrame & {
+  sequence: number;
+  animate?: boolean;
+  startedAt?: number;
+};
 const listeners = new Map<string, Set<(frames: PlaybackFrame[]) => void>>();
 let sequence = 0;
 export function publishCombatFrames(campaignId: string, frames: CombatFrame[]) {
@@ -63,7 +70,7 @@ export function createPlaybackQueue(
       onChange({ frame, playing: false });
       return;
     }
-    frame = { ...next, animate: !reducedMotion };
+    frame = { ...next, animate: !reducedMotion, startedAt: Date.now() };
     onChange({ frame, playing: true });
     timer = setTimeout(step, reducedMotion ? 80 : frameDuration(frame));
   };

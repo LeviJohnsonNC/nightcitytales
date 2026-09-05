@@ -271,6 +271,7 @@ export async function runNpcTurns(
     const begun = beginTurn(state);
     state = begun.state;
     if (begun.deathSave) {
+      if (begun.died) data = { ...data, [actor.id]: { ...data[actor.id]!, exitReason: "dead" } };
       await logDeathSave(campaignId, begun.deathSave, {
         combatantName: actor.name,
         died: begun.died,
@@ -301,6 +302,7 @@ export async function runNpcTurns(
       lines.push(describeMorale(actor.name, check));
       if (check.broke) {
         state = defeatCombatant(state, actor.id);
+        data = { ...data, [actor.id]: { ...data[actor.id]!, exitReason: "withdrawn" } };
         capture("status", lines.at(-1)!, { actorId: actor.id });
         continue;
       }
@@ -453,6 +455,8 @@ export async function runNpcTurns(
     capture("attack", lines.at(-1)!, {
       actorId: actor.id,
       targetId: target.id,
+      targetHpBefore: target.hp,
+      attackStyle: stats.rangeType ? "ranged" : "melee",
       impact: result.attack.hit
         ? `HIT · ${target.hp} → ${state.combatants[target.id]?.hp} HP`
         : "MISS",

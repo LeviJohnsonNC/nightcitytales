@@ -3,50 +3,33 @@ import { arenaFor, coverStatuses } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { battlefieldProjection } from "../battlefieldProjection";
 import { frameDuration, type PlaybackFrame } from "../combatPlayback";
-import { courtyardCamera, routePosition } from "./courtyardPresentation";
+import { courtyardCamera } from "./courtyardPresentation";
+import {
+  animationCell,
+  facingFor,
+  movementSample,
+  muzzleOffset,
+  poseFor,
+  SHOT_TIMING,
+  CHARACTER_FRAME,
+  type Facing,
+} from "./characterAnimation";
+import { clearMatte, createCharacterAtlas } from "./characterTextures";
 
 export type CourtyardModel = {
   live: LiveEncounter;
   playback?: PlaybackFrame | null | undefined;
+  aimTargetId?: string | null;
   camera: { x: number; y: number; zoom: number };
 };
 export type CourtyardRenderer = { sync: (model: CourtyardModel) => void; destroy: () => void };
 
-// Generated proof assets use a light matte. Key only the edge-connected matte
-// when uploading textures; bright detail enclosed by the character is preserved.
-// Production animation sheets should supply authored alpha instead.
-function clearMatte(ctx: CanvasRenderingContext2D, width: number, height: number) {
-  const pixels = ctx.getImageData(0, 0, width, height);
-  const visited = new Uint8Array(width * height);
-  const queue = new Int32Array(width * height);
-  let head = 0,
-    tail = 0;
-  const add = (index: number) => {
-    if (index < 0 || index >= visited.length || visited[index]) return;
-    visited[index] = 1;
-    const offset = index * 4;
-    if (Math.min(pixels.data[offset]!, pixels.data[offset + 1]!, pixels.data[offset + 2]!) < 205)
-      return;
-    queue[tail++] = index;
-  };
-  for (let x = 0; x < width; x++) {
-    add(x);
-    add((height - 1) * width + x);
-  }
-  for (let y = 0; y < height; y++) {
-    add(y * width);
-    add(y * width + width - 1);
-  }
-  while (head < tail) {
-    const index = queue[head++]!;
-    pixels.data[index * 4 + 3] = 0;
-    if (index % width) add(index - 1);
-    if (index % width < width - 1) add(index + 1);
-    add(index - width);
-    add(index + width);
-  }
-  ctx.putImageData(pixels, 0, 0);
-}
+type Unit = {
+  container: Phaser.GameObjects.Container;
+  sprite: Phaser.GameObjects.Image;
+  shadow: Phaser.GameObjects.Ellipse;
+  facing: Facing;
+};
 
 export function createCourtyard(
   host: HTMLElement,
@@ -63,37 +46,44 @@ export function createCourtyard(
   let started = 0;
   let previousLive: LiveEncounter | null = null;
   let previousFrame: PlaybackFrame | null | undefined;
-  const units = new Map<string, Phaser.GameObjects.Container>();
+  const units = new Map<string, Unit>();
   const scenery: Phaser.GameObjects.Image[] = [];
 
   class CourtyardScene extends Phaser.Scene {
     weather!: Phaser.GameObjects.Graphics;
     flash!: Phaser.GameObjects.Graphics;
     preload() {
-      for (const key of ["ground", "crate", "mercenary", "hostile"])
+      for (const key of ["ground", "crate", "mercenary-animation", "hostile-animation"])
         this.load.image(`source-${key}`, `/images/combat/night-shift/${key}.png`);
       this.load.on("loaderror", onFailure);
     }
     create() {
       if (disposed) return;
       if (
-        ["ground", "crate", "mercenary", "hostile"].some(
+        ["ground", "crate", "mercenary-animation", "hostile-animation"].some(
           (key) => !this.textures.exists(`source-${key}`),
         )
       ) {
         onFailure();
         return;
       }
-      for (const key of ["crate", "mercenary", "hostile"]) {
-        const source = this.textures.get(`source-${key}`).getSourceImage() as HTMLImageElement;
-        const width = key === "crate" ? 256 : 192;
-        const height = Math.round((width * source.height) / source.width);
-        const texture = this.textures.createCanvas(key, width, height)!;
-        const ctx = texture.context;
-        ctx.drawImage(source, 0, 0, width, height);
-        clearMatte(ctx, width, height);
-        texture.refresh();
-        this.textures.remove(`source-${key}`);
+      try {
+        for (const key of ["crate"]) {
+          const source = this.textures.get(`source-${key}`).getSourceImage() as HTMLImageElement;
+          const width = 256;
+          const height = Math.round((width * source.height) / source.width);
+          const texture = this.textures.createCanvas(key, width, height)!;
+          const ctx = texture.context;
+          ctx.drawImage(source, 0, 0, width, height);
+          clearMatte(ctx, width, height);
+          texture.refresh();
+          this.textures.remove(`source-${key}`);
+        }
+        createCharacterAtlas(this, "mercenary");
+        createCharacterAtlas(this, "hostile");
+      } catch {
+        onFailure();
+        return;
       }
       this.add.image(550, 350, "source-ground").setDisplaySize(1200, 800).setDepth(-1000);
       // Baked lighting establishes the look. Small additive pools support it.
@@ -111,25 +101,78 @@ export function createCourtyard(
     override update(time: number) {
       if (!ready || disposed) return;
       const frame = model.playback;
-      if (
-        frame?.kind === "move" &&
-        frame.actorId &&
-        frame.path &&
-        frame.animate !== false &&
-        !motion.matches
-      ) {
-        const progress = Math.min(1, Math.max(0, (this.time.now - started) / frameDuration(frame)));
-        const point = routePosition(frame.path, progress);
-        const unit = units.get(frame.actorId);
-        if (point && unit) {
-          const p = project(point);
-          unit.setPosition(p.x, p.y).setDepth(p.y);
+      const elapsed = Math.max(0, Date.now() - (frame?.startedAt ?? started));
+      const duration = frame ? frameDuration(frame) : 0;
+      for (const [id, unit] of units) {
+        const actor = model.live.state.combatants[id],
+          data = model.live.data[id];
+        if (!actor || !data) continue;
+        let position = data.position;
+        const moving = frame?.kind === "move" && frame.actorId === id && frame.path;
+        if (moving) {
+          const sample = movementSample(
+            moving,
+            motion.matches || frame.animate === false ? 1 : elapsed / duration,
+          );
+          if (sample.position) position = sample.position;
+          if (sample.from && sample.to)
+            unit.facing = facingFor(project(sample.from), project(sample.to), unit.facing);
         }
+        const p = project(position);
+        unit.container.setPosition(p.x, p.y).setDepth(p.y);
+        let aim =
+          actor.isPlayer && model.aimTargetId ? model.live.data[model.aimTargetId]?.position : null;
+        if (frame?.actorId === id && (frame.kind === "attack" || frame.kind === "cover"))
+          aim = frame.aim ?? (frame.targetId ? model.live.data[frame.targetId]?.position : null);
+        if (aim && !moving) unit.facing = facingFor(p, project(aim), unit.facing);
+        const pose = poseFor({
+          actor,
+          exitReason: data.exitReason,
+          frame,
+          elapsed,
+          movementDuration: duration,
+          reducedMotion: motion.matches,
+        });
+        const cell = animationCell(unit.facing, pose, elapsed, !actor.isPlayer);
+        unit.sprite.setFrame(cell.frame).setFlipX(cell.flipX);
+        const animated = !motion.matches && frame?.animate !== false;
+        // A small recoil/settle supports the authored pose; feet never drive position.
+        const recoil =
+          pose === "fire" && animated
+            ? Math.sin(
+                Math.min(
+                  1,
+                  (elapsed - SHOT_TIMING.fire) / (SHOT_TIMING.recover - SHOT_TIMING.fire),
+                ) * Math.PI,
+              )
+            : 0;
+        const side = unit.facing.endsWith("e") ? 1 : -1;
+        const fall =
+          pose === "fall"
+            ? Math.min(
+                1,
+                (elapsed - SHOT_TIMING.impact) / (SHOT_TIMING.settle - SHOT_TIMING.impact),
+              )
+            : 1;
+        const breathe =
+          pose === "aim" && !actor.defeated && animated
+            ? Math.sin(time / 650 + id.length) * 0.35
+            : 0;
+        unit.sprite
+          .setPosition(
+            -side * recoil * 2,
+            -recoil + breathe - (pose === "fall" ? (1 - fall) * 5 : 0),
+          )
+          .setAngle(pose === "hurt" && animated ? -side * 4 : 0);
+        unit.sprite.setAlpha(actor.defeated && data.exitReason !== "dead" ? 0.4 : 1);
+        if (actor.defeated && data.exitReason !== "dead") unit.sprite.setTint(0x879aa5);
+        else unit.sprite.clearTint();
+        unit.shadow.setSize(pose === "dead" || pose === "fall" ? 55 : 30, 12);
       }
       for (const prop of scenery) {
         if (prop.getData("destroyed")) continue;
         const obstructs = [...units.values()].some(
-          (unit) =>
+          ({ container: unit }) =>
             unit.y < prop.depth &&
             unit.y > prop.y - prop.displayHeight * 0.75 &&
             Math.abs(unit.x - prop.x) < prop.displayWidth * 0.4,
@@ -150,17 +193,29 @@ export function createCourtyard(
       if (
         frame &&
         ["attack", "cover"].includes(frame.kind) &&
+        frame.attackStyle !== "melee" &&
         frame.animate !== false &&
         !motion.matches &&
-        this.time.now - started < 110 &&
+        elapsed >= SHOT_TIMING.fire &&
+        elapsed < SHOT_TIMING.impact + 80 &&
         frame.actorId
       ) {
-        const position = model.live.data[frame.actorId]?.position;
-        if (position) {
-          const p = project(position);
-          const muzzleX = p.x + (model.live.state.combatants[frame.actorId]?.isPlayer ? 16 : -16);
-          this.flash.fillStyle(0xffd599, 0.24).fillCircle(muzzleX, p.y - 35, 22);
-          this.flash.fillStyle(0xfff4cb, 0.95).fillCircle(muzzleX, p.y - 35, 5);
+        const unit = units.get(frame.actorId);
+        const aim =
+          frame.aim ?? (frame.targetId ? model.live.data[frame.targetId]?.position : null);
+        if (unit && aim) {
+          const muzzle = muzzleOffset(
+              unit.facing,
+              !model.live.state.combatants[frame.actorId]?.isPlayer,
+            ),
+            p = project(aim);
+          const x = unit.container.x + unit.sprite.x + muzzle.x,
+            y = unit.container.y + unit.sprite.y + muzzle.y;
+          this.flash
+            .lineStyle(2, 0xffd599, 0.8)
+            .lineBetween(x, y, p.x, p.y - (frame.kind === "cover" ? 16 : 42));
+          this.flash.fillStyle(0xffd599, 0.24).fillCircle(x, y, 18);
+          this.flash.fillStyle(0xfff4cb, 0.95).fillCircle(x, y, 4);
         }
       }
     }
@@ -173,13 +228,20 @@ export function createCourtyard(
       previousFrame?.sequence !== model.playback?.sequence ||
       previousFrame?.animate !== model.playback?.animate
     )
-      started = current.time.now;
+      started = Date.now();
+    if (previousLive && previousLive.id !== model.live.id) {
+      for (const unit of units.values()) unit.container.destroy();
+      units.clear();
+    }
     previousLive = model.live;
     previousFrame = model.playback;
     for (const object of scenery) object.destroy();
     scenery.length = 0;
-    for (const unit of units.values()) unit.destroy();
-    units.clear();
+    for (const [id, unit] of units)
+      if (!model.live.state.combatants[id]) {
+        unit.container.destroy();
+        units.delete(id);
+      }
     for (const status of coverStatuses(arena, model.live.cover)) {
       const r = status.piece.rect;
       const p = project({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
@@ -200,20 +262,28 @@ export function createCourtyard(
       const actor = model.live.state.combatants[id];
       const data = model.live.data[id];
       if (!actor || !data) continue;
+      if (units.has(id)) continue;
       const p = project(data.position);
       const shadow = current.add.ellipse(0, 0, 30, 12, 0x01050a, 0.6);
       const sprite = current.add
-        .image(0, 0, actor.isPlayer ? "mercenary" : "hostile")
-        .setOrigin(0.5, 0.965)
-        .setDisplaySize(56, 84);
-      if (actor.defeated)
-        sprite
-          .setAngle(78)
-          .setScale(sprite.scaleX * 0.8, sprite.scaleY * 0.8)
-          .setAlpha(0.5)
-          .setY(-7);
-      const unit = current.add.container(p.x, p.y, [shadow, sprite]).setDepth(p.y);
-      units.set(id, unit);
+        .image(0, 0, actor.isPlayer ? "mercenary" : "hostile", 0)
+        .setOrigin(0.5, CHARACTER_FRAME.foot / CHARACTER_FRAME.size);
+      const container = current.add.container(p.x, p.y, [shadow, sprite]).setDepth(p.y);
+      const other = model.live.state.order.find((otherId) => {
+        const otherActor = model.live.state.combatants[otherId];
+        return otherActor && !otherActor.defeated && otherActor.side !== actor.side;
+      });
+      const toward = other ? model.live.data[other]?.position : null;
+      units.set(id, {
+        container,
+        sprite,
+        shadow,
+        facing: toward
+          ? facingFor(p, project(toward), actor.isPlayer ? "ne" : "sw")
+          : actor.isPlayer
+            ? "ne"
+            : "sw",
+      });
     }
   }
   function resize() {

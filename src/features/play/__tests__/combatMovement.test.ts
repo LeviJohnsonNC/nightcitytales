@@ -58,6 +58,7 @@ vi.mock("@/features/campaign/combatLog", () => ({
     },
   ),
   logDeathSave: vi.fn(async () => {}),
+  logMorale: vi.fn(async () => {}),
 }));
 
 const { MOVE_EVENT, movePlayer, movePlayerTo, runNpcTurns } = await import("../combatFlow");
@@ -660,6 +661,49 @@ describe("saved combat playback", () => {
         "encounter changed",
       );
       expect(listener).not.toHaveBeenCalled();
+    } finally {
+      stop();
+    }
+  });
+});
+
+describe("saved animation receipts", () => {
+  it.each(["dead", "withdrawn"] as const)(
+    "persists %s without confusing the two exits",
+    async (reason) => {
+      const { subscribeCombatFrames } = await import("../combatPlayback");
+      const frames: import("../combatPlayback").PlaybackFrame[] = [];
+      const stop = subscribeCombatFrames("exit-animation", (batch) => frames.push(...batch));
+      const live = fight({});
+      live.state.combatants["h"]!.hp = reason === "dead" ? 0 : 5;
+      live.state.combatants["h"]!.woundState = reason === "dead" ? "mortal" : "serious";
+      const random = vi.spyOn(Math, "random").mockReturnValue(reason === "dead" ? 0.99 : 0);
+      try {
+        const result = await runNpcTurns("exit-animation", null, live);
+        expect(result.live.data["h"]!.exitReason).toBe(reason);
+        expect(result.live.state.combatants["h"]!.defeated).toBe(true);
+        const exit = frames.find((f) => f.kind === "status" && f.actorId === "h");
+        expect(exit?.live.data["h"]!.exitReason).toBe(reason);
+        expect(exit?.live.version).toBe(result.live.version);
+        expect(live.data["h"]!.exitReason).toBeUndefined();
+      } finally {
+        random.mockRestore();
+        stop();
+      }
+    },
+  );
+  it("carries the victim's pre-hit HP in saved enemy attack playback", async () => {
+    const { subscribeCombatFrames } = await import("../combatPlayback");
+    const frames: import("../combatPlayback").PlaybackFrame[] = [];
+    const stop = subscribeCombatFrames("hit-animation", (batch) => frames.push(...batch));
+    const live = fight({});
+    try {
+      await runNpcTurns("hit-animation", null, live);
+      expect(frames.find((f) => f.kind === "attack")).toMatchObject({
+        targetId: "p",
+        targetHpBefore: live.state.combatants["p"]!.hp,
+        attackStyle: "ranged",
+      });
     } finally {
       stop();
     }

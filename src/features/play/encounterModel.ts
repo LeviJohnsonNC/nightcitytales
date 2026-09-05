@@ -106,6 +106,8 @@ export type CombatantData = {
    * exactly as it did.
    */
   combatGoal?: CombatGoal;
+  /** Presentation receipt of an engine-confirmed exit, not another defeat rule. */
+  exitReason?: "dead" | "withdrawn";
 };
 
 /**
@@ -195,6 +197,9 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
     move: typeof raw.move === "number" ? raw.move : DEFAULT_HOSTILE_MOVE,
     attackSkill: typeof raw.attackSkill === "number" ? raw.attackSkill : 0,
     ...(turn ? { turn } : {}),
+    ...(raw.exitReason === "dead" || raw.exitReason === "withdrawn"
+      ? { exitReason: raw.exitReason }
+      : {}),
     ...(armor && Object.keys(armor).length > 0 ? { armor } : {}),
   };
 }
