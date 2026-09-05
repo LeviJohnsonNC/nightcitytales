@@ -137,7 +137,6 @@ import {
   npcSummaries,
   jobOutcome,
   recentEventLines,
-  turnsSinceLastRoll,
 } from "./playModel";
 import {
   beginEncounter,
@@ -390,7 +389,6 @@ async function narrate(
     npcsPresent: npcSummaries(bundle.npcs),
     recentEvents: recentEventLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
-    turnsSinceLastRoll: turnsSinceLastRoll(bundle.events),
     pressure: pressureLines(bundle.pressure),
     standings: bundle.standings,
     chronicle: chronicleFor({
