@@ -1,3 +1,4 @@
+import { isCourtyard } from "./courtyard/propPresentation";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   Crosshair,
@@ -93,7 +94,7 @@ export function CombatBoard({
   const [camera, setCamera] = useState({
     x: 0,
     y: 0,
-    zoom: live?.arena === "night_shift" ? 1.25 : 1,
+    zoom: isCourtyard(live?.arena) ? 1.25 : 1,
   });
   const drag = useRef<Point | null>(null);
   const patternId = useId().replaceAll(":", "");
@@ -102,7 +103,7 @@ export function CombatBoard({
   }, [dice]);
   if (!live) return null;
   const arena = arenaFor(live.arena);
-  const courtyard = arena.key === "night_shift";
+  const courtyard = isCourtyard(arena.key);
   const scenic = courtyard && artEnabled && artReady;
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   const cover = coverStatuses(arena, live.cover);
@@ -260,6 +261,7 @@ export function CombatBoard({
         <div className={`combat-stage mode-${mode}`}>
           {courtyard && artEnabled && (
             <CourtyardLayer
+              key={arena.key}
               live={live}
               playback={playback}
               camera={camera}
@@ -579,10 +581,12 @@ export function CombatBoard({
             {[
               ...cover.map((piece) => ({
                 key: piece.piece.id,
-                depth: project({
-                  x: piece.piece.rect.x + piece.piece.rect.width / 2,
-                  y: piece.piece.rect.y + piece.piece.rect.height / 2,
-                }).y,
+                depth: piece.destroyed
+                  ? -500
+                  : project({
+                      x: piece.piece.rect.x + piece.piece.rect.width / 2,
+                      y: piece.piece.rect.y + piece.piece.rect.height / 2,
+                    }).y,
                 render: () => {
                   const r = piece.piece.rect;
                   const corners = [
@@ -601,12 +605,18 @@ export function CombatBoard({
                       aria-label={`${piece.label}, ${piece.destroyed ? "destroyed" : `${piece.hp} HP`}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setInspected(piece.piece.id);
+                        if (piece.destroyed && mode === "move" && canAct && !dice) {
+                          setDestination(groundPoint(e.currentTarget.ownerSVGElement!, e));
+                          setInspected(null);
+                        } else setInspected(piece.piece.id);
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          setInspected(piece.piece.id);
+                          if (piece.destroyed && mode === "move" && canAct && !dice) {
+                            setDestination({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
+                            setInspected(null);
+                          } else setInspected(piece.piece.id);
                         }
                       }}
                     >
@@ -614,6 +624,16 @@ export function CombatBoard({
                         points={points([...top, corners[2]!, corners[1]!, corners[0]!])}
                         fill="transparent"
                       />
+                      {scenic && inspected === piece.piece.id && (
+                        <polygon
+                          points={points(corners)}
+                          fill="#ffc578"
+                          fillOpacity=".12"
+                          stroke="#ffc578"
+                          strokeWidth="2"
+                          pointerEvents="none"
+                        />
+                      )}
                       <g visibility={scenic ? "hidden" : undefined}>
                         <polygon
                           points={points([corners[0]!, corners[1]!, top[1]!, top[0]!])}
@@ -843,6 +863,9 @@ export function CombatBoard({
           ) : inspectedCover ? (
             <div className="combat-assessment">
               <h2>{inspectedCover.label}</h2>
+              <p className="combat-eyebrow">
+                {inspectedCover.thickness} {inspectedCover.material}
+              </p>
               <strong>
                 {inspectedCover.destroyed
                   ? "DESTROYED"
