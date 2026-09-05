@@ -1,3 +1,4 @@
+import { publishCombatFrames, type CombatFrame } from "./combatPlayback";
 /**
  * Sequencing a fight: the engine resolves, this module persists and logs.
  * No dice are rolled here and no hit/miss is decided here — every mechanical
@@ -253,6 +254,9 @@ export async function runNpcTurns(
   let cover = live.cover;
   const arena = arenaFor(live.arena);
   const lines: string[] = [];
+  const frames: CombatFrame[] = [];
+  const capture = (kind: CombatFrame["kind"], text: string, details: Partial<CombatFrame> = {}) =>
+    frames.push({ live: { ...live, state, data, cover }, kind, text, ...details });
 
   for (let i = 0; i < MAX_NPC_TURNS; i += 1) {
     if (state.status !== "active") break;
@@ -262,6 +266,7 @@ export async function runNpcTurns(
     const actor = currentCombatant(state);
     if (!actor) break;
     if (actor.isPlayer) break;
+    capture("turn", `${actor.name} is acting.`, { actorId: actor.id });
 
     const begun = beginTurn(state);
     state = begun.state;
@@ -272,6 +277,7 @@ export async function runNpcTurns(
         beatId,
       });
       lines.push(`${actor.name} Death Save: ${begun.died ? "failed and is dead" : "survived"}.`);
+      capture("status", lines.at(-1)!, { actorId: actor.id });
     }
     const live_actor = state.combatants[actor.id];
     if (!live_actor || live_actor.defeated) continue;
@@ -295,6 +301,7 @@ export async function runNpcTurns(
       lines.push(describeMorale(actor.name, check));
       if (check.broke) {
         state = defeatCombatant(state, actor.id);
+        capture("status", lines.at(-1)!, { actorId: actor.id });
         continue;
       }
     }
@@ -318,6 +325,7 @@ export async function runNpcTurns(
     if (target.isPlayer && goalSatisfiedBy(goal, target)) {
       state = defeatCombatant(state, actor.id);
       lines.push(describeGoalMet(actor.name, goal));
+      capture("status", lines.at(-1)!, { actorId: actor.id });
       continue;
     }
 
@@ -346,6 +354,7 @@ export async function runNpcTurns(
         lines.push(
           `${actor.name} moves ${walked.metres} m, now ${metresApart(stats, targetStats)} m from ${target.name}.`,
         );
+        capture("move", lines.at(-1)!, { actorId: actor.id, path: walked.path });
       }
     }
 
@@ -405,6 +414,15 @@ export async function runNpcTurns(
             : `${actor.name} fires at ${target.name}; ${hit.label} takes it ` +
               `(${hit.hpBefore} to ${hit.hpAfter}).`,
       );
+      capture("cover", lines.at(-1)!, {
+        actorId: actor.id,
+        aim: aimPoint,
+        impact: hit
+          ? hit.destroyed
+            ? "COVER DESTROYED"
+            : `COVER ${hit.hpBefore} → ${hit.hpAfter} HP`
+          : "MISS",
+      });
       continue;
     }
 
@@ -432,9 +450,21 @@ export async function runNpcTurns(
       },
     );
     lines.push(describeAttack(actor.name, target.name, stats.weaponName, result));
+    capture("attack", lines.at(-1)!, {
+      actorId: actor.id,
+      targetId: target.id,
+      impact: result.attack.hit
+        ? `HIT · ${target.hp} → ${state.combatants[target.id]?.hp} HP`
+        : "MISS",
+    });
   }
 
   const next = await saveLiveEncounter({ ...live, state, data, cover });
+  // No visual result escapes until the authoritative save succeeds.
+  publishCombatFrames(
+    campaignId,
+    frames.map((frame) => ({ ...frame, live: { ...frame.live, version: next.version } })),
+  );
   return { live: next, lines };
 }
 
@@ -642,6 +672,15 @@ export async function movePlayer(input: {
     ...(input.beatId ? { beat_id: input.beatId } : {}),
   });
 
+  publishCombatFrames(input.campaignId, [
+    {
+      live: next,
+      kind: "move",
+      text: `${player.name} moves ${moved} m.`,
+      actorId: player.id,
+      path: plan.path,
+    },
+  ]);
   return { live: next, refusal: null };
 }
 
@@ -726,6 +765,15 @@ export async function movePlayerTo(input: {
     ...(input.beatId ? { beat_id: input.beatId } : {}),
   });
 
+  publishCombatFrames(input.campaignId, [
+    {
+      live: next,
+      kind: "move",
+      text: `${player.name} moves ${moved} m.`,
+      actorId: player.id,
+      path: plan.path,
+    },
+  ]);
   return { live: next, refusal: null };
 }
 

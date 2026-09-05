@@ -281,10 +281,8 @@ describe("shipping turn orchestration", () => {
     b.inventory = io.inventory as never;
     await shoot(b);
     expect(io.npc).toHaveBeenCalledOnce();
-    expect(io.narrate).toHaveBeenCalledOnce();
-    expect(io.events.filter((e) => e["type"] === "gm_narration")[0]?.["data"]).toMatchObject({
-      suggestedActions: [],
-    });
+    expect(io.narrate).not.toHaveBeenCalled();
+    expect(io.events.some((e) => e["type"] === "combat_exchange")).toBe(true);
   });
   it("lets the player move after both shots, then hands over", async () => {
     const b = bundle();

@@ -622,3 +622,46 @@ describe("cover in a hostile's line", () => {
     expect(attackLog).toEqual(["Vela"]);
   });
 });
+
+describe("saved combat playback", () => {
+  it("publishes enemy actions only after their authoritative save", async () => {
+    const { subscribeCombatFrames } = await import("../combatPlayback");
+    const { saveLiveEncounter } = await import("@/features/campaign/encounterState");
+    const frames: import("../combatPlayback").PlaybackFrame[] = [];
+    const stop = subscribeCombatFrames("playback-test", (batch) => frames.push(...batch));
+    vi.mocked(saveLiveEncounter).mockImplementationOnce(async (live) => {
+      expect(frames).toHaveLength(0);
+      return { ...live, version: 1 };
+    });
+    try {
+      await runNpcTurns(
+        "playback-test",
+        null,
+        fight({ hostileAt: { x: 8, y: 28 }, playerAt: { x: 8, y: 2 } }),
+      );
+      expect(frames[0]?.kind).toBe("turn");
+      expect(frames.every((frame) => frame.live.version === 1)).toBe(true);
+      const move = frames.find((frame) => frame.kind === "move");
+      expect(move).toBeDefined();
+      expect(move?.path?.at(-1)).toEqual(move?.live.data["h"]?.position);
+      expect(frames.some((frame) => frame.kind === "attack" || frame.kind === "cover")).toBe(true);
+    } finally {
+      stop();
+    }
+  });
+  it("shows no enemy playback when the encounter save fails", async () => {
+    const { subscribeCombatFrames } = await import("../combatPlayback");
+    const { saveLiveEncounter } = await import("@/features/campaign/encounterState");
+    const listener = vi.fn();
+    const stop = subscribeCombatFrames("failed-playback", listener);
+    vi.mocked(saveLiveEncounter).mockRejectedValueOnce(new Error("encounter changed"));
+    try {
+      await expect(runNpcTurns("failed-playback", null, fight({}))).rejects.toThrow(
+        "encounter changed",
+      );
+      expect(listener).not.toHaveBeenCalled();
+    } finally {
+      stop();
+    }
+  });
+});

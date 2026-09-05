@@ -1,3 +1,5 @@
+import { publishCombatFrames } from "./combatPlayback";
+import { useCombatPlayback } from "./useCombatPlayback";
 /**
  * The play loop. Loads a campaign's live state, and runs a turn: the player's
  * intent goes to the GM (gmTurnFn), the engine resolves any proposed skill
@@ -1039,6 +1041,18 @@ export async function commitAttack(
     },
   );
   await payLuck(bundle, luckSpent);
+  publishCombatFrames(campaignId, [
+    {
+      live: saved,
+      kind: "attack",
+      actorId: pending.attacker.id,
+      targetId: pending.target.id,
+      text: describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
+      impact: result.attack.hit
+        ? `HIT · ${pending.target.hp} → ${result.state.combatants[pending.target.id]?.hp} HP`
+        : "MISS",
+    },
+  ]);
 
   await finishCombatAction(bundle, saved, beatId, [
     describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
@@ -1232,6 +1246,9 @@ export async function commitReload(bundle: PlayBundle, weaponItemId: string): Pr
       },
     },
   });
+  publishCombatFrames(campaignId, [
+    { live: saved, kind: "reload", actorId: player.id, text: `${player.name} reloads.` },
+  ]);
   await finishCombatAction(bundle, saved, beatId);
 }
 
@@ -1353,22 +1370,18 @@ async function runTheTurnOver(
   // before they can act again — the same pair the opening writes.
   const { status, owed } = await settleNpcTurns(campaignId, beatId, live);
 
-  const fresh: PlayBundle = {
-    ...bundle,
-    events: await listCampaignEvents(campaignId),
-    encounter: live,
-  };
-  await narrate(
-    fresh,
-    `(ENGINE: combat is RESOLVED for this exchange. ${lines.join(" ")}${status} Narrate exactly these results in short kinetic beats. Do not change a hit, a miss, a damage number, or who is standing. ${
-      status
-        ? "Return to the scene."
-        : owed
-          ? "The player is Mortally Wounded and owes a Death Save before acting: end on that breath, and propose nothing."
-          : "Leave the next action to the player; propose nothing."
-    })`,
-    { logInput: false, fixedResult: true },
-  );
+  // Routine exchanges have a complete deterministic report. No model round trip
+  // is needed to tell the player who fired, what hit, or whose turn comes next.
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    beat_id: beatId,
+    type: "combat_exchange",
+    summary: [...lines, status].filter(Boolean).join(" "),
+    data: { encounterId: live.id, round: live.state.round },
+  });
+  publishCombatFrames(campaignId, [
+    { live, kind: "turn", text: status || (owed ? "Death Save required." : "Your turn.") },
+  ]);
 }
 
 /**
@@ -1661,13 +1674,13 @@ export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["play", campaignId], queryFn: () => loadPlay(campaignId) });
 
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
-    // The phase is authoritative and lives outside this bundle: a job that just
-    // ended must move the screen to wrap-up without a reload.
-    void queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] });
-    void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
-  };
+  const playback = useCombatPlayback(campaignId, query.data?.encounter ?? null);
+  const invalidate = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["play", campaignId] }),
+      queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] }),
+      queryClient.invalidateQueries({ queryKey: ["life", campaignId] }),
+    ]);
 
   const turn = useMutation({
     mutationFn: (input: string) => {
@@ -1718,8 +1731,10 @@ export function usePlay(campaignId: string) {
    * attempt work; without it the bundle keeps its stale version token and every
    * retry refuses itself.
    */
-  const onWriteError = (error: unknown) => {
-    if (error instanceof EncounterChangedError) invalidate();
+  const onWriteError = () => {
+    // A later ledger write may fail after an encounter save succeeded. Refresh
+    // on every error so playback cannot leave the screen waiting on stale state.
+    void invalidate();
   };
 
   const combat = useMutation({
@@ -1972,7 +1987,10 @@ export function usePlay(campaignId: string) {
      * What the character can actually do right now, so the cards can grey out
      * the impossible instead of letting the player roll for it.
      */
-    capability: bundle ? snapshotFor(bundle) : null,
+    capability: bundle
+      ? snapshotFor(playback.frame ? { ...bundle, encounter: playback.frame.live } : bundle)
+      : null,
+    playback,
 
     /** The check waiting on the player's die, if any. */
     pendingCheck,
@@ -2107,7 +2125,7 @@ export function usePlay(campaignId: string) {
     /** The attack waiting on the player's dice, if any. */
     pendingAttack,
     /** The live fight, for the board and the initiative/status rail. */
-    encounter: bundle?.encounter ?? null,
+    encounter: playback.frame?.live ?? bundle?.encounter ?? null,
     /**
      * Walk to a spot on the board. The engine decides how far they get; a
      * Move does not end the Turn, so the Action is still theirs afterwards.
@@ -2205,6 +2223,8 @@ export function usePlay(campaignId: string) {
     backToLifeError: (nextJobMutation.error as Error | null) ?? null,
     opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
     busy:
+      playback.locked ||
+      query.isFetching ||
       turn.isPending ||
       options.isPending ||
       choose.isPending ||

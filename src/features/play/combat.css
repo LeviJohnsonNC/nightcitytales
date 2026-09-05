@@ -916,3 +916,140 @@
     font-size: 8px;
   }
 }
+
+.combat-skip {
+  position: absolute;
+  right: 18px;
+  bottom: 20px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #79949e55;
+  background: #0d1c26e8;
+  color: #c6d9db;
+  font: 11px monospace;
+}
+.combat-map-hint.has-feedback {
+  right: 160px;
+  max-width: 680px;
+  background: #09141ddb;
+  border-left: 2px solid #65eee080;
+  padding: 12px 16px;
+}
+.combat-map-hint.has-feedback > .combat-eyebrow,
+.combat-map-hint.has-feedback {
+  font-size: 10px;
+}
+.combat-feedback {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #d8e8e6;
+  margin: 0 0 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.combat-impact {
+  font:
+    bold 14px "IBM Plex Mono",
+    monospace;
+  fill: #ffd18b;
+  paint-order: stroke;
+  stroke: #09141d;
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  animation: combat-impact 0.8s ease-out both;
+}
+.combat-tracer {
+  animation: combat-tracer 0.5s ease-out both;
+}
+@keyframes combat-tracer {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes combat-impact {
+  0% {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  20%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.8;
+    translate: 0 -5px;
+  }
+}
+@media (max-width: 900px) {
+  .combat-map-hint.has-feedback {
+    left: 12px;
+    right: 125px;
+    padding: 8px 10px;
+    bottom: 10px;
+  }
+  .combat-feedback {
+    font-size: 10px;
+    -webkit-line-clamp: 3;
+  }
+  .combat-skip {
+    right: 10px;
+    bottom: 12px;
+    font-size: 9px;
+    padding: 9px 7px;
+  }
+  .combat-map-hint.has-feedback > .combat-eyebrow {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .combat-impact,
+  .combat-tracer {
+    animation: none;
+  }
+  .combat-tracer {
+    opacity: 0.5;
+  }
+}
+
+.combat-shot-playback.no-motion .combat-tracer,
+.combat-shot-playback.no-motion .combat-impact {
+  animation: none;
+}
+
+.combat-turn.is-enemy strong {
+  color: #ff938a;
+}
+.combat-turn.is-enemy .combat-status-dot {
+  background: #ff938a;
+  box-shadow: 0 0 12px #ff777077;
+}
+.combat-turn {
+  animation: combat-turn-enter 0.3s ease-out;
+}
+@keyframes combat-turn-enter {
+  from {
+    opacity: 0.4;
+    translate: 0 -3px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .combat-turn {
+    animation: none;
+  }
+}

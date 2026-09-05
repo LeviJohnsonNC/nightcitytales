@@ -787,6 +787,14 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         weaponId={weaponId}
         onWeaponId={setWeaponId}
         busy={locked}
+        playback={play.playback.frame}
+        feedback={
+          play.playback.lastFrame?.live.id === play.encounter.id &&
+          (play.playback.playing || play.playback.lastFrame.kind !== "turn")
+            ? play.playback.lastFrame.text
+            : undefined
+        }
+        onSkipPlayback={play.playback.skip}
         statusText={
           play.actionError
             ? "Action not saved"
@@ -827,7 +835,9 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
           </>
         }
         dice={
-          play.actionError || play.pendingAttack || play.pendingCheck || play.pendingDeathSave ? (
+          play.actionError ||
+          (!play.playback.locked &&
+            (play.pendingAttack || play.pendingCheck || play.pendingDeathSave)) ? (
             <>
               {play.actionError && (
                 <div role="alert">

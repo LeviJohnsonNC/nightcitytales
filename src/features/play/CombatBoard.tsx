@@ -29,6 +29,7 @@ import { raisedWeapon } from "./encounterModel";
 import { targetCapabilities } from "./capabilityModel";
 import { battlefieldProjection } from "./battlefieldProjection";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { frameDuration, type PlaybackFrame } from "./combatPlayback";
 import "./combat.css";
 
 type Props = {
@@ -48,6 +49,9 @@ type Props = {
   tools?: ReactNode;
   journal?: ReactNode;
   improvisation?: ReactNode;
+  playback?: PlaybackFrame | null;
+  feedback?: string | undefined;
+  onSkipPlayback?: () => void;
 };
 const points = (path: Point[]) => path.map((p) => `${p.x},${p.y}`).join(" ");
 
@@ -69,6 +73,9 @@ export function CombatBoard({
   tools,
   journal,
   improvisation,
+  playback,
+  feedback,
+  onSkipPlayback,
 }: Props) {
   const [mode, setMode] = useState<"move" | "shoot" | "pan">("move");
   const [destination, setDestination] = useState<Point | null>(null);
@@ -165,6 +172,18 @@ export function CombatBoard({
       : active?.isPlayer
         ? "Your turn"
         : `${active?.name ?? "Opponent"}'s turn`);
+  const playbackActor = playback?.actorId ? live.data[playback.actorId] : null;
+  const impactPoint =
+    playback?.aim ?? (playback?.targetId ? live.data[playback.targetId]?.position : null);
+  const playbackStatus = playback
+    ? live.state.status !== "active"
+      ? "Combat resolved"
+      : active?.isPlayer
+        ? playback.kind === "turn"
+          ? "Your turn"
+          : "Your action"
+        : `${active?.name ?? "Opponent"} acting`
+    : null;
   const turnKey = `${live.id}:${live.state.round}:${active?.id}`;
   return (
     <section className="combat-screen" aria-label="Tactical combat">
@@ -186,9 +205,12 @@ export function CombatBoard({
         </div>
       </header>
       <div className="combat-turn-strip">
-        <div className={`combat-turn ${busy && !statusText ? "is-busy" : ""}`} key={turnKey}>
+        <div
+          className={`combat-turn ${busy && !statusText ? "is-busy" : ""} ${active && !active.isPlayer ? "is-enemy" : ""}`}
+          key={turnKey}
+        >
           <span className="combat-status-dot" />
-          <strong aria-live="polite">{status}</strong>
+          <strong aria-live="polite">{playbackStatus ?? status}</strong>
           <span>ROUND {String(live.state.round).padStart(2, "0")}</span>
         </div>
         <span className="combat-mobile-budget">
@@ -597,6 +619,25 @@ export function CombatBoard({
                         }
                       }}
                     >
+                      {playback?.animate !== false &&
+                        playback?.kind === "move" &&
+                        playback.actorId === actor.id &&
+                        playback.path && (
+                          <animateTransform
+                            key={playback.sequence}
+                            attributeName="transform"
+                            type="translate"
+                            values={playback.path
+                              .map((point) => {
+                                const p = project(point);
+                                return `${p.x} ${p.y}`;
+                              })
+                              .join(";")}
+                            dur={`${frameDuration(playback)}ms`}
+                            calcMode="paced"
+                            fill="freeze"
+                          />
+                        )}
                       <circle r="25" cy="-17" fill="transparent" />
                       <ellipse
                         rx={chosen ? 21 : 15}
@@ -645,16 +686,59 @@ export function CombatBoard({
               .map((item) => (
                 <g key={item.key}>{item.render()}</g>
               ))}
+            {playback && impactPoint && playbackActor && (
+              <g
+                key={playback.sequence}
+                className={
+                  playback.animate === false
+                    ? "combat-shot-playback no-motion"
+                    : "combat-shot-playback"
+                }
+                pointerEvents="none"
+              >
+                <line
+                  x1={project(playbackActor.position).x}
+                  y1={project(playbackActor.position).y - 20}
+                  x2={project(impactPoint).x}
+                  y2={project(impactPoint).y - (playback.kind === "cover" ? 10 : 20)}
+                  stroke={playback.impact === "MISS" ? "#d1b4a0" : "#ffcd7f"}
+                  strokeWidth="3"
+                  className="combat-tracer"
+                />
+                <text
+                  x={project(impactPoint).x}
+                  y={project(impactPoint).y - 78}
+                  textAnchor="middle"
+                  className="combat-impact"
+                >
+                  {playback.impact}
+                </text>
+              </g>
+            )}
           </svg>
-          <div className="combat-map-hint">
-            <span className="combat-eyebrow">
-              {mode === "pan" ? "Camera" : mode === "shoot" ? "Targeting" : "Movement"}
-            </span>
-            {mode === "pan"
-              ? "Drag to look around"
-              : mode === "shoot"
-                ? "Select a target · review the shot"
-                : "Select ground · preview your route · confirm"}
+          {playback && onSkipPlayback && (
+            <button className="combat-skip" onClick={onSkipPlayback}>
+              <SkipForward size={14} /> Skip playback
+            </button>
+          )}
+          <div className={`combat-map-hint ${feedback ? "has-feedback" : ""}`}>
+            {feedback && (
+              <p className="combat-feedback" role="status">
+                {feedback}
+              </p>
+            )}
+            {!playback && (
+              <>
+                <span className="combat-eyebrow">
+                  {mode === "pan" ? "Camera" : mode === "shoot" ? "Targeting" : "Movement"}
+                </span>
+                {mode === "pan"
+                  ? "Drag to look around"
+                  : mode === "shoot"
+                    ? "Select a target · review the shot"
+                    : "Select ground · preview your route · confirm"}
+              </>
+            )}
           </div>
         </div>
         <aside className="combat-intel" aria-label="Tactical readout">
