@@ -37,7 +37,8 @@ import {
  * painter's sort keeps them there while a unit walks.
  */
 export type GridOverlay = {
-  squares: { tile: Tile; sheltered: boolean }[];
+  /** `firing` can see the target being aimed at; `faded` is reachable context. */
+  squares: { tile: Tile; sheltered: boolean; firing?: boolean; faded?: boolean }[];
   /** The square under the cursor, drawn brighter. */
   chosen: Tile | null;
   /** The walked route, in metres. */
@@ -370,14 +371,23 @@ export function createCourtyard(
     const outline = (corners: Phaser.Math.Vector2[], colour: number, alpha: number, w = 1) =>
       g.lineStyle(w, colour, alpha).strokePoints(corners, true);
     const CYAN = 0x65eee0,
-      AMBER = 0xf9bd72;
+      AMBER = 0xf9bd72,
+      GOLD = 0xffd166;
     const chosen = overlay.chosen ? tileKey(overlay.chosen) : null;
-    for (const { tile, sheltered } of overlay.squares) {
+    for (const { tile, sheltered, firing, faded } of overlay.squares) {
       const corners = squareCorners(tile);
-      const colour = sheltered ? AMBER : CYAN;
+      const colour = firing ? GOLD : sheltered ? AMBER : CYAN;
       const here = chosen === tileKey(tile);
-      fill(corners, colour, here ? 0.3 : 0.1);
-      outline(corners, here ? 0xa9fff5 : colour, here ? 0.9 : 0.3, here ? 1.8 : 0.8);
+      // Ground that cannot see the target stays visible as reach, but stops
+      // competing with the ground that can.
+      const strength = faded ? 0.3 : 1;
+      fill(corners, colour, (here ? 0.3 : firing ? 0.18 : 0.1) * strength);
+      outline(
+        corners,
+        here ? 0xa9fff5 : colour,
+        (here ? 0.9 : firing ? 0.55 : 0.3) * strength,
+        here ? 1.8 : 0.8,
+      );
     }
     if (overlay.route?.length) {
       const path = overlay.route.map(screen);

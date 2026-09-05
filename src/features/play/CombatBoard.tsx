@@ -1,4 +1,16 @@
 import { CombatPortrait } from "./CombatPortrait";
+import { BattlefieldCallout } from "./BattlefieldCallout";
+import { useBoardAnchor } from "./useBoardAnchor";
+import {
+  IDLE,
+  interactionOf,
+  lockedTarget,
+  nextInteraction,
+  readTarget,
+  readTile,
+  type Interaction,
+  type InteractionEvent,
+} from "./combatInteraction";
 import { NightCityMark } from "@/components/brand/NightCityMark";
 import { NpcDossier } from "@/features/cast/NpcName";
 import { findNpcNumbered } from "@/features/cast/npcDirectory";
@@ -25,6 +37,7 @@ import {
 } from "lucide-react";
 import {
   arenaFor,
+  blockedTiles,
   centreOf,
   coverBlocking,
   coverStatuses,
@@ -117,11 +130,30 @@ export function CombatBoard({
     setArtReady(false);
     setArtEnabled(false);
   }, []);
-  const [mode, setMode] = useState<"move" | "shoot" | "pan">("move");
-  const [destination, setDestination] = useState<Point | null>(null);
-  const [hover, setHover] = useState<Point | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  /**
+   * Looking versus doing. Panning is a way of seeing the board, so it must not
+   * throw away a route the player has already chosen — which is why it is a
+   * tool rather than an interaction state.
+   */
+  const [tool, setTool] = useState<"select" | "pan">("select");
+  const [intent, setIntent] = useState<Interaction>(IDLE);
   const [inspected, setInspected] = useState<string | null>(null);
+  /**
+   * Who the readout is about, resolved before the early return so the firing
+   * analysis below keeps its hook order.
+   *
+   * Falls back to the first standing hostile the same way the inspector does.
+   * Without that the panel would describe somebody the analysis had never
+   * looked at, and offer a dead disabled button instead of a way out.
+   */
+  const assessedId =
+    readTarget(interactionOf(intent, busy || !!dice)) ??
+    Object.values(live?.state.combatants ?? {}).find((c) => !c.isPlayer && !c.defeated)?.id ??
+    null;
+  const weaponForField = weaponId;
+  const boardRef = useRef<SVGSVGElement | null>(null);
+  const calloutPoint = useRef<Point | null>(null);
+  const calloutAnchor = useBoardAnchor(boardRef, calloutPoint);
   const [panel, setPanel] = useState<"journal" | "improvise" | null>(null);
   /** The combatant whose dossier is open. Their art is on file; the fight is not. */
   const [dossier, setDossier] = useState<string | null>(null);
@@ -143,7 +175,7 @@ export function CombatBoard({
    * ground the rules refuse.
    */
   const moveField = useMemo(() => {
-    if (!live || !capability || mode !== "move") return null;
+    if (!live || !capability) return null;
     const you = Object.values(live.state.combatants).find((c) => c.isPlayer);
     const standing = you ? live.data[you.id] : null;
     if (!standing) return null;
@@ -156,7 +188,7 @@ export function CombatBoard({
         c.isPlayer || c.defeated || !live.data[c.id] ? [] : [live.data[c.id]!.position],
       ),
     });
-  }, [live, capability, mode]);
+  }, [live, capability]);
   /**
    * The squares in the reach field that no standing hostile has a line into.
    *
@@ -179,6 +211,25 @@ export function CombatBoard({
     }
     return safe;
   }, [live, moveField]);
+  /**
+   * Squares this Move reaches that can actually see the target being aimed at.
+   *
+   * The same previewAttack the shot button reads, asked once per reachable
+   * square with the capability re-measured from there — so a square lights up
+   * only if the gate would accept a shot taken standing on it. No LOS or range
+   * arithmetic is reimplemented here.
+   */
+  const firingTiles = useMemo(() => {
+    if (!live || !capability || !moveField || !assessedId || !weaponForField) return null;
+    const found = new Map<string, { tile: Tile; dv: number | null }>();
+    for (const { tile } of moveField.values()) {
+      const at = centreOf(tile);
+      const there = { ...capability, targets: targetCapabilities(live, at) };
+      const preview = previewAttack(there, assessedId, weaponForField);
+      if (!preview.gap) found.set(tileKey(tile), { tile, dv: preview.dv });
+    }
+    return found;
+  }, [live, capability, moveField, assessedId, weaponForField]);
   if (!live) return null;
   const arena = arenaFor(live.arena);
   const courtyard = isCourtyard(arena.key);
@@ -198,21 +249,34 @@ export function CombatBoard({
   const weapon = raisedWeapon(capability, weaponId);
   const weaponArt = weapon ? itemArt(`weapon.${weapon.itemId}`, weapon.name) : null;
   const targets = actors.filter(({ actor }) => !actor.isPlayer && !actor.defeated);
-  const target = targets.find(({ actor }) => actor.id === selected) ?? targets[0];
+  // A command in flight outranks the pointer; see combatInteraction.ts.
+  const resolving = busy || !!dice;
+  const interaction = interactionOf(intent, resolving);
+  const pointedId = readTarget(interaction);
+  const lockedId = lockedTarget(interaction);
+  /** Who the sidebar describes. It is an inspector, so it always describes somebody. */
+  const target = targets.find(({ actor }) => actor.id === assessedId) ?? targets[0];
+  /** Who the BOARD is drawing a line to. Only ever somebody actually pointed at. */
+  const aimed = pointedId ? targets.find(({ actor }) => actor.id === pointedId) : undefined;
   const shot =
     capability && weapon && target
       ? previewAttack(capability, target.actor.id, weapon.itemId)
       : null;
   const targetCover = capability?.targets.find((t) => t.id === target?.actor.id)?.coverLabel;
-  const targetReadout = !shot
-    ? "Select a usable weapon to assess this target."
-    : shot.gap && targetCover
-      ? `Blocked by ${targetCover}.`
-      : (shot.gap ?? `${shot.distance} m · clear shot`);
-  const spot = destination ?? hover;
-  const spotTile = spot ? tileOf(arena, spot) : null;
+  // Told apart, because they lead to different offers: blocked ground can be
+  // walked around, and distance can be closed, but they are not the same fix.
+  const blockedByCover = shot?.verdict.ok === false && shot.verdict.code === "target_not_perceived";
+  const outOfRange = shot?.verdict.ok === false && shot.verdict.code === "out_of_range";
+  /** The piece standing in the way, so the board can point at it. */
+  const blocker =
+    blockedByCover && player && target
+      ? (coverBlocking(arena, player.data.position, target.data.position, live.cover)[0] ?? null)
+      : null;
+  const spotTile = readTile(interaction);
+  const spot = spotTile ? centreOf(spotTile) : null;
   const spotSquares = spotTile ? moveField?.get(tileKey(spotTile))?.cost : undefined;
-  const showSquares = mode === "move" && canAct && !!moveField && !!remaining?.movementSquares;
+  const canMove = !!canAct && !!moveField && !!remaining?.movementSquares;
+  const showSquares = canMove && interaction.type !== "resolving-action";
   const route =
     capability && player && spot
       ? previewMovement({
@@ -262,17 +326,52 @@ export function CombatBoard({
       ? snapToGrid(arena, to)
       : null;
   };
-  const selectMode = (next: typeof mode) => {
-    setMode(next);
-    setDestination(null);
-    setHover(null);
-    setInspected(null);
+  const dispatch = (event: InteractionEvent) => {
+    setIntent((current) => nextInteraction(interactionOf(current, resolving), event));
+    if (event.kind !== "hover-tile" && event.kind !== "hover-unit") setInspected(null);
   };
+  const sameSquare = (tile: Tile) =>
+    interaction.type === "move-preview" &&
+    interaction.tile.col === tile.col &&
+    interaction.tile.row === tile.row;
+
+  /**
+   * The one place a move is sent.
+   *
+   * Every route into it — the callout, a second click on the square, Enter —
+   * lands here, and it refuses while a command is running, so nothing can be
+   * committed twice by an event arriving through two paths.
+   */
   const confirmMove = () => {
-    if (!canAct || dice || !route?.ok || !destination) return;
-    onMoveTo?.(route.position);
-    setDestination(null);
-    setHover(null);
+    if (resolving || !canAct || !route?.ok || interaction.type !== "move-preview" || !onMoveTo)
+      return;
+    onMoveTo(route.position);
+    dispatch({ kind: "moved" });
+  };
+  /** The one place a shot is sent. Selecting a target never comes through here. */
+  const confirmShot = () => {
+    if (resolving || !canAct || !weapon || !onAttack) return;
+    const id = lockedId;
+    if (!id) return;
+    const preview = capability ? previewAttack(capability, id, weapon.itemId) : null;
+    if (!preview || preview.gap) return;
+    onAttack(id, weapon.itemId);
+    dispatch({ kind: "fired" });
+  };
+  /** Enter and Space: commit whatever is currently previewed. Route first. */
+  const confirmCurrent = () => {
+    if (interaction.type === "move-preview") confirmMove();
+    else confirmShot();
+  };
+  const clickSquare = (tile: Tile) => {
+    // A second click on the square already previewed is the commit. Checked
+    // before dispatching, because the reducer treats it as a no-op.
+    if (sameSquare(tile)) confirmMove();
+    else dispatch({ kind: "click-tile", tile });
+  };
+  const clickUnit = (id: string) => {
+    if (interaction.type === "target-selected" && interaction.targetId === id) confirmShot();
+    else dispatch({ kind: "click-unit", targetId: id });
   };
   const status =
     statusText ??
@@ -290,6 +389,134 @@ export function CombatBoard({
       ? "Your action"
       : `${acting?.side === "hostile" ? "Enemy" : "Ally"} turn · ${acting?.name ?? "Combatant"}`
     : null;
+  /** What the board is doing, in the player's words. One line per state. */
+  const [hintTitle, hintBody] =
+    tool === "pan"
+      ? ["Camera", "Drag to look around"]
+      : interaction.type === "resolving-action"
+        ? ["Resolving", "Waiting on the dice"]
+        : interaction.type === "find-firing-position"
+          ? [
+              "Finding a shot",
+              firingTiles?.size
+                ? "Lit squares can see them · pick one to preview the route"
+                : "Nowhere in reach can see them this Round",
+            ]
+          : interaction.type === "move-preview"
+            ? ["Movement", "Click the square again, or press Enter, to go"]
+            : interaction.type === "target-selected"
+              ? shot?.gap
+                ? ["Targeting", "No shot from here · find a firing position"]
+                : ["Targeting", "Click them again, or press Enter, to shoot"]
+              : interaction.type === "target-hover"
+                ? ["Targeting", "Click to lock this target"]
+                : ["Movement", "Hover a square to preview · click to lock it in"];
+  /**
+   * The lit ground, described once for whichever renderer is drawing it.
+   *
+   * While looking for a firing position, a square that can see the target is
+   * the point and everything else is context, so the rest is marked spent
+   * rather than removed — the player can still see how far they could go.
+   */
+  const scouting = interaction.type === "find-firing-position";
+  /** Squares nobody can stand on — the engine's answer, not the art's outline. */
+  const blockedSquares = blockedTiles(arena, live.cover);
+  const litSquares = showSquares
+    ? [...moveField!.values()].flatMap(({ tile, cost }) => {
+        if (cost === 0) return [];
+        const key = tileKey(tile);
+        return [
+          {
+            tile,
+            key,
+            sheltered: sheltered?.has(key) ?? false,
+            firing: scouting && !!firingTiles?.has(key),
+            faded: scouting && !firingTiles?.has(key),
+          },
+        ];
+      })
+    : [];
+  /**
+   * Where the contextual control hangs.
+   *
+   * The destination when a route is on the table, otherwise the body being
+   * aimed at — always the thing the control acts on, never a fixed corner.
+   */
+  calloutPoint.current =
+    (interaction.type === "move-preview" || scouting) && spot
+      ? { x: project(spot).x, y: project(spot).y - 14 }
+      : aimed
+        ? { x: project(aimed.data.position).x, y: project(aimed.data.position).y - 64 }
+        : null;
+  /**
+   * What the contextual control says and whether it commits anything.
+   *
+   * Every refusal here names a reason. A control that is simply absent, or
+   * present and dead, teaches the player nothing about the fight.
+   */
+  const callout: {
+    tone: "move" | "shoot" | "blocked";
+    title: string;
+    lines: string[];
+    hint?: string | undefined;
+    confirm?: (() => void) | undefined;
+    scout?: boolean | undefined;
+  } | null = (() => {
+    if (!canAct || interaction.type === "resolving-action") return null;
+    // Hovering a candidate firing square reads exactly like hovering any
+    // other square, plus the answer to the question that put us here: can I
+    // shoot from there, and at what DV.
+    if (interaction.type === "move-preview" || (scouting && spotTile)) {
+      if (!route?.ok)
+        return {
+          tone: "blocked",
+          title: "Can't move here",
+          lines: [route?.reason ?? "No route to that square."],
+        };
+      const cover = spotTile && sheltered?.has(tileKey(spotTile)) ? "Out of their line" : "Exposed";
+      const lines = [`${spotSquares ?? "—"} Move · ${route.moved} m`, cover];
+      if (futureShot && target)
+        lines.push(
+          futureShot.gap
+            ? `No shot at ${target.actor.name} from here`
+            : `Shot from here · DV ${futureShot.dv}`,
+        );
+      return {
+        tone: "move",
+        title: "Move here",
+        lines,
+        ...(interaction.type === "move-preview"
+          ? { hint: "Click again to move", confirm: onMoveTo ? confirmMove : undefined }
+          : { hint: "Click to lock this route" }),
+      };
+    }
+    if (!aimed) return null;
+    if (!weapon)
+      return { tone: "blocked", title: "No weapon", lines: ["Nothing raised to shoot with."] };
+    if (blockedByCover)
+      return {
+        tone: "blocked",
+        title: "No shot",
+        lines: [`Blocked by ${targetCover ?? "cover"}`],
+        scout: !scouting && !!firingTiles?.size && canMove,
+      };
+    if (outOfRange)
+      return {
+        tone: "blocked",
+        title: "Out of range",
+        lines: [`${shot?.distance ?? "—"} m · past the ${weapon.name}'s table`],
+        scout: !scouting && !!firingTiles?.size && canMove,
+      };
+    if (shot?.gap) return { tone: "blocked", title: "No shot", lines: [shot.gap] };
+    return {
+      tone: "shoot",
+      title: "Shoot",
+      lines: [weapon.name, `DV ${shot?.dv ?? "—"} · ${shot?.distance ?? "—"} m`],
+      ...(lockedId === aimed.actor.id
+        ? { hint: "Click again to fire", confirm: onAttack ? confirmShot : undefined }
+        : { hint: "Click to lock the target" }),
+    };
+  })();
   const turnKey = `${live.id}:${live.state.round}:${active?.id}`;
   const dossierNpc = dossier ? findNpcNumbered(dossier) : null;
   return (
@@ -371,24 +598,20 @@ export function CombatBoard({
         </ol>
       </div>
       <div className="combat-main">
-        <div className={`combat-stage mode-${mode}`}>
+        <div className={`combat-stage tool-${tool}`}>
           {courtyard && artEnabled && (
             <CourtyardLayer
               key={arena.key}
               live={live}
               playback={playback}
               camera={displayCamera}
-              aimTargetId={mode === "shoot" ? (target?.actor.id ?? null) : null}
+              aimTargetId={aimed?.actor.id ?? null}
               // Over the art the squares belong ON the floor, under everything
               // standing on it, so the scene draws them rather than the SVG.
               grid={
                 scenic && showSquares
                   ? {
-                      squares: [...moveField.values()].flatMap(({ tile, cost }) =>
-                        cost === 0
-                          ? []
-                          : [{ tile, sheltered: sheltered?.has(tileKey(tile)) ?? false }],
-                      ),
+                      squares: litSquares,
                       chosen: route?.ok ? spotTile : null,
                       route: route?.ok ? route.path : null,
                     }
@@ -452,10 +675,10 @@ export function CombatBoard({
               <Minus size={17} />
             </button>
             <button
-              className={`combat-icon ${mode === "pan" ? "is-selected" : ""}`}
+              className={`combat-icon ${tool === "pan" ? "is-selected" : ""}`}
               aria-label="Pan battlefield"
-              aria-pressed={mode === "pan"}
-              onClick={() => selectMode(mode === "pan" ? "move" : "pan")}
+              aria-pressed={tool === "pan"}
+              onClick={() => setTool(tool === "pan" ? "select" : "pan")}
             >
               <Hand size={17} />
             </button>
@@ -468,26 +691,30 @@ export function CombatBoard({
             </button>
           </div>
           <span className="sr-only" id={`${patternId}-keyboard`}>
-            In Move mode, use arrow keys to preview a destination one square at a time, Enter to
-            confirm, and Escape to clear. Targets and cover can also be selected with Tab and Enter.
+            Arrow keys preview a destination one square at a time. Enter or Space confirms the
+            previewed move, or takes the shot at the selected target. Escape steps back. Targets and
+            cover can also be reached with Tab.
           </span>
           <svg
+            ref={boardRef}
             className={`combat-arena ${scenic ? "combat-arena-overlay" : ""}`}
             viewBox={viewBox}
             tabIndex={0}
             role="group"
             aria-describedby={`${patternId}-keyboard`}
             onKeyDown={(e) => {
-              if (e.target !== e.currentTarget || mode !== "move" || !player) return;
+              // Escape steps back from wherever focus is; a unit or a crate
+              // having been tabbed to must not swallow the way out.
               if (e.key === "Escape") {
-                setDestination(null);
-                setHover(null);
-                setInspected(null);
+                dispatch({ kind: "cancel" });
                 return;
               }
-              if (e.key === "Enter") {
+              // The rest is the board's own keyboard. Focusable children run
+              // their own Enter and stop it before it reaches here.
+              if (e.target !== e.currentTarget || !player) return;
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                confirmMove();
+                confirmCurrent();
                 return;
               }
               const shifts: Record<string, Point> = {
@@ -497,22 +724,27 @@ export function CombatBoard({
                 ArrowRight: { x: 1, y: 0 },
               };
               const shift = shifts[e.key];
-              if (!shift || !canAct || dice) return;
+              if (!shift || !canMove) return;
               e.preventDefault();
-              const from = destination ?? player.data.position;
-              setInspected(null);
+              const from = spot ?? player.data.position;
               // One square per press, so the keyboard walks the same lattice
-              // the pointer does.
-              setDestination(
-                snapToGrid(arena, {
+              // the pointer does. Arrowing is previewing, never committing.
+              dispatch({
+                kind: "click-tile",
+                tile: tileOf(arena, {
                   x: from.x + shift.x * TILE_METRES,
                   y: from.y + shift.y * TILE_METRES,
                 }),
-              );
+              });
             }}
             aria-label={`Angled battlefield: ${arena.label}. Select units or ground to preview an action.`}
+            onContextMenu={(e) => {
+              // Right-click is back one level, not a browser menu.
+              e.preventDefault();
+              dispatch({ kind: "cancel" });
+            }}
             onPointerDown={(e) => {
-              if (mode === "pan") {
+              if (tool === "pan") {
                 drag.current = { x: e.clientX, y: e.clientY };
                 e.currentTarget.setPointerCapture(e.pointerId);
               }
@@ -535,14 +767,17 @@ export function CombatBoard({
                 drag.current = { x: e.clientX, y: e.clientY };
                 return;
               }
-              if (e.pointerType === "mouse" && mode === "move" && !destination)
-                setHover(groundPoint(e.currentTarget, e));
+              if (e.pointerType !== "mouse" || tool !== "select" || !canMove) return;
+              const at = groundPoint(e.currentTarget, e);
+              dispatch(
+                at ? { kind: "hover-tile", tile: tileOf(arena, at) } : { kind: "leave-board" },
+              );
             }}
-            onPointerLeave={() => setHover(null)}
+            onPointerLeave={() => dispatch({ kind: "leave-board" })}
             onClick={(e) => {
-              if (mode !== "move" || !canAct || dice) return;
-              setDestination(groundPoint(e.currentTarget, e));
-              setInspected(null);
+              if (tool !== "select" || !canMove) return;
+              const at = groundPoint(e.currentTarget, e);
+              if (at) clickSquare(tileOf(arena, at));
             }}
           >
             <defs>
@@ -685,34 +920,33 @@ export function CombatBoard({
             )}
             {showSquares && !scenic && (
               <g className="combat-squares" pointerEvents="none">
-                {[...moveField.values()].map(({ tile, cost }) => {
-                  if (cost === 0) return null;
-                  const key = tileKey(tile);
-                  return (
-                    <polygon
-                      key={key}
-                      className={`combat-square ${sheltered?.has(key) ? "is-sheltered" : ""} ${
-                        spotTile && tileKey(spotTile) === key ? "is-chosen" : ""
-                      }`}
-                      points={points(squareCorners(tile).map(project))}
-                    />
-                  );
-                })}
+                {litSquares.map(({ tile, key, sheltered: safe, firing, faded }) => (
+                  <polygon
+                    key={key}
+                    className={`combat-square ${safe ? "is-sheltered" : ""} ${
+                      firing ? "is-firing" : ""
+                    } ${faded ? "is-faded" : ""} ${
+                      spotTile && tileKey(spotTile) === key ? "is-chosen" : ""
+                    }`}
+                    points={points(squareCorners(tile).map(project))}
+                  />
+                ))}
               </g>
             )}
-            {mode === "shoot" && player && target && (
+            {/* The line of the shot. Amber and solid when it exists, red and
+                broken when it does not — the dash carries the meaning as well
+                as the colour, so it survives being colour-blind or dimmed. */}
+            {player && aimed && (
               <line
+                className={`combat-los ${shot?.gap ? "is-blocked" : "is-clear"}`}
                 x1={project(player.data.position).x}
                 y1={project(player.data.position).y - 15}
-                x2={project(target.data.position).x}
-                y2={project(target.data.position).y - 15}
-                stroke={shot?.gap ? "#ff7770" : "#f9bd72"}
-                strokeWidth="2"
-                strokeDasharray={shot?.gap ? "5 7" : ""}
+                x2={project(aimed.data.position).x}
+                y2={project(aimed.data.position).y - 15}
                 pointerEvents="none"
               />
             )}
-            {route?.ok && mode === "move" && spotTile && !scenic && (
+            {route?.ok && spotTile && !scenic && (
               <g pointerEvents="none">
                 <polyline
                   points={points(route.path.map(project))}
@@ -754,18 +988,24 @@ export function CombatBoard({
                       aria-label={`${piece.label}, ${piece.destroyed ? "destroyed" : `${piece.hp} HP`}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (piece.destroyed && mode === "move" && canAct && !dice) {
-                          setDestination(groundPoint(e.currentTarget.ownerSVGElement!, e));
-                          setInspected(null);
-                        } else setInspected(piece.piece.id);
+                        // A standing crate is drawn as a box, so its clickable
+                        // shape overhangs the squares behind it. Ground the
+                        // player can actually stand on wins: the board is the
+                        // control surface, and inspecting is the fallback.
+                        const at = canMove
+                          ? groundPoint(e.currentTarget.ownerSVGElement!, e)
+                          : null;
+                        const square = at ? tileOf(arena, at) : null;
+                        if (square && !blockedSquares.has(tileKey(square))) clickSquare(square);
+                        else setInspected(piece.piece.id);
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          if (piece.destroyed && mode === "move" && canAct && !dice) {
-                            setDestination({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
-                            setInspected(null);
-                          } else setInspected(piece.piece.id);
+                          e.stopPropagation();
+                          if (piece.destroyed && canMove)
+                            clickSquare(tileOf(arena, { x: r.x + 1, y: r.y + 1 }));
+                          else setInspected(piece.piece.id);
                         }
                       }}
                     >
@@ -773,6 +1013,20 @@ export function CombatBoard({
                         points={points([...top, corners[2]!, corners[1]!, corners[0]!])}
                         fill="transparent"
                       />
+                      {blocker?.id === piece.piece.id && (
+                        // The thing in the way, said out loud. Outline plus a
+                        // label, so it does not rely on the colour alone.
+                        <g className="combat-blocker" pointerEvents="none">
+                          <polygon points={points(top)} />
+                          <text
+                            x={(corners[0]!.x + corners[2]!.x) / 2}
+                            y={corners[0]!.y - lift - 10}
+                            textAnchor="middle"
+                          >
+                            IN THE WAY
+                          </text>
+                        </g>
+                      )}
                       {scenic && inspected === piece.piece.id && (
                         <polygon
                           points={points(corners)}
@@ -829,29 +1083,44 @@ export function CombatBoard({
                     : actor.side === "hostile"
                       ? "#ff7770"
                       : "#b3a2ff";
-                  const chosen = mode === "shoot" && target?.actor.id === actor.id;
-                  const select = () => {
-                    if (!actor.isPlayer && !actor.defeated) {
-                      setSelected(actor.id);
-                      selectMode("shoot");
-                    }
-                  };
+                  const takeable = !actor.isPlayer && !actor.defeated;
+                  const locked = lockedId === actor.id;
+                  const chosen = pointedId === actor.id;
                   return (
                     <g
                       transform={`translate(${p.x},${p.y})`}
-                      className={`combat-unit ${actor.defeated ? "is-out" : ""}`}
+                      className={`combat-unit ${actor.defeated ? "is-out" : ""} ${
+                        locked ? "is-locked" : ""
+                      }`}
                       role="button"
                       tabIndex={0}
-                      aria-label={`${actor.name}, ${actor.hp} of ${actor.hpMax} HP${actor.isPlayer ? ", your character" : ", select target"}`}
+                      aria-label={
+                        actor.isPlayer
+                          ? `${actor.name}, ${actor.hp} of ${actor.hpMax} HP, your character`
+                          : `${actor.name}, ${actor.hp} of ${actor.hpMax} HP. ${
+                              locked ? "Selected; activate again to shoot" : "Activate to target"
+                            }`
+                      }
+                      aria-pressed={takeable ? locked : undefined}
                       onClick={(e) => {
+                        // The board behind this must not also read the click as
+                        // ground, or one gesture would target AND move.
                         e.stopPropagation();
-                        select();
+                        if (takeable) clickUnit(actor.id);
                       }}
                       onPointerMove={(e) => e.stopPropagation()}
+                      onPointerEnter={() => {
+                        if (takeable) dispatch({ kind: "hover-unit", targetId: actor.id });
+                      }}
+                      onPointerLeave={(e) => {
+                        e.stopPropagation();
+                        if (takeable) dispatch({ kind: "leave-unit" });
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          select();
+                          e.stopPropagation();
+                          if (takeable) clickUnit(actor.id);
                         }
                       }}
                     >
@@ -882,11 +1151,11 @@ export function CombatBoard({
                         fill="transparent"
                       />
                       <ellipse
-                        rx={chosen ? 21 : 15}
-                        ry={chosen ? 11 : 8}
+                        rx={locked ? 18 : 15}
+                        ry={locked ? 9 : 8}
                         fill={`${color}20`}
                         stroke={color}
-                        strokeWidth={chosen ? 2 : 1}
+                        strokeWidth={locked ? 2 : 1}
                       />
                       <g visibility={scenic ? "hidden" : undefined}>
                         {actor.defeated ? (
@@ -920,12 +1189,20 @@ export function CombatBoard({
                       <text y="23" textAnchor="middle" fill={color} className="combat-unit-label">
                         {actor.isPlayer ? "YOU" : actor.name}
                       </text>
-                      {chosen && (
+                      {/* Brackets around the person, not a box around a
+                          rectangle: they close in when the target is locked,
+                          so hovering and choosing read differently. */}
+                      {(chosen || locked) && (
                         <path
-                          d="M-29 -49v-8h8M29 -49v-8h-8M-29 5v8h8M29 5v8h-8"
+                          className={`combat-brackets ${locked ? "is-locked" : ""}`}
+                          d={
+                            locked
+                              ? "M-20 -46v-7h7M20 -46v-7h-7M-20 2v7h7M20 2v7h-7"
+                              : "M-24 -48v-8h8M24 -48v-8h-8M-24 3v8h8M24 3v8h-8"
+                          }
                           stroke={color}
                           fill="none"
-                          strokeWidth="2"
+                          strokeWidth={locked ? 2.4 : 1.6}
                         />
                       )}
                     </g>
@@ -978,6 +1255,29 @@ export function CombatBoard({
               <p>{playback.text}</p>
             </div>
           )}
+          {callout && (
+            <BattlefieldCallout
+              anchor={calloutAnchor}
+              tone={callout.tone}
+              title={callout.title}
+              lines={callout.lines}
+              hint={callout.hint}
+              onConfirm={callout.confirm}
+            >
+              {callout.scout && (
+                <button
+                  type="button"
+                  className="combat-callout-scout"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dispatch({ kind: "find-firing-position" });
+                  }}
+                >
+                  Find firing position
+                </button>
+              )}
+            </BattlefieldCallout>
+          )}
           <div className={`combat-map-hint ${feedback ? "has-feedback" : ""}`}>
             {feedback && !playback && (
               <p className="combat-feedback" role="status">
@@ -986,14 +1286,8 @@ export function CombatBoard({
             )}
             {!playback && (
               <>
-                <span className="combat-eyebrow">
-                  {mode === "pan" ? "Camera" : mode === "shoot" ? "Targeting" : "Movement"}
-                </span>
-                {mode === "pan"
-                  ? "Drag to look around"
-                  : mode === "shoot"
-                    ? "Select a target · review the shot"
-                    : "Select a square · preview your route · confirm"}
+                <span className="combat-eyebrow">{hintTitle}</span>
+                {hintBody}
               </>
             )}
           </div>
@@ -1005,7 +1299,7 @@ export function CombatBoard({
                 ? "Resolve action"
                 : inspectedCover
                   ? "Terrain"
-                  : mode === "move" && spot
+                  : spotTile
                     ? "Destination"
                     : "Target assessment"}
             </span>
@@ -1034,7 +1328,7 @@ export function CombatBoard({
                     : "Intact cover blocks the shot and the walking route."}
               </p>
             </div>
-          ) : mode === "move" && spot ? (
+          ) : spotTile ? (
             <div className="combat-assessment">
               <h2>{route?.ok ? "Reposition" : "Cannot move here"}</h2>
               <div className="combat-big-number">
@@ -1060,9 +1354,12 @@ export function CombatBoard({
                   {futureShot.gap ? futureShot.gap : `From here: DV ${futureShot.dv}`}
                 </p>
               )}
+              {/* The battlefield is where a move is confirmed. This is the
+                  keyboard-and-screen-reader path to the same one command, not
+                  a second way of committing it. */}
               <button
                 className="combat-confirm"
-                disabled={!canAct || !destination || !route?.ok || !onMoveTo}
+                disabled={interaction.type !== "move-preview" || !canAct || !route?.ok || !onMoveTo}
                 onClick={confirmMove}
               >
                 Confirm move <ChevronRight size={16} />
@@ -1105,7 +1402,30 @@ export function CombatBoard({
                 {shot?.dv ?? "—"}
                 <small>range DV</small>
               </div>
-              <p>{targetReadout}</p>
+              {blockedByCover ? (
+                <div className="combat-obstruction">
+                  <strong>No line of sight</strong>
+                  <p>
+                    Blocked by
+                    <br />
+                    <b>{targetCover ?? "something in the way"}</b>
+                  </p>
+                </div>
+              ) : outOfRange ? (
+                <div className="combat-obstruction">
+                  <strong>Out of range</strong>
+                  <p>
+                    {shot?.distance} m with the {weapon?.name ?? "weapon"}. The printed table stops
+                    short of that.
+                  </p>
+                </div>
+              ) : (
+                <p>
+                  {!shot
+                    ? "Select a usable weapon to assess this target."
+                    : (shot.gap ?? `${shot.distance} m · clear shot`)}
+                </p>
+              )}
               <div className="combat-target-stats">
                 <span>
                   {target.actor.hp}/{target.actor.hpMax} HP
@@ -1114,18 +1434,27 @@ export function CombatBoard({
                   <Shield size={13} /> SP {target.actor.spBody}
                 </span>
               </div>
-              <button
-                className="combat-confirm is-fire"
-                disabled={!canAct || !!shot?.gap || !shot || !onAttack}
-                onClick={() => {
-                  if (weapon) {
-                    selectMode("shoot");
-                    onAttack?.(target.actor.id, weapon.itemId);
+              {shot?.gap && firingTiles && firingTiles.size > 0 ? (
+                // A dead-end disabled button teaches nothing. This says what to
+                // do about it, and the board answers by lighting the ground.
+                <button
+                  className="combat-confirm is-scout"
+                  onClick={() => dispatch({ kind: "find-firing-position" })}
+                  disabled={!canMove}
+                >
+                  Find firing position <Footprints size={16} />
+                </button>
+              ) : (
+                <button
+                  className="combat-confirm is-fire"
+                  disabled={
+                    lockedId !== target.actor.id || !canAct || !!shot?.gap || !shot || !onAttack
                   }
-                }}
-              >
-                Take shot <Crosshair size={16} />
-              </button>
+                  onClick={confirmShot}
+                >
+                  Take shot <Crosshair size={16} />
+                </button>
+              )}
             </div>
           ) : (
             <div className="combat-assessment">
@@ -1141,12 +1470,11 @@ export function CombatBoard({
               return (
                 <button
                   key={actor.id}
-                  disabled={busy || !!dice}
-                  className={target?.actor.id === actor.id ? "is-selected" : ""}
-                  onClick={() => {
-                    setSelected(actor.id);
-                    selectMode("shoot");
-                  }}
+                  disabled={resolving}
+                  className={lockedId === actor.id ? "is-selected" : ""}
+                  onClick={() => clickUnit(actor.id)}
+                  onPointerEnter={() => dispatch({ kind: "hover-unit", targetId: actor.id })}
+                  onPointerLeave={() => dispatch({ kind: "leave-unit" })}
                 >
                   <CombatPortrait name={actor.name} hostile={actor.side === "hostile"} />
                   <span>
@@ -1181,10 +1509,13 @@ export function CombatBoard({
           </div>
         </div>
         <div className="combat-actions" aria-label="Combat actions">
+          {/* The dock reads the Turn's economy and offers a shortcut into each
+              action. It is no longer a mode switch: the board is always live
+              for both, so neither of these has to be pressed first. */}
           <button
-            className={mode === "move" ? "is-selected" : ""}
-            disabled={!canAct || !!dice || !remaining?.movement || !onMoveTo}
-            onClick={() => selectMode("move")}
+            className={spotTile ? "is-selected" : ""}
+            disabled={!canMove}
+            onClick={() => dispatch({ kind: "cancel" })}
           >
             <Footprints />
             <span>
@@ -1197,9 +1528,12 @@ export function CombatBoard({
             </span>
           </button>
           <button
-            className={mode === "shoot" ? "is-selected" : ""}
-            disabled={!canAct || !!dice || !onAttack}
-            onClick={() => selectMode("shoot")}
+            className={lockedId ? "is-selected" : ""}
+            disabled={!canAct || resolving || !onAttack || !targets.length}
+            onClick={() => {
+              const next = targets[0];
+              if (next) dispatch({ kind: "click-unit", targetId: next.actor.id });
+            }}
           >
             <Crosshair />
             <span>
