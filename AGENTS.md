@@ -356,7 +356,9 @@ Keep these in mind when changing adjacent code:
   not in code.
 - `bun run lint` still fails on a pre-existing `prefer-const` error in
   `src/integrations/supabase/previewAuthStorage.ts`, plus existing Fast Refresh
-  warnings.
+  warnings. CI runs lint with `continue-on-error`, which is why this has
+  survived: a lint error will not turn a build red, so nothing catches a new one
+  for you. Run it locally.
 - `src/integrations/supabase/types.ts` was hand-synchronised for
   `campaign_places` rather than regenerated.
   `src/features/campaign/__tests__/placeSchema.test.ts` compares that table's
