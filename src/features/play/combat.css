@@ -1157,3 +1157,43 @@
 .combat-scenic .combat-impact {
   animation-delay: 220ms;
 }
+
+.combat-volume {
+  width: 65px;
+  accent-color: #65eee0;
+}
+.combat-playback-report {
+  position: absolute;
+  z-index: 4;
+  left: 16px;
+  bottom: 48px;
+  max-width: min(480px, calc(100% - 32px));
+  padding: 10px 14px;
+  background: #07121bef;
+  border-left: 2px solid #efb67a;
+  color: #dbe6eb;
+  pointer-events: none;
+  font-size: 12px;
+}
+.combat-playback-report span {
+  color: #efc090;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.combat-playback-report p {
+  margin: 4px 0 0;
+  line-height: 1.4;
+  max-height: 4.2em;
+  overflow: auto;
+}
+@media (max-width: 600px) {
+  .combat-volume {
+    width: 44px;
+  }
+  .combat-playback-report {
+    bottom: 42px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+}

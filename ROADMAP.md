@@ -206,8 +206,11 @@ those decisions visible and directly playable.
    confirmed-death poses now follow saved engine outcomes. Representative character
    art remains. The richer layout adds a two-section delivery truck, generator,
    dumpster, concrete and timber cover with intact/damaged/wrecked art. Existing
-   saved courtyard layouts stay unchanged. Sound/feedback polish and the full HUD
-   redesign follow this prop review. See
+   saved courtyard layouts stay unchanged. Combat feedback now includes original
+   synthesized weapon/material sounds, persistent audio controls, impact particles,
+   shared camera recoil and an explicit enemy-action readout. All consume saved
+   outcomes; skip and reduced motion remain supported. The full HUD redesign
+   follows this feedback review. See
    `docs/combat-visual-proof.md`.
 5. **After visual review: improvisation:** freeform intent previews a concrete, engine-validated cost
    and consequence alongside the common actions.

@@ -52,7 +52,14 @@ mirror inspected west-facing rows. Weapon-specific silhouettes and melee attack
 poses remain future art work; melee playback does not emit gunfire effects.
 Props now have authored damage and wreckage states. The truck is static cover,
 not a drivable vehicle; its two sections follow the existing RED cover system.
-Sound, impact/camera polish and the full HUD redesign are next. Lighting is
+Combat feedback now adds original synthesized weapon reports, material impacts,
+misses, footsteps and reload cues. Sounds follow saved outcomes, unlock on a player
+gesture and have persistent mute/volume controls. Skip, unmount and hiding the tab
+stop active audio; overdue cues are discarded. A small recoil offset moves the
+art and targeting overlay together and returns to the unchanged camera position;
+reduced motion disables it. Enemy playback highlights the acting combatant and
+shows their action, target and factual result. Cover changes appearance at impact,
+and missed tracers avoid the target. The full HUD redesign remains next. Lighting is
 primarily baked into the art, not real-time normal-map lighting.
 
 The environment image contains only unobstructed floor and perimeter architecture.
