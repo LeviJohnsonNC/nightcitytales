@@ -34,6 +34,7 @@ import {
   type CapabilitySnapshot,
   type WeaponCapability,
 } from "./capability";
+import { combatMoveAllowance } from "./combat";
 import { planReload } from "./reload";
 
 export const MOVE_METRES_NOTE =
@@ -66,7 +67,8 @@ export type LegalityCode =
   | "rank_too_low"
   | "netrun_no_interface"
   | "physically_incapable"
-  | "retry_unchanged";
+  | "retry_unchanged"
+  | "not_your_turn";
 
 export type CandidateAction =
   | {
@@ -220,11 +222,7 @@ function judgeWeaponForAttack(
     );
   }
   const turn = snapshot.turn;
-  if (
-    turn.inCombat &&
-    turn.shotWeaponId === weapon.itemId &&
-    turn.shotsThisRound >= Math.max(1, weapon.rof)
-  ) {
+  if (turn.inCombat && turn.shotsThisRound >= attackLimit(snapshot, weapon)) {
     return no(
       "rof_exceeded",
       `${weapon.name} has a Rate of Fire of ${weapon.rof}; that is already spent this Round.`,
@@ -250,6 +248,16 @@ export function judgeAction(
   snapshot: CapabilitySnapshot,
   action: CandidateAction,
 ): LegalityVerdict {
+  if (snapshot.turn.inCombat && snapshot.turn.isPlayerTurn === false) {
+    return no("not_your_turn", "It is not your Turn.");
+  }
+  if (
+    snapshot.turn.inCombat &&
+    snapshot.turn.actionUsed &&
+    !["attack", "move", "spend"].includes(action.kind)
+  ) {
+    return no("action_spent", "Their Action for this Round is already spent.");
+  }
   // Mortally Wounded and unstabilised: nothing but a Death Save happens.
   if (snapshot.incapacitated && action.kind !== "spend") {
     return no(
@@ -397,8 +405,8 @@ export function judgeAction(
       if (turn.inCombat && turn.metresMoved > 0 && action.metres > 0) {
         return no("movement_spent", "They have already moved this Round.");
       }
-      const allowance = Math.max(0, snapshot.move);
-      if (allowance > 0 && action.metres > allowance) {
+      const allowance = combatMoveAllowance(snapshot.move, snapshot.woundState);
+      if (!Number.isFinite(action.metres) || action.metres <= 0 || action.metres > allowance) {
         return no(
           "move_exceeded",
           `That is ${action.metres} m in one Move; their MOVE covers ${allowance} m.`,
@@ -440,4 +448,45 @@ export function judgeAction(
     default:
       return OK;
   }
+}
+
+/** Switching weapons cannot reset the attacks already spent on this Action. */
+function attackLimit(snapshot: CapabilitySnapshot, weapon: WeaponCapability): number {
+  const previous = snapshot.turn.shotWeaponId
+    ? findWeapon(snapshot, snapshot.turn.shotWeaponId)
+    : null;
+  return Math.max(1, Math.min(weapon.rof, previous?.rof ?? weapon.rof));
+}
+
+/** Remaining budgets, independent of which target the player currently selected.
+ * Keep a remaining attack even without a visible target: they may move or improvise.
+ */
+export function remainingCombatTurn(snapshot: CapabilitySnapshot) {
+  const enabled =
+    snapshot.turn.inCombat && snapshot.turn.isPlayerTurn !== false && !snapshot.incapacitated;
+  const movement =
+    enabled && snapshot.turn.metresMoved === 0
+      ? combatMoveAllowance(snapshot.move, snapshot.woundState)
+      : 0;
+  const action = enabled && !snapshot.turn.actionUsed;
+  const attacks =
+    enabled && (action || snapshot.turn.shotsThisRound > 0)
+      ? Math.max(
+          0,
+          ...snapshot.weapons
+            .filter((w) => !w.broken && w.roundsLoaded !== 0)
+            .map((w) =>
+              Math.min(
+                attackLimit(snapshot, w) - snapshot.turn.shotsThisRound,
+                w.roundsLoaded ?? Infinity,
+              ),
+            ),
+        )
+      : 0;
+  return {
+    movement,
+    action,
+    attacks,
+    exhausted: enabled && movement === 0 && !action && attacks === 0,
+  };
 }

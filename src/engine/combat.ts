@@ -268,3 +268,8 @@ export function rollDeathSave(
   const survived = !autoFail && effective < body;
   return { roll, penalty, effective, autoFail, survived, penaltyAfter: penalty + 1 };
 }
+
+/** Retains the existing MOVE allowance; rules conversion is not a rendering decision. */
+export function combatMoveAllowance(move: number, wound: WoundStateCode): number {
+  return move <= 0 ? 0 : Math.max(1, move + woundMovePenalty(wound));
+}

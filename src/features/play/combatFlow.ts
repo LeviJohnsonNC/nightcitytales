@@ -27,7 +27,9 @@ import {
   moraleTriggerFor,
   rollMorale,
   metresBetween,
-  moveToward,
+  previewMovement,
+  walkingPath,
+  walkRoute,
   placeHostiles,
   singleShotDV,
   startEncounter as rollInitiativeOrder,
@@ -334,11 +336,15 @@ export async function runNpcTurns(
         allowance: moveAllowance(stats.move, live_actor.woundState),
         arena,
       });
-      if (step.metres > 0) {
-        stats = { ...stats, position: step.position };
+      const path = walkingPath(arena, cover, stats.position, step.position);
+      const walked = path
+        ? walkRoute(path, moveAllowance(stats.move, live_actor.woundState))
+        : null;
+      if (walked && walked.metres > 0) {
+        stats = { ...stats, position: walked.position };
         data = { ...data, [actor.id]: stats };
         lines.push(
-          `${actor.name} moves ${step.metres} m, now ${metresApart(stats, targetStats)} m from ${target.name}.`,
+          `${actor.name} moves ${walked.metres} m, now ${metresApart(stats, targetStats)} m from ${target.name}.`,
         );
       }
     }
@@ -548,71 +554,24 @@ export type MovePlayerResult = {
 
 /** A Move the gate allowed, priced and clamped — or the refusal it earned. */
 type PlannedStep =
-  | { ok: true; position: Point; moved: number; cost: ActionCost }
+  | { ok: true; position: Point; path: Point[]; moved: number; cost: ActionCost }
   | { ok: false; refusal: Extract<LegalityVerdict, { ok: false }> };
 
-/**
- * Where a Move actually ends, and what it costs.
- *
- * Shared by both ways a character can be told to go: the model naming a person
- * and a direction, and the player clicking a spot on the board. Neither of them
- * decides a single metre — this does, out of MOVE, the arena's walls and the
- * legality gate, so the two entry points cannot drift into two different
- * answers about how far somebody got.
- *
- * The Move gate in engine/legality.ts has existed since the legality layer
- * shipped and had never once been called, because nothing in the app could
- * move. It is what refuses a second Move in the same Round.
- */
+/** Adapt live encounter state to the same engine planner the board previews. */
 function planStep(input: {
   live: LiveEncounter;
   capability: CapabilitySnapshot;
   from: Point;
-  woundState: WoundStateCode;
-  /** Where they are trying to get to. */
   to: Point;
-  /**
-   * How far the caller is asking to travel, for the gate to price. The
-   * closer/away path asks for the whole allowance because that is what it
-   * spends; the board asks for the distance to the spot that was clicked, so
-   * that clicking out of reach is REFUSED with a reason rather than silently
-   * becoming a shorter move somewhere the player did not choose.
-   */
-  requested: number;
 }): PlannedStep {
-  const { live, capability } = input;
-  // The LIVE sheet value, not the one frozen into the encounter when it
-  // started: judgeAction validates against snapshot.move, and two sources for
-  // one number is how they end up disagreeing.
-  const allowance = moveAllowance(capability.move, input.woundState);
-  if (allowance <= 0) {
-    return {
-      ok: false,
-      refusal: { ok: false, code: "move_exceeded", reason: "They have no MOVE to spend." },
-    };
-  }
-  const verdict = judgeAction(capability, { kind: "move", metres: input.requested });
-  if (!verdict.ok) return { ok: false, refusal: verdict };
-
-  const arena = arenaFor(live.arena);
-  const step = moveToward(input.from, input.to, allowance);
-  const position = clampToArena(arena, step.position);
-  const moved = Math.round(metresBetween(input.from, position));
-  if (moved <= 0) {
-    return {
-      ok: false,
-      refusal: {
-        ok: false,
-        code: "move_exceeded",
-        reason: `There is nowhere to go — they are already at the edge of ${arena.label}.`,
-      },
-    };
-  }
-  // Charged at what was actually covered, not at what was asked for: the gate
-  // priced the request, and the arena's edge may have stopped them short. The
-  // refusal of a SECOND Move does not depend on the number — any metres spent
-  // this Round is what closes it — so this only has to be true.
-  return { ok: true, position, moved, cost: { ...verdict.cost, metres: moved } };
+  const plan = previewMovement({
+    arena: arenaFor(input.live.arena),
+    cover: input.live.cover,
+    from: input.from,
+    to: input.to,
+    capability: input.capability,
+  });
+  return plan.ok ? plan : { ok: false, refusal: plan };
 }
 
 /**
@@ -650,9 +609,7 @@ export async function movePlayer(input: {
     live,
     capability: input.capability,
     from: from.position,
-    woundState: player.woundState,
-    to: aim.position,
-    requested: allowance,
+    to: clampToArena(arenaFor(live.arena), aim.position),
   });
   if (!plan.ok) return { live, refusal: plan.refusal };
   const { position, moved } = plan;
@@ -715,17 +672,12 @@ export async function movePlayerTo(input: {
   if (!from) return { live, refusal: null };
 
   const arena = arenaFor(live.arena);
-  const wanted = clampToArena(arena, input.to);
+  const wanted = input.to;
   const plan = planStep({
     live,
     capability: input.capability,
     from: from.position,
-    woundState: player.woundState,
     to: wanted,
-    // What was actually asked for. Clicking beyond MOVE is refused with the
-    // gate's own reason rather than quietly becoming a shorter move to
-    // somewhere the player did not pick.
-    requested: Math.round(metresBetween(from.position, wanted)),
   });
   if (!plan.ok) return { live, refusal: plan.refusal };
   const { position, moved } = plan;
@@ -767,6 +719,7 @@ export async function movePlayerTo(input: {
     data: {
       metres: moved,
       to: position,
+      path: plan.path,
       intent: input.intent,
       ...(blocked.length > 0 ? { coveredFrom: blocked, behind: shielding } : {}),
     } as unknown as Json,

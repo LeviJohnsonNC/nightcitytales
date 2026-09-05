@@ -49,6 +49,8 @@ export type CoverPiece = {
    * cap, and a test holds every arena to it.
    */
   rect: Rect;
+  /** Intact footprint blocks walking unless explicitly authored as passable. */
+  blocksMovement?: boolean;
 };
 
 /**
