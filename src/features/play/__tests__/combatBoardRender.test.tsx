@@ -164,4 +164,70 @@ describe("the board renders", () => {
     );
     expect(after).not.toContain("combat-square");
   });
+  it("offers the ground before the player has touched anything", () => {
+    // Direct manipulation: no mode is chosen first, so the reachable squares
+    // are on the board from the moment it is the player's turn.
+    expect(html).toContain("combat-square");
+  });
+  it("shows no contextual control until something is chosen", () => {
+    expect(html).not.toContain("combat-callout");
+  });
+  it("does not arm the sidebar's confirm until a route is locked", () => {
+    const confirm = /<button[^>]*combat-confirm[^>]*>/.exec(html)?.[0] ?? "";
+    expect(confirm).toContain("disabled");
+  });
+});
+
+/**
+ * A blocked shot has to teach, not just refuse.
+ *
+ * The old screen's whole answer was a greyed-out Take shot, which says that
+ * something is wrong and nothing about what or what to do instead.
+ */
+describe("a target nothing can see", () => {
+  const blockedArena = arenaFor("night_shift_grid");
+  const behindCover = {
+    ...live,
+    data: {
+      ...live.data,
+      h1: { ...live.data["h1"], position: { x: 21, y: 17 } },
+    },
+  } as unknown as LiveEncounter;
+  const blindCapability = {
+    ...capability,
+    targets: [
+      {
+        id: "h1",
+        key: "h1",
+        name: "Street Thug 1",
+        distance: 20,
+        defeated: false,
+        perceivable: false,
+        coverLabel: "a yellow generator housing",
+      },
+      { ...(capability.targets[1] as object) },
+    ],
+  } as unknown as CapabilitySnapshot;
+  const html = renderToStaticMarkup(
+    <CombatBoard
+      live={behindCover}
+      capability={blindCapability}
+      weaponId="very_heavy_pistol"
+      onWeaponId={() => {}}
+      onMoveTo={() => {}}
+      onAttack={() => {}}
+    />,
+  );
+  it("names the obstruction rather than only greying a button", () => {
+    expect(html).toContain("No line of sight");
+    expect(html).toContain("a yellow generator housing");
+  });
+  it("offers somewhere to go instead", () => {
+    expect(html).toContain("Find firing position");
+    expect(html).not.toContain("Take shot");
+  });
+  it("marks the blocker on the board, and draws the shot as broken", () => {
+    expect(html).toContain("combat-blocker");
+    expect(blockedArena.cover?.some((c) => c.id === "generator")).toBe(true);
+  });
 });

@@ -202,13 +202,13 @@
   touch-action: none;
   user-select: none;
 }
-.mode-move .combat-arena {
+.tool-select .combat-arena {
   cursor: crosshair;
 }
-.mode-pan .combat-arena {
+.tool-pan .combat-arena {
   cursor: grab;
 }
-.mode-pan .combat-arena:active {
+.tool-pan .combat-arena:active {
   cursor: grabbing;
 }
 /* Every square a Move Action reaches. Drawn as the ground itself rather than a
@@ -225,6 +225,17 @@
 .combat-square.is-sheltered {
   fill: #f9bd7226;
   stroke: #f9bd7259;
+}
+/* Ground that can see the target being aimed at. Gold rather than a third
+   shade of the same cyan, and the squares that cannot are faded rather than
+   hidden so the player can still read how far they could go. */
+.combat-square.is-firing {
+  fill: #ffd16630;
+  stroke: #ffd16688;
+  stroke-width: 1.1;
+}
+.combat-square.is-faded {
+  opacity: 0.3;
 }
 .combat-square.is-chosen {
   fill: #65eee047;
@@ -1848,4 +1859,170 @@
   margin-top: 16px;
   max-height: 30dvh;
   overflow: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Choose on the battlefield. Confirm on the battlefield.
+
+   Committing a move used to mean leaving the square you had just picked and
+   crossing the screen to a sidebar button. These sit on the board beside the
+   square or the body they act on. Positioned in screen pixels by
+   useBoardAnchor rather than drawn into the SVG, so they stay readable instead
+   of scaling with the camera.
+--------------------------------------------------------------------------- */
+.combat-callout {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+  filter: drop-shadow(0 6px 16px #040a0fbb);
+}
+.combat-callout-act {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 13px 9px;
+  min-width: 118px;
+  border: 1px solid var(--callout-edge, #65eee0);
+  background: linear-gradient(165deg, #0e2029f2, #071119f7);
+  color: #d8e8ec;
+  text-align: center;
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+}
+.combat-callout-act.is-static {
+  cursor: default;
+}
+.combat-callout-act strong {
+  font:
+    700 12px Archivo,
+    sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--callout-edge, #65eee0);
+}
+.combat-callout-act span {
+  font:
+    9px "IBM Plex Mono",
+    monospace;
+  letter-spacing: 0.05em;
+  color: #adc3ca;
+}
+.combat-callout-act em {
+  margin-top: 4px;
+  font:
+    8px "IBM Plex Mono",
+    monospace;
+  font-style: normal;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--callout-edge, #65eee0);
+  opacity: 0.75;
+}
+button.combat-callout-act:hover {
+  background: linear-gradient(165deg, #16323df5, #0a1a24f7);
+}
+/* A tail, so the plate reads as belonging to the square beneath it. */
+.combat-callout::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 1px;
+  height: 6px;
+  background: var(--callout-edge, #65eee0);
+}
+.combat-callout.is-move {
+  --callout-edge: #65eee0;
+}
+.combat-callout.is-shoot {
+  --callout-edge: #f9bd72;
+}
+.combat-callout.is-blocked {
+  --callout-edge: #ff8079;
+}
+.combat-callout-scout {
+  margin-top: 7px;
+  padding: 5px 10px;
+  width: 100%;
+  border: 1px solid #ffd16677;
+  background: #ffd1661a;
+  color: #ffd8a0;
+  font:
+    8px "IBM Plex Mono",
+    monospace;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+.combat-callout-scout:hover {
+  border-color: #ffd166;
+  background: #ffd1662e;
+}
+
+/* The line of the shot. The dash carries the meaning as well as the colour. */
+.combat-los {
+  stroke-width: 2;
+}
+.combat-los.is-clear {
+  stroke: #f9bd72;
+}
+.combat-los.is-blocked {
+  stroke: #ff7770;
+  stroke-dasharray: 5 7;
+  stroke-width: 2.4;
+}
+/* The piece standing in the way, named on the board rather than only in prose. */
+.combat-blocker polygon {
+  fill: #ff777026;
+  stroke: #ff8079;
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+.combat-blocker text {
+  font:
+    700 9px "IBM Plex Mono",
+    monospace;
+  letter-spacing: 0.14em;
+  fill: #ff9a93;
+  paint-order: stroke;
+  stroke: #08131b;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.combat-brackets.is-locked {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+/* Why an attack is unavailable, in the inspector, next to what to do about it. */
+.combat-obstruction {
+  margin: 10px 0;
+  padding: 9px 11px;
+  border-left: 2px solid #ff8079;
+  background: #ff80790f;
+}
+.combat-obstruction strong {
+  display: block;
+  font:
+    700 10px "IBM Plex Mono",
+    monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ff9a93;
+}
+.combat-obstruction p {
+  margin: 5px 0 0;
+  font-size: 11px;
+  color: #c2d2d7;
+}
+.combat-obstruction b {
+  color: #e7f0f2;
+}
+.combat-confirm.is-scout {
+  border-color: #ffd16688;
+  color: #ffd8a0;
+  background: #ffd1661a;
+}
+.combat-confirm.is-scout:hover:not(:disabled) {
+  border-color: #ffd166;
+  background: #ffd1662e;
 }
