@@ -14,7 +14,16 @@ import {
   CHARACTER_FRAME,
   type Facing,
 } from "./characterAnimation";
-import { clearMatte, createCharacterAtlas } from "./characterTextures";
+import { createCharacterAtlas } from "./characterTextures";
+
+import { createPropTextures, propSource } from "./propTextures";
+import {
+  PROP_KINDS,
+  propKind,
+  propCondition,
+  propTexture,
+  propPlacement,
+} from "./propPresentation";
 
 export type CourtyardModel = {
   live: LiveEncounter;
@@ -41,7 +50,14 @@ export function createCourtyard(
   let ready = false;
   let disposed = false;
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const arena = arenaFor("night_shift");
+  const arena = arenaFor(initial.live.arena);
+  const kinds = arena.key === "night_shift_yard" ? PROP_KINDS : ["cargo" as const];
+  const assets = [
+    "ground",
+    "mercenary-animation",
+    "hostile-animation",
+    ...new Set(kinds.map(propSource)),
+  ];
   const { project } = battlefieldProjection(arena.extent.width, arena.extent.height);
   let started = 0;
   let previousLive: LiveEncounter | null = null;
@@ -53,32 +69,18 @@ export function createCourtyard(
     weather!: Phaser.GameObjects.Graphics;
     flash!: Phaser.GameObjects.Graphics;
     preload() {
-      for (const key of ["ground", "crate", "mercenary-animation", "hostile-animation"])
+      for (const key of assets)
         this.load.image(`source-${key}`, `/images/combat/night-shift/${key}.png`);
       this.load.on("loaderror", onFailure);
     }
     create() {
       if (disposed) return;
-      if (
-        ["ground", "crate", "mercenary-animation", "hostile-animation"].some(
-          (key) => !this.textures.exists(`source-${key}`),
-        )
-      ) {
+      if (assets.some((key) => !this.textures.exists(`source-${key}`))) {
         onFailure();
         return;
       }
       try {
-        for (const key of ["crate"]) {
-          const source = this.textures.get(`source-${key}`).getSourceImage() as HTMLImageElement;
-          const width = 256;
-          const height = Math.round((width * source.height) / source.width);
-          const texture = this.textures.createCanvas(key, width, height)!;
-          const ctx = texture.context;
-          ctx.drawImage(source, 0, 0, width, height);
-          clearMatte(ctx, width, height);
-          texture.refresh();
-          this.textures.remove(`source-${key}`);
-        }
+        createPropTextures(this, kinds);
         createCharacterAtlas(this, "mercenary");
         createCharacterAtlas(this, "hostile");
       } catch {
@@ -243,19 +245,20 @@ export function createCourtyard(
         units.delete(id);
       }
     for (const status of coverStatuses(arena, model.live.cover)) {
-      const r = status.piece.rect;
-      const p = project({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
-      const left = project({ x: r.x, y: r.y });
-      const right = project({ x: r.x + r.width, y: r.y + r.height });
-      const width = (right.x - left.x) / 0.846;
-      const front = project({ x: r.x + r.width, y: r.y });
+      const condition = propCondition(status);
+      const kind = propKind(arena.key, status.piece.id);
+      const placement = propPlacement(status, project);
+      const texture = propTexture(kind, condition);
+      const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
+      const height = status.destroyed
+        ? placement.groundDepth + 5
+        : (placement.width * image.height) / image.width;
       const prop = current.add
-        .image(p.x, front.y, "crate")
-        .setOrigin(0.5, 0.908)
-        .setDisplaySize(width, status.destroyed ? width * 0.16 : width)
-        .setDepth(p.y);
+        .image(placement.x, placement.y, texture)
+        .setOrigin(0.5, 1)
+        .setDisplaySize(placement.width, height)
+        .setDepth(placement.depth);
       prop.setData("destroyed", status.destroyed);
-      if (status.destroyed) prop.setTint(0x4b535a).setAlpha(0.7);
       scenery.push(prop);
     }
     for (const id of model.live.state.order) {

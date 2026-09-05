@@ -1,6 +1,6 @@
 # Night Shift courtyard — visual proof
 
-The courtyard visual proof now includes the first character animation pass.
+The courtyard now includes the character animation and richer-prop passes.
 Open `/combat`, select **Night Shift courtyard**, choose a character/opposition,
 and launch. This uses the existing campaign encounter creation and `/play/:id`
 turn loop. The harness writes real campaign data, as it did before this change.
@@ -9,10 +9,12 @@ Existing encounters on other maps retain the diagram renderer.
 ## Included
 
 - Phaser 4.2.1, loaded only when this arena is displayed in scenic mode.
-- One authored 24 × 24 metre courtyard with four destructible cargo sections.
+- One 24 × 24 metre courtyard with eight destructible cover sections: two cargo
+  crates, a generator housing, a dumpster, a concrete roadblock, timber packing,
+  and the separately destructible cargo and cab/engine halves of a delivery truck.
   Geometry and materials live in `engine/battlefield.ts`; HP is still read from
   RED's cover rules. No database changes or combat rules changes.
-- Generated environment art, separate character and crate textures, depth sorting,
+- Generated environment art, separate character and prop textures, depth sorting,
   reduced opacity for props obscuring units, rain, and brief muzzle illumination.
 - Existing React/SVG controls, path previews, target assessments, labels and hit
   regions over Phaser. Both renderers use `battlefieldProjection`; the canvas
@@ -26,6 +28,14 @@ Existing encounters on other maps retain the diagram renderer.
 - Death poses require a resolved Death Save receipt (`exitReason: dead`) saved in
   combatant JSON. Zero HP, withdrawal/surrender, and legacy defeated units are not
   assumed dead. Skipping or reloading keeps the saved outcome without replaying it.
+- Intact, damaged and wrecked art follows `coverStatuses`: full HP, any damage,
+  and destroyed respectively. This is presentation, not a new damage mechanic.
+  Wreckage is registered to the original footprint and stays under characters;
+  clicking it in Move mode previews a route. Intact prop inspection shows HP,
+  material/thickness and highlights its exact ground footprint.
+- `night_shift_yard` is the new layout; saved `night_shift` encounters retain their
+  four original footprints, cover IDs and material values. The harness labels that
+  choice **Night Shift courtyard (original layout)**. Both use scenic rendering.
 - Diagram toggle; the diagram also stays available during loading, asset failure,
   or WebGL context loss. Select Scenic view to retry after a graphics failure.
 - Reduced-motion preference suppresses ambient rain, interpolated movement and
@@ -40,24 +50,43 @@ firing and hurt are single authored poses with small recoil/settle motion, and
 death transitions from hurt into an authored prone pose. The hostile's east views
 mirror inspected west-facing rows. Weapon-specific silhouettes and melee attack
 poses remain future art work; melee playback does not emit gunfire effects.
-Destroyed crates flatten and darken. Authored wreckage, a vehicle, additional prop
-variety, sound and the full HUD redesign follow this character pass. Lighting is
+Props now have authored damage and wreckage states. The truck is static cover,
+not a drivable vehicle; its two sections follow the existing RED cover system.
+Sound, impact/camera polish and the full HUD redesign are next. Lighting is
 primarily baked into the art, not real-time normal-map lighting.
 
 The environment image contains only unobstructed floor and perimeter architecture.
 A faint dashed boundary marks the playable inset, which is smaller than the illustrated floor. New cover is always a
-separate object; never paint a gameplay obstacle into that background. Its four
-crates are the engine's cover sections, not independently positioned decorations.
+separate object; never paint a gameplay obstacle into that background. All eight
+sections read their position and projected width from engine rectangles. The art
+manifest maps section IDs to appearances and contains no duplicate world positions.
 
-Source PNGs remain unchanged. The renderer loads ground, crate and two animation
-sheets; the original standalone character PNGs remain as art references. On upload,
+Source PNGs remain unchanged. The renderer loads ground, six prop sheets and two animation
+sheets for the richer layout (only the cargo sheet for the original layout); the original standalone character PNGs remain as art references. On upload,
 edge-connected light matte is keyed out and each animation sheet is normalized into
 one 1024 × 512 atlas (32 cells). Curated crop boundaries avoid clipped heads and
 prone bodies, torso registration stabilizes horizontal placement, and a common
-standing height anchors the feet. The crate uploads at 256 pixels wide. Source GPU
+standing height anchors the feet. Prop states upload at 256 pixels wide after alpha-preserving cell extraction and
+light-matte removal where needed. Six unchanged prop sources total roughly 11 MB;
+compressed delivery assets remain a performance follow-up. The supplied alpha is
+preserved. Wreckage height is fitted to the projected ground depth, so collapsed
+remains read as passable rather than upright cover. Source GPU
 textures are released after conversion. Proper authored alpha and compressed delivery
 assets remain useful follow-up work. Desktop rendering targets 60 fps; this is a
 target, not a measured guarantee on players' devices.
+
+## Prop assets
+
+The built-in image tool generated these project assets, all saved in
+`public/images/combat/night-shift/`:
+
+- `cargo-states.png`, `generator-states.png`, `dumpster-states.png`
+- `barrier-states.png`, `pallet-states.png`, `vehicle-states.png`
+
+The first five contain intact/damaged/wrecked columns. The vehicle sheet has
+cargo/cab columns and intact/damaged/wrecked rows. The complete final prompt set
+and style reference are in [courtyard-prop-prompts.json](courtyard-prop-prompts.json).
+The source images were inspected and copied unchanged into the project.
 
 ## Asset provenance and prompts
 
@@ -103,7 +132,7 @@ crimson panels, shaved head, red cybernetic eye and compact rifle”.
 
 ## Verification
 
-- 1,640 tests pass. Regression coverage includes animation timing, route-corner facing, saved HP
+- Character-pass baseline: 1,640 tests pass. Regression coverage includes animation timing, route-corner facing, saved HP
   snapshots, death versus withdrawal receipts, skip and reduced motion, plus camera alignment for desktop and both mobile shapes,
   path interpolation, valid spawn placement, and the existing combat flow tests.
 - Type checking and production build pass. Changed-file lint passes; repository
@@ -115,3 +144,17 @@ crimson panels, shaved head, red cybernetic eye and compact rifle”.
   poses, muzzle alignment at zoom, death, withdrawal and skipped playback.
   The fixture was removed. Authenticated database persistence was not browser-tested
   in this environment; its existing code paths and regression tests are retained.
+
+### Richer courtyard verification
+
+- All 1,645 tests pass with `bun run test --maxWorkers=1 --testTimeout=60000`.
+  Parallel runs on this machine hit the existing five-second limit in unrelated
+  exhaustive city-simulation tests. Type checking, production build and changed-file
+  lint pass; repository-wide lint retains the pre-existing errors described above.
+- New regression coverage freezes legacy geometry, checks art coverage and safe
+  spawns, independently destroys a truck section, round-trips its persisted damage,
+  verifies the resulting route/sightline, and checks sprite footprint registration.
+- Browser review used a temporary fixture around the shipping CombatBoard:
+  intact/damaged/wrecked art, partial truck destruction, keyboard cover inspection,
+  zoom, movement onto rubble, and original-layout compatibility. The fixture was
+  removed. Database persistence was not browser-tested; existing save paths remain.

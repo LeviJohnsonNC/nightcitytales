@@ -111,9 +111,80 @@ export type Arena = {
 };
 
 export const ARENAS: Arena[] = [
+  // A new key freezes the original courtyard for encounters already in progress.
+  // Vehicle halves remain independent 2m RED sections, never one shared HP pool.
+  {
+    key: "night_shift_yard",
+    label: "Night Shift courtyard",
+    extent: { width: 24, height: 24 },
+    playerStart: { x: 5, y: 5 },
+    hostileSlots: [
+      { x: 16, y: 15 },
+      { x: 20, y: 10 },
+      { x: 9, y: 19 },
+    ],
+    cover: [
+      {
+        id: "cargo_west",
+        label: "a sealed cargo crate",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 6, y: 10, width: 2, height: 2 },
+      },
+      {
+        id: "generator",
+        label: "a yellow generator housing",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 12, y: 11, width: 2, height: 2 },
+      },
+      {
+        id: "cargo_east",
+        label: "an armored cargo crate",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 17, y: 7, width: 2, height: 2 },
+      },
+      {
+        id: "dumpster",
+        label: "a loading bay dumpster",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 10, y: 17, width: 2, height: 2 },
+      },
+      {
+        id: "truck_cargo",
+        label: "the delivery truck's cargo section",
+        material: "steel",
+        thickness: "thin",
+        rect: { x: 12, y: 3, width: 2, height: 2 },
+      },
+      {
+        id: "truck_cab",
+        label: "the delivery truck's cab and engine block",
+        material: "steel",
+        thickness: "thick",
+        rect: { x: 14, y: 3, width: 2, height: 2 },
+      },
+      {
+        id: "concrete",
+        label: "a concrete roadblock",
+        material: "concrete",
+        thickness: "thick",
+        rect: { x: 8, y: 5, width: 2, height: 2 },
+      },
+      {
+        id: "pallets",
+        label: "a timber packing case on pallets",
+        material: "wood",
+        thickness: "thin",
+        rect: { x: 4, y: 15, width: 2, height: 2 },
+      },
+    ],
+  },
   {
     key: "night_shift",
-    label: "Night Shift courtyard",
+    label: "Night Shift courtyard (original layout)",
     extent: { width: 24, height: 24 },
     playerStart: { x: 5, y: 5 },
     hostileSlots: [
