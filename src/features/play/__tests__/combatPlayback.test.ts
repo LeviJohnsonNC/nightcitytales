@@ -24,9 +24,12 @@ describe("combat presentation queue", () => {
     queue.enqueue([frame(1), frame(2)]);
     queue.enqueue([frame(3)]);
     expect(states.at(-1)?.frame?.sequence).toBe(1);
+    const firstStart = states.at(-1)?.frame?.startedAt;
+    expect(firstStart).toBe(Date.now());
     vi.runAllTimers();
     expect(states.filter((s) => s.playing).map((s) => s.frame?.sequence)).toEqual([1, 2, 3]);
     expect(states.at(-1)?.playing).toBe(false);
+    expect(states.at(-1)?.frame?.startedAt).toBe(firstStart! + 1700);
     queue.dispose();
   });
   it("skips to the last saved result without replaying pending frames", () => {

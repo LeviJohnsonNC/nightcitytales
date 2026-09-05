@@ -263,6 +263,7 @@ export function CombatBoard({
               live={live}
               playback={playback}
               camera={camera}
+              aimTargetId={mode === "shoot" ? (target?.actor.id ?? null) : null}
               onReady={setArtReady}
               onFailure={handleArtFailure}
             />

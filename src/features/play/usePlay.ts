@@ -1047,6 +1047,8 @@ export async function commitAttack(
       kind: "attack",
       actorId: pending.attacker.id,
       targetId: pending.target.id,
+      targetHpBefore: pending.target.hp,
+      attackStyle: option.weapon.melee ? "melee" : "ranged",
       text: describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
       impact: result.attack.hit
         ? `HIT · ${pending.target.hp} → ${result.state.combatants[pending.target.id]?.hp} HP`
@@ -1570,12 +1572,35 @@ export async function commitDeathSave(
   const save = result.deathSave;
   if (!save) throw new Error("The engine did not roll a Death Save.");
 
-  const live = await saveLiveEncounter({ ...bundle.encounter, state: result.state });
+  const live = await saveLiveEncounter({
+    ...bundle.encounter,
+    state: result.state,
+    data: result.died
+      ? {
+          ...bundle.encounter.data,
+          [pending.combatant.id]: {
+            ...bundle.encounter.data[pending.combatant.id]!,
+            exitReason: "dead",
+          },
+        }
+      : bundle.encounter.data,
+  });
   await logDeathSave(campaignId, save, {
     combatantName: pending.combatant.name,
     died: result.died,
     beatId,
   });
+
+  publishCombatFrames(campaignId, [
+    {
+      live,
+      kind: "status",
+      actorId: pending.combatant.id,
+      text: result.died
+        ? `${pending.combatant.name} failed the Death Save.`
+        : `${pending.combatant.name} survived the Death Save.`,
+    },
+  ]);
 
   // closeOutFight alone, never settleNpcTurns: the save has just been ROLLED.
   // Surviving one leaves the player Mortally Wounded and still on their own
