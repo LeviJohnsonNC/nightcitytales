@@ -27,6 +27,33 @@ const ROOT = process.cwd();
 const MIGRATIONS = join(ROOT, "supabase/migrations");
 const TYPES = join(ROOT, "src/integrations/supabase/types.ts");
 
+/**
+ * The status values the newest CHECK on a column allows — the deployed one.
+ *
+ * Reads every migration in order and keeps the last CHECK it sees for that
+ * column, whether it arrived in a CREATE TABLE or a later ADD CONSTRAINT, so a
+ * table defined twice does not leave this reading the definition nobody runs.
+ */
+function allowedValuesFor(table: string, column: string): string[] {
+  const files = readdirSync(MIGRATIONS)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+  let allowed: string[] | null = null;
+  const pattern = new RegExp(`CHECK\\s*\\(\\s*${column}\\s+IN\\s*\\(([^)]*)\\)`, "gi");
+  for (const file of files) {
+    const sql = readFileSync(join(MIGRATIONS, file), "utf8");
+    // Only the sections of this file that concern the table in question.
+    for (const section of sql.split(/(?=CREATE TABLE|ALTER TABLE)/g)) {
+      if (!section.includes(`public.${table}`)) continue;
+      for (const match of section.matchAll(pattern)) {
+        allowed = [...match[1]!.matchAll(/'([^']+)'/g)].map((v) => v[1]!);
+      }
+    }
+  }
+  if (!allowed) throw new Error(`No CHECK on ${table}.${column} in any migration.`);
+  return allowed;
+}
+
 /** The last migration that defines this function — the one that is deployed. */
 function newestDefinitionOf(fn: string): string {
   const files = readdirSync(MIGRATIONS)
@@ -125,5 +152,44 @@ describe("save_encounter_state writes columns that exist", () => {
     // The function is defined in several migrations; a guard reading the first
     // would check a version nobody runs.
     expect(body).toContain("version = v_version + 1");
+  });
+});
+
+/**
+ * Can a fight end?
+ *
+ * `save_encounter_state` validated the status against one list and wrote it
+ * into a column whose CHECK was a different list, overlapping on two values
+ * that were not the two the engine produces when somebody wins. Every fight
+ * persisted fine until it was over, and then the raw constraint violation
+ * appeared in the player's Resolve Action panel.
+ *
+ * Same cause as the campaign_id regression above — `encounters` is created
+ * twice in the migration history — so it is guarded in the same place.
+ */
+describe("an encounter can be saved in every state the engine can reach", () => {
+  const allowed = allowedValuesFor("encounters", "status");
+
+  it("accepts every EncounterStatus the engine can produce", () => {
+    // Mirrors engine/encounter.ts. Written out rather than imported so that
+    // widening the union without widening the schema fails here.
+    for (const status of ["active", "friendlies_won", "friendlies_lost"]) {
+      expect(allowed, `the schema refuses ${status}`).toContain(status);
+    }
+  });
+
+  it("accepts the harness teardown status", () => {
+    // features/dev/seedEncounter.ts writes this when it ends a seeded fight.
+    expect(allowed).toContain("resolved");
+  });
+
+  it("allows nothing the transaction would reject on the way in", () => {
+    // The RPC's own allowlist is the contract; a column that permits more than
+    // it is a value no code path can ever legally write.
+    const body = newestDefinitionOf("save_encounter_state");
+    const guard = /status'\s+NOT IN\s*\(([^)]*)\)/.exec(body);
+    if (!guard) throw new Error("The transaction no longer guards status; update this test.");
+    const validated = [...guard[1]!.matchAll(/'([^']+)'/g)].map((v) => v[1]!);
+    expect([...allowed].sort()).toEqual([...validated].sort());
   });
 });
