@@ -1,0 +1,89 @@
+# Night Shift courtyard — visual proof
+
+Review the look before expanding the map or investing in full animation sets.
+Open `/combat`, select **Night Shift courtyard**, choose a character/opposition,
+and launch. This uses the existing campaign encounter creation and `/play/:id`
+turn loop. The harness writes real campaign data, as it did before this change.
+Existing encounters on other maps retain the diagram renderer.
+
+## Included
+
+- Phaser 4.2.1, loaded only when this arena is displayed in scenic mode.
+- One authored 24 × 24 metre courtyard with four destructible cargo sections.
+  Geometry and materials live in `engine/battlefield.ts`; HP is still read from
+  RED's cover rules. No database changes or combat rules changes.
+- Generated environment art, separate character and crate textures, depth sorting,
+  reduced opacity for props obscuring units, rain, and brief muzzle illumination.
+- Existing React/SVG controls, path previews, target assessments, labels and hit
+  regions over Phaser. Both renderers use `battlefieldProjection`; the canvas
+  camera reproduces SVG letterboxing, zoom and pan exactly.
+- Saved playback frames animate along the real path, at constant speed. Camera
+  changes do not restart playback. The renderer cannot move, damage or save a unit.
+- Diagram toggle; the diagram also stays available during loading, asset failure,
+  or WebGL context loss. Select Scenic view to retry after a graphics failure.
+- Reduced-motion preference suppresses ambient rain, interpolated movement and
+  muzzle flashes. The existing playback skip and reduced-motion queue still apply.
+
+## Deliberately provisional
+
+This is the first visual review, not the completed art milestone. Characters are
+static representative mercenary poses, not the player's saved appearance or
+finished directional animation sheets. Hostiles share one art proxy. Movement is
+sprite translation, not a walk cycle. Destroyed crates flatten and darken; authored
+wreckage, a vehicle, additional prop variety, attack/death animations, sound and the
+full HUD redesign follow the visual review. Lighting is primarily baked into the
+art; this is not a 3D renderer or a demonstration of real-time normal-map lighting.
+
+The environment image contains only unobstructed floor and perimeter architecture.
+A faint dashed boundary marks the playable inset, which is smaller than the illustrated floor. New cover is always a
+separate object; never paint a gameplay obstacle into that background. Its four
+crates are the engine's cover sections, not independently positioned decorations.
+
+The four PNGs are proof sources (7.5 MB total). The separate renderer chunk is
+360 KB gzipped in the production build and is excluded from the server bundle. At upload, character/prop textures
+are reduced to 192/256 pixels wide and their edge-connected light matte is keyed
+out. Original GPU sprite textures are released after that conversion. This keeps
+white details enclosed by a silhouette, but future animation sheets should have
+proper authored alpha and compressed delivery assets. Desktop rendering targets
+60 fps; this is a target, not a measured guarantee on players' devices.
+
+## Asset provenance and prompts
+
+Assets in `public/images/combat/night-shift/` were made with the built-in image
+generation tool for this project. No external asset pack or paid license was added.
+The supplied screenshot informed art direction, not mechanics or asset reuse.
+
+**ground.png** — final prompt:
+
+> Use case: stylized-concept. Create a production game environment texture for an isometric cyberpunk tactical game, high-detail realistic pre-rendered 3D look. Wide 1536x1024 image. A flat EMPTY wet industrial courtyard floor viewed orthographically at 30 degree elevation, diamond footprint with corners at approximately top center (768,150), right (1450,540), bottom center (768,930), left (86,540). Entire floor is flat, unobstructed concrete paving with subtle joints, drainage grates flush with floor, oil stains, painted worn loading stripes, puddles reflecting cyan neon on left and crimson on right, warm light patches. Along ONLY the far two edges outside the diamond: moody warehouse facade with corrugated shutters, pipes, vents, a cyan sign reading NIGHT SHIFT on left, crimson industrial lights on right. Foreground two edges fade into near-black. Strong cinematic night atmosphere, textured realistic wet materials, rich dark blue shadows with legible floor detail. Absolutely NO characters, crates, vehicles, barrels or freestanding obstacles on the floor. No UI, no grid overlay, no logos. This is the background layer; cover and actors are separately rendered at runtime. Precise symmetric isometric floor geometry, no perspective vanishing point.
+
+**mercenary.png** — initial prompt:
+
+> Use case: stylized-concept. Production isometric game sprite, actual transparent background. One single cyberpunk armored mercenary, full body and boots, holding a compact rifle ready in both hands, facing upper right (back three-quarter view) viewed from elevated 30 degree isometric tactical camera. Realistic detailed pre-rendered 3D video game aesthetic, dark navy armored jacket, combat trousers, small cyan trim, natural human proportions, believable anatomy. Character occupies 80% image height, centered with margin. Subtle cyan rim light left and neutral overhead lighting, no floor, no backdrop, no text, no UI, no additional poses. Clean alpha edges. This is a separate runtime character asset for a wet neon industrial courtyard.
+
+Final edit prompt, using that generated image as the edit target:
+
+> Use case: background-extraction. Edit target is the attached mercenary image. Remove ALL background including black and colored glow. Return ONLY the complete character and rifle on true transparent alpha background, like a cutout PNG game sprite. Preserve character appearance, pose, detail, proportions and all boots. No background gradient, no haze, no floor shadow, no checkerboard painted into the image. Transparent means empty alpha, not black. Fit entire character within image with small transparent margin.
+
+The tool returned an opaque light matte despite the transparency request; the
+renderer handles it as described above.
+
+**hostile.png** — final prompt:
+
+> Use case: stylized-concept. A full body cyberpunk hostile mercenary game sprite, isolated on pure white background. Realistic detailed pre-rendered 3D isometric tactical game art. Elevated camera 30 degrees looking down. Facing lower left, front three-quarter view, rifle aimed diagonally down left across chest at a distant target. Shaved head with cybernetic red eye, black armored tactical vest with crimson cloth panels, dark combat trousers and boots, natural proportions. Entire body from head to boots within image, centered generous margins. Neutral illumination with restrained red rim light. No ground, no shadow, no background texture, no glow outside body, no other characters, no UI. Crisp silhouette for runtime masking. Pose consistent with tactical combat.
+
+**crate.png** — final prompt:
+
+> Use case: stylized-concept. One isolated square industrial cargo crate for a realistic pre-rendered isometric cyberpunk tactics game. Orthographic elevated 30 degree view, front corner pointing down, symmetrical left and right faces, square footprint, low squat height. Dark weathered blue steel frame with olive polymer panels, metal latches, chipped paint, tiny amber identification label, fine rain droplets. Cyan rim on left, crimson rim on right, top readable. No text beyond small illegible serial markings. Full object centered, generous margin, entirely visible. On a solid PURE WHITE background with NO shadow, NO glow outside silhouette, NO floor, no other objects. 1024x1024. Crisp game-ready silhouette, highest material detail.
+
+## Verification
+
+- 1,628 tests pass, including camera alignment for desktop and both mobile shapes,
+  path interpolation, valid spawn placement, and the existing combat flow tests.
+- Type checking and production build pass. Changed-file lint passes; repository
+  lint retains the existing errors in `gen_routes.cjs` and `previewAuthStorage.ts`.
+- Browser inspection used the shipping CombatBoard with a temporary rendering
+  fixture: scenic rendering, zoom, keyboard movement preview/confirmation, cover
+  inspection/destruction, portrait and landscape frames, and forced WebGL loss.
+  The fixture was removed. Authenticated database persistence was not browser-tested
+  in this environment; its existing code paths and regression tests are retained.

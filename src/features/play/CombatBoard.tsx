@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   Crosshair,
   Footprints,
@@ -30,6 +30,7 @@ import { targetCapabilities } from "./capabilityModel";
 import { battlefieldProjection } from "./battlefieldProjection";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { frameDuration, type PlaybackFrame } from "./combatPlayback";
+import { CourtyardLayer } from "./courtyard/CourtyardLayer";
 import "./combat.css";
 
 type Props = {
@@ -77,13 +78,23 @@ export function CombatBoard({
   feedback,
   onSkipPlayback,
 }: Props) {
+  const [artReady, setArtReady] = useState(false);
+  const [artEnabled, setArtEnabled] = useState(true);
+  const handleArtFailure = useCallback(() => {
+    setArtReady(false);
+    setArtEnabled(false);
+  }, []);
   const [mode, setMode] = useState<"move" | "shoot" | "pan">("move");
   const [destination, setDestination] = useState<Point | null>(null);
   const [hover, setHover] = useState<Point | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [inspected, setInspected] = useState<string | null>(null);
   const [panel, setPanel] = useState<"journal" | "improvise" | null>(null);
-  const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 1 });
+  const [camera, setCamera] = useState({
+    x: 0,
+    y: 0,
+    zoom: live?.arena === "night_shift" ? 1.25 : 1,
+  });
   const drag = useRef<Point | null>(null);
   const patternId = useId().replaceAll(":", "");
   useEffect(() => {
@@ -91,6 +102,8 @@ export function CombatBoard({
   }, [dice]);
   if (!live) return null;
   const arena = arenaFor(live.arena);
+  const courtyard = arena.key === "night_shift";
+  const scenic = courtyard && artEnabled && artReady;
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   const cover = coverStatuses(arena, live.cover);
   const actors = live.state.order.flatMap((id) => {
@@ -186,7 +199,10 @@ export function CombatBoard({
     : null;
   const turnKey = `${live.id}:${live.state.round}:${active?.id}`;
   return (
-    <section className="combat-screen" aria-label="Tactical combat">
+    <section
+      className={`combat-screen ${scenic ? "combat-scenic" : ""}`}
+      aria-label="Tactical combat"
+    >
       <header className="combat-header">
         <div className="combat-brand">
           <span className="combat-eyebrow">Night City / combat</span>
@@ -227,7 +243,14 @@ export function CombatBoard({
               key={actor.id}
               className={`${actor.id === active?.id ? "is-active" : ""} ${actor.defeated ? "is-out" : ""}`}
             >
-              <span>{index + 1}</span>
+              {scenic ? (
+                <span
+                  className={`combat-proof-portrait ${actor.isPlayer ? "is-player" : "is-hostile"}`}
+                  aria-hidden="true"
+                />
+              ) : (
+                <span>{index + 1}</span>
+              )}
               {actor.isPlayer ? "YOU" : actor.name}
             </li>
           ))}
@@ -235,6 +258,15 @@ export function CombatBoard({
       </div>
       <div className="combat-main">
         <div className={`combat-stage mode-${mode}`}>
+          {courtyard && artEnabled && (
+            <CourtyardLayer
+              live={live}
+              playback={playback}
+              camera={camera}
+              onReady={setArtReady}
+              onFailure={handleArtFailure}
+            />
+          )}
           <div className="combat-map-caption">
             <span className="combat-eyebrow">{arena.label}</span>
             <span>
@@ -242,6 +274,18 @@ export function CombatBoard({
             </span>
           </div>
           <div className="combat-camera" aria-label="Camera controls">
+            {courtyard && (
+              <button
+                className="combat-view-toggle"
+                onClick={() => {
+                  setArtEnabled(!artEnabled);
+                  setArtReady(false);
+                }}
+                aria-pressed={artEnabled}
+              >
+                {artEnabled ? "Diagram view" : "Scenic view"}
+              </button>
+            )}
             <button
               className="combat-icon"
               aria-label="Zoom in"
@@ -269,7 +313,7 @@ export function CombatBoard({
             <button
               className="combat-icon"
               aria-label="Reset camera"
-              onClick={() => setCamera({ x: 0, y: 0, zoom: 1 })}
+              onClick={() => setCamera({ x: 0, y: 0, zoom: courtyard ? 1.25 : 1 })}
             >
               <Maximize size={17} />
             </button>
@@ -279,7 +323,7 @@ export function CombatBoard({
             clear. Targets and cover can also be selected with Tab and Enter.
           </span>
           <svg
-            className="combat-arena"
+            className={`combat-arena ${scenic ? "combat-arena-overlay" : ""}`}
             viewBox={viewBox}
             tabIndex={0}
             role="group"
@@ -288,6 +332,8 @@ export function CombatBoard({
               if (e.target !== e.currentTarget || mode !== "move" || !player) return;
               if (e.key === "Escape") {
                 setDestination(null);
+                setHover(null);
+                setInspected(null);
                 return;
               }
               if (e.key === "Enter") {
@@ -305,6 +351,7 @@ export function CombatBoard({
               if (!shift || !canAct || dice) return;
               e.preventDefault();
               const from = destination ?? player.data.position;
+              setInspected(null);
               setDestination({
                 x: Math.max(0, Math.min(arena.extent.width, from.x + shift.x)),
                 y: Math.max(0, Math.min(arena.extent.height, from.y + shift.y)),
@@ -361,100 +408,113 @@ export function CombatBoard({
                 <stop offset="1" stopColor="#3dddd6" stopOpacity="0" />
               </radialGradient>
             </defs>
-            <ellipse cx="550" cy="470" rx="440" ry="125" fill="#000" opacity=".3" />
-            <polygon
-              points={points(
-                [...boardCorners, boardCorners[0]!].map((p) => ({ ...p, y: p.y + 16 })),
-              )}
-              fill="#070e14"
-              stroke="#33434b"
-            />
-            <polygon
-              points={points(boardCorners)}
-              fill={`url(#${patternId}-ground)`}
-              stroke="#557079"
-              strokeWidth="1.3"
-            />
-            <polygon
-              points={points(boardCorners)}
-              fill={`url(#${patternId})`}
-              pointerEvents="none"
-            />
-            <g pointerEvents="none" clipPath={`url(#${patternId}-floor)`}>
-              <polyline
+            <g visibility={scenic ? "hidden" : undefined}>
+              <ellipse cx="550" cy="470" rx="440" ry="125" fill="#000" opacity=".3" />
+              <polygon
                 points={points(
-                  [
-                    { x: 0.5, y: 0.5 },
-                    { x: 0.5, y: arena.extent.height - 0.5 },
-                    { x: arena.extent.width - 0.5, y: arena.extent.height - 0.5 },
-                  ].map(project),
+                  [...boardCorners, boardCorners[0]!].map((p) => ({ ...p, y: p.y + 16 })),
                 )}
-                fill="none"
-                stroke={arena.key === "club_interior" ? "#db81cd" : "#a4ccca"}
-                strokeOpacity=".5"
-                strokeWidth="2"
+                fill="#070e14"
+                stroke="#33434b"
               />
-              <polyline
-                points={points(
-                  [
-                    { x: arena.extent.width * 0.12, y: arena.extent.height * 0.8 },
-                    { x: arena.extent.width * 0.88, y: arena.extent.height * 0.8 },
-                  ].map(project),
-                )}
-                fill="none"
-                stroke="#d5ba82"
-                strokeOpacity=".25"
-                strokeWidth="3"
-                strokeDasharray="14 9"
+              <polygon
+                points={points(boardCorners)}
+                fill={`url(#${patternId}-ground)`}
+                stroke="#557079"
+                strokeWidth="1.3"
               />
-              <g
-                transform={`matrix(${project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x},${project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y},${project({ x: 0, y: 1 }).x - project({ x: 0, y: 0 }).x},${project({ x: 0, y: 1 }).y - project({ x: 0, y: 0 }).y},${project({ x: 0, y: 0 }).x},${project({ x: 0, y: 0 }).y})`}
-              >
-                <text
-                  x={arena.extent.width * 0.12}
-                  y={arena.extent.height * 0.9}
-                  fontSize={arena.extent.width * 0.055}
-                  fontFamily="monospace"
-                  letterSpacing=".25"
-                  fill="#bed8d3"
-                  opacity=".12"
+              <polygon
+                points={points(boardCorners)}
+                fill={`url(#${patternId})`}
+                pointerEvents="none"
+              />
+              <g pointerEvents="none" clipPath={`url(#${patternId}-floor)`}>
+                <polyline
+                  points={points(
+                    [
+                      { x: 0.5, y: 0.5 },
+                      { x: 0.5, y: arena.extent.height - 0.5 },
+                      { x: arena.extent.width - 0.5, y: arena.extent.height - 0.5 },
+                    ].map(project),
+                  )}
+                  fill="none"
+                  stroke={arena.key === "club_interior" ? "#db81cd" : "#a4ccca"}
+                  strokeOpacity=".5"
+                  strokeWidth="2"
+                />
+                <polyline
+                  points={points(
+                    [
+                      { x: arena.extent.width * 0.12, y: arena.extent.height * 0.8 },
+                      { x: arena.extent.width * 0.88, y: arena.extent.height * 0.8 },
+                    ].map(project),
+                  )}
+                  fill="none"
+                  stroke="#d5ba82"
+                  strokeOpacity=".25"
+                  strokeWidth="3"
+                  strokeDasharray="14 9"
+                />
+                <g
+                  transform={`matrix(${project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x},${project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y},${project({ x: 0, y: 1 }).x - project({ x: 0, y: 0 }).x},${project({ x: 0, y: 1 }).y - project({ x: 0, y: 0 }).y},${project({ x: 0, y: 0 }).x},${project({ x: 0, y: 0 }).y})`}
                 >
-                  {arena.key === "club_interior" ? "AFTER HOURS" : "NIGHT CITY"}
-                </text>
+                  <text
+                    x={arena.extent.width * 0.12}
+                    y={arena.extent.height * 0.9}
+                    fontSize={arena.extent.width * 0.055}
+                    fontFamily="monospace"
+                    letterSpacing=".25"
+                    fill="#bed8d3"
+                    opacity=".12"
+                  >
+                    {arena.key === "club_interior" ? "AFTER HOURS" : "NIGHT CITY"}
+                  </text>
+                </g>
               </g>
-            </g>
-            {/* Cosmetic grid: no snapping, tiles or mechanics are introduced. */}
-            <g stroke="#a7cccf" strokeOpacity=".085" strokeWidth=".7" pointerEvents="none">
-              {Array.from({ length: Math.ceil(arena.extent.width / 2) - 1 }, (_, i) => (
-                <polyline
-                  key={`x${i}`}
-                  points={points(
-                    [
-                      { x: (i + 1) * 2, y: 0 },
-                      { x: (i + 1) * 2, y: arena.extent.height },
-                    ].map(project),
-                  )}
+              {/* Cosmetic grid: no snapping, tiles or mechanics are introduced. */}
+              <g stroke="#a7cccf" strokeOpacity=".085" strokeWidth=".7" pointerEvents="none">
+                {Array.from({ length: Math.ceil(arena.extent.width / 2) - 1 }, (_, i) => (
+                  <polyline
+                    key={`x${i}`}
+                    points={points(
+                      [
+                        { x: (i + 1) * 2, y: 0 },
+                        { x: (i + 1) * 2, y: arena.extent.height },
+                      ].map(project),
+                    )}
+                  />
+                ))}
+                {Array.from({ length: Math.ceil(arena.extent.height / 2) - 1 }, (_, i) => (
+                  <polyline
+                    key={`y${i}`}
+                    points={points(
+                      [
+                        { x: 0, y: (i + 1) * 2 },
+                        { x: arena.extent.width, y: (i + 1) * 2 },
+                      ].map(project),
+                    )}
+                  />
+                ))}
+              </g>
+              {player && (
+                <ellipse
+                  cx={project(player.data.position).x}
+                  cy={project(player.data.position).y}
+                  rx="170"
+                  ry="90"
+                  fill={`url(#${patternId}-light)`}
+                  pointerEvents="none"
                 />
-              ))}
-              {Array.from({ length: Math.ceil(arena.extent.height / 2) - 1 }, (_, i) => (
-                <polyline
-                  key={`y${i}`}
-                  points={points(
-                    [
-                      { x: 0, y: (i + 1) * 2 },
-                      { x: arena.extent.width, y: (i + 1) * 2 },
-                    ].map(project),
-                  )}
-                />
-              ))}
+              )}
             </g>
-            {player && (
-              <ellipse
-                cx={project(player.data.position).x}
-                cy={project(player.data.position).y}
-                rx="170"
-                ry="90"
-                fill={`url(#${patternId}-light)`}
+            {scenic && (
+              <polygon
+                points={points(boardCorners)}
+                fill="none"
+                stroke="#9ac7cc"
+                strokeOpacity=".22"
+                strokeWidth="1"
+                strokeDasharray="4 8"
                 pointerEvents="none"
               />
             )}
@@ -550,35 +610,41 @@ export function CombatBoard({
                       }}
                     >
                       <polygon
-                        points={points([corners[0]!, corners[1]!, top[1]!, top[0]!])}
-                        fill="#354b52"
-                        stroke="#61777d"
+                        points={points([...top, corners[2]!, corners[1]!, corners[0]!])}
+                        fill="transparent"
                       />
-                      <polygon
-                        points={points([corners[1]!, corners[2]!, top[2]!, top[1]!])}
-                        fill="#263b45"
-                        stroke="#61777d"
-                      />
-                      <polygon
-                        points={points(top)}
-                        fill={
-                          piece.destroyed
-                            ? "#263137"
-                            : piece.piece.material === "wood"
-                              ? "#727363"
-                              : "#57737a"
-                        }
-                        stroke={inspected === piece.piece.id ? "#f9bd72" : "#9caa9f"}
-                        strokeWidth="1.2"
-                        strokeDasharray={piece.destroyed ? "3 3" : undefined}
-                      />
-                      {!piece.destroyed && (
-                        <polyline
-                          points={points([top[0]!, top[2]!])}
-                          stroke="#d2dbbe"
-                          opacity=".35"
+                      <g visibility={scenic ? "hidden" : undefined}>
+                        <polygon
+                          points={points([corners[0]!, corners[1]!, top[1]!, top[0]!])}
+                          fill="#354b52"
+                          stroke="#61777d"
                         />
-                      )}
+                        <polygon
+                          points={points([corners[1]!, corners[2]!, top[2]!, top[1]!])}
+                          fill="#263b45"
+                          stroke="#61777d"
+                        />
+                        <polygon
+                          points={points(top)}
+                          fill={
+                            piece.destroyed
+                              ? "#263137"
+                              : piece.piece.material === "wood"
+                                ? "#727363"
+                                : "#57737a"
+                          }
+                          stroke={inspected === piece.piece.id ? "#f9bd72" : "#9caa9f"}
+                          strokeWidth="1.2"
+                          strokeDasharray={piece.destroyed ? "3 3" : undefined}
+                        />
+                        {!piece.destroyed && (
+                          <polyline
+                            points={points([top[0]!, top[2]!])}
+                            stroke="#d2dbbe"
+                            opacity=".35"
+                          />
+                        )}
+                      </g>
                     </g>
                   );
                 },
@@ -638,7 +704,13 @@ export function CombatBoard({
                             fill="freeze"
                           />
                         )}
-                      <circle r="25" cy="-17" fill="transparent" />
+                      <rect
+                        x="-30"
+                        y={scenic ? -88 : -65}
+                        width="60"
+                        height={scenic ? 100 : 77}
+                        fill="transparent"
+                      />
                       <ellipse
                         rx={chosen ? 21 : 15}
                         ry={chosen ? 11 : 8}
@@ -646,21 +718,30 @@ export function CombatBoard({
                         stroke={color}
                         strokeWidth={chosen ? 2 : 1}
                       />
-                      {actor.defeated ? (
-                        <path d="M-10 -3L10 3M-8 4L8 -4" stroke={color} strokeWidth="3" />
-                      ) : (
-                        <g stroke="#091a23" strokeWidth="2">
-                          <path d="M-6 -18L-8 -4M5 -18L8 -4" stroke={color} strokeWidth="5" />
-                          <path d="M-7 -35L8 -35L10 -19L-8 -19Z" fill={color} />
-                          <circle cy="-43" r="6" fill="#d8ded6" />
-                          <path d="M6 -30L17 -23L23 -32" stroke={color} strokeWidth="4" />
-                          <path d="M20 -35L30 -38" stroke="#e5e8dc" strokeWidth="4" />
-                        </g>
-                      )}
-                      <rect x="-23" y="-62" width="46" height="4" rx="1" fill="#08131b" />
+                      <g visibility={scenic ? "hidden" : undefined}>
+                        {actor.defeated ? (
+                          <path d="M-10 -3L10 3M-8 4L8 -4" stroke={color} strokeWidth="3" />
+                        ) : (
+                          <g stroke="#091a23" strokeWidth="2">
+                            <path d="M-6 -18L-8 -4M5 -18L8 -4" stroke={color} strokeWidth="5" />
+                            <path d="M-7 -35L8 -35L10 -19L-8 -19Z" fill={color} />
+                            <circle cy="-43" r="6" fill="#d8ded6" />
+                            <path d="M6 -30L17 -23L23 -32" stroke={color} strokeWidth="4" />
+                            <path d="M20 -35L30 -38" stroke="#e5e8dc" strokeWidth="4" />
+                          </g>
+                        )}
+                      </g>
                       <rect
                         x="-23"
-                        y="-62"
+                        y={scenic ? -94 : -62}
+                        width="46"
+                        height="4"
+                        rx="1"
+                        fill="#08131b"
+                      />
+                      <rect
+                        x="-23"
+                        y={scenic ? -94 : -62}
                         width={46 * Math.max(0, Math.min(1, actor.hp / actor.hpMax))}
                         height="4"
                         rx="1"

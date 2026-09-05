@@ -199,9 +199,15 @@ those decisions visible and directly playable.
    impacts and a skip control. Routine exchanges append an engine-written report
    instead of calling the model. Input remains locked through playback and query
    refresh; reduced-motion playback is brief and does not animate movement.
-4. **Next: improvisation:** freeform intent previews a concrete, engine-validated cost
+4. **Visual proof ready for review:** one Night Shift courtyard with a lazy-loaded
+   Phaser 4 art layer, layered environment/cover/unit textures, saved-action
+   playback and the existing accessible tactical controls. Select it in `/combat`.
+   Static pose proxies establish the look; directional animation, a larger prop
+   kit and the full HUD redesign wait for this visual checkpoint. See
+   `docs/combat-visual-proof.md`.
+5. **After visual review: improvisation:** freeform intent previews a concrete, engine-validated cost
    and consequence alongside the common actions.
-5. **Tactical and mobile refinement:** encounter readability, meaningful terrain,
+6. **Tactical and mobile refinement:** encounter readability, meaningful terrain,
    pacing and touch verification.
 
 Milestone 1 retains the existing one-Move policy and MOVE-to-metres allowance;
