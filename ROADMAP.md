@@ -209,8 +209,10 @@ those decisions visible and directly playable.
    saved courtyard layouts stay unchanged. Combat feedback now includes original
    synthesized weapon/material sounds, persistent audio controls, impact particles,
    shared camera recoil and an explicit enemy-action readout. All consume saved
-   outcomes; skip and reduced motion remain supported. The full HUD redesign
-   follows this feedback review. See
+   outcomes; skip and reduced motion remain supported. The finished HUD adds saved
+   player/cast portraits, catalog weapon art and live ammo, a compact target
+   readout, and a persistent dock with “Try something…” alongside common actions.
+   Desktop and phone layouts keep the battlefield and controls available. See
    `docs/combat-visual-proof.md`.
 5. **After visual review: improvisation:** freeform intent previews a concrete, engine-validated cost
    and consequence alongside the common actions.

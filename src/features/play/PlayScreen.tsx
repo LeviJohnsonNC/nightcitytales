@@ -1,3 +1,5 @@
+import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
+import { portraitById, portraitArt } from "@/features/chargen/art";
 /**
  * The play screen: the narrative log and input in the center, with the
  * always-visible constructs (character vitals, the current scene + objectives +
@@ -694,6 +696,7 @@ function InputBar({
             send();
           }
         }}
+        aria-label="What do you do?"
         placeholder="What do you do?"
         rows={2}
         className="flex-1 resize-none"
@@ -721,6 +724,11 @@ function InputBar({
 
 export function PlayScreen({ campaignId }: { campaignId: string }) {
   const play = usePlay(campaignId);
+  const appearance = play.bundle?.character.character;
+  const generatedPortrait = usePortraitUrl(appearance?.portrait_path);
+  const savedPortrait = appearance?.portrait_id ? portraitById(appearance.portrait_id) : null;
+  const playerPortrait =
+    generatedPortrait ?? (savedPortrait ? portraitArt(savedPortrait).src : null);
   /**
    * The gun that is raised, for the whole fight.
    *
@@ -776,6 +784,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
     return (
       <CombatBoard
         key={play.encounter.id}
+        playerPortrait={playerPortrait}
         live={play.encounter}
         capability={play.capability}
         title={bundle.campaign.name}
@@ -815,13 +824,18 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         }
         improvisation={
           <>
-            <NarrativeLog events={bundle.events.slice(-6)} busy={play.busy || play.opening} />
             <InputBar
               onSend={play.submit}
               onAskOptions={play.askOptions}
               showOptions={false}
               busy={locked || Boolean(play.pendingAttack)}
             />
+            <div className="combat-intent-result" aria-live="polite">
+              <NarrativeLog
+                events={bundle.events.filter((event) => event.type === "gm_narration").slice(-1)}
+                busy={play.busy || play.opening}
+              />
+            </div>
           </>
         }
         journal={

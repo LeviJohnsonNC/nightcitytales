@@ -59,7 +59,18 @@ stop active audio; overdue cues are discarded. A small recoil offset moves the
 art and targeting overlay together and returns to the unchanged camera position;
 reduced motion disables it. Enemy playback highlights the acting combatant and
 shows their action, target and factual result. Cover changes appearance at impact,
-and missed tracers avoid the target. The full HUD redesign remains next. Lighting is
+and missed tracers avoid the target.
+
+The HUD now shows the player’s saved/generated portrait, known cast portraits in
+initiative and targeting, and catalog weapon art with live damage dice, ROF and
+loaded ammunition. Missing or failed portraits use a neutral silhouette; the HUD
+never assigns an unrelated person’s portrait to an unknown combatant. The compact
+readout names blocking cover and preserves the engine’s Range DV and legality.
+The persistent dock puts “Try something…” beside Move, Shoot and Reload. Its
+input comes first, with the latest GM response below; the full record remains in
+the journal. Dice prompts lock weapon/target changes and End turn. Desktop and
+390px phone layouts were reviewed with the shipping board and local fixtures;
+no preview fixture is shipped. Lighting is
 primarily baked into the art, not real-time normal-map lighting.
 
 The environment image contains only unobstructed floor and perimeter architecture.
