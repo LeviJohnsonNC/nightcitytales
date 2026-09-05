@@ -4,8 +4,13 @@ export type PropKind =
   "cargo" | "generator" | "dumpster" | "barrier" | "pallet" | "truck-cargo" | "truck-cab";
 export type PropCondition = "intact" | "damaged" | "wrecked";
 
+/** Every courtyard layout, including the retired ones a fight may still be on. */
+const COURTYARD_KEYS = ["night_shift", "night_shift_yard", "night_shift_grid"];
+/** The layouts whose cover ids map to their own authored prop art. */
+const YARD_ART_KEYS = ["night_shift_yard", "night_shift_grid"];
+
 export function isCourtyard(key: string | null | undefined) {
-  return key === "night_shift" || key === "night_shift_yard";
+  return typeof key === "string" && COURTYARD_KEYS.includes(key);
 }
 
 /** Only art associations live here. Footprints, materials and HP come from the engine. */
@@ -28,8 +33,12 @@ export const PROP_KINDS: PropKind[] = [
   "truck-cargo",
   "truck-cab",
 ];
+/** True when this layout's cover ids each have their own prop art to load. */
+export function hasYardProps(key: string | null | undefined) {
+  return typeof key === "string" && YARD_ART_KEYS.includes(key);
+}
 export function propKind(arena: string, id: string): PropKind {
-  return arena === "night_shift_yard" ? (YARD_PROPS[id] ?? "cargo") : "cargo";
+  return hasYardProps(arena) ? (YARD_PROPS[id] ?? "cargo") : "cargo";
 }
 export function propCondition(status: CoverStatus): PropCondition {
   return status.destroyed ? "wrecked" : status.hp < status.hpMax ? "damaged" : "intact";

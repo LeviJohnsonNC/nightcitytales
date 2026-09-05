@@ -62,12 +62,14 @@ vi.mock("@/features/campaign/combatLog", () => ({
 }));
 
 const { MOVE_EVENT, movePlayer, movePlayerTo, runNpcTurns } = await import("../combatFlow");
-const { EMPTY_TURN_ECONOMY, arenaFor, singleShotDV } = await import("@/engine");
+const { EMPTY_TURN_ECONOMY, arenaFor, singleShotDV, snapToGrid } = await import("@/engine");
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import type { CapabilitySnapshot } from "@/engine";
 import type { CombatantData } from "../encounterModel";
 
 const ARENA = arenaFor("street");
+// Combatants stand on square centres, exactly as encounterState snaps them on
+// the way out of the database. Tests name loose metres; the fixture squares them.
 
 function fight(over: {
   playerAt?: { x: number; y: number };
@@ -137,7 +139,7 @@ function fight(over: {
         weaponName: "",
         damageDice: 0,
         rangeType: null,
-        position: over.playerAt ?? { ...ARENA.playerStart },
+        position: snapToGrid(ARENA, over.playerAt ?? ARENA.playerStart),
         move: over.playerMove ?? 8,
         attackSkill: 0,
         ...(over.playerTurn ? { turn: over.playerTurn } : {}),
@@ -147,7 +149,7 @@ function fight(over: {
         weaponName: "sidearm",
         damageDice: over.hostileDamage ?? 2,
         rangeType: over.hostileRange === undefined ? "pistol" : over.hostileRange,
-        position: over.hostileAt ?? { x: 15, y: 45 },
+        position: snapToGrid(ARENA, over.hostileAt ?? { x: 15, y: 45 }),
         move: over.hostileMove ?? 6,
         attackSkill: 4,
       },
@@ -206,7 +208,7 @@ describe("the player moving", () => {
     const live = fight({});
     const before = metres(live);
     return move(live, "closer").then((result) => {
-      expect(metres(result.live)).toBe(before - 8);
+      expect(metres(result.live)).toBe(before - 16); // MOVE 8 = 8 squares = 16 m
       expect(result.refusal).toBeNull();
     });
   });
@@ -217,28 +219,30 @@ describe("the player moving", () => {
     const live = fight({ playerAt: { x: 15, y: 20 }, hostileAt: { x: 15, y: 60 } });
     const before = metres(live);
     const result = await move(live, "away");
-    expect(metres(result.live)).toBe(before + 8);
+    expect(metres(result.live)).toBe(before + 16);
   });
 
   it("only spends the metres it actually covered", async () => {
-    // Backing into a wall gives 5 m of ground, not the full 8 m Move.
+    // Backing into a wall gives the two squares that are there, not all eight.
     const live = fight({ playerAt: { x: 15, y: 5 }, hostileAt: { x: 15, y: 45 } });
     const result = await move(live, "away");
-    expect(result.live.data["p"]!.position.y).toBe(0);
-    expect(result.live.data["p"]!.turn?.metresMoved).toBe(5);
+    expect(result.live.data["p"]!.position.y).toBe(1); // the last square on the board
+    expect(result.live.data["p"]!.turn?.metresMoved).toBe(4);
   });
 
   it("changes the Range DV, which is the entire point", async () => {
-    const live = fight({ playerAt: { x: 15, y: 20 }, hostileAt: { x: 15, y: 34 } });
+    const live = fight({ playerAt: { x: 15, y: 21 }, hostileAt: { x: 15, y: 35 } });
     expect(singleShotDV("pistol", metres(live))).toBe(20); // 14 m
     const result = await move(live, "closer");
-    expect(metres(result.live)).toBe(6);
+    // A Move that outruns the gap stops at the square next to them: nobody
+    // shares a square, so "as close as possible" is adjacent, not on top.
+    expect(metres(result.live)).toBe(2);
     expect(singleShotDV("pistol", metres(result.live))).toBe(13);
   });
 
   it("spends the Move out of the Round's economy", async () => {
     const result = await move(fight({}), "closer");
-    expect(result.live.data["p"]!.turn).toMatchObject({ round: 1, metresMoved: 8 });
+    expect(result.live.data["p"]!.turn).toMatchObject({ round: 1, metresMoved: 16 });
   });
 
   it("refuses a second Move in the same Round", async () => {
@@ -265,7 +269,7 @@ describe("the player moving", () => {
     });
     const result = await move(live, "closer");
     expect(result.refusal).toBeNull();
-    expect(result.live.data["p"]!.turn).toMatchObject({ round: 2, metresMoved: 8 });
+    expect(result.live.data["p"]!.turn).toMatchObject({ round: 2, metresMoved: 16 });
   });
 
   it("keeps an attack already made this Round when it spends the Move", async () => {
@@ -283,7 +287,7 @@ describe("the player moving", () => {
       actionUsed: true,
       shotsThisRound: 1,
       shotWeaponId: "w",
-      metresMoved: 8,
+      metresMoved: 16,
     });
   });
 
@@ -304,9 +308,9 @@ describe("the player moving", () => {
     await move(fight({}), "closer");
     const row = ledger.find((e) => e.type === MOVE_EVENT)!;
     expect(row).toBeTruthy();
-    expect(row.data["metres"]).toBe(8);
+    expect(row.data["metres"]).toBe(16);
     expect(row.data["from"]).toBe(40);
-    expect(row.data["to"]).toBe(32);
+    expect(row.data["to"]).toBe(24);
   });
 
   it("persists, so the position survives a reload", async () => {
@@ -331,20 +335,20 @@ describe("the player moving to a spot on the board", () => {
     });
 
   it("walks to the spot that was picked", async () => {
-    const live = fight({ playerAt: { x: 15, y: 20 } });
-    const result = await goTo(live, { x: 15, y: 26 });
+    const live = fight({ playerAt: { x: 15, y: 21 } });
+    const result = await goTo(live, { x: 15, y: 27 });
     expect(result.refusal).toBeNull();
-    expect(result.live.data["p"]!.position).toEqual({ x: 15, y: 26 });
+    expect(result.live.data["p"]!.position).toEqual({ x: 15, y: 27 });
     expect(result.live.data["p"]!.turn).toMatchObject({ round: 1, metresMoved: 6 });
   });
 
   it("refuses a spot further than MOVE rather than stopping short of it", async () => {
     // Silently walking part-way would put them somewhere nobody chose, and the
     // Range DV of every shot afterwards is measured from wherever that is.
-    const live = fight({ playerAt: { x: 15, y: 20 } });
+    const live = fight({ playerAt: { x: 15, y: 21 } });
     const result = await goTo(live, { x: 15, y: 45 });
     expect(result.refusal?.code).toBe("move_exceeded");
-    expect(result.live.data["p"]!.position).toEqual({ x: 15, y: 20 });
+    expect(result.live.data["p"]!.position).toEqual({ x: 15, y: 21 });
   });
 
   it("refuses a second Move in the same Round", async () => {
@@ -367,10 +371,10 @@ describe("the player moving to a spot on the board", () => {
   });
 
   it("persists, and writes the metres to the ledger", async () => {
-    await goTo(fight({ playerAt: { x: 15, y: 20 } }), { x: 15, y: 25 });
+    await goTo(fight({ playerAt: { x: 15, y: 21 } }), { x: 15, y: 25 });
     expect(saved).toHaveLength(1);
     const row = ledger.find((e) => e.type === MOVE_EVENT)!;
-    expect(row.data["metres"]).toBe(5);
+    expect(row.data["metres"]).toBe(4);
   });
 
   /**
@@ -450,9 +454,9 @@ describe("hostiles moving on their own", () => {
   });
 
   it("stands still when it is already where it shoots best", async () => {
-    const live = fight({ hostileAt: { x: 15, y: 10 } }); // 5 m: inside a pistol's best band
+    const live = fight({ hostileAt: { x: 15, y: 11 } }); // 6 m: inside a pistol's best band
     const result = await runNpcTurns("c", null, live);
-    expect(metres(result.live)).toBe(5);
+    expect(metres(result.live)).toBe(6);
     expect(result.lines.some((l) => l.includes("moves"))).toBe(false);
   });
 
@@ -467,7 +471,7 @@ describe("hostiles moving on their own", () => {
     // would be invisible until somebody with real cyberlegs turned up.
     const live = fight({ hostileAt: { x: 15, y: 45 } });
     const result = await runNpcTurns("c", null, live);
-    expect(metres(result.live)).toBe(34);
+    expect(metres(result.live)).toBe(28); // MOVE 6 = 6 squares = 12 m
   });
 
   it("reports the range it ended at, not the one it started from", async () => {
@@ -476,7 +480,7 @@ describe("hostiles moving on their own", () => {
     const live = fight({ hostileAt: { x: 15, y: 45 } });
     const result = await runNpcTurns("c", null, live);
     const line = result.lines.find((l) => l.includes("moves"))!;
-    expect(line).toContain("34 m from Vela");
+    expect(line).toContain("28 m from Vela");
   });
 });
 

@@ -45,11 +45,26 @@
   border-bottom: 1px solid #ffffff12;
   background: #0d1922;
 }
+/* The sign, then what tonight is. The mark carries the place; the heading
+   carries the job, so neither has to say "Night City" twice. */
+.combat-lockup {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.combat-lockup .night-city-mark {
+  height: 26px;
+}
+.combat-lockup .combat-eyebrow {
+  padding-left: 11px;
+  border-left: 1px solid #ffffff26;
+  line-height: 1.1;
+}
 .combat-brand h1 {
   font-family: Archivo, sans-serif;
   font-size: 24px;
   letter-spacing: -0.03em;
-  margin: 3px 0;
+  margin: 4px 0 2px;
 }
 .combat-brand p {
   font-size: 12px;
@@ -196,11 +211,34 @@
 .mode-pan .combat-arena:active {
   cursor: grabbing;
 }
-.combat-reach {
-  fill: #65eee009;
-  stroke: #65eee067;
-  stroke-width: 1;
-  stroke-dasharray: 5 5;
+/* Every square a Move Action reaches. Drawn as the ground itself rather than a
+   ring around it: the player picks a square, so the squares are the control. */
+.combat-square {
+  fill: #65eee01f;
+  stroke: #65eee047;
+  stroke-width: 0.75;
+  transition:
+    fill var(--combat-square-fade, 120ms) ease-out,
+    stroke var(--combat-square-fade, 120ms) ease-out;
+}
+/* Ground no standing hostile has a line into — RED cover, measured, not a stance. */
+.combat-square.is-sheltered {
+  fill: #f9bd7226;
+  stroke: #f9bd7259;
+}
+.combat-square.is-chosen {
+  fill: #65eee047;
+  stroke: #a9fff5;
+  stroke-width: 1.6;
+}
+.combat-square.is-sheltered.is-chosen {
+  fill: #f9bd7247;
+  stroke: #ffd9a1;
+}
+.combat-destination {
+  fill: none;
+  stroke: #a9fff5;
+  stroke-width: 2;
 }
 .combat-unit {
   cursor: pointer;
@@ -228,7 +266,11 @@
   filter: brightness(1.3);
 }
 .combat-route {
-  animation: combat-dash 1.5s linear infinite;
+  stroke: #65eee0;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px #65eee066);
 }
 .combat-map-hint {
   position: absolute;
@@ -472,11 +514,6 @@
     opacity: 0.3;
   }
 }
-@keyframes combat-dash {
-  to {
-    stroke-dashoffset: -20;
-  }
-}
 @media (min-width: 1500px) {
   .combat-main {
     grid-template-columns: minmax(0, 1fr) 310px;
@@ -550,8 +587,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .combat-brand > .combat-eyebrow {
+  .combat-lockup .combat-eyebrow {
     font-size: 8px;
+  }
+  .combat-lockup .night-city-mark {
+    height: 19px;
   }
   .combat-header-tools {
     gap: 4px;
@@ -738,7 +778,9 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .combat-route,
+  .combat-square {
+    --combat-square-fade: 0ms;
+  }
   .is-busy .combat-status-dot {
     animation: none;
   }
@@ -810,9 +852,12 @@
   .combat-header {
     padding: 7px 14px;
   }
-  .combat-brand > .combat-eyebrow,
+  .combat-lockup .combat-eyebrow,
   .combat-brand p {
     display: none;
+  }
+  .combat-lockup .night-city-mark {
+    height: 15px;
   }
   .combat-main {
     display: grid;
@@ -1030,8 +1075,12 @@
   background: linear-gradient(150deg, #10252deb, #07121bf5);
   border-left: 1px solid #65dbe43b;
 }
-.combat-scenic .combat-reach {
-  fill-opacity: 0.035;
+/* Over the art the squares have to sit lighter, or the courtyard disappears. */
+.combat-scenic .combat-square {
+  fill-opacity: 0.1;
+}
+.combat-scenic .combat-square.is-chosen {
+  fill-opacity: 0.28;
 }
 @media (max-width: 600px) {
   .combat-view-toggle {
@@ -1223,6 +1272,25 @@
 .combat-target-identity .combat-portrait {
   width: 54px;
   height: 66px;
+}
+/* The portrait is the way into the dossier when there is one to open. */
+.combat-dossier-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: filter 150ms ease-out;
+}
+.combat-dossier-open:hover .combat-portrait,
+.combat-dossier-open:focus-visible .combat-portrait {
+  border-color: var(--tac-cyan);
+  filter: brightness(1.15);
+}
+.combat-dossier-open:focus-visible {
+  outline: 2px solid var(--tac-cyan);
+  outline-offset: 2px;
 }
 .combat-target-stats {
   margin: 10px 0;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { UserRound } from "lucide-react";
-import { findNpc, npcImage } from "@/features/cast/npcDirectory";
+import { findNpcNumbered, npcImage } from "@/features/cast/npcDirectory";
 
 /** Known identities use their own artwork; unknown combatants keep a neutral silhouette. */
 export function CombatPortrait({
@@ -12,7 +12,7 @@ export function CombatPortrait({
   src?: string | null | undefined;
   hostile?: boolean;
 }) {
-  const npc = findNpc(name);
+  const npc = findNpcNumbered(name);
   const source = src === undefined ? (npc ? npcImage(npc) : null) : src;
   const [failed, setFailed] = useState<string | null>(null);
   return (

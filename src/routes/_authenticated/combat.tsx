@@ -15,7 +15,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ARENAS, FORCES, FORCE_SIZES, type ForceSize } from "@/engine";
+import { SELECTABLE_ARENAS, FORCES, FORCE_SIZES, type ForceSize } from "@/engine";
 import { getActiveCampaignForCharacter, getActiveEncounter, listCharacters } from "@/lib/backend";
 import {
   endEncounter,
@@ -80,7 +80,7 @@ function Choice({
 function CombatHarness() {
   const navigate = useNavigate();
   const [characterId, setCharacterId] = useState<string | null>(null);
-  const [arena, setArena] = useState(ARENAS[0]!.key);
+  const [arena, setArena] = useState(SELECTABLE_ARENAS[0]!.key);
   const [forceKey, setForceKey] = useState(FORCES[0]!.key);
   const [size, setSize] = useState<ForceSize>("standard");
   const [wound, setWound] = useState<SeedWound>("none");
@@ -131,7 +131,7 @@ function CombatHarness() {
   });
 
   const preview = previewForce(forceKey, size);
-  const arenaDef = ARENAS.find((a) => a.key === arena) ?? ARENAS[0]!;
+  const arenaDef = SELECTABLE_ARENAS.find((a) => a.key === arena) ?? SELECTABLE_ARENAS[0]!;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
@@ -200,7 +200,7 @@ function CombatHarness() {
 
       <Field label={`Arena — ${arenaDef.extent.width} × ${arenaDef.extent.height} m`}>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {ARENAS.map((a) => (
+          {SELECTABLE_ARENAS.map((a) => (
             <Choice
               key={a.key}
               active={a.key === arena}

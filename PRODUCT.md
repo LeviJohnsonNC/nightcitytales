@@ -251,11 +251,21 @@ nouns the engine understands cannot drift.
 
 **Distance is the DV.** `src/engine/battlefield.ts` exists because a narrator who
 writes "about eight metres" has silently chosen the difficulty of the shot. The
-engine places everyone in continuous metres, measures, and reads the printed
-Range DV table. Continuous rather than grid squares, deliberately: RED's bands
-are 6/12/25/50/100/200/400/800 and MOVE is a raw metre score, so a tile size
-would quantise both. The UI may draw squares. The numbers underneath stay
-printed.
+engine places everyone, measures, and reads the printed Range DV table. Range is
+measured in continuous metres, because RED's bands are 6/12/25/50/100/200/400/800
+and a tile size would quantise them.
+
+MOVEMENT is a different question, and the book answers it differently: a Move
+Action covers "a number of squares (if playing on a grid) equal to their MOVE",
+and a square is 2 m (pg. 168). So `src/engine/grid.ts` puts a 2 m lattice over
+the same metres — bodies stand on square centres, a Move spends squares, and the
+board draws exactly the squares the gate will accept. Range is still measured
+between those positions in metres, off the printed table. Quantising WHERE
+somebody stands does not quantise how far away they are.
+
+One number in that lattice is invented and labelled as such: a diagonal step
+costs 1.5 squares rather than the book's 1, so that counted squares and measured
+metres cannot drift apart on the diagonal.
 
 **Oracles.** Some things nobody at the table decides: whether work reaches you,
 what the client left out, whether the clinic is still open. The engine rolls

@@ -3,7 +3,13 @@
  * transitions; this module loads the rows into engine state and writes the
  * changed combatants back. It never decides anything mechanical.
  */
-import { arenaFor, coverDamageFrom, type CoverDamage, type EncounterState } from "@/engine";
+import {
+  arenaFor,
+  coverDamageFrom,
+  snapToOpenTile,
+  type CoverDamage,
+  type EncounterState,
+} from "@/engine";
 import {
   getActiveEncounter,
   getEncounter,
@@ -47,18 +53,27 @@ export type LiveEncounter = {
 };
 
 function liveFrom(full: FullEncounter): LiveEncounter {
-  const data: Record<string, CombatantData> = {};
-  for (const row of full.combatants) data[row.id] = combatantDataOf(row);
   const arena = full.encounter.arena ?? null;
+  // Everybody stands on a square. Rows written before the grid existed hold
+  // loose metres, so they are snapped on the way in rather than migrated: the
+  // worst case is a body shifting under a metre, and no fight in progress is
+  // left standing between two squares the board cannot draw them on.
+  const ground = arenaFor(arena);
+  // Read against the authored arena: an id no arena knows is dropped rather
+  // than trusted into a live fight. The database validated shape and sign;
+  // identity is this layer's to check.
+  const cover = coverDamageFrom(ground, full.encounter.cover);
+  const data: Record<string, CombatantData> = {};
+  for (const row of full.combatants) {
+    const combatant = combatantDataOf(row);
+    data[row.id] = { ...combatant, position: snapToOpenTile(ground, cover, combatant.position) };
+  }
   return {
     id: full.encounter.id,
     state: stateFromRows(full),
     data,
     arena,
-    // Read against the authored arena: an id no arena knows is dropped rather
-    // than trusted into a live fight. The database validated shape and sign;
-    // identity is this layer's to check.
-    cover: coverDamageFrom(arenaFor(arena), full.encounter.cover),
+    cover,
     version: full.encounter.version ?? 0,
   };
 }

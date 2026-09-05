@@ -19,6 +19,7 @@ import {
   usableWeapons,
   weaponBands,
   combatMoveAllowance,
+  combatMoveSquares,
   woundStateFor,
   type ActionCost,
   type Arena,
@@ -226,6 +227,11 @@ export function metresApart(a: CombatantData, b: CombatantData): number {
  */
 export function moveAllowance(move: number, wound: WoundStateCode): number {
   return combatMoveAllowance(move, wound);
+}
+
+/** The same allowance in battlemat squares, which is what the grid spends. */
+export function moveSquares(move: number, wound: WoundStateCode): number {
+  return combatMoveSquares(move, wound);
 }
 
 /**

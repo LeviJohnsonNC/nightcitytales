@@ -19,6 +19,7 @@ import { createCharacterAtlas } from "./characterTextures";
 import { createPropTextures, propSource } from "./propTextures";
 import {
   PROP_KINDS,
+  hasYardProps,
   propKind,
   propCondition,
   propTexture,
@@ -51,7 +52,7 @@ export function createCourtyard(
   let disposed = false;
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const arena = arenaFor(initial.live.arena);
-  const kinds = arena.key === "night_shift_yard" ? PROP_KINDS : ["cargo" as const];
+  const kinds = hasYardProps(arena.key) ? PROP_KINDS : ["cargo" as const];
   const assets = [
     "ground",
     "mercenary-animation",

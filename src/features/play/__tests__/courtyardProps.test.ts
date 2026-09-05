@@ -4,17 +4,20 @@ import {
   coverStatuses,
   coverBlocking,
   applyCoverDamage,
-  walkingPath,
+  blockedTiles,
+  tileKey,
+  tileOf,
   coverDamageFrom,
   rectContains,
   placeHostiles,
+  SELECTABLE_ARENAS,
 } from "@/engine";
 import { YARD_PROPS, propCondition, propKind, propPlacement } from "../courtyard/propPresentation";
 import { battlefieldProjection } from "../battlefieldProjection";
 
-const arena = arenaFor("night_shift_yard");
+const arena = arenaFor("night_shift_grid");
 describe("courtyard props tell the same truth as the engine", () => {
-  it("keeps the original encounter geometry and damage identities available", () => {
+  it("keeps every retired layout resolvable for fights already on it", () => {
     const old = arenaFor("night_shift");
     expect(old.cover?.map((p) => [p.id, p.rect])).toEqual([
       ["cargo_west", { x: 6, y: 10, width: 2, height: 2 }],
@@ -24,6 +27,19 @@ describe("courtyard props tell the same truth as the engine", () => {
     ]);
     expect(coverDamageFrom(old, { cargo_middle: 12 })).toEqual({ cargo_middle: 12 });
     expect(propKind(old.key, "cargo_middle")).toBe("cargo");
+    // The pre-grid yard keeps its off-lattice geometry rather than being edited.
+    const preGrid = arenaFor("night_shift_yard");
+    expect(preGrid.retired).toBe(true);
+    expect(preGrid.cover?.find((p) => p.id === "generator")?.rect.y).toBe(11);
+    expect(SELECTABLE_ARENAS.map((a) => a.key)).not.toContain("night_shift_yard");
+  });
+  it("puts every section and every spawn on a whole square", () => {
+    for (const piece of arena.cover!) {
+      expect([piece.rect.x % 2, piece.rect.y % 2]).toEqual([0, 0]);
+      expect([piece.rect.width, piece.rect.height]).toEqual([2, 2]);
+    }
+    for (const point of [arena.playerStart, ...arena.hostileSlots])
+      expect([point.x % 2, point.y % 2]).toEqual([1, 1]);
   });
   it("provides exactly one art association per section and clear spawn points", () => {
     expect(Object.keys(YARD_PROPS).sort()).toEqual(arena.cover!.map((p) => p.id).sort());
@@ -35,8 +51,9 @@ describe("courtyard props tell the same truth as the engine", () => {
     const cab = arena.cover!.find((p) => p.id === "truck_cab")!;
     const from = { x: 15, y: 1 },
       to = { x: 15, y: 7 };
+    const cabSquare = tileKey(tileOf(arena, { x: 15, y: 3 }));
     expect(coverBlocking(arena, from, to, {}).map((p) => p.id)).toEqual(["truck_cab"]);
-    expect(walkingPath(arena, {}, from, to)!.length).toBeGreaterThan(2);
+    expect(blockedTiles(arena, {}).has(cabSquare)).toBe(true);
     const scratched = applyCoverDamage(cab, {}, 1);
     expect(
       propCondition(coverStatuses(arena, scratched.damageMap).find((s) => s.piece.id === cab.id)!),
@@ -44,7 +61,7 @@ describe("courtyard props tell the same truth as the engine", () => {
     expect(coverBlocking(arena, from, to, scratched.damageMap)).toHaveLength(1);
     const wreck = applyCoverDamage(cab, scratched.damageMap, 1000);
     const reloaded = coverDamageFrom(arena, JSON.parse(JSON.stringify(wreck.damageMap)));
-    expect(walkingPath(arena, reloaded, from, to)).toEqual([from, to]);
+    expect(blockedTiles(arena, reloaded).has(cabSquare)).toBe(false);
     expect(coverBlocking(arena, from, to, reloaded)).toEqual([]);
     const statuses = coverStatuses(arena, reloaded);
     expect(propCondition(statuses.find((s) => s.piece.id === "truck_cab")!)).toBe("wrecked");
