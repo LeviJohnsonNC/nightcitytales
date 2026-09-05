@@ -18,7 +18,7 @@ import {
   spendCost,
   usableWeapons,
   weaponBands,
-  woundMovePenalty,
+  combatMoveAllowance,
   woundStateFor,
   type ActionCost,
   type Arena,
@@ -220,9 +220,7 @@ export function metresApart(a: CombatantData, b: CombatantData): number {
  * the floor on the caller, and this is the caller.
  */
 export function moveAllowance(move: number, wound: WoundStateCode): number {
-  const base = Math.max(0, move);
-  if (base <= 0) return 0;
-  return Math.max(1, base + woundMovePenalty(wound));
+  return combatMoveAllowance(move, wound);
 }
 
 /**

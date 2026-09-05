@@ -8,7 +8,7 @@ import {
   arenaFor,
   coverBlocking,
   getSkill,
-  judgeAction,
+  previewAttack,
   type CapabilitySnapshot,
   weaponAttackDv,
   weaponAttackGap,
@@ -30,6 +30,8 @@ import { effectiveStatsRecord, statsRecord } from "./playModel";
 
 export type PendingAttack = {
   eventId: string;
+  /** Version measured when this roll preview was built. */
+  encounterVersion?: number;
   beatId: string | null;
   intent: string;
   distance: number;
@@ -83,7 +85,9 @@ export function attackOption(
     statValue: stats[statKey] ?? 0,
     skillLabel: weapon.skillId ? getSkill(weapon.skillId).name : weapon.skillName,
     skillValue: skillLevel,
-    dv: weaponAttackDv(weapon, pending.distance),
+    dv: capability
+      ? previewAttack(capability, pending.target.id, weapon.itemId).dv
+      : weaponAttackDv(weapon, pending.distance),
     damageDice: weapon.damageDice,
     gap: weaponAttackGap(weapon, pending.distance) ?? legalityGap(capability, pending, weapon),
   };
@@ -96,13 +100,7 @@ function legalityGap(
   weapon: WeaponProfile,
 ): string | null {
   if (!capability) return null;
-  const verdict = judgeAction(capability, {
-    kind: "attack",
-    targetKey: pending.target.id,
-    distance: pending.distance,
-    weapon: weapon.itemId,
-  });
-  return verdict.ok ? null : verdict.reason;
+  return previewAttack(capability, pending.target.id, weapon.itemId).gap;
 }
 
 type PromptData = { targetId?: unknown; distance?: unknown; intent?: unknown };
@@ -154,7 +152,7 @@ export function pendingAttackFrom(
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i];
     if (!event) continue;
-    if (event.type === "attack") return null; // the newest prompt is already rolled
+    if (event.type === "attack" || event.type === "turn_ended") return null; // the newest prompt is already rolled
     if (event.type !== "attack_prompt") continue;
 
     const data = (event.data ?? {}) as PromptData;
@@ -174,6 +172,7 @@ export function pendingAttackFrom(
 
     return {
       eventId: event.id,
+      encounterVersion: live.version,
       beatId: event.beat_id ?? null,
       intent: typeof data.intent === "string" ? data.intent : "",
       // Measured now, not read back off the prompt event: the player may have

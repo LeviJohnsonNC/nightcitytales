@@ -66,3 +66,5 @@ export * from "./placeActions";
 export * from "./haunts";
 export * from "./placeState";
 export * from "./placeIntel";
+
+export * from "./combatPreview";

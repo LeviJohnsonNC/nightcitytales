@@ -867,7 +867,8 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
                   play.busy ||
                   play.opening ||
                   Boolean(play.actionError) ||
-                  Boolean(play.pendingDeathSave)
+                  Boolean(play.pendingDeathSave) ||
+                  Boolean(play.pendingCheck)
                 }
               />
             </div>

@@ -9,6 +9,7 @@
  */
 import {
   ATTACK_COST,
+  currentCombatant,
   EMPTY_TURN_ECONOMY,
   arenaFor,
   coverBlocking,
@@ -19,6 +20,8 @@ import {
   roleAbilityOf,
   weaponProfile,
   type CapabilitySnapshot,
+  type Point,
+  rangeMetres,
   type CyberwareCapability,
   type FailedAttempt,
   type ItemCapability,
@@ -28,7 +31,7 @@ import {
   type WoundStateCode,
 } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
-import { metresApart, spendTurn, type CombatantTurnState } from "./encounterModel";
+import { spendTurn, type CombatantTurnState } from "./encounterModel";
 import type {
   CampaignEvent,
   CampaignCyberware,
@@ -129,10 +132,13 @@ export function cyberwareCapabilities(rows: CampaignCyberware[]): CyberwareCapab
 }
 
 /** Who the player can currently see and shoot at. */
-export function targetCapabilities(live: LiveEncounter | null): TargetCapability[] {
+export function targetCapabilities(
+  live: LiveEncounter | null,
+  previewPosition?: Point,
+): TargetCapability[] {
   if (!live || live.state.status !== "active") return [];
   const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
-  const from = player ? live.data[player.id] : null;
+  const from = previewPosition ?? (player ? live.data[player.id]?.position : undefined);
   const arena = arenaFor(live.arena);
   const out: TargetCapability[] = [];
   for (const combatant of Object.values(live.state.combatants)) {
@@ -141,15 +147,14 @@ export function targetCapabilities(live: LiveEncounter | null): TargetCapability
     // Line of sight is MEASURED against the arena's cover, the same way the
     // range is measured against its positions. A piece already shot to bits
     // stops blocking, which is the whole point of it having HP.
-    const blocking =
-      from && data ? coverBlocking(arena, from.position, data.position, live.cover) : [];
+    const blocking = from && data ? coverBlocking(arena, from, data.position, live.cover) : [];
     out.push({
       key: data?.key ?? combatant.id,
       id: combatant.id,
       name: combatant.name,
       // Measured, not remembered. The GM is TOLD how far away everyone is so it
       // can describe the scene; it no longer gets to decide.
-      distance: from && data ? metresApart(from, data) : 0,
+      distance: from && data ? rangeMetres(from, data.position) : 0,
       defeated: combatant.defeated,
       perceivable: blocking.length === 0,
       ...(blocking[0] ? { coverLabel: blocking[0].label } : {}),
@@ -166,6 +171,7 @@ export function turnEconomy(live: LiveEncounter | null, move: number): TurnEcono
   const sameRound = raw.round === live.state.round;
   return {
     inCombat: true,
+    isPlayerTurn: currentCombatant(live.state)?.isPlayer === true,
     actionUsed: sameRound ? (raw.actionUsed ?? false) : false,
     shotsThisRound: sameRound ? (raw.shotsThisRound ?? 0) : 0,
     shotWeaponId: sameRound ? (raw.shotWeaponId ?? null) : null,

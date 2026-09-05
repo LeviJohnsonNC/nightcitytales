@@ -175,30 +175,37 @@ Decide it deliberately rather than by default.
 
 ---
 
-## Then: combat as an interactive tactical mode
+## In progress: combat as an interactive tactical mode
 
-`PRODUCT.md` is explicit that narration supports the fight and is never the
-fight. The engine already holds continuous-metre positioning, arenas, threat
-profiles, initiative, attacks, damage, ablation, Death Saves, ammunition, and a
-legality layer — behind a read-only HUD.
+`PRODUCT.md` makes the battlefield the fight and narration its support. Keep
+RED's Move, Action, weapon ROF, range tables and persistent costs while making
+those decisions visible and directly playable.
 
-The first playable battlefield layer:
+1. **Turn foundation implemented:** board and execution share engine movement
+   routes and attack previews. Intact cover blocks walking; destroyed cover
+   opens routes. Shooting preserves an unused Move and any remaining ROF;
+   checks and reloads spend the same Action budget. Hostiles run when choices
+   are exhausted or the player ends the turn. Fixed-result narration cannot
+   propose another action or change state. Regression tests cover the shipping
+   handlers, including stale attack previews.
+2. **Next: angled battlefield:** a dedicated combat layout, click-to-move,
+   targeting previews and an always-visible action bar. Desktop first, with
+   usable touch controls.
+3. **Immediate playback:** resolve and show routine actions without waiting for
+   generated narration; make player/enemy turn transitions unmistakable.
+4. **Improvisation:** freeform intent previews a concrete, engine-validated cost
+   and consequence alongside the common actions.
+5. **Tactical and mobile refinement:** encounter readability, meaningful terrain,
+   pacing and touch verification.
 
-- Render combatants spatially.
-- Let the player pick a destination and move within MOVE.
-- Show range bands and calculated DVs before attacking.
-- Enforce one Move plus one Action.
-- Make targeting, ammunition, ablation, HP, and initiative legible.
-- Add cover and line of sight once movement is solid.
-- Keep freeform intent for unusual environmental actions.
+Milestone 1 retains the existing one-Move policy and MOVE-to-metres allowance;
+it does not introduce XCOM action points, split movement or cover bonuses. The
+current board remains top-down, and exhausted-turn narration still waits for
+the model until milestone 3.
 
 Success: the player wins by repositioning into the right range band, managing
 ammunition, and choosing the right target — not by describing an impressive
 attack to the model.
-
-This is deliberately third. It is the highest-complexity item, and building it
-before Life would leave jobs far stronger than the life they are supposed to
-interrupt.
 
 ---
 

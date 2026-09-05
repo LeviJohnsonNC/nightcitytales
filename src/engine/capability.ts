@@ -84,6 +84,8 @@ export type TargetCapability = {
 export type TurnEconomy = {
   /** Whether a fight is running at all; outside combat nothing is budgeted. */
   inCombat: boolean;
+  /** Absent on legacy callers; live encounters supply whose Turn this is. */
+  isPlayerTurn?: boolean;
   /** True once the player has taken their Action this Round. */
   actionUsed: boolean;
   /** Attacks already made this Round, checked against the weapon's ROF. */

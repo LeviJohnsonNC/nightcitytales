@@ -28,9 +28,9 @@
  *
  * Clicking it moves. The board sends a POINT and nothing else: how far of that
  * they actually get, what it costs and whether it is allowed at all are the
- * engine's (features/play/combatFlow.ts, movePlayerTo). The dashed circle is
- * the same `moveAllowance` the Move is bounded by, so it cannot offer a step
- * that would be refused.
+ * engine's (`previewMovement`, also used by movePlayerTo). The dashed circle
+ * shows the distance limit; the route preview accounts for obstacles and
+ * explains when a destination inside that circle is still unreachable.
  *
  * Picking a weapon paints its RANGE BANDS. This is the lookup RED makes you do
  * by hand and the one thing a computer should obviously be doing for you: the
@@ -45,6 +45,10 @@ import {
   coverStatuses,
   currentCombatant,
   judgeAction,
+  previewMovement,
+  previewAttack,
+  remainingCombatTurn,
+  type MovementPreview,
   metresBetween,
   usableWeapons,
   weaponBands,
@@ -57,6 +61,7 @@ import {
 } from "@/engine";
 import { Button } from "@/components/ui/button";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
+import { targetCapabilities } from "./capabilityModel";
 import { moveAllowance, raisedWeapon, type CombatantData } from "./encounterModel";
 
 /**
@@ -95,7 +100,7 @@ type Marker = { combatant: Combatant; data: CombatantData };
  * clicking them is what would actually happen.
  */
 type HoverTarget =
-  | { kind: "ground"; point: Point; metres: number; ok: boolean }
+  | { kind: "ground"; point: Point; metres: number; ok: boolean; plan: MovementPreview }
   | { kind: "target"; id: string }
   | null;
 
@@ -220,7 +225,18 @@ export function CombatBoard({
   // How far they could actually go, wound penalty included. The same helper the
   // Move itself is bounded by, so the circle cannot promise a step the engine
   // would refuse.
-  const reach = player ? moveAllowance(player.data.move, player.combatant.woundState) : 0;
+  const remaining = capability ? remainingCombatTurn(capability) : null;
+  const reach = capability ? moveAllowance(capability.move, capability.woundState) : 0;
+  const movementPreview = (to: Point) =>
+    player && capability
+      ? previewMovement({
+          arena,
+          cover: live.cover,
+          from: player.data.position,
+          to,
+          capability,
+        })
+      : null;
 
   const targets = new Map<string, TargetCapability>(
     (capability?.targets ?? []).map((t) => [t.id, t]),
@@ -264,13 +280,8 @@ export function CombatBoard({
   const canAct = !busy && Boolean(active?.isPlayer) && !player?.combatant.defeated;
 
   const attackRefusal = (target: TargetCapability): string | null =>
-    weapon
-      ? refusalFor({
-          kind: "attack",
-          targetKey: target.id,
-          distance: target.distance,
-          weapon: weapon.itemId,
-        })
+    weapon && capability
+      ? previewAttack(capability, target.id, weapon.itemId).gap
       : "No weapon selected.";
 
   const reloadRefusal = weapon ? refusalFor({ kind: "reload", weapon: weapon.itemId }) : null;
@@ -298,8 +309,10 @@ export function CombatBoard({
     if (!to || to.x < 0 || to.y < 0 || to.x > width || to.y > height) return setHover(null);
     // The same rounding the click uses, so the readout cannot promise a step
     // the click then refuses.
-    const metres = Math.round(metresBetween(player.data.position, to));
-    setHover({ kind: "ground", point: to, metres, ok: canMove && metres > 0 && metres <= reach });
+    const plan = movementPreview(to);
+    if (!plan) return;
+    const metres = plan.ok ? plan.moved : Math.round(metresBetween(player.data.position, to));
+    setHover({ kind: "ground", point: to, metres, ok: canMove && plan.ok, plan });
   };
 
   /**
@@ -327,7 +340,7 @@ export function CombatBoard({
     // Not a legal step, and the three reasons do not mean the same thing.
     if (!active?.isPlayer) return `${active?.name ?? "Someone else"} is acting`;
     if (moveSpent) return "Move spent this Round";
-    if (hover.metres > reach) return `${hover.metres} m — further than ${reach} m of MOVE`;
+    if (!hover.plan.ok) return hover.plan.reason;
     return null;
   };
 
@@ -349,6 +362,10 @@ export function CombatBoard({
    */
   const mapWidth = `${(width / height) * BOARD_MAX_VH}vh`;
 
+  const destinationCapability =
+    capability && hover?.kind === "ground" && hover.ok
+      ? { ...capability, targets: targetCapabilities(live, hover.point) }
+      : null;
   const hovering = hoverLine();
 
   const clickBoard = (event: React.MouseEvent<SVGSVGElement>) => {
@@ -363,11 +380,8 @@ export function CombatBoard({
     // engine would refuse it, and the board declines to ask. Rounded, because
     // the gate reads whole metres — an unrounded compare here would make a
     // sliver of legal destinations unclickable.
-    const metres = Math.round(metresBetween(player.data.position, to));
-    // Clicking your own marker, or anywhere that rounds to standing still. The
-    // engine refuses a zero-metre Move; asking it to would write a refusal into
-    // the ledger for a misclick.
-    if (metres <= 0 || metres > reach) return;
+    const plan = movementPreview(to);
+    if (!plan?.ok) return;
     onMoveTo?.(to);
   };
 
@@ -377,6 +391,16 @@ export function CombatBoard({
         Combat — round {live.state.round} · {arena.label}
       </p>
 
+      {remaining && (
+        <p className="font-mono text-xs text-neon-cyan" aria-live="polite">
+          {remaining.movement > 0 ? `Move ready · ${remaining.movement} m` : "Move spent"}
+          {" · "}
+          {remaining.action ? "Action ready" : "Action spent"}
+          {!remaining.action && remaining.attacks > 0
+            ? ` · ${remaining.attacks} attack(s) remaining`
+            : ""}
+        </p>
+      )}
       {/*
         The map beside its own numbers, when the arena leaves room for them.
 
@@ -532,11 +556,11 @@ export function CombatBoard({
                 that spot is the more important thing to see. */}
             {player && hover?.kind === "ground" && hover.ok && (
               <g className="pointer-events-none">
-                <line
-                  x1={player.data.position.x}
-                  y1={player.data.position.y}
-                  x2={hover.point.x}
-                  y2={hover.point.y}
+                <polyline
+                  fill="none"
+                  points={
+                    hover.plan.ok ? hover.plan.path.map((p) => `${p.x},${p.y}`).join(" ") : ""
+                  }
                   className="stroke-neon-cyan/70"
                   strokeWidth={HAIRLINE}
                   strokeDasharray="2 3"
@@ -651,7 +675,21 @@ export function CombatBoard({
                           measured, off the table the To-Hit is rolled against.
                           Absent means this weapon cannot reach them at all. */}
                         {target.perceivable && weapon ? dvLabel(weapon, target.distance) : ""}
-                        {target.perceivable ? "" : " · no shot"} ·{" "}
+                        {target.perceivable ? "" : " · no shot"}
+                        {destinationCapability && weapon && (
+                          <span className="text-neon-cyan">
+                            {" → "}
+                            {(() => {
+                              const shot = previewAttack(
+                                destinationCapability,
+                                combatant.id,
+                                weapon.itemId,
+                              );
+                              return shot.gap ? "no shot there" : `DV ${shot.dv} there`;
+                            })()}
+                          </span>
+                        )}{" "}
+                        ·{" "}
                       </span>
                     ) : null}
                     {combatant.hp}/{combatant.hpMax} · {combatant.woundState}
