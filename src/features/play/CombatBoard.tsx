@@ -212,6 +212,7 @@ export function CombatBoard({
   const spot = destination ?? hover;
   const spotTile = spot ? tileOf(arena, spot) : null;
   const spotSquares = spotTile ? moveField?.get(tileKey(spotTile))?.cost : undefined;
+  const showSquares = mode === "move" && canAct && !!moveField && !!remaining?.movementSquares;
   const route =
     capability && player && spot
       ? previewMovement({
@@ -378,9 +379,42 @@ export function CombatBoard({
               playback={playback}
               camera={displayCamera}
               aimTargetId={mode === "shoot" ? (target?.actor.id ?? null) : null}
+              // Over the art the squares belong ON the floor, under everything
+              // standing on it, so the scene draws them rather than the SVG.
+              grid={
+                scenic && showSquares
+                  ? {
+                      squares: [...moveField.values()].flatMap(({ tile, cost }) =>
+                        cost === 0
+                          ? []
+                          : [{ tile, sheltered: sheltered?.has(tileKey(tile)) ?? false }],
+                      ),
+                      chosen: route?.ok ? spotTile : null,
+                      route: route?.ok ? route.path : null,
+                    }
+                  : null
+              }
               onReady={setArtReady}
               onFailure={handleArtFailure}
             />
+          )}
+          {/* The art loads in a beat or two. Showing the wireframe underneath
+              while it does reads as the screen changing its mind, so hold a
+              deliberate one until the feed is up — and drop it, uncovering the
+              diagram for real, if the renderer never arrives. */}
+          {courtyard && artEnabled && (
+            <div
+              className={`combat-boot ${artReady ? "is-live" : ""}`}
+              role="status"
+              aria-live="polite"
+              {...(artReady ? { "aria-hidden": true } : {})}
+            >
+              <span className="combat-boot-scan" aria-hidden="true" />
+              <span className="combat-boot-label">
+                <span className="combat-eyebrow">Establishing feed</span>
+                <strong>{arena.label}</strong>
+              </span>
+            </div>
           )}
           <div className="combat-map-caption">
             <span className="combat-eyebrow">{arena.label}</span>
@@ -649,7 +683,7 @@ export function CombatBoard({
                 pointerEvents="none"
               />
             )}
-            {mode === "move" && canAct && moveField && !!remaining?.movementSquares && (
+            {showSquares && !scenic && (
               <g className="combat-squares" pointerEvents="none">
                 {[...moveField.values()].map(({ tile, cost }) => {
                   if (cost === 0) return null;
@@ -678,7 +712,7 @@ export function CombatBoard({
                 pointerEvents="none"
               />
             )}
-            {route?.ok && mode === "move" && spotTile && (
+            {route?.ok && mode === "move" && spotTile && !scenic && (
               <g pointerEvents="none">
                 <polyline
                   points={points(route.path.map(project))}
