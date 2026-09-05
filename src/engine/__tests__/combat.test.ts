@@ -56,6 +56,26 @@ describe("resolveAttack", () => {
     expect(r.margin).toBe(0);
     expect(r.hit).toBe(false);
   });
+  it("writes a formula that agrees with the miss", () => {
+    // The log prints "MISS (<formula>)". A formula that says SUCCESS inside a
+    // line that says MISS is how this was found in play.
+    const r = resolveAttack(
+      { statLabel: "REF", statValue: 5, skillLabel: "Handgun", skillValue: 5, dv: 15 },
+      scripted([5], 10),
+    );
+    expect(r.success).toBe(false);
+    expect(r.formula).toContain("vs DV15 → TIED — the Defender wins ties");
+    expect(r.formula).not.toContain("SUCCESS");
+  });
+  it("still calls a beaten DV a success, and says by how much", () => {
+    const r = resolveAttack(
+      { statLabel: "REF", statValue: 8, skillLabel: "Shoulder Arms", skillValue: 6, dv: 15 },
+      scripted([4], 10),
+    );
+    expect(r.hit).toBe(true);
+    expect(r.success).toBe(true);
+    expect(r.formula).toContain("vs DV15 → SUCCESS by 3");
+  });
 });
 
 describe("rollDamage", () => {

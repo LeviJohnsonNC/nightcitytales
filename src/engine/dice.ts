@@ -1,5 +1,5 @@
 import type { RNG } from "./types";
-import { buildRollResult, type RollModifier, type RollResult } from "./rollLog";
+import { buildRollResult, type RollModifier, type RollResult, type TieGoesTo } from "./rollLog";
 
 export const defaultRng: RNG = () => Math.random();
 
@@ -41,6 +41,8 @@ export type CheckResult = RollResult & {
 
 export type CheckOptions = {
   dv?: number | null;
+  /** "defender" for an attack, where a tie misses. Defaults to "roller". */
+  tieGoesTo?: TieGoesTo;
   now?: () => Date;
   /**
    * Suppress the Critical Failure implosion on a natural 1. A Solo's Fumble
@@ -85,6 +87,7 @@ export function statSkillCheck(
     rolls,
     modifiers,
     dv: options.dv ?? null,
+    ...(options.tieGoesTo ? { tieGoesTo: options.tieGoesTo } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { rollDice, rollDie, seededRng, statSkillCheck } from "../dice";
+import { buildRollResult } from "../rollLog";
 
 /** Returns fixed 0-1 values so die faces are exact. */
 const scripted = (faces: number[], sides = 10) => {
@@ -77,5 +78,35 @@ describe("dice", () => {
     const a = statSkillCheck(3, seededRng(99), { dv: 15, now: () => new Date(0) });
     const b = statSkillCheck(3, seededRng(99), { dv: 15, now: () => new Date(0) });
     expect(a).toEqual(b);
+  });
+});
+
+describe("who a tie belongs to", () => {
+  it("meets or beats by default: a Check equalling the DV succeeds (CP:R pg. 130)", () => {
+    const r = buildRollResult({
+      dice: "1d10",
+      rolls: [5],
+      modifiers: [{ label: "REF", value: 10 }],
+      dv: 15,
+    });
+    expect(r.success).toBe(true);
+    expect(r.formula).toContain("vs DV15 → SUCCESS by 0");
+  });
+  it("hands a tie to the defender when asked, and says so rather than 'FAILED by 0'", () => {
+    const r = buildRollResult({
+      dice: "1d10",
+      rolls: [5],
+      modifiers: [{ label: "REF", value: 10 }],
+      dv: 15,
+      tieGoesTo: "defender",
+    });
+    expect(r.success).toBe(false);
+    expect(r.formula).toContain("vs DV15 → TIED — the Defender wins ties");
+  });
+  it("changes nothing when the roll is not a tie", () => {
+    const beat = { dice: "1d10", rolls: [6], modifiers: [{ label: "REF", value: 10 }], dv: 15 };
+    expect(buildRollResult(beat).formula).toBe(
+      buildRollResult({ ...beat, tieGoesTo: "defender" }).formula,
+    );
   });
 });

@@ -73,7 +73,12 @@ export type AttackInput = {
 };
 
 export type AttackResult = CheckResult & {
-  /** Combat rule: the Defender wins ties, so a hit needs total > DV. */
+  /**
+   * Combat rule: the Defender wins ties, so a hit needs total > DV. Same
+   * answer as `success`, which is told the tie rule rather than assuming the
+   * Check one — a log line saying MISS must not carry a formula saying
+   * SUCCESS.
+   */
   hit: boolean;
   /** total − DV. On a hit this is the amount you beat the DV by. */
   margin: number;
@@ -87,11 +92,12 @@ export function resolveAttack(input: AttackInput, rng: RNG = defaultRng): Attack
   ];
   const result = statSkillCheck(modifiers, rng, {
     dv: input.dv,
+    tieGoesTo: "defender",
     ...(input.now ? { now: input.now } : {}),
     ...(input.ignoreCriticalFailure ? { ignoreCriticalFailure: true } : {}),
   });
   const margin = result.total - input.dv;
-  return { ...result, margin, hit: margin > 0 };
+  return { ...result, margin, hit: result.success === true };
 }
 
 // ===========================================================================
