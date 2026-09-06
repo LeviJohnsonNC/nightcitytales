@@ -436,6 +436,12 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       "Return 3-4 concrete actions drawn from the scene they are already standing in. Do not " +
         "advance the fiction, do not propose a check, and set timeSpent to 0: thinking about it " +
         "costs nothing.",
+      "Write only what is LIVE — what has just happened, who is here, what is unfinished. The " +
+        "ordinary business of these venues is added to your list by the engine, with real prices, " +
+        "so do not spend an option on eating, drinking, shopping, taking a room or looking in on " +
+        "the neighbours unless something tonight has made it more than that.",
+      "timeMinutes and knownCost are charged exactly as you write them. Give the honest cost of " +
+        "the thing, and null for knownCost when it is not something you pay for.",
     );
   }
 
