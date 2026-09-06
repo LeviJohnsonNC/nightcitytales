@@ -231,3 +231,39 @@ describe("a target nothing can see", () => {
     expect(blockedArena.cover?.some((c) => c.id === "generator")).toBe(true);
   });
 });
+
+/**
+ * A write in flight is not a reason to take the board away.
+ *
+ * `busy` covers a save landing, a playback running and a query refetching. It
+ * used to blank the whole interaction surface, so one stuck flag left the
+ * screen inert: no squares, every click swallowed, no target lockable and
+ * therefore no shot possible for the rest of the fight. Looking is always
+ * allowed; only committing waits.
+ */
+describe("while the last action is still saving", () => {
+  const html = renderToStaticMarkup(
+    <CombatBoard
+      live={live}
+      capability={capability}
+      weaponId="very_heavy_pistol"
+      onWeaponId={() => {}}
+      onMoveTo={() => {}}
+      onAttack={() => {}}
+      busy
+    />,
+  );
+  it("still offers the ground", () => {
+    expect(html).toContain("combat-square");
+  });
+  it("still lets a target be assessed", () => {
+    expect(html).toContain("Street Thug 1");
+  });
+  it("disarms the commits rather than the board", () => {
+    for (const button of html.match(/<button[^>]*combat-confirm[^>]*>/g) ?? [])
+      expect(button).toContain("disabled");
+  });
+  it("says why, so a refusal is never silence", () => {
+    expect(html).toContain("Waiting on the last action");
+  });
+});
