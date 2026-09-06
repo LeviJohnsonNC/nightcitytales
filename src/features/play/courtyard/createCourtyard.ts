@@ -108,7 +108,10 @@ export function createCourtyard(
     flash!: Phaser.GameObjects.Graphics;
     preload() {
       for (const key of assets)
-        this.load.image(`source-${key}`, `/images/combat/night-shift/${key}.png`);
+        // WebP, encoded losslessly and unresized by tools/art/webp.mjs: these
+        // are atlases Phaser slices into frames, so nothing may move and no
+        // colour may bleed across a frame boundary.
+        this.load.image(`source-${key}`, `/images/combat/night-shift/${key}.webp`);
       this.load.on("loaderror", onFailure);
     }
     create() {

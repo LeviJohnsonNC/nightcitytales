@@ -76,19 +76,46 @@ const manifest = (manifestJson ?? {}) as unknown as Manifest;
 
 export const MANIFEST_PRESENT = Boolean(manifest.roleArt || manifest.portraits);
 
+/**
+ * The narrow width every local image is also encoded at, by tools/art/webp.mjs.
+ *
+ * Item and cast art is only ever drawn inside a max-w-lg dialog, so 1024 covers
+ * it on a 2x display and 512 covers it on a 1x one. The full-size file keeps
+ * the plain name; the narrow one is suffixed with its width.
+ */
+const NARROW_WIDTH = 512;
+
+/**
+ * The srcSet for a local image, or null for anything else.
+ *
+ * Derived from the path rather than stored, because the second file is written
+ * by the conversion script and named by convention — a manifest listing both
+ * would be a second place for the two to drift apart. Remote pointer URLs get
+ * nothing: they are uploaded assets with no variants beside them.
+ */
+function srcSetFor(src: string | null): string | null {
+  if (!src || !src.startsWith("/images/") || !src.endsWith(".webp")) return null;
+  const base = src.slice(0, -".webp".length);
+  return `${base}-${NARROW_WIDTH}.webp ${NARROW_WIDTH}w, ${src} 1024w`;
+}
+
 /** Resolved art for a slot. `src === null` means: render the placeholder. */
 export type ResolvedArt = {
   assetId: string;
   src: string | null;
+  /** Both widths, when this is a local image. Null for a remote pointer. */
+  srcSet: string | null;
   alt: string;
   focalPoint: FocalPoint;
 };
 
 export function roleArt(roleId: string, roleName: string): ResolvedArt {
   const entry = manifest.roleArt?.[roleId];
+  const src = pointerUrl(entry?.pointer) ?? entry?.src ?? null;
   return {
     assetId: `roleArt.${roleId}`,
-    src: pointerUrl(entry?.pointer) ?? entry?.src ?? null,
+    src,
+    srcSet: srcSetFor(src),
     alt: entry?.alt ?? `${roleName} key art`,
     focalPoint: (entry?.focalPoint as FocalPoint | undefined) ?? [0.5, 0.35],
   };
@@ -101,9 +128,11 @@ export function roleArt(roleId: string, roleName: string): ResolvedArt {
  */
 export function itemArt(key: string, label: string): ResolvedArt {
   const entry = manifest.itemArt?.[key];
+  const src = pointerUrl(entry?.pointer) ?? entry?.src ?? null;
   return {
     assetId: `itemArt.${key}`,
-    src: pointerUrl(entry?.pointer) ?? entry?.src ?? null,
+    src,
+    srcSet: srcSetFor(src),
     alt: entry?.alt ?? `${label} art`,
     focalPoint: (entry?.focalPoint as FocalPoint | undefined) ?? [0.5, 0.5],
   };
@@ -115,9 +144,11 @@ export function portraits(): PortraitEntry[] {
 
 /** A portrait resolved through the same pointer → src → placeholder order. */
 export function portraitArt(entry: PortraitEntry): ResolvedArt {
+  const src = pointerUrl(entry.pointer) ?? entry.src ?? null;
   return {
     assetId: `portraits.${entry.id}`,
-    src: pointerUrl(entry.pointer) ?? entry.src ?? null,
+    src,
+    srcSet: srcSetFor(src),
     alt: entry.alt,
     focalPoint: entry.focalPoint ?? [0.5, 0.35],
   };

@@ -23,6 +23,10 @@ export function ArtSlot({
     return (
       <img
         src={art.src}
+        {...(art.srcSet ? { srcSet: art.srcSet } : {})}
+        // Item and cast art never appears wider than a max-w-lg dialog, and role
+        // cards top out around 480. The narrow file answers both on a 1x display.
+        sizes="(min-width: 640px) 512px, 100vw"
         alt={art.alt}
         loading="lazy"
         style={{ objectPosition: `${focal[0] * 100}% ${focal[1] * 100}%` }}

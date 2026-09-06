@@ -139,8 +139,12 @@ describe("the board renders", () => {
   });
   it("draws the neon wordmark and the thugs' own faces", () => {
     expect(html).toContain('aria-label="Night City"');
-    expect(html).toContain("/images/cast/street-thug-1.png");
-    expect(html).toContain("/images/cast/street-thug-2.png");
+    // Both widths, because a portrait that named only one would still render
+    // here and quietly fetch a file that does not exist on the other display.
+    for (const thug of ["street-thug-1", "street-thug-2"]) {
+      expect(html).toContain(`/images/cast/${thug}.webp`);
+      expect(html).toContain(`/images/cast/${thug}-512.webp`);
+    }
   });
   it("prices the Move in squares", () => {
     expect(html).toContain("6 squares · 12 m");
