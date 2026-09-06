@@ -29,6 +29,16 @@
   outline: 2px solid var(--tac-cyan);
   outline-offset: 3px;
 }
+/* Clicking the board focuses it, so Enter can confirm. A ring around the whole
+   battlefield every time the player clicks the ground is not what that is for:
+   keep it for the keyboard, where it is the only way to tell. */
+.combat-arena:focus {
+  outline: none;
+}
+.combat-arena:focus-visible {
+  outline: 2px solid var(--tac-cyan);
+  outline-offset: -2px;
+}
 .combat-eyebrow {
   font:
     10px "IBM Plex Mono",

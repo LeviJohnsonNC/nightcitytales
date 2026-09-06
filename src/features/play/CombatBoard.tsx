@@ -147,7 +147,7 @@ export function CombatBoard({
    * looked at, and offer a dead disabled button instead of a way out.
    */
   const assessedId =
-    readTarget(interactionOf(intent, busy || !!dice)) ??
+    readTarget(interactionOf(intent, !!dice)) ??
     Object.values(live?.state.combatants ?? {}).find((c) => !c.isPlayer && !c.defeated)?.id ??
     null;
   const weaponForField = weaponId;
@@ -244,13 +244,27 @@ export function CombatBoard({
   const player = actors.find(({ actor }) => actor.isPlayer);
   const active = currentCombatant(live.state);
   const remaining = capability ? remainingCombatTurn(capability) : null;
-  const canAct =
-    !busy && active?.isPlayer && !player?.actor.defeated && live.state.status === "active";
+  /**
+   * Whose Round it is. Looking at the board — hovering squares, reading a
+   * target, previewing a route — is allowed for the whole of it.
+   */
+  const canAct = !!active?.isPlayer && !player?.actor.defeated && live.state.status === "active";
+  /**
+   * Whether a command may actually be SENT right now.
+   *
+   * Separate from canAct on purpose. `busy` covers a write in flight, a
+   * playback still running and a query refetching — all transient, none of
+   * them a reason to take the board away from the player. Conflating the two
+   * meant one stuck flag left the whole screen inert: no squares, every click
+   * swallowed, no target lockable and therefore no shot possible.
+   */
+  const canCommit = canAct && !busy && !dice;
   const weapon = raisedWeapon(capability, weaponId);
   const weaponArt = weapon ? itemArt(`weapon.${weapon.itemId}`, weapon.name) : null;
   const targets = actors.filter(({ actor }) => !actor.isPlayer && !actor.defeated);
-  // A command in flight outranks the pointer; see combatInteraction.ts.
-  const resolving = busy || !!dice;
+  // Only a card demanding a roll takes the board out of play. A write in
+  // flight refuses commits (canCommit) but must not stop the player looking.
+  const resolving = !!dice;
   const interaction = interactionOf(intent, resolving);
   const pointedId = readTarget(interaction);
   const lockedId = lockedTarget(interaction);
@@ -275,7 +289,7 @@ export function CombatBoard({
   const spotTile = readTile(interaction);
   const spot = spotTile ? centreOf(spotTile) : null;
   const spotSquares = spotTile ? moveField?.get(tileKey(spotTile))?.cost : undefined;
-  const canMove = !!canAct && !!moveField && !!remaining?.movementSquares;
+  const canMove = canAct && !!moveField && !!remaining?.movementSquares;
   const showSquares = canMove && interaction.type !== "resolving-action";
   const route =
     capability && player && spot
@@ -343,14 +357,13 @@ export function CombatBoard({
    * committed twice by an event arriving through two paths.
    */
   const confirmMove = () => {
-    if (resolving || !canAct || !route?.ok || interaction.type !== "move-preview" || !onMoveTo)
-      return;
+    if (!canCommit || !route?.ok || interaction.type !== "move-preview" || !onMoveTo) return;
     onMoveTo(route.position);
     dispatch({ kind: "moved" });
   };
   /** The one place a shot is sent. Selecting a target never comes through here. */
   const confirmShot = () => {
-    if (resolving || !canAct || !weapon || !onAttack) return;
+    if (!canCommit || !weapon || !onAttack) return;
     const id = lockedId;
     if (!id) return;
     const preview = capability ? previewAttack(capability, id, weapon.itemId) : null;
@@ -389,28 +402,36 @@ export function CombatBoard({
       ? "Your action"
       : `${acting?.side === "hostile" ? "Enemy" : "Ally"} turn · ${acting?.name ?? "Combatant"}`
     : null;
+  /** Why a commit is refused this instant. Shown instead of nothing happening. */
+  const waitingWhy = dice
+    ? "Resolve the roll first"
+    : busy
+      ? "Waiting on the last action"
+      : undefined;
   /** What the board is doing, in the player's words. One line per state. */
   const [hintTitle, hintBody] =
     tool === "pan"
       ? ["Camera", "Drag to look around"]
       : interaction.type === "resolving-action"
         ? ["Resolving", "Waiting on the dice"]
-        : interaction.type === "find-firing-position"
-          ? [
-              "Finding a shot",
-              firingTiles?.size
-                ? "Lit squares can see them · pick one to preview the route"
-                : "Nowhere in reach can see them this Round",
-            ]
-          : interaction.type === "move-preview"
-            ? ["Movement", "Click the square again, or press Enter, to go"]
-            : interaction.type === "target-selected"
-              ? shot?.gap
-                ? ["Targeting", "No shot from here · find a firing position"]
-                : ["Targeting", "Click them again, or press Enter, to shoot"]
-              : interaction.type === "target-hover"
-                ? ["Targeting", "Click to lock this target"]
-                : ["Movement", "Hover a square to preview · click to lock it in"];
+        : !canCommit && canAct && waitingWhy
+          ? ["Waiting", waitingWhy]
+          : interaction.type === "find-firing-position"
+            ? [
+                "Finding a shot",
+                firingTiles?.size
+                  ? "Lit squares can see them · pick one to preview the route"
+                  : "Nowhere in reach can see them this Round",
+              ]
+            : interaction.type === "move-preview"
+              ? ["Movement", "Click the square again, or press Enter, to go"]
+              : interaction.type === "target-selected"
+                ? shot?.gap
+                  ? ["Targeting", "No shot from here · find a firing position"]
+                  : ["Targeting", "Click them again, or press Enter, to shoot"]
+                : interaction.type === "target-hover"
+                  ? ["Targeting", "Click to lock this target"]
+                  : ["Movement", "Hover a square to preview · click to lock it in"];
   /**
    * The lit ground, described once for whichever renderer is drawing it.
    *
@@ -485,9 +506,13 @@ export function CombatBoard({
         tone: "move",
         title: "Move here",
         lines,
-        ...(interaction.type === "move-preview"
-          ? { hint: "Click again to move", confirm: onMoveTo ? confirmMove : undefined }
-          : { hint: "Click to lock this route" }),
+        // Never a silent refusal: if the route is locked but the write queue is
+        // still busy, the plate says that rather than doing nothing.
+        ...(interaction.type !== "move-preview"
+          ? {}
+          : canCommit
+            ? { confirm: onMoveTo ? confirmMove : undefined }
+            : { hint: waitingWhy }),
       };
     }
     if (!aimed) return null;
@@ -512,9 +537,11 @@ export function CombatBoard({
       tone: "shoot",
       title: "Shoot",
       lines: [weapon.name, `DV ${shot?.dv ?? "—"} · ${shot?.distance ?? "—"} m`],
-      ...(lockedId === aimed.actor.id
-        ? { hint: "Click again to fire", confirm: onAttack ? confirmShot : undefined }
-        : { hint: "Click to lock the target" }),
+      ...(lockedId !== aimed.actor.id
+        ? { hint: "Click to lock the target" }
+        : canCommit
+          ? { confirm: onAttack ? confirmShot : undefined }
+          : { hint: waitingWhy }),
     };
   })();
   const turnKey = `${live.id}:${live.state.round}:${active?.id}`;
@@ -1359,7 +1386,9 @@ export function CombatBoard({
                   a second way of committing it. */}
               <button
                 className="combat-confirm"
-                disabled={interaction.type !== "move-preview" || !canAct || !route?.ok || !onMoveTo}
+                disabled={
+                  interaction.type !== "move-preview" || !canCommit || !route?.ok || !onMoveTo
+                }
                 onClick={confirmMove}
               >
                 Confirm move <ChevronRight size={16} />
@@ -1448,7 +1477,7 @@ export function CombatBoard({
                 <button
                   className="combat-confirm is-fire"
                   disabled={
-                    lockedId !== target.actor.id || !canAct || !!shot?.gap || !shot || !onAttack
+                    lockedId !== target.actor.id || !canCommit || !!shot?.gap || !shot || !onAttack
                   }
                   onClick={confirmShot}
                 >
