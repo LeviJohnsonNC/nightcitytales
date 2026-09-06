@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import type { PlaybackFrame } from "./combatPlayback";
 import { createCombatAudio } from "./combatSound";
 import { scheduleCombatCues, feedbackOffset } from "./combatFeedback";
+import combatMusic from "@/assets/neon-storm-front.mp3.asset.json";
+
+/**
+ * The fight's backing track rides under the effects, not over them: a shot or
+ * a body hit must always be the loudest thing the player hears.
+ */
+const MUSIC_LEVEL = 0.3;
 
 export function useCombatFeedback(frame?: PlaybackFrame | null) {
   const [muted, setMuted] = useState(false);
@@ -9,6 +16,7 @@ export function useCombatFeedback(frame?: PlaybackFrame | null) {
   const [reduced, setReduced] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const audio = useRef<ReturnType<typeof createCombatAudio> | null>(null);
+  const music = useRef<HTMLAudioElement | null>(null);
   const played = useRef({ sequence: -1, cues: new Set<number>() });
   useEffect(() => {
     try {
@@ -20,9 +28,23 @@ export function useCombatFeedback(frame?: PlaybackFrame | null) {
     }
     const controller = createCombatAudio();
     audio.current = controller;
-    const unlock = () => controller.unlock();
+    const track = new Audio(combatMusic.url);
+    track.loop = true;
+    track.preload = "auto";
+    music.current = track;
+    const unlock = () => {
+      controller.unlock();
+      if (localStorage.getItem("combat-muted") !== "true") {
+        void track.play().catch(() => {});
+      }
+    };
     const hide = () => {
-      if (document.hidden) controller.stop();
+      if (document.hidden) {
+        controller.stop();
+        track.pause();
+      } else if (localStorage.getItem("combat-muted") !== "true") {
+        void track.play().catch(() => {});
+      }
     };
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setReduced(motion.matches);
@@ -34,12 +56,23 @@ export function useCombatFeedback(frame?: PlaybackFrame | null) {
     return () => {
       controller.dispose();
       audio.current = null;
+      track.pause();
+      track.src = "";
+      music.current = null;
       window.removeEventListener("pointerdown", unlock, true);
       window.removeEventListener("keydown", unlock, true);
       document.removeEventListener("visibilitychange", hide);
       motion.removeEventListener("change", update);
     };
   }, []);
+  // The track answers the same volume knob and mute switch as the effects.
+  useEffect(() => {
+    const track = music.current;
+    if (!track) return;
+    track.volume = volume * MUSIC_LEVEL;
+    if (muted) track.pause();
+    else void track.play().catch(() => {});
+  }, [muted, volume]);
   useEffect(() => {
     setOffset({ x: 0, y: 0 });
     if (!frame || frame.animate === false) {
