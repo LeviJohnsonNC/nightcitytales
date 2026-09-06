@@ -696,6 +696,54 @@
     },
     "x5": {
       "tags": ["market", "derelict", "farm", "fence"]
+    },
+    "r1": {
+      "tags": ["transit", "secure"]
+    },
+    "r2": {
+      "tags": ["shop", "food", "secure"]
+    },
+    "r3": {
+      "tags": ["luxury_housing", "government", "secure"]
+    },
+    "r4": {
+      "tags": ["leisure", "restaurant", "secure"]
+    },
+    "r5": {
+      "tags": ["secure", "office"]
+    },
+    "r6": {
+      "tags": ["flophouse", "housing", "derelict", "crowd"]
+    },
+    "k2": {
+      "tags": ["transit", "garage", "repair"]
+    },
+    "k3": {
+      "tags": ["market", "fence", "shop"]
+    },
+    "k4": {
+      "tags": ["nomad", "housing", "food"]
+    },
+    "s2": {
+      "tags": ["docks", "water", "warehouse"]
+    },
+    "s3": {
+      "tags": ["secure", "office", "warehouse"]
+    },
+    "s4": {
+      "tags": ["bar", "fence", "gang_turf"]
+    },
+    "m3": {
+      "tags": ["secure", "transit"]
+    },
+    "m4": {
+      "tags": ["garage", "repair", "warehouse"]
+    },
+    "o3": {
+      "tags": ["market", "shop", "crowd", "food"]
+    },
+    "o4": {
+      "tags": ["ripperdoc", "gang_turf", "shop"]
     }
   }
 }

@@ -79,16 +79,42 @@ describe("place dossiers", () => {
     expect(unwritten).toEqual([]);
   });
 
-  it("has a picture for every entry", () => {
-    // Text and pictures arrived separately, and for a while this held a list of
-    // the entries still waiting. Every one of them now has a picture, so the
-    // list is empty and stays that way: an entry added later without a picture,
-    // or one whose picture is added to the repository but never wired up, shows
-    // up here first.
+  it("has a picture for every entry, or is on the list of ones still waiting", () => {
+    // Text and pictures arrive separately, so this holds the entries written
+    // but not yet drawn. It was empty once and will be again: the sixteen
+    // house-rule locations were written for districts the atlas left with
+    // nowhere to stand, and their pictures have not been made yet.
+    //
+    // The list is the point. Anything NOT on it that lacks a picture fails
+    // here, and every name struck off it is a picture that landed — so this
+    // shrinks and never grows.
+    const AWAITING_PICTURES = [
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "r5",
+      "r6",
+      "k2",
+      "k3",
+      "k4",
+      "s2",
+      "s3",
+      "s4",
+      "m3",
+      "m4",
+      "o3",
+      "o4",
+    ];
     const pending = Object.entries(PLACE_DOSSIERS)
       .filter(([, entry]) => !entry.image)
       .map(([key]) => key);
-    expect(pending).toEqual([]);
+    expect(pending.sort()).toEqual([...AWAITING_PICTURES].sort());
+    // And every name on the list is a real entry, so a picture that lands
+    // without the name being struck off is caught rather than quietly ignored.
+    for (const key of AWAITING_PICTURES) {
+      expect(PLACE_DOSSIERS[key], `${key} is on the waiting list but has no entry`).toBeDefined();
+    }
   });
 
   it("keeps the district list it was written against", () => {
