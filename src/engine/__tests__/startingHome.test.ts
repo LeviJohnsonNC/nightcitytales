@@ -178,6 +178,21 @@ describe("what an address would mean", () => {
     }
   });
 
+  it("describes the neighbourhood rather than the building you are standing in", () => {
+    // placeActions puts wherever you are standing first and in full, which is
+    // right when you are standing in it and wrong here: the first cut of this
+    // panel told a player living in Eagle Rock Stadium that within walking
+    // distance they could ask around at Eagle Rock Stadium, look in on the
+    // neighbours at Eagle Rock Stadium, and see what's on at Eagle Rock Stadium.
+    for (const home of [...everyStartingHome(), ...execHomes()]) {
+      const preview = homePreview(home.key)!;
+      const venues = preview.nearby.map((n) => n.placeName);
+      expect(venues, `${home.name} lists itself`).not.toContain(preview.placeName);
+      expect(new Set(venues).size, `${home.name} names one venue twice`).toBe(venues.length);
+      expect(venues.length, `${home.name} has nothing around it`).toBeGreaterThan(0);
+    }
+  });
+
   it("gives the choice something to actually be a choice about", () => {
     // The container costs the same everywhere, so if every address answered the
     // same way there would be no decision here at all. Rancho Coronado is
