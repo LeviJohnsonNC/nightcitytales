@@ -188,6 +188,118 @@
       "description": "Food, an argument about a route, and nobody asking what you do.",
       "minutes": 90,
       "cost": null
+    },
+    {
+      "key": "cash_transfer",
+      "tags": ["bank"],
+      "label": "Cash a transfer",
+      "description": "Somebody else’s money becomes yours, minus whatever the counter takes.",
+      "minutes": 30,
+      "cost": null
+    },
+    {
+      "key": "sign_in",
+      "tags": ["office"],
+      "label": "Sign in at reception",
+      "description": "A badge, your name in a log, and half an hour of somebody else’s day.",
+      "minutes": 30,
+      "cost": null
+    },
+    {
+      "key": "make_appointment",
+      "tags": ["corp_hq"],
+      "label": "Make an appointment",
+      "description": "You will not be seen today. Being written down is the whole of the win.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "what_theyll_admit",
+      "tags": ["lab"],
+      "label": "Ask what they are working on",
+      "description": "The answer is public, sanitised, and still more than you knew this morning.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "sell_what_you_saw",
+      "tags": ["media"],
+      "label": "Sell what you saw",
+      "description": "They buy footage, rumour and eyewitness, and pay badly for all three.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "sit_in",
+      "tags": ["school"],
+      "label": "Sit in on something",
+      "description": "Nobody checks. An hour of somebody teaching something they actually know.",
+      "minutes": 60,
+      "cost": null
+    },
+    {
+      "key": "file_it",
+      "tags": ["government"],
+      "label": "File it and wait",
+      "description": "The form exists. Whether anything happens to it is a separate question.",
+      "minutes": 90,
+      "cost": 10
+    },
+    {
+      "key": "make_a_report",
+      "tags": ["police"],
+      "label": "Report it",
+      "description": "They will take it down. Taking it down is not the same as doing anything.",
+      "minutes": 60,
+      "cost": null
+    },
+    {
+      "key": "watch_the_door",
+      "tags": ["secure"],
+      "label": "Watch the door",
+      "description": "Who goes in, who comes out, and who they nod to on the way past.",
+      "minutes": 60,
+      "cost": null
+    },
+    {
+      "key": "take_the_train",
+      "tags": ["transit"],
+      "label": "Take the train",
+      "description": "Somewhere else, for the price of a ticket and the length of the ride.",
+      "minutes": 45,
+      "cost": 10
+    },
+    {
+      "key": "look_for_a_shift",
+      "tags": ["factory"],
+      "label": "Look for a shift",
+      "description": "They are always short, and it always pays less than the board said.",
+      "minutes": 60,
+      "cost": null
+    },
+    {
+      "key": "take_a_bunk",
+      "tags": ["flophouse"],
+      "label": "Take a bunk",
+      "description": "A mattress, a locker that does not lock, and nobody asking your name.",
+      "minutes": 30,
+      "cost": 10
+    },
+    {
+      "key": "past_the_desk",
+      "tags": ["luxury_housing"],
+      "label": "Talk your way past the desk",
+      "description": "The lobby is the whole security model, and the lobby is a person.",
+      "minutes": 45,
+      "cost": null
+    },
+    {
+      "key": "whose_street",
+      "tags": ["gang_turf"],
+      "label": "See whose street this is",
+      "description": "Colours, tags, and who stands where. Worth knowing before you need it.",
+      "minutes": 30,
+      "cost": null
     }
   ]
 }

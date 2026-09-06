@@ -6,21 +6,44 @@
     "police_attention": {
       "label": "Police attention",
       "segments": 8,
-      "tags": ["market", "fence", "gang_turf", "derelict", "club", "bar"],
+      "tags": [
+        "market",
+        "fence",
+        "gang_turf",
+        "derelict",
+        "club",
+        "bar",
+        "ripperdoc",
+        "docks",
+        "warehouse"
+      ],
       "start": 0,
       "meaning": "How interested the law has become in what goes on here."
     },
     "gang_pressure": {
       "label": "Gang pressure",
       "segments": 8,
-      "tags": ["gang_turf", "market", "shop", "garage"],
+      "tags": ["gang_turf", "market", "shop", "garage", "repair", "factory"],
       "start": 2,
       "meaning": "How much somebody is leaning on the people who work here."
     },
     "goodwill": {
       "label": "Goodwill",
       "segments": 8,
-      "tags": ["housing", "container_housing", "farm", "food", "clinic"],
+      "tags": [
+        "housing",
+        "container_housing",
+        "farm",
+        "food",
+        "clinic",
+        "hotel",
+        "flophouse",
+        "restaurant",
+        "leisure",
+        "studio",
+        "nomad",
+        "water"
+      ],
       "start": 4,
       "meaning": "Whether the people here are glad to see the character."
     },
@@ -30,6 +53,30 @@
       "tags": ["farm"],
       "start": 6,
       "meaning": "How much of this ground the people who work it still hold."
+    },
+    "corporate_attention": {
+      "label": "Corporate attention",
+      "segments": 8,
+      "tags": ["office", "corp_hq", "lab", "secure", "media", "bank", "luxury_housing", "factory"],
+      "start": 1,
+      "meaning": "How far up the building somebody has started asking about you."
+    },
+    "civic_scrutiny": {
+      "label": "Civic scrutiny",
+      "segments": 8,
+      "tags": [
+        "government",
+        "police",
+        "school",
+        "hospital",
+        "transit",
+        "religious",
+        "stadium",
+        "park",
+        "crowd"
+      ],
+      "start": 1,
+      "meaning": "Whether the people whose job is noticing have started noticing."
     }
   },
   "flagNote": "Closed vocabulary. A flag is set by the engine when a dial crosses, or by a beat that resolves; nothing else may write one, and the model may not name one at all.",
@@ -39,7 +86,9 @@
     "raided": "The law has been through, and recently.",
     "shut": "Closed. Not temporarily, as far as anyone here knows.",
     "rebuilt": "Put back together after something took it apart.",
-    "power_out": "No power, and no date for its return."
+    "power_out": "No power, and no date for its return.",
+    "locked_down": "Access is restricted, and somebody is checking who comes through.",
+    "under_audit": "Somebody official is going through the records, and taking their time."
   },
   "thresholdNote": "What happens when a dial fills. This is where a place stops being what the atlas described: a market that draws enough police attention stops being a market, and the entry the player read in week one is now history.",
   "thresholds": [
@@ -66,6 +115,22 @@
       "clears": [],
       "resets": 0,
       "note": "The people who worked this ground are not working it any more."
+    },
+    {
+      "dial": "corporate_attention",
+      "at": 8,
+      "sets": ["locked_down"],
+      "clears": [],
+      "resets": 4,
+      "note": "Somebody signed off on new access rules. The badge you used last week is not the badge you need now."
+    },
+    {
+      "dial": "civic_scrutiny",
+      "at": 8,
+      "sets": ["under_audit"],
+      "clears": [],
+      "resets": 4,
+      "note": "An inspection has started. Nothing here is refusing to work, it is only taking four times as long."
     }
   ],
   "startNote": "Where a specific location starts, when the writing said something specific. Everything not named here starts wherever its tags put it.",

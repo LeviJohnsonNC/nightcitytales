@@ -175,22 +175,34 @@ export function hasFlag(state: PlaceState | undefined, flag: string): boolean {
  * way: being loud draws the law to THIS ADDRESS as well as to the character,
  * and doing somebody an actual service is how a place comes to know you.
  *
+ * Institutional ground notices differently. A building with a reception desk
+ * has no police attention of its own — it has a security department, and being
+ * NAMED inside one costs more than being merely seen, because the thing that
+ * closes a corporate door is a memo rather than a patrol. `favour` moves
+ * neither: you do not earn goodwill from a lobby.
+ *
  * These are pacing numbers, like OBSERVATION_COSTS beside them. No printed rule
  * says what being seen costs a market.
  */
 export const PLACE_OBSERVATION_EFFECTS: Partial<
   Record<Observation, Partial<Record<string, number>>>
 > = {
-  seen: { police_attention: 1 },
-  named: { police_attention: 1 },
-  witness: { police_attention: 1 },
-  loud: { police_attention: 2, goodwill: -1 },
-  killed: { police_attention: 3, goodwill: -2, gang_pressure: 1 },
-  wounded: { police_attention: 1, goodwill: -1 },
-  property: { police_attention: 1, goodwill: -2 },
-  burned: { goodwill: -2, gang_pressure: 1 },
+  seen: { police_attention: 1, corporate_attention: 1, civic_scrutiny: 1 },
+  named: { police_attention: 1, corporate_attention: 2, civic_scrutiny: 2 },
+  witness: { police_attention: 1, corporate_attention: 1, civic_scrutiny: 1 },
+  loud: { police_attention: 2, goodwill: -1, corporate_attention: 2, civic_scrutiny: 2 },
+  killed: {
+    police_attention: 3,
+    goodwill: -2,
+    gang_pressure: 1,
+    corporate_attention: 3,
+    civic_scrutiny: 3,
+  },
+  wounded: { police_attention: 1, goodwill: -1, corporate_attention: 1, civic_scrutiny: 1 },
+  property: { police_attention: 1, goodwill: -2, corporate_attention: 2, civic_scrutiny: 1 },
+  burned: { goodwill: -2, gang_pressure: 1, corporate_attention: 1 },
   favour: { goodwill: 2, reclaimer_control: 1 },
-  clean: { police_attention: -1 },
+  clean: { police_attention: -1, corporate_attention: -1, civic_scrutiny: -1 },
 };
 
 export type PlaceChange = {
