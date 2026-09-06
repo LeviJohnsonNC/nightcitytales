@@ -20,7 +20,8 @@ import {
 import { readGeneralLifepath, displayValue } from "./lifepathState";
 import { BudgetBars, FashionWarning, PurchaseError, eb, useLoadoutActions } from "./market";
 import { useState } from "react";
-import { useChargenStore, type ChargenState } from "./store";
+import { HomePicker } from "./HomePicker";
+import type { ChargenState } from "./store";
 
 const LOOK_TABLES = [
   { id: "clothing_style", label: "Clothing Style" },
@@ -179,7 +180,6 @@ function FashionShop({ state }: { state: ChargenState }) {
 }
 
 function HousingCard({ state }: { state: ChargenState }) {
-  const patch = useChargenStore((s) => s.patch);
   const plan = startingLifestylePlan(state.roleId);
   const [infoOpen, setInfoOpen] = useState(false);
   return (
@@ -195,55 +195,16 @@ function HousingCard({ state }: { state: ChargenState }) {
           ?
         </button>
       </div>
-      {plan.grantedByRoleAbility ? (
-        <>
-          <p className="mt-2 text-sm text-text">
-            Your Role Ability hands you a <span className="text-ember">{plan.housingName}</span> at{" "}
-            <span className="text-ember">{eb(plan.rent)}</span> rent — no location roll, no
-            neighbourhood choice.
-          </p>
-          {plan.grantRule ? <p className="mt-2 text-sm text-text-muted">{plan.grantRule}</p> : null}
-          {plan.rentNote ? <p className="mt-2 text-sm text-text-muted">{plan.rentNote}</p> : null}
-        </>
-      ) : (
-        <>
-          <p className="mt-2 text-sm text-text">
-            You start in a rented <span className="text-ember">{plan.housingName}</span> on a{" "}
-            <span className="text-ember">{plan.lifestyleName}</span> Lifestyle. Pick where it sits.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {plan.locations.map((location) => {
-              const selected = state.lifestyle.location === location;
-              return (
-                <button
-                  key={location}
-                  type="button"
-                  onClick={() =>
-                    patch({
-                      lifestyle: {
-                        ...state.lifestyle,
-                        location,
-                        districtKey: null,
-                        placeKey: null,
-                      },
-                    })
-                  }
-                  aria-pressed={selected}
-                  className={`border p-4 text-left transition-colors duration-200 ${
-                    selected
-                      ? "border-ember bg-ember/10"
-                      : "border-hairline bg-surface-raised hover:border-ember/60"
-                  }`}
-                >
-                  <span className="font-mono text-sm uppercase tracking-[0.15em] text-text">
-                    {location}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
+      {plan.grantedByRoleAbility && plan.grantRule ? (
+        <p className="mt-2 text-sm text-text-muted">{plan.grantRule}</p>
+      ) : null}
+      {plan.grantedByRoleAbility && plan.rentNote ? (
+        <p className="mt-2 text-sm text-text-muted">{plan.rentNote}</p>
+      ) : null}
+
+      <div className="mt-4">
+        <HomePicker state={state} />
+      </div>
 
       <dl className="mt-5 grid gap-3 sm:grid-cols-2">
         <div className="border border-hairline bg-surface-raised p-3">

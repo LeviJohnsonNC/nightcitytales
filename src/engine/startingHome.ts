@@ -40,8 +40,15 @@ import {
   type District,
 } from "./geography";
 import { startingLifestylePlan, type LifestyleChoice, STARTING_LOCATIONS } from "./lifestyle";
-import { placeActions } from "./placeActions";
-import { districtProfile, hasTag, placesWithTag, type PlaceProfile } from "./places";
+import { PLACE_ACTION_TEMPLATES } from "./placeActions";
+import {
+  districtProfile,
+  hasTag,
+  placesWithTag,
+  tagsOf,
+  type PlaceProfile,
+  type PlaceTag,
+} from "./places";
 
 // ---------------------------------------------------------------------------
 // The two printed categories.
@@ -195,6 +202,15 @@ const LANDMARK_PLACES = ["b1", "g4", "x5"];
 /** How many verbs to show for the district. Enough to say what living there is like. */
 const NEARBY_SHOWN = 4;
 
+/**
+ * Somewhere in the district that is not the character's own front door.
+ *
+ * A home with nothing around it is a real answer — the Reclamation Zone has
+ * four locations and a character living in one of them genuinely does not have
+ * much within walking distance — so an empty list is left empty rather than
+ * padded back out with the home itself.
+ */
+
 /** What living here would actually be like, from what the engine already holds. */
 export function homePreview(placeKey: string): HomePreview | null {
   const place = getPlace(placeKey);
@@ -202,9 +218,27 @@ export function homePreview(placeKey: string): HomePreview | null {
   if (!place || !district) return null;
   const profile = districtProfile(district.key);
 
-  const nearby = placeActions({ districtKey: district.key, placeKey })
-    .slice(0, NEARBY_SHOWN)
-    .map((action) => ({ label: action.label, placeName: action.placeName }));
+  // Deliberately asked for WITHOUT the home as the standing place. placeActions
+  // puts wherever you are standing first and in full, which is right when you
+  // are standing in it and wrong here: "within walking distance" listing your
+  // own container stack three times says nothing about the neighbourhood. Asked
+  // district-wide, it spreads across venues instead.
+  // Built from the district's LOCATIONS rather than from placeActions, on
+  // purpose. placeActions answers "what is there to do from where I stand",
+  // which is capped at five for the whole district and offers each verb once —
+  // so a venue with many tags takes three of the slots and the list describes
+  // one building instead of a neighbourhood. This asks the other question:
+  // which places are near you, and what is each one for.
+  const nearby: HomePreview["nearby"] = [];
+  for (const location of district.locations) {
+    if (location.key === placeKey) continue;
+    const verb = PLACE_ACTION_TEMPLATES.find((template) =>
+      template.tags.some((tag) => tagsOf(location.key).includes(tag as PlaceTag)),
+    );
+    if (!verb) continue;
+    nearby.push({ label: verb.label, placeName: location.name });
+    if (nearby.length >= NEARBY_SHOWN) break;
+  }
 
   const travel: HomePreview["travel"] = [];
   for (const to of LANDMARK_PLACES) {
