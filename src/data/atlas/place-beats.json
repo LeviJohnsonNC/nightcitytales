@@ -1,6 +1,6 @@
 {
   "houseRule": true,
-  "note": "What a place can put in front of a character. A beat is anchored to a location and is true while the character is in that location's district; the engine picks it deterministically from the day, so nothing here is a roll and nothing here is the narrator's decision. Anchored by TAG rather than by key wherever the beat is not about one specific venue, so a beat written once works in every district that has the ground for it.",
+  "note": "What a place can put in front of a character. A beat is anchored to a location and is true while the character is in that location's district; the engine picks it deterministically from the day, so nothing here is a roll and nothing here is the narrator's decision. Two kinds live here. A TAG beat is anchored to ground rather than to a venue, so it is written once and works in every district that has the ground for it — that is what stops a district being bare. A NAMED beat is anchored to one location by key and is about that location and nowhere else, which is what stops every district feeling the same; when both fit, the named one takes the slot.",
   "cap": 2,
   "capNote": "How many place beats may be live at once. Two. The Life funnel scores them against rent, wounds and people like everything else, and a place that offers four things at once is a quest board.",
   "beats": [
@@ -285,6 +285,553 @@
       "summary": "Packing has started, the argument about the route is well underway, and nobody has said how long they will be gone.",
       "severity": 2,
       "everyDays": 24
+    },
+    {
+      "key": "truce_at_holy_angels",
+      "places": ["a9"],
+      "category": "people",
+      "title": "Somebody has called a meeting at Holy Angels",
+      "summary": "Two sides who would shoot each other on the street have agreed to sit down. Father Kevin is holding the weapons.",
+      "severity": 3,
+      "everyDays": 29,
+      "signal": "meeting"
+    },
+    {
+      "key": "santa_dropped_something",
+      "places": ["a11"],
+      "category": "opportunity",
+      "title": "Something has landed in the Library",
+      "summary": "A dump nobody has claimed, sitting in Short Circuit's shared architecture. Half the second floor is already reading it.",
+      "severity": 3,
+      "everyDays": 23,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "norman_is_asking",
+      "places": ["a2"],
+      "category": "pressure",
+      "title": "Norman has been asking after somebody",
+      "summary": "Not you. Somebody who drinks here, who has not been in for a week, and whose name he will not say out loud.",
+      "severity": 2,
+      "everyDays": 19
+    },
+    {
+      "key": "board_at_the_afterlife",
+      "places": ["b1"],
+      "category": "opportunity",
+      "title": "A name went up on the board at the Afterlife",
+      "summary": "Somebody died well enough to be remembered, and the wake has turned into the busiest night of the month.",
+      "severity": 2,
+      "everyDays": 17,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "mooring_dispute",
+      "places": ["b7"],
+      "category": "pressure",
+      "title": "There is an argument about a mooring",
+      "summary": "One of the FloatHomes has drifted onto somebody else's water, and neither owner is treating it as an accident.",
+      "severity": 2,
+      "everyDays": 21
+    },
+    {
+      "key": "medcenter_over_capacity",
+      "places": ["b3"],
+      "category": "need",
+      "title": "City Medical is turning people away",
+      "summary": "Whatever came in overnight has taken every bed. The queue outside has stopped being a queue and become a crowd.",
+      "severity": 3,
+      "everyDays": 25
+    },
+    {
+      "key": "delirium_door_policy",
+      "places": ["c4"],
+      "category": "pressure",
+      "title": "Delirium has changed who it lets in",
+      "summary": "New faces on the door and a list that was not there last week. Regulars are standing outside looking insulted.",
+      "severity": 2,
+      "everyDays": 20,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "firestation_two_short",
+      "places": ["c5"],
+      "category": "need",
+      "title": "Firestation #2 is running short",
+      "summary": "Half the appliances are out on something nobody will describe, and the district is quietly uninsured for the evening.",
+      "severity": 2,
+      "everyDays": 26
+    },
+    {
+      "key": "totentanz_is_open",
+      "places": ["d4"],
+      "category": "opportunity",
+      "title": "Totentanz is open to anyone tonight",
+      "summary": "Maelstrom have opened the doors, which they do occasionally, for reasons that have never been satisfactorily explained.",
+      "severity": 3,
+      "everyDays": 18,
+      "parts": ["night"]
+    },
+    {
+      "key": "toggle_has_something_in",
+      "places": ["d3"],
+      "category": "opportunity",
+      "title": "Toggle has something in",
+      "summary": "Salvage out of the Zone, still warm, and Toggle is being unusually specific about who is allowed to look at it.",
+      "severity": 2,
+      "everyDays": 22,
+      "signal": "trade"
+    },
+    {
+      "key": "hope_is_full",
+      "places": ["e3"],
+      "category": "people",
+      "title": "The Forlorn Hope is full tonight",
+      "summary": "Every table taken and half of them by people who do not normally drink together. Something has happened somewhere.",
+      "severity": 2,
+      "everyDays": 16,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "bridgetown_flooding",
+      "places": ["e1"],
+      "category": "need",
+      "title": "Bridgetown is taking water again",
+      "summary": "The lower containers are ankle-deep and rising. Everyone who can lift is moving somebody else's belongings upstairs.",
+      "severity": 3,
+      "everyDays": 24
+    },
+    {
+      "key": "campus_lockdown",
+      "places": ["f4"],
+      "category": "pressure",
+      "title": "The campus has gone to lockdown",
+      "summary": "NCU Campus Security has closed the gates and will not say why. Several thousand people are inside and cannot leave.",
+      "severity": 3,
+      "everyDays": 27
+    },
+    {
+      "key": "seeds_came_in",
+      "places": ["f7"],
+      "category": "opportunity",
+      "title": "A seed shipment reached Stems & Seeds",
+      "summary": "Rare stock, badly needed, and worth rather more to certain people than the people who ordered it are aware.",
+      "severity": 2,
+      "everyDays": 20,
+      "signal": "trade"
+    },
+    {
+      "key": "princessland_lights",
+      "places": ["f6"],
+      "category": "opportunity",
+      "title": "There are lights on in Princessland",
+      "summary": "The park has been dead for years. Somebody has power running to it tonight, and it is not the city.",
+      "severity": 2,
+      "everyDays": 23,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "precinct_briefing",
+      "places": ["g5"],
+      "category": "pressure",
+      "title": "Precinct #1 is briefing for something",
+      "summary": "Every shift held over, vehicles staged in the yard, and nobody outside the building has been told what for.",
+      "severity": 3,
+      "everyDays": 19
+    },
+    {
+      "key": "city_hall_vote",
+      "places": ["g4"],
+      "category": "opportunity",
+      "title": "City Hall is voting on something today",
+      "summary": "The public gallery is open, the item is buried at number nine, and three people in the district stand to lose everything.",
+      "severity": 2,
+      "everyDays": 26
+    },
+    {
+      "key": "plaza_demonstration",
+      "places": ["g11"],
+      "category": "pressure",
+      "title": "There is a demonstration in the Plaza",
+      "summary": "Peaceful so far, larger than anyone planned for, and ringed by people being paid to decide when it stops being peaceful.",
+      "severity": 2,
+      "everyDays": 21
+    },
+    {
+      "key": "suzuki_short",
+      "places": ["h4"],
+      "category": "need",
+      "title": "Mrs. Suzuki has been cleaned out",
+      "summary": "The bodega's shelves went in a morning. Whoever bought it bought all of it, and paid without arguing.",
+      "severity": 2,
+      "everyDays": 18
+    },
+    {
+      "key": "hiro_has_a_car",
+      "places": ["h3"],
+      "category": "opportunity",
+      "title": "Hiro has a car nobody has claimed",
+      "summary": "On the lot, papers absent, and a Nomad family has been past twice today looking at it without stopping.",
+      "severity": 2,
+      "everyDays": 22,
+      "signal": "trade"
+    },
+    {
+      "key": "boneyard_procession",
+      "places": ["i1"],
+      "category": "people",
+      "title": "There is a procession through the Boneyard",
+      "summary": "The Sinful Adams are burying one of their own, and the whole district has come out to be seen not interfering.",
+      "severity": 2,
+      "everyDays": 25,
+      "parts": ["evening"]
+    },
+    {
+      "key": "slammer_card",
+      "places": ["i5"],
+      "category": "opportunity",
+      "title": "There is a card on at the Slammer",
+      "summary": "Wild Things business, an open gate, and a purse large enough that people have travelled for it.",
+      "severity": 2,
+      "everyDays": 15,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "savage_docs_busy",
+      "places": ["i3"],
+      "category": "pressure",
+      "title": "Savage Docs has been busy all night",
+      "summary": "Three arrivals since dark, none of them walking. Whatever happened, it happened to a crew rather than a person.",
+      "severity": 3,
+      "everyDays": 24,
+      "parts": ["night"]
+    },
+    {
+      "key": "cargo_community_sweep",
+      "places": ["j3"],
+      "category": "pressure",
+      "title": "The Thelas Marines are walking the cargo community",
+      "summary": "Not a raid. A count, door by door, of who is living in what, and the count is being written down.",
+      "severity": 2,
+      "everyDays": 20
+    },
+    {
+      "key": "medtech_has_stock",
+      "places": ["j5"],
+      "category": "opportunity",
+      "title": "Medical Technologies has taken delivery",
+      "summary": "Chrome, unpapered, and the sort that does not usually reach the Port. It will not be there in a week.",
+      "severity": 2,
+      "everyDays": 17,
+      "signal": "trade"
+    },
+    {
+      "key": "herschel_unclaimed",
+      "places": ["k1"],
+      "category": "people",
+      "title": "Herschel has somebody nobody has claimed",
+      "summary": "A body, a week old, and an undertaker who will not put anyone in the ground without a name to say over them.",
+      "severity": 2,
+      "everyDays": 21
+    },
+    {
+      "key": "yard_stripped",
+      "places": ["k2"],
+      "category": "pressure",
+      "title": "Somebody stripped the Yard overnight",
+      "summary": "Parts gone that the city's transport needs by Monday. The reclaimers are furious and are not calling anybody official.",
+      "severity": 3,
+      "everyDays": 19
+    },
+    {
+      "key": "ashes_needs_blood",
+      "places": ["l1"],
+      "category": "need",
+      "title": "From the Ashes has run out",
+      "summary": "Blood, plasma, and most of what a clinic needs to be one. Edgerunners Inc are asking anyone who can spare either.",
+      "severity": 3,
+      "everyDays": 16
+    },
+    {
+      "key": "semiconductor_lit",
+      "places": ["l3"],
+      "category": "opportunity",
+      "title": "There is a light in the semiconductor building",
+      "summary": "Nobody has run that plant in twenty years. Somebody is running something in it tonight.",
+      "severity": 2,
+      "everyDays": 27,
+      "parts": ["night"]
+    },
+    {
+      "key": "gate_is_closed",
+      "places": ["m3"],
+      "category": "pressure",
+      "title": "The Main Gate has closed to everyone",
+      "summary": "No traffic in or out, no explanation, and NorCal Military Police standing where they do not normally stand.",
+      "severity": 3,
+      "everyDays": 23
+    },
+    {
+      "key": "motor_pool_inventory",
+      "places": ["m4"],
+      "category": "opportunity",
+      "title": "The Motor Pool is taking inventory",
+      "summary": "Everything out of the sheds and onto the apron, counted twice, by people who look like they expect the count to be wrong.",
+      "severity": 2,
+      "everyDays": 20
+    },
+    {
+      "key": "redline_running",
+      "places": ["n6"],
+      "category": "opportunity",
+      "title": "The Redline is running tonight",
+      "summary": "Wild Things have the gate open and the pit lit. The crowd is already too large for the ground it is standing on.",
+      "severity": 3,
+      "everyDays": 14,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "trauma_tower_grounded",
+      "places": ["n11"],
+      "category": "pressure",
+      "title": "Trauma Team has grounded its birds",
+      "summary": "Every AV on the pad and none of them moving. Whoever is paying for the pause is paying a great deal for it.",
+      "severity": 3,
+      "everyDays": 26
+    },
+    {
+      "key": "oktober_last_train",
+      "places": ["n5"],
+      "category": "people",
+      "title": "The last train out of Red Oktober is late",
+      "summary": "Two hundred people on a platform with nowhere to be until it comes, and the bar attached to it has noticed.",
+      "severity": 1,
+      "everyDays": 13,
+      "parts": ["night"]
+    },
+    {
+      "key": "theater_full_house",
+      "places": ["o1"],
+      "category": "people",
+      "title": "The Nakagawa has a full house tonight",
+      "summary": "The troupe is performing and the Co-Prosperity Sphere's leadership is in the building. So is everybody who wants something from them.",
+      "severity": 2,
+      "everyDays": 22,
+      "parts": ["evening", "night"],
+      "signal": "meeting"
+    },
+    {
+      "key": "ganymede_shipment",
+      "places": ["o3"],
+      "category": "opportunity",
+      "title": "Something came in across the Pacific",
+      "summary": "Ganymede Street has stock this morning that was not on any manifest, and the stalls are pricing it accordingly.",
+      "severity": 2,
+      "everyDays": 15,
+      "parts": ["morning", "afternoon"],
+      "signal": "market"
+    },
+    {
+      "key": "n54_running_it_tonight",
+      "places": ["p5"],
+      "category": "pressure",
+      "title": "Network 54 is running it tonight",
+      "summary": "A story is going out at the top of the hour, the district is in it, and nobody in the district has been asked about it.",
+      "severity": 2,
+      "everyDays": 18
+    },
+    {
+      "key": "north_cargo_cleared",
+      "places": ["p8"],
+      "category": "pressure",
+      "title": "North Cargo Village is being cleared",
+      "summary": "Notices on the containers, a date on the notices, and the date is close enough that people have started packing.",
+      "severity": 3,
+      "everyDays": 25
+    },
+    {
+      "key": "rocklin_recruiting",
+      "places": ["p9"],
+      "category": "opportunity",
+      "title": "Rocklin Augmentics is recruiting volunteers",
+      "summary": "Paid, medical, and the consent form is four pages of things that will not happen to you and one page of what might.",
+      "severity": 2,
+      "everyDays": 21
+    },
+    {
+      "key": "seral_grove_visitor",
+      "places": ["q4"],
+      "category": "people",
+      "title": "Somebody has been visiting a grave in Seral Grove",
+      "summary": "Repeatedly, out of hours, and the reconstruction they have been talking to has started saying things it should not know.",
+      "severity": 3,
+      "everyDays": 28,
+      "parts": ["night"]
+    },
+    {
+      "key": "anjelika_has_a_slot",
+      "places": ["q1"],
+      "category": "opportunity",
+      "title": "Anjelika has an evening free",
+      "summary": "Which never happens, and she is not saying who cancelled or why they are not going to need the appointment.",
+      "severity": 2,
+      "everyDays": 19,
+      "parts": ["evening"],
+      "signal": "trade"
+    },
+    {
+      "key": "verge_water_cut",
+      "places": ["r6"],
+      "category": "need",
+      "title": "The Verge has lost its water point",
+      "summary": "Cut from the other side of the wall, according to everyone here, and nobody on that side is answering.",
+      "severity": 3,
+      "everyDays": 15
+    },
+    {
+      "key": "gatehouse_shift_change",
+      "places": ["r5"],
+      "category": "opportunity",
+      "title": "Lazarus is changing the gatehouse roster",
+      "summary": "New faces, unfamiliar with the district's regulars, and for about a week the wall is only as good as a list.",
+      "severity": 2,
+      "everyDays": 24
+    },
+    {
+      "key": "oasis_delivery_run",
+      "places": ["r2"],
+      "category": "opportunity",
+      "title": "The Oasis is running a delivery round",
+      "summary": "Drones out to the estates all afternoon, each one carrying a manifest that says who is home and what they wanted.",
+      "severity": 2,
+      "everyDays": 20,
+      "parts": ["afternoon"]
+    },
+    {
+      "key": "weighbridge_discrepancy",
+      "places": ["s3"],
+      "category": "pressure",
+      "title": "The Weighbridge has found a discrepancy",
+      "summary": "A load that weighed one thing on arrival and another on release. SK Security have stopped everything until it resolves.",
+      "severity": 3,
+      "everyDays": 22
+    },
+    {
+      "key": "wharf_night_landing",
+      "places": ["s2"],
+      "category": "opportunity",
+      "title": "Something is landing at Cargo Way after dark",
+      "summary": "Not on the schedule, not lit, and the crew working it were not the crew rostered for tonight.",
+      "severity": 3,
+      "everyDays": 17,
+      "parts": ["night"]
+    },
+    {
+      "key": "armory_taking_orders",
+      "places": ["t2"],
+      "category": "opportunity",
+      "title": "The Armory is taking orders again",
+      "summary": "6th Street have stock in and are writing names down. What you can have depends entirely on whose name is above yours.",
+      "severity": 2,
+      "everyDays": 16,
+      "signal": "trade"
+    },
+    {
+      "key": "shelter_overrun",
+      "places": ["t8"],
+      "category": "need",
+      "title": "The animal shelter has run out of room",
+      "summary": "Somebody dumped a crate of bioexotics at the door overnight and the clinic behind it is not equipped for any of them.",
+      "severity": 1,
+      "everyDays": 23
+    },
+    {
+      "key": "xanadu_all_night",
+      "places": ["t10"],
+      "category": "opportunity",
+      "title": "Xanadu is going all night",
+      "summary": "The stadium floor is open, the card is long, and the crowd has been arriving since the afternoon.",
+      "severity": 2,
+      "everyDays": 14,
+      "parts": ["night"]
+    },
+    {
+      "key": "yangs_has_a_job",
+      "places": ["u3"],
+      "category": "opportunity",
+      "title": "Yang's Wheels has more work than hands",
+      "summary": "A fleet job with a deadline attached, and Yang has started asking people in the street whether they can hold a spanner.",
+      "severity": 1,
+      "everyDays": 18
+    },
+    {
+      "key": "rambling_rose_shifting",
+      "places": ["u1"],
+      "category": "pressure",
+      "title": "The Rambling Rose has shifted again",
+      "summary": "The old hull moved in the night and the people living in it have moved with it. Somebody is going to have to go down there.",
+      "severity": 2,
+      "everyDays": 26
+    },
+    {
+      "key": "aldecaldo_convoy",
+      "places": ["v1"],
+      "category": "people",
+      "title": "An Aldecaldo convoy is coming in",
+      "summary": "Family arriving off the road, which means food, news from the Badlands, and three days of nobody in the camp sleeping much.",
+      "severity": 2,
+      "everyDays": 17
+    },
+    {
+      "key": "woodchipper_swap_meet",
+      "places": ["v7"],
+      "category": "opportunity",
+      "title": "Woodchipper's is holding a swap meet",
+      "summary": "Half the district's vehicles in one yard, parts changing hands, and the Steel Vaqueros running the gate as a courtesy.",
+      "severity": 2,
+      "everyDays": 15,
+      "parts": ["morning", "afternoon"],
+      "signal": "market"
+    },
+    {
+      "key": "precinct_two_quiet",
+      "places": ["v2"],
+      "category": "pressure",
+      "title": "Precinct #2 has gone quiet",
+      "summary": "Nobody answering, nobody dispatching, and the Aldecaldo Peacekeepers have started covering calls that are not theirs.",
+      "severity": 2,
+      "everyDays": 24
+    },
+    {
+      "key": "playland_lit_up",
+      "places": ["w5"],
+      "category": "opportunity",
+      "title": "Playland is lit up tonight",
+      "summary": "Somebody has power to the front of the park for the first time in months, and the Piranhas are claiming credit.",
+      "severity": 2,
+      "everyDays": 16,
+      "parts": ["evening", "night"]
+    },
+    {
+      "key": "playhouse_meeting",
+      "places": ["w4"],
+      "category": "people",
+      "title": "There is a meeting at the Playhouse",
+      "summary": "The building has filled with people who live here and one person who does not, and that person is doing the talking.",
+      "severity": 2,
+      "everyDays": 21,
+      "parts": ["evening"],
+      "signal": "meeting"
+    },
+    {
+      "key": "bits_n_bolts_delivery",
+      "places": ["w1"],
+      "category": "opportunity",
+      "title": "Bits'n'Bolts has taken a delivery",
+      "summary": "Parts the district has not seen since the resort closed, and Voodoo Boys money is the obvious explanation nobody says.",
+      "severity": 2,
+      "everyDays": 19,
+      "signal": "trade"
     }
   ],
   "signalNote": "The mark a beat wears on the map, from the closed list in placeSignals.ts. Omitted, a beat is an event (or a person, when its category is people) — a beat has to ask to be anything more eye-catching than a warning."

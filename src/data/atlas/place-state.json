@@ -42,7 +42,8 @@
         "leisure",
         "studio",
         "nomad",
-        "water"
+        "water",
+        "religious"
       ],
       "start": 4,
       "meaning": "Whether the people here are glad to see the character."
@@ -133,7 +134,7 @@
       "note": "An inspection has started. Nothing here is refusing to work, it is only taking four times as long."
     }
   ],
-  "startNote": "Where a specific location starts, when the writing said something specific. Everything not named here starts wherever its tags put it.",
+  "startNote": "Where a specific location starts, when the writing said something specific. Everything not named here starts wherever its tags put it. Two reasons to appear in this list: the dossier already describes a condition — Holy Angels is neutral ground, the Redline is held outright — or the place is a market, which has to be flagged open before the raid threshold has anything to close.",
   "places": {
     "x5": {
       "dials": { "reclaimer_control": 6, "gang_pressure": 5, "police_attention": 2 },
@@ -141,6 +142,136 @@
     },
     "x4": { "dials": { "reclaimer_control": 7, "goodwill": 5 }, "flags": [] },
     "x1": { "dials": { "gang_pressure": 7, "police_attention": 1 }, "flags": [] },
-    "x2": { "dials": { "goodwill": 3 }, "flags": ["power_out"] }
+    "x2": { "dials": { "goodwill": 3 }, "flags": ["power_out"] },
+    "h4": {
+      "note": "Mrs. Suzuki's Bodega",
+      "dials": { "police_attention": 1, "gang_pressure": 3 },
+      "flags": ["market_open"]
+    },
+    "j1": {
+      "note": "Dock 13",
+      "dials": { "police_attention": 1, "gang_pressure": 2 },
+      "flags": ["market_open"]
+    },
+    "k3": {
+      "note": "The Swap",
+      "dials": { "police_attention": 0, "gang_pressure": 2 },
+      "flags": ["market_open"]
+    },
+    "o3": {
+      "note": "Ganymede Street Market",
+      "dials": { "police_attention": 2, "gang_pressure": 5 },
+      "flags": ["market_open"]
+    },
+    "v7": {
+      "note": "Woodchipper's Garage",
+      "dials": { "police_attention": 1, "gang_pressure": 3 },
+      "flags": ["market_open"]
+    },
+    "a9": {
+      "note": "Holy Angels: neutral ground the whole district protects",
+      "dials": { "goodwill": 8, "civic_scrutiny": 0 },
+      "flags": []
+    },
+    "a11": {
+      "note": "Short Circuit: security nobody has beaten yet",
+      "dials": { "police_attention": 0, "civic_scrutiny": 0 },
+      "flags": []
+    },
+    "d4": {
+      "note": "Totentanz: Maelstrom's own room",
+      "dials": { "gang_pressure": 7, "police_attention": 0 },
+      "flags": []
+    },
+    "d1": {
+      "note": "The Ashcroft: gang-held",
+      "dials": { "gang_pressure": 6, "police_attention": 0 },
+      "flags": []
+    },
+    "e1": {
+      "note": "Bridgetown: container housing at the waterline",
+      "dials": { "goodwill": 2 },
+      "flags": []
+    },
+    "f4": {
+      "note": "NCU: its own security force",
+      "dials": { "civic_scrutiny": 4, "corporate_attention": 3 },
+      "flags": []
+    },
+    "g5": {
+      "note": "Precinct #1",
+      "dials": { "civic_scrutiny": 6 },
+      "flags": []
+    },
+    "i3": {
+      "note": "Savage Docs",
+      "dials": { "gang_pressure": 6, "police_attention": 3 },
+      "flags": []
+    },
+    "n6": {
+      "note": "The Redline: Wild Things ground outright",
+      "dials": { "gang_pressure": 8 },
+      "flags": ["gang_extortion"]
+    },
+    "o1": {
+      "note": "Nakagawa: Tyger Claw leadership upstairs",
+      "dials": { "gang_pressure": 6, "civic_scrutiny": 3 },
+      "flags": []
+    },
+    "q4": {
+      "note": "Seral Grove: drones, stun panels, electrical flooring",
+      "dials": { "corporate_attention": 6 },
+      "flags": []
+    },
+    "m2": {
+      "note": "Militech Offices",
+      "dials": { "corporate_attention": 6 },
+      "flags": []
+    },
+    "s3": {
+      "note": "The Weighbridge: SK Security's own house",
+      "dials": { "corporate_attention": 5 },
+      "flags": []
+    },
+    "s4": {
+      "note": "Skiv's Counter",
+      "dials": { "gang_pressure": 6, "police_attention": 1 },
+      "flags": []
+    },
+    "t2": {
+      "note": "The Armory: 6th Street stock and 6th Street rules",
+      "dials": { "gang_pressure": 7 },
+      "flags": ["gang_extortion"]
+    },
+    "v1": {
+      "note": "Aldecaldo Camp: family ground",
+      "dials": { "goodwill": 7 },
+      "flags": []
+    },
+    "l1": {
+      "note": "From the Ashes: the only clinic the Zone has",
+      "dials": { "goodwill": 7 },
+      "flags": []
+    },
+    "r3": {
+      "note": "The Davies Estate",
+      "dials": { "corporate_attention": 6 },
+      "flags": []
+    },
+    "r5": {
+      "note": "Lazarus Gatehouse",
+      "dials": { "corporate_attention": 7 },
+      "flags": []
+    },
+    "r4": {
+      "note": "The Greens",
+      "dials": { "corporate_attention": 5 },
+      "flags": []
+    },
+    "r6": {
+      "note": "The Verge: the community outside the wall",
+      "dials": { "goodwill": 6, "civic_scrutiny": 5 },
+      "flags": []
+    }
   }
 }

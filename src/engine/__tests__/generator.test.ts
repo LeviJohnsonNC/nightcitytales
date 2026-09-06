@@ -18,8 +18,13 @@ import {
   type Mission,
   weighForce,
 } from "../index";
+import content from "@/data/missions/job-content.json";
+import { DISTRICTS, getDistrict } from "../geography";
 import { seededRng } from "../dice";
 import { fillSlots } from "../missions/generator";
+
+const JOB_DISTRICTS = (content as unknown as { districts: { key: string; name: string }[] })
+  .districts;
 
 /** A spread of seeds, fixed so a failure is always reproducible. */
 const SEEDS = Array.from({ length: 250 }, (_, i) => i * 7919 + 13);
@@ -387,5 +392,34 @@ describe("the opposition waiting in a generated job", () => {
     }
     // And the ladder is a ladder: not every night in Night City is the same.
     expect(seen.size).toBeGreaterThan(1);
+  });
+});
+
+describe("work reaches the whole city", () => {
+  it("can put a job in every district on the map", () => {
+    // The wire used to draw from eight districts of twenty-four, so two thirds
+    // of Night City could never be where the work was — including everywhere
+    // the player had gone out of their way to get to know.
+    const covered = new Set(JOB_DISTRICTS.map((d) => d.key));
+    const missing = DISTRICTS.filter((d) => !covered.has(d.key)).map((d) => d.key);
+    expect(missing).toEqual([]);
+  });
+
+  it("names each of them the way the atlas does", () => {
+    // A colour line is written by hand beside a key, so a key that drifts or a
+    // name that disagrees with the atlas shows up here rather than in a job.
+    for (const row of JOB_DISTRICTS) {
+      const district = getDistrict(row.key);
+      expect(district, `${row.key} is not a district`).toBeDefined();
+      expect(district!.name, row.key).toBe(row.name);
+    }
+  });
+
+  it("has somewhere in every one of them for the work to actually be at", () => {
+    // pickPlaceIn returns null for a district the atlas gives no locations, and
+    // a job with no address is a job on a map pin and nowhere else.
+    for (const row of JOB_DISTRICTS) {
+      expect(getDistrict(row.key)!.locations.length, row.key).toBeGreaterThan(0);
+    }
   });
 });

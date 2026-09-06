@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import stateFile from "@/data/atlas/place-state.json";
 import {
   DISTRICTS,
   OBSERVATIONS,
@@ -16,6 +17,7 @@ import {
   hasFlag,
   isPlaceDial,
   isPlaceFlag,
+  placesWithTag,
   recordVisit,
   segmentsOf,
   startingState,
@@ -25,6 +27,13 @@ import {
 } from "@/engine";
 
 const SEED = "campaign-1";
+
+/** The hand-written starting conditions, straight out of the file. */
+const AUTHORED_PLACES = (
+  stateFile as unknown as {
+    places: Record<string, { dials?: Record<string, number>; flags?: string[] }>;
+  }
+).places;
 const EVENING = 21 * 60;
 
 /** Hit a place with the same observation until something gives. */
@@ -105,6 +114,40 @@ describe("where a place starts", () => {
     // quiet by finding it gone quiet.
     for (const clock of dialClocks(startingState("x5"))) {
       expect(clock.hidden, clock.key).toBe(true);
+    }
+  });
+});
+
+describe("what was written about a place", () => {
+  it("only ever says where a dial the ground already carries should start", () => {
+    // Writing a starting value was the one way left to give a location a dial
+    // its tags do not justify — a hand-written override could have quietly put
+    // reclaimer control on a bar. An override says where an earned dial starts;
+    // it does not earn one.
+    for (const [key, row] of Object.entries(AUTHORED_PLACES)) {
+      const ground = dialsOf(key);
+      const started = Object.keys(startingState(key).dials);
+      for (const dial of started) {
+        expect(ground, `${key} starts with ${dial}, which its ground does not carry`).toContain(
+          dial,
+        );
+      }
+      for (const flag of row.flags ?? []) {
+        expect(isPlaceFlag(flag), `${key} is written up with "${flag}", which is not a flag`).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  it("flags every market open, so there is something for a raid to close", () => {
+    // The raid threshold clears `market_open`. A market that never carried the
+    // flag cannot be closed by it, so the whole mechanism would quietly do
+    // nothing everywhere except the one place somebody remembered to write up.
+    for (const place of placesWithTag("market")) {
+      expect(startingState(place.key).flags, `${place.name} (${place.key})`).toContain(
+        "market_open",
+      );
     }
   });
 });
