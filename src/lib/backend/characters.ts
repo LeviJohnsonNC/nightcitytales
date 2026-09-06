@@ -152,25 +152,50 @@ export async function saveLifepath(lifepath: CharacterLifepathInsert) {
 }
 
 /**
+ * Where a character lives, and whether we were able to find out.
+ *
+ * `placeKey: null, readable: true` is a real answer: a character saved before
+ * the housing step asked for an address has none. `readable: false` is not an
+ * answer at all — it means the columns were not there to read, which is a
+ * different problem with the same shape, and the two must not be confused.
+ */
+export type CharacterHome = {
+  placeKey: string | null;
+  districtKey: string | null;
+  /** False when the finance row exists but carries no home columns. */
+  readable: boolean;
+};
+
+/**
  * Just the atlas keys for where a character lives.
  *
  * A targeted read rather than a full character fetch, because the one caller
- * that needs it — starting a campaign — has a character id and nothing else,
- * and pulling the whole sheet to learn one key would be wasteful. Returns nulls
- * for a character saved before the address was asked for.
+ * that needs it — starting a campaign — has a character id and nothing else.
+ *
+ * SELECTS `*` DELIBERATELY, rather than naming the two columns. Naming them
+ * makes the whole read fail on a database that has not had the migration
+ * applied yet, and that failure was indistinguishable from "this character has
+ * no home": a player who chose Pacifica woke up at the atlas default with
+ * nothing logged anywhere. Selecting everything means a missing column is a
+ * missing FIELD, which this can see and say so about — and it means the feature
+ * starts working the moment the migration lands, with no redeploy.
  */
-export async function getCharacterHome(
-  characterId: string,
-): Promise<{ placeKey: string | null; districtKey: string | null }> {
+export async function getCharacterHome(characterId: string): Promise<CharacterHome> {
   const res = await backendClient
     .from("character_finance")
-    .select("home_place_key, home_district_key")
+    .select("*")
     .eq("character_id", characterId)
     .maybeSingle();
   if (res.error) throw new Error(res.error.message);
+  const row = res.data as Record<string, unknown> | null;
+  // No finance row at all is not a schema problem — there is simply nothing
+  // saved for this character, and null is the honest answer.
+  if (!row) return { placeKey: null, districtKey: null, readable: true };
+  const readable = "home_place_key" in row;
   return {
-    placeKey: res.data?.home_place_key ?? null,
-    districtKey: res.data?.home_district_key ?? null,
+    placeKey: (row["home_place_key"] as string | null) ?? null,
+    districtKey: (row["home_district_key"] as string | null) ?? null,
+    readable,
   };
 }
 
