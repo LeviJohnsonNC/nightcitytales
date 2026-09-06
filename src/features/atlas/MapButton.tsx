@@ -27,9 +27,8 @@ export function MapButton({
   signals?: PlaceSignal[] | undefined;
   placeHere?: ((key: string) => PlaceHere | undefined) | undefined;
   /**
-   * The map can also be opened from elsewhere — Go somewhere, during a Life
-   * turn — and it is the same map. Given these, the caller owns whether it is
-   * showing; without them the button keeps its own state as before.
+   * The map is opened from this pin. A screen that needs to open it itself can
+   * own that by passing these; without them the button keeps its own state.
    */
   open?: boolean | undefined;
   onOpenChange?: ((v: boolean) => void) | undefined;

@@ -494,13 +494,11 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
 function InputBar({
   onSend,
   onAskOptions,
-  onGoSomewhere,
   busy,
 }: {
   onSend: (text: string) => Promise<boolean> | void;
   onAskOptions: () => void;
   /** Open the city and pick a destination off it. */
-  onGoSomewhere: () => void;
   busy: boolean;
 }) {
   const [text, setText] = useState("");
@@ -542,15 +540,6 @@ function InputBar({
           title="Ask what you could do here. Costs no time."
         >
           Options?
-        </Button>
-        <Button
-          variant="outline"
-          className="flex-1 sm:flex-none"
-          onClick={onGoSomewhere}
-          disabled={busy}
-          title="Open the city and pick somewhere to go."
-        >
-          Go somewhere
         </Button>
       </div>
     </div>
@@ -734,10 +723,6 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
   const life = useLife(campaignId);
   const bundle = life.bundle;
 
-  // The map is opened from two places — the header pin and Go somewhere — and
-  // they are the same map, so the screen owns whether it is showing.
-  const [mapOpen, setMapOpen] = useState(false);
-
   // What is worth knowing about somewhere tonight. The engine applies the
   // budget: three across the whole city, one per district, each tracing to a
   // row. Most pins carry nothing, which is the intended reading.
@@ -915,8 +900,6 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   travelBusy={life.travelBusy}
                   signals={signals}
                   placeHere={placeHere}
-                  open={mapOpen}
-                  onOpenChange={setMapOpen}
                 />
                 <SheetDrawer
                   character={bundle.character}
@@ -991,7 +974,6 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               <InputBar
                 onSend={(text) => life.act(text)}
                 onAskOptions={() => life.askOptions()}
-                onGoSomewhere={() => setMapOpen(true)}
                 busy={life.busy || !!life.pendingCheck}
               />
             </BottomDock>
