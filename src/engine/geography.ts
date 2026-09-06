@@ -4,8 +4,10 @@
  * Pure TypeScript, like the rest of the engine: no React, no backend, no
  * feature imports. Every district, location, city manager, security provider
  * and gang here is transcribed from the official Night City Atlas (v1.01) into
- * `src/data/atlas/night-city.json`. Nothing in this module invents a place, a
- * name or a boundary; if a value is missing it is missing from that file.
+ * `src/data/atlas/night-city.json`. Nothing in this module invents a name or a
+ * boundary; if a value is missing from the transcription it is missing from
+ * that file, and the one thing appended to it announces itself as a house rule
+ * below.
  *
  * District SHAPES live next door, in `src/data/atlas/night-city-map.json`, and
  * are reached through `./cityGrid`. They were traced from the red dotted
@@ -13,11 +15,22 @@
  * lines too. Anything about direction, extent or "how far can I get" is decided
  * by walking that ground rather than by comparing two points.
  *
- * The only house rule is travel time, which the atlas does not print. It lives
- * in the `travel` block of the same JSON, flagged `houseRule: true`, so it is
- * tuned there rather than in code.
+ * Two house rules sit beside it, both flagged `houseRule: true` and both held
+ * in data rather than in code:
+ *
+ *  - TRAVEL TIME, which the atlas does not print, in the `travel` block of the
+ *    same JSON.
+ *
+ *  - EXTRA LOCATIONS, in `places.houserule.json`. The atlas gives the Exec Zone
+ *    no numbered locations whatsoever, and four other districts only one or
+ *    two. A district with nowhere in it is somewhere the player can be sent and
+ *    nowhere they can stand: no tags, so no actions, no dials, no beats, and no
+ *    building for a job to be at. Those are appended to the printed list here,
+ *    after it and never over it, so the transcription stays exactly what the
+ *    publisher printed and `HOUSE_RULE_PLACES` says which ones are ours.
  */
 import atlas from "@/data/atlas/night-city.json";
+import houseRule from "@/data/atlas/places.houserule.json";
 import {
   adjacentDistricts,
   borderingDistricts,
@@ -133,10 +146,48 @@ type AtlasFile = {
   source: { title: string; publisher: string; note: string };
 };
 
+type HouseRuleFile = {
+  houseRule: boolean;
+  note: string;
+  sourceNote: string;
+  districts: Record<string, Place[]>;
+};
+
 const ATLAS = atlas as unknown as AtlasFile;
+const EXTRA = houseRule as unknown as HouseRuleFile;
+
+/** True when the extra locations are what they claim to be: a tunable house rule. */
+export const HOUSE_RULE_PLACES_ARE_HOUSE_RULE: boolean = EXTRA.houseRule;
+
+/** Why the extra locations exist, for anyone reading it in a prompt or a test. */
+export const HOUSE_RULE_PLACES_NOTE: string = EXTRA.note;
+
+/**
+ * Every location key this file added, so anything that needs to know which half
+ * of the atlas it is looking at can ask rather than guess.
+ */
+export const HOUSE_RULE_PLACES: Set<string> = new Set(
+  Object.values(EXTRA.districts).flatMap((places) => places.map((place) => place.key)),
+);
+
+export function isHouseRulePlace(key: string): boolean {
+  return HOUSE_RULE_PLACES.has(key);
+}
+
+/**
+ * The printed locations, then ours.
+ *
+ * Appended rather than merged: the atlas's own list keeps its order and its
+ * contents, and a district the atlas filled gets nothing added to it.
+ */
+function withHouseRulePlaces(district: District): District {
+  const extra = EXTRA.districts[district.key];
+  if (!extra?.length) return district;
+  return { ...district, locations: [...district.locations, ...extra] };
+}
 
 export const AREAS: Area[] = ATLAS.areas;
-export const DISTRICTS: District[] = ATLAS.districts;
+export const DISTRICTS: District[] = ATLAS.districts.map(withHouseRulePlaces);
 export const LANDMARKS: Landmark[] = ATLAS.landmarks;
 export const STREETS: Street[] = ATLAS.streets;
 export const MAP_IMAGE: MapImage = ATLAS.map;

@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
+import atlas from "@/data/atlas/night-city.json";
 import { districtAtPoint, districtNearPoint, nearestCity } from "@/engine/cityGrid";
 import {
   AREAS,
   DISTRICTS,
+  HOUSE_RULE_PLACES,
+  HOUSE_RULE_PLACES_ARE_HOUSE_RULE,
+  isHouseRulePlace,
   areaOf,
   canTravel,
   describePosition,
@@ -58,6 +62,65 @@ describe("night city atlas data", () => {
     const keys = DISTRICTS.flatMap((d) => d.locations.map((l) => l.key));
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys.length).toBeGreaterThan(150);
+  });
+});
+
+describe("the locations the atlas does not print", () => {
+  it("are a house rule, tunable in data", () => {
+    expect(HOUSE_RULE_PLACES_ARE_HOUSE_RULE).toBe(true);
+    expect(HOUSE_RULE_PLACES.size).toBeGreaterThan(0);
+  });
+
+  it("leaves the printed atlas exactly as it was transcribed", () => {
+    // The whole reason geography.ts can be trusted. Ours are APPENDED: every
+    // printed location keeps its key, its name and its position in the list,
+    // and a district the atlas filled gets nothing added to it.
+    for (const printed of atlas.districts) {
+      const district = getDistrict(printed.key)!;
+      const head = district.locations.slice(0, printed.locations.length);
+      expect(
+        head.map((l) => l.key),
+        printed.key,
+      ).toEqual(printed.locations.map((l) => l.key));
+      for (const place of printed.locations) {
+        expect(isHouseRulePlace(place.key), `${place.key} is printed, not ours`).toBe(false);
+      }
+      for (const extra of district.locations.slice(printed.locations.length)) {
+        expect(isHouseRulePlace(extra.key), `${extra.key} is ours, and unmarked`).toBe(true);
+      }
+    }
+  });
+
+  it("puts every one of them on ground inside its own district", () => {
+    // A coordinate that misses is worse than no coordinate: the pin lands in
+    // somebody else's district and the map quietly lies about where you are.
+    for (const district of DISTRICTS) {
+      for (const place of district.locations) {
+        if (!isHouseRulePlace(place.key)) continue;
+        expect(place.map, `${place.key} has no position`).toBeDefined();
+        expect(districtAtPoint(place.map!), `${place.key} (${place.name})`).toBe(district.key);
+      }
+    }
+  });
+
+  it("gives every district in the city somewhere to stand", () => {
+    // The gap this closes: the Exec Zone was a district the player could be
+    // sent to and could not be in. No tags, so no actions, no dials, no beats,
+    // and no building for a job to be at.
+    for (const district of DISTRICTS) {
+      expect(district.locations.length, `${district.name} has nowhere in it`).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps its codes in step with the district's own numbering", () => {
+    for (const district of DISTRICTS) {
+      for (const place of district.locations) {
+        expect(place.code.toLowerCase(), place.key).toBe(place.key);
+        expect(place.code.startsWith(district.code), `${place.code} in ${district.code}`).toBe(
+          true,
+        );
+      }
+    }
   });
 });
 

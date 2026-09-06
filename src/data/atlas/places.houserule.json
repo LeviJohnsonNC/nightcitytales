@@ -1,0 +1,129 @@
+{
+  "houseRule": true,
+  "note": "Locations the atlas does not print. The Night City Atlas gives the Exec Zone no numbered locations at all and four other districts only one or two, which leaves them somewhere the player can be sent and nowhere they can stand: no tags, so no actions, no dials, no beats, and no building for a job to be at. This file is the ground those districts need, and it is a HOUSE RULE for exactly the reason travel time is — night-city.json stays what the publisher printed, and geography.ts appends these to it.",
+  "sourceNote": "Nothing here is invented from nothing. Every entry is built out of what the atlas does print about its district: its security provider, its gangs, its city manager, the streets the map labels, and the dossier written from the published description. Codes continue each district's own numbering.",
+  "districts": {
+    "exec_zone": [
+      {
+        "key": "r1",
+        "code": "R1",
+        "name": "Zone Station",
+        "blurb": "The private monorail terminus. Corporate authorization, credentials and biometrics decide who boards, and the seating is ranked.",
+        "map": { "x": 70.75, "y": 38 }
+      },
+      {
+        "key": "r2",
+        "code": "R2",
+        "name": "Executive Zone Oasis",
+        "blurb": "An Oasis unlike any other in Night City, stocking premium brands and rarities. Fresh-cut flowers, delivered by drone.",
+        "map": { "x": 72.5, "y": 39.25 }
+      },
+      {
+        "key": "r3",
+        "code": "R3",
+        "name": "The Davies Estate",
+        "blurb": "Home of Doctor Karen Davies and the seat of the Home Owner's Association, which is the whole of the district's government.",
+        "map": { "x": 74.5, "y": 39 }
+      },
+      {
+        "key": "r4",
+        "code": "R4",
+        "name": "The Greens",
+        "blurb": "A private club with courses, courts, a spa and a dining room. Membership is not a thing money alone has ever bought.",
+        "map": { "x": 74.25, "y": 41 }
+      },
+      {
+        "key": "r5",
+        "code": "R5",
+        "name": "Lazarus Gatehouse",
+        "blurb": "Where the district decides whether you are coming in. Lazarus staffs it around the clock and keeps its own records.",
+        "map": { "x": 72.25, "y": 41.5 }
+      },
+      {
+        "key": "r6",
+        "code": "R6",
+        "name": "The Verge",
+        "blurb": "The tent community crowding the ground outside the wall, much to the irritation of the people whose views include it.",
+        "map": { "x": 76.25, "y": 41.75 }
+      }
+    ],
+    "reclamation_zone": [
+      {
+        "key": "k2",
+        "code": "K2",
+        "name": "The Yard",
+        "blurb": "The depot the reclaimers run Night City's public transportation out of. Everything that moves people is repaired here.",
+        "map": { "x": 34, "y": 58.5 }
+      },
+      {
+        "key": "k3",
+        "code": "K3",
+        "name": "The Swap",
+        "blurb": "Where reclaimed parts change hands. Provenance is not a question anybody working the tables considers polite.",
+        "map": { "x": 35.5, "y": 56.75 }
+      },
+      {
+        "key": "k4",
+        "code": "K4",
+        "name": "The Long Camp",
+        "blurb": "Where the families who took this land for the work live on it. Nomad ground, settled, and not entirely settled about that.",
+        "map": { "x": 36.75, "y": 56 }
+      }
+    ],
+    "heywood_docks": [
+      {
+        "key": "s2",
+        "code": "S2",
+        "name": "Cargo Way Wharf",
+        "blurb": "The berths the smaller Corporate-sponsored ships use, working up and down the West Coast where the big vessels cannot.",
+        "map": { "x": 71.5, "y": 49.75 }
+      },
+      {
+        "key": "s3",
+        "code": "S3",
+        "name": "The Weighbridge",
+        "blurb": "SK Security's counting house. Nothing leaves the docks without being weighed, logged, and matched against a manifest.",
+        "map": { "x": 68, "y": 51.5 }
+      },
+      {
+        "key": "s4",
+        "code": "S4",
+        "name": "Skiv's Counter",
+        "blurb": "A dockside bar the Skiv Family keep an office at the back of. Both halves of the business are open to anyone.",
+        "map": { "x": 70.5, "y": 52 }
+      }
+    ],
+    "norcal_military_base": [
+      {
+        "key": "m3",
+        "code": "M3",
+        "name": "The Main Gate",
+        "blurb": "Where the Estero Bay Military COG decides whether NorCal has business with you. The NorCal Military Police staff it.",
+        "map": { "x": 32.25, "y": 21.75 }
+      },
+      {
+        "key": "m4",
+        "code": "M4",
+        "name": "The Motor Pool",
+        "blurb": "Vehicles, munitions and the people who keep both running, on land traded to Militech for training and materiel.",
+        "map": { "x": 38.75, "y": 20.5 }
+      }
+    ],
+    "kabuki": [
+      {
+        "key": "o3",
+        "code": "O3",
+        "name": "Ganymede Street Market",
+        "blurb": "The street the map names, and the stalls along it. Busy at every hour the Tyger Claws allow it to be.",
+        "map": { "x": 53.5, "y": 31.75 }
+      },
+      {
+        "key": "o4",
+        "code": "O4",
+        "name": "The Ivory Needle",
+        "blurb": "Ink at the front, chrome at the back, and a Tyger Claw sitting where they can see both doors.",
+        "map": { "x": 51.75, "y": 29.75 }
+      }
+    ]
+  }
+}
