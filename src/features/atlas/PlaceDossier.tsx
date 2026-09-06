@@ -22,7 +22,7 @@ import {
   type Place,
 } from "@/engine";
 import type { PlaceSignal } from "@/engine";
-import { placeDossier, placeImage } from "./placeDossiers";
+import { placeArtwork, placeDossier } from "./placeDossiers";
 
 /**
  * Everything the campaign knows about the place on show, gathered by the caller.
@@ -157,12 +157,20 @@ function Portrait({
   className?: string;
 }) {
   const entry = placeDossier(dossierKey);
-  const src = entry ? placeImage(entry) : undefined;
+  const art = entry ? placeArtwork(entry) : undefined;
   // An entry written before its picture was made simply reads as text.
-  if (!src) return null;
+  if (!art) return null;
   return (
     <div className={cn("relative aspect-[4/3] w-full overflow-hidden bg-background", className)}>
-      <img src={src} alt={alt} className="h-full w-full object-cover object-center" />
+      <img
+        src={art.src}
+        srcSet={art.srcSet}
+        // The dossier dialog caps at 4xl (896px) and goes full-bleed below that.
+        sizes="(min-width: 640px) 896px, 96vw"
+        alt={alt}
+        loading="lazy"
+        className="h-full w-full object-cover object-center"
+      />
       <div className="pointer-events-none absolute inset-0 border border-ember/40" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent" />
     </div>
