@@ -11,6 +11,7 @@ import {
   fashionItemId,
   getFashion,
   isFashionItem,
+  EMPTY_LIFESTYLE,
   readLifestyle,
   startingLifestylePlan,
   validateLifestyle,
@@ -72,12 +73,37 @@ describe("starting lifestyle", () => {
     expect(plan.rent).toBe(0);
     expect(plan.requiresLocation).toBe(false);
     expect(plan.lifestyleCost).toBe(100);
-    expect(validateLifestyle({ location: null }, "exec")).toHaveLength(0);
+    // The Exec is not asked for a category, because they are given housing
+    // rather than renting it — but they are still asked WHERE, so the campaign
+    // has an address to open at.
+    expect(validateLifestyle(EMPTY_LIFESTYLE, "exec")).toHaveLength(2);
+    expect(
+      validateLifestyle(
+        { location: null, districtKey: "norcal_military_base", placeKey: "m1" },
+        "exec",
+      ),
+    ).toHaveLength(0);
   });
 
-  it("requires a location and rejects anything off the list", () => {
-    expect(validateLifestyle({ location: null })).toHaveLength(1);
+  it("requires a category and rejects anything off the printed list", () => {
+    expect(validateLifestyle(EMPTY_LIFESTYLE)).toHaveLength(3);
     expect(readLifestyle({ location: "Corpo Plaza" }).location).toBeNull();
-    expect(validateLifestyle(readLifestyle({ location: "Combat Zone" }))).toHaveLength(0);
+    const complete = readLifestyle({
+      location: "Combat Zone",
+      districtKey: "south_night_city",
+      placeKey: "i6",
+    });
+    expect(validateLifestyle(complete)).toHaveLength(0);
+  });
+
+  it("reads a choice saved before there was an address to save", () => {
+    // Characters and half-finished drafts were stored as a lone category. They
+    // come back as exactly that — a category with no address — so the player is
+    // asked to finish rather than being reset or having one invented.
+    const old = readLifestyle({ location: "Combat Zone" });
+    expect(old.location).toBe("Combat Zone");
+    expect(old.districtKey).toBeNull();
+    expect(old.placeKey).toBeNull();
+    expect(validateLifestyle(old)).toHaveLength(2);
   });
 });

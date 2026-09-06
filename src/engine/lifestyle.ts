@@ -141,23 +141,72 @@ export function startingLifestylePlan(roleId: string | null): StartingLifestyleP
   };
 }
 
-export type LifestyleChoice = { location: string | null };
+/**
+ * Where the character lives.
+ *
+ * `location` is the printed choice and the only part the rules speak to: one of
+ * the two categories on Core p.109, or null for a Role that is given housing
+ * instead of renting it. The other two say WHICH suburb and WHICH building,
+ * which the rulebook does not ask for and does not forbid — picking Eagle Rock
+ * Stadium is a way of being in the Overcrowded Suburbs, not an addition to it.
+ * `startingHome.ts` owns what may go in them.
+ */
+export type LifestyleChoice = {
+  /** A printed category, or null. Null for the Exec, who is given a conapt. */
+  location: string | null;
+  /** Atlas district key. */
+  districtKey: string | null;
+  /** Atlas location key: the actual building. */
+  placeKey: string | null;
+};
 
-export const EMPTY_LIFESTYLE: LifestyleChoice = { location: null };
+export const EMPTY_LIFESTYLE: LifestyleChoice = {
+  location: null,
+  districtKey: null,
+  placeKey: null,
+};
 
+/**
+ * Read a stored choice back.
+ *
+ * Tolerates the shape this used to have — a lone `location` string — because
+ * characters and half-finished drafts were saved with it. Those come back as a
+ * category with no address, which is what they are: the player is asked to
+ * finish the choice rather than having one invented for them or being reset.
+ */
 export function readLifestyle(raw: unknown): LifestyleChoice {
   if (!raw || typeof raw !== "object") return EMPTY_LIFESTYLE;
-  const value = (raw as LifestyleChoice).location;
+  const value = raw as Partial<LifestyleChoice>;
+  const text = (field: unknown): string | null =>
+    typeof field === "string" && field ? field : null;
   return {
-    location: typeof value === "string" && STARTING_LOCATIONS.includes(value) ? value : null,
+    location:
+      typeof value.location === "string" && STARTING_LOCATIONS.includes(value.location)
+        ? value.location
+        : null,
+    districtKey: text(value.districtKey),
+    placeKey: text(value.placeKey),
   };
 }
 
+/**
+ * What is still missing.
+ *
+ * The address is required, which is stricter than the rulebook and deliberately
+ * so: the campaign starts the character at home, and "the Combat Zone" is not
+ * somewhere anybody can be put. Whether the values name real ground is
+ * `startingHome.ts`'s question, asked through `validateStartingHome`, so this
+ * module keeps knowing only what the rules file prints.
+ */
 export function validateLifestyle(choice: LifestyleChoice, roleId: string | null = null): string[] {
   const plan = startingLifestylePlan(roleId);
-  if (!plan.requiresLocation) return [];
-  if (!choice.location) {
-    return [`Pick where your ${plan.housingName} is parked: ${plan.locations.join(" or ")}.`];
+  const violations: string[] = [];
+  if (plan.requiresLocation && !choice.location) {
+    violations.push(
+      `Pick where your ${plan.housingName} is parked: ${plan.locations.join(" or ")}.`,
+    );
   }
-  return [];
+  if (!choice.districtKey) violations.push("Pick the district you live in.");
+  if (!choice.placeKey) violations.push(`Pick the building your ${plan.housingName} is at.`);
+  return violations;
 }

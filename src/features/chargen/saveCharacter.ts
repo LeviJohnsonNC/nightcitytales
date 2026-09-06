@@ -157,6 +157,11 @@ export function savePayload(
       housing: sheet.finance.location
         ? `${sheet.finance.housing}, ${sheet.finance.location}`
         : sheet.finance.housing,
+      // Kept as keys as well as prose. `housing` is what the sheet prints; these
+      // are what the campaign is started at, and parsing an atlas key back out
+      // of a display string is not a thing anybody should have to do.
+      home_place_key: sheet.finance.homePlaceKey,
+      home_district_key: sheet.finance.homeDistrictKey,
       rent: sheet.finance.rent,
     },
   };

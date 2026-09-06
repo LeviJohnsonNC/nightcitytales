@@ -1,0 +1,58 @@
+{
+  "houseRule": true,
+  "note": "Which districts a character's Lifepath makes feel like home. Cyberpunk RED's Childhood Environment table (lifepath-general.json) says what kind of place somebody grew up in; the atlas says which districts are that kind of place. This joins the two so the housing step can say \"you grew up in the ruins of a town the Reclaimers took over — Rancho Coronado would feel like coming home\" instead of offering a list of names.",
+  "ruleNote": "A SUGGESTION AND NOTHING ELSE. Nothing here filters, restricts, sorts or scores anything: the printed rule lets a starting character live in any Overcrowded Suburb or Combat Zone, and a suggestion that quietly removed options would be a house rule pretending to be flavour. A district named here is highlighted and given a line of prose. Every other district stays exactly as pickable as it was.",
+  "matchNote": "Matched on the opening words of the Childhood Environment entry, because the table is printed text and quoting it in full here would mean two copies of a rules string that must stay identical. Districts are named by key and a test holds them to the atlas.",
+  "suggestions": [
+    {
+      "startsWith": "Ran on The Street",
+      "districts": ["south_night_city", "old_combat_zone", "north_heywood"],
+      "line": "You came up on the street with nobody watching. You already know which doorways are dry."
+    },
+    {
+      "startsWith": "Spent in a safe Corp Zone",
+      "districts": ["new_westbrook", "watson_development"],
+      "line": "You grew up behind a wall somebody else paid for. This is as close to that as your rent gets."
+    },
+    {
+      "startsWith": "In a Nomad pack moving",
+      "districts": ["santo_domingo", "reclamation_zone"],
+      "line": "Your people kept moving. These are the districts where the families stop."
+    },
+    {
+      "startsWith": "In a Nomad pack with roots in transport",
+      "districts": ["port_of_night_city", "heywood_docks", "reclamation_zone"],
+      "line": "You were raised around freight. The water and the yards would smell like childhood."
+    },
+    {
+      "startsWith": "In a decaying, once upscale neighborhood",
+      "districts": ["rancho_coronado", "pacifica_playground"],
+      "line": "You know exactly what a neighbourhood looks like on the way down. You grew up in one."
+    },
+    {
+      "startsWith": "In the heart of the Combat Zone",
+      "districts": ["old_combat_zone", "south_night_city", "the_hot_zone"],
+      "line": "You have squatted a wrecked building before. You could do it again without being taught."
+    },
+    {
+      "startsWith": "In a huge \"megastructure\"",
+      "districts": ["watson_development", "heywood_industrial_zone", "north_heywood"],
+      "line": "You were raised in somebody's stack. The corridors here run the same way."
+    },
+    {
+      "startsWith": "In the ruins of a deserted town",
+      "districts": ["reclamation_zone", "rancho_coronado", "old_combat_zone"],
+      "line": "You were raised by people who take things back. Reclaimer ground would feel like coming home."
+    },
+    {
+      "startsWith": "In a Drift Nation",
+      "districts": ["port_of_night_city", "upper_marina", "heywood_docks"],
+      "line": "You grew up on water among everybody else's languages. The docks are the nearest thing to it."
+    },
+    {
+      "startsWith": "In a Corporate luxury \"starscraper,\"",
+      "districts": ["charter_hill", "downtown", "new_westbrook"],
+      "line": "You were raised looking down at all of this. Living in it will be the new part."
+    }
+  ]
+}

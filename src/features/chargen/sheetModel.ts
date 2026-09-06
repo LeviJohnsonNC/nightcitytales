@@ -21,6 +21,8 @@ export function buildFromState(state: ChargenState): CharacterBuild {
     skills: state.skills,
     loadout: state.loadout,
     lifestyleLocation: readLifestyle(state.lifestyle).location,
+    homeDistrictKey: readLifestyle(state.lifestyle).districtKey,
+    homePlaceKey: readLifestyle(state.lifestyle).placeKey,
   };
 }
 

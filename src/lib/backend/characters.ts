@@ -151,6 +151,29 @@ export async function saveLifepath(lifepath: CharacterLifepathInsert) {
   );
 }
 
+/**
+ * Just the atlas keys for where a character lives.
+ *
+ * A targeted read rather than a full character fetch, because the one caller
+ * that needs it — starting a campaign — has a character id and nothing else,
+ * and pulling the whole sheet to learn one key would be wasteful. Returns nulls
+ * for a character saved before the address was asked for.
+ */
+export async function getCharacterHome(
+  characterId: string,
+): Promise<{ placeKey: string | null; districtKey: string | null }> {
+  const res = await backendClient
+    .from("character_finance")
+    .select("home_place_key, home_district_key")
+    .eq("character_id", characterId)
+    .maybeSingle();
+  if (res.error) throw new Error(res.error.message);
+  return {
+    placeKey: res.data?.home_place_key ?? null,
+    districtKey: res.data?.home_district_key ?? null,
+  };
+}
+
 export async function saveFinance(finance: CharacterFinanceInsert) {
   return unwrap(
     await backendClient
@@ -248,7 +271,16 @@ export type SaveCharacterPayload = {
     humanity_loss_rolled: number | null;
   }[];
   lifepath: { general: unknown; role_specific: unknown; narrative?: string | null };
-  finance: { eurobucks: number; lifestyle: string; housing: string; rent: number };
+  finance: {
+    eurobucks: number;
+    lifestyle: string;
+    housing: string;
+    rent: number;
+    /** Atlas location key for the character's home. Null for older saves. */
+    home_place_key?: string | null;
+    /** Atlas district key for the character's home. Null for older saves. */
+    home_district_key?: string | null;
+  };
 };
 
 /** Returns the new character id. */

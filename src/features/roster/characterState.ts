@@ -206,7 +206,15 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
       roleSpecific: record(full.lifepath?.role_specific),
     },
     loadout: full.gear.length || full.cyberware.length ? loadoutFrom(full, method) : EMPTY_LOADOUT,
-    lifestyle: { location: STARTING_LOCATIONS.find((l) => housing.includes(l)) ?? null },
+    lifestyle: {
+      // The category is still read out of the printed housing line, because
+      // that is where it has always been. The address comes from its own
+      // columns, and is null for every character saved before they existed —
+      // which is the honest answer, and the housing step asks for it.
+      location: STARTING_LOCATIONS.find((l) => housing.includes(l)) ?? null,
+      districtKey: full.finance?.home_district_key ?? null,
+      placeKey: full.finance?.home_place_key ?? null,
+    },
     visited: [...STEP_IDS],
     rollLog: [],
     background: "",

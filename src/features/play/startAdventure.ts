@@ -3,9 +3,13 @@
  * seeded with a mission and returns its id; if the character already has an
  * active campaign, that one is resumed instead and the requested mission is
  * ignored — you cannot start a second job on top of a live one.
+ *
+ * The campaign opens where the character lives. Resuming does not move anybody:
+ * an existing campaign is returned untouched, so a character who has walked
+ * across the city stays where they walked to.
  */
 import { jobIdForSeed, NIGHT_AT_THE_OPERA, rollJobSeed } from "@/engine";
-import { getActiveCampaignForCharacter, type Character } from "@/lib/backend";
+import { getActiveCampaignForCharacter, getCharacterHome, type Character } from "@/lib/backend";
 import { startCampaignForCharacter } from "@/features/campaign/newCampaign";
 
 export type AdventureStart =
@@ -25,5 +29,13 @@ export async function startOrResumeAdventure(
 ): Promise<string> {
   const existing = await getActiveCampaignForCharacter(character.id);
   if (existing) return existing.id;
-  return startCampaignForCharacter(character, { missionId: missionIdFor(start) });
+  // Looked up here rather than passed in, so no caller can forget it and no
+  // caller has to carry a finance row it does not otherwise need. A character
+  // saved before the housing step asked for an address has none, and the
+  // campaign opens at the atlas default exactly as it used to.
+  const home = await getCharacterHome(character.id).catch(() => ({ placeKey: null }));
+  return startCampaignForCharacter(character, {
+    missionId: missionIdFor(start),
+    homePlaceKey: home.placeKey,
+  });
 }
