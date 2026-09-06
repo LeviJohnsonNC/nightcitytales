@@ -2,9 +2,28 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { DISTRICTS, districtOfPlace, getDistrict, getPlace } from "@/engine";
-import { PLACE_DOSSIERS, placeDossier, placeImage } from "../placeDossiers";
+import { PLACE_DOSSIERS, placeArtwork, placeDossier } from "../placeDossiers";
 
 const PUBLIC = join(process.cwd(), "public");
+const PLACES = join(PUBLIC, "images", "places");
+
+/** Every file in the places directory, whatever its extension. */
+function pictureFiles(): string[] {
+  return readdirSync(PLACES).filter((f) => !f.startsWith("."));
+}
+
+/** Every slug that has been encoded, read off the full-width files. */
+function encodedSlugs(): string[] {
+  return pictureFiles()
+    .filter((f) => f.endsWith(".webp") && !f.endsWith("-640.webp"))
+    .map((f) => f.slice(0, -".webp".length));
+}
+
+/** Every URL a srcSet names, so each can be checked against the disk. */
+function urlsIn(art: { src: string; srcSet: string }): string[] {
+  const fromSet = art.srcSet.split(",").map((part) => part.trim().split(/\s+/)[0]!);
+  return [...new Set([art.src, ...fromSet])];
+}
 
 describe("place dossiers", () => {
   it("is keyed on places the atlas actually has", () => {
@@ -16,13 +35,19 @@ describe("place dossiers", () => {
     }
   });
 
-  it("has a picture on disk for every entry that names one", () => {
-    // The slug is written by hand and the file is added by hand, so nothing but
-    // this stops the two from drifting apart into a broken image.
+  it("has a picture on disk for every entry that names one, at every width", () => {
+    // The slug is written by hand and the files are written by a script, so
+    // nothing but this stops the two from drifting apart into a broken image.
+    // Both widths are checked: a srcSet naming a file that is not there fails
+    // silently in the browser, and only on the displays that ask for it.
     for (const [key, entry] of Object.entries(PLACE_DOSSIERS)) {
-      const url = placeImage(entry);
-      if (!url) continue;
-      expect(existsSync(join(PUBLIC, url)), `${key} points at ${url}, which is missing`).toBe(true);
+      const art = placeArtwork(entry);
+      if (!art) continue;
+      for (const url of urlsIn(art)) {
+        expect(existsSync(join(PUBLIC, url)), `${key} points at ${url}, which is missing`).toBe(
+          true,
+        );
+      }
     }
   });
 
@@ -34,11 +59,26 @@ describe("place dossiers", () => {
         .map((e) => e.image)
         .filter(Boolean),
     );
-    const orphans = readdirSync(join(PUBLIC, "images", "places"))
-      .filter((f) => f.endsWith(".png"))
-      .map((f) => f.slice(0, -4))
-      .filter((slug) => !named.has(slug));
+    const orphans = encodedSlugs().filter((slug) => !named.has(slug));
     expect(orphans).toEqual([]);
+  });
+
+  it("leaves no picture behind at only one of the two widths", () => {
+    // The pair is what makes srcSet work. A slug encoded at one width only is
+    // either a half-finished conversion or a file the script never saw, and
+    // both read as a working image right up until a display asks for the other.
+    const files = new Set(pictureFiles());
+    for (const slug of encodedSlugs()) {
+      expect(files.has(`${slug}.webp`), `${slug} has no full-width file`).toBe(true);
+      expect(files.has(`${slug}-640.webp`), `${slug} has no 640w file`).toBe(true);
+    }
+  });
+
+  it("ships no PNGs in the places directory", () => {
+    // 563MB of them, for pictures drawn into cards 225 pixels wide. If one
+    // reappears it is a file added by hand that the conversion never saw.
+    const strays = pictureFiles().filter((f) => f.endsWith(".png"));
+    expect(strays).toEqual([]);
   });
 
   it("covers every location of every district it covers at all", () => {

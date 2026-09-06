@@ -7,14 +7,16 @@
  * atlas JSON stays what the publisher printed, and this is what the player
  * reads. A place with no entry here falls back to its atlas blurb.
  *
- * `image` is a file under public/images/places. Keys are the atlas's own place
- * and district keys, so nothing has to be kept in step by hand.
+ * `image` is a slug under public/images/places, which holds WebP at two widths
+ * (`<slug>.webp` and `<slug>-640.webp`, written by tools/art/webp.mjs). Keys are
+ * the atlas's own place and district keys, so nothing has to be kept in step by
+ * hand.
  */
 
 export type PlaceDossierEntry = {
   /**
-   * File name (no extension) under public/images/places, when a picture has
-   * been made. Text and pictures arrive separately, so an entry can be written
+   * Slug (no width suffix, no extension) under public/images/places, when a
+   * picture has been made. Text and pictures arrive separately, so an entry can be written
    * before its picture exists; the dossier simply shows no picture until it does.
    */
   image?: string;
@@ -1886,7 +1888,39 @@ export function placeDossier(key: string): PlaceDossierEntry | undefined {
   return PLACE_DOSSIERS[key.trim().toLowerCase()];
 }
 
+/**
+ * The widths every place picture is encoded at, by `tools/art/webp.mjs`.
+ *
+ * Two, because the same picture is drawn into a card about 225 CSS pixels wide
+ * and into a dossier capped at 896. One file either over-serves the grid by
+ * five times or under-serves the dossier; a browser handed both picks.
+ */
+export const PLACE_IMAGE_WIDTHS = { small: 640, large: 1536 } as const;
+
 /** Where the picture for a dossier lives, for an entry that has one. */
 export function placeImage(entry: PlaceDossierEntry): string | undefined {
-  return entry.image ? `/images/places/${entry.image}.png` : undefined;
+  return entry.image ? `/images/places/${entry.image}.webp` : undefined;
+}
+
+export type PlaceArtwork = {
+  /** The full-width file. Used as `src`, so a browser ignoring srcSet still works. */
+  src: string;
+  /** Both widths, for the browser to choose between against `sizes`. */
+  srcSet: string;
+};
+
+/**
+ * The picture, at both widths.
+ *
+ * Callers pass their own `sizes`, because only the caller knows how wide the
+ * image will be drawn — a card in a four-column grid and a full-width dossier
+ * header want different answers out of the same pair of files.
+ */
+export function placeArtwork(entry: PlaceDossierEntry): PlaceArtwork | undefined {
+  if (!entry.image) return undefined;
+  const base = `/images/places/${entry.image}`;
+  return {
+    src: `${base}.webp`,
+    srcSet: `${base}-${PLACE_IMAGE_WIDTHS.small}.webp ${PLACE_IMAGE_WIDTHS.small}w, ${base}.webp ${PLACE_IMAGE_WIDTHS.large}w`,
+  };
 }

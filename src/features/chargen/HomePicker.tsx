@@ -30,7 +30,7 @@ import {
   type HomePreview,
   type PlaceProfile,
 } from "@/engine";
-import { placeDossier, placeImage } from "@/features/atlas/placeDossiers";
+import { placeArtwork, placeDossier } from "@/features/atlas/placeDossiers";
 import { cn } from "@/lib/utils";
 import { readGeneralLifepath, displayValue } from "./lifepathState";
 import { useChargenStore, type ChargenState } from "./store";
@@ -65,8 +65,8 @@ function Stage({ n, of, label }: { n: number; of: number; label: string }) {
  */
 function PlaceArt({ atlasKey, label }: { atlasKey: string; label: string }) {
   const entry = placeDossier(atlasKey);
-  const src = entry ? placeImage(entry) : undefined;
-  if (!src) {
+  const art = entry ? placeArtwork(entry) : undefined;
+  if (!art) {
     return (
       <div
         role="img"
@@ -81,7 +81,12 @@ function PlaceArt({ atlasKey, label }: { atlasKey: string; label: string }) {
   }
   return (
     <img
-      src={src}
+      src={art.src}
+      srcSet={art.srcSet}
+      // Two per row on a phone, up to four in the widest grid, inside a panel
+      // that stops at 5xl. The 640w file answers all of those; the full-width
+      // one is only ever fetched here on a very large display.
+      sizes="(min-width: 1280px) 225px, (min-width: 768px) 300px, 45vw"
       alt={label}
       loading="lazy"
       className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
@@ -101,6 +106,7 @@ function PickCard({
   title,
   meta,
   selected,
+  selectedLabel,
   suggested,
   onPick,
 }: {
@@ -108,6 +114,8 @@ function PickCard({
   title: string;
   meta?: string | null;
   selected: boolean;
+  /** What the mark says. Only the building is the home; a district is a district. */
+  selectedLabel: string;
   suggested?: boolean;
   onPick: () => void;
 }) {
@@ -129,7 +137,7 @@ function PickCard({
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/45 to-transparent" />
       {selected && (
         <span className="absolute right-2 top-2 z-10 bg-ember px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-background">
-          Home
+          {selectedLabel}
         </span>
       )}
       {!selected && suggested && (
@@ -197,13 +205,17 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 /** The chosen address, and what the atlas already knows about it. */
 function HomeSpotlight({ preview, housingName }: { preview: HomePreview; housingName: string }) {
   const entry = placeDossier(preview.placeKey);
-  const src = entry ? placeImage(entry) : undefined;
+  const art = entry ? placeArtwork(entry) : undefined;
   return (
     <div className="overflow-hidden border border-ember/50 bg-card">
       <div className="relative h-44 border-b border-ember/30 sm:h-56">
-        {src ? (
+        {art ? (
           <img
-            src={src}
+            src={art.src}
+            srcSet={art.srcSet}
+            // Full width of the panel, so this is the one place in the picker
+            // that genuinely wants the large file.
+            sizes="(min-width: 1024px) 950px, 100vw"
             alt={preview.placeName}
             className="h-full w-full object-cover object-center"
           />
@@ -400,6 +412,7 @@ export function HomePicker({ state }: { state: ChargenState }) {
                 title={district.name}
                 meta={districtMeta(district)}
                 selected={districtKey === district.key}
+                selectedLabel="Chosen"
                 suggested={suggestedKeys.has(district.key)}
                 onPick={() => pickDistrict(district.key)}
               />
@@ -439,6 +452,7 @@ export function HomePicker({ state }: { state: ChargenState }) {
                 title={building.name}
                 meta={givenHousing ? (homePreview(building.key)?.districtName ?? null) : null}
                 selected={placeKey === building.key}
+                selectedLabel="Home"
                 onPick={() => pickBuilding(building.key)}
               />
             ))}
