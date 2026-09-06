@@ -18,6 +18,8 @@ import {
   isPlaceDial,
   isPlaceFlag,
   placesWithTag,
+  BEAT_REQUIRES,
+  PLACE_BEATS,
   recordVisit,
   segmentsOf,
   startingState,
@@ -242,6 +244,35 @@ describe("a place stops being what was written about it", () => {
       places: { x5: raided },
     });
     expect(closed.some((b) => b.data?.["beat"] === "night_market")).toBe(false);
+  });
+
+  it("gates every beat about trade on the trade still running", () => {
+    // This was a hand-written map of one beat key to one flag, complete for
+    // exactly as long as Minimallism was the only flagged market in the city.
+    // Once other markets were written up and given beats of their own, the law
+    // could raid one and its market would carry on running and lighting a pin,
+    // because nobody had remembered to add a second line.
+    const marketBeats = PLACE_BEATS.filter((b) => b.signal === "market");
+    expect(marketBeats.length, "no market beats to check").toBeGreaterThan(1);
+    for (const beat of marketBeats) {
+      expect(BEAT_REQUIRES[beat.key], `${beat.key} runs at a market that has been closed`).toBe(
+        "market_open",
+      );
+    }
+  });
+
+  it("stops a raided market running its market beat, wherever it is", () => {
+    for (const beat of PLACE_BEATS.filter((b) => b.signal === "market")) {
+      for (const placeKey of beat.places ?? []) {
+        const open = startingState(placeKey);
+        expect(beatAllowedAt(beat.key, placeKey, open), `${placeKey} starts shut`).toBe(true);
+        const raided: PlaceState = {
+          ...open,
+          flags: open.flags.filter((f) => f !== "market_open"),
+        };
+        expect(beatAllowedAt(beat.key, placeKey, raided), `${placeKey} still trading`).toBe(false);
+      }
+    }
   });
 
   it("silences a place entirely when it is shut", () => {

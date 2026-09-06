@@ -37,6 +37,7 @@
  *
  * Pure TypeScript: state in, state out, no knowledge of how any of it is stored.
  */
+import beatData from "@/data/atlas/place-beats.json";
 import data from "@/data/atlas/place-state.json";
 import { OBSERVATION_COSTS, type Observation } from "./clocks";
 import { tagsOf, type PlaceTag } from "./places";
@@ -294,10 +295,31 @@ export function recordVisit(state: PlaceState, day: number): PlaceState {
  * is a market; bring the law down on it enough times and the threshold clears
  * `market_open`, the beat stops firing, and the west concourse is somewhere
  * that USED to have a night market.
+ *
+ * DERIVED, not listed. This was a hand-written map of one beat key to one flag,
+ * which was complete for exactly as long as Minimallism was the only flagged
+ * market in the city. The moment other markets were written up and given beats
+ * of their own, the law could raid one and its market would carry on running
+ * and lighting a pin, because nobody had remembered to add a second line here.
+ *
+ * A beat that wears the `market` signal is a beat about trade happening, so it
+ * needs the trade to be happening. Reading that off the beat's own declaration
+ * means the next one cannot be forgotten. SIGNAL_REQUIRES is the rule;
+ * EXPLICIT_REQUIRES is the escape hatch for a beat whose requirement its signal
+ * does not imply.
  */
-export const BEAT_REQUIRES: Record<string, string> = {
-  night_market: "market_open",
+const SIGNAL_REQUIRES: Record<string, string> = {
+  market: "market_open",
 };
+
+const EXPLICIT_REQUIRES: Record<string, string> = {};
+
+export const BEAT_REQUIRES: Record<string, string> = Object.fromEntries(
+  (beatData as unknown as { beats: { key: string; signal?: string }[] }).beats.flatMap((beat) => {
+    const required = EXPLICIT_REQUIRES[beat.key] ?? (beat.signal && SIGNAL_REQUIRES[beat.signal]);
+    return required ? [[beat.key, required] as const] : [];
+  }),
+);
 
 /** Flags that stop a place doing anything at all. */
 export const SILENCING_FLAGS = ["shut"];
