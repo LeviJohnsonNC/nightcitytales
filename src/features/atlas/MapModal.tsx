@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import {
   DISTRICTS,
   LANDMARKS,
-  MAP_IMAGE,
   describePosition,
   getDistrict,
   mapPointOf,
@@ -26,6 +25,7 @@ import {
   type PlaceSignal,
 } from "@/engine";
 import { PlaceDossier, type PlaceHere } from "./PlaceDossier";
+import { MAP_PICTURE, placeOnMap, placeOnMapStyle } from "./mapWarp";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -92,15 +92,22 @@ export function MapModal({
   // atlas places it there, otherwise the district's.
   const youAreHere: MapPoint | null = useMemo(() => mapPointOf(locationKey) ?? null, [locationKey]);
 
-  /** Scroll so a percentage point on the map lands in the middle of the view. */
+  /**
+   * Scroll so an atlas point lands in the middle of the view.
+   *
+   * Warped like everything else that becomes a screen position. Centring on
+   * the raw percentage would put the view where the atlas map has the
+   * character rather than where this picture draws them.
+   */
   const scrollToPoint = useCallback((point: MapPoint) => {
     const el = scroller.current;
     if (!el) return false;
     const contentWidth = el.scrollWidth;
     const contentHeight = el.scrollHeight;
     if (contentWidth <= 0 || contentHeight <= 0) return false;
-    el.scrollLeft = Math.max(0, (point.x / 100) * contentWidth - el.clientWidth / 2);
-    el.scrollTop = Math.max(0, (point.y / 100) * contentHeight - el.clientHeight / 2);
+    const at = placeOnMap(point.x, point.y);
+    el.scrollLeft = Math.max(0, (at.left / 100) * contentWidth - el.clientWidth / 2);
+    el.scrollTop = Math.max(0, (at.top / 100) * contentHeight - el.clientHeight / 2);
     return true;
   }, []);
 
@@ -248,11 +255,11 @@ export function MapModal({
               className="relative select-none"
               style={{
                 width: `${zoom * 100}%`,
-                aspectRatio: `${MAP_IMAGE.width} / ${MAP_IMAGE.height}`,
+                aspectRatio: `${MAP_PICTURE.width} / ${MAP_PICTURE.height}`,
               }}
             >
               <img
-                src={MAP_IMAGE.image}
+                src={MAP_PICTURE.src}
                 alt="Map of Night City from the Night City Atlas"
                 draggable={false}
                 onLoad={centreOnMe}
@@ -268,7 +275,7 @@ export function MapModal({
                   aria-hidden
                   title={landmark.name}
                   className="pointer-events-none absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 border border-foreground/50 bg-background/70"
-                  style={{ left: `${landmark.map.x}%`, top: `${landmark.map.y}%` }}
+                  style={placeOnMapStyle(landmark.map.x, landmark.map.y)}
                 />
               ))}
 
@@ -292,7 +299,7 @@ export function MapModal({
                     }
                     data-here={isHere ? "true" : undefined}
                     className="absolute -translate-x-1/2 -translate-y-1/2"
-                    style={{ left: `${point.x}%`, top: `${point.y}%` }}
+                    style={placeOnMapStyle(point.x, point.y)}
                   >
                     <span className="relative flex h-4 w-4 items-center justify-center">
                       {isHere ? (
