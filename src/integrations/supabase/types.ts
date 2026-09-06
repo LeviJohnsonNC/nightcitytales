@@ -600,8 +600,6 @@ export type Database = {
         Row: {
           character_id: string
           eurobucks: number
-          home_district_key: string | null
-          home_place_key: string | null
           housing: string | null
           improvement_points: number
           lifestyle: string | null
@@ -610,8 +608,6 @@ export type Database = {
         Insert: {
           character_id: string
           eurobucks?: number
-          home_district_key?: string | null
-          home_place_key?: string | null
           housing?: string | null
           improvement_points?: number
           lifestyle?: string | null
@@ -620,8 +616,6 @@ export type Database = {
         Update: {
           character_id?: string
           eurobucks?: number
-          home_district_key?: string | null
-          home_place_key?: string | null
           housing?: string | null
           improvement_points?: number
           lifestyle?: string | null
