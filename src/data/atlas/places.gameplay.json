@@ -38,6 +38,7 @@
     "housing": "people live here",
     "luxury_housing": "people live here, and it cost them",
     "container_housing": "people live here, in what used to be freight",
+    "corp_housing": "people live here because they work for the company that owns it",
     "flophouse": "people sleep here, which is not the same thing",
     "clinic": "someone who can close a wound",
     "hospital": "a real medical facility with a real bill",
@@ -103,6 +104,7 @@
     ["media", "club_interior"],
     ["religious", "club_interior"],
     ["luxury_housing", "club_interior"],
+    ["corp_housing", "club_interior"],
     ["secure", "club_interior"],
     ["gang_turf", "street"]
   ],
@@ -236,13 +238,13 @@
       "tags": ["bar", "food", "shop"]
     },
     "a3": {
-      "tags": ["housing"]
+      "tags": ["housing", "corp_housing"]
     },
     "a4": {
       "tags": ["hotel", "container_housing"]
     },
     "a5": {
-      "tags": ["housing"]
+      "tags": ["housing", "corp_housing"]
     },
     "a6": {
       "tags": ["office", "corp_hq", "secure"]
@@ -353,7 +355,7 @@
       "tags": ["school", "lab", "corp_hq"]
     },
     "f2": {
-      "tags": ["lab", "housing"]
+      "tags": ["lab", "housing", "corp_housing"]
     },
     "f3": {
       "tags": ["studio", "crowd"]
@@ -494,7 +496,7 @@
       "tags": ["housing"]
     },
     "m1": {
-      "tags": ["housing", "secure"]
+      "tags": ["housing", "corp_housing", "secure"]
     },
     "m2": {
       "tags": ["corp_hq", "office", "secure"]
@@ -506,7 +508,7 @@
       "tags": ["luxury_housing"]
     },
     "n3": {
-      "tags": ["housing"]
+      "tags": ["housing", "corp_housing"]
     },
     "n4": {
       "tags": ["corp_hq", "office", "secure", "studio"]
@@ -527,7 +529,7 @@
       "tags": ["corp_hq", "office"]
     },
     "n10": {
-      "tags": ["hospital", "housing"]
+      "tags": ["hospital", "housing", "corp_housing"]
     },
     "n11": {
       "tags": ["hospital", "repair", "corp_hq", "luxury_housing"]
@@ -560,7 +562,7 @@
       "tags": ["media", "corp_hq"]
     },
     "p6": {
-      "tags": ["media", "luxury_housing"]
+      "tags": ["media", "luxury_housing", "corp_housing"]
     },
     "p7": {
       "tags": ["government", "secure"]
@@ -572,7 +574,7 @@
       "tags": ["hospital", "lab", "corp_hq", "office"]
     },
     "p10": {
-      "tags": ["office", "housing"]
+      "tags": ["office", "housing", "corp_housing"]
     },
     "p11": {
       "tags": ["corp_hq"]
@@ -593,7 +595,7 @@
       "tags": ["warehouse", "secure"]
     },
     "t1": {
-      "tags": ["housing"]
+      "tags": ["housing", "corp_housing"]
     },
     "t2": {
       "tags": ["gang_turf", "corp_hq", "shop"]
@@ -635,7 +637,7 @@
       "tags": ["corp_hq"]
     },
     "u5": {
-      "tags": ["container_housing", "housing", "office"]
+      "tags": ["container_housing", "housing", "corp_housing", "office"]
     },
     "v1": {
       "tags": ["nomad"]

@@ -51,6 +51,10 @@ export type CharacterBuild = {
   skills: SkillEntry[];
   loadout: Loadout;
   lifestyleLocation: string | null;
+  /** Atlas district key for the character's home, when they have chosen one. */
+  homeDistrictKey?: string | null;
+  /** Atlas location key for the character's home: the actual building. */
+  homePlaceKey?: string | null;
 };
 
 export type SheetSkillLine = {
@@ -123,7 +127,12 @@ export type SheetCyberwareLocation = {
 export type SheetFinance = {
   eurobucks: number;
   plan: StartingLifestylePlan;
+  /** The printed category, or null for a Role that is given its housing. */
   location: string | null;
+  /** Atlas district key for the home, when the character has an address. */
+  homeDistrictKey: string | null;
+  /** Atlas location key for the home: the building itself. */
+  homePlaceKey: string | null;
   housing: string;
   lifestyle: string;
   rent: number;
@@ -371,6 +380,10 @@ export function assembleCharacter(build: CharacterBuild): AssembledCharacter {
       eurobucks: build.method ? eurobucksKept(build.method, build.loadout) : 0,
       plan,
       location: plan.requiresLocation ? build.lifestyleLocation : null,
+      // The address, which the printed rule does not ask for and every system
+      // downstream of chargen needs: a campaign cannot be started at a category.
+      homeDistrictKey: build.homeDistrictKey ?? null,
+      homePlaceKey: build.homePlaceKey ?? null,
       housing: plan.housingName,
       lifestyle: plan.lifestyleName,
       rent: plan.rent,

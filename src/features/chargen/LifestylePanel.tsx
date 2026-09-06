@@ -218,7 +218,16 @@ function HousingCard({ state }: { state: ChargenState }) {
                 <button
                   key={location}
                   type="button"
-                  onClick={() => patch({ lifestyle: { location } })}
+                  onClick={() =>
+                    patch({
+                      lifestyle: {
+                        ...state.lifestyle,
+                        location,
+                        districtKey: null,
+                        placeKey: null,
+                      },
+                    })
+                  }
                   aria-pressed={selected}
                   className={`border p-4 text-left transition-colors duration-200 ${
                     selected
