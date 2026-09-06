@@ -6,6 +6,12 @@
  * about it is the player's problem. Options exist only if they ask for them,
  * behind a button, and asking costs no time.
  *
+ * That included the standing business of the district, which used to sit on
+ * screen permanently as a "here you can" strip — a menu by any other name, and
+ * one that duplicated the options the model wrote from the same list. It is
+ * offered behind the same button now, mixed in with what is live; see
+ * lifeOptions.ts. Every card charges the minutes and the eurobucks it prints.
+ *
  * A job can only appear here as an offer, with terms the player can push on and
  * an Accept they have to press themselves.
  */
@@ -39,12 +45,10 @@ import {
   cityBeats,
   resolvePosition,
   placeActions,
-  describePlaceAction,
   peopleAtHaunts,
   districtOfPlace,
   whoIsAt,
   flagMeaning,
-  type PlaceAction,
 } from "@/engine";
 
 import { NpcText } from "@/features/cast/NpcText";
@@ -726,59 +730,6 @@ function knownPlacesOf(campaign: { known_places: unknown }): string[] {
     : [];
 }
 
-/**
- * The ordinary business of being where you are.
- *
- * Deliberately small and quiet — a row of things you could do rather than a
- * board of quests. These are shortcuts for the common verb; the line below them
- * is still where anything unusual happens, and that ordering is the point.
- */
-function PlaceActions({
-  actions,
-  busy,
-  onPick,
-}: {
-  actions: PlaceAction[];
-  busy: boolean;
-  onPick: (action: PlaceAction) => void;
-}) {
-  if (!actions.length) return null;
-  return (
-    <section className="space-y-1.5">
-      <Label>Here you can</Label>
-      <div className="flex flex-wrap gap-1.5">
-        {actions.map((action) => (
-          <Tooltip key={action.key}>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onPick(action)}
-                className="flex items-baseline gap-2 border border-hairline px-2.5 py-1.5 text-left transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
-              >
-                <span className="text-sm">{action.label}</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  {action.here ? "here" : action.placeName}
-                </span>
-                <span className="font-mono text-[10px] text-accent">
-                  {formatDuration(action.minutes)}
-                  {action.cost ? ` · ${action.cost}eb` : ""}
-                </span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p className="max-w-[16rem] text-xs">
-                {action.description}{" "}
-                <span className="text-muted-foreground">{action.placeName}</span>
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function LifeScreen({ campaignId }: { campaignId: string }) {
   const life = useLife(campaignId);
   const bundle = life.bundle;
@@ -938,17 +889,6 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
     };
   };
 
-  // The ordinary business of being here. Derived from the ground the character
-  // is standing on, so it is the same list the narrator was handed.
-  const here = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
-  const placeActionsHere = here
-    ? placeActions({
-        districtKey: here.districtKey,
-        placeKey: here.placeKey,
-        places: bundle.places,
-      })
-    : [];
-
   return (
     <TooltipProvider delayDuration={150}>
       <div className="touch-play">
@@ -1028,21 +968,21 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                     action={action}
                     character={bundle.character as never}
                     busy={life.busy}
-                    onPick={() => void life.act(`${action.label}. ${action.description}`.trim())}
+                    onPick={() =>
+                      void life.act(`${action.label}. ${action.description}`.trim(), {
+                        // What the card printed is what the turn costs. Both
+                        // kinds of card go through here — the model's and the
+                        // engine's — because a player cannot tell them apart
+                        // and should not have to.
+                        minutes: action.timeMinutes,
+                        ...(action.knownCost
+                          ? { spend: { amount: action.knownCost, reason: action.label } }
+                          : {}),
+                      })
+                    }
                   />
                 ))}
               </div>
-            )}
-
-            {/* What this place supports, under whatever is happening in it.
-                Hidden while a check is pending: the player is answering a
-                question, not browsing. */}
-            {!life.pendingCheck && !life.hook && (
-              <PlaceActions
-                actions={placeActionsHere}
-                busy={life.busy}
-                onPick={(action) => void life.act(describePlaceAction(action))}
-              />
             )}
 
             {life.hook && <HookCard life={life} />}

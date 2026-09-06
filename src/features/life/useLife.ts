@@ -100,6 +100,7 @@ import {
 import { renderLifeUserPrompt, type LifeContext, type LifeWireOffer } from "./lifeContext";
 import { lifeTurnFn } from "./lifeTurn.server";
 import type { LifeActionCard, LifeResponse } from "./lifeResponse";
+import { MAX_LIFE_OPTIONS, mergeOptions, venueOptions } from "./lifeOptions";
 import {
   askTagFrom,
   hookFromSituation,
@@ -350,6 +351,16 @@ type TurnOptions = {
   options?: boolean;
   /** Minutes the engine has already decided this turn costs. */
   minutes?: number;
+  /**
+   * Eurobucks the engine has already decided this turn costs, with what for.
+   *
+   * Applied through the same capability gate the model's own spends go through,
+   * so an option the character cannot afford is refused rather than quietly
+   * overdrawing them. This exists because an option card printing "10eb" and
+   * then leaving the model to decide whether money moved was a number on screen
+   * that nothing enforced.
+   */
+  spend?: { amount: number; reason: string };
   /** Narrate a committed engine result without applying model-authored actions. */
   fixedResult?: boolean;
   /**
@@ -634,6 +645,30 @@ async function applyResponse(
     downtime ??= await loadDowntime(campaignId);
     return downtime;
   };
+
+  // What the option card printed, charged before anything the model proposed.
+  // The card said this is what it costs, so this is what it costs.
+  if (turn.spend && turn.spend.amount > 0 && !turn.options) {
+    const legal = judgeAction(capability, {
+      kind: "spend",
+      resource: "eurobucks",
+      amount: turn.spend.amount,
+    });
+    if (!legal.ok) {
+      await refuse(legal.reason, legal.code);
+    } else {
+      const amount = Math.min(turn.spend.amount, eurobucks);
+      if (amount > 0) {
+        eurobucks -= amount;
+        await appendCampaignEvent({
+          campaign_id: campaignId,
+          type: "life_action",
+          summary: `Paid ${amount}eb — ${turn.spend.reason}`,
+          data: { amount } as unknown as Json,
+        });
+      }
+    }
+  }
 
   // Asking what you could do is not doing it. Nothing mechanical is applied on
   // an options turn, whatever the model attached to it.
@@ -1547,6 +1582,7 @@ export function useLife(campaignId: string) {
    */
   const actions: LifeActionCard[] = (() => {
     if (!bundle) return [];
+    let written: LifeActionCard[] = [];
     for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
       const event = bundle.events[i];
       if (!event) continue;
@@ -1554,9 +1590,26 @@ export function useLife(campaignId: string) {
       // Whichever came last wins, so acting on anything clears the list: an
       // ordinary turn always answers with none of its own.
       const data = event.data as { actions?: unknown } | null;
-      return Array.isArray(data?.actions) ? (data.actions as LifeActionCard[]) : [];
+      written = Array.isArray(data?.actions) ? (data.actions as LifeActionCard[]) : [];
+      break;
     }
-    return [];
+    // The model wrote what is live; the engine fills the rest with the standing
+    // business of the venues. Derived here rather than stored with the event,
+    // because where the character is standing can change without the options
+    // being asked for again.
+    if (!written.length) return [];
+    const position = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+    const district = position?.districtKey ? getDistrict(position.districtKey) : undefined;
+    if (!district) return written.slice(0, MAX_LIFE_OPTIONS);
+    return mergeOptions(
+      written,
+      venueOptions({
+        districtKey: district.key,
+        placeKey: position?.placeKey,
+        places: bundle.places,
+      }),
+      district.locations.map((l) => l.name),
+    );
   })();
 
   const latestNarration = (() => {
@@ -1612,9 +1665,19 @@ export function useLife(campaignId: string) {
      * the action, clamped by the engine: there is no menu entry carrying a
      * duration any more, because there is no menu.
      */
-    act: async (input: string) => {
+    /**
+     * Do something. `costs` is passed when the player picked a card rather than
+     * typing, and it is what that card printed: the turn then spends exactly
+     * the minutes and eurobucks the player was shown, instead of whatever the
+     * model decides afterwards.
+     */
+    act: async (input: string, costs?: { minutes?: number; spend?: TurnOptions["spend"] }) => {
       try {
-        await turn.mutateAsync({ input });
+        await turn.mutateAsync({
+          input,
+          ...(costs?.minutes !== undefined ? { minutes: costs.minutes } : {}),
+          ...(costs?.spend ? { spend: costs.spend } : {}),
+        });
         return true;
       } catch {
         return false;
