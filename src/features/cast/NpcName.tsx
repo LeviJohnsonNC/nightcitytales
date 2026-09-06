@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { findNpc, npcImage, type NpcEntry } from "./npcDirectory";
+import { findNpc, npcArtwork, type NpcEntry } from "./npcDirectory";
 
 export function NpcDossier({
   npc,
@@ -28,7 +28,9 @@ export function NpcDossier({
         <div>
           <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
             <img
-              src={npcImage(npc)}
+              src={npcArtwork(npc).src}
+              srcSet={npcArtwork(npc).srcSet}
+              sizes="(min-width: 640px) 512px, 92vw"
               alt={npc.name}
               className="h-full w-full object-cover object-top"
             />
