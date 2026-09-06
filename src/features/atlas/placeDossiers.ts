@@ -921,6 +921,7 @@ That philosophy has attracted appropriate allies. Members of the **Tombstone Pre
   },
 
   k2: {
+    image: "the-yard",
     text: `The Yard is why Night City still has public transportation. When the reclaimers took this land, the deal was straightforward: their technical and motor skills in exchange for the ground to stand on, and this depot is where they hold up their end. Buses, trams, rolling stock and everything that carries the city's people come here to be repaired, stripped for parts, or argued back into service by people whose qualification is that they have done it before and it worked.
 
 Nothing about the operation looks official, because it is not. There is no livery, no corporate signage, no maintenance schedule anybody outside the yard has seen. There are pits, gantries, an enormous quantity of salvaged components sorted by a system that makes sense to the people using it, and a rota that is enforced socially rather than administratively. Vehicles that would be scrapped anywhere else in the city are kept running here on the principle that a thing which moves is worth more than a thing which is correct.
@@ -929,6 +930,7 @@ The city depends on this and mostly does not think about it, which is the reclai
   },
 
   k3: {
+    image: "the-swap",
     text: `The Swap is where reclaimed things stop being salvage and start being goods. It runs out of a cleared lot and the structures around it, tables under whatever will keep rain off, and it operates on the understanding that the question of where an item came from is not one a buyer asks and not one a seller answers. Parts, mostly. Vehicle components, electronics, tooling, wire, anything that came out of something else and can be persuaded into something new.
 
 The pricing is conversational and the etiquette is firm. You may examine anything. You may test anything. You may not ask who brought it in, and asking twice is how a stranger becomes a person the tables go quiet for. The Tombstone Preservers have an interest here too, and while their concern is the sanctity of the dead rather than the honesty of the trade, they take a dim view of anything that has obviously come off a body or out of a grave. That line is enforced quietly and completely.
@@ -937,6 +939,7 @@ For anybody who needs a component that no longer exists in a catalogue, this is 
   },
 
   k4: {
+    image: "the-long-camp",
     text: `The Long Camp is the answer to a question the reclaimers have not entirely settled among themselves: what happens to nomad families who stop moving. They took this land for the work, the work turned out to be permanent, and a generation has now grown up on ground their parents intended to be a stop. The camp keeps the shape of a nomad pack — vehicles at the perimeter, communal cooking, the whole settlement arranged so it could leave by morning — while being, in every practical sense, a neighbourhood.
 
 Nobody says this out loud very often. The vehicles are maintained. The routes are still discussed. Somebody is always about to organise a run that does not happen. Meanwhile there are gardens, and permanent water, and children who have never slept in a moving vehicle, and an argument at every large meal about whether any of that is a betrayal or simply what surviving looked like this time. Both positions are held sincerely and neither is winning.
@@ -1024,6 +1027,7 @@ Despite the security, Militech occasionally creates one extraordinary vulnerabil
   },
 
   m3: {
+    image: "the-main-gate",
     text: `The Main Gate is where the Estero Bay Military COG decides whether NorCal has business with you, and the answer is usually no. The NorCal Military Police staff it, the procedure is military rather than commercial, and there is no equivalent of talking your way past a receptionist: you are expected or you are not, and being not expected is resolved by being asked to leave while several people who are very good at this watch you do it.
 
 What makes the gate strange is what it is guarding. The COG is in theory loyal to NorCal and the Pacifica Confederation. In practice it has traded land and access to Militech in exchange for training and munitions, which means the checkpoint is simultaneously a national border, a corporate perimeter, and the seam between the two. Militech personnel come through on Militech business with Militech credentials, waved past by soldiers whose oath is to somebody else entirely. Nobody at the gate has been given a satisfying explanation of this and nobody has asked for one twice.
@@ -1032,6 +1036,7 @@ Somewhere in that seam sits the Culper Ring, a secret sect inside the COG dedica
   },
 
   m4: {
+    image: "the-motor-pool",
     text: `The Motor Pool is the practical shape of the deal the Estero Bay Military COG made. Vehicles, munitions, workshops, fuel, and the people who keep all of it serviceable, arranged on ground that was traded to Militech in exchange for training and materiel. Some of what sits under these roofs belongs to NorCal. Some of it belongs to a corporation. A quantity that nobody has ever fully audited is on paper in one place and in practice in the other, and the mechanics have long since stopped caring which.
 
 The work is real and constant. Armour, transports, generators, drones, and the endless mechanical debt of a military force operating equipment older than most of its personnel. The technicians here are the reason the COG functions and are treated accordingly by everybody except the officers, which is a tension the pool wears comfortably. Militech instructors pass through to run training and leave behind hardware, habits, and a slowly increasing sense among the enlisted that they are being professionally acquired.
@@ -1201,6 +1206,7 @@ Which is why Yum Seng is close to perfect edgerunner territory. The karaoke room
   },
 
   o3: {
+    image: "ganymede-street-market",
     text: `Ganymede Street is one of the few roads in Night City the map bothers to name, and the market along it is the reason. Kabuki is the brain and heart of the Night City Co-Prosperity Sphere, and this is where that stops being a slogan: stalls the whole length of the street, food at every hour, goods arriving through channels that begin somewhere across the Pacific, and a density of people that makes the district feel far larger than the two blocks it occupies.
 
 The market runs on Tyger Claw sufferance and everybody trading here knows the terms. Nothing is extorted crudely, because crude extortion would kill the street and the Claws are not stupid. What happens instead is a tax that looks like a relationship: a percentage, a favour, a stall that becomes available when a vendor stops being congenial. In return the street is safe in a way very little of Night City is safe, and vendors who have been robbed elsewhere will tell you the arrangement is worth it. Some of them mean it.
@@ -1209,6 +1215,7 @@ For anybody working the district, Ganymede Street is where information moves fas
   },
 
   o4: {
+    image: "the-ivory-needle",
     text: `The Ivory Needle has ink at the front and chrome at the back, and the two halves of the business are not as separate as the layout suggests. The front room does traditional work, done properly and slowly, by artists whose waiting list is measured in months. The back room is a ripperdoc's, competent and clean, and the reason the waiting list out front is worth joining: a Tyger Claw's ink says which crew, and the chrome underneath it says what they are for, and getting both done in the same building by people who understand how they sit together is not a service many places offer.
 
 There is always a Claw in the shop, positioned where both doors are visible, and they are not there for a tattoo. Kabuki is Tyger Claw ground and the Needle is one of the fixed points on it — somewhere the organisation's people come regularly, predictably, and in a state that makes them briefly easy to find. That fact is understood by everyone and has been the basis of at least two very bad decisions by outsiders.
@@ -1391,6 +1398,7 @@ For an edgerunner, the Executive Zone is less a neighborhood than an **endgame d
   },
 
   r1: {
+    image: "zone-station",
     text: `Zone Station is where the Executive Zone admits that it is attached to a city. The private high-speed monorail runs from here into corporate Night City, and the platform is the one piece of the district an outsider can plausibly reach without climbing a wall. That does not make it reachable. Boarding requires corporate authorization, identity credentials and biometric verification, checked in that order by systems that do not consider your explanation interesting. The concourse is quiet, cool, and immaculate in the way of a place that has never once been asked to handle a crowd.
 
 The hierarchy is built into the architecture. Ordinary high-level Executives wait in a lounge with good chairs and better coffee. The people above them do not wait anywhere, because a car is held until they arrive, and the seating on that car is upholstered to a standard the rest of the train is not. **Night City has managed to make public transportation rank-ordered down to the stitching.** Staff move through all of it without appearing to look at anybody, which is itself a skill somebody was hired for.
@@ -1399,6 +1407,7 @@ For an edgerunner, Zone Station is the front door and the trap in the same build
   },
 
   r2: {
+    image: "executive-zone-oasis",
     text: `There is an Oasis in most districts of Night City, and in most districts it is a convenience store: shelves of packaged calories, a bored clerk, a scanner that beeps. The Executive Zone Oasis carries the same sign and almost nothing else in common. The shelves hold premium brands, imported goods, and rarities that elsewhere in the city are rumours — real coffee, produce that grew in soil, and **fresh-cut flowers**, which in 2045 is less a product than a statement about what the buyer can afford to have die decoratively in a vase.
 
 Very little of it is carried out by hand. Orders go to the estates by drone, and the shop's real business is the delivery manifest rather than the counter, which means the floor is usually near empty and the stockroom is never still. The staff know every household by name, every standing order by heart, and exactly which residents want their purchases to arrive without a record. That last service is not advertised and is not free.
@@ -1407,6 +1416,7 @@ That manifest is the interesting thing about the building. It says who is in res
   },
 
   r3: {
+    image: "the-davies-estate",
     text: `The Davies Estate is the closest thing the Executive Zone has to a city hall, which tells you most of what you need to know about how the district is governed. **Doctor Karen Davies** is the City Manager, elected by the Home Owner's Association, an electorate small enough that the ballot and the guest list are substantially the same document. The Association meets here. Its decisions are the district's law, its minutes are not published, and its membership is among the more closely guarded pieces of information in Night City.
 
 The house itself is a compound rather than a building: several structures on landscaped ground, some of it genuine grass, the rest Biotechnica Realgrass maintained to a standard that makes the genuine article look unreliable. Security is layered and mostly invisible until it is not. Deliveries arrive by drone to a pad rather than a door. Guests are expected, verified, and walked in. Nobody has ever knocked.
@@ -1415,6 +1425,7 @@ What makes the estate matter is that everything the district does to itself is d
   },
 
   r4: {
+    image: "the-greens",
     text: `The Greens is a private club with courses, courts, a spa, and a dining room, and the least interesting thing about it is any of those. What the membership buys is a room in which the Executive Zone's residents can be seen by one another and by nobody else. There are no cameras a member has not approved. There is no press. There is no record of who played with whom, which is precisely the service being sold, and it costs considerably more than the golf.
 
 The grounds are absurd and know it. Real turf in some places, Realgrass in others, Realtrees standing exactly where a landscaping plan two decades old said trees should stand. Staff are numerous, quiet, long-serving and extremely well paid, because the club worked out early that the cheapest way to keep a secret is to make sure nobody who knows it needs money. Members drink, eat properly cooked food, complain about their own corporations, and conduct in an afternoon the sort of business that would take a quarter through official channels.
@@ -1423,6 +1434,7 @@ For an edgerunner, The Greens is the softest ground in the hardest district. The
   },
 
   r5: {
+    image: "lazarus-gatehouse",
     text: `Every wall needs a door, and the Lazarus Gatehouse is the Executive Zone's. It is staffed around the clock, built to take a vehicle-borne impact without conceding anything, and run by people whose employer is not the city, not the HOA, and not the resident whose gate they are standing at. Lazarus holds the district's security contract. The gatehouse is where that contract becomes a person asking you a question.
 
 The procedure is slower than it looks and deliberately so. Credentials are checked against a list, the list is checked against a schedule, the schedule is checked against whoever inside the wall is expecting you, and the vehicle is checked against nothing in particular while all of that happens. Lazarus keeps its own records of every one of these exchanges, separate from the district's, and does not share them with the Home Owner's Association. Several residents find this arrangement uncomfortable. None of them have changed it.
@@ -1431,6 +1443,7 @@ That archive is the reason the gatehouse is worth more than the gate. It knows w
   },
 
   r6: {
+    image: "the-verge",
     text: `The Verge is not in the Executive Zone. It is against it. Tent communities have crowded the ground outside the wall for as long as the wall has existed, and this is the largest of them: tarps, scavenged roofing, salvaged containers, cooking fires, a water point that works most days, and several thousand people living in sight of the most expensive real estate on the West Coast. Residents inside the district refer to it, when they refer to it at all, as a view problem.
 
 It is a real settlement rather than a camp. There are lanes with names nobody has written down, a pecking order among the water queues, people who fix things and people who know people, and a working understanding of exactly how close to the wall you can put a shelter before Lazarus arrives to explain that you cannot. Work comes from the Zone: groundskeeping, deliveries, kitchens, cleaning, the whole apparatus of a district that does not do its own laundry. The Verge staffs the paradise it is not allowed into, and goes home through the gate it cannot use.
@@ -1461,6 +1474,7 @@ That combination has given Greenbox an almost mythical reputation in Night City'
   },
 
   s2: {
+    image: "cargo-way-wharf",
     text: `Cargo Way Wharf is where the corporations are quietly cutting the nomad nations out of shipping. The larger vessels cannot use the Heywood Docks at all, but smaller Corporate-sponsored ships working up and down the West Coast can, and this is where they tie up. The berths are short, the cranes are modest, the turnaround is fast, and the whole operation is designed around volume that arrives often rather than volume that arrives large.
 
 It is unglamorous and enormously consequential. Every container that comes over this quayside is one that did not travel overland in a nomad convoy, and everybody working the wharf understands the arithmetic of that even when nobody says it. The crews are local, the schedules are corporate, and the friction between those two facts is the wharf's permanent weather. Work is steady. Loyalty is not something anybody here has been offered a reason to feel.
@@ -1469,6 +1483,7 @@ For an edgerunner, the wharf is a place where things arrive on a timetable and a
   },
 
   s3: {
+    image: "the-weighbridge",
     text: `The Weighbridge is SK Security's counting house, and it is the reason the Heywood Docks work as a business rather than as a free-for-all. Nothing leaves the quayside without crossing it: weighed, logged, matched against a manifest, and released by somebody whose employer is the same company that appointed the district's City Manager. **Andrea Lee** runs the district on SK's behalf, and the Weighbridge is where that authority stops being an org chart and becomes a barrier arm.
 
 The building is deliberately plain. Scales, offices, a records room, and a great deal of very good surveillance pointed at the one place every load has to pass through. Discrepancies are common and mostly boring — a manifest transcribed wrong, a load that settled, a driver who cannot find a document. The interesting discrepancies are handled by people who arrive quickly and do not introduce themselves, and the docks have a long and unremarked history of loads that were logged in and never logged out.
@@ -1477,6 +1492,7 @@ Both the Skiv Family and the DeadWoods have an understanding with this building,
   },
 
   s4: {
+    image: "skivs-counter",
     text: `Skiv's Counter is a dockside bar with an office at the back, and the Skiv Family have never pretended otherwise. The front room is genuinely a bar: cheap, warm, loud at shift change, full of longshoremen who have been drinking in the same seats for years and would fight anyone who suggested this was a criminal establishment. The back room is where Night City's dominant mafia family conducts the business of controlling the Heywood Docks. Both halves are open to anyone. Getting into the second one is a matter of being invited rather than a matter of the door.
 
 The arrangement is old and works because it is honest about itself. Dock crews bring problems here that the Weighbridge cannot solve and SK Security would rather not hear about: a load that needs to not exist, a debt, a man who has become a difficulty. The Family solves them, takes a percentage, and keeps the docks running, which is more than can be said for several of the institutions that are supposed to. Nobody in the front room finds this remarkable.
