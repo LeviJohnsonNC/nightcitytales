@@ -264,8 +264,19 @@ export function askTagFrom(event: CampaignEvent | undefined): HookAskTag | null 
  * Heights. This is done by CHOOSING AMONG SEEDS rather than by steering the
  * generator: every draw inside generateJob is deterministic from its seed, and
  * biasing the district there would change every job every stored id names.
+ *
+ * The number is set by the size of the pool it is searching. Six was chosen
+ * when the generator drew from eight districts, where a character who knew
+ * three of them matched a given seed three times in eight and six looks found
+ * one about nineteen times in twenty. The generator now draws from all
+ * twenty-four, so the same three districts match one seed in eight, and six
+ * looks would find one barely half the time — the preference would still be
+ * there and the player would stop being able to feel it.
+ *
+ * Eighteen restores it: about nine times in ten, which is roughly where it was.
+ * Each look is a pure deterministic generateJob, so the cost is arithmetic.
  */
-export const SEED_CANDIDATES = 6;
+export const SEED_CANDIDATES = 18;
 
 /**
  * Draw a seed for the next job, preferring one whose work lands somewhere the

@@ -15,9 +15,13 @@ describe("the wire prefers ground you know", () => {
       const district = generateJob(seed).offer?.districtKey;
       if (district && known.has(district)) familiar += 1;
     }
-    // Not every time — six candidates cannot always find one — but far more
-    // often than three districts out of twenty-four would give by chance.
-    expect(familiar).toBeGreaterThan(30);
+    // Not every time — a run of candidates cannot always find one — but far
+    // more often than three districts out of twenty-four would give by chance,
+    // which is about eight of these sixty. The bar is what the preference felt
+    // like when the generator only drew from eight districts, and it is here so
+    // that widening the pool again silently weakens it into a failure rather
+    // than into a shrug.
+    expect(familiar).toBeGreaterThan(48);
   });
 
   it("still finds work for somebody who has been nowhere", () => {

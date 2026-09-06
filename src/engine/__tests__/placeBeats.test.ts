@@ -151,6 +151,48 @@ describe("what the ground offers", () => {
     expect(quiet).toBeGreaterThan(30);
   });
 
+  it("gives every district something of its own to say", () => {
+    // The tag beats are the floor: they stop a district being bare, and they
+    // are identical everywhere the ground matches. Without a beat anchored to
+    // a venue by key, every district reads like every other one.
+    for (const district of DISTRICTS) {
+      const own = PLACE_BEATS.filter((b) =>
+        b.places?.some((key) => district.locations.some((l) => l.key === key)),
+      );
+      expect(own.length, `${district.name} has nothing written about it`).toBeGreaterThan(0);
+    }
+  });
+
+  it("does not let a generic beat crowd out one written for the place", () => {
+    // The cap is two and the tag beats outnumber the named ones several times
+    // over. Sorted on severity alone, "the water pressure has gone again" —
+    // true of half the container housing in Night City — would take the slot
+    // from the thing that is only true here.
+    const named = new Set(PLACE_BEATS.filter((b) => b.places?.length).map((b) => b.key));
+    for (const district of DISTRICTS) {
+      for (let day = 0; day < 120; day += 1) {
+        for (const minute of [MORNING, EVENING]) {
+          const shown = beatsOn(district.key, day, minute);
+          const beatKeys = shown.map((s) => String(s.data?.["beat"]));
+          // Anything named that was live today and did not make the cut means a
+          // generic beat took its slot.
+          const liveNamed = PLACE_BEATS.filter(
+            (b) =>
+              b.places?.some((k) => district.locations.some((l) => l.key === k)) &&
+              beatFitsHour(b, minute) &&
+              b.places.some((k) => beatIsLive(b, k, day, SEED)),
+          ).map((b) => b.key);
+          const dropped = liveNamed.filter((k) => !beatKeys.includes(k));
+          const genericShown = beatKeys.filter((k) => !named.has(k));
+          expect(
+            dropped.length === 0 || genericShown.length === 0,
+            `${district.key} day ${day}: ${genericShown.join(",")} took the slot from ${dropped.join(",")}`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
   it("leaves no district that can never have anything happen in it", () => {
     // The gap this closes: the tag beats were written for the ground Rancho
     // Coronado stands on, so a district of offices and precincts could go a

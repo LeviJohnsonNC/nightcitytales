@@ -104,6 +104,86 @@
       "key": "rancho_coronado",
       "name": "Rancho Coronado",
       "colour": "the city's ragged southern edge, dust off the Badlands and nobody official in sight"
+    },
+    {
+      "key": "little_europe",
+      "name": "Little Europe",
+      "colour": "old brick and new glass on the same block, a church that takes everyone's guns, and four gangs with overlapping opinions"
+    },
+    {
+      "key": "downtown",
+      "name": "Downtown",
+      "colour": "Whitewater Security on private contract, Undertow tags on the hoardings, and a district being built over one still standing in it"
+    },
+    {
+      "key": "the_hot_zone",
+      "name": "The Hot Zone",
+      "colour": "rads, Scavvers, and a skyline nobody has repaired because nobody intends to come back for it"
+    },
+    {
+      "key": "little_china",
+      "name": "Little China",
+      "colour": "Gold Dragon protection money, the Weng Fang Tong upstairs, and tenement stacks that go up rather than out"
+    },
+    {
+      "key": "university_district",
+      "name": "University District",
+      "colour": "campus security with a jurisdiction they invented, Biotechnica money, and students who are cheaper than contractors"
+    },
+    {
+      "key": "the_glen",
+      "name": "The Glen",
+      "colour": "City Hall, the Hall of Justice, and a precinct house, which is three good reasons to do this somewhere else"
+    },
+    {
+      "key": "old_japantown",
+      "name": "Old Japantown",
+      "colour": "Kimen-Gumi on the doors, Tyger Claws behind them, and the Red Chrome Legion picking fights with the Iron Sights"
+    },
+    {
+      "key": "port_of_night_city",
+      "name": "Port of Night City",
+      "colour": "Thelas Marines on the quay, Consortium money underneath it, and containers people are living in"
+    },
+    {
+      "key": "reclamation_zone",
+      "name": "Reclamation Zone",
+      "colour": "reclaimers who keep the city's transport running, and a guardian gang who take the dead personally"
+    },
+    {
+      "key": "old_combat_zone",
+      "name": "Old Combat Zone",
+      "colour": "no grid, no law, Edgerunners Inc trying to reconnect it and the Faded trying to stop them"
+    },
+    {
+      "key": "norcal_military_base",
+      "name": "NorCal Military Base",
+      "colour": "a COG loyal to NorCal on paper and to Militech in practice, and a secret society inside it that is loyal to neither"
+    },
+    {
+      "key": "new_westbrook",
+      "name": "New Westbrook",
+      "colour": "Network 54 cameras, canal money, and cargo villages being cleared for something that pays better"
+    },
+    {
+      "key": "charter_hill",
+      "name": "Charter Hill",
+      "colour": "Militech on the streets, old money behind the gates, and a cemetery with better security than most banks"
+    },
+    {
+      "key": "exec_zone",
+      "name": "Exec Zone",
+      "colour": "Lazarus at the wall, twenty private estates behind it, and a tent line outside that watches everything"
+    },
+    {
+      "key": "heywood_docks",
+      "name": "Heywood Docks",
+      "colour": "SK Security weighing every load, the Skiv Family weighing the ones that matter, and nomads being cut out of both"
+    },
+    {
+      "key": "north_heywood",
+      "name": "North Heywood",
+      "colour": "6th Street running security and extortion out of the same building, and the Toecutters on the eastern edge"
     }
   ],
 

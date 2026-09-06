@@ -62,7 +62,7 @@ type StateFile = {
     note: string;
   }[];
   startNote: string;
-  places: Record<string, { dials?: Record<string, number>; flags?: string[] }>;
+  places: Record<string, { note?: string; dials?: Record<string, number>; flags?: string[] }>;
 };
 
 const FILE = data as unknown as StateFile;
@@ -126,7 +126,12 @@ export function startingState(placeKey: string): PlaceState {
   const authored = FILE.places[placeKey];
   if (authored?.dials) {
     for (const [dial, value] of Object.entries(authored.dials)) {
-      if (isPlaceDial(dial)) dials[dial] = clampDial(dial, value);
+      // The same guard applyToPlace uses: only dials this place HAS. Writing a
+      // starting value was the one way left to give a location a dial its
+      // ground does not carry, which would have let a hand-written override
+      // quietly put reclaimer control on a bar. A tag earns a dial; an
+      // override only says where an earned one starts.
+      if (isPlaceDial(dial) && dial in dials) dials[dial] = clampDial(dial, value);
     }
   }
   return {

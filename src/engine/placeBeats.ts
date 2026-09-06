@@ -217,7 +217,7 @@ export function derivePlaceBeats(input: PlaceBeatInput): LifeSituation[] {
   const district = getDistrict(input.districtKey);
   if (!district) return [];
 
-  const candidates: { situation: LifeSituation; atPlace: boolean }[] = [];
+  const candidates: { situation: LifeSituation; atPlace: boolean; named: boolean }[] = [];
 
   for (const beat of PLACE_BEATS) {
     if (!beatFitsHour(beat, input.minute)) continue;
@@ -227,8 +227,11 @@ export function derivePlaceBeats(input: PlaceBeatInput): LifeSituation[] {
       const place = getPlace(placeKey);
       if (!place) continue;
       const atPlace = input.placeKey === placeKey;
+      // Anchored to this venue by key, rather than to any ground carrying a tag.
+      const named = !!beat.places?.includes(placeKey);
       candidates.push({
         atPlace,
+        named,
         situation: {
           key: placeBeatKey(placeKey, beat.key),
           category: beat.category as LifeCategory,
@@ -249,10 +252,20 @@ export function derivePlaceBeats(input: PlaceBeatInput): LifeSituation[] {
     }
   }
 
-  // Loudest first, then somewhere the character is actually standing, then a
-  // stable key order so the same day always produces the same board.
+  // Named before generic, then loudest, then somewhere the character is
+  // actually standing, then a stable key order so the same day always produces
+  // the same board.
+  //
+  // Named first because the cap is two and the tag beats outnumber the named
+  // ones several times over in every district. Sorted on severity alone, "the
+  // water pressure has gone again" — true of half the container housing in
+  // Night City — would routinely take the slot from the thing that is only
+  // true here, and every district would read like every other one. The tag
+  // beats are the floor, not the ceiling: they exist so nowhere is bare, and
+  // they should stand aside when somewhere has something of its own to say.
   candidates.sort(
     (a, b) =>
+      Number(b.named) - Number(a.named) ||
       b.situation.severity - a.situation.severity ||
       Number(b.atPlace) - Number(a.atPlace) ||
       a.situation.key.localeCompare(b.situation.key),
