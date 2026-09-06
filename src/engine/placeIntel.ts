@@ -28,7 +28,7 @@
  */
 import { districtOfPlace, getPlace } from "./geography";
 import { districtProfile, tagMeaning, tagsOf } from "./places";
-import { flagMeaning, type PlaceState } from "./placeState";
+import { flagMeaning, startingState, type PlaceState } from "./placeState";
 
 /**
  * How many visits each rung costs.
@@ -79,10 +79,53 @@ function whoComes(placeKey: string): string | null {
   return `If it goes loud: ${profile.response.who}, ${profile.response.label}.`;
 }
 
-function whatHasHappened(state: PlaceState | undefined): string | null {
-  if (!state?.flags.length) return null;
-  const said = state.flags.map((flag) => flagMeaning(flag) ?? flag);
+/**
+ * What has CHANGED here, which is not the same as what is true here.
+ *
+ * The rung says "since you have been coming here", so it has to be measured
+ * against how the place started rather than read off the flags it happens to
+ * carry. A market is flagged `market_open` from the moment the city is built;
+ * reporting that as news told a player who had earned this rung that trade runs
+ * here as usual, which they could see, and which had not happened.
+ *
+ * Both directions count, and the second one is the point. When a raid clears
+ * `market_open` the flag simply vanishes from the list, so the one moment this
+ * whole system exists for — the market you have been shopping at for six weeks
+ * is gone — produced no line at all.
+ */
+function whatHasHappened(placeKey: string, state: PlaceState | undefined): string | null {
+  if (!state) return null;
+  const started = new Set(startingState(placeKey).flags);
+  const now = new Set(state.flags);
+  const said: string[] = [];
+  for (const flag of state.flags) {
+    if (!started.has(flag)) said.push(flagMeaning(flag) ?? flag);
+  }
+  for (const flag of started) {
+    if (!now.has(flag)) said.push(flagGone(flag));
+  }
+  if (!said.length) return null;
   return `Since you have been coming here: ${said.join(" ")}`;
+}
+
+/**
+ * What it means that a flag the place started with is no longer set.
+ *
+ * A closed vocabulary like the flags themselves. Anything not named here is
+ * reported as the plain fact that it has stopped being true, which is honest
+ * and readable rather than a gap.
+ */
+const FLAG_GONE: Record<string, string> = {
+  market_open: "The trade that ran here has stopped.",
+  gang_extortion: "Whoever was taking a cut of everything is no longer taking it.",
+  power_out: "The power has come back.",
+  raided: "The law has stopped coming through.",
+  locked_down: "Access is no longer being checked the way it was.",
+  under_audit: "Whoever was going through the records has finished.",
+};
+
+function flagGone(flag: string): string {
+  return FLAG_GONE[flag] ?? `That is no longer true: ${flagMeaning(flag) ?? flag}`;
 }
 
 /**
@@ -107,7 +150,7 @@ export function placeIntel(placeKey: string, state?: PlaceState | undefined): Pl
           ? whoClaimsIt(placeKey)
           : rung === "law"
             ? whoComes(placeKey)
-            : whatHasHappened(state);
+            : whatHasHappened(placeKey, state);
     if (line) lines.push(line);
   }
 

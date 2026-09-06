@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   DISTRICTS,
   INTEL_LADDER,
+  applyToPlace,
   describeFamiliarity,
   findMission,
   generateJob,
   getPlace,
   placeIntel,
+  placesWithTag,
   recordVisit,
   rungsFor,
   startingState,
@@ -98,9 +100,45 @@ describe("knowing a place", () => {
     expect(joined).toContain("NCPD (in theory)"); // the atlas's own security line
   });
 
-  it("mentions what has happened here, once something has", () => {
-    const quiet = placeIntel("x5", visited("x5", 6))!;
-    expect(quiet.known.join(" ")).toContain("Trade runs here as usual");
+  it("says nothing has happened when nothing has, however well you know it", () => {
+    // The rung is "since you have been coming here", so it is measured against
+    // how the place STARTED. This test used to assert the opposite and was
+    // named for it: a market is flagged open from the moment the city is built,
+    // and a player who had earned this rung was told that trade runs here as
+    // usual — which they could see, and which had not happened.
+    for (const place of placesWithTag("market")) {
+      const known = placeIntel(place.key, visited(place.key, 6))!.known.join(" ");
+      expect(known, `${place.name} reports its opening condition as news`).not.toContain(
+        "Since you have been coming here",
+      );
+    }
+    // And the same for ground written up as already held or already dark.
+    for (const key of ["n6", "t2", "x2"]) {
+      expect(placeIntel(key, visited(key, 6))!.known.join(" "), key).not.toContain(
+        "Since you have been coming here",
+      );
+    }
+  });
+
+  it("mentions what has happened here, once something actually has", () => {
+    let state = visited("x5", 6);
+    for (let i = 0; i < 8; i += 1) state = applyToPlace(state, ["loud"]).state;
+    const known = placeIntel("x5", state)!.known.join(" ");
+    expect(known).toContain("Since you have been coming here");
+    expect(known).toContain("The law has been through");
+  });
+
+  it("reports a flag the place has LOST, which is the whole point of the rung", () => {
+    // A raid clears `market_open`, and a cleared flag simply vanishes from the
+    // list. The one moment this system exists for — the market you have been
+    // shopping at for six weeks is gone — used to produce no line at all.
+    let state = visited("x5", 6);
+    expect(state.flags).toContain("market_open");
+    for (let i = 0; i < 8; i += 1) state = applyToPlace(state, ["loud"]).state;
+    expect(state.flags).not.toContain("market_open");
+    expect(placeIntel("x5", state)!.known.join(" ")).toContain(
+      "The trade that ran here has stopped",
+    );
   });
 
   it("counts the visits in words", () => {
