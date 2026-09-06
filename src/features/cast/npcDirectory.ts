@@ -2,7 +2,7 @@
  * NPC DIRECTORY — the faces of Night City.
  *
  * One entry per person, crew or archetype we have artwork for. `image` points at
- * a file in public/images/cast. `bio` is the background text shown in the
+ * a WebP under public/images/cast, at two widths. `bio` is the background text shown in the
  * dossier modal; it is written by hand and stays null until it lands, in which
  * case the modal shows the portrait alone rather than inventing anything.
  *
@@ -16,7 +16,7 @@ import { WORLD_BIOS } from "./worldBios";
 export type NpcKind = "cast" | "broker" | "patron" | "target" | "faction" | "threat";
 
 export interface NpcEntry {
-  /** Slug, and the file name under public/images/cast. */
+  /** Slug, and the file name (no width suffix or extension) under public/images/cast. */
   id: string;
   /** Canonical display name, exactly as written in the content files. */
   name: string;
@@ -185,8 +185,25 @@ export function findNpc(name: string): NpcEntry | null {
   return BY_KEY.get(name.trim().toLowerCase()) ?? null;
 }
 
+/** The narrow width cast art is also encoded at. See tools/art/webp.mjs. */
+const NARROW_WIDTH = 512;
+
 export function npcImage(npc: NpcEntry): string {
-  return `/images/cast/${npc.id}.png`;
+  return `/images/cast/${npc.id}.webp`;
+}
+
+/**
+ * The portrait at both widths.
+ *
+ * Cast art is only ever drawn inside a max-w-lg dialog or a combat portrait, so
+ * 1024 covers a 2x display and 512 a 1x one. The caller passes its own `sizes`.
+ */
+export function npcArtwork(npc: NpcEntry): { src: string; srcSet: string } {
+  const base = `/images/cast/${npc.id}`;
+  return {
+    src: `${base}.webp`,
+    srcSet: `${base}-${NARROW_WIDTH}.webp ${NARROW_WIDTH}w, ${base}.webp 1024w`,
+  };
 }
 
 /** Numbered variants of one archetype, in order: "Street Thug 1", "Street Thug 2". */
