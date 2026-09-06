@@ -151,6 +151,20 @@ describe("what the ground offers", () => {
     expect(quiet).toBeGreaterThan(30);
   });
 
+  it("leaves no district that can never have anything happen in it", () => {
+    // The gap this closes: the tag beats were written for the ground Rancho
+    // Coronado stands on, so a district of offices and precincts could go a
+    // whole campaign without the city ever putting anything in front of the
+    // player. Quiet is a result; permanently mute is a content hole.
+    for (const district of DISTRICTS) {
+      if (!district.locations.length) continue;
+      const everHappens = Array.from({ length: 120 }, (_, day) => day).some((day) =>
+        [MORNING, EVENING].some((minute) => beatsOn(district.key, day, minute).length > 0),
+      );
+      expect(everHappens, `nothing can ever happen in ${district.name}`).toBe(true);
+    }
+  });
+
   it("says nothing at all about a district that is not on the map", () => {
     expect(beatsOn("atlantis", 3)).toEqual([]);
   });

@@ -125,6 +125,21 @@ describe("what a place offers", () => {
     }
   });
 
+  it("gives every single location in the city something to do in it", () => {
+    // Stronger than the district check above, and the one that matters: a
+    // district can offer five things while the pin the player actually tapped
+    // offers none. Every corporate lobby, precinct and city office in the game
+    // was a dead pin until the verbs for that ground were written.
+    for (const district of DISTRICTS) {
+      for (const place of district.locations) {
+        const here = placeActions({ districtKey: district.key, placeKey: place.key }).filter(
+          (a) => a.here,
+        );
+        expect(here.length, `${place.name} (${place.key}) offers nothing`).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it("says nothing about a district that is not on the map", () => {
     expect(placeActions({ districtKey: "atlantis" })).toEqual([]);
   });
