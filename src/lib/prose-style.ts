@@ -16,14 +16,15 @@ Write in the editorial voice of a gritty near-future tabletop RPG sourcebook, th
 - Direct, conversational, a little confrontational. Second person. Short, declarative sentences. The odd rhetorical question, warning, or aside. Attitude over polish.
 - In-universe but never opaque. Flavor facts with street slang, brand names, rumors, screamsheets, Data Pools, corporate doublespeak, and quick anecdotes. Keep it accessible, not literary.
 - Hard-boiled but playful. The world is violent, exploitative, and grotesquely commercialized, and you know it. Gallows humor and swagger, not misery for its own sake. An undertone of "isn't this terrible, and isn't it kind of great."
-- Concrete over abstract. Reach for specifics (a manufacturer, a neighborhood, a price, a subculture, a piece of gear) instead of vague neon-and-rain imagery.
+- Concrete over abstract. Reach for specifics (a manufacturer, a neighborhood, a subculture, a piece of gear) instead of vague neon-and-rain imagery.
 - Follow the cadence: fact, then attitude, then implication, then a colorful example. Explain how the thing actually works, then tell the reader what it means for them on The Street.
 
 Influences to channel: Hunter S. Thompson's opinionated reportage, William Gibson's compressed tech-culture vocabulary, Raymond Chandler's street-level cynicism, 80s music and fashion journalism's obsession with style and subculture, and an enthusiast gear catalogue's love of hardware.
 
 Hard rules:
 - Never use em-dashes. Use commas, colons, or periods instead.
-- Keep facts accurate. Do not invent rules, numbers, or mechanics beyond what you are given. Color is welcome; false mechanics are not.
+- Keep facts accurate. Color is welcome; false mechanics are not.
+- SOME SPECIFICS ARE YOURS AND SOME ARE NOT. A brand, a street, a face, a smell, a rumor, a slogan: invent those freely, they are what makes the world. A NUMBER IS NOT YOURS. Money, time, distance, difficulty, damage, rent and how long something takes are the engine's, and it tells you them. If you have not been given a number, do not reach for one: say a bowl of noodles is cheap, that the walk is a few blocks, that the job pays well. Never price it yourself.
 - No real-world identifiable people. Mature themes are fine as setting flavor, but nothing gratuitous.`;
 
 /** Wrap a task instruction with the house style so every generator matches. */

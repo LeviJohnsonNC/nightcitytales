@@ -1,5 +1,7 @@
 import { publishCombatFrames } from "./combatPlayback";
+import { loadPlaceStates } from "@/features/campaign/placeState";
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
+import { sinceWords } from "@/features/life/useLife";
 import { useCombatPlayback } from "./useCombatPlayback";
 /**
  * The play loop. Loads a campaign's live state, and runs a turn: the player's
@@ -76,6 +78,8 @@ import {
   directionName,
   neighboursOf,
   getPlace,
+  placeFamiliarity,
+  type PlaceState,
 } from "@/engine";
 
 import {
@@ -225,6 +229,8 @@ export type PlayBundle = {
   cyberware: CampaignCyberware[];
   /** The fight in progress, if the GM has started one. */
   encounter: LiveEncounter | null;
+  /** Everything the campaign knows about the ground, keyed by place. */
+  places: Record<string, PlaceState>;
   /**
    * The fee agreed when this job was taken, when the player argued it up from
    * the printed reward. Null on a job nobody negotiated.
@@ -267,8 +273,12 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
 
   const events = await listCampaignEvents(campaignId);
   const encounter = await loadLiveEncounter(campaignId);
+  // What the character has already learned about the ground, so a job at a
+  // building they have cased before is not introduced from scratch.
+  const places = await loadPlaceStates(campaignId);
   return {
     campaign: full.campaign,
+    places,
     vitals: full.vitals,
     character,
     mission,
@@ -388,9 +398,24 @@ async function narrate(
               const at = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
               const blurb = at?.placeKey ? getPlace(at.placeKey)?.blurb?.trim() : undefined;
               const written = dossierForPrompt(at?.placeKey, jobDistrict.key);
+              // A job at a building the character has cased before should not
+              // be introduced to them as though they had never seen it.
+              const read = at?.placeKey
+                ? placeFamiliarity(at.placeKey, bundle.places[at.placeKey], bundle.campaign.day)
+                : null;
               return {
                 ...(blurb ? { blurb } : {}),
                 ...(written ? { dossier: written.text } : {}),
+                ...(read
+                  ? {
+                      familiarity: {
+                        visits: read.visits,
+                        standing: read.standing,
+                        since: sinceWords(read.daysSince),
+                        known: read.known,
+                      },
+                    }
+                  : {}),
               };
             })(),
             gangs: jobDistrict.gangs,
