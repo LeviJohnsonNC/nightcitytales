@@ -1,7 +1,19 @@
 /**
- * The Night City map. A pan/zoom view of the stitched atlas map with a pulsing
- * marker for where the character is standing and dimmer markers for districts
- * they have been to. Tapping a marker opens that district's dossier.
+ * The Night City map. A pan/zoom view of the city with a marker for where the
+ * character is standing and a pin on every district. Hovering a pin names the
+ * district; tapping one opens its dossier.
+ *
+ * THE ARTWORK IS LOUDER THAN THE UI ON IT. The neon map is saturated cyan,
+ * magenta and purple, and every hue in the palette is already somewhere on it:
+ * primary magenta is the nebula, ring cyan is the water, amber collides with
+ * the highways, white is the street network, red is the district borders. A
+ * marker therefore cannot win on colour, however bright it is — the accent
+ * purple it used to be was invisible against a purple city.
+ *
+ * So two things do the work instead. The picture is muted a step, and the
+ * markers separate by STRUCTURE: a dark knockout ring around a light core,
+ * which reads against anything underneath it, plus a silhouette that is not
+ * another dot on a map full of dots.
  *
  * Presentation only: every coordinate, name and fact comes from the engine's
  * geography module.
@@ -32,6 +44,16 @@ const MAX_ZOOM = 4;
 
 /** How far a pointer must travel before the gesture stops being a tap. */
 const PAN_THRESHOLD_PX = 4;
+
+/**
+ * How far the artwork is pulled back before anything is drawn on it.
+ *
+ * The map is a bright thing to put an interface on top of, so it is desaturated
+ * and darkened a step first. Applied to the IMAGE only and never to the layer
+ * the markers live in — muting them together would dim the pins along with the
+ * city and undo the point of it.
+ */
+const MAP_MUTE = "saturate(0.8) brightness(0.9)";
 
 export function MapModal({
   open,
@@ -263,6 +285,7 @@ export function MapModal({
                 alt="Map of Night City from the Night City Atlas"
                 draggable={false}
                 onLoad={centreOnMe}
+                style={{ filter: MAP_MUTE }}
                 className="pointer-events-none absolute inset-0 h-full w-full object-fill"
               />
 
@@ -298,22 +321,44 @@ export function MapModal({
                         : `${district.name} district`
                     }
                     data-here={isHere ? "true" : undefined}
-                    className="absolute -translate-x-1/2 -translate-y-1/2"
+                    className="group absolute -translate-x-1/2 -translate-y-1/2 focus:outline-none hover:z-20 focus-visible:z-20"
                     style={placeOnMapStyle(point.x, point.y)}
                   >
                     <span className="relative flex h-4 w-4 items-center justify-center">
                       {isHere ? (
-                        <span className="absolute h-6 w-6 animate-ping rounded-full bg-accent/60" />
-                      ) : null}
-                      <span
-                        className={
-                          isHere
-                            ? "h-3.5 w-3.5 rounded-full border-2 border-background bg-accent shadow-[0_0_12px_hsl(var(--accent))]"
-                            : isKnown
-                              ? "h-2.5 w-2.5 rounded-full border border-background bg-ember"
-                              : "h-2 w-2 rounded-full border border-background/70 bg-foreground/40"
-                        }
-                      />
+                        <>
+                          {/* A reticle, not a dot. The ring is the background
+                              colour, so the marker carries its own separation
+                              from whatever the artwork puts behind it. */}
+                          <span className="absolute h-7 w-7 animate-ping rounded-full border border-accent/70" />
+                          <span className="absolute h-4 w-4 rounded-full border-[3px] border-background" />
+                          <span className="absolute h-4 w-4 rounded-full border-2 border-accent" />
+                          <span className="absolute h-1.5 w-1.5 rounded-full bg-foreground shadow-[0_0_6px_hsl(var(--background))]" />
+                          {[
+                            "left-1/2 top-0 h-1.5 w-px -translate-x-1/2 -translate-y-full",
+                            "left-1/2 bottom-0 h-1.5 w-px -translate-x-1/2 translate-y-full",
+                            "top-1/2 left-0 w-1.5 h-px -translate-y-1/2 -translate-x-full",
+                            "top-1/2 right-0 w-1.5 h-px -translate-y-1/2 translate-x-full",
+                          ].map((tick) => (
+                            <span key={tick} className={`absolute bg-foreground/90 ${tick}`} />
+                          ))}
+                        </>
+                      ) : (
+                        <span
+                          className={
+                            isKnown
+                              ? "h-2.5 w-2.5 rounded-full border border-background bg-ember shadow-[0_0_0_1px_hsl(var(--background))]"
+                              : "h-2.5 w-2.5 rounded-full border-2 border-foreground/80 bg-background/80 shadow-[0_0_0_1px_hsl(var(--background))]"
+                          }
+                        />
+                      )}
+                      {/* The district's name, on hover and on focus. A chip
+                          rather than a tooltip: this sits inside a container
+                          that pans and zooms, and a portalled tooltip drifts
+                          away from its pin the moment the map moves. */}
+                      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 hidden -translate-x-1/2 whitespace-nowrap border border-hairline bg-background/95 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-foreground group-hover:block group-focus-visible:block">
+                        {district.name}
+                      </span>
                       {signal ? (
                         <span className="pointer-events-none absolute bottom-full left-1/2 mb-1 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap border border-ember/60 bg-background/95 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-foreground">
                           <span aria-hidden>{signal.icon}</span>

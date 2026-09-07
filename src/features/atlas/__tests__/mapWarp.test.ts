@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { DISTRICTS, LANDMARKS, MAP_IMAGE } from "@/engine";
@@ -124,5 +125,34 @@ describe("placing a coordinate on the picture", () => {
     const style = placeOnMapStyle(50, 50);
     expect(style.left).toMatch(/^[\d.]+%$/);
     expect(style.top).toMatch(/^[\d.]+%$/);
+  });
+});
+
+describe("the markers on the picture", () => {
+  it("mutes the picture and nothing else", async () => {
+    // The mute belongs to the image. Applying it to the layer the markers live
+    // in would dim the pins along with the city, which is the opposite of what
+    // it is for — the point of pulling the artwork back is to let the interface
+    // sit above it.
+    const source = await readFile(join(process.cwd(), "src/features/atlas/MapModal.tsx"), "utf8");
+    const mute = source.match(/const MAP_MUTE = "([^"]+)"/);
+    expect(mute, "MAP_MUTE is gone; the map is unmuted again").not.toBeNull();
+    expect(mute![1]).toContain("saturate");
+    // Applied exactly once, on the <img>.
+    expect(source.match(/filter: MAP_MUTE/g) ?? []).toHaveLength(1);
+    const imgAt = source.indexOf("<img");
+    const filterAt = source.indexOf("filter: MAP_MUTE");
+    const nextTagAfterImg = source.indexOf("/>", imgAt);
+    expect(filterAt, "the mute is not on the image").toBeGreaterThan(imgAt);
+    expect(filterAt, "the mute is not on the image").toBeLessThan(nextTagAfterImg);
+  });
+
+  it("names every district it draws a pin for", () => {
+    // The pins are the only way into a district's dossier, so a pin without an
+    // accessible name is a district a screen reader cannot reach.
+    for (const district of DISTRICTS) {
+      expect(district.name.length, district.key).toBeGreaterThan(2);
+    }
+    expect(DISTRICTS).toHaveLength(24);
   });
 });
