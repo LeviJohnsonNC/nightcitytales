@@ -1924,3 +1924,30 @@ export function placeArtwork(entry: PlaceDossierEntry): PlaceArtwork | undefined
     srcSet: `${base}-${PLACE_IMAGE_WIDTHS.small}.webp ${PLACE_IMAGE_WIDTHS.small}w, ${base}.webp ${PLACE_IMAGE_WIDTHS.large}w`,
   };
 }
+
+/**
+ * What is written about where the character is standing, for the narrator.
+ *
+ * The dossiers were built to be READ — this file's header says the engine never
+ * imports them — and that boundary turned out to be the reason a visit to
+ * Mister Rice Guy produced a greasy noodle counter with a human line cook. The
+ * canon is an ownerless automated conveyor-belt sushi place with colour-coded
+ * price tiers and a virtual mascot, and the model had never been told any of it.
+ * From `restaurant, food, crowd` in a poor coastal district, a noodle counter is
+ * a reasonable invention. It is simply not this place.
+ *
+ * The smallest place the character is actually in, because that is the room
+ * they are standing in: the venue when they are at one, the district when they
+ * are not. One dossier a turn, never the whole city.
+ */
+export function dossierForPrompt(
+  placeKey: string | null | undefined,
+  districtKey: string | null | undefined,
+): { name: string; text: string } | undefined {
+  for (const key of [placeKey, districtKey]) {
+    if (!key) continue;
+    const entry = placeDossier(key);
+    if (entry) return { name: key, text: entry.text };
+  }
+  return undefined;
+}

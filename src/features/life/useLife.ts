@@ -97,6 +97,7 @@ import {
   worstArmor,
   type DowntimeBundle,
 } from "@/features/downtime/downtimeOps";
+import { dossierForPrompt } from "@/features/atlas/placeDossiers";
 import { renderLifeUserPrompt, type LifeContext, type LifeWireOffer } from "./lifeContext";
 import { lifeTurnFn } from "./lifeTurn.server";
 import type { LifeActionCard, LifeResponse } from "./lifeResponse";
@@ -152,6 +153,7 @@ import {
   whoIsAt,
   type PlaceState,
   getDistrict,
+  getPlace,
   isCombatZone,
   resolvePosition,
   reachableDestinations,
@@ -414,6 +416,12 @@ function knownPlacesOf(campaign: Campaign): string[] {
 }
 
 /** The context slice the Life model reasons over. Deterministic and small. */
+/** The atlas's own line about a venue, when it is standing in one. */
+function placeBlurb(placeKey: string): { blurb?: string } {
+  const blurb = getPlace(placeKey)?.blurb?.trim();
+  return blurb ? { blurb } : {};
+}
+
 function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
   const summary = characterSummary(bundle.character, bundle.vitals, bundle.inventory);
   const capability = buildCapabilitySnapshot({
@@ -449,6 +457,16 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
                 character: `${WEALTH_WORDS[profile.wealth]}, ${CROWD_WORDS[profile.crowd]}`,
               }
             : {}),
+          // What the atlas prints about this exact address, and what has been
+          // written about it. Without these the narrator knows the venue's name
+          // and its tags and nothing else, and invents the rest from the
+          // district — which is how a visit to an automated sushi place with a
+          // virtual mascot produced a griddle counter with a human line cook.
+          ...(position?.placeKey ? placeBlurb(position.placeKey) : {}),
+          ...(() => {
+            const written = dossierForPrompt(position?.placeKey, positionDistrict.key);
+            return written ? { dossier: written.text } : {};
+          })(),
           // Presence, not a summons. Only ever asked about a venue: a district
           // is not somewhere you run into somebody.
           ...(position?.placeKey
