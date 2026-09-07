@@ -164,3 +164,73 @@ export function describeFamiliarity(intel: PlaceIntel): string | null {
     ? `You have been to ${intel.placeName} once.`
     : `You have been to ${intel.placeName} ${intel.visits} times.`;
 }
+
+// ---------------------------------------------------------------------------
+// How well they know it, for the narrator.
+// ---------------------------------------------------------------------------
+
+/**
+ * How a place should be described, given how often the character has been.
+ *
+ * Not a number for the model to restate. The bands exist because the SAME place
+ * needs writing three different ways: somewhere new has to be established,
+ * somewhere familiar should not be established again, and somewhere they
+ * practically live is furniture they would not look at twice.
+ *
+ * Before this existed the narrator was told nothing at all, so every arrival
+ * read as a first arrival — the character who lives at Eagle Rock Stadium had
+ * their own front door introduced to them every night. Handing the narrator the
+ * written canon made that worse rather than better: with a fixed body of facts
+ * to reach for, it would recite the same ones every visit.
+ */
+export type PlaceStanding = "first" | "returning" | "known";
+
+export type PlaceFamiliarity = {
+  placeKey: string;
+  visits: number;
+  standing: PlaceStanding;
+  /** Days since they were last here. Null on a first visit. */
+  daysSince: number | null;
+  /** The rungs their visits have earned, same as placeIntel. */
+  known: string[];
+};
+
+/**
+ * The bands, read off the intel ladder rather than invented beside it.
+ *
+ * `known` is the ladder's own top rung — the point at which the engine already
+ * considers somebody to know a place properly, and the number newCampaign uses
+ * to say a character knows the building they live in.
+ */
+const KNOWS_IT_WELL: number = INTEL_LADDER[INTEL_LADDER.length - 1]!.visits;
+
+export function standingFor(visits: number): PlaceStanding {
+  if (visits >= KNOWS_IT_WELL) return "known";
+  return visits <= 1 ? "first" : "returning";
+}
+
+/**
+ * What the narrator should know about how familiar this place is.
+ *
+ * Null for somewhere the atlas does not have. A place with no stored state is
+ * somewhere they have never been, which is a real answer rather than a gap.
+ */
+export function placeFamiliarity(
+  placeKey: string,
+  state: PlaceState | undefined,
+  today: number,
+): PlaceFamiliarity | null {
+  const place = getPlace(placeKey);
+  if (!place) return null;
+  const visits = state?.visits ?? 0;
+  const last = state?.lastVisitDay ?? null;
+  return {
+    placeKey,
+    visits,
+    standing: standingFor(visits),
+    // The visit being made now is already recorded by the time a turn renders,
+    // so "today" is the common case and reads as no gap at all.
+    daysSince: last === null ? null : Math.max(0, today - last),
+    known: placeIntel(placeKey, state)?.known ?? [],
+  };
+}

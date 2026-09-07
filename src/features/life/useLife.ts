@@ -150,6 +150,7 @@ import {
   describePosition,
   districtProfile,
   placeActions,
+  placeFamiliarity,
   whoIsAt,
   type PlaceState,
   getDistrict,
@@ -416,6 +417,48 @@ function knownPlacesOf(campaign: Campaign): string[] {
 }
 
 /** The context slice the Life model reasons over. Deterministic and small. */
+/** The shape both prompt builders take, without the optionality. */
+type PlaceFamiliaritySlice = {
+  visits: number;
+  standing: "first" | "returning" | "known";
+  since: string;
+  known: string[];
+};
+
+/**
+ * How long it has been, in words, so no renderer does arithmetic on days.
+ *
+ * A visit is recorded on arrival, so the turn that describes a place almost
+ * always sees a gap of nothing. That reads as no gap at all rather than as
+ * "zero days ago".
+ */
+export function sinceWords(daysSince: number | null): string {
+  if (daysSince === null || daysSince <= 0) return "";
+  if (daysSince === 1) return ", last here yesterday";
+  if (daysSince < 14) return `, last here ${daysSince} days ago`;
+  if (daysSince < 60) return ", not here in weeks";
+  return ", not here in months";
+}
+
+/** What the narrator should know about how familiar the ground under them is. */
+function familiarityFor(
+  placeKey: string | null | undefined,
+  places: Record<string, PlaceState>,
+  day: number,
+): { familiarity: PlaceFamiliaritySlice } | Record<string, never> {
+  if (!placeKey) return {};
+  const read = placeFamiliarity(placeKey, places[placeKey], day);
+  if (!read) return {};
+  return {
+    familiarity: {
+      visits: read.visits,
+      standing: read.standing,
+      since: sinceWords(read.daysSince),
+      known: read.known,
+    },
+  };
+}
+
 /** The atlas's own line about a venue, when it is standing in one. */
 function placeBlurb(placeKey: string): { blurb?: string } {
   const blurb = getPlace(placeKey)?.blurb?.trim();
@@ -467,6 +510,10 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
             const written = dossierForPrompt(position?.placeKey, positionDistrict.key);
             return written ? { dossier: written.text } : {};
           })(),
+          // How often they have stood here. The engine has counted every
+          // arrival since the campaign began and nothing has ever read it back,
+          // so every visit was written as a first visit.
+          ...familiarityFor(position?.placeKey, bundle.places, bundle.clock.day),
           // Presence, not a summons. Only ever asked about a venue: a district
           // is not somewhere you run into somebody.
           ...(position?.placeKey

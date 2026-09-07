@@ -67,6 +67,18 @@ export type GmContextInput = {
     blurb?: string;
     /** What has been written about where the character is standing. */
     dossier?: string;
+    /**
+     * How often the character has been here, and what to do about it. The same
+     * place is written three different ways depending on this.
+     */
+    familiarity?: {
+      visits: number;
+      standing: "first" | "returning" | "known";
+      /** Pre-worded, so the renderer never does arithmetic on days. */
+      since: string;
+      known: string[];
+    };
+
     gangs: string[];
     combatZone: boolean;
     nearby: string[];
@@ -166,6 +178,37 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
     parts.push(line("District", `${p.district} (${p.area})`));
     if (p.security) parts.push(line("Security", p.security));
     if (p.blurb) parts.push(line("What it is", p.blurb));
+    if (p.familiarity) {
+      const f = p.familiarity;
+      parts.push("", "-- HOW WELL THEY KNOW THIS PLACE --");
+      if (f.standing === "first") {
+        parts.push(
+          "They have never been here before. Establish it: what it is, what it looks like, what " +
+            "is going on in it. This is the one visit that gets the full picture.",
+        );
+      } else if (f.standing === "returning") {
+        parts.push(
+          `They have been here ${f.visits} times${f.since}. DO NOT ESTABLISH IT AGAIN. They know ` +
+            "the layout, the smell and the staff, and telling them any of it a second time reads " +
+            "as the world resetting between visits. Write what is different TONIGHT: who is in, " +
+            "what has changed, the hour, the weather, what is missing.",
+        );
+      } else {
+        parts.push(
+          `They know this place cold — ${f.visits} visits${f.since}. It is furniture to them. ` +
+            "Spend almost no words on the room itself. Open on the one thing that is not as they " +
+            "left it, or on the person who is here, and get out of the way.",
+        );
+      }
+      if (f.known.length) {
+        parts.push("What their own time here has taught them:");
+        for (const fact of f.known) parts.push(`  - ${fact}`);
+        parts.push(
+          "Those are the character's, not yours to announce. Let them act on what they already " +
+            "know rather than being told it again.",
+        );
+      }
+    }
     if (p.dossier) {
       parts.push(
         "",
@@ -179,6 +222,8 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
           "narrate any of that at the player, do not quote a sentence of it, and do not invent " +
           "the people it speculates about. Describe what the character sees NOW, at this hour, " +
           "in a few sentences of your own.",
+        "These facts stay true on every visit. They do not get DESCRIBED on every visit: how " +
+          "much of this the player is told is set by how well they know the place, above.",
       );
     }
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
