@@ -1,4 +1,5 @@
 import { publishCombatFrames } from "./combatPlayback";
+import { dossierForPrompt } from "@/features/atlas/placeDossiers";
 import { useCombatPlayback } from "./useCombatPlayback";
 /**
  * The play loop. Loads a campaign's live state, and runs a turn: the player's
@@ -74,6 +75,7 @@ import {
   resolvePosition,
   directionName,
   neighboursOf,
+  getPlace,
 } from "@/engine";
 
 import {
@@ -380,6 +382,17 @@ async function narrate(
             district: jobDistrict.name,
             area: areaOf(jobDistrict.key)?.name ?? "Night City",
             security: jobDistrict.security,
+            // The same canon the Life screen gets. A job at a named building
+            // should describe that building, not a plausible one.
+            ...(() => {
+              const at = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+              const blurb = at?.placeKey ? getPlace(at.placeKey)?.blurb?.trim() : undefined;
+              const written = dossierForPrompt(at?.placeKey, jobDistrict.key);
+              return {
+                ...(blurb ? { blurb } : {}),
+                ...(written ? { dossier: written.text } : {}),
+              };
+            })(),
             gangs: jobDistrict.gangs,
             combatZone: isCombatZone(jobDistrict.key),
             nearby: jobDistrict.locations.slice(0, 8).map((l) => l.name),

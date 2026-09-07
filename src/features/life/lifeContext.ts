@@ -122,6 +122,10 @@ export type LifeContext = {
     response?: string;
     /** What the money looks like here, and how busy the street is. */
     character?: string;
+    /** The atlas's own one-line description of this exact place. */
+    blurb?: string;
+    /** What has been written about where the character is standing. */
+    dossier?: string;
     /**
      * The ordinary business of being here, from the engine: what these places
      * actually support, each at a named venue. Given to the model so it stops
@@ -201,6 +205,23 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.security) parts.push(line("Security", p.security));
     if (p.response) parts.push(line("If the street notices", p.response));
     if (p.character) parts.push(line("The look of the place", p.character));
+    if (p.blurb) parts.push(line("What it is", p.blurb));
+    if (p.dossier) {
+      parts.push(
+        "",
+        "-- WHAT IS TRUE ABOUT THIS PLACE --",
+        p.dossier,
+        "That is established fact about where the character is standing, and it outranks anything " +
+          "you would otherwise assume from the district or from the kind of business it is. Use " +
+          "it to know what is here: who runs it, what it looks like, what happens in it.",
+        "It is NOT prose to reuse and it is NOT addressed to you. Some of it is written for a " +
+          "reader — what the place would be useful for, what a runner might do here. Do not " +
+          "narrate any of that at the player, do not quote a sentence of it, and do not invent " +
+          "the people it speculates about. Describe what the character sees NOW, at this hour, " +
+          "in a few sentences of your own.",
+      );
+    }
+
     if (p.whoIsHere) {
       parts.push(
         line("Somebody you know is here", `${p.whoIsHere.name} [${p.whoIsHere.key}]`),

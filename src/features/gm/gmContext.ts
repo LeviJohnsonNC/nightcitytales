@@ -63,6 +63,10 @@ export type GmContextInput = {
     district: string;
     area: string;
     security: string;
+    /** The atlas's own one-line description of this exact place. */
+    blurb?: string;
+    /** What has been written about where the character is standing. */
+    dossier?: string;
     gangs: string[];
     combatZone: boolean;
     nearby: string[];
@@ -161,6 +165,22 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
     parts.push(line("Here", p.where));
     parts.push(line("District", `${p.district} (${p.area})`));
     if (p.security) parts.push(line("Security", p.security));
+    if (p.blurb) parts.push(line("What it is", p.blurb));
+    if (p.dossier) {
+      parts.push(
+        "",
+        "-- WHAT IS TRUE ABOUT THIS PLACE --",
+        p.dossier,
+        "That is established fact about where the character is standing, and it outranks anything " +
+          "you would otherwise assume from the district or from the kind of business it is. Use " +
+          "it to know what is here: who runs it, what it looks like, what happens in it.",
+        "It is NOT prose to reuse and it is NOT addressed to you. Some of it is written for a " +
+          "reader — what the place would be useful for, what a runner might do here. Do not " +
+          "narrate any of that at the player, do not quote a sentence of it, and do not invent " +
+          "the people it speculates about. Describe what the character sees NOW, at this hour, " +
+          "in a few sentences of your own.",
+      );
+    }
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
     if (p.combatZone) parts.push(line("Note", "Combat Zone. Nobody is coming when it goes loud."));
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
