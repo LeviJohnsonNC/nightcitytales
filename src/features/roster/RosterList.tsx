@@ -91,7 +91,7 @@ export function RosterList({ userId: _userId }: { userId: string }) {
 
   // One character is selected by default: the one most recently returned to.
   useEffect(() => {
-    if (!selectedId && data && data.length > 0) setSelectedId(data[0].id);
+    if (!selectedId && data?.[0]) setSelectedId(data[0].id);
   }, [data, selectedId]);
 
   const start = useMutation({
