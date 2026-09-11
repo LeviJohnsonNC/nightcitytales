@@ -34,7 +34,11 @@ export type RosterStats = {
   humanity_max: number | null;
 };
 
-export type RosterEntry = Character & { stats: RosterStats | null };
+export type RosterEntry = Character & {
+  stats: RosterStats | null;
+  /** True when this character already has a live playthrough to continue. */
+  hasActiveCampaign: boolean;
+};
 
 /** The roster grid read: every saved character, most recently updated first. */
 export async function listRoster(): Promise<RosterEntry[]> {
@@ -43,11 +47,16 @@ export async function listRoster(): Promise<RosterEntry[]> {
     .select("*, character_stats(hp_current,hp_max,humanity_current,humanity_max)")
     .order("updated_at", { ascending: false });
   const rows = unwrap(res) ?? [];
+  const active = unwrap(
+    await backendClient.from("campaigns").select("character_id").eq("status", "active"),
+  );
+  const live = new Set((active ?? []).map((row) => row.character_id));
   return (
     rows as unknown as (Character & { character_stats: RosterStats | RosterStats[] | null })[]
   ).map(({ character_stats, ...character }) => ({
     ...character,
     stats: Array.isArray(character_stats) ? (character_stats[0] ?? null) : character_stats,
+    hasActiveCampaign: live.has(character.id),
   }));
 }
 
