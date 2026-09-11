@@ -34,7 +34,7 @@ function Rail({
           {known ? `${current} / ${max}` : "—"}
         </span>
       </div>
-      <div className="mt-1.5 h-[3px] w-full overflow-hidden bg-white/8">
+      <div className="mt-1.5 h-[3px] w-full overflow-hidden bg-hairline/60">
         <div
           className={cn(
             "h-full transition-[width] duration-700 ease-out motion-reduce:transition-none",
