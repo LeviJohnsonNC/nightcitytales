@@ -17,10 +17,9 @@ export function CharacterStatus({
   facts?: (string | null | undefined)[];
   className?: string;
 }) {
-  const items = [
-    live ? "Adventure in progress" : "No active job",
-    ...(facts ?? []),
-  ].filter((f): f is string => Boolean(f));
+  const items = [live ? "Adventure in progress" : "No active job", ...(facts ?? [])].filter(
+    (f): f is string => Boolean(f),
+  );
 
   return (
     <p

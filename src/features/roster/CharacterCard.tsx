@@ -102,7 +102,6 @@ export function CharacterCard({
         />
       </div>
 
-
       <div className="relative -mt-8 flex flex-1 flex-col gap-4 px-5 pb-5">
         <header className="min-w-0">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-ember">{roleName}</p>
