@@ -60,6 +60,15 @@ export function CharacterCard({
     <article
       onMouseEnter={onSelect}
       onFocusCapture={onSelect}
+      onClick={onSelect}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-label={`${entry.name}, ${roleName}`}
       className={cn(
         "group relative flex flex-col overflow-hidden text-left",
         "animate-[fade-in_.5s_both] motion-reduce:animate-none",
