@@ -18,12 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FileText, MoreHorizontal } from "lucide-react";
 import { CREATION_METHODS } from "@/engine";
 import { ArtSlot } from "@/features/chargen/ArtSlot";
@@ -244,7 +239,12 @@ function CharacterCard({
         <TooltipProvider delayDuration={200}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button asChild variant="outline" size="icon" aria-label={`Open ${entry.name}'s sheet`}>
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                aria-label={`Open ${entry.name}'s sheet`}
+              >
                 <Link to="/character/$id" params={{ id: entry.id }}>
                   <FileText className="h-4 w-4" />
                 </Link>
