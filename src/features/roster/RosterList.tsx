@@ -12,6 +12,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { FileText, MoreHorizontal } from "lucide-react";
 import { CREATION_METHODS } from "@/engine";
 import { ArtSlot } from "@/features/chargen/ArtSlot";
 import { portraitArt, portraitById } from "@/features/chargen/art";
