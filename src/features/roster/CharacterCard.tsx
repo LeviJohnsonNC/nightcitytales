@@ -70,7 +70,7 @@ export function CharacterCard({
       }}
       aria-label={`${entry.name}, ${roleName}`}
       className={cn(
-        "group relative flex flex-col overflow-hidden text-left",
+        "group relative flex flex-col overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         "animate-[fade-in_.5s_both] motion-reduce:animate-none",
         "border transition-[transform,border-color,box-shadow,background-color] duration-200 ease-out motion-reduce:transition-none",
         "bg-[linear-gradient(180deg,color-mix(in_oklab,var(--color-surface)_78%,transparent),color-mix(in_oklab,var(--color-ground)_88%,transparent))] backdrop-blur-md",
