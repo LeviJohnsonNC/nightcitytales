@@ -321,14 +321,6 @@ export function RosterList({ userId: _userId }: { userId: string }) {
         <EmptyRoster />
       ) : (
         <>
-          <div className="flex items-center justify-between">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              {data.length} saved · most recently updated first
-            </p>
-            <Button variant="outline" size="sm" onClick={() => navigate({ to: "/create" })}>
-              New character
-            </Button>
-          </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {data.map((entry) => (
               <CharacterCard
