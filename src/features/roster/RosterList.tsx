@@ -217,24 +217,45 @@ function CharacterCard({
         </div>
       </div>
 
-      {/* Primary action slot — "Start Adventure" lands here once play exists. */}
-      <div className="mt-auto border-t border-border p-3">
-        <Button className="w-full" onClick={onStart} disabled={starting}>
-          {starting ? "Starting…" : "Start Adventure"}
+      <div className="mt-auto flex items-center gap-2 border-t border-border p-3">
+        <Button className="flex-1" onClick={onStart} disabled={starting}>
+          {starting
+            ? entry.hasActiveCampaign
+              ? "Continuing…"
+              : "Starting…"
+            : entry.hasActiveCampaign
+              ? "Continue Adventure"
+              : "Start Adventure"}
         </Button>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm" className="flex-1">
-            <Link to="/character/$id" params={{ id: entry.id }}>
-              Open sheet
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" onClick={onReset} disabled={resetting}>
-            {resetting ? "Resetting…" : "Reset adventure"}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onDelete}>
-            Delete
-          </Button>
-        </div>
+
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild variant="outline" size="icon" aria-label={`Open ${entry.name}'s sheet`}>
+                <Link to="/character/$id" params={{ id: entry.id }}>
+                  <FileText className="h-4 w-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Open sheet</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label={`More actions for ${entry.name}`}>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={onReset} disabled={resetting}>
+              {resetting ? "Resetting…" : "Reset adventure"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onDelete} className="text-destructive">
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </article>
   );
