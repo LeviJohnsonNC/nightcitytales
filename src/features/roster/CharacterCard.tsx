@@ -83,12 +83,7 @@ export function CharacterCard({
         )}
       />
 
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-label={`Select ${entry.name}`}
-        className="relative block w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
+      <div className="relative w-full">
         <CharacterPortrait
           name={entry.name}
           handle={entry.handle}
@@ -96,7 +91,8 @@ export function CharacterCard({
           portraitPath={entry.portrait_path}
           emphasised={selected}
         />
-      </button>
+      </div>
+
 
       <div className="relative -mt-8 flex flex-1 flex-col gap-4 px-5 pb-5">
         <header className="min-w-0">
