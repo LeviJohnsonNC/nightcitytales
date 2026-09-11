@@ -27,11 +27,11 @@ function RosterPage() {
     <div className="relative min-h-screen">
       <div
         aria-hidden
-        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${backdrop.url})` }}
       />
-      <div aria-hidden className="fixed inset-0 -z-10 bg-background/80" />
-      <main className="mx-auto max-w-6xl space-y-6 px-6 py-12">
+      <div aria-hidden className="fixed inset-0 z-0 bg-background/80" />
+      <main className="relative z-10 mx-auto max-w-6xl space-y-6 px-6 py-12">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-bold tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
             Your Roster
