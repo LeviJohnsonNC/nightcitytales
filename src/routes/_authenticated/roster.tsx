@@ -1,5 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { RosterList } from "@/features/roster/RosterList";
+import backdrop from "@/assets/roster-backdrop.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/roster")({
   head: () => ({
