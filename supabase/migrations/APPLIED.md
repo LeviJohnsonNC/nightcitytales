@@ -95,4 +95,3 @@ once it has actually been run.
 
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
-
