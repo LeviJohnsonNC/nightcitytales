@@ -404,8 +404,25 @@ seventeen bespoke ones.
   The shapes are shown on the check card before the die, because a choice the
   player cannot see is not a choice. No migration: it rides in
   `campaign_npcs.data` beside the rungs they have already given up.
-- Slice 4: Deduction, on `Truth.needs` — a conclusion whose prerequisites are
-  other discoveries. Only works once slices 1-3 have populated the graph.
+- ~~Slice 4: Deduction~~ — `Truth.needs` was declared empty in slice 1 on the
+  argument that retrofitting it would cost a migration; this is the slice that
+  fills it in. A conclusion is not a thing in a drawer: it is what the pieces
+  add up to, so it is UNREACHABLE rather than merely hard until the
+  prerequisites are found, and a brilliant roll is no substitute for the
+  legwork. Deduction is also the one Skill whose pool is not the room — it
+  works off the whole job, wherever the character is standing when it clicks.
+  Night at the Opera now has a two-step chain (the costume and the head make
+  Huntver into Ruthven; that plus the theatre being theatre makes the job a
+  set-up), and the generated archetypes' conclusions each stand on something.
+  A conclusion that also carries `revealedAt` still lands when the story
+  reaches the scene built to expose it: prerequisites gate working it out
+  early, never the plot. The narrator is told THAT there is something to work
+  out and the engine's DV — the one place this system volunteers that something
+  hidden exists, and a fair one, because the prerequisites were earned.
+  Two leaks closed on the way: a beat's check `note` reaches the model with the
+  brief, and the Opera's printed notes still said what searching would find;
+  and `isSearchSkill` only knew the city templates, all of which are
+  Perception, so every non-Perception beat truth slice 2 wrote was unrollable.
 - Slice 5: affordances for the new Skills, through the Stage 3 mechanism, on the
   same budget. They offer approaches, never conclusions: an affordance naming
   the insight has already given away what the roll was for.

@@ -73,7 +73,9 @@ visiting or by being a local), `truth.ts` (what is true here and not apparent
 from standing in it — for a location, and for the concealed half of a mission
 beat, which is held in `Beat.truths` rather than in the beat's `gmBrief`
 because the brief reaches the model and the player's character has not found it
-yet) and `haunts.ts` (where the
+yet; a truth may also `need` other truths, which is what Deduction runs on, and
+what makes a conclusion unreachable rather than merely hard until the pieces
+are in hand) and `haunts.ts` (where the
 cast are) are the house rules made of it. Their data lives beside the
 atlas in `places.gameplay.json`, `place-beats.json`, `place-actions.json`,
 `place-state.json`, `place-intel.json` and `place-truths.json`, each flagged

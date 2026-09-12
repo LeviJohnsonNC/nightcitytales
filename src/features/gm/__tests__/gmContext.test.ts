@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NIGHT_AT_THE_OPERA, getBeat } from "@/engine";
+import { NIGHT_AT_THE_OPERA, deductionOffer, getBeat, truthsInMission } from "@/engine";
 import { buildGmContext, renderGmUserPrompt, type GmCharacterSummary } from "../gmContext";
 
 const character: GmCharacterSummary = {
@@ -176,5 +176,68 @@ describe("what the narrator is told about a beat's hidden truths", () => {
       if (truth.fact === found) continue;
       expect(prompt).not.toContain(truth.fact);
     }
+  });
+});
+
+/**
+ * The one place the system volunteers that something hidden exists. It is
+ * principled: a conclusion's prerequisites are other discoveries, so an offer
+ * is the pay-off for legwork already done. It still must not say WHAT.
+ */
+describe("what the narrator is told about a conclusion on offer", () => {
+  const mission = NIGHT_AT_THE_OPERA;
+  const beat = getBeat(mission, "monster_hunt");
+  const conclusion = truthsInMission({ missionId: mission.id, beats: mission.beats }).find(
+    (truth) => truth.key.endsWith("::huntver_is_ruthven"),
+  )!;
+
+  const prompt = (deduction?: { dv: number; count: number }) =>
+    renderGmUserPrompt(
+      buildGmContext({
+        mission,
+        beat,
+        availableExits: beat.exits,
+        character,
+        objectives: [],
+        npcsPresent: [],
+        recentEvents: [],
+        ...(deduction ? { deduction } : {}),
+      }),
+      "I go over what we have",
+    );
+
+  it("says there is something to work out, and the engine's DV", () => {
+    const text = prompt(
+      deductionOffer(
+        truthsInMission({ missionId: mission.id, beats: mission.beats }),
+        conclusion.needs,
+      )!,
+    );
+    expect(text).toContain("THERE IS SOMETHING TO BE WORKED OUT");
+    expect(text).toContain(`Deduction check at DV ${conclusion.found.dv}`);
+    expect(text).toMatch(/you do not know what it is/i);
+    expect(text).toMatch(/must not guess at it, hint at it/i);
+  });
+
+  it("never says what the conclusion is", () => {
+    const text = prompt({ dv: conclusion.found.dv, count: 1 });
+    expect(text).not.toContain(conclusion.fact);
+
+    // Scoped to the offer itself — the heading and the paragraph under it.
+    // This beat's own brief and opposition list are allowed to name Ruthven,
+    // because by the time the crew are hunting him they know.
+    const lines = text.split("\n");
+    const at = lines.findIndex((l) => l.includes("THERE IS SOMETHING TO BE WORKED OUT"));
+    const offer = lines.slice(at, at + 2).join("\n");
+    expect(offer).toMatch(/Deduction check at DV/);
+    expect(offer).not.toMatch(/ruthven|huntver|the master/i);
+    // Nor how many there are: "two things to work out" is itself information.
+    expect(offer).not.toMatch(/\b(one|two|three|1|2|3) (thing|conclusion)/i);
+  });
+
+  it("says nothing at all when there is nothing to work out", () => {
+    // An empty heading would tell the player to go looking for a leap they
+    // have not earned the pieces for.
+    expect(prompt()).not.toContain("THERE IS SOMETHING TO BE WORKED OUT");
   });
 });

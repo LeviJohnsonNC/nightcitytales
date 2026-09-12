@@ -78,14 +78,18 @@ import {
   directionName,
   neighboursOf,
   getPlace,
+  DEDUCTION_SKILL,
+  deductionOffer,
   isSearchSkill,
   knownTruths,
   type SkillCheckResult,
   placeFamiliarity,
   searchWith,
+  searchesFor,
   truthsAt,
   truthsRevealedAt,
   truthsInBeat,
+  truthsInMission,
   type PlaceState,
 } from "@/engine";
 
@@ -457,18 +461,30 @@ async function narrate(
       : {}),
     mission: bundle.mission,
     beat: bundle.beat,
-    // Only what they have found. The rest of what this beat is holding is not
-    // in the prompt at all.
+    // Only what they have found. The rest of what the job is holding is not in
+    // the prompt at all.
+    //
+    // Across the whole job rather than this beat: a thing learned in the office
+    // is still known in the warehouse, and a conclusion drawn from it has to be
+    // narratable in the scene the character is standing in.
     ...(() => {
-      const found = knownTruths(
-        truthsInBeat({
-          missionId: bundle.mission.id,
-          beatId: bundle.beat.id,
-          truths: bundle.beat.truths,
-        }),
-        bundle.discoveredTruths,
-      ).map((truth) => truth.fact);
-      return found.length ? { discoveredBeatTruths: found } : {};
+      // Nothing to say while `campaign_truths` is unmigrated: with no record of
+      // what has been found, every truth reads as undiscovered and every
+      // conclusion as unreachable.
+      const discovered = bundle.truthsAvailable ? bundle.discoveredTruths : [];
+      const all = truthsInMission({
+        missionId: bundle.mission.id,
+        beats: bundle.mission.beats,
+      });
+      const found = knownTruths(all, discovered).map((truth) => truth.fact);
+      // There is something to be worked out and the pieces are in hand. The
+      // model is told THAT and the number, never what the conclusion is: the
+      // prerequisites were earned, so the offer is a pay-off rather than a hint.
+      const offer = deductionOffer(all, discovered);
+      return {
+        ...(found.length ? { discoveredBeatTruths: found } : {}),
+        ...(offer ? { deduction: offer } : {}),
+      };
     })(),
     availableExits: bundle.availableExits,
     // Where they are standing goes with the sheet, so the Skill list reports
@@ -1123,25 +1139,41 @@ async function revealBeatTruths(
  * scene built around a hidden thing answers before the building's generic tags
  * do. Null when this was not a search, when nothing is found and nothing was
  * there, or while `campaign_truths` is unmigrated.
+ *
+ * DEDUCTION IS NOT A SEARCH OF THE ROOM. Every other Skill here looks at what
+ * is in front of the character; a conclusion is worked out from everything they
+ * have gathered, wherever they happen to be standing when it clicks. So its
+ * pool is the whole job rather than this beat, and what gates it is not the
+ * difficulty but the prerequisites: the pieces have to be in hand.
  */
 async function applyJobSearch(
   bundle: PlayBundle,
   pending: PendingCheck,
   result: SkillCheckResult,
 ): Promise<string | null> {
-  if (!bundle.truthsAvailable || !isSearchSkill(pending.skillId)) return null;
+  if (!bundle.truthsAvailable) return null;
 
   const at = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+  const deducing = pending.skillId === DEDUCTION_SKILL;
   const candidates = [
-    ...(bundle.mission && bundle.beat
-      ? truthsInBeat({
-          missionId: bundle.mission.id,
-          beatId: bundle.beat.id,
-          truths: bundle.beat.truths,
-        })
+    ...(bundle.mission
+      ? deducing
+        ? truthsInMission({ missionId: bundle.mission.id, beats: bundle.mission.beats })
+        : bundle.beat
+          ? truthsInBeat({
+              missionId: bundle.mission.id,
+              beatId: bundle.beat.id,
+              truths: bundle.beat.truths,
+            })
+          : []
       : []),
     ...(at?.placeKey ? truthsAt(at.placeKey, bundle.places[at.placeKey]) : []),
   ];
+
+  // The guard that keeps a search outcome off a check that was not one: a
+  // successful Athletics roll over a fence must not come back with "there is
+  // nothing here to find".
+  if (!searchesFor(pending.skillId, candidates)) return null;
 
   const search = searchWith({
     truths: candidates,
@@ -1151,7 +1183,10 @@ async function applyJobSearch(
   });
 
   if (search.outcome === "nothing") {
-    if (!result.success) return null;
+    // Silence for a conclusion that is not available: saying "there was
+    // nothing to work out" tells the player there is nothing to chase, which
+    // may simply mean they have not found the pieces yet.
+    if (!result.success || deducing || !isSearchSkill(pending.skillId)) return null;
     return (
       "They searched properly and there is NOTHING here to find. Say so plainly rather than " +
       "inventing something small so the roll was not wasted — knowing a room is clean is worth " +
@@ -1159,10 +1194,12 @@ async function applyJobSearch(
     );
   }
   if (search.outcome === "missed") {
-    return (
-      "They did not find it. There IS something here and the search did not reach it — narrate " +
-      "the looking and the coming up empty, and do not hint at what was missed."
-    );
+    return deducing
+      ? "They turned it over and it did NOT come together. There is something to be worked out " +
+          "here and this was not the moment — narrate the thinking and the not-quite, and do not " +
+          "hint at what it was."
+      : "They did not find it. There IS something here and the search did not reach it — narrate " +
+          "the looking and the coming up empty, and do not hint at what was missed.";
   }
 
   const stored = await recordTruthDiscovery(bundle.campaign.id, {
@@ -1177,11 +1214,13 @@ async function applyJobSearch(
     summary: search.truth.fact,
     data: { truthKey: search.truth.key, beatId: bundle.beat?.id ?? null } as unknown as Json,
   });
-  return (
-    `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
-    "Narrate them finding that. Do not add a second discovery beside it and do not enlarge on " +
-    "what it means — working out what it means is the player's job."
-  );
+  return deducing
+    ? `They WORKED IT OUT, and this is the conclusion, exactly: ${search.truth.fact} ` +
+        "Narrate the character reaching that, off what they already knew. Do not add a second " +
+        "conclusion beside it, and do not carry it further than it goes."
+    : `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
+        "Narrate them finding that. Do not add a second discovery beside it and do not enlarge " +
+        "on what it means — working out what it means is the player's job.";
 }
 
 /**
