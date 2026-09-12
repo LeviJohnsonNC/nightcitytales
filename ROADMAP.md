@@ -451,6 +451,21 @@ Also done alongside the last slice:
   facts found here add up to, and it exists at a location only if its
   prerequisites do, so it can never turn up where its evidence could not.
 
+Two seams found by auditing the five slices afterwards, and fixed:
+
+- **A social read only ever happened on an OPPOSED check.** The model picks
+  freely between `skill_check` and `opposed_check`, and nothing told it which
+  to use on a person — so "Persuasion, DV 13, on the bartender" read nobody and
+  cost nobody anything, and Human Perception, whose whole point is that
+  watching somebody needs no contest, was reachable only through a contest. A
+  DV check can now name who it is aimed at, both loops apply the read either
+  way, and both prompts ask for the name.
+- **A picked card sent prose, not a check.** The approach cards printed a Skill
+  and a number and then sent plain text, which the model could answer with a
+  paragraph about looking around — rolling nothing. `cardInput` asks for the
+  check the card promised; the model's own tagged cards were losing their Skill
+  the same way and are fixed with it.
+
 Success: a player can be told "you find nothing here" and believe it, because
 the alternative was never available to the narrator.
 

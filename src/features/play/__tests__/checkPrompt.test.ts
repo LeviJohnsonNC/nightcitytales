@@ -445,3 +445,72 @@ describe("wound penalties on checks", () => {
     expect(pending?.dv).toBeNull();
   });
 });
+
+/**
+ * A check aimed at a person, settled against a DV.
+ *
+ * The social model could only ever read somebody on an OPPOSED check, and the
+ * model picks freely between the two shapes — so "Persuasion, DV 13, on the
+ * bartender" read nobody and cost nobody anything, and Human Perception, whose
+ * whole point is that watching somebody needs no contest, was reachable only
+ * through a contest.
+ */
+describe("a DV check that names who it is aimed at", () => {
+  /** Human Perception is an EMP skill, which the talker fixture does not carry. */
+  const watcher = {
+    character: { name: "Vane", role: "Fixer" },
+    stats: { emp: 6, cool: 6 },
+    skills: [
+      { skill_id: "human_perception", level: 4 },
+      { skill_id: "persuasion", level: 4 },
+    ],
+  } as unknown as FullCharacter;
+
+  const aimed = (over: Record<string, unknown> = {}) =>
+    event({
+      id: "aimed",
+      type: "check_prompt",
+      data: {
+        skillId: "human_perception",
+        dv: 15,
+        intent: "watch her hands while she talks",
+        npcKey: "wakako_okada",
+        npcName: "Wakako Okada",
+        ...over,
+      } as never,
+    });
+
+  it("carries the target through, with the DV intact", () => {
+    const pending = pendingCheckFrom([aimed()], watcher);
+    expect(pending?.dv).toBe(15);
+    expect(pending?.opposition).toBeNull();
+    expect(pending?.target).toEqual({ npcKey: "wakako_okada", npcName: "Wakako Okada" });
+  });
+
+  it("offers what the approach reaches, the same as an opposed one", () => {
+    const pending = pendingCheckFrom([aimed()], watcher);
+    expect(pending?.reads).toMatchObject({ shape: "observe", costsTrust: false });
+  });
+
+  it("names nobody for a check against the world", () => {
+    const pending = pendingCheckFrom(
+      [
+        event({
+          id: "w",
+          type: "check_prompt",
+          data: { skillId: "human_perception", dv: 13 } as never,
+        }),
+      ],
+      watcher,
+    );
+    expect(pending?.target).toBeNull();
+    expect(pending?.reads).toBeNull();
+  });
+
+  it("needs both halves: a key nobody can name, or a name nothing can store, is neither", () => {
+    for (const half of [{ npcName: undefined }, { npcKey: undefined }]) {
+      const pending = pendingCheckFrom([aimed(half)], watcher);
+      expect(pending?.target).toBeNull();
+    }
+  });
+});

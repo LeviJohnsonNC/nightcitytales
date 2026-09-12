@@ -956,7 +956,16 @@ async function applyResponse(
           campaign_id: campaignId,
           type: "check_prompt",
           summary: `${skillName} check — DV ${dv}${band ? ` (${band})` : ""}`,
-          data: { skillId, skillName, dv, intent: action.intent } as unknown as Json,
+          data: {
+            skillId,
+            skillName,
+            dv,
+            intent: action.intent,
+            // Who it is aimed at, when it is aimed at a person. A Social check
+            // against a DV used to carry nobody, so it could not read anybody.
+            ...(action.npcKey ? { npcKey: action.npcKey } : {}),
+            ...(action.npcName ? { npcName: action.npcName } : {}),
+          } as unknown as Json,
         });
       } else {
         const opposingSkillId = resolveSkillId(action.opposingSkillId);
@@ -1441,12 +1450,30 @@ async function commitLifeCheck(
   // What the engine says was there to find, before the narrator is asked to
   // describe the looking.
   const found = await applySearch(bundle, pending, roll);
+  // And what a check aimed at a PERSON read about them. Not only the opposed
+  // ones: a Social check settled against a DV is the same exchange, and while
+  // this only ran on the opposed branch the shape table reached almost nothing
+  // — Human Perception's whole point is that watching somebody needs no
+  // contest, and a contest was the only way in.
+  const read = pending.target
+    ? await applyInsight({
+        campaignId,
+        npcKey: pending.target.npcKey,
+        skillId: pending.skillId,
+        // A roll made against no DV has no verdict, and no verdict is not a
+        // win — the same reading the negotiation path takes.
+        success: roll.result.success === true,
+        margin: roll.result.total - dv,
+        today: bundle.clock.day,
+      })
+    : null;
   const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
   await liveTurn(fresh, "", {
     minutes: 0,
     resolved:
       `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".` +
-      (found ? ` ${found}` : ""),
+      (found ? ` ${found}` : "") +
+      insightLine(read),
   });
 }
 

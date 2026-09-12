@@ -351,13 +351,5 @@ function approachesAt(input: PlaceActionInput): PlaceAction[] {
  * decided is possible here, rather than being asked whether it is.
  */
 export function describePlaceAction(action: PlaceAction): string {
-  if (!action.skillId) return `${action.label} at ${action.placeName}.`;
-  // An approach is a way of looking, so it reaches the narrator as one: the
-  // Skill is named and the DV is not, because what is here to find and how hard
-  // it is to find are the engine's to say once the dice are thrown.
-  return (
-    `${action.label} at ${action.placeName}.\n` +
-    `(ENGINE: this leans on ${action.skillId}. Propose a skill_check with that skillId and a DV ` +
-    "from the published table, and stop. Do not decide what they find.)"
-  );
+  return `${action.label} at ${action.placeName}.`;
 }

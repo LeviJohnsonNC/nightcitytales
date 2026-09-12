@@ -75,6 +75,31 @@ export function venueOptions(input: {
     .map(({ action }) => toCard(action));
 }
 
+/**
+ * What a picked card sends as the player's turn.
+ *
+ * A card tagged with a Skill is a check somebody already has in mind, so
+ * clicking it must not degrade into prose the model may narrate away. Without
+ * this the approach cards were a promise nothing kept: the card printed
+ * "Perception: 14" and a pink border, and picking it sent "Look closer. Slow
+ * down and go over the place properly." as plain text — which the model was
+ * free to answer with a paragraph about looking around, rolling nothing, and
+ * the whole truth system sat there unconsulted.
+ *
+ * The same fix reaches the model's own tagged cards, which were losing their
+ * Skill the same way. It mirrors `suggestionInput` on the job screen; the DV is
+ * deliberately not named, because the difficulty belongs to whatever is there
+ * to be found and the engine is the one that knows.
+ */
+export function cardInput(card: LifeActionCard): string {
+  const said = `${card.label}. ${card.description}`.trim();
+  if (!card.skillId) return said;
+  return (
+    `${said}\n(ENGINE: this action leans on ${card.skillId}. Propose a skill_check with that ` +
+    "skillId and a DV from the published table, and stop. Do not decide what it turns up.)"
+  );
+}
+
 function toCard(action: PlaceAction): LifeActionCard {
   return {
     label: action.label,

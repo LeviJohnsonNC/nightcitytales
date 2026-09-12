@@ -124,12 +124,14 @@ describe("what a place lets you do with your attention", () => {
     expect(actions.some((a) => a.skillId)).toBe(false);
   });
 
-  it("hands the narrator the Skill and never a DV", () => {
+  it("names the Skill on the action itself, for the caller to act on", () => {
+    // The engine's sentence stays a sentence — what a picked card SENDS is
+    // `cardInput` in features/life/lifeOptions.ts, which is the wired path and
+    // is tested there. This used to carry the engine note and nothing called
+    // it, so the note was dead and the card rolled nothing.
     const approach = at({ conclusionAvailable: true }).find((a) => a.skillId)!;
-    const line = describePlaceAction(approach);
-    expect(line).toContain(approach.skillId!);
-    expect(line).toMatch(/do not decide what they find/i);
-    expect(line).not.toMatch(/DV ?\d/);
+    expect(approach.skillId).toBeTruthy();
+    expect(describePlaceAction(approach)).toBe(`${approach.label} at ${approach.placeName}.`);
   });
 
   /**

@@ -72,6 +72,7 @@ import { ShopSheet } from "./ShopSheet";
 import { RipperdocSheet } from "./RipperdocSheet";
 import { RecordSheet } from "./RecordSheet";
 import type { LifeActionCard } from "./lifeResponse";
+import { cardInput } from "./lifeOptions";
 
 /** Where someone stands with the character, in words rather than a number. */
 function dispositionLabel(disposition: number): string {
@@ -993,7 +994,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                     context={rollContext}
                     busy={life.busy}
                     onPick={() =>
-                      void life.act(`${action.label}. ${action.description}`.trim(), {
+                      void life.act(cardInput(action), {
                         // What the card printed is what the turn costs. Both
                         // kinds of card go through here — the model's and the
                         // engine's — because a player cannot tell them apart

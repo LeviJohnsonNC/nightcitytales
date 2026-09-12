@@ -27,6 +27,17 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
     skillId: z.string(),
     dv: z.number().int(),
     intent: z.string(),
+    /**
+     * Who the check is aimed AT, when it is aimed at a person.
+     *
+     * Optional and load-bearing. A Social check resolved against a DV had
+     * nothing in it naming the target, so reading somebody — the whole social
+     * model in engine/socialRead.ts — could only ever happen on an opposed
+     * check, and the model picks freely between the two. "Persuasion, DV 13,
+     * on the bartender" read nobody and cost nobody anything.
+     */
+    npcKey: z.string().optional(),
+    npcName: z.string().optional(),
   }),
   z.object({
     kind: z.literal("opposed_check"),
@@ -304,7 +315,18 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
     }
     if (kindRaw === "skill_check" || skillId) {
       if (!skillId) continue;
-      out.push({ kind: "skill_check", skillId, dv: snapDv(num(a["dv"])), intent });
+      // Carried when the model named the person it is aimed at, by either
+      // spelling. Absent is normal: most checks are against the world.
+      const atName = str(a["npcName"]) ?? str(a["npc_name"]);
+      const atKey = str(a["npcKey"]) ?? str(a["npc_key"]) ?? atName;
+      out.push({
+        kind: "skill_check",
+        skillId,
+        dv: snapDv(num(a["dv"])),
+        intent,
+        ...(atKey ? { npcKey: atKey } : {}),
+        ...(atName ? { npcName: atName } : {}),
+      });
       continue;
     }
     if (kindRaw === "none") continue;

@@ -154,3 +154,47 @@ describe("the question the turn could not answer itself", () => {
     expect(result.question).toBe("Has the landlord been by already?");
   });
 });
+
+/**
+ * A social check the model settles against a DV has to be able to say WHO it is
+ * aimed at, or the engine cannot read them — which is how the whole shape table
+ * in engine/socialRead.ts ended up reachable only through opposed checks.
+ */
+describe("a skill check aimed at a person", () => {
+  it("keeps the person the model named", () => {
+    const parsed = normalizeLifeResponse({
+      resolution: "You watch her hands.",
+      proposedActions: [
+        {
+          kind: "skill_check",
+          skillId: "human_perception",
+          dv: 15,
+          intent: "read her while she answers",
+          npcKey: "wakako_okada",
+          npcName: "Wakako Okada",
+        },
+      ],
+    });
+    expect(parsed.proposedActions[0]).toMatchObject({
+      kind: "skill_check",
+      npcKey: "wakako_okada",
+      npcName: "Wakako Okada",
+    });
+  });
+
+  it("accepts the snake_case spelling too", () => {
+    const parsed = normalizeLifeResponse({
+      proposedActions: [
+        { kind: "skill_check", skillId: "persuasion", dv: 13, npc_key: "razor", npc_name: "Razor" },
+      ],
+    });
+    expect(parsed.proposedActions[0]).toMatchObject({ npcKey: "razor", npcName: "Razor" });
+  });
+
+  it("leaves a check against the world naming nobody", () => {
+    const parsed = normalizeLifeResponse({
+      proposedActions: [{ kind: "skill_check", skillId: "perception", dv: 13 }],
+    });
+    expect(parsed.proposedActions[0]).not.toHaveProperty("npcKey");
+  });
+});
