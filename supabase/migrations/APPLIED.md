@@ -87,14 +87,12 @@ once it has actually been run.
   is a no-op; it is kept because it is the file the code comments point at.
 - `20260906193715_1f0962dd-5121-4e11-9d65-49386fc69e0f.sql` — the copy that was
   actually applied. Identical DDL to the entry above.
+- `20260912140000_campaign_truths.sql`
+- `20260912141314_b9ce2474-7053-4d7e-be92-8e6af113fa0d.sql` — the copy that was
+  actually applied. Identical DDL to the entry above.
 
 ## Pending
 
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
 
-- `20260912140000_campaign_truths.sql` — NOT YET APPLIED. Creates
-  `campaign_truths`, which records which hidden truths a campaign has
-  discovered. Until it is run, `listCampaignTruths` returns nothing and
-  Perception searches fall back to being narrated the way they always were:
-  no discoveries are recorded and none are lost, because there are none.
