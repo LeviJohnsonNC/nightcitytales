@@ -36,6 +36,7 @@
  */
 import data from "@/data/atlas/place-actions.json";
 import { getDistrict, getPlace } from "./geography";
+import { rungsFromLocalExpert } from "./placeIntel";
 import { tagsOf, type PlaceTag } from "./places";
 import { SILENCING_FLAGS, type PlaceState } from "./placeState";
 
@@ -52,6 +53,8 @@ type ActionFile = {
     description: string;
     minutes: number;
     cost: number | null;
+    /** Only offered as a shortcut to somebody who knows the area. */
+    local?: boolean;
   }[];
 };
 
@@ -105,9 +108,52 @@ export type PlaceActionInput = {
   /**
    * What has happened to these places. A shut place sells nothing: the counter
    * a beat closed should not still be offering to serve you.
+   *
+   * Also how a stranger earns a `local` action: having been somewhere is
+   * knowing it is there.
    */
   places?: Record<string, PlaceState> | undefined;
+  /**
+   * How much of a local the character is in this district.
+   *
+   * Some doors are only found by people who know the area — the unlicensed
+   * surgery, the fence, the bunk nobody writes your name down for. Those are
+   * flagged `local` in the data and offered as a SHORTCUT only to somebody who
+   * knows this neighbourhood. Zero, or omitted, and the list is what a stranger
+   * would find, which is what every caller got before this existed.
+   *
+   * Read through `placeIntel`'s own ladder rather than against a number of its
+   * own: the rung that tells a local which doors are around here is the same
+   * one that lets them walk up to them.
+   */
+  localExpertLevel?: number | undefined;
 };
+
+/**
+ * Whether this character knows the area well enough to be shown its quiet doors.
+ *
+ * Three ways in, and all of them are "you already know this place is here":
+ *
+ *  - STANDING IN IT. You are at the door; there is nothing left to find out.
+ *    This is not a concession, it is what the gate is about — being a stranger
+ *    costs you knowing WHERE the quiet doors are, never the ability to act once
+ *    you are at one. Without it, a building whose only business is a quiet one
+ *    became a dead pin for every stranger, which is the exact failure the whole
+ *    module was written against.
+ *  - BEING A LOCAL in the district, through `placeIntel`'s own ladder.
+ *  - HAVING BEEN HERE BEFORE. A fence you have already bought from is not a
+ *    secret again next week.
+ */
+function knowsTheseDoors(args: {
+  here: boolean;
+  localExpertLevel: number;
+  placeKey: string;
+  places?: Record<string, PlaceState> | undefined;
+}): boolean {
+  if (args.here) return true;
+  if (rungsFromLocalExpert(args.localExpertLevel).includes("neighbourhood")) return true;
+  return (args.places?.[args.placeKey]?.visits ?? 0) > 0;
+}
 
 /**
  * What is worth doing from where the character is standing.
@@ -125,13 +171,27 @@ export function placeActions(input: PlaceActionInput): PlaceAction[] {
 
   const out: PlaceAction[] = [];
   const seen = new Set<string>();
+  const localExpertLevel = input.localExpertLevel ?? 0;
 
-  const offer = (placeKey: string, here: boolean) => {
+  const offer = (placeKey: string, here: boolean, only?: "local" | "ordinary") => {
     const place = getPlace(placeKey);
     if (!place) return;
     // Somewhere the law closed is not open for business.
     if (SILENCING_FLAGS.some((flag) => input.places?.[placeKey]?.flags.includes(flag))) return;
+    const known = knowsTheseDoors({
+      here,
+      localExpertLevel,
+      placeKey,
+      ...(input.places ? { places: input.places } : {}),
+    });
     for (const template of templatesFor(tagsOf(placeKey))) {
+      const isLocal = template.local === true;
+      if (only === "local" && !isLocal) continue;
+      if (only === "ordinary" && isLocal) continue;
+      // A door you would have to know somebody to find. Still on the map, still
+      // reachable by travelling there or by being sent — just not handed to a
+      // stranger as a shortcut.
+      if (isLocal && !known) continue;
       // One offer of a verb at a time. Six bars in a district is not six
       // chances to have a drink, it is one drink and a choice of bar, and the
       // choice of bar is the map's job rather than this list's.
@@ -153,11 +213,20 @@ export function placeActions(input: PlaceActionInput): PlaceAction[] {
 
   // Where they are standing, first and in full.
   if (input.placeKey) offer(input.placeKey, true);
+
   // Then the rest of the district, in the atlas's own order, which is
-  // alphabetical by name and therefore stable.
-  for (const place of district.locations) {
-    if (place.key === input.placeKey) continue;
-    offer(place.key, false);
+  // alphabetical by name and therefore stable — but the quiet doors first.
+  //
+  // The cap is five, and without this the ordering silently undid the gate:
+  // a local's fence sat behind "fill your bottles" and never made the list, so
+  // knowing the neighbourhood swapped one ordinary verb for another instead of
+  // buying anything. The shortcut worth having is the one a stranger could not
+  // have found, so it goes above the one they could.
+  for (const pass of ["local", "ordinary"] as const) {
+    for (const place of district.locations) {
+      if (place.key === input.placeKey) continue;
+      offer(place.key, false, pass);
+    }
   }
 
   return out.slice(0, MAX_PLACE_ACTIONS);

@@ -250,7 +250,19 @@ export function campaignPhase(campaign: Campaign): GamePhase {
  * otherwise put one person in two places at once, which is exactly the kind of
  * thing that reads as a ghost rather than as a bug.
  */
-export function hauntPeople(npcs: CampaignNpc[], campaign: Campaign): HauntPerson[] {
+export function hauntPeople(
+  npcs: CampaignNpc[],
+  campaign: Campaign,
+  /**
+   * The district the character lives in. `hauntsFor` puts people in the part of
+   * town the character lives in — "a cast you can only meet by crossing the
+   * city is a cast you never meet" — and it was being handed `DEFAULT_START`,
+   * so every campaign's cast kept their bars in Little Europe no matter where
+   * the character had actually moved in. Omitted, it falls back to that same
+   * default rather than leaving somebody nowhere.
+   */
+  homeDistrictKey?: string | null,
+): HauntPerson[] {
   const seen = new Set<string>();
   const out: HauntPerson[] = [];
   for (const npc of npcs) {
@@ -264,9 +276,9 @@ export function hauntPeople(npcs: CampaignNpc[], campaign: Campaign): HauntPerso
       key,
       name: npc.name,
       role: member.role,
-      // Home is where the campaign began, which is where the character lives
-      // and therefore where they should be able to run into people.
-      haunts: hauntsFor(member.role, DEFAULT_START, campaign.id),
+      // Home is where the character actually lives, which is where they should
+      // be able to run into people.
+      haunts: hauntsFor(member.role, homeDistrictKey || DEFAULT_START, campaign.id),
     });
   }
   return out;

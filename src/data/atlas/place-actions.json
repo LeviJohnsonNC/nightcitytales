@@ -4,6 +4,7 @@
   "costNote": "Cyberpunk RED prints no price for a bowl of noodles or a jug of water, so these are house-rule prices anchored to the published cost ladder the Night Market uses: Cheap 10, Everyday 20, Costly 50, Premium 100. Nothing here may sit between rungs — a test holds them to the ladder — and anything the engine already prices (a repair, a ripperdoc's bill, a night's stock) is left at null for the engine to answer.",
   "cap": 5,
   "capNote": "How many things a place offers at once. Five. A location that lists everything it could conceivably support is a menu, and the player stops reading menus.",
+  "localNote": "Some doors you only find if you know the area. An action flagged `local` is offered as a shortcut ONLY to somebody who knows this neighbourhood — a local (Local Expert, through placeIntel's `neighbourhood` rung) or somebody who has already been to that venue and so knows it is there. It is never removed from the world: the map still travels anywhere, a job can still send you, and the narrator can still put you in front of it. What being a stranger costs you is the shortcut, not the place.",
   "actions": [
     {
       "key": "eat_cheap",
@@ -75,7 +76,9 @@
       "label": "See about chrome",
       "description": "Ask what they have in and what it would cost you.",
       "minutes": 30,
-      "cost": null
+      "cost": null,
+      "local": true,
+      "localNote": "The unlicensed surgery is found by asking somebody who knows."
     },
     {
       "key": "patched_up",
@@ -115,7 +118,9 @@
       "label": "Have a look round",
       "description": "Nobody is stopping you. That is not the same as nobody being here.",
       "minutes": 60,
-      "cost": null
+      "cost": null,
+      "local": true,
+      "localNote": "Knowing which empty building is worth walking into, and which is occupied."
     },
     {
       "key": "sit_a_while",
@@ -179,7 +184,9 @@
       "label": "Ask what came in",
       "description": "Nobody here asks where anything came from, which cuts both ways.",
       "minutes": 45,
-      "cost": null
+      "cost": null,
+      "local": true,
+      "localNote": "Nobody advertises where stolen goods change hands."
     },
     {
       "key": "sit_with_the_families",
@@ -259,7 +266,9 @@
       "label": "Watch the door",
       "description": "Who goes in, who comes out, and who they nod to on the way past.",
       "minutes": 60,
-      "cost": null
+      "cost": null,
+      "local": true,
+      "localNote": "Knowing which door is worth watching in the first place."
     },
     {
       "key": "take_the_train",
@@ -283,7 +292,9 @@
       "label": "Take a bunk",
       "description": "A mattress, a locker that does not lock, and nobody asking your name.",
       "minutes": 30,
-      "cost": 10
+      "cost": 10,
+      "local": true,
+      "localNote": "A bed nobody writes your name down for is not on a sign."
     },
     {
       "key": "past_the_desk",
@@ -299,7 +310,9 @@
       "label": "See whose street this is",
       "description": "Colours, tags, and who stands where. Worth knowing before you need it.",
       "minutes": 30,
-      "cost": null
+      "cost": null,
+      "local": true,
+      "localNote": "Reading a claim off the walls takes knowing whose walls they are."
     }
   ]
 }

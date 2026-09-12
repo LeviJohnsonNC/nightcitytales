@@ -121,3 +121,23 @@ describe("mixing what is live with what is always there", () => {
     }
   });
 });
+
+describe("what a local is offered that a stranger is not", () => {
+  it("carries the quiet doors of the district onto the option cards", () => {
+    // The first point in the loop where being a local changes what the player
+    // can DO rather than only what they know.
+    const stranger = venueOptions({ districtKey: DISTRICT }).map((c) => c.label);
+    const local = venueOptions({ districtKey: DISTRICT, localExpertLevel: 6 }).map((c) => c.label);
+    expect(local).not.toEqual(stranger);
+    expect(local.some((label) => !stranger.includes(label))).toBe(true);
+  });
+
+  it("still prints the engine's own minutes and price on them", () => {
+    // A quiet door is an ordinary card in every other respect: whichever card is
+    // picked, the turn costs the minutes it printed.
+    const cards = venueOptions({ districtKey: DISTRICT, localExpertLevel: 6 });
+    const engine = placeActions({ districtKey: DISTRICT, localExpertLevel: 6 });
+    expect(cards.map((c) => c.timeMinutes)).toEqual(engine.map((a) => a.minutes));
+    expect(cards.map((c) => c.knownCost)).toEqual(engine.map((a) => a.cost));
+  });
+});
