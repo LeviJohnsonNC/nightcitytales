@@ -1,12 +1,23 @@
 # Architecture, test and documentation review — September 2026
 
 > **Status.** This is a snapshot, kept as written rather than edited as work
-> lands. **P0 (items 1-4) is done** — every paid-AI path now authenticates, the
-> chargen system prompt is chosen server-side from a closed job list, the
-> portrait route is metered, and `.env` is untracked with a `.env.example`
-> beside it. `src/lib/__tests__/paidAiAuth.test.ts` is the guard that keeps it
-> that way. Sections 1.1 and 1.2 below describe the state at `e9e294c`, not the
-> state today. Everything from P1 down is still open.
+> lands. Sections below describe the state at `e9e294c`, not the state today.
+>
+> **P0 (items 1-4): done.** Every paid-AI path authenticates, the chargen system
+> prompt is chosen server-side from a closed job list, the portrait route is
+> metered, and `.env` is untracked. Guarded by
+> `src/lib/__tests__/paidAiAuth.test.ts`.
+>
+> **P1 (items 5-9): four done, one open.** The ledger has a shared payload
+> contract (`src/engine/ledger.ts`, round-trip tested); lint is clean and
+> blocking in CI; `/combat` is gated on `VITE_COMBAT_HARNESS`; the chargen save
+> gate has tests. Item 9 is partly done and partly a decision: `supabase/replay/`
+> now measures the migration drift instead of leaving it a warning — 37 applied,
+> 9 failed — but reconciling it touches published history, so the route is
+> undecided and the replay is not yet a CI gate. See
+> `supabase/replay/README.md`.
+>
+> **P2 and P3: open.**
 
 Reviewed at `e9e294c`. Scope: the whole repository — architecture boundaries,
 the AI trust boundary, the persistence layer, the migration history, the test

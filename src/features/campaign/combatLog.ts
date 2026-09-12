@@ -3,6 +3,8 @@
  * Saves carry their full roll trace, so every combat die stays inspectable.
  */
 import {
+  attackEventData,
+  deathSaveEventData,
   describeMorale,
   type ApplyDamageResult,
   type AttackResult,
@@ -40,27 +42,35 @@ export function attackEvent(
   context: AttackLogContext,
 ): CampaignEventInsert {
   const { attack, damage, applied } = parts;
-  const data: Record<string, unknown> = {
+  // The field names belong to engine/ledger.ts, which settlement reads back
+  // through the same module. Spelling them here is how the two sides drift.
+  const data = attackEventData({
     attacker: context.attackerName,
     target: context.targetName,
     hit: attack.hit,
     margin: attack.margin,
-  };
-  if (context.weapon) data["weapon"] = context.weapon;
-  if (context.ammo) data["ammo"] = context.ammo;
-  if (damage) data["damage"] = damage.total;
-  if (applied) {
-    data["through_armor"] = applied.damageThroughArmor;
-    data["bonus_damage"] = applied.bonusDamage;
-    data["hp_before"] = applied.hpAfter + applied.totalHpLoss;
-    data["hp_after"] = applied.hpAfter;
-    data["sp_before"] = applied.spBefore;
-    data["sp_after"] = applied.spAfter;
-    data["armor_location"] = context.armorLocation ?? "body";
-    data["ablated"] = applied.ablated;
-    data["critical_injury"] = applied.criticalInjury;
-  }
-  if (context.targetWoundState) data["target_wound_state"] = context.targetWoundState;
+    ...(context.weapon !== undefined ? { weapon: context.weapon } : {}),
+    ...(context.ammo !== undefined ? { ammo: context.ammo } : {}),
+    ...(context.targetWoundState !== undefined
+      ? { targetWoundState: context.targetWoundState }
+      : {}),
+    ...(damage ? { damage: damage.total } : {}),
+    ...(applied
+      ? {
+          applied: {
+            damageThroughArmor: applied.damageThroughArmor,
+            bonusDamage: applied.bonusDamage,
+            hpAfter: applied.hpAfter,
+            totalHpLoss: applied.totalHpLoss,
+            spBefore: applied.spBefore,
+            spAfter: applied.spAfter,
+            ablated: applied.ablated,
+            criticalInjury: applied.criticalInjury,
+            armorLocation: context.armorLocation ?? "body",
+          },
+        }
+      : {}),
+  });
 
   return {
     campaign_id: campaignId,
@@ -90,11 +100,10 @@ export function deathSaveEvent(
     type: "death_save",
     summary: `${context.combatantName} Death Save: d10(${result.roll}) + penalty(${result.penalty}) = ${result.effective} vs BODY — ${verdict}`,
     roll: result as unknown as Json,
-    data: {
+    data: deathSaveEventData({
       combatant: context.combatantName,
-      survived: !context.died,
       died: context.died,
-    } as unknown as Json,
+    }) as unknown as Json,
     ...(context.beatId ? { beat_id: context.beatId } : {}),
   };
 }

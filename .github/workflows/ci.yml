@@ -29,12 +29,19 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Non-blocking: the Autoformat workflow keeps main Prettier-clean, so a
-      # formatting-dirty push (e.g. from Lovable) is reported here without
-      # failing the build. Real (non-formatting) eslint errors still surface
-      # as annotations.
+      # BLOCKING, and prettier/prettier is switched off for it. The two were
+      # one step before: eslint-plugin-prettier turns formatting into an eslint
+      # error, formatting-dirty pushes arrive from Lovable routinely, so the
+      # whole check had to be continue-on-error — and a linter that cannot fail
+      # a build is a linter nothing reads. Splitting them means a real error
+      # fails CI while formatting stays advisory.
       - name: Lint
-        run: bun run lint
+        run: bun run lint:code
+
+      # Non-blocking: the Autoformat workflow keeps main Prettier-clean, so a
+      # formatting-dirty push is reported here rather than failing the build.
+      - name: Formatting
+        run: bun run format:check
         continue-on-error: true
 
       - name: Typecheck

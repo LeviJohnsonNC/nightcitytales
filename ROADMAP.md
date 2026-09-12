@@ -492,9 +492,17 @@ Not features, but they get more expensive with time. Full detail in `AGENTS.md`.
   the play loop.
 - Ordinary play turns still span multiple writes; only encounter saves,
   settlement and Aftermath closeout are transactional.
-- `bun run lint` fails on a pre-existing `prefer-const` error.
+- ~~`bun run lint` fails on a pre-existing `prefer-const` error.~~ Lint is clean
+  and CI blocks on it: `lint:code` is blocking, `format:check` advisory, and
+  generated files are excluded because a finding nobody may act on is what
+  forced the whole check to be non-blocking.
 - Migration history creates some campaign and encounter objects more than once,
-  so a clean database reset is not proven.
+  so a clean database reset is not proven. Now measured rather than suspected:
+  `supabase/replay/` applies every migration to an empty Postgres and reports
+  37 applied, 9 failed. Its README explains why (a hand-written migration and
+  the Lovable console's copy of the same DDL, only one of which ran) and lists
+  the three ways to reconcile it. The choice is open; until it is made the
+  replay is a script you run, not a CI gate.
 
 ---
 
