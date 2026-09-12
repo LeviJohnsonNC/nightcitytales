@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { getFaction, isFactionId, standingBand } from "@/engine";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { pressureLines } from "@/features/campaign/pressure";
-import type { LifeBundle } from "./useLife";
+import type { LifeBundle } from "./lifeOps";
 
 function Row({
   label,

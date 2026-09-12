@@ -28,7 +28,8 @@ import { raisedWeapon } from "./encounterModel";
 import { gmSkillList, suggestionInput } from "./playModel";
 import { settlementFrom, wasShorted } from "./settlementReport";
 import { NpcText } from "@/features/cast/NpcText";
-import { usePlay, type PlayBundle } from "./usePlay";
+import { usePlay } from "./usePlay";
+import type { PlayBundle } from "./playOps";
 import type { RollRecord } from "./checkPrompt";
 
 function EventBlock({ event }: { event: CampaignEvent }) {

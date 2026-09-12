@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PlayBundle } from "../usePlay";
+import type { PlayBundle } from "../playOps";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import {
   EMPTY_TURN_ECONOMY,
@@ -193,7 +193,7 @@ const {
   commitCheck,
   endPlayerTurn,
   finishCombatAction,
-} = await import("../usePlay");
+} = await import("../playOps");
 const { attackOption, pendingAttackFrom } = await import("../attackPrompt");
 
 async function shoot(b: PlayBundle) {

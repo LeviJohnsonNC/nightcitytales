@@ -98,7 +98,8 @@ tools/atlas/     regenerates the derived atlas data
 The one architectural rule worth stating here: **nothing in `src/engine/` may
 import React, a feature module, or the backend.** It takes plain objects and
 returns plain objects, and it is the only place dice are rolled or character math
-is done. `src/engine/__tests__/architecture.test.ts` enforces it.
+is done. `src/__tests__/boundaries.test.ts` enforces it, along with the other two rules
+about what may import what.
 
 ## Running it
 

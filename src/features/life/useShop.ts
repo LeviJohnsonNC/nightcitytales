@@ -22,7 +22,7 @@ import {
   stockedShelf,
   type StockedItem,
 } from "@/features/campaign/shopping";
-import type { LifeBundle } from "./useLife";
+import type { LifeBundle } from "./lifeOps";
 
 export type ShopMessage = { tone: "bought" | "refused"; text: string };
 

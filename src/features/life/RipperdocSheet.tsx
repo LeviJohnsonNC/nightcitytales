@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CYBERWARE, formatDuration, getCyberware } from "@/engine";
-import type { LifeBundle } from "./useLife";
+import type { LifeBundle } from "./lifeOps";
 import { quoteCyberware, useRipperdoc } from "./useRipperdoc";
 
 export function RipperdocSheet({

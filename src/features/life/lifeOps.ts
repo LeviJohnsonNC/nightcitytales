@@ -1,0 +1,1766 @@
+/**
+ * A Life turn, applied.
+ *
+ * Everything a Life turn DOES: load the bundle, score the situation funnel,
+ * build the narrator's context, normalize what comes back, resolve checks and
+ * travel and shopping in the engine, and write the results down. Accepting,
+ * declining and negotiating a hook live here too — `acceptHook` is the only
+ * door into a Job, and it belongs with the rest of the turn rather than inside
+ * a component's mutation.
+ *
+ * Split out of useLife.ts for the same reason `downtimeOps.ts` was split out of
+ * useDowntime: the operations belong to the game, not to the screen that calls
+ * them, and turn logic behind a hook can only be tested through React.
+ *
+ * No React and no TanStack Query in here. useLife.ts binds these to the query
+ * client.
+ */
+import {
+  advanceClock,
+  ageSituations,
+  canAsk,
+  clampActionMinutes,
+  clampDisposition,
+  getMission,
+  getSkill,
+  hookAskSpec,
+  judgeAction,
+  knownTerms,
+  looksForWork,
+  luckPoolMax,
+  mergeSituations,
+  missionOffer,
+  nextPhase,
+  partOfDay,
+  resolveSkillId,
+  selectSituation,
+  settleHookAsk,
+  standingBand,
+  startMission,
+  tickClock,
+  BROKER_DEFAULT_SKILL_LEVEL,
+  BROKER_DEFAULT_STAT,
+  TIME_COSTS,
+  type GameClock,
+  type GamePhase,
+  type HookAsk,
+  type FactionStanding,
+  type LifeSituation,
+  type Opposition,
+  type WoundStateCode,
+  directionName,
+  getLandmark,
+  modeLabel,
+  neighboursOf,
+  streetsIn,
+  resolveTravelIntent,
+} from "@/engine";
+import {
+  appendCampaignEvent,
+  findCampaignNpc,
+  getCampaign,
+  getCharacter,
+  listCampaignEvents,
+  listCampaignTruths,
+  recordTruthDiscovery,
+  listCampaignFactions,
+  listClocks,
+  listSituations,
+  setCampaignClock,
+  setCampaignPhase,
+  setNpcDisposition,
+  setCampaignFlag,
+  setSituationStatus,
+  updateCampaign,
+  updateCampaignVitals,
+  upsertClock,
+  upsertSituations,
+  type Campaign,
+  type CampaignEvent,
+  type CampaignFlag,
+  type CampaignInventoryItem,
+  type CampaignCyberware,
+  type CampaignNpc,
+  type CampaignVitals,
+  type FullCharacter,
+  type Json,
+} from "@/lib/backend";
+import { saveMissionRuntime } from "@/features/campaign/missionState";
+import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
+import { characterSummary, localExpertIn, statsRecord } from "@/features/play/playModel";
+import { gmSkillList } from "@/features/play/playModel";
+import {
+  dvBandName,
+  pendingChecksFrom,
+  snapToPublishedDv,
+  type CheckRoll,
+  type PendingCheck,
+} from "@/features/play/checkPrompt";
+import { buildCapabilitySnapshot, renderCapabilityLines } from "@/features/play/capabilityModel";
+import {
+  loadDowntime,
+  payBills,
+  repair,
+  rest,
+  worstArmor,
+  type DowntimeBundle,
+} from "@/features/downtime/downtimeOps";
+import { dossierForPrompt } from "@/features/atlas/placeDossiers";
+import { renderLifeUserPrompt, type LifeContext, type LifeWireOffer } from "./lifeContext";
+import { lifeTurnFn } from "./lifeTurn.server";
+import type { LifeActionCard, LifeResponse } from "./lifeResponse";
+import { MAX_LIFE_OPTIONS, mergeOptions, venueOptions } from "./lifeOptions";
+import {
+  askTagFrom,
+  hookFromSituation,
+  hookKeyFor,
+  hookUpsert,
+  liveHookSituation,
+  nextJobSeedFrom,
+  pickJobSeed,
+  offerTerms,
+  wireOfferFor,
+  JOB_PAYOUT_FLAG,
+  NEXT_JOB_SEED_FLAG,
+  type LifeHook,
+} from "./hookOffer";
+import {
+  oppositionProfileOf,
+  reconcileOpposition,
+  rememberOpposition,
+} from "@/features/campaign/npcOpposition";
+import { castMemberInRole, ensureCast, markDealtWith } from "@/features/campaign/castSeeding";
+import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
+import { rememberDeclined, runWorldTick, settleMoves } from "@/features/campaign/worldTick";
+import {
+  answerPendingQuestion,
+  askOracle,
+  consultStreet,
+  consultWire,
+  rollComplicationFor,
+  spendWire,
+  type OracleAnswer,
+} from "@/features/campaign/oracles";
+import { chronicleFor } from "@/features/campaign/chronicleModel";
+import { travelTo } from "@/features/atlas/travel";
+import {
+  applyPlaceObservations,
+  loadPlaceStates,
+  notePlaceVisit,
+} from "@/features/campaign/placeState";
+import {
+  DEFAULT_START,
+  areaOf,
+  describePosition,
+  districtProfile,
+  placeActions,
+  placeFamiliarity,
+  DEDUCTION_SKILL,
+  deductionOffer,
+  isSearchSkill,
+  knownTruths,
+  searchWith,
+  truthsAt,
+  whoIsAt,
+  type PlaceState,
+  getDistrict,
+  getPlace,
+  isCombatZone,
+  resolvePosition,
+  reachableDestinations,
+  canTravel,
+} from "@/engine";
+import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
+import {
+  applyPressure,
+  notableFrom,
+  pressureFrom,
+  pressureLines,
+  readObservations,
+  spendFiredClock,
+  standingLines,
+  type LivePressure,
+} from "@/features/campaign/pressure";
+import {
+  campaignPhase,
+  clockFromRow,
+  derivedSituations,
+  lifePeople,
+  recentLifeLines,
+  situationFromRow,
+  situationToUpsert,
+  hauntPeople,
+} from "./lifeModel";
+
+export type { LifeHook };
+
+export type LifeBundle = {
+  campaign: Campaign;
+  vitals: CampaignVitals;
+  character: FullCharacter;
+  inventory: CampaignInventoryItem[];
+  cyberware: CampaignCyberware[];
+  npcs: CampaignNpc[];
+  events: CampaignEvent[];
+  phase: GamePhase;
+  clock: GameClock;
+  situations: LifeSituation[];
+  /** Every clock the engine recognises, worst first. */
+  pressure: LivePressure[];
+  /** Every organisation that has formed an opinion. */
+  standings: FactionStanding[];
+  /** The one situation this turn is about. */
+  current: LifeSituation | null;
+  /** The offer on the table, when the campaign is in the hook phase. */
+  hook: LifeHook | null;
+  /**
+   * The job that already exists, waiting for a moment that reaches for it. The
+   * model is shown its public half and may put THIS one on the table; it cannot
+   * invent another. Null while an offer is already live.
+   */
+  wire: LifeWireOffer | null;
+  /** The mission id behind that offer, so accepting starts the job that was pitched. */
+  wireMissionId: string | null;
+  /** Running totals that outlive a turn's ledger window. */
+  tally: CampaignTally;
+  /**
+   * What has happened to the places this campaign has touched. Sparse: a place
+   * with no entry is a place at its authored starting condition, not a blank
+   * one.
+   */
+  places: Record<string, PlaceState>;
+  /**
+   * The hidden truths this campaign has discovered, as engine truth keys.
+   *
+   * Sparse and one-way: a key is here because somebody found it. What is TRUE
+   * is derived from the atlas by `truth.ts`; this is only who knows it.
+   */
+  discoveredTruths: string[];
+  /**
+   * False until `campaign_truths` has been migrated. Not the same as "nothing
+   * discovered" — one means the feature is off and searching narrates the way
+   * it always did, the other means the character has not looked yet.
+   */
+  truthsAvailable: boolean;
+};
+
+export async function loadLife(campaignId: string): Promise<LifeBundle> {
+  const full = await getCampaign(campaignId);
+  if (!full) throw new Error("Campaign not found.");
+  if (!full.vitals) throw new Error("Campaign has no vitals to live with.");
+
+  const character = await getCharacter(full.campaign.character_id);
+  if (!character) throw new Error("This campaign's character no longer exists.");
+
+  const [events, situationRows, clockRows, factionRows, places, truths] = await Promise.all([
+    listCampaignEvents(campaignId),
+    listSituations(campaignId),
+    listClocks(campaignId),
+    listCampaignFactions(campaignId),
+    loadPlaceStates(campaignId),
+    listCampaignTruths(campaignId),
+  ]);
+
+  // The six the campaign lives among. Seeded once, from the character's own
+  // Lifepath, before anything reads the people: a campaign with nobody in it
+  // has no fixer to be called by and no friend to have gone quiet on.
+  const cast = await ensureCast({
+    campaignId,
+    flags: full.flags,
+    character,
+    npcs: full.npcs,
+  });
+
+  const clock: GameClock = { day: full.campaign.day, minute: full.campaign.minute };
+  const input = {
+    campaign: full.campaign,
+    vitals: full.vitals,
+    character,
+    inventory: full.inventory,
+    cyberware: full.cyberware,
+    npcs: cast.npcs,
+  };
+
+  // Age what was already on the books, then fold in what is true right now.
+  // The result is persisted, so a situation survives a reload rather than being
+  // re-invented (or forgotten) each turn.
+  const persisted = ageSituations(situationRows.map(situationFromRow), clock.day);
+  const merged = mergeSituations(persisted, derivedSituations({ ...input, places }));
+  const changed = merged.filter((s) => {
+    const prior = persisted.find((p) => p.key === s.key);
+    return !prior || JSON.stringify(prior) !== JSON.stringify(s);
+  });
+  if (changed.length) await upsertSituations(campaignId, changed.map(situationToUpsert));
+
+  const lastShownKey = [...events]
+    .reverse()
+    .map((e) => (e.data as { situationKey?: unknown } | null)?.situationKey)
+    .find((k): k is string => typeof k === "string");
+
+  // There is always a job somewhere in Night City. Its seed is drawn once and
+  // stored, so the same work is still on the wire after a reload, and so the
+  // mission behind an offer exists BEFORE anyone pitches it.
+  const seed = await ensureNextJobSeed(campaignId, full.flags, knownDistrictsOf(full.campaign));
+  // Work comes through the fixer the character actually has, not a new name.
+  const { missionId: wireMissionId, wire } = wireOfferFor(
+    seed,
+    castMemberInRole(cast.npcs, "fixer"),
+    places,
+    // A job on the character's own streets arrives knowing more than a job
+    // across the city, before they have accepted anything.
+    (districtKey) => localExpertIn(character, districtKey),
+  );
+
+  const hookRow = liveHookSituation(merged);
+  let hook = hookRow ? hookFromSituation(hookRow) : null;
+  if (hookRow && !hook) {
+    // A hook written before offers carried a mission. Rather than guess at what
+    // job was meant, bind it to the one on the wire and roll a fresh one on:
+    // from here the offer and the job it starts are the same object.
+    hook = await bindLegacyHook(campaignId, hookRow, seed, knownDistrictsOf(full.campaign));
+  }
+
+  return {
+    ...input,
+    events,
+    phase: campaignPhase(full.campaign),
+    clock,
+    situations: merged,
+    pressure: pressureFrom(clockRows),
+    standings: notableFrom(factionRows),
+    current: selectSituation(merged, clock.day, lastShownKey),
+    hook,
+    wire: hook ? null : wire,
+    wireMissionId: hook ? null : wireMissionId,
+    tally: tallyFrom(full.flags),
+    places,
+    discoveredTruths: truths.rows.map((row) => row.truth_key),
+    truthsAvailable: truths.available,
+  };
+}
+
+/** The seed of the job on the wire, drawing and storing one the first time. */
+async function ensureNextJobSeed(
+  campaignId: string,
+  flags: CampaignFlag[],
+  known: Set<string>,
+): Promise<number> {
+  const stored = nextJobSeedFrom(flags);
+  if (stored !== null) return stored;
+  // Prefer work on ground the character has walked. "The target is holed up in
+  // Coronado Heights" only lands if they have been to Coronado Heights.
+  const seed = pickJobSeed(known);
+  await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, seed as unknown as Json);
+  return seed;
+}
+
+/** Draw the next job onto the wire, so the one just offered is not offered twice. */
+async function rollWireForward(campaignId: string, known: Set<string>): Promise<void> {
+  await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, pickJobSeed(known) as unknown as Json);
+}
+
+/** Give an offer that predates offer-time generation the job it will start. */
+async function bindLegacyHook(
+  campaignId: string,
+  situation: LifeSituation,
+  seed: number,
+  known: Set<string>,
+): Promise<LifeHook> {
+  const { missionId } = wireOfferFor(seed);
+  const mission = getMission(missionId);
+  const offer = missionOffer(mission);
+  const terms = offerTerms(mission);
+  await upsertSituations(campaignId, [hookUpsert(situation.key, mission, offer, terms)]);
+  await rollWireForward(campaignId, known);
+  return { situationKey: situation.key, missionId, mission, offer, terms };
+}
+
+/** What a single Life turn is: what the player did, and what already happened. */
+export type TurnOptions = {
+  /** What the engine already resolved, when this turn narrates a result. */
+  resolved?: string;
+  /** True when the player asked what they could do rather than doing something. */
+  options?: boolean;
+  /** Minutes the engine has already decided this turn costs. */
+  minutes?: number;
+  /**
+   * Eurobucks the engine has already decided this turn costs, with what for.
+   *
+   * Applied through the same capability gate the model's own spends go through,
+   * so an option the character cannot afford is refused rather than quietly
+   * overdrawing them. This exists because an option card printing "10eb" and
+   * then leaving the model to decide whether money moved was a number on screen
+   * that nothing enforced.
+   */
+  spend?: { amount: number; reason: string };
+  /** Narrate a committed engine result without applying model-authored actions. */
+  fixedResult?: boolean;
+  /**
+   * What the oracles said before this turn ran. The model is handed these as
+   * facts; it never learns that a die was involved in producing them.
+   */
+  oracle?: {
+    /** True when tonight's wire roll actually produced work. */
+    wireOffers?: boolean;
+    /** What the street is doing, when it was rolled for. */
+    street?: string;
+    /** The answer to whatever the model asked last turn. */
+    answer?: OracleAnswer;
+  };
+};
+
+/** Everywhere the campaign has recorded standing, as stored location keys. */
+/**
+ * How a district's money and traffic are put to the narrator.
+ *
+ * Words rather than the engine's own levels, because "poor" in a prompt reads
+ * as an instruction to write squalor. What is wanted is the texture: what is on
+ * the street, not a verdict on the people living there.
+ */
+const WEALTH_WORDS: Record<string, string> = {
+  poor: "little money about, and what there is is spent carefully",
+  mixed: "some money about, unevenly",
+  rich: "money everywhere, and it shows",
+};
+
+const CROWD_WORDS: Record<string, string> = {
+  empty: "hardly anybody around",
+  steady: "people about, going somewhere",
+  busy: "crowded, at most hours",
+};
+
+/** The districts this campaign has actually set foot in. */
+function knownDistrictsOf(campaign: Campaign): Set<string> {
+  const out = new Set<string>();
+  for (const raw of knownPlacesOf(campaign)) {
+    const at = resolvePosition(raw);
+    if (at) out.add(at.districtKey);
+  }
+  return out;
+}
+
+function knownPlacesOf(campaign: Campaign): string[] {
+  const known = campaign.known_places;
+  if (!Array.isArray(known)) return [];
+  return (known as unknown[]).filter((v): v is string => typeof v === "string");
+}
+
+/** The context slice the Life model reasons over. Deterministic and small. */
+/** The shape both prompt builders take, without the optionality. */
+type PlaceFamiliaritySlice = {
+  visits: number;
+  standing: "first" | "returning" | "known";
+  since: string;
+  known: string[];
+  /** The part of `known` that being a local accounts for, not having been here. */
+  asALocal: string[];
+  localExpert?: { level: number; districtName: string };
+};
+
+/**
+ * How long it has been, in words, so no renderer does arithmetic on days.
+ *
+ * A visit is recorded on arrival, so the turn that describes a place almost
+ * always sees a gap of nothing. That reads as no gap at all rather than as
+ * "zero days ago".
+ */
+export function sinceWords(daysSince: number | null): string {
+  if (daysSince === null || daysSince <= 0) return "";
+  if (daysSince === 1) return ", last here yesterday";
+  if (daysSince < 14) return `, last here ${daysSince} days ago`;
+  if (daysSince < 60) return ", not here in weeks";
+  return ", not here in months";
+}
+
+/**
+ * What the narrator should know about how familiar the ground under them is.
+ *
+ * `localExpertLevel` is how much of a local the character is in this district,
+ * which opens rungs of the same ladder visits open — so a local knows a
+ * building on their own street they have never walked into.
+ */
+function familiarityFor(
+  placeKey: string | null | undefined,
+  places: Record<string, PlaceState>,
+  day: number,
+  localExpertLevel = 0,
+): { familiarity: PlaceFamiliaritySlice } | Record<string, never> {
+  if (!placeKey) return {};
+  const read = placeFamiliarity(placeKey, places[placeKey], day, localExpertLevel);
+  if (!read) return {};
+  return {
+    familiarity: {
+      visits: read.visits,
+      standing: read.standing,
+      since: sinceWords(read.daysSince),
+      known: read.known,
+      asALocal: read.asALocal,
+      ...(read.localExpert ? { localExpert: read.localExpert } : {}),
+    },
+  };
+}
+
+/** The atlas's own line about a venue, when it is standing in one. */
+function placeBlurb(placeKey: string): { blurb?: string } {
+  const blurb = getPlace(placeKey)?.blurb?.trim();
+  return blurb ? { blurb } : {};
+}
+
+function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
+  // Resolved before the character summary, because a place-scoped Skill is only
+  // worth its Level in one neighbourhood and the summary has to say which.
+  const position = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+  const standingDistrictKey = position?.districtKey ?? null;
+  const summary = characterSummary(
+    bundle.character,
+    bundle.vitals,
+    bundle.inventory,
+    standingDistrictKey,
+  );
+  const capability = buildCapabilitySnapshot({
+    character: bundle.character,
+    vitals: bundle.vitals,
+    inventory: bundle.inventory,
+    cyberware: bundle.cyberware,
+    encounter: null,
+    events: bundle.events,
+    beatId: null,
+  });
+
+  const positionDistrict = position ? getDistrict(position.districtKey) : undefined;
+  // What the streets around them are like, and who turns up if they are loud
+  // on them. Read off the atlas's own security provider by the engine; the
+  // model is told the consequence, never asked to imagine it.
+  const profile = positionDistrict ? districtProfile(positionDistrict.key) : undefined;
+
+  return {
+    clock: bundle.clock,
+    place: positionDistrict
+      ? {
+          where: describePosition(bundle.campaign.location_key ?? DEFAULT_START),
+          district: positionDistrict.name,
+          area: areaOf(positionDistrict.key)?.name ?? "Night City",
+          security: positionDistrict.security,
+          gangs: positionDistrict.gangs,
+          combatZone: isCombatZone(positionDistrict.key),
+          ...(profile
+            ? {
+                response: `${profile.response.who}, ${profile.response.label}`,
+                character: `${WEALTH_WORDS[profile.wealth]}, ${CROWD_WORDS[profile.crowd]}`,
+              }
+            : {}),
+          // What the atlas prints about this exact address, and what has been
+          // written about it. Without these the narrator knows the venue's name
+          // and its tags and nothing else, and invents the rest from the
+          // district — which is how a visit to an automated sushi place with a
+          // virtual mascot produced a griddle counter with a human line cook.
+          ...(position?.placeKey ? placeBlurb(position.placeKey) : {}),
+          ...(() => {
+            const written = dossierForPrompt(position?.placeKey, positionDistrict.key);
+            return written ? { dossier: written.text } : {};
+          })(),
+          // How often they have stood here. The engine has counted every
+          // arrival since the campaign began and nothing has ever read it back,
+          // so every visit was written as a first visit.
+          ...familiarityFor(
+            position?.placeKey,
+            bundle.places,
+            bundle.clock.day,
+            localExpertIn(bundle.character, standingDistrictKey),
+          ),
+          // What they have SEARCHED OUT here, which is a different thing from
+          // what they know by being familiar with it. Only the found ones: the
+          // rest are never sent, so the model cannot telegraph them.
+          ...(position?.placeKey
+            ? (() => {
+                const discovered = bundle.truthsAvailable ? bundle.discoveredTruths : [];
+                const truths = truthsAt(position.placeKey, bundle.places[position.placeKey]);
+                const found = knownTruths(truths, discovered).map((truth) => truth.fact);
+                // And whether what they have found here adds up to something
+                // they have not said out loud. THAT and the number only: the
+                // pieces were earned, so the offer is a pay-off, not a hint.
+                const offer = deductionOffer(truths, discovered);
+                return {
+                  ...(found.length ? { discovered: found } : {}),
+                  ...(offer ? { deduction: offer } : {}),
+                };
+              })()
+            : {}),
+          // Presence, not a summons. Only ever asked about a venue: a district
+          // is not somewhere you run into somebody.
+          ...(position?.placeKey
+            ? (() => {
+                const met = whoIsAt({
+                  placeKey: position.placeKey,
+                  people: hauntPeople(
+                    bundle.npcs,
+                    bundle.campaign,
+                    bundle.character.finance?.home_district_key,
+                  ),
+                  day: bundle.clock.day,
+                  minute: bundle.clock.minute,
+                  seed: bundle.campaign.id,
+                });
+                return met ? { whoIsHere: { name: met.name, key: met.key } } : {};
+              })()
+            : {}),
+          // What the ground supports, as the character would find it: a local
+          // is told about the quiet doors of their own neighbourhood and a
+          // stranger is not, so the narrator cannot offer a newcomer a fence
+          // they would have no way of knowing about.
+          // Business only, never the ways of LOOKING. Those are cards for the
+          // player; the narrator has no use for being told the player has a
+          // search button, and letting them into this list would cost the
+          // ground two of the things it actually offers.
+          business: placeActions({
+            districtKey: positionDistrict.key,
+            placeKey: position?.placeKey,
+            places: bundle.places,
+            localExpertLevel: localExpertIn(bundle.character, positionDistrict.key),
+          })
+            .filter((a) => !a.skillId)
+            .map((a) => `${a.label} (${a.placeName})`),
+          nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
+          streets: streetsIn(positionDistrict.key).map((s) => s.name),
+          destinations: reachableDestinations(
+            bundle.campaign.location_key ?? DEFAULT_START,
+            knownPlacesOf(bundle.campaign),
+          ).map((d) => d.name),
+          neighbours: neighboursOf(bundle.campaign.location_key ?? DEFAULT_START).map(
+            (n) => `${n.name} — ${directionName(n.direction)}, ${n.minutes} min`,
+          ),
+        }
+      : null,
+    character: {
+      name: bundle.character.character.name,
+      ...(bundle.character.character.handle ? { handle: bundle.character.character.handle } : {}),
+      role: bundle.character.character.role,
+      hp: bundle.vitals.hp_current,
+      hpMax: bundle.vitals.hp_max,
+      woundState: bundle.vitals.wound_state,
+      humanity: bundle.vitals.humanity_current,
+      humanityMax: bundle.vitals.humanity_max,
+      eurobucks: bundle.vitals.eurobucks,
+      stats: summary.stats,
+      skills: gmSkillList(bundle.character, 40, {
+        vitals: bundle.vitals,
+        inventory: bundle.inventory,
+        districtKey: standingDistrictKey,
+      }).map((s) => ({
+        // The label the engine produced, not the plain Skill name: it carries
+        // the specialization, and for Local Expert the district the Level is
+        // for. Re-deriving the name here was how "Local Expert" reached the
+        // model with no neighbourhood attached.
+        skill: s.skill,
+        id: s.id,
+        base: s.base,
+      })),
+    },
+    situation: bundle.current,
+    otherSituations: bundle.situations.filter(
+      (s) => s.status === "live" && s.key !== bundle.current?.key,
+    ),
+    clocks: bundle.pressure.map((p) => p.clock),
+    standings: standingLines(bundle.standings),
+    // The long memory, so a campaign forty hours deep is not still six lines
+    // of narration deep.
+    chronicle: chronicleFor({
+      day: bundle.clock.day,
+      events: bundle.events,
+      standings: bundle.standings,
+      pressure: pressureLines(bundle.pressure),
+      npcs: bundle.npcs,
+      situationKeys: bundle.situations.map((s) => s.key),
+      tally: bundle.tally,
+    }),
+    people: lifePeople(bundle.npcs, bundle.clock.day),
+    recentEvents: recentLifeLines(bundle.events),
+    capabilities: renderCapabilityLines(capability),
+    ...(turn.resolved ? { resolved: turn.resolved } : {}),
+    ...(turn.options ? { optionsRequested: true } : {}),
+    ...(turn.oracle?.street ? { street: turn.oracle.street } : {}),
+    ...(turn.oracle?.answer
+      ? { oracle: { question: turn.oracle.answer.question, answer: turn.oracle.answer.answer } }
+      : {}),
+    // Work reaches the model only on a night the wire oracle produced some.
+    // Before this gate the model decided when a job turned up, which is the one
+    // piece of pacing it was still quietly authoring.
+    wire:
+      bundle.phase === "life" && !bundle.hook && turn.oracle?.wireOffers === true
+        ? bundle.wire
+        : null,
+    hookOnTable: bundle.hook
+      ? {
+          title: bundle.hook.mission.title,
+          brokerName: bundle.hook.offer.brokerName,
+          brokerKey: bundle.hook.offer.brokerKey,
+          brokerLine: bundle.hook.offer.brokerLine,
+          district: bundle.hook.offer.district,
+          pitch: bundle.hook.offer.pitch,
+          ask: bundle.hook.offer.ask,
+          payout: bundle.hook.terms.payout,
+          learned: knownTerms(bundle.hook.terms, bundle.hook.offer),
+        }
+      : null,
+  };
+}
+
+/**
+ * What the engine actually did with a turn, as opposed to what the model wrote.
+ * The two can differ — the model proposes a move and the engine picks the
+ * destination — and where they do, the fiction has to be told.
+ */
+type TurnOutcome = {
+  travelled?: {
+    from: string;
+    to: string;
+    minutes: number;
+    direction?: string;
+    stoppedAt?: "water" | "edge" | "arrived";
+    mode: string;
+    /** How far the trip covered, in city blocks, when it was a walk along a heading. */
+    blocks?: number;
+    /** Bridges the route crossed, by name, in order. */
+    bridges?: string[];
+  };
+  travelRefused?: string;
+};
+
+/** Persist a clock delta and the situations/flags the turn produced. */
+async function applyResponse(
+  bundle: LifeBundle,
+  response: LifeResponse,
+  turn: TurnOptions,
+): Promise<TurnOutcome> {
+  const campaignId = bundle.campaign.id;
+  const outcome: TurnOutcome = {};
+
+  // Time is spent by the engine, never claimed by the model. A turn that moves
+  // the character bodily (travel, rest) carries its own duration and is charged
+  // where it is applied; anything else costs what the model reports the action
+  // took, clamped to something a single Life turn is allowed to eat.
+  const carriesOwnTime =
+    !turn.options && response.proposedActions.some((a) => a.kind === "travel" || a.kind === "rest");
+  const spent =
+    turn.minutes !== undefined
+      ? clampActionMinutes(turn.minutes)
+      : carriesOwnTime
+        ? 0
+        : clampActionMinutes(response.timeSpent);
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    // Options are answered on a row of their own: the scene has not moved, and
+    // restating it in the log would read as the world repeating itself.
+    type: turn.options ? "life_options" : "life_narration",
+    summary: response.resolution ?? response.situation.description,
+    data: {
+      situationKey: bundle.current?.key ?? null,
+      title: response.situation.title,
+      actions: turn.fixedResult ? [] : response.actions,
+    } as unknown as Json,
+  });
+
+  // The transaction already committed every consequence. The narrator gets
+  // prose and nothing else: no question, time, pressure, delta, spend, or phase
+  // transition can leak out of a fixed-result follow-up.
+  if (turn.fixedResult) return {};
+
+  // A question the turn needed answered and could not answer itself. Held, not
+  // answered: the dice get thrown next turn, so the model writes this one
+  // genuinely not knowing. An options turn asks nothing — nobody lived it.
+  if (!turn.options) await askOracle(campaignId, response.question);
+
+  // --- what the engine, not the model, applies -----------------------------
+  let clock = bundle.clock;
+  let eurobucks = bundle.vitals.eurobucks;
+
+  // The same gate the job loop runs. Life is not a hole in the wall: money the
+  // character does not have and kit they are not carrying are refused here,
+  // deterministically, and the refusal is written back as something that
+  // happened rather than silently dropped.
+  const capability = buildCapabilitySnapshot({
+    character: bundle.character,
+    vitals: bundle.vitals,
+    inventory: bundle.inventory,
+    cyberware: bundle.cyberware,
+    encounter: null,
+    events: bundle.events,
+    beatId: null,
+  });
+  const refuse = async (reason: string, code = "impossible"): Promise<void> => {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "action_refused",
+      summary: reason,
+      data: { code } as unknown as Json,
+    });
+  };
+
+  /** The downtime operations, loaded only when a turn actually asks for one. */
+  let downtime: DowntimeBundle | null = null;
+  const downtimeBundle = async (): Promise<DowntimeBundle> => {
+    downtime ??= await loadDowntime(campaignId);
+    return downtime;
+  };
+
+  // What the option card printed, charged before anything the model proposed.
+  // The card said this is what it costs, so this is what it costs.
+  if (turn.spend && turn.spend.amount > 0 && !turn.options) {
+    const legal = judgeAction(capability, {
+      kind: "spend",
+      resource: "eurobucks",
+      amount: turn.spend.amount,
+    });
+    if (!legal.ok) {
+      await refuse(legal.reason, legal.code);
+    } else {
+      const amount = Math.min(turn.spend.amount, eurobucks);
+      if (amount > 0) {
+        eurobucks -= amount;
+        await appendCampaignEvent({
+          campaign_id: campaignId,
+          type: "life_action",
+          summary: `Paid ${amount}eb — ${turn.spend.reason}`,
+          data: { amount } as unknown as Json,
+        });
+      }
+    }
+  }
+
+  // Asking what you could do is not doing it. Nothing mechanical is applied on
+  // an options turn, whatever the model attached to it.
+  const proposed = turn.options ? [] : response.proposedActions;
+
+  for (const action of proposed) {
+    if (action.kind === "spend") {
+      const legal = judgeAction(capability, {
+        kind: "spend",
+        resource: "eurobucks",
+        amount: action.amount,
+      });
+      if (!legal.ok) {
+        await refuse(legal.reason, legal.code);
+        continue;
+      }
+      const amount = Math.min(action.amount, eurobucks);
+      if (amount <= 0) continue;
+      eurobucks -= amount;
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "life_action",
+        summary: `Paid ${amount}eb — ${action.reason}`,
+        data: { amount } as unknown as Json,
+      });
+    } else if (action.kind === "use_item") {
+      const legal = judgeAction(capability, {
+        kind: "use_item",
+        item: action.item,
+        quantity: action.quantity,
+      });
+      if (!legal.ok) {
+        await refuse(legal.reason, legal.code);
+        continue;
+      }
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "life_action",
+        summary: `Used ${action.quantity > 1 ? `${action.quantity}× ` : ""}${action.item}.`,
+        data: { item: action.item, quantity: action.quantity } as unknown as Json,
+      });
+    } else if (action.kind === "pay_bills") {
+      // One implementation of rent: the Downtime operation, priced by the engine.
+      try {
+        const paid = await payBills(await downtimeBundle());
+        if (paid.total > 0) eurobucks -= paid.total;
+      } catch (error) {
+        await refuse((error as Error).message, "resource_unavailable");
+      }
+    } else if (action.kind === "repair_armor") {
+      const bundleForOps = await downtimeBundle();
+      const piece = worstArmor(bundleForOps);
+      if (!piece) {
+        await refuse("Nothing in the kit needs patching.", "impossible");
+      } else {
+        try {
+          const done = await repair(bundleForOps, piece);
+          eurobucks -= done.cost;
+        } catch (error) {
+          await refuse((error as Error).message, "resource_unavailable");
+        }
+      }
+    } else if (action.kind === "travel") {
+      // A move in the fiction is a move on the map. The engine resolves the
+      // name against the atlas, prices the trip from the house-rule table, and
+      // commits the same way the map's own travel button does — so the pin, the
+      // header and the ledger all agree with the narration.
+      const decision = resolveTravelIntent({
+        from: bundle.campaign.location_key ?? DEFAULT_START,
+        ...(action.destination ? { destination: action.destination } : {}),
+        ...(action.direction ? { direction: action.direction } : {}),
+        ...(action.extent ? { extent: action.extent } : {}),
+        ...(action.mode ? { mode: action.mode } : {}),
+        ...(action.blocks ? { blocks: action.blocks } : {}),
+      });
+      if (!decision.ok) {
+        await refuse(decision.reason, "impossible");
+        outcome.travelRefused = decision.reason;
+        continue;
+      }
+      const before = bundle.campaign.location_key ?? DEFAULT_START;
+      const moved = await travelTo({
+        campaign: bundle.campaign,
+        clock,
+        to: decision.to,
+        minutes: decision.minutes,
+        mode: decision.mode,
+      });
+      bundle.campaign = moved.campaign;
+      clock = moved.clock;
+      // Being somewhere is the beginning of knowing it. Step seven reads these
+      // back at a job briefing: the elevator, the way onto the roof, who runs
+      // the carwash across the road.
+      const arrived = resolvePosition(moved.campaign.location_key);
+      if (arrived?.placeKey) {
+        await notePlaceVisit({
+          campaignId,
+          placeKey: arrived.placeKey,
+          day: clock.day,
+          known: bundle.places,
+        });
+      }
+      outcome.travelled = {
+        from: describePosition(before),
+        to: describePosition(decision.to),
+        minutes: moved.minutes,
+        ...(decision.direction ? { direction: directionName(decision.direction) } : {}),
+        ...(decision.stoppedAt ? { stoppedAt: decision.stoppedAt } : {}),
+        ...(decision.blocks ? { blocks: decision.blocks } : {}),
+        mode: modeLabel(decision.mode),
+        ...(decision.route?.spans.length
+          ? { bridges: decision.route.spans.map((k) => getLandmark(k)?.name ?? k) }
+          : {}),
+      };
+    } else if (action.kind === "rest") {
+      // Sleeping IS resting: the hours move the clock, and every whole day the
+      // character crossed heals at the printed rate through the same Downtime
+      // operation the panel uses. The clock is advanced here, so the operation
+      // is told not to move the calendar a second time.
+      const before = clock;
+      clock = advanceClock(clock, clampActionMinutes(action.hours * 60));
+      const daysCrossed = clock.day - before.day;
+      if (daysCrossed > 0) {
+        await rest(await downtimeBundle(), daysCrossed, { advanceCalendar: false });
+      }
+    } else if (action.kind === "skill_check" || action.kind === "opposed_check") {
+      const skillId = resolveSkillId(action.skillId);
+      if (!skillId) continue;
+      const skillName = getSkill(skillId).name;
+      if (action.kind === "skill_check") {
+        const dv = snapToPublishedDv(action.dv);
+        const band = dvBandName(dv);
+        await appendCampaignEvent({
+          campaign_id: campaignId,
+          type: "check_prompt",
+          summary: `${skillName} check — DV ${dv}${band ? ` (${band})` : ""}`,
+          data: {
+            skillId,
+            skillName,
+            dv,
+            intent: action.intent,
+            // Who it is aimed at, when it is aimed at a person. A Social check
+            // against a DV used to carry nobody, so it could not read anybody.
+            ...(action.npcKey ? { npcKey: action.npcKey } : {}),
+            ...(action.npcName ? { npcName: action.npcName } : {}),
+          } as unknown as Json,
+        });
+      } else {
+        const opposingSkillId = resolveSkillId(action.opposingSkillId);
+        if (!opposingSkillId) continue;
+        await appendCampaignEvent({
+          campaign_id: campaignId,
+          type: "check_prompt",
+          summary: `${skillName} check — opposed by ${action.npcName}`,
+          data: {
+            skillId,
+            skillName,
+            intent: action.intent,
+            opposition: {
+              npcKey: action.npcKey,
+              npcName: action.npcName,
+              skillId: opposingSkillId,
+              skillLevel: action.opposingSkillLevel,
+              statValue: action.opposingStatValue,
+            },
+          } as unknown as Json,
+        });
+      }
+    } else if (action.kind === "hook_offer") {
+      // A job OFFER, never a job — and specifically the job that was already on
+      // the wire when this turn started. The model brought nothing to this: the
+      // mission, the broker and the fee were generated before it spoke, which is
+      // what makes the offer and the job it starts the same thing.
+      // And specifically on a night the wire oracle said there was work. The
+      // block is withheld from the model on a quiet night, but withholding is
+      // not enforcement: a model that offers a job anyway is refused here.
+      if (!bundle.wireMissionId || bundle.hook) continue;
+      if (turn.oracle?.wireOffers !== true) {
+        await refuse("Nobody called tonight. There is no work to put on the table.", "no_work");
+        continue;
+      }
+      const missionId = bundle.wireMissionId;
+      const mission = getMission(missionId);
+      const offer = missionOffer(mission);
+      const terms = offerTerms(mission);
+      const key = hookKeyFor(offer, missionId);
+      await upsertSituations(campaignId, [hookUpsert(key, mission, offer, terms)]);
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "hook_offered",
+        summary: `${offer.brokerName} offers work: ${mission.title} (${terms.payout}eb)`,
+        data: { situationKey: key, missionId, payout: terms.payout } as unknown as Json,
+      });
+      // The wire moves on, so the same job is never offered twice — and
+      // tonight's roll is spent, so the NEXT job does not turn up this evening
+      // too if the player walks away from this one.
+      await rollWireForward(campaignId, knownDistrictsOf(bundle.campaign));
+      await spendWire(campaignId, clock.day);
+      const to = nextPhase(bundle.phase, "offer_hook");
+      if (to) await setCampaignPhase(campaignId, to);
+    }
+  }
+
+  for (const delta of response.deltas) {
+    if (delta.kind === "set_flag") {
+      await setCampaignFlag(campaignId, delta.flag);
+    } else if (delta.kind === "npc_disposition") {
+      const npc = bundle.npcs.find((n) => n.npc_id === delta.npcKey);
+      if (npc) {
+        // The engine, the schema and the column's CHECK all say -3..3. Clamping
+        // to a wider range here wrote values the database refuses.
+        await setNpcDisposition(npc.id, clampDisposition(npc.disposition + delta.delta));
+      }
+    } else if (delta.kind === "note") {
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "life_note",
+        summary: delta.text,
+        data: {} as Json,
+      });
+    }
+  }
+
+  // --- pressure ------------------------------------------------------------
+  // The model reported what the fiction noticed; the engine decides what each
+  // observation costs, moves the dials, and hands back anything that has come
+  // due. Skipped on an options turn, which did not happen.
+  if (!turn.options) {
+    const reports = readObservations(response.observations);
+    if (reports.length) {
+      // The same reports, read a second way: what this did to the character's
+      // standing with the city, and what it did to THIS ADDRESS.
+      const where = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+      if (where?.placeKey) {
+        await applyPlaceObservations({
+          campaignId,
+          placeKey: where.placeKey,
+          observations: reports.map((r) => r.observation),
+          known: bundle.places,
+        });
+      }
+      const { pressure } = await applyPressure(campaignId, reports, {
+        // Where it happened decides what the city hears. A district with no
+        // response profile is the ordinary city; one nobody polices is not.
+        districtKey: where?.districtKey ?? null,
+      });
+      await arrivePressure(campaignId, pressure, clock.day);
+    }
+  }
+
+  if (response.newSituation && !turn.options) {
+    const s = response.newSituation;
+    await upsertSituations(campaignId, [
+      {
+        situationKey: s.key,
+        category: s.category,
+        title: s.title,
+        summary: s.summary,
+        npcKey: s.npcKey,
+        status: "live",
+        severity: s.severity,
+        dueDay: s.dueDay,
+      },
+    ]);
+  }
+
+  // The situation just put to the player does not come round again today.
+  if (bundle.current) {
+    await upsertSituations(campaignId, [
+      { ...situationToUpsert(bundle.current), lastShownDay: bundle.clock.day },
+    ]);
+  }
+
+  if (eurobucks !== bundle.vitals.eurobucks) {
+    await updateCampaignVitals(campaignId, { eurobucks });
+  }
+
+  clock = advanceClock(clock, spent);
+  if (clock.day !== bundle.clock.day || clock.minute !== bundle.clock.minute) {
+    await setCampaignClock(campaignId, clock);
+  }
+  return outcome;
+}
+
+/**
+ * Let a filled clock arrive.
+ *
+ * The engine spends the clock and writes what came; the situation it raises is a
+ * severity-5 pressure, which is loud enough that selectSituation will put it in
+ * front of the player next turn. The model narrates it after the fact, exactly
+ * as it narrates a resolved check: it does not get to decide whether Maelstrom
+ * turned up, only what it looked like when they did.
+ */
+async function arrivePressure(
+  campaignId: string,
+  pressure: LivePressure[],
+  day: number,
+): Promise<void> {
+  const arrived = await spendFiredClock(campaignId);
+  if (!arrived) return;
+  await upsertSituations(campaignId, [
+    {
+      situationKey: `pressure_${arrived.definition.key}`,
+      category: "pressure",
+      title: arrived.definition.label.replace(/ (Retaliation|Investigation|Heat)$/, " have come"),
+      summary: arrived.payoff,
+      status: "live",
+      severity: 5,
+      data: {
+        clockKey: arrived.definition.key,
+        factionId: arrived.definition.factionId,
+      } as unknown as Json,
+    },
+  ]);
+}
+
+/**
+ * Ask the oracles, before the model is asked anything.
+ *
+ * Everything here is rolled and written down BEFORE the prompt is built, so the
+ * model receives the answers as facts about a world that had already decided
+ * them. It never learns that a die was involved, and it is never in a position
+ * to decide whether the phone rings tonight.
+ *
+ * Nothing is rolled on an options turn: the player is thinking, not living, and
+ * an evening should not pass because they asked what an evening might contain.
+ */
+async function consultOracles(
+  bundle: LifeBundle,
+  input: string,
+  turn: TurnOptions,
+): Promise<TurnOptions["oracle"]> {
+  if (turn.options) return undefined;
+  const campaignId = bundle.campaign.id;
+
+  // The world gets its turn before anything else is asked. Once per in-world
+  // day, guarded inside runWorldTick, so the night cannot be re-rolled by a
+  // refetch.
+  //
+  // What it writes lands on the NEXT turn rather than this one, because this
+  // turn's board was built before the roll. That is the right shape: the night
+  // passed, the player's turn resolves, and the scene that opens after it is
+  // the consequence walking in.
+  await runWorldTick({
+    campaignId,
+    day: bundle.clock.day,
+    minute: bundle.clock.minute,
+    npcs: bundle.npcs,
+    situations: bundle.situations,
+  });
+  const oracle: NonNullable<TurnOptions["oracle"]> = {};
+
+  // A question the model asked last turn. Answered first, so the answer is in
+  // front of it before anything else about tonight is decided.
+  const answer = await answerPendingQuestion(campaignId);
+  if (answer) oracle.answer = answer;
+
+  // Living, and nothing already on the table: is anybody calling tonight?
+  if (bundle.phase === "life" && !bundle.hook) {
+    const wire = await consultWire({
+      campaignId,
+      day: bundle.clock.day,
+      eurobucks: bundle.vitals.eurobucks,
+      chasing: looksForWork(input),
+    });
+    oracle.wireOffers = wire.offered;
+
+    // And when nothing is already demanding attention, what the evening is —
+    // once per part of the day, so a player taking five turns in one evening
+    // does not get five chances at something walking into it.
+    if (!bundle.current) {
+      const street = await consultStreet({
+        campaignId,
+        day: bundle.clock.day,
+        part: partOfDay(bundle.clock.minute),
+      });
+      if (street) oracle.street = street.result.text;
+    }
+  }
+
+  return oracle;
+}
+
+/** One Life turn: the player says something, the world answers. */
+export async function liveTurn(
+  bundle: LifeBundle,
+  input: string,
+  turn: TurnOptions = {},
+): Promise<void> {
+  if (input.trim()) {
+    await appendCampaignEvent({
+      campaign_id: bundle.campaign.id,
+      type: "player_input",
+      summary: input,
+      data: {} as Json,
+    });
+  }
+  const oracle = turn.fixedResult
+    ? undefined
+    : (turn.oracle ?? (await consultOracles(bundle, input, turn)));
+  const asked: TurnOptions = oracle ? { ...turn, oracle } : turn;
+  const context = buildContext(bundle, asked);
+  const opening = turn.options
+    ? "(the player is asking what they could do here)"
+    : "(open the moment)";
+  const response = await lifeTurnFn({
+    data: { userPrompt: renderLifeUserPrompt(context, input || opening) },
+  });
+  const outcome = await applyResponse(bundle, response, asked);
+
+  // The model wrote its prose before the engine had decided anything, so a trip
+  // it described is its own guess at where the player ended up. Now that the
+  // move is committed, tell it what actually happened and let it write the
+  // arrival. Without this the narration can walk you east while the pin, the
+  // header and the ledger all say you went west.
+  const correction = describeTravelOutcome(outcome);
+  if (correction && !turn.fixedResult) {
+    const fresh = { ...bundle, events: await listCampaignEvents(bundle.campaign.id) };
+    await liveTurn(fresh, "", { minutes: 0, resolved: correction, fixedResult: true });
+    return;
+  }
+
+  // Acting on a situation about a person IS dealing with them. Only a turn the
+  // player actually typed counts: opening the moment, or asking what the
+  // options are, is not the same as picking up the phone.
+  const npcKey = bundle.current?.npcKey;
+  if (npcKey && input.trim() && !turn.options) {
+    const npc = bundle.npcs.find((n) => n.npc_id === npcKey);
+    if (npc) await markDealtWith(bundle.campaign.id, npc, bundle.clock.day);
+    // A move the world made is answered by dealing with the person who made it.
+    // Unlike the derived `person_` situations, a move is written rather than
+    // re-derived, so nothing else would ever take it off the board.
+    await settleMoves(bundle.campaign.id, npcKey);
+  }
+}
+
+/**
+ * Looking for something, and what the engine says is there.
+ *
+ * The whole point of `truth.ts`. A check that searches a place no longer asks
+ * the narrator what is here — inventing is cheaper than refusing, so the answer
+ * to a good roll was always a hidden safe that had not existed a moment before,
+ * and a discovery that could have been anything was not a discovery. The engine
+ * decides which of the facts ALREADY TRUE here the number reaches, records it,
+ * and hands the model the one line it is allowed to narrate.
+ *
+ * Three outcomes and the third is the interesting one. Finding nothing is a
+ * real answer rather than a wasted turn: satisfying yourself a room is clean is
+ * information in a game about investigation, and it is the honest thing to say
+ * when the alternative is inventing something so the roll was not wasted.
+ *
+ * Returns null when this is not a search at all, and when `campaign_truths` has
+ * not been migrated yet — in which case searching narrates exactly the way it
+ * always has, rather than silently finding nothing forever.
+ */
+async function applySearch(
+  bundle: LifeBundle,
+  pending: PendingCheck,
+  roll: CheckRoll,
+): Promise<string | null> {
+  if (!bundle.truthsAvailable || roll.kind !== "dv") return null;
+  // Only a Skill that finds things gets a search outcome. Without this a
+  // successful Athletics roll came back with "you satisfy yourself there is
+  // nothing here" — the character was climbing a fence.
+  //
+  // Skill rather than stated intent, which is the honest limit of this slice: a
+  // Perception check rolled to spot a tail, in a room that happens to hold
+  // something, reads as having missed the thing in the room. Tying an outcome
+  // to a parsed intent is the model's judgement, and this module exists
+  // precisely to stop the model deciding what is here.
+  if (!isSearchSkill(pending.skillId)) return null;
+  const at = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+  if (!at?.placeKey) return null;
+
+  // A conclusion about a place is drawn from the facts about that place, so
+  // unlike on a job — where the subject is the whole case — the pool is the
+  // same either way. What differs is that a conclusion is gated by its
+  // prerequisites rather than by the die, and that failing to make a
+  // connection is not failing to find an object.
+  const deducing = pending.skillId === DEDUCTION_SKILL;
+  const truths = truthsAt(at.placeKey, bundle.places[at.placeKey]);
+  const search = searchWith({
+    truths,
+    skillId: pending.skillId,
+    discovered: bundle.discoveredTruths,
+    total: roll.result.total,
+  });
+
+  if (search.outcome === "nothing") {
+    // Only worth saying when the roll actually landed. A failed search that
+    // found nothing tells the character nothing at all — and a conclusion that
+    // is not available stays silent either way, because "there was nothing to
+    // work out" may only mean the pieces have not been found yet.
+    if (!roll.result.success || deducing) return null;
+    return (
+      "They searched properly and there is NOTHING here to find. Say so plainly: " +
+      "the place is what it appears to be. Do not invent something small so the " +
+      "roll was not wasted — knowing a room is clean is worth knowing."
+    );
+  }
+  if (search.outcome === "missed") {
+    return deducing
+      ? "They turned it over and it did NOT come together. There is something to be worked out " +
+          "about this place and this was not the moment — narrate the thinking and the " +
+          "not-quite, and do not hint at what it was."
+      : "They did not find it. There IS something here and the search did not reach " +
+          "it — narrate the looking and the coming up empty, and do not hint at what " +
+          "was missed or how close they came.";
+  }
+
+  const stored = await recordTruthDiscovery(bundle.campaign.id, {
+    truthKey: search.truth.key,
+    discoveredDay: bundle.clock.day,
+    viaSkill: pending.skillId,
+  });
+  if (!stored) return null;
+  await appendCampaignEvent({
+    campaign_id: bundle.campaign.id,
+    type: "truth_found",
+    summary: search.truth.fact,
+    data: { truthKey: search.truth.key, placeKey: at.placeKey } as unknown as Json,
+  });
+  return deducing
+    ? `They WORKED IT OUT, and this is the conclusion, exactly: ${search.truth.fact} ` +
+        "Narrate the character reaching that, off what they already knew about this place. Do " +
+        "not add a second conclusion beside it, and do not carry it further than it goes."
+    : `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
+        "That is the discovery — narrate them noticing it. Do not add a second find " +
+        "beside it and do not enlarge on what it means.";
+}
+
+/** What to tell the narrator about a move the engine has already committed. */
+function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
+  if (outcome.travelRefused) {
+    return (
+      `The character did NOT travel. ${outcome.travelRefused} They are still where they were. ` +
+      "Narrate that in a sentence or two: the trip did not happen, and say why in the fiction " +
+      "rather than as a rule. Do not describe arriving anywhere."
+    );
+  }
+  const trip = outcome.travelled;
+  if (!trip) return undefined;
+  const far = trip.blocks ? `${trip.blocks} block${trip.blocks === 1 ? "" : "s"}` : undefined;
+  if (trip.stoppedAt === "water" || trip.stoppedAt === "edge") {
+    const edge =
+      trip.stoppedAt === "water"
+        ? "the waterfront, with nothing but water beyond it"
+        : "the edge of the city, where the streets give out";
+    return (
+      `The character went ${trip.direction ? `${trip.direction} ` : ""}${trip.mode} as far as ` +
+      `that way goes${far ? ` — ${far}` : ""} and came up against ${edge}. It took ` +
+      `${trip.minutes} minutes and they are now at ${trip.to}, which is a different spot from ` +
+      "where they set off even if it is the same district. Narrate reaching that edge in two or " +
+      "three sentences: what is in front of them, what is behind. Do not send them onwards."
+    );
+  }
+  const crossing = trip.bridges?.length
+    ? ` The way there crossed ${trip.bridges.join(", then ")}, so that is on the route and ` +
+      "worth a line."
+    : "";
+  return (
+    `The character has ARRIVED. They travelled ${trip.direction ? `${trip.direction} ` : ""}` +
+    `${far ? `${far} ` : ""}from ${trip.from} to ${trip.to} ${trip.mode}, and it took ` +
+    `${trip.minutes} minutes.` +
+    `${crossing} That destination, that heading and how they got there are facts — the engine ` +
+    "chose them, not you. Narrate the arrival in two or three sentences: where they are standing " +
+    "now, what is in front of them. Do not name a different place, do not contradict the " +
+    "heading, and do not send them onwards."
+  );
+}
+
+/** Roll a Life check the player pressed, then let the world answer it. */
+export async function commitLifeCheck(
+  bundle: LifeBundle,
+  pending: PendingCheck,
+  roll: CheckRoll,
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+
+  // A check posted by a negotiation settles the TERMS, not just the fiction:
+  // the engine decides what the push bought and the model is only told the
+  // outcome afterwards.
+  const tag = askTagFrom(bundle.events.find((e) => e.id === pending.eventId));
+  if (tag && bundle.hook && bundle.hook.situationKey === tag.situationKey) {
+    await settleNegotiation(bundle, bundle.hook, tag.ask, pending, roll);
+    return;
+  }
+
+  if (roll.kind === "opposed") {
+    await logOpposedCheck(campaignId, roll.result, {
+      skillId: pending.skillId,
+      skillName: pending.skillName,
+      intent: pending.intent,
+      promptEventId: pending.eventId,
+      luckSpent: roll.luckSpent,
+      ...(pending.opposition?.npcKey ? { npcKey: pending.opposition.npcKey } : {}),
+    });
+    const verdict = roll.result.success
+      ? `SUCCESS by ${Math.abs(roll.result.margin)}`
+      : roll.result.tie
+        ? "FAILURE — tied, and a tie goes to the one resisting"
+        : `FAILURE by ${Math.abs(roll.result.margin)}`;
+    const read = pending.opposition?.npcKey
+      ? await applyInsight({
+          campaignId,
+          npcKey: pending.opposition.npcKey,
+          skillId: pending.skillId,
+          success: roll.result.success,
+          margin: roll.result.margin,
+          today: bundle.clock.day,
+        })
+      : null;
+    const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
+    await liveTurn(fresh, "", {
+      minutes: 0,
+      resolved:
+        `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".` +
+        insightLine(read),
+    });
+    return;
+  }
+
+  await logSkillCheck(campaignId, roll.result, {
+    skillId: pending.skillId,
+    skillName: pending.skillName,
+    intent: pending.intent,
+    promptEventId: pending.eventId,
+    luckSpent: roll.luckSpent,
+  });
+  const dv = pending.dv ?? 0;
+  const verdict = roll.result.success ? "SUCCESS" : "FAILURE";
+  // What the engine says was there to find, before the narrator is asked to
+  // describe the looking.
+  const found = await applySearch(bundle, pending, roll);
+  // And what a check aimed at a PERSON read about them. Not only the opposed
+  // ones: a Social check settled against a DV is the same exchange, and while
+  // this only ran on the opposed branch the shape table reached almost nothing
+  // — Human Perception's whole point is that watching somebody needs no
+  // contest, and a contest was the only way in.
+  const read = pending.target
+    ? await applyInsight({
+        campaignId,
+        npcKey: pending.target.npcKey,
+        skillId: pending.skillId,
+        // A roll made against no DV has no verdict, and no verdict is not a
+        // win — the same reading the negotiation path takes.
+        success: roll.result.success === true,
+        margin: roll.result.total - dv,
+        today: bundle.clock.day,
+      })
+    : null;
+  const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
+  await liveTurn(fresh, "", {
+    minutes: 0,
+    resolved:
+      `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".` +
+      (found ? ` ${found}` : "") +
+      insightLine(read),
+  });
+}
+
+/**
+ * The ONLY door into a job. Pressed by the player, never by a turn: the hook is
+ * marked taken, a mission is started, and the phase moves to `job`, at which
+ * point the existing play machinery owns the screen.
+ */
+export async function acceptHook(bundle: LifeBundle): Promise<void> {
+  const hook = bundle.hook;
+  if (!hook) throw new Error("There is no offer on the table.");
+  const campaignId = bundle.campaign.id;
+  const to = nextPhase(bundle.phase, "accept_hook");
+  if (!to) throw new Error("This campaign is not holding an offer right now.");
+
+  // THE job, not A job: the mission that was pitched, generated before the offer
+  // was ever made and carried on the hook ever since.
+  const { missionId, mission } = hook;
+  await saveMissionRuntime(campaignId, startMission(mission));
+  // Taking the work puts the character where the work is: the offer names a
+  // canonical atlas district, so the job starts on the real map.
+  const jobDistrict = hook.offer.districtKey;
+  const moveTo = jobDistrict && canTravel(jobDistrict) ? jobDistrict : null;
+  const knownNow = new Set<string>(
+    Array.isArray(bundle.campaign.known_places)
+      ? (bundle.campaign.known_places as unknown[]).filter(
+          (v): v is string => typeof v === "string",
+        )
+      : [],
+  );
+  if (moveTo) knownNow.add(moveTo);
+  await updateCampaign(campaignId, {
+    current_mission_id: missionId,
+    ip_awarded: null,
+    status: "active",
+    ...(moveTo ? { location_key: moveTo, known_places: [...knownNow] } : {}),
+  });
+  // A fee that was argued upwards is carried on the campaign, so the job pays
+  // what was agreed rather than what was printed.
+  await setCampaignFlag(campaignId, JOB_PAYOUT_FLAG, hook.terms.payout as unknown as Json);
+  // What the brief left out, rolled the moment they take the work and kept from
+  // everyone until the job is over. Neither the player nor the model knows
+  // whether this job has a lie in it, which is the only way "the employer lied"
+  // can land as a discovery rather than as a twist somebody chose to write.
+  await rollComplicationFor(campaignId, missionId);
+  // A job is a session: the Luck Pool refills on the same boundary IP is awarded on.
+  await updateCampaignVitals(campaignId, {
+    luck_current: luckPoolMax(statsRecord(bundle.character)),
+  });
+  await setSituationStatus(campaignId, hook.situationKey, "resolved");
+  const negotiated =
+    hook.terms.payout !== hook.terms.basePayout
+      ? ` at ${hook.terms.payout}eb, up from ${hook.terms.basePayout}eb`
+      : ` at ${hook.terms.payout}eb`;
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "mission_started",
+    summary: `Took the job: ${mission.title} — ${hook.offer.brokerName}${negotiated}`,
+    // The broker rides on the event, so settlement can find the person who owes
+    // the money without having to reconstruct who offered the job.
+    data: {
+      missionId,
+      payout: hook.terms.payout,
+      brokerKey: hook.offer.brokerKey,
+      brokerName: hook.offer.brokerName,
+    } as unknown as Json,
+  });
+  // Counted rather than re-derived: the record has to remember fifty sessions
+  // and a turn only reads the last 200 rows.
+  await addToTally(campaignId, { jobsTaken: 1 });
+  await setCampaignPhase(campaignId, to);
+}
+
+/** Turn the offer down (or let it go cold). The campaign goes back to living. */
+export async function declineHook(bundle: LifeBundle, reason: string): Promise<void> {
+  if (!bundle.hook) return;
+  const campaignId = bundle.campaign.id;
+  const title = bundle.hook.mission.title;
+  const broker = bundle.hook.offer.brokerName;
+  await setSituationStatus(campaignId, bundle.hook.situationKey, "expired");
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "hook_declined",
+    summary: `Passed on ${title}.`,
+    // The title and the day ride along so the world tick can have somebody else
+    // take the job later. A gig you passed on that nobody ever does was never a
+    // choice, just a reroll.
+    data: {
+      reason,
+      title,
+      missionId: bundle.hook.missionId,
+      day: bundle.clock.day,
+    } as unknown as Json,
+  });
+  // Written down rather than left to be re-derived: the world tick used to scan
+  // the whole campaign for declines on every day that passed.
+  await rememberDeclined(campaignId, { title, day: bundle.clock.day });
+  await addToTally(campaignId, { jobsDeclined: 1 });
+  const to = nextPhase(bundle.phase, "decline_hook");
+  if (to) await setCampaignPhase(campaignId, to);
+  const fresh = { ...bundle, events: await listCampaignEvents(campaignId), hook: null };
+  await liveTurn(fresh, `I turn the work down. ${reason}`.trim(), {
+    minutes: TIME_COSTS.conversation,
+    resolved: `The player DECLINED the offer "${title}". Let ${broker} react in character and move on. That job is gone; do not offer it again.`,
+  });
+}
+
+/**
+ * Push on the terms of an offer.
+ *
+ * Posts the check and stops, exactly like every other proposed check: the player
+ * rolls it themselves on the same card, and settleNegotiation below decides what
+ * it bought. The model is not in this path at all until there is a result to
+ * describe.
+ */
+export async function pushHook(bundle: LifeBundle, ask: HookAsk): Promise<void> {
+  const hook = bundle.hook;
+  if (!hook) throw new Error("There is no offer on the table.");
+  if (!canAsk(hook.terms, ask)) throw new Error("You have already pushed on that.");
+
+  const campaignId = bundle.campaign.id;
+  const spec = hookAskSpec(ask);
+  const skillId = resolveSkillId(spec.skillId);
+  if (!skillId) throw new Error(`No printed Skill named "${spec.skillId}".`);
+  const skillName = getSkill(skillId).name;
+  const negotiation = { ask, situationKey: hook.situationKey };
+
+  if (!spec.opposedBy) {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "check_prompt",
+      summary: `${skillName} check — DV ${spec.dv}`,
+      data: { skillId, skillName, dv: spec.dv, intent: spec.blurb, negotiation } as unknown as Json,
+    });
+    return;
+  }
+
+  const opposingSkillId = resolveSkillId(spec.opposedBy);
+  if (!opposingSkillId) throw new Error(`No printed Skill named "${spec.opposedBy}".`);
+
+  // The broker's own numbers. A fixer the campaign has already seen resist
+  // something keeps the numbers they resisted with; a new one is written down
+  // now, so pushing them twice is pushing the same person twice.
+  const npc = await findCampaignNpc(campaignId, hook.offer.brokerKey);
+  const proposed: Opposition = {
+    name: hook.offer.brokerName,
+    skillId: opposingSkillId,
+    skillLevel: BROKER_DEFAULT_SKILL_LEVEL,
+    statValue: BROKER_DEFAULT_STAT,
+  };
+  const { opposition, remembered } = reconcileOpposition(proposed, oppositionProfileOf(npc));
+  await rememberOpposition({
+    campaignId,
+    npcKey: hook.offer.brokerKey,
+    npcName: hook.offer.brokerName,
+    npc,
+    opposition,
+  });
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "check_prompt",
+    summary: `${skillName} check — opposed by ${hook.offer.brokerName}`,
+    data: {
+      skillId,
+      skillName,
+      intent: spec.blurb,
+      negotiation,
+      opposition: {
+        npcKey: hook.offer.brokerKey,
+        npcName: hook.offer.brokerName,
+        skillId: opposition.skillId,
+        skillLevel: opposition.skillLevel,
+        statValue: opposition.statValue,
+        remembered,
+      },
+    } as unknown as Json,
+  });
+}
+
+/**
+ * What a push bought. The engine decides: the fee moves or it does not, the name
+ * is given up or it is not, and the model is handed the result to describe after
+ * the fact, exactly as it is for any other roll.
+ */
+async function settleNegotiation(
+  bundle: LifeBundle,
+  hook: LifeHook,
+  ask: HookAsk,
+  pending: PendingCheck,
+  roll: CheckRoll,
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const spec = hookAskSpec(ask);
+
+  let success: boolean;
+  let margin: number;
+  if (roll.kind === "opposed") {
+    await logOpposedCheck(campaignId, roll.result, {
+      skillId: pending.skillId,
+      skillName: pending.skillName,
+      intent: pending.intent,
+      promptEventId: pending.eventId,
+      luckSpent: roll.luckSpent,
+      npcKey: hook.offer.brokerKey,
+    });
+    success = roll.result.success;
+    margin = roll.result.margin;
+  } else {
+    await logSkillCheck(campaignId, roll.result, {
+      skillId: pending.skillId,
+      skillName: pending.skillName,
+      intent: pending.intent,
+      promptEventId: pending.eventId,
+      luckSpent: roll.luckSpent,
+    });
+    // A roll made against no DV has no verdict, and no verdict is not a win.
+    success = roll.result.success === true;
+    margin = roll.result.total - (pending.dv ?? 0);
+  }
+
+  const outcome = settleHookAsk(hook.terms, hook.offer, ask, { success, margin });
+  // Only a push made AGAINST the broker reads the broker. Asking around the
+  // street is a check about the job, with the fixer nowhere in the room.
+  const read = spec.opposedBy
+    ? await applyInsight({
+        campaignId,
+        npcKey: hook.offer.brokerKey,
+        skillId: pending.skillId,
+        success,
+        margin,
+        today: bundle.clock.day,
+      })
+    : null;
+
+  await upsertSituations(campaignId, [
+    hookUpsert(hook.situationKey, hook.mission, hook.offer, outcome.terms),
+  ]);
+
+  if (outcome.dispositionDelta !== 0) {
+    // Read the row rather than the bundle: a broker met for the first time was
+    // written when the check was posted, after this bundle was loaded.
+    const npc = await findCampaignNpc(campaignId, hook.offer.brokerKey);
+    if (npc) {
+      await setNpcDisposition(npc.id, clampDisposition(npc.disposition + outcome.dispositionDelta));
+    }
+  }
+
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: "hook_negotiated",
+    summary: outcome.summary,
+    data: {
+      ask,
+      success,
+      payout: outcome.terms.payout,
+      situationKey: hook.situationKey,
+    } as unknown as Json,
+  });
+
+  const resolved = [
+    `The player pushed on the offer (${spec.label.toLowerCase()}) and the ${pending.skillName} check is RESOLVED: ${success ? "SUCCESS" : "FAILURE"}.`,
+    `The engine has already applied it: ${outcome.summary}`,
+    outcome.revealed ? `They now know this, and did not before: ${outcome.revealed}` : "",
+    read?.kind === "learned"
+      ? `Leaning on them that hard also showed something: ${read.text} Play it as a tell.`
+      : (read?.text ?? ""),
+    `Narrate the exchange in ${hook.offer.brokerName}'s voice. Do not change the fee, do not add terms, and do not offer anything the engine did not.`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const fresh: LifeBundle = {
+    ...bundle,
+    events: await listCampaignEvents(campaignId),
+    hook: { ...hook, terms: outcome.terms },
+  };
+  await liveTurn(fresh, "", { minutes: spec.minutes, resolved });
+}

@@ -2,11 +2,20 @@
  * The map pin that lives in the play headers. Shows where you are and opens the
  * city map on tap.
  */
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { MapPin } from "lucide-react";
 import { describePosition, type PlaceSignal } from "@/engine";
-import { MapModal } from "./MapModal";
 import type { PlaceHere } from "./PlaceDossier";
+
+/**
+ * Loaded on first open. The modal carries the map warp fit and the dossier
+ * corpus behind it, and this pin sits in the header of every play and Life
+ * screen — so eagerly mounting it put both in the bundle for everyone who
+ * never opened the map.
+ *
+ * The type import above is erased at build time and costs nothing.
+ */
+const MapModal = lazy(() => import("./MapModal").then((m) => ({ default: m.MapModal })));
 
 export function MapButton({
   locationKey,
@@ -36,11 +45,18 @@ export function MapButton({
   const [ownOpen, setOwnOpen] = useState(false);
   const open = openProp ?? ownOpen;
   const setOpen = onOpenChange ?? setOwnOpen;
+  // Once opened it stays mounted, so closing keeps its animation. A screen that
+  // drives `open` itself can open the map without this button being pressed.
+  const [everOpened, setEverOpened] = useState(false);
+  const mounted = everOpened || open;
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setEverOpened(true);
+          setOpen(true);
+        }}
         aria-label="Open the map of Night City"
         className={`flex min-h-11 items-center gap-1.5 rounded-md border border-hairline px-2.5 py-1.5 text-left transition-colors hover:border-accent hover:text-accent ${className ?? ""}`}
       >
@@ -49,16 +65,20 @@ export function MapButton({
           {describePosition(locationKey)}
         </span>
       </button>
-      <MapModal
-        open={open}
-        onOpenChange={setOpen}
-        locationKey={locationKey}
-        knownPlaces={knownPlaces}
-        onTravel={onTravel}
-        travelBusy={travelBusy}
-        signals={signals}
-        placeHere={placeHere}
-      />
+      {mounted ? (
+        <Suspense fallback={null}>
+          <MapModal
+            open={open}
+            onOpenChange={setOpen}
+            locationKey={locationKey}
+            knownPlaces={knownPlaces}
+            onTravel={onTravel}
+            travelBusy={travelBusy}
+            signals={signals}
+            placeHere={placeHere}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }

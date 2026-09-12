@@ -13,7 +13,7 @@ import { CAMPAIGN_STATUSES } from "@/engine";
  * This scans the play layer for literal status writes and checks them against
  * the vocabulary the database will actually accept.
  */
-const FILES = ["usePlay.ts", "PlayScreen.tsx", "combatFlow.ts", "encounterModel.ts"];
+const FILES = ["playOps.ts", "usePlay.ts", "PlayScreen.tsx", "combatFlow.ts", "encounterModel.ts"];
 
 function sourceOf(file: string): string {
   return readFileSync(join(__dirname, "..", file), "utf8");

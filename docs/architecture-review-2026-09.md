@@ -17,7 +17,24 @@
 > undecided and the replay is not yet a CI gate. See
 > `supabase/replay/README.md`.
 >
-> **P2 and P3: open.**
+> **P2 (items 10-15): five done, one open.** Turn logic is out from under both
+> hooks (`playOps.ts`, `lifeOps.ts`); `boundaries.test.ts` replaces
+> `architecture.test.ts` and now covers `import()`/`require`, the
+> backend-adapter rule and the server-only rule; Play no longer mints an NPC
+> from a model-invented key; the dossier corpus and the map modal are
+> lazy-loaded; `roster/characterState.ts` has tests. Item 12 (the `goodwill`
+> dial) is open — it is the one P2 item that changes what the game DOES, and
+> the audit found the problem is broader than one dial: four of the eight place
+> flags are read by nothing.
+>
+> Two corrections to this document, found while doing the work. Item 15 said
+> `lib/backend` needed unit tests; it is almost entirely async I/O, its one
+> useful test (`schema.test.ts`) already exists, and unit tests there would
+> exercise a mock rather than the code. It also said the Life and Place option
+> caps were untested; `placeActions.test.ts` and `lifeOptions.test.ts` already
+> cover the cap, the ordering and the determinism.
+>
+> **P3: open.**
 
 Reviewed at `e9e294c`. Scope: the whole repository — architecture boundaries,
 the AI trust boundary, the persistence layer, the migration history, the test
