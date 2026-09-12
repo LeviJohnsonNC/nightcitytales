@@ -30,6 +30,13 @@ If a migration is deliberately NOT applied — superseded, abandoned — say so 
 its line rather than deleting it. A migration nobody can account for is the
 thing this file exists to prevent.
 
+When code lands before somebody can reach the database — the migration is
+written, the feature is merged, and applying it is a separate person's next
+job — the file goes under **Pending** instead, with a line saying so. The test
+counts a line anywhere in this file, so Pending keeps the suite honest without
+letting an unapplied migration sit in a list headed "Applied". Move the line up
+once it has actually been run.
+
 ## Applied
 
 - `20260809190156_5da5d1e4-a37d-48b9-8f17-4621971a5334.sql`
@@ -80,3 +87,14 @@ thing this file exists to prevent.
   is a no-op; it is kept because it is the file the code comments point at.
 - `20260906193715_1f0962dd-5121-4e11-9d65-49386fc69e0f.sql` — the copy that was
   actually applied. Identical DDL to the entry above.
+
+## Pending
+
+Written and merged, but NOT yet run against the database. The code that reads
+these tables must tolerate their absence until the line moves up to Applied.
+
+- `20260912140000_campaign_truths.sql` — NOT YET APPLIED. Creates
+  `campaign_truths`, which records which hidden truths a campaign has
+  discovered. Until it is run, `listCampaignTruths` returns nothing and
+  Perception searches fall back to being narrated the way they always were:
+  no discoveries are recorded and none are lost, because there are none.
