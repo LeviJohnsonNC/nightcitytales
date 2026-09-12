@@ -21,6 +21,7 @@ import {
 const FILE = truthFile as unknown as {
   fromTags: { key: string; tags: string[]; skill: string; difficulty: string; fact: string }[];
   fromFlags: { key: string; flag: string; skill: string; difficulty: string; fact: string }[];
+  fromNeeds: { key: string; needs: string[]; skill: string; difficulty: string; fact: string }[];
 };
 
 /** Every place in the city, so an invariant can be swept rather than sampled. */
@@ -45,14 +46,14 @@ describe("the truth templates", () => {
   it("name printed Skills and published difficulties, never invented ones", () => {
     const skillIds = new Set(SKILLS.map((s) => s.id));
     const bands = new Set(DIFFICULTY_VALUES.map((d) => d.name));
-    for (const template of [...FILE.fromTags, ...FILE.fromFlags]) {
+    for (const template of [...FILE.fromTags, ...FILE.fromFlags, ...FILE.fromNeeds]) {
       expect(skillIds, template.key).toContain(template.skill);
       expect(bands, template.key).toContain(template.difficulty);
     }
   });
 
   it("has a unique key per template", () => {
-    const keys = [...FILE.fromTags, ...FILE.fromFlags].map((t) => t.key);
+    const keys = [...FILE.fromTags, ...FILE.fromFlags, ...FILE.fromNeeds].map((t) => t.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
@@ -211,5 +212,95 @@ describe("searching", () => {
     ];
     expect(findableBy(gated, "perception", [])).toEqual([]);
     expect(findableBy(gated, "perception", ["place:x5::not-found-yet"])).toHaveLength(1);
+  });
+});
+
+/**
+ * A conclusion about a place: what two facts already found here add up to. It
+ * declares no tag of its own — what decides whether it exists here is whether
+ * its prerequisites do, which is why it can never turn up somewhere its
+ * evidence could not.
+ */
+describe("conclusions about a place", () => {
+  it("only ever names prerequisites the templates actually have", () => {
+    // The quiet failure this guards: a `needs` entry naming a template that
+    // does not exist means the conclusion never appears anywhere, and nothing
+    // in play shows why.
+    const keys = new Set([...FILE.fromTags, ...FILE.fromFlags].map((t) => t.key));
+    for (const template of FILE.fromNeeds) {
+      expect(template.needs.length, template.key).toBeGreaterThan(1);
+      for (const need of template.needs)
+        expect(keys, `${template.key} needs ${need}`).toContain(need);
+    }
+  });
+
+  /**
+   * A template whose prerequisites never co-occur anywhere in the city is dead
+   * content: it reads like a system and fires for nobody. Two of my first three
+   * were exactly that (a fence that is also `secure` does not exist in this
+   * atlas), which is why this is a test and not a code comment.
+   */
+  it("earns its keep somewhere in the city", () => {
+    const reach: Record<string, number> = {};
+    for (const place of EVERY_PLACE) {
+      for (const truth of truthsAt(place.key)) {
+        if (truth.found.skillId !== "deduction") continue;
+        const id = truth.key.slice(truth.key.lastIndexOf("::") + 2);
+        reach[id] = (reach[id] ?? 0) + 1;
+      }
+    }
+    // Flag-driven conclusions cannot appear until a campaign has done
+    // something to a place, so they are exempt from the tag-only sweep.
+    const flagKeys = new Set(FILE.fromFlags.map((t) => t.key));
+    for (const template of FILE.fromNeeds) {
+      if (template.needs.some((need) => flagKeys.has(need))) continue;
+      expect(reach[template.key] ?? 0, `${template.key} fires nowhere`).toBeGreaterThan(0);
+    }
+  });
+
+  it("exists only where everything it rests on exists", () => {
+    for (const place of EVERY_PLACE) {
+      const truths = truthsAt(place.key);
+      const keys = new Set(truths.map((t) => t.key));
+      for (const truth of truths) {
+        for (const need of truth.needs) expect(keys, `${place.key}: ${truth.key}`).toContain(need);
+      }
+    }
+  });
+
+  it("is shut until the pieces are in hand, then reachable", () => {
+    // A transfer point: the quiet way in AND the stock that is not on the
+    // paperwork. One of the two is not enough, at any total.
+    const place = EVERY_PLACE.find((p) =>
+      truthsAt(p.key).some((t) => t.key.endsWith("::transfer_point")),
+    )!;
+    const truths = truthsAt(place.key);
+    const conclusion = truths.find((t) => t.key.endsWith("::transfer_point"))!;
+    expect(conclusion.needs).toHaveLength(2);
+
+    expect(findableBy(truths, "deduction", [])).toHaveLength(0);
+    expect(findableBy(truths, "deduction", conclusion.needs.slice(0, 1))).toHaveLength(0);
+    expect(searchWith({ truths, skillId: "deduction", discovered: [], total: 99 })).toEqual({
+      outcome: "nothing",
+    });
+
+    const ready = [...conclusion.needs];
+    expect(findableBy(truths, "deduction", ready).map((t) => t.key)).toEqual([conclusion.key]);
+    expect(
+      searchWith({ truths, skillId: "deduction", discovered: ready, total: conclusion.found.dv }),
+    ).toMatchObject({ outcome: "found", truth: { key: conclusion.key } });
+    expect(
+      searchWith({
+        truths,
+        skillId: "deduction",
+        discovered: ready,
+        total: conclusion.found.dv - 1,
+      }),
+    ).toEqual({ outcome: "missed" });
+  });
+
+  it("makes Deduction a Skill that searches, without widening the others", () => {
+    expect(isSearchSkill("deduction")).toBe(true);
+    expect(isSearchSkill("athletics")).toBe(false);
   });
 });

@@ -429,3 +429,18 @@ describe("what the narrator is told about hidden truths", () => {
     expect(prompt).not.toContain(secret);
   });
 });
+
+/** The Life side of the deduction offer: that there is one, and the DV. */
+describe("a conclusion on offer in Life", () => {
+  it("says there is something to work out, and never what", () => {
+    const prompt = lifePrompt({ deduction: { dv: 15, count: 1 } });
+    expect(prompt).toContain("THERE IS SOMETHING TO BE WORKED OUT HERE");
+    expect(prompt).toContain("Deduction check at DV 15");
+    expect(prompt).toMatch(/you do not know what it is/i);
+    expect(prompt).toMatch(/must not guess at it, hint at it/i);
+  });
+
+  it("says nothing when there is nothing to work out", () => {
+    expect(lifePrompt({})).not.toContain("THERE IS SOMETHING TO BE WORKED OUT");
+  });
+});

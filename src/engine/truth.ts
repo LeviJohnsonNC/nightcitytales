@@ -104,11 +104,28 @@ type FlagTruth = {
   fact: string;
 };
 
+/**
+ * A conclusion about a place: what two facts already found here add up to.
+ *
+ * It declares no tag of its own. What decides whether it exists is whether its
+ * PREREQUISITES exist here, which is the honest rule — a conclusion cannot turn
+ * up somewhere its evidence could not — and means a place grows conclusions
+ * only where the ground actually supports them.
+ */
+type NeedTruth = {
+  key: string;
+  needs: string[];
+  skill: string;
+  difficulty: string;
+  fact: string;
+};
+
 type TruthFile = {
   houseRule: boolean;
   note: string;
   fromTags: TagTruth[];
   fromFlags: FlagTruth[];
+  fromNeeds?: NeedTruth[];
 };
 
 const FILE = truthData as unknown as TruthFile;
@@ -165,6 +182,22 @@ export function truthsAt(placeKey: string, state?: PlaceState | undefined): Trut
     });
   }
 
+  // Conclusions last, because they are decided by what the two passes above
+  // produced: a conclusion exists here only if everything it rests on does.
+  const present = new Set(out.map((truth) => truth.key));
+  for (const template of FILE.fromNeeds ?? []) {
+    const needs = template.needs.map((need) => truthKey(subject, need));
+    if (!needs.every((need) => present.has(need))) continue;
+    out.push({
+      key: truthKey(subject, template.key),
+      kind: "motive",
+      fact: fill(template.fact, place.name),
+      subject,
+      found: { skillId: template.skill, dv: getDV(template.difficulty) },
+      needs,
+    });
+  }
+
   return out;
 }
 
@@ -214,6 +247,7 @@ export function searchesFor(skillId: string, truths: readonly Truth[]): boolean 
 const SEARCH_SKILLS: ReadonlySet<string> = new Set([
   ...FILE.fromTags.map((t) => t.skill),
   ...FILE.fromFlags.map((t) => t.skill),
+  ...(FILE.fromNeeds ?? []).map((t) => t.skill),
 ]);
 
 /** The ones still to be found, in the order the data declares them. */

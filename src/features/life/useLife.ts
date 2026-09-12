@@ -148,6 +148,8 @@ import {
   districtProfile,
   placeActions,
   placeFamiliarity,
+  DEDUCTION_SKILL,
+  deductionOffer,
   isSearchSkill,
   knownTruths,
   searchWith,
@@ -564,11 +566,17 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           // rest are never sent, so the model cannot telegraph them.
           ...(position?.placeKey
             ? (() => {
-                const found = knownTruths(
-                  truthsAt(position.placeKey, bundle.places[position.placeKey]),
-                  bundle.discoveredTruths,
-                ).map((truth) => truth.fact);
-                return found.length ? { discovered: found } : {};
+                const discovered = bundle.truthsAvailable ? bundle.discoveredTruths : [];
+                const truths = truthsAt(position.placeKey, bundle.places[position.placeKey]);
+                const found = knownTruths(truths, discovered).map((truth) => truth.fact);
+                // And whether what they have found here adds up to something
+                // they have not said out loud. THAT and the number only: the
+                // pieces were earned, so the offer is a pay-off, not a hint.
+                const offer = deductionOffer(truths, discovered);
+                return {
+                  ...(found.length ? { discovered: found } : {}),
+                  ...(offer ? { deduction: offer } : {}),
+                };
               })()
             : {}),
           // Presence, not a summons. Only ever asked about a venue: a district
@@ -1267,6 +1275,12 @@ async function applySearch(
   const at = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
   if (!at?.placeKey) return null;
 
+  // A conclusion about a place is drawn from the facts about that place, so
+  // unlike on a job — where the subject is the whole case — the pool is the
+  // same either way. What differs is that a conclusion is gated by its
+  // prerequisites rather than by the die, and that failing to make a
+  // connection is not failing to find an object.
+  const deducing = pending.skillId === DEDUCTION_SKILL;
   const truths = truthsAt(at.placeKey, bundle.places[at.placeKey]);
   const search = searchWith({
     truths,
@@ -1277,8 +1291,10 @@ async function applySearch(
 
   if (search.outcome === "nothing") {
     // Only worth saying when the roll actually landed. A failed search that
-    // found nothing tells the character nothing at all.
-    if (!roll.result.success) return null;
+    // found nothing tells the character nothing at all — and a conclusion that
+    // is not available stays silent either way, because "there was nothing to
+    // work out" may only mean the pieces have not been found yet.
+    if (!roll.result.success || deducing) return null;
     return (
       "They searched properly and there is NOTHING here to find. Say so plainly: " +
       "the place is what it appears to be. Do not invent something small so the " +
@@ -1286,11 +1302,13 @@ async function applySearch(
     );
   }
   if (search.outcome === "missed") {
-    return (
-      "They did not find it. There IS something here and the search did not reach " +
-      "it — narrate the looking and the coming up empty, and do not hint at what " +
-      "was missed or how close they came."
-    );
+    return deducing
+      ? "They turned it over and it did NOT come together. There is something to be worked out " +
+          "about this place and this was not the moment — narrate the thinking and the " +
+          "not-quite, and do not hint at what it was."
+      : "They did not find it. There IS something here and the search did not reach " +
+          "it — narrate the looking and the coming up empty, and do not hint at what " +
+          "was missed or how close they came.";
   }
 
   const stored = await recordTruthDiscovery(bundle.campaign.id, {
@@ -1305,11 +1323,13 @@ async function applySearch(
     summary: search.truth.fact,
     data: { truthKey: search.truth.key, placeKey: at.placeKey } as unknown as Json,
   });
-  return (
-    `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
-    "That is the discovery — narrate them noticing it. Do not add a second find " +
-    "beside it and do not enlarge on what it means."
-  );
+  return deducing
+    ? `They WORKED IT OUT, and this is the conclusion, exactly: ${search.truth.fact} ` +
+        "Narrate the character reaching that, off what they already knew about this place. Do " +
+        "not add a second conclusion beside it, and do not carry it further than it goes."
+    : `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
+        "That is the discovery — narrate them noticing it. Do not add a second find " +
+        "beside it and do not enlarge on what it means.";
 }
 
 /** What to tell the narrator about a move the engine has already committed. */
