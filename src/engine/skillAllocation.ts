@@ -2,6 +2,7 @@
  * Skill point budgeting. Every constant is read from
  * src/data/rules/skills.json and src/data/rules/role-skill-packages.json.
  */
+import { areaLabel, isAreaScoped, isLegalLocalExpertArea } from "./localExpert";
 import {
   BASIC_SKILL_IDS,
   SKILL_PACKAGE_RULES,
@@ -157,10 +158,28 @@ export function skillEntryKey(entry: Pick<SkillEntry, "skillId" | "specializatio
   return entry.specialization ? `${entry.skillId}::${entry.specialization}` : entry.skillId;
 }
 
-/** Display name including the specialization, e.g. "Language (Streetslang)". */
-export function skillEntryName(entry: Pick<SkillEntry, "skillId" | "specialization">): string {
+/**
+ * Display name including the specialization, e.g. "Language (Streetslang)".
+ *
+ * A place-scoped specialization is shown as the district's printed NAME rather
+ * than as whatever is stored, so a sheet reads "Local Expert (The Glen)" for a
+ * line stored as `the_glen`. Pass the character's home district and the printed
+ * "Your Home" placeholder resolves the same way — the line every Role package
+ * grants stops being a phrase the moment the player has chosen where they live.
+ * Without a home district it still reads "Local Expert (Your Home)", which is
+ * the truth: there is something left to decide.
+ */
+export function skillEntryName(
+  entry: Pick<SkillEntry, "skillId" | "specialization">,
+  homeDistrictKey?: string | null,
+): string {
   const name = getSkill(entry.skillId).name;
-  return entry.specialization ? `${name} (${entry.specialization})` : name;
+  if (!entry.specialization) return name;
+  if (isAreaScoped(entry.skillId)) {
+    const label = areaLabel(entry.specialization, homeDistrictKey);
+    return label ? `${name} (${label})` : name;
+  }
+  return `${name} (${entry.specialization})`;
 }
 
 /** The Role's printed 20-skill package as sheet entries. */
@@ -208,6 +227,15 @@ export function validateSkillEntries(input: SkillEntryValidationInput): SkillVal
       );
     }
     if (entry.level < 0) violations.push(`${name} cannot be negative`);
+    // A place-scoped Skill has to name somewhere on the map. The picker cannot
+    // offer anything else, so this catches a draft saved back when the
+    // specialization was a free-text box: "Night City" is not a neighbourhood,
+    // and a Skill that covers no ground is worth nothing anywhere.
+    if (isAreaScoped(entry.skillId) && !isLegalLocalExpertArea(entry.specialization)) {
+      violations.push(
+        `${name} has to name a single neighbourhood of Night City — pick a district from the list`,
+      );
+    }
   }
 
   const minimum = SKILL_RULES.basicSkillMinimum;
@@ -340,6 +368,9 @@ export function canAddSkillEntry(input: {
       allowed: false,
       reason: `Name the ${skill.specializationLabel ?? "specialization"} first`,
     };
+  }
+  if (isAreaScoped(input.skillId) && !isLegalLocalExpertArea(input.specialization)) {
+    return { allowed: false, reason: "Pick a neighbourhood of Night City" };
   }
   const remaining = rules.skillPoints - skillPointsSpent(input.entries);
   const cost = skillPointCost(input.skillId, 0, input.level);

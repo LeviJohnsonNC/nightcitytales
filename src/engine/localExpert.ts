@@ -24,7 +24,7 @@
  *
  * Pure TypeScript.
  */
-import { getDistrict } from "./geography";
+import { AREAS, DISTRICTS, getDistrict } from "./geography";
 
 /** The printed Skill this module is about. */
 export const LOCAL_EXPERT_SKILL_ID = "local_expert";
@@ -188,4 +188,57 @@ export function localExpertAreas(
       level,
     }))
     .sort((a, b) => b.level - a.level || a.districtName.localeCompare(b.districtName));
+}
+
+// ---------------------------------------------------------------------------
+// The neighbourhoods a player can actually choose between.
+// ---------------------------------------------------------------------------
+
+export type LocalExpertArea = {
+  districtKey: string;
+  districtName: string;
+  /** The part of the city it is in, for grouping a long list. */
+  areaKey: string;
+  areaName: string;
+};
+
+/**
+ * Every neighbourhood this Skill may be taken for, grouped by part of the city.
+ *
+ * The whole district list, in the atlas's own order within each area. There is
+ * no filtering to do: a district IS the legal scope, so every one of them is a
+ * legal answer — including the ones nobody would choose to know, which is the
+ * point of letting a player choose rather than offering them a shortlist.
+ *
+ * Exists so that the picker cannot offer something `areaKeyOf` would fail to
+ * resolve. Before it, the specialization was a free-text box, and "Night City"
+ * or a typo went onto the sheet as a Skill that covered no ground in the city.
+ */
+export function localExpertAreaOptions(): LocalExpertArea[] {
+  const order = new Map(AREAS.map((area, index) => [area.key, index]));
+  return DISTRICTS.map((district) => ({
+    districtKey: district.key,
+    districtName: district.name,
+    areaKey: district.area,
+    areaName: AREAS.find((a) => a.key === district.area)?.name ?? district.area,
+  })).sort(
+    (a, b) =>
+      (order.get(a.areaKey) ?? 0) - (order.get(b.areaKey) ?? 0) ||
+      a.districtName.localeCompare(b.districtName),
+  );
+}
+
+/**
+ * Whether a stored specialization is one this Skill can legally carry: a
+ * neighbourhood on the map, or the placeholder that will become one.
+ *
+ * The guard the picker makes unreachable and validation still asks, because a
+ * draft saved before the picker existed can hold anything somebody typed.
+ */
+export function isLegalLocalExpertArea(
+  specialization: string | null | undefined,
+  homeDistrictKey?: string | null,
+): boolean {
+  if (isHomeArea(specialization)) return true;
+  return areaKeyOf(specialization, homeDistrictKey) !== null;
 }

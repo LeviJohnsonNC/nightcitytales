@@ -34,6 +34,46 @@ function build(overrides: Partial<Parameters<typeof assembleCharacter>[0]> = {})
   });
 }
 
+/**
+ * The line every Role package grants is "Local Expert (Your Home)". Once the
+ * character has an address, the sheet says which neighbourhood that is — on all
+ * three screens that render a sheet, because they all assemble it here.
+ */
+describe("a place-scoped Skill on the sheet", () => {
+  const skills = [{ skillId: "local_expert", level: 6, specialization: "Your Home" }];
+
+  it("names the home district once there is one", () => {
+    const sheet = build({ skills, homeDistrictKey: "the_glen" });
+    expect(sheet.skills.find((l) => l.skillId === "local_expert")?.name).toBe(
+      "Local Expert (The Glen)",
+    );
+  });
+
+  it("still names the decision still to come when there is no home yet", () => {
+    const sheet = build({ skills });
+    expect(sheet.skills.find((l) => l.skillId === "local_expert")?.name).toBe(
+      "Local Expert (Your Home)",
+    );
+  });
+
+  it("shows a district the player chose for themselves by its printed name", () => {
+    const sheet = build({
+      skills: [{ skillId: "local_expert", level: 3, specialization: "pacifica_playground" }],
+      homeDistrictKey: "the_glen",
+    });
+    expect(sheet.skills.find((l) => l.skillId === "local_expert")?.name).toBe(
+      "Local Expert (Pacifica Playground)",
+    );
+  });
+
+  it("carries the specialization through to the check actor", () => {
+    const sheet = build({ skills, homeDistrictKey: "the_glen" });
+    const line = sheet.skills.find((l) => l.skillId === "local_expert");
+    expect(line?.specialization).toBe("Your Home");
+    expect(sheet.finance.homeDistrictKey).toBe("the_glen");
+  });
+});
+
 describe("assembleCharacter", () => {
   it("derives from the engine, not by hand", () => {
     const sheet = build();

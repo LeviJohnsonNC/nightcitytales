@@ -251,12 +251,23 @@ The stages, in dependency order:
   standing in and is worth 0 where they are not a local; the roll log, the check
   card and the model's own Skill list all name the neighbourhood the Level is
   for. Language and every unspecialized Skill are untouched.
-- Stage 1: chargen picks a real neighbourhood. A district picker instead of the
-  free-text box, `Your Home` as a deliberate deferral resolved at the Outfit &
-  Lifestyle step (the printed creation order puts Skills before housing and must
-  not be reordered), the consequence shown where the home is chosen, the
-  resolved label on the sheet, and a final-gate violation for a placeholder that
-  never got a home.
+- ~~Stage 1: chargen picks a real neighbourhood~~ — the free-text box is a
+  district picker (grouped by part of the city, with a ★ on whatever the
+  character's childhood points at, a highlight and never a filter), `Your Home`
+  is offered as a deliberate deferral because the printed creation order puts
+  Skills before housing and must not be reordered, and Complete Package now
+  seeds Local Expert on that placeholder — the rules minimum used to demand a
+  Basic Skill the wizard never created, so the one Skill everybody has was the
+  one the player had to invent. `skillEntryName` resolves a place-scoped
+  specialization to the district's printed name, given once in
+  `sheetSkillLines`, so the chargen sheet, the roster and the in-play drawer all
+  read "Local Expert (The Glen)". The home picker's spotlight says what the
+  address does to the Skill, which is the moment the choice stops being flavour.
+  Validation refuses a line naming somewhere the map does not have, which is
+  what a draft saved before the picker can hold.
+  No separate final-gate check: `validateLifestyle` already requires a district
+  and a building, so a character cannot be saved with the placeholder
+  unresolved, and a second mechanism would only be a second thing to keep true.
 - Stage 2: pay in information, through the ladder that already exists.
   `placeIntel`'s rungs are earned one building at a time; Local Expert should
   open them a neighbourhood at a time, with its Level-to-rung thresholds in data

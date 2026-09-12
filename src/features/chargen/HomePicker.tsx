@@ -23,12 +23,15 @@ import {
   execHomes,
   homePreview,
   homesIn,
+  localExpertAreas,
+  localExpertLevel,
   startingLifestylePlan,
   suggestedHomeIn,
   suggestedHome,
   type District,
   type HomePreview,
   type PlaceProfile,
+  type SkillEntry,
 } from "@/engine";
 import { placeArtwork, placeDossier } from "@/features/atlas/placeDossiers";
 import { cn } from "@/lib/utils";
@@ -202,8 +205,72 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
+/**
+ * What choosing this district does to the character's Skills.
+ *
+ * The one place where the address stops being flavour. Every Role package
+ * grants "Local Expert (Your Home)" and the phrase resolves through whatever is
+ * picked here, so this is the moment the player finds out that their Level 6 is
+ * Level 6 in The Glen and nothing at all three districts over.
+ *
+ * Reads the sheet rather than asserting anything: a character who spent their
+ * own points on a different neighbourhood is told that too, because that line
+ * is unaffected by where they live and the confusion would be real.
+ */
+function LocalExpertFact({
+  skills,
+  districtKey,
+  districtName,
+}: {
+  skills: SkillEntry[];
+  districtKey: string;
+  districtName: string;
+}) {
+  // Asked as though this address were already chosen, because that is the
+  // question: the placeholder every Role package grants resolves to whichever
+  // district the player is looking at.
+  const here = localExpertLevel(skills, districtKey, districtKey);
+  const elsewhere = localExpertAreas(skills, districtKey).filter(
+    (area) => area.districtKey !== districtKey,
+  );
+
+  return (
+    <Fact label="What you know here">
+      {here > 0 ? (
+        <>
+          <span className="text-foreground">
+            Local Expert ({districtName}) {here}
+          </span>
+          <span className="text-text-dim">
+            {" "}
+            · the one neighbourhood this Skill is worth anything in.
+          </span>
+        </>
+      ) : (
+        <span className="text-text-dim">
+          No Local Expert for this district — you would live here as a stranger.
+        </span>
+      )}
+      {elsewhere.length ? (
+        <span className="text-text-dim">
+          {" "}
+          You are also a local in {elsewhere.map((a) => `${a.districtName} ${a.level}`).join(", ")}.
+        </span>
+      ) : null}
+    </Fact>
+  );
+}
+
 /** The chosen address, and what the atlas already knows about it. */
-function HomeSpotlight({ preview, housingName }: { preview: HomePreview; housingName: string }) {
+function HomeSpotlight({
+  preview,
+  housingName,
+  skills,
+}: {
+  preview: HomePreview;
+  housingName: string;
+  skills: SkillEntry[];
+}) {
   const entry = placeDossier(preview.placeKey);
   const art = entry ? placeArtwork(entry) : undefined;
   return (
@@ -247,6 +314,13 @@ function HomeSpotlight({ preview, housingName }: { preview: HomePreview; housing
           <Fact label="Who claims this ground">
             {preview.gangs.length ? preview.gangs.join(", ") : "Nobody, officially."}
           </Fact>
+          <div className="sm:col-span-2">
+            <LocalExpertFact
+              skills={skills}
+              districtKey={preview.districtKey}
+              districtName={preview.districtName}
+            />
+          </div>
         </dl>
 
         {preview.nearby.length ? (
@@ -461,7 +535,9 @@ export function HomePicker({ state }: { state: ChargenState }) {
       ) : null}
 
       {/* What you chose, and what it will mean. */}
-      {preview ? <HomeSpotlight preview={preview} housingName={plan.housingName} /> : null}
+      {preview ? (
+        <HomeSpotlight preview={preview} housingName={plan.housingName} skills={state.skills} />
+      ) : null}
     </div>
   );
 }
