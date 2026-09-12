@@ -30,7 +30,19 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       readAloud:
         "Net 54 Crimewatchers: a string of missing persons across the University District claims its latest victim — Lucy Rhinemeyer, 19, daughter of Rocklin Augmentics Executive Engineer George Edward Rhinemeyer. Seven women gone in four weeks; NCPD has no leads. Early the next morning, a message arrives from Mr. Rhinemeyer's representative offering 2,000eb per head — 500 up front — to recover Lucy, in whatever state you find her.",
       gmBrief:
-        "Set the neon-noir tone. The job looks like a straightforward recovery for a grieving Exec. It is not: the Edgerunner is a pawn in a scheme by The Master, a Philharmonic Vampyre leader, to quietly deal with one of their own.",
+        "Set the neon-noir tone. A grieving Exec, a missing daughter, and a fee that is better than the work looks. Play it as the straightforward recovery it is being sold as — you have not been told otherwise, and neither has the Edgerunner.",
+      truths: [
+        {
+          id: "pawn",
+          kind: "motive",
+          fact: "This was never a recovery job. The Edgerunner is a pawn in a scheme by The Master, a Philharmonic Vampyre leader, to quietly deal with one of their own.",
+          skill: "deduction",
+          difficulty: "Professional",
+          // The Master says it himself when the Crew is finally received as a
+          // guest. A twist has to be able to land on the scene built to land it.
+          revealedAt: "darkness_and_light",
+        },
+      ],
       playerBrief:
         "Seven women have vanished from the University District in four weeks. The latest is Lucy Rhinemeyer, 19. Her father's representative is offering 2,000eb per head, 500 up front, to bring her back — in whatever state you find her.",
       objectives: ["Recover Lucy Rhinemeyer"],
@@ -42,7 +54,16 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       title: "The Hook",
       page: 6,
       gmBrief:
-        "Rhinemeyer is bankrolling (bribing) NCPD to prioritize his daughter's case, but the cops are swamped with gang activity and can't move on the prime suspects — the Philharmonic Vampyres — on their own turf. Campus Security suspects the Vampyres but can't act. The patron's task: get into one of the Vampyres' parties and investigate from the inside.",
+        "NCPD and Campus Security both like the Philharmonic Vampyres for this and neither can move on them on their own turf. The patron's task is plain: get inside one of the Vampyres' parties and investigate from there.",
+      truths: [
+        {
+          id: "bribe",
+          kind: "social",
+          fact: "Rhinemeyer is paying NCPD under the table to keep his daughter's case at the top of a pile they have no resources for.",
+          skill: "streetwise",
+          difficulty: "Difficult",
+        },
+      ],
       playerBrief:
         "NCPD and Campus Security both like a campus crew called the Philharmonic Vampyres for the disappearances, and neither can move on them. Your patron wants you inside one of their parties, asking questions where badges can't.",
       exits: [{ to: "getting_tickets", label: "Find a way into the Vampyres' party" }],
@@ -71,7 +92,16 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       title: "Night at the Opera",
       page: 7,
       gmBrief:
-        "Just after sundown, a line forms outside the symphony hall; a battered Campus Security aerodyne is parked out front. A top-hatted, ghost-white host barks invitations while burlesque dancers writhe. No one checks for weapons. Inside, a futuristic staging of Dracula unfolds — style, swagger, and menace. Watch for what's off beneath the spectacle.",
+        "Just after sundown, a line forms outside the symphony hall; a battered Campus Security aerodyne is parked out front. A top-hatted, ghost-white host barks invitations while burlesque dancers writhe. No one checks for weapons. Inside, a futuristic staging of Dracula unfolds — style, swagger, and menace. Play the spectacle straight and let them watch it.",
+      truths: [
+        {
+          id: "theatre_not_threat",
+          kind: "social",
+          fact: "The menace here is staging. These people are performers who like the costume; whatever is taking women off this campus is not in this room.",
+          skill: "human_perception",
+          difficulty: "Difficult",
+        },
+      ],
       playerBrief:
         "You're in line outside the Symphony Hall after sundown. Nobody checks for weapons. Inside is a staging of Dracula with real teeth behind the theatre — and plenty to notice if you're watching.",
       checks: [
@@ -100,7 +130,37 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       title: "Empty Office Hours (optional)",
       page: 11,
       gmBrief:
-        "Professor Huntver's office, fourth floor of the social sciences building. The evidence, if searched, is damning: a kissed photo of Network 54 anchor Barbara Dahl; a bloodstained clown costume and Inquisitor uniform hidden behind academic regalia; a locked mini-fridge holding good vodka and a preserved human head — the late Kenneth Dahl, Barbara's husband. Huntver is Lord Ruthven. Learning this can send the Crew straight at Ruthven, or to the Vampyres first.",
+        "Professor Huntver's office, fourth floor of the social sciences building. He has not answered mail in weeks and the door is locked. Describe the room as somebody finds it — academic clutter, regalia on a hook, a mini-fridge with a lock on it — and let them search. What searching turns up is the engine's to say, not yours: do not decide what is in here.",
+      truths: [
+        {
+          id: "photo",
+          kind: "physical",
+          fact: "A photograph of Network 54 anchor Barbara Dahl on Huntver's desk, kissed so often the print has worn through.",
+          skill: "perception",
+          difficulty: "Everyday",
+        },
+        {
+          id: "costume",
+          kind: "physical",
+          fact: "Behind the academic regalia: a bloodstained clown costume and an Inquisitor uniform, both hidden rather than stored.",
+          skill: "perception",
+          difficulty: "Difficult",
+        },
+        {
+          id: "head",
+          kind: "physical",
+          fact: "The locked mini-fridge holds good vodka and a preserved human head — Kenneth Dahl, Barbara's late husband.",
+          skill: "perception",
+          difficulty: "Professional",
+        },
+        {
+          id: "huntver_is_ruthven",
+          kind: "deception",
+          fact: "Professor Huntver is Lord Ruthven. The man the campus has been mailing about a thesis is the one taking the women.",
+          skill: "deduction",
+          difficulty: "Difficult",
+        },
+      ],
       playerBrief:
         "Professor Huntver's office, fourth floor of the social sciences building. He has not answered mail in weeks, and the door is locked.",
       checks: [
@@ -167,7 +227,19 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       page: 12,
       encounter: true,
       gmBrief:
-        "The Union Chapel squats on the Combat Zone border, its open door lit by a flickering neon 'Open' sign like a mouth waiting to be fed. Inside is a charnel house — a carpet of stitched human skin, skinless bodies seated at rotting tables, cybered heads guttering red wax on the bar. Surviving lieutenants (the Monk and/or the Clown) and their mooks guard the way, backed by automated turrets (NET Architecture, Floor DV8). Then Lord Ruthven himself — black medical uniform, hooded cloak, jagged metal fangs — attacks to the death: 'Witness my supremacy, vermin!' Behind the tapestry: a medical pod of six women biosculpted to resemble Barbara Dahl. Only Lucy Rhinemeyer still lives.",
+        "The Union Chapel squats on the Combat Zone border, its open door lit by a flickering neon 'Open' sign like a mouth waiting to be fed. Inside is a charnel house — a carpet of stitched human skin, skinless bodies seated at rotting tables, cybered heads guttering red wax on the bar. Surviving lieutenants (the Monk and/or the Clown) and their mooks guard the way, backed by automated turrets (NET Architecture, Floor DV8). Then Lord Ruthven himself — black medical uniform, hooded cloak, jagged metal fangs — attacks to the death: 'Witness my supremacy, vermin!' There is a tapestry on the far wall. Do not say what is behind it.",
+      truths: [
+        {
+          id: "behind_the_tapestry",
+          kind: "physical",
+          fact: "Behind the tapestry: a medical pod holding six women biosculpted to resemble Barbara Dahl. Only Lucy Rhinemeyer is still alive.",
+          skill: "perception",
+          difficulty: "Everyday",
+          // Whatever else happens, a Crew that clears this room finds her. The
+          // job cannot end with Lucy undiscovered because nobody rolled.
+          revealedAt: "epilogue",
+        },
+      ],
       playerBrief:
         "The Union Chapel Building on the Combat Zone border, door propped open under a flickering neon OPEN sign. Lord Ruthven is inside, and so — if anyone is still breathing — is Lucy.",
       opposition: [

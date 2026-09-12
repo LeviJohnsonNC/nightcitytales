@@ -42,6 +42,18 @@ export type GmNpcSummary = {
 export type GmContextInput = {
   mission: Mission;
   beat: Beat;
+  /**
+   * Facts this beat was holding back that the character has now FOUND, and only
+   * those.
+   *
+   * The beat's concealed half used to live in `gmBrief`, which reaches the model
+   * every turn of the beat — so on beat one of Night at the Opera the narrator
+   * was told the whole solution and asked to spend four beats of investigation
+   * not letting on. `JobCard.tsx` has always been careful never to render a
+   * gmBrief to the player; the prompt had no such care. The undiscovered ones
+   * are not withheld by instruction now: they are never sent.
+   */
+  discoveredBeatTruths?: string[];
   availableExits: BeatExit[];
   character: GmCharacterSummary;
   objectives: MissionObjective[];
@@ -147,6 +159,16 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   parts.push(line("Mission", `${mission.title} — Beat: ${beat.title} (${beat.type})`));
   if (context.clock) parts.push(line("Time", context.clock));
   parts.push(line("GM brief", beat.gmBrief));
+  if (context.discoveredBeatTruths?.length) {
+    parts.push("", "-- WHAT THEY HAVE UNCOVERED IN THIS JOB --");
+    for (const fact of context.discoveredBeatTruths) parts.push(`  - ${fact}`);
+    parts.push(
+      "The character worked these out or found them. They are established: do not contradict " +
+        "one and do not re-reveal one as though it were new. Anything else this scene is holding " +
+        "back has NOT been found, and you have not been told it — so do not hint at it, and do " +
+        "not decide what it is. What is here to find is the engine's to say, on a check.",
+    );
+  }
   if (beat.readAloud) parts.push(line("Read-aloud", beat.readAloud));
   if (beat.checks?.length) {
     parts.push(

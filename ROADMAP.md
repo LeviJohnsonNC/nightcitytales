@@ -381,11 +381,14 @@ seventeen bespoke ones.
   already-true fact the roll reached, and the narrator is handed that one line
   and only that. Undiscovered truths are never sent to the model at all.
   Finding nothing is a designed outcome, not a failure.
-- Slice 2: the `gmBrief` leak. `gmContext.ts` pushes a beat's GM brief — the
-  job's actual twists — into the prompt every turn, while `JobCard.tsx` is
-  careful never to render it to the player. Split it into a situation the model
-  narrates and truths it is not told until they are found. Needed slice 1 first,
-  because the withheld half needs somewhere to live.
+- ~~Slice 2: the `gmBrief` leak~~ — a beat's brief reaches the model every turn
+  of the beat, so on beat one of Night at the Opera the narrator was told the
+  whole solution ("the Edgerunner is a pawn in a scheme by The Master") and
+  asked to spend four beats of investigation not letting on. Every brief that
+  carried its own twist is split: the situation the model narrates stays, and
+  the answer moves to `Beat.truths`, which is not sent until the character finds
+  it. Both authored beats and all five generated archetypes. A truth may carry
+  `revealedAt`, for the one that lands on arrival rather than on a roll.
 - Slice 3: the social six. `readsThePerson` currently returns true for any
   Social-category Skill at margin 5, and that category includes Personal
   Grooming and Wardrobe & Style — so nine Skills are one Skill. Differentiate by

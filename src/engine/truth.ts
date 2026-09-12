@@ -53,7 +53,16 @@ import type { PlaceState } from "./placeState";
 export const TRUTH_KINDS = ["physical", "social", "historical", "motive", "deception"] as const;
 export type TruthKind = (typeof TRUTH_KINDS)[number];
 
-export type TruthSubject = { kind: "place" | "person" | "district"; key: string };
+export type TruthSubject = {
+  /**
+   * `beat` is a scene in a job rather than a spot on the map: the concealed
+   * half of what a mission beat is about. Its truths are authored or templated
+   * with the beat instead of derived from tags, because a job's twist is not a
+   * property of the ground it happens on.
+   */
+  kind: "place" | "person" | "district" | "beat";
+  key: string;
+};
 
 export type Truth = {
   /**
@@ -251,4 +260,82 @@ export function searchWith(args: {
   if (!candidates.length) return { outcome: "nothing" };
   const reached = candidates.find((truth) => args.total >= truth.found.dv);
   return reached ? { outcome: "found", truth: reached } : { outcome: "missed" };
+}
+
+// ---------------------------------------------------------------------------
+// The concealed half of a mission beat.
+// ---------------------------------------------------------------------------
+
+/**
+ * A fact a beat is holding back, as the mission content declares it.
+ *
+ * Missions carry their secrets in `gmBrief`, which goes to the model every turn
+ * of that beat. So on beat one of Night at the Opera the narrator was told the
+ * whole solution — that the Edgerunner is a pawn in The Master's scheme — and
+ * asked to spend four beats of investigation not letting on. `JobCard.tsx` is
+ * careful never to render a gmBrief to the player; the prompt had no such care.
+ *
+ * These are what comes out of those briefs: the facts the player has no way of
+ * knowing yet, each with the Skill and published difficulty that would find it,
+ * and optionally the beat that reveals it whatever anybody rolled.
+ */
+export type BeatTruth = {
+  /** Unique within the beat. Combined with the beat to make the truth's key. */
+  id: string;
+  fact: string;
+  /** The printed Skill that finds it. */
+  skill: string;
+  /** A published Difficulty Value BY NAME, resolved through checkDV. */
+  difficulty: string;
+  /**
+   * The beat that makes this plain regardless of any check.
+   *
+   * Without this a twist could simply never land: the complication beat's whole
+   * job is to reveal that the floor plan was wrong, and a story that reaches it
+   * should not depend on somebody having rolled well earlier. A truth with no
+   * `revealedAt` is only ever found by looking.
+   */
+  revealedAt?: string;
+  kind?: TruthKind;
+};
+
+/** The truths one beat is holding, as engine truths with stable keys. */
+export function truthsInBeat(args: {
+  missionId: string;
+  beatId: string;
+  truths: readonly BeatTruth[] | undefined;
+}): Truth[] {
+  if (!args.truths?.length) return [];
+  const subject: TruthSubject = { kind: "beat", key: `${args.missionId}:${args.beatId}` };
+  return args.truths.map((truth) => ({
+    key: truthKey(subject, truth.id),
+    kind: truth.kind ?? "historical",
+    fact: truth.fact,
+    subject,
+    found: { skillId: truth.skill, dv: getDV(truth.difficulty) },
+    needs: [],
+  }));
+}
+
+/**
+ * The truths a beat reveals on arrival, whatever anybody rolled.
+ *
+ * Read against the beat the story has actually reached, so a twist lands when
+ * the mission reaches the scene that exposes it. Everything else in the beat
+ * stays hidden until somebody looks.
+ */
+export function truthsRevealedAt(args: {
+  missionId: string;
+  beatId: string;
+  truths: readonly BeatTruth[] | undefined;
+  /** The beat the story is standing on now. */
+  atBeatId: string;
+}): Truth[] {
+  const revealed = new Set(
+    (args.truths ?? []).filter((t) => t.revealedAt === args.atBeatId).map((t) => t.id),
+  );
+  if (!revealed.size) return [];
+  return truthsInBeat(args).filter((truth) =>
+    revealed.has(truth.key.slice(truth.key.lastIndexOf("::") + 2)),
+  );
 }

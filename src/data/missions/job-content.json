@@ -9,22 +9,32 @@
     "skills": "Every skill below must be a printed Skill name from skills.json, so the GM can map it to a real skill id.",
     "force": "Every opposition entry names a force key from data/rules/threats.json. It is READ, never drawn, so adding this field changed no existing job: the fiction of who is against you decides the statblocks of who turns up, instead of the GM model inventing them."
   },
-
   "fixers": [
     {
       "name": "Rogue Amendiares",
       "line": "the Afterlife's owner, who does not make calls like this twice"
     },
-    { "name": "Wakako Okada", "line": "who takes her cut off the top and never explains it" },
+    {
+      "name": "Wakako Okada",
+      "line": "who takes her cut off the top and never explains it"
+    },
     {
       "name": "Sebastian \"Padre\" Ibarra",
       "line": "who asks after your soul before he asks after the job"
     },
-    { "name": "Dakota Smith", "line": "who runs the Badlands routes and vouches for nobody" },
-    { "name": "Regina Jones", "line": "who pays scanner rates and expects discretion" },
-    { "name": "Mama Welles", "line": "who feeds you first and names the price after" }
+    {
+      "name": "Dakota Smith",
+      "line": "who runs the Badlands routes and vouches for nobody"
+    },
+    {
+      "name": "Regina Jones",
+      "line": "who pays scanner rates and expects discretion"
+    },
+    {
+      "name": "Mama Welles",
+      "line": "who feeds you first and names the price after"
+    }
   ],
-
   "patrons": [
     {
       "name": "Adele Voss",
@@ -63,7 +73,6 @@
       "tell": "His hands are steady. His story about why he needs this isn't."
     }
   ],
-
   "districts": [
     {
       "key": "watson_development",
@@ -186,7 +195,6 @@
       "colour": "6th Street running security and extortion out of the same building, and the Toecutters on the eastern edge"
     }
   ],
-
   "targets": [
     {
       "name": "a sealed data shard",
@@ -219,7 +227,6 @@
       "why": "The crash it logged is officially still under investigation."
     }
   ],
-
   "opposition": [
     {
       "name": "Maelstrom",
@@ -252,15 +259,14 @@
       "force": "military"
     }
   ],
-
   "archetypes": [
     {
       "id": "retrieval",
       "title": "Retrieval in {district}",
       "objective": "Bring {target} back intact",
       "background": "{fixer} passes the job along without editorial. A client they will not name wants {target} out of {district} and into their hands, quietly, before the week turns. {why} The fee is real money for a night's work, which is the part that should worry you.",
-      "backgroundBrief": "A clean-sounding retrieval. It is not clean. Establish {district} — {colour} — and let the money look better than the job.",
-      "hookBrief": "{patron} meets in person. {tell} They will not say who else is looking for {target}, only that speed matters more than subtlety. The Edgerunner is being hired because someone expendable was required.",
+      "backgroundBrief": "A retrieval, pitched clean. Establish {district} — {colour} — and let the money look better than the job. Play the pitch as the pitch: you have not been told what is wrong with it.",
+      "hookBrief": "{patron} meets in person. {tell} They will not say who else is looking for {target}, only that speed matters more than subtlety.",
       "legworkBrief": "The Edgerunner needs a way in, and {district} offers two: the people who work the site, and the site itself. Present both without steering.",
       "approaches": [
         {
@@ -269,8 +275,14 @@
           "flag": "approach_inside",
           "brief": "Someone on the payroll drinks nearby and resents management. They can be bought, charmed, or leaned on — but they will remember which one it was.",
           "checks": [
-            { "skill": "Persuasion", "dv": 15 },
-            { "skill": "Streetwise", "dv": 13 }
+            {
+              "skill": "Persuasion",
+              "dv": 15
+            },
+            {
+              "skill": "Streetwise",
+              "dv": 13
+            }
           ]
         },
         {
@@ -279,14 +291,23 @@
           "flag": "approach_recon",
           "brief": "Two hours on a facing rooftop reads the whole rhythm of the place: shift change, camera arcs, which door is propped open for a smoke break.",
           "checks": [
-            { "skill": "Perception", "dv": 13 },
-            { "skill": "Stealth", "dv": 15 }
+            {
+              "skill": "Perception",
+              "dv": 13
+            },
+            {
+              "skill": "Stealth",
+              "dv": 15
+            }
           ]
         }
       ],
-      "complicationBrief": "Word comes that {the} is already moving. It turns out {opposition} — {oppositionFlavour} — got the same job from the other side, or got there first. The window is closing tonight, not this week.",
+      "complicationBrief": "Word comes that {the} is already moving. The window is closing tonight, not this week.",
       "complicationChecks": [
-        { "skill": "Deduction", "dv": 15 },
+        {
+          "skill": "Deduction",
+          "dv": 15
+        },
         {
           "skill": "Drive Land Vehicle",
           "dv": 17,
@@ -294,15 +315,46 @@
         }
       ],
       "climaxBrief": "It comes down to a room with {the} in it and {opposition} between. Frame the geography — cover, exits, distance in metres — and let the player choose violence or something cleverer. Both are real options.",
-      "resolutionBrief": "The handoff. {patron} takes {the}, pays what was agreed, and the Edgerunner learns just enough about why to wish they hadn't. Night City keeps the change."
+      "resolutionBrief": "The handoff. {patron} takes {the}, pays what was agreed, and the Edgerunner learns just enough about why to wish they hadn't. Night City keeps the change.",
+      "beatTruths": {
+        "background": [
+          {
+            "id": "not_clean",
+            "kind": "motive",
+            "fact": "This job is not the clean retrieval it was sold as.",
+            "skill": "deduction",
+            "difficulty": "Difficult",
+            "revealedAt": "complication"
+          }
+        ],
+        "hook": [
+          {
+            "id": "expendable",
+            "kind": "motive",
+            "fact": "The Edgerunner is being hired because somebody expendable was required.",
+            "skill": "human_perception",
+            "difficulty": "Difficult"
+          }
+        ],
+        "complication": [
+          {
+            "id": "other_side",
+            "kind": "historical",
+            "fact": "{opposition} were given the same job from the other side, or simply got there first.",
+            "skill": "streetwise",
+            "difficulty": "Everyday",
+            "revealedAt": "complication"
+          }
+        ]
+      }
     },
     {
       "id": "extraction",
       "title": "Extraction from {district}",
       "objective": "Get the package out of {district} alive",
       "background": "{fixer} makes the introduction and then makes themselves scarce. The client needs a person pulled out of {district} tonight — willing or not, and the brief is deliberately vague about which. {why}",
-      "backgroundBrief": "An extraction with a soft centre: the package may not want extracting. Establish {district} — {colour} — and keep the ambiguity live.",
-      "hookBrief": "{patron} briefs fast and leaves faster. {tell} The Edgerunner gets a face, an address, and a window. Nobody mentions what happens to the package afterward.",
+      "backgroundBrief": "An extraction with a soft centre. Establish {district} — {colour} — and keep the ambiguity live without resolving it.",
+      "hookBrief": "{patron} briefs fast and leaves faster. {tell} The Edgerunner gets a face, an address, and a window.",
       "legworkBrief": "Two ways to find the package before the window opens: the paper trail, or the people who have seen them.",
       "approaches": [
         {
@@ -311,8 +363,14 @@
           "flag": "approach_records",
           "brief": "Delivery manifests, clinic intakes, a lease under a cousin's name. Boring work that puts a pin on a map.",
           "checks": [
-            { "skill": "Library Search", "dv": 15 },
-            { "skill": "Cryptography", "dv": 17 }
+            {
+              "skill": "Library Search",
+              "dv": 15
+            },
+            {
+              "skill": "Cryptography",
+              "dv": 17
+            }
           ]
         },
         {
@@ -321,18 +379,61 @@
           "flag": "approach_streets",
           "brief": "People here answer questions from someone who buys a round and doesn't look like a cop. They also talk about who was asking.",
           "checks": [
-            { "skill": "Streetwise", "dv": 13 },
-            { "skill": "Human Perception", "dv": 15 }
+            {
+              "skill": "Streetwise",
+              "dv": 13
+            },
+            {
+              "skill": "Human Perception",
+              "dv": 15
+            }
           ]
         }
       ],
-      "complicationBrief": "The package is guarded — not by {opposition}, yet, but by people who love them. Circling the block are {opposition}, {oppositionFlavour}, and they are not here to extract anybody.",
+      "complicationBrief": "The package is guarded. Circling the block are {opposition}, {oppositionFlavour}, and they are not here to extract anybody.",
       "complicationChecks": [
-        { "skill": "Conversation", "dv": 13 },
-        { "skill": "Tactics", "dv": 17 }
+        {
+          "skill": "Conversation",
+          "dv": 13
+        },
+        {
+          "skill": "Tactics",
+          "dv": 17
+        }
       ],
       "climaxBrief": "The window opens, and {opposition} move at the same moment. Give the player the package, the exit, and not enough time — and let the package have an opinion.",
-      "resolutionBrief": "Whatever crossed the district line is what {patron} pays for. Let the Edgerunner sit with the shape of what they just did, then let {org} close the file."
+      "resolutionBrief": "Whatever crossed the district line is what {patron} pays for. Let the Edgerunner sit with the shape of what they just did, then let {org} close the file.",
+      "beatTruths": {
+        "background": [
+          {
+            "id": "unwilling",
+            "kind": "motive",
+            "fact": "The package may not want extracting.",
+            "skill": "human_perception",
+            "difficulty": "Everyday",
+            "revealedAt": "complication"
+          }
+        ],
+        "hook": [
+          {
+            "id": "afterward",
+            "kind": "motive",
+            "fact": "Nobody has said what happens to the package afterward, and the omission is deliberate.",
+            "skill": "conversation",
+            "difficulty": "Difficult"
+          }
+        ],
+        "complication": [
+          {
+            "id": "loved",
+            "kind": "social",
+            "fact": "The people guarding the package are not muscle. They love them.",
+            "skill": "human_perception",
+            "difficulty": "Everyday",
+            "revealedAt": "complication"
+          }
+        ]
+      }
     },
     {
       "id": "sabotage",
@@ -340,7 +441,7 @@
       "objective": "Put the operation in {district} out of commission",
       "background": "{fixer} says only that the client pays on results. Somebody with money wants something in {district} to stop working — permanently enough to matter, quietly enough to deny. {why}",
       "backgroundBrief": "Industrial sabotage with a deniability clause. Establish {district} — {colour} — and make clear nobody will confirm this conversation happened.",
-      "hookBrief": "{patron} supplies a floor plan two revisions out of date and a hard deadline. {tell} No support, no extraction, no acknowledgement if it goes wrong.",
+      "hookBrief": "{patron} supplies a floor plan and a hard deadline. {tell} No support, no extraction, no acknowledgement if it goes wrong.",
       "legworkBrief": "The Edgerunner needs to know what actually breaks the place: the machinery, or the people running it.",
       "approaches": [
         {
@@ -349,8 +450,14 @@
           "flag": "approach_technical",
           "brief": "Schematics, load ratings, and the one subsystem whose failure takes everything else with it. Elegant, if it works.",
           "checks": [
-            { "skill": "Basic Tech", "dv": 15 },
-            { "skill": "Demolitions", "dv": 17 }
+            {
+              "skill": "Basic Tech",
+              "dv": 15
+            },
+            {
+              "skill": "Demolitions",
+              "dv": 17
+            }
           ]
         },
         {
@@ -359,25 +466,59 @@
           "flag": "approach_social",
           "brief": "A shift supervisor with gambling debts is a better tool than any charge. Riskier: people talk, and this one might.",
           "checks": [
-            { "skill": "Bribery", "dv": 15 },
-            { "skill": "Interrogation", "dv": 17 }
+            {
+              "skill": "Bribery",
+              "dv": 15
+            },
+            {
+              "skill": "Interrogation",
+              "dv": 17
+            }
           ]
         }
       ],
-      "complicationBrief": "The floor plan was wrong, or the schedule was. On site tonight, and on nobody's list, are {opposition} — {oppositionFlavour}. Improvise or walk — and walking has a price too.",
+      "complicationBrief": "Something about the brief was wrong. On site tonight are {opposition} — {oppositionFlavour}. Improvise or walk — and walking has a price too.",
       "complicationChecks": [
-        { "skill": "Electronics/Security Tech", "dv": 17 },
-        { "skill": "Stealth", "dv": 15 }
+        {
+          "skill": "Electronics/Security Tech",
+          "dv": 17
+        },
+        {
+          "skill": "Stealth",
+          "dv": 15
+        }
       ],
       "climaxBrief": "The job goes loud, or it goes perfectly and then goes loud, with {opposition} between the Edgerunner and the door. State distances in metres and let the clock run.",
-      "resolutionBrief": "Something in {district} stops working. {patron} never says thank you and the payment arrives from an account with no name on it. Someone will come looking eventually."
+      "resolutionBrief": "Something in {district} stops working. {patron} never says thank you and the payment arrives from an account with no name on it. Someone will come looking eventually.",
+      "beatTruths": {
+        "hook": [
+          {
+            "id": "stale_plan",
+            "kind": "deception",
+            "fact": "The floor plan is two revisions out of date.",
+            "skill": "perception",
+            "difficulty": "Difficult",
+            "revealedAt": "complication"
+          }
+        ],
+        "complication": [
+          {
+            "id": "unlisted",
+            "kind": "historical",
+            "fact": "{opposition} are on site tonight and on nobody's list.",
+            "skill": "perception",
+            "difficulty": "Everyday",
+            "revealedAt": "complication"
+          }
+        ]
+      }
     },
     {
       "id": "protection",
       "title": "Protection detail in {district}",
       "objective": "Keep the principal breathing until morning",
       "background": "{fixer} calls it babysitting and does not laugh. The client needs a body between themselves and {district} for one night, and their name is not part of the briefing yet. {why} That is exactly why someone wants them dead.",
-      "backgroundBrief": "A bodyguard job where the threat is real and the principal is not being straight. Establish {district} — {colour} — and keep the night closing in.",
+      "backgroundBrief": "A bodyguard job where the threat is real. Establish {district} — {colour} — and keep the night closing in.",
       "hookBrief": "{patron} explains the schedule and omits the reason. {tell} One night, three stops, no questions — and a fee high enough to answer the questions anyway.",
       "legworkBrief": "Before the night starts, the Edgerunner can prepare the route or read the principal. Either buys something the other doesn't.",
       "approaches": [
@@ -387,8 +528,14 @@
           "flag": "approach_route",
           "brief": "Three stops, two chokepoints, one stretch with no cover at all. Knowing which is which is the whole job.",
           "checks": [
-            { "skill": "Tactics", "dv": 15 },
-            { "skill": "Perception", "dv": 13 }
+            {
+              "skill": "Tactics",
+              "dv": 15
+            },
+            {
+              "skill": "Perception",
+              "dv": 13
+            }
           ]
         },
         {
@@ -397,14 +544,23 @@
           "flag": "approach_principal",
           "brief": "What they are lying about narrows who is coming. They will not appreciate being read.",
           "checks": [
-            { "skill": "Human Perception", "dv": 15 },
-            { "skill": "Conversation", "dv": 13 }
+            {
+              "skill": "Human Perception",
+              "dv": 15
+            },
+            {
+              "skill": "Conversation",
+              "dv": 13
+            }
           ]
         }
       ],
-      "complicationBrief": "The first stop goes wrong early. Working the route are {opposition}, {oppositionFlavour}, which means someone sold the schedule — and only a few people had it.",
+      "complicationBrief": "The first stop goes wrong early. Working the route are {opposition}, {oppositionFlavour}.",
       "complicationChecks": [
-        { "skill": "Deduction", "dv": 15 },
+        {
+          "skill": "Deduction",
+          "dv": 15
+        },
         {
           "skill": "First Aid",
           "dv": 13,
@@ -412,15 +568,36 @@
         }
       ],
       "climaxBrief": "They come properly the second time, at the chokepoint. Frame cover and distance in metres. The principal is a liability, not an ally — play them that way.",
-      "resolutionBrief": "Dawn over {district}. If the principal is alive, {patron} pays and asks nothing. If not, the conversation is shorter. Either way the reason stays buried."
+      "resolutionBrief": "Dawn over {district}. If the principal is alive, {patron} pays and asks nothing. If not, the conversation is shorter. Either way the reason stays buried.",
+      "beatTruths": {
+        "background": [
+          {
+            "id": "not_straight",
+            "kind": "deception",
+            "fact": "The principal is not being straight about why they need protecting.",
+            "skill": "human_perception",
+            "difficulty": "Everyday"
+          }
+        ],
+        "complication": [
+          {
+            "id": "sold",
+            "kind": "social",
+            "fact": "Somebody sold the schedule, and only a few people had it.",
+            "skill": "deduction",
+            "difficulty": "Difficult",
+            "revealedAt": "complication"
+          }
+        ]
+      }
     },
     {
       "id": "investigation",
       "title": "Quiet inquiry in {district}",
       "objective": "Find out what happened to {target}",
       "background": "{fixer} passes it on because it is beneath them and above the client's means. Somebody is paying to know what became of {target} in {district}. {why} No police, no noise, no report in writing.",
-      "backgroundBrief": "An investigation that turns out to be about somebody's exposure, not somebody's grief. Establish {district} — {colour} — and let the client's calm sit slightly wrong.",
-      "hookBrief": "{patron} is measured about it, which is itself the tell. {tell} They want an answer, and there is a clear sense they would prefer one particular answer.",
+      "backgroundBrief": "A quiet inquiry on behalf of a composed client. Establish {district} — {colour} — and let the client's calm sit slightly wrong without saying why.",
+      "hookBrief": "{patron} is measured about it, which is itself the tell. {tell} They want an answer.",
       "legworkBrief": "Two threads: the last place {target} was seen, and the people who profited by it. Both lead somewhere; only one is safe.",
       "approaches": [
         {
@@ -429,8 +606,14 @@
           "flag": "approach_scene",
           "brief": "A cleaned room cleaned by someone in a hurry. What is missing says more than what is left.",
           "checks": [
-            { "skill": "Criminology", "dv": 15 },
-            { "skill": "Perception", "dv": 13 }
+            {
+              "skill": "Criminology",
+              "dv": 15
+            },
+            {
+              "skill": "Perception",
+              "dv": 13
+            }
           ]
         },
         {
@@ -439,25 +622,79 @@
           "flag": "approach_money",
           "brief": "Shell accounts and a transfer timed a little too well. Dry work that names a person.",
           "checks": [
-            { "skill": "Accounting", "dv": 15 },
-            { "skill": "Business", "dv": 17 }
+            {
+              "skill": "Accounting",
+              "dv": 15
+            },
+            {
+              "skill": "Business",
+              "dv": 17
+            }
           ]
         }
       ],
-      "complicationBrief": "The answer implicates the client. Already cleaning up behind the Edgerunner, one interview at a time, are {opposition} — {oppositionFlavour} — and the Edgerunner is now on the list.",
+      "complicationBrief": "Already cleaning up behind the Edgerunner, one interview at a time, are {opposition} — {oppositionFlavour} — and the Edgerunner is now on the list.",
       "complicationChecks": [
-        { "skill": "Conceal/Reveal Object", "dv": 15 },
-        { "skill": "Evasion", "dv": 15 }
+        {
+          "skill": "Conceal/Reveal Object",
+          "dv": 15
+        },
+        {
+          "skill": "Evasion",
+          "dv": 15
+        }
       ],
       "climaxBrief": "The truth and the cleanup crew arrive together, {opposition} in the room and the evidence within reach. Distances in metres — and telling the truth is as live an option as shooting.",
-      "resolutionBrief": "The Edgerunner knows what happened to {target}. What they do with it — sell it, bury it, hand it to {patron} — is the last real choice, and Night City will price it accordingly."
+      "resolutionBrief": "The Edgerunner knows what happened to {target}. What they do with it — sell it, bury it, hand it to {patron} — is the last real choice, and Night City will price it accordingly.",
+      "beatTruths": {
+        "background": [
+          {
+            "id": "exposure",
+            "kind": "motive",
+            "fact": "This is about the client's exposure, not the client's grief.",
+            "skill": "deduction",
+            "difficulty": "Difficult",
+            "revealedAt": "complication"
+          }
+        ],
+        "hook": [
+          {
+            "id": "preferred_answer",
+            "kind": "motive",
+            "fact": "The client would prefer one particular answer to the others.",
+            "skill": "human_perception",
+            "difficulty": "Everyday"
+          }
+        ],
+        "complication": [
+          {
+            "id": "implicates",
+            "kind": "motive",
+            "fact": "The answer implicates the client.",
+            "skill": "deduction",
+            "difficulty": "Professional",
+            "revealedAt": "complication"
+          }
+        ]
+      }
     }
   ],
-
   "rewardBands": [
-    { "eurobucksPerHead": 500, "upfront": 100 },
-    { "eurobucksPerHead": 1000, "upfront": 250 },
-    { "eurobucksPerHead": 1500, "upfront": 300 },
-    { "eurobucksPerHead": 2000, "upfront": 500 }
+    {
+      "eurobucksPerHead": 500,
+      "upfront": 100
+    },
+    {
+      "eurobucksPerHead": 1000,
+      "upfront": 250
+    },
+    {
+      "eurobucksPerHead": 1500,
+      "upfront": 300
+    },
+    {
+      "eurobucksPerHead": 2000,
+      "upfront": 500
+    }
   ]
 }

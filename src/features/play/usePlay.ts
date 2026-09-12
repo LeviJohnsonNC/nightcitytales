@@ -78,7 +78,14 @@ import {
   directionName,
   neighboursOf,
   getPlace,
+  isSearchSkill,
+  knownTruths,
+  type SkillCheckResult,
   placeFamiliarity,
+  searchWith,
+  truthsAt,
+  truthsRevealedAt,
+  truthsInBeat,
   type PlaceState,
 } from "@/engine";
 
@@ -89,6 +96,8 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  listCampaignTruths,
+  recordTruthDiscovery,
   findCampaignNpc,
   saveCampaignNpc,
   setCampaignClock,
@@ -232,6 +241,10 @@ export type PlayBundle = {
   encounter: LiveEncounter | null;
   /** Everything the campaign knows about the ground, keyed by place. */
   places: Record<string, PlaceState>;
+  /** Truth keys this campaign has discovered, places and beats alike. */
+  discoveredTruths: string[];
+  /** False until `campaign_truths` is migrated; the feature is then inert. */
+  truthsAvailable: boolean;
   /**
    * The fee agreed when this job was taken, when the player argued it up from
    * the printed reward. Null on a job nobody negotiated.
@@ -277,9 +290,14 @@ async function loadPlay(campaignId: string): Promise<PlayBundle> {
   // What the character has already learned about the ground, so a job at a
   // building they have cased before is not introduced from scratch.
   const places = await loadPlaceStates(campaignId);
+  // What this job has given up so far. Undiscovered beat truths never reach the
+  // prompt, so the narrator cannot telegraph a twist it has not been told.
+  const truths = await listCampaignTruths(campaignId);
   return {
     campaign: full.campaign,
     places,
+    discoveredTruths: truths.rows.map((row) => row.truth_key),
+    truthsAvailable: truths.available,
     vitals: full.vitals,
     character,
     mission,
@@ -439,6 +457,19 @@ async function narrate(
       : {}),
     mission: bundle.mission,
     beat: bundle.beat,
+    // Only what they have found. The rest of what this beat is holding is not
+    // in the prompt at all.
+    ...(() => {
+      const found = knownTruths(
+        truthsInBeat({
+          missionId: bundle.mission.id,
+          beatId: bundle.beat.id,
+          truths: bundle.beat.truths,
+        }),
+        bundle.discoveredTruths,
+      ).map((truth) => truth.fact);
+      return found.length ? { discoveredBeatTruths: found } : {};
+    })(),
     availableExits: bundle.availableExits,
     // Where they are standing goes with the sheet, so the Skill list reports
     // Local Expert for this district rather than for whichever one they know.
@@ -653,6 +684,7 @@ async function narrate(
       }
       if (next) {
         await saveMissionRuntime(campaignId, next);
+        await revealBeatTruths(bundle, bundle.mission, action.to);
         await logBeatAdvanced(campaignId, {
           mission: bundle.mission,
           fromBeatId: bundle.beat.id,
@@ -1029,10 +1061,126 @@ async function resolveCheck(
     ...bundle,
     events: await listCampaignEvents(campaignId),
   };
+  const found = await applyJobSearch(bundle, pending, result);
   await narrate(
     fresh,
-    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again. End on a decision.)`,
+    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again.${found ? ` ${found}` : ""} End on a decision.)`,
     { logInput: false, fixedResult: bundle.encounter?.state.status === "active" },
+  );
+}
+
+/**
+ * The twists a beat lands on arrival, whatever anybody rolled.
+ *
+ * A story that reaches the scene built to expose a secret should not depend on
+ * somebody having searched well two beats earlier — the complication beat's
+ * whole job is to reveal that the floor plan was wrong. So a truth may name the
+ * beat that reveals it, and reaching that beat records it as found.
+ *
+ * Persisted rather than derived, because once something is known it stays known
+ * and the story moves on past the scene that told it.
+ */
+async function revealBeatTruths(
+  bundle: PlayBundle,
+  mission: Mission,
+  toBeatId: string,
+): Promise<void> {
+  if (!bundle.truthsAvailable) return;
+  for (const beat of mission.beats) {
+    for (const truth of truthsRevealedAt({
+      missionId: mission.id,
+      beatId: beat.id,
+      truths: beat.truths,
+      atBeatId: toBeatId,
+    })) {
+      if (bundle.discoveredTruths.includes(truth.key)) continue;
+      const stored = await recordTruthDiscovery(bundle.campaign.id, {
+        truthKey: truth.key,
+        discoveredDay: bundle.campaign.day,
+        viaSkill: null,
+      });
+      if (!stored) continue;
+      await appendCampaignEvent({
+        campaign_id: bundle.campaign.id,
+        type: "truth_found",
+        summary: truth.fact,
+        data: { truthKey: truth.key, beatId: toBeatId } as unknown as Json,
+      });
+    }
+  }
+}
+
+/**
+ * Looking for something inside a job, and what the engine says is there.
+ *
+ * The Life loop has had this since the truth spine landed; a job is where it
+ * matters most, because a job is where the concealed things are. Professor
+ * Huntver's office used to say "the evidence, IF SEARCHED, is damning" and then
+ * list it in the same breath — a discovery system written as a parenthesis, with
+ * the whole of it handed to the narrator on arrival.
+ *
+ * Searches the beat's own concealed facts first, then the ground underfoot, so a
+ * scene built around a hidden thing answers before the building's generic tags
+ * do. Null when this was not a search, when nothing is found and nothing was
+ * there, or while `campaign_truths` is unmigrated.
+ */
+async function applyJobSearch(
+  bundle: PlayBundle,
+  pending: PendingCheck,
+  result: SkillCheckResult,
+): Promise<string | null> {
+  if (!bundle.truthsAvailable || !isSearchSkill(pending.skillId)) return null;
+
+  const at = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+  const candidates = [
+    ...(bundle.mission && bundle.beat
+      ? truthsInBeat({
+          missionId: bundle.mission.id,
+          beatId: bundle.beat.id,
+          truths: bundle.beat.truths,
+        })
+      : []),
+    ...(at?.placeKey ? truthsAt(at.placeKey, bundle.places[at.placeKey]) : []),
+  ];
+
+  const search = searchWith({
+    truths: candidates,
+    skillId: pending.skillId,
+    discovered: bundle.discoveredTruths,
+    total: result.total,
+  });
+
+  if (search.outcome === "nothing") {
+    if (!result.success) return null;
+    return (
+      "They searched properly and there is NOTHING here to find. Say so plainly rather than " +
+      "inventing something small so the roll was not wasted — knowing a room is clean is worth " +
+      "knowing, and on a job it is worth a great deal."
+    );
+  }
+  if (search.outcome === "missed") {
+    return (
+      "They did not find it. There IS something here and the search did not reach it — narrate " +
+      "the looking and the coming up empty, and do not hint at what was missed."
+    );
+  }
+
+  const stored = await recordTruthDiscovery(bundle.campaign.id, {
+    truthKey: search.truth.key,
+    discoveredDay: bundle.campaign.day,
+    viaSkill: pending.skillId,
+  });
+  if (!stored) return null;
+  await appendCampaignEvent({
+    campaign_id: bundle.campaign.id,
+    type: "truth_found",
+    summary: search.truth.fact,
+    data: { truthKey: search.truth.key, beatId: bundle.beat?.id ?? null } as unknown as Json,
+  });
+  return (
+    `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
+    "Narrate them finding that. Do not add a second discovery beside it and do not enlarge on " +
+    "what it means — working out what it means is the player's job."
   );
 }
 
@@ -1693,6 +1841,7 @@ async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {
   const campaignId = bundle.campaign.id;
   const next = advance(bundle.mission, bundle.runtime, exit.to);
   await saveMissionRuntime(campaignId, next);
+  await revealBeatTruths(bundle, bundle.mission, exit.to);
   const toBeat = getBeat(bundle.mission, exit.to);
   await logBeatAdvanced(campaignId, {
     mission: bundle.mission,

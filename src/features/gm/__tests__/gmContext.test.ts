@@ -114,3 +114,67 @@ describe("the secret the job was built around", () => {
     expect(prompt).toContain("do not mention dice");
   });
 });
+
+/**
+ * The same guarantee `placeCanon.test.ts` holds for a location, held for a job:
+ * a beat's concealed half is not withheld from the narrator by instruction — it
+ * is never sent. A model that can see the twist telegraphs it.
+ */
+describe("what the narrator is told about a beat's hidden truths", () => {
+  const mission = NIGHT_AT_THE_OPERA;
+  const beat = getBeat(mission, "empty_office_hours");
+  const found =
+    "A photograph of Network 54 anchor Barbara Dahl on Huntver's desk, kissed so often the print has worn through.";
+
+  const jobPrompt = (discoveredBeatTruths?: string[]) =>
+    renderGmUserPrompt(
+      buildGmContext({
+        mission,
+        beat,
+        availableExits: beat.exits,
+        character,
+        objectives: [],
+        npcsPresent: [],
+        recentEvents: [],
+        ...(discoveredBeatTruths ? { discoveredBeatTruths } : {}),
+      }),
+      "I go through the desk",
+    );
+
+  it("names a fact the beat actually declares", () => {
+    // The tests below mean nothing if `found` is a string the beat never held.
+    expect((beat.truths ?? []).map((truth) => truth.fact)).toContain(found);
+  });
+
+  it("sends an uncovered truth, and says it is established", () => {
+    const prompt = jobPrompt([found]);
+    expect(prompt).toContain("WHAT THEY HAVE UNCOVERED IN THIS JOB");
+    expect(prompt).toContain(found);
+    expect(prompt).toMatch(/do not re-reveal one as though it were new/i);
+  });
+
+  it("forbids hinting at what is still hidden, and deciding what it is", () => {
+    const prompt = jobPrompt([found]);
+    expect(prompt).toMatch(/do not hint at it/i);
+    expect(prompt).toMatch(/do not\s+decide what it is/i);
+    expect(prompt).toMatch(/the engine's to say, on a check/i);
+  });
+
+  it("says nothing at all when they have uncovered nothing", () => {
+    // Not an empty heading, and not a note that this beat is holding something
+    // back — either tells the player there is a twist to look for.
+    expect(jobPrompt()).not.toContain("WHAT THEY HAVE UNCOVERED IN THIS JOB");
+  });
+
+  it("carries no trace of the beat's undiscovered truths", () => {
+    // The whole invariant. This beat declares four facts; one is found, and the
+    // other three are absent from the prompt rather than mentioned as unfound.
+    const prompt = jobPrompt([found]);
+    const declared = beat.truths ?? [];
+    expect(declared.length).toBeGreaterThan(1);
+    for (const truth of declared) {
+      if (truth.fact === found) continue;
+      expect(prompt).not.toContain(truth.fact);
+    }
+  });
+});
