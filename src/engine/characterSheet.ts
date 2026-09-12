@@ -191,9 +191,18 @@ function skillStat(skill: SkillDefinition): StatKey {
   return stat;
 }
 
+/**
+ * The sheet's Skill lines.
+ *
+ * `homeDistrictKey` is what a place-scoped specialization resolves against, so
+ * the line every Role package grants reads "Local Expert (The Glen)" on a
+ * character who lives there instead of the printed "Local Expert (Your Home)".
+ * Given here rather than at each of the three screens that render a sheet.
+ */
 export function sheetSkillLines(
   entries: SkillEntry[],
   stats: Partial<StatBlock>,
+  homeDistrictKey?: string | null,
 ): SheetSkillLine[] {
   return entries
     .map((entry) => {
@@ -203,7 +212,7 @@ export function sheetSkillLines(
       return {
         key: entry.specialization ? `${entry.skillId}::${entry.specialization}` : entry.skillId,
         skillId: entry.skillId,
-        name: skillEntryName(entry),
+        name: skillEntryName(entry, homeDistrictKey),
         specialization: entry.specialization,
         category: skill.category,
         stat,
@@ -322,7 +331,7 @@ export function assembleCharacter(build: CharacterBuild): AssembledCharacter {
       ])
     : null;
 
-  const skills = sheetSkillLines(build.skills, build.stats);
+  const skills = sheetSkillLines(build.skills, build.stats, build.homeDistrictKey);
   const worn = wornArmor(build.loadout);
   const pkg = packageEntries(build.roleId, build.method);
   const plan = startingLifestylePlan(build.roleId);

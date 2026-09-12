@@ -4,8 +4,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   BASIC_SKILLS,
+  HOME_AREA,
   SKILLS,
   canAddSkillEntry,
+  isAreaScoped,
+  isHomeArea,
+  localExpertAreaOptions,
+  readLifestyle,
   skillEntryLimits,
   type SkillLimits,
   SKILL_PACKAGE_RULES,
@@ -16,17 +21,32 @@ import {
   skillEntryKey,
   skillEntryName,
   skillPointCost,
+  suggestedHome,
   validateSkillEntries,
   type SkillDefinition,
   type SkillEntry,
   type StatKey,
 } from "@/engine";
-import { readGeneralLifepath } from "./lifepathState";
+import { displayValue, readGeneralLifepath } from "./lifepathState";
 import { SkillInfo } from "./SkillInfo";
 import { useChargenStore, type ChargenState } from "./store";
 
 /** Rulebook categories, in the order skills.json lists them. */
 const CATEGORIES: string[] = [...new Set(SKILLS.map((s) => s.category))];
+
+/**
+ * The neighbourhood the character lives in, if they have got that far.
+ *
+ * The printed creation order puts Skills before housing — `steps.ts` says that
+ * order is a rules value and must not be reordered — so at the Skills step this
+ * is usually null, and "Local Expert (Your Home)" is a deliberate deferral
+ * rather than a blank. It resolves on screen the moment the Outfit & Lifestyle
+ * step names an address.
+ */
+function homeDistrictOf(state: ChargenState): string | null {
+  return readLifestyle(state.lifestyle).districtKey;
+}
+
 const EDGERUNNER_RULES = SKILL_PACKAGE_RULES.edgerunner;
 const COMPLETE_RULES = SKILL_PACKAGE_RULES.completePackage;
 
@@ -72,6 +92,65 @@ function Guidance({ remaining }: { remaining: number }) {
   );
 }
 
+/**
+ * The neighbourhood a Local Expert line is for.
+ *
+ * A picker rather than a text box, and that is the whole point of the step: the
+ * Skill is only worth its Level in one district, so the specialization has to
+ * be a district the engine can resolve. Typed by hand it was "Night City", "my
+ * block", or a typo — none of which name ground the city has.
+ *
+ * `Your Home` is offered first and is the default, because it is what the
+ * printed Role packages grant and because the address is chosen at a later step
+ * the printed creation order will not let us move. Choosing a district here
+ * instead is for the player who wants to be a local somewhere they do not live.
+ */
+function AreaPicker({
+  value,
+  onChange,
+  suggested,
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  /** District keys the character's childhood points at. A highlight, never a filter. */
+  suggested: string[];
+  label: string;
+}) {
+  const options = useMemo(() => localExpertAreaOptions(), []);
+  const groups = useMemo(() => {
+    const byArea = new Map<string, typeof options>();
+    for (const option of options) {
+      const bucket = byArea.get(option.areaName);
+      if (bucket) bucket.push(option);
+      else byArea.set(option.areaName, [option]);
+    }
+    return [...byArea.entries()];
+  }, [options]);
+  const hint = new Set(suggested);
+
+  return (
+    <select
+      className="w-56 border border-hairline bg-surface-raised px-2 py-1 text-sm text-text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label={label}
+    >
+      <option value={HOME_AREA}>Your Home (decided at Lifestyle)</option>
+      {groups.map(([areaName, districts]) => (
+        <optgroup key={areaName} label={areaName}>
+          {districts.map((district) => (
+            <option key={district.districtKey} value={district.districtKey}>
+              {district.districtName}
+              {hint.has(district.districtKey) ? " ★" : ""}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  );
+}
+
 function SkillRow({
   entry,
   state,
@@ -91,13 +170,18 @@ function SkillRow({
   const stat = statValue(state, skill.stat);
   const base = stat === null ? null : skillBase(stat, entry.level);
   const cost = skillPointCost(entry.skillId, 0, entry.level);
+  const home = homeDistrictOf(state);
+  const label = skillEntryName(entry, home);
+  // A place-scoped line still holding the printed placeholder: say where it
+  // gets decided, rather than leaving "Your Home" on the sheet looking unfilled.
+  const awaitingHome = isAreaScoped(entry.skillId) && isHomeArea(entry.specialization) && !home;
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-hairline px-4 py-2 last:border-b-0">
       <div className="min-w-52 flex-1">
         <div className="flex items-center gap-2">
           <p className="font-medium text-text">
-            {skillEntryName(entry)}
+            {label}
             {skill.doubleCost && (
               <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-ember">
                 ×2
@@ -115,6 +199,11 @@ function SkillRow({
           {skill.stat.toUpperCase()} · {skill.category}
           {!entry.granted && ` · ${cost} pts`}
         </p>
+        {awaitingHome && (
+          <p className="mt-1 text-xs text-text-muted">
+            Your own neighbourhood — it becomes the district you pick at Outfit &amp; Lifestyle.
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -123,8 +212,8 @@ function SkillRow({
             variant="outline"
             size="sm"
             disabled={limits ? !limits.canDecrease : false}
-            title={limits?.decreaseReason ?? `Lower ${skillEntryName(entry)}`}
-            aria-label={`Lower ${skillEntryName(entry)}`}
+            title={limits?.decreaseReason ?? `Lower ${label}`}
+            aria-label={`Lower ${label}`}
             onClick={() => onLevel(entry.level - 1)}
           >
             −
@@ -138,8 +227,8 @@ function SkillRow({
             variant="outline"
             size="sm"
             disabled={limits ? !limits.canIncrease : false}
-            title={limits?.increaseReason ?? `Raise ${skillEntryName(entry)}`}
-            aria-label={`Raise ${skillEntryName(entry)}`}
+            title={limits?.increaseReason ?? `Raise ${label}`}
+            aria-label={`Raise ${label}`}
             onClick={() => onLevel(entry.level + 1)}
           >
             +
@@ -330,13 +419,34 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
     [state.roleId],
   );
 
-  // The 13 Basic Skills must be present, so seed them at the minimum.
+  /**
+   * Districts the character's childhood points at. A highlight in the picker,
+   * never a filter — the same house rule the home picker already prints.
+   */
+  const childhoodDistricts = useMemo(() => {
+    const entry = readGeneralLifepath(state.lifepath.general).entries["childhood_environment"];
+    const answer = entry ? displayValue(entry) : null;
+    return suggestedHome(answer)?.districts ?? [];
+  }, [state.lifepath.general]);
+
+  /**
+   * The 13 Basic Skills must be present, so seed them at the minimum.
+   *
+   * Local Expert is seeded too, on the printed "Your Home" placeholder. It is a
+   * Basic Skill like the rest, and leaving it out because it takes a
+   * specialization meant the rules minimum was unsatisfiable until the player
+   * typed a location into a free-text box by hand — so the one Skill everybody
+   * has was also the one the wizard made them invent. Language stays out: the
+   * Lifepath grants a Cultural Origin one, and `grantedLanguage` supplies it.
+   */
   useEffect(() => {
     if (state.skills.length > 0) return;
     patch({
-      skills: BASIC_SKILLS.filter((id) => !getSkill(id).requiresSpecialization).map((id) => ({
+      skills: BASIC_SKILLS.filter(
+        (id) => !getSkill(id).requiresSpecialization || isAreaScoped(id),
+      ).map((id) => ({
         skillId: id,
-        specialization: null,
+        specialization: isAreaScoped(id) ? HOME_AREA : null,
         level: COMPLETE_RULES.basicSkillMinimum,
       })),
     });
@@ -359,12 +469,26 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
   /** Level a newly added Skill starts at, and what it costs. */
   const ADD_LEVEL = COMPLETE_RULES.basicSkillMinimum;
 
+  /**
+   * The specialization the controls are currently offering for this Skill.
+   *
+   * A place-scoped Skill defaults to the printed placeholder rather than to
+   * nothing, so its picker always has a legal value selected and "Add" is never
+   * disabled for a Skill the player has not typed into.
+   */
+  function chosenSpec(skill: SkillDefinition): string | null {
+    if (!skill.requiresSpecialization) return null;
+    const typed = (spec[skill.id] ?? "").trim();
+    if (typed) return typed;
+    return isAreaScoped(skill.id) ? HOME_AREA : null;
+  }
+
   function addability(skill: SkillDefinition) {
     return canAddSkillEntry({
       method: "complete_package",
       entries: state.skills,
       skillId: skill.id,
-      specialization: skill.requiresSpecialization ? (spec[skill.id] ?? "").trim() || null : null,
+      specialization: chosenSpec(skill),
       level: ADD_LEVEL,
     });
   }
@@ -382,10 +506,15 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
 
   function addSkill(skill: SkillDefinition) {
     if (!addability(skill).allowed) return;
-    const specialization = skill.requiresSpecialization ? (spec[skill.id] ?? "").trim() : null;
-    const entry: SkillEntry = { skillId: skill.id, specialization, level: ADD_LEVEL };
+    const entry: SkillEntry = {
+      skillId: skill.id,
+      specialization: chosenSpec(skill),
+      level: ADD_LEVEL,
+    };
     patch({ skills: [...state.skills, entry] });
-    if (skill.requiresSpecialization) setSpec((s) => ({ ...s, [skill.id]: "" }));
+    if (skill.requiresSpecialization) {
+      setSpec((s) => ({ ...s, [skill.id]: isAreaScoped(skill.id) ? HOME_AREA : "" }));
+    }
   }
 
   function removeSkill(target: SkillEntry) {
@@ -401,6 +530,13 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
         above {COMPLETE_RULES.maxLevel}, and the 13 Basic Skills at{" "}
         {COMPLETE_RULES.basicSkillMinimum} or better. The "Suggested for your Role" chip only
         filters the list; it never restricts what you may buy.
+        {childhoodDistricts.length > 0 && (
+          <>
+            {" "}
+            A ★ in the Local Expert list marks a neighbourhood your childhood points at — a
+            suggestion, nothing more.
+          </>
+        )}
       </Notice>
       <Budget
         spent={result.pointsSpent}
@@ -484,15 +620,23 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
                     {skill.stat.toUpperCase()} · {skill.category}
                   </p>
                 </div>
-                {skill.requiresSpecialization && (
-                  <Input
-                    className="w-48"
-                    value={spec[skill.id] ?? ""}
-                    onChange={(e) => setSpec((s) => ({ ...s, [skill.id]: e.target.value }))}
-                    placeholder={skill.specializationLabel ?? "specialization"}
-                    aria-label={`${skill.name} ${skill.specializationLabel ?? "specialization"}`}
-                  />
-                )}
+                {skill.requiresSpecialization &&
+                  (isAreaScoped(skill.id) ? (
+                    <AreaPicker
+                      value={spec[skill.id] ?? HOME_AREA}
+                      onChange={(value) => setSpec((s) => ({ ...s, [skill.id]: value }))}
+                      suggested={childhoodDistricts}
+                      label={`${skill.name} ${skill.specializationLabel ?? "location"}`}
+                    />
+                  ) : (
+                    <Input
+                      className="w-48"
+                      value={spec[skill.id] ?? ""}
+                      onChange={(e) => setSpec((s) => ({ ...s, [skill.id]: e.target.value }))}
+                      placeholder={skill.specializationLabel ?? "specialization"}
+                      aria-label={`${skill.name} ${skill.specializationLabel ?? "specialization"}`}
+                    />
+                  ))}
                 <Button
                   variant="outline"
                   size="sm"

@@ -10,6 +10,7 @@ import {
   validateSkillEntries,
   type SkillAllocation,
 } from "../skillAllocation";
+import { HOME_AREA } from "../localExpert";
 import { getRoleSkillIds, getSkill } from "../rulesData";
 
 const ROLE = "solo";
@@ -117,7 +118,8 @@ describe("entry-aware skill validation", () => {
   const basics = (level: number) =>
     BASIC_SKILLS.map((skillId) => ({
       skillId,
-      specialization: skillId === "language" || skillId === "local_expert" ? "Streetslang" : null,
+      specialization:
+        skillId === "language" ? "Streetslang" : skillId === "local_expert" ? HOME_AREA : null,
       level,
     }));
 
@@ -155,7 +157,8 @@ describe("control limits", () => {
   const entries = (level: number) =>
     BASIC_SKILLS.map((skillId) => ({
       skillId,
-      specialization: skillId === "language" || skillId === "local_expert" ? "Streetslang" : null,
+      specialization:
+        skillId === "language" ? "Streetslang" : skillId === "local_expert" ? HOME_AREA : null,
       level,
     }));
 

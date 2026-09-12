@@ -6,11 +6,20 @@ import {
   HOME_AREA,
   isAreaScoped,
   isHomeArea,
+  isLegalLocalExpertArea,
+  localExpertAreaOptions,
   localExpertAreas,
   localExpertLevel,
   LOCAL_EXPERT_SKILL_ID,
 } from "../localExpert";
 import roleSkillPackages from "@/data/rules/role-skill-packages.json";
+import { DISTRICTS } from "../geography";
+import {
+  BASIC_SKILLS,
+  canAddSkillEntry,
+  skillEntryName,
+  validateSkillEntries,
+} from "../skillAllocation";
 import { skillCheckForCharacter, skillLevelFor, type SkillCheckActor } from "../skillCheck";
 import { opposedCheckForCharacter } from "../opposedCheck";
 
@@ -335,5 +344,184 @@ describe("every other Skill", () => {
     );
     expect(roll.total).toBe(17);
     expect(roll.formula).toContain("Language(4)");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stage 1: the neighbourhood is picked, not typed.
+// ---------------------------------------------------------------------------
+
+describe("the areas a player can choose between", () => {
+  it("offers every district on the map, and nothing that is not one", () => {
+    const options = localExpertAreaOptions();
+    expect(options).toHaveLength(DISTRICTS.length);
+    // Every option has to be something areaKeyOf can resolve, or the picker can
+    // put a Skill on the sheet that covers no ground in the city.
+    for (const option of options) {
+      expect(areaKeyOf(option.districtKey)).toBe(option.districtKey);
+      expect(option.districtName).not.toBe("");
+      expect(option.areaName).not.toBe("");
+    }
+  });
+
+  it("groups them by part of the city", () => {
+    const options = localExpertAreaOptions();
+    const areas = [...new Set(options.map((o) => o.areaName))];
+    // Grouped, not interleaved: each area's districts are contiguous.
+    const firstIndex = areas.map((area) => options.findIndex((o) => o.areaName === area));
+    const lastIndex = areas.map((area) =>
+      options.reduce((last, o, index) => (o.areaName === area ? index : last), -1),
+    );
+    for (let i = 0; i < areas.length - 1; i += 1) {
+      expect(lastIndex[i]!).toBeLessThan(firstIndex[i + 1]!);
+    }
+  });
+});
+
+describe("isLegalLocalExpertArea", () => {
+  it("accepts the placeholder and any real neighbourhood", () => {
+    expect(isLegalLocalExpertArea(HOME_AREA)).toBe(true);
+    expect(isLegalLocalExpertArea("little_china")).toBe(true);
+    expect(isLegalLocalExpertArea("Little China")).toBe(true);
+    expect(isLegalLocalExpertArea("E")).toBe(true);
+  });
+
+  it("rejects what the old free-text box allowed", () => {
+    expect(isLegalLocalExpertArea("Night City")).toBe(false);
+    expect(isLegalLocalExpertArea("my block")).toBe(false);
+    expect(isLegalLocalExpertArea("Streetslang")).toBe(false);
+    expect(isLegalLocalExpertArea(null)).toBe(false);
+  });
+});
+
+describe("the sheet's name for a Skill line", () => {
+  it("shows a district key as the district's printed name", () => {
+    expect(skillEntryName({ skillId: LOCAL_EXPERT_SKILL_ID, specialization: "the_glen" })).toBe(
+      "Local Expert (The Glen)",
+    );
+  });
+
+  it("resolves the printed placeholder through the home district", () => {
+    const line = { skillId: LOCAL_EXPERT_SKILL_ID, specialization: HOME_AREA };
+    expect(skillEntryName(line, "the_glen")).toBe("Local Expert (The Glen)");
+  });
+
+  it("keeps saying Your Home while there is no home to resolve", () => {
+    // Skills are chosen before housing in the printed creation order, so this
+    // is most of character creation: the line names the decision still to come.
+    const line = { skillId: LOCAL_EXPERT_SKILL_ID, specialization: HOME_AREA };
+    expect(skillEntryName(line)).toBe("Local Expert (Your Home)");
+    expect(skillEntryName(line, null)).toBe("Local Expert (Your Home)");
+  });
+
+  it("leaves a specialization that is not a place exactly as stored", () => {
+    expect(skillEntryName({ skillId: "language", specialization: "Streetslang" }, "the_glen")).toBe(
+      "Language (Streetslang)",
+    );
+    expect(skillEntryName({ skillId: "perception", specialization: null })).toBe("Perception");
+  });
+});
+
+describe("validation of a Local Expert line", () => {
+  const sheet = (specialization: string | null) =>
+    BASIC_SKILLS.map((skillId) => ({
+      skillId,
+      specialization:
+        skillId === "language"
+          ? "Streetslang"
+          : skillId === LOCAL_EXPERT_SKILL_ID
+            ? specialization
+            : null,
+      level: 2,
+    }));
+
+  const complaint = (specialization: string | null) =>
+    validateSkillEntries({ method: "complete_package", entries: sheet(specialization) }).violations;
+
+  it("passes a real neighbourhood and the printed placeholder", () => {
+    const nowhere = (violations: string[]) => violations.some((v) => v.includes("neighbourhood"));
+    expect(nowhere(complaint("little_china"))).toBe(false);
+    expect(nowhere(complaint(HOME_AREA))).toBe(false);
+  });
+
+  /**
+   * The trap Stage 1 removed. Complete Package seeds the Basic Skills, and it
+   * used to skip the ones that take a specialization — so the rules minimum
+   * demanded a Local Expert the wizard had not created, and the only way to
+   * satisfy it was to type a location into a free-text box by hand.
+   */
+  it("is satisfied by a seeded sheet nobody has typed into", () => {
+    const seeded = BASIC_SKILLS.map((skillId) => ({
+      skillId,
+      specialization: skillId === LOCAL_EXPERT_SKILL_ID ? HOME_AREA : null,
+      level: 2,
+    }));
+    const violations = validateSkillEntries({
+      method: "complete_package",
+      entries: [...seeded, { skillId: "language", specialization: "Streetslang", level: 2 }],
+    }).violations;
+    // Points are still unspent — that is the player's job. Nothing here says a
+    // Basic Skill is missing or that a location has to be named.
+    expect(violations.some((v) => v.includes("missing"))).toBe(false);
+    expect(violations.some((v) => v.includes("neighbourhood"))).toBe(false);
+    expect(violations.every((v) => v.includes("Skill Points"))).toBe(true);
+  });
+
+  it("catches a draft saved back when the location was typed by hand", () => {
+    expect(complaint("Night City")).toContain(
+      "Local Expert (Night City) has to name a single neighbourhood of Night City — pick a district from the list",
+    );
+  });
+});
+
+describe("adding a Local Expert line", () => {
+  it("is refused for somewhere the map does not have", () => {
+    const refusal = canAddSkillEntry({
+      method: "complete_package",
+      entries: [],
+      skillId: LOCAL_EXPERT_SKILL_ID,
+      specialization: "somewhere nice",
+      level: 2,
+    });
+    expect(refusal.allowed).toBe(false);
+    expect(refusal.reason).toBe("Pick a neighbourhood of Night City");
+  });
+
+  it("is allowed for a district, and for the placeholder", () => {
+    for (const specialization of ["pacifica_playground", HOME_AREA]) {
+      expect(
+        canAddSkillEntry({
+          method: "complete_package",
+          entries: [],
+          skillId: LOCAL_EXPERT_SKILL_ID,
+          specialization,
+          level: 2,
+        }).allowed,
+      ).toBe(true);
+    }
+  });
+
+  it("still lets a second neighbourhood be taken alongside the first", () => {
+    // Two districts is two lines, which the rules allow and IP spends already
+    // key separately. Only the same district twice is a duplicate.
+    const held = [{ skillId: LOCAL_EXPERT_SKILL_ID, specialization: "little_china", level: 4 }];
+    expect(
+      canAddSkillEntry({
+        method: "complete_package",
+        entries: held,
+        skillId: LOCAL_EXPERT_SKILL_ID,
+        specialization: "the_glen",
+        level: 2,
+      }).allowed,
+    ).toBe(true);
+    expect(
+      canAddSkillEntry({
+        method: "complete_package",
+        entries: held,
+        skillId: LOCAL_EXPERT_SKILL_ID,
+        specialization: "little_china",
+        level: 2,
+      }).reason,
+    ).toBe("Already on your sheet");
   });
 });
