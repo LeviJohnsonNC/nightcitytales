@@ -84,6 +84,7 @@ export type MissionProgressInsert = Insert<"mission_progress">;
 
 export type CampaignSituation = Row<"campaign_situations">;
 export type CampaignPlace = Row<"campaign_places">;
+export type CampaignTruth = Row<"campaign_truths">;
 export type CampaignSituationInsert = Insert<"campaign_situations">;
 export type CampaignSituationUpdate = Update<"campaign_situations">;
 

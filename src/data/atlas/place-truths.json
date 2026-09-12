@@ -1,0 +1,80 @@
+{
+  "houseRule": true,
+  "note": "What is true about a place and not apparent from standing in it. The counterpart to placeIntel: that pays out for FAMILIARITY — what you know because you live here or keep coming back — and this pays out for LOOKING, on this visit, with a skill. Nothing here is authored per location: every entry hangs off a tag the whole city already carries or a flag the campaign has already set, so all 156 locations answer rather than the handful somebody has written up.",
+  "skillNote": "The Skill is the printed id from src/data/rules/skills.json. The difficulty is a published Difficulty Value BY NAME, resolved through checkDV.getDV — so no number here was invented, and a band that stops being printed fails loudly instead of silently becoming a house rule.",
+  "factNote": "`{place}` is replaced with the location's atlas name. The facts are written as something the character now knows rather than as something a narrator announces, because that is how they reach the prompt.",
+  "fromTags": [
+    {
+      "key": "way_in",
+      "tags": ["secure"],
+      "skill": "perception",
+      "difficulty": "Difficult",
+      "fact": "There is a way into {place} that is not the front door — a service way the people who run it treat as nobody's business but staff's."
+    },
+    {
+      "key": "occupied",
+      "tags": ["derelict"],
+      "skill": "perception",
+      "difficulty": "Everyday",
+      "fact": "{place} is not as empty as it looks. Somebody has been sleeping here, and recently."
+    },
+    {
+      "key": "whose_claim",
+      "tags": ["gang_turf"],
+      "skill": "perception",
+      "difficulty": "Everyday",
+      "fact": "The marks on {place} are fresh and they are not the ones you would expect — whoever is claiming this ground has claimed it lately, over somebody else's tag."
+    },
+    {
+      "key": "off_manifest",
+      "tags": ["warehouse", "docks"],
+      "skill": "perception",
+      "difficulty": "Difficult",
+      "fact": "Some of what is stacked at {place} is not on any manifest. The seals do not match the paperwork on the pallets beside them."
+    },
+    {
+      "key": "back_room",
+      "tags": ["ripperdoc", "clinic"],
+      "skill": "perception",
+      "difficulty": "Difficult",
+      "fact": "There is a room at {place} the patients do not see, and the door to it has a better lock than the front."
+    },
+    {
+      "key": "where_the_stock_is",
+      "tags": ["fence"],
+      "skill": "perception",
+      "difficulty": "Professional",
+      "fact": "What is on the shelves at {place} is not the stock. The stock is somewhere else, and somebody walks there and back."
+    },
+    {
+      "key": "way_up",
+      "tags": ["rooftop"],
+      "skill": "perception",
+      "difficulty": "Everyday",
+      "fact": "There is a way onto the roof of {place} from the outside that does not go through the building."
+    },
+    {
+      "key": "watched",
+      "tags": ["corp_hq", "bank", "government"],
+      "skill": "perception",
+      "difficulty": "Difficult",
+      "fact": "{place} is watched more closely than it advertises — the cameras are not where the signs say they are."
+    }
+  ],
+  "fromFlags": [
+    {
+      "key": "paying_someone",
+      "flag": "gang_extortion",
+      "skill": "perception",
+      "difficulty": "Everyday",
+      "fact": "Somebody is taking a cut at {place}. It shows in what is missing from the shelves and in who nobody will look at."
+    },
+    {
+      "key": "records_being_read",
+      "flag": "under_audit",
+      "skill": "perception",
+      "difficulty": "Difficult",
+      "fact": "Somebody is going through the records at {place}, and the staff know it."
+    }
+  ]
+}

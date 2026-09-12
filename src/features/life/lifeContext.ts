@@ -146,6 +146,15 @@ export type LifeContext = {
       /** How much of a local they are here, when they are one. */
       localExpert?: { level: number; districtName: string };
     };
+    /**
+     * Hidden truths the character has FOUND here, and only those.
+     *
+     * The undiscovered ones are not withheld from the narrator by instruction —
+     * they are never sent. A model that can see a secret will telegraph it,
+     * which is why `cast.ts` releases a dossier one rung at a time, and this is
+     * the same argument pointed at places.
+     */
+    discovered?: string[];
 
     /**
      * The ordinary business of being here, from the engine: what these places
@@ -277,6 +286,17 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
             "bartender explain to them something the lists above say they already know.",
         );
       }
+    }
+    if (p.discovered?.length) {
+      parts.push("", "-- WHAT THEY HAVE FOUND HERE --");
+      for (const fact of p.discovered) parts.push(`  - ${fact}`);
+      parts.push(
+        "The character searched and turned these up. They are established facts now: do not " +
+          "contradict one, do not walk one back, and do not re-reveal one as though it were new. " +
+          "Anything else hidden here has NOT been found, and you have not been told it — so do " +
+          "not gesture at it, and never invent a discovery of your own. What is here to find is " +
+          "the engine's to say, on a check.",
+      );
     }
     if (p.dossier) {
       parts.push(

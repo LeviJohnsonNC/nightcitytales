@@ -55,6 +55,8 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  listCampaignTruths,
+  recordTruthDiscovery,
   listCampaignFactions,
   listClocks,
   listSituations,
@@ -151,6 +153,10 @@ import {
   districtProfile,
   placeActions,
   placeFamiliarity,
+  isSearchSkill,
+  knownTruths,
+  searchWith,
+  truthsAt,
   whoIsAt,
   type PlaceState,
   getDistrict,
@@ -219,6 +225,19 @@ export type LifeBundle = {
    * one.
    */
   places: Record<string, PlaceState>;
+  /**
+   * The hidden truths this campaign has discovered, as engine truth keys.
+   *
+   * Sparse and one-way: a key is here because somebody found it. What is TRUE
+   * is derived from the atlas by `truth.ts`; this is only who knows it.
+   */
+  discoveredTruths: string[];
+  /**
+   * False until `campaign_truths` has been migrated. Not the same as "nothing
+   * discovered" — one means the feature is off and searching narrates the way
+   * it always did, the other means the character has not looked yet.
+   */
+  truthsAvailable: boolean;
 };
 
 async function loadLife(campaignId: string): Promise<LifeBundle> {
@@ -229,12 +248,13 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
   const character = await getCharacter(full.campaign.character_id);
   if (!character) throw new Error("This campaign's character no longer exists.");
 
-  const [events, situationRows, clockRows, factionRows, places] = await Promise.all([
+  const [events, situationRows, clockRows, factionRows, places, truths] = await Promise.all([
     listCampaignEvents(campaignId),
     listSituations(campaignId),
     listClocks(campaignId),
     listCampaignFactions(campaignId),
     loadPlaceStates(campaignId),
+    listCampaignTruths(campaignId),
   ]);
 
   // The six the campaign lives among. Seeded once, from the character's own
@@ -310,6 +330,8 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     wireMissionId: hook ? null : wireMissionId,
     tally: tallyFrom(full.flags),
     places,
+    discoveredTruths: truths.rows.map((row) => row.truth_key),
+    truthsAvailable: truths.available,
   };
 }
 
@@ -542,6 +564,18 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
             bundle.clock.day,
             localExpertIn(bundle.character, standingDistrictKey),
           ),
+          // What they have SEARCHED OUT here, which is a different thing from
+          // what they know by being familiar with it. Only the found ones: the
+          // rest are never sent, so the model cannot telegraph them.
+          ...(position?.placeKey
+            ? (() => {
+                const found = knownTruths(
+                  truthsAt(position.placeKey, bundle.places[position.placeKey]),
+                  bundle.discoveredTruths,
+                ).map((truth) => truth.fact);
+                return found.length ? { discovered: found } : {};
+              })()
+            : {}),
           // Presence, not a summons. Only ever asked about a venue: a district
           // is not somewhere you run into somebody.
           ...(position?.placeKey
@@ -1200,6 +1234,89 @@ async function liveTurn(bundle: LifeBundle, input: string, turn: TurnOptions = {
   }
 }
 
+/**
+ * Looking for something, and what the engine says is there.
+ *
+ * The whole point of `truth.ts`. A check that searches a place no longer asks
+ * the narrator what is here — inventing is cheaper than refusing, so the answer
+ * to a good roll was always a hidden safe that had not existed a moment before,
+ * and a discovery that could have been anything was not a discovery. The engine
+ * decides which of the facts ALREADY TRUE here the number reaches, records it,
+ * and hands the model the one line it is allowed to narrate.
+ *
+ * Three outcomes and the third is the interesting one. Finding nothing is a
+ * real answer rather than a wasted turn: satisfying yourself a room is clean is
+ * information in a game about investigation, and it is the honest thing to say
+ * when the alternative is inventing something so the roll was not wasted.
+ *
+ * Returns null when this is not a search at all, and when `campaign_truths` has
+ * not been migrated yet — in which case searching narrates exactly the way it
+ * always has, rather than silently finding nothing forever.
+ */
+async function applySearch(
+  bundle: LifeBundle,
+  pending: PendingCheck,
+  roll: CheckRoll,
+): Promise<string | null> {
+  if (!bundle.truthsAvailable || roll.kind !== "dv") return null;
+  // Only a Skill that finds things gets a search outcome. Without this a
+  // successful Athletics roll came back with "you satisfy yourself there is
+  // nothing here" — the character was climbing a fence.
+  //
+  // Skill rather than stated intent, which is the honest limit of this slice: a
+  // Perception check rolled to spot a tail, in a room that happens to hold
+  // something, reads as having missed the thing in the room. Tying an outcome
+  // to a parsed intent is the model's judgement, and this module exists
+  // precisely to stop the model deciding what is here.
+  if (!isSearchSkill(pending.skillId)) return null;
+  const at = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+  if (!at?.placeKey) return null;
+
+  const truths = truthsAt(at.placeKey, bundle.places[at.placeKey]);
+  const search = searchWith({
+    truths,
+    skillId: pending.skillId,
+    discovered: bundle.discoveredTruths,
+    total: roll.result.total,
+  });
+
+  if (search.outcome === "nothing") {
+    // Only worth saying when the roll actually landed. A failed search that
+    // found nothing tells the character nothing at all.
+    if (!roll.result.success) return null;
+    return (
+      "They searched properly and there is NOTHING here to find. Say so plainly: " +
+      "the place is what it appears to be. Do not invent something small so the " +
+      "roll was not wasted — knowing a room is clean is worth knowing."
+    );
+  }
+  if (search.outcome === "missed") {
+    return (
+      "They did not find it. There IS something here and the search did not reach " +
+      "it — narrate the looking and the coming up empty, and do not hint at what " +
+      "was missed or how close they came."
+    );
+  }
+
+  const stored = await recordTruthDiscovery(bundle.campaign.id, {
+    truthKey: search.truth.key,
+    discoveredDay: bundle.clock.day,
+    viaSkill: pending.skillId,
+  });
+  if (!stored) return null;
+  await appendCampaignEvent({
+    campaign_id: bundle.campaign.id,
+    type: "truth_found",
+    summary: search.truth.fact,
+    data: { truthKey: search.truth.key, placeKey: at.placeKey } as unknown as Json,
+  });
+  return (
+    `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
+    "That is the discovery — narrate them noticing it. Do not add a second find " +
+    "beside it and do not enlarge on what it means."
+  );
+}
+
 /** What to tell the narrator about a move the engine has already committed. */
 function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
   if (outcome.travelRefused) {
@@ -1330,10 +1447,15 @@ async function commitLifeCheck(
   });
   const dv = pending.dv ?? 0;
   const verdict = roll.result.success ? "SUCCESS" : "FAILURE";
+  // What the engine says was there to find, before the narrator is asked to
+  // describe the looking.
+  const found = await applySearch(bundle, pending, roll);
   const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
   await liveTurn(fresh, "", {
     minutes: 0,
-    resolved: `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".`,
+    resolved:
+      `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".` +
+      (found ? ` ${found}` : ""),
   });
 }
 

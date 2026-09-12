@@ -358,6 +358,49 @@ actually walked — without a single invented modifier.
 
 ---
 
+## In progress: the model stops knowing everything
+
+The weakness the whole skill list exposes: the model knows the answer, so it
+lets the character know it too. A check that searches a place asks the narrator
+what is here, inventing is cheaper than refusing, and a good roll produces a
+hidden safe that did not exist a moment before — a discovery that could have
+been anything was not a discovery.
+
+`cast.ts` already refuses to work that way for people: a dossier is released one
+rung at a time and the model is never shown a rung the player has not earned,
+because "a model that can see a secret will telegraph it". The plan is to point
+that same argument at everything else, as four reusable subsystems rather than
+seventeen bespoke ones.
+
+- ~~Slice 1: the spine, and Perception~~ — `truth.ts` derives hidden truths from
+  tags the whole city already carries and flags the campaign has already set, so
+  71 of 172 locations have something to find with nothing authored per place.
+  Difficulties are published DVs resolved by name. `campaign_truths` records who
+  found what, per campaign, because a truth is a fact about the world and a
+  discovery is a fact about one campaign. A search now asks the engine which
+  already-true fact the roll reached, and the narrator is handed that one line
+  and only that. Undiscovered truths are never sent to the model at all.
+  Finding nothing is a designed outcome, not a failure.
+- Slice 2: the `gmBrief` leak. `gmContext.ts` pushes a beat's GM brief — the
+  job's actual twists — into the prompt every turn, while `JobCard.tsx` is
+  careful never to render it to the player. Split it into a situation the model
+  narrates and truths it is not told until they are found. Needed slice 1 first,
+  because the withheld half needs somewhere to live.
+- Slice 3: the social six. `readsThePerson` currently returns true for any
+  Social-category Skill at margin 5, and that category includes Personal
+  Grooming and Wardrobe & Style — so nine Skills are one Skill. Differentiate by
+  shape after `negotiation.ts`, and add suspicion as the one new axis.
+- Slice 4: Deduction, on `Truth.needs` — a conclusion whose prerequisites are
+  other discoveries. Only works once slices 1-3 have populated the graph.
+- Slice 5: affordances for the new Skills, through the Stage 3 mechanism, on the
+  same budget. They offer approaches, never conclusions: an affordance naming
+  the insight has already given away what the roll was for.
+
+Success: a player can be told "you find nothing here" and believe it, because
+the alternative was never available to the narrator.
+
+---
+
 ## Standing debts
 
 Not features, but they get more expensive with time. Full detail in `AGENTS.md`.

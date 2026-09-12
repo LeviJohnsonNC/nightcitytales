@@ -68,6 +68,7 @@ export * from "./placeActions";
 export * from "./haunts";
 export * from "./placeState";
 export * from "./placeIntel";
+export * from "./truth";
 export * from "./startingHome";
 
 export * from "./combatPreview";

@@ -392,3 +392,40 @@ describe("the narrator is told when the ground is the character's own", () => {
     }
   });
 });
+
+/**
+ * The guarantee the truth system exists for: a hidden fact the character has
+ * not found is not withheld from the narrator by instruction — it is never sent.
+ * A model that can see a secret will telegraph it.
+ */
+describe("what the narrator is told about hidden truths", () => {
+  const found = "There is a way into the Motor Pool that is not the front door.";
+
+  it("sends a discovered truth, and says it is established", () => {
+    const prompt = lifePrompt({ discovered: [found] });
+    expect(prompt).toContain("WHAT THEY HAVE FOUND HERE");
+    expect(prompt).toContain(found);
+    expect(prompt).toMatch(/do not re-reveal one as though it were new/i);
+  });
+
+  it("forbids the narrator inventing a discovery of its own", () => {
+    const prompt = lifePrompt({ discovered: [found] });
+    expect(prompt).toMatch(/never invent a discovery of your own/i);
+    expect(prompt).toMatch(/the engine's to say, on a check/i);
+  });
+
+  it("says nothing at all when they have found nothing", () => {
+    // Not an empty heading, and not a note that something is hidden here —
+    // either would tell the player there is something to look for.
+    const prompt = lifePrompt({});
+    expect(prompt).not.toContain("WHAT THEY HAVE FOUND HERE");
+  });
+
+  it("carries no trace of an undiscovered truth", () => {
+    // The whole invariant, stated as a test: an unfound fact is absent from the
+    // prompt, not mentioned as unfound.
+    const secret = "The stock is somewhere else, and somebody walks there and back.";
+    const prompt = lifePrompt({ discovered: [found] });
+    expect(prompt).not.toContain(secret);
+  });
+});
