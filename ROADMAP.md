@@ -231,6 +231,49 @@ attack to the model.
 
 ---
 
+## In progress: making Local Expert mean something
+
+Local Expert is the one Skill in RED that is worth nothing in the wrong place —
+you choose a neighbourhood whenever you raise it, and the atlas's districts are
+already that scale. Every starting character has it, and until now it was
+decoration: the Role packages grant `Local Expert (Your Home)` and nothing ever
+resolved the phrase, while every check path reduced a Skill line to
+`{ skillId, level }`, so a character who knew Little China rolled at full Level
+in Pacifica and the narrator was shown a number the engine would not add.
+
+The stages, in dependency order:
+
+- ~~Stage 0: make the specialization load-bearing~~ — `src/engine/localExpert.ts`
+  resolves a stored specialization (a district key, a printed code, a name, or
+  the `Your Home` placeholder read through the character's home district) to a
+  district, and `skillLevelFor` is now the single lookup every check goes
+  through. A place-scoped Skill is read for the district the character is
+  standing in and is worth 0 where they are not a local; the roll log, the check
+  card and the model's own Skill list all name the neighbourhood the Level is
+  for. Language and every unspecialized Skill are untouched.
+- Stage 1: chargen picks a real neighbourhood. A district picker instead of the
+  free-text box, `Your Home` as a deliberate deferral resolved at the Outfit &
+  Lifestyle step (the printed creation order puts Skills before housing and must
+  not be reordered), the consequence shown where the home is chosen, the
+  resolved label on the sheet, and a final-gate violation for a placeholder that
+  never got a home.
+- Stage 2: pay in information, through the ladder that already exists.
+  `placeIntel`'s rungs are earned one building at a time; Local Expert should
+  open them a neighbourhood at a time, with its Level-to-rung thresholds in data
+  as a house rule and one district-scope rung only it can open. Not a die bonus:
+  see the argument in `placeIntel.ts`, which still holds.
+- Stage 3: pay in options. Insider actions in `lifeOptions`/`placeActions` gated
+  on being a local, all derived from tags, flags and haunts rather than authored
+  per district. `lifeModel.ts` also seeds cast haunts with `DEFAULT_START`
+  instead of the character's home district, so the argument is currently inert.
+- Stage 4: earning a new neighbourhood, once `campaign_places` shows real time
+  spent there. `skillLineKey` already keys IP spends by specialization.
+
+Success: the player picks where they live, and the city reads differently there
+than three districts over — without a single invented modifier.
+
+---
+
 ## Standing debts
 
 Not features, but they get more expensive with time. Full detail in `AGENTS.md`.

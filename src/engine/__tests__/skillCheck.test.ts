@@ -105,9 +105,55 @@ describe("skillCheckForCharacter", () => {
   it("actorFromSheet reduces a sheet to stats + skill levels", () => {
     const actorFrom = actorFromSheet({
       stats: { ref: 7 },
-      skills: [{ skillId: "handgun", name: "Handgun", stat: "ref", statValue: 7, level: 3 }],
+      skills: [
+        {
+          skillId: "handgun",
+          name: "Handgun",
+          stat: "ref",
+          statValue: 7,
+          level: 3,
+          specialization: null,
+        },
+      ],
+      finance: { homeDistrictKey: null },
     } as unknown as Parameters<typeof actorFromSheet>[0]);
     expect(actorFrom.stats).toEqual({ ref: 7 });
-    expect(actorFrom.skills).toEqual([{ skillId: "handgun", level: 3 }]);
+    expect(actorFrom.skills).toEqual([{ skillId: "handgun", level: 3, specialization: null }]);
+  });
+
+  it('actorFromSheet carries the home district, so "Your Home" can resolve', () => {
+    const actorFrom = actorFromSheet({
+      stats: { int: 6 },
+      skills: [
+        {
+          skillId: "local_expert",
+          name: "Local Expert (Your Home)",
+          stat: "int",
+          statValue: 6,
+          level: 4,
+          specialization: "Your Home",
+        },
+      ],
+      finance: { homeDistrictKey: "little_china" },
+    } as unknown as Parameters<typeof actorFromSheet>[0]);
+    expect(actorFrom.homeDistrictKey).toBe("little_china");
+    // Standing in the district their home is in, the Level is theirs.
+    expect(
+      skillCheckForCharacter(
+        { ...actorFrom, districtKey: "little_china" },
+        "local_expert",
+        13,
+        scripted([5]),
+      ).total,
+    ).toBe(15);
+    // Three districts over, the same sheet is worth INT and the die alone.
+    expect(
+      skillCheckForCharacter(
+        { ...actorFrom, districtKey: "pacifica_playground" },
+        "local_expert",
+        13,
+        scripted([5]),
+      ).total,
+    ).toBe(11);
   });
 });

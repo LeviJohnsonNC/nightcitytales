@@ -28,6 +28,56 @@ const character = {
   skills: [{ skill_id: "perception", level: 4 }],
 } as unknown as FullCharacter;
 
+/**
+ * A card that promises a Level the roll will not add is worse than no card, and
+ * Local Expert is the Skill that makes the promise conditional: the same sheet
+ * is worth 6 in Little China and nothing in Pacifica.
+ */
+describe("a place-scoped check prompt", () => {
+  const localExpert = {
+    character: { name: "Mira", role: "Fixer" },
+    stats: { int: 7 },
+    skills: [{ skill_id: "local_expert", level: 6, specialization: "little_china" }],
+    finance: { home_district_key: null },
+  } as unknown as FullCharacter;
+
+  const vitals = { hp_current: 40, hp_max: 40, humanity_current: 50 } as never;
+
+  const promptIn = (districtKey: string) =>
+    pendingCheckFrom(
+      [
+        event({
+          id: "le",
+          type: "check_prompt",
+          data: {
+            skillId: "local_expert",
+            dv: 13,
+            intent: "find the way round the checkpoint",
+          } as never,
+        }),
+      ],
+      localExpert,
+      "none",
+      { vitals, inventory: [], districtKey },
+    );
+
+  it("promises the Level for the district underfoot", () => {
+    const card = promptIn("little_china");
+    expect(card?.skillLevel).toBe(6);
+    expect(card?.base).toBe(13); // INT 7 + 6
+    expect(card?.skillName).toBe("Local Expert (Little China)");
+    expect(card?.needed).toBe(0);
+  });
+
+  it("promises nothing where the character is not a local", () => {
+    const card = promptIn("pacifica_playground");
+    expect(card?.skillLevel).toBe(0);
+    expect(card?.base).toBe(7); // INT 7 alone
+    expect(card?.skillName).toBe("Local Expert (Pacifica Playground)");
+    expect(card?.needed).toBe(6);
+  });
+});
+
 describe("checkPrompt", () => {
   it("snaps an off-table DV to the nearest published band", () => {
     expect(snapToPublishedDv(14)).toBe(13);

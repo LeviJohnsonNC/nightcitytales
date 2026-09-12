@@ -466,7 +466,16 @@ function placeBlurb(placeKey: string): { blurb?: string } {
 }
 
 function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
-  const summary = characterSummary(bundle.character, bundle.vitals, bundle.inventory);
+  // Resolved before the character summary, because a place-scoped Skill is only
+  // worth its Level in one neighbourhood and the summary has to say which.
+  const position = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
+  const standingDistrictKey = position?.districtKey ?? null;
+  const summary = characterSummary(
+    bundle.character,
+    bundle.vitals,
+    bundle.inventory,
+    standingDistrictKey,
+  );
   const capability = buildCapabilitySnapshot({
     character: bundle.character,
     vitals: bundle.vitals,
@@ -477,7 +486,6 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     beatId: null,
   });
 
-  const position = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
   const positionDistrict = position ? getDistrict(position.districtKey) : undefined;
   // What the streets around them are like, and who turns up if they are loud
   // on them. Read off the atlas's own security provider by the engine; the
@@ -557,8 +565,13 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
       skills: gmSkillList(bundle.character, 40, {
         vitals: bundle.vitals,
         inventory: bundle.inventory,
+        districtKey: standingDistrictKey,
       }).map((s) => ({
-        skill: getSkill(s.id).name,
+        // The label the engine produced, not the plain Skill name: it carries
+        // the specialization, and for Local Expert the district the Level is
+        // for. Re-deriving the name here was how "Local Expert" reached the
+        // model with no neighbourhood attached.
+        skill: s.skill,
         id: s.id,
         base: s.base,
       })),
@@ -1636,7 +1649,14 @@ export function useLife(campaignId: string) {
         bundle.events,
         bundle.character,
         bundle.vitals.wound_state as WoundStateCode,
-        { vitals: bundle.vitals, inventory: bundle.inventory },
+        {
+          vitals: bundle.vitals,
+          inventory: bundle.inventory,
+          // A Local Expert card must promise the Level for the district the
+          // character is standing in, not the one they happen to know.
+          districtKey:
+            resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+        },
       )[0] ?? null)
     : null;
 

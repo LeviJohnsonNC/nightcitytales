@@ -18,7 +18,14 @@ import { defaultRng, statSkillCheck, type CheckResult } from "./dice";
 import type { RollModifier } from "./rollLog";
 import { getSkill, OPPOSED_CHECK_TIE_GOES_TO } from "./rulesData";
 import type { RNG, StatKey } from "./types";
-import type { SkillCheckActor, SkillCheckModifier, SkillCheckOptions } from "./skillCheck";
+import {
+  areaForCheck,
+  skillCheckLabel,
+  skillLevelFor,
+  type SkillCheckActor,
+  type SkillCheckModifier,
+  type SkillCheckOptions,
+} from "./skillCheck";
 
 /** One side of an opposed check: who is rolling, and what they add to the die. */
 export type OpposedSide = {
@@ -111,7 +118,12 @@ export function opposedCheckForCharacter(
   skillId: string,
   opposition: Opposition,
   rng: RNG = defaultRng,
-  options: SkillCheckOptions & { actorName?: string; modifiers?: SkillCheckModifier[] } = {},
+  options: SkillCheckOptions & {
+    actorName?: string;
+    modifiers?: SkillCheckModifier[];
+    /** What a place-scoped Skill is about; defaults to where the actor stands. */
+    area?: string | null;
+  } = {},
 ): OpposedCheckResult {
   const skill = getSkill(skillId);
   const stat = skill.stat as StatKey;
@@ -120,14 +132,15 @@ export function opposedCheckForCharacter(
     throw new Error(`Character has no ${stat.toUpperCase()} value for a ${skill.name} check.`);
   }
   const opposingSkill = getSkill(opposition.skillId);
+  const area = areaForCheck(actor, skillId, options.area);
 
   return resolveOpposedCheck(
     {
       name: options.actorName ?? "You",
       statLabel: stat.toUpperCase(),
       statValue,
-      skillLabel: skill.name,
-      skillValue: actor.skills.find((entry) => entry.skillId === skillId)?.level ?? 0,
+      skillLabel: skillCheckLabel(actor, skillId, area),
+      skillValue: skillLevelFor(actor, skillId, area),
       ...(options.modifiers ? { modifiers: options.modifiers } : {}),
     },
     {

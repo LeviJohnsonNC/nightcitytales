@@ -57,7 +57,12 @@ import { CheckCard } from "@/features/play/CheckCard";
 import { MapButton } from "@/features/atlas/MapButton";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
-import { actorFor, gmSkillList, statsRecord } from "@/features/play/playModel";
+import {
+  actorFor,
+  gmSkillList,
+  statsRecord,
+  type CurrentStatsContext,
+} from "@/features/play/playModel";
 import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
@@ -258,6 +263,7 @@ function LifeLog({
 function ActionCard({
   action,
   character,
+  context,
   onPick,
   busy,
 }: {
@@ -267,14 +273,27 @@ function ActionCard({
       ? C
       : never
     : never;
+  /**
+   * The live context the roll will use: worn armor, current Humanity, and the
+   * district underfoot. The card prints the number the engine is going to add,
+   * so it has to be asked the same question the check asks — without the
+   * district, a Local Expert option advertised a Level the character only has
+   * in another neighbourhood.
+   */
+  context: CurrentStatsContext;
   onPick: () => void;
   busy: boolean;
 }) {
   const skillId = action.skillId ? resolveSkillId(action.skillId) : null;
+  const line = skillId
+    ? gmSkillList(character as never, 40, context).find((s) => s.id === skillId)
+    : undefined;
   const hint = skillId
     ? {
-        name: getSkill(skillId).name,
-        base: gmSkillList(character as never).find((s) => s.id === skillId)?.base ?? 0,
+        // The engine's own label, which names the specialization — and for
+        // Local Expert, the district this number is for.
+        name: line?.skill ?? getSkill(skillId).name,
+        base: line?.base ?? 0,
       }
     : null;
 
@@ -785,6 +804,19 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
   const luckMax = luckPoolMax(statsRecord(bundle.character));
   const luckLeft = luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character));
 
+  /**
+   * The live context every number on this screen is read through: worn armor,
+   * current Humanity, and the district under the character's feet. A Local
+   * Expert check is about the neighbourhood they are standing in, so the
+   * district travels with the rest of it.
+   */
+  const rollContext: CurrentStatsContext = {
+    vitals: bundle.vitals,
+    inventory: bundle.inventory,
+    districtKey:
+      resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+  };
+
   const chips = [
     { label: "HP", value: `${bundle.vitals.hp_current}/${bundle.vitals.hp_max}` },
     { label: "Wound", value: bundle.vitals.wound_state },
@@ -794,10 +826,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
   /** The engine rolls; the card only animates toward what it rolled. */
   const rollCheck = (pending: PendingCheck, luckSpend: number): CheckRoll => {
-    const actor = actorFor(bundle.character, {
-      vitals: bundle.vitals,
-      inventory: bundle.inventory,
-    });
+    const actor = actorFor(bundle.character, rollContext);
     const luckSpent = clampLuckSpend(luckSpend, luckLeft);
     const spend = luckModifier(luckSpent);
     const wounds = woundActionPenalty(bundle.vitals.wound_state as WoundStateCode);
@@ -950,6 +979,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                     key={action.label}
                     action={action}
                     character={bundle.character as never}
+                    context={rollContext}
                     busy={life.busy}
                     onPick={() =>
                       void life.act(`${action.label}. ${action.description}`.trim(), {

@@ -5,9 +5,12 @@
  * file never invents a DV, a STAT, or a Skill Level.
  */
 import {
+  areaForCheck,
   DIFFICULTY_VALUES,
   describeDV,
   getSkill,
+  skillCheckLabel,
+  skillLevelFor,
   woundActionPenalty,
   type WoundStateCode,
   type OpposedCheckResult,
@@ -20,9 +23,16 @@ import type {
   CampaignVitals,
   FullCharacter,
 } from "@/lib/backend";
-import { effectiveStatsRecord } from "./playModel";
+import { actorFor, effectiveStatsRecord, type CurrentStatsContext } from "./playModel";
 
-type LiveCheckContext = { vitals: CampaignVitals; inventory: CampaignInventoryItem[] };
+/**
+ * The live context a prompt is read through: worn armor, current Humanity, and
+ * the district underfoot. The card prints what the roll will add, so it is
+ * asked the same question the roll is — including where the character is
+ * standing, without which a Local Expert prompt promised a Level the character
+ * only has in another neighbourhood.
+ */
+type LiveCheckContext = CurrentStatsContext;
 
 /** The published DV bands, lowest first (src/data/rules/dv-table.json). */
 export const DV_BANDS = [...DIFFICULTY_VALUES].sort((a, b) => a.dv - b.dv);
@@ -186,7 +196,11 @@ export function describePendingCheck(
     stats && typeof stats[skill.stat] === "number" ? (stats[skill.stat] as number) : null;
   if (statValue === null) return null;
 
-  const skillLevel = character.skills.find((s) => s.skill_id === skillId)?.level ?? 0;
+  // Read through the same lookup the engine rolls with, so a place-scoped Skill
+  // is worth its Level here and nothing where the character is not a local.
+  const actor = actorFor(character, context);
+  const area = areaForCheck(actor, skillId);
+  const skillLevel = skillLevelFor(actor, skillId, area);
   const base = statValue + skillLevel;
   const woundPenalty = woundActionPenalty(woundState);
   const dv = opposition || dvRaw === null ? null : snapToPublishedDv(dvRaw);
@@ -194,7 +208,9 @@ export function describePendingCheck(
   return {
     eventId: event.id,
     skillId,
-    skillName: skill.name,
+    // Named for the ground it is about, so a Local Expert prompt says which
+    // neighbourhood the Level on the card belongs to.
+    skillName: skillCheckLabel(actor, skillId, area),
     stat: skill.stat,
     statValue,
     skillLevel,

@@ -61,6 +61,14 @@ export type SheetSkillLine = {
   key: string;
   skillId: string;
   name: string;
+  /**
+   * What this line is specialized in, for the Skills that take one: a tongue, a
+   * field of study, a Martial Arts Form, or — for Local Expert — a district of
+   * the city. Null for the Skills that take none. `name` already reads
+   * "Language (Streetslang)", but a display string is not something the check
+   * layer can match a district against, so the value is carried as well.
+   */
+  specialization: string | null;
   category: string;
   stat: StatKey;
   statValue: number | null;
@@ -196,6 +204,7 @@ export function sheetSkillLines(
         key: entry.specialization ? `${entry.skillId}::${entry.specialization}` : entry.skillId,
         skillId: entry.skillId,
         name: skillEntryName(entry),
+        specialization: entry.specialization,
         category: skill.category,
         stat,
         statValue: value,
