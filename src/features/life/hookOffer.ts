@@ -11,6 +11,7 @@
  * React, no dice.
  */
 import {
+  districtOfPlace,
   generateJob,
   getMission,
   placeIntel,
@@ -208,14 +209,28 @@ export function wireOfferFor(
   seed: number,
   broker: CastMember | null = null,
   places: Record<string, PlaceState> = {},
+  /**
+   * How much of a local the character is, asked by district. Given as a lookup
+   * rather than a number because the offer picks the place: the caller knows
+   * the character, this knows the address, and neither has to learn the other.
+   *
+   * Without it an offer in the character's own neighbourhood read exactly like
+   * one across the city — which is the moment being a local should be worth
+   * something, before they have accepted anything.
+   */
+  localExpertIn: (districtKey: string) => number = () => 0,
 ): { missionId: string; wire: LifeWireOffer } {
   const missionId = jobIdForSeed(seed);
   const mission = getMission(missionId);
   const offer = offerThrough(missionOffer(mission), broker);
-  // What the character already knows about the building, because they have
-  // been there. Absent for somewhere they have never set foot, which is the
-  // honest answer rather than an empty readout.
-  const intel = offer.placeKey ? placeIntel(offer.placeKey, places[offer.placeKey]) : null;
+  // What the character already knows about the building — because they have
+  // been there, or because it is on their own streets. Absent for somewhere
+  // they have never set foot and are a stranger to, which is the honest answer
+  // rather than an empty readout.
+  const district = offer.placeKey ? districtOfPlace(offer.placeKey) : undefined;
+  const intel = offer.placeKey
+    ? placeIntel(offer.placeKey, places[offer.placeKey], district ? localExpertIn(district.key) : 0)
+    : null;
   return {
     missionId,
     wire: {

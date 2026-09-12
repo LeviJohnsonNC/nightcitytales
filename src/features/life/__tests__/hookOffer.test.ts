@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  districtOfPlace,
   generateJob,
   jobIdForSeed,
   missionOffer,
@@ -54,6 +55,35 @@ describe("the job on the wire", () => {
     expect(missionId).toBe(jobIdForSeed(SEED));
     expect(wire.title).toBe(generateJob(SEED).title);
     expect(wire.payout).toBeGreaterThan(0);
+  });
+
+  /**
+   * A job on the character's own streets should arrive knowing more than a job
+   * across the city, before they have accepted anything — which is the first
+   * point in the loop where being a local is worth something.
+   */
+  it("carries what a local already knows about the address", () => {
+    const { wire } = wireOfferFor(SEED);
+    const offer = missionOffer(generateJob(SEED));
+    const district = offer.placeKey ? districtOfPlace(offer.placeKey) : undefined;
+    expect(district, "this seed's job needs an address to test against").toBeDefined();
+
+    // A stranger to the district, who has never been to the building.
+    expect(wire.familiar ?? []).toEqual([]);
+
+    // The same offer, to somebody who grew up on that street.
+    const { wire: asLocal } = wireOfferFor(SEED, null, {}, (key) =>
+      key === district!.key ? 6 : 0,
+    );
+    expect(asLocal.familiar?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it("does not let being a local somewhere else tell you anything here", () => {
+    const { wire } = wireOfferFor(SEED, null, {}, () => 0);
+    const { wire: elsewhere } = wireOfferFor(SEED, null, {}, (key) =>
+      key === "nowhere_at_all" ? 10 : 0,
+    );
+    expect(elsewhere.familiar ?? []).toEqual(wire.familiar ?? []);
   });
 
   it("says only what a broker would say out loud", () => {

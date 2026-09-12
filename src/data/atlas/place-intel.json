@@ -1,0 +1,85 @@
+{
+  "houseRule": true,
+  "note": "What knowing somewhere buys you. Two ways of knowing the same ground, on one ladder of rungs: having been to a building, and being a local in the neighbourhood it stands in. Both pay in INFORMATION the engine already holds, never in a die modifier — Cyberpunk RED prints its DVs and a home-field bonus is an invented rule. Every rung is read from the atlas, the gameplay tags, or the campaign's own row for the place.",
+  "visitNote": "How many visits each rung costs. Walking past tells you what the place is. Coming back tells you who runs the street. Knowing it properly takes more than an errand.",
+  "visitLadder": [
+    {
+      "rung": "what",
+      "visits": 1
+    },
+    {
+      "rung": "who",
+      "visits": 2
+    },
+    {
+      "rung": "law",
+      "visits": 4
+    },
+    {
+      "rung": "state",
+      "visits": 6
+    }
+  ],
+  "localExpertNote": "Which rungs being a local in this district opens, by Local Expert Level. A neighbourhood at a time rather than a building at a time: a local walks into a building on their own street they have never entered and still knows what it is, who claims it, and who answers when it goes loud. The Skill's printed description is knowing the area and the agendas of its political and criminal factions, which is what these rungs are made of.",
+  "localExpertLadder": [
+    {
+      "rung": "what",
+      "level": 2
+    },
+    {
+      "rung": "who",
+      "level": 4
+    },
+    {
+      "rung": "law",
+      "level": 4
+    },
+    {
+      "rung": "neighbourhood",
+      "level": 6
+    }
+  ],
+  "stateNote": "The `state` rung is deliberately absent from the Local Expert ladder and can only ever be earned by visiting. It reports what has changed HERE SINCE YOU STARTED COMING — a personal log of one building, not knowledge of a neighbourhood. Being a local cannot tell you that the counter you have been buying from for six weeks is gone, because it is your six weeks that make it news.",
+  "neighbourhoodNote": "The rung only being a local opens, and the only one measured across the whole district rather than at one address. Two things a stranger cannot get at any number of visits to a single building: what noise actually costs on these streets, and which doors the people who live here use.",
+  "localKnowledgeNote": "The tags a local can point at, as the thing they are for. A closed vocabulary, and each entry resolves to named venues in the district through placesWithTag — so this says which KINDS of door local knowledge opens, and the atlas says where they are. Ordered: the doors you would have to know somebody to find come first, because those are the ones worth having; the last three are what a local knows about their own streets whether or not anything illicit is on them. A district with none of these says nothing, which is the honest answer for ground with four addresses on it.",
+  "localKnowledge": [
+    {
+      "tag": "ripperdoc",
+      "purpose": "where to get chrome put in"
+    },
+    {
+      "tag": "clinic",
+      "purpose": "where to get a wound closed without a bill arriving later"
+    },
+    {
+      "tag": "fence",
+      "purpose": "where a thing's provenance is nobody's business"
+    },
+    {
+      "tag": "flophouse",
+      "purpose": "where to sleep when you cannot be found"
+    },
+    {
+      "tag": "gang_turf",
+      "purpose": "which ground is claimed, and to be walked around"
+    },
+    {
+      "tag": "derelict",
+      "purpose": "which empty buildings are not as empty as they look"
+    },
+    {
+      "tag": "secure",
+      "purpose": "which doors are a problem to get through"
+    },
+    {
+      "tag": "crowd",
+      "purpose": "where there are always enough people to disappear into"
+    },
+    {
+      "tag": "transit",
+      "purpose": "how to get out of the area in a hurry"
+    }
+  ],
+  "localKnowledgeShownNote": "How many kinds of door to name at once. Enough to feel like local knowledge, few enough that it stays a memory rather than a directory.",
+  "localKnowledgeShown": 4
+}

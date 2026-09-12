@@ -268,11 +268,35 @@ The stages, in dependency order:
   No separate final-gate check: `validateLifestyle` already requires a district
   and a building, so a character cannot be saved with the placeholder
   unresolved, and a second mechanism would only be a second thing to keep true.
-- Stage 2: pay in information, through the ladder that already exists.
-  `placeIntel`'s rungs are earned one building at a time; Local Expert should
-  open them a neighbourhood at a time, with its Level-to-rung thresholds in data
-  as a house rule and one district-scope rung only it can open. Not a die bonus:
-  see the argument in `placeIntel.ts`, which still holds.
+- ~~Stage 2: pay in information, through the ladder that already exists~~ —
+  `placeIntel` now has two routes up one ladder. Visits are earned a building at
+  a time, as before; Local Expert opens the same rungs for every address in its
+  district, so a local walks into a building on their own street they have never
+  entered and still knows what it is, who claims it, and who answers when it
+  goes loud. Both ladders and their numbers live in `place-intel.json`, flagged
+  `houseRule: true`, so the thresholds are tunable without touching code
+  (currently: Local Expert 2 opens `what`, 4 opens `who` and `law`, 6 opens
+  `neighbourhood`).
+
+  Two rungs are deliberately not interchangeable, and the asymmetry is the
+  design. `state` can only ever be visited for — it reports what has changed
+  here since you started coming, a log of your own weeks rather than knowledge
+  of an area. `neighbourhood` can only ever be Local Expert's, and is the one
+  rung measured across the district instead of at one address: what noise
+  actually costs on these streets (the heat multiplier the pressure engine
+  applies, which nobody else ever sees stated) and which doors the locals use —
+  the unlicensed surgery, the fence, the empty building that is not empty, the
+  crowd to disappear into — each answered with the venue's real name through
+  `placesWithTag`. Nothing authored per district; 22 of the 24 have something to
+  say, and the two that do not have one address between them.
+
+  Both narrator prompts now separate what the character has seen for themselves
+  from what they know because they live there, which is the only kind of
+  knowledge that can be true on a first visit. A job offered on the wire in the
+  character's own neighbourhood arrives carrying it, before they accept
+  anything. Still no die bonus anywhere: the argument in `placeIntel.ts` holds,
+  and a test asserts it across every line in every district.
+
 - Stage 3: pay in options. Insider actions in `lifeOptions`/`placeActions` gated
   on being a local, all derived from tags, flags and haunts rather than authored
   per district. `lifeModel.ts` also seeds cast haunts with `DEFAULT_START`

@@ -142,6 +142,7 @@ import {
   actorFor,
   characterSummary,
   findNpcByKey,
+  localExpertIn,
   npcDispositionAfter,
   statsRecord,
   npcSummaries,
@@ -401,7 +402,14 @@ async function narrate(
               // A job at a building the character has cased before should not
               // be introduced to them as though they had never seen it.
               const read = at?.placeKey
-                ? placeFamiliarity(at.placeKey, bundle.places[at.placeKey], bundle.campaign.day)
+                ? placeFamiliarity(
+                    at.placeKey,
+                    bundle.places[at.placeKey],
+                    bundle.campaign.day,
+                    // A job on the character's own ground should not brief them
+                    // on the streets they grew up on.
+                    localExpertIn(bundle.character, at.districtKey),
+                  )
                 : null;
               return {
                 ...(blurb ? { blurb } : {}),
@@ -413,6 +421,8 @@ async function narrate(
                         standing: read.standing,
                         since: sinceWords(read.daysSince),
                         known: read.known,
+                        asALocal: read.asALocal,
+                        ...(read.localExpert ? { localExpert: read.localExpert } : {}),
                       },
                     }
                   : {}),

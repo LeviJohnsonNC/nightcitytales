@@ -3,6 +3,7 @@ import type { CampaignEvent, CampaignNpc, CampaignVitals, FullCharacter } from "
 import { skillLevelFor } from "@/engine";
 import {
   actorFor,
+  localExpertIn,
   characterSummary,
   findNpcByKey,
   gmSkillList,
@@ -136,6 +137,29 @@ describe("a place-scoped Skill in the model's own list", () => {
       id: "local_expert",
       base: 7,
     });
+  });
+});
+
+describe("localExpertIn", () => {
+  it("is the Level for that district, and zero everywhere else", () => {
+    expect(localExpertIn(localExpert, "little_china")).toBe(6);
+    expect(localExpertIn(localExpert, "the_glen")).toBe(2);
+    expect(localExpertIn(localExpert, "pacifica_playground")).toBe(0);
+    expect(localExpertIn(localExpert, null)).toBe(0);
+  });
+
+  it("resolves a Role package's placeholder through the saved home district", () => {
+    const starting = {
+      ...localExpert,
+      skills: [{ skill_id: "local_expert", level: 4, specialization: "Your Home" }],
+      finance: { home_district_key: "kabuki" },
+    } as unknown as FullCharacter;
+    expect(localExpertIn(starting, "kabuki")).toBe(4);
+    expect(localExpertIn(starting, "downtown")).toBe(0);
+  });
+
+  it("is zero for a character with no Local Expert at all", () => {
+    expect(localExpertIn(full, "little_china")).toBe(0);
   });
 });
 
