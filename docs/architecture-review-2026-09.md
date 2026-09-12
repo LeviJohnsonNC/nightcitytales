@@ -1,5 +1,13 @@
 # Architecture, test and documentation review — September 2026
 
+> **Status.** This is a snapshot, kept as written rather than edited as work
+> lands. **P0 (items 1-4) is done** — every paid-AI path now authenticates, the
+> chargen system prompt is chosen server-side from a closed job list, the
+> portrait route is metered, and `.env` is untracked with a `.env.example`
+> beside it. `src/lib/__tests__/paidAiAuth.test.ts` is the guard that keeps it
+> that way. Sections 1.1 and 1.2 below describe the state at `e9e294c`, not the
+> state today. Everything from P1 down is still open.
+
 Reviewed at `e9e294c`. Scope: the whole repository — architecture boundaries,
 the AI trust boundary, the persistence layer, the migration history, the test
 suite, and the four governing documents (`PRODUCT.md`, `AGENTS.md`,

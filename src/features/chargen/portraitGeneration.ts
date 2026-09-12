@@ -5,10 +5,27 @@
  */
 import { createParser } from "eventsource-parser";
 import { flushSync } from "react-dom";
-import { uploadPortrait } from "@/lib/backend";
+import { getAccessToken, uploadPortrait } from "@/lib/backend";
 import type { PortraitFacts } from "./portraitPrompt";
 
 const ENDPOINT = "/api/generate-portrait";
+
+/**
+ * The route bills an image per call, so it authenticates. This is a plain
+ * fetch rather than a server function, and `attachSupabaseAuth` only attaches
+ * the bearer token to server functions — so it goes on by hand here.
+ */
+async function postToEndpoint(body: unknown): Promise<Response> {
+  const token = await getAccessToken();
+  return fetch(ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+}
 
 type Frame = { b64_json?: string; error?: { message?: string }; type?: string };
 
@@ -31,11 +48,7 @@ export async function generatePortrait(
   draftId: string | null,
   onFrame: (dataUrl: string, isFinal: boolean) => void,
 ): Promise<string> {
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(facts),
-  });
+  const res = await postToEndpoint(facts);
   if (!res.ok || !res.body) {
     throw new Error(
       (await res.text().catch(() => "")) || `Portrait generation failed (${res.status}).`,
@@ -86,11 +99,7 @@ export async function generatePortrait(
 
   if (!sawAnyEvent) {
     // Zero events is a transport hiccup: replay once, non-streamed.
-    const replay = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...facts, stream: false }),
-    });
+    const replay = await postToEndpoint({ ...facts, stream: false });
     if (!replay.ok) {
       throw new Error(
         (await replay.text().catch(() => "")) || `Portrait generation failed (${replay.status}).`,

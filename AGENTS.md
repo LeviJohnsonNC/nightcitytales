@@ -208,6 +208,31 @@ Any new server function or HTTP route that can consume paid AI resources or
 access user data must perform server-side authentication. A browser route guard,
 an attached bearer token, or CSRF protection is not by itself authorization.
 
+There are two ways to do it, and which one you need depends on the shape of the
+endpoint:
+
+- A **server function** takes `.middleware([requireSupabaseAuth])`
+  (`src/integrations/supabase/auth-middleware.ts`). The browser's token is
+  attached for you by the global `attachSupabaseAuth`.
+- An **HTTP route** under `src/routes/api/` gets a bare `Request` and never runs
+  function middleware — nor the CSRF middleware in `src/start.ts`, which filters
+  on `handlerType === "serverFn"`. It calls `requireUserId(request)`
+  (`src/integrations/supabase/requestAuth.server.ts`) itself, and its client has
+  to send the bearer token by hand (`getAccessToken()` from `src/lib/backend`).
+
+`src/lib/__tests__/paidAiAuth.test.ts` enforces this: it finds every module that
+reads `LOVABLE_API_KEY` and fails if one of them has no auth, so a fifth AI path
+is covered the moment it reads the key. An endpoint that spends money should
+also meter the caller — see `src/lib/rate-limit.server.ts`, and read its header
+for what an in-memory limit does and does not promise.
+
+A prompt is part of the contract, not part of the payload: the model's SYSTEM
+prompt is chosen server-side from a closed list of jobs
+(`src/lib/background.jobs.ts` names them, `background.prompts.ts` holds them).
+An endpoint that accepts a caller-supplied system prompt is a general-purpose
+model wearing the feature's name, and it also routes around
+`src/lib/prose-style.ts`.
+
 Never expose `LOVABLE_API_KEY` or a Supabase service-role key to browser code.
 The service-role client bypasses RLS and is for trusted server-only operations.
 

@@ -12,6 +12,19 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   return toUser(data.user);
 }
 
+/**
+ * The current session's access token, for the one caller that cannot rely on
+ * the middleware: a server FUNCTION gets its bearer token attached
+ * automatically by `attachSupabaseAuth`, but a plain `fetch` to an HTTP route
+ * (src/routes/api/*) does not, so it has to send the header itself.
+ *
+ * Null when nobody is signed in; the route answers 401 either way.
+ */
+export async function getAccessToken(): Promise<string | null> {
+  const { data } = await backendClient.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
 export async function signInWithPassword(email: string, password: string) {
   const { error } = await backendClient.auth.signInWithPassword({ email, password });
   if (error) throw error;

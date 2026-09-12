@@ -9,6 +9,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { GM_SYSTEM_PROMPT } from "./gmSystemPrompt";
 import {
   GmWireResponseSchema,
@@ -53,6 +54,9 @@ function rawTextOf(error: unknown): string | null {
 }
 
 export const gmTurnFn = createServerFn({ method: "POST" })
+  // A GM turn spends AI credits. CSRF stops a cross-site browser request and
+  // nothing else; this is what stops a stranger with curl.
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => GmTurnInput.parse(input))
   .handler(async ({ data }): Promise<GmResponse> => {
     const key = process.env["LOVABLE_API_KEY"];
