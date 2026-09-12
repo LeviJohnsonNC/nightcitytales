@@ -14,7 +14,6 @@ import {
   isRoleTableRevealed,
 } from "@/engine";
 import { generateBackgroundFn } from "@/lib/background.functions";
-import { withHouseStyle } from "@/lib/prose-style";
 import { SINGLE_LIFEPATH_TABLES, displayValue, type GeneralLifepath } from "./lifepathState";
 import type { RoleLifepath } from "./roleLifepathState";
 
@@ -89,26 +88,16 @@ export function buildBackgroundInput(
   };
 }
 
-/** The prompt sent to the model. Shared, so behavior matches everywhere. */
-export function buildBackgroundPrompt(input: BackgroundInput): { system: string; user: string } {
-  const task = [
-    "You are the Game Master for a Cyberpunk RED campaign in Night City.",
-    "Write a character background from the structured Lifepath facts in the user message.",
-    "Weave ALL of the given facts in naturally: origins, family, childhood, crises, personality, values, style, language, friends, enemies and their grudges, tragic loves, Role, Role answers, and life goal.",
-    "Do not invent game mechanics, STATs, cyberware, skills, or rules; narrative color only.",
-    "Use second person, present tense.",
-    "Structure: at least 3 paragraphs, 300 to 450 words total. Paragraph one covers where you came from, family, and childhood. Paragraph two covers the turn or crisis that made you who you are. Paragraph three covers the people who matter, friends, enemies, and any tragic love. A final short paragraph lands on where you stand now as your Role and what you are chasing.",
-    "Separate paragraphs with a blank line.",
-    "Make each telling distinct: vary the opening beat, the specifics you dwell on, and the closing line.",
-    "Return only the background prose, with no preamble, headings, labels, or surrounding quotation marks.",
-  ].join(" ");
-
-  const system = withHouseStyle(task);
-  const user = [
+/**
+ * The FACTS sent to the model. The instruction half is not built here: the
+ * system prompt for this job lives in src/lib/background.prompts.ts and is
+ * applied server-side, so the browser cannot choose what the model is.
+ */
+export function buildBackgroundUserPrompt(input: BackgroundInput): string {
+  return [
     JSON.stringify(input, null, 2),
     `\nSession seed (use only to vary phrasing, never mention it): ${Math.random().toString(36).slice(2, 10)}`,
   ].join("\n");
-  return { system, user };
 }
 
 /**
@@ -117,6 +106,8 @@ export function buildBackgroundPrompt(input: BackgroundInput): { system: string;
  * we never fall back to canned prose.
  */
 export async function generateBackground(input: BackgroundInput): Promise<string> {
-  const { text } = await generateBackgroundFn({ data: buildBackgroundPrompt(input) });
+  const { text } = await generateBackgroundFn({
+    data: { job: "lifepath_background", user: buildBackgroundUserPrompt(input) },
+  });
   return text.trim();
 }

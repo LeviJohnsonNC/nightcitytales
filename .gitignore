@@ -16,6 +16,11 @@ dist-ssr
 .nitro
 *.local
 
+# Real secrets. .env.example carries the key names instead.
+.env
+.env.*
+!.env.example
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

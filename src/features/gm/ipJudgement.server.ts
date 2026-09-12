@@ -4,6 +4,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   IP_JUDGEMENT_SYSTEM_PROMPT,
   IpJudgementWireSchema,
@@ -14,6 +15,8 @@ import {
 const IpJudgementInput = z.object({ userPrompt: z.string().min(1) });
 
 export const ipJudgementFn = createServerFn({ method: "POST" })
+  // Spends AI credits — see gmTurn.server.ts.
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => IpJudgementInput.parse(input))
   .handler(async ({ data }): Promise<IpJudgement> => {
     const key = process.env["LOVABLE_API_KEY"];
