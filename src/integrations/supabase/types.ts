@@ -439,6 +439,41 @@ export type Database = {
           },
         ]
       }
+      campaign_truths: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          discovered_day: number | null
+          id: string
+          truth_key: string
+          via_skill: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          discovered_day?: number | null
+          id?: string
+          truth_key: string
+          via_skill?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          discovered_day?: number | null
+          id?: string
+          truth_key?: string
+          via_skill?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_truths_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_vitals: {
         Row: {
           campaign_id: string
