@@ -37,6 +37,17 @@ export type GmNpcSummary = {
   disposition: number;
   status: string;
   notes?: string;
+  /** One public line on who this person is to the character. */
+  standing?: string;
+  /** What the character's own Lifepath said about them, quoted. */
+  tie?: string;
+  /**
+   * What the player has actually worked out about them. Absent facts are absent
+   * on purpose: the engine holds the rest and the model is never shown it.
+   */
+  known?: string[];
+  /** True when they have noticed being worked and closed up. The boolean only. */
+  guarded?: boolean;
 };
 
 export type GmContextInput = {
@@ -355,7 +366,21 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       parts.push(
         `- ${npc.name}${key} (disposition ${npc.disposition}, ${npc.status})${npc.notes ? ` — ${npc.notes}` : ""}`,
       );
+      if (npc.standing) parts.push(`    ${npc.standing}`);
+      if (npc.tie) parts.push(`    From their history together: ${npc.tie}`);
+      for (const fact of npc.known ?? []) parts.push(`    The player has worked out: ${fact}`);
+      if (npc.guarded) {
+        parts.push(
+          "    GUARDED: they have noticed being worked on and have stopped volunteering " +
+            "anything. Still civil, still dealing with the character — just careful.",
+        );
+      }
     }
+    parts.push(
+      "What is written above is ALL you know about these people. Never invent a want, a fear " +
+        "or a secret for them and state it as fact, and never have one explain to the character " +
+        "something the character already worked out.",
+    );
   }
 
   if (context.recentEvents.length) {

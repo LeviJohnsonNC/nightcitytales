@@ -25,9 +25,6 @@ import {
   missionOffer,
   nextPhase,
   partOfDay,
-  canRead,
-  socialRead,
-  suspicionCost,
   resolveSkillId,
   selectSituation,
   settleHookAsk,
@@ -125,15 +122,8 @@ import {
   reconcileOpposition,
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
-import {
-  castMemberInRole,
-  ensureCast,
-  markDealtWith,
-  guardednessOf,
-  knownFactsOf,
-  raiseNpcSuspicion,
-  revealFact,
-} from "@/features/campaign/castSeeding";
+import { castMemberInRole, ensureCast, markDealtWith } from "@/features/campaign/castSeeding";
+import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
 import { rememberDeclined, runWorldTick, settleMoves } from "@/features/campaign/worldTick";
 import {
   answerPendingQuestion,
@@ -1362,99 +1352,6 @@ function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
   );
 }
 
-/**
- * Reading someone while you were doing something else.
- *
- * A check won comfortably against a person can tell you something they did not
- * volunteer — but WHICH something, and whether anything at all, depends on the
- * Skill. Conversation gets what they want and never what they are hiding;
- * Interrogation goes for the secret and they remember you did it; Wardrobe &
- * Style reads nobody, whatever the Core Rulebook files it under. The engine
- * decides (`socialRead`); this persists the answer and hands the model the one
- * line, never the rungs still hidden.
- *
- * The attempt is also paid for. Anything that works somebody raises how guarded
- * they are with you, landed or not, and a guarded person stops giving things up
- * to being asked — the way back in is to stop asking and watch them instead.
- */
-type InsightResult =
-  /** A rung of their dossier, which the model narrates as a tell. */
-  | { kind: "learned"; text: string }
-  /** Something about the exchange itself, which is not a thing they revealed. */
-  | { kind: "note"; text: string };
-
-async function applyInsight(
-  campaignId: string,
-  npcKey: string,
-  skillId: string,
-  success: boolean,
-  margin: number,
-  today: number,
-): Promise<InsightResult | null> {
-  // A Skill that neither reads anybody nor costs them anything is not a social
-  // exchange at all: an opposed Athletics check over a fence has no business
-  // reading a row back.
-  const cost = suspicionCost(skillId);
-  if (cost === 0 && !canRead(skillId)) return null;
-
-  const npc = await findCampaignNpc(campaignId, npcKey);
-  if (!npc) return null;
-
-  // Paid before anything is learned, and on a failed check too: they noticed
-  // being worked whether or not it worked.
-  if (cost > 0) await raiseNpcSuspicion(campaignId, npc, cost, today);
-
-  if (!success) return null;
-  const read = socialRead({
-    skillId,
-    margin,
-    known: knownFactsOf(npc),
-    suspicion: guardednessOf(npc, today),
-  });
-
-  if (read.outcome !== "read") {
-    // Two of the silences are worth saying out loud, because both tell the
-    // player to change approach without telling them what is left to find.
-    if (read.why === "guarded") {
-      return {
-        kind: "note",
-        text:
-          `${npc.name} has noticed being worked and has closed up: they are still dealing with ` +
-          "the character, and they are not volunteering anything to being asked. Play the " +
-          "carefulness; do not explain it to them.",
-      };
-    }
-    if (read.why === "out_of_reach") {
-      return {
-        kind: "note",
-        text:
-          `This kind of approach has got everything out of ${npc.name} that it is going to. ` +
-          "Nothing new came of it. Do NOT invent something they gave away, and do not hint that " +
-          "there is more — a different kind of ask would be a different scene.",
-      };
-    }
-    return null;
-  }
-
-  const learned = await revealFact(campaignId, npc, read.fact);
-  if (!learned) return null;
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "npc_read",
-    summary: learned.text,
-    data: { npcKey, fact: learned.fact, shape: read.shape.shape } as unknown as Json,
-  });
-  return { kind: "learned", text: learned.text };
-}
-
-/** How a read reaches the narrator: as a tell, or as a note about the exchange. */
-function insightLine(read: InsightResult | null): string {
-  if (!read) return "";
-  return read.kind === "learned"
-    ? ` Reading them that closely told the character something they did not volunteer: ${read.text} Let it show as a tell in how they behave, not as an announcement.`
-    : ` ${read.text}`;
-}
-
 /** Roll a Life check the player pressed, then let the world answer it. */
 async function commitLifeCheck(
   bundle: LifeBundle,
@@ -1487,14 +1384,14 @@ async function commitLifeCheck(
         ? "FAILURE — tied, and a tie goes to the one resisting"
         : `FAILURE by ${Math.abs(roll.result.margin)}`;
     const read = pending.opposition?.npcKey
-      ? await applyInsight(
+      ? await applyInsight({
           campaignId,
-          pending.opposition.npcKey,
-          pending.skillId,
-          roll.result.success,
-          roll.result.margin,
-          bundle.clock.day,
-        )
+          npcKey: pending.opposition.npcKey,
+          skillId: pending.skillId,
+          success: roll.result.success,
+          margin: roll.result.margin,
+          today: bundle.clock.day,
+        })
       : null;
     const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
     await liveTurn(fresh, "", {
@@ -1749,14 +1646,14 @@ async function settleNegotiation(
   // Only a push made AGAINST the broker reads the broker. Asking around the
   // street is a check about the job, with the fixer nowhere in the room.
   const read = spec.opposedBy
-    ? await applyInsight(
+    ? await applyInsight({
         campaignId,
-        hook.offer.brokerKey,
-        pending.skillId,
+        npcKey: hook.offer.brokerKey,
+        skillId: pending.skillId,
         success,
         margin,
-        bundle.clock.day,
-      )
+        today: bundle.clock.day,
+      })
     : null;
 
   await upsertSituations(campaignId, [
