@@ -5,7 +5,7 @@
  * no advance_beat, and no way to accept a job.
  */
 import { z } from "zod";
-import { isAnswerableQuestion } from "@/engine";
+import { clampDispositionDelta, isAnswerableQuestion } from "@/engine";
 
 export const LIFE_ACTION_KINDS = [
   "skill_check",
@@ -357,7 +357,11 @@ function normalizeDeltas(raw: unknown): LifeDelta[] {
     if (kind === "clock" || clockKey) continue;
     if (kind === "npc_disposition" || (npcKey && num(d["delta"]) !== undefined)) {
       if (!npcKey) continue;
-      out.push({ kind: "npc_disposition", npcKey, delta: clamp(num(d["delta"]) ?? 0, -3, 3) });
+      out.push({
+        kind: "npc_disposition",
+        npcKey,
+        delta: clampDispositionDelta(num(d["delta"]) ?? 0),
+      });
       continue;
     }
     if (kind === "set_flag" || flag) {

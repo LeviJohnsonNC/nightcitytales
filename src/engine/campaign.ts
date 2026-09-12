@@ -122,3 +122,19 @@ export const NPC_DISPOSITION_MAX = 3; // devoted
 export function clampDisposition(value: number): number {
   return Math.max(NPC_DISPOSITION_MIN, Math.min(NPC_DISPOSITION_MAX, Math.round(value)));
 }
+
+/**
+ * The most one reported delta may move a person, in either direction.
+ *
+ * Not the same question as clampDisposition, which bounds where somebody can
+ * END UP. This bounds how far one turn may carry them: the scale is only seven
+ * steps wide, so an unbounded delta saturates, and saturating means a single
+ * report can take somebody from hostile to devoted. Feelings move a step at a
+ * time — see PRODUCT.md on disposition being the person rather than a clock.
+ *
+ * Life clamped to this and the Job path did not, which is the kind of
+ * asymmetry that is harmless until somebody widens the scale.
+ */
+export function clampDispositionDelta(value: number): number {
+  return Math.max(NPC_DISPOSITION_MIN, Math.min(NPC_DISPOSITION_MAX, Math.round(value)));
+}

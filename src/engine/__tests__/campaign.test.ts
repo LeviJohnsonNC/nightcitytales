@@ -4,9 +4,12 @@ import {
   CAMPAIGN_START_CLOCK,
   CAMPAIGN_STATUSES,
   MISSION_STATUSES,
+  NPC_DISPOSITION_MAX,
+  NPC_DISPOSITION_MIN,
   NPC_STATUSES,
   WOUND_STATE_CODES,
   clampDisposition,
+  clampDispositionDelta,
   formatClock,
   startingVitals,
   woundStateFor,
@@ -115,5 +118,23 @@ describe("clampDisposition", () => {
     expect(clampDisposition(2.4)).toBe(2);
     expect(clampDisposition(-2.6)).toBe(-3);
     expect(clampDisposition(0)).toBe(0);
+  });
+});
+
+describe("how far one report may move a person", () => {
+  it("bounds a delta to the scale, so nobody goes hostile to devoted in one turn", () => {
+    expect(clampDispositionDelta(100)).toBe(NPC_DISPOSITION_MAX);
+    expect(clampDispositionDelta(-100)).toBe(NPC_DISPOSITION_MIN);
+  });
+
+  it("leaves an ordinary step alone", () => {
+    expect(clampDispositionDelta(1)).toBe(1);
+    expect(clampDispositionDelta(-2)).toBe(-2);
+    expect(clampDispositionDelta(0)).toBe(0);
+  });
+
+  it("rounds to a whole step, because the scale has no halves", () => {
+    expect(clampDispositionDelta(1.4)).toBe(1);
+    expect(clampDispositionDelta(-1.6)).toBe(-2);
   });
 });

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "tanstack_start_ts",
+      "name": "night-city-tales",
       "dependencies": {
         "@ai-sdk/openai-compatible": "^3.0.31",
         "@hookform/resolvers": "^5.2.2",

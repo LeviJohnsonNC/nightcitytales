@@ -32,9 +32,9 @@ table, service, state machine, prompt or framework has to answer first.
 This file stays authoritative on architecture; `PRODUCT.md` is authoritative on
 intent.
 
-`ROADMAP.md` says what to build next and why, and records what the current
-Known implementation gaps below are blocking. Update it when a milestone lands
-or the ordering changes.
+`ROADMAP.md` says what to build next and why, and carries the single list of
+standing debts — ordered and tagged by severity. Update it when a milestone
+lands, when the ordering changes, or when a debt is paid.
 
 The top-level `README.md` is the orientation document: what the product is, how
 the loop and the city layer fit together, the stack, and where things live. It is
@@ -394,82 +394,41 @@ to be luckier.
 
 ## Known implementation gaps
 
-Keep these in mind when changing adjacent code:
+**The list lives in `ROADMAP.md` under "Standing debts"**, ordered and tagged by
+severity. It used to be duplicated here in a different order with no severities,
+which meant a reader could not tell what was urgent and a fix had two places to
+be recorded — the second source of truth this project refuses everywhere else.
 
-- The character save payload includes Lifepath narrative, but the current
-  character Lifepath table has no narrative column. Pronouns and self-description
-  are also not part of the saved-character schema.
-- Portrait storage policies exist in migrations, but the repository does not
-  create the `portraits` bucket.
-- Mission objectives, rewards, and final campaign status are not fully updated
-  by the current play loop.
-- Non-combat structured world-state deltas proposed by the GM are still only
-  partially wired into persistence.
-- Combat has an angled board, persistent commands, and saved-result playback.
-  Playback is ephemeral presentation, never command input. Routine exchanges use
-  engine-written reports; freeform check narration still waits for the model.
-- Settlement reads a bounded job ledger window (`JOB_LEDGER_LIMIT`, 2000 events)
-  rather than querying the exact `mission_started` → `mission_completed` range.
-  An exceptionally long job could exceed it.
-- Encounters created before the atomic-closeout migration do not record which
-  inventory rows supplied head and body armor, so their remaining SP cannot be
-  written back to inventory.
-- Immediate in-job pressure reports and engine-derived settlement pricing are
-  not causally deduplicated. Engine-derived settlement is the authoritative
-  pricing pass.
-- `campaign_npcs` has no uniqueness constraint on `(campaign_id, npc_id)`.
-  Settlement serializes survivor promotion behind the campaign lock, but
-  concurrent writes elsewhere can still duplicate a recurring NPC.
-- The append-only ledger is auditable, not tamper-proof: authenticated users can
-  insert arbitrary event types into campaigns they own. Do not treat it as an
-  anti-cheat boundary.
-- Ordinary play turns still span multiple writes; only encounter saves, job
-  settlement, and Aftermath closeout are transactional, so error handling must
-  still account for partial turns in the immutable ledger.
-- `src/integrations/supabase/types.ts` was hand-synchronized for
-  `install_cyberware`, `campaign_cyberware` and `encounters.version` rather than
-  regenerated. Regenerate it from the applied schema.
-- Ripperdoc pacing — 0/1/3 recovery days by install level, four surgery hours
-  per physical implant, appointment delay by disposition — is a house rule, and
+What stays here is the part that is guidance rather than a debt: the things a
+contributor needs to know while editing the code next to one.
+
+- **`campaign_npcs` has no `(campaign_id, npc_id)` uniqueness constraint.** Look
+  a person up by key before writing them, and never create one from a key the
+  model supplied — `playOps.ts` and `lifeOps.ts` both ignore an unknown key
+  rather than filing a row for it.
+- **The ledger is auditable, not tamper-proof.** An authenticated user can
+  insert arbitrary event types into a campaign they own. It is a record, not a
+  boundary; do not build anti-cheat on it.
+- **Ordinary play turns are not transactional.** Only encounter saves,
+  `settle_job` and `close_aftermath` are. Sequence writes so a failure partway
+  leaves something a later turn can read, and expect partial turns in the ledger.
+- **Regenerate `src/integrations/supabase/types.ts` after schema work.** It has
+  been hand-synchronised three times; `encounterSchema.test.ts` and
+  `placeSchema.test.ts` guard two of those cases, which is a guard rather than a
+  fix.
+- **Run `supabase/replay/replay.sh` before adding schema work.** It applies every
+  migration to an empty Postgres and currently reports 37 applied, 9 failed. Its
+  README explains why and what the options are.
+- **Ripperdoc pacing is a house rule** — 0/1/3 recovery days by install level,
+  four surgery hours per physical implant, appointment delay by disposition.
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,
   not in code.
-- Lint is clean and CI now blocks on it. `bun run lint:code` is the blocking
-  check (eslint with `prettier/prettier` off) and `bun run format:check` is
-  advisory, so a formatting-dirty push from Lovable cannot be the reason a real
-  error goes unreported. Generated files — the Supabase integration clients and
-  `routeTree.gen.ts` — are excluded from eslint, because each says not to edit
-  it and a finding nobody may act on is what forced the whole check to be
-  non-blocking in the first place. Fast Refresh warnings remain, as warnings.
-- `src/integrations/supabase/types.ts` was hand-synchronised for
-  `campaign_places` rather than regenerated.
-  `src/features/campaign/__tests__/placeSchema.test.ts` compares that table's
-  columns against the migration, which is a guard rather than a fix.
-- The `goodwill` dial in `place-state.json` moves but no threshold reads it, so
-  it accumulates without ever reaching the player. A dial nothing depends on is
-  the failure `PRODUCT.md` warns about; either give it a threshold or take it
-  out. The other three dials each resolve to a flag.
-- The location layer's pacing numbers — `PLACE_OBSERVATION_EFFECTS`, the beat
-  periods, the thresholds — have not been playtested. Tune them from a week of
-  play rather than from argument.
+- **The location layer's pacing numbers are guesses.** `PLACE_OBSERVATION_EFFECTS`,
+  the beat periods and the `place-state.json` thresholds have not been
+  playtested. They live in data so they can be tuned from play.
 
-Resolved by the Tomorrow Test closeout work (see
-`supabase/migrations/20260830020000_atomic_combat_and_closeout.sql`):
-
-- Combat costs — HP, wound state, Death Save failures, armor ablation, and
-  ammunition — now reach canonical campaign rows instead of living only on the
-  encounter.
-- Job settlement is a single locked, idempotent transaction, so a partial write
-  can no longer lose a payout or leave tallies, pressure, or phase half-applied.
-- Settlement re-reads fresh canonical state before planning closeout instead of
-  trusting a mid-turn bundle snapshot.
-- Wounds and armor are no longer duplicated as `aftermath_*` situations; Life
-  derives them from vitals and inventory.
-- Attack ledger entries carry enough trace to reconstruct HP loss, armor
-  ablation, ammunition use, and critical injuries, and Aftermath shows that
-  receipt.
-
-Do not silently paper over these gaps by moving mechanical authority into the
-LLM or UI.
+Do not silently paper over any of it by moving mechanical authority into the LLM
+or the UI.
 
 ## Package manager and verification
 

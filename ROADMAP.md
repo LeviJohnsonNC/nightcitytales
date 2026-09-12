@@ -128,9 +128,12 @@ Three things should wait for that week rather than be argued in advance:
 
 - `PLACE_OBSERVATION_EFFECTS` and the thresholds in `place-state.json` are
   pacing guesses. Four loud nights closing a market may be far too fast.
-- `goodwill` and `gang_pressure` move and no threshold reads them, so two dials
-  currently accumulate in silence. Giving `goodwill` a threshold is the missing
-  half of the favour loop.
+- `goodwill` moves and no threshold reads it. (`gang_pressure` has one now, at
+  8; this line used to name both.) Auditing it turned up more than a dial:
+  `raided`, `locked_down`, `power_out` and `rebuilt` are set and read by
+  nothing either, so half the flag vocabulary is decoration. Giving `goodwill`
+  a threshold is still the missing half of the favour loop, and still only half
+  a fix — a flag needs something that reads it. Standing debt 14.
 - The Life prompt gained the response profile, the look of the place, the
   ordinary business and who is here. Worth measuring before anything else is
   added to it.
@@ -479,30 +482,50 @@ reachable — and they are all in data for that reason.
 
 ## Standing debts
 
-Not features, but they get more expensive with time. Full detail in `AGENTS.md`.
+**This is the list.** `AGENTS.md` used to carry its own copy under "Known
+implementation gaps"; two lists of the same thing in two documents is the
+duplication this project refuses everywhere else, so `AGENTS.md` now points
+here and keeps only the guidance a contributor needs while editing the code
+next to one.
 
-- `campaign_places` (migration `20260904030000`) has to be applied to any
-  database that predates it. Until it exists, the first Life turn throws: no
-  backfill is needed, but the table is not optional.
-- `src/integrations/supabase/types.ts` was hand-synchronised again for
-  `campaign_places` rather than regenerated.
-- The `portraits` storage bucket is never created by a migration.
-- Lifepath narrative, pronouns and self-description have nowhere to persist.
-- Mission objectives, rewards and final campaign status are not fully updated by
-  the play loop.
-- Ordinary play turns still span multiple writes; only encounter saves,
-  settlement and Aftermath closeout are transactional.
+Severity is what happens if it is ignored, not how hard it is to fix:
+
+- **Correctness** — it can make the game quietly wrong, or lose data.
+- **Operational** — it bites when the database or the deployment changes.
+- **Incomplete** — a feature that reaches only part way, visibly.
+- **Unsettled** — it needs a decision or a week of play, not a patch.
+
+| #   | Severity    | Debt                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Correctness | `campaign_npcs` has no uniqueness constraint on `(campaign_id, npc_id)`. Settlement serialises survivor promotion behind the campaign lock, so the common path is safe, but a concurrent write elsewhere can still duplicate a recurring NPC — and a duplicated person is a person whose disposition splits in two.                                                                                                                       |
+| 2   | Correctness | Ordinary play turns still span multiple writes. Only encounter saves, `settle_job` and `close_aftermath` are transactional, so a turn that fails midway leaves the immutable ledger holding half of it. Error handling has to assume partial turns.                                                                                                                                                                                       |
+| 3   | Correctness | Settlement reads a bounded ledger window (`JOB_LEDGER_LIMIT`, 2000 events) rather than the exact `mission_started` → `mission_completed` range. An exceptionally long job silently prices only its last 2000 events.                                                                                                                                                                                                                      |
+| 4   | Operational | The migration history cannot replay onto an empty database: `supabase/replay/` reports 37 applied, 9 failed. Not carelessness — a hand-written migration and the Lovable console's own copy of the same DDL, only one of which ever ran. Three ways to reconcile it are in `supabase/replay/README.md`; the choice is open, which is why the replay is a script rather than a CI gate.                                                    |
+| 5   | Operational | `src/integrations/supabase/types.ts` has been hand-synchronised rather than regenerated three times over: for `install_cyberware`, `campaign_cyberware` and `encounters.version`, and again for `campaign_places`. `encounterSchema.test.ts` and `placeSchema.test.ts` guard two of those against drift, which is a guard rather than a fix. Regenerate from the applied schema.                                                          |
+| 6   | Operational | The `portraits` storage bucket is never created by a migration. Its policies are — policies alone do not create a bucket.                                                                                                                                                                                                                                                                                                                 |
+| 7   | Operational | `campaign_places` (migration `20260904030000`) must be applied to any database predating it. No backfill is needed, but the first Life turn throws without the table.                                                                                                                                                                                                                                                                     |
+| 8   | Operational | The append-only ledger is auditable, not tamper-proof: an authenticated user can insert arbitrary event types into a campaign they own. Fine as a record, not a boundary — do not build anti-cheat on it.                                                                                                                                                                                                                                 |
+| 9   | Incomplete  | Lifepath narrative, pronouns and self-description are assembled at creation and have nowhere to persist. The save payload carries them; the schema has no column.                                                                                                                                                                                                                                                                         |
+| 10  | Incomplete  | Mission objectives, rewards and final campaign status are not fully updated by the play loop.                                                                                                                                                                                                                                                                                                                                             |
+| 11  | Incomplete  | Non-combat structured world-state deltas the GM proposes are only partially wired into persistence.                                                                                                                                                                                                                                                                                                                                       |
+| 12  | Incomplete  | Encounters created before the atomic-closeout migration do not record which inventory rows supplied head and body armor, so their remaining SP cannot be written back. Legacy rows only.                                                                                                                                                                                                                                                  |
+| 13  | Incomplete  | Immediate in-job pressure reports and engine-derived settlement pricing are not causally deduplicated. Engine-derived settlement is the authoritative pass; the two are counted on different events, so this is a known overlap rather than a double charge.                                                                                                                                                                              |
+| 14  | Unsettled   | The `goodwill` dial moves and no threshold reads it — and it is not alone. `raided`, `locked_down`, `power_out` and `rebuilt` are set by the engine and read by nothing, so four of the eight place flags are decoration. A dial or flag that changes nothing the player meets is the failure `PRODUCT.md` names. Giving `goodwill` a threshold is only half a fix: a flag needs a consumer, and what goodwill BUYS is a design decision. |
+| 15  | Unsettled   | The location layer's pacing numbers — `PLACE_OBSERVATION_EFFECTS`, the beat periods, the `place-state.json` thresholds — have never been playtested. Tune them from a week in one district rather than from argument.                                                                                                                                                                                                                     |
+
+Resolved, and kept here because the reasoning is worth more than the entry:
+
 - ~~`bun run lint` fails on a pre-existing `prefer-const` error.~~ Lint is clean
   and CI blocks on it: `lint:code` is blocking, `format:check` advisory, and
-  generated files are excluded because a finding nobody may act on is what
-  forced the whole check to be non-blocking.
-- Migration history creates some campaign and encounter objects more than once,
-  so a clean database reset is not proven. Now measured rather than suspected:
-  `supabase/replay/` applies every migration to an empty Postgres and reports
-  37 applied, 9 failed. Its README explains why (a hand-written migration and
-  the Lovable console's copy of the same DDL, only one of which ran) and lists
-  the three ways to reconcile it. The choice is open; until it is made the
-  replay is a script you run, not a CI gate.
+  generated files are out of eslint's scope, because a finding nobody is allowed
+  to act on is what forced the whole check to be non-blocking in the first place.
+- ~~Three of four paid-AI endpoints had no server-side authentication, and one
+  took its system prompt from the client.~~ All four authenticate;
+  `paidAiAuth.test.ts` finds every module that reads `LOVABLE_API_KEY` and fails
+  if one has no check.
+- ~~The ledger's payloads were agreed on by coincidence between writer and
+  reader.~~ `engine/ledger.ts` owns each one; a rename is a type error on one
+  side and a round-trip failure on the other.
 
 ---
 

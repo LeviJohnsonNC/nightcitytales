@@ -6,6 +6,7 @@
 import { z } from "zod";
 import {
   COMBAT_GOALS,
+  clampDispositionDelta,
   DEFAULT_ARENA_KEY,
   combatGoalFor,
   DEFAULT_THREAT_KEY,
@@ -466,7 +467,11 @@ export function normalizeGmResponse(
     const text = str(d["text"]) ?? str(d["note"]) ?? str(d["summary"]);
     if (kind === "set_flag" && flag) stateDeltas.push({ kind: "set_flag", flag });
     else if (kind === "npc_disposition" && npcKey)
-      stateDeltas.push({ kind: "npc_disposition", npcKey, delta: num(d["delta"]) ?? 0 });
+      stateDeltas.push({
+        kind: "npc_disposition",
+        npcKey,
+        delta: clampDispositionDelta(num(d["delta"]) ?? 0),
+      });
     else if (text) stateDeltas.push({ kind: "note", text });
   }
 
