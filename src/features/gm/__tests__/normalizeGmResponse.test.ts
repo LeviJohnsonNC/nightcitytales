@@ -366,3 +366,35 @@ describe("enemy stats are not the model's to give", () => {
     expect(warn).toHaveBeenCalled();
   });
 });
+
+/** The job side of the same thing: a DV check may name who it is aimed at. */
+describe("a job check aimed at a person", () => {
+  it("keeps the person the GM named", () => {
+    const parsed = normalizeGmResponse({
+      narration: "You watch him while he talks.",
+      proposedActions: [
+        {
+          kind: "skill_check",
+          skillId: "human_perception",
+          dv: 15,
+          intent: "read him",
+          npcKey: "the_master",
+          npcName: "The Master",
+        },
+      ],
+    });
+    expect(parsed.proposedActions[0]).toMatchObject({
+      kind: "skill_check",
+      npcKey: "the_master",
+      npcName: "The Master",
+    });
+  });
+
+  it("leaves a check against the world naming nobody", () => {
+    const parsed = normalizeGmResponse({
+      narration: "",
+      proposedActions: [{ kind: "skill_check", skillId: "perception", dv: 13, intent: "look" }],
+    });
+    expect(parsed.proposedActions[0]).not.toHaveProperty("npcKey");
+  });
+});

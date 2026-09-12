@@ -98,6 +98,7 @@ Return a structured object:
 - Travel is settled AFTER you write. You propose it; the engine decides where the trip ends and then asks you to narrate the arrival with the destination and heading fixed. So while proposing, do not write the character arriving anywhere, and do not name the place you expect them to reach — describe them setting off, and let the arrival be its own moment.
 - "proposedActions": what the engine should resolve, using EXACTLY these shapes:
   - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"..."}
+    When the check is aimed AT A PERSON and nobody is resisting it — watching somebody for a tell, reading the room, listening to how they answer, sizing up a stranger — also set "npcKey" and "npcName" (the key exactly as PEOPLE THEY KNOW prints it, when they are one of them). The engine decides what paying that much attention to somebody tells the character, and it cannot do that for a check that names nobody. Leave both out for a check against the world.
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}
   - {"kind":"use_item","item":"<the thing they are using, as the kit list names it>","quantity":<integer>}

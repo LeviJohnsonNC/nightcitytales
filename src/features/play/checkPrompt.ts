@@ -107,6 +107,16 @@ export type PendingCheck = {
   /** Set when this check is resolved against a person rather than a DV. */
   opposition: PendingOpposition | null;
   /**
+   * Who a DV check is aimed AT, when it is aimed at a person.
+   *
+   * An opposed check always names its target; a DV check named nobody, which
+   * quietly cost the social model most of its reach — reading somebody could
+   * only happen on an opposed roll, and the model picks freely between the two.
+   * A Persuasion check against DV 13 on a named bartender is now the same kind
+   * of exchange it obviously is.
+   */
+  target: { npcKey: string; npcName: string } | null;
+  /**
    * What this Skill, used on this person, can get you — set only when the check
    * is against somebody and the Skill reads people at all.
    *
@@ -185,6 +195,18 @@ function describeOpposition(raw: PromptOpposition | undefined): PendingOppositio
   };
 }
 
+/**
+ * The person a DV check is aimed at, or null. Both halves are required: a key
+ * with no name cannot be shown to the player, and a name with no key cannot be
+ * written back to a row.
+ */
+function describeTarget(data: PromptData): { npcKey: string; npcName: string } | null {
+  const raw = data as { npcKey?: unknown; npcName?: unknown };
+  const npcKey = typeof raw.npcKey === "string" ? raw.npcKey : null;
+  const npcName = typeof raw.npcName === "string" ? raw.npcName : null;
+  return npcKey && npcName ? { npcKey, npcName } : null;
+}
+
 /** The offer line for a Skill used on a person, or null when it reads nobody. */
 function readOfferFor(skillId: string): SocialReadOffer | null {
   const shape = shapeForSkill(skillId);
@@ -212,6 +234,7 @@ export function describePendingCheck(
   // prompt carries no DV, and inventing one for it would be a difficulty nobody
   // set at the table.
   const opposition = describeOpposition(data.opposition);
+  const target = describeTarget(data);
   const dvRaw = typeof data.dv === "number" ? data.dv : null;
   if (!opposition && dvRaw === null) return null;
 
@@ -255,7 +278,10 @@ export function describePendingCheck(
     // set by the beat, the penalty is carried by the character.
     needed: dv === null ? null : dv - base - woundPenalty,
     opposition,
-    reads: opposition ? readOfferFor(skillId) : null,
+    target,
+    // Offered for either shape of check against a person: what the approach
+    // reaches and what having tried costs.
+    reads: opposition || target ? readOfferFor(skillId) : null,
     intent: typeof data.intent === "string" ? data.intent : "",
     beatId: event.beat_id ?? null,
   };

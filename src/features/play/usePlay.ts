@@ -624,6 +624,10 @@ async function narrate(
           skillName,
           dv,
           intent: action.intent,
+          // Who it is aimed at, when it is aimed at a person. Without this a
+          // Social check against a DV named nobody and so could read nobody.
+          ...(action.npcKey ? { npcKey: action.npcKey } : {}),
+          ...(action.npcName ? { npcName: action.npcName } : {}),
         } as unknown as Json,
         ...beatFields,
       });
@@ -1093,9 +1097,23 @@ async function resolveCheck(
     events: await listCampaignEvents(campaignId),
   };
   const found = await applyJobSearch(bundle, pending, result);
+  // A check aimed at a PERSON reads them whichever way it was settled. Only the
+  // opposed branch did this, which left the social model unreachable on the
+  // commoner path — and Human Perception, whose whole point is that watching
+  // somebody needs no contest, reachable only through a contest.
+  const read = pending.target
+    ? await applyInsight({
+        campaignId,
+        npcKey: pending.target.npcKey,
+        skillId: pending.skillId,
+        success: result.success === true,
+        margin: result.total - pending.dv,
+        today: bundle.campaign.day,
+      })
+    : null;
   await narrate(
     fresh,
-    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again.${found ? ` ${found}` : ""} End on a decision.)`,
+    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again.${found ? ` ${found}` : ""}${insightLine(read)} End on a decision.)`,
     { logInput: false, fixedResult: bundle.encounter?.state.status === "active" },
   );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getDistrict, placeActions } from "@/engine";
-import { MAX_LIFE_OPTIONS, mergeOptions, venueOptions } from "../lifeOptions";
+import { MAX_LIFE_OPTIONS, cardInput, mergeOptions, venueOptions } from "../lifeOptions";
 import type { LifeActionCard } from "../lifeResponse";
 
 /** A card of the shape the model returns. */
@@ -139,5 +139,50 @@ describe("what a local is offered that a stranger is not", () => {
     const engine = placeActions({ districtKey: DISTRICT, localExpertLevel: 6 });
     expect(cards.map((c) => c.timeMinutes)).toEqual(engine.map((a) => a.minutes));
     expect(cards.map((c) => c.knownCost)).toEqual(engine.map((a) => a.cost));
+  });
+});
+
+/**
+ * What a picked card actually sends. The approach cards printed a Skill and a
+ * number and then sent plain prose, which the model was free to answer with a
+ * paragraph about looking around — rolling nothing, and leaving the whole truth
+ * system unconsulted. A card that promises a roll has to ask for one.
+ */
+describe("what a picked card sends", () => {
+  it("asks for the check a tagged card promised, without setting the difficulty", () => {
+    const sent = cardInput(
+      card("Look closer", "Go over the place properly.", { skillId: "perception" }),
+    );
+    expect(sent).toContain("Look closer. Go over the place properly.");
+    expect(sent).toContain("perception");
+    expect(sent).toMatch(/propose a skill_check/i);
+    // The DV belongs to whatever is there to be found, and the engine knows it.
+    expect(sent).not.toMatch(/DV ?\d/);
+    expect(sent).toMatch(/do not decide what it turns up/i);
+  });
+
+  it("sends an untagged card as what it says and nothing more", () => {
+    expect(cardInput(card("Have a drink", "Nurse one at the bar."))).toBe(
+      "Have a drink. Nurse one at the bar.",
+    );
+  });
+
+  it("carries the Skill for a card the model tagged, too", () => {
+    // Those were losing their tag on the way out by exactly the same route.
+    const sent = cardInput(
+      card("Talk them round", "Try the friendly angle.", { skillId: "persuasion" }),
+    );
+    expect(sent).toContain("persuasion");
+  });
+
+  it("offers every engine approach as something that asks for its check", () => {
+    const cards = venueOptions({
+      districtKey: DISTRICT,
+      placeKey: getDistrict(DISTRICT)!.locations[0]!.key,
+      conclusionAvailable: true,
+    });
+    const tagged = cards.filter((c) => c.skillId);
+    expect(tagged.length).toBeGreaterThan(0);
+    for (const c of tagged) expect(cardInput(c)).toMatch(/propose a skill_check/i);
   });
 });

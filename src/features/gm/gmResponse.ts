@@ -42,6 +42,13 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     skillId: z.string(),
     dv: z.number().int(),
     intent: z.string(),
+    /**
+     * Who the check is aimed AT, when it is aimed at a person. Optional, and
+     * what lets a Social check settled against a DV read the person it was
+     * used on — see features/campaign/socialInsight.ts.
+     */
+    npcKey: z.string().optional(),
+    npcName: z.string().optional(),
   }),
   /**
    * A check against a person who is actively resisting: both sides roll
@@ -361,8 +368,19 @@ export function normalizeGmResponse(
     }
     if (kind === "skill_check") {
       const skillId = str(a["skillId"]) ?? str(a["skill"]) ?? str(a["skill_id"]);
+      // Who it is aimed at, when the model named somebody. Both halves or
+      // neither: a key with no name cannot be shown, a name with no key cannot
+      // be written back to a row.
+      const atName = str(a["npcName"]) ?? str(a["npc_name"]);
+      const atKey = str(a["npcKey"]) ?? str(a["npc_key"]) ?? str(a["npcId"]) ?? atName;
       if (skillId)
-        proposedActions.push({ kind: "skill_check", skillId, dv: num(a["dv"]) ?? 13, intent });
+        proposedActions.push({
+          kind: "skill_check",
+          skillId,
+          dv: num(a["dv"]) ?? 13,
+          intent,
+          ...(atKey && atName ? { npcKey: atKey, npcName: atName } : {}),
+        });
       else warn(`GM proposed a check with no skill, dropped: ${JSON.stringify(raw)}`);
     } else if (kind === "opposed_check") {
       const skillId = str(a["skillId"]) ?? str(a["skill"]) ?? str(a["skill_id"]);
