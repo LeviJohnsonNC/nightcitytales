@@ -55,6 +55,14 @@ Supabase, or backend adapters. It takes plain objects and returns plain objects.
   where appropriate.
 - `src/engine/__tests__/architecture.test.ts` enforces the import boundary.
 
+The people are a system too. `cast.ts` holds who the standing six are and what
+each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says
+which Skill can reach which rung and what having asked costs, so the nine
+printed Social Skills are nine Skills rather than one. Its data is
+`src/data/cast/social-reads.json`, flagged `houseRule: true`, and the axis it
+adds — suspicion — is spent on information and never on dice, the same ruling
+the city layer runs on.
+
 The city is a system in the engine, not a setting in the prose. `geography.ts`
 is the atlas as the publisher printed it and invents nothing; beside it,
 `places.ts` (tags, district profiles, arenas), `placeBeats.ts` (what a location

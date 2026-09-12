@@ -1,0 +1,86 @@
+{
+  "houseRule": true,
+  "note": "What each printed Social Skill is actually FOR when it is used on a person. Cyberpunk RED prints what these Skills are; it does not print what learning somebody costs, because at a table the GM is the one deciding how much a good Persuasion roll gave away. This file is that decision, written down: nine Social Skills used to do one identical thing — reveal the next rung of a person's dossier — which made Personal Grooming a mind-reading Skill and made Interrogation redundant.",
+  "reachNote": "`reaches` is the set of dossier rungs (see REVEAL_LADDER in engine/cast.ts) a shape can get to at all. A shape gives the first rung in ladder order that it can reach and the player has not earned, so Interrogation can go straight for the secret without first making small talk, and Conversation can be rolled forever without ever getting there. A shape that reaches nothing is not a failure: the check still did what it was rolled for, it simply did not read the person.",
+  "suspicionNote": "Suspicion is what this person thinks you are doing to them, and it rises when you ASK, whether or not the roll landed — the cost is having tried. It is the one new axis in this system, and it is spent on INFORMATION, never on dice: a guarded person is harder to learn and no harder to beat on a check. Adding a die modifier here would invent a rule RED does not print.",
+  "guardedAt": 3,
+  "coolsAfterDays": 3,
+  "shapes": {
+    "observe": {
+      "label": "Watch them",
+      "blurb": "You are not asking. You are looking at their hands.",
+      "reaches": ["fear"],
+      "suspicion": 0,
+      "needsExchange": false,
+      "worksOnGuarded": true,
+      "guardedNote": "Nobody can close themselves to being looked at, which is why this is the way back in once you have burned the others."
+    },
+    "draw_out": {
+      "label": "Get them talking",
+      "blurb": "They tell you because talking to you is pleasant.",
+      "reaches": ["wants"],
+      "suspicion": 0,
+      "needsExchange": true,
+      "worksOnGuarded": false
+    },
+    "press": {
+      "label": "Work them",
+      "blurb": "You want something, and finding the lever means finding what moves them.",
+      "reaches": ["wants", "fear"],
+      "suspicion": 1,
+      "needsExchange": true,
+      "worksOnGuarded": false
+    },
+    "lean_on": {
+      "label": "Lean on them",
+      "blurb": "Straight at the thing they are keeping, and they will remember you did it.",
+      "reaches": ["fear", "secret"],
+      "suspicion": 2,
+      "needsExchange": true,
+      "worksOnGuarded": false
+    },
+    "buy": {
+      "label": "Pay for it",
+      "blurb": "A bought answer is the shortest way to a secret and tells them exactly what you wanted.",
+      "reaches": ["secret"],
+      "suspicion": 1,
+      "needsExchange": true,
+      "worksOnGuarded": false
+    },
+    "haggle": {
+      "label": "Read the deal",
+      "blurb": "You learn what the thing is worth to them. That is not the same as learning them.",
+      "reaches": [],
+      "suspicion": 0,
+      "needsExchange": true,
+      "worksOnGuarded": true
+    },
+    "present": {
+      "label": "Come across well",
+      "blurb": "This changes what they think of you, not what you know about them.",
+      "reaches": [],
+      "suspicion": 0,
+      "needsExchange": false,
+      "worksOnGuarded": true
+    },
+    "ask_around": {
+      "label": "Ask the street",
+      "blurb": "About people who are not in the room. Nothing about the one who is.",
+      "reaches": [],
+      "suspicion": 0,
+      "needsExchange": false,
+      "worksOnGuarded": true
+    }
+  },
+  "skills": {
+    "human_perception": "observe",
+    "conversation": "draw_out",
+    "persuasion": "press",
+    "interrogation": "lean_on",
+    "bribery": "buy",
+    "trading": "haggle",
+    "personal_grooming": "present",
+    "wardrobe_style": "present",
+    "streetwise": "ask_around"
+  }
+}

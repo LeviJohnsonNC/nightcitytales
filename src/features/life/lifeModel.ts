@@ -16,9 +16,9 @@ import {
   type LifeSituation,
   type LifeStateInput,
 } from "@/engine";
-import { publicView } from "@/engine";
+import { isGuarded, publicView } from "@/engine";
 import { downtimeView } from "@/features/downtime/downtimeModel";
-import { castMemberFrom, knownFactsOf } from "@/features/campaign/castSeeding";
+import { castMemberFrom, guardednessOf, knownFactsOf } from "@/features/campaign/castSeeding";
 import type { HauntPerson, PlaceState } from "@/engine";
 import type {
   Campaign,
@@ -90,13 +90,17 @@ function lastSeenDay(npc: CampaignNpc): number | undefined {
  * dossier the player has actually earned. What they want, fear and are hiding
  * stays with the engine until it is learned (see engine/cast.ts).
  */
-export function lifePeople(npcs: CampaignNpc[]): LifePersonSummary[] {
+export function lifePeople(npcs: CampaignNpc[], today: number): LifePersonSummary[] {
   return npcs
     .filter((n) => n.status !== "dead")
     .map((n) => {
       const seen = lastSeenDay(n);
       const member = castMemberFrom(n);
-      const view = member ? publicView(member, knownFactsOf(n)) : null;
+      // Read off the row, not off the cast: anybody can be worked, and somebody
+      // who has closed up should play that way whether or not they are one of
+      // the six with a dossier.
+      const guarded = isGuarded(guardednessOf(n, today));
+      const view = member ? publicView(member, knownFactsOf(n), guarded) : null;
       return {
         key: n.npc_id ?? n.name,
         name: n.name,
@@ -104,6 +108,7 @@ export function lifePeople(npcs: CampaignNpc[]): LifePersonSummary[] {
         status: n.status,
         ...(seen !== undefined ? { lastSeenDay: seen } : {}),
         ...(n.notes ? { notes: n.notes } : {}),
+        ...(guarded ? { guarded: true } : {}),
         ...(view
           ? {
               role: view.role,
@@ -190,7 +195,7 @@ export function buildLifeState(input: LifeBundleInput): Omit<LifeStateInput, "pe
  */
 export function derivedSituations(input: LifeBundleInput): LifeSituation[] {
   const state = buildLifeState(input);
-  const needs = deriveNeeds({ ...state, people: lifePeople(input.npcs) });
+  const needs = deriveNeeds({ ...state, people: lifePeople(input.npcs, input.campaign.day) });
   const position = resolvePosition(input.campaign.location_key ?? DEFAULT_START);
   if (!position) return needs;
   return [

@@ -25,7 +25,9 @@ import {
   missionOffer,
   nextPhase,
   partOfDay,
-  readsThePerson,
+  canRead,
+  socialRead,
+  suspicionCost,
   resolveSkillId,
   selectSituation,
   settleHookAsk,
@@ -127,7 +129,10 @@ import {
   castMemberInRole,
   ensureCast,
   markDealtWith,
-  revealNextFact,
+  guardednessOf,
+  knownFactsOf,
+  raiseNpcSuspicion,
+  revealFact,
 } from "@/features/campaign/castSeeding";
 import { rememberDeclined, runWorldTick, settleMoves } from "@/features/campaign/worldTick";
 import {
@@ -657,7 +662,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
       situationKeys: bundle.situations.map((s) => s.key),
       tally: bundle.tally,
     }),
-    people: lifePeople(bundle.npcs),
+    people: lifePeople(bundle.npcs, bundle.clock.day),
     recentEvents: recentLifeLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
     ...(turn.resolved ? { resolved: turn.resolved } : {}),
@@ -1360,30 +1365,94 @@ function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
 /**
  * Reading someone while you were doing something else.
  *
- * A Social check won comfortably against a person tells you something about
- * them that they did not volunteer. The engine decides what: the next rung of
- * their dossier, in order, once per check. The model is handed the fact
- * afterwards to narrate as a tell, and is never shown the rungs still hidden.
+ * A check won comfortably against a person can tell you something they did not
+ * volunteer — but WHICH something, and whether anything at all, depends on the
+ * Skill. Conversation gets what they want and never what they are hiding;
+ * Interrogation goes for the secret and they remember you did it; Wardrobe &
+ * Style reads nobody, whatever the Core Rulebook files it under. The engine
+ * decides (`socialRead`); this persists the answer and hands the model the one
+ * line, never the rungs still hidden.
+ *
+ * The attempt is also paid for. Anything that works somebody raises how guarded
+ * they are with you, landed or not, and a guarded person stops giving things up
+ * to being asked — the way back in is to stop asking and watch them instead.
  */
+type InsightResult =
+  /** A rung of their dossier, which the model narrates as a tell. */
+  | { kind: "learned"; text: string }
+  /** Something about the exchange itself, which is not a thing they revealed. */
+  | { kind: "note"; text: string };
+
 async function applyInsight(
   campaignId: string,
   npcKey: string,
   skillId: string,
   success: boolean,
   margin: number,
-): Promise<string | null> {
-  if (!success || !readsThePerson(skillId, margin)) return null;
+  today: number,
+): Promise<InsightResult | null> {
+  // A Skill that neither reads anybody nor costs them anything is not a social
+  // exchange at all: an opposed Athletics check over a fence has no business
+  // reading a row back.
+  const cost = suspicionCost(skillId);
+  if (cost === 0 && !canRead(skillId)) return null;
+
   const npc = await findCampaignNpc(campaignId, npcKey);
   if (!npc) return null;
-  const learned = await revealNextFact(campaignId, npc);
+
+  // Paid before anything is learned, and on a failed check too: they noticed
+  // being worked whether or not it worked.
+  if (cost > 0) await raiseNpcSuspicion(campaignId, npc, cost, today);
+
+  if (!success) return null;
+  const read = socialRead({
+    skillId,
+    margin,
+    known: knownFactsOf(npc),
+    suspicion: guardednessOf(npc, today),
+  });
+
+  if (read.outcome !== "read") {
+    // Two of the silences are worth saying out loud, because both tell the
+    // player to change approach without telling them what is left to find.
+    if (read.why === "guarded") {
+      return {
+        kind: "note",
+        text:
+          `${npc.name} has noticed being worked and has closed up: they are still dealing with ` +
+          "the character, and they are not volunteering anything to being asked. Play the " +
+          "carefulness; do not explain it to them.",
+      };
+    }
+    if (read.why === "out_of_reach") {
+      return {
+        kind: "note",
+        text:
+          `This kind of approach has got everything out of ${npc.name} that it is going to. ` +
+          "Nothing new came of it. Do NOT invent something they gave away, and do not hint that " +
+          "there is more — a different kind of ask would be a different scene.",
+      };
+    }
+    return null;
+  }
+
+  const learned = await revealFact(campaignId, npc, read.fact);
   if (!learned) return null;
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "npc_read",
     summary: learned.text,
-    data: { npcKey, fact: learned.fact } as unknown as Json,
+    data: { npcKey, fact: learned.fact, shape: read.shape.shape } as unknown as Json,
   });
-  return learned.text;
+  return { kind: "learned", text: learned.text };
+}
+
+/** How a read reaches the narrator: as a tell, or as a note about the exchange. */
+function insightLine(read: InsightResult | null): string {
+  if (!read) return "";
+  return read.kind === "learned"
+    ? ` Reading them that closely told the character something they did not volunteer: ${read.text} Let it show as a tell in how they behave, not as an announcement.`
+    : ` ${read.text}`;
 }
 
 /** Roll a Life check the player pressed, then let the world answer it. */
@@ -1424,6 +1493,7 @@ async function commitLifeCheck(
           pending.skillId,
           roll.result.success,
           roll.result.margin,
+          bundle.clock.day,
         )
       : null;
     const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
@@ -1431,9 +1501,7 @@ async function commitLifeCheck(
       minutes: 0,
       resolved:
         `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".` +
-        (read
-          ? ` Reading them that closely told the character something they did not volunteer: ${read} Let it show as a tell in how they behave, not as an announcement.`
-          : ""),
+        insightLine(read),
     });
     return;
   }
@@ -1681,7 +1749,14 @@ async function settleNegotiation(
   // Only a push made AGAINST the broker reads the broker. Asking around the
   // street is a check about the job, with the fixer nowhere in the room.
   const read = spec.opposedBy
-    ? await applyInsight(campaignId, hook.offer.brokerKey, pending.skillId, success, margin)
+    ? await applyInsight(
+        campaignId,
+        hook.offer.brokerKey,
+        pending.skillId,
+        success,
+        margin,
+        bundle.clock.day,
+      )
     : null;
 
   await upsertSituations(campaignId, [
@@ -1713,7 +1788,9 @@ async function settleNegotiation(
     `The player pushed on the offer (${spec.label.toLowerCase()}) and the ${pending.skillName} check is RESOLVED: ${success ? "SUCCESS" : "FAILURE"}.`,
     `The engine has already applied it: ${outcome.summary}`,
     outcome.revealed ? `They now know this, and did not before: ${outcome.revealed}` : "",
-    read ? `Leaning on them that hard also showed something: ${read} Play it as a tell.` : "",
+    read?.kind === "learned"
+      ? `Leaning on them that hard also showed something: ${read.text} Play it as a tell.`
+      : (read?.text ?? ""),
     `Narrate the exchange in ${hook.offer.brokerName}'s voice. Do not change the fee, do not add terms, and do not offer anything the engine did not.`,
   ]
     .filter(Boolean)
@@ -1874,7 +1951,7 @@ export function useLife(campaignId: string) {
     situation: bundle?.current ?? null,
     situations: bundle?.situations.filter((s) => s.status === "live") ?? [],
     /** The people this character actually knows, as the player may see them. */
-    people: bundle ? lifePeople(bundle.npcs) : [],
+    people: bundle ? lifePeople(bundle.npcs, bundle.clock.day) : [],
     clocks: bundle?.pressure.filter((p) => !p.clock.hidden).map((p) => p.clock) ?? [],
     /** Organisations with an opinion, for the Standing panel. */
     standings: bundle?.standings ?? [],
