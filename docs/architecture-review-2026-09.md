@@ -34,7 +34,23 @@
 > caps were untested; `placeActions.test.ts` and `lifeOptions.test.ts` already
 > cover the cap, the ordering and the determinism.
 >
-> **P3: open.**
+> **P3 (items 16-20): four done, one withdrawn.** The stale dial counts are
+> fixed; the two gap lists are one severity-tagged list in `ROADMAP.md` with
+> `AGENTS.md` pointing at it; `package.json` is renamed; the disposition delta
+> is clamped through one engine helper on both paths.
+>
+> **Item 19 is withdrawn, and it was my error.** "Narrow the engine's public
+> surface" rested on ~50 symbols exported with no external consumer. The real
+> figure is 291 of 1,191 — and 176 of those are TYPES that appear in the
+> signatures of exported functions, which must stay exported or callers cannot
+> name what they are given. Most of the remaining 115 are rules constants
+> (`AIMED_SHOT_PENALTY`, `HOUSE_RULE_PLACES_NOTE`, `DV_RULES`) that exist to be
+> read as documentation of a published or house rule, which is a value this
+> project holds deliberately. What is genuinely removable is a handful of
+> helpers, each needing its own judgement, for no benefit a bundler does not
+> already deliver. The legible-API problem underneath it is real — `index.ts`
+> re-exports 73 modules with `export *` — but fixing that is designing a public
+> API, not hygiene.
 
 Reviewed at `e9e294c`. Scope: the whole repository — architecture boundaries,
 the AI trust boundary, the persistence layer, the migration history, the test
