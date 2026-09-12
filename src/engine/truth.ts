@@ -194,6 +194,23 @@ export function isSearchSkill(skillId: string): boolean {
   return SEARCH_SKILLS.has(skillId);
 }
 
+/**
+ * Whether this Skill finds anything in THIS pool.
+ *
+ * `isSearchSkill` reads the city-wide templates, which are all Perception — so
+ * on its own it turned away every other Skill a beat declares, and a mission
+ * truth written for Human Perception or Conversation could never be rolled for.
+ * A beat brings its own Skills with it, so the pool has to be asked as well as
+ * the templates.
+ *
+ * Asked of the whole pool rather than the undiscovered part of it: a Skill that
+ * has already found the one thing it could find here still searched, and the
+ * caller wants "there is nothing left" rather than "that was not a search".
+ */
+export function searchesFor(skillId: string, truths: readonly Truth[]): boolean {
+  return isSearchSkill(skillId) || truths.some((truth) => truth.found.skillId === skillId);
+}
+
 const SEARCH_SKILLS: ReadonlySet<string> = new Set([
   ...FILE.fromTags.map((t) => t.skill),
   ...FILE.fromFlags.map((t) => t.skill),
@@ -201,7 +218,7 @@ const SEARCH_SKILLS: ReadonlySet<string> = new Set([
 
 /** The ones still to be found, in the order the data declares them. */
 export function unknownTruths(truths: Truth[], discovered: readonly string[]): Truth[] {
-  const found = new Set(discovered);
+  const found = new Set(discovered ?? []);
   return truths.filter((truth) => !found.has(truth.key));
 }
 
@@ -217,9 +234,13 @@ export function findableBy(
   skillId: string,
   discovered: readonly string[],
 ): Truth[] {
-  return unknownTruths(truths, discovered)
+  // Tolerant of a missing list rather than throwing on one. These run inside
+  // prompt assembly, where an exception costs the player their turn, and a
+  // campaign with no record of discoveries has simply discovered nothing.
+  const found = discovered ?? [];
+  return unknownTruths(truths, found)
     .filter((truth) => truth.found.skillId === skillId)
-    .filter((truth) => truth.needs.every((need) => discovered.includes(need)))
+    .filter((truth) => (truth.needs ?? []).every((need) => found.includes(need)))
     .sort((a, b) => b.found.dv - a.found.dv);
 }
 
@@ -297,7 +318,35 @@ export type BeatTruth = {
    */
   revealedAt?: string;
   kind?: TruthKind;
+  /**
+   * Other truths in this mission that must already be found before this one
+   * can be worked out. An entry is `id` for a truth in the same beat, or
+   * `beatId:id` for one in another beat.
+   *
+   * This is what Deduction runs on. A conclusion is not a thing lying in a
+   * drawer: it is what the pieces add up to, so it is unreachable — not merely
+   * hard — until the pieces are in hand. A conclusion that also carries
+   * `revealedAt` is still handed over when the story reaches that beat: the
+   * prerequisites gate working it out EARLY, and never gate the plot.
+   */
+  needs?: string[];
 };
+
+/** The Skill that works a conclusion out of what is already known. */
+export const DEDUCTION_SKILL = "deduction";
+
+/**
+ * Resolve one `needs` entry to the truth key it names.
+ *
+ * `id` means a truth in the same beat; `beatId:id` one in another beat of the
+ * same mission. Nothing crosses missions: a conclusion is about this job.
+ */
+export function beatNeedKey(args: { missionId: string; beatId: string; need: string }): string {
+  const colon = args.need.indexOf(":");
+  const beatId = colon === -1 ? args.beatId : args.need.slice(0, colon);
+  const id = colon === -1 ? args.need : args.need.slice(colon + 1);
+  return truthKey({ kind: "beat", key: `${args.missionId}:${beatId}` }, id);
+}
 
 /** The truths one beat is holding, as engine truths with stable keys. */
 export function truthsInBeat(args: {
@@ -313,8 +362,61 @@ export function truthsInBeat(args: {
     fact: truth.fact,
     subject,
     found: { skillId: truth.skill, dv: getDV(truth.difficulty) },
-    needs: [],
+    needs: (truth.needs ?? []).map((need) =>
+      beatNeedKey({ missionId: args.missionId, beatId: args.beatId, need }),
+    ),
   }));
+}
+
+/**
+ * Every truth the whole job is holding, across all its beats.
+ *
+ * Deduction is the one Skill whose pool is not the room. Searching a desk finds
+ * what is in the desk; working something out happens wherever the character is
+ * standing when it clicks, off everything they have gathered. So a conclusion
+ * declared in the office beat can be reached from the warehouse, and the beats
+ * are taken as a structural list rather than a Mission import — the engine's
+ * truth module has no business knowing what else a mission carries.
+ */
+export function truthsInMission(args: {
+  missionId: string;
+  beats: readonly { id: string; truths?: readonly BeatTruth[] | undefined }[];
+}): Truth[] {
+  return args.beats.flatMap((beat) =>
+    truthsInBeat({ missionId: args.missionId, beatId: beat.id, truths: beat.truths }),
+  );
+}
+
+/**
+ * The conclusions this character could reach right now: a Deduction truth they
+ * have not had, whose every prerequisite they have. Hardest first, as with any
+ * search.
+ */
+export function deducibleFrom(truths: Truth[], discovered: readonly string[]): Truth[] {
+  return findableBy(truths, DEDUCTION_SKILL, discovered);
+}
+
+/**
+ * What the narrator may be told about a pending conclusion: that there is one,
+ * and the number it is worked out against. NEVER what it is.
+ *
+ * This is the one place the system volunteers the existence of something
+ * hidden, and it is fair: the prerequisites have been earned, so what is being
+ * offered is the pay-off for legwork already done rather than a hint that
+ * something exists. `dv` is the engine's, so the model never picks a difficulty
+ * for a conclusion it cannot see.
+ */
+export type DeductionOffer = { dv: number; count: number };
+
+export function deductionOffer(
+  truths: Truth[],
+  discovered: readonly string[],
+): DeductionOffer | null {
+  const reachable = deducibleFrom(truths, discovered);
+  // Easiest of the reachable conclusions: the character is not choosing which
+  // leap to make, so the DV on offer is the nearest one.
+  const easiest = reachable[reachable.length - 1];
+  return easiest ? { dv: easiest.found.dv, count: reachable.length } : null;
 }
 
 /**

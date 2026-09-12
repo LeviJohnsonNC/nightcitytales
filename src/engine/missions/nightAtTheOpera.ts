@@ -41,6 +41,11 @@ export const NIGHT_AT_THE_OPERA: Mission = {
           // The Master says it himself when the Crew is finally received as a
           // guest. A twist has to be able to land on the scene built to land it.
           revealedAt: "darkness_and_light",
+          // Nobody reasons their way to this from a news broadcast and a fee.
+          // It needs the two pieces that make it thinkable: that the Vampyres
+          // in the hall are theatre, and that the man taking the women is one
+          // of their own. Reaching the meeting hands it over regardless.
+          needs: ["night_at_opera:theatre_not_threat", "empty_office_hours:huntver_is_ruthven"],
         },
       ],
       playerBrief:
@@ -101,15 +106,21 @@ export const NIGHT_AT_THE_OPERA: Mission = {
           skill: "human_perception",
           difficulty: "Difficult",
         },
+        {
+          id: "security_are_vampyres",
+          kind: "physical",
+          fact: "The two Campus Security officers out front are carrying Vampyres cyberware. Campus Security and the gang are the same people.",
+          skill: "perception",
+          difficulty: "Everyday",
+        },
       ],
       playerBrief:
         "You're in line outside the Symphony Hall after sundown. Nobody checks for weapons. Inside is a staging of Dracula with real teeth behind the theatre — and plenty to notice if you're watching.",
       checks: [
-        {
-          skill: "Perception",
-          dv: 9,
-          note: "The two Campus Security officers out front have Vampyres cyberware installed.",
-        },
+        // The note said what the check WOULD FIND, which handed the model the
+        // answer before the player had it. It is a truth now; the note names
+        // where to look.
+        { skill: "Perception", dv: 9, note: "The Campus Security officers out front." },
       ],
       exits: [{ to: "noodles_and_info", label: "Work the leads after the show" }],
     },
@@ -159,6 +170,10 @@ export const NIGHT_AT_THE_OPERA: Mission = {
           fact: "Professor Huntver is Lord Ruthven. The man the campus has been mailing about a thesis is the one taking the women.",
           skill: "deduction",
           difficulty: "Difficult",
+          // The costume and the head, not the photograph. Those two are what
+          // make the man the monster; the photograph is why, and a motive on
+          // its own convicts nobody.
+          needs: ["costume", "head"],
         },
       ],
       playerBrief:
@@ -169,25 +184,22 @@ export const NIGHT_AT_THE_OPERA: Mission = {
           dv: 9,
           note: "The office door (or DV13 Athletics to bust it; automatic with a Melee Weapon).",
         },
-        {
-          skill: "Perception",
-          dv: 9,
-          note: "Desk: a photo of Barbara Dahl, kissed in faded red lipstick.",
-        },
-        {
-          skill: "Perception",
-          dv: 13,
-          note: "Closet: a bloodstained clown costume and Inquisitor uniform.",
-        },
+        // A check's note goes to the model with the brief, so these said what
+        // searching the room WOULD FIND — the photograph, the costume, the head
+        // — which is the leak the truths above exist to close. What is here to
+        // find is the engine's to say; a note's job is to name the place a
+        // character can put their hands.
+        { skill: "Perception", dv: 9, note: "The desk and what is standing on it." },
+        { skill: "Perception", dv: 13, note: "The closet, behind the academic regalia." },
         {
           skill: "Perception",
           dv: 13,
-          note: "Desk: a locked mini-fridge (DV13 Athletics / DV9 Pick Lock) hiding a preserved human head.",
+          note: "The locked mini-fridge (DV13 Athletics / DV9 Pick Lock to open it).",
         },
         {
           skill: "Criminology",
           dv: 13,
-          note: "The head is Kenneth Dahl, Barbara Dahl's late husband (Library Search or Streetwise also work).",
+          note: "Putting a name to what the room turns up (Library Search or Streetwise also work).",
         },
       ],
       exits: [

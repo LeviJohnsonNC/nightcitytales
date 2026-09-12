@@ -54,6 +54,17 @@ export type GmContextInput = {
    * are not withheld by instruction now: they are never sent.
    */
   discoveredBeatTruths?: string[];
+  /**
+   * That there is a conclusion available, and the number it is worked out
+   * against — never what it is.
+   *
+   * The one place this system volunteers the existence of something hidden, and
+   * the exception is principled: a conclusion's prerequisites are other
+   * discoveries, so if it is on offer the character has already done the work.
+   * The DV comes from the engine so the model is not picking a difficulty for a
+   * fact it cannot see.
+   */
+  deduction?: { dv: number; count: number };
   availableExits: BeatExit[];
   character: GmCharacterSummary;
   objectives: MissionObjective[];
@@ -167,6 +178,16 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
         "one and do not re-reveal one as though it were new. Anything else this scene is holding " +
         "back has NOT been found, and you have not been told it — so do not hint at it, and do " +
         "not decide what it is. What is here to find is the engine's to say, on a check.",
+    );
+  }
+  if (context.deduction) {
+    parts.push(
+      "",
+      "-- THERE IS SOMETHING TO BE WORKED OUT --",
+      "What they have gathered adds up to something they have not said out loud yet. You do " +
+        "NOT know what it is, and you must not guess at it, hint at it, or have an NPC supply " +
+        "it. If the player stops to think it through, or asks what it all means, call for a " +
+        `Deduction check at DV ${context.deduction.dv} and let the engine say what they reach.`,
     );
   }
   if (beat.readAloud) parts.push(line("Read-aloud", beat.readAloud));
