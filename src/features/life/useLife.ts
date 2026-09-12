@@ -79,7 +79,7 @@ import {
 } from "@/lib/backend";
 import { saveMissionRuntime } from "@/features/campaign/missionState";
 import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
-import { characterSummary, statsRecord } from "@/features/play/playModel";
+import { characterSummary, localExpertIn, statsRecord } from "@/features/play/playModel";
 import { gmSkillList } from "@/features/play/playModel";
 import {
   dvBandName,
@@ -282,6 +282,9 @@ async function loadLife(campaignId: string): Promise<LifeBundle> {
     seed,
     castMemberInRole(cast.npcs, "fixer"),
     places,
+    // A job on the character's own streets arrives knowing more than a job
+    // across the city, before they have accepted anything.
+    (districtKey) => localExpertIn(character, districtKey),
   );
 
   const hookRow = liveHookSituation(merged);
@@ -423,6 +426,9 @@ type PlaceFamiliaritySlice = {
   standing: "first" | "returning" | "known";
   since: string;
   known: string[];
+  /** The part of `known` that being a local accounts for, not having been here. */
+  asALocal: string[];
+  localExpert?: { level: number; districtName: string };
 };
 
 /**
@@ -440,14 +446,21 @@ export function sinceWords(daysSince: number | null): string {
   return ", not here in months";
 }
 
-/** What the narrator should know about how familiar the ground under them is. */
+/**
+ * What the narrator should know about how familiar the ground under them is.
+ *
+ * `localExpertLevel` is how much of a local the character is in this district,
+ * which opens rungs of the same ladder visits open — so a local knows a
+ * building on their own street they have never walked into.
+ */
 function familiarityFor(
   placeKey: string | null | undefined,
   places: Record<string, PlaceState>,
   day: number,
+  localExpertLevel = 0,
 ): { familiarity: PlaceFamiliaritySlice } | Record<string, never> {
   if (!placeKey) return {};
-  const read = placeFamiliarity(placeKey, places[placeKey], day);
+  const read = placeFamiliarity(placeKey, places[placeKey], day, localExpertLevel);
   if (!read) return {};
   return {
     familiarity: {
@@ -455,6 +468,8 @@ function familiarityFor(
       standing: read.standing,
       since: sinceWords(read.daysSince),
       known: read.known,
+      asALocal: read.asALocal,
+      ...(read.localExpert ? { localExpert: read.localExpert } : {}),
     },
   };
 }
@@ -521,7 +536,12 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           // How often they have stood here. The engine has counted every
           // arrival since the campaign began and nothing has ever read it back,
           // so every visit was written as a first visit.
-          ...familiarityFor(position?.placeKey, bundle.places, bundle.clock.day),
+          ...familiarityFor(
+            position?.placeKey,
+            bundle.places,
+            bundle.clock.day,
+            localExpertIn(bundle.character, standingDistrictKey),
+          ),
           // Presence, not a summons. Only ever asked about a venue: a district
           // is not somewhere you run into somebody.
           ...(position?.placeKey

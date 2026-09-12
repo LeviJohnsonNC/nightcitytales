@@ -10,6 +10,7 @@ import {
   areaForCheck,
   getSkill,
   isAreaScoped,
+  localExpertLevel,
   skillCheckLabel,
   skillLevelFor,
   STAT_ORDER,
@@ -96,6 +97,27 @@ export function actorFor(full: FullCharacter, context?: CurrentStatsContext): Sk
     homeDistrictKey: full.finance?.home_district_key ?? null,
     districtKey: context?.districtKey ?? null,
   };
+}
+
+/**
+ * How much of a local this character is in a district — 0 when they are not.
+ *
+ * The adapter between a persisted sheet and `localExpert.ts`: it resolves the
+ * printed "Your Home" placeholder through the character's saved home district,
+ * so the Skill every Role package grants counts for the neighbourhood they
+ * actually live in. Feature code asks this rather than reaching into the skill
+ * rows, so there is one place where a Skill line becomes a Level for a place.
+ */
+export function localExpertIn(full: FullCharacter, districtKey: string | null | undefined): number {
+  return localExpertLevel(
+    full.skills.map((s) => ({
+      skillId: s.skill_id,
+      level: s.level,
+      specialization: s.specialization,
+    })),
+    districtKey,
+    full.finance?.home_district_key ?? null,
+  );
 }
 
 /**

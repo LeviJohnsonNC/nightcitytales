@@ -136,6 +136,15 @@ export type LifeContext = {
       /** Pre-worded, so the renderer never does arithmetic on days. */
       since: string;
       known: string[];
+      /**
+       * The part of `known` that comes from being a local in this district
+       * rather than from having stood here. The only kind of knowledge that can
+       * be true on a first visit, and it has to be written differently: not
+       * "you remember", but "you know, because this is your neighbourhood".
+       */
+      asALocal?: string[];
+      /** How much of a local they are here, when they are one. */
+      localExpert?: { level: number; districtName: string };
     };
 
     /**
@@ -240,12 +249,32 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
             "left it, or on the person who is here, and get out of the way.",
         );
       }
-      if (f.known.length) {
+      // Being a local is the one kind of knowledge that can be true on a first
+      // visit, so it is stated BEFORE the standing lines are acted on: without
+      // it the narrator reads "never been here" and introduces the character to
+      // their own neighbourhood.
+      if (f.localExpert) {
+        parts.push(
+          `This is their NEIGHBOURHOOD: they are a local in ${f.localExpert.districtName} ` +
+            `(Local Expert ${f.localExpert.level}). They may never have been inside this ` +
+            "particular building, and they still know the street it is on, who runs it, and " +
+            "how things are done around here. Do not write them as a stranger to the area.",
+        );
+      }
+      const own = f.known.filter((fact) => !(f.asALocal ?? []).includes(fact));
+      if (own.length) {
         parts.push("What their own time here has taught them:");
-        for (const fact of f.known) parts.push(`  - ${fact}`);
+        for (const fact of own) parts.push(`  - ${fact}`);
+      }
+      if (f.asALocal?.length) {
+        parts.push("What they know because they are a local here, not because they have been in:");
+        for (const fact of f.asALocal) parts.push(`  - ${fact}`);
+      }
+      if (f.known.length) {
         parts.push(
           "Those are the character's, not yours to announce. Let them act on what they already " +
-            "know rather than being told it again.",
+            "know rather than being told it again. In particular, never have a passer-by or a " +
+            "bartender explain to them something the lists above say they already know.",
         );
       }
     }

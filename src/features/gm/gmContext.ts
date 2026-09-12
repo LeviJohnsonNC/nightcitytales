@@ -77,6 +77,15 @@ export type GmContextInput = {
       /** Pre-worded, so the renderer never does arithmetic on days. */
       since: string;
       known: string[];
+      /**
+       * The part of `known` that comes from being a local in this district
+       * rather than from having stood here. On a job this is the one that
+       * matters most: a run into the character's own neighbourhood should not
+       * brief them on ground they grew up on.
+       */
+      asALocal?: string[];
+      /** How much of a local they are here, when they are one. */
+      localExpert?: { level: number; districtName: string };
     };
 
     gangs: string[];
@@ -200,12 +209,28 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
             "left it, or on the person who is here, and get out of the way.",
         );
       }
-      if (f.known.length) {
+      if (f.localExpert) {
+        parts.push(
+          `This job is on their own ground: they are a local in ${f.localExpert.districtName} ` +
+            `(Local Expert ${f.localExpert.level}). They may never have been inside this ` +
+            "building and they still know the street, who claims it, and who answers when it " +
+            "goes loud. Do not brief them on their own neighbourhood.",
+        );
+      }
+      const own = f.known.filter((fact) => !(f.asALocal ?? []).includes(fact));
+      if (own.length) {
         parts.push("What their own time here has taught them:");
-        for (const fact of f.known) parts.push(`  - ${fact}`);
+        for (const fact of own) parts.push(`  - ${fact}`);
+      }
+      if (f.asALocal?.length) {
+        parts.push("What they know because they are a local here, not because they have been in:");
+        for (const fact of f.asALocal) parts.push(`  - ${fact}`);
+      }
+      if (f.known.length) {
         parts.push(
           "Those are the character's, not yours to announce. Let them act on what they already " +
-            "know rather than being told it again.",
+            "know rather than being told it again. In particular, never have an NPC explain to " +
+            "them something the lists above say they already know.",
         );
       }
     }

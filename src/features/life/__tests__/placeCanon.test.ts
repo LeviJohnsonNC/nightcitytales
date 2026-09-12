@@ -305,3 +305,90 @@ describe("which specifics belong to the narrator", () => {
     expect(LIFE_SYSTEM_PROMPT).toContain(CYBERPUNK_STYLE_GUIDE);
   });
 });
+
+/**
+ * Being a local is the one kind of knowledge that can be true on a FIRST visit,
+ * and the prompt has to say so before the standing lines are acted on —
+ * otherwise the narrator reads "never been here" and introduces the character
+ * to their own neighbourhood.
+ */
+describe("the narrator is told when the ground is the character's own", () => {
+  const own = ["Who claims this ground: the Albino Alligators."];
+  const localFamiliarity = {
+    visits: 0,
+    standing: "first" as const,
+    since: "",
+    known: own,
+    asALocal: own,
+    localExpert: { level: 6, districtName: "Rancho Coronado" },
+  };
+
+  it("names the neighbourhood and the Level, on both screens", () => {
+    for (const prompt of [
+      lifePrompt({ familiarity: localFamiliarity }),
+      gmPrompt({ familiarity: localFamiliarity }),
+    ]) {
+      expect(prompt).toContain("Rancho Coronado");
+      expect(prompt).toContain("Local Expert 6");
+    }
+  });
+
+  it("says not to write them as a stranger even on a first visit", () => {
+    const prompt = lifePrompt({ familiarity: localFamiliarity });
+    // The standing line still says they have not been inside this building...
+    expect(prompt).toMatch(/never been here before/i);
+    // ...and the local line stops that being read as a stranger to the area.
+    expect(prompt).toMatch(/do not write them as a stranger/i);
+  });
+
+  it("does not brief a runner on their own neighbourhood", () => {
+    expect(gmPrompt({ familiarity: localFamiliarity })).toMatch(
+      /do not brief them on their own neighbourhood/i,
+    );
+  });
+
+  it("separates what they have seen from what they know as a local", () => {
+    const seen = ["What it is: a market."];
+    const asLocal = ["What noise costs here: nothing."];
+    const prompt = lifePrompt({
+      familiarity: {
+        visits: 3,
+        standing: "returning",
+        since: "",
+        known: [...seen, ...asLocal],
+        asALocal: asLocal,
+        localExpert: { level: 4, districtName: "Kabuki" },
+      },
+    });
+    expect(prompt).toContain("What their own time here has taught them:");
+    expect(prompt).toContain(
+      "What they know because they are a local here, not because they have been in:",
+    );
+    // Each fact appears under exactly one heading.
+    const ownIndex = prompt.indexOf(seen[0]!);
+    const localIndex = prompt.indexOf(asLocal[0]!);
+    expect(ownIndex).toBeGreaterThan(-1);
+    expect(localIndex).toBeGreaterThan(ownIndex);
+  });
+
+  it("says nothing about being a local for somebody who is not one", () => {
+    const visitedFact = "What it is: a market.";
+    const prompt = lifePrompt({
+      familiarity: { visits: 3, standing: "returning", since: "", known: [visitedFact] },
+    });
+    expect(prompt).not.toContain("Local Expert");
+    expect(prompt).not.toMatch(/this is their NEIGHBOURHOOD/i);
+    // And the visited facts still reach the model under their own heading.
+    expect(prompt).toContain("What their own time here has taught them:");
+    expect(prompt).toContain(visitedFact);
+  });
+
+  it("forbids an NPC explaining to them what they already know", () => {
+    for (const prompt of [
+      lifePrompt({ familiarity: localFamiliarity }),
+      gmPrompt({ familiarity: localFamiliarity }),
+    ]) {
+      expect(prompt).toMatch(/never have (a passer-by or a bartender|an NPC) explain/i);
+    }
+  });
+});
