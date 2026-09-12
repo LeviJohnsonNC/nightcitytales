@@ -48,6 +48,14 @@ kept current — if a change makes it wrong, fix it in the same change.
 Supabase, or backend adapters. It takes plain objects and returns plain objects.
 
 - All dice rolls and character/game arithmetic belong in the engine.
+- `ledger.ts` owns the payload contract for the events something reads back.
+  `campaign_events.data` is jsonb, so a writer and a reader agreeing on field
+  names is a coincidence until something enforces it — and when it lapses,
+  settlement does not throw, it prices a job at zero. Build a payload with
+  `attackEventData` / `deathSaveEventData` and read one with the matching
+  `read*` function; do not spell the field names at a call site. No schema
+  library: the engine imports no third-party package at all, and these are
+  plain narrowing functions.
 - UI code must call engine functions instead of duplicating rules or arithmetic.
 - Rules values must come from `src/data/rules/`, not from literals in components,
   backend code, or AI prompts.
@@ -187,8 +195,11 @@ Routes under `src/routes/_authenticated/` require a Supabase user session:
 - `/character/:id`
 - `/play/:id`
 - `/combat` — the battlefield harness, a developer tool. Deliberately unlinked
-  from navigation and deliberately not gated on `import.meta.env.DEV`, because
-  it has to work on the deployed preview. It writes to real campaign data.
+  from navigation. Because it writes to real campaign data, it is gated by
+  `src/features/dev/harnessEnabled.ts`: on in `bun run dev`, on in a preview
+  that sets `VITE_COMBAT_HARNESS=1`, off in production. It is not gated on
+  `import.meta.env.DEV` alone, because the preview is exactly where it is
+  wanted and DEV is false there.
 
 The protected layout currently performs a client-side session check with SSR
 disabled. Database authorization must still rely on RLS rather than the route
@@ -344,6 +355,16 @@ match the later schema rather than all earlier migrations. Do not assume a clean
 database reset works until this has been reconciled with the deployed migration
 history.
 
+`supabase/replay/` now measures exactly that rather than leaving it a warning.
+`replay.sh` applies every migration to an empty Postgres over a small shim of
+the Supabase surface they use, and today reports 37 applied and 9 failed. Five
+are duplicate object creation; four are knock-on. Its README explains why the
+duplicates exist — a hand-written migration and the Lovable console's own copy
+of the same DDL, of which only one ever ran — and sets out the three ways to
+reconcile it. Run it before adding schema work. It is deliberately not a CI gate
+yet: the reconciliation is undecided, and a known-red check teaches people to
+ignore checks.
+
 This has already cost one silent outage. `encounter_combatants` is created twice
 — with a `campaign_id` in `20260823024230` and without one in `20260823033846` —
 and `save_encounter_state` filtered on that column from `20260830020000` until
@@ -397,11 +418,13 @@ Keep these in mind when changing adjacent code:
   per physical implant, appointment delay by disposition — is a house rule, and
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,
   not in code.
-- `bun run lint` still fails on a pre-existing `prefer-const` error in
-  `src/integrations/supabase/previewAuthStorage.ts`, plus existing Fast Refresh
-  warnings. CI runs lint with `continue-on-error`, which is why this has
-  survived: a lint error will not turn a build red, so nothing catches a new one
-  for you. Run it locally.
+- Lint is clean and CI now blocks on it. `bun run lint:code` is the blocking
+  check (eslint with `prettier/prettier` off) and `bun run format:check` is
+  advisory, so a formatting-dirty push from Lovable cannot be the reason a real
+  error goes unreported. Generated files — the Supabase integration clients and
+  `routeTree.gen.ts` — are excluded from eslint, because each says not to edit
+  it and a finding nobody may act on is what forced the whole check to be
+  non-blocking in the first place. Fast Refresh warnings remain, as warnings.
 - `src/integrations/supabase/types.ts` was hand-synchronised for
   `campaign_places` rather than regenerated.
   `src/features/campaign/__tests__/placeSchema.test.ts` compares that table's

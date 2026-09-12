@@ -25,6 +25,17 @@
  * Pure: events in, reports out. No dice, no network, no clock.
  */
 import type { Observation } from "./clocks";
+import {
+  LEDGER_EVENTS,
+  payloadOf,
+  readAttackEventData,
+  readBackupCalledEventData,
+  readDeathSaveEventData,
+  readSkillCheckEventData,
+  type HitLocation,
+  type AttackEventData,
+  type DeathSaveEventData,
+} from "./ledger";
 
 /**
  * The slice of a ledger row this module needs.
@@ -43,12 +54,6 @@ export const MAX_PER_OBSERVATION = 4;
 
 /** Shots fired in one job before the street has definitely noticed. */
 export const LOUD_SHOT_THRESHOLD = 3;
-
-function bag(event: SettlementEvent): Record<string, unknown> {
-  return event.data && typeof event.data === "object" && !Array.isArray(event.data)
-    ? (event.data as Record<string, unknown>)
-    : {};
-}
 
 /**
  * Only this job's events.
@@ -101,28 +106,32 @@ export type JobMechanicalCost = {
  */
 export function readMechanicalCost(input: SettlementReadInput): JobMechanicalCost {
   const events = eventsForThisJob(input.events);
-  const playerHits = events.filter(
-    (event) => event.type === "attack" && bag(event)["target"] === input.playerName,
+
+  // Parsed ONCE, through engine/ledger.ts, which is also what combatLog.ts
+  // builds with. A field renamed on one side is a type error on the other
+  // rather than a row that quietly stops matching.
+  const attacks = events
+    .filter((event) => event.type === LEDGER_EVENTS.attack)
+    .map((event) => readAttackEventData(payloadOf(event)))
+    .filter((data): data is AttackEventData => data !== null);
+
+  const playerHits = attacks.filter((data) => data.target === input.playerName);
+
+  const hpRows = playerHits.flatMap((data) =>
+    data.hpBefore !== null && data.hpAfter !== null
+      ? [{ before: data.hpBefore, after: data.hpAfter }]
+      : [],
   );
-  const hpRows = playerHits.flatMap((event) => {
-    const data = bag(event);
-    return typeof data["hp_before"] === "number" && typeof data["hp_after"] === "number"
-      ? [{ before: data["hp_before"], after: data["hp_after"] }]
-      : [];
-  });
 
   const armorByLocation = new Map<
-    "head" | "body",
+    HitLocation,
     { before: number; after: number; ablated: number }
   >();
-  for (const event of playerHits) {
-    const data = bag(event);
-    const location = data["armor_location"] === "head" ? "head" : "body";
-    const before = data["sp_before"];
-    const after = data["sp_after"];
-    if (typeof before !== "number" || typeof after !== "number") continue;
-    const prior = armorByLocation.get(location);
-    armorByLocation.set(location, {
+  for (const data of playerHits) {
+    const { spBefore: before, spAfter: after } = data;
+    if (before === null || after === null) continue;
+    const prior = armorByLocation.get(data.armorLocation);
+    armorByLocation.set(data.armorLocation, {
       before: prior?.before ?? before,
       after,
       ablated: (prior?.ablated ?? 0) + Math.max(0, before - after),
@@ -133,26 +142,15 @@ export function readMechanicalCost(input: SettlementReadInput): JobMechanicalCos
     string,
     { weapon: string; before: number; after: number; spent: number }
   >();
-  for (const event of events) {
-    if (event.type !== "attack") continue;
-    const data = bag(event);
-    const ammo = bag({ type: "ammo", data: data["ammo"] });
-    const inventoryId = ammo["inventoryId"];
-    const before = ammo["before"];
-    const after = ammo["after"];
-    if (
-      typeof inventoryId !== "string" ||
-      typeof before !== "number" ||
-      typeof after !== "number"
-    ) {
-      continue;
-    }
-    const prior = ammoByInventory.get(inventoryId);
-    ammoByInventory.set(inventoryId, {
-      weapon: typeof data["weapon"] === "string" ? data["weapon"] : (prior?.weapon ?? "Weapon"),
-      before: prior?.before ?? before,
-      after,
-      spent: (prior?.spent ?? 0) + Math.max(0, before - after),
+  for (const data of attacks) {
+    const ammo = data.ammo;
+    if (!ammo) continue;
+    const prior = ammoByInventory.get(ammo.inventoryId);
+    ammoByInventory.set(ammo.inventoryId, {
+      weapon: data.weapon ?? prior?.weapon ?? "Weapon",
+      before: prior?.before ?? ammo.before,
+      after: ammo.after,
+      spent: (prior?.spent ?? 0) + Math.max(0, ammo.before - ammo.after),
     });
   }
 
@@ -170,7 +168,7 @@ export function readMechanicalCost(input: SettlementReadInput): JobMechanicalCos
       inventoryId,
       ...value,
     })),
-    criticalInjuries: playerHits.filter((event) => bag(event)["critical_injury"] === true).length,
+    criticalInjuries: playerHits.filter((data) => data.criticalInjury).length,
   };
 }
 
@@ -191,32 +189,29 @@ export function readSettlement(input: SettlementReadInput): SettlementFinding[] 
   // --- bodies -------------------------------------------------------------
   // A failed Death Save on somebody other than the player. The one record of a
   // death that exists whatever the narration said.
-  const killed = events.filter((e) => {
-    if (e.type !== "death_save") return false;
-    const data = bag(e);
-    return data["died"] === true && data["combatant"] !== input.playerName;
-  }).length;
+  const deathSaves = events
+    .filter((e) => e.type === LEDGER_EVENTS.deathSave)
+    .map((e) => readDeathSaveEventData(payloadOf(e)))
+    .filter((d): d is DeathSaveEventData => d !== null);
+  const killed = deathSaves.filter((d) => d.died && d.combatant !== input.playerName).length;
   add("killed", killed, `${killed} died`);
 
   // --- people who were hurt and lived -------------------------------------
   // Somebody the player hit hard enough to matter who is not among the dead.
+  const attacks = events
+    .filter((e) => e.type === LEDGER_EVENTS.attack)
+    .map((e) => readAttackEventData(payloadOf(e)))
+    .filter((d): d is AttackEventData => d !== null);
+
   const hurt = new Set<string>();
-  for (const event of events) {
-    if (event.type !== "attack") continue;
-    const data = bag(event);
-    if (data["hit"] !== true) continue;
-    if (data["attacker"] !== input.playerName) continue;
-    const target = data["target"];
-    const through = data["through_armor"];
-    if (typeof target !== "string") continue;
-    if (typeof through === "number" && through > 0) hurt.add(target);
+  for (const data of attacks) {
+    // `!== true` rather than `!data.hit`: a row that does not say whether it
+    // landed is not evidence that it did.
+    if (data.hit !== true) continue;
+    if (data.attacker !== input.playerName) continue;
+    if (data.throughArmor !== null && data.throughArmor > 0) hurt.add(data.target);
   }
-  const dead = new Set(
-    events
-      .filter((e) => e.type === "death_save" && bag(e)["died"] === true)
-      .map((e) => bag(e)["combatant"])
-      .filter((n): n is string => typeof n === "string"),
-  );
+  const dead = new Set(deathSaves.filter((d) => d.died).map((d) => d.combatant));
   const wounded = [...hurt].filter((name) => !dead.has(name)).length;
   add("wounded", wounded, `${wounded} put in hospital`);
 
@@ -224,21 +219,25 @@ export function readSettlement(input: SettlementReadInput): SettlementFinding[] 
   // Gunfire in quantity. A single shot in a back room is not the street
   // noticing; a firefight is. Counted on resolved attacks, so a fight the
   // narration skipped over still counts.
-  const shots = events.filter((e) => e.type === "attack").length;
+  const shots = events.filter((e) => e.type === LEDGER_EVENTS.attack).length;
   if (shots >= LOUD_SHOT_THRESHOLD) add("loud", 1, `${shots} shots exchanged`);
 
   // Calling for backup is a radio call somebody else can hear, and it brings
   // more people who can see you.
-  const backup = events.filter((e) => e.type === "backup_called" && bag(e)["responded"] === true);
+  const backup = events.filter(
+    (e) =>
+      e.type === LEDGER_EVENTS.backupCalled &&
+      readBackupCalledEventData(payloadOf(e))?.responded === true,
+  );
   if (backup.length > 0) add("witness", backup.length, "backup was called in");
 
   // --- being seen ---------------------------------------------------------
   // A blown Stealth check is the engine's own record that somebody clocked
   // them. Nothing else in the ledger says this as plainly.
   const blownStealth = events.filter((e) => {
-    if (e.type !== "skill_check") return false;
-    const data = bag(e);
-    return data["success"] === false && data["skill_id"] === "stealth";
+    if (e.type !== LEDGER_EVENTS.skillCheck) return false;
+    const check = readSkillCheckEventData(payloadOf(e));
+    return check?.success === false && check.skillId === "stealth";
   }).length;
   add(
     "seen",
@@ -249,7 +248,7 @@ export function readSettlement(input: SettlementReadInput): SettlementFinding[] 
   // --- or not ------------------------------------------------------------
   // Working clean is the only thing that takes pressure back off, so it has to
   // be earned by the whole job: no fight, nobody hurt, nobody spotted.
-  const fought = events.some((e) => e.type === "encounter_started");
+  const fought = events.some((e) => e.type === LEDGER_EVENTS.encounterStarted);
   if (!fought && findings.length === 0) {
     add("clean", 1, "no fight, nobody hurt, nobody spotted");
   }
@@ -359,16 +358,15 @@ export function survivorsFrom(input: SettlementReadInput): Survivor[] {
   const events = eventsForThisJob(input.events);
   const fought = new Set<string>();
   for (const event of events) {
-    if (event.type !== "attack") continue;
-    const data = bag(event);
-    if (data["attacker"] !== input.playerName) continue;
-    const target = data["target"];
-    if (typeof target === "string" && looksLikeAPerson(target)) fought.add(target);
+    if (event.type !== LEDGER_EVENTS.attack) continue;
+    const data = readAttackEventData(payloadOf(event));
+    if (!data || data.attacker !== input.playerName) continue;
+    if (looksLikeAPerson(data.target)) fought.add(data.target);
   }
   for (const event of events) {
-    if (event.type !== "death_save" || bag(event)["died"] !== true) continue;
-    const who = bag(event)["combatant"];
-    if (typeof who === "string") fought.delete(who);
+    if (event.type !== LEDGER_EVENTS.deathSave) continue;
+    const data = readDeathSaveEventData(payloadOf(event));
+    if (data?.died) fought.delete(data.combatant);
   }
   return [...fought].map((name) => ({ name }));
 }

@@ -10,6 +10,10 @@
  * condition, seeds a real encounter through the real `beginEncounter`, and
  * sends you to `/play/:id` — where the shipping board, the shipping gate and
  * the shipping persistence own everything. See features/dev/seedEncounter.ts.
+ *
+ * Because it writes to a real campaign, it is gated: on in dev, on in a preview
+ * that sets VITE_COMBAT_HARNESS=1, off in production. See
+ * features/dev/harnessEnabled.ts for why it is a flag rather than DEV.
  */
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -23,6 +27,7 @@ import {
   seedEncounter,
   type SeedWound,
 } from "@/features/dev/seedEncounter";
+import { harnessEnabled } from "@/features/dev/harnessEnabled";
 
 export const Route = createFileRoute("/_authenticated/combat")({
   head: () => ({
@@ -31,8 +36,34 @@ export const Route = createFileRoute("/_authenticated/combat")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: CombatHarness,
+  component: CombatHarnessRoute,
 });
+
+/**
+ * The gate. A plain notice rather than a 404: somebody who reached this URL
+ * meant to, and "off in this build" is a more useful answer than "no such page".
+ */
+function CombatHarnessRoute() {
+  if (!harnessEnabled()) {
+    return (
+      <div className="mx-auto max-w-md px-6 py-24 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          Battlefield harness
+        </p>
+        <h1 className="mt-3 text-xl font-semibold">Not available in this build.</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          The harness seeds a real encounter into a real campaign, so it stays off outside
+          development. Set <code className="font-mono">VITE_COMBAT_HARNESS=1</code> to enable it on
+          a preview deployment.
+        </p>
+        <Link to="/roster" className="mt-6 inline-block text-sm underline underline-offset-4">
+          Back to the roster
+        </Link>
+      </div>
+    );
+  }
+  return <CombatHarness />;
+}
 
 const WOUNDS: { value: SeedWound; label: string; note: string }[] = [
   { value: "none", label: "Unhurt", note: "full HP" },
