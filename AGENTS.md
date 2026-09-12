@@ -66,7 +66,9 @@ the city layer runs on.
 The city is a system in the engine, not a setting in the prose. `geography.ts`
 is the atlas as the publisher printed it and invents nothing; beside it,
 `places.ts` (tags, district profiles, arenas), `placeBeats.ts` (what a location
-can put in front of you), `placeActions.ts` (what there is to do there),
+can put in front of you), `placeActions.ts` (what there is to do there,
+and the ways of LOOKING at it — an approach carries a Skill and no DV, because
+what is there to find is the engine's to say),
 `placeSignals.ts` (what a map pin may say), `placeState.ts` (what a place has
 become), `placeIntel.ts` (what knowing it buys you, whether by
 visiting or by being a local), `truth.ts` (what is true here and not apparent

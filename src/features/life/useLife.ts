@@ -601,12 +601,18 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           // is told about the quiet doors of their own neighbourhood and a
           // stranger is not, so the narrator cannot offer a newcomer a fence
           // they would have no way of knowing about.
+          // Business only, never the ways of LOOKING. Those are cards for the
+          // player; the narrator has no use for being told the player has a
+          // search button, and letting them into this list would cost the
+          // ground two of the things it actually offers.
           business: placeActions({
             districtKey: positionDistrict.key,
             placeKey: position?.placeKey,
             places: bundle.places,
             localExpertLevel: localExpertIn(bundle.character, positionDistrict.key),
-          }).map((a) => `${a.label} (${a.placeName})`),
+          })
+            .filter((a) => !a.skillId)
+            .map((a) => `${a.label} (${a.placeName})`),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
           streets: streetsIn(positionDistrict.key).map((s) => s.name),
           destinations: reachableDestinations(
@@ -1832,6 +1838,16 @@ export function useLife(campaignId: string) {
     const position = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
     const district = position?.districtKey ? getDistrict(position.districtKey) : undefined;
     if (!district) return written.slice(0, MAX_LIFE_OPTIONS);
+    // Whether "Think it through" is on the table: the one approach that is not
+    // offered blind, because a conclusion's prerequisites are other discoveries
+    // and offering it without them is a button that can only disappoint.
+    const conclusionAvailable =
+      bundle.truthsAvailable && position?.placeKey
+        ? deductionOffer(
+            truthsAt(position.placeKey, bundle.places[position.placeKey]),
+            bundle.discoveredTruths,
+          ) !== null
+        : false;
     return mergeOptions(
       written,
       venueOptions({
@@ -1839,6 +1855,7 @@ export function useLife(campaignId: string) {
         placeKey: position?.placeKey,
         places: bundle.places,
         localExpertLevel: localExpertIn(bundle.character, district.key),
+        conclusionAvailable,
       }),
       district.locations.map((l) => l.name),
     );

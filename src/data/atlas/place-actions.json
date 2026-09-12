@@ -314,5 +314,35 @@
       "local": true,
       "localNote": "Reading a claim off the walls takes knowing whose walls they are."
     }
+  ],
+  "approachCap": 2,
+  "approachNote": "An APPROACH is not business. The verbs above are things to do — buy, eat, drink, get patched up; these are ways of LOOKING, and they exist because the truth system gave the city things to find and nothing on the screen ever offered to look for them. An approach offers a way in and never a finding: it says 'slow down and examine the place', never 'there is something behind the counter'. That is what makes it safe to offer somewhere with nothing to find — 'you search and the place is what it appears to be' is a real answer the engine already gives. They are listed in PRIORITY order, not file order: the cap is small and a fixed file order left Conversation's card firing nowhere in the whole city. A conclusion goes first because it was earned; looking properly comes next because it is the verb the whole truth system hangs on.",
+  "approachSkillNote": "`skill` is the printed Skill the card leans on. The engine sets no DV here: the difficulty belongs to the thing being found, which the engine knows and this card must not hint at. `needsConclusion` is the one exception to offering blind — a conclusion's prerequisites are other discoveries, so it is only offered once the character has earned the pieces, and offering it is a pay-off rather than a hint.",
+  "approaches": [
+    {
+      "key": "think_it_through",
+      "anywhere": true,
+      "needsConclusion": true,
+      "skill": "deduction",
+      "label": "Think it through",
+      "description": "Sit with what you already know about this place and see what it adds up to.",
+      "minutes": 30
+    },
+    {
+      "key": "look_properly",
+      "anywhere": true,
+      "skill": "perception",
+      "label": "Look closer",
+      "description": "Slow down and go over the place properly instead of passing through it.",
+      "minutes": 20
+    },
+    {
+      "key": "read_the_room",
+      "tags": ["bar", "club", "restaurant", "food", "market", "crowd", "leisure"],
+      "skill": "human_perception",
+      "label": "Read the room",
+      "description": "Watch faces instead of talking to them, and see who is not comfortable.",
+      "minutes": 20
+    }
   ]
 }

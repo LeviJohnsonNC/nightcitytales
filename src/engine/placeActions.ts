@@ -56,6 +56,21 @@ type ActionFile = {
     /** Only offered as a shortcut to somebody who knows the area. */
     local?: boolean;
   }[];
+  /** How many of the cap may be ways of looking rather than things to do. */
+  approachCap: number;
+  approaches: {
+    key: string;
+    /** True for a way of looking that needs no particular ground. */
+    anywhere?: boolean;
+    tags?: string[];
+    label: string;
+    description: string;
+    minutes: number;
+    /** The printed Skill the card leans on. */
+    skill: string;
+    /** Offered only once the character has the pieces a conclusion rests on. */
+    needsConclusion?: boolean;
+  }[];
 };
 
 const FILE = data as unknown as ActionFile;
@@ -70,6 +85,17 @@ export const PLACE_ACTION_TEMPLATES = FILE.actions;
  * the player stops reading menus.
  */
 export const MAX_PLACE_ACTIONS: number = FILE.cap;
+
+/**
+ * How many of those five may be ways of LOOKING rather than things to do. Two.
+ *
+ * An approach is not business, and the two crowd each other: without a reserve
+ * a bar with four things to buy would never offer to let you read the room, and
+ * with no limit a market would offer nothing but ways of staring at it. Three
+ * of the five stay the ordinary business of being somewhere, which is what the
+ * whole module was written for.
+ */
+export const MAX_PLACE_APPROACHES: number = FILE.approachCap;
 
 /** True when these are what they claim to be: tunable house rules. */
 export const PLACE_ACTIONS_ARE_HOUSE_RULE: boolean = FILE.houseRule;
@@ -93,6 +119,21 @@ export type PlaceAction = {
   cost: number | null;
   /** True when the character is standing in this place rather than nearby. */
   here: boolean;
+  /**
+   * True for a door only somebody who knows the area would have found. Exposed
+   * so a caller ordering this list can keep those above the ordinary verbs —
+   * the cap quietly undid that gate once already.
+   */
+  local: boolean;
+  /**
+   * The printed Skill this leans on, for an APPROACH rather than a piece of
+   * business: a way of looking at the place instead of a thing to do in it.
+   *
+   * No DV rides along. The difficulty belongs to whatever is there to be found,
+   * which the engine knows and this card must not hint at — the card offers a
+   * way in and never a finding.
+   */
+  skillId?: string;
 };
 
 /** The verbs a place's own ground supports. */
@@ -127,6 +168,19 @@ export type PlaceActionInput = {
    * one that lets them walk up to them.
    */
   localExpertLevel?: number | undefined;
+  /**
+   * True when what the character has already found HERE adds up to something
+   * they have not worked out yet (`deductionOffer` in truth.ts).
+   *
+   * The one approach that is not offered blind. Every other way of looking can
+   * be offered anywhere, because "you searched and the place is what it appears
+   * to be" is a real answer the engine gives — so the offer tells the player
+   * nothing. A conclusion is different: its prerequisites are other
+   * discoveries, so offering it is the pay-off for looking rather than a hint
+   * that something is there, and offering it when the pieces are missing would
+   * be a button that can only disappoint.
+   */
+  conclusionAvailable?: boolean | undefined;
 };
 
 /**
@@ -207,6 +261,7 @@ export function placeActions(input: PlaceActionInput): PlaceAction[] {
         minutes: template.minutes,
         cost: template.cost,
         here,
+        local: isLocal,
       });
     }
   };
@@ -229,7 +284,63 @@ export function placeActions(input: PlaceActionInput): PlaceAction[] {
     }
   }
 
-  return out.slice(0, MAX_PLACE_ACTIONS);
+  // Ways of LOOKING, on their own budget beside the five rather than out of
+  // them. The cap exists so a venue list does not become a menu; an approach
+  // names no new venue and answers a different question — not "what is there to
+  // do here" but "how else could I look at this" — so taking slots off the
+  // business would have cost the ground things it really offers. At the farm it
+  // did exactly that, squeezing the whole district out of a five-item list,
+  // which the existing suite caught.
+  return [...out.slice(0, MAX_PLACE_ACTIONS), ...approachesAt(input)];
+}
+
+/**
+ * Ways of looking at where the character is standing.
+ *
+ * The truth system gave the city things to find and nothing on the screen ever
+ * offered to look for them: a player had to think to type "I search the room",
+ * and a player who never thought of it never found anything anywhere. These are
+ * that verb, made visible.
+ *
+ * They offer a WAY IN and never a finding. "Slow down and examine the place" is
+ * safe to offer somewhere with nothing to find, because the engine's answer —
+ * you searched properly and the place is what it appears to be — is a real
+ * outcome rather than a wasted turn. A card that said "there is something
+ * behind the counter" would have given away the whole game.
+ *
+ * Only offered where the character is standing. An approach is something you do
+ * with your attention, and you cannot pay attention to a building three streets
+ * away.
+ */
+function approachesAt(input: PlaceActionInput): PlaceAction[] {
+  if (!input.placeKey) return [];
+  const place = getPlace(input.placeKey);
+  if (!place) return [];
+  if (SILENCING_FLAGS.some((flag) => input.places?.[place.key]?.flags.includes(flag))) return [];
+  const tags = tagsOf(place.key);
+
+  const out: PlaceAction[] = [];
+  for (const template of FILE.approaches) {
+    if (template.needsConclusion && !input.conclusionAvailable) continue;
+    const grounded =
+      template.anywhere === true || (template.tags ?? []).some((t) => tags.includes(t as PlaceTag));
+    if (!grounded) continue;
+    out.push({
+      key: `${template.key}@${place.key}`,
+      action: template.key,
+      label: template.label,
+      description: template.description,
+      placeKey: place.key,
+      placeName: place.name,
+      minutes: template.minutes,
+      cost: null,
+      here: true,
+      local: false,
+      skillId: template.skill,
+    });
+    if (out.length >= MAX_PLACE_APPROACHES) break;
+  }
+  return out;
 }
 
 /**
@@ -240,5 +351,13 @@ export function placeActions(input: PlaceActionInput): PlaceAction[] {
  * decided is possible here, rather than being asked whether it is.
  */
 export function describePlaceAction(action: PlaceAction): string {
-  return `${action.label} at ${action.placeName}.`;
+  if (!action.skillId) return `${action.label} at ${action.placeName}.`;
+  // An approach is a way of looking, so it reaches the narrator as one: the
+  // Skill is named and the DV is not, because what is here to find and how hard
+  // it is to find are the engine's to say once the dice are thrown.
+  return (
+    `${action.label} at ${action.placeName}.\n` +
+    `(ENGINE: this leans on ${action.skillId}. Propose a skill_check with that skillId and a DV ` +
+    "from the published table, and stop. Do not decide what they find.)"
+  );
 }
