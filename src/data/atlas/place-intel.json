@@ -81,5 +81,10 @@
     }
   ],
   "localKnowledgeShownNote": "How many kinds of door to name at once. Enough to feel like local knowledge, few enough that it stays a memory rather than a directory.",
-  "localKnowledgeShown": 4
+  "localKnowledgeShown": 4,
+  "earnedNote": "What the campaign has to show before a character may BUY Local Expert for a neighbourhood they did not start in. Cyberpunk RED prints no such requirement — it says choose a location — so this is a house rule, and it exists because the alternative is buying local knowledge of somewhere you have never been. Two numbers rather than one: visits across the district, and how many different addresses in it those visits touched. Eight evenings in the same bar is knowing a bar; it is not knowing the neighbourhood the bar is on. The character's own home district always qualifies, however little they have walked it — they live there.",
+  "earned": {
+    "visits": 8,
+    "places": 2
+  }
 }

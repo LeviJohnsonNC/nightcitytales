@@ -22,12 +22,14 @@ import {
   appendCampaignEvent,
   getCampaign,
   getCharacter,
+  listCampaignPlaces,
   setCampaignClock,
   setInventorySp,
   updateCampaign,
   updateCampaignVitals,
   type Campaign,
   type CampaignInventoryItem,
+  type CampaignPlace,
   type CampaignVitals,
   type FullCharacter,
   type Json,
@@ -39,6 +41,15 @@ export type DowntimeBundle = {
   vitals: CampaignVitals;
   character: FullCharacter;
   inventory: CampaignInventoryItem[];
+  /**
+   * Everywhere this campaign has been, and how often.
+   *
+   * Loaded for one question: which neighbourhoods the character has spent
+   * enough time in to be able to buy Local Expert for them. A row exists only
+   * once something has happened at a place, so this is the campaign's own
+   * record of where the character has actually walked.
+   */
+  places: CampaignPlace[];
 };
 
 export async function loadDowntime(campaignId: string): Promise<DowntimeBundle> {
@@ -52,6 +63,7 @@ export async function loadDowntime(campaignId: string): Promise<DowntimeBundle> 
     vitals: full.vitals,
     character,
     inventory: full.inventory,
+    places: await listCampaignPlaces(campaignId),
   };
 }
 

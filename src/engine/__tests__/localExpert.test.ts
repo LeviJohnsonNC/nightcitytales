@@ -6,8 +6,11 @@ import {
   HOME_AREA,
   isAreaScoped,
   isHomeArea,
+  earnedLocalExpertAreas,
+  EARNED_AREA_RULE,
   isLegalLocalExpertArea,
   localExpertAreaOptions,
+  newLocalExpertAreas,
   localExpertAreas,
   localExpertLevel,
   LOCAL_EXPERT_SKILL_ID,
@@ -523,5 +526,151 @@ describe("adding a Local Expert line", () => {
         level: 2,
       }).reason,
     ).toBe("Already on your sheet");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stage 4: coming to know somewhere new.
+// ---------------------------------------------------------------------------
+
+/** Enough visits, across enough addresses, to have learned a neighbourhood. */
+function enoughFor(districtKey: string): { placeKey: string; visits: number }[] {
+  const district = DISTRICTS.find((d) => d.key === districtKey)!;
+  const places = district.locations.slice(0, EARNED_AREA_RULE.places);
+  const each = Math.ceil(EARNED_AREA_RULE.visits / places.length);
+  return places.map((place) => ({ placeKey: place.key, visits: each }));
+}
+
+describe("the rule for coming to know somewhere new", () => {
+  it("is a house rule with both halves declared", () => {
+    // RED prints no requirement at all — it says choose a location. This is
+    // ours, so it says so in the data it comes from.
+    expect(EARNED_AREA_RULE.visits).toBeGreaterThan(0);
+    expect(EARNED_AREA_RULE.places).toBeGreaterThan(1);
+  });
+});
+
+describe("which neighbourhoods a campaign has earned", () => {
+  it("offers one the character has really walked", () => {
+    const earned = earnedLocalExpertAreas({
+      visitsByPlace: enoughFor("little_china"),
+      skills: [],
+    });
+    expect(earned.map((a) => a.districtKey)).toContain("little_china");
+  });
+
+  it("refuses one they have only passed through", () => {
+    const earned = earnedLocalExpertAreas({
+      visitsByPlace: [{ placeKey: "e1", visits: EARNED_AREA_RULE.visits - 1 }],
+      skills: [],
+    });
+    expect(earned).toEqual([]);
+  });
+
+  it("refuses a district they know one address in, however often", () => {
+    // The second number is the point. Eight evenings in the same bar is knowing
+    // a bar; it is not knowing the neighbourhood the bar is on.
+    const earned = earnedLocalExpertAreas({
+      visitsByPlace: [{ placeKey: "g1", visits: 99 }],
+      skills: [],
+    });
+    expect(earned).toEqual([]);
+  });
+
+  it("counts visits across the district rather than at one address", () => {
+    const earned = earnedLocalExpertAreas({
+      visitsByPlace: enoughFor("little_china"),
+      skills: [],
+    });
+    const china = earned.find((a) => a.districtKey === "little_china")!;
+    expect(china.places).toBe(EARNED_AREA_RULE.places);
+    expect(china.visits).toBeGreaterThanOrEqual(EARNED_AREA_RULE.visits);
+  });
+
+  it("always includes the district they live in, walked or not", () => {
+    const earned = earnedLocalExpertAreas({
+      visitsByPlace: [],
+      skills: [],
+      homeDistrictKey: "kabuki",
+    });
+    expect(earned).toEqual([
+      {
+        districtKey: "kabuki",
+        districtName: "Kabuki",
+        visits: 0,
+        places: 0,
+        level: 0,
+        isHome: true,
+      },
+    ]);
+  });
+
+  it("says what they already hold there", () => {
+    const earned = earnedLocalExpertAreas({
+      visitsByPlace: enoughFor("little_china"),
+      skills: [{ skillId: LOCAL_EXPERT_SKILL_ID, level: 3, specialization: "little_china" }],
+    });
+    expect(earned.find((a) => a.districtKey === "little_china")?.level).toBe(3);
+  });
+
+  it("ignores a place the atlas does not have, and a row with no visits", () => {
+    expect(
+      earnedLocalExpertAreas({
+        visitsByPlace: [
+          { placeKey: "zz9", visits: 99 },
+          { placeKey: "e1", visits: 0 },
+        ],
+        skills: [],
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("what the spend screen offers as a new line", () => {
+  it("leaves out a district they are already a local in", () => {
+    // Raising that line is already on the board through the ordinary list.
+    const args = {
+      visitsByPlace: enoughFor("little_china"),
+      skills: [{ skillId: LOCAL_EXPERT_SKILL_ID, level: 3, specialization: "little_china" }],
+    };
+    expect(earnedLocalExpertAreas(args).map((a) => a.districtKey)).toContain("little_china");
+    expect(newLocalExpertAreas(args)).toEqual([]);
+  });
+
+  it("leaves out the home district once the Role package's line resolves to it", () => {
+    // "Local Expert (Your Home)" already covers where they live, so offering it
+    // again as something to learn would be offering a line they hold.
+    const offered = newLocalExpertAreas({
+      visitsByPlace: [],
+      skills: [{ skillId: LOCAL_EXPERT_SKILL_ID, level: 4, specialization: HOME_AREA }],
+      homeDistrictKey: "kabuki",
+    });
+    expect(offered).toEqual([]);
+  });
+
+  it("offers the home district to somebody who is not a local in it", () => {
+    // A Complete Package character who spent their points on somewhere else.
+    const offered = newLocalExpertAreas({
+      visitsByPlace: [],
+      skills: [{ skillId: LOCAL_EXPERT_SKILL_ID, level: 6, specialization: "little_china" }],
+      homeDistrictKey: "kabuki",
+    });
+    expect(offered.map((a) => a.districtKey)).toEqual(["kabuki"]);
+  });
+
+  it("offers nothing at all to a character with no history and no home", () => {
+    expect(newLocalExpertAreas({ visitsByPlace: [], skills: [] })).toEqual([]);
+  });
+
+  it("names a district the picker would also accept", () => {
+    // The specialization the purchase stores has to be one areaKeyOf resolves,
+    // or the Skill it creates covers no ground in the city.
+    for (const area of newLocalExpertAreas({
+      visitsByPlace: [...enoughFor("little_china"), ...enoughFor("the_glen")],
+      skills: [],
+    })) {
+      expect(isLegalLocalExpertArea(area.districtKey)).toBe(true);
+      expect(areaKeyOf(area.districtKey)).toBe(area.districtKey);
+    }
   });
 });

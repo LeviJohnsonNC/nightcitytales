@@ -169,3 +169,42 @@ describe("repeatable skills with specializations", () => {
     });
   });
 });
+
+/**
+ * The spend screen shows the same name the sheet does. A Local Expert line is
+ * stored as a district key, and reading `Local Expert (little_china)` back at
+ * the player is the raw storage leaking onto the screen.
+ */
+describe("naming a place-scoped Skill on the spend screen", () => {
+  it("shows a district key as the district's printed name", () => {
+    expect(describeSkillRaise("local_expert", 2, 99, "little_china").skillName).toBe(
+      "Local Expert (Little China)",
+    );
+  });
+
+  it("resolves the printed placeholder through the home district", () => {
+    expect(describeSkillRaise("local_expert", 4, 99, "Your Home", "the_glen").skillName).toBe(
+      "Local Expert (The Glen)",
+    );
+  });
+
+  it("still says Your Home when there is no home to resolve", () => {
+    expect(describeSkillRaise("local_expert", 4, 99, "Your Home").skillName).toBe(
+      "Local Expert (Your Home)",
+    );
+  });
+
+  it("leaves a specialization that is not a place exactly as stored", () => {
+    expect(describeSkillRaise("language", 2, 99, "Streetslang", "the_glen").skillName).toBe(
+      "Language (Streetslang)",
+    );
+  });
+
+  it("prices a brand-new district line as an ordinary first Level", () => {
+    // Buying a neighbourhood is not its own economy: it is Level 1 of a Skill.
+    const fresh = describeSkillRaise("local_expert", 0, 99, "kabuki");
+    expect(fresh.currentLevel).toBe(0);
+    expect(fresh.nextLevel).toBe(1);
+    expect(fresh.cost).toBe(skillRaiseCost("local_expert", 1));
+  });
+});
