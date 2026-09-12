@@ -241,3 +241,41 @@ describe("what the narrator is told about a conclusion on offer", () => {
     expect(prompt()).not.toContain("THERE IS SOMETHING TO BE WORKED OUT");
   });
 });
+
+/** The prompt side of the same thing: what the job narrator is handed. */
+describe("the people block in a job prompt", () => {
+  const mission = NIGHT_AT_THE_OPERA;
+  const beat = getBeat(mission, "getting_tickets");
+
+  const withNpc = (npc: Record<string, unknown>) =>
+    renderGmUserPrompt(
+      buildGmContext({
+        mission,
+        beat,
+        availableExits: beat.exits,
+        character,
+        objectives: [],
+        npcsPresent: [{ name: "Wakako Okada", disposition: 1, status: "alive", ...npc }],
+        recentEvents: [],
+      }),
+      "I talk to her",
+    );
+
+  it("hands over what the player has worked out, and forbids inventing more", () => {
+    const prompt = withNpc({
+      standing: "The fixer who answers your calls.",
+      known: ["What Wakako is actually after: a clean exit."],
+    });
+    expect(prompt).toContain("The fixer who answers your calls.");
+    expect(prompt).toContain("The player has worked out: What Wakako is actually after");
+    expect(prompt).toMatch(/never invent a want, a fear or a secret/i);
+    expect(prompt).toMatch(
+      /never have one explain to the character something the character already worked out/i,
+    );
+  });
+
+  it("says when somebody has closed up", () => {
+    expect(withNpc({ guarded: true })).toContain("GUARDED");
+    expect(withNpc({})).not.toContain("GUARDED");
+  });
+});

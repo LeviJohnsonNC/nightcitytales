@@ -885,7 +885,10 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
     const district = districtOfPlace(key);
     const business = district
       ? placeActions({ districtKey: district.key, placeKey: key, places: bundle.places })
-          .filter((a) => a.placeKey === key)
+          // What this place DOES. A way of looking at it is not its business,
+          // and this panel is a page about the location rather than a list of
+          // things to press.
+          .filter((a) => a.placeKey === key && !a.skillId)
           .map((a) => ({
             label: a.label,
             detail: `${formatDuration(a.minutes)}${a.cost ? ` · ${a.cost}eb` : ""}`,

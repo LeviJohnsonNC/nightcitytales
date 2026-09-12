@@ -10,8 +10,10 @@ import {
   areaForCheck,
   getSkill,
   isAreaScoped,
+  isGuarded,
   localExpertLevel,
   skillCheckLabel,
+  publicView,
   skillLevelFor,
   STAT_ORDER,
   type MissionStatus,
@@ -19,6 +21,7 @@ import {
   type StatKey,
 } from "@/engine";
 import type { GmCharacterSummary, GmNpcSummary } from "@/features/gm/gmContext";
+import { castMemberFrom, guardednessOf, knownFactsOf } from "@/features/campaign/castSeeding";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import type {
   CampaignEvent,
@@ -247,14 +250,40 @@ export function suggestionInput(suggestion: GmSuggestedAction): string {
   return `${suggestion.label}\n(ENGINE: this action leans on ${skill}. If it can plausibly fail, propose a skill_check with that skillId and a DV from the published table, and stop.)`;
 }
 
-export function npcSummaries(npcs: CampaignNpc[]): GmNpcSummary[] {
-  return npcs.map((npc) => ({
-    name: npc.name,
-    disposition: npc.disposition,
-    status: npc.status,
-    ...(npc.npc_id ? { key: npc.npc_id } : {}),
-    ...(npc.location ? { notes: `at ${npc.location}` } : {}),
-  }));
+/**
+ * The people in the room, as the job prompt wants them.
+ *
+ * Carries the same public half Life has always carried: who this person is to
+ * the character, whichever rungs of their dossier the player has actually
+ * earned, and whether they have closed up. It used to carry a name, a number
+ * and a status — so a fixer the character had spent a week reading arrived on a
+ * job as a stranger, and everything learned about them was unusable in the half
+ * of the game where it mattered.
+ *
+ * What they want, fear and are hiding stays with the engine until it is learned
+ * (see engine/cast.ts). `today` is for suspicion's cooling.
+ */
+export function npcSummaries(npcs: CampaignNpc[], today: number): GmNpcSummary[] {
+  return npcs.map((npc) => {
+    const member = castMemberFrom(npc);
+    const guarded = isGuarded(guardednessOf(npc, today));
+    const view = member ? publicView(member, knownFactsOf(npc), guarded) : null;
+    return {
+      name: npc.name,
+      disposition: npc.disposition,
+      status: npc.status,
+      ...(npc.npc_id ? { key: npc.npc_id } : {}),
+      ...(npc.location ? { notes: `at ${npc.location}` } : {}),
+      ...(guarded ? { guarded: true } : {}),
+      ...(view
+        ? {
+            standing: view.standing,
+            ...(view.tie ? { tie: view.tie } : {}),
+            ...(view.known.length ? { known: view.known } : {}),
+          }
+        : {}),
+    };
+  });
 }
 
 /**

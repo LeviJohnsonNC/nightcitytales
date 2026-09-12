@@ -423,12 +423,42 @@ seventeen bespoke ones.
   brief, and the Opera's printed notes still said what searching would find;
   and `isSearchSkill` only knew the city templates, all of which are
   Perception, so every non-Perception beat truth slice 2 wrote was unrollable.
-- Slice 5: affordances for the new Skills, through the Stage 3 mechanism, on the
-  same budget. They offer approaches, never conclusions: an affordance naming
-  the insight has already given away what the roll was for.
+- ~~Slice 5: affordances for the new Skills~~ — the truth system gave the city
+  things to find and nothing on the screen ever offered to look for them: a
+  player had to think to type "I search the room", and one who never thought of
+  it never found anything anywhere. `place-actions.json` now declares
+  APPROACHES beside its business verbs — Look closer (Perception), Read the
+  room (Human Perception), Think it through (Deduction) — carrying a Skill and
+  no DV, because the difficulty belongs to the thing being found. They offer a
+  way IN and never a finding, which is safe precisely because slice 1 made "you
+  searched and the place is what it appears to be" a real answer: the offer
+  tells the player nothing. The one exception is the conclusion, offered only
+  once its prerequisites are found — a pay-off rather than a hint.
+  Not on the business budget in the end: taking slots off the five squeezed an
+  entire district out of the list at a place with three verbs of its own, which
+  the existing suite caught. They get their own reserve of two, and the card
+  strip orders what is in front of you, then a local's quiet doors, then the
+  ways of looking, then the ordinary verbs of buildings down the road.
+
+Also done alongside the last slice:
+
+- **A job reads the person you are working.** `applyInsight` lived inside
+  `useLife.ts`, so leaning on a fixer over breakfast read them and the same
+  check mid-job read nobody and cost nobody anything. Shared now, and a job's
+  people block carries the public half Life's always had — who they are, the
+  rungs the player earned, whether they have closed up.
+- **Deduction in Life.** `fromNeeds` place truths: a conclusion is what two
+  facts found here add up to, and it exists at a location only if its
+  prerequisites do, so it can never turn up where its evidence could not.
 
 Success: a player can be told "you find nothing here" and believe it, because
 the alternative was never available to the narrator.
+
+Still open, and the honest limit of all five slices: **nobody has played it.**
+Every invariant here is verified by test and none of it by a week in one
+district. The numbers most likely to be wrong are the pacing ones — the
+suspicion cooling rate, the insight margin, how often a conclusion is actually
+reachable — and they are all in data for that reason.
 
 ---
 

@@ -161,6 +161,16 @@ export type LifeContext = {
      * the same argument pointed at places.
      */
     discovered?: string[];
+    /**
+     * That what they have found here adds up to something, and the number it
+     * is worked out against — never what it is.
+     *
+     * The one place this system volunteers the existence of something hidden,
+     * and a principled one: a conclusion's prerequisites are other
+     * discoveries, so an offer is the pay-off for looking rather than a hint
+     * that something is there.
+     */
+    deduction?: { dv: number; count: number };
 
     /**
      * The ordinary business of being here, from the engine: what these places
@@ -302,6 +312,16 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
           "Anything else hidden here has NOT been found, and you have not been told it — so do " +
           "not gesture at it, and never invent a discovery of your own. What is here to find is " +
           "the engine's to say, on a check.",
+      );
+    }
+    if (p.deduction) {
+      parts.push(
+        "",
+        "-- THERE IS SOMETHING TO BE WORKED OUT HERE --",
+        "What they have found about this place adds up to something they have not said out loud " +
+          "yet. You do NOT know what it is, and you must not guess at it, hint at it, or have " +
+          "somebody supply it. If they stop to think it through, or ask what it all means, call " +
+          `for a Deduction check at DV ${p.deduction.dv} and let the engine say what they reach.`,
       );
     }
     if (p.dossier) {

@@ -122,6 +122,7 @@ import {
   type Json,
 } from "@/lib/backend";
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
+import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
 import {
@@ -496,7 +497,8 @@ async function narrate(
       jobPosition?.districtKey ?? null,
     ),
     objectives: bundle.runtime.objectives,
-    npcsPresent: npcSummaries(bundle.npcs),
+    // With the day, so somebody who has closed up plays that way on a job too.
+    npcsPresent: npcSummaries(bundle.npcs, bundle.campaign.day),
     recentEvents: recentEventLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
     pressure: pressureLines(bundle.pressure),
@@ -923,6 +925,19 @@ async function commitOpposedCheck(
       ? "FAILURE on a tie — the totals matched and a tie goes to the one resisting"
       : `FAILURE by ${Math.abs(result.margin)}`;
 
+  // Working somebody mid-job reads them, exactly as it does over breakfast.
+  // This only ran in Life until now, which meant the half of the game with the
+  // pressure in it — where most Social checks actually get rolled — was the
+  // half where leaning on a person told you nothing and cost you nothing.
+  const read = await applyInsight({
+    campaignId,
+    npcKey: opposition.npcKey,
+    skillId: pending.skillId,
+    success: result.success,
+    margin: result.margin,
+    today: bundle.campaign.day,
+  });
+
   const fresh: PlayBundle = { ...bundle, events: await listCampaignEvents(campaignId) };
   await narrate(
     fresh,
@@ -930,7 +945,7 @@ async function commitOpposedCheck(
       `Player: ${result.actor.formula} = ${result.actor.total}${critNote(result.actor.critical)}. ` +
       `${opposition.npcName} (${opposition.skillName}): ${result.opponent.formula} = ${result.opponent.total}${critNote(result.opponent.critical)}. ` +
       `Outcome: ${verdict}. Narrate this exact outcome for the intent "${pending.intent}", showing how ${opposition.npcName} met it. ` +
-      `Do not re-decide it, do not soften a failure, do not propose the same check again. End on a decision.)`,
+      `Do not re-decide it, do not soften a failure, do not propose the same check again.${insightLine(read)} End on a decision.)`,
     { logInput: false, fixedResult: bundle.encounter?.state.status === "active" },
   );
 }

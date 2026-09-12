@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignEvent, CampaignNpc, CampaignVitals, FullCharacter } from "@/lib/backend";
-import { skillLevelFor } from "@/engine";
+import { GUARDED_AT, SUSPICION_COOLS_AFTER_DAYS, generateCast, skillLevelFor } from "@/engine";
 import {
   actorFor,
   localExpertIn,
@@ -193,14 +193,17 @@ describe("characterSummary", () => {
 
 describe("npcSummaries & recentEventLines", () => {
   it("maps NPCs and recent events to compact forms", () => {
-    const npcs = npcSummaries([
-      {
-        name: "The Master",
-        disposition: 1,
-        status: "alive",
-        location: "Symphony Hall",
-      } as CampaignNpc,
-    ]);
+    const npcs = npcSummaries(
+      [
+        {
+          name: "The Master",
+          disposition: 1,
+          status: "alive",
+          location: "Symphony Hall",
+        } as CampaignNpc,
+      ],
+      1,
+    );
     expect(npcs[0]).toMatchObject({
       name: "The Master",
       disposition: 1,
@@ -322,9 +325,12 @@ describe("findNpcByKey", () => {
 
 describe("npcSummaries", () => {
   it("carries the stable key so the GM can name it back", () => {
-    const summaries = npcSummaries([
-      { npc_id: "trace-santiago", name: "Trace Santiago", disposition: 1, status: "alive" },
-    ] as unknown as CampaignNpc[]);
+    const summaries = npcSummaries(
+      [
+        { npc_id: "trace-santiago", name: "Trace Santiago", disposition: 1, status: "alive" },
+      ] as unknown as CampaignNpc[],
+      1,
+    );
     expect(summaries[0]).toMatchObject({ name: "Trace Santiago", key: "trace-santiago" });
   });
 });
@@ -367,5 +373,64 @@ describe("oracle rolls stay out of the rolling summary", () => {
       event("life_narration", "Rain on the window."),
     ]);
     expect(lines).toEqual(["Rain on the window."]);
+  });
+});
+
+/**
+ * A job used to reduce everyone in the room to a name, a number and a status,
+ * so a fixer the character had spent a week reading arrived on a job as a
+ * stranger. It carries the same public half Life does now — and no more.
+ */
+describe("what a job is told about the people in the room", () => {
+  const member = generateCast({ seed: 0x9a1 })[0]!;
+
+  const rowFor = (over: Record<string, unknown> = {}): CampaignNpc =>
+    ({
+      npc_id: member.key,
+      name: member.name,
+      disposition: member.disposition,
+      status: "alive",
+      data: {
+        role: member.role,
+        standing: member.standing,
+        tie: member.tie,
+        dossier: member.dossier,
+        known: [],
+        ...over,
+      },
+    }) as unknown as CampaignNpc;
+
+  it("carries who they are and nothing they have not earned", () => {
+    const summary = npcSummaries([rowFor()], 1)[0]!;
+    expect(summary.standing).toBe(member.standing);
+    const rendered = JSON.stringify(summary);
+    expect(rendered).not.toContain(member.dossier.wants);
+    expect(rendered).not.toContain(member.dossier.fear);
+    expect(rendered).not.toContain(member.dossier.secret);
+    expect(rendered).not.toContain(member.dossier.breakingPoint);
+  });
+
+  it("carries exactly what has been learned, once it is learned", () => {
+    const summary = npcSummaries([rowFor({ known: ["wants"] })], 1)[0]!;
+    expect(summary.known).toHaveLength(1);
+    expect(JSON.stringify(summary)).toContain(member.dossier.wants);
+    expect(JSON.stringify(summary)).not.toContain(member.dossier.fear);
+  });
+
+  it("says they are guarded, and never how guarded", () => {
+    const summary = npcSummaries(
+      [rowFor({ suspicion: { points: GUARDED_AT + 3, onDay: 4 } })],
+      4,
+    )[0]!;
+    expect(summary.guarded).toBe(true);
+    expect(JSON.stringify(summary)).not.toContain(String(GUARDED_AT + 3));
+  });
+
+  it("lets suspicion cool between the ask and the job", () => {
+    const row = rowFor({ suspicion: { points: GUARDED_AT, onDay: 0 } });
+    expect(npcSummaries([row], 0)[0]!.guarded).toBe(true);
+    expect(
+      npcSummaries([row], SUSPICION_COOLS_AFTER_DAYS * GUARDED_AT)[0]!.guarded,
+    ).toBeUndefined();
   });
 });

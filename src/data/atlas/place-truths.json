@@ -76,5 +76,36 @@
       "difficulty": "Difficult",
       "fact": "Somebody is going through the records at {place}, and the staff know it."
     }
+  ],
+  "needsNote": "`fromNeeds` is a CONCLUSION rather than a thing lying about: it is what two facts about a place add up to, so it is found with Deduction and it does not exist at all unless both of the facts it rests on exist here. Nothing declares a tag — the prerequisites do that, which is why a conclusion can never appear somewhere its evidence could not.",
+  "fromNeeds": [
+    {
+      "key": "transfer_point",
+      "needs": ["way_in", "off_manifest"],
+      "skill": "deduction",
+      "difficulty": "Difficult",
+      "fact": "The quiet way in and the stock that is not on the paperwork are one operation: {place} is a transfer point, and somebody is timing the gap between the two."
+    },
+    {
+      "key": "watched_by_people",
+      "needs": ["watched", "way_in"],
+      "skill": "deduction",
+      "difficulty": "Difficult",
+      "fact": "The service way into {place} is not an oversight. The cameras are placed to leave it alone because it is covered by people instead, and people can be waited out."
+    },
+    {
+      "key": "patches_up_the_gang",
+      "needs": ["back_room", "whose_claim"],
+      "skill": "deduction",
+      "difficulty": "Everyday",
+      "fact": "The room the patients never see is why the crew claiming this ground leave {place} alone: somebody here is patching up their people, and that is the arrangement."
+    },
+    {
+      "key": "who_collects",
+      "needs": ["whose_claim", "paying_someone"],
+      "skill": "deduction",
+      "difficulty": "Everyday",
+      "fact": "The cut being taken at {place} and the fresh marks outside it are the same people. Whoever is claiming this ground is the one collecting."
+    }
   ]
 }

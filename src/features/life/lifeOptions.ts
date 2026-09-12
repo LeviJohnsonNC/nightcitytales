@@ -54,8 +54,25 @@ export function venueOptions(input: {
   placeKey?: string | undefined;
   places?: Record<string, PlaceState> | undefined;
   localExpertLevel?: number | undefined;
+  /** Whether what they have found here adds up to something not yet worked out. */
+  conclusionAvailable?: boolean | undefined;
 }): LifeActionCard[] {
-  return placeActions(input).map(toCard);
+  const actions = placeActions(input);
+  // Ordered for the card strip, which is shorter than this list and trims from
+  // the end. What is in front of the character comes first, then the quiet
+  // doors of a neighbourhood they know — the rarest thing here and the one the
+  // cap has swallowed before — then the ways of looking at where they are, then
+  // the ordinary verbs of buildings down the road.
+  const rank = (action: PlaceAction): number => {
+    if (action.here && !action.skillId) return 0;
+    if (action.local) return 1;
+    if (action.skillId) return 2;
+    return 3;
+  };
+  return actions
+    .map((action, index) => ({ action, index }))
+    .sort((a, b) => rank(a.action) - rank(b.action) || a.index - b.index)
+    .map(({ action }) => toCard(action));
 }
 
 function toCard(action: PlaceAction): LifeActionCard {
@@ -66,7 +83,10 @@ function toCard(action: PlaceAction): LifeActionCard {
     description: `${action.description} ${action.here ? "Here." : `At ${action.placeName}.`}`,
     timeMinutes: action.minutes,
     knownCost: action.cost,
-    skillId: null,
+    // Set for an APPROACH — a way of looking rather than a thing to do — which
+    // makes the card print the Skill and the number the character would add,
+    // the same as a card the model tagged.
+    skillId: action.skillId ?? null,
   };
 }
 

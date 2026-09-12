@@ -25,9 +25,6 @@ import {
   missionOffer,
   nextPhase,
   partOfDay,
-  canRead,
-  socialRead,
-  suspicionCost,
   resolveSkillId,
   selectSituation,
   settleHookAsk,
@@ -125,15 +122,8 @@ import {
   reconcileOpposition,
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
-import {
-  castMemberInRole,
-  ensureCast,
-  markDealtWith,
-  guardednessOf,
-  knownFactsOf,
-  raiseNpcSuspicion,
-  revealFact,
-} from "@/features/campaign/castSeeding";
+import { castMemberInRole, ensureCast, markDealtWith } from "@/features/campaign/castSeeding";
+import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
 import { rememberDeclined, runWorldTick, settleMoves } from "@/features/campaign/worldTick";
 import {
   answerPendingQuestion,
@@ -158,6 +148,8 @@ import {
   districtProfile,
   placeActions,
   placeFamiliarity,
+  DEDUCTION_SKILL,
+  deductionOffer,
   isSearchSkill,
   knownTruths,
   searchWith,
@@ -574,11 +566,17 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           // rest are never sent, so the model cannot telegraph them.
           ...(position?.placeKey
             ? (() => {
-                const found = knownTruths(
-                  truthsAt(position.placeKey, bundle.places[position.placeKey]),
-                  bundle.discoveredTruths,
-                ).map((truth) => truth.fact);
-                return found.length ? { discovered: found } : {};
+                const discovered = bundle.truthsAvailable ? bundle.discoveredTruths : [];
+                const truths = truthsAt(position.placeKey, bundle.places[position.placeKey]);
+                const found = knownTruths(truths, discovered).map((truth) => truth.fact);
+                // And whether what they have found here adds up to something
+                // they have not said out loud. THAT and the number only: the
+                // pieces were earned, so the offer is a pay-off, not a hint.
+                const offer = deductionOffer(truths, discovered);
+                return {
+                  ...(found.length ? { discovered: found } : {}),
+                  ...(offer ? { deduction: offer } : {}),
+                };
               })()
             : {}),
           // Presence, not a summons. Only ever asked about a venue: a district
@@ -603,12 +601,18 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           // is told about the quiet doors of their own neighbourhood and a
           // stranger is not, so the narrator cannot offer a newcomer a fence
           // they would have no way of knowing about.
+          // Business only, never the ways of LOOKING. Those are cards for the
+          // player; the narrator has no use for being told the player has a
+          // search button, and letting them into this list would cost the
+          // ground two of the things it actually offers.
           business: placeActions({
             districtKey: positionDistrict.key,
             placeKey: position?.placeKey,
             places: bundle.places,
             localExpertLevel: localExpertIn(bundle.character, positionDistrict.key),
-          }).map((a) => `${a.label} (${a.placeName})`),
+          })
+            .filter((a) => !a.skillId)
+            .map((a) => `${a.label} (${a.placeName})`),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
           streets: streetsIn(positionDistrict.key).map((s) => s.name),
           destinations: reachableDestinations(
@@ -1277,6 +1281,12 @@ async function applySearch(
   const at = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
   if (!at?.placeKey) return null;
 
+  // A conclusion about a place is drawn from the facts about that place, so
+  // unlike on a job — where the subject is the whole case — the pool is the
+  // same either way. What differs is that a conclusion is gated by its
+  // prerequisites rather than by the die, and that failing to make a
+  // connection is not failing to find an object.
+  const deducing = pending.skillId === DEDUCTION_SKILL;
   const truths = truthsAt(at.placeKey, bundle.places[at.placeKey]);
   const search = searchWith({
     truths,
@@ -1287,8 +1297,10 @@ async function applySearch(
 
   if (search.outcome === "nothing") {
     // Only worth saying when the roll actually landed. A failed search that
-    // found nothing tells the character nothing at all.
-    if (!roll.result.success) return null;
+    // found nothing tells the character nothing at all — and a conclusion that
+    // is not available stays silent either way, because "there was nothing to
+    // work out" may only mean the pieces have not been found yet.
+    if (!roll.result.success || deducing) return null;
     return (
       "They searched properly and there is NOTHING here to find. Say so plainly: " +
       "the place is what it appears to be. Do not invent something small so the " +
@@ -1296,11 +1308,13 @@ async function applySearch(
     );
   }
   if (search.outcome === "missed") {
-    return (
-      "They did not find it. There IS something here and the search did not reach " +
-      "it — narrate the looking and the coming up empty, and do not hint at what " +
-      "was missed or how close they came."
-    );
+    return deducing
+      ? "They turned it over and it did NOT come together. There is something to be worked out " +
+          "about this place and this was not the moment — narrate the thinking and the " +
+          "not-quite, and do not hint at what it was."
+      : "They did not find it. There IS something here and the search did not reach " +
+          "it — narrate the looking and the coming up empty, and do not hint at what " +
+          "was missed or how close they came.";
   }
 
   const stored = await recordTruthDiscovery(bundle.campaign.id, {
@@ -1315,11 +1329,13 @@ async function applySearch(
     summary: search.truth.fact,
     data: { truthKey: search.truth.key, placeKey: at.placeKey } as unknown as Json,
   });
-  return (
-    `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
-    "That is the discovery — narrate them noticing it. Do not add a second find " +
-    "beside it and do not enlarge on what it means."
-  );
+  return deducing
+    ? `They WORKED IT OUT, and this is the conclusion, exactly: ${search.truth.fact} ` +
+        "Narrate the character reaching that, off what they already knew about this place. Do " +
+        "not add a second conclusion beside it, and do not carry it further than it goes."
+    : `They FOUND something, and this is it, exactly: ${search.truth.fact} ` +
+        "That is the discovery — narrate them noticing it. Do not add a second find " +
+        "beside it and do not enlarge on what it means.";
 }
 
 /** What to tell the narrator about a move the engine has already committed. */
@@ -1362,99 +1378,6 @@ function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
   );
 }
 
-/**
- * Reading someone while you were doing something else.
- *
- * A check won comfortably against a person can tell you something they did not
- * volunteer — but WHICH something, and whether anything at all, depends on the
- * Skill. Conversation gets what they want and never what they are hiding;
- * Interrogation goes for the secret and they remember you did it; Wardrobe &
- * Style reads nobody, whatever the Core Rulebook files it under. The engine
- * decides (`socialRead`); this persists the answer and hands the model the one
- * line, never the rungs still hidden.
- *
- * The attempt is also paid for. Anything that works somebody raises how guarded
- * they are with you, landed or not, and a guarded person stops giving things up
- * to being asked — the way back in is to stop asking and watch them instead.
- */
-type InsightResult =
-  /** A rung of their dossier, which the model narrates as a tell. */
-  | { kind: "learned"; text: string }
-  /** Something about the exchange itself, which is not a thing they revealed. */
-  | { kind: "note"; text: string };
-
-async function applyInsight(
-  campaignId: string,
-  npcKey: string,
-  skillId: string,
-  success: boolean,
-  margin: number,
-  today: number,
-): Promise<InsightResult | null> {
-  // A Skill that neither reads anybody nor costs them anything is not a social
-  // exchange at all: an opposed Athletics check over a fence has no business
-  // reading a row back.
-  const cost = suspicionCost(skillId);
-  if (cost === 0 && !canRead(skillId)) return null;
-
-  const npc = await findCampaignNpc(campaignId, npcKey);
-  if (!npc) return null;
-
-  // Paid before anything is learned, and on a failed check too: they noticed
-  // being worked whether or not it worked.
-  if (cost > 0) await raiseNpcSuspicion(campaignId, npc, cost, today);
-
-  if (!success) return null;
-  const read = socialRead({
-    skillId,
-    margin,
-    known: knownFactsOf(npc),
-    suspicion: guardednessOf(npc, today),
-  });
-
-  if (read.outcome !== "read") {
-    // Two of the silences are worth saying out loud, because both tell the
-    // player to change approach without telling them what is left to find.
-    if (read.why === "guarded") {
-      return {
-        kind: "note",
-        text:
-          `${npc.name} has noticed being worked and has closed up: they are still dealing with ` +
-          "the character, and they are not volunteering anything to being asked. Play the " +
-          "carefulness; do not explain it to them.",
-      };
-    }
-    if (read.why === "out_of_reach") {
-      return {
-        kind: "note",
-        text:
-          `This kind of approach has got everything out of ${npc.name} that it is going to. ` +
-          "Nothing new came of it. Do NOT invent something they gave away, and do not hint that " +
-          "there is more — a different kind of ask would be a different scene.",
-      };
-    }
-    return null;
-  }
-
-  const learned = await revealFact(campaignId, npc, read.fact);
-  if (!learned) return null;
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "npc_read",
-    summary: learned.text,
-    data: { npcKey, fact: learned.fact, shape: read.shape.shape } as unknown as Json,
-  });
-  return { kind: "learned", text: learned.text };
-}
-
-/** How a read reaches the narrator: as a tell, or as a note about the exchange. */
-function insightLine(read: InsightResult | null): string {
-  if (!read) return "";
-  return read.kind === "learned"
-    ? ` Reading them that closely told the character something they did not volunteer: ${read.text} Let it show as a tell in how they behave, not as an announcement.`
-    : ` ${read.text}`;
-}
-
 /** Roll a Life check the player pressed, then let the world answer it. */
 async function commitLifeCheck(
   bundle: LifeBundle,
@@ -1487,14 +1410,14 @@ async function commitLifeCheck(
         ? "FAILURE — tied, and a tie goes to the one resisting"
         : `FAILURE by ${Math.abs(roll.result.margin)}`;
     const read = pending.opposition?.npcKey
-      ? await applyInsight(
+      ? await applyInsight({
           campaignId,
-          pending.opposition.npcKey,
-          pending.skillId,
-          roll.result.success,
-          roll.result.margin,
-          bundle.clock.day,
-        )
+          npcKey: pending.opposition.npcKey,
+          skillId: pending.skillId,
+          success: roll.result.success,
+          margin: roll.result.margin,
+          today: bundle.clock.day,
+        })
       : null;
     const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
     await liveTurn(fresh, "", {
@@ -1749,14 +1672,14 @@ async function settleNegotiation(
   // Only a push made AGAINST the broker reads the broker. Asking around the
   // street is a check about the job, with the fixer nowhere in the room.
   const read = spec.opposedBy
-    ? await applyInsight(
+    ? await applyInsight({
         campaignId,
-        hook.offer.brokerKey,
-        pending.skillId,
+        npcKey: hook.offer.brokerKey,
+        skillId: pending.skillId,
         success,
         margin,
-        bundle.clock.day,
-      )
+        today: bundle.clock.day,
+      })
     : null;
 
   await upsertSituations(campaignId, [
@@ -1915,6 +1838,16 @@ export function useLife(campaignId: string) {
     const position = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
     const district = position?.districtKey ? getDistrict(position.districtKey) : undefined;
     if (!district) return written.slice(0, MAX_LIFE_OPTIONS);
+    // Whether "Think it through" is on the table: the one approach that is not
+    // offered blind, because a conclusion's prerequisites are other discoveries
+    // and offering it without them is a button that can only disappoint.
+    const conclusionAvailable =
+      bundle.truthsAvailable && position?.placeKey
+        ? deductionOffer(
+            truthsAt(position.placeKey, bundle.places[position.placeKey]),
+            bundle.discoveredTruths,
+          ) !== null
+        : false;
     return mergeOptions(
       written,
       venueOptions({
@@ -1922,6 +1855,7 @@ export function useLife(campaignId: string) {
         placeKey: position?.placeKey,
         places: bundle.places,
         localExpertLevel: localExpertIn(bundle.character, district.key),
+        conclusionAvailable,
       }),
       district.locations.map((l) => l.name),
     );
