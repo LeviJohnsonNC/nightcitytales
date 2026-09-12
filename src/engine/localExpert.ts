@@ -24,7 +24,8 @@
  *
  * Pure TypeScript.
  */
-import { AREAS, DISTRICTS, getDistrict } from "./geography";
+import intelData from "@/data/atlas/place-intel.json";
+import { AREAS, DISTRICTS, districtOfPlace, getDistrict } from "./geography";
 
 /** The printed Skill this module is about. */
 export const LOCAL_EXPERT_SKILL_ID = "local_expert";
@@ -241,4 +242,107 @@ export function isLegalLocalExpertArea(
 ): boolean {
   if (isHomeArea(specialization)) return true;
   return areaKeyOf(specialization, homeDistrictKey) !== null;
+}
+
+// ---------------------------------------------------------------------------
+// Coming to know somewhere new.
+// ---------------------------------------------------------------------------
+
+type EarnedRule = { earned: { visits: number; places: number } };
+
+/**
+ * What the campaign has to show before a character may BUY this Skill for a
+ * neighbourhood they did not start in.
+ *
+ * A HOUSE RULE, and flagged as one in `place-intel.json`. RED prints no such
+ * requirement: it says choose a location. This exists because the alternative
+ * is spending Improvement Points on local knowledge of a district the character
+ * has never set foot in, which is the one purchase this Skill should not
+ * support. Raising a line they already hold is untouched — that is the printed
+ * rule and stays the printed rule.
+ */
+export const EARNED_AREA_RULE: { visits: number; places: number } = (
+  intelData as unknown as EarnedRule
+).earned;
+
+/** A neighbourhood the campaign says this character has actually spent time in. */
+export type EarnedArea = {
+  districtKey: string;
+  districtName: string;
+  /** Visits recorded across every address in the district. */
+  visits: number;
+  /** How many different addresses in it those visits touched. */
+  places: number;
+  /** The Level they already hold here. Zero when this would be a new line. */
+  level: number;
+  /** True when they qualify because they live here rather than by walking it. */
+  isHome: boolean;
+};
+
+/**
+ * The neighbourhoods this character could legitimately take Local Expert for.
+ *
+ * Two numbers rather than one, and the second is the point: eight evenings in
+ * the same bar is knowing a bar, not the neighbourhood the bar is on. So the
+ * rule asks for visits AND for those visits to have touched more than one
+ * address.
+ *
+ * The home district is always included. They live there — whatever the campaign
+ * has happened to record about their walking about.
+ *
+ * Sorted by how well the campaign says they know the ground, so the district
+ * they have really been living in comes first.
+ */
+export function earnedLocalExpertAreas(args: {
+  /** `campaign_places`, reduced to what this question needs. */
+  visitsByPlace: { placeKey: string; visits: number }[];
+  skills: AreaSkillLine[];
+  homeDistrictKey?: string | null;
+}): EarnedArea[] {
+  const tally = new Map<string, { visits: number; places: number }>();
+  for (const row of args.visitsByPlace) {
+    if (row.visits <= 0) continue;
+    const district = districtOfPlace(row.placeKey);
+    if (!district) continue;
+    const seen = tally.get(district.key) ?? { visits: 0, places: 0 };
+    seen.visits += row.visits;
+    seen.places += 1;
+    tally.set(district.key, seen);
+  }
+
+  const home = args.homeDistrictKey ? (getDistrict(args.homeDistrictKey)?.key ?? null) : null;
+  if (home && !tally.has(home)) tally.set(home, { visits: 0, places: 0 });
+
+  const out: EarnedArea[] = [];
+  for (const [districtKey, seen] of tally) {
+    const isHome = districtKey === home;
+    const qualifies =
+      isHome || (seen.visits >= EARNED_AREA_RULE.visits && seen.places >= EARNED_AREA_RULE.places);
+    if (!qualifies) continue;
+    out.push({
+      districtKey,
+      districtName: getDistrict(districtKey)?.name ?? districtKey,
+      visits: seen.visits,
+      places: seen.places,
+      level: localExpertLevel(args.skills, districtKey, args.homeDistrictKey),
+      isHome,
+    });
+  }
+
+  return out.sort((a, b) => b.visits - a.visits || a.districtName.localeCompare(b.districtName));
+}
+
+/**
+ * The same list, narrowed to neighbourhoods they are not a local in yet.
+ *
+ * What the spend screen offers as a NEW Skill line. A district they already
+ * hold a line for is left out because raising that line is already on the
+ * board, through the ordinary advancement list.
+ */
+export function newLocalExpertAreas(args: {
+  visitsByPlace: { placeKey: string; visits: number }[];
+  skills: AreaSkillLine[];
+  homeDistrictKey?: string | null;
+}): EarnedArea[] {
+  return earnedLocalExpertAreas(args).filter((area) => area.level === 0);
 }

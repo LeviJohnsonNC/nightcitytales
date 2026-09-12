@@ -9,6 +9,7 @@
  * the sum of each step and the price climbs as the Skill does.
  */
 import { getSkill, IP_COSTS, SKILL_RULES } from "./rulesData";
+import { skillEntryName } from "./skillAllocation";
 
 /** The highest Skill Level reachable in play (skills.json _rules). */
 export const MAX_SKILL_LEVEL: number = SKILL_RULES.maxLevelInPlay;
@@ -67,12 +68,21 @@ export type SkillRaise = {
   doubleCost: boolean;
 };
 
-/** Describe the next Level of one Skill against a pool of I.P. */
+/**
+ * Describe the next Level of one Skill against a pool of I.P.
+ *
+ * The name is built by `skillEntryName` rather than here, so a place-scoped
+ * specialization reads as the district's printed name: a Local Expert line
+ * stored as `little_china` says "Local Expert (Little China)" on the spend
+ * screen, the same as it does on the sheet. Pass `homeDistrictKey` and the
+ * printed "Your Home" placeholder resolves too.
+ */
 export function describeSkillRaise(
   skillId: string,
   currentLevel: number,
   availableIp: number,
   specialization: string | null = null,
+  homeDistrictKey?: string | null,
 ): SkillRaise {
   const skill = getSkill(skillId);
   const atMax = currentLevel >= MAX_SKILL_LEVEL;
@@ -82,7 +92,7 @@ export function describeSkillRaise(
     skillId,
     specialization,
     key: skillLineKey(skillId, specialization),
-    skillName: specialization ? `${skill.name} (${specialization})` : skill.name,
+    skillName: skillEntryName({ skillId, specialization }, homeDistrictKey),
     currentLevel,
     nextLevel,
     cost,
@@ -99,10 +109,20 @@ export type SkillLine = { skillId: string; level: number; specialization?: strin
  * show what this session's points actually buy. Skills already at the ceiling
  * come last — they are shown, not hidden, so their state is legible.
  */
-export function availableSkillRaises(skills: SkillLine[], availableIp: number): SkillRaise[] {
+export function availableSkillRaises(
+  skills: SkillLine[],
+  availableIp: number,
+  homeDistrictKey?: string | null,
+): SkillRaise[] {
   return skills
     .map((line) =>
-      describeSkillRaise(line.skillId, line.level, availableIp, line.specialization ?? null),
+      describeSkillRaise(
+        line.skillId,
+        line.level,
+        availableIp,
+        line.specialization ?? null,
+        homeDistrictKey,
+      ),
     )
     .sort((a, b) => {
       if (a.atMax !== b.atMax) return a.atMax ? 1 : -1;
@@ -131,12 +151,12 @@ export function spendOnSkill(
   skillId: string,
   specialization: string | null = null,
 ): SpendResult {
-  const skill = getSkill(skillId); // throws on an unknown id
+  getSkill(skillId); // throws on an unknown id
   const key = skillLineKey(skillId, specialization);
   const currentLevel =
     skills.find((line) => skillLineKey(line.skillId, line.specialization ?? null) === key)?.level ??
     0;
-  const label = specialization ? `${skill.name} (${specialization})` : skill.name;
+  const label = skillEntryName({ skillId, specialization });
   if (currentLevel >= MAX_SKILL_LEVEL) {
     throw new Error(`${label} is already at Level ${MAX_SKILL_LEVEL}, the in-play maximum.`);
   }

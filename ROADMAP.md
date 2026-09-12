@@ -231,7 +231,7 @@ attack to the model.
 
 ---
 
-## In progress: making Local Expert mean something
+## Also shipped: making Local Expert mean something
 
 Local Expert is the one Skill in RED that is worth nothing in the wrong place —
 you choose a neighbourhood whenever you raise it, and the atlas's districts are
@@ -331,11 +331,30 @@ The stages, in dependency order:
   rule forbids, and the rule is right. Also still open: reading a route around a
   `locked_down` flag, which is a routing feature rather than an options one.
 
-- Stage 4: earning a new neighbourhood, once `campaign_places` shows real time
-  spent there. `skillLineKey` already keys IP spends by specialization.
+- ~~Stage 4: earning a new neighbourhood~~ — the Downtime spend screen offers
+  Local Expert for a district the campaign says the character has actually
+  walked: `campaign_places` has to show 8 visits across at least 2 of its
+  addresses, and the row says which, because an offer that appears without
+  explanation reads as a bug rather than as something earned. Two numbers rather
+  than one, and the second is the point: eight evenings in the same bar is
+  knowing a bar, not the neighbourhood the bar is on. The home district always
+  qualifies — they live there.
 
-Success: the player picks where they live, and the city reads differently there
-than three districts over — without a single invented modifier.
+  A house rule, flagged in `place-intel.json` beside the ladders: RED prints no
+  such requirement, it says choose a location. It applies only to taking a NEW
+  district; raising a line the character already holds is the printed rule and
+  is untouched. No schema change was needed — `spend_ip_on_skill` already
+  inserts a line that does not exist yet, and `skillLineKey` already keys by
+  specialization, so a second neighbourhood is simply a second line.
+
+  Carried with it: `describeSkillRaise` now names a line through
+  `skillEntryName`, so the spend screen reads "Local Expert (Little China)"
+  rather than leaking the stored district key at the player, and resolves "Your
+  Home" the same way the sheet does.
+
+Success: the player picks where they live, the city reads differently there than
+three districts over, and the neighbourhoods they come to know are the ones they
+actually walked — without a single invented modifier.
 
 ---
 

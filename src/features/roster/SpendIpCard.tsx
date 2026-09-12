@@ -9,7 +9,16 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { availableSkillRaises, MAX_SKILL_LEVEL, spendOnSkill, type SkillRaise } from "@/engine";
+import {
+  availableSkillRaises,
+  describeSkillRaise,
+  EARNED_AREA_RULE,
+  LOCAL_EXPERT_SKILL_ID,
+  MAX_SKILL_LEVEL,
+  spendOnSkill,
+  type EarnedArea,
+  type SkillRaise,
+} from "@/engine";
 import { spendIpOnSkill, type FullCharacter } from "@/lib/backend";
 
 function RaiseRow({
@@ -51,12 +60,64 @@ function RaiseRow({
   );
 }
 
+/**
+ * A neighbourhood the campaign says the character has come to know.
+ *
+ * Local Expert is the one Skill you cannot simply decide to have: it names a
+ * place, and buying local knowledge of a district you have never set foot in is
+ * the purchase it should not support. So a new district appears here only once
+ * the campaign's own record of where the character has walked says it should —
+ * and it says WHY, because a row that appears without explanation reads as a
+ * bug rather than as something earned.
+ */
+function NewAreaRow({
+  area,
+  raise,
+  onBuy,
+  busy,
+}: {
+  area: EarnedArea;
+  raise: SkillRaise;
+  onBuy: (raise: SkillRaise) => void;
+  busy: boolean;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-3 border-b border-border/50 py-1.5 last:border-b-0">
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm">{area.districtName}</span>
+        <span className="block font-mono text-[10px] text-muted-foreground">
+          {area.isHome
+            ? "You live here"
+            : `${area.visits} visits across ${area.places} ${area.places === 1 ? "address" : "addresses"}`}
+        </span>
+      </span>
+      <span className="font-mono text-xs text-muted-foreground">{raise.cost} I.P.</span>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!raise.affordable || busy}
+        onClick={() => onBuy(raise)}
+      >
+        Learn
+      </Button>
+    </li>
+  );
+}
+
 export function SpendIpCard({
   character,
   improvementPoints,
+  newAreas = [],
 }: {
   character: FullCharacter;
   improvementPoints: number;
+  /**
+   * Neighbourhoods the character could start knowing, from the campaign's own
+   * record of where they have been. Empty off-campaign — the roster has no
+   * campaign to read a history from, and offering a district there would be
+   * offering it on no evidence at all.
+   */
+  newAreas?: EarnedArea[];
 }) {
   const queryClient = useQueryClient();
   const [showAll, setShowAll] = useState(false);
@@ -66,8 +127,25 @@ export function SpendIpCard({
     level: s.level,
     specialization: s.specialization,
   }));
-  const raises = availableSkillRaises(skills, improvementPoints);
+  // The home district resolves the printed "Your Home" placeholder to a real
+  // neighbourhood name on this screen, the same as it does on the sheet.
+  const homeDistrictKey = character.finance?.home_district_key ?? null;
+  const raises = availableSkillRaises(skills, improvementPoints, homeDistrictKey);
   const affordable = raises.filter((r) => r.affordable);
+
+  // A district is bought as a Level 1 line, priced by the same rule as every
+  // other first Level. The district KEY is the specialization, so the line the
+  // purchase creates is the one `localExpert.ts` resolves.
+  const areaOffers = newAreas.map((area) => ({
+    area,
+    raise: describeSkillRaise(
+      LOCAL_EXPERT_SKILL_ID,
+      0,
+      improvementPoints,
+      area.districtKey,
+      homeDistrictKey,
+    ),
+  }));
 
   const buy = useMutation({
     mutationFn: async (raise: SkillRaise) => {
@@ -124,6 +202,29 @@ export function SpendIpCard({
         <Button size="sm" variant="ghost" onClick={() => setShowAll((v) => !v)}>
           {showAll ? "Show only what I can afford" : `Show all ${raises.length} skills`}
         </Button>
+      )}
+
+      {areaOffers.length > 0 && (
+        <div className="space-y-2 border-t border-border pt-3">
+          <Label>Neighbourhoods you could come to know</Label>
+          <p className="text-xs text-muted-foreground">
+            Local Expert is worth its Level in one neighbourhood and nothing anywhere else. A
+            district appears here once you have put {EARNED_AREA_RULE.visits} visits across{" "}
+            {EARNED_AREA_RULE.places} of its addresses — house rule: the rulebook lets you name any
+            location, and this asks the campaign to show you have been there.
+          </p>
+          <ul className="max-h-52 overflow-y-auto">
+            {areaOffers.map(({ area, raise }) => (
+              <NewAreaRow
+                key={area.districtKey}
+                area={area}
+                raise={raise}
+                onBuy={(r) => buy.mutate(r)}
+                busy={buy.isPending}
+              />
+            ))}
+          </ul>
+        </div>
       )}
 
       {buy.error && <p className="text-sm text-destructive">{(buy.error as Error).message}</p>}

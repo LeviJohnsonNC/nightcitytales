@@ -6,7 +6,15 @@
  * through useDowntime — this file renders and asks, it never calculates.
  */
 import { useMemo, useState } from "react";
-import { AMMUNITION, ARMOR, GEAR, WEAPONS, itemCost, type ItemKind } from "@/engine";
+import {
+  AMMUNITION,
+  ARMOR,
+  GEAR,
+  WEAPONS,
+  itemCost,
+  newLocalExpertAreas,
+  type ItemKind,
+} from "@/engine";
 import { Button } from "@/components/ui/button";
 import { SpendIpCard } from "@/features/roster/SpendIpCard";
 import type { FullCharacter } from "@/lib/backend";
@@ -299,6 +307,27 @@ export function DowntimePanel({
 }) {
   const downtime = useDowntime(campaignId);
 
+  /**
+   * Neighbourhoods this campaign says the character has come to know.
+   *
+   * Read from `campaign_places` — the campaign's own record of where they have
+   * actually walked — rather than from anything they could assert about
+   * themselves. Empty until the history says otherwise, which is most of a
+   * campaign, and the card simply does not show the section.
+   */
+  const newAreas = useMemo(() => {
+    const places = downtime.bundle?.places ?? [];
+    return newLocalExpertAreas({
+      visitsByPlace: places.map((row) => ({ placeKey: row.place_key, visits: row.visits })),
+      skills: character.skills.map((s) => ({
+        skillId: s.skill_id,
+        level: s.level,
+        specialization: s.specialization,
+      })),
+      homeDistrictKey: character.finance?.home_district_key ?? null,
+    });
+  }, [downtime.bundle?.places, character]);
+
   if (downtime.isPending) {
     return <p className="text-sm text-muted-foreground">Counting the take…</p>;
   }
@@ -328,6 +357,7 @@ export function DowntimePanel({
           <SpendIpCard
             character={character}
             improvementPoints={character.finance?.improvement_points ?? 0}
+            newAreas={newAreas}
           />
         </div>
       </div>
