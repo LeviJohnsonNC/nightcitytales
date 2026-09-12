@@ -21,6 +21,7 @@ import { DIFFICULTY_VALUES } from "../checkDV";
 import { SKILLS } from "../rulesData";
 import { buildForce, forceFor, rollForceSize } from "../threats";
 import { stableKey, type Beat, type BeatCheck, type Mission } from "../mission";
+import type { BeatTruth } from "../truth";
 import type { RNG } from "../types";
 
 /** Ids of generated jobs start with this, so they are recognisable on sight. */
@@ -49,6 +50,14 @@ type Archetype = {
   complicationChecks: BeatCheck[];
   climaxBrief: string;
   resolutionBrief: string;
+  /**
+   * The concealed half of each beat, keyed by beat id.
+   *
+   * The twists used to live in the briefs, which reach the model every turn of
+   * the beat — so the narrator knew the client was dirty while it was still
+   * pitching the job. These are withheld until found; see `truth.ts`.
+   */
+  beatTruths?: Record<string, BeatTruth[]>;
 };
 
 type JobContent = {
@@ -193,6 +202,18 @@ export function generateJob(seed: number): Mission {
     exits: [{ to: "complication", label: "Move on what you found" }],
   });
 
+  /** A beat's withheld facts, with the same substitutions its brief gets. */
+  const truthsFor = (beatId: string): { truths: BeatTruth[] } | Record<string, never> => {
+    const declared = archetype.beatTruths?.[beatId];
+    if (!declared?.length) return {};
+    return {
+      truths: declared.map((truth) => ({
+        ...truth,
+        fact: fill(truth.fact),
+      })),
+    };
+  };
+
   const beats: Beat[] = [
     {
       id: "background",
@@ -200,6 +221,7 @@ export function generateJob(seed: number): Mission {
       title: "The Offer",
       readAloud: fill(archetype.background),
       gmBrief: fill(archetype.backgroundBrief),
+      ...truthsFor("background"),
       objectives: [fill(archetype.objective)],
       exits: [{ to: "hook", label: "Take the job" }],
     },
@@ -208,6 +230,7 @@ export function generateJob(seed: number): Mission {
       type: "hook",
       title: "The Meeting",
       gmBrief: fill(archetype.hookBrief),
+      ...truthsFor("hook"),
       exits: [{ to: "legwork", label: "Start the legwork" }],
     },
     {
@@ -227,6 +250,7 @@ export function generateJob(seed: number): Mission {
       type: "cliff",
       title: "It Goes Sideways",
       gmBrief: fill(archetype.complicationBrief),
+      ...truthsFor("complication"),
       checks: archetype.complicationChecks.map((c) => checkFrom(c, `${archetype.id}.complication`)),
       opposition: [`${opposition.name} — ${opposition.flavour}`],
       exits: [{ to: "climax", label: "See it through" }],

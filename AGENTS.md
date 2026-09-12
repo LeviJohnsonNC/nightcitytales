@@ -62,7 +62,10 @@ can put in front of you), `placeActions.ts` (what there is to do there),
 `placeSignals.ts` (what a map pin may say), `placeState.ts` (what a place has
 become), `placeIntel.ts` (what knowing it buys you, whether by
 visiting or by being a local), `truth.ts` (what is true here and not apparent
-from standing in it) and `haunts.ts` (where the
+from standing in it — for a location, and for the concealed half of a mission
+beat, which is held in `Beat.truths` rather than in the beat's `gmBrief`
+because the brief reaches the model and the player's character has not found it
+yet) and `haunts.ts` (where the
 cast are) are the house rules made of it. Their data lives beside the
 atlas in `places.gameplay.json`, `place-beats.json`, `place-actions.json`,
 `place-state.json`, `place-intel.json` and `place-truths.json`, each flagged

@@ -11,6 +11,7 @@
  */
 import type { MissionStatus } from "./campaign";
 import type { ForceSize, ThreatMember } from "./threats";
+import type { BeatTruth } from "./truth";
 
 export type BeatType = "background" | "hook" | "dev" | "opdev" | "cliff" | "climax" | "resolution";
 
@@ -40,7 +41,15 @@ export type Beat = {
   page?: number;
   /** Verbatim read-aloud text, where the source provides it. */
   readAloud?: string;
-  /** GM-facing brief the AI narrates this beat from. NEVER shown to the player. */
+  /**
+   * GM-facing brief the AI narrates this beat from. NEVER shown to the player.
+   *
+   * Stage directions and what is OPENLY true — the tone to set, the geography
+   * to frame, what the scene is. The beat's concealed facts do not belong here:
+   * this string reaches the model every turn of the beat, so a twist written
+   * into it is a twist the narrator has been told and asked to sit on. Those
+   * go in `truths`.
+   */
   gmBrief: string;
   /**
    * What the player legitimately knows while standing on this beat — safe to
@@ -48,6 +57,12 @@ export type Beat = {
    */
   playerBrief?: string;
   objectives?: string[];
+  /**
+   * What this beat is holding back: the facts the player has no way of knowing
+   * yet, each with the Skill that would find it. Withheld from the prompt until
+   * discovered — see `truth.ts`.
+   */
+  truths?: BeatTruth[];
   checks?: BeatCheck[];
   opposition?: string[];
   /** True when this beat is a fight the combat engine resolves. */
