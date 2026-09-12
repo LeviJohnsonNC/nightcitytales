@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CampaignEvent } from "@/lib/backend";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { deathSaveOwed, pendingDeathSaveFrom } from "../deathSavePrompt";
-import { newestPrompt } from "../usePlay";
+import { newestPrompt } from "../playOps";
 
 const event = (over: Partial<CampaignEvent>): CampaignEvent =>
   ({

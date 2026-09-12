@@ -24,7 +24,7 @@ import {
 import { ItemInfo, type ItemKindLabel } from "@/features/chargen/ItemInfo";
 import type { StockedItem } from "@/features/campaign/shopping";
 import { useShop } from "./useShop";
-import type { LifeBundle } from "./useLife";
+import type { LifeBundle } from "./lifeOps";
 
 const KIND_LABELS: Record<string, string> = {
   weapon: "Weapons",

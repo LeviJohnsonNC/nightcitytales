@@ -14,7 +14,7 @@ import {
   prepareRipperdocInstall,
   type PreparedRipperdocInstall,
 } from "@/features/campaign/cyberware";
-import type { LifeBundle } from "./useLife";
+import type { LifeBundle } from "./lifeOps";
 
 export type RipperdocQuote = {
   cost: number;
