@@ -26,6 +26,7 @@ export * from "./campaign";
 export * from "./phase";
 export * from "./clock";
 export * from "./life";
+export * from "./localExpert";
 export * from "./skillCheck";
 export * from "./opposedCheck";
 export * from "./luck";

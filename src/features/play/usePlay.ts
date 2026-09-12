@@ -430,7 +430,14 @@ async function narrate(
     mission: bundle.mission,
     beat: bundle.beat,
     availableExits: bundle.availableExits,
-    character: characterSummary(bundle.character, bundle.vitals, bundle.inventory),
+    // Where they are standing goes with the sheet, so the Skill list reports
+    // Local Expert for this district rather than for whichever one they know.
+    character: characterSummary(
+      bundle.character,
+      bundle.vitals,
+      bundle.inventory,
+      jobPosition?.districtKey ?? null,
+    ),
     objectives: bundle.runtime.objectives,
     npcsPresent: npcSummaries(bundle.npcs),
     recentEvents: recentEventLines(bundle.events),
@@ -512,7 +519,11 @@ async function narrate(
     bundle.events,
     bundle.character,
     bundle.vitals.wound_state as WoundStateCode,
-    { vitals: bundle.vitals, inventory: bundle.inventory },
+    {
+      vitals: bundle.vitals,
+      inventory: bundle.inventory,
+      districtKey: jobPosition?.districtKey ?? null,
+    },
   ).length;
   const checkBudget = Math.max(0, (fightRunning ? 1 : MAX_CHECKS_PER_TURN) - outstanding);
 
@@ -1926,7 +1937,14 @@ export function usePlay(campaignId: string) {
           bundle.events,
           bundle.character,
           bundle.vitals.wound_state as WoundStateCode,
-          { vitals: bundle.vitals, inventory: bundle.inventory },
+          {
+            vitals: bundle.vitals,
+            inventory: bundle.inventory,
+            // A Local Expert card must promise the Level for the district the
+            // character is standing in, not the one they happen to know.
+            districtKey:
+              resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+          },
         )
       : [];
   const checkCandidate = checkQueue[0] ?? null;
@@ -2071,6 +2089,10 @@ export function usePlay(campaignId: string) {
       const actor = actorFor(bundle.character, {
         vitals: bundle.vitals,
         inventory: bundle.inventory,
+        // A Local Expert check is about the neighbourhood the character is
+        // standing in, and is worth nothing in one they are not a local in.
+        districtKey:
+          resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
       });
       // Clamp against the live pool, not against what the card offered: the
       // stepper cannot talk the engine into spending points that are not there.

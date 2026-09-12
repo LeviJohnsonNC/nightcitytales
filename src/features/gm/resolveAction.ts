@@ -16,7 +16,14 @@ export type ResolvedAction =
   | { kind: "skill_check"; skillId: string; intent: string; result: SkillCheckResult }
   | { kind: "unresolved"; action: GmProposedAction };
 
-/** Resolve a skill-check proposal into an actual roll; pass everything else through. */
+/**
+ * Resolve a skill-check proposal into an actual roll; pass everything else
+ * through.
+ *
+ * A place-scoped Skill is rolled for the district the actor is standing in,
+ * which `actorFor` puts on the actor. The GM proposes the Skill and the DV; it
+ * does not get to say which neighbourhood the character is a local in.
+ */
 export function resolveProposedAction(
   action: GmProposedAction,
   actor: SkillCheckActor,

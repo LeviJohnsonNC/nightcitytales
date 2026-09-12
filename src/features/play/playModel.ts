@@ -7,7 +7,11 @@ import {
   BASIC_SKILL_IDS,
   clampDisposition,
   currentStats,
+  areaForCheck,
   getSkill,
+  isAreaScoped,
+  skillCheckLabel,
+  skillLevelFor,
   STAT_ORDER,
   type MissionStatus,
   type SkillCheckActor,
@@ -27,6 +31,16 @@ import { liveInventory } from "./liveInventory";
 export type CurrentStatsContext = {
   vitals: CampaignVitals;
   inventory: CampaignInventoryItem[];
+  /**
+   * The district the campaign has the character standing in, when the caller
+   * knows it. Only a place-scoped Skill reads it — Local Expert is worth its
+   * Level in one neighbourhood and nothing anywhere else — but it has to travel
+   * with the rest of the live context, because the sheet alone cannot say where
+   * the character is and a Skill list that does not know is a Skill list that
+   * overstates. Omitted, Local Expert reads as the sheet's own best line, which
+   * is what every caller got before it existed.
+   */
+  districtKey?: string | null;
 };
 
 /** The STATs as a plain record, skipping any that aren't set. */
@@ -57,7 +71,14 @@ export function effectiveStatsRecord(
   }) as Record<string, number>;
 }
 
-/** The minimal actor a skill check needs, from the saved character. */
+/**
+ * The minimal actor a skill check needs, from the saved character.
+ *
+ * Carries each Skill line's specialization, the character's home district, and
+ * the district they are standing in, so a place-scoped Skill is read for the
+ * right neighbourhood. Dropping those three was how Local Expert (Little China)
+ * rolled at full Level on the other side of the city.
+ */
 export function actorFor(full: FullCharacter, context?: CurrentStatsContext): SkillCheckActor {
   const stats: Partial<Record<StatKey, number>> = {};
   const projected = effectiveStatsRecord(full, context);
@@ -67,26 +88,66 @@ export function actorFor(full: FullCharacter, context?: CurrentStatsContext): Sk
   }
   return {
     stats,
-    skills: full.skills.map((s) => ({ skillId: s.skill_id, level: s.level })),
+    skills: full.skills.map((s) => ({
+      skillId: s.skill_id,
+      level: s.level,
+      specialization: s.specialization,
+    })),
+    homeDistrictKey: full.finance?.home_district_key ?? null,
+    districtKey: context?.districtKey ?? null,
   };
 }
 
-/** The character's best trained skills as "Skill +base" entries, highest first. */
+/**
+ * The character's best trained skills as "Skill +base" entries, highest first.
+ *
+ * A specialized Skill is named with its specialization, because "Language +8"
+ * twice over tells the model nothing about which tongue either line is, and
+ * because the number beside a place-scoped Skill is only true somewhere.
+ *
+ * THE NUMBER HERE IS THE NUMBER THE ENGINE WILL ROLL. For Local Expert that
+ * means the Level for the district the character is standing in, which is 0
+ * everywhere they are not a local — otherwise the model is shown "Local Expert
+ * +9" in a neighbourhood the character has never been and calls for the check
+ * on the strength of it. One entry per place-scoped Skill, for where they
+ * stand: which other neighbourhoods they know is knowledge for the narrator's
+ * own block, not a second roll the model could reach for.
+ */
 export function keySkills(
   full: FullCharacter,
   limit = 8,
   context?: CurrentStatsContext,
 ): { skill: string; id: string; base: number }[] {
   const stats = effectiveStatsRecord(full, context);
-  return full.skills
-    .filter((s) => s.level > 0)
-    .map((s) => {
-      const def = getSkill(s.skill_id);
-      const statValue = stats[def.stat] ?? 0;
-      return { skill: def.name, id: def.id, base: statValue + s.level };
-    })
-    .sort((a, b) => b.base - a.base)
-    .slice(0, limit);
+  const actor = actorFor(full, context);
+  const lines: { skill: string; id: string; base: number }[] = [];
+  const placeScopedSeen = new Set<string>();
+
+  for (const row of full.skills) {
+    if (row.level <= 0) continue;
+    const def = getSkill(row.skill_id);
+    const statValue = stats[def.stat] ?? 0;
+
+    if (isAreaScoped(def.id)) {
+      if (placeScopedSeen.has(def.id)) continue;
+      placeScopedSeen.add(def.id);
+      const area = areaForCheck(actor, def.id);
+      lines.push({
+        skill: skillCheckLabel(actor, def.id, area),
+        id: def.id,
+        base: statValue + skillLevelFor(actor, def.id, area),
+      });
+      continue;
+    }
+
+    lines.push({
+      skill: row.specialization ? `${def.name} (${row.specialization})` : def.name,
+      id: def.id,
+      base: statValue + row.level,
+    });
+  }
+
+  return lines.sort((a, b) => b.base - a.base).slice(0, limit);
 }
 
 /**
@@ -105,22 +166,36 @@ export function gmSkillList(
   context?: CurrentStatsContext,
 ): { skill: string; id: string; base: number }[] {
   const stats = effectiveStatsRecord(full, context);
+  const actor = actorFor(full, context);
   const trained = keySkills(full, limit, context);
   const known = new Set(trained.map((s) => s.id));
   const untrainedBasics = BASIC_SKILL_IDS.filter((id) => !known.has(id)).map((id) => {
     const def = getSkill(id);
-    return { skill: def.name, id: def.id, base: stats[def.stat] ?? 0 };
+    // A place-scoped Basic Skill is named for the ground underfoot even at
+    // Level 0, so the list never offers "Local Expert" as though it were a
+    // Skill you could roll about the city at large.
+    const skill = isAreaScoped(def.id)
+      ? skillCheckLabel(actor, def.id, areaForCheck(actor, def.id))
+      : def.name;
+    return { skill, id: def.id, base: stats[def.stat] ?? 0 };
   });
   return [...trained, ...untrainedBasics];
 }
 
-/** The GM's compact view of the player character, from the sheet + live vitals. */
+/**
+ * The GM's compact view of the player character, from the sheet + live vitals.
+ *
+ * `districtKey` is where the character is standing. It only reaches the Skill
+ * list, and only a place-scoped Skill reads it, but without it that list
+ * advertises Local Expert at a Level the engine will not roll.
+ */
 export function characterSummary(
   full: FullCharacter,
   vitals: CampaignVitals,
   inventory: CampaignInventoryItem[] = [],
+  districtKey?: string | null,
 ): GmCharacterSummary {
-  const context = { vitals, inventory };
+  const context = { vitals, inventory, ...(districtKey === undefined ? {} : { districtKey }) };
   return {
     name: full.character.name,
     role: full.character.role,

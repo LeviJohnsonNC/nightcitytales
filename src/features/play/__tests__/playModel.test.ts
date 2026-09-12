@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignEvent, CampaignNpc, CampaignVitals, FullCharacter } from "@/lib/backend";
+import { skillLevelFor } from "@/engine";
 import {
   actorFor,
   characterSummary,
@@ -45,6 +46,108 @@ describe("keySkills", () => {
     const skills = keySkills(full);
     expect(skills[0]).toEqual({ skill: "Handgun", id: "handgun", base: 14 }); // REF 8 + 6
     expect(skills.some((s) => s.skill === "Brawling")).toBe(false); // level 0 dropped
+  });
+});
+
+/**
+ * The same character, but a local somewhere: Little China cold, The Glen a
+ * little, and a home district their Role package's "Your Home" line points at.
+ */
+const localExpert = {
+  character: { name: "Mira Vance", handle: "Sparrow", role: "fixer" },
+  stats: { ref: 5, body: 5, dex: 5, cool: 6, int: 7, tech: 4, will: 5, luck: 5, move: 5, emp: 5 },
+  skills: [
+    { skill_id: "local_expert", level: 6, specialization: "little_china" },
+    { skill_id: "local_expert", level: 2, specialization: "the_glen" },
+    { skill_id: "language", level: 4, specialization: "Mandarin" },
+  ],
+  finance: { home_district_key: "kabuki" },
+} as unknown as FullCharacter;
+
+const liveContext = (districtKey: string | null) => ({
+  vitals,
+  inventory: [],
+  districtKey,
+});
+
+describe("a place-scoped Skill in the model's own list", () => {
+  it("is named for the ground underfoot and worth its Level there", () => {
+    const here = keySkills(localExpert, 8, liveContext("little_china"));
+    expect(here).toContainEqual({
+      skill: "Local Expert (Little China)",
+      id: "local_expert",
+      base: 13, // INT 7 + 6
+    });
+  });
+
+  /**
+   * The whole point. Shown "Local Expert +13" in a district the character has
+   * never set foot in, the model calls for the check on the strength of it and
+   * the engine then rolls INT alone — so the list has to say 7, here.
+   */
+  it("is worth nothing in a neighbourhood they are not a local in", () => {
+    const away = keySkills(localExpert, 8, liveContext("pacifica_playground"));
+    expect(away).toContainEqual({
+      skill: "Local Expert (Pacifica Playground)",
+      id: "local_expert",
+      base: 7, // INT 7 + nothing
+    });
+  });
+
+  it("appears once, however many neighbourhoods they know", () => {
+    const listed = keySkills(localExpert, 8, liveContext("little_china")).filter(
+      (s) => s.id === "local_expert",
+    );
+    expect(listed).toHaveLength(1);
+  });
+
+  it("matches what the engine will actually roll", () => {
+    for (const districtKey of ["little_china", "the_glen", "pacifica_playground"]) {
+      const context = liveContext(districtKey);
+      const listed = keySkills(localExpert, 8, context).find((s) => s.id === "local_expert");
+      const actor = actorFor(localExpert, context);
+      const int = actor.stats.int ?? 0;
+      expect(listed?.base).toBe(int + skillLevelFor(actor, "local_expert", districtKey));
+    }
+  });
+
+  it("names the standing district even for a character who is a local nowhere", () => {
+    const list = gmSkillList(full, 40, liveContext("kabuki"));
+    // Local Expert is a Basic Skill: everyone has it at 0, somewhere.
+    expect(list).toContainEqual({
+      skill: "Local Expert (Kabuki)",
+      id: "local_expert",
+      base: 6, // INT 6, no Level
+    });
+  });
+
+  it('resolves a Role package\'s "Your Home" through the home district', () => {
+    const starting = {
+      ...localExpert,
+      skills: [{ skill_id: "local_expert", level: 4, specialization: "Your Home" }],
+    } as unknown as FullCharacter;
+    expect(keySkills(starting, 8, liveContext("kabuki"))).toContainEqual({
+      skill: "Local Expert (Kabuki)",
+      id: "local_expert",
+      base: 11, // INT 7 + 4, at home
+    });
+    expect(keySkills(starting, 8, liveContext("downtown"))).toContainEqual({
+      skill: "Local Expert (Downtown)",
+      id: "local_expert",
+      base: 7,
+    });
+  });
+});
+
+describe("a specialized Skill that is not place-scoped", () => {
+  it("is named with its specialization and untouched by the district", () => {
+    for (const districtKey of ["little_china", "pacifica_playground"]) {
+      expect(keySkills(localExpert, 8, liveContext(districtKey))).toContainEqual({
+        skill: "Language (Mandarin)",
+        id: "language",
+        base: 11, // INT 7 + 4, wherever they are standing
+      });
+    }
   });
 });
 
