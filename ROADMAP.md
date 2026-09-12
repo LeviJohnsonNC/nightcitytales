@@ -297,10 +297,40 @@ The stages, in dependency order:
   anything. Still no die bonus anywhere: the argument in `placeIntel.ts` holds,
   and a test asserts it across every line in every district.
 
-- Stage 3: pay in options. Insider actions in `lifeOptions`/`placeActions` gated
-  on being a local, all derived from tags, flags and haunts rather than authored
-  per district. `lifeModel.ts` also seeds cast haunts with `DEFAULT_START`
-  instead of the character's home district, so the argument is currently inert.
+- ~~Stage 3: pay in options~~ — six verbs in `place-actions.json` are flagged
+  `local`: the fence, the unlicensed surgery, the bunk nobody writes your name
+  down for, the empty building worth walking into, whose street this is, and
+  which door is worth watching. Across the district those are offered as a
+  shortcut only to somebody who knows the area — a local (through `placeIntel`'s
+  own `neighbourhood` rung, so no second threshold to keep in step) or somebody
+  who has already been to that venue. It changes the board in 19 of the 24
+  districts.
+
+  Two things the gate deliberately does NOT do. It never touches the place the
+  character is standing in: being a stranger costs you knowing WHERE the quiet
+  doors are, never the ability to act once you are at one, and gating `here`
+  turned every building whose only business is a quiet one into a dead pin. And
+  it never removes anything from the world — the map still travels anywhere, a
+  job can still send you, the narrator can still put you in front of it.
+
+  The quiet doors are ordered ahead of the ordinary business in the district
+  sweep. Without that the cap of five silently undid the whole thing: a local's
+  fence sat behind "fill your bottles" and never made the list, so knowing the
+  neighbourhood swapped one ordinary verb for another and bought nothing.
+
+  `hauntPeople` now takes the character's home district. It was handed
+  `DEFAULT_START` — a constant, not an address — so every campaign's cast kept
+  their bars in Little Europe however far away the character had moved in,
+  against `hauntsFor`'s own reasoning that "a cast you can only meet by crossing
+  the city is a cast you never meet."
+
+  Dropped on inspection: revealing extra map pins inside your own district.
+  `placeSignals` is explicit that every signal traces to a row and that nothing
+  may be computed from how interesting a place is, on a budget of three across
+  the whole city. Lighting pins because of who is looking is exactly what that
+  rule forbids, and the rule is right. Also still open: reading a route around a
+  `locked_down` flag, which is a routing feature rather than an options one.
+
 - Stage 4: earning a new neighbourhood, once `campaign_places` shows real time
   spent there. `skillLineKey` already keys IP spends by specialization.
 

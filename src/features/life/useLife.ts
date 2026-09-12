@@ -548,7 +548,11 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
             ? (() => {
                 const met = whoIsAt({
                   placeKey: position.placeKey,
-                  people: hauntPeople(bundle.npcs, bundle.campaign),
+                  people: hauntPeople(
+                    bundle.npcs,
+                    bundle.campaign,
+                    bundle.character.finance?.home_district_key,
+                  ),
                   day: bundle.clock.day,
                   minute: bundle.clock.minute,
                   seed: bundle.campaign.id,
@@ -556,9 +560,15 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
                 return met ? { whoIsHere: { name: met.name, key: met.key } } : {};
               })()
             : {}),
+          // What the ground supports, as the character would find it: a local
+          // is told about the quiet doors of their own neighbourhood and a
+          // stranger is not, so the narrator cannot offer a newcomer a fence
+          // they would have no way of knowing about.
           business: placeActions({
             districtKey: positionDistrict.key,
             placeKey: position?.placeKey,
+            places: bundle.places,
+            localExpertLevel: localExpertIn(bundle.character, positionDistrict.key),
           }).map((a) => `${a.label} (${a.placeName})`),
           nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
           streets: streetsIn(positionDistrict.key).map((s) => s.name),
@@ -1712,6 +1722,7 @@ export function useLife(campaignId: string) {
         districtKey: district.key,
         placeKey: position?.placeKey,
         places: bundle.places,
+        localExpertLevel: localExpertIn(bundle.character, district.key),
       }),
       district.locations.map((l) => l.name),
     );

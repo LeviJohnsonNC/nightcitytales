@@ -40,11 +40,20 @@ import type { LifeActionCard } from "./lifeResponse";
  */
 export const MAX_LIFE_OPTIONS = 6;
 
-/** The standing business of where the character is, as option cards. */
+/**
+ * The standing business of where the character is, as option cards.
+ *
+ * `localExpertLevel` decides whether the quiet doors of the district are among
+ * them. A stranger is offered what a stranger would find; somebody who knows
+ * this neighbourhood is also offered the fence, the unlicensed surgery and the
+ * bunk nobody writes your name down for — which is the first time in the loop
+ * that being a local changes what the player can DO rather than what they know.
+ */
 export function venueOptions(input: {
   districtKey: string;
   placeKey?: string | undefined;
   places?: Record<string, PlaceState> | undefined;
+  localExpertLevel?: number | undefined;
 }): LifeActionCard[] {
   return placeActions(input).map(toCard);
 }

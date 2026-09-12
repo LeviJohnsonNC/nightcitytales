@@ -762,7 +762,11 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
       // as the beats: somebody drinking in a neighbourhood you have never been
       // to is not news that reaches you.
       peopleAt: peopleAtHaunts({
-        people: hauntPeople(bundle.npcs, bundle.campaign),
+        people: hauntPeople(
+          bundle.npcs,
+          bundle.campaign,
+          bundle.character.finance?.home_district_key,
+        ),
         day: bundle.clock.day,
         minute: bundle.clock.minute,
         seed: bundle.campaign.id,
@@ -869,7 +873,11 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
     const state = bundle.places[key];
     const met = whoIsAt({
       placeKey: key,
-      people: hauntPeople(bundle.npcs, bundle.campaign),
+      people: hauntPeople(
+        bundle.npcs,
+        bundle.campaign,
+        bundle.character.finance?.home_district_key,
+      ),
       day: bundle.clock.day,
       minute: bundle.clock.minute,
       seed: bundle.campaign.id,
