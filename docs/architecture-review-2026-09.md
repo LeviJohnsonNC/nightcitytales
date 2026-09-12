@@ -7,10 +7,10 @@ suite, and the four governing documents (`PRODUCT.md`, `AGENTS.md`,
 
 Verification run for this review:
 
-| Check       | Result                                                     |
-| ----------- | ---------------------------------------------------------- |
-| `bun run test`      | **2070 passed, 127 files, 14.9s**                  |
-| `bun run lint`      | **1 error, 12 warnings** (the known `prefer-const`) |
+| Check               | Result                                                                                                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run test`      | **2070 passed, 127 files, 14.9s**                                                                                                                                                                              |
+| `bun run lint`      | **1 error, 12 warnings** (the known `prefer-const`)                                                                                                                                                            |
 | `bun run typecheck` | Not conclusive here — several dependencies (`ai`, `@ai-sdk/*`, `@lovable.dev/*`, `eventsource-parser`) return 403 from the Lovable npm proxy in this sandbox. Every reported error traces to a missing module. |
 
 ---
@@ -58,13 +58,13 @@ stated rule the code does not keep, or a doc that has drifted from the code.
 
 The rule is kept once:
 
-| Path | Auth |
-| ---- | ---- |
-| `src/features/life/lifeTurn.server.ts` | `.middleware([requireSupabaseAuth])` ✅ |
-| `src/features/gm/gmTurn.server.ts` | none ❌ |
-| `src/features/gm/ipJudgement.server.ts` | none ❌ |
-| `src/lib/background.functions.ts` | none ❌ |
-| `src/routes/api/generate-portrait.ts` | none ❌ |
+| Path                                    | Auth                                    |
+| --------------------------------------- | --------------------------------------- |
+| `src/features/life/lifeTurn.server.ts`  | `.middleware([requireSupabaseAuth])` ✅ |
+| `src/features/gm/gmTurn.server.ts`      | none ❌                                 |
+| `src/features/gm/ipJudgement.server.ts` | none ❌                                 |
+| `src/lib/background.functions.ts`       | none ❌                                 |
+| `src/routes/api/generate-portrait.ts`   | none ❌                                 |
 
 `src/start.ts` installs `createCsrfMiddleware` with
 `filter: (ctx) => ctx.handlerType === "serverFn"`, so the three server functions
@@ -146,8 +146,8 @@ scar tissue:
 > fight persisted movement, damage, hostile turns or its own ending, and nothing
 > failed loudly.
 
-Zod is already a dependency and is already used, well, for the *model* boundary.
-It is not used for the *persistence* boundary, which carries just as much
+Zod is already a dependency and is already used, well, for the _model_ boundary.
+It is not used for the _persistence_ boundary, which carries just as much
 mechanical authority and is written and read by two different modules.
 
 **The fix:** one `src/features/campaign/eventSchemas.ts` with a Zod schema per
@@ -197,20 +197,20 @@ which is the right way to write a regression test. Three structural observations
 
 ### 4.1 Coverage is inverted relative to risk
 
-| Area | Test files | Source files |
-| ---- | ---------- | ------------ |
-| `src/engine/` | 68 | 77 |
-| `src/features/campaign/` | 17 | 18 |
-| `src/features/play/` | 22 | 43 |
-| `src/features/life/` | 7 | 14 |
-| `src/features/gm/` | 5 | 7 |
-| `src/features/atlas/` | 2 | 8 |
-| **`src/features/chargen/`** | **3** | **58** |
-| `src/features/downtime/` | 1 | 4 |
-| **`src/lib/backend/`** | **1** | **14** |
-| **`src/features/roster/`** | **0** | **10** |
-| `src/routes/` | 0 | 11 |
-| `src/components/` | 0 | 47 |
+| Area                        | Test files | Source files |
+| --------------------------- | ---------- | ------------ |
+| `src/engine/`               | 68         | 77           |
+| `src/features/campaign/`    | 17         | 18           |
+| `src/features/play/`        | 22         | 43           |
+| `src/features/life/`        | 7          | 14           |
+| `src/features/gm/`          | 5          | 7            |
+| `src/features/atlas/`       | 2          | 8            |
+| **`src/features/chargen/`** | **3**      | **58**       |
+| `src/features/downtime/`    | 1          | 4            |
+| **`src/lib/backend/`**      | **1**      | **14**       |
+| **`src/features/roster/`**  | **0**      | **10**       |
+| `src/routes/`               | 0          | 11           |
+| `src/components/`           | 0          | 47           |
 
 The engine is the safest layer in the codebase — pure, deterministic, plain
 objects in and out — and it has near-total coverage. Character creation is where
@@ -381,7 +381,7 @@ the database CI does not have.
 ## 6. Documentation
 
 The four documents are the strongest asset here. `PRODUCT.md` is a genuinely
-unusual artifact: a compass that says *no* to specific attractive changes, names
+unusual artifact: a compass that says _no_ to specific attractive changes, names
 its own failure modes ("How to tell it is going wrong"), and records open
 questions so they get decided rather than defaulted into. `AGENTS.md` keeps an
 honest gap list that names an outage it caused. `ROADMAP.md` marks shipped work
@@ -442,43 +442,43 @@ wait.
 
 ### P0 — do first
 
-| # | Change | Why | Size |
-| - | ------ | --- | ---- |
-| 1 | Add `requireSupabaseAuth` to `gmTurnFn`, `ipJudgementFn`, `generateBackgroundFn` | Three unauthenticated paid-AI endpoints; violates a rule `AGENTS.md` states explicitly | ~4 lines |
-| 2 | Authenticate `/api/generate-portrait` inline (function middleware does not reach a file route) and add a per-user rate limit | Unauthenticated, un-CSRF'd, billed image generation | ~20 lines |
-| 3 | Stop `generateBackgroundFn` accepting a client-supplied `system` prompt — move it server-side beside the other prompts | Open general-purpose LLM proxy on the owner's key; also the only prompt not under `prose-style.ts` | ~15 lines |
-| 4 | `git rm --cached .env`, add to `.gitignore`, add `.env.example` | Only publishable keys today; the tracked file is the trap | ~5 min |
+| #   | Change                                                                                                                       | Why                                                                                                | Size      |
+| --- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------- |
+| 1   | Add `requireSupabaseAuth` to `gmTurnFn`, `ipJudgementFn`, `generateBackgroundFn`                                             | Three unauthenticated paid-AI endpoints; violates a rule `AGENTS.md` states explicitly             | ~4 lines  |
+| 2   | Authenticate `/api/generate-portrait` inline (function middleware does not reach a file route) and add a per-user rate limit | Unauthenticated, un-CSRF'd, billed image generation                                                | ~20 lines |
+| 3   | Stop `generateBackgroundFn` accepting a client-supplied `system` prompt — move it server-side beside the other prompts       | Open general-purpose LLM proxy on the owner's key; also the only prompt not under `prose-style.ts` | ~15 lines |
+| 4   | `git rm --cached .env`, add to `.gitignore`, add `.env.example`                                                              | Only publishable keys today; the tracked file is the trap                                          | ~5 min    |
 
 ### P1 — next
 
-| # | Change | Why | Size |
-| - | ------ | --- | ---- |
-| 5 | Zod schemas for `campaign_events.data`, shared by `combatLog.ts` (write) and `settlement.ts` (read) | 116 untyped `Json` casts; writer/reader drift silently zeroes a job's receipt — the outage class already seen once | 1–2 days |
-| 6 | Make lint blocking: fix the `prefer-const`, split formatting into a separate non-blocking step | The linter currently cannot fail a build, by configuration | ~1 hour |
-| 7 | Gate `/combat` on an env flag that is on in preview, off in production | Any player can seed arbitrary encounters into a live campaign | ~10 lines |
-| 8 | Tests for `validation.ts` and `finalGate.ts` | The one invariant `AGENTS.md` calls load-bearing in chargen has no guard | ~100 lines |
-| 9 | `supabase db reset` replay in CI, asserting the schema matches `types.ts` | Closes the oldest standing debt and retires two text-scanning proxy tests | 1 day |
+| #   | Change                                                                                              | Why                                                                                                                | Size       |
+| --- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- |
+| 5   | Zod schemas for `campaign_events.data`, shared by `combatLog.ts` (write) and `settlement.ts` (read) | 116 untyped `Json` casts; writer/reader drift silently zeroes a job's receipt — the outage class already seen once | 1–2 days   |
+| 6   | Make lint blocking: fix the `prefer-const`, split formatting into a separate non-blocking step      | The linter currently cannot fail a build, by configuration                                                         | ~1 hour    |
+| 7   | Gate `/combat` on an env flag that is on in preview, off in production                              | Any player can seed arbitrary encounters into a live campaign                                                      | ~10 lines  |
+| 8   | Tests for `validation.ts` and `finalGate.ts`                                                        | The one invariant `AGENTS.md` calls load-bearing in chargen has no guard                                           | ~100 lines |
+| 9   | `supabase db reset` replay in CI, asserting the schema matches `types.ts`                           | Closes the oldest standing debt and retires two text-scanning proxy tests                                          | 1 day      |
 
 ### P2 — worth scheduling
 
-| # | Change | Why | Size |
-| - | ------ | --- | ---- |
-| 10 | Extract turn orchestration from `usePlay.ts` / `useLife.ts` into React-free `playTurn.ts` / `lifeTurn.ts` | 4548 lines across two files; turn logic is untestable without four mock factories | 2–3 days |
-| 11 | Widen `architecture.test.ts` into `boundaries.test.ts`: cover `import()`/`require`, the backend-adapter rule, and cross-feature imports | The guard covers one direction and one import syntax | ~1 hour |
-| 12 | Give `goodwill` a threshold, or delete the dial | Named by both docs as the failure `PRODUCT.md` warns about; has survived two revisions | ~1 hour |
-| 13 | Make Play's `npc_disposition` handling match Life's — do not mint an NPC from a model-invented key | Model authoring people, into the table with no uniqueness constraint | ~10 lines |
-| 14 | Move `placeDossiers.ts` to `src/data/` and load lazily (or lazy-import `PlaceDossier`) | ~200 KB of prose in the initial play bundle via `PlaceName` | ~2 hours |
-| 15 | Raise `lib/backend` and `roster` off zero tests; add model-layer tests for the Life/Place option caps and ordering | Two layers with no coverage; the action-cap rules are pure and already regressed once | 1–2 days |
+| #   | Change                                                                                                                                  | Why                                                                                    | Size      |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------- |
+| 10  | Extract turn orchestration from `usePlay.ts` / `useLife.ts` into React-free `playTurn.ts` / `lifeTurn.ts`                               | 4548 lines across two files; turn logic is untestable without four mock factories      | 2–3 days  |
+| 11  | Widen `architecture.test.ts` into `boundaries.test.ts`: cover `import()`/`require`, the backend-adapter rule, and cross-feature imports | The guard covers one direction and one import syntax                                   | ~1 hour   |
+| 12  | Give `goodwill` a threshold, or delete the dial                                                                                         | Named by both docs as the failure `PRODUCT.md` warns about; has survived two revisions | ~1 hour   |
+| 13  | Make Play's `npc_disposition` handling match Life's — do not mint an NPC from a model-invented key                                      | Model authoring people, into the table with no uniqueness constraint                   | ~10 lines |
+| 14  | Move `placeDossiers.ts` to `src/data/` and load lazily (or lazy-import `PlaceDossier`)                                                  | ~200 KB of prose in the initial play bundle via `PlaceName`                            | ~2 hours  |
+| 15  | Raise `lib/backend` and `roster` off zero tests; add model-layer tests for the Life/Place option caps and ordering                      | Two layers with no coverage; the action-cap rules are pure and already regressed once  | 1–2 days  |
 
 ### P3 — hygiene
 
-| # | Change | Why |
-| - | ------ | --- |
-| 16 | Fix the dial counts in `AGENTS.md` and `ROADMAP.md` | Both stale; `gang_pressure` now has a threshold |
-| 17 | Consolidate the gap lists — one ordered, severity-tagged list in `ROADMAP.md`, linked from `AGENTS.md` | 16 bullets, two documents, no severities; the repo's own one-source-of-truth rule |
-| 18 | Rename `package.json` from `tanstack_start_ts` | Scaffold residue |
-| 19 | Narrow the engine's public surface: drop `export` from file-local helpers, make `index.ts` a deliberate API | ~50 symbols public with no external consumer; `export *` from 73 modules |
-| 20 | Clamp the GM-path `npc_disposition` delta the way the Life path does | Harmless today, asymmetric, stops being harmless if the scale widens |
+| #   | Change                                                                                                      | Why                                                                               |
+| --- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 16  | Fix the dial counts in `AGENTS.md` and `ROADMAP.md`                                                         | Both stale; `gang_pressure` now has a threshold                                   |
+| 17  | Consolidate the gap lists — one ordered, severity-tagged list in `ROADMAP.md`, linked from `AGENTS.md`      | 16 bullets, two documents, no severities; the repo's own one-source-of-truth rule |
+| 18  | Rename `package.json` from `tanstack_start_ts`                                                              | Scaffold residue                                                                  |
+| 19  | Narrow the engine's public surface: drop `export` from file-local helpers, make `index.ts` a deliberate API | ~50 symbols public with no external consumer; `export *` from 73 modules          |
+| 20  | Clamp the GM-path `npc_disposition` delta the way the Life path does                                        | Harmless today, asymmetric, stops being harmless if the scale widens              |
 
 ---
 
