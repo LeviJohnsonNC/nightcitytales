@@ -49,3 +49,34 @@ jobs:
 
       - name: Test
         run: bun run test
+
+  # The database check CI never had. Everything above runs against code; this
+  # builds the schema from nothing and applies whatever migrations came after
+  # the baseline, which is the only way a SQL string referencing a column that
+  # does not exist gets caught — the type checker does not read inside one, and
+  # that is precisely how every encounter save failed silently for weeks.
+  #
+  # See supabase/replay/README.md for why it starts from a baseline rather than
+  # from the first migration.
+  migrations:
+    name: Migration replay
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Replay onto an empty database
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/postgres
+        run: supabase/replay/replay.sh

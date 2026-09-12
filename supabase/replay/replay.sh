@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Replay every migration against an empty database, in the order the directory
-# sorts, and report what breaks.
+# Build the database from scratch and prove the result is what the application
+# expects: the shim, then the baseline, then every migration added after it.
 #
-# WHAT THIS ANSWERS. `AGENTS.md` has carried this warning for months:
+# WHAT THIS ANSWERS. `AGENTS.md` carried this warning for months:
 #
 #   "campaign/encounter objects are created more than once in the current
 #    migration history, and the generated types match the later schema rather
@@ -15,18 +15,30 @@
 # `encounter_combatants.campaign_id` that the surviving CREATE TABLE never made,
 # silent because the type checker does not read inside a SQL string.
 #
-# USAGE
-#   supabase/replay/replay.sh                 # starts its own Postgres if it can
-#   PGURL=postgres://... supabase/replay/replay.sh
+# WHY A BASELINE. The migration directory cannot replay: it holds five pairs
+# where the same DDL was written by hand and then applied again through the
+# Lovable console, which wrote its own copy into the directory. Only one of each
+# ever ran, so the directory is a truthful record of what was WRITTEN and not a
+# runnable sequence. `baseline.sql` is the state those migrations actually
+# produced — verified column by column against the generated types — and
+# everything added after it replays on top. The history behind that line is not
+# going to become replayable; the migrations in front of it are what still need
+# testing, and now they get it.
 #
-# It exits non-zero if any migration fails. See README.md in this directory for
-# what it currently reports and why that is not yet wired into CI as blocking.
+# USAGE
+#   PGURL=postgres://postgres@localhost:5432/replay supabase/replay/replay.sh
+#
+# Exits non-zero if anything fails to apply.
 
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MIGRATIONS="$HERE/../migrations"
-SHIM="$HERE/00_supabase_shim.sql"
+
+# Everything at or before this stem is inside baseline.sql. Move it forward when
+# a batch of migrations has been applied to the deployed database and the
+# baseline is rebuilt — see rebuild-baseline.sh.
+BASELINE_THROUGH="20260912141314"
 
 if [ -z "${PGURL:-}" ]; then
   echo "Set PGURL to a Postgres connection string for an empty, disposable database." >&2
@@ -36,19 +48,26 @@ fi
 
 run() { psql "$PGURL" -v ON_ERROR_STOP=1 -q -f "$1" 2>&1; }
 
-echo "Shim: $(basename "$SHIM")"
-if ! out=$(run "$SHIM"); then
-  echo "  the shim itself failed — that is a bug in the harness, not in a migration" >&2
-  echo "$out" >&2
-  exit 1
-fi
+for stage in 00_supabase_shim.sql baseline.sql; do
+  if ! out=$(run "$HERE/$stage"); then
+    echo "FAIL $stage — this is a bug in the harness or a stale baseline" >&2
+    echo "$out" | grep -m3 "ERROR:" >&2
+    exit 1
+  fi
+  echo "ok   $stage"
+done
 
 failed=0
 applied=0
 for file in $(ls "$MIGRATIONS"/*.sql | sort); do
   name="$(basename "$file")"
+  stem="$(echo "$name" | cut -c1-14)"
+  # String comparison is safe here: the stems are fixed-width timestamps.
+  [[ "$stem" > "$BASELINE_THROUGH" ]] || continue
+
   if out=$(run "$file"); then
     applied=$((applied + 1))
+    echo "ok   $name"
   else
     failed=$((failed + 1))
     echo "FAIL $name"
@@ -57,5 +76,9 @@ for file in $(ls "$MIGRATIONS"/*.sql | sort); do
 done
 
 echo
-echo "$applied applied, $failed failed."
+if [ "$applied" -eq 0 ] && [ "$failed" -eq 0 ]; then
+  echo "Baseline applied; no migrations after $BASELINE_THROUGH."
+else
+  echo "Baseline applied; $applied migrations after it, $failed failed."
+fi
 [ "$failed" -eq 0 ] || exit 1

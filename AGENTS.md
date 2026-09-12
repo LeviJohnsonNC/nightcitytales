@@ -416,9 +416,15 @@ contributor needs to know while editing the code next to one.
   been hand-synchronised three times; `encounterSchema.test.ts` and
   `placeSchema.test.ts` guard two of those cases, which is a guard rather than a
   fix.
-- **Run `supabase/replay/replay.sh` before adding schema work.** It applies every
-  migration to an empty Postgres and currently reports 37 applied, 9 failed. Its
-  README explains why and what the options are.
+- **A migration is tested by `supabase/replay/`, and CI runs it.** `replay.sh`
+  builds the schema from nothing — a small Supabase shim, then
+  `baseline.sql` (the state the applied migrations actually produced), then
+  every migration added after it. Run it before pushing schema work; a function
+  or constraint naming a column that does not exist fails there rather than in
+  production, which is the bug class that took encounter saves down. The
+  baseline exists because the directory holds five pairs where the same DDL was
+  written by hand and applied again through the Lovable console, only one of
+  each ever running — read its README before touching the migration history.
 - **Ripperdoc pacing is a house rule** — 0/1/3 recovery days by install level,
   four surgery hours per physical implant, appointment delay by disposition.
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,

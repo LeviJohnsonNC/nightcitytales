@@ -1,88 +1,86 @@
 # Migration replay
 
-Can the migrations in `supabase/migrations/` build a working database from
-nothing? `AGENTS.md` has said "do not assume a clean database reset works" since
-the encounter-save outage, and nothing could check it because CI has no
-database.
+Can the migrations build a working database from nothing? `AGENTS.md` said "do
+not assume a clean database reset works" from the day the encounter-save outage
+was diagnosed, and nothing could check it, because CI had no database.
 
-`replay.sh` checks it. `00_supabase_shim.sql` is the small Supabase surface the
-migrations stand on — the roles they grant to, `auth.uid()`, `auth.users`, and
-the `storage` objects the portrait policies reference — derived from what the
-migrations actually use rather than from a general-purpose emulator.
+It checks now, on every pull request.
 
 ```sh
 PGURL=postgres://postgres@localhost:5432/replay supabase/replay/replay.sh
 ```
 
-## What it reports today
+| File                   | What it is                                                                                                                                                                                                             |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `00_supabase_shim.sql` | The Supabase surface the migrations stand on — the roles they grant to, `auth.uid()`, `auth.users`, `storage.objects` and `storage.foldername`. Derived from what the migrations actually use, not a general emulator. |
+| `baseline.sql`         | The schema as the deployed database has it, through `20260912141314`.                                                                                                                                                  |
+| `replay.sh`            | Shim, baseline, then every migration added after the baseline. The CI gate.                                                                                                                                            |
+| `rebuild-baseline.sh`  | How `baseline.sql` was made, so it is checkable and can be moved forward.                                                                                                                                              |
 
-**The replay does not pass.** Nine migrations fail. Five are the real finding;
-four are knock-on effects of those five.
+## Why it starts from a baseline
 
-### Duplicate object creation
+Because the migration directory is not a runnable sequence, and was never going
+to become one.
 
-| Migration        | Error                                                               |
-| ---------------- | ------------------------------------------------------------------- |
-| `20260823033846` | `relation "campaigns" already exists`                               |
-| `20260823033944` | `column "created_at" of relation "mission_progress" already exists` |
-| `20260830211754` | `relation "campaign_cyberware" already exists`                      |
-| `20260904132122` | `relation "campaign_places" already exists`                         |
-| `20260912141314` | `relation "campaign_truths" already exists`                         |
+It holds **five pairs** where the same DDL was written by hand and then applied
+again through the Lovable console, which wrote its own timestamped copy into the
+directory. Only one of each pair ever ran. `APPLIED.md` already recorded this for
+the two most recent pairs — _"the copy that was actually applied. Identical DDL
+to the entry above."_ — and the older three were never annotated.
 
-### Knock-on
+| Written, then superseded | Superseded by    | Objects                              |
+| ------------------------ | ---------------- | ------------------------------------ |
+| `20260823002741`         | `20260823033846` | `campaigns`, `mission_progress`      |
+| `20260823024230`         | `20260823033846` | `encounters`, `encounter_combatants` |
+| `20260830211754`         | `20260830160000` | `campaign_cyberware`                 |
+| `20260904132122`         | `20260904030000` | `campaign_places`                    |
+| `20260912141314`         | `20260912140000` | `campaign_truths`                    |
 
-| Migration        | Error                              | Because                                                               |
-| ---------------- | ---------------------------------- | --------------------------------------------------------------------- |
-| `20260825233000` | `column "standing" does not exist` | `campaign_factions` was never created — it is inside `20260823033846` |
-| `20260826010427` | `column "standing" does not exist` | same                                                                  |
-| `20260826190000` | `column "kind" does not exist`     | inventory columns from a skipped file                                 |
-| `20260826193435` | `column "kind" does not exist`     | same                                                                  |
+Four of the five pairs carry identical DDL, so which one ran changes nothing.
+**The second pair is the one that mattered**, because the two disagree:
+`20260823024230` creates `encounter_combatants` **with** a `campaign_id` and
+`20260823033846` creates it **without**.
 
-## Why this is not a pile of mistakes
+The deployed database has the version without — which is exactly why
+`save_encounter_state` failed on every call from `20260830020000` until
+`20260901120000`, persisting no movement, no damage, no hostile turns and no
+ending, and failing silently the whole time. The outage is the evidence for
+which file won, and the baseline is built accordingly.
 
-It is the shape of the Lovable workflow, and `APPLIED.md` already records it for
-the recent cases:
+## Why you can believe the baseline
 
-> `20260912141314_…` — the copy that was actually applied. Identical DDL to the
-> entry above.
+It is not a hand-written guess. `rebuild-baseline.sh` applies every migration in
+order with those five skipped, and the result was checked column by column
+against `src/integrations/supabase/types.ts` — which is generated from the
+deployed database, and so is the only independent evidence available:
 
-A migration gets written by hand and committed; the same DDL is then applied
-through the Lovable console, which writes its own timestamped copy into the
-directory. Both files exist. **Only one of them ever ran.** So the deployed
-database is correct and the _directory_ is not replayable, which is a different
-problem from the one it looks like.
+```
+24 tables declared, 24 produced, 0 column differences
+```
 
-The three recent pairs are annotated in `APPLIED.md`. The early pair is not, and
-it is the one with history:
+Including `encounter_combatants` arriving with no `campaign_id`, which is the
+one column the outage already told us about.
 
-- `20260823024230` creates `encounters` and `encounter_combatants` **with** a
-  `campaign_id`.
-- `20260823033846` creates both again **without** it, plus eight other tables.
+## What this does and does not prove
 
-The deployed database has the second version — which is exactly why
-`save_encounter_state` filtering on `campaign_id` failed on every call until
-`20260901120000`. The outage is the evidence for which file won.
+**Does:** that a fresh database can be built, that every migration added from
+here on applies cleanly onto the real schema, and that a function or constraint
+naming a column that does not exist fails loudly instead of at 3am. That is the
+bug class this exists for.
 
-## What is undecided
+**Does not:** that the RLS policies are _correct_. They apply; whether they say
+the right thing is a different question and wants a different test.
 
-Making the replay pass means reconciling the directory with what actually ran,
-and every route touches published history, which `AGENTS.md` warns against:
+## Moving the baseline forward
 
-1. **Mark superseded files and have the replay skip them.** Smallest change and
-   no rewrite: extend `APPLIED.md`'s existing "the copy that was actually
-   applied" annotation to the early pair, and teach `replay.sh` to read it. The
-   directory stays a truthful record of what was written; the replay follows
-   what was run.
-2. **Make the duplicate creations idempotent** (`CREATE TABLE IF NOT EXISTS`).
-   Inert against the deployed database, since those migrations have already
-   run — but it edits files that Lovable has published.
-3. **Squash to a baseline.** Snapshot the current deployed schema as
-   `0000_baseline.sql` and replay only migrations after it. Standard answer,
-   biggest change, and it discards the written history as a runnable thing.
+When a batch of migrations has been applied to the deployed database:
 
-Option 1 is the recommendation and is not yet done, because which files were
-superseded is a claim about the deployed database that wants confirming rather
-than inferring.
+1. `PGURL=... supabase/replay/rebuild-baseline.sh` — it refuses to dump if the
+   superseded list has gone stale.
+2. Dump the schema as the script prints, keep `baseline.sql`'s header.
+3. Check it against `types.ts` again.
+4. Move `BASELINE_THROUGH` in `replay.sh` to the newest stem now inside it.
 
-Until one of those lands, this is a script you run by hand, not a CI gate.
-Wiring a known-red check into CI would only teach people to ignore it.
+`baseline.sql` deliberately lives here rather than in `supabase/migrations/`.
+The deployed database is already in this state; nothing should ever apply it
+there.
