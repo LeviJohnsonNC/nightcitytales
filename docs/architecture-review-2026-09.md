@@ -8,24 +8,26 @@
 > metered, and `.env` is untracked. Guarded by
 > `src/lib/__tests__/paidAiAuth.test.ts`.
 >
-> **P1 (items 5-9): four done, one open.** The ledger has a shared payload
+> **P1 (items 5-9): done.** The ledger has a shared payload
 > contract (`src/engine/ledger.ts`, round-trip tested); lint is clean and
 > blocking in CI; `/combat` is gated on `VITE_COMBAT_HARNESS`; the chargen save
-> gate has tests. Item 9 is partly done and partly a decision: `supabase/replay/`
-> now measures the migration drift instead of leaving it a warning — 37 applied,
-> 9 failed — but reconciling it touches published history, so the route is
-> undecided and the replay is not yet a CI gate. See
+> gate has tests. Item 9 is closed: the history was squashed to a
+> baseline that reproduces the deployed schema exactly (verified against the
+> generated types, 24 tables, 0 column differences), and CI now replays it
+> against a real Postgres on every pull request. See
 > `supabase/replay/README.md`.
 >
-> **P2 (items 10-15): five done, one open.** Turn logic is out from under both
+> **P2 (items 10-15): done.** Turn logic is out from under both
 > hooks (`playOps.ts`, `lifeOps.ts`); `boundaries.test.ts` replaces
 > `architecture.test.ts` and now covers `import()`/`require`, the
 > backend-adapter rule and the server-only rule; Play no longer mints an NPC
 > from a model-invented key; the dossier corpus and the map modal are
-> lazy-loaded; `roster/characterState.ts` has tests. Item 12 (the `goodwill`
-> dial) is open — it is the one P2 item that changes what the game DOES, and
-> the audit found the problem is broader than one dial: four of the eight place
-> flags are read by nothing.
+> lazy-loaded; `roster/characterState.ts` has tests. Item 12 is closed: `goodwill`
+> fires `welcome` at 8 and `unwelcome` at 0, and both are read by a truth, so
+> the favour loop pays in what people will say in front of you rather than in
+> dice or in price. Every dial now reaches something. The wider finding from
+> that audit stands as standing debt 14 — `raided`, `locked_down`, `power_out`
+> and `rebuilt` are still read by nothing.
 >
 > Two corrections to this document, found while doing the work. Item 15 said
 > `lib/backend` needed unit tests; it is almost entirely async I/O, its one

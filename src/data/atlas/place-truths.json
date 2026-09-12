@@ -75,6 +75,20 @@
       "skill": "perception",
       "difficulty": "Difficult",
       "fact": "Somebody is going through the records at {place}, and the staff know it."
+    },
+    {
+      "key": "vouched_for",
+      "flag": "welcome",
+      "skill": "human_perception",
+      "difficulty": "Everyday",
+      "fact": "The people at {place} talk in front of you now rather than around you — who has been asking after them, which night the deliveries really come, and which of the regulars is not a regular."
+    },
+    {
+      "key": "gone_quiet_on_you",
+      "flag": "unwelcome",
+      "skill": "human_perception",
+      "difficulty": "Everyday",
+      "fact": "The room at {place} goes a half-step quieter when you come in. Nobody says anything. Nobody has to."
     }
   ],
   "needsNote": "`fromNeeds` is a CONCLUSION rather than a thing lying about: it is what two facts about a place add up to, so it is found with Deduction and it does not exist at all unless both of the facts it rests on exist here. Nothing declares a tag — the prerequisites do that, which is why a conclusion can never appear somewhere its evidence could not.",
