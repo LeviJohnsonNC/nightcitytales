@@ -82,9 +82,9 @@ describe("the people block", () => {
   const cast = generateCast({ seed: 0xca57 });
 
   /** The people block as useLife builds it, for a given state of knowledge. */
-  const peopleWith = (known: DossierFact[]) =>
+  const peopleWith = (known: DossierFact[], guarded = false) =>
     cast.map((member) => {
-      const view = publicView(member, known);
+      const view = publicView(member, known, guarded);
       return {
         key: view.key,
         name: view.name,
@@ -94,6 +94,7 @@ describe("the people block", () => {
         standing: view.standing,
         ...(view.tie ? { tie: view.tie } : {}),
         ...(view.known.length ? { known: view.known } : {}),
+        ...(view.guarded ? { guarded: true } : {}),
       };
     });
 
@@ -127,6 +128,23 @@ describe("the people block", () => {
     for (const member of cast) {
       expect(prompt).not.toContain(member.dossier.breakingPoint);
     }
+  });
+
+  it("says when somebody has closed up, and never how guarded they are", () => {
+    const prompt = renderLifeUserPrompt(
+      { ...BASE, people: peopleWith(["wants"], true) },
+      "I try Wakako again.",
+    );
+    expect(prompt).toContain("GUARDED");
+    expect(prompt).toMatch(/stopped volunteering anything/i);
+    // The narrator is told they are careful, not that they are hostile: a
+    // guarded person is still dealing with the character.
+    expect(prompt).toMatch(/still dealing with the character/i);
+  });
+
+  it("says nothing about being guarded for somebody who is not", () => {
+    const prompt = renderLifeUserPrompt({ ...BASE, people: peopleWith(["wants"]) }, "");
+    expect(prompt).not.toContain("GUARDED");
   });
 
   it("tells the model these are the people, and that it does not know the rest", () => {

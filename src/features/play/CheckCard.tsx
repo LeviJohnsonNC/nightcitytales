@@ -380,6 +380,23 @@ export function CheckCard({
       </h3>
       {pending.intent && <p className="text-sm italic text-muted-foreground">{pending.intent}</p>}
 
+      {/*
+        What this approach can get out of them, before the die. The Social
+        Skills reach different things and cost different amounts of goodwill,
+        and a choice the player cannot see is not a choice.
+      */}
+      {pending.reads && (
+        <p className="border-l-2 border-accent/40 pl-3 text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">{pending.reads.label}.</span>{" "}
+          {pending.reads.blurb}
+          {pending.reads.costsTrust && (
+            <span className="block pt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+              They will be more guarded after this, win or lose
+            </span>
+          )}
+        </p>
+      )}
+
       {opposition ? (
         <OpposedBody
           pending={pending}

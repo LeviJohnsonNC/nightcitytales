@@ -27,7 +27,6 @@
  */
 import content from "@/data/cast/cast-content.json";
 import { seededRng } from "./dice";
-import { getSkill } from "./rulesData";
 import { clampDisposition } from "./campaign";
 import { stableKey } from "./mission";
 import type { RNG } from "./types";
@@ -130,19 +129,11 @@ export function revealText(member: CastMember, fact: DossierFact): string {
 export const INSIGHT_MARGIN = 5;
 
 /**
- * True when a check was the kind of exchange that reveals a person: a printed
- * Social skill, used against them, won comfortably. Read off the rules data
- * rather than a hardcoded list, so a Social skill added to skills.json counts
- * without anyone remembering to come back here.
+ * WHICH Skills read a person, and what each one can reach, is `socialRead.ts`,
+ * which reads this ladder and this margin. It deliberately depends on this
+ * module and not the other way round: the dossier does not need to know what
+ * anybody is rolling.
  */
-export function readsThePerson(skillId: string, margin: number): boolean {
-  if (margin < INSIGHT_MARGIN) return false;
-  try {
-    return getSkill(skillId).category === "Social";
-  } catch {
-    return false;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // What the model is allowed to see.
@@ -157,14 +148,25 @@ export type CastPublicView = {
   disposition: number;
   /** Only the rungs the player has actually earned. */
   known: string[];
+  /**
+   * True when they have noticed being worked and closed up. Public by
+   * definition — being guarded is a thing you can see — and still only the
+   * boolean: the suspicion NUMBER is the engine's and never goes in a prompt.
+   */
+  guarded?: boolean;
 };
 
 /**
  * The half of a person that may go in a prompt. Everything the player has not
  * learned is simply absent: the model cannot hint at what it was never given.
  */
-export function publicView(member: CastMember, known: readonly DossierFact[]): CastPublicView {
+export function publicView(
+  member: CastMember,
+  known: readonly DossierFact[],
+  guarded = false,
+): CastPublicView {
   return {
+    ...(guarded ? { guarded: true } : {}),
     key: member.key,
     name: member.name,
     role: member.role,

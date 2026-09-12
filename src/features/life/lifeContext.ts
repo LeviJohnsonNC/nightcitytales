@@ -25,6 +25,12 @@ export type LifePersonSummary = {
    * on purpose: the engine holds the rest and the model is never shown it.
    */
   known?: string[];
+  /**
+   * True when they have noticed being worked and closed up. The boolean only:
+   * how guarded they are is a number the engine keeps, and a number in a prompt
+   * is a number the narrator will quote.
+   */
+  guarded?: boolean;
 };
 
 /**
@@ -460,6 +466,13 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       if (p.standing) parts.push(`    ${p.standing}`);
       if (p.tie) parts.push(`    From their history together: ${p.tie}`);
       for (const fact of p.known ?? []) parts.push(`    The player has worked out: ${fact}`);
+      if (p.guarded) {
+        parts.push(
+          "    GUARDED: they have noticed being worked on and have stopped volunteering " +
+            "anything. Still civil, still dealing with the character — just careful, and " +
+            "shorter than they were.",
+        );
+      }
       if (p.notes) parts.push(`    ${p.notes}`);
     }
     parts.push(

@@ -14,14 +14,16 @@
 import {
   generateCast,
   isDossierFact,
-  nextUnknownFact,
+  raiseSuspicion,
   revealText,
   rollJobSeed,
+  suspicionNow,
   type CastMember,
   type CastRole,
   type DossierFact,
   type Dossier,
   type LifepathTies,
+  type SuspicionState,
 } from "@/engine";
 import {
   listCampaignNpcs,
@@ -47,6 +49,7 @@ type CastData = {
   tie?: unknown;
   dossier?: unknown;
   known?: unknown;
+  suspicion?: unknown;
 };
 
 // ---------------------------------------------------------------------------
@@ -226,19 +229,60 @@ export async function ensureCast(input: {
 export type CastReveal = { fact: DossierFact; text: string };
 
 /**
- * Give up the next rung of someone's dossier, if they have one left to give.
- * Returns what was learned so the caller can put it on the ledger and let the
- * model narrate the tell; null when this person has nothing further to reveal.
+ * How guarded this person was when it was last written down, or null when
+ * nobody has ever worked them.
+ *
+ * Lives in the row's `data`, beside the rungs they have given up, because it is
+ * the same kind of thing: a fact about this campaign's relationship with them
+ * rather than about who they are. No migration — `campaign_npcs.data` is
+ * already where `known` and `lastSeenDay` live.
  */
-export async function revealNextFact(
+export function suspicionOf(npc: CampaignNpc | null | undefined): SuspicionState | null {
+  const raw = (npc?.data ?? {}) as CastData;
+  const state = raw.suspicion;
+  if (!state || typeof state !== "object") return null;
+  const { points, onDay } = state as { points?: unknown; onDay?: unknown };
+  if (typeof points !== "number" || typeof onDay !== "number") return null;
+  return { points, onDay };
+}
+
+/** How guarded they are TODAY, with the cooling applied. */
+export function guardednessOf(npc: CampaignNpc | null | undefined, today: number): number {
+  return suspicionNow(suspicionOf(npc), today);
+}
+
+/**
+ * Write down that somebody has been worked. Called whether or not the check
+ * landed: the cost is having tried, which is the whole point of the axis.
+ */
+export async function raiseNpcSuspicion(
   campaignId: string,
   npc: CampaignNpc,
+  add: number,
+  today: number,
+): Promise<void> {
+  if (add <= 0) return;
+  const data = (npc.data ?? {}) as Record<string, unknown>;
+  const next = raiseSuspicion({ state: suspicionOf(npc), add, today });
+  await saveCampaignNpc(campaignId, npc.npc_id ?? npc.name, {
+    data: { ...data, suspicion: next } as unknown as Json,
+  });
+}
+
+/**
+ * Write down one rung this person has given up, and hand back the line the
+ * character now knows. WHICH rung is the engine's decision (`socialRead`): this
+ * only persists it, so the ladder and the reach rules stay in one place.
+ */
+export async function revealFact(
+  campaignId: string,
+  npc: CampaignNpc,
+  fact: DossierFact,
 ): Promise<CastReveal | null> {
   const member = castMemberFrom(npc);
   if (!member) return null;
   const known = knownFactsOf(npc);
-  const fact = nextUnknownFact(known);
-  if (!fact) return null;
+  if (known.includes(fact)) return null;
 
   const data = (npc.data ?? {}) as Record<string, unknown>;
   await saveCampaignNpc(campaignId, npc.npc_id ?? npc.name, {

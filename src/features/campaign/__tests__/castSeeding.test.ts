@@ -1,12 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { generateCast, publicView, REVEAL_LADDER, type CastMember } from "@/engine";
+import {
+  GUARDED_AT,
+  SUSPICION_COOLS_AFTER_DAYS,
+  generateCast,
+  isGuarded,
+  publicView,
+  REVEAL_LADDER,
+  type CastMember,
+} from "@/engine";
 import type { CampaignNpc, FullCharacter } from "@/lib/backend";
 import {
   castFrom,
   castMemberFrom,
   castMemberInRole,
+  guardednessOf,
   knownFactsOf,
   lifepathTiesFrom,
+  suspicionOf,
 } from "../castSeeding";
 
 /**
@@ -165,5 +175,53 @@ describe("what leaves this module", () => {
     expect(view.name).toBe(CAST[0]!.name);
     expect(view.standing).toBe(CAST[0]!.standing);
     expect(view.role).toBe(CAST[0]!.role);
+  });
+});
+
+/**
+ * Suspicion rides in the row's `data`, beside the rungs they have given up and
+ * the day they were last dealt with — so the one new axis in the social system
+ * needed no column and no migration.
+ */
+describe("how guarded somebody is, off the row", () => {
+  const member = CAST[0]!;
+
+  /** A row as `raiseNpcSuspicion` leaves one. */
+  const worked = (points: number, onDay: number): CampaignNpc => {
+    const row = rowFor(member);
+    const data = (row.data ?? {}) as Record<string, unknown>;
+    return { ...row, data: { ...data, suspicion: { points, onDay } } } as CampaignNpc;
+  };
+
+  it("reads nothing off a person nobody has worked", () => {
+    expect(suspicionOf(rowFor(member))).toBeNull();
+    expect(guardednessOf(rowFor(member), 12)).toBe(0);
+    expect(guardednessOf(null, 12)).toBe(0);
+  });
+
+  it("reads back what was written, and cools it with the days", () => {
+    const row = worked(GUARDED_AT, 10);
+    expect(suspicionOf(row)).toEqual({ points: GUARDED_AT, onDay: 10 });
+    expect(isGuarded(guardednessOf(row, 10))).toBe(true);
+    expect(isGuarded(guardednessOf(row, 10 + SUSPICION_COOLS_AFTER_DAYS * GUARDED_AT))).toBe(false);
+  });
+
+  it("ignores a suspicion field that is not one", () => {
+    // Rows written before this existed, and anything hand-edited into the JSON
+    // blob, must read as "nobody has worked them" rather than throwing.
+    for (const junk of [7, "high", null, {}, { points: "3", onDay: 1 }]) {
+      const row = rowFor(member);
+      const data = (row.data ?? {}) as Record<string, unknown>;
+      const mangled = { ...row, data: { ...data, suspicion: junk } } as CampaignNpc;
+      expect(suspicionOf(mangled)).toBeNull();
+      expect(guardednessOf(mangled, 3)).toBe(0);
+    }
+  });
+
+  it("keeps the number out of the public half and the boolean in it", () => {
+    const row = worked(GUARDED_AT + 4, 2);
+    const view = publicView(member, [], isGuarded(guardednessOf(row, 2)));
+    expect(view.guarded).toBe(true);
+    expect(JSON.stringify(view)).not.toContain(String(GUARDED_AT + 4));
   });
 });

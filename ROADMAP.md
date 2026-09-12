@@ -389,10 +389,21 @@ seventeen bespoke ones.
   the answer moves to `Beat.truths`, which is not sent until the character finds
   it. Both authored beats and all five generated archetypes. A truth may carry
   `revealedAt`, for the one that lands on arrival rather than on a roll.
-- Slice 3: the social six. `readsThePerson` currently returns true for any
-  Social-category Skill at margin 5, and that category includes Personal
-  Grooming and Wardrobe & Style — so nine Skills are one Skill. Differentiate by
-  shape after `negotiation.ts`, and add suspicion as the one new axis.
+- ~~Slice 3: the social six~~ — `readsThePerson` asked the rules data for a
+  Skill's CATEGORY, so all nine printed Social Skills revealed the same dossier
+  rung at the same margin and Wardrobe & Style told you what somebody was
+  hiding. Each Skill now has a SHAPE (`socialRead.ts`): what using it on a
+  person can reach at all, and what having tried costs. Conversation gets what
+  they want and never the secret; Human Perception reads the fear without
+  asking a question; Interrogation and Bribery reach the secret and are
+  remembered for it; Trading, Streetwise, Personal Grooming and Wardrobe &
+  Style read nobody. Suspicion is the one new axis: it rises when you ask,
+  landed or not, cools on its own, and closes a person to being ASKED while
+  never closing them to being WATCHED — so burning your way through the
+  pushy Skills has a way back. It is spent on information, never on dice.
+  The shapes are shown on the check card before the die, because a choice the
+  player cannot see is not a choice. No migration: it rides in
+  `campaign_npcs.data` beside the rungs they have already given up.
 - Slice 4: Deduction, on `Truth.needs` — a conclusion whose prerequisites are
   other discoveries. Only works once slices 1-3 have populated the graph.
 - Slice 5: affordances for the new Skills, through the Stage 3 mechanism, on the

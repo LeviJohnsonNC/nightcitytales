@@ -9,6 +9,7 @@ import {
   DIFFICULTY_VALUES,
   describeDV,
   getSkill,
+  shapeForSkill,
   skillCheckLabel,
   skillLevelFor,
   woundActionPenalty,
@@ -16,6 +17,7 @@ import {
   type OpposedCheckResult,
   type Opposition,
   type SkillCheckResult,
+  type SocialShape,
 } from "@/engine";
 import type {
   CampaignEvent,
@@ -71,6 +73,15 @@ export type PendingOpposition = {
   remembered: boolean;
 };
 
+/** What an approach can reach, and what it costs to try. Never what is there. */
+export type SocialReadOffer = {
+  shape: SocialShape;
+  label: string;
+  blurb: string;
+  /** True when using it makes them more guarded, landed or not. */
+  costsTrust: boolean;
+};
+
 export type PendingCheck = {
   /** The ledger row that proposed this check. */
   eventId: string;
@@ -95,6 +106,16 @@ export type PendingCheck = {
   needed: number | null;
   /** Set when this check is resolved against a person rather than a DV. */
   opposition: PendingOpposition | null;
+  /**
+   * What this Skill, used on this person, can get you — set only when the check
+   * is against somebody and the Skill reads people at all.
+   *
+   * Shown BEFORE the die, because the point of giving the Social Skills
+   * different shapes is that choosing between them is a decision, and a
+   * decision the player cannot see is not one. It says what the approach
+   * reaches and what having tried costs; it never says what is there to find.
+   */
+  reads: SocialReadOffer | null;
   intent: string;
   beatId: string | null;
 };
@@ -164,6 +185,18 @@ function describeOpposition(raw: PromptOpposition | undefined): PendingOppositio
   };
 }
 
+/** The offer line for a Skill used on a person, or null when it reads nobody. */
+function readOfferFor(skillId: string): SocialReadOffer | null {
+  const shape = shapeForSkill(skillId);
+  if (!shape || !shape.reaches.length) return null;
+  return {
+    shape: shape.shape,
+    label: shape.label,
+    blurb: shape.blurb,
+    costsTrust: shape.suspicion > 0,
+  };
+}
+
 /** Describe a proposed check against a saved character. Null if unreadable. */
 export function describePendingCheck(
   event: CampaignEvent,
@@ -222,6 +255,7 @@ export function describePendingCheck(
     // set by the beat, the penalty is carried by the character.
     needed: dv === null ? null : dv - base - woundPenalty,
     opposition,
+    reads: opposition ? readOfferFor(skillId) : null,
     intent: typeof data.intent === "string" ? data.intent : "",
     beatId: event.beat_id ?? null,
   };

@@ -49,6 +49,7 @@ export * from "./encounter";
 export * from "./mission";
 export * from "./negotiation";
 export * from "./cast";
+export * from "./socialRead";
 export * from "./factions";
 export * from "./clocks";
 export * from "./oracle";

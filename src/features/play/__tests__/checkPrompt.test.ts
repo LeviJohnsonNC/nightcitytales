@@ -179,12 +179,12 @@ const talker = {
   skills: [{ skill_id: "persuasion", level: 4 }],
 } as unknown as FullCharacter;
 
-const opposedPrompt = (over: Record<string, unknown> = {}) =>
+const opposedPrompt = (over: Record<string, unknown> = {}, skillId = "persuasion") =>
   event({
     id: "op",
     type: "check_prompt",
     data: {
-      skillId: "persuasion",
+      skillId,
       intent: "talk the fixer round",
       opposition: {
         npcKey: "trace-santiago",
@@ -215,6 +215,25 @@ describe("opposed check prompts", () => {
       base: 8,
       remembered: false,
     });
+  });
+
+  it("says what the approach can get out of them, before the die", () => {
+    // The Social Skills reach different things and cost different amounts of
+    // goodwill. A choice the player cannot see before rolling is not a choice.
+    const pending = pendingCheckFrom([opposedPrompt()], talker);
+    expect(pending?.reads).toMatchObject({ shape: "press", costsTrust: true });
+    expect(pending?.reads?.label).toBeTruthy();
+
+    // ...and never what is actually there to find.
+    expect(JSON.stringify(pending?.reads)).not.toMatch(/secret|afraid of|hiding/i);
+  });
+
+  it("offers nothing for a Skill that does not read the person", () => {
+    for (const skillId of ["wardrobe_style", "trading"]) {
+      const pending = pendingCheckFrom([opposedPrompt({}, skillId)], talker);
+      expect(pending, skillId).not.toBeNull();
+      expect(pending?.reads, skillId).toBeNull();
+    }
   });
 
   it("marks numbers the campaign already knew", () => {
