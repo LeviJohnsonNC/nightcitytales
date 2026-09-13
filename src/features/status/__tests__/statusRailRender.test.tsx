@@ -56,8 +56,10 @@ const view = () =>
 describe("the rail renders", () => {
   const html = renderToStaticMarkup(<StatusRail status={view()} />);
 
-  it("leads the money chip with the runway", () => {
-    expect(html).toContain("rent in 50d");
+  it("shows the balance when the next bill is too far away to act on", () => {
+    // Fifty days out: a countdown nobody can do anything about is not a chip.
+    expect(html).toContain("€$4,350");
+    expect(html).not.toContain("rent in");
   });
 
   it("leads the growth chip with the distance to the next raise", () => {
@@ -96,7 +98,7 @@ describe("the commitments panel", () => {
 describe("the collapsed strip", () => {
   it("carries all three facts on one line for a screen that cannot spare three", () => {
     const html = renderToStaticMarkup(<StatusStrip status={view()} />);
-    expect(html).toContain("rent in 50d");
+    expect(html).toContain("€$4,350");
     expect(html).toContain("3 IP");
     expect(html).toContain("2 open");
   });

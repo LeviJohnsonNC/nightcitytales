@@ -12,7 +12,20 @@
 // at runtime (for validation) and as a literal union type.
 // ---------------------------------------------------------------------------
 
-export const CAMPAIGN_STATUSES = ["active", "won", "lost", "abandoned"] as const;
+/**
+ * What a campaign can be.
+ *
+ * "won" used to be here and nothing in the game ever wrote it, which made it
+ * the same failure `PRODUCT.md` names for dials: a value nothing produces is
+ * decoration. It was also the wrong shape for what this game is — a campaign is
+ * a LIFE, not a job, so finishing a night's work is not winning anything. A run
+ * ends when the character dies, or when the player walks away from it.
+ *
+ * If a life in Night City should ever be able to be over and to have gone well,
+ * that is a design decision that comes with a rule for how it happens, and the
+ * word can come back with it.
+ */
+export const CAMPAIGN_STATUSES = ["active", "lost", "abandoned"] as const;
 export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number];
 
 export const MISSION_STATUSES = ["active", "completed", "failed", "abandoned"] as const;

@@ -42,6 +42,17 @@ export type MoneyTone = "ok" | "soon" | "due";
 /** Inside a week of the next bill is the point at which it should start to nag. */
 export const MONEY_WARNING_DAYS = 7;
 
+/**
+ * How far ahead the chip will look for the rent.
+ *
+ * Rent is charged in arrears a month at a time, so a fresh campaign is fifty
+ * days from its first bill. "rent in 50d" is arithmetically true and
+ * emotionally inert: a countdown to something too far away to act on, in the
+ * one place on the screen that exists to produce a decision. Past this horizon
+ * the chip leads with whatever is actually nearest instead.
+ */
+export const MONEY_HORIZON_DAYS = 30;
+
 export type MoneyStatus = {
   eurobucks: number;
   rates: LifestyleRates;
@@ -49,6 +60,11 @@ export type MoneyStatus = {
   owed: number;
   /** Days until the next month's costs land. */
   daysToNextBill: number;
+  /**
+   * The money thing actually coming soonest, as the chip says it. Null when
+   * nothing is near enough to be worth counting down to.
+   */
+  nextUp: { label: string; inDays: number } | null;
   /** Short of what is owed (or of the next month's costs) by this much. */
   short: number;
   tone: MoneyTone;
@@ -60,6 +76,11 @@ export function moneyStatus(input: {
   campaign: Campaign;
   vitals: CampaignVitals;
   character: FullCharacter;
+  /**
+   * A money commitment with a date on it — a debt, somebody's deadline — so the
+   * chip can lead with it when it lands before the rent does.
+   */
+  nearestDue?: { label: string; inDays: number } | null;
 }): MoneyStatus {
   const rates = lifestyleRates(input.character);
   const day = input.campaign.day ?? 0;
@@ -75,31 +96,58 @@ export function moneyStatus(input: {
 
   // A character nobody charges has no runway to show, and inventing one would
   // be inventing a pressure the rules do not put on them.
+  const nearestDue = input.nearestDue ?? null;
+  const balance = `€$${eurobucks.toLocaleString()}`;
+
   if (rates.perMonth <= 0) {
     return {
       eurobucks,
       rates,
       owed: 0,
       daysToNextBill,
+      nextUp: nearestDue,
       short: 0,
-      tone: "ok",
-      line: `€$${eurobucks.toLocaleString()}`,
+      tone: nearestDue && nearestDue.inDays <= MONEY_WARNING_DAYS ? "soon" : "ok",
+      line: nearestDue ? `${balance} · ${dueClause(nearestDue)}` : balance,
     };
   }
 
   const owed = bills.total;
-  const tone: MoneyTone = owed > 0 ? "due" : daysToNextBill <= MONEY_WARNING_DAYS ? "soon" : "ok";
   // What they are short by is measured against whatever is actually coming: the
   // overdue bill if one has landed, otherwise next month's.
   const target = owed > 0 ? owed : rates.perMonth;
   const short = Math.max(0, target - eurobucks);
 
+  // Whichever is truest, in this order: what is already owed, then whatever
+  // money thing lands soonest, then the rent once it is close enough to act on,
+  // then just the balance. The chip never counts down to something too far away
+  // to do anything about.
+  const rentIsNear = daysToNextBill <= MONEY_HORIZON_DAYS;
+  const dueBeatsRent = nearestDue !== null && nearestDue.inDays < daysToNextBill;
+  const nextUp: MoneyStatus["nextUp"] = dueBeatsRent
+    ? nearestDue
+    : rentIsNear
+      ? { label: "rent", inDays: daysToNextBill }
+      : nearestDue;
+
+  const tone: MoneyTone =
+    owed > 0 ? "due" : nextUp !== null && nextUp.inDays <= MONEY_WARNING_DAYS ? "soon" : "ok";
+
   const line =
     owed > 0
-      ? `€$${eurobucks.toLocaleString()} · €$${owed.toLocaleString()} owed`
-      : `€$${eurobucks.toLocaleString()} · rent in ${daysToNextBill}d`;
+      ? `${balance} · €$${owed.toLocaleString()} owed`
+      : nextUp
+        ? `${balance} · ${dueClause(nextUp)}`
+        : balance;
 
-  return { eurobucks, rates, owed, daysToNextBill, short, tone, line };
+  return { eurobucks, rates, owed, daysToNextBill, nextUp, short, tone, line };
+}
+
+/** "rent in 11d", "the clinic today", "Kiro's money 2d late". */
+function dueClause(due: { label: string; inDays: number }): string {
+  if (due.inDays < 0) return `${due.label} ${Math.abs(due.inDays)}d late`;
+  if (due.inDays === 0) return `${due.label} today`;
+  return `${due.label} in ${due.inDays}d`;
 }
 
 // ---------------------------------------------------------------------------
@@ -325,21 +373,43 @@ export function statusView(input: {
   missionTitle?: string | null;
   currentKey?: string | null;
 }): StatusView {
+  const commitments = commitmentsStatus({
+    day: input.campaign.day ?? 0,
+    situations: input.situations,
+    clocks: input.clocks,
+    ...(input.objectives ? { objectives: input.objectives } : {}),
+    ...(input.missionTitle !== undefined ? { missionTitle: input.missionTitle } : {}),
+    ...(input.currentKey !== undefined ? { currentKey: input.currentKey } : {}),
+  });
+
   return {
-    money: moneyStatus(input),
+    // Commitments first, because the money chip leads with whichever money
+    // thing is actually nearest — and a debt with a date on it can easily beat
+    // the rent to it.
+    money: moneyStatus({ ...input, nearestDue: nearestMoneyDue(commitments) }),
+    commitments,
     growth: growthStatus({
       character: input.character,
       improvementPoints: input.character.finance?.improvement_points ?? 0,
     }),
-    commitments: commitmentsStatus({
-      day: input.campaign.day ?? 0,
-      situations: input.situations,
-      clocks: input.clocks,
-      ...(input.objectives ? { objectives: input.objectives } : {}),
-      ...(input.missionTitle !== undefined ? { missionTitle: input.missionTitle } : {}),
-      ...(input.currentKey !== undefined ? { currentKey: input.currentKey } : {}),
-    }),
   };
+}
+
+/**
+ * The soonest dated `need` on the board, as the money chip would say it.
+ *
+ * `need` is the category the funnel puts money on — rent, debts, the thing that
+ * has to be paid. A `people` commitment with a date is somebody waiting, which
+ * is a real commitment and not a bill, so it belongs in the list rather than on
+ * the money chip.
+ */
+function nearestMoneyDue(status: CommitmentsStatus): { label: string; inDays: number } | null {
+  const dated = status.commitments
+    .filter((c) => c.kind === "need" && c.status === "active" && c.dueInDays !== null)
+    .sort((a, b) => (a.dueInDays ?? 0) - (b.dueInDays ?? 0));
+  const soonest = dated[0];
+  if (!soonest || soonest.dueInDays === null) return null;
+  return { label: soonest.title, inDays: soonest.dueInDays };
 }
 
 /** "due in 2 days", "today", "3 days late" — a date a player can act on. */
