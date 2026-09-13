@@ -108,7 +108,21 @@ can close.
 
 Merged on its own, before anything else.
 
-## Phase 1 — The status rail
+## Phase 1 — The status rail — shipped
+
+Built as described, with two decisions taken during the work and recorded here
+rather than left in a commit message.
+
+**It replaced rather than joined.** The bare Eurobucks number in the Life rail,
+the "On your plate" list and the separate Pressure panel are gone: the first was
+a score rather than a pressure, and the other two put a lead the world was
+dangling on the same footing as a promise the player made. Adding a rail beside
+them would have meant the same facts in two places, drifting.
+
+**Play passes no clocks.** `PressurePanel` is their home on that screen, and
+saying it twice is worse than either.
+
+## Phase 1 — as planned
 
 One component, three chips, derived on render.
 
@@ -126,7 +140,16 @@ tappable strip that expands on demand — the Play screen already carries vitals
 the scene, objectives, prompts and the combat board, and on a phone it cannot
 afford three more chips at rest.
 
-## Phase 2 — The commitments panel
+## Phase 2 — The commitments panel — shipped
+
+Live situations grouped with due dates, severity, the job's objectives pinned
+above them and visible clocks as six-segment dials. The rule that keeps it off
+the quest board is enforced in `statusModel.ts` rather than left to the
+renderer: `COMMITTED_CATEGORIES` is `need`, `people`, `pressure`, and an
+`opportunity` or a `hook` is a **lead** — shown under its own heading, never
+counted in the chip.
+
+## Phase 2 — as planned
 
 Live situations grouped by category, `dueDay` rendered as `due in 2 days`,
 severity as a dot count, the active mission's objectives pinned at the top, and

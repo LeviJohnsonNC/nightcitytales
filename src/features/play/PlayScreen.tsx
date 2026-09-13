@@ -22,6 +22,8 @@ import { JobCard } from "./JobCard";
 import { MapButton } from "@/features/atlas/MapButton";
 import { SheetDrawer } from "./SheetDrawer";
 import { BottomDock, MobileStatusBar } from "./mobileShell";
+import { StatusStrip } from "@/features/status/StatusRail";
+import { statusView } from "@/features/status/statusModel";
 import { DowntimePanel } from "@/features/downtime/DowntimePanel";
 import { RoleAbilityPanel } from "./RoleAbilityPanel";
 import { raisedWeapon } from "./encounterModel";
@@ -763,8 +765,27 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
       : []),
   ];
 
+  /**
+   * Where they stand, collapsed.
+   *
+   * Play already carries vitals, the scene, prompts and the combat board, so
+   * the rail is a strip that opens on demand rather than three standing chips.
+   * Clocks are deliberately NOT passed as commitments here: PressurePanel below
+   * is their home on this screen, and saying it twice is worse than either.
+   */
+  const standing = statusView({
+    campaign: bundle.campaign,
+    vitals: bundle.vitals,
+    character: bundle.character,
+    situations: [],
+    clocks: [],
+    objectives: bundle.runtime?.objectives ?? [],
+    missionTitle: bundle.mission?.title ?? null,
+  });
+
   const rail = (
     <>
+      <StatusStrip status={standing} />
       <CharacterPanel bundle={bundle} luck={play.luck} />
       <RoleAbilityPanel play={play} />
       <RollHistory rolls={play.rolls} />
