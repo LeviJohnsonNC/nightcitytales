@@ -27,6 +27,9 @@ import type { RNG } from "../types";
 /** Ids of generated jobs start with this, so they are recognisable on sight. */
 export const GENERATED_JOB_PREFIX = "job-";
 
+/** The id of the one objective every generated job carries: what it was hired for. */
+export const JOB_OBJECTIVE = "job_done";
+
 type Slots = Record<string, string>;
 
 type Approach = {
@@ -222,7 +225,10 @@ export function generateJob(seed: number): Mission {
       readAloud: fill(archetype.background),
       gmBrief: fill(archetype.backgroundBrief),
       ...truthsFor("background"),
-      objectives: [fill(archetype.objective)],
+      // Keyed rather than positional so the climax can name it: an id of
+      // "background.0" re-points the moment an archetype declares a second
+      // objective above it.
+      objectives: [{ key: JOB_OBJECTIVE, text: fill(archetype.objective) }],
       exits: [{ to: "hook", label: "Take the job" }],
     },
     {
@@ -262,7 +268,7 @@ export function generateJob(seed: number): Mission {
       gmBrief: fill(archetype.climaxBrief),
       opposition: [`${opposition.name} — ${opposition.flavour}`],
       encounter: true,
-      exits: [{ to: "resolution", label: "Finish it" }],
+      exits: [{ to: "resolution", label: "Finish it", completes: [JOB_OBJECTIVE] }],
     },
     {
       id: "resolution",

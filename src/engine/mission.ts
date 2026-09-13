@@ -31,7 +31,21 @@ export type BeatExit = {
   requires?: string[];
   /** Flags set when this exit is taken. */
   sets?: string[];
+  /**
+   * Objectives this exit closes as achieved, by objective id.
+   *
+   * This is how an objective ever stops being "active". The beat graph owns it
+   * for the same reason it owns every other transition: taking the exit that
+   * frees the hostage IS achieving the objective, and the narrator should not
+   * be the one deciding whether it counts.
+   */
+  completes?: string[];
+  /** Objectives this exit closes as failed, by objective id. */
+  fails?: string[];
 };
+
+/** An objective declared with a stable id of its own rather than a positional one. */
+export type BeatObjective = { key: string; text: string };
 
 export type Beat = {
   id: string;
@@ -56,7 +70,13 @@ export type Beat = {
    * render in the UI. Anything secret belongs in gmBrief only.
    */
   playerBrief?: string;
-  objectives?: string[];
+  /**
+   * What this beat puts on the board. A bare string is identified by its
+   * position (`beatId.0`); the keyed form names itself, which is what an exit's
+   * `completes` should reference — a positional id silently re-points at a
+   * different objective the moment one is inserted above it.
+   */
+  objectives?: (string | BeatObjective)[];
   /**
    * What this beat is holding back: the facts the player has no way of knowing
    * yet, each with the Skill that would find it. Withheld from the prompt until
@@ -175,12 +195,74 @@ export function getBeat(mission: Mission, beatId: string): Beat {
   return beat;
 }
 
+/** The id an objective entry answers to: its own key, or its position. */
+function objectiveId(beatId: string, entry: string | BeatObjective, index: number): string {
+  return typeof entry === "string" ? `${beatId}.${index}` : entry.key;
+}
+
 function objectivesFor(beat: Beat): MissionObjective[] {
-  return (beat.objectives ?? []).map((text, index) => ({
-    id: `${beat.id}.${index}`,
-    text,
+  return (beat.objectives ?? []).map((entry, index) => ({
+    id: objectiveId(beat.id, entry, index),
+    text: typeof entry === "string" ? entry : entry.text,
     status: "active" as const,
   }));
+}
+
+/**
+ * The objectives the beats named here put on the board, in order, de-duplicated.
+ *
+ * What a runtime's objective list SHOULD hold, given where it has been — which
+ * is how a saved one is rebuilt after the mission content changes underneath it.
+ * Unknown beat ids are skipped rather than throwing: a renamed beat should cost
+ * its own objectives, not the whole load.
+ */
+export function objectivesForBeats(mission: Mission, beatIds: string[]): MissionObjective[] {
+  let out: MissionObjective[] = [];
+  for (const id of beatIds) {
+    const beat = mission.beats.find((b) => b.id === id);
+    if (beat) out = mergeObjectives(out, objectivesFor(beat));
+  }
+  return out;
+}
+
+/**
+ * Every objective the mission declares anywhere, by id.
+ *
+ * An exit may close an objective belonging to a beat the player never stood on
+ * — a job whose climax fails the "keep them alive" objective declared back at
+ * the hook. Closing one that is not on the board yet has to ADD it closed
+ * rather than quietly do nothing, or the result is the silent no-op this whole
+ * change exists to remove.
+ */
+export function declaredObjectives(mission: Mission): Map<string, MissionObjective> {
+  const byId = new Map<string, MissionObjective>();
+  for (const beat of mission.beats) {
+    for (const objective of objectivesFor(beat)) {
+      if (!byId.has(objective.id)) byId.set(objective.id, objective);
+    }
+  }
+  return byId;
+}
+
+/**
+ * Close an objective, adding it in that state if the board has not seen it yet.
+ * Throws on an id the mission does not declare — `validateMission` rejects those
+ * at authoring time, so reaching here means a typo got past the tests.
+ */
+function closeObjective(
+  mission: Mission,
+  objectives: MissionObjective[],
+  id: string,
+  status: ObjectiveStatus,
+): MissionObjective[] {
+  if (objectives.some((o) => o.id === id)) {
+    return objectives.map((o) => (o.id === id ? { ...o, status } : o));
+  }
+  const declared = declaredObjectives(mission).get(id);
+  if (!declared) {
+    throw new Error(`Mission "${mission.id}" has no objective "${id}" to close.`);
+  }
+  return [...objectives, { ...declared, status }];
 }
 
 function mergeObjectives(
@@ -268,20 +350,37 @@ export function advance(mission: Mission, runtime: MissionRuntime, exitTo: strin
     ? runtime.completedBeats
     : [...runtime.completedBeats, runtime.currentBeatId];
 
+  let objectives = mergeObjectives(runtime.objectives, objectivesFor(target));
+  for (const id of exit.completes ?? [])
+    objectives = closeObjective(mission, objectives, id, "done");
+  for (const id of exit.fails ?? []) objectives = closeObjective(mission, objectives, id, "failed");
+
   return {
     ...runtime,
     currentBeatId: target.id,
     completedBeats,
     branchChoices: { ...runtime.branchChoices, [runtime.currentBeatId]: exit.to },
-    objectives: mergeObjectives(runtime.objectives, objectivesFor(target)),
+    objectives,
     flags: [...flags],
     status: target.type === "resolution" ? "completed" : runtime.status,
   };
 }
 
-/** Mark the mission failed (e.g. the player character died). */
+/**
+ * Mark the mission failed (e.g. the player character died).
+ *
+ * Anything still open failed with it. A dead Edgerunner does not leave a job
+ * with three objectives eternally "active" — that reads as a job still in
+ * progress everywhere the objectives are counted.
+ */
 export function failMission(runtime: MissionRuntime): MissionRuntime {
-  return { ...runtime, status: "failed" };
+  return {
+    ...runtime,
+    status: "failed",
+    objectives: runtime.objectives.map((o) =>
+      o.status === "active" ? { ...o, status: "failed" } : o,
+    ),
+  };
 }
 
 /** A beat with no exits, or a Resolution, ends its line. */
@@ -361,10 +460,51 @@ export function validateMission(mission: Mission): string[] {
     problems.push(`startBeatId "${mission.startBeatId}" is not a beat in this mission.`);
   }
 
+  // Objective ids must be unique across the mission, because an exit closes one
+  // by id: two beats declaring the same key would make "completes" ambiguous.
+  const objectiveIds = new Set<string>();
   for (const beat of mission.beats) {
+    (beat.objectives ?? []).forEach((entry, index) => {
+      const id = objectiveId(beat.id, entry, index);
+      if (objectiveIds.has(id)) {
+        problems.push(`Objective id "${id}" is declared more than once.`);
+      }
+      objectiveIds.add(id);
+    });
+  }
+
+  for (const beat of mission.beats) {
+    // `advance` identifies an exit by its TARGET, so two exits from one beat to
+    // the same beat are indistinguishable and the first always wins. That is
+    // survivable when they differ only in wording and actively wrong now that an
+    // exit carries consequences: "got out clean" and "got out messy" landing on
+    // the same Resolution would silently close the same objectives either way.
+    const targets = new Set<string>();
+    for (const exit of beat.exits) {
+      if (targets.has(exit.to)) {
+        problems.push(
+          `Beat "${beat.id}" has more than one exit to "${exit.to}", which advance() cannot tell apart.`,
+        );
+      }
+      targets.add(exit.to);
+    }
+
     for (const exit of beat.exits) {
       if (!ids.has(exit.to)) {
         problems.push(`Beat "${beat.id}" exits to "${exit.to}", which does not exist.`);
+      }
+      for (const id of [...(exit.completes ?? []), ...(exit.fails ?? [])]) {
+        if (!objectiveIds.has(id)) {
+          problems.push(
+            `Beat "${beat.id}" exits to "${exit.to}" closing objective "${id}", which no beat declares.`,
+          );
+        }
+      }
+      const both = (exit.completes ?? []).filter((id) => (exit.fails ?? []).includes(id));
+      for (const id of both) {
+        problems.push(
+          `Beat "${beat.id}" exits to "${exit.to}" both completing and failing objective "${id}".`,
+        );
       }
     }
     if (!isTerminal(beat) && beat.exits.length === 0) {
@@ -389,6 +529,21 @@ export function validateMission(mission: Mission): string[] {
   }
   if (![...reached].some((id) => mission.beats.find((b) => b.id === id)?.type === "resolution")) {
     problems.push("No Resolution beat is reachable, so the mission can never complete.");
+  }
+
+  // An objective no exit ever closes can only ever be "active". That was true of
+  // every objective in the game until this check existed, and settlement spent
+  // that whole time reporting "0/N objectives closed" on finished jobs. Stated
+  // here so the next mission that forgets fails a test instead of a player.
+  const closedSomewhere = new Set(
+    mission.beats.flatMap((beat) =>
+      beat.exits.flatMap((exit) => [...(exit.completes ?? []), ...(exit.fails ?? [])]),
+    ),
+  );
+  for (const id of objectiveIds) {
+    if (!closedSomewhere.has(id)) {
+      problems.push(`Objective "${id}" is never completed or failed by any exit.`);
+    }
   }
 
   return problems;
@@ -426,8 +581,15 @@ export function missionOffer(mission: Mission): MissionOffer {
     district: mission.subtitle ?? "Night City",
     opposition: "Unknown.",
     pitch: mission.beats.find((b) => b.id === mission.startBeatId)?.readAloud ?? mission.title,
-    ask: mission.beats.find((b) => b.id === mission.startBeatId)?.objectives?.[0] ?? mission.title,
+    ask: startObjectiveText(mission) ?? mission.title,
   };
+}
+
+/** The first objective on the start beat, as text. What the job is asking for. */
+function startObjectiveText(mission: Mission): string | null {
+  const entry = mission.beats.find((b) => b.id === mission.startBeatId)?.objectives?.[0];
+  if (entry === undefined) return null;
+  return typeof entry === "string" ? entry : entry.text;
 }
 
 /** A lowercase, underscored key for a name. Stable for the same input. */
