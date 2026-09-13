@@ -34,7 +34,9 @@ const derived = deriveStats(stats);
 
 describe("status vocabularies mirror the DB CHECK constraints", () => {
   it("lists the exact allowed values", () => {
-    expect([...CAMPAIGN_STATUSES]).toEqual(["active", "won", "lost", "abandoned"]);
+    // "won" was removed: nothing ever wrote it, and a campaign is a life
+    // rather than a job, so there is nothing to win by surviving one.
+    expect([...CAMPAIGN_STATUSES]).toEqual(["active", "lost", "abandoned"]);
     expect([...MISSION_STATUSES]).toEqual(["active", "completed", "failed", "abandoned"]);
     expect([...WOUND_STATE_CODES]).toEqual(["none", "light", "serious", "mortal"]);
     expect([...NPC_STATUSES]).toEqual(["alive", "dead", "fled", "unknown"]);

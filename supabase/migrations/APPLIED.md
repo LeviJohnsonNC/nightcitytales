@@ -95,3 +95,9 @@ once it has actually been run.
 
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
+
+- `20260913040000_drop_won_campaign_status.sql` — narrows the
+  `campaigns_status_check` vocabulary to `active | lost | abandoned`. Nothing in
+  the application has ever written `won`, so until this runs the only difference
+  is that the database would still accept a value the app cannot produce. No
+  code depends on it having run.

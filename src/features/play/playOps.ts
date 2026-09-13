@@ -1758,10 +1758,6 @@ async function settleMission(
   // deliberately leaves the wrap-up screen. So a campaign sat in Aftermath had
   // a status nothing had confirmed since the job was accepted. It is confirmed
   // here, at the moment the job actually ends.
-  //
-  // The vocabulary also holds "won", and nothing in the game has ever written
-  // it. That is a design question rather than a missing line: what a life in
-  // Night City would have to do to be over and have gone well.
   await updateCampaign(campaignId, { status: "active" });
 
   // The phase moves to aftermath — the wrap-up screen — and only the player's

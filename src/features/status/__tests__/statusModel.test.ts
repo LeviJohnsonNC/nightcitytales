@@ -44,17 +44,68 @@ const situation = (over: Partial<LifeSituation>): LifeSituation => ({
 });
 
 describe("money leads with the runway, not the balance", () => {
-  it("says how long until rent rather than only how much is in the account", () => {
+  it("does not count down to a bill too far away to act on", () => {
     // Day 10, first month free, so bills are settled through day 30 — and rent
-    // is charged in arrears, so the month running 30→60 lands on day 60.
+    // is charged in arrears, so the month running 30→60 lands on day 60. Fifty
+    // days out is arithmetically true and emotionally inert, and this chip
+    // exists to produce a decision, so it says the balance and nothing else.
     const money = moneyStatus({
       campaign: campaign(),
       vitals: vitals(4350),
       character: character(),
     });
     expect(money.daysToNextBill).toBe(50);
-    expect(money.line).toContain("rent in 50d");
+    expect(money.nextUp).toBeNull();
+    expect(money.line).toBe("€$4,350");
     expect(money.tone).toBe("ok");
+  });
+
+  it("becomes a rent countdown once the bill is inside the horizon", () => {
+    const money = moneyStatus({
+      campaign: campaign({ day: 40 }),
+      vitals: vitals(4350),
+      character: character(),
+    });
+    expect(money.line).toContain("rent in 20d");
+    expect(money.nextUp).toEqual({ label: "rent", inDays: 20 });
+  });
+
+  it("leads with a debt that lands before the rent does", () => {
+    const money = moneyStatus({
+      campaign: campaign({ day: 40 }),
+      vitals: vitals(4350),
+      character: character(),
+      nearestDue: { label: "The clinic", inDays: 3 },
+    });
+    expect(money.line).toContain("The clinic in 3d");
+    expect(money.tone).toBe("soon");
+  });
+
+  it("still shows a debt even when the rent is over the horizon", () => {
+    const money = moneyStatus({
+      campaign: campaign(),
+      vitals: vitals(4350),
+      character: character(),
+      nearestDue: { label: "The clinic", inDays: 12 },
+    });
+    expect(money.line).toContain("The clinic in 12d");
+  });
+
+  it("says today and late in words a player can act on", () => {
+    const today = moneyStatus({
+      campaign: campaign({ day: 40 }),
+      vitals: vitals(10),
+      character: character(),
+      nearestDue: { label: "Kiro's money", inDays: 0 },
+    });
+    expect(today.line).toContain("Kiro's money today");
+    const late = moneyStatus({
+      campaign: campaign({ day: 40 }),
+      vitals: vitals(10),
+      character: character(),
+      nearestDue: { label: "Kiro's money", inDays: -2 },
+    });
+    expect(late.line).toContain("Kiro's money 2d late");
   });
 
   it("turns on the pressure inside a week of the bill", () => {

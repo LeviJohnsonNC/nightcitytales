@@ -53,6 +53,6 @@ describe("campaign status writes stay inside the CHECK constraint", () => {
   it("knows the vocabulary it is checking against", () => {
     // Guards the guard: if CAMPAIGN_STATUSES drifts from the migration's CHECK,
     // the tests above would start passing bad values.
-    expect([...CAMPAIGN_STATUSES].sort()).toEqual(["abandoned", "active", "lost", "won"]);
+    expect([...CAMPAIGN_STATUSES].sort()).toEqual(["abandoned", "active", "lost"]);
   });
 });
