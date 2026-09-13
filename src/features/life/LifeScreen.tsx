@@ -58,6 +58,9 @@ import { MapButton } from "@/features/atlas/MapButton";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { StatusRail } from "@/features/status/StatusRail";
 import { statusView, type StatusView } from "@/features/status/statusModel";
+import { ReceiptBar } from "@/features/status/ReceiptBar";
+import { snapshotOf } from "@/features/status/receipts";
+import { useReceipts } from "@/features/status/useReceipts";
 import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
 import {
   actorFor,
@@ -708,6 +711,25 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
   const life = useLife(campaignId);
   const bundle = life.bundle;
 
+  /**
+   * What the last turn cost.
+   *
+   * Diffed across bundles rather than read from a row: every one of these
+   * numbers was already moved by the turn and written down, and none of them
+   * was ever shown as a CHANGE. Called above the loading and error returns
+   * below, because hooks do not get to be conditional.
+   */
+  const receipts = useReceipts(
+    bundle
+      ? snapshotOf({
+          clock: bundle.clock,
+          vitals: bundle.vitals,
+          npcs: bundle.npcs,
+          pressure: bundle.pressure,
+        })
+      : null,
+  );
+
   // What is worth knowing about somewhere tonight. The engine applies the
   // budget: three across the whole city, one per district, each tracing to a
   // row. Most pins carry nothing, which is the intended reading.
@@ -941,6 +963,9 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               busy={life.busy}
               {...(life.narration ? { suppressText: life.narration.text } : {})}
             />
+
+            {/* What the turn just cost, under the log where the eye already is. */}
+            <ReceiptBar receipts={receipts} />
 
             {life.actionError && (
               <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
