@@ -161,7 +161,32 @@ player did not cause.** A job they took, a promise they made, a debt they owe, a
 clock they started. Opportunities the world is dangling are not commitments and
 do not belong in the list — they arrive through the funnel, as they do now.
 
-## Phase 3 — The opening
+## Phase 3 — The opening — shipped
+
+Built as planned, with four decisions taken during the work.
+
+**`take_work` offers the authored opener.** "A Night at the Opera" is the
+strongest first job in the game, and it is now reached in fiction rather than
+from a button on the character list. It is an OFFER: the player can question it,
+argue the fee up, or turn it down, and the wire supplies generated work from
+then on. One line in `openingOps.ts` changes it to a generated job if that ever
+reads as too fixed.
+
+**It offers, it does not start.** `take_work` moves LIFE → HOOK, not LIFE → JOB.
+`accept_hook` remains the only door into a job, and the player still gets the
+negotiation.
+
+**Money reaches the model as a band, never a figure.** The style guide's hardest
+rule is that numbers belong to the engine, and the surest way to stop the cold
+open pricing the rent is never to hand it the rent. A test asserts no long
+number appears in the prompt at all.
+
+**The doors' wording falls back; the prose never does.** A model that forgets a
+door, invents a fifth, or repeats one still produces a playable first screen,
+because the doors are the engine's. Empty prose is a failed generation and is
+reported as one, per the call below.
+
+## Phase 3 — as planned
 
 The roster's starter-versus-generated button is removed. In its place, on
 campaign creation and before any mission is seeded:

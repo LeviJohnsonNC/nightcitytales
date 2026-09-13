@@ -1,0 +1,91 @@
+/*
+ * The cold open.
+ *
+ * Deliberately the slowest screen in the game. Everything else in Night City
+ * Tales appears at once because the player is mid-decision; here they have just
+ * finished a character sheet and have nothing to do but read, so the prose
+ * arrives a paragraph at a time and the doors arrive after it. The pacing IS
+ * the welcome.
+ *
+ * Every animation here is a fade and a short rise, which the global
+ * prefers-reduced-motion block in styles.css already collapses to nothing.
+ */
+
+.open-rise {
+  animation: open-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes open-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The line under the title, drawn left to right as the scene settles. */
+.open-rule {
+  transform-origin: left;
+  animation: open-rule 900ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes open-rule {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* While the city is deciding what kind of night this is. */
+.open-breathe {
+  animation: open-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes open-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/*
+ * A door. The frame lights on hover and focus rather than the background
+ * shifting, so the card reads as a sign coming on instead of a button greying.
+ */
+.open-door {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.open-door:hover:not(:disabled),
+.open-door:focus-visible {
+  border-color: rgba(255, 61, 154, 0.55);
+  box-shadow:
+    0 0 14px -2px rgba(255, 61, 154, 0.45),
+    inset 0 0 14px -8px rgba(255, 61, 154, 0.35);
+  transform: translateY(-2px);
+}
+
+/* The one they picked stays lit while the rest step back. */
+.open-door-taken {
+  border-color: rgba(52, 213, 230, 0.6);
+  box-shadow:
+    0 0 16px -2px rgba(52, 213, 230, 0.5),
+    inset 0 0 16px -8px rgba(52, 213, 230, 0.4);
+}
+
+.open-door-passed {
+  opacity: 0.35;
+}

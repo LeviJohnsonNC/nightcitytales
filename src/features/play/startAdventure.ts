@@ -1,36 +1,27 @@
 /**
- * Starting (or resuming) a playthrough for a saved character. Creates a campaign
- * seeded with a mission and returns its id; if the character already has an
- * active campaign, that one is resumed instead and the requested mission is
- * ignored — you cannot start a second job on top of a live one.
+ * Starting (or resuming) a playthrough for a saved character. Returns the
+ * campaign id; if the character already has an active campaign, that one is
+ * resumed untouched, so a character who has walked across the city stays where
+ * they walked to.
  *
- * The campaign opens where the character lives. Resuming does not move anybody:
- * an existing campaign is returned untouched, so a character who has walked
- * across the city stays where they walked to.
+ * A new campaign is created with NO MISSION. It used to be handed one here, and
+ * the choice between the authored opener and a generated job was made by a
+ * button on the character list — out of fiction, before the player had read a
+ * word. The campaign now opens on its cold open, in Life, and whether there is
+ * work tonight is the first thing the character decides. See
+ * features/opening/.
+ *
+ * The campaign still opens where the character lives.
  */
-import { jobIdForSeed, NIGHT_AT_THE_OPERA, rollJobSeed } from "@/engine";
 import { getActiveCampaignForCharacter, getCharacterHome, type Character } from "@/lib/backend";
 import { startCampaignForCharacter } from "@/features/campaign/newCampaign";
 
-export type AdventureStart =
-  /** The authored Tales from the RED opener. */
-  | { kind: "starter" }
-  /** A procedurally generated job. The seed is drawn now and lives in the id. */
-  | { kind: "generated" };
-
-/** The mission id a start option resolves to. */
-export function missionIdFor(start: AdventureStart): string {
-  return start.kind === "generated" ? jobIdForSeed(rollJobSeed()) : NIGHT_AT_THE_OPERA.id;
-}
-
 export async function startOrResumeAdventure(
   character: Pick<Character, "id" | "name" | "handle">,
-  start: AdventureStart = { kind: "starter" },
 ): Promise<string> {
   const existing = await getActiveCampaignForCharacter(character.id);
   if (existing) return existing.id;
   return startCampaignForCharacter(character, {
-    missionId: missionIdFor(start),
     // Looked up here rather than passed in, so no caller can forget it and no
     // caller has to carry a finance row it does not otherwise need.
     homePlaceKey: await homeFor(character.id),

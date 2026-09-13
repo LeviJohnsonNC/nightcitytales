@@ -241,6 +241,7 @@ describe("turn operations are free of React", () => {
     expect(opsModules.map(shortName).sort()).toEqual([
       "features/downtime/downtimeOps.ts",
       "features/life/lifeOps.ts",
+      "features/opening/openingOps.ts",
       "features/play/playOps.ts",
     ]);
   });
