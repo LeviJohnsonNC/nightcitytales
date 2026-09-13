@@ -217,7 +217,27 @@ succeeding, and an outage means a new campaign cannot be started at all. The
 four choices are engine-owned regardless, so if that trade ever looks wrong, an
 authored fallback intro can be added later without touching the branch logic.
 
-## Phase 4 — Receipts
+## Phase 4 — Receipts — shipped
+
+`−€$450`, `HP 30 → 21`, `Kiro ↑`, `NCPD Heat 4/6` with its dial, `+3 hours`,
+under the Life log, fading after seven seconds.
+
+Built as a **diff of two snapshots**, not a new record. Every value was already
+moved by the turn and written to a row; none of them was ever shown as a
+_change_. So nothing here is stored and nothing here can disagree with what it
+came from.
+
+Two rules worth keeping:
+
+- **A card appears only when something moved.** A turn that changed nothing
+  produces none. A strip that is always lit is wallpaper.
+- **A hidden clock is never a receipt.** Showing its movement would leak exactly
+  what hiding it was for.
+
+Time sorts last, because it moves on almost every turn and would otherwise be
+the card the eye lands on first.
+
+## Phase 4 — as planned
 
 Transient cards after a turn resolves: `Kiro ^`, `-E$450 +3 days`,
 `Handgun 6->7`, `NCPD Heat [##....]`. The rail is standing state; the receipts

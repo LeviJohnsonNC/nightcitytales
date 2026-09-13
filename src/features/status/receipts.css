@@ -1,0 +1,24 @@
+/*
+ * Receipts arrive, hold, and go.
+ *
+ * The fade-out is part of the animation rather than a timer in React: the card
+ * is removed from state on its own schedule, and this makes the last second of
+ * its life look deliberate instead of a disappearance.
+ *
+ * The global prefers-reduced-motion block in styles.css collapses this to
+ * nothing, which is correct: the information is in the text, not the movement.
+ */
+.receipt {
+  animation: receipt-in 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes receipt-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

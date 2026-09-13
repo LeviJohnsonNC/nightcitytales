@@ -1748,7 +1748,22 @@ async function settleMission(
   // written to suit how the job was going.
   await revealComplication(campaignId, mission.id);
 
-  // The campaign stays active: it is the character's run, not this one job.
+  // A finished job writes the campaign's status, rather than leaving it to be
+  // written later or not at all.
+  //
+  // What it writes is "active", because a campaign is a life and not a job:
+  // surviving a night's work is not winning anything, and the run continues.
+  // Until now nothing wrote it here at all — `settle_job` moves the phase and
+  // touches no status, and `close_aftermath` only writes one once the player
+  // deliberately leaves the wrap-up screen. So a campaign sat in Aftermath had
+  // a status nothing had confirmed since the job was accepted. It is confirmed
+  // here, at the moment the job actually ends.
+  //
+  // The vocabulary also holds "won", and nothing in the game has ever written
+  // it. That is a design question rather than a missing line: what a life in
+  // Night City would have to do to be over and have gone well.
+  await updateCampaign(campaignId, { status: "active" });
+
   // The phase moves to aftermath — the wrap-up screen — and only the player's
   // press moves it on to Life. The AI never performs this transition.
   // The settlement transaction owns the normal phase transition. The fallback
