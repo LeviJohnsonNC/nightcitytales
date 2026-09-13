@@ -56,6 +56,8 @@ import { NpcName } from "@/features/cast/NpcName";
 import { CheckCard } from "@/features/play/CheckCard";
 import { MapButton } from "@/features/atlas/MapButton";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
+import { StatusRail } from "@/features/status/StatusRail";
+import { statusView, type StatusView } from "@/features/status/statusModel";
 import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
 import {
   actorFor,
@@ -576,11 +578,13 @@ function LifeRail({
   bundle,
   luckLeft,
   luckMax,
+  status,
 }: {
   life: ReturnType<typeof useLife>;
   bundle: NonNullable<ReturnType<typeof useLife>["bundle"]>;
   luckLeft: number;
   luckMax: number;
+  status: StatusView;
 }) {
   return (
     <>
@@ -610,10 +614,6 @@ function LifeRail({
             </p>
           </div>
         </div>
-        <div>
-          <Label>Eurobucks</Label>
-          <p className="num text-base font-bold">{bundle.vitals.eurobucks}eb</p>
-        </div>
         {luckMax > 0 && (
           <div>
             <Label>Luck</Label>
@@ -624,25 +624,14 @@ function LifeRail({
         )}
       </section>
 
-      {life.situations.length > 0 && (
-        <section className="space-y-2 border border-border bg-card p-4">
-          <Label>On your plate</Label>
-          <ul className="space-y-2">
-            {life.situations.slice(0, 8).map((s) => (
-              <li key={s.key} className="text-sm">
-                <span
-                  className={
-                    s.key === life.situation?.key ? "font-semibold text-accent" : "font-medium"
-                  }
-                >
-                  {s.title}
-                </span>
-                <span className="block text-xs text-muted-foreground">{s.summary}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/*
+       * Where they stand: what rent is doing, what the banked points are close
+       * to buying, and what they have taken on. This replaced both the bare
+       * Eurobucks number above and the old "On your plate" list — the first was
+       * a score rather than a pressure, and the second put a lead the world was
+       * dangling on the same footing as a promise the player made.
+       */}
+      <StatusRail status={status} />
 
       {life.people.length > 0 && (
         <section className="space-y-2 border border-border bg-card p-4">
@@ -669,30 +658,6 @@ function LifeRail({
               </li>
             ))}
           </ul>
-        </section>
-      )}
-
-      {life.clocks.length > 0 && (
-        <section className="space-y-2 border border-border bg-card p-4">
-          <Label>Pressure</Label>
-          {life.clocks.map((c) => (
-            <div key={c.key}>
-              <p className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-sm">
-                <span className="truncate">{c.label}</span>
-                <span className="num shrink-0 font-mono text-xs text-muted-foreground">
-                  {c.filled}/{c.segments}
-                </span>
-              </p>
-              <div className="mt-1 flex gap-1" aria-hidden>
-                {Array.from({ length: c.segments }, (_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1.5 flex-1 ${i < c.filled ? "bg-destructive" : "bg-border"}`}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
         </section>
       )}
 
@@ -810,6 +775,21 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
   const luckLeft = luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character));
 
   /**
+   * Where the player stands, derived from rows this screen already holds.
+   *
+   * Life carries no mission runtime, so no objectives are passed: in Life the
+   * commitments are the situations and the clocks. Play passes its own.
+   */
+  const status = statusView({
+    campaign: bundle.campaign,
+    vitals: bundle.vitals,
+    character: bundle.character,
+    situations: life.situations,
+    clocks: life.clocks,
+    currentKey: life.situation?.key ?? null,
+  });
+
+  /**
    * The live context every number on this screen is read through: worn armor,
    * current Humanity, and the district under the character's feet. A Local
    * Expert check is about the neighbourhood they are standing in, so the
@@ -919,7 +899,13 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
     <TooltipProvider delayDuration={150}>
       <div className="touch-play">
         <MobileStatusBar title={bundle.character.character.name} chips={chips}>
-          <LifeRail life={life} bundle={bundle} luckLeft={luckLeft} luckMax={luckMax} />
+          <LifeRail
+            life={life}
+            bundle={bundle}
+            luckLeft={luckLeft}
+            luckMax={luckMax}
+            status={status}
+          />
         </MobileStatusBar>
 
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -1022,7 +1008,13 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
           </div>
 
           <aside className="sticky top-6 hidden h-fit space-y-4 self-start lg:block">
-            <LifeRail life={life} bundle={bundle} luckLeft={luckLeft} luckMax={luckMax} />
+            <LifeRail
+              life={life}
+              bundle={bundle}
+              luckLeft={luckLeft}
+              luckMax={luckMax}
+              status={status}
+            />
           </aside>
         </div>
       </div>
