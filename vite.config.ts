@@ -37,7 +37,8 @@ for (const [key, value] of Object.entries(PUBLIC_BACKEND_ENV)) {
 // The server half reads the unprefixed names. In the deployed worker these
 // come from the host's runtime environment; during a build (SSR prerender,
 // for instance) the URL and publishable key are the same public pair.
-if (!process.env["SUPABASE_URL"]) process.env["SUPABASE_URL"] = PUBLIC_BACKEND_ENV["VITE_SUPABASE_URL"]!;
+if (!process.env["SUPABASE_URL"])
+  process.env["SUPABASE_URL"] = PUBLIC_BACKEND_ENV["VITE_SUPABASE_URL"]!;
 if (!process.env["SUPABASE_PUBLISHABLE_KEY"])
   process.env["SUPABASE_PUBLISHABLE_KEY"] = PUBLIC_BACKEND_ENV["VITE_SUPABASE_PUBLISHABLE_KEY"]!;
 
