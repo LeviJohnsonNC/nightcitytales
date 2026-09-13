@@ -4,7 +4,9 @@
  * lean. No arithmetic or branch logic lives here — the engine owns it.
  */
 import {
+  declaredObjectives,
   flagsFromChoices,
+  objectivesForBeats,
   startMission,
   type Mission,
   type MissionObjective,
@@ -50,15 +52,53 @@ function asObjectives(value: unknown): MissionObjective[] {
   });
 }
 
+/**
+ * The objective board, rebuilt from where the mission has been.
+ *
+ * Objective ids come from mission content, so editing that content can orphan a
+ * saved id — renaming one, or giving a positionally-identified objective a
+ * stable key. An orphan can never be closed by any exit, so it would sit
+ * "active" forever beside its own replacement: two of the same objective on
+ * screen and a count that never completes.
+ *
+ * So the board is DERIVED, the way flags already are: the beats this runtime
+ * has stood on say which objectives exist and what they read, and the saved row
+ * supplies only what has happened to them. An objective closed from a beat the
+ * player never visited is kept as well — `advance` can do that deliberately,
+ * and it is still one the mission declares.
+ */
+function liveObjectives(
+  mission: Mission,
+  saved: MissionObjective[],
+  visitedBeatIds: string[],
+): MissionObjective[] {
+  const savedById = new Map(saved.map((objective) => [objective.id, objective]));
+  const board = objectivesForBeats(mission, visitedBeatIds).map((objective) => {
+    const was = savedById.get(objective.id);
+    // Text from the content so prose corrections land; status from the save.
+    return was ? { ...objective, status: was.status } : objective;
+  });
+
+  const onBoard = new Set(board.map((objective) => objective.id));
+  const declared = declaredObjectives(mission);
+  const offBoard = saved.filter((o) => !onBoard.has(o.id) && declared.has(o.id));
+  return [...board, ...offBoard];
+}
+
 /** Build a MissionRuntime from a saved mission_progress row, deriving flags. */
 export function progressToRuntime(mission: Mission, row: MissionProgress): MissionRuntime {
   const branchChoices = asChoices(row.branch_choices);
+  const currentBeatId = row.current_beat_id ?? mission.startBeatId;
+  const completedBeats = asStringArray(row.completed_beats);
   return {
     missionId: row.mission_id,
-    currentBeatId: row.current_beat_id ?? mission.startBeatId,
-    completedBeats: asStringArray(row.completed_beats),
+    currentBeatId,
+    completedBeats,
     branchChoices,
-    objectives: asObjectives(row.objectives),
+    objectives: liveObjectives(mission, asObjectives(row.objectives), [
+      ...completedBeats,
+      currentBeatId,
+    ]),
     flags: flagsFromChoices(mission, branchChoices),
     status: row.status as MissionStatus,
   };

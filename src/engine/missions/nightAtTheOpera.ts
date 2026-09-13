@@ -50,7 +50,7 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       ],
       playerBrief:
         "Seven women have vanished from the University District in four weeks. The latest is Lucy Rhinemeyer, 19. Her father's representative is offering 2,000eb per head, 500 up front, to bring her back — in whatever state you find her.",
-      objectives: ["Recover Lucy Rhinemeyer"],
+      objectives: [{ key: "recover_lucy", text: "Recover Lucy Rhinemeyer" }],
       exits: [{ to: "hook", label: "Take the job" }],
     },
     {
@@ -260,7 +260,16 @@ export const NIGHT_AT_THE_OPERA: Mission = {
         "Automated Turrets (NET Architecture)",
         "Lord Ruthven (cyberpsycho, pg. 17)",
       ],
-      exits: [{ to: "epilogue", label: "Cut down Ruthven and free the survivor" }],
+      // Clearing this room IS recovering her: `behind_the_tapestry` is revealed
+      // at the epilogue precisely so the job cannot end with Lucy undiscovered
+      // because nobody rolled, and the objective closes on the same guarantee.
+      exits: [
+        {
+          to: "epilogue",
+          label: "Cut down Ruthven and free the survivor",
+          completes: ["recover_lucy"],
+        },
+      ],
     },
     {
       id: "epilogue",

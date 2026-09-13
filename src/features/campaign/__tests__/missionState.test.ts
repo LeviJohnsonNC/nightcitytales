@@ -25,14 +25,54 @@ describe("progressToRuntime", () => {
     expect(rt.completedBeats).toContain("getting_tickets");
     // The getting_tickets -> empty_office_hours exit sets this flag.
     expect(rt.flags).toContain("investigated_professor");
+    // The saved row still calls it "background.0", from before the objective
+    // was given a stable key. The board is derived from the beats this runtime
+    // has stood on, so it comes back under the id the content declares now.
     expect(rt.objectives).toEqual([
-      { id: "background.0", text: "Recover Lucy Rhinemeyer", status: "active" },
+      { id: "recover_lucy", text: "Recover Lucy Rhinemeyer", status: "active" },
     ]);
   });
 
   it("falls back to the start beat when the row has no current beat", () => {
     const rt = progressToRuntime(NIGHT_AT_THE_OPERA, row({ current_beat_id: null }));
     expect(rt.currentBeatId).toBe(NIGHT_AT_THE_OPERA.startBeatId);
+  });
+
+  it("keeps what happened to an objective across a content change", () => {
+    // The id moved; the fact that it was FAILED must not move with it. This is
+    // the half that makes deriving the board safe rather than lossy.
+    const rt = progressToRuntime(
+      NIGHT_AT_THE_OPERA,
+      row({
+        objectives: [{ id: "recover_lucy", text: "Recover Lucy Rhinemeyer", status: "failed" }],
+      }),
+    );
+    expect(rt.objectives).toEqual([
+      { id: "recover_lucy", text: "Recover Lucy Rhinemeyer", status: "failed" },
+    ]);
+  });
+
+  it("takes the objective's wording from the mission, not the saved row", () => {
+    const rt = progressToRuntime(
+      NIGHT_AT_THE_OPERA,
+      row({ objectives: [{ id: "recover_lucy", text: "a typo nobody fixed", status: "active" }] }),
+    );
+    expect(rt.objectives[0]?.text).toBe("Recover Lucy Rhinemeyer");
+  });
+
+  it("drops an objective the mission no longer declares at all", () => {
+    const rt = progressToRuntime(
+      NIGHT_AT_THE_OPERA,
+      row({
+        objectives: [
+          { id: "recover_lucy", text: "Recover Lucy Rhinemeyer", status: "active" },
+          { id: "cut_from_the_script", text: "Something deleted", status: "active" },
+        ],
+      }),
+    );
+    // An orphan can never be closed by any exit, so leaving it would park a
+    // permanently-active objective on the board and a count that never finishes.
+    expect(rt.objectives.map((o) => o.id)).toEqual(["recover_lucy"]);
   });
 });
 

@@ -94,6 +94,12 @@ describe("every generated job is walkable", () => {
         }
         expect(runtime.status, `seed ${seed} branch ${branch}`).toBe("completed");
         expect(currentBeat(mission, runtime).type).toBe("resolution");
+        // And it arrives with its objective actually closed. Settlement counts
+        // these to decide both what it prints and whether the job went badly
+        // (`messy: done < total`), so an objective stuck on "active" made every
+        // finished job report 0/N closed and settle as a mess.
+        expect(runtime.objectives.length, `seed ${seed} branch ${branch}`).toBe(1);
+        expect(runtime.objectives.every((o) => o.status === "done")).toBe(true);
       }
     }
   });
