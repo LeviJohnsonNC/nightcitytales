@@ -93,7 +93,7 @@ describe("while the city is deciding", () => {
     state.opening = null;
     state.writing = true;
     const html = render();
-    expect(html).toContain("Somewhere in six hundred thousand people");
+    expect(html).toContain("Somewhere in seven million people");
     expect(html).not.toContain("What do you do first?");
   });
 });

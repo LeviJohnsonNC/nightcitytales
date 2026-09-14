@@ -39,7 +39,7 @@ function Writing() {
     <div className="flex min-h-[60vh] flex-col justify-center gap-4">
       <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-accent">Night City</p>
       <p className="open-breathe text-lg text-muted-foreground">
-        Somewhere in six hundred thousand people, one of them is you.
+        Somewhere in seven million people, one of them is you.
       </p>
     </div>
   );
