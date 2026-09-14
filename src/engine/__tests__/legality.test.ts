@@ -42,6 +42,7 @@ const base: CapabilitySnapshot = {
     },
   ],
   roleAbility: { abilityId: "combat_awareness", abilityName: "Combat Awareness", rank: 4 },
+  vehicle: null,
   targets: [
     { key: "scav_1", id: "c1", name: "Scav", distance: 12, defeated: false, perceivable: true },
   ],

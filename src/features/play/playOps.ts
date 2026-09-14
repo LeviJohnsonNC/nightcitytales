@@ -65,6 +65,8 @@ import {
   backupTierFor,
   callBackup,
   charismaticImpactCheck,
+  getFaction,
+  type BelievabilityResult,
   resolveSkillId,
   woundActionPenalty,
   skillCheckForCharacter,
@@ -217,6 +219,7 @@ import {
   withAbilityState,
 } from "./roleAbilityModel";
 import { arriveBackup, pendingBackupFrom } from "./backupFlow";
+import { publishStory } from "@/features/campaign/publishing";
 import { JOB_PAYOUT_FLAG } from "@/features/life/hookOffer";
 import {
   applyPressure,
@@ -262,6 +265,8 @@ export type PlayBundle = {
   places: Record<string, PlaceState>;
   /** Truth keys this campaign has discovered, places and beats alike. */
   discoveredTruths: string[];
+  /** The day each of those was discovered on, for evidence that is dated. */
+  truthDays: (number | null)[];
   /** False until `campaign_truths` is migrated; the feature is then inert. */
   truthsAvailable: boolean;
   /**
@@ -322,6 +327,9 @@ export async function loadPlay(campaignId: string): Promise<PlayBundle> {
     campaign: full.campaign,
     places,
     discoveredTruths: truths.rows.map((row) => row.truth_key),
+    // The DAYS as well as the keys: a Media's evidence is what they have found
+    // out since their last story, which needs the dates the truths carry.
+    truthDays: truths.rows.map((row) => row.discovered_day),
     truthsAvailable: truths.available,
     vitals: full.vitals,
     character,
@@ -357,6 +365,7 @@ export function snapshotFor(bundle: PlayBundle): CapabilitySnapshot {
     vitals: bundle.vitals,
     inventory: bundle.inventory,
     cyberware: bundle.cyberware,
+    roleState: bundle.campaign.role_state,
     encounter: bundle.encounter,
     events: bundle.events,
     beatId: bundle.beat?.id ?? null,
@@ -1018,6 +1027,52 @@ export async function commitCharismaticImpact(
           `Narrate the crowd turning, and what that buys the player right now.`
         : `Narrate the room not buying it. They cannot be worked again for a week.`) +
       ` Do not re-decide the outcome. End on a decision.)`,
+    { logInput: false },
+  );
+}
+
+/**
+ * File a story, and let it land on the people it is about.
+ *
+ * The believability roll happens in the panel, where the player watches the
+ * die; this is what the result MEANS. A believed story takes segments off that
+ * faction's clock and costs you their opinion, and either way it reaches the
+ * ledger — the next story's evidence is counted from the day this one ran.
+ */
+export async function commitPublishedStory(
+  bundle: PlayBundle,
+  input: { factionId: FactionId; result: BelievabilityResult; evidencePieces: number },
+): Promise<void> {
+  const campaignId = bundle.campaign.id;
+  const beatId = bundle.beat?.id ?? null;
+  const rank = liveRoleAbility(bundle.character)?.rank ?? 0;
+  const story = await publishStory({
+    campaignId,
+    factionId: input.factionId,
+    rank,
+    believed: input.result.believed,
+    day: bundle.campaign.day ?? 0,
+    evidencePieces: input.evidencePieces,
+    beatId,
+  });
+
+  const faction = getFaction(input.factionId);
+  const fresh: PlayBundle = { ...bundle, events: await listCampaignEvents(campaignId) };
+  await narrate(
+    fresh,
+    `(ENGINE: the player published a Media story about ${faction.name}, backed by ` +
+      `${input.evidencePieces} piece(s) of what they actually found out. ` +
+      (story.believed
+        ? `${story.impact?.audience ?? "The audience"} believes it. The printed Impact at this ` +
+          `Rank is: ${story.impact?.impact ?? "change"}. ` +
+          (story.moved.length
+            ? `What moved: ${story.moved.join("; ")}. `
+            : "Nothing was left on their dials to move. ") +
+          `Narrate the story going out and what it costs THEM — people pulled in, a name ` +
+          `withdrawn, a shipment stopped. They will work out who wrote it.`
+        : `Nobody buys it. Narrate the story failing to land: no pickup, no follow-up, and the ` +
+          `quiet that follows a piece nobody ran.`) +
+      ` Do not re-decide the outcome and never state a segment count. End on a decision.)`,
     { logInput: false },
   );
 }

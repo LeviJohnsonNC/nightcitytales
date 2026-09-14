@@ -23,6 +23,8 @@ import {
   execTeam,
   liveRoleAbility,
   makerSpecialties,
+  liveMotorpool,
+  motorpoolSwapState,
   makerSpecialtyBudget,
   medicineDoses,
   medicineSpecialties,
@@ -45,6 +47,9 @@ import {
   beginTurn,
   callBackup,
   charismaticImpactCheck,
+  storyEvidence,
+  type BelievabilityResult,
+  type FactionId,
   clampLuckSpend,
   luckModifier,
   luckPoolMax,
@@ -63,6 +68,7 @@ import {
   commitBoardMove,
   commitCallShot,
   commitCharismaticImpact,
+  commitPublishedStory,
   commitCheck,
   commitDeathSave,
   commitReload,
@@ -80,6 +86,7 @@ import {
   takeExit,
 } from "./playOps";
 import type { IpTally, PlayBundle } from "./playOps";
+import { lastStoryDayFor } from "@/features/campaign/publishing";
 
 export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
@@ -319,6 +326,33 @@ export function usePlay(campaignId: string) {
     onSuccess: invalidate,
   });
 
+  const storyMutation = useMutation({
+    mutationFn: (input: {
+      factionId: FactionId;
+      result: BelievabilityResult;
+      evidencePieces: number;
+    }) => {
+      if (!query.data) throw new Error("Still loading.");
+      return commitPublishedStory(query.data, input);
+    },
+    onSuccess: invalidate,
+  });
+
+  const motorpoolMutation = useMutation({
+    mutationFn: (vehicleId: string) => {
+      if (!query.data) throw new Error("Still loading.");
+      const campaign = query.data.campaign;
+      return updateCampaign(campaign.id, {
+        role_state: withAbilityState(
+          campaign,
+          "moto",
+          motorpoolSwapState(campaign, query.data.character, vehicleId),
+        ) as Json,
+      });
+    },
+    onSuccess: invalidate,
+  });
+
   const specialtyMutation = useMutation({
     mutationFn: (specialties: Record<string, number>) => {
       if (!query.data) throw new Error("Still loading.");
@@ -471,6 +505,31 @@ export function usePlay(campaignId: string) {
     },
     /** The character's Role Ability and Rank, for the panel that spends it. */
     roleAbility: bundle ? liveRoleAbility(bundle.character) : null,
+    /**
+     * What a Media has to say that is new, per faction.
+     *
+     * Evidence is what the character has FOUND OUT since their last story about
+     * these people — truths the truth system recorded — rather than a number
+     * typed into a box, which is the only version of this that a consequence
+     * can hang off honestly.
+     */
+    storyEvidenceFor: (factionId: FactionId) =>
+      bundle
+        ? storyEvidence({
+            discoveredDays: bundle.truthDays,
+            lastStoryDay: lastStoryDayFor(bundle.events, factionId),
+          })
+        : { pieces: 0, bonus: 0, publishable: false },
+    publishStory: (input: {
+      factionId: FactionId;
+      result: BelievabilityResult;
+      evidencePieces: number;
+    }) => storyMutation.mutate(input),
+    storyBusy: storyMutation.isPending,
+    /** A Nomad's Family Motorpool, or null for every other Role. */
+    motorpool: bundle ? liveMotorpool(bundle.campaign, bundle.character) : null,
+    callForVehicle: (vehicleId: string) => motorpoolMutation.mutate(vehicleId),
+    motorpoolBusy: motorpoolMutation.isPending,
     /** A Solo's live Combat Awareness division, or null for every other Role. */
     combatAwareness: bundle ? combatAwarenessFor(bundle.campaign, bundle.character) : null,
     /** The points as currently assigned, for the panel to edit. */

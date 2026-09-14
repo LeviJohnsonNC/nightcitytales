@@ -11,6 +11,9 @@ import {
   combatAwarenessAllocation,
   combatAwarenessFor,
   combatRoleEffects,
+  liveMotorpool,
+  liveVehicleRule,
+  motorpoolSwapState,
   withPlayerRoleEffects,
   liveRoleAbility,
   execTeam,
@@ -330,5 +333,73 @@ describe("carrying a Solo's division into a fight that was saved and read back",
     const before = live();
     expect(withPlayerRoleEffects(before, null)).toBe(before);
     expect(withPlayerRoleEffects(null, { attack: 2 })).toBeNull();
+  });
+});
+
+describe("a Nomad's Family Motorpool", () => {
+  /**
+   * One vehicle out at a time, and the Family bring another the next morning.
+   * The swap lands on READ rather than on a tick somebody has to remember to
+   * run, which is what these hold.
+   */
+  const nomad = character("nomad", 7);
+  const day = (d: number, minute = 12 * 60): Campaign =>
+    ({ id: "c1", role_state: {}, day: d, minute }) as unknown as Campaign;
+  const withMoto = (state: Record<string, unknown>, d = 5, minute = 12 * 60): Campaign =>
+    ({ id: "c1", role_state: { moto: state }, day: d, minute }) as unknown as Campaign;
+
+  it("is null for every other Role", () => {
+    expect(liveMotorpool(day(1), character("solo", 4))).toBeNull();
+    expect(liveVehicleRule(day(1), character("solo", 4))).toBeNull();
+  });
+
+  it("puts a Nomad who has never chosen in the first thing their Rank reaches", () => {
+    const pool = liveMotorpool(day(1), nomad);
+    expect(pool?.out).not.toBeNull();
+    expect(pool?.available.length).toBeGreaterThan(0);
+    expect(liveVehicleRule(day(1), nomad)).not.toBeNull();
+  });
+
+  it("drives what they chose", () => {
+    expect(liveMotorpool(withMoto({ vehicleId: "superbike" }), nomad)?.out?.id).toBe("superbike");
+  });
+
+  it("will not drive something their Rank does not reach", () => {
+    // av_9 is a Rank 9 machine and this Nomad is Rank 7.
+    const pool = liveMotorpool(withMoto({ vehicleId: "av_9" }), nomad);
+    expect(pool?.out?.id).not.toBe("av_9");
+    expect(pool?.available.map((v) => v.id)).not.toContain("av_9");
+  });
+
+  it("keeps the old vehicle until the morning the new one is promised for", () => {
+    const pending = withMoto({ vehicleId: "roadbike", swapId: "helicopter", swapDay: 6 }, 5);
+    const pool = liveMotorpool(pending, nomad);
+    expect(pool?.out?.id).toBe("roadbike");
+    expect(pool?.incoming?.vehicle.id).toBe("helicopter");
+    expect(pool?.incoming?.arrivesOnDay).toBe(6);
+  });
+
+  it("hands it over on the day, without anything having to run", () => {
+    const arrived = withMoto({ vehicleId: "roadbike", swapId: "helicopter", swapDay: 6 }, 6);
+    const pool = liveMotorpool(arrived, nomad);
+    expect(pool?.out?.id).toBe("helicopter");
+    expect(pool?.incoming).toBeNull();
+    expect(liveVehicleRule(arrived, nomad)?.label).toBe("by helicopter");
+  });
+
+  it("calls for the next morning, and for today when called before dawn", () => {
+    const afternoon = motorpoolSwapState(day(5, 15 * 60), nomad, "superbike");
+    expect(afternoon["swapDay"]).toBe(6);
+    const smallHours = motorpoolSwapState(day(5, 3 * 60), nomad, "superbike");
+    expect(smallHours["swapDay"]).toBe(5);
+  });
+
+  it("settles a landed swap on the way past, so a second call keeps the right one", () => {
+    // The helicopter arrived on day 6; calling for a superbike on day 8 must
+    // leave them in the helicopter, not back in the Roadbike they swapped out.
+    const landed = withMoto({ vehicleId: "roadbike", swapId: "helicopter", swapDay: 6 }, 8);
+    const next = motorpoolSwapState(landed, nomad, "superbike");
+    expect(next["vehicleId"]).toBe("helicopter");
+    expect(next["swapId"]).toBe("superbike");
   });
 });

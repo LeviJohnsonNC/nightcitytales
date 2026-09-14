@@ -13,7 +13,14 @@ import {
   operatorHaggleBonus,
   roleAbilityOf,
   teamMemberSlots,
+  canDrive,
+  getVehicle,
+  motorpoolFor,
+  MOTORPOOL_SWAP_HOUR,
   vehicleFamiliarityBonus,
+  vehicleTravelRule,
+  type TravelModeRule,
+  type Vehicle,
   type CombatantRoleEffects,
   type CombatAwarenessAllocation,
   type CombatAwarenessEffects,
@@ -143,6 +150,102 @@ export function pendingBackup(campaign: Campaign): PendingBackup | null {
     arrivesOnRound: p["arrivesOnRound"],
     groups: typeof p["groups"] === "number" ? p["groups"] : 1,
   };
+}
+
+/**
+ * A Nomad's Family Motorpool, and which of it is out.
+ *
+ * The printed rule is that a Nomad may have ONE Family Vehicle out at a time
+ * and calls the Family to swap it for another the next morning. `available` is
+ * everything their Rank permits; `out` is the one they are actually driving.
+ *
+ * A Nomad who has never chosen is driving the first thing their Rank reaches
+ * rather than nothing. That is the difference between a Role Ability and a
+ * settings screen: the vehicle is theirs, and having to go and switch it on
+ * before it exists is how the last version of this gave them a modifier and no
+ * machine.
+ */
+export type LiveMotorpool = {
+  available: Vehicle[];
+  out: Vehicle | null;
+  /** The vehicle the Family is bringing, and the day it arrives. */
+  incoming: { vehicle: Vehicle; arrivesOnDay: number } | null;
+};
+
+export function liveMotorpool(campaign: Campaign, character: FullCharacter): LiveMotorpool | null {
+  const ability = liveRoleAbility(character);
+  if (!ability || ability.info.abilityId !== "moto") return null;
+
+  const available = motorpoolFor(ability.rank);
+  const state = abilityState(campaign, "moto");
+  const stored = typeof state["vehicleId"] === "string" ? state["vehicleId"] : null;
+  // A stored vehicle their Rank no longer reaches is not driven. Ranks do not
+  // fall in this game, but a rules edit can move a tier, and quietly driving
+  // something the motorpool disowns is worse than falling back.
+  const chosen =
+    (stored && canDrive(ability.rank, stored) ? getVehicle(stored) : null) ?? available[0] ?? null;
+
+  const swapId = typeof state["swapId"] === "string" ? state["swapId"] : null;
+  const swapDay = typeof state["swapDay"] === "number" ? state["swapDay"] : null;
+  const swapVehicle = swapId && canDrive(ability.rank, swapId) ? getVehicle(swapId) : null;
+
+  // The swap lands on READ rather than on a tick somebody has to remember to
+  // run: once the morning it was promised for has come, that is the vehicle
+  // outside. Nothing needs to have happened in between, which is the point —
+  // the Family turned up whether or not the player opened a screen.
+  const arrived = swapVehicle !== null && swapDay !== null && (campaign.day ?? 0) >= swapDay;
+  return {
+    available,
+    out: arrived ? swapVehicle : chosen,
+    incoming:
+      swapVehicle && swapDay !== null && !arrived
+        ? { vehicle: swapVehicle, arrivesOnDay: swapDay }
+        : null,
+  };
+}
+
+/**
+ * The role_state a call to the Family leaves behind: what is coming and when.
+ *
+ * "The next morning" is the printed promise; the hour it lands at is the one
+ * house rule in it, and vehicles.json says so. A call placed before that hour
+ * still arrives the same day — you called in the small hours and it was there
+ * when you got up.
+ */
+export function motorpoolSwapState(
+  campaign: Campaign,
+  character: FullCharacter,
+  vehicleId: string,
+): Record<string, unknown> {
+  const day = campaign.day ?? 0;
+  const minute = campaign.minute ?? 0;
+  const beforeTheDrop = minute < MOTORPOOL_SWAP_HOUR * 60;
+  // A previous swap that has already landed is settled on the way past, so the
+  // vehicle they are driving right now is the one they keep until this new one
+  // turns up. Without it a second call would put them back in the machine they
+  // swapped out of, for a day, for no reason anybody could see.
+  const settled = liveMotorpool(campaign, character)?.out?.id ?? null;
+  return {
+    ...abilityState(campaign, "moto"),
+    ...(settled ? { vehicleId: settled } : {}),
+    swapId: vehicleId,
+    swapDay: beforeTheDrop ? day : day + 1,
+  };
+}
+
+/**
+ * The travel rule for whatever this character is driving, or null when they are
+ * on foot like everybody else.
+ *
+ * Callers ask unconditionally, which is what keeps every travel site from
+ * having to know what a Nomad is.
+ */
+export function liveVehicleRule(
+  campaign: Campaign,
+  character: FullCharacter,
+): TravelModeRule | null {
+  const vehicle = liveMotorpool(campaign, character)?.out;
+  return vehicle ? vehicleTravelRule(vehicle) : null;
 }
 
 /** Positive whole numbers out of a stored map, ignoring anything else. */

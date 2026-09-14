@@ -4,7 +4,7 @@
  */
 import { Suspense, lazy, useState } from "react";
 import { MapPin } from "lucide-react";
-import { describePosition, type PlaceSignal } from "@/engine";
+import { describePosition, type PlaceSignal, type TravelMode } from "@/engine";
 import type { PlaceHere } from "./PlaceDossier";
 
 /**
@@ -23,6 +23,7 @@ export function MapButton({
   className,
   onTravel,
   travelBusy,
+  travelMode,
   signals,
   placeHere,
   open: openProp,
@@ -33,6 +34,8 @@ export function MapButton({
   className?: string | undefined;
   onTravel?: ((districtKey: string) => void) | undefined;
   travelBusy?: boolean | undefined;
+  /** What they would make the trip in, so the quoted minutes are the real ones. */
+  travelMode?: TravelMode | undefined;
   signals?: PlaceSignal[] | undefined;
   placeHere?: ((key: string) => PlaceHere | undefined) | undefined;
   /**
@@ -74,6 +77,7 @@ export function MapButton({
             knownPlaces={knownPlaces}
             onTravel={onTravel}
             travelBusy={travelBusy}
+            travelMode={travelMode}
             signals={signals}
             placeHere={placeHere}
           />

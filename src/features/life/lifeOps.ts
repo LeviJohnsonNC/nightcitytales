@@ -97,6 +97,7 @@ import {
   type PendingCheck,
 } from "@/features/play/checkPrompt";
 import { buildCapabilitySnapshot, renderCapabilityLines } from "@/features/play/capabilityModel";
+import { liveVehicleRule } from "@/features/play/roleAbilityModel";
 import {
   loadDowntime,
   payBills,
@@ -522,6 +523,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     vitals: bundle.vitals,
     inventory: bundle.inventory,
     cyberware: bundle.cyberware,
+    roleState: bundle.campaign.role_state,
     encounter: null,
     events: bundle.events,
     beatId: null,
@@ -785,6 +787,7 @@ async function applyResponse(
     vitals: bundle.vitals,
     inventory: bundle.inventory,
     cyberware: bundle.cyberware,
+    roleState: bundle.campaign.role_state,
     encounter: null,
     events: bundle.events,
     beatId: null,
@@ -891,6 +894,7 @@ async function applyResponse(
         }
       }
     } else if (action.kind === "travel") {
+      const vehicleRule = liveVehicleRule(bundle.campaign, bundle.character);
       // A move in the fiction is a move on the map. The engine resolves the
       // name against the atlas, prices the trip from the house-rule table, and
       // commits the same way the map's own travel button does — so the pin, the
@@ -902,6 +906,9 @@ async function applyResponse(
         ...(action.extent ? { extent: action.extent } : {}),
         ...(action.mode ? { mode: action.mode } : {}),
         ...(action.blocks ? { blocks: action.blocks } : {}),
+        // Whatever they have out of the Family Motorpool answers for any trip
+        // they did not say they were walking. Null for every other Role.
+        ...(vehicleRule ? { vehicle: vehicleRule } : {}),
       });
       if (!decision.ok) {
         await refuse(decision.reason, "impossible");

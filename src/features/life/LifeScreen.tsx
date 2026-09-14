@@ -950,6 +950,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                   knownPlaces={knownPlaces}
                   onTravel={life.travelTo}
                   travelBusy={life.travelBusy}
+                  {...(life.vehicleRule ? { travelMode: life.vehicleRule } : {})}
                   signals={signals}
                   placeHere={placeHere}
                 />

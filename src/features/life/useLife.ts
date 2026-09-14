@@ -21,6 +21,7 @@ import { travelTo } from "@/features/atlas/travel";
 import { rest } from "@/features/downtime/downtimeOps";
 import { type CheckRoll, type PendingCheck, pendingChecksFrom } from "@/features/play/checkPrompt";
 import { localExpertIn } from "@/features/play/playModel";
+import { liveVehicleRule } from "@/features/play/roleAbilityModel";
 import {
   type TurnOptions,
   acceptHook,
@@ -41,6 +42,8 @@ export function useLife(campaignId: string) {
   };
 
   const bundle = query.data;
+  /** Whatever is out of the Family Motorpool, or null for every other Role. */
+  const vehicleRule = bundle ? liveVehicleRule(bundle.campaign, bundle.character) : null;
 
   const turn = useMutation({
     mutationFn: ({ input, ...rest }: { input: string } & TurnOptions) => {
@@ -85,7 +88,15 @@ export function useLife(campaignId: string) {
   const travel = useMutation({
     mutationFn: (to: string) => {
       if (!bundle) throw new Error("Still loading.");
-      return travelTo({ campaign: bundle.campaign, clock: bundle.clock, to });
+      return travelTo({
+        campaign: bundle.campaign,
+        clock: bundle.clock,
+        to,
+        // The map's own Travel button rides whatever is out of the Family
+        // Motorpool, the same as a trip the narrator proposes. Undefined for
+        // every other Role, which prices the trip exactly as it always was.
+        ...(vehicleRule ? { mode: vehicleRule } : {}),
+      });
     },
     onSuccess: invalidate,
   });
@@ -247,6 +258,8 @@ export function useLife(campaignId: string) {
     pushHook: (ask: HookAsk) => push.mutate(ask),
     /** Cross the city. The engine prices the trip; the clock pays for it. */
     travelTo: (to: string) => travel.mutate(to),
+    /** Whatever is out of the Family Motorpool, so the map quotes the real minutes. */
+    vehicleRule,
     travelBusy: travel.isPending,
     narrateFixedResult: async (resolved: string) => {
       try {
