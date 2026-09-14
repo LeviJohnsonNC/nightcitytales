@@ -1,0 +1,95 @@
+{
+  "_source": "House rule. Not a Cyberpunk RED rules value.",
+  "_rules": "What each Role REACHES FOR, written for the narrator rather than for the engine. Nothing here changes a number, sets a DV, or grants a character anything: roles.json and roleAbility.ts stay the sole authority on what a Role Ability does and what Rank reaches how far. This file exists because the Role was only ever described to the model as a prohibition — 'nothing above that Rank' — so a Rockerboy and a Nomad were offered the same three things to do. `reach` is one line of who this person is in a room. `options` are the SHAPES of move only this Role would think of, offered as examples to think with and never to be read back verbatim.",
+  "houseRule": true,
+  "roles": {
+    "rockerboy": {
+      "reach": "People are the lever. They read a room for who wants to be led, and a crowd is something they can point.",
+      "options": [
+        "work the room — find who everyone else is watching and get to them",
+        "play, speak or perform where it will be heard, and let the crowd do the pushing",
+        "make a private thing public: name it loudly, in front of the people it embarrasses",
+        "trade on being known — the door opens because of who is asking"
+      ]
+    },
+    "solo": {
+      "reach": "They read a room for exits, angles and who is armed, and they were ready before it started.",
+      "options": [
+        "take the ground first — the angle, the doorway, the high side",
+        "pick which one drops first, and why that one",
+        "call the fight before it starts: move on the one reaching",
+        "read the threat and say plainly what this becomes if it goes loud"
+      ]
+    },
+    "netrunner": {
+      "reach": "Every wall here has something running inside it, and they can hear it.",
+      "options": [
+        "find the architecture behind the building and what it is guarding",
+        "look for the jack-in point nobody thinks of as a door"
+      ]
+    },
+    "tech": {
+      "reach": "Nothing here is a fixed object. It is parts, and they know which ones are load-bearing.",
+      "options": [
+        "open the thing up and find out why it actually failed",
+        "make the broken one work for a while — badly, but now",
+        "sabotage something so it fails later and looks like wear",
+        "build or bodge the tool this job needs out of what is on the bench"
+      ]
+    },
+    "medtech": {
+      "reach": "They see injuries, not wounds — what is survivable, what is hours away from killing someone, and what it would cost to fix.",
+      "options": [
+        "work on someone here instead of moving them",
+        "read the body: what did this, how long ago, and did they walk away",
+        "trade treatment for what you actually want",
+        "get into somewhere on the strength of being the one who can help"
+      ]
+    },
+    "media": {
+      "reach": "Everything here is either a story or a source, and they are always deciding which.",
+      "options": [
+        "get it on record — camera, recorder, a witness who will say it again",
+        "ask the question nobody in this room is supposed to ask",
+        "offer to leave a name out, and find out what that is worth",
+        "trade on the piece you have not run yet"
+      ]
+    },
+    "exec": {
+      "reach": "Somebody owns this, somebody signs for it, and they know how to find out which.",
+      "options": [
+        "find out who this actually reports to",
+        "have someone else do it, and be elsewhere when it happens",
+        "make it a procurement problem instead of a fight",
+        "spend the company's name where it still means something"
+      ]
+    },
+    "lawman": {
+      "reach": "The badge is a key and a target, and they can usually tell which it will be before they show it.",
+      "options": [
+        "show the badge and see what the room does",
+        "run the name, the plate, the face against what the department holds",
+        "lean on someone who has more to lose from a report than from you",
+        "call it in — get people with armor here and let them be the argument"
+      ]
+    },
+    "fixer": {
+      "reach": "Everything has a price and a second price, and they know who is holding.",
+      "options": [
+        "push the number — the first one is never the one",
+        "find who moves this kind of thing in this district",
+        "sell what is in hand to the person who wants it most",
+        "call in what somebody already owes rather than paying"
+      ]
+    },
+    "nomad": {
+      "reach": "They came in with wheels and they know the way out, which changes what is worth trying.",
+      "options": [
+        "do it from the vehicle, and keep the engine running",
+        "work out the route out of here before doing anything else",
+        "ask the road — another family has been through this and talked about it",
+        "put the vehicle between the problem and whoever needs covering"
+      ]
+    }
+  }
+}

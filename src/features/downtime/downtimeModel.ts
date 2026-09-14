@@ -7,14 +7,21 @@
  */
 import {
   DOWNTIME_MONTH_DAYS,
+  MEDICAL_DRUGS,
+  SELF_CARE_SKILLS,
   armorRepairCost,
   billsDue,
   getArmor,
   planRest,
+  selfCareBonus,
+  speedhealAmount,
   startingLifestylePlan,
   type BillsDue,
+  type HealingCourse,
+  type MedicalDrug,
   type RestPlan,
 } from "@/engine";
+import { liveRoleAbility, medicineDoses, medicineSkills } from "@/features/play/roleAbilityModel";
 import type { Campaign, CampaignInventoryItem, CampaignVitals, FullCharacter } from "@/lib/backend";
 
 /** The monthly costs this character is on the hook for. */
@@ -102,6 +109,66 @@ export function repairableArmor(inventory: CampaignInventoryItem[]): RepairableA
   return out.sort((a, b) => b.missingSp - a.missingSp);
 }
 
+/** The printed drug with this id, or null when the rules data has no such drug. */
+export function medicalDrug(id: string): MedicalDrug | null {
+  return MEDICAL_DRUGS.find((drug) => drug.id === id) ?? null;
+}
+
+/**
+ * What the character's own medicine does for their recovery.
+ *
+ * Null for everybody who is not a Medtech, which is what keeps this off every
+ * other Role's downtime entirely. For a Medtech it is three things: the small
+ * standing self-care bonus (a house rule, flagged in recovery.json), and the
+ * two printed drugs they can have synthesized — Antibiotic, which is a course
+ * run through a rest, and Speedheal, which is taken now.
+ */
+export type MedicalCare = {
+  /** The better of Surgery and Medical Tech, as their Specialty points set it. */
+  skillLevel: number;
+  /** Standing HP a day beyond BODY. */
+  selfCare: number;
+  /** Doses of each drug on hand, by drug id. */
+  doses: Record<string, number>;
+  /** The Antibiotic course a dose would start, when one is on hand. */
+  antibiotic: (HealingCourse & { drug: MedicalDrug }) | null;
+  /** What a Speedheal dose would restore right now, when one is on hand. */
+  speedheal: { hp: number; drug: MedicalDrug } | null;
+};
+
+export function medicalCare(input: {
+  campaign: Campaign;
+  character: FullCharacter;
+}): MedicalCare | null {
+  const ability = liveRoleAbility(input.character);
+  if (!ability || ability.info.abilityId !== "medicine") return null;
+
+  const skills = medicineSkills(input.campaign);
+  const skillLevel = Math.max(...SELF_CARE_SKILLS.map((id) => skills[id] ?? 0), 0);
+  const doses = medicineDoses(input.campaign);
+  const stats = input.character.stats as { body?: number; will?: number } | null;
+
+  const antibioticDrug = medicalDrug("antibiotic");
+  const speedhealDrug = medicalDrug("speedheal");
+  return {
+    skillLevel,
+    selfCare: selfCareBonus(skillLevel),
+    doses,
+    antibiotic:
+      antibioticDrug && (doses["antibiotic"] ?? 0) > 0
+        ? {
+            drug: antibioticDrug,
+            hpPerDay: antibioticDrug.hpPerDayBonus ?? 0,
+            days: antibioticDrug.days ?? 0,
+          }
+        : null,
+    speedheal:
+      speedhealDrug && (doses["speedheal"] ?? 0) > 0
+        ? { drug: speedhealDrug, hp: speedhealAmount(stats ?? {}) }
+        : null,
+  };
+}
+
 export type DowntimeView = {
   day: number;
   /** The day bills are settled through right now, before any payment. */
@@ -114,10 +181,14 @@ export type DowntimeView = {
   hpCurrent: number;
   hpMax: number;
   body: number;
+  /** What this character's own medicine buys them, or null for every other Role. */
+  care: MedicalCare | null;
   /** Resting for the days the player has asked for. */
   rest: RestPlan;
   /** Resting all the way to full. */
   restToFull: RestPlan;
+  /** The same rest with an Antibiotic course started, when a dose is on hand. */
+  restOnAntibiotic: RestPlan | null;
   repairs: RepairableArmor[];
   /** True when the character is whole and owes nothing — downtime is optional. */
   settled: boolean;
@@ -137,10 +208,14 @@ export function downtimeView(input: {
   const stats = input.character.stats as { body?: number } | null;
   const body = typeof stats?.body === "number" ? stats.body : 0;
 
+  // A Medtech's own training and their own drugs. Null for every other Role,
+  // and a zero bonus is what every other Role's rest has always been.
+  const care = medicalCare({ campaign: input.campaign, character: input.character });
   const restInput = {
     hpCurrent: input.vitals.hp_current,
     hpMax: input.vitals.hp_max,
     body,
+    perDayBonus: care?.selfCare ?? 0,
   };
   const bills = billsDue({
     day,
@@ -150,6 +225,9 @@ export function downtimeView(input: {
   });
   const rest = planRest({ days: input.restDays, ...restInput });
   const restToFull = planRest({ days: Number.MAX_SAFE_INTEGER, ...restInput });
+  const restOnAntibiotic = care?.antibiotic
+    ? planRest({ days: input.restDays, ...restInput, course: care.antibiotic })
+    : null;
   const repairs = repairableArmor(input.inventory);
 
   return {
@@ -162,8 +240,10 @@ export function downtimeView(input: {
     hpCurrent: input.vitals.hp_current,
     hpMax: input.vitals.hp_max,
     body,
+    care,
     rest,
     restToFull,
+    restOnAntibiotic,
     repairs,
     settled:
       input.vitals.hp_current >= input.vitals.hp_max && bills.total === 0 && repairs.length === 0,

@@ -143,6 +143,52 @@ cheaper to find out the model is wrong before climbing it.
 
 ---
 
+## Also shipped: the Role you chose
+
+Ten Role Abilities were transcribed and modelled in the engine, and almost none
+of them reached the player. The narrator was told about a Role exactly once, as
+a ceiling — "Role Ability: Operator at Rank 4 — nothing above that Rank" — so a
+Fixer, a Nomad and a Lawman standing in the same alley were offered the same
+three things to do. This pass made the Role something to reach for.
+
+Shipped:
+
+- **A Solo's Precision Attack now hits things.** `combatAwarenessEffects`
+  computed the bonus and nothing added it to the To-Hit roll, so the most
+  obviously attractive option on the Combat Awareness panel bought nothing.
+  Found beside it: combatant rows carry no Role effects, so a fight read back
+  from the database came back with the whole ability switched off — Initiative
+  survived only because it is rolled once and stored as a number. Effects are
+  recomputed on load rather than persisted, which is also what lets a division
+  made between fights reach the next one, and the "first this Round" marks now
+  survive a save so Spot Weakness and Damage Deflection stay once a Round.
+- **The Role reaches the narrator as an invitation.** A new
+  `WHAT THIS ROLE REACHES FOR` block in both the Job and Life contexts, from
+  `engine/roleAffordance.ts` and its house-rule data, and a prompt rule that at
+  least one offered option be a move only this character would think of. It
+  grants nothing: the capability ceiling still refuses anything above the Rank.
+- **The ground offers Role work.** `placeActions` takes a Role id and offers up
+  to two cards nobody else sees — the Lawman's terminal, the Fixer's fence, the
+  Nomad's lift, the Medtech's clinic — found by the same tags, at named venues,
+  on their own budget so the district's ordinary business is never displaced.
+- **A Medtech recovers differently.** The printed drugs do the work: Antibiotic
+  as a course through a rest (+2 HP a day for a week, and it runs out), and
+  Speedheal as BODY + WILL at once. Beside them a small house-rule self-care
+  bonus, capped well below BODY, so the empty-bag days still differ.
+- **The Fixer can argue and can source.** Operator Reach takes the stock die off
+  the table inside the Fixer's own price categories — the printed "always
+  source", which `priceCategoryContext` had been parsing for nobody — and the
+  shop takes an opposed Trading check for the price, once per visit, worth the
+  Fixer's printed ±10%/±20% band and a smaller house-rule band for everybody
+  else.
+
+Still open: the Tech cannot build anything (`priceCategoryContext`'s Maker
+DV/time table has no consumer), the Nomad has no vehicle to be good with, and a
+believed Media story changes nothing. Those need new systems rather than wiring,
+and are the next pass.
+
+---
+
 ## Next: make Life feel like the actual game
 
 Life is where the player spends most of their time and is currently the weakest

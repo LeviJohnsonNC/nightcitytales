@@ -7,7 +7,15 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ItemKind } from "@/engine";
 import { billsAfterResting, downtimeView, type RepairableArmor } from "./downtimeModel";
-import { buy, loadDowntime, payBills, repair, rest, type DowntimeBundle } from "./downtimeOps";
+import {
+  buy,
+  loadDowntime,
+  payBills,
+  repair,
+  rest,
+  takeSpeedheal,
+  type DowntimeBundle,
+} from "./downtimeOps";
 
 export type { DowntimeBundle };
 
@@ -30,9 +38,16 @@ export function useDowntime(campaignId: string) {
   const bundle = query.data ?? null;
 
   const restMutation = useMutation({
-    mutationFn: (days: number) => {
+    mutationFn: ({ days, antibiotic }: { days: number; antibiotic: boolean }) => {
       if (!bundle) throw new Error("Still loading.");
-      return rest(bundle, days);
+      return rest(bundle, days, { antibiotic });
+    },
+    onSuccess: invalidate,
+  });
+  const speedhealMutation = useMutation({
+    mutationFn: () => {
+      if (!bundle) throw new Error("Still loading.");
+      return takeSpeedheal(bundle);
     },
     onSuccess: invalidate,
   });
@@ -69,18 +84,22 @@ export function useDowntime(campaignId: string) {
     billsAfterRest: view ? billsAfterResting(view, view.rest.days) : null,
     restDays,
     setRestDays,
-    rest: (days: number) => restMutation.mutate(days),
+    rest: (days: number, options: { antibiotic?: boolean } = {}) =>
+      restMutation.mutate({ days, antibiotic: options.antibiotic === true }),
+    takeSpeedheal: () => speedhealMutation.mutate(),
     payBills: () => billsMutation.mutate(),
     buy: (purchase: { kind: ItemKind; itemId: string; quantity: number }) =>
       buyMutation.mutate(purchase),
     repair: (piece: RepairableArmor) => repairMutation.mutate(piece),
     busy:
       restMutation.isPending ||
+      speedhealMutation.isPending ||
       billsMutation.isPending ||
       buyMutation.isPending ||
       repairMutation.isPending,
     actionError:
       (restMutation.error as Error | null) ??
+      (speedhealMutation.error as Error | null) ??
       (billsMutation.error as Error | null) ??
       (buyMutation.error as Error | null) ??
       (repairMutation.error as Error | null),

@@ -19,12 +19,42 @@ import {
   getGear,
   getWeapon,
   stacksInInventory,
+  withinReach,
   type ItemKind,
 } from "@/engine";
 import { ItemInfo, type ItemKindLabel } from "@/features/chargen/ItemInfo";
 import type { StockedItem } from "@/features/campaign/shopping";
 import { useShop } from "./useShop";
 import type { LifeBundle } from "./lifeOps";
+
+/**
+ * Arguing about the price, offered once per visit.
+ *
+ * Everyone may try; what winning is worth is the Fixer's printed Haggle band
+ * and a smaller house-rule one for everybody else. Once it has been asked, win
+ * or lose, the button is spent — which is what makes asking a decision.
+ */
+function HaggleRow({ shop }: { shop: ReturnType<typeof useShop> }) {
+  if (shop.haggleSpent) {
+    return (
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+        {shop.haggleDiscount > 0
+          ? `price argued down ${shop.haggleDiscount}% this visit`
+          : "price already argued this visit"}
+      </p>
+    );
+  }
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <Button size="sm" variant="outline" disabled={shop.busy} onClick={() => shop.haggle()}>
+        {shop.busy ? "…" : "Talk the price down"}
+      </Button>
+      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+        Trading, opposed · worth {shop.hagglePercent}% · one run at it
+      </span>
+    </div>
+  );
+}
 
 const KIND_LABELS: Record<string, string> = {
   weapon: "Weapons",
@@ -61,12 +91,15 @@ function Row({
   item,
   busy,
   eurobucks,
+  operatorRank,
   onBuy,
 }: {
   item: StockedItem;
   busy: boolean;
   /** What the character is actually holding, so the button cannot lie. */
   eurobucks: number;
+  /** The Fixer's Operator Rank, so the shelf can say what they can always get. */
+  operatorRank: number;
   onBuy: (quantity: number) => void;
 }) {
   const [quantity, setQuantity] = useState(1);
@@ -82,6 +115,9 @@ function Row({
     }
   }, [item.kind, item.itemId]);
   const total = item.price * (stackable ? quantity : 1);
+  // Inside a Fixer's Reach the stock die is never rolled, so the shelf says so
+  // rather than letting the player find out by being told no.
+  const sourcedOnReach = withinReach(item.kind as ItemKind, item.itemId, operatorRank);
 
   return (
     <li className="flex items-start gap-2 border-b border-border/60 py-2 last:border-0">
@@ -91,14 +127,22 @@ function Row({
             {item.name}
           </span>
           {raw && <ItemInfo kind={item.kind as ItemKindLabel} item={raw} />}
-          {item.tier === "unusual" && (
-            <span
-              className="shrink-0 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground"
-              title="Not shelf stock — they have to go and look"
-            >
-              order
-            </span>
-          )}
+          {item.tier === "unusual" &&
+            (sourcedOnReach ? (
+              <span
+                className="shrink-0 font-mono text-[9px] uppercase tracking-[0.14em] text-accent"
+                title="Inside your Operator Reach — you can always source this, no stock roll"
+              >
+                reach
+              </span>
+            ) : (
+              <span
+                className="shrink-0 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground"
+                title="Not shelf stock — they have to go and look"
+              >
+                order
+              </span>
+            ))}
         </div>
         <p className="truncate font-mono text-[11px] text-muted-foreground">
           {summarize(item.kind, item.itemId)}
@@ -203,6 +247,8 @@ export function ShopSheet({ bundle }: { bundle: LifeBundle }) {
             : ""}
         </p>
 
+        <HaggleRow shop={shop} />
+
         {shop.message && (
           <p
             className={`mt-3 border-l-2 px-3 py-2 text-sm ${
@@ -275,6 +321,7 @@ export function ShopSheet({ bundle }: { bundle: LifeBundle }) {
                 item={item}
                 busy={shop.busy}
                 eurobucks={shop.eurobucks}
+                operatorRank={shop.operatorRank}
                 onBuy={(quantity) => shop.buy(item, quantity)}
               />
             ))

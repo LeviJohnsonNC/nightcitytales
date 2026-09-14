@@ -56,6 +56,8 @@ export function venueOptions(input: {
   localExpertLevel?: number | undefined;
   /** Whether what they have found here adds up to something not yet worked out. */
   conclusionAvailable?: boolean | undefined;
+  /** The character's Role, so the ground can offer what only they would try. */
+  roleId?: string | null | undefined;
 }): LifeActionCard[] {
   const actions = placeActions(input);
   // Ordered for the card strip, which is shorter than this list and trims from
@@ -64,10 +66,15 @@ export function venueOptions(input: {
   // cap has swallowed before — then the ways of looking at where they are, then
   // the ordinary verbs of buildings down the road.
   const rank = (action: PlaceAction): number => {
-    if (action.here && !action.skillId) return 0;
-    if (action.local) return 1;
-    if (action.skillId) return 2;
-    return 3;
+    // A Role offer first, and deliberately ahead of everything. It is the one
+    // card on the strip a character of another Role would never see, the strip
+    // is shorter than this list and trims from the end, and an offer that only
+    // survives on a quiet night is not a Role playing differently.
+    if (action.role) return 0;
+    if (action.here && !action.skillId) return 1;
+    if (action.local) return 2;
+    if (action.skillId) return 3;
+    return 4;
   };
   return actions
     .map((action, index) => ({ action, index }))

@@ -236,6 +236,11 @@ export const RECOVERY_RULES = recovery as unknown as {
   healing: { hpPerDayOfRest: string; requiresStabilized: boolean; note: string };
   month: { days: number };
   armorRepair: { costPerMissingSpFraction: number };
+  medtechSelfCare: {
+    hpPerDayPerSkillLevels: number;
+    maxBonusHpPerDay: number;
+    skillIds: string[];
+  };
 };
 
 /**

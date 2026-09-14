@@ -4,7 +4,13 @@
  * the ONE situation the app selected, the standing pressures, the people who
  * matter, and what the character can actually do. Nothing else.
  */
-import { formatLifeClock, formatDuration, partOfDay, type GameClock } from "@/engine";
+import {
+  formatLifeClock,
+  formatDuration,
+  partOfDay,
+  renderRoleAffordanceLines,
+  type GameClock,
+} from "@/engine";
 import type { LifeSituation, LifeClock } from "@/engine";
 
 export type LifePersonSummary = {
@@ -424,6 +430,15 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
   if (context.capabilities?.length) {
     parts.push("", "== WHAT THEY CAN ACTUALLY DO (never propose anything outside this) ==");
     for (const c of context.capabilities) parts.push(`- ${c}`);
+  }
+
+  // The Role as something to reach for, which the capability block above can
+  // only ever take away from. Both are true at once: reach for these, and still
+  // never above the Rank.
+  const affordance = renderRoleAffordanceLines(character.role);
+  if (affordance.length) {
+    parts.push("", "== WHAT THIS ROLE REACHES FOR ==");
+    for (const line of affordance) parts.push(line);
   }
 
   parts.push("", "== CURRENT SITUATION (dress this one; do not replace it) ==");

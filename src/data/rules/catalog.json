@@ -79,7 +79,45 @@
       "_resolves": "This closes the previously-open question about foundation slot counts."
     },
     "armorNote": "One worn armor per location (head / body / shield). Track current SP separately from base SP so ablation works in play.",
-    "stackingNote": "Benefits from multiple installations of the same cyberware do not stack unless stated."
+    "stackingNote": "Benefits from multiple installations of the same cyberware do not stack unless stated.",
+    "priceCategoryLadder": {
+      "_provenance": "The Night Market cost/price-category table. Reported consistently by secondary sources and matching the categories the Tech Maker table names in roles.json, but NOT transcribed from the printed page here — the same caveat recovery.json carries. Confirm against the Core Rulebook before treating the boundaries as verified.",
+      "_note": "`maxCost` is the top of each band: an item costs at most that much to be in it. Only weapons, armor and ammunition need this — gear lines carry their own priceCategory field and are read from it directly.",
+      "bands": [
+        {
+          "category": "Cheap",
+          "maxCost": 10
+        },
+        {
+          "category": "Everyday",
+          "maxCost": 20
+        },
+        {
+          "category": "Costly",
+          "maxCost": 50
+        },
+        {
+          "category": "Premium",
+          "maxCost": 100
+        },
+        {
+          "category": "Expensive",
+          "maxCost": 500
+        },
+        {
+          "category": "Very Expensive",
+          "maxCost": 1000
+        },
+        {
+          "category": "Luxury",
+          "maxCost": 5000
+        },
+        {
+          "category": "Super Luxury",
+          "maxCost": null
+        }
+      ]
+    }
   },
   "_schema": {
     "weapon": "{id,name,category,skill,damage,magazine,rof,handsRequired,concealable,cost,notes}",

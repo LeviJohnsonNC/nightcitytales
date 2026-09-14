@@ -152,7 +152,17 @@ export async function saveLiveEncounter(
           sp_body: c.spBody,
           defeated: c.defeated,
           initiative: c.initiative,
-          data: live.data[id] as never,
+          // The "first this Round" marks live on the engine combatant, and the
+          // row's `data` is the only column that can hold them. Folded in here
+          // so a saved fight reads back knowing whose Spot Weakness and whose
+          // Damage Deflection are already spent this Round.
+          data: {
+            ...live.data[id],
+            ...(typeof c.lastHitRound === "number" ? { lastHitRound: c.lastHitRound } : {}),
+            ...(typeof c.lastDamagedRound === "number"
+              ? { lastDamagedRound: c.lastDamagedRound }
+              : {}),
+          } as never,
         },
       ];
     }),

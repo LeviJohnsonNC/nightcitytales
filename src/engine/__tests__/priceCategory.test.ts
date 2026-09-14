@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PRICE_CATEGORY_LADDER, priceCategoryContext } from "../priceCategory";
+import {
+  PRICE_CATEGORY_LADDER,
+  priceCategoryContext,
+  priceCategoryForCost,
+} from "../priceCategory";
 
 /**
  * priceCategory.ts derives its ladder and tables by parsing the prose in
@@ -50,5 +54,32 @@ describe("price category context", () => {
     expect(priceCategoryContext(null)).toBeNull();
     expect(priceCategoryContext(undefined)).toBeNull();
     expect(priceCategoryContext("Not A Category")).toBeNull();
+  });
+});
+
+describe("priceCategoryForCost", () => {
+  it("reads the Night Market bands off the cost ladder", () => {
+    expect(priceCategoryForCost(10)).toBe("Cheap");
+    expect(priceCategoryForCost(20)).toBe("Everyday");
+    expect(priceCategoryForCost(50)).toBe("Costly");
+    expect(priceCategoryForCost(100)).toBe("Premium");
+    expect(priceCategoryForCost(500)).toBe("Expensive");
+    expect(priceCategoryForCost(1000)).toBe("Very Expensive");
+  });
+
+  it("puts anything between bands in the band it does not exceed", () => {
+    expect(priceCategoryForCost(11)).toBe("Everyday");
+    expect(priceCategoryForCost(501)).toBe("Very Expensive");
+  });
+
+  it("has a top band nothing falls off the end of", () => {
+    expect(priceCategoryForCost(10_000)).toBe("Super Luxury");
+    expect(priceCategoryForCost(1_000_000)).toBe("Super Luxury");
+  });
+
+  it("names categories the Reach ladder already knows", () => {
+    for (const cost of [10, 50, 500, 5000, 99999]) {
+      expect(priceCategoryContext(priceCategoryForCost(cost)), String(cost)).not.toBeNull();
+    }
   });
 });

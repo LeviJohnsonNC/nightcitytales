@@ -204,12 +204,13 @@ import {
 import { deathSaveOwed, pendingDeathSaveFrom, type PendingDeathSave } from "./deathSavePrompt";
 import {
   combatAwarenessAllocation,
-  combatAwarenessFor,
   execTeam,
   liveRoleAbility,
   medicineDoses,
   medicineSpecialties,
   makerSpecialties,
+  combatRoleEffects,
+  withPlayerRoleEffects,
   makerSpecialtyBudget,
   pendingBackup,
   roleCheckModifiers,
@@ -304,7 +305,13 @@ export async function loadPlay(campaignId: string): Promise<PlayBundle> {
   }
 
   const events = await listCampaignEvents(campaignId);
-  const encounter = await loadLiveEncounter(campaignId);
+  // A fight read back from the database has no Role Ability on it — combatant
+  // rows do not carry one — so the character's live division is put back on the
+  // player combatant here, once, before anything reads the encounter.
+  const encounter = withPlayerRoleEffects(
+    await loadLiveEncounter(campaignId),
+    combatRoleEffects(full.campaign, character),
+  );
   // What the character has already learned about the ground, so a job at a
   // building they have cased before is not introduced from scratch.
   const places = await loadPlaceStates(campaignId);
@@ -744,7 +751,7 @@ export async function narrate(
           ? arenaForPlace(jobPlace)
           : undefined;
       // A Solo brings their Combat Awareness division into the fight with them.
-      const awareness = combatAwarenessFor(bundle.campaign, bundle.character);
+      const roleEffects = combatRoleEffects(bundle.campaign, bundle.character);
       const opened = await beginEncounter({
         campaignId,
         characterId: bundle.campaign.character_id,
@@ -760,16 +767,7 @@ export async function narrate(
         // interior at a bar, a parking structure under a garage.
         arena: action.arena ?? arenaHere,
         goal: action.goal,
-        ...(awareness
-          ? {
-              roleEffects: {
-                initiative: awareness.initiative,
-                damageDeflection: awareness.damageDeflection,
-                spotWeakness: awareness.spotWeakness,
-                fumbleRecovery: awareness.fumbleRecovery,
-              },
-            }
-          : {}),
+        ...(roleEffects ? { roleEffects } : {}),
       });
       // Anyone who beat the player on Initiative has already acted; what they
       // did is on the encounter_started event, so the GM reads it with the

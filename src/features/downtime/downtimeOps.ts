@@ -34,6 +34,7 @@ import {
   type FullCharacter,
   type Json,
 } from "@/lib/backend";
+import { medicineDoses, withAbilityState } from "@/features/play/roleAbilityModel";
 import { downtimeView, type RepairableArmor } from "./downtimeModel";
 
 export type DowntimeBundle = {
@@ -83,11 +84,17 @@ export function stacks(kind: ItemKind): boolean {
 export async function rest(
   bundle: DowntimeBundle,
   days: number,
-  options: { advanceCalendar?: boolean } = {},
+  options: { advanceCalendar?: boolean; antibiotic?: boolean } = {},
 ): Promise<{ days: number; hpHealed: number }> {
   const view = downtimeView({ ...bundle, restDays: days });
-  const plan = view.rest;
+  // A Medtech may start a course of their own Antibiotic on the way into bed:
+  // the printed drug, +2 HP a day for a week, one at a time. The dose is spent
+  // whether or not the rest runs the full week, which is what makes taking it
+  // for a two-day lie-down a waste rather than a free upgrade.
+  const onCourse = options.antibiotic === true && view.restOnAntibiotic !== null;
+  const plan = onCourse && view.restOnAntibiotic ? view.restOnAntibiotic : view.rest;
   if (plan.days <= 0) return { days: 0, hpHealed: 0 };
+  if (onCourse) await spendDose(bundle, "antibiotic");
 
   if (options.advanceCalendar !== false) {
     await setCampaignClock(
@@ -107,9 +114,16 @@ export async function rest(
     summary:
       `Lay low for ${plan.days} day${plan.days === 1 ? "" : "s"}` +
       (plan.hpHealed > 0
-        ? ` — healed ${plan.hpHealed} HP (BODY ${view.body} a day), now ${plan.hpAfter}/${view.hpMax}.`
+        ? ` — healed ${plan.hpHealed} HP (${describeRate(view.body, plan)}), ` +
+          `now ${plan.hpAfter}/${view.hpMax}.`
         : "."),
-    data: { days: plan.days, hpHealed: plan.hpHealed, body: view.body } as unknown as Json,
+    data: {
+      days: plan.days,
+      hpHealed: plan.hpHealed,
+      body: view.body,
+      perDay: plan.perDay,
+      ...(onCourse ? { antibioticDays: plan.courseDays } : {}),
+    } as unknown as Json,
   });
   return { days: plan.days, hpHealed: plan.hpHealed };
 }
@@ -206,4 +220,66 @@ export function worstArmor(bundle: DowntimeBundle): RepairableArmor | null {
   return (
     [...view.repairs].sort((a, b) => b.missingSp - a.missingSp).find((p) => p.missingSp > 0) ?? null
   );
+}
+
+/** How the rate reads on the receipt, so a better day is visible as a reason. */
+function describeRate(
+  body: number,
+  plan: { perDay: number; courseDays: number; perDayOnCourse: number },
+): string {
+  const base =
+    plan.perDay > body ? `BODY ${body} +${plan.perDay - body} a day` : `BODY ${body} a day`;
+  if (plan.courseDays <= 0) return base;
+  return `${base}, +${plan.perDayOnCourse - plan.perDay} for ${plan.courseDays} of them on Antibiotic`;
+}
+
+/**
+ * Spend one dose of a synthesized drug.
+ *
+ * Doses live in the campaign's role_state beside the Specialty division that
+ * unlocked them, which is where the Role panel writes and reads them. Refuses
+ * rather than going negative: a dose that is not there was already used.
+ */
+async function spendDose(bundle: DowntimeBundle, drugId: string): Promise<void> {
+  const doses = medicineDoses(bundle.campaign);
+  const held = doses[drugId] ?? 0;
+  if (held <= 0) throw new Error(`No ${drugId} on hand.`);
+  const next = { ...doses };
+  if (held > 1) next[drugId] = held - 1;
+  else delete next[drugId];
+  await updateCampaign(bundle.campaign.id, {
+    role_state: withAbilityState(bundle.campaign, "medicine", {
+      specialties: (
+        bundle.campaign.role_state as Record<string, { specialties?: unknown }> | null
+      )?.["medicine"]?.specialties,
+      doses: next,
+    }) as unknown as Json,
+  });
+}
+
+/**
+ * Take a Speedheal: BODY + WILL HP, at once, and never to somebody Mortally
+ * Wounded — which is the printed restriction and the reason it is not simply a
+ * better rest. Once a day, so a stack of doses is not a stack of health bars.
+ */
+export async function takeSpeedheal(bundle: DowntimeBundle): Promise<{ hpHealed: number }> {
+  const view = downtimeView({ ...bundle, restDays: 0 });
+  const speedheal = view.care?.speedheal;
+  if (!speedheal) throw new Error("No Speedheal synthesized.");
+  if (bundle.vitals.hp_current <= 0) {
+    throw new Error("Speedheal does nothing for someone Mortally Wounded. They need stabilizing.");
+  }
+  const hpAfter = Math.min(view.hpMax, bundle.vitals.hp_current + speedheal.hp);
+  const hpHealed = hpAfter - bundle.vitals.hp_current;
+  if (hpHealed <= 0) throw new Error("Already whole — that dose would be wasted.");
+
+  await spendDose(bundle, "speedheal");
+  await updateCampaignVitals(bundle.campaign.id, { hp_current: hpAfter });
+  await appendCampaignEvent({
+    campaign_id: bundle.campaign.id,
+    type: "downtime_speedheal",
+    summary: `Took a Speedheal — ${hpHealed} HP back, now ${hpAfter}/${view.hpMax}.`,
+    data: { hpHealed, hpAfter } as unknown as Json,
+  });
+  return { hpHealed };
 }

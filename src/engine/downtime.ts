@@ -20,6 +20,41 @@ export function healingPerDay(body: number): number {
   return Math.max(0, Math.trunc(body));
 }
 
+/** The Skills a Medtech's own training is measured by, for self-care. */
+export const SELF_CARE_SKILLS: string[] = RECOVERY_RULES.medtechSelfCare.skillIds;
+
+/**
+ * The standing bonus somebody who does medicine for a living gets on their own
+ * wounds, in HP a day.
+ *
+ * A house rule, and a small one on purpose — see medtechSelfCare._provenance in
+ * recovery.json. The printed way a Medtech recovers faster is the drugs they
+ * synthesize, which are modelled as printed; this is what they have on the days
+ * the bag is empty. It is capped well below BODY so the printed rate stays the
+ * rate, and it is zero for everybody without the Skill, which is everybody who
+ * is not a Medtech.
+ */
+export function selfCareBonus(skillLevel: number): number {
+  const rule = RECOVERY_RULES.medtechSelfCare;
+  const level = Math.max(0, Math.trunc(skillLevel));
+  const per = Math.max(1, rule.hpPerDayPerSkillLevels);
+  return Math.min(rule.maxBonusHpPerDay, Math.floor(level / per));
+}
+
+/**
+ * A course of something taken over the days of a rest.
+ *
+ * Antibiotic is the printed case: +2 HP a day for a week, one at a time. It is
+ * a COURSE rather than a rate because it runs out — a fortnight in bed on one
+ * course is seven better days and seven ordinary ones — and a bonus with no end
+ * would quietly turn one dose into unlimited healing.
+ */
+export type HealingCourse = {
+  hpPerDay: number;
+  /** How many days of the rest the course covers. */
+  days: number;
+};
+
 /** Days in a month, for charging monthly costs against a day counter. */
 export const DOWNTIME_MONTH_DAYS: number = RECOVERY_RULES.month.days;
 
@@ -28,6 +63,10 @@ export type RestInput = {
   hpCurrent: number;
   hpMax: number;
   body: number;
+  /** Standing HP a day beyond BODY — a Medtech's self-care. Zero for everyone else. */
+  perDayBonus?: number;
+  /** A course running through this rest, when one has been started. */
+  course?: HealingCourse | null;
 };
 
 export type RestPlan = {
@@ -37,6 +76,12 @@ export type RestPlan = {
   hpAfter: number;
   /** Days it would take to reach full HP from here. */
   daysToFull: number;
+  /** HP a day this character recovers: BODY plus any standing bonus. */
+  perDay: number;
+  /** HP a day while a course is still running, when one is. */
+  perDayOnCourse: number;
+  /** Days of this rest the course actually covered. */
+  courseDays: number;
 };
 
 /**
@@ -45,14 +90,48 @@ export type RestPlan = {
  * Rest is capped at what the injury needs: a character who is two days from
  * whole cannot burn a week of rent lying in bed for no gain. Someone already at
  * full HP rests zero days no matter what they asked for.
+ *
+ * A course runs out partway through a long rest, so the sum is the course days
+ * at the better rate and the rest at the ordinary one — which is also why
+ * `daysToFull` has to be worked out day by day rather than by division.
  */
 export function planRest(input: RestInput): RestPlan {
-  const perDay = healingPerDay(input.body);
+  const perDay = healingPerDay(input.body) + Math.max(0, Math.trunc(input.perDayBonus ?? 0));
+  const courseDaysAvailable = Math.max(0, Math.trunc(input.course?.days ?? 0));
+  const coursePerDay = perDay + Math.max(0, Math.trunc(input.course?.hpPerDay ?? 0));
   const missing = Math.max(0, input.hpMax - input.hpCurrent);
-  const daysToFull = perDay > 0 ? Math.ceil(missing / perDay) : 0;
+
+  /** HP recovered over `days`, with the course spent first. */
+  const healedOver = (days: number): number => {
+    const onCourse = Math.min(days, courseDaysAvailable);
+    return onCourse * coursePerDay + (days - onCourse) * perDay;
+  };
+
+  // Day by day, because the rate changes when the course runs out. Bounded by
+  // the injury: nothing here can run away, and a rate of zero stops at once.
+  let daysToFull = 0;
+  if (perDay > 0 || coursePerDay > 0) {
+    while (healedOver(daysToFull) < missing) {
+      daysToFull += 1;
+      // A course that heals nothing and a BODY of zero would never converge.
+      if (daysToFull > courseDaysAvailable && perDay <= 0) {
+        daysToFull = courseDaysAvailable;
+        break;
+      }
+    }
+  }
+
   const days = Math.max(0, Math.min(Math.trunc(input.days), daysToFull));
-  const hpHealed = Math.min(missing, days * perDay);
-  return { days, hpHealed, hpAfter: input.hpCurrent + hpHealed, daysToFull };
+  const hpHealed = Math.min(missing, healedOver(days));
+  return {
+    days,
+    hpHealed,
+    hpAfter: input.hpCurrent + hpHealed,
+    daysToFull,
+    perDay,
+    perDayOnCourse: coursePerDay,
+    courseDays: Math.min(days, courseDaysAvailable),
+  };
 }
 
 export type BillsInput = {

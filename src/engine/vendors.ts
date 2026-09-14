@@ -22,6 +22,7 @@
  */
 import { ARMOR, AMMUNITION, GEAR, WEAPONS, itemCost, type ItemKind } from "./catalog";
 import { defaultRng } from "./dice";
+import { priceCategoryContext, priceCategoryForCost } from "./priceCategory";
 import { entryFor, rollOracle, type OracleResult, type OracleTable } from "./oracle";
 import type { RNG } from "./types";
 
@@ -117,6 +118,13 @@ export type Vendor = {
   markup: number;
   /** What they say when asked for something outside what they deal in. */
   refusal: string;
+  /**
+   * Who is on the other side of the table when the price is argued about.
+   *
+   * COOL and Trading, which is the printed Haggle opposition. A pitch on a
+   * folding table argues less well than a fixer whose whole living is this.
+   */
+  haggle: { cool: number; trading: number };
 };
 
 export const VENDORS: Vendor[] = [
@@ -128,6 +136,7 @@ export const VENDORS: Vendor[] = [
     minutes: 45,
     markup: 1,
     refusal: "Nobody out here is selling you a gun in daylight. Ammo and kit, that's the pitch.",
+    haggle: { cool: 4, trading: 3 },
   },
   {
     id: "gun_shop",
@@ -137,6 +146,7 @@ export const VENDORS: Vendor[] = [
     minutes: 90,
     markup: 1,
     refusal: "He sells guns and what goes in them. Armor is two doors down and not his problem.",
+    haggle: { cool: 5, trading: 4 },
   },
   {
     id: "armorer",
@@ -146,6 +156,7 @@ export const VENDORS: Vendor[] = [
     minutes: 90,
     markup: 1,
     refusal: "Armor and the kit to keep it working. He does not stock weapons and says so often.",
+    haggle: { cool: 5, trading: 4 },
   },
   {
     id: "fixer",
@@ -158,6 +169,7 @@ export const VENDORS: Vendor[] = [
     // difference between shopping and asking someone to owe somebody for you.
     markup: 1.25,
     refusal: "They can get most things. Most is not all, and they will say which.",
+    haggle: { cool: 7, trading: 6 },
   },
 ];
 
@@ -242,13 +254,53 @@ export type StockCheck = {
   available: boolean;
   /** The roll, when one was needed. Null for ordinary stock, which is just there. */
   roll: OracleResult | null;
-  /** Why: "ordinary" when it never needed asking, otherwise the oracle's key. */
+  /** Why: "ordinary" when it never needed asking, "reach" when a Fixer sourced
+   * it on their own Operator Reach, otherwise the oracle's key. */
   key: string;
 };
+
+/**
+ * The price category an item sits in.
+ *
+ * Gear lines carry their own printed category; weapons, armor and ammunition do
+ * not, so those are read off the cost ladder instead.
+ */
+export function itemPriceCategory(kind: ItemKind, itemId: string): string | null {
+  if (kind === "gear") {
+    const entry = GEAR.find((g) => g.id === itemId);
+    if (entry?.priceCategory) return entry.priceCategory;
+  }
+  return priceCategoryForCost(itemCost(kind, itemId));
+}
+
+/**
+ * True when this Fixer's Operator Reach always sources this item.
+ *
+ * The Reach rank per category is parsed from the Fixer's own rules text in
+ * priceCategory.ts; a category the ladder does not know, or a rank the text
+ * states no tier for, is not within anybody's Reach.
+ */
+export function withinReach(kind: ItemKind, itemId: string, operatorRank: number): boolean {
+  const rank = Math.max(0, Math.trunc(operatorRank));
+  if (rank <= 0) return false;
+  const category = itemPriceCategory(kind, itemId);
+  const context = priceCategoryContext(category);
+  if (!context || context.fixerRank === null) return false;
+  return rank >= context.fixerRank;
+}
 
 export type StockCheckOptions = {
   /** True when the character has dealt with this vendor before and it showed. */
   regular?: boolean;
+  /**
+   * The character's own Operator Rank, when they are a Fixer.
+   *
+   * Reach is the printed half of Operator that nobody could reach: "the highest
+   * price category the Fixer can always source". Always means always, so within
+   * their Reach the shelf is not rolled for at all — which is the difference
+   * between knowing a guy and being the guy.
+   */
+  operatorRank?: number;
   rng?: RNG;
 };
 
@@ -268,6 +320,11 @@ export function checkStock(
     return { available: false, roll: null, key: "not_dealt" };
   }
   if (item.tier === "ordinary") return { available: true, roll: null, key: "ordinary" };
+  // A Fixer inside their own Reach does not roll. The rules say "always source",
+  // and a die that can answer no is not always.
+  if (withinReach(item.kind, item.itemId, options.operatorRank ?? 0)) {
+    return { available: true, roll: null, key: "reach" };
+  }
 
   const roll = rollOracle(STOCK, options.rng ?? defaultRng, {
     modifiers: options.regular ? [{ label: "Known here", value: STOCK_REGULAR_BONUS }] : [],

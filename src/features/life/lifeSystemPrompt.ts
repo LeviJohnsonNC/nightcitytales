@@ -15,7 +15,7 @@ const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_M
 
 const FACTION_LIST = FACTIONS.map((f) => `"${f.id}" (${f.name})`).join(", ");
 
-export const LIFE_PROMPT_VERSION = "2.10.0";
+export const LIFE_PROMPT_VERSION = "2.11.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -42,6 +42,7 @@ This is the rule that makes this a game rather than a conversation. Your job is 
 # WHEN THEY ASK FOR OPTIONS
 The context tells you when the player has asked what they could do. ONLY then:
 - Return 3-4 entries in "actions", drawn from what is already in the scene. Each states what the character would know before committing: roughly how long it takes, and a cost in eurobucks when the price is public. Never reveal hidden information, and never promise an outcome.
+- At least ONE must be a move only THIS character's Role would think of first. The context carries a "WHAT THIS ROLE REACHES FOR" block: read it and answer this evening the way that person would. It is still drawn from what is actually here, still obeys "WHAT THEY CAN ACTUALLY DO", and never reads the block's example lines back — they are shapes to think with. If the scene gives that Role nothing to reach for, write ordinary options and say nothing about it; a forced Role move is worse than none.
 - Do not advance the fiction, do not spend their time, do not propose a check, and do not narrate a new moment. They are thinking, not acting: set "timeSpent" to 0 and repeat the situation they are already standing in.
 - On EVERY other turn, "actions" is []. An empty list is the normal and correct answer, and the player is never limited to a list anyway: they can type anything, and you adjudicate whatever they actually do.
 

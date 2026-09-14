@@ -9,6 +9,8 @@ import {
   getVendor,
   inStock,
   isVendorId,
+  itemPriceCategory,
+  withinReach,
   shelfFor,
   shelfTier,
   stockEntryFor,
@@ -296,5 +298,62 @@ describe("resolveItemKind and effectiveSlot", () => {
     expect(isPackageSlot("package:gear")).toBe(true);
     expect(isPackageSlot("weapon")).toBe(false);
     expect(isPackageSlot(null)).toBe(false);
+  });
+});
+
+describe("Operator Reach", () => {
+  /**
+   * The printed half of Operator that nothing consulted: "the highest price
+   * category the Fixer can always source". priceCategoryContext parsed the
+   * Reach ranks out of the Fixer's rules text and was dead code outside its own
+   * test — the shelf never asked, so being a Fixer changed nothing about what
+   * was on it.
+   */
+  const fixer = getVendor("fixer");
+  /** Something dear enough that the shelf has to be rolled for. */
+  const unusual = shelfFor(fixer).find((i) => i.tier === "unusual")!;
+  const ordinary = shelfFor(fixer).find((i) => i.tier === "ordinary")!;
+
+  it("puts every catalog line in a price category", () => {
+    for (const item of shelfFor(fixer)) {
+      expect(itemPriceCategory(item.kind, item.itemId), item.name).not.toBeNull();
+    }
+  });
+
+  it("reaches nothing at Rank 0, which is everybody who is not a Fixer", () => {
+    expect(withinReach(unusual.kind, unusual.itemId, 0)).toBe(false);
+  });
+
+  it("skips the stock roll entirely inside the Fixer's own Reach", () => {
+    // Rank 10 reaches Super Luxury: everything in this catalog is inside it.
+    expect(withinReach(unusual.kind, unusual.itemId, 10)).toBe(true);
+    // An RNG that would roll "out" — the answer must not come from the die.
+    const alwaysOut = () => 0;
+    const check = checkStock(fixer, unusual, { operatorRank: 10, rng: alwaysOut });
+    expect(check.available).toBe(true);
+    expect(check.roll).toBeNull();
+    expect(check.key).toBe("reach");
+  });
+
+  it("still rolls for what a low-Rank Fixer cannot always source", () => {
+    const expensive = shelfFor(fixer)
+      .filter((i) => i.tier === "unusual")
+      .find((i) => !withinReach(i.kind, i.itemId, 1));
+    expect(expensive, "the catalog needs something beyond Rank 1 Reach").toBeDefined();
+    const check = checkStock(fixer, expensive!, { operatorRank: 1, rng: () => 0 });
+    expect(check.roll).not.toBeNull();
+    expect(check.available).toBe(false);
+  });
+
+  it("changes nothing about ordinary stock, which never asked anybody", () => {
+    expect(checkStock(fixer, ordinary, { operatorRank: 10 }).key).toBe("ordinary");
+    expect(checkStock(fixer, ordinary, {}).key).toBe("ordinary");
+  });
+
+  it("gives every vendor somebody to argue with", () => {
+    for (const vendor of VENDORS) {
+      expect(vendor.haggle.cool, vendor.id).toBeGreaterThan(0);
+      expect(vendor.haggle.trading, vendor.id).toBeGreaterThanOrEqual(0);
+    }
   });
 });

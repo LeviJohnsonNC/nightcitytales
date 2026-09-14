@@ -19,6 +19,9 @@ import {
   checkStock,
   describeReload,
   getVendor,
+  haggledPrice,
+  hagglePercent,
+  opposedCheckForCharacter,
   planReload,
   shelfFor,
   slotFor,
@@ -27,6 +30,8 @@ import {
   weaponProfile,
   type GameClock,
   type ItemKind,
+  type OpposedCheckResult,
+  type SkillCheckActor,
   type ShelfItem,
   type Vendor,
 } from "@/engine";
@@ -114,10 +119,34 @@ export type PurchaseInput = {
   kind: ItemKind;
   itemId: string;
   quantity: number;
+  /**
+   * The character's Operator Rank, when they are a Fixer. Zero otherwise.
+   *
+   * Two printed things ride on it: Reach, which takes the stock die off the
+   * table inside the Fixer's own price categories, and the size of the band a
+   * won Haggle buys.
+   */
+  operatorRank?: number;
+  isFixer?: boolean;
+  /**
+   * True when the price has already been argued down at this vendor.
+   *
+   * The percentage is NOT passed in — it is worked out here from the Role and
+   * the Rank, so a caller cannot name its own discount.
+   */
+  haggleWon?: boolean;
 };
 
 export type PurchaseOutcome =
-  | { ok: true; spent: number; quantity: number; name: string; stockKey: string }
+  | {
+      ok: true;
+      spent: number;
+      quantity: number;
+      name: string;
+      stockKey: string;
+      /** Eurobucks the argument saved, when one was won. */
+      saved: number;
+    }
   | { ok: false; reason: string; stockKey: string };
 
 /**
@@ -148,7 +177,10 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
 
   // Is it here at all? Ordinary stock never asks; the unusual gets a die the
   // player watches, shifted by whether this vendor knows their face.
-  const stock = checkStock(vendor, item, { regular: isRegularAt(full.flags, vendor.id) });
+  const stock = checkStock(vendor, item, {
+    regular: isRegularAt(full.flags, vendor.id),
+    operatorRank: input.isFixer ? (input.operatorRank ?? 0) : 0,
+  });
   if (stock.roll) await logOpenOracle(input.campaignId, stock.roll);
   if (!stock.available) {
     return {
@@ -160,7 +192,19 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
 
   // "One left" means one, whatever the player asked for.
   const allowed = stock.key === "last_one" ? 1 : quantity;
-  const cost = vendorPrice(vendor, item.kind, item.itemId) * allowed;
+  // "One left, and they know it. The price does not move" — the stock table says
+  // so in as many words, so a won argument does not survive that read.
+  const percent =
+    input.haggleWon === true && stock.key !== "last_one"
+      ? hagglePercent({
+          isFixer: input.isFixer === true,
+          operatorRank: input.operatorRank ?? 0,
+        })
+      : 0;
+  const list = vendorPrice(vendor, item.kind, item.itemId);
+  const unit = haggledPrice(list, percent);
+  const cost = unit * allowed;
+  const saved = (list - unit) * allowed;
   if (!canAfford(eurobucks, cost)) {
     return {
       ok: false,
@@ -195,18 +239,92 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
   await appendCampaignEvent({
     campaign_id: input.campaignId,
     type: PURCHASE_EVENT,
-    summary: `Bought ${allowed > 1 ? `${allowed}× ` : ""}${item.name} for ${cost}eb at ${vendor.label.toLowerCase()}.`,
+    summary:
+      `Bought ${allowed > 1 ? `${allowed}× ` : ""}${item.name} for ${cost}eb at ` +
+      `${vendor.label.toLowerCase()}` +
+      (saved > 0 ? `, ${saved}eb off the asking price.` : ".") +
+      (stock.key === "reach" ? " Sourced on Reach." : ""),
     data: {
       vendorId: vendor.id,
       kind: item.kind,
       itemId: item.itemId,
       quantity: allowed,
       cost,
+      saved,
+      stockKey: stock.key,
       slot: slotFor(item.kind, item.itemId),
     } as unknown as Json,
   });
 
-  return { ok: true, spent: cost, quantity: allowed, name: item.name, stockKey: stock.key };
+  return { ok: true, spent: cost, quantity: allowed, name: item.name, stockKey: stock.key, saved };
+}
+
+/** The ledger type a haggle is written under. */
+export const HAGGLE_EVENT = "haggle";
+
+export type HaggleOutcome = {
+  result: OpposedCheckResult;
+  won: boolean;
+  /** The percentage off a win is worth to this character. */
+  percent: number;
+};
+
+/**
+ * Argue about the price.
+ *
+ * One opposed Trading check against the person behind the counter, exactly as
+ * the Fixer's printed Haggle describes it — COOL + Trading + Operator Rank
+ * against their COOL + Trading. The Rank rides on the roll through the caller's
+ * modifiers, the same way it does on every other check; what a win is WORTH is
+ * `hagglePercent`, which is the Fixer's printed band and a smaller house-rule
+ * band for everybody else.
+ *
+ * The check is rolled here and the result is written to the ledger win or lose,
+ * because a failed argument is a thing that happened.
+ */
+export async function haggle(input: {
+  campaignId: string;
+  vendorId: string;
+  /** Built by the caller, which is the layer that knows the live sheet. */
+  actor: SkillCheckActor;
+  actorName: string;
+  isFixer: boolean;
+  operatorRank: number;
+  /** Role and situational modifiers the caller has already worked out. */
+  modifiers?: { label: string; value: number }[];
+}): Promise<HaggleOutcome> {
+  const vendor = getVendor(input.vendorId);
+  const result = opposedCheckForCharacter(
+    input.actor,
+    "trading",
+    {
+      name: vendor.label,
+      skillId: "trading",
+      skillLevel: vendor.haggle.trading,
+      statValue: vendor.haggle.cool,
+    },
+    undefined,
+    {
+      actorName: input.actorName,
+      ...(input.modifiers?.length ? { modifiers: input.modifiers } : {}),
+    },
+  );
+  const percent = hagglePercent({ isFixer: input.isFixer, operatorRank: input.operatorRank });
+  await appendCampaignEvent({
+    campaign_id: input.campaignId,
+    type: HAGGLE_EVENT,
+    summary: result.success
+      ? `Talked ${vendor.label.toLowerCase()} down ${percent}%.`
+      : `${vendor.label} would not move on the price.`,
+    data: {
+      vendorId: vendor.id,
+      won: result.success,
+      percent: result.success ? percent : 0,
+      actorTotal: result.actor.total,
+      opponentTotal: result.opponent.total,
+    } as unknown as Json,
+  });
+  return { result, won: result.success, percent };
 }
 
 /**

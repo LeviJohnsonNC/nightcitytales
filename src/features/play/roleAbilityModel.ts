@@ -14,11 +14,13 @@ import {
   roleAbilityOf,
   teamMemberSlots,
   vehicleFamiliarityBonus,
+  type CombatantRoleEffects,
   type CombatAwarenessAllocation,
   type CombatAwarenessEffects,
   type RoleAbilityInfo,
 } from "@/engine";
 import type { Campaign, FullCharacter } from "@/lib/backend";
+import type { LiveEncounter } from "@/features/campaign/encounterState";
 import type { PendingBackup } from "./backupFlow";
 
 export type LiveRoleAbility = {
@@ -78,6 +80,56 @@ export function combatAwarenessFor(
   if (!ability || ability.info.abilityId !== "combat_awareness") return null;
   const effects = combatAwarenessEffects(combatAwarenessAllocation(campaign), ability.rank);
   return { ...effects, rank: ability.rank };
+}
+
+/**
+ * The slice of a Role Ability the combat engine applies itself, for this
+ * character right now — or null for a Role that changes nothing in a fight.
+ *
+ * This is RECOMPUTED rather than persisted, and deliberately. Combat Awareness
+ * is re-divisible outside combat, so a division made between fights has to
+ * reach the next one; and combatant rows carry no role effects, so a fight read
+ * back from the database would otherwise come back with the Solo's entire Role
+ * Ability switched off. Only Initiative survived that, because Initiative is
+ * rolled once at the start and stored as a number.
+ */
+export function combatRoleEffects(
+  campaign: Campaign,
+  character: FullCharacter,
+): CombatantRoleEffects | null {
+  const awareness = combatAwarenessFor(campaign, character);
+  if (!awareness) return null;
+  return {
+    initiative: awareness.initiative,
+    attack: awareness.attack,
+    damageDeflection: awareness.damageDeflection,
+    spotWeakness: awareness.spotWeakness,
+    fumbleRecovery: awareness.fumbleRecovery,
+  };
+}
+
+/**
+ * A loaded encounter with the player's live Role effects put back on them.
+ *
+ * Null encounter in, null out, so the caller can hand it whatever it has.
+ */
+export function withPlayerRoleEffects(
+  live: LiveEncounter | null,
+  effects: CombatantRoleEffects | null,
+): LiveEncounter | null {
+  if (!live || !effects) return live;
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  if (!player) return live;
+  return {
+    ...live,
+    state: {
+      ...live.state,
+      combatants: {
+        ...live.state.combatants,
+        [player.id]: { ...player, roleEffects: effects },
+      },
+    },
+  };
 }
 
 /** Backup that has answered and is on its way, if any. */

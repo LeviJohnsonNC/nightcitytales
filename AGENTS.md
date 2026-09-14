@@ -425,6 +425,19 @@ contributor needs to know while editing the code next to one.
   baseline exists because the directory holds five pairs where the same DDL was
   written by hand and applied again through the Lovable console, only one of
   each ever running — read its README before touching the migration history.
+- **A Role Ability has two halves and they live apart.** What it DOES is
+  `engine/roleAbility.ts`, read from `roles.json`; what the Role reaches FOR is
+  `engine/roleAffordance.ts`, read from the house-rule `role-affordances.json`.
+  The second grants nothing and must not start: it reaches the narrator as a
+  block of moves to think with, while the capability snapshot still refuses
+  anything above the Rank. Role-gated place actions (`roleActions` in
+  `place-actions.json`) are the same bargain — a real venue, an ordinary Skill,
+  their own small budget beside the five.
+- **Combat Role effects are recomputed, never persisted.** Combatant rows carry
+  none, so `combatRoleEffects` is re-applied to the player on every load. Add a
+  new one to `CombatantRoleEffects` AND to that helper, or it will work for one
+  turn and then quietly stop. The "first this Round" marks (`lastHitRound`,
+  `lastDamagedRound`) do persist, in the row's `data`.
 - **Ripperdoc pacing is a house rule** — 0/1/3 recovery days by install level,
   four surgery hours per physical implant, appointment delay by disposition.
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,

@@ -6,9 +6,12 @@
  */
 import { describe, expect, it } from "vitest";
 import type { Campaign, FullCharacter } from "@/lib/backend";
+import type { LiveEncounter } from "@/features/campaign/encounterState";
 import {
   combatAwarenessAllocation,
   combatAwarenessFor,
+  combatRoleEffects,
+  withPlayerRoleEffects,
   liveRoleAbility,
   execTeam,
   makerSpecialtyBudget,
@@ -255,5 +258,77 @@ describe("Medtech — doses and Skills", () => {
   it("reads synthesized doses back, ignoring junk", () => {
     const stored = campaign({ medicine: { doses: { speedheal: 3, stim: "lots" } } });
     expect(medicineDoses(stored)).toEqual({ speedheal: 3 });
+  });
+});
+
+describe("carrying a Solo's division into a fight that was saved and read back", () => {
+  /**
+   * Combatant rows carry no Role effects, so an encounter rehydrated from the
+   * database came back with the Solo's whole Role Ability switched off. Only
+   * Initiative survived, because Initiative is rolled once at the start and
+   * stored as a number — Precision Attack, Spot Weakness, Damage Deflection and
+   * Fumble Recovery all quietly stopped applying from the second turn onward.
+   *
+   * The fix recomputes rather than persists, which is also what lets a division
+   * made between fights reach the next one.
+   */
+  // Rank 10: three points into Precision Attack (+1), four into Fumble
+  // Recovery, and the last three on Spot Weakness.
+  const solo = character("solo", 10);
+  const divided = campaign({
+    combat_awareness: {
+      allocation: { precision_attack: 3, fumble_recovery: 4, spot_weakness: 3 },
+    },
+  });
+
+  const live = (): LiveEncounter =>
+    ({
+      id: "e1",
+      state: {
+        round: 2,
+        order: ["pc", "goon"],
+        activeIndex: 0,
+        status: "active",
+        combatants: {
+          pc: { id: "pc", isPlayer: true, name: "Vincent" },
+          goon: { id: "goon", isPlayer: false, name: "Scav" },
+        },
+      },
+      data: {},
+      arena: null,
+      cover: {},
+      version: 3,
+    }) as unknown as LiveEncounter;
+
+  it("hands the combat engine every effect the division bought", () => {
+    const effects = combatRoleEffects(divided, solo);
+    expect(effects).toEqual({
+      initiative: 0,
+      attack: 1,
+      damageDeflection: 0,
+      spotWeakness: 3,
+      fumbleRecovery: true,
+    });
+    // The one that was being dropped: points spent on hitting things.
+    expect(effects!.attack).toBeGreaterThan(0);
+  });
+
+  it("is null for every Role that changes nothing in a fight", () => {
+    expect(combatRoleEffects(campaign(), character("fixer", 6))).toBeNull();
+  });
+
+  it("puts the effects back on the player and on nobody else", () => {
+    const restored = withPlayerRoleEffects(live(), combatRoleEffects(divided, solo));
+    expect(restored!.state.combatants["pc"]!.roleEffects).toMatchObject({ fumbleRecovery: true });
+    expect(restored!.state.combatants["goon"]!.roleEffects).toBeUndefined();
+    // Everything else about the fight is untouched.
+    expect(restored!.version).toBe(3);
+    expect(restored!.state.round).toBe(2);
+  });
+
+  it("leaves the encounter alone when there is nothing to put back", () => {
+    const before = live();
+    expect(withPlayerRoleEffects(before, null)).toBe(before);
+    expect(withPlayerRoleEffects(null, { attack: 2 })).toBeNull();
   });
 });
