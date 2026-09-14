@@ -182,8 +182,7 @@ Shipped:
   Fixer's printed ±10%/±20% band and a smaller house-rule band for everybody
   else.
 
-Still open after that pass: the Nomad has no vehicle to be good with, and a
-believed Media story changes nothing.
+Both of those closed in the passes below.
 
 ---
 
@@ -223,6 +222,54 @@ item that already exists, and per-item modifications have nowhere to live: an
 armor row carries `current_sp` but takes its maximum from the catalog, so
 "+1 SP" needs a per-row modification concept that armor derivation, chargen
 display and combat would all have to read.
+
+---
+
+## Also shipped: the Nomad has wheels, and a Media story lands
+
+The last two Roles whose ability existed and did nothing.
+
+**Nomad.** Moto rode on Drive and the vehicle Tech Skills, applied to a machine
+that did not exist anywhere in the game — a modifier looking for a subject.
+
+- `engine/vehicles.ts` parses the printed Family Motorpool and its Rank tiers
+  out of the Nomad's own rules text, the discipline `priceCategory.ts` and
+  `haggle.ts` already use. Only the SPECS are ours, and `vehicles.json` says so.
+- One vehicle out at a time; call the Family and they swap it the next morning,
+  as printed. The swap lands on READ rather than on a tick somebody has to
+  remember to run.
+- Travel is the advantage. A vehicle is waiting where you left it, so it answers
+  for any trip the player did not say was a walk, and an air vehicle pays nothing
+  to cross a bridge — which falls out of the route the engine already walks.
+  `travelTrip` takes a rule as well as a mode name, so the atlas never has to
+  carry an entry for every machine in the motorpool.
+- The vehicle is in the capability block, so the narrator can offer a getaway and
+  cannot offer one to a character on foot.
+
+Deliberately not built: **vehicle combat, SDP and SP.** Nothing in this build can
+damage a vehicle, so a durability number would be a field nobody reads and the
+printed 500eb/one-week Family repair would be a rule nothing can trigger — the
+exact dead code this run of work exists to remove. It arrives with vehicle
+combat, not before.
+
+**Media.** Credibility was the most complete Role Ability in the engine and the
+least consequential in the game: the roll worked, the panel printed "the
+neighbourhood believes it", and nothing anywhere changed.
+
+- A believed story now moves two dials in opposite directions. Segments come OFF
+  that faction's clock — the printed Impact column says "local bad guys arrested
+  or ousted", so what they were building against you loses that much momentum —
+  and their standing falls, because they work out who wrote it.
+- **Evidence is no longer a number the player types.** It is what the character
+  has actually found out since their last story on those people, counted from
+  the truth system. That also answers the printed "you can't publish another
+  story on the exact same topic without new information": no new truths, no
+  story. A Media's loop is now go and find something out, then publish it.
+- The numbers are a house rule in `story-impact.json`; the bands they hang on are
+  the printed Credibility ranks.
+
+Still open for the Media: passive rumor pickup, which needs somewhere for a
+rumor to point.
 
 ---
 

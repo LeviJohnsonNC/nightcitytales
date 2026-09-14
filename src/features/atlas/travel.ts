@@ -15,6 +15,7 @@ import {
   resolvePosition,
   travelMinutes,
   type GameClock,
+  type TravelMode,
 } from "@/engine";
 import { advanceClock } from "@/engine";
 import { appendCampaignEvent, updateCampaign } from "@/lib/backend/campaigns";
@@ -48,8 +49,11 @@ export async function travelTo(args: {
   to: string;
   /** What the engine already priced the trip at, when it has. */
   minutes?: number;
-  /** How they got there, for the ledger line. */
-  mode?: string;
+  /**
+   * How they got there, for the pricing and the ledger line. Either a mode the
+   * atlas names, or the rule for a vehicle the character owns.
+   */
+  mode?: TravelMode;
 }): Promise<TravelResult> {
   const { campaign, clock, to } = args;
   if (!canTravel(to)) throw new Error(`"${to}" is not a place on the Night City map.`);
@@ -91,6 +95,11 @@ export async function travelTo(args: {
     known_places: [...known],
   });
 
+  // "by cab", or "by roadbike" for a vehicle handed in whole. Read once so the
+  // ledger's sentence and its payload cannot disagree about how they got there.
+  const modeSaid =
+    typeof args.mode === "string" ? modeLabel(args.mode) : (args.mode?.label ?? null);
+
   // The heading is recorded as fact, so the next narration cannot describe a
   // trip east as heading west.
   const heading = directionBetween(from, key);
@@ -100,12 +109,12 @@ export async function travelTo(args: {
     type: "travelled",
     summary:
       `Travelled ${where.heading}to ${where.what}` +
-      `${args.mode ? ` ${modeLabel(args.mode)}` : ""}${minutes ? ` (${minutes} min)` : ""}.`,
+      `${modeSaid ? ` ${modeSaid}` : ""}${minutes ? ` (${minutes} min)` : ""}.`,
     data: {
       from,
       to: key,
       minutes,
-      ...(args.mode ? { mode: args.mode } : {}),
+      ...(modeSaid ? { mode: modeSaid } : {}),
       ...(heading ? { direction: heading } : {}),
     },
   });

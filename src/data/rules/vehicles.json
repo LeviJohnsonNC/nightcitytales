@@ -1,0 +1,40 @@
+{
+  "_source": {
+    "book": "Cyberpunk RED Core Rulebook",
+    "note": "The Family Motorpool LIST and the Rank tiers are printed, and are not restated here — engine/vehicles.ts parses them out of the Nomad's own mechanicalText in roles.json, the same way the Fixer's Reach and Haggle bands are parsed out of theirs. What is below is the specs the app needs and the book's vehicle tables do not reach this build."
+  },
+  "houseRule": true,
+  "_provenance": "OURS, not the book's. Cyberpunk RED prints vehicle statistics (SDP, SP, seats, speed) that were not verifiable from this build environment, so speeds here are chosen against the atlas's own travel scale rather than transcribed: a Compact Groundcar moves a little better than the 20km/h cab the travel table already prices, and a Superbike or an AV moves a lot better. Seats are the obvious reading of the name. Nothing here is presented as a rules value, and travel.modes in the atlas says the same about its own numbers.",
+  "_notModelled": "SDP, SP and vehicle combat. Nothing in this build can damage a vehicle, so a durability number would be a field nobody reads and the printed 500eb/one-week Family repair would be a rule nothing can trigger. Both arrive with vehicle combat, not before.",
+  "vehicles": {
+    "compact_groundcar": { "name": "Compact Groundcar", "kind": "land", "kmh": 40, "seats": 4 },
+    "gyrocopter": { "name": "Gyrocopter", "kind": "air", "kmh": 90, "seats": 1 },
+    "jetski": { "name": "Jetski", "kind": "sea", "kmh": 50, "seats": 2 },
+    "roadbike": { "name": "Roadbike", "kind": "land", "kmh": 55, "seats": 2 },
+    "helicopter": { "name": "Helicopter", "kind": "air", "kmh": 140, "seats": 6 },
+    "high_performance_groundcar": {
+      "name": "High Performance Groundcar",
+      "kind": "land",
+      "kmh": 70,
+      "seats": 4
+    },
+    "speedboat": { "name": "Speedboat", "kind": "sea", "kmh": 65, "seats": 6 },
+    "av_4": { "name": "AV-4", "kind": "air", "kmh": 180, "seats": 8 },
+    "cabin_cruiser": { "name": "Cabin Cruiser", "kind": "sea", "kmh": 35, "seats": 8 },
+    "superbike": { "name": "Superbike", "kind": "land", "kmh": 85, "seats": 2 },
+    "aerozep": { "name": "Aerozep", "kind": "air", "kmh": 60, "seats": 20 },
+    "av_9": { "name": "AV-9", "kind": "air", "kmh": 220, "seats": 10 },
+    "super_groundcar": { "name": "Super Groundcar", "kind": "land", "kmh": 95, "seats": 4 },
+    "yacht": { "name": "Yacht", "kind": "sea", "kmh": 40, "seats": 12 }
+  },
+  "travel": {
+    "_provenance": "OURS, beside atlas travel.modes and measured the same way. A vehicle you own is waiting where you left it, so readyMinutes is 0 rather than the cab's wait; the bridge cost is the cab's, because a bridge is a bridge. An air vehicle pays no bridge cost at all, which is most of what owning one is for.",
+    "readyMinutes": 0,
+    "spanMinutes": 2,
+    "airSpanMinutes": 0
+  },
+  "swap": {
+    "_provenance": "The printed rule: a Nomad has one Family Vehicle out at a time and can call the Family to swap it for another the next morning. The hour below is OURS — the book says 'the next morning' and the app needs a minute on the clock to put it at.",
+    "arrivesAtHour": 7
+  }
+}

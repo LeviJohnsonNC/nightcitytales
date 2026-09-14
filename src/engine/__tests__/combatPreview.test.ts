@@ -37,6 +37,7 @@ const snapshot = (): CapabilitySnapshot => ({
   items: [],
   cyberware: [],
   roleAbility: null,
+  vehicle: null,
   targets: [{ id: "h", key: "h", name: "Guard", distance: 12, defeated: false, perceivable: true }],
   failedAttempts: [],
   turn: { ...EMPTY_TURN_ECONOMY, inCombat: true, isPlayerTurn: true, move: 8 },

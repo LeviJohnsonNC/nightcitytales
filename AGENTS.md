@@ -446,6 +446,17 @@ contributor needs to know while editing the code next to one.
   Expertise is not missing by accident — it would need the narrator to set an
   item's rules and Price Category, which is the boundary this project exists to
   hold.
+- **A travel mode can be a rule, not just a name.** `travelTrip` takes either
+  one of the atlas's named modes or a `TravelModeRule` handed in whole, which is
+  how a Nomad's own vehicle gets priced without `night-city.json` carrying an
+  entry for every machine in the Family Motorpool. A character with none must be
+  priced exactly as before — that is the property `vehicleTravel.test.ts` holds.
+- **A published story is pressure the player aims.** `features/campaign/
+publishing.ts` moves a faction's clock DOWN and their standing with it, and it
+  is deliberately not routed through `applyObservations` — observations are
+  things the city noticed about you and only ever cost you. A Media's evidence
+  is counted from discovered truths, never from a number a player typed, because
+  a consequence cannot hang off a dial the player can max.
 - **Ripperdoc pacing is a house rule** — 0/1/3 recovery days by install level,
   four surgery hours per physical implant, appointment delay by disposition.
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,

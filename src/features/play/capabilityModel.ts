@@ -19,6 +19,9 @@ import {
   itemName,
   luckRemaining,
   roleAbilityOf,
+  motorpoolFor,
+  getVehicle,
+  canDrive,
   weaponProfile,
   type CapabilitySnapshot,
   type Point,
@@ -203,6 +206,13 @@ export function failedAttempts(events: CampaignEvent[], beatId: string | null): 
 
 export type SnapshotInput = {
   character: FullCharacter;
+  /**
+   * The campaign's Role state, for the parts of a capability that live there.
+   *
+   * Only a Nomad's vehicle reads it today. Optional so every existing caller —
+   * and every Role that keeps nothing there — is unchanged.
+   */
+  roleState?: unknown;
   vitals: CampaignVitals;
   inventory: CampaignInventoryItem[];
   cyberware: CampaignCyberware[];
@@ -210,6 +220,26 @@ export type SnapshotInput = {
   events: CampaignEvent[];
   beatId: string | null;
 };
+
+/**
+ * The Family Vehicle a Nomad has out, read the same way liveMotorpool reads it.
+ *
+ * Duplicated deliberately rather than imported: capabilityModel is reached from
+ * both the Job and the Life loop and must not depend on the play feature's
+ * campaign shape. The fallback is the same — a Nomad who has never chosen is
+ * driving the first thing their Rank reaches.
+ */
+function vehicleOut(input: SnapshotInput): CapabilitySnapshot["vehicle"] {
+  const ability = roleAbilityOf(input.character.character.role);
+  if (ability?.abilityId !== "moto") return null;
+  const rank = input.character.roleAbility?.rank ?? ability.startingRank;
+  const state = (input.roleState ?? {}) as Record<string, unknown>;
+  const moto = (state["moto"] ?? {}) as Record<string, unknown>;
+  const stored = typeof moto["vehicleId"] === "string" ? moto["vehicleId"] : null;
+  const vehicle =
+    (stored && canDrive(rank, stored) ? getVehicle(stored) : null) ?? motorpoolFor(rank)[0] ?? null;
+  return vehicle ? { name: vehicle.name, kind: vehicle.kind, seats: vehicle.seats } : null;
+}
 
 export function buildCapabilitySnapshot(input: SnapshotInput): CapabilitySnapshot {
   const stats = effectiveStatsRecord(input.character, {
@@ -239,6 +269,7 @@ export function buildCapabilitySnapshot(input: SnapshotInput): CapabilitySnapsho
           rank: input.character.roleAbility?.rank ?? ability.startingRank,
         }
       : null,
+    vehicle: vehicleOut(input),
     targets: targetCapabilities(input.encounter),
     turn: turnEconomy(input.encounter, move),
     failedAttempts: failedAttempts(input.events, input.beatId),
@@ -267,6 +298,13 @@ export function renderCapabilityLines(snapshot: CapabilitySnapshot): string[] {
   if (snapshot.roleAbility) {
     lines.push(
       `Role Ability: ${snapshot.roleAbility.abilityName} at Rank ${snapshot.roleAbility.rank} — nothing above that Rank.`,
+    );
+  }
+  if (snapshot.vehicle) {
+    const v = snapshot.vehicle;
+    lines.push(
+      `Vehicle: a ${v.name} (${v.kind}, ${v.seats} seat${v.seats === 1 ? "" : "s"}), theirs, ` +
+        `parked wherever they left it. They can drive it; nobody else's is available.`,
     );
   }
   // MOVE is squares; the metres it buys are what the range table is read at.

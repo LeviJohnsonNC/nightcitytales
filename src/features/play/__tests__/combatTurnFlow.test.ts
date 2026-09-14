@@ -111,6 +111,7 @@ function capability(): CapabilitySnapshot {
     items: [],
     cyberware: [],
     roleAbility: null,
+    vehicle: null,
     failedAttempts: [],
     weapons: [
       {

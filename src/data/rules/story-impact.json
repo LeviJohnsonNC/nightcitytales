@@ -1,0 +1,19 @@
+{
+  "_source": "Cyberpunk RED Core Rulebook, Media Role Ability (Credibility). The Impact column is printed as prose — 'small incremental change', 'local bad guys arrested or ousted', 'mid-level corporations or governments may fall' — and roles.json carries that prose verbatim. The numbers below are this app's reading of it.",
+  "houseRule": true,
+  "_provenance": "OURS. The book says what a story DOES in the fiction and never in segments, because a tabletop GM does not need a number for it. This app does: pressure is a dial the engine owns, so 'local bad guys arrested or ousted' has to become something that happens to a clock. Two things move, in opposite directions, and that is the whole design — a story hurts the people it is about, and it tells them who wrote it.",
+  "_note": "`maxRank` matches the bands in roles.json's Credibility mechanics, so the two are read off the same ladder. `clockSegments` comes OFF that faction's clock: the people in the story are arrested, ousted, reassigned, and whatever they were building against you loses that much momentum. `standing` is what the organisation thinks of you afterwards, and it never improves.",
+  "byRank": [
+    { "maxRank": 2, "clockSegments": 1, "standing": -1 },
+    { "maxRank": 4, "clockSegments": 2, "standing": -1 },
+    { "maxRank": 6, "clockSegments": 3, "standing": -2 },
+    { "maxRank": 8, "clockSegments": 4, "standing": -2 },
+    { "maxRank": 9, "clockSegments": 5, "standing": -3 },
+    { "maxRank": 10, "clockSegments": 6, "standing": -3 }
+  ],
+  "evidence": {
+    "_provenance": "OURS. The printed rule raises the believe chance for 'easily understood verifiable evidence' and leaves counting it to the table. A number the player types is a dial they can max, so this app counts what the character has actually FOUND OUT: truths discovered through the truth system since their last story. The printed thresholds (1 piece +1, more than 4 pieces +2) are unchanged and live in roles.json.",
+    "countsDiscoveredTruths": true,
+    "requiresNewInformationPerTopic": true
+  }
+}

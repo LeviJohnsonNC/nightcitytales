@@ -517,9 +517,30 @@ export function parseMode(input: string | null | undefined): string | undefined 
   return TRAVEL_MODES.includes(raw) ? raw : undefined;
 }
 
-function modeRule(mode: string | null | undefined): TravelModeRule {
+/**
+ * How a trip is being made.
+ *
+ * Either one of the atlas's own named modes, or a rule handed in whole — which
+ * is how a vehicle the character actually owns gets priced without the atlas
+ * having to carry an entry for every machine in the Family Motorpool. The atlas
+ * describes the city; what somebody is driving is not the city's business.
+ */
+export type TravelMode = string | TravelModeRule | null | undefined;
+
+function isRule(mode: TravelMode): mode is TravelModeRule {
+  return typeof mode === "object" && mode !== null;
+}
+
+function modeRule(mode: TravelMode): TravelModeRule {
+  if (isRule(mode)) return mode;
   const rules = ATLAS.travel.modes;
   return rules[mode ?? ""] ?? rules[ATLAS.travel.defaultMode]!;
+}
+
+/** The name a trip is recorded under, for a mode of either shape. */
+function modeName(mode: TravelMode): string {
+  if (isRule(mode)) return mode.label;
+  return mode && ATLAS.travel.modes[mode] ? mode : ATLAS.travel.defaultMode;
 }
 
 /** Map distance to minutes, at the speed the mode moves. */
@@ -553,10 +574,10 @@ export type Trip = {
 export function travelTrip(
   from: string | null | undefined,
   to: string,
-  mode: string | null | undefined = undefined,
+  mode: TravelMode = undefined,
 ): Trip {
-  const chosen = mode && ATLAS.travel.modes[mode] ? mode : ATLAS.travel.defaultMode;
-  const rule = modeRule(chosen);
+  const chosen = modeName(mode);
+  const rule = modeRule(mode);
   const a = resolvePosition(from);
   const b = resolvePosition(to);
   if (!b) return { minutes: 0, mode: chosen };
@@ -594,7 +615,7 @@ export function travelTrip(
 export function travelMinutes(
   from: string | null | undefined,
   to: string,
-  mode: string | null | undefined = undefined,
+  mode: TravelMode = undefined,
 ): number {
   return travelTrip(from, to, mode).minutes;
 }
@@ -989,6 +1010,15 @@ export type TravelIntent = {
   direction?: string | null | undefined;
   /** "far" means as far as the city allows in that heading. */
   extent?: "near" | "far" | null | undefined;
+  /**
+   * The rule for a vehicle the character actually owns, when they have one out.
+   *
+   * It answers for every trip they do not explicitly make on foot: somebody
+   * with a bike parked outside rides it, and saying "I walk" still walks. The
+   * atlas carries no entry for it because what somebody is driving is not the
+   * city's business — see `TravelMode`.
+   */
+  vehicle?: TravelModeRule | null | undefined;
 };
 
 export type Arrival = {
@@ -1020,7 +1050,12 @@ export type TravelDecision = Arrival | { ok: false; reason: string };
  */
 export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
   const direction = parseDirection(intent.direction);
-  const mode = parseMode(intent.mode) ?? DEFAULT_MODE;
+  const saidMode = parseMode(intent.mode);
+  // Your own wheels answer for anything that is not explicitly a walk. Saying
+  // "I walk from here" still walks, which is the whole reason a stated mode
+  // wins when it is "foot".
+  const mode: TravelMode =
+    intent.vehicle && saidMode !== "foot" ? intent.vehicle : (saidMode ?? DEFAULT_MODE);
   const arrive = (to: string, heading?: Compass): Arrival => {
     const trip = travelTrip(intent.from, to, mode);
     return {

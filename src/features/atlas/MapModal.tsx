@@ -35,6 +35,7 @@ import {
   type District,
   type MapPoint,
   type PlaceSignal,
+  type TravelMode,
 } from "@/engine";
 import { PlaceDossier, type PlaceHere } from "./PlaceDossier";
 import { MAP_PICTURE, placeOnMap, placeOnMapStyle } from "./mapWarp";
@@ -64,6 +65,7 @@ export function MapModal({
   travelBusy = false,
   signals = [],
   placeHere,
+  travelMode,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -72,6 +74,13 @@ export function MapModal({
   /** When given, districts other than the current one offer a trip. */
   onTravel?: ((districtKey: string) => void) | undefined;
   travelBusy?: boolean | undefined;
+  /**
+   * What they would make the trip in, when it is not the default.
+   *
+   * The button prints the minutes the trip will actually cost, so a Nomad with
+   * a bike outside must not be quoted a cab's time and then charged a ride's.
+   */
+  travelMode?: TravelMode | undefined;
   /**
    * What is worth knowing about somewhere, from the engine. Deliberately few:
    * the budget is three across the whole city (see engine/placeSignals.ts), so
@@ -409,7 +418,7 @@ export function MapModal({
                     >
                       {travelBusy
                         ? "On the move…"
-                        : `Travel here · ${travelMinutes(locationKey, showing)} min`}
+                        : `Travel here · ${travelMinutes(locationKey, showing, travelMode)} min`}
                     </Button>
                   ),
               }

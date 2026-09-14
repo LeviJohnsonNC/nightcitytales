@@ -22,12 +22,14 @@ import {
   SYNTHESIS_DV,
   SYNTHESIS_MATERIALS_COST,
   TEAM_MEMBER_CLASSES,
+  FACTIONS,
   believabilityCheck,
+  storyImpactFor,
+  type FactionId,
   charismaticFavor,
   combatAwarenessEffects,
   combatAwarenessValue,
   credibilityFor,
-  evidenceBonus,
   execPerks,
   loyaltyAfter,
   loyaltySave,
@@ -427,9 +429,15 @@ function MakerSection({ play }: { play: ReturnType<typeof usePlay> }) {
 function CredibilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
   const rank = play.roleAbility?.rank ?? 0;
   const band = credibilityFor(rank);
-  const [evidence, setEvidence] = useState(0);
+  const impact = storyImpactFor(rank);
+  const [factionId, setFactionId] = useState<FactionId>(FACTIONS[0]!.id);
   const [result, setResult] = useState<BelievabilityResult | null>(null);
-  const chance = Math.min(10, (band?.believeIn10 ?? 0) + evidenceBonus(evidence));
+
+  // Not a stepper. What the story is worth is what the character has actually
+  // found out about these people since they last filed — which is why the
+  // believe chance cannot be talked up and a consequence can hang off it.
+  const evidence = play.storyEvidenceFor(factionId);
+  const chance = Math.min(10, (band?.believeIn10 ?? 0) + evidence.bonus);
 
   return (
     <section className="space-y-2 border border-border bg-card p-4">
@@ -444,31 +452,33 @@ function CredibilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
         Hunting a rumor actively: {RUMOR_TIERS.map((t) => `${t.name} DV${t.activeDv}`).join(" · ")}
       </p>
 
-      <div className="flex items-center gap-2">
-        <Label>Hard evidence</Label>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-6 w-6 p-0"
-          disabled={evidence <= 0 || result !== null}
-          aria-label="One piece fewer"
-          onClick={() => setEvidence(Math.max(0, evidence - 1))}
-        >
-          −
-        </Button>
-        <span className="num w-6 text-center text-xs">{evidence}</span>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-6 w-6 p-0"
-          disabled={result !== null}
-          aria-label="One piece more"
-          onClick={() => setEvidence(evidence + 1)}
-        >
-          +
-        </Button>
-        <span className="num text-xs text-muted-foreground">{chance}-in-10 believed</span>
+      <Label>Who the story is about</Label>
+      <div className="flex flex-wrap gap-1.5">
+        {FACTIONS.map((faction) => (
+          <Button
+            key={faction.id}
+            size="sm"
+            variant={faction.id === factionId ? "default" : "outline"}
+            disabled={result !== null}
+            onClick={() => setFactionId(faction.id)}
+          >
+            {faction.name}
+          </Button>
+        ))}
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        {evidence.publishable ? (
+          <>
+            <span className="num font-bold">{evidence.pieces}</span> piece
+            {evidence.pieces === 1 ? "" : "s"} of hard evidence since your last story on them
+            {evidence.bonus > 0 ? ` (+${evidence.bonus} to the chance)` : ""} ·{" "}
+            <span className="num">{chance}-in-10</span> believed
+          </>
+        ) : (
+          "Nothing new on them since your last story. Go and find something out first — the rules do not let you run the same piece twice."
+        )}
+      </p>
 
       {result === null ? (
         <div className="flex items-center gap-3">
@@ -476,16 +486,29 @@ function CredibilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
             sides={10}
             value={null}
             size={44}
-            disabled={play.busy || !band}
+            disabled={play.busy || play.storyBusy || !band || !evidence.publishable}
             label="Roll Believability"
             roll={() => {
-              const rolled = believabilityCheck(rank, evidence);
-              return { face: rolled.roll, commit: () => setResult(rolled) };
+              const rolled = believabilityCheck(rank, evidence.pieces);
+              return {
+                face: rolled.roll,
+                commit: () => {
+                  setResult(rolled);
+                  play.publishStory({
+                    factionId,
+                    result: rolled,
+                    evidencePieces: evidence.pieces,
+                  });
+                },
+              };
             }}
           />
           <p className="text-xs text-muted-foreground">
             {chance} or under and they buy it.
             {BELIEVABILITY_FORBIDS_LUCK && " Luck cannot touch this roll."}
+            {impact
+              ? ` A story that lands takes ${impact.clockSegments} segment${impact.clockSegments === 1 ? "" : "s"} off what they are building against you — and they will know who wrote it.`
+              : ""}
           </p>
         </div>
       ) : (
@@ -777,6 +800,77 @@ function TeamworkSection({ play }: { play: ReturnType<typeof usePlay> }) {
   );
 }
 
+/**
+ * A Nomad's Family Motorpool.
+ *
+ * One vehicle is out at a time and the Family brings another the next morning,
+ * which is the printed rule and the reason this is a call rather than a
+ * dropdown: choosing costs you a day in whatever you are already driving.
+ */
+function MotorpoolSection({ play }: { play: ReturnType<typeof usePlay> }) {
+  const motorpool = play.motorpool;
+  if (!motorpool) return null;
+
+  return (
+    <section className="space-y-2 border border-border bg-card p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <Label>Family Motorpool</Label>
+        <p className="num text-xs text-muted-foreground">{motorpool.available.length} permitted</p>
+      </div>
+
+      {motorpool.out ? (
+        <p className="text-sm">
+          Out: <span className="font-bold">{motorpool.out.name}</span>
+          <span className="text-xs text-muted-foreground">
+            {" "}
+            · {motorpool.out.kind} · {motorpool.out.seats} seat
+            {motorpool.out.seats === 1 ? "" : "s"}
+            {motorpool.out.kind === "air" ? " · no bridges" : ""}
+          </span>
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground">Nothing out. No Rank reaches a vehicle yet.</p>
+      )}
+
+      {motorpool.incoming && (
+        <p className="text-xs text-accent">
+          The Family are bringing a {motorpool.incoming.vehicle.name} on day{" "}
+          {motorpool.incoming.arrivesOnDay}.
+        </p>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        One out at a time. Call the Family and they swap it over the next morning.
+      </p>
+
+      <ul className="space-y-1">
+        {motorpool.available.map((vehicle) => {
+          const isOut = motorpool.out?.id === vehicle.id;
+          const isComing = motorpool.incoming?.vehicle.id === vehicle.id;
+          return (
+            <li key={vehicle.id} className="flex items-center justify-between gap-2">
+              <span className="text-sm">
+                {vehicle.name}
+                <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  {vehicle.kind}
+                </span>
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={play.busy || play.motorpoolBusy || isOut || isComing}
+                onClick={() => play.callForVehicle(vehicle.id)}
+              >
+                {isOut ? "out" : isComing ? "coming" : "call for it"}
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 /** Every other Role: name the ability and what it is doing for them right now. */
 function AbilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
   const ability = play.roleAbility;
@@ -784,9 +878,7 @@ function AbilitySection({ play }: { play: ReturnType<typeof usePlay> }) {
 
   const lines: string[] = [];
   if (ability.info.abilityId === "moto") {
-    lines.push(
-      `+${ability.rank} on driving, piloting and vehicle Tech Checks. The Family Motorpool needs a vehicle system this app does not have yet.`,
-    );
+    lines.push(`+${ability.rank} on driving, piloting and vehicle Tech Checks.`);
   }
   if (ability.info.abilityId === "operator") {
     lines.push(`+${ability.rank} on a Trading deal — your Operator Rank is part of the Haggle.`);
@@ -836,6 +928,16 @@ export function RoleAbilityPanel({ play }: { play: ReturnType<typeof usePlay> })
   }
   if (ability.info.abilityId === "teamwork") {
     return <TeamworkSection play={play} />;
+  }
+  // A Nomad gets both: the Skill bonus is what Moto does on a Check, and the
+  // motorpool is the machine it does it to.
+  if (ability.info.abilityId === "moto") {
+    return (
+      <div className="space-y-3">
+        <MotorpoolSection play={play} />
+        <AbilitySection play={play} />
+      </div>
+    );
   }
   return <AbilitySection play={play} />;
 }

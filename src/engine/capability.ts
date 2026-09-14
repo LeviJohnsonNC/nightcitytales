@@ -117,6 +117,15 @@ export type CapabilitySnapshot = {
   items: ItemCapability[];
   cyberware: CyberwareCapability[];
   roleAbility: RoleAbilityCapability | null;
+  /**
+   * What they have out of the Family Motorpool, when they are a Nomad.
+   *
+   * In the capability block because the narrator cannot offer a getaway, a
+   * stakeout from the cab of something, or a lift for a wounded friend without
+   * knowing whether there is a machine parked outside — and must not offer any
+   * of it when there is not.
+   */
+  vehicle: { name: string; kind: string; seats: number } | null;
   targets: TargetCapability[];
   turn: TurnEconomy;
   failedAttempts: FailedAttempt[];
