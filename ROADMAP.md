@@ -273,6 +273,39 @@ rumor to point.
 
 ---
 
+## Also shipped: a Role picker that sells the game it is selling
+
+Four passes made the Roles real and the character creator never heard about it.
+It sold every Role with 2,345 characters of printed rank table behind a button
+marked "Show how it works", beside a third-person encyclopedia entry. Nobody has
+ever chosen a class because of a rank table.
+
+Shipped:
+
+- **The same alley, ten answers.** One street corner, rendered identically for
+  every Role, and underneath it what THIS one sees in it. Switch Roles and the
+  alley does not move; the answer does. That comparison is the decision, and a
+  list of ten descriptions can never make it. `role-affordances.json` now carries
+  the player's second-person half beside the narrator's third-person half — two
+  audiences, one file, because the moment they live apart they start disagreeing
+  about what a Role is for.
+- **What you get on the first night, computed.** `engine/roleOpening.ts` asks the
+  engine rather than a copy file: 100eb of Premium parts and a week at the bench
+  becomes a 500eb Very Heavy Melee Weapon; a Fixer sources anything up to
+  Expensive without a roll; a Nomad has a Compact Groundcar outside. Every figure
+  moves when the Rank moves, which is the test that stops it being a sentence
+  somebody typed.
+- **The printed rules are still there**, one click away at the bottom. They are
+  simply no longer the door. The book's tagline and lore moved below the fold,
+  for the player already sold and wanting to sink in.
+- **The Netrunner says so.** Marked plainly as coming in its own update rather
+  than sold as an equal and disappointing somebody forty minutes in.
+
+Still open: a "compare all ten at once" screen, which is the same data on one
+page and is the thing that would actually settle a hard choice.
+
+---
+
 ## Next: make Life feel like the actual game
 
 Life is where the player spends most of their time and is currently the weakest

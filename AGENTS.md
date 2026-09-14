@@ -457,6 +457,14 @@ publishing.ts` moves a faction's clock DOWN and their standing with it, and it
   things the city noticed about you and only ever cost you. A Media's evidence
   is counted from discovered truths, never from a number a player typed, because
   a consequence cannot hang off a dial the player can max.
+- **The Role picker promises what the engine can keep.** `engine/roleOpening.ts`
+  computes what a Role hands a character on day one by CALLING the same
+  functions play runs on — the bench's real prices, the Fixer's real Reach, the
+  Nomad's real motorpool. Adding a Role Ability means adding it there too, or
+  the creator goes on selling the version that existed when somebody typed it.
+  `role-affordances.json` now serves two audiences: `reach`/`options` are the
+  narrator's, in the third person, and `player`/`answers` are the player's, in
+  the second. They must not converge — a test holds them apart.
 - **Ripperdoc pacing is a house rule** — 0/1/3 recovery days by install level,
   four surgery hours per physical implant, appointment delay by disposition.
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,

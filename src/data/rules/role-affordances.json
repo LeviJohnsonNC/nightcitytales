@@ -10,6 +10,11 @@
         "play, speak or perform where it will be heard, and let the crowd do the pushing",
         "make a private thing public: name it loudly, in front of the people it embarrasses",
         "trade on being known — the door opens because of who is asking"
+      ],
+      "player": "People are the lever. You read a room for who wants to be led, and a crowd is something you can point.",
+      "answers": [
+        "The driver has a face. Get him talking, and get him talking loudly.",
+        "Somebody on this street already hates that company. Find them."
       ]
     },
     "solo": {
@@ -19,6 +24,11 @@
         "pick which one drops first, and why that one",
         "call the fight before it starts: move on the one reaching",
         "read the threat and say plainly what this becomes if it goes loud"
+      ],
+      "player": "You read a room for exits, angles and who is armed, and you were ready before it started.",
+      "answers": [
+        "The guard is the only one facing out. That is a choice he made, and it is the wrong one.",
+        "Take the angle behind the van before anybody is looking for you."
       ]
     },
     "netrunner": {
@@ -26,6 +36,11 @@
       "options": [
         "find the architecture behind the building and what it is guarding",
         "look for the jack-in point nobody thinks of as a door"
+      ],
+      "player": "Every wall here has something running inside it, and you can hear it.",
+      "answers": [
+        "Those two cameras report somewhere. Find out where, and whether it is listening.",
+        "The gate is a lock with a login."
       ]
     },
     "tech": {
@@ -35,6 +50,11 @@
         "make the broken one work for a while — badly, but now",
         "sabotage something so it fails later and looks like wear",
         "build or bodge the tool this job needs out of what is on the bench"
+      ],
+      "player": "Nothing here is a fixed object. It is parts, and you know which ones are load-bearing.",
+      "answers": [
+        "Cameras on a sweep have a motor, and a motor can fail convincingly.",
+        "That gate runs off something. Open the panel."
       ]
     },
     "medtech": {
@@ -44,6 +64,11 @@
         "read the body: what did this, how long ago, and did they walk away",
         "trade treatment for what you actually want",
         "get into somewhere on the strength of being the one who can help"
+      ],
+      "player": "You see injuries, not wounds — what is survivable, and what it would cost to fix.",
+      "answers": [
+        "The guard is favouring his right leg. He has been favouring it a while.",
+        "Walk up as the only person on this street who can help, and see which door that opens."
       ]
     },
     "media": {
@@ -53,6 +78,11 @@
         "ask the question nobody in this room is supposed to ask",
         "offer to leave a name out, and find out what that is worth",
         "trade on the piece you have not run yet"
+      ],
+      "player": "Everything here is either a story or a source, and you are always deciding which.",
+      "answers": [
+        "Get the plate, the time and the face on record before the van is through the gate.",
+        "Ask the guard a question he is not supposed to answer, and watch him not answer it."
       ]
     },
     "exec": {
@@ -62,6 +92,11 @@
         "have someone else do it, and be elsewhere when it happens",
         "make it a procurement problem instead of a fight",
         "spend the company's name where it still means something"
+      ],
+      "player": "Somebody owns this, somebody signs for it, and you know how to find out which.",
+      "answers": [
+        "That van is a delivery, so somebody approved it. Find out who, and call them.",
+        "This is a procurement problem wearing a fence."
       ]
     },
     "lawman": {
@@ -71,6 +106,11 @@
         "run the name, the plate, the face against what the department holds",
         "lean on someone who has more to lose from a report than from you",
         "call it in — get people with armor here and let them be the argument"
+      ],
+      "player": "The badge is a key and a target, and you can usually tell which it will be before you show it.",
+      "answers": [
+        "Run the plate on the van before it is inside.",
+        "Walk up to the gate as what you are and see what the guard does about it."
       ]
     },
     "fixer": {
@@ -80,6 +120,11 @@
         "find who moves this kind of thing in this district",
         "sell what is in hand to the person who wants it most",
         "call in what somebody already owes rather than paying"
+      ],
+      "player": "Everything has a price and a second price, and you know who is holding.",
+      "answers": [
+        "Whatever is on that van, somebody in this district moves it. Find out who.",
+        "The guard is on somebody's payroll. Payrolls can be outbid."
       ]
     },
     "nomad": {
@@ -89,7 +134,17 @@
         "work out the route out of here before doing anything else",
         "ask the road — another family has been through this and talked about it",
         "put the vehicle between the problem and whoever needs covering"
+      ],
+      "player": "You came in with wheels and you know the way out, which changes what is worth trying.",
+      "answers": [
+        "Be in the vehicle, behind the van, with the engine running.",
+        "Work out the road off this block before you touch anything on it."
       ]
     }
+  },
+  "_playerNote": "`reach` and `options` are written for the NARRATOR, in the third person, and are what engine/roleAffordance.ts puts in the Job and Life context. `player`, `scene` and `answers` are the same idea turned toward the PLAYER choosing a Role, in the second person. Two audiences, one file, because the moment they live in separate files they start disagreeing about what a Role is for.",
+  "scene": {
+    "_note": "The same street corner, shown to every Role. A character creator can tell you what you ARE ten times over and never answer the only question a player actually has, which is what you would DO that nobody else would. So the scene never changes and the answer always does.",
+    "text": "Twelve feet of chainlink. One guard smoking by the loading dock, two cameras sweeping the south wall, and a delivery van backing toward the gate."
   }
 }

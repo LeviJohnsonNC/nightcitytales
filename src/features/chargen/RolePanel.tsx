@@ -1,10 +1,36 @@
+/**
+ * Choosing who you are.
+ *
+ * This screen used to sell every Role with 2,345 characters of rank table
+ * behind a button marked "Show how it works". Nobody has ever chosen a class
+ * because of a rank table, and the printed prose beside it was an encyclopedia
+ * entry — "Rockerboys ARE street poets" — aimed at a reader rather than at
+ * somebody deciding who to be.
+ *
+ * Three things replace it, in the order a person actually asks them:
+ *
+ *  - WHAT WOULD I DO? One street corner, shown identically to every Role, and
+ *    underneath it what THIS one sees in it. Switch Roles and the alley does
+ *    not move; the answer does. That comparison is the whole decision, and it
+ *    is the one thing a list of ten descriptions can never make.
+ *  - WHAT DO I GET? Concrete things, on the first night, COMPUTED — the bench's
+ *    real prices, the Fixer's real Reach, the Nomad's real motorpool, from the
+ *    same engine functions play runs on (engine/roleOpening.ts). A promise the
+ *    creator makes has to be a promise the game keeps.
+ *  - AND THE RULES? Still here, one click away, at the bottom. No longer the
+ *    door.
+ *
+ * The book's own tagline and lore are not thrown away — they are moved below
+ * the fold, for the player who is already sold and wants to sink in.
+ */
 import { useRef, useState } from "react";
 import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
+import { SHARED_SCENE, roleAnswer, roleOpening, type RoleOpening } from "@/engine";
 import { cn } from "@/lib/utils";
 import { ArtSlot } from "./ArtSlot";
 import { roleArt } from "./art";
-import { ROLE_PLAYS_LIKE } from "./copy";
+import { ROLE_HOOK, ROLE_PLAYS_LIKE } from "./copy";
 import { emphasizeTerms, loreParagraphs } from "./loreFormat";
 import type { ChargenState } from "./store";
 
@@ -23,6 +49,7 @@ function playsBody(roleId: string): string {
   const raw = ROLE_PLAYS_LIKE[roleId] ?? "";
   return raw.replace(/^plays like:\s*/i, "");
 }
+
 /** Presentation-only: banner crops that would otherwise clip the character's head. */
 const SPOTLIGHT_FOCAL: Record<string, [number, number]> = {
   rockerboy: [0.5, 0.15],
@@ -31,6 +58,14 @@ const SPOTLIGHT_FOCAL: Record<string, [number, number]> = {
   fixer: [0.5, 0.15],
   nomad: [0.5, 0.15],
 };
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+      {children}
+    </p>
+  );
+}
 
 function RoleTile({
   role,
@@ -43,6 +78,8 @@ function RoleTile({
   previewed: boolean;
   onPreview: () => void;
 }) {
+  const hook = ROLE_HOOK[role.id];
+  const unbuilt = roleOpening(role.id, role.roleAbility.startingRank)?.unbuilt === true;
   return (
     <button
       type="button"
@@ -58,16 +95,74 @@ function RoleTile({
       )}
     >
       <ArtSlot art={roleArt(role.id, role.name)} label={role.name} className="border-0" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
       {committed && (
         <span className="absolute right-2 top-2 z-10 bg-primary px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-primary-foreground">
           Selected
         </span>
       )}
-      <h3 className="absolute bottom-2 left-3 right-3 truncate text-base font-bold tracking-tight">
-        {role.name}
-      </h3>
+      {!committed && unbuilt && (
+        <span className="absolute right-2 top-2 z-10 bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
+          Coming later
+        </span>
+      )}
+      <div className="absolute bottom-2 left-3 right-3">
+        <h3 className="truncate text-base font-bold tracking-tight">{role.name}</h3>
+        {hook && <p className="truncate text-[11px] leading-tight text-accent">{hook}</p>}
+      </div>
     </button>
+  );
+}
+
+/**
+ * The same alley, answered by this Role.
+ *
+ * Renders nothing when the data has no answer, so a Role added later reads as
+ * one section short rather than as an empty heading.
+ */
+function TheAlley({ roleId }: { roleId: string }) {
+  const answer = roleAnswer(roleId);
+  if (!answer) return null;
+  return (
+    <div className="space-y-2 border border-border bg-background/60 p-3">
+      <Eyebrow>The same alley, every Role</Eyebrow>
+      <p className="text-sm italic leading-relaxed text-muted-foreground">{SHARED_SCENE}</p>
+      <p className="border-l-2 border-accent pl-3 text-sm leading-relaxed">{answer.player}</p>
+      <ul className="space-y-1">
+        {answer.answers.map((line) => (
+          <li key={line} className="flex gap-2 text-sm leading-relaxed">
+            <span aria-hidden className="text-accent">
+              →
+            </span>
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** What the Role hands you on day one. Every figure computed, none transcribed. */
+function TonightYouHave({ opening }: { opening: RoleOpening }) {
+  return (
+    <div className="space-y-3">
+      <Eyebrow>{opening.unbuilt ? "Before you pick this" : "On your first night"}</Eyebrow>
+      <ul className="space-y-3">
+        {opening.facts.map((fact) => (
+          <li key={fact.label}>
+            <p
+              className={cn(
+                "text-sm font-semibold",
+                opening.unbuilt ? "text-muted-foreground" : "text-foreground",
+              )}
+            >
+              {fact.label}
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">{fact.detail}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -85,6 +180,7 @@ function RoleSpotlight({
   const plays = playsBody(role.id);
   const paragraphs = loreParagraphs(role.flavorText);
   const emphasisTerms = [`${role.name}s`, role.name, role.roleAbility.name];
+  const opening = roleOpening(role.id, role.roleAbility.startingRank);
 
   return (
     <div className="overflow-hidden border border-border bg-card">
@@ -101,87 +197,91 @@ function RoleSpotlight({
         </h2>
       </div>
 
+      {/* The promise, in the player's own second person, before anything else. */}
+      {opening && (
+        <p className="border-b border-border px-4 py-3 text-base leading-snug sm:text-lg">
+          {opening.headline}
+        </p>
+      )}
+
       <div className="grid gap-4 p-4 lg:grid-cols-2 lg:gap-6">
         <div className="min-w-0 space-y-3">
-          <p className="text-sm text-accent">{role.tagline}</p>
-
+          <TheAlley roleId={role.id} />
           {plays && (
             <p className="border-l-2 border-primary/70 bg-primary/5 px-3 py-2 text-sm leading-relaxed">
               <span className="font-semibold text-primary">Plays like:</span> {plays}
             </p>
           )}
-
-          <div>
-            <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
-              {(loreOpen ? paragraphs : paragraphs.slice(0, 1)).map((para, i) => (
-                <p key={i} className={cn(!loreOpen && "line-clamp-4")}>
-                  {emphasizeTerms(para, emphasisTerms).map((seg, j) =>
-                    seg.emphasis ? (
-                      <strong key={j} className="font-semibold text-foreground">
-                        {seg.text}
-                      </strong>
-                    ) : (
-                      <span key={j}>{seg.text}</span>
-                    ),
-                  )}
-                </p>
-              ))}
-            </div>
-            {paragraphs.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setLoreOpen((v) => !v)}
-                className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-neon-cyan hover:underline"
-              >
-                {loreOpen ? "Show less" : "Read more"}
-              </button>
-            )}
-          </div>
         </div>
 
-        <div className="min-w-0 space-y-3 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Role Ability
-            </span>
-            <span className="font-mono text-base font-bold tracking-tight">
-              {role.roleAbility.name}
-              <span className="ml-2 text-primary">Rank {role.roleAbility.startingRank}</span>
-            </span>
-          </div>
+        <div className="min-w-0 space-y-4 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          {opening && <TonightYouHave opening={opening} />}
 
+          <div className="space-y-3 border-t border-border pt-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <Eyebrow>Role Ability</Eyebrow>
+              <span className="font-mono text-base font-bold tracking-tight">
+                {role.roleAbility.name}
+                <span className="ml-2 text-primary">Rank {role.roleAbility.startingRank}</span>
+              </span>
+            </div>
+
+            <Button
+              className="w-full"
+              variant={committed ? "outline" : "default"}
+              disabled={committed}
+              onClick={onChoose}
+            >
+              {committed ? `Selected: ${role.name}` : `Choose the ${role.name}`}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Below the fold: the book's own words, for somebody already sold. */}
+      <div className="space-y-3 border-t border-border bg-background/40 p-4">
+        <p className="text-sm text-accent">{role.tagline}</p>
+        <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+          {(loreOpen ? paragraphs : paragraphs.slice(0, 1)).map((para, i) => (
+            <p key={i} className={cn(!loreOpen && "line-clamp-3")}>
+              {emphasizeTerms(para, emphasisTerms).map((seg, j) =>
+                seg.emphasis ? (
+                  <strong key={j} className="font-semibold text-foreground">
+                    {seg.text}
+                  </strong>
+                ) : (
+                  <span key={j}>{seg.text}</span>
+                ),
+              )}
+            </p>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-4">
+          {paragraphs.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setLoreOpen((v) => !v)}
+              className="font-mono text-[10px] uppercase tracking-[0.18em] text-neon-cyan hover:underline"
+            >
+              {loreOpen ? "Show less" : `More about ${role.name}s`}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setAbilityOpen((v) => !v)}
             aria-expanded={abilityOpen}
-            className="flex w-full items-center justify-between border border-neon-cyan/35 bg-neon-cyan/5 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.1em] text-neon-cyan transition-colors hover:bg-neon-cyan/10"
+            className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground hover:underline"
           >
-            <span>{abilityOpen ? "Hide how it works" : "Show how it works"}</span>
-            <span aria-hidden className={cn("transition-transform", abilityOpen && "rotate-90")}>
-              ›
-            </span>
+            {abilityOpen ? "Hide the printed rule" : "Read the printed rule"}
           </button>
-
-          {abilityOpen && (
-            <p className="max-h-64 overflow-y-auto whitespace-pre-line border border-border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
-              {role.roleAbility.mechanicalText}
-            </p>
-          )}
-
-          <Button
-            className="w-full"
-            variant={committed ? "outline" : "default"}
-            disabled={committed}
-            onClick={onChoose}
-          >
-            {committed
-              ? `Selected: ${role.roleAbility.name} Rank ${role.roleAbility.startingRank}`
-              : `Choose the ${role.name}`}
-          </Button>
-          <p className="text-center font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-            You start with {role.roleAbility.name} at Rank {role.roleAbility.startingRank}
-          </p>
         </div>
+
+        {abilityOpen && (
+          <p className="max-h-64 overflow-y-auto whitespace-pre-line border border-border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
+            {role.roleAbility.mechanicalText}
+          </p>
+        )}
       </div>
     </div>
   );
