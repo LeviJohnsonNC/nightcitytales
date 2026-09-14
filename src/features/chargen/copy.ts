@@ -57,3 +57,26 @@ export const ROLE_PLAYS_LIKE: Record<string, string> = {
   nomad:
     "Plays like: wheels, family, and open road. You move the crew and the cargo, and you always know the way out.",
 };
+
+/**
+ * The hook on a Role's tile, in the player's own second person.
+ *
+ * Six or seven words, because the grid has to start persuading before anybody
+ * clicks. Deliberately not the tagline: `roles.json` carries the book's own
+ * third-person line ("Rockerboys are street poets…"), which is an encyclopedia
+ * entry, and an encyclopedia entry has never made anybody want to be something.
+ * The book's text is still on the page, below the fold, where somebody already
+ * sold wants to sink into it.
+ */
+export const ROLE_HOOK: Record<string, string> = {
+  rockerboy: "Turn a crowd into a movement.",
+  solo: "Be the one who walks out.",
+  netrunner: "Hear what is running inside the walls.",
+  tech: "Build what the city will not sell you.",
+  medtech: "Be the reason the crew comes home.",
+  media: "Print what they paid to bury.",
+  exec: "Have money and people do the fighting.",
+  lawman: "Hold a line nobody thanks you for.",
+  fixer: "Be the number everyone has saved.",
+  nomad: "Always know the way out.",
+};

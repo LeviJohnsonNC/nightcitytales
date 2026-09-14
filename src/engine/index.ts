@@ -37,6 +37,7 @@ export * from "./haggle";
 export * from "./fabrication";
 export * from "./vehicles";
 export * from "./storyImpact";
+export * from "./roleOpening";
 export * from "./skillMatch";
 export * from "./battlefield";
 export * from "./cover";

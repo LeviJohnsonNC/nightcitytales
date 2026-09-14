@@ -25,9 +25,51 @@ export type RoleAffordance = {
   options: string[];
 };
 
-type RawAffordance = { reach?: string; options?: string[] };
+/**
+ * The same idea turned toward the PLAYER rather than the narrator.
+ *
+ * Second person, and answering one fixed scene rather than describing a
+ * disposition — because a character creator can tell you what you ARE ten times
+ * over and never answer the only question somebody choosing actually has, which
+ * is what they would DO here that nobody else would.
+ */
+export type RoleAnswer = {
+  roleId: string;
+  /** Who you are in a room, said to you. */
+  player: string;
+  /** What you would do in THE scene below. Two moves, specific to it. */
+  answers: string[];
+};
 
-const AFFORDANCES = (affordanceData as unknown as { roles: Record<string, RawAffordance> }).roles;
+type RawAffordance = {
+  reach?: string;
+  options?: string[];
+  player?: string;
+  answers?: string[];
+};
+
+const FILE = affordanceData as unknown as {
+  roles: Record<string, RawAffordance>;
+  scene: { text: string };
+};
+
+const AFFORDANCES = FILE.roles;
+
+/**
+ * The one street corner every Role is shown.
+ *
+ * It never changes. That is the entire device: switch Roles and the alley stays
+ * exactly where it is while the answer to it moves.
+ */
+export const SHARED_SCENE: string = FILE.scene.text;
+
+/** What this Role would do in that scene, or null when the data has no answer. */
+export function roleAnswer(roleId: string | null | undefined): RoleAnswer | null {
+  if (!roleId) return null;
+  const raw = AFFORDANCES[roleId];
+  if (!raw?.player) return null;
+  return { roleId, player: raw.player, answers: raw.answers ?? [] };
+}
 
 /** What this Role reaches for, or null for a Role the data does not know. */
 export function roleAffordance(roleId: string | null | undefined): RoleAffordance | null {
