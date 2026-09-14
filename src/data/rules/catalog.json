@@ -117,6 +117,17 @@
           "maxCost": null
         }
       ]
+    },
+    "repairSkills": {
+      "_provenance": "OURS as a mapping, not a printed table. The Maker rules say a Tech rolls \"the item's usual repair Skill\" and the Core Rulebook names the Tech Skills (Basic Tech, Cybertech, Electronics/Security Tech, Weaponstech, Land/Sea/Air Vehicle Tech) without printing a per-item index. This assigns one per item KIND, which is the coarsest reading that is never absurd: guns and the rounds for them are Weaponstech, chrome is Cybertech, everything else is Basic Tech. A per-item override list belongs here too if one is ever needed.",
+      "byKind": {
+        "weapon": "weaponstech",
+        "ammunition": "weaponstech",
+        "cyberware": "cybertech",
+        "armor": "basic_tech",
+        "gear": "basic_tech"
+      },
+      "byItem": {}
     }
   },
   "_schema": {

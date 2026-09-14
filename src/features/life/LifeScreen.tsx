@@ -75,6 +75,7 @@ import { hauntPeople } from "./lifeModel";
 import { placeHistory } from "@/features/campaign/placeState";
 import { ShopSheet } from "./ShopSheet";
 import { RipperdocSheet } from "./RipperdocSheet";
+import { WorkshopSheet } from "./WorkshopSheet";
 import { RecordSheet } from "./RecordSheet";
 import type { LifeActionCard } from "./lifeResponse";
 import { cardInput } from "./lifeOptions";
@@ -692,6 +693,8 @@ function LifeRail({
       <ShopSheet bundle={bundle} />
 
       <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
+      {/* Renders nothing at all for a character without Maker. */}
+      <WorkshopSheet bundle={bundle} />
 
       <Button asChild variant="outline" size="sm" className="w-full">
         <Link to="/roster">Back to the roster</Link>
