@@ -330,6 +330,16 @@ function BackupSection({ play }: { play: ReturnType<typeof usePlay> }) {
 }
 
 /** A Tech dividing their Maker Specialty ranks. */
+/**
+ * The Maker Specialties that actually do something.
+ *
+ * Kept beside the list rather than inferred, so adding one is a deliberate edit
+ * in the same file as the label it removes — the "(not modelled)" tag is a
+ * promise to the player about where their ranks go, and a stale one is worse
+ * than none.
+ */
+const MODELLED_MAKER_SPECIALTIES = ["field_expertise", "fabrication_expertise"];
+
 function MakerSection({ play }: { play: ReturnType<typeof usePlay> }) {
   const saved = play.makerSpecialties;
   const budget = play.makerBudget;
@@ -350,8 +360,10 @@ function MakerSection({ play }: { play: ReturnType<typeof usePlay> }) {
         </p>
       </div>
       <p className="text-xs text-muted-foreground">
-        Two Specialty ranks for every Rank of Maker. Field Expertise rides on your Tech Skill
-        Checks; the other three need materials and quality rules this app does not model yet.
+        Two Specialty ranks for every Rank of Maker. Field Expertise rides on your Tech Skill Checks
+        and Fabrication Expertise builds things at the bench, in Life. Upgrade needs per-item
+        modifications this app does not model, and Invention needs somebody to approve a new item
+        and set its rules — which is not the narrator's to do.
       </p>
 
       <ul className="space-y-1">
@@ -361,7 +373,7 @@ function MakerSection({ play }: { play: ReturnType<typeof usePlay> }) {
             <li key={specialty.id} className="flex items-center justify-between gap-2">
               <span className="text-sm">
                 {specialty.name}
-                {specialty.id !== "field_expertise" && (
+                {!MODELLED_MAKER_SPECIALTIES.includes(specialty.id) && (
                   <span className="ml-1 text-xs text-muted-foreground">(not modelled)</span>
                 )}
               </span>

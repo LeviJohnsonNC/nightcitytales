@@ -254,7 +254,7 @@
               "noRepeatUntilFullyRepaired": true
             }
           },
-          "_notModelled": "Upgrade, Fabrication and Invention Expertise need item quality tiers, attachment slots, materials and inventions, none of which this app models yet."
+          "_notModelled": "Fabrication Expertise IS modelled, in engine/fabrication.ts: materials one price category below the item, the DV and time this same text prints, and the item in the kit on a success. Upgrade Expertise is not — it modifies an item that already exists, and per-item modifications (quality tiers, attachment slots, an armor piece carrying +1 SP over its printed rating) have nowhere to live yet. Invention Expertise is not, and deliberately: it needs the GM to approve a new item and set its rules and Price Category, which would be the narrator authoring mechanical values."
         }
       }
     },

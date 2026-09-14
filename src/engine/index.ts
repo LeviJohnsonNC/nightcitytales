@@ -34,6 +34,7 @@ export * from "./downtime";
 export * from "./roleAbility";
 export * from "./roleAffordance";
 export * from "./haggle";
+export * from "./fabrication";
 export * from "./skillMatch";
 export * from "./battlefield";
 export * from "./cover";

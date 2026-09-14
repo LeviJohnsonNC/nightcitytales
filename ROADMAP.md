@@ -182,10 +182,47 @@ Shipped:
   Fixer's printed ±10%/±20% band and a smaller house-rule band for everybody
   else.
 
-Still open: the Tech cannot build anything (`priceCategoryContext`'s Maker
-DV/time table has no consumer), the Nomad has no vehicle to be good with, and a
-believed Media story changes nothing. Those need new systems rather than wiring,
-and are the next pass.
+Still open after that pass: the Nomad has no vehicle to be good with, and a
+believed Media story changes nothing.
+
+---
+
+## Also shipped: the Tech can build things
+
+Fabrication Expertise, which is the half of Maker that makes a Tech a Tech. The
+numbers were all already here and none of them had a consumer:
+`priceCategoryContext` had been parsing the Maker DV-and-time table out of the
+Tech's own rules text since it was written, for nobody, and the price ladder
+that says what materials cost went in with the Fixer's Reach.
+
+Shipped:
+
+- `engine/fabrication.ts` joins them: materials one price category below the
+  item, the printed DV and time, and TECH + the item's repair Skill + the
+  Fabrication Expertise Rank + 1d10. A 500eb weapon out of 100eb of parts and a
+  week at the bench, which is the whole fantasy and is printed.
+- The time is the cost. A build spends its printed duration off the campaign
+  clock whether or not it works, so a fortnight at the bench is a fortnight of
+  rent — and a failure costs that fortnight and not the parts, exactly as the
+  rules say.
+- Parts already bought stay bought. `role_state.maker.materials` remembers which
+  builds have their materials, so the retry the rules promise costs only time.
+  No schema: it lives in the blob the Role panel already writes.
+- A Workshop sheet in Life, which renders nothing at all for a character without
+  Maker.
+- The Role panel stopped lying: Fabrication Expertise no longer reads
+  "(not modelled)".
+
+Deliberately not built: **Invention Expertise**, because it needs the GM to
+approve a new item and set its rules and Price Category — the narrator authoring
+mechanical values, which is the one thing `PRODUCT.md` does not allow. It is not
+a gap to be closed later; it is the boundary working.
+
+**Upgrade Expertise** is a real gap and is the next Tech pass. It modifies an
+item that already exists, and per-item modifications have nowhere to live: an
+armor row carries `current_sp` but takes its maximum from the catalog, so
+"+1 SP" needs a per-row modification concept that armor derivation, chargen
+display and combat would all have to read.
 
 ---
 

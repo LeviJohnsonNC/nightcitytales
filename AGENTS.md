@@ -438,6 +438,14 @@ contributor needs to know while editing the code next to one.
   new one to `CombatantRoleEffects` AND to that helper, or it will work for one
   turn and then quietly stop. The "first this Round" marks (`lastHitRound`,
   `lastDamagedRound`) do persist, in the row's `data`.
+- **A Tech's bench spends the clock, not just money.** `engine/fabrication.ts`
+  is pure arithmetic over the Maker table; `features/campaign/fabricating.ts`
+  writes, and it advances the campaign clock by the build's printed duration
+  even on a failure. Anything that adds a new buildable kind adds it to
+  `FABRICABLE_KINDS` and to `catalog.json`'s `_rules.repairSkills`. Invention
+  Expertise is not missing by accident — it would need the narrator to set an
+  item's rules and Price Category, which is the boundary this project exists to
+  hold.
 - **Ripperdoc pacing is a house rule** — 0/1/3 recovery days by install level,
   four surgery hours per physical implant, appointment delay by disposition.
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,
