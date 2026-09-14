@@ -617,6 +617,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
             placeKey: position?.placeKey,
             places: bundle.places,
             localExpertLevel: localExpertIn(bundle.character, positionDistrict.key),
+            roleId: bundle.character.character.role,
           })
             .filter((a) => !a.skillId)
             .map((a) => `${a.label} (${a.placeName})`),

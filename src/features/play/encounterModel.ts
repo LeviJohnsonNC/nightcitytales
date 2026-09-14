@@ -109,6 +109,16 @@ export type CombatantData = {
   combatGoal?: CombatGoal;
   /** Presentation receipt of an engine-confirmed exit, not another defeat rule. */
   exitReason?: "dead" | "withdrawn";
+  /**
+   * The Round this combatant last landed a hit in, and last took damage in.
+   *
+   * Only a Solo's Spot Weakness and Damage Deflection read these, and both are
+   * "the first one each Round" — so without carrying them across a reload the
+   * bonus would fire on every attack of a fight that was saved and read back,
+   * which is more than the rules give and worse than giving nothing.
+   */
+  lastHitRound?: number;
+  lastDamagedRound?: number;
 };
 
 /**
@@ -201,6 +211,8 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
     ...(raw.exitReason === "dead" || raw.exitReason === "withdrawn"
       ? { exitReason: raw.exitReason }
       : {}),
+    ...(typeof raw.lastHitRound === "number" ? { lastHitRound: raw.lastHitRound } : {}),
+    ...(typeof raw.lastDamagedRound === "number" ? { lastDamagedRound: raw.lastDamagedRound } : {}),
     ...(armor && Object.keys(armor).length > 0 ? { armor } : {}),
   };
 }
@@ -408,6 +420,18 @@ export function hostileCombatant(
   return { combatant, data };
 }
 
+/** The "first this Round" marks a combatant row is carrying, if any. */
+function roundMarks(row: EncounterCombatant): {
+  lastHitRound?: number;
+  lastDamagedRound?: number;
+} {
+  const raw = (row.data ?? {}) as Partial<CombatantData>;
+  return {
+    ...(typeof raw.lastHitRound === "number" ? { lastHitRound: raw.lastHitRound } : {}),
+    ...(typeof raw.lastDamagedRound === "number" ? { lastDamagedRound: raw.lastDamagedRound } : {}),
+  };
+}
+
 /** Rebuild the live engine state from the persisted rows. */
 export function stateFromRows(full: FullEncounter): EncounterState {
   const combatants: Record<string, Combatant> = {};
@@ -428,6 +452,7 @@ export function stateFromRows(full: FullEncounter): EncounterState {
       spBody: row.sp_body,
       defeated: row.defeated,
       initiative: row.initiative,
+      ...roundMarks(row),
     };
   }
   const order = Array.isArray(full.encounter.order_ids)

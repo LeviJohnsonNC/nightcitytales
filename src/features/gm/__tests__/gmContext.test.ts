@@ -279,3 +279,41 @@ describe("the people block in a job prompt", () => {
     expect(withNpc({})).not.toContain("GUARDED");
   });
 });
+
+describe("what the Role reaches for", () => {
+  /**
+   * The Role used to reach the narrator as a prohibition and nothing else —
+   * "Role Ability: Combat Awareness at Rank 4 — nothing above that Rank" — so
+   * when the player asked what they could do, every Role was offered the same
+   * three things. This is the other half of that sentence.
+   */
+  const promptFor = (role: string): string =>
+    renderGmUserPrompt(
+      buildGmContext({
+        mission: NIGHT_AT_THE_OPERA,
+        beat: getBeat(NIGHT_AT_THE_OPERA, "getting_tickets"),
+        availableExits: [],
+        character: { ...character, role },
+        objectives: [],
+        npcsPresent: [],
+        recentEvents: [],
+        clock: "Day 1, 18:00",
+      }),
+      "what could I do",
+    );
+
+  it("tells the narrator what this Role reaches for", () => {
+    const prompt = promptFor("fixer");
+    expect(prompt).toContain("WHAT THIS ROLE REACHES FOR");
+    expect(prompt).toContain("Everything has a price and a second price");
+  });
+
+  it("gives a different Role a different block", () => {
+    expect(promptFor("nomad")).not.toContain("Everything has a price and a second price");
+    expect(promptFor("nomad")).toContain("they know the way out");
+  });
+
+  it("leaves the block out entirely for a Role it does not know", () => {
+    expect(promptFor("bartender")).not.toContain("WHAT THIS ROLE REACHES FOR");
+  });
+});

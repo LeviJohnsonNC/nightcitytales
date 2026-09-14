@@ -58,6 +58,20 @@ type ActionFile = {
   }[];
   /** How many of the cap may be ways of looking rather than things to do. */
   approachCap: number;
+  /** How many offers may be things only one Role would think of. */
+  roleActionCap: number;
+  roleActions: {
+    key: string;
+    /** The Role ids that see this card. */
+    roles: string[];
+    tags: string[];
+    label: string;
+    description: string;
+    minutes: number;
+    cost: number | null;
+    /** The printed Skill the card leans on, when it is a way of looking. */
+    skill?: string | null;
+  }[];
   approaches: {
     key: string;
     /** True for a way of looking that needs no particular ground. */
@@ -97,6 +111,16 @@ export const MAX_PLACE_ACTIONS: number = FILE.cap;
  */
 export const MAX_PLACE_APPROACHES: number = FILE.approachCap;
 
+/**
+ * How many offers may be things only THIS Role would think of. Two.
+ *
+ * On their own budget beside the five, for exactly the reason approaches are: a
+ * Role move that has to outrank "fill your bottles" for a slot is a Role move
+ * nobody ever sees. Reserved rather than unlimited, because a district that
+ * offers a Lawman nothing but police work has stopped being a city.
+ */
+export const MAX_PLACE_ROLE_ACTIONS: number = FILE.roleActionCap;
+
 /** True when these are what they claim to be: tunable house rules. */
 export const PLACE_ACTIONS_ARE_HOUSE_RULE: boolean = FILE.houseRule;
 
@@ -125,6 +149,17 @@ export type PlaceAction = {
    * the cap quietly undid that gate once already.
    */
   local: boolean;
+  /**
+   * True for an offer only this character's Role would have thought of.
+   *
+   * It grants nothing — the card names a real venue, costs the minutes it
+   * prints, and leans on an ordinary Skill. What a Role ABILITY does and how
+   * far a Rank reaches stay in roleAbility.ts, untouched by any of these. This
+   * flag exists so a caller ordering the list can keep them out of the trim:
+   * the whole point of a Role offer is that it is the one a stranger to this
+   * Role would never see.
+   */
+  role: boolean;
   /**
    * The printed Skill this leans on, for an APPROACH rather than a piece of
    * business: a way of looking at the place instead of a thing to do in it.
@@ -181,6 +216,13 @@ export type PlaceActionInput = {
    * be a button that can only disappoint.
    */
   conclusionAvailable?: boolean | undefined;
+  /**
+   * The character's Role id, when the caller knows it.
+   *
+   * Omitted, and the list is exactly what it was before Role offers existed —
+   * which is what every test and every caller that does not care still gets.
+   */
+  roleId?: string | null | undefined;
 };
 
 /**
@@ -262,6 +304,7 @@ export function placeActions(input: PlaceActionInput): PlaceAction[] {
         cost: template.cost,
         here,
         local: isLocal,
+        role: false,
       });
     }
   };
@@ -291,7 +334,68 @@ export function placeActions(input: PlaceActionInput): PlaceAction[] {
   // business would have cost the ground things it really offers. At the farm it
   // did exactly that, squeezing the whole district out of a five-item list,
   // which the existing suite caught.
-  return [...out.slice(0, MAX_PLACE_ACTIONS), ...approachesAt(input)];
+  return [...out.slice(0, MAX_PLACE_ACTIONS), ...roleActionsAt(input), ...approachesAt(input)];
+}
+
+/**
+ * What there is to do here AS this person.
+ *
+ * The same ground, read by somebody with a particular training: a garage is a
+ * place to get something fixed to everybody and a lift, a light and nobody
+ * asking to a Nomad. Found by the same tags as everything else in this file and
+ * offered at the same named venues, so a Role offer is business at a real place
+ * rather than a button the Role carries around with it.
+ *
+ * It grants nothing. The card leans on an ordinary Skill and costs the minutes
+ * it prints; what the Role ABILITY does, and what Rank reaches how far, is
+ * roleAbility.ts's and is not consulted here. A character without the Role
+ * simply never sees the card, which is the entire mechanism.
+ */
+function roleActionsAt(input: PlaceActionInput): PlaceAction[] {
+  const roleId = input.roleId;
+  if (!roleId) return [];
+  const district = getDistrict(input.districtKey);
+  if (!district) return [];
+
+  const out: PlaceAction[] = [];
+  const seen = new Set<string>();
+  // Where they are standing first, then the rest of the district — the same
+  // order the ordinary business is offered in, so a Role offer at the counter
+  // in front of them is never displaced by one three streets away.
+  const order = [
+    ...(input.placeKey ? [input.placeKey] : []),
+    ...district.locations.map((l) => l.key).filter((key) => key !== input.placeKey),
+  ];
+
+  for (const placeKey of order) {
+    if (out.length >= MAX_PLACE_ROLE_ACTIONS) break;
+    const place = getPlace(placeKey);
+    if (!place) continue;
+    if (SILENCING_FLAGS.some((flag) => input.places?.[placeKey]?.flags.includes(flag))) continue;
+    const tags = tagsOf(placeKey);
+    for (const template of FILE.roleActions) {
+      if (out.length >= MAX_PLACE_ROLE_ACTIONS) break;
+      if (!template.roles.includes(roleId)) continue;
+      if (seen.has(template.key)) continue;
+      if (!template.tags.some((tag) => tags.includes(tag as PlaceTag))) continue;
+      seen.add(template.key);
+      out.push({
+        key: `${template.key}@${place.key}`,
+        action: template.key,
+        label: template.label,
+        description: template.description,
+        placeKey: place.key,
+        placeName: place.name,
+        minutes: template.minutes,
+        cost: template.cost,
+        here: placeKey === input.placeKey,
+        local: false,
+        role: true,
+        ...(template.skill ? { skillId: template.skill } : {}),
+      });
+    }
+  }
+  return out;
 }
 
 /**
@@ -336,6 +440,7 @@ function approachesAt(input: PlaceActionInput): PlaceAction[] {
       cost: null,
       here: true,
       local: false,
+      role: false,
       skillId: template.skill,
     });
     if (out.length >= MAX_PLACE_APPROACHES) break;

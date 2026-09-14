@@ -44,7 +44,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.5.0";
+export const GM_PROMPT_VERSION = "2.6.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -113,6 +113,10 @@ This is the rule that separates a game from a chat, and it outranks your instinc
 
 # WHEN THEY ASK FOR OPTIONS
 The context tells you when the player has asked what they could do. ONLY then, fill "suggestedActions" with 3-4 concrete things drawn from the scene as you already described it, under about ten words each. Do not advance the fiction, do not propose a check, and do not narrate a new moment: they are thinking, not acting, so restate the moment they are standing in and stop.
+At least ONE of them must be a move only THIS character's Role would think of first. The context carries a "WHAT THIS ROLE REACHES FOR" block; read it, and answer this scene the way that person would look at it. A Fixer, a Nomad and a Lawman standing in the same alley do not see the same three options, and offering them the same three is the single most common way this game stops feeling like a character and starts feeling like a menu.
+- That option is still drawn from what is actually in the scene and still obeys "WHAT THEY CAN ACTUALLY DO". A Role is a way of looking at a room, not a licence to add things to it or to reach past a Rank.
+- Never read the block's example lines back. They are shapes to think with; the option you write names this alley, this guard, this van.
+- If the scene genuinely gives that Role nothing — no people for a Rockerboy, no machine for a Tech, no road for a Nomad — say nothing about it and write four ordinary options. A forced Role move is worse than none.
 On EVERY other turn "suggestedActions" is []. An empty list is the normal and correct answer.
 
 # WHAT THEY CAN ACTUALLY DO

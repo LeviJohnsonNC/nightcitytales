@@ -5,6 +5,7 @@
  * summary of recent events — never the whole transcript. That bounded slice is
  * what keeps a long campaign from drifting.
  */
+import { renderRoleAffordanceLines } from "@/engine";
 import type { Beat, BeatExit, Mission, MissionObjective } from "@/engine";
 
 export type GmCharacterSummary = {
@@ -351,6 +352,15 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   if (context.capabilities?.length) {
     parts.push("", "== WHAT THEY CAN ACTUALLY DO (never propose anything outside this) ==");
     for (const c of context.capabilities) parts.push(`- ${c}`);
+  }
+
+  // The Role as something to reach for, which the capability block above can
+  // only ever take away from. Both are true at once: reach for these, and still
+  // never above the Rank.
+  const affordance = renderRoleAffordanceLines(character.role);
+  if (affordance.length) {
+    parts.push("", "== WHAT THIS ROLE REACHES FOR ==");
+    for (const line of affordance) parts.push(line);
   }
 
   const activeObjectives = context.objectives.filter((o) => o.status === "active");

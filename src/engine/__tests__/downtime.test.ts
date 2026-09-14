@@ -13,6 +13,7 @@ import {
   healingPerDay,
   planRest,
   purchaseCost,
+  selfCareBonus,
 } from "../downtime";
 
 describe("healing", () => {
@@ -130,5 +131,64 @@ describe("buying and repairing", () => {
       maxSp: 11,
     });
     expect(heavy.cost).toBeGreaterThan(light.cost);
+  });
+});
+
+describe("a Medtech's own recovery", () => {
+  it("adds the self-care bonus to the printed BODY rate", () => {
+    // The house rule: the better of Surgery and Medical Tech over 4, capped at 2.
+    expect(selfCareBonus(0)).toBe(0);
+    expect(selfCareBonus(3)).toBe(0);
+    expect(selfCareBonus(4)).toBe(1);
+    expect(selfCareBonus(8)).toBe(2);
+    expect(selfCareBonus(10)).toBe(2);
+
+    const plan = planRest({ days: 3, hpCurrent: 10, hpMax: 40, body: 7, perDayBonus: 2 });
+    expect(plan.perDay).toBe(9);
+    expect(plan.hpHealed).toBe(27);
+  });
+
+  it("leaves every other Role's rest exactly as it was", () => {
+    const plain = planRest({ days: 3, hpCurrent: 10, hpMax: 40, body: 7 });
+    expect(plain.perDay).toBe(7);
+    expect(plain.hpHealed).toBe(21);
+    expect(plain.courseDays).toBe(0);
+  });
+});
+
+describe("a course of Antibiotic", () => {
+  // The printed drug: +2 HP a day for a week. The point of modelling it as a
+  // course rather than a rate is that it RUNS OUT.
+  const course = { hpPerDay: 2, days: 7 };
+
+  it("heals faster for the days it covers", () => {
+    const plan = planRest({ days: 3, hpCurrent: 0, hpMax: 60, body: 5, course });
+    expect(plan.perDay).toBe(5);
+    expect(plan.perDayOnCourse).toBe(7);
+    expect(plan.courseDays).toBe(3);
+    expect(plan.hpHealed).toBe(21);
+  });
+
+  it("runs out partway through a longer rest and stops helping", () => {
+    // Ten days: seven at 7 a day (49) and three at 5 (15) = 64, capped at 60.
+    const plan = planRest({ days: 10, hpCurrent: 0, hpMax: 60, body: 5, course });
+    expect(plan.courseDays).toBe(7);
+    expect(plan.hpHealed).toBe(60);
+    // And it got there sooner than the nine days a plain BODY 5 rest needs.
+    expect(plan.daysToFull).toBeLessThan(
+      planRest({ days: 99, hpCurrent: 0, hpMax: 60, body: 5 }).daysToFull,
+    );
+  });
+
+  it("still never rests more days than the wound needs", () => {
+    const plan = planRest({ days: 9, hpCurrent: 54, hpMax: 60, body: 5, course });
+    expect(plan.days).toBe(1);
+    expect(plan.hpAfter).toBe(60);
+  });
+
+  it("terminates when nothing can heal at all", () => {
+    const plan = planRest({ days: 5, hpCurrent: 1, hpMax: 40, body: 0 });
+    expect(plan.daysToFull).toBe(0);
+    expect(plan.hpHealed).toBe(0);
   });
 });

@@ -25,5 +25,12 @@
     "costPerMissingSpFraction": 0.1,
     "_provenance": "OURS, not the book's. The printed rule prices item repair by the item's Price Category and sets a TECH DV and a time cost, which this app does not model yet; no eurobuck figure for repairing ablated armor was verifiable from the build environment. This charges a tenth of the armor's catalog price for each point of SP restored, so a full rebuild of a badly chewed vest costs about what the vest did.",
     "_alternativeReported": "Some secondary sources say ablated armor recovers 1 SP per day of rest for free. That reading may be about SUBDERMAL armor (which repairs itself via nanomachines) rather than worn armor, so it was not implemented. If the book supports it for worn armor, replace this paid repair with a per-day recovery in downtime."
+  },
+  "medtechSelfCare": {
+    "_provenance": "OURS, not the book's. The printed rules give a Medtech faster recovery through DRUGS they synthesize (Antibiotic, +2 HP a day for a week; Speedheal, BODY+WILL at once) and those are implemented as printed, in roles.json. This is the small standing bonus beside them: somebody who does this for a living dresses their own wounds better than somebody who does not, on the days they have nothing in the bag. Kept deliberately small so it never outweighs BODY, which is the printed rate.",
+    "hpPerDayPerSkillLevels": 4,
+    "maxBonusHpPerDay": 2,
+    "skillIds": ["surgery", "medical_tech"],
+    "note": "Bonus HP a day = the better of those Skill Levels divided by hpPerDayPerSkillLevels, rounded down, capped at maxBonusHpPerDay. A Medtech with Surgery 10 recovers BODY+2 a day; everyone else recovers BODY, exactly as before."
   }
 }

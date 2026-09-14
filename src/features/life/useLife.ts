@@ -160,6 +160,7 @@ export function useLife(campaignId: string) {
         places: bundle.places,
         localExpertLevel: localExpertIn(bundle.character, district.key),
         conclusionAvailable,
+        roleId: bundle.character.character.role,
       }),
       district.locations.map((l) => l.name),
     );

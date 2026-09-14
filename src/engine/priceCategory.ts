@@ -6,6 +6,7 @@
  * is missing from the file, the helper returns null rather than guessing.
  */
 import rolesData from "@/data/rules/roles.json";
+import catalogData from "@/data/rules/catalog.json";
 
 type RoleAbility = { mechanicalText?: string };
 type Role = { roleAbility?: RoleAbility };
@@ -104,3 +105,30 @@ export function priceCategoryContext(
 
 /** Ordered ladder, exported for display and tests. */
 export const PRICE_CATEGORY_LADDER = LADDER;
+
+/**
+ * The Night Market cost bands, read from catalog.json rather than typed here.
+ *
+ * Only weapons, armor and ammunition need them: gear lines carry their own
+ * `priceCategory` field, which is always better than inferring one from a
+ * number. See the file's own provenance note before trusting a boundary.
+ */
+const COST_BANDS = (
+  catalogData as unknown as {
+    _rules: { priceCategoryLadder: { bands: { category: string; maxCost: number | null }[] } };
+  }
+)._rules.priceCategoryLadder.bands;
+
+/**
+ * The price category a cost falls in, or null when the ladder does not reach.
+ *
+ * Prefer an item's own printed `priceCategory` wherever the catalog carries
+ * one. This is the fallback for the lines that do not.
+ */
+export function priceCategoryForCost(cost: number): string | null {
+  const value = Math.max(0, Math.trunc(cost));
+  for (const band of COST_BANDS) {
+    if (band.maxCost === null || value <= band.maxCost) return band.category;
+  }
+  return null;
+}

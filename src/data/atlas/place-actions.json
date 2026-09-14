@@ -344,5 +344,199 @@
       "description": "Watch faces instead of talking to them, and see who is not comfortable.",
       "minutes": 20
     }
+  ],
+  "roleActionCap": 2,
+  "roleActionCapNote": "How many of a place's offers may be things only this Role would think of. Two, on their own budget beside the five, for the same reason approaches are: a Role move that has to beat 'fill your bottles' for a slot is a Role move nobody ever sees. Reserved rather than unlimited, because a district that offers a Lawman nothing but police work has stopped being a city.",
+  "roleActionNote": "House rule, like everything else in this file. A Role action is the ordinary business of being somewhere AS this person: it names a real venue found by the same tags, costs the minutes it prints, and grants nothing. What a Role ABILITY does, and how far a Rank reaches, stay in roles.json and roleAbility.ts — none of these cards touch either. `roles` is the Role ids that see the card; a card with a `skill` is an approach, and carries no DV for the same reason the others do not.",
+  "roleActions": [
+    {
+      "key": "run_the_name",
+      "roles": ["lawman"],
+      "tags": ["police", "government", "office"],
+      "label": "Run it against the system",
+      "description": "Sit at a terminal you still have a login for and pull what the department holds on a name, a plate or a face.",
+      "minutes": 45,
+      "cost": null,
+      "skill": "bureaucracy"
+    },
+    {
+      "key": "badge_the_room",
+      "roles": ["lawman"],
+      "tags": ["bar", "club", "market", "crowd", "shop", "flophouse", "gang_turf"],
+      "label": "Show the badge",
+      "description": "Let the room see what you are and watch what it does about it. Some of them go quiet. Some of them leave.",
+      "minutes": 20,
+      "cost": null,
+      "skill": "interrogation"
+    },
+    {
+      "key": "work_the_price",
+      "roles": ["fixer"],
+      "tags": ["market", "shop", "fence", "docks", "warehouse"],
+      "label": "Work the price",
+      "description": "Take the number apart in front of whoever quoted it. The first one is never the one.",
+      "minutes": 30,
+      "cost": null,
+      "skill": "trading"
+    },
+    {
+      "key": "who_moves_this",
+      "roles": ["fixer"],
+      "tags": ["market", "bar", "crowd", "fence", "docks", "warehouse", "gang_turf"],
+      "label": "Find who moves this",
+      "description": "Ask the people who would know who handles this kind of thing in this district, and what they want for an introduction.",
+      "minutes": 45,
+      "cost": null,
+      "skill": "streetwise"
+    },
+    {
+      "key": "work_on_the_vehicle",
+      "roles": ["nomad"],
+      "tags": ["garage", "repair", "nomad", "factory"],
+      "label": "Get under the vehicle",
+      "description": "Somewhere with a lift, a light and nobody asking. Whatever you are driving comes out of it better than it went in.",
+      "minutes": 120,
+      "cost": null,
+      "skill": "basic_tech"
+    },
+    {
+      "key": "ask_the_road",
+      "roles": ["nomad"],
+      "tags": ["nomad", "transit", "docks", "warehouse", "bar"],
+      "label": "Ask the road",
+      "description": "Find whoever came in off the highway recently. Another family has been through this and somebody talked about it.",
+      "minutes": 45,
+      "cost": null,
+      "skill": "streetwise"
+    },
+    {
+      "key": "play_the_room",
+      "roles": ["rockerboy"],
+      "tags": ["club", "bar", "stadium", "studio", "crowd", "leisure"],
+      "label": "Play it where it's heard",
+      "description": "Take the stage, the corner, the speaker — whatever this place has — and give the room something. People remember who moved them.",
+      "minutes": 120,
+      "cost": null,
+      "skill": "play_instrument"
+    },
+    {
+      "key": "who_wants_leading",
+      "roles": ["rockerboy"],
+      "tags": ["crowd", "market", "bar", "club", "housing", "container_housing", "gang_turf"],
+      "label": "Find who wants leading",
+      "description": "Read the room for the ones who are angry and waiting for somebody to say it out loud.",
+      "minutes": 30,
+      "cost": null,
+      "skill": "human_perception"
+    },
+    {
+      "key": "get_it_on_record",
+      "roles": ["media"],
+      "tags": [
+        "crowd",
+        "market",
+        "police",
+        "government",
+        "corp_hq",
+        "gang_turf",
+        "docks",
+        "derelict"
+      ],
+      "label": "Get it on record",
+      "description": "Camera up, recorder running, or a witness who will say it again with their name on it. Nothing you cannot prove is worth anything.",
+      "minutes": 45,
+      "cost": null,
+      "skill": "photography_film"
+    },
+    {
+      "key": "ask_the_question",
+      "roles": ["media"],
+      "tags": ["office", "corp_hq", "government", "police", "lab", "media", "school"],
+      "label": "Ask the question nobody asks",
+      "description": "Walk in as press and put the thing everyone is working around directly to somebody who has to answer it.",
+      "minutes": 45,
+      "cost": null,
+      "skill": "persuasion"
+    },
+    {
+      "key": "see_to_people",
+      "roles": ["medtech"],
+      "tags": ["clinic", "hospital", "housing", "container_housing", "flophouse", "gang_turf"],
+      "label": "See to people here",
+      "description": "Set up where there is nobody else doing it. You are paid in what people tell you while you work.",
+      "minutes": 180,
+      "cost": null,
+      "skill": "paramedic"
+    },
+    {
+      "key": "read_the_body",
+      "roles": ["medtech"],
+      "tags": ["clinic", "hospital", "derelict", "gang_turf", "ripperdoc"],
+      "label": "Read what happened to them",
+      "description": "What did this, how long ago, and whether whoever it was walked away afterwards.",
+      "minutes": 45,
+      "cost": null,
+      "skill": "paramedic"
+    },
+    {
+      "key": "open_it_up",
+      "roles": ["tech"],
+      "tags": ["garage", "repair", "factory", "warehouse", "lab", "derelict"],
+      "label": "Open it up",
+      "description": "Get the panel off whatever is broken here and find out why it actually failed, which is rarely what they told you.",
+      "minutes": 90,
+      "cost": null,
+      "skill": "basic_tech"
+    },
+    {
+      "key": "bench_time",
+      "roles": ["tech"],
+      "tags": ["garage", "repair", "factory", "lab", "shop"],
+      "label": "Buy an hour at the bench",
+      "description": "Somewhere with a vice, power and parts bins nobody counts. What you make there is yours.",
+      "minutes": 120,
+      "cost": 20,
+      "skill": null
+    },
+    {
+      "key": "who_signs_for_this",
+      "roles": ["exec"],
+      "tags": ["corp_hq", "office", "lab", "factory", "warehouse", "bank"],
+      "label": "Find out who signs for this",
+      "description": "Somebody owns this operation and somebody approves its spending. Those are usually not the same person.",
+      "minutes": 60,
+      "cost": null,
+      "skill": "business"
+    },
+    {
+      "key": "spend_the_name",
+      "roles": ["exec"],
+      "tags": ["corp_hq", "office", "luxury_housing", "bank", "government"],
+      "label": "Spend the company's name",
+      "description": "Use the letterhead while it still opens things. It does not open everything and it does not open it twice.",
+      "minutes": 45,
+      "cost": null,
+      "skill": "persuasion"
+    },
+    {
+      "key": "case_the_ground",
+      "roles": ["solo"],
+      "tags": ["secure", "corp_hq", "warehouse", "docks", "gang_turf", "derelict", "police"],
+      "label": "Case the ground",
+      "description": "Exits, angles, who is armed and who only looks it. Do it now so you are not working it out later under fire.",
+      "minutes": 45,
+      "cost": null,
+      "skill": "tactics"
+    },
+    {
+      "key": "find_the_architecture",
+      "roles": ["netrunner"],
+      "tags": ["corp_hq", "office", "lab", "factory", "secure", "bank"],
+      "label": "Find the architecture",
+      "description": "Whatever is running behind these walls has to reach the street somewhere. Find where.",
+      "minutes": 60,
+      "cost": null,
+      "skill": "electronics_security_tech"
+    }
   ]
 }

@@ -427,3 +427,69 @@ describe("joining a fight in progress", () => {
     expect(next.order).toEqual(["fast", "backup"]);
   });
 });
+
+describe("Solo — Precision Attack", () => {
+  /**
+   * The one option of Combat Awareness that is spent on hitting things. It was
+   * computed by combatAwarenessEffects and then dropped on the floor: the
+   * encounter carried initiative, deflection, spot weakness and fumble
+   * recovery, and nothing added the bonus to the To-Hit roll, so the most
+   * obviously attractive option on the panel bought nothing at all.
+   */
+  it("adds the bonus to the To-Hit roll", () => {
+    const target = mk("goon", { hp: 40 });
+    // die 5 + REF 3 + skill 3 = 11. DV 13 is a miss without the bonus.
+    const params = {
+      attackerId: "pc",
+      targetId: "goon",
+      statLabel: "REF",
+      statValue: 3,
+      skillLabel: "Handgun",
+      skillValue: 3,
+      dv: 13,
+      damageDice: 3,
+    } as const;
+
+    const plain = mk("pc", { side: "friendly", ref: 8 });
+    expect(performAttack(stateOf([plain, target]), params, seq([[5, 10]])).attack.hit).toBe(false);
+
+    const solo = mk("pc", { side: "friendly", ref: 8, roleEffects: { attack: 3 } });
+    const hit = performAttack(
+      stateOf([solo, target]),
+      params,
+      seq([
+        [5, 10],
+        [3, 6],
+        [3, 6],
+        [3, 6],
+      ]),
+    );
+    expect(hit.attack.hit).toBe(true);
+    expect(hit.attack.modifiers.map((m) => m.label)).toContain("Precision Attack");
+  });
+
+  it("changes nothing for a combatant with no Role effects", () => {
+    const target = mk("goon", { hp: 40 });
+    const plain = mk("pc", { side: "friendly", ref: 8 });
+    const r = performAttack(
+      stateOf([plain, target]),
+      {
+        attackerId: "pc",
+        targetId: "goon",
+        statLabel: "REF",
+        statValue: 8,
+        skillLabel: "Handgun",
+        skillValue: 6,
+        dv: 15,
+        damageDice: 3,
+      },
+      seq([
+        [4, 10],
+        [3, 6],
+        [3, 6],
+        [3, 6],
+      ]),
+    );
+    expect(r.attack.modifiers.map((m) => m.label)).not.toContain("Precision Attack");
+  });
+});

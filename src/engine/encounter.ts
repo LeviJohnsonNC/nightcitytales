@@ -68,6 +68,8 @@ export type Combatant = {
 export type CombatantRoleEffects = {
   /** Added to the Initiative roll. */
   initiative?: number;
+  /** Added to every attack Check this combatant makes. */
+  attack?: number;
   /** Subtracted from the first damage taken each Round. */
   damageDeflection?: number;
   /** Added to the damage of the first successful attack each Round. */
@@ -287,9 +289,13 @@ export function performAttack(
 
   // A wounded attacker takes their Wound State penalty on the Check (CP:R pg. 186).
   const woundPenalty = woundActionPenalty(attacker.woundState);
+  // Solo, Precision Attack: points spent there ride on the To-Hit roll itself,
+  // which is why it is a modifier here rather than something applied to damage.
+  const precision = attacker.roleEffects?.attack ?? 0;
   const modifiers: RollModifier[] = [
     ...(params.modifiers ?? []),
     ...(woundPenalty !== 0 ? [{ label: "Wound", value: woundPenalty }] : []),
+    ...(precision !== 0 ? [{ label: "Precision Attack", value: precision }] : []),
   ];
 
   const attack = resolveAttack(

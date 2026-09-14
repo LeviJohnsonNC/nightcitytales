@@ -45,15 +45,29 @@ function RestSection({ downtime }: { downtime: ReturnType<typeof useDowntime> })
   const { rest, restToFull } = view;
   const after = downtime.billsAfterRest;
   const whole = view.hpCurrent >= view.hpMax;
+  // Only offered when a dose is actually on hand and it would do more than the
+  // plain rest already does: a course that buys nothing is not a choice.
+  const onCourse =
+    view.restOnAntibiotic && view.restOnAntibiotic.hpHealed > rest.hpHealed
+      ? view.restOnAntibiotic
+      : null;
 
   return (
     <Section title="Lie low">
       <p className="text-sm">
         HP <span className="num font-bold">{view.hpCurrent}</span>/{view.hpMax}
         {view.body > 0 && (
-          <span className="text-muted-foreground"> · BODY {view.body} back per day of rest</span>
+          <span className="text-muted-foreground">
+            {" "}
+            · {rest.perDay} back per day of rest
+            {rest.perDay > view.body
+              ? ` (BODY ${view.body} +${rest.perDay - view.body} your own)`
+              : ""}
+          </span>
         )}
       </p>
+
+      <SpeedhealLine downtime={downtime} />
 
       {whole ? (
         <p className="text-sm text-muted-foreground">You are whole. Nothing to sleep off.</p>
@@ -103,16 +117,58 @@ function RestSection({ downtime }: { downtime: ReturnType<typeof useDowntime> })
               eb.
             </p>
           )}
-          <Button
-            size="sm"
-            disabled={downtime.busy || rest.days <= 0}
-            onClick={() => downtime.rest(rest.days)}
-          >
-            {downtime.busy ? "…" : `Lie low ${rest.days} day${rest.days === 1 ? "" : "s"}`}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              disabled={downtime.busy || rest.days <= 0}
+              onClick={() => downtime.rest(rest.days)}
+            >
+              {downtime.busy ? "…" : `Lie low ${rest.days} day${rest.days === 1 ? "" : "s"}`}
+            </Button>
+            {onCourse && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={downtime.busy || onCourse.days <= 0}
+                onClick={() => downtime.rest(rest.days, { antibiotic: true })}
+              >
+                {downtime.busy
+                  ? "…"
+                  : `…on a course of Antibiotic (+${onCourse.hpHealed - rest.hpHealed} HP, one dose)`}
+              </Button>
+            )}
+          </div>
         </>
       )}
     </Section>
+  );
+}
+
+/**
+ * A Medtech's own Speedheal, when they have synthesized one.
+ *
+ * Renders nothing at all for every other Role and for a Medtech with an empty
+ * bag, which is why it is a component rather than a branch inside the section.
+ */
+function SpeedhealLine({ downtime }: { downtime: ReturnType<typeof useDowntime> }) {
+  const care = downtime.view?.care;
+  const speedheal = care?.speedheal;
+  if (!speedheal) return null;
+  const whole = (downtime.view?.hpCurrent ?? 0) >= (downtime.view?.hpMax ?? 0);
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <p className="text-xs text-muted-foreground">
+        {care.doses["speedheal"]}× Speedheal on hand — {speedheal.hp} HP, at once, no days spent.
+      </p>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={downtime.busy || whole}
+        onClick={() => downtime.takeSpeedheal()}
+      >
+        {downtime.busy ? "…" : `Take one (+${speedheal.hp} HP)`}
+      </Button>
+    </div>
   );
 }
 
