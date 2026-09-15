@@ -224,11 +224,43 @@ const HOUSE_LOOK = [
   "Single subject, waist-up, facing the camera, 3:4 portrait framing with the head and shoulders filling the frame.",
   "Neon-noir palette: deep navy and cobalt shadow, electric cyan, violet, magenta and hot pink light, with one warm sunset-orange or rose accent.",
   "Cinematic lighting: strong coloured rim light along the jaw and shoulders, soft neon bloom, screen and signage glow, deep shadow, wet chrome and reflective metal catching coloured light.",
-  "Shallow, hazy megacity backdrop directly behind the shoulders — a few illuminated windows and restrained signage dissolving fast into volumetric haze and fog. The city is atmosphere, never the subject.",
+  "Shallow backdrop directly behind the shoulders, dissolving fast into volumetric haze and fog. The setting is atmosphere, never the subject.",
   "Grounded and lived-in: aging metal, patched infrastructure, grime, worn synthetic fabrics, believable urban wear. Retrofitted onto an old city, not freshly manufactured, not glossy utopian sci-fi.",
   "Spirit of late-1980s and 1990s cyberpunk atmosphere and Blade Runner neon noir, painted as high-end cinematic concept art.",
   "No text, no logos, no watermarks, no captions, no second person, no collage, no weapons aimed at the camera, no wide establishing shot.",
 ].join(" ");
+
+/**
+ * Where each Role is painted standing. The backdrop is the one place the
+ * portrait can say what the character DOES, so every Role gets a setting of
+ * its own instead of the generic megacity haze. Keyed by the Role's display
+ * name from roles.json; an unknown Role falls back to the city.
+ */
+const ROLE_BACKDROPS: Record<string, string> = {
+  Rockerboy:
+    "a stage moments before the set — microphone stand and amp stacks in shadow, a roaring crowd reduced to silhouettes and raised hands, harsh stage lighting and laser haze cutting through smoke",
+  Solo:
+    "a rain-slicked combat zone rooftop or checkpoint at night — muzzle-flash-orange emergency lights, spent casings, armored barriers and a burning barrel, the city held at gunpoint's distance",
+  Netrunner:
+    "a darkened server den — a nest of cables and coolant lines, stacked monitors and holo-displays throwing ghostly interface light across the gloom, a netrunner's chair and cyberdeck cables behind them",
+  Tech:
+    "a cluttered workshop bench — tool racks, half-disassembled tech, a welding torch's blue spark, parts bins and dangling work lights in oily shadow",
+  Medtech:
+    "a back-alley ripperdoc clinic — a surgical lamp's cold cone of light, a trauma kit and chrome instruments on a steel tray, medical monitors glowing softly behind a stained privacy curtain",
+  Media:
+    "a live news scene at night — camera rig and recording drone lights, a reporter's datapad glow, police barriers and distant sirens smeared into red-and-blue haze",
+  Exec:
+    "a corporate tower high above the city — floor-to-ceiling glass, a boardroom table's polished reflection, cold recessed lighting and the megacity spread out far below like a possession",
+  Lawman:
+    "a cordoned crime scene under NCPD lights — flickering police barricades, evidence markers, rain-slick asphalt catching red and blue flashers, a patrol vehicle looming in the dark",
+  Fixer:
+    "the back booth of a neon-lit night market bar — a deal half-made on the table, bottle glass and credstick glinting, hangers-on and goods crates blurred into warm smoky depth",
+  Nomad:
+    "the open road at the city's edge — a dusty caravan of patched vehicles and bikes, headlights and a campfire burning low, the badland horizon swallowing the last of the light",
+};
+
+const DEFAULT_BACKDROP =
+  "a hazy megacity street — a few illuminated windows and restrained signage dissolving into fog";
 
 /** The exact prompt sent to the image model. */
 export function buildPortraitPrompt(facts: PortraitFacts): string {
