@@ -265,6 +265,9 @@ const DEFAULT_BACKDROP =
 /** The exact prompt sent to the image model. */
 export function buildPortraitPrompt(facts: PortraitFacts): string {
   const lines: string[] = [HOUSE_LOOK, ""];
+  const backdrop = (facts.role && ROLE_BACKDROPS[facts.role]) || DEFAULT_BACKDROP;
+  lines.push(`Backdrop: ${backdrop}. Keep it shallow, hazy and out of focus behind the subject.`);
+  lines.push("");
   lines.push("Subject:");
   if (facts.role) lines.push(`- Occupation on The Street: ${facts.role}`);
   if (facts.roleAbility) lines.push(`- Known for: ${facts.roleAbility}`);
