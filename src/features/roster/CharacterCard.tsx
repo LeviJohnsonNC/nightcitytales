@@ -111,9 +111,6 @@ export function CharacterCard({
           <p className="truncate text-sm italic text-text-muted">
             {entry.handle ? `“${entry.handle}”` : "no street name"}
           </p>
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
-            {METHOD_LABELS[entry.creation_method] ?? entry.creation_method}
-          </p>
         </header>
 
         <CharacterStats
