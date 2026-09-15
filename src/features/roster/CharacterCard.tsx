@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { FileText, MoreHorizontal } from "lucide-react";
-import { CREATION_METHODS } from "@/engine";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,12 +15,6 @@ import { CharacterStats } from "./CharacterStats";
 import { CharacterStatus } from "./CharacterStatus";
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
-
-const METHOD_LABELS: Record<string, string> = {
-  streetrat: CREATION_METHODS.streetrat.label,
-  edgerunner: CREATION_METHODS.edgerunner.label,
-  complete_package: CREATION_METHODS.completePackage.label,
-};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
