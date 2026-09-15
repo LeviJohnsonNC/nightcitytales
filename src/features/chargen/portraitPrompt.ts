@@ -239,18 +239,15 @@ const HOUSE_LOOK = [
 const ROLE_BACKDROPS: Record<string, string> = {
   Rockerboy:
     "a stage moments before the set — microphone stand and amp stacks in shadow, a roaring crowd reduced to silhouettes and raised hands, harsh stage lighting and laser haze cutting through smoke",
-  Solo:
-    "a rain-slicked combat zone rooftop or checkpoint at night — muzzle-flash-orange emergency lights, spent casings, armored barriers and a burning barrel, the city held at gunpoint's distance",
+  Solo: "a rain-slicked combat zone rooftop or checkpoint at night — muzzle-flash-orange emergency lights, spent casings, armored barriers and a burning barrel, the city held at gunpoint's distance",
   Netrunner:
     "a darkened server den — a nest of cables and coolant lines, stacked monitors and holo-displays throwing ghostly interface light across the gloom, a netrunner's chair and cyberdeck cables behind them",
-  Tech:
-    "a cluttered workshop bench — tool racks, half-disassembled tech, a welding torch's blue spark, parts bins and dangling work lights in oily shadow",
+  Tech: "a cluttered workshop bench — tool racks, half-disassembled tech, a welding torch's blue spark, parts bins and dangling work lights in oily shadow",
   Medtech:
     "a back-alley ripperdoc clinic — a surgical lamp's cold cone of light, a trauma kit and chrome instruments on a steel tray, medical monitors glowing softly behind a stained privacy curtain",
   Media:
     "a live news scene at night — camera rig and recording drone lights, a reporter's datapad glow, police barriers and distant sirens smeared into red-and-blue haze",
-  Exec:
-    "a corporate tower high above the city — floor-to-ceiling glass, a boardroom table's polished reflection, cold recessed lighting and the megacity spread out far below like a possession",
+  Exec: "a corporate tower high above the city — floor-to-ceiling glass, a boardroom table's polished reflection, cold recessed lighting and the megacity spread out far below like a possession",
   Lawman:
     "a cordoned crime scene under NCPD lights — flickering police barricades, evidence markers, rain-slick asphalt catching red and blue flashers, a patrol vehicle looming in the dark",
   Fixer:
