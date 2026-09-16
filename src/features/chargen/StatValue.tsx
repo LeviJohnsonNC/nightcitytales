@@ -106,6 +106,32 @@ export function StatValue({
   );
 }
 
+export function StatBandIndicator({
+  value,
+  className,
+}: {
+  value: number | null | undefined;
+  className?: string;
+}) {
+  if (value === null || value === undefined) return null;
+  const band = statBand(value);
+  const Icon = band.Icon;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 font-mono text-[9px] font-semibold uppercase",
+        band.textClass,
+        className,
+      )}
+      title={`${band.label}: ${band.description}`}
+      aria-label={band.label}
+    >
+      <Icon aria-hidden="true" className="size-3" strokeWidth={2.5} />
+      {band.shortLabel}
+    </span>
+  );
+}
+
 export function StatLegend({ className }: { className?: string }) {
   const entries = [
     { value: 2, range: "2" },

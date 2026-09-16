@@ -16,6 +16,7 @@ import {
 import type { StatBlock, StatKey } from "@/engine";
 import { DiceRoll } from "./DiceRoll";
 import { StatTemplateTable } from "./StatTemplateTable";
+import { StatBandIndicator, StatLegend, StatValue, statBand } from "./StatValue";
 import { appendRoll } from "./rollLogStore";
 import { useChargenStore, type ChargenState } from "./store";
 
@@ -81,20 +82,32 @@ function StatReadout({
   rows?: Partial<Record<StatKey, number>>;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-      {STAT_ORDER.map((stat) => (
-        <div key={stat} className="border border-border bg-card p-3 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {stat.toUpperCase()}
-          </p>
-          <p className="num font-mono text-2xl font-bold tabular-nums text-foreground">
-            {stats[stat] ?? "—"}
-          </p>
-          {rows?.[stat] !== undefined && (
-            <p className="font-mono text-[10px] text-muted-foreground">row {rows[stat]}</p>
-          )}
-        </div>
-      ))}
+    <div className="space-y-2">
+      <StatLegend />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {STAT_ORDER.map((stat) => {
+          const value = stats[stat];
+          const band = typeof value === "number" ? statBand(value) : null;
+          return (
+            <div
+              key={stat}
+              className={cn(
+                "border bg-card p-3 text-center",
+                band?.borderClass ?? "border-border",
+                band?.backgroundClass,
+              )}
+            >
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                {stat.toUpperCase()}
+              </p>
+              <StatValue value={value} className="text-2xl font-bold" />
+              {rows?.[stat] !== undefined && (
+                <p className="font-mono text-[10px] text-muted-foreground">row {rows[stat]}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -198,15 +211,24 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
           or roll them one at a time below
         </span>
       </div>
+      <StatLegend />
       <div ref={gridRef} className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        {STAT_ORDER.map((stat) => (
-          <div key={stat} className="border border-border bg-card p-3 text-center">
+        {STAT_ORDER.map((stat) => {
+          const value = state.stats[stat];
+          const band = typeof value === "number" ? statBand(value) : null;
+          return (
+          <div
+            key={stat}
+            className={cn(
+              "border bg-card p-3 text-center",
+              band?.borderClass ?? "border-border",
+              band?.backgroundClass,
+            )}
+          >
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
               {stat.toUpperCase()}
             </p>
-            <p className="num font-mono text-2xl font-bold tabular-nums text-foreground">
-              {state.stats[stat] ?? "—"}
-            </p>
+            <StatValue value={value} className="text-2xl font-bold" />
             <div className="mt-2 flex justify-center" data-stat-die-wrap={stat}>
               <DiceRoll
                 sides={10}
@@ -217,7 +239,8 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
               />
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       <StatTemplateTable roleId={roleId} highlightCells={state.statRolls.rows} />
     </div>
@@ -288,6 +311,8 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
                 key={stat}
                 className={cn(
                   "flex items-center gap-3 border border-border bg-card p-3",
+                  typeof value === "number" && statBand(value).borderClass,
+                  typeof value === "number" && statBand(value).backgroundClass,
                   outOfRange && "border-destructive",
                 )}
               >
@@ -314,6 +339,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
                 <Button variant="outline" size="sm" onClick={() => step(stat, 1)}>
                   +
                 </Button>
+                <StatBandIndicator value={value} className="ml-auto" />
               </div>
             );
           })}
