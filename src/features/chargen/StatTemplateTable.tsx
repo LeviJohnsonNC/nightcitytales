@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { STAT_ORDER, getStatTemplateRows } from "@/engine";
 import type { StatKey } from "@/engine";
+import { StatValue } from "./StatValue";
+import { statBand } from "./statBands";
 
 const ROW_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -58,10 +60,11 @@ export function StatTemplateTable({
                       key={stat}
                       className={cn(
                         "num p-2 tabular-nums",
+                        typeof values[stat] === "number" && statBand(values[stat]).backgroundClass,
                         cellHit && "bg-primary/25 font-bold text-primary",
                       )}
                     >
-                      {values[stat]}
+                      <StatValue value={values[stat]} className="text-sm font-semibold" />
                     </td>
                   );
                 })}

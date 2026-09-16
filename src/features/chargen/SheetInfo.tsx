@@ -14,6 +14,8 @@ import {
 import { STAT_DESCRIPTIONS, getSkill, statTemplateRange } from "@/engine";
 import type { StatKey } from "@/engine";
 import { STAT_FLAVOR } from "./statFlavor";
+import { StatBandIndicator } from "./StatValue";
+import { statBand } from "./statBands";
 
 /** The shared round "?" button used beside a sheet line. */
 export function InfoDot({ label, onClick }: { label: string; onClick: () => void }) {
@@ -41,13 +43,14 @@ function StatScale({ stat, value }: { stat: StatKey; value: number | null }) {
   const max = Math.max(range.max, value ?? range.max);
   const span = Math.max(1, max - min);
   const pct = value === null ? 0 : Math.max(0, Math.min(100, ((value - min) / span) * 100));
+  const band = value === null ? null : statBand(value);
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
         <span className="num font-mono text-xs text-text-dim">{min}</span>
         <div className="relative h-5 flex-1 overflow-hidden rounded-full border border-hairline bg-[color-mix(in_oklab,var(--color-surface)_70%,transparent)] shadow-[inset_0_1px_0_color-mix(in_oklab,white_12%,transparent)]">
           <div
-            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember/50 to-ember shadow-[0_0_14px_2px_color-mix(in_oklab,var(--color-ember)_55%,transparent)] transition-[width] duration-500"
+            className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ${band?.backgroundClass ?? "bg-surface-raised"} ${band?.borderClass ?? ""} border-r-2`}
             style={{ width: `${pct}%` }}
           />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-full bg-gradient-to-b from-white/12 to-transparent" />
@@ -66,6 +69,7 @@ function StatScale({ stat, value }: { stat: StatKey; value: number | null }) {
         {value === null ? "not set" : `you: ${value}`} · band seen in the Role templates {range.min}
         –{range.max}
       </p>
+      <StatBandIndicator value={value} />
     </div>
   );
 }

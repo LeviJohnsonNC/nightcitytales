@@ -33,6 +33,8 @@ import {
 import { readRoleLifepath } from "./roleLifepathState";
 import { SINGLE_LIFEPATH_TABLES } from "./lifepathState";
 import type { ChargenState } from "./store";
+import { StatLegend, StatValue } from "./StatValue";
+import { statBand } from "./statBands";
 
 function Panel({
   title,
@@ -96,7 +98,7 @@ function Box({
   className,
 }: {
   label: string;
-  value: string;
+  value: React.ReactNode;
   sub?: string | undefined;
   className?: string | undefined;
 }) {
@@ -105,7 +107,7 @@ function Box({
       className={`border border-hairline bg-surface-raised px-3 py-2 transition-colors ${className ?? ""}`}
     >
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">{label}</p>
-      <p className="num text-2xl font-bold leading-tight text-text">{value}</p>
+      <div className="num text-2xl font-bold leading-tight text-text">{value}</div>
       {sub && <p className="font-mono text-[10px] tracking-wide text-text-dim">{sub}</p>}
     </div>
   );
@@ -240,6 +242,7 @@ export function CharacterSheet({
 
       {/* 2 — STATs */}
       <Panel title="STATs" note="tap a STAT for what it is good for">
+        <StatLegend className="mb-3" />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {sheet.statOrder.map((stat) => {
             const value = sheet.stats[stat];
@@ -248,8 +251,8 @@ export function CharacterSheet({
               <StatInfoDialog key={stat} stat={stat} value={current ?? null}>
                 <Box
                   label={stat.toUpperCase()}
-                  value={current === null || current === undefined ? "—" : String(current)}
-                  className="cursor-pointer hover:border-primary/60 hover:bg-surface/80 hover:shadow-[0_0_10px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] active:bg-surface/60"
+                  value={<StatValue value={current} />}
+                  className={`${typeof current === "number" ? `${statBand(current).borderClass} ${statBand(current).backgroundClass}` : ""} cursor-pointer hover:border-primary/60 hover:bg-surface/80 hover:shadow-[0_0_10px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] active:bg-surface/60`}
                 />
               </StatInfoDialog>
             );
