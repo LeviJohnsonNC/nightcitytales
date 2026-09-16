@@ -14,7 +14,8 @@ import {
 import { STAT_DESCRIPTIONS, getSkill, statTemplateRange } from "@/engine";
 import type { StatKey } from "@/engine";
 import { STAT_FLAVOR } from "./statFlavor";
-import { StatBandIndicator, statBand } from "./StatValue";
+import { StatBandIndicator } from "./StatValue";
+import { statBand } from "./statBands";
 
 /** The shared round "?" button used beside a sheet line. */
 export function InfoDot({ label, onClick }: { label: string; onClick: () => void }) {

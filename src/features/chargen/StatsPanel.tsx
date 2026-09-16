@@ -16,7 +16,8 @@ import {
 import type { StatBlock, StatKey } from "@/engine";
 import { DiceRoll } from "./DiceRoll";
 import { StatTemplateTable } from "./StatTemplateTable";
-import { StatBandIndicator, StatLegend, StatValue, statBand } from "./StatValue";
+import { StatBandIndicator, StatLegend, StatValue } from "./StatValue";
+import { statBand } from "./statBands";
 import { appendRoll } from "./rollLogStore";
 import { useChargenStore, type ChargenState } from "./store";
 

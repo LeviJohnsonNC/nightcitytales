@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 import { STAT_ORDER, getStatTemplateRows } from "@/engine";
 import type { StatKey } from "@/engine";
-import { StatValue, statBand } from "./StatValue";
+import { StatValue } from "./StatValue";
+import { statBand } from "./statBands";
 
 const ROW_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 

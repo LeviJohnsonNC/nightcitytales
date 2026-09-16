@@ -33,7 +33,8 @@ import {
 import { readRoleLifepath } from "./roleLifepathState";
 import { SINGLE_LIFEPATH_TABLES } from "./lifepathState";
 import type { ChargenState } from "./store";
-import { StatLegend, StatValue, statBand } from "./StatValue";
+import { StatLegend, StatValue } from "./StatValue";
+import { statBand } from "./statBands";
 
 function Panel({
   title,
