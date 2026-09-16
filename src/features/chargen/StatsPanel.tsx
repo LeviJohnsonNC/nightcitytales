@@ -218,28 +218,28 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
           const value = state.stats[stat];
           const band = typeof value === "number" ? statBand(value) : null;
           return (
-          <div
-            key={stat}
-            className={cn(
-              "border bg-card p-3 text-center",
-              band?.borderClass ?? "border-border",
-              band?.backgroundClass,
-            )}
-          >
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              {stat.toUpperCase()}
-            </p>
-            <StatValue value={value} className="text-2xl font-bold" />
-            <div className="mt-2 flex justify-center" data-stat-die-wrap={stat}>
-              <DiceRoll
-                sides={10}
-                value={state.statRolls.rows[stat] ?? null}
-                label={`${state.stats[stat] === undefined ? "Roll" : "Re-roll"} 1d10 for ${stat.toUpperCase()}`}
-                buttonProps={{ "data-stat-die": stat }}
-                roll={() => rollStat(stat)}
-              />
+            <div
+              key={stat}
+              className={cn(
+                "border bg-card p-3 text-center",
+                band?.borderClass ?? "border-border",
+                band?.backgroundClass,
+              )}
+            >
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                {stat.toUpperCase()}
+              </p>
+              <StatValue value={value} className="text-2xl font-bold" />
+              <div className="mt-2 flex justify-center" data-stat-die-wrap={stat}>
+                <DiceRoll
+                  sides={10}
+                  value={state.statRolls.rows[stat] ?? null}
+                  label={`${state.stats[stat] === undefined ? "Roll" : "Re-roll"} 1d10 for ${stat.toUpperCase()}`}
+                  buttonProps={{ "data-stat-die": stat }}
+                  roll={() => rollStat(stat)}
+                />
+              </div>
             </div>
-          </div>
           );
         })}
       </div>
