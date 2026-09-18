@@ -71,6 +71,13 @@
       "focalPoint": [0.5, 0.35]
     }
   },
+  "sceneArt": {
+    "alley": {
+      "src": "/images/scenes/role-alley.webp",
+      "alt": "A guarded loading dock behind a chainlink fence, a delivery van backing toward the gate, Night City's towers lit up beyond the wall",
+      "focalPoint": [0.55, 0.72]
+    }
+  },
   "itemArt": {
     "gear.agent": {
       "src": "/images/gear/agent.webp",
