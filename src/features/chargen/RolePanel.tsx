@@ -121,6 +121,12 @@ function RoleTile({
  * one section short rather than as an empty heading. The scene image never
  * changes between Roles — that repetition is the point, so the comparison
  * lands on the two labeled parts that do change.
+ *
+ * The scene caption sits ON the picture, under the same gradient-scrim
+ * treatment the app already uses for text over key art (see the role banner
+ * above), rather than beside it — legible over the photo the way the role
+ * banner's own heading is, while the labeled Role text below it just uses the
+ * box's flat panel color. Two placements, both guaranteed readable.
  */
 function TheAlley({ roleId, roleName }: { roleId: string; roleName: string }) {
   const answer = roleAnswer(roleId);
@@ -128,12 +134,15 @@ function TheAlley({ roleId, roleName }: { roleId: string; roleName: string }) {
   return (
     <div className="space-y-2 border border-border bg-background/60 p-3">
       <Eyebrow>Same alley. Different read.</Eyebrow>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="h-32 w-full flex-shrink-0 overflow-hidden sm:h-auto sm:w-28">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        <div className="relative h-48 w-full flex-shrink-0 overflow-hidden sm:h-auto sm:w-1/2">
           <ArtSlot art={sceneArt("alley", "The alley")} label="The alley" className="border-0" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          <p className="absolute inset-x-0 bottom-0 p-3 text-sm italic leading-relaxed text-foreground [text-shadow:0_1px_4px_rgb(0_0_0_/_0.8)]">
+            {SHARED_SCENE}
+          </p>
         </div>
         <div className="min-w-0 flex-1 space-y-3">
-          <p className="text-sm italic leading-relaxed text-muted-foreground">{SHARED_SCENE}</p>
           <div className="space-y-1">
             <Eyebrow>How a {roleName} reads it</Eyebrow>
             <p className="border-l-2 border-accent pl-3 text-sm leading-relaxed">{answer.player}</p>
@@ -222,11 +231,6 @@ function RoleSpotlight({
       <div className="grid gap-4 p-4 lg:grid-cols-2 lg:gap-6">
         <div className="min-w-0 space-y-3">
           <TheAlley roleId={role.id} roleName={role.name} />
-          {plays && (
-            <p className="border-l-2 border-primary/70 bg-primary/5 px-3 py-2 text-sm leading-relaxed">
-              <span className="font-semibold text-primary">Plays like:</span> {plays}
-            </p>
-          )}
         </div>
 
         <div className="min-w-0 space-y-4 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
@@ -252,6 +256,13 @@ function RoleSpotlight({
           </div>
         </div>
       </div>
+
+      {/* Spans both columns above — a one-line pitch belongs to the whole Role, not one side of it. */}
+      {plays && (
+        <p className="border-l-2 border-t border-border border-l-primary/70 bg-primary/5 px-4 py-3 text-sm leading-relaxed">
+          <span className="font-semibold text-primary">Plays like:</span> {plays}
+        </p>
+      )}
 
       {/* Below the fold: the book's own words, for somebody already sold. */}
       <div className="space-y-3 border-t border-border bg-background/40 p-4">
