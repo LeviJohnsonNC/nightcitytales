@@ -136,9 +136,7 @@ function TheAlley({ roleId, roleName }: { roleId: string; roleName: string }) {
           <p className="text-sm italic leading-relaxed text-muted-foreground">{SHARED_SCENE}</p>
           <div className="space-y-1">
             <Eyebrow>How a {roleName} reads it</Eyebrow>
-            <p className="border-l-2 border-accent pl-3 text-sm leading-relaxed">
-              {answer.player}
-            </p>
+            <p className="border-l-2 border-accent pl-3 text-sm leading-relaxed">{answer.player}</p>
           </div>
           <div className="space-y-1">
             <Eyebrow>What they'd do here</Eyebrow>
