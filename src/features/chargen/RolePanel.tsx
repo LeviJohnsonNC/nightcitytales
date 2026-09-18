@@ -122,44 +122,43 @@ function RoleTile({
  * changes between Roles — that repetition is the point, so the comparison
  * lands on the two labeled parts that do change.
  *
- * The scene caption sits ON the picture, under the same gradient-scrim
- * treatment the app already uses for text over key art (see the role banner
- * above), rather than beside it — legible over the photo the way the role
- * banner's own heading is, while the labeled Role text below it just uses the
- * box's flat panel color. Two placements, both guaranteed readable.
+ * The picture runs the box's full width as a banner, scene caption burned
+ * into it under the same gradient-scrim treatment the role banner above uses
+ * for its own heading. The Role's two answers sit below it in their own
+ * tinted panels — accent for the read, primary for the moves — so the two
+ * kinds of answer are told apart at a glance rather than by reading the
+ * label first.
  */
 function TheAlley({ roleId, roleName }: { roleId: string; roleName: string }) {
   const answer = roleAnswer(roleId);
   if (!answer) return null;
   return (
-    <div className="space-y-2 border border-border bg-background/60 p-3">
+    <div className="space-y-3 border border-border bg-background/60 p-3">
       <Eyebrow>Same alley. Different read.</Eyebrow>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-        <div className="relative h-48 w-full flex-shrink-0 overflow-hidden sm:h-auto sm:w-1/2">
-          <ArtSlot art={sceneArt("alley", "The alley")} label="The alley" className="border-0" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-          <p className="absolute inset-x-0 bottom-0 p-3 text-sm italic leading-relaxed text-foreground [text-shadow:0_1px_4px_rgb(0_0_0_/_0.8)]">
-            {SHARED_SCENE}
-          </p>
+      <div className="relative h-56 w-full overflow-hidden sm:h-64">
+        <ArtSlot art={sceneArt("alley", "The alley")} label="The alley" className="border-0" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <p className="absolute inset-x-0 bottom-0 p-4 text-sm italic leading-relaxed text-foreground [text-shadow:0_1px_4px_rgb(0_0_0_/_0.85)] sm:text-base">
+          {SHARED_SCENE}
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2 border-l-2 border-accent bg-accent/5 p-3">
+          <Eyebrow>How a {roleName} reads it</Eyebrow>
+          <p className="text-sm leading-relaxed">{answer.player}</p>
         </div>
-        <div className="min-w-0 flex-1 space-y-3">
-          <div className="space-y-1">
-            <Eyebrow>How a {roleName} reads it</Eyebrow>
-            <p className="border-l-2 border-accent pl-3 text-sm leading-relaxed">{answer.player}</p>
-          </div>
-          <div className="space-y-1">
-            <Eyebrow>What they'd do here</Eyebrow>
-            <ol className="space-y-1">
-              {answer.answers.map((line, i) => (
-                <li key={line} className="flex gap-2 text-sm leading-relaxed">
-                  <span aria-hidden className="font-mono text-accent">
-                    {i + 1}.
-                  </span>
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+        <div className="space-y-2 border-l-2 border-primary bg-primary/5 p-3">
+          <Eyebrow>What they'd do here</Eyebrow>
+          <ol className="space-y-2">
+            {answer.answers.map((line, i) => (
+              <li key={line} className="flex gap-2 text-sm leading-relaxed">
+                <span aria-hidden className="font-mono font-bold text-primary">
+                  {i + 1}.
+                </span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
     </div>
