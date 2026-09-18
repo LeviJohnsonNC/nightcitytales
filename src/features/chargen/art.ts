@@ -68,6 +68,7 @@ export type PortraitEntry = {
 
 type Manifest = {
   roleArt?: Record<string, Partial<ArtEntry> | undefined>;
+  sceneArt?: Record<string, Partial<ArtEntry> | undefined>;
   itemArt?: Record<string, Partial<ArtEntry> | undefined>;
   portraits?: PortraitEntry[];
 };
@@ -118,6 +119,22 @@ export function roleArt(roleId: string, roleName: string): ResolvedArt {
     srcSet: srcSetFor(src),
     alt: entry?.alt ?? `${roleName} key art`,
     focalPoint: (entry?.focalPoint as FocalPoint | undefined) ?? [0.5, 0.35],
+  };
+}
+
+/**
+ * Art for a fixed narrative scene (e.g. the alley every Role is shown), resolved
+ * through the same pointer -> src -> placeholder order as everything else.
+ */
+export function sceneArt(key: string, label: string): ResolvedArt {
+  const entry = manifest.sceneArt?.[key];
+  const src = pointerUrl(entry?.pointer) ?? entry?.src ?? null;
+  return {
+    assetId: `sceneArt.${key}`,
+    src,
+    srcSet: srcSetFor(src),
+    alt: entry?.alt ?? `${label} art`,
+    focalPoint: (entry?.focalPoint as FocalPoint | undefined) ?? [0.5, 0.5],
   };
 }
 

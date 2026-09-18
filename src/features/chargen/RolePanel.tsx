@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { SHARED_SCENE, roleAnswer, roleOpening, type RoleOpening } from "@/engine";
 import { cn } from "@/lib/utils";
 import { ArtSlot } from "./ArtSlot";
-import { roleArt } from "./art";
+import { roleArt, sceneArt } from "./art";
 import { ROLE_HOOK, ROLE_PLAYS_LIKE } from "./copy";
 import { emphasizeTerms, loreParagraphs } from "./loreFormat";
 import type { ChargenState } from "./store";
@@ -118,26 +118,43 @@ function RoleTile({
  * The same alley, answered by this Role.
  *
  * Renders nothing when the data has no answer, so a Role added later reads as
- * one section short rather than as an empty heading.
+ * one section short rather than as an empty heading. The scene image never
+ * changes between Roles — that repetition is the point, so the comparison
+ * lands on the two labeled parts that do change.
  */
-function TheAlley({ roleId }: { roleId: string }) {
+function TheAlley({ roleId, roleName }: { roleId: string; roleName: string }) {
   const answer = roleAnswer(roleId);
   if (!answer) return null;
   return (
     <div className="space-y-2 border border-border bg-background/60 p-3">
-      <Eyebrow>The same alley, every Role</Eyebrow>
-      <p className="text-sm italic leading-relaxed text-muted-foreground">{SHARED_SCENE}</p>
-      <p className="border-l-2 border-accent pl-3 text-sm leading-relaxed">{answer.player}</p>
-      <ul className="space-y-1">
-        {answer.answers.map((line) => (
-          <li key={line} className="flex gap-2 text-sm leading-relaxed">
-            <span aria-hidden className="text-accent">
-              →
-            </span>
-            <span>{line}</span>
-          </li>
-        ))}
-      </ul>
+      <Eyebrow>Same alley. Different read.</Eyebrow>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="h-32 w-full flex-shrink-0 overflow-hidden sm:h-auto sm:w-28">
+          <ArtSlot art={sceneArt("alley", "The alley")} label="The alley" className="border-0" />
+        </div>
+        <div className="min-w-0 flex-1 space-y-3">
+          <p className="text-sm italic leading-relaxed text-muted-foreground">{SHARED_SCENE}</p>
+          <div className="space-y-1">
+            <Eyebrow>How a {roleName} reads it</Eyebrow>
+            <p className="border-l-2 border-accent pl-3 text-sm leading-relaxed">
+              {answer.player}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Eyebrow>What they'd do here</Eyebrow>
+            <ol className="space-y-1">
+              {answer.answers.map((line, i) => (
+                <li key={line} className="flex gap-2 text-sm leading-relaxed">
+                  <span aria-hidden className="font-mono text-accent">
+                    {i + 1}.
+                  </span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -206,7 +223,7 @@ function RoleSpotlight({
 
       <div className="grid gap-4 p-4 lg:grid-cols-2 lg:gap-6">
         <div className="min-w-0 space-y-3">
-          <TheAlley roleId={role.id} />
+          <TheAlley roleId={role.id} roleName={role.name} />
           {plays && (
             <p className="border-l-2 border-primary/70 bg-primary/5 px-3 py-2 text-sm leading-relaxed">
               <span className="font-semibold text-primary">Plays like:</span> {plays}
