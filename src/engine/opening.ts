@@ -17,8 +17,8 @@
 export const OPENING_CHOICES = [
   "take_work",
   "see_someone",
-  "walk_the_block",
-  "handle_business",
+  "just_living",
+  "role_action",
 ] as const;
 
 export type OpeningChoice = (typeof OPENING_CHOICES)[number];
@@ -39,10 +39,10 @@ export const OPENING_MEANINGS: Record<OpeningChoice, string> = {
     "the character goes looking for paying work tonight, and finds some. A real job lands on the table as an offer they can question, argue over or turn down.",
   see_someone:
     "the character goes to see one specific person they already know, because something between them is unfinished.",
-  walk_the_block:
-    "the character stays on their own streets and pays attention to them. No plan, no appointment.",
-  handle_business:
-    "the character deals with their own life first: the rent, the debt, the thing that has been sitting there.",
+  just_living:
+    "the character stays home for the night, no plan and no appointment, and the game shows them their own life as it actually stands right now: the apartment, what they own, what they owe.",
+  role_action:
+    "the character does one small thing tonight that only someone with their training and instincts would think to do — not a job, no client, no pay, just the kind of move their Role makes without thinking about it.",
 };
 
 /**
@@ -62,13 +62,13 @@ export const OPENING_FALLBACK: Record<OpeningChoice, { label: string; line: stri
     label: "Go see someone",
     line: "There is a conversation you have been putting off.",
   },
-  walk_the_block: {
-    label: "Walk your own streets",
-    line: "No appointment. Just see what the block is doing.",
+  just_living: {
+    label: "Stay home tonight",
+    line: "No plan. Just your own four walls and what's actually in them.",
   },
-  handle_business: {
-    label: "Handle your own business",
-    line: "Rent, debts, the thing on the counter. Deal with it.",
+  role_action: {
+    label: "Do the thing you're good at",
+    line: "Not a job. Just the kind of move you make without thinking.",
   },
 };
 

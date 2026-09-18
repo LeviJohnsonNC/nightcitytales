@@ -10,7 +10,14 @@
  *
  * Pure. No React, no network, no writes.
  */
-import { billsDue, districtOfPlace, getCyberware, getPlace, type CastMember } from "@/engine";
+import {
+  billsDue,
+  districtOfPlace,
+  getCyberware,
+  getPlace,
+  roleAffordance,
+  type CastMember,
+} from "@/engine";
 import { lifestyleRates, paidThroughDay } from "@/features/downtime/downtimeModel";
 import type { Campaign, CampaignVitals, FullCharacter } from "@/lib/backend";
 
@@ -68,6 +75,15 @@ export type OpeningFacts = {
    */
   cyberware: string[];
   hour: string;
+  /**
+   * What this Role reaches for, from `role-affordances.json` — the same house
+   * rule the narrator's own context uses. Only the "role_action" door needs it,
+   * but it costs nothing to hand to the model unconditionally: it is written
+   * for exactly this purpose (a shape of move only this Role thinks of first,
+   * never a line to read back verbatim), and it is null for a Role the data
+   * does not know rather than missing the field entirely.
+   */
+  roleReach: { reach: string; options: string[] } | null;
 };
 
 function entryText(raw: unknown): string | null {
@@ -168,6 +184,7 @@ export function buildOpeningFacts(input: {
   const place = homeKey ? getPlace(homeKey) : undefined;
   const district = homeKey ? districtOfPlace(homeKey) : undefined;
   const ties = lifepathTies(character);
+  const affordance = roleAffordance(character.character.role);
 
   return {
     name: character.character.name,
@@ -203,6 +220,7 @@ export function buildOpeningFacts(input: {
     })),
     cyberware: cyberwareNames(character),
     hour: hourWords(campaign.minute ?? 0),
+    roleReach: affordance ? { reach: affordance.reach, options: affordance.options } : null,
   };
 }
 
