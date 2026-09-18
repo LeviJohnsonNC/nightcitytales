@@ -209,12 +209,10 @@ Routes under `src/routes/_authenticated/` require a Supabase user session:
 - `/roster`
 - `/character/:id`
 - `/play/:id`
-- `/combat` — the battlefield harness, a developer tool. Deliberately unlinked
-  from navigation. Because it writes to real campaign data, it is gated by
-  `src/features/dev/harnessEnabled.ts`: on in `bun run dev`, on in a preview
-  that sets `VITE_COMBAT_HARNESS=1`, off in production. It is not gated on
-  `import.meta.env.DEV` alone, because the preview is exactly where it is
-  wanted and DEV is false there.
+- `/combat` — the battlefield harness, a developer tool that writes to real
+  campaign data. Deliberately unlinked from navigation; reaching it still
+  requires a signed-in Supabase session, same as every other route under this
+  layout.
 
 The protected layout currently performs a client-side session check with SSR
 disabled. Database authorization must still rely on RLS rather than the route
