@@ -14,12 +14,7 @@
  * Pure data and types. The feature layer applies them.
  */
 
-export const OPENING_CHOICES = [
-  "take_work",
-  "see_someone",
-  "just_living",
-  "role_action",
-] as const;
+export const OPENING_CHOICES = ["take_work", "see_someone", "just_living", "role_action"] as const;
 
 export type OpeningChoice = (typeof OPENING_CHOICES)[number];
 

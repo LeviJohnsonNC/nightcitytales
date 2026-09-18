@@ -196,12 +196,12 @@ already holds — lifepath, Role, home place and its dials, known truths, starti
 Lifestyle and what is owed — and returns **four openings** drawn from a closed
 vocabulary. The model writes the flavour; the engine owns the consequence:
 
-| Choice         | What the engine does                                                       |
-| -------------- | -------------------------------------------------------------------------- |
-| `take_work`    | Seeds a mission — the authored opener or a generated job — and enters HOOK |
-| `see_someone`  | Seeds a `people` situation against a seeded cast NPC; stays in LIFE        |
-| `just_living`  | Seeds a `need` situation grounded at home; stays in LIFE                   |
-| `role_action`  | Seeds an `opportunity` situation from the character's Role affordance; stays in LIFE |
+| Choice        | What the engine does                                                                 |
+| ------------- | ------------------------------------------------------------------------------------ |
+| `take_work`   | Seeds a mission — the authored opener or a generated job — and enters HOOK           |
+| `see_someone` | Seeds a `people` situation against a seeded cast NPC; stays in LIFE                  |
+| `just_living` | Seeds a `need` situation grounded at home; stays in LIFE                             |
+| `role_action` | Seeds an `opportunity` situation from the character's Role affordance; stays in LIFE |
 
 This is the same split as the hook offer: closed vocabulary in, deterministic
 transition out, prose around it. Three of the four open the game in **Life**,
