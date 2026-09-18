@@ -56,6 +56,7 @@ ${CHOICE_LIST}
 Your job is to write how each one sounds TO THIS CHARACTER TONIGHT, from the scene you just wrote.
 - "label": how the character would put it to themselves. Under six words. An action, not a category. "Answer the fixer" beats "Find work". "Go see Mara" beats "Meet an NPC". Use real names from the material when the door points at a person.
 - "line": one sentence, under twenty words, of what taking it means right now. Concrete and specific to the scene you wrote — refer to the thing on the counter, the person who has not called back, the street outside this building.
+- For "role_action", ground it in the material's "roleReach" field — what this Role actually reaches for, and the shapes of move only they would think of first. Pick or adapt ONE, phrased as this character's own instinct tonight, never read back as a list.
 - Never promise an outcome, never mention dice, difficulty, rewards, money or game systems, and never say "you could".
 - All four must feel live. The one they do not pick should sting slightly.
 

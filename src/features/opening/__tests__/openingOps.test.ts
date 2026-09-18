@@ -53,10 +53,10 @@ const person = (over: Partial<CastMember> = {}): CastMember =>
     dossier: { wants: "w", fear: "f", secret: "s", breakingPoint: "b" },
   }) as CastMember;
 
-const bundle = (cast: CastMember[] = []) => ({
+const bundle = (cast: CastMember[] = [], role: string | null = "rockerboy") => ({
   campaign: campaign(),
   vitals: {} as CampaignVitals,
-  character: {} as FullCharacter,
+  character: { character: { role } } as unknown as FullCharacter,
   cast,
 });
 
@@ -102,7 +102,7 @@ describe("the four doors diverge", () => {
   });
 
   it("the other three leave the campaign in Life", async () => {
-    for (const choice of ["see_someone", "walk_the_block", "handle_business"] as const) {
+    for (const choice of ["see_someone", "just_living", "role_action"] as const) {
       setCampaignPhase.mockClear();
       await chooseOpening(bundle(), choice);
       expect(setCampaignPhase, choice).not.toHaveBeenCalled();
@@ -111,13 +111,25 @@ describe("the four doors diverge", () => {
 
   it("seeds a different kind of situation for each", async () => {
     const categories: string[] = [];
-    for (const choice of ["see_someone", "walk_the_block", "handle_business"] as const) {
+    for (const choice of ["see_someone", "just_living", "role_action"] as const) {
       upsertSituations.mockClear();
       await chooseOpening(bundle([person()]), choice);
       categories.push(upsertSituations.mock.calls[0]?.[1]?.[0]?.category ?? "");
     }
-    expect(categories).toEqual(["people", "opportunity", "need"]);
+    expect(categories).toEqual(["people", "need", "opportunity"]);
     expect(new Set(categories).size).toBe(3);
+  });
+
+  it("role_action grounds the situation in the character's own Role", async () => {
+    await chooseOpening(bundle([], "rockerboy"), "role_action");
+    const row = upsertSituations.mock.calls[0]?.[1]?.[0] as { summary?: string };
+    expect(row?.summary).toMatch(/lever/);
+  });
+
+  it("role_action still works for a Role the affordance data does not know", async () => {
+    await chooseOpening(bundle([], null), "role_action");
+    const row = upsertSituations.mock.calls[0]?.[1]?.[0];
+    expect(row?.category).toBe("opportunity");
   });
 
   it("points see_someone at the person the character is closest to", async () => {
@@ -139,13 +151,13 @@ describe("the four doors diverge", () => {
 
 describe("the flag that says the opening is done", () => {
   it("records which door was taken", async () => {
-    await chooseOpening(bundle(), "walk_the_block");
-    expect(setCampaignFlag).toHaveBeenCalledWith("c1", OPENING_FLAG, "walk_the_block");
+    await chooseOpening(bundle(), "just_living");
+    expect(setCampaignFlag).toHaveBeenCalledWith("c1", OPENING_FLAG, "just_living");
   });
 
   it("is written last, so a failed consequence leaves the opening retryable", async () => {
     upsertSituations.mockRejectedValueOnce(new Error("the write failed"));
-    await expect(chooseOpening(bundle(), "handle_business")).rejects.toThrow("the write failed");
+    await expect(chooseOpening(bundle(), "role_action")).rejects.toThrow("the write failed");
     // No flag means needsOpening is still true, so the player gets the screen
     // back rather than a campaign that recorded a choice nothing acted on.
     expect(setCampaignFlag).not.toHaveBeenCalled();

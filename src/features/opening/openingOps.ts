@@ -19,6 +19,7 @@ import {
   missionOffer,
   nextPhase,
   phaseOf,
+  roleAffordance,
   type CastMember,
   type OpeningChoice,
 } from "@/engine";
@@ -171,33 +172,53 @@ async function seedSeeSomeone(campaignId: string, cast: CastMember[], day: numbe
   ]);
 }
 
-/** The block itself: no appointment, no plan, just the streets they live on. */
-async function seedWalkTheBlock(campaignId: string, day: number): Promise<void> {
+/**
+ * No client, no appointment — just the apartment they're paying for and
+ * everything it doesn't quite cover. A `need`, same funnel slot the old
+ * rent-and-debt door used: what changed is the framing, not the category.
+ * How broke that actually feels is not decided here — the Life turn that
+ * reads this situation already has the character's real money band, the same
+ * way it does for every other situation, so an Exec who is genuinely flush
+ * and a Nomad who is genuinely desperate each get their own truth rather than
+ * a line hardcoded to their Role.
+ */
+async function seedJustLiving(campaignId: string, day: number): Promise<void> {
   await upsertSituations(campaignId, [
     {
-      situationKey: situationKey("walk_the_block"),
-      category: "opportunity",
-      title: "Your own streets, at your own pace",
+      situationKey: situationKey("just_living"),
+      category: "need",
+      title: "Your own place, for a change",
       summary:
-        "Nobody is expecting you anywhere. Whatever is happening out there is happening whether you watch it or not.",
+        "Nobody is expecting you anywhere tonight. Just this apartment, what's in it, and what it's costing you.",
       status: "live",
-      severity: 2,
+      severity: 3,
       dueDay: day,
     },
   ]);
 }
 
-/** The rent, the debt, the thing that has been sitting there. */
-async function seedHandleBusiness(campaignId: string, day: number): Promise<void> {
+/**
+ * Not a job — the small thing this Role does without being asked.
+ *
+ * The engine's own stored copy stays generic and Role-agnostic on purpose,
+ * the same as every other door's situation: the specific, varied version of
+ * this already happened once, in the door's own model-written line, drawn
+ * from this Role's real `role-affordances.json` entry. Falls back gracefully
+ * for a Role the data does not know, because a missing house-rule entry is
+ * never a reason to fail somebody's first night.
+ */
+async function seedRoleAction(campaignId: string, role: string | null, day: number): Promise<void> {
+  const affordance = roleAffordance(role);
   await upsertSituations(campaignId, [
     {
-      situationKey: situationKey("handle_business"),
-      category: "need",
-      title: "Your own house, first",
-      summary:
-        "What you owe does not care what kind of night you were planning. Settle it, or decide not to.",
+      situationKey: situationKey("role_action"),
+      category: "opportunity",
+      title: affordance ? "The kind of thing you do without thinking" : "A small thing worth doing",
+      summary: affordance
+        ? affordance.reach
+        : "Not everything worth doing tonight is a job somebody else is paying for.",
       status: "live",
-      severity: 3,
+      severity: 2,
       dueDay: day,
     },
   ]);
@@ -221,11 +242,11 @@ export async function chooseOpening(bundle: OpeningBundle, choice: OpeningChoice
     case "see_someone":
       await seedSeeSomeone(campaignId, bundle.cast, day);
       break;
-    case "walk_the_block":
-      await seedWalkTheBlock(campaignId, day);
+    case "just_living":
+      await seedJustLiving(campaignId, day);
       break;
-    case "handle_business":
-      await seedHandleBusiness(campaignId, day);
+    case "role_action":
+      await seedRoleAction(campaignId, bundle.character.character.role, day);
       break;
   }
 

@@ -105,6 +105,21 @@ describe("the material the prose is written from", () => {
     expect(facts({ vitals: vitals({ hp_current: 12 }) }).condition).not.toBeNull();
   });
 
+  it("carries the character's Role reach, for the role_action door", () => {
+    expect(facts().roleReach?.reach).toMatch(/exits, angles/);
+    expect(facts().roleReach?.options.length).toBeGreaterThan(0);
+  });
+
+  it("is null for a Role the affordance data does not know", () => {
+    const f = buildOpeningFacts({
+      campaign: campaign(),
+      vitals: vitals(),
+      character: character({ character: { id: "ch1", name: "Mara Vance", role: "nobody" } }),
+      cast: [],
+    });
+    expect(f.roleReach).toBeNull();
+  });
+
   it("gives the hour in words, because the clock is the engine's", () => {
     expect(hourWords(0)).toBe("the small hours");
     expect(hourWords(9 * 60)).toBe("morning");
