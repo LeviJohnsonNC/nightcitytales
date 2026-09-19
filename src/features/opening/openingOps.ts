@@ -182,7 +182,7 @@ async function seedSeeSomeone(campaignId: string, cast: CastMember[], day: numbe
  * and a Nomad who is genuinely desperate each get their own truth rather than
  * a line hardcoded to their Role.
  */
-async function seedJustLiving(campaignId: string, day: number): Promise<void> {
+async function seedJustLiving(campaignId: string): Promise<void> {
   await upsertSituations(campaignId, [
     {
       situationKey: situationKey("just_living"),
@@ -192,7 +192,12 @@ async function seedJustLiving(campaignId: string, day: number): Promise<void> {
         "Nobody is expecting you anywhere tonight. Just this apartment, what's in it, and what it's costing you.",
       status: "live",
       severity: 3,
-      dueDay: day,
+      // No due day, and flagged as the night's PREMISE rather than something
+      // owed: nobody is waiting, which is the whole point of this door. The
+      // status rail reads the flag and leaves it out of the commitments count,
+      // which otherwise opened the game claiming one thing was due today over
+      // a summary saying nothing was expected of you.
+      data: { premise: true },
     },
   ]);
 }
@@ -243,7 +248,7 @@ export async function chooseOpening(bundle: OpeningBundle, choice: OpeningChoice
       await seedSeeSomeone(campaignId, bundle.cast, day);
       break;
     case "just_living":
-      await seedJustLiving(campaignId, day);
+      await seedJustLiving(campaignId);
       break;
     case "role_action":
       await seedRoleAction(campaignId, bundle.character.character.role, day);

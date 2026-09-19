@@ -56,14 +56,24 @@ const view = () =>
 describe("the rail renders", () => {
   const html = renderToStaticMarkup(<StatusRail status={view()} />);
 
-  it("shows the balance when the next bill is too far away to act on", () => {
-    // Fifty days out: a countdown nobody can do anything about is not a chip.
-    expect(html).toContain("€$4,350");
+  it("puts the balance on the money chip and nothing beside it", () => {
+    expect(html).toContain("€4,350");
     expect(html).not.toContain("rent in");
+    expect(html).not.toContain("€$");
   });
 
-  it("leads the growth chip with the distance to the next raise", () => {
-    expect(html).toMatch(/3 IP · \d+ more for Handgun 4→5/);
+  it("leads the growth chip with the distance, not the name of the Skill", () => {
+    expect(html).toMatch(/3 IP · \d+ to next Skill/);
+    // The raise is still named where the choice is actually made — the panel
+    // behind the chip, which statusModel still hands the whole SkillRaise to.
+    expect(html).not.toContain("Handgun");
+    expect(view().growth.next?.skillName).toBe("Handgun");
+  });
+
+  it("gives each chip a caret big enough to press", () => {
+    // Three chips, three carets, each one a 2rem box rather than a 10px glyph.
+    expect(html.split("lucide-chevron-down").length - 1).toBe(3);
+    expect(html).toContain("size-8");
   });
 
   it("counts the commitments and not the leads", () => {
@@ -98,7 +108,7 @@ describe("the commitments panel", () => {
 describe("the collapsed strip", () => {
   it("carries all three facts on one line for a screen that cannot spare three", () => {
     const html = renderToStaticMarkup(<StatusStrip status={view()} />);
-    expect(html).toContain("€$4,350");
+    expect(html).toContain("€4,350");
     expect(html).toContain("3 IP");
     expect(html).toContain("2 open");
   });

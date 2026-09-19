@@ -8,9 +8,12 @@
  *
  * The ruling behind every line here is `PRODUCT.md`'s: money "should produce
  * decisions, not a score", and "Eurobucks that only ever go up have stopped
- * being a mechanic". So the money chip leads with the RUNWAY rather than the
- * balance, growth leads with the DISTANCE to the next thing rather than a
- * total, and the commitments list holds what the player actually took on.
+ * being a mechanic". The runway is still what this module computes — what is
+ * owed, what lands next, how short of it the character is — but it reaches the
+ * player as the chip's COLOUR and as the panel behind it rather than as a
+ * clause on its face, which is what the face was asked to stop carrying.
+ * Growth leads with the DISTANCE to the next Skill rather than a total, and
+ * the commitments list holds what the player actually took on.
  *
  * Pure and React-free, like the rest of the *Model/*Ops layer. Every number is
  * derived: nothing here is stored, so nothing here can drift out of step with
@@ -33,7 +36,7 @@ import {
 import type { Campaign, CampaignVitals, FullCharacter } from "@/lib/backend";
 
 // ---------------------------------------------------------------------------
-// Money — the runway, not the balance.
+// Money — the balance on the face, the runway behind it.
 // ---------------------------------------------------------------------------
 
 /** How close the next bill is. Drives the colour, so it is named, not a number. */
@@ -53,6 +56,17 @@ export const MONEY_WARNING_DAYS = 7;
  */
 export const MONEY_HORIZON_DAYS = 30;
 
+/**
+ * Money, written the way the game writes it.
+ *
+ * One spelling, exported, because the rail and the receipt strip sit two
+ * centimetres apart and a screen that says €400 in one and €$400 in the other
+ * is a screen with two currencies on it.
+ */
+export function formatMoney(value: number): string {
+  return `€${value.toLocaleString()}`;
+}
+
 export type MoneyStatus = {
   eurobucks: number;
   rates: LifestyleRates;
@@ -68,7 +82,7 @@ export type MoneyStatus = {
   /** Short of what is owed (or of the next month's costs) by this much. */
   short: number;
   tone: MoneyTone;
-  /** The face of the chip: what the player needs to know in five words. */
+  /** The face of the chip: the balance, and nothing competing with it. */
   line: string;
 };
 
@@ -97,7 +111,7 @@ export function moneyStatus(input: {
   // A character nobody charges has no runway to show, and inventing one would
   // be inventing a pressure the rules do not put on them.
   const nearestDue = input.nearestDue ?? null;
-  const balance = `€$${eurobucks.toLocaleString()}`;
+  const balance = formatMoney(eurobucks);
 
   if (rates.perMonth <= 0) {
     return {
@@ -108,7 +122,7 @@ export function moneyStatus(input: {
       nextUp: nearestDue,
       short: 0,
       tone: nearestDue && nearestDue.inDays <= MONEY_WARNING_DAYS ? "soon" : "ok",
-      line: nearestDue ? `${balance} · ${dueClause(nearestDue)}` : balance,
+      line: balance,
     };
   }
 
@@ -133,18 +147,16 @@ export function moneyStatus(input: {
   const tone: MoneyTone =
     owed > 0 ? "due" : nextUp !== null && nextUp.inDays <= MONEY_WARNING_DAYS ? "soon" : "ok";
 
-  const line =
-    owed > 0
-      ? `${balance} · €$${owed.toLocaleString()} owed`
-      : nextUp
-        ? `${balance} · ${dueClause(nextUp)}`
-        : balance;
-
-  return { eurobucks, rates, owed, daysToNextBill, nextUp, short, tone, line };
+  // The face of the chip is the balance and nothing else. What is owed and
+  // what is coming still decide the COLOUR, and still print in full one tap
+  // down — the runway reading this module was built around now lives in
+  // `nextUp` and in MoneyDetail rather than in a clause the eye has to parse
+  // every time it passes.
+  return { eurobucks, rates, owed, daysToNextBill, nextUp, short, tone, line: balance };
 }
 
 /** "rent in 11d", "the clinic today", "Kiro's money 2d late". */
-function dueClause(due: { label: string; inDays: number }): string {
+export function dueClause(due: { label: string; inDays: number }): string {
   if (due.inDays < 0) return `${due.label} ${Math.abs(due.inDays)}d late`;
   if (due.inDays === 0) return `${due.label} today`;
   return `${due.label} in ${due.inDays}d`;
@@ -184,13 +196,19 @@ export function growthStatus(input: {
   if (!next) return { ip, next: null, gap: 0, ready: false, line: `${ip} IP` };
 
   const gap = Math.max(0, next.cost - ip);
-  const label = `${next.skillName} ${next.currentLevel}→${next.nextLevel}`;
+  // Which Skill it is does not belong on the face of the chip: the player is
+  // reading a distance, not choosing a purchase, and the name of the cheapest
+  // raise changes under them every time they bank a point. The detail panel
+  // still says which one, because that is where the choice is actually made.
   return {
     ip,
     next,
     gap,
     ready: gap === 0,
-    line: gap === 0 ? `${ip} IP · ${label} ready` : `${ip} IP · ${gap} more for ${label}`,
+    // Kept short deliberately: the chip's line truncates at the rail's width,
+    // and "30 more for the next Skill" is the exact length that loses its own
+    // last word to an ellipsis in a 20rem column.
+    line: gap === 0 ? `${ip} IP · next Skill ready` : `${ip} IP · ${gap} to next Skill`,
   };
 }
 
@@ -250,6 +268,20 @@ function isCommitted(category: string): boolean {
   return (COMMITTED_CATEGORIES as readonly string[]).includes(category);
 }
 
+/**
+ * A situation that frames the night rather than asking anything of the player.
+ *
+ * The opening's "just living" door is the case this exists for: it is a `need`
+ * so the narrator keeps seeing it, but nobody is waiting and nothing is owed,
+ * and counting it read as "1 open · 1 due today" over a summary that says in
+ * as many words that nothing is expected of you tonight. A premise is carried
+ * by the situation itself — `data.premise` — rather than guessed at here from
+ * its key, because the next one will not be called `opening_just_living`.
+ */
+function isPremise(situation: LifeSituation): boolean {
+  return situation.data?.["premise"] === true;
+}
+
 /** A clock's fill as a 1-5 severity, so it sorts beside everything else. */
 export function clockSeverity(clock: LifeClock): number {
   if (clock.segments <= 0) return 1;
@@ -279,7 +311,7 @@ export function commitmentsStatus(input: {
   }));
 
   const fromSituations: Commitment[] = input.situations
-    .filter((s) => s.status === "live" && isCommitted(s.category))
+    .filter((s) => s.status === "live" && isCommitted(s.category) && !isPremise(s))
     .map((s) => ({
       key: `situation:${s.key}`,
       kind: s.category as CommitmentKind,
@@ -307,7 +339,7 @@ export function commitmentsStatus(input: {
   );
 
   const leads: Lead[] = input.situations
-    .filter((s) => s.status === "live" && !isCommitted(s.category))
+    .filter((s) => s.status === "live" && !isCommitted(s.category) && !isPremise(s))
     .sort((a, b) => b.severity - a.severity)
     .map((s) => ({ key: s.key, title: s.title, detail: s.summary, severity: s.severity }));
 

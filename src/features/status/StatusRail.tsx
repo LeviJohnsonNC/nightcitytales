@@ -10,10 +10,12 @@
  * nothing here computes a price, a date or a count.
  */
 import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import {
   dueLabel,
+  formatMoney,
   type Commitment,
   type CommitmentsStatus,
   type GrowthStatus,
@@ -29,8 +31,22 @@ const TONE_CLASS: Record<MoneyTone, string> = {
   due: "text-destructive",
 };
 
-function money(value: number): string {
-  return `€$${value.toLocaleString()}`;
+/**
+ * The affordance that says a chip opens.
+ *
+ * It was a 10px glyph in muted grey, which on a phone is a target you aim at
+ * rather than press. A real icon in a bordered box: the whole row is still the
+ * button, and this is the part of it the eye and the thumb both find.
+ */
+function Caret({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`flex size-8 shrink-0 items-center justify-center border border-hairline bg-surface/60 text-accent transition-[transform,border-color,color] duration-200 group-hover:border-accent/60 group-hover:text-foreground group-data-[state=open]:rotate-180 ${className ?? ""}`}
+    >
+      <ChevronDown className="size-5" strokeWidth={2.5} />
+    </span>
+  );
 }
 
 /** One chip: a label, the line that matters, and the detail behind it. */
@@ -47,16 +63,14 @@ function Chip({
 }) {
   return (
     <Collapsible className="border-b border-border/50 last:border-b-0">
-      <CollapsibleTrigger className="flex min-h-11 w-full items-center justify-between gap-3 py-2 text-left">
+      <CollapsibleTrigger className="group flex min-h-14 w-full items-center justify-between gap-3 py-2 text-left">
         <span className="min-w-0">
           <Label>{label}</Label>
           <span className={`num block truncate text-sm font-bold ${tone ?? "text-foreground"}`}>
             {line}
           </span>
         </span>
-        <span aria-hidden className="shrink-0 font-mono text-[10px] text-muted-foreground">
-          ▾
-        </span>
+        <Caret />
       </CollapsibleTrigger>
       <CollapsibleContent className="pb-3">{children}</CollapsibleContent>
     </Collapsible>
@@ -77,21 +91,24 @@ function MoneyDetail({ status }: { status: MoneyStatus }) {
   const { rates } = status;
   return (
     <div className="space-y-1">
-      <Row left="On hand" right={money(status.eurobucks)} />
+      <Row left="On hand" right={formatMoney(status.eurobucks)} />
       {rates.granted ? (
         <Row left={`${rates.housingName} (Role ability)`} right="—" />
       ) : (
-        <Row left={`Rent · ${rates.housingName}`} right={`${money(rates.rent)}/mo`} />
+        <Row left={`Rent · ${rates.housingName}`} right={`${formatMoney(rates.rent)}/mo`} />
       )}
-      <Row left={`Lifestyle · ${rates.lifestyleName}`} right={`${money(rates.lifestyleCost)}/mo`} />
+      <Row
+        left={`Lifestyle · ${rates.lifestyleName}`}
+        right={`${formatMoney(rates.lifestyleCost)}/mo`}
+      />
       {status.owed > 0 ? (
-        <Row left="Owed now" right={money(status.owed)} />
+        <Row left="Owed now" right={formatMoney(status.owed)} />
       ) : (
         <Row left="Next due" right={`day ${status.daysToNextBill} from now`} />
       )}
       {status.short > 0 && (
         <p className="pt-1 text-xs text-destructive">
-          Short {money(status.short)} of what is coming.
+          Short {formatMoney(status.short)} of what is coming.
         </p>
       )}
     </div>
@@ -268,7 +285,7 @@ export function StatusRail({ status }: { status: StatusView }) {
 export function StatusStrip({ status }: { status: StatusView }) {
   return (
     <Collapsible className="border border-border bg-card">
-      <CollapsibleTrigger className="flex min-h-11 w-full items-center gap-3 overflow-x-auto px-3 py-2 text-left">
+      <CollapsibleTrigger className="group flex min-h-12 w-full items-center gap-3 overflow-x-auto px-3 py-2 text-left">
         <span className={`num shrink-0 text-xs font-bold ${TONE_CLASS[status.money.tone]}`}>
           {status.money.line}
         </span>
@@ -276,9 +293,7 @@ export function StatusStrip({ status }: { status: StatusView }) {
         <span className="num shrink-0 text-xs text-muted-foreground">
           {status.commitments.line}
         </span>
-        <span aria-hidden className="ml-auto shrink-0 font-mono text-[10px] text-accent">
-          ▾
-        </span>
+        <Caret className="ml-auto" />
       </CollapsibleTrigger>
       <CollapsibleContent className="border-t border-border/50 px-3 py-3">
         <div className="space-y-3">

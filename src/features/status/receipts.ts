@@ -14,6 +14,7 @@
  * Pure and React-free.
  */
 import { DOWNTIME_MONTH_DAYS, type LifeClock } from "@/engine";
+import { formatMoney } from "./statusModel";
 
 export type ReceiptTone = "good" | "bad" | "neutral";
 
@@ -63,7 +64,7 @@ export function snapshotOf(input: {
 }
 
 function money(value: number): string {
-  return `€$${Math.abs(value).toLocaleString()}`;
+  return formatMoney(Math.abs(value));
 }
 
 /**
