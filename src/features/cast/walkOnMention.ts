@@ -22,7 +22,7 @@ export const WalkOnMentionSchema = z.object({
   gender: z.enum(["male", "female"]).optional(),
 });
 
-export type WalkOnMention = { subject: string; gender?: FlavorGender };
+export type WalkOnMention = z.infer<typeof WalkOnMentionSchema>;
 
 export type ResolvedWalkOn = { subject: string; gender: FlavorGender };
 
@@ -57,11 +57,18 @@ export function normalizeWalkOnMentions(raw: unknown): WalkOnMention[] {
  * each subject gets its own slot appended, so two different subjects
  * mentioned in the same scene resolve independently.
  */
-export function resolveWalkOns(mentions: WalkOnMention[] | undefined, seed: string): ResolvedWalkOn[] {
+export function resolveWalkOns(
+  mentions: WalkOnMention[] | undefined,
+  seed: string,
+): ResolvedWalkOn[] {
   if (!Array.isArray(mentions)) return [];
   const out: ResolvedWalkOn[] = [];
   for (const mention of mentions) {
-    const gender = resolveFlavorGender(mention.subject, mention.gender, `${seed}:${mention.subject}`);
+    const gender = resolveFlavorGender(
+      mention.subject,
+      mention.gender,
+      `${seed}:${mention.subject}`,
+    );
     if (gender) out.push({ subject: mention.subject, gender });
   }
   return out;

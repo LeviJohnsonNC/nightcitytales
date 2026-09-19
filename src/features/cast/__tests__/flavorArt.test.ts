@@ -10,12 +10,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import FLAVOR_ART from "@/data/cast/flavor-art.json";
-import {
-  flavorArt,
-  flavorSubjectLabel,
-  resolveFlavorGender,
-  FLAVOR_SUBJECTS,
-} from "../flavorArt";
+import { flavorArt, flavorSubjectLabel, resolveFlavorGender, FLAVOR_SUBJECTS } from "../flavorArt";
 
 const PUBLIC_DIR = resolve(import.meta.dirname, "../../../../public/images/flavor");
 
