@@ -16,7 +16,8 @@ import {
 import type { StatBlock, StatKey } from "@/engine";
 import { DiceRoll } from "./DiceRoll";
 import { StatTemplateTable } from "./StatTemplateTable";
-import { StatBandIndicator, StatLegend, StatValue } from "./StatValue";
+import { StatBandIndicator } from "./StatValue";
+import { StatCard } from "./StatCard";
 import { statBand } from "./statBands";
 import { appendRoll } from "./rollLogStore";
 import { useChargenStore, type ChargenState } from "./store";
@@ -75,6 +76,15 @@ function DerivedPreview({ stats }: { stats: Partial<StatBlock> }) {
   );
 }
 
+/**
+ * The ten numbers, on the same cards the character sheet shows them on.
+ *
+ * Creation and the sheet used to draw a STAT two different ways, so a player
+ * met the cards for the first time after they had finished choosing. The band
+ * legend that sat above this grid is gone with the difference: the cards carry
+ * a continuous ramp now, and a five-step key teaches a coarser model than the
+ * thing it is a key to.
+ */
 function StatReadout({
   stats,
   rows,
@@ -83,32 +93,14 @@ function StatReadout({
   rows?: Partial<Record<StatKey, number>>;
 }) {
   return (
-    <div className="space-y-2">
-      <StatLegend />
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        {STAT_ORDER.map((stat) => {
-          const value = stats[stat];
-          const band = typeof value === "number" ? statBand(value) : null;
-          return (
-            <div
-              key={stat}
-              className={cn(
-                "border bg-card p-3 text-center",
-                band?.borderClass ?? "border-border",
-                band?.backgroundClass,
-              )}
-            >
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                {stat.toUpperCase()}
-              </p>
-              <StatValue value={value} className="text-2xl font-bold" />
-              {rows?.[stat] !== undefined && (
-                <p className="font-mono text-[10px] text-muted-foreground">row {rows[stat]}</p>
-              )}
-            </div>
-          );
-        })}
-      </div>
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      {STAT_ORDER.map((stat) => (
+        <StatCard key={stat} stat={stat} value={stats[stat]}>
+          {rows?.[stat] !== undefined && (
+            <p className="font-mono text-[10px] text-text-dim">row {rows[stat]}</p>
+          )}
+        </StatCard>
+      ))}
     </div>
   );
 }
@@ -212,36 +204,20 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
           or roll them one at a time below
         </span>
       </div>
-      <StatLegend />
       <div ref={gridRef} className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        {STAT_ORDER.map((stat) => {
-          const value = state.stats[stat];
-          const band = typeof value === "number" ? statBand(value) : null;
-          return (
-            <div
-              key={stat}
-              className={cn(
-                "border bg-card p-3 text-center",
-                band?.borderClass ?? "border-border",
-                band?.backgroundClass,
-              )}
-            >
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                {stat.toUpperCase()}
-              </p>
-              <StatValue value={value} className="text-2xl font-bold" />
-              <div className="mt-2 flex justify-center" data-stat-die-wrap={stat}>
-                <DiceRoll
-                  sides={10}
-                  value={state.statRolls.rows[stat] ?? null}
-                  label={`${state.stats[stat] === undefined ? "Roll" : "Re-roll"} 1d10 for ${stat.toUpperCase()}`}
-                  buttonProps={{ "data-stat-die": stat }}
-                  roll={() => rollStat(stat)}
-                />
-              </div>
+        {STAT_ORDER.map((stat) => (
+          <StatCard key={stat} stat={stat} value={state.stats[stat]}>
+            <div className="flex justify-start" data-stat-die-wrap={stat}>
+              <DiceRoll
+                sides={10}
+                value={state.statRolls.rows[stat] ?? null}
+                label={`${state.stats[stat] === undefined ? "Roll" : "Re-roll"} 1d10 for ${stat.toUpperCase()}`}
+                buttonProps={{ "data-stat-die": stat }}
+                roll={() => rollStat(stat)}
+              />
             </div>
-          );
-        })}
+          </StatCard>
+        ))}
       </div>
       <StatTemplateTable roleId={roleId} highlightCells={state.statRolls.rows} />
     </div>

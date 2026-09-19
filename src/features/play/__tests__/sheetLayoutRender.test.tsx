@@ -91,7 +91,7 @@ describe("the STATs panel", () => {
     expect(html).not.toMatch(/>\s*Very Good\s*</);
   });
 
-  it("gives every STAT its own icon", () => {
+  it("gives every STAT its own icon, large and in the card's empty half", () => {
     // Ten STATs, ten icons, and none of them the band chevrons the cards used
     // to carry beside the number.
     for (const icon of [
@@ -108,6 +108,9 @@ describe("the STATs panel", () => {
     ]) {
       expect(html).toContain(icon);
     }
+    // Held back behind the number, on the right, rather than inline with the
+    // three-letter label it used to sit beside.
+    expect(html).toContain("absolute right-2 top-1/2 size-12 -translate-y-1/2 opacity-40");
   });
 
   it("makes the edge a meter as well, so the ramp is not colour alone", () => {
