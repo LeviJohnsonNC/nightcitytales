@@ -4,7 +4,15 @@
  */
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { findNpc, npcArtwork, type NpcEntry } from "./npcDirectory";
+import { findNpc, npcArtwork, type NpcEntry, type NpcKind } from "./npcDirectory";
+
+/**
+ * Which kinds get a face in running prose. Factions and hostile archetypes are
+ * groups or repeatable crowd-fill rather than a specific person the text is
+ * about, and a thumbnail on every mention of "gangers" or "Tyger Claws" would
+ * read as noise rather than a face worth knowing.
+ */
+const INLINE_PORTRAIT_KINDS = new Set<NpcKind>(["cast", "broker", "patron", "target"]);
 
 export function NpcDossier({
   npc,
@@ -62,11 +70,29 @@ export function NpcDossier({
   );
 }
 
-/** Inline clickable name. Falls back to plain text when we have no such person. */
-export function NpcName({ name, children }: { name: string; children?: React.ReactNode }) {
+/**
+ * Inline clickable name. Falls back to plain text when we have no such person.
+ *
+ * `portrait` additionally puts a small face in front of the name — for prose
+ * (NpcText), where a name is a passing mention worth a glance, not for the
+ * compact People rail, which truncates a whole line to one and has no room
+ * to spare.
+ */
+export function NpcName({
+  name,
+  children,
+  portrait = false,
+}: {
+  name: string;
+  children?: React.ReactNode;
+  portrait?: boolean;
+}) {
   const npc = findNpc(name);
   const [open, setOpen] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
   if (!npc) return <>{children ?? name}</>;
+  const showThumb = portrait && INLINE_PORTRAIT_KINDS.has(npc.kind) && !thumbFailed;
+  const thumb = showThumb ? npcArtwork(npc) : null;
   return (
     <>
       <button
@@ -75,6 +101,16 @@ export function NpcName({ name, children }: { name: string; children?: React.Rea
         className="cursor-pointer border-b border-dotted border-accent/60 text-accent transition-colors hover:border-accent hover:text-ember"
         aria-label={`Open dossier for ${npc.name}`}
       >
+        {thumb && (
+          <img
+            src={thumb.src}
+            srcSet={thumb.srcSet}
+            sizes="20px"
+            alt=""
+            className="mr-1 inline-block h-[1.15em] w-[1.15em] -translate-y-[1px] rounded-full border border-hairline/70 align-middle object-cover"
+            onError={() => setThumbFailed(true)}
+          />
+        )}
         {children ?? name}
       </button>
       <NpcDossier npc={npc} open={open} onOpenChange={setOpen} />

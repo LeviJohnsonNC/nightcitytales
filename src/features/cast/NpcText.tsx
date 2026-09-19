@@ -48,7 +48,7 @@ export function NpcText({ text }: { text: string }) {
             <PlaceText text={p} />
           </Fragment>
         ) : (
-          <NpcName key={i} name={p.match}>
+          <NpcName key={i} name={p.match} portrait>
             {p.match}
           </NpcName>
         ),
