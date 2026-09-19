@@ -8,12 +8,38 @@
   },
   "entries": [
     {
+      "id": "auto-mechanic-female",
+      "type": "person",
+      "subject": "auto-mechanic",
+      "gender": "female"
+    },
+    { "id": "auto-mechanic-male", "type": "person", "subject": "auto-mechanic", "gender": "male" },
+    {
       "id": "av-cab-driver-female",
       "type": "person",
       "subject": "av-cab-driver",
       "gender": "female"
     },
     { "id": "av-cab-driver-male", "type": "person", "subject": "av-cab-driver", "gender": "male" },
+    {
+      "id": "bail-bondsman-female",
+      "type": "person",
+      "subject": "bail-bondsman",
+      "gender": "female"
+    },
+    { "id": "bail-bondsman-male", "type": "person", "subject": "bail-bondsman", "gender": "male" },
+    {
+      "id": "braindance-parlor-host-female",
+      "type": "person",
+      "subject": "braindance-parlor-host",
+      "gender": "female"
+    },
+    {
+      "id": "braindance-parlor-host-male",
+      "type": "person",
+      "subject": "braindance-parlor-host",
+      "gender": "male"
+    },
     {
       "id": "clinic-nurse-female",
       "type": "person",
@@ -53,6 +79,18 @@
       "gender": "male"
     },
     {
+      "id": "corpo-mid-manager-female",
+      "type": "person",
+      "subject": "corpo-mid-manager",
+      "gender": "female"
+    },
+    {
+      "id": "corpo-mid-manager-male",
+      "type": "person",
+      "subject": "corpo-mid-manager",
+      "gender": "male"
+    },
+    {
       "id": "dive-bar-tender-female",
       "type": "person",
       "subject": "dive-bar-tender",
@@ -62,6 +100,44 @@
       "id": "dive-bar-tender-male",
       "type": "person",
       "subject": "dive-bar-tender",
+      "gender": "male"
+    },
+    { "id": "gym-trainer-female", "type": "person", "subject": "gym-trainer", "gender": "female" },
+    { "id": "gym-trainer-male", "type": "person", "subject": "gym-trainer", "gender": "male" },
+    {
+      "id": "junk-shop-fence-female",
+      "type": "person",
+      "subject": "junk-shop-fence",
+      "gender": "female"
+    },
+    {
+      "id": "junk-shop-fence-male",
+      "type": "person",
+      "subject": "junk-shop-fence",
+      "gender": "male"
+    },
+    {
+      "id": "media-stringer-female",
+      "type": "person",
+      "subject": "media-stringer",
+      "gender": "female"
+    },
+    {
+      "id": "media-stringer-male",
+      "type": "person",
+      "subject": "media-stringer",
+      "gender": "male"
+    },
+    {
+      "id": "motel-desk-clerk-female",
+      "type": "person",
+      "subject": "motel-desk-clerk",
+      "gender": "female"
+    },
+    {
+      "id": "motel-desk-clerk-male",
+      "type": "person",
+      "subject": "motel-desk-clerk",
       "gender": "male"
     },
     {
@@ -96,11 +172,35 @@
       "gender": "male"
     },
     {
+      "id": "pawn-shop-owner-female",
+      "type": "person",
+      "subject": "pawn-shop-owner",
+      "gender": "female"
+    },
+    {
+      "id": "pawn-shop-owner-male",
+      "type": "person",
+      "subject": "pawn-shop-owner",
+      "gender": "male"
+    },
+    {
       "id": "street-vendor-female",
       "type": "person",
       "subject": "street-vendor",
       "gender": "female"
     },
-    { "id": "street-vendor-male", "type": "person", "subject": "street-vendor", "gender": "male" }
+    { "id": "street-vendor-male", "type": "person", "subject": "street-vendor", "gender": "male" },
+    {
+      "id": "tattoo-piercing-artist-female",
+      "type": "person",
+      "subject": "tattoo-piercing-artist",
+      "gender": "female"
+    },
+    {
+      "id": "tattoo-piercing-artist-male",
+      "type": "person",
+      "subject": "tattoo-piercing-artist",
+      "gender": "male"
+    }
   ]
 }
