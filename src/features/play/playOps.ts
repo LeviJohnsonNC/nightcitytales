@@ -124,6 +124,7 @@ import {
   setCampaignFlag,
   type CampaignFlag,
   setCampaignPhase,
+  setInventoryQuantity,
   setNpcDisposition,
   updateCampaign,
   updateCampaignVitals,
@@ -136,6 +137,7 @@ import {
   type FullCharacter,
   type Json,
 } from "@/lib/backend";
+import { applyItemUse, planItemUse } from "@/features/campaign/itemUse";
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
@@ -404,6 +406,12 @@ export async function narrate(
   // proposing the impossible; the gate below still refuses anything that slips
   // through, because a model is not an enforcement layer.
   let capability = snapshotFor(bundle);
+  // The kit as it stands part-way through this turn. Using something up
+  // changes what the rest of the turn may do with it, and `bundle` is the
+  // caller's object — so the change lives here and the snapshot is rebuilt
+  // from it rather than the parameter being reassigned under the narrowing
+  // that proves the mission, runtime and beat exist.
+  let kit = bundle.inventory;
 
   /**
    * Refuse an impossible action in the fiction rather than silently dropping
@@ -723,6 +731,45 @@ export async function narrate(
         } as unknown as Json,
         ...beatFields,
       });
+    } else if (action.kind === "use_item") {
+      // The same two-step Life runs: legality decides whether they may, and
+      // consumables.ts decides what is left afterwards. A Job could not say
+      // this at all before, so a mission narrated the last ampoule going in
+      // and left it on the sheet.
+      const legalUse = judgeAction(capability, {
+        kind: "use_item",
+        item: action.item,
+        quantity: action.quantity,
+      });
+      if (!legalUse.ok) {
+        await refuse(legalUse);
+        continue;
+      }
+      const use = planItemUse({
+        capability,
+        inventory: kit,
+        item: action.item,
+        quantity: action.quantity,
+      });
+      for (const write of use.writes) await setInventoryQuantity(write.id, write.quantity);
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "life_action",
+        summary: use.summary,
+        data: {
+          item: use.itemId,
+          quantity: use.consumed ? use.spent : action.quantity,
+          intent: action.intent,
+          consumed: use.consumed,
+          ...(use.consumed ? { remaining: use.remaining } : {}),
+        } as unknown as Json,
+        ...beatFields,
+      });
+      // The kit changed under the snapshot the rest of this turn judges
+      // against: a second use of the last flare has to be refused, not granted
+      // because the check ran against the inventory as it was when we started.
+      kit = applyItemUse(kit, use);
+      capability = snapshotFor({ ...bundle, inventory: kit });
     } else if (action.kind === "advance_beat") {
       // Only the model's proposed advancement is allowed to be wrong. Everything
       // after it is our own bookkeeping, and a failure there must surface — a
@@ -768,7 +815,7 @@ export async function narrate(
         name: action.name,
         character: bundle.character,
         vitals: bundle.vitals,
-        inventory: bundle.inventory,
+        inventory: kit,
         enemies: action.enemies,
         // Where the fight is decides its geometry. The model may still name an
         // arena — it can see the room and this cannot — but when it does not,
@@ -828,7 +875,7 @@ export async function narrate(
       });
       if (moved.refusal) await refuse(moved.refusal);
       live = moved.live;
-      capability = snapshotFor({ ...bundle, encounter: live });
+      capability = snapshotFor({ ...bundle, inventory: kit, encounter: live });
     }
   }
 

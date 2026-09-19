@@ -66,6 +66,17 @@ Supabase, or backend adapters. It takes plain objects and returns plain objects.
   backend-adapter rule below, and the server-only rule that keeps
   `LOVABLE_API_KEY` and the service-role client out of the browser bundle.
 
+Using something is two decisions, and they live apart. `legality.ts` says
+whether a character MAY use an item — do they have one, do they have enough —
+and `consumables.ts` says what is left afterwards. The second half did not
+exist until a Life turn was found printing "Used 5× Glow Paint" over five
+untouched cans. Its data is `src/data/rules/consumables.json`, flagged
+`houseRule: true`, because the book prices a Food Stick and an Electric Guitar
+the same way and never says that eating one leaves you with none: a table does
+not need telling. Anything not on that list is equipment — used, not spent —
+and ammunition is consumable as a class. Both turn loops go through
+`features/campaign/itemUse.ts` rather than each deciding for itself.
+
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says
 which Skill can reach which rung and what having asked costs, so the nine

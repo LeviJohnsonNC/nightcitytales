@@ -59,6 +59,7 @@ import {
   appendCampaignEvent,
   findCampaignNpc,
   getCampaign,
+  setInventoryQuantity,
   getCharacter,
   listCampaignEvents,
   listCampaignTruths,
@@ -85,6 +86,7 @@ import {
   type FullCharacter,
   type Json,
 } from "@/lib/backend";
+import { planItemUse } from "@/features/campaign/itemUse";
 import { saveMissionRuntime } from "@/features/campaign/missionState";
 import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
 import { characterSummary, localExpertIn, statsRecord } from "@/features/play/playModel";
@@ -866,11 +868,25 @@ async function applyResponse(
         await refuse(legal.reason, legal.code);
         continue;
       }
+      // The ledger used to say "Used 5× Glow Paint" over an untouched sheet.
+      // Whatever it says now is what the rows were actually set to.
+      const use = planItemUse({
+        capability,
+        inventory: bundle.inventory,
+        item: action.item,
+        quantity: action.quantity,
+      });
+      for (const write of use.writes) await setInventoryQuantity(write.id, write.quantity);
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "life_action",
-        summary: `Used ${action.quantity > 1 ? `${action.quantity}× ` : ""}${action.item}.`,
-        data: { item: action.item, quantity: action.quantity } as unknown as Json,
+        summary: use.summary,
+        data: {
+          item: use.itemId,
+          quantity: use.consumed ? use.spent : action.quantity,
+          consumed: use.consumed,
+          ...(use.consumed ? { remaining: use.remaining } : {}),
+        } as unknown as Json,
       });
     } else if (action.kind === "pay_bills") {
       // One implementation of rent: the Downtime operation, priced by the engine.

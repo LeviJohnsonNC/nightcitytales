@@ -15,6 +15,7 @@ export * from "./advancement";
 export * from "./lifepath";
 export * from "./roleLifepath";
 export * from "./catalog";
+export * from "./consumables";
 export * from "./priceCategory";
 export * from "./ammoTypes";
 export * from "./packageCatalog";

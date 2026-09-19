@@ -398,3 +398,46 @@ describe("a job check aimed at a person", () => {
     expect(parsed.proposedActions[0]).not.toHaveProperty("npcKey");
   });
 });
+
+/**
+ * Using something out of the kit. A Job had no way to say this at all until
+ * the sheet was found to be lying about a player's Glow Paint — so what a
+ * mission is allowed to spend, and how it may spell it, is pinned here.
+ */
+describe("using the kit", () => {
+  it("reads a use the model spelled its own way", () => {
+    for (const kind of ["use_item", "use", "use_gear", "consume_item"]) {
+      const out = normalizeGmResponse(
+        wire([{ kind, item: "Road Flare", quantity: 2, intent: "light the lot" }]),
+        quiet,
+      );
+      expect(out.proposedActions).toEqual([
+        { kind: "use_item", item: "Road Flare", quantity: 2, intent: "light the lot" },
+      ]);
+    }
+  });
+
+  it("infers it from an item field when the model names no kind", () => {
+    expect(actionKindOf({ item: "Airhypo", quantity: 1 })).toBe("use_item");
+    // …but never ahead of something that says what it is doing.
+    expect(actionKindOf({ skillId: "handgun", item: "Very Heavy Pistol" })).toBe("skill_check");
+    expect(actionKindOf({ targetId: "thug-1", item: "Very Heavy Pistol" })).toBe("attack");
+  });
+
+  it("defaults the count to one and refuses a silly one", () => {
+    const one = normalizeGmResponse(wire([{ kind: "use_item", item: "Glow Paint" }]), quiet);
+    expect(one.proposedActions[0]).toMatchObject({ quantity: 1 });
+    const many = normalizeGmResponse(
+      wire([{ kind: "use_item", item: "Glow Paint", quantity: 900 }]),
+      quiet,
+    );
+    expect(many.proposedActions[0]).toMatchObject({ quantity: 99 });
+  });
+
+  it("drops a use that names nothing, loudly", () => {
+    const warn = vi.fn();
+    const out = normalizeGmResponse(wire([{ kind: "use_item", quantity: 2 }]), { onWarn: warn });
+    expect(out.proposedActions).toEqual([]);
+    expect(warn).toHaveBeenCalled();
+  });
+});
