@@ -130,19 +130,3 @@
     opacity: 0;
   }
 }
-
-/* The stand-in when a place has no photograph: a dead sign, lit from behind. */
-.scene-hero-plate {
-  background-image:
-    radial-gradient(90% 120% at 18% 110%, rgba(255, 61, 154, 0.3), transparent 60%),
-    radial-gradient(80% 110% at 82% 120%, rgba(52, 213, 230, 0.22), transparent 58%),
-    radial-gradient(140% 100% at 50% -20%, rgba(161, 92, 255, 0.26), transparent 70%),
-    repeating-linear-gradient(
-      0deg,
-      rgba(236, 241, 255, 0.08) 0px,
-      rgba(236, 241, 255, 0.08) 1px,
-      transparent 1px,
-      transparent 3px
-    ),
-    linear-gradient(180deg, #120e2b 0%, #0b0819 100%);
-}

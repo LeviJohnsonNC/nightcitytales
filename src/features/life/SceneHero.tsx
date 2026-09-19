@@ -8,9 +8,10 @@
  * announcement travel gets that is not a line of monospace.
  *
  * Which picture is `sceneArt.ts`'s decision, and it walks up the geography when
- * the exact venue has none. When nothing in the chain has art, the plate below
- * stands in: the place's own name over a lit gradient, rather than a photograph
- * of somewhere else.
+ * the exact venue has none. When nothing in the chain has art — which no place
+ * on the map is today — the whole thing stays away rather than standing in with
+ * a drawn plate: a lit gradient where a photograph should be is worse than the
+ * prose starting where the prose starts.
  */
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,10 @@ export function SceneHero({
 
   const open = opening || arrived;
 
+  // Nothing to show. Every atlas place and district has a picture, so this is
+  // the guard for one added without art rather than a state the game is in.
+  if (!scene.artwork) return null;
+
   return (
     <figure
       className={cn(
@@ -49,19 +54,15 @@ export function SceneHero({
         open ? "h-52 sm:h-64 lg:h-72" : "h-16 sm:h-20",
       )}
     >
-      {scene.artwork ? (
-        <img
-          key={scene.artwork.src}
-          src={scene.artwork.src}
-          srcSet={scene.artwork.srcSet}
-          // The Life column is 1fr of a 72rem grid beside a 20rem rail.
-          sizes="(min-width: 1024px) 48rem, 96vw"
-          alt={scene.alt}
-          className="scene-hero-img h-full w-full object-cover object-center"
-        />
-      ) : (
-        <div className="scene-hero-plate h-full w-full" />
-      )}
+      <img
+        key={scene.artwork.src}
+        src={scene.artwork.src}
+        srcSet={scene.artwork.srcSet}
+        // The Life column is 1fr of a 72rem grid beside a 20rem rail.
+        sizes="(min-width: 1024px) 48rem, 96vw"
+        alt={scene.alt}
+        className="scene-hero-img h-full w-full object-cover object-center"
+      />
 
       {/* The picture is a backdrop, not a card: it darkens into the page at the
           bottom so the caption and the log below read as sitting in front of it. */}

@@ -43,9 +43,9 @@ describe("nothing moved, nothing shown", () => {
 describe("what a turn cost", () => {
   it("shows money going out, and coming in", () => {
     const out = receiptsBetween(snap(), snap({ eurobucks: 550 }));
-    expect(out[0]).toMatchObject({ text: "−€$450", tone: "bad" });
+    expect(out[0]).toMatchObject({ text: "−€450", tone: "bad" });
     const paid = receiptsBetween(snap(), snap({ eurobucks: 3000 }));
-    expect(paid[0]).toMatchObject({ text: "+€$2,000", tone: "good" });
+    expect(paid[0]).toMatchObject({ text: "+€2,000", tone: "good" });
   });
 
   it("shows a wound as the move, not the total", () => {

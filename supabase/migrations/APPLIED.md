@@ -96,6 +96,12 @@ once it has actually been run.
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
 
+- `20260919050000_opening_premise_not_a_commitment.sql` — data only. Clears
+  `due_day` on the opening's `opening_just_living` situation and marks it
+  `data.premise`, so campaigns started before the fix stop being told one thing
+  is due today on a night when nothing is. New campaigns are written correctly
+  by `seedJustLiving` without it; until this runs, an existing campaign that
+  took that door keeps showing the old count.
 - `20260913040000_drop_won_campaign_status.sql` — narrows the
   `campaigns_status_check` vocabulary to `active | lost | abandoned`. Nothing in
   the application has ever written `won`, so until this runs the only difference

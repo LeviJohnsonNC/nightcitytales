@@ -243,7 +243,7 @@ function Index() {
                   { label: "Rent due", value: "3 days", tone: "text-amber" },
                   { label: "Razor", value: "Wants to talk", tone: "text-ember" },
                   { label: "Armor SP", value: "6 / 11", tone: "text-cool" },
-                  { label: "Balance", value: "€$740", tone: "text-amber" },
+                  { label: "Balance", value: "€740", tone: "text-amber" },
                 ].map((chip) => (
                   <div
                     key={chip.label}
@@ -366,7 +366,7 @@ function Index() {
                     Rent
                   </p>
                   <p className="num mt-3 text-lg font-semibold text-amber">2 days</p>
-                  <p className="mt-3 text-sm text-text-muted">€$600 due.</p>
+                  <p className="mt-3 text-sm text-text-muted">€600 due.</p>
                 </Panel>
               </Reveal>
               <Reveal delay={320}>
@@ -434,7 +434,7 @@ function Index() {
                   </p>
                   <p className="mt-2 font-display text-2xl tracking-[-0.02em] text-text">Dino</p>
                 </div>
-                <p className="num text-lg font-semibold text-amber">€$2,000</p>
+                <p className="num text-lg font-semibold text-amber">€2,000</p>
               </div>
               <p className="mt-5 border-l-2 border-hairline pl-4 text-sm leading-relaxed text-text-muted">
                 "Need someone tonight. Quiet extraction."
@@ -627,7 +627,7 @@ function Index() {
           <ol className="mt-14 space-y-0">
             {[
               { t: "6:10 PM", b: "Your ripperdoc offers you discounted cyberware." },
-              { t: "7:35 PM", b: "You spend €$400 you were saving for rent.", tone: "amber" },
+              { t: "7:35 PM", b: "You spend €400 you were saving for rent.", tone: "amber" },
               { t: "9:12 PM", b: "Dino offers you an extraction job." },
               { t: "10:48 PM", b: "You discover the target is an old friend." },
               { t: "11:17 PM", b: "You abandon the extraction.", tone: "ember" },
