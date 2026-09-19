@@ -30,6 +30,8 @@ import { raisedWeapon } from "./encounterModel";
 import { gmSkillList, suggestionInput } from "./playModel";
 import { settlementFrom, wasShorted } from "./settlementReport";
 import { NpcText } from "@/features/cast/NpcText";
+import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
+import { readWalkOnsEventData } from "@/engine";
 import { usePlay } from "./usePlay";
 import type { PlayBundle } from "./playOps";
 import type { RollRecord } from "./checkPrompt";
@@ -43,9 +45,12 @@ function EventBlock({ event }: { event: CampaignEvent }) {
       );
     case "gm_narration":
       return (
-        <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
-          <NpcText text={text} />
-        </p>
+        <div className="space-y-2">
+          <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
+            <NpcText text={text} />
+          </p>
+          <WalkOnStrip walkOns={readWalkOnsEventData(event.data)} />
+        </div>
       );
 
     case "skill_check":

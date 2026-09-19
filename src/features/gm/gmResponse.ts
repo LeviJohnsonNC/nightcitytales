@@ -14,6 +14,7 @@ import {
   isArenaKey,
   isThreatKey,
 } from "@/engine";
+import { normalizeWalkOnMentions, WalkOnMentionSchema } from "@/features/cast/walkOnMention";
 
 /**
  * A hostile, as much of one as the model is allowed to author.
@@ -154,6 +155,13 @@ export const GmResponseSchema = z.object({
    */
   question: z.string().nullable().default(null),
   endsWithDecision: z.boolean().default(false),
+  /**
+   * Walk-on characters named this turn who are not part of the standing cast,
+   * matched against the flavor-art catalog. Shape and vocabulary only — which
+   * gender each one actually gets is resolved in playOps.ts, where the
+   * campaign and place seed live.
+   */
+  walkOns: z.array(WalkOnMentionSchema).default([]),
 });
 export type GmResponse = z.infer<typeof GmResponseSchema>;
 
@@ -219,6 +227,17 @@ export const GmWireResponseSchema = z.object({
     )
     .nullish(),
   endsWithDecision: z.boolean().nullish(),
+  walkOns: z
+    .array(z.unknown())
+    .describe(
+      "Walk-on characters you named this turn who are NOT part of the standing cast — a " +
+        "bartender, a beat cop, a shopkeep. Tag one only when their role matches a subject in " +
+        "the WALK-ON FACES list, using its id exactly. Each item is " +
+        '{"subject":"<id from the WALK-ON FACES list>","gender":"male"|"female"} (gender optional). ' +
+        "Never invent a subject outside that list, and never tag a named cast member this way. " +
+        "Use [] when nobody walk-on-shaped was named, which is most turns.",
+    )
+    .nullish(),
 });
 export type GmWireResponse = z.infer<typeof GmWireResponseSchema>;
 
@@ -534,6 +553,7 @@ export function normalizeGmResponse(
     // handed a yes/no that means nothing.
     question: isAnswerableQuestion(wire.question) ? wire.question.trim() : null,
     endsWithDecision: wire.endsWithDecision ?? false,
+    walkOns: normalizeWalkOnMentions(wire.walkOns),
   };
 }
 
@@ -590,6 +610,7 @@ export function salvageGmResponse(text: unknown): GmResponse | null {
     observations: [],
     question: null,
     endsWithDecision: false,
+    walkOns: [],
   };
 }
 

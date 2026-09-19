@@ -55,6 +55,7 @@ import {
   streetsIn,
   resolveTravelIntent,
 } from "@/engine";
+import { resolveWalkOns } from "@/features/cast/walkOnMention";
 import {
   appendCampaignEvent,
   findCampaignNpc,
@@ -763,6 +764,13 @@ async function applyResponse(
       situationKey: bundle.current?.key ?? null,
       title: response.situation.title,
       actions: turn.fixedResult ? [] : response.actions,
+      // Resolved HERE, once, with the campaign+place seed the response schema
+      // never sees — never re-picked on a later render, so a walk-on's face
+      // stays the same face across scrollback and reload.
+      walkOns: resolveWalkOns(
+        response.walkOns,
+        `${campaignId}:${bundle.campaign.location_key ?? DEFAULT_START}`,
+      ),
     } as unknown as Json,
   });
 

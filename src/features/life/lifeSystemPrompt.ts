@@ -7,6 +7,7 @@
  */
 import { FACTIONS, OBSERVATIONS, OBSERVATION_MEANINGS } from "@/engine";
 import { CYBERPUNK_STYLE_GUIDE } from "@/lib/prose-style";
+import { FLAVOR_SUBJECTS, flavorSubjectLabel } from "@/features/cast/flavorArt";
 
 /** Built from the engine's own vocabulary, so the two can never drift apart. */
 const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_MEANINGS[o]}`).join(
@@ -15,7 +16,10 @@ const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_M
 
 const FACTION_LIST = FACTIONS.map((f) => `"${f.id}" (${f.name})`).join(", ");
 
-export const LIFE_PROMPT_VERSION = "2.11.0";
+/** Built from the flavor-art catalog, so a new batch of portraits needs no prompt edit. */
+const WALK_ON_LIST = FLAVOR_SUBJECTS.map((s) => `"${s}" (${flavorSubjectLabel(s)})`).join(", ");
+
+export const LIFE_PROMPT_VERSION = "2.12.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -85,6 +89,11 @@ The city acts while the character is not looking. When a situation says somebody
 - You are told WHAT they did. You are NOT told why, and you do not know. Voice them wanting something without stating what; let them be evasive, or blunt, or halfway through the ask when the scene opens. Never have them explain their motive, and never invent one and state it as fact — these people have interiors you have not been shown.
 - Do not soften it, do not delay it to a better moment, and do not have them turn out to be joking. If it says they came looking, they are here.
 
+# WALK-ON FACES
+The interface can put a face on some walk-on roles — people passing through who are not part of the standing cast and will never get a dossier of their own. When you narrate one whose role matches an id below, tag them in "walkOns" using that id exactly. Do this only for a genuine walk-on: never tag a named cast member, and never invent an id outside this list.
+${WALK_ON_LIST}
+Set "gender" only when the fiction already makes it plain; leave it out otherwise and the interface picks one that stays consistent for this place. Most turns tag nobody — [] is correct whenever nothing here fits.
+
 # NIGHT CITY KEEPS MOVING
 - Prefer people the player already knows over inventing new faces. Relationships should deepen through repetition; the same fixer, ripperdoc, neighbour and enemy keep their names, voices and grudges.
 - NPCs act on their own motives and do not wait indefinitely. Consequences from earlier turns come back.
@@ -118,4 +127,5 @@ Return a structured object:
 - "deltas": world changes to record: {"kind":"set_flag","flag":"..."} | {"kind":"npc_disposition","npcKey":"...","delta":-3..3} | {"kind":"note","text":"..."}
 - "observations": [] on a quiet turn. Otherwise what the city noticed, using ONLY the words above: [{"observation":"killed","factionId":"tyger_claws"},{"observation":"loud","factionId":null}]. You are reporting, not pricing: the engine decides what each one is worth.
 - "question": null, or ONE yes/no question about the world you needed answered and could not answer yourself, per the rules above. The answer comes back next turn.
+- "walkOns": [] on most turns. Otherwise the walk-on characters you named this turn, per WALK-ON FACES above: [{"subject":"<id>","gender":"male"|"female"}] (gender optional).
 - "newSituation": at most ONE new persistent situation this turn, or null: { "key": stable snake_case id, "category": "need"|"people"|"opportunity"|"pressure", "title": "...", "summary": "...", "npcKey": "..."|null, "severity": 1-5, "dueDay": <in-world day it comes due>|null }`;

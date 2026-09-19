@@ -57,6 +57,8 @@ import {
 
 import { NpcText } from "@/features/cast/NpcText";
 import { NpcName } from "@/features/cast/NpcName";
+import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
+import { readWalkOnsEventData } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
 import { MapButton } from "@/features/atlas/MapButton";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
@@ -116,9 +118,12 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
       );
     case "life_narration":
       return (
-        <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
-          <NpcText text={text} />
-        </p>
+        <div className="space-y-2">
+          <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
+            <NpcText text={text} />
+          </p>
+          <WalkOnStrip walkOns={readWalkOnsEventData(event.data)} />
+        </div>
       );
 
     case "skill_check":
@@ -1036,11 +1041,12 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
             )}
 
             {life.narration && (
-              <section className="border-l-2 border-accent bg-accent/5 p-3">
+              <section className="space-y-2 border-l-2 border-accent bg-accent/5 p-3">
                 <Label>{life.narration.title}</Label>
                 <p className="whitespace-pre-wrap text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
                   <NpcText text={life.narration.text} />
                 </p>
+                <WalkOnStrip walkOns={life.narration.walkOns} />
               </section>
             )}
 

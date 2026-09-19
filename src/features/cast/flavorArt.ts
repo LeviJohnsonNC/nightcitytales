@@ -56,3 +56,46 @@ export function flavorArt(subject: string, gender?: FlavorGender): FlavorArtwork
 
 /** Every subject slug with at least one variant on file, for content tooling. */
 export const FLAVOR_SUBJECTS: string[] = [...new Set(ENTRIES.map((e) => e.subject))].sort();
+
+/** "dive-bar-tender" -> "Dive Bar Tender", for printing the subject list in a prompt. */
+export function flavorSubjectLabel(subject: string): string {
+  return subject
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/** Stable number for a string. FNV-1a, same as haunts.ts/placeBeats.ts use. */
+function hash(value: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < value.length; i += 1) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/** Every gender this subject has a variant for, in file order. */
+export function flavorGenders(subject: string): FlavorGender[] {
+  return ENTRIES.filter((e) => e.subject === subject).map((e) => e.gender);
+}
+
+/**
+ * Which gender a walk-on mention of `subject` actually gets, deterministically.
+ *
+ * The model may say which gender it meant; if that gender has no art for this
+ * subject, or it said nothing, the same seed always resolves to the same
+ * gender for this subject — so "the bartender at Skiv's Counter" doesn't
+ * flip between visits, the same idiom `haunts.ts` uses for "is he here?".
+ * Undefined only when the subject has no art at all.
+ */
+export function resolveFlavorGender(
+  subject: string,
+  requested: FlavorGender | undefined,
+  seed: string,
+): FlavorGender | undefined {
+  const genders = flavorGenders(subject);
+  if (genders.length === 0) return undefined;
+  if (requested && genders.includes(requested)) return requested;
+  return genders[hash(seed) % genders.length];
+}

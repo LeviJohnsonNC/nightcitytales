@@ -198,3 +198,21 @@ describe("a skill check aimed at a person", () => {
     expect(parsed.proposedActions[0]).not.toHaveProperty("npcKey");
   });
 });
+
+describe("walkOns", () => {
+  it("defaults to an empty list", () => {
+    expect(normalizeLifeResponse({}).walkOns).toEqual([]);
+  });
+
+  it("keeps a mention naming a real subject", () => {
+    const parsed = normalizeLifeResponse({
+      walkOns: [{ subject: "dive-bar-tender", gender: "female" }],
+    });
+    expect(parsed.walkOns).toEqual([{ subject: "dive-bar-tender", gender: "female" }]);
+  });
+
+  it("drops a subject the flavor-art catalog does not know", () => {
+    const parsed = normalizeLifeResponse({ walkOns: [{ subject: "a-person-nobody-drew" }] });
+    expect(parsed.walkOns).toEqual([]);
+  });
+});
