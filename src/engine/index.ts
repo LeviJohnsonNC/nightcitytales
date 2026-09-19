@@ -41,6 +41,7 @@ export * from "./storyImpact";
 export * from "./roleOpening";
 export * from "./skillMatch";
 export * from "./battlefield";
+export * from "./battlefieldProps";
 export * from "./cover";
 export * from "./grid";
 export * from "./combatGoal";

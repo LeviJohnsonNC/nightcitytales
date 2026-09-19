@@ -77,6 +77,18 @@ not need telling. Anything not on that list is equipment — used, not spent —
 and ammunition is consumable as a class. Both turn loops go through
 `features/campaign/itemUse.ts` rather than each deciding for itself.
 
+An arena is furnished from a library rather than from scratch.
+`battlefieldProps.ts` holds twenty named objects — a sedan, a bus, a bar
+counter — and `placeProp` stamps one at a point as ordinary `CoverPiece`s, so
+the arena keeps its own ids and this never becomes a second source of truth
+about where anything stands. A prop is a LIST of 2m sections because pg. 182
+makes that the attackable unit: a car is an engine block you can hide behind
+and a door you cannot. Its data is `src/data/rules/battlefield-props.json`,
+flagged `houseRule: true` — the HP table is the printed one, but which
+material a bus is made of is a judgement, and each entry carries the row it
+was read against. Three entries are scenery at 0 HP: a fence stops a person
+and no bullet, which the engine already models and nothing had used.
+
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says
 which Skill can reach which rung and what having asked costs, so the nine
