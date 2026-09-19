@@ -1,11 +1,15 @@
 /**
  * The character sheet, one click away during play.
  *
- * Read-only, and now in two halves that are honest about being different
- * things: what the character is CARRYING, read live from the campaign's
- * inventory, above the assembled sheet they were created with. A sheet alone
- * cannot answer "do I still have a spare magazine", because it was written
- * before the campaign started and never changes again.
+ * Read-only, and in two halves that are honest about being different things:
+ * the assembled sheet they were created with, and what the character is
+ * CARRYING, read live from the campaign's inventory. A sheet alone cannot
+ * answer "do I still have a spare magazine", because it was written before the
+ * campaign started and never changes again.
+ *
+ * The live half is handed to the sheet rather than stacked on top of it, so it
+ * sits folded under Weapons and Armor — beside the printed kit it is the
+ * current truth about, instead of in front of the whole document.
  */
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -46,21 +50,19 @@ export function SheetDrawer({
         <SheetHeader>
           <SheetTitle>{character.character.name}</SheetTitle>
         </SheetHeader>
-        {inventory && (
-          <section className="mt-4 border border-border bg-card/50 p-3">
-            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
-              Carrying now
-            </p>
-            <CarriedKit inventory={inventory} {...(cyberware ? { cyberware } : {})} />
-          </section>
-        )}
-
         <div className="mt-4">
           <CharacterSheet
             state={state}
             build={build}
             sheet={sheet}
             improvementPoints={character.finance?.improvement_points ?? 0}
+            {...(inventory
+              ? {
+                  carrying: (
+                    <CarriedKit inventory={inventory} {...(cyberware ? { cyberware } : {})} />
+                  ),
+                }
+              : {})}
           />
         </div>
       </SheetContent>

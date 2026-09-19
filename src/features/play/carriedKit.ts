@@ -14,6 +14,8 @@ import type { CampaignCyberware, CampaignInventoryItem } from "@/lib/backend";
 
 export type KitLine = {
   id: string;
+  /** The catalog id, so a line can open the same "?" entry the sheet uses. */
+  itemId: string;
   name: string;
   /** What is worth saying beyond the name: rounds loaded, SP remaining. */
   detail: string;
@@ -95,6 +97,7 @@ export function carriedKit(
         label,
         lines: cyberware.map((row) => ({
           id: row.id,
+          itemId: row.item_id,
           // Legacy rows may hold a printed label rather than a catalog id.
           // Showing the stored value beats blanking the whole screen.
           name: nameFor("cyberware", row.item_id),
@@ -108,6 +111,7 @@ export function carriedKit(
       if (kindOf(row) !== kind || row.quantity <= 0) continue;
       lines.push({
         id: row.id,
+        itemId: row.item_id,
         name: nameFor(kind, row.item_id),
         detail: detailFor(kind, row),
         quantity: row.quantity,

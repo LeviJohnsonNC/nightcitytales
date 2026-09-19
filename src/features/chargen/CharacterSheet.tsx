@@ -33,8 +33,9 @@ import {
 import { readRoleLifepath } from "./roleLifepathState";
 import { SINGLE_LIFEPATH_TABLES } from "./lifepathState";
 import type { ChargenState } from "./store";
-import { StatLegend, StatValue } from "./StatValue";
-import { statBand } from "./statBands";
+import { StatValue } from "./StatValue";
+import { statColor, statFraction } from "./statBands";
+import { STAT_ICONS } from "./statIcons";
 
 function Panel({
   title,
@@ -113,6 +114,67 @@ function Box({
   );
 }
 
+/**
+ * One STAT, as a card.
+ *
+ * Three things at once, in the order the eye takes them: the icon says which
+ * STAT, the lit edge says how strong it is, and the number says exactly. The
+ * edge is the ramp from `statBands.ts` — neon red at 2 through to neon green
+ * at 8 — so a row of cards reads as a shape before a single number is read,
+ * which is what the five-band legend under this panel was doing badly.
+ */
+function StatCard({ stat, value }: { stat: string; value: number | null }) {
+  const Icon = STAT_ICONS[stat as keyof typeof STAT_ICONS];
+  const color = typeof value === "number" ? statColor(value) : null;
+  return (
+    <div
+      className="relative overflow-hidden border border-hairline bg-surface-raised py-2 pl-4 pr-3 transition-colors hover:border-primary/60 hover:bg-surface/80 hover:shadow-[0_0_10px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] active:bg-surface/60"
+      style={
+        color
+          ? ({
+              borderLeftColor: color,
+              // The lit edge, and the faintest wash of the same colour across
+              // the card so a strong STAT reads warm rather than just outlined.
+              backgroundImage: `linear-gradient(90deg, color-mix(in oklab, ${color} 14%, transparent), transparent 60%)`,
+            } as React.CSSProperties)
+          : undefined
+      }
+    >
+      {color && typeof value === "number" && (
+        <>
+          {/* The edge is a meter as well as a colour. A red-green ramp alone
+              says nothing to a red-green colour-blind reader, and the height
+              of the lit part says the same thing the hue does. */}
+          <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-hairline/60" />
+          <span
+            aria-hidden
+            className="absolute bottom-0 left-0 w-1"
+            style={{
+              height: `${18 + statFraction(value) * 82}%`,
+              background: color,
+              boxShadow: `0 0 10px -2px ${color}`,
+            }}
+          />
+        </>
+      )}
+      <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
+        {Icon && (
+          <Icon
+            aria-hidden
+            className="size-3.5"
+            strokeWidth={2.25}
+            style={color ? { color } : undefined}
+          />
+        )}
+        {stat.toUpperCase()}
+      </p>
+      <div className="num text-2xl font-bold leading-tight text-text">
+        <StatValue value={value} showIcon={false} className="text-text" />
+      </div>
+    </div>
+  );
+}
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-hairline/60 py-1 text-sm">
@@ -147,12 +209,23 @@ export function CharacterSheet({
   build,
   sheet,
   improvementPoints,
+  carrying,
 }: {
   state: ChargenState;
   build: CharacterBuild;
   sheet: AssembledCharacter;
   /** The saved career I.P. total; omitted during creation, where it is 0. */
   improvementPoints?: number;
+  /**
+   * What the character is carrying NOW, from the campaign's live inventory.
+   *
+   * Passed in rather than read here, because this component is the assembled
+   * sheet — who they were when creation ended — and has no business touching
+   * campaign rows. It lands folded away under Weapons and Armor, which is
+   * where a reader is already looking when they wonder what is actually in
+   * their hands. Creation passes nothing and the panel does not appear.
+   */
+  carrying?: React.ReactNode;
 }) {
   const roles = rolesData.roles as unknown as Record<string, { name: string }>;
   const role = build.roleId ? (roles[build.roleId] ?? null) : null;
@@ -241,19 +314,14 @@ export function CharacterSheet({
       </section>
 
       {/* 2 — STATs */}
-      <Panel title="STATs" note="tap a STAT for what it is good for">
-        <StatLegend className="mb-3" />
+      <Panel title="STATs">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {sheet.statOrder.map((stat) => {
             const value = sheet.stats[stat];
             const current = stat === "emp" ? sheet.empCurrent : (value ?? null);
             return (
               <StatInfoDialog key={stat} stat={stat} value={current ?? null}>
-                <Box
-                  label={stat.toUpperCase()}
-                  value={<StatValue value={current} />}
-                  className={`${typeof current === "number" ? `${statBand(current).borderClass} ${statBand(current).backgroundClass}` : ""} cursor-pointer hover:border-primary/60 hover:bg-surface/80 hover:shadow-[0_0_10px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] active:bg-surface/60`}
-                />
+                <StatCard stat={stat} value={current ?? null} />
               </StatInfoDialog>
             );
           })}
@@ -463,6 +531,12 @@ export function CharacterSheet({
           </div>
         )}
       </Panel>
+
+      {carrying && (
+        <CollapsiblePanel title="Carrying now" note="live from the campaign">
+          {carrying}
+        </CollapsiblePanel>
+      )}
 
       {/* 6 — Improvement Points and Reputation */}
       <Panel title="Improvement Points & Reputation">
