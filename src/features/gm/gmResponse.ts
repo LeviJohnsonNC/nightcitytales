@@ -100,6 +100,18 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     towards: z.enum(["closer", "away"]),
     intent: z.string(),
   }),
+  /**
+   * Something out of the kit being used up — an ampoule, a flare, a grenade
+   * off the ammunition rows. Life has had this since it was written; a Job had
+   * no way to say it at all, so a mission could narrate the last stimulant
+   * going in and leave it sitting on the sheet afterwards.
+   */
+  z.object({
+    kind: z.literal("use_item"),
+    item: z.string(),
+    quantity: z.number().int(),
+    intent: z.string(),
+  }),
   z.object({ kind: z.literal("advance_beat"), to: z.string() }),
   z.object({ kind: z.literal("none") }),
 ]);
@@ -169,6 +181,7 @@ export const GmWireResponseSchema = z.object({
         '{"kind":"start_encounter","name":"<label>","arena":"<one of the ARENAS ids>","goal":"kill"|"capture"|"repel"|"rob"|"delay"|"protect","enemies":[{"key":"<stable id>","name":"<what they are called>","profile":"<one of the THREATS ids>"}]}; ' +
         '{"kind":"attack","targetId":"<enemy key>","intent":"<what they are doing>"}; ' +
         '{"kind":"move","targetId":"<enemy key>","towards":"closer"|"away","intent":"<what they are doing>"}; ' +
+        '{"kind":"use_item","item":"<as the kit list names it>","quantity":<integer>,"intent":"<what they are doing with it>"}; ' +
         '{"kind":"advance_beat","to":"<beat id>"}. Use [] when nothing is proposed.',
     )
     .nullish(),
@@ -261,6 +274,10 @@ const ACTION_KIND_ALIASES: Record<string, GmProposedAction["kind"]> = {
   movement: "move",
   melee_attack: "attack",
   ranged_attack: "attack",
+  use_item: "use_item",
+  use: "use_item",
+  consume_item: "use_item",
+  use_gear: "use_item",
   advance_beat: "advance_beat",
   advance: "advance_beat",
   next_beat: "advance_beat",
@@ -292,6 +309,10 @@ export function actionKindOf(item: Loose): GmProposedAction["kind"] | null {
   if (str(item["skillId"]) ?? str(item["skill"]) ?? str(item["skill_id"])) return "skill_check";
   if (str(item["targetId"]) ?? str(item["target"]) ?? str(item["target_id"])) return "attack";
   if (str(item["to"]) ?? str(item["beatId"]) ?? str(item["beat_id"])) return "advance_beat";
+  // Last, and only on an explicit item field: everything above names what it
+  // is doing, and guessing "use" from a bare noun would spend the kit on a
+  // sentence that never meant to.
+  if (str(item["item"]) ?? str(item["itemId"]) ?? str(item["item_id"])) return "use_item";
   return null;
 }
 
@@ -442,6 +463,18 @@ export function normalizeGmResponse(
           enemies,
         });
       else warn(`GM proposed an encounter with no hostiles, dropped: ${JSON.stringify(raw)}`);
+    } else if (kind === "use_item") {
+      const item = str(a["item"]) ?? str(a["itemId"]) ?? str(a["item_id"]) ?? str(a["name"]);
+      if (item) {
+        proposedActions.push({
+          kind: "use_item",
+          item,
+          // Nobody uses nothing, and nobody uses ninety-nine of something in
+          // one beat. The engine still refuses more than they carry.
+          quantity: clamp(num(a["quantity"]) ?? num(a["count"]) ?? 1, 1, 99),
+          intent,
+        });
+      } else warn(`GM proposed using an item it did not name, dropped: ${JSON.stringify(raw)}`);
     } else if (kind === "advance_beat") {
       const to = str(a["to"]) ?? str(a["beatId"]) ?? str(a["beat_id"]);
       if (to) proposedActions.push({ kind: "advance_beat", to });

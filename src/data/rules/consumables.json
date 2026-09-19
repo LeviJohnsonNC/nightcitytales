@@ -1,0 +1,19 @@
+{
+  "_source": "House rule. Cyberpunk RED's gear list does not mark which items a use spends.",
+  "houseRule": true,
+  "_note": "Which carried things a USE uses up. The book prices gear and describes what it does; it never says whether using it leaves you with less of it, because at a table nobody needs telling that a meal is eaten and a guitar is not. The game does need telling: an engine that decrements everything deletes your instrument the first time you play it, and one that decrements nothing lets you paint the same wall forever. Every id below is judged from that item's own printed description in catalog.json — a meal, a stick that burns for ten hours, a can of spraypaint, a vial with one dose in it. Anything not listed here is equipment: it is used, not spent.",
+  "_kinds": "Ammunition is consumable as a class rather than by id — every round, shell and grenade in the catalog is spent when it is used, and that needs no list to maintain.",
+  "consumableKinds": ["ammunition"],
+  "gear": [
+    { "id": "food_stick", "why": "One awful meal in bar form — eaten." },
+    { "id": "kibble_pack", "why": "One meal's worth of Kibble." },
+    { "id": "mre", "why": "A self-heating meal bag. Heated once." },
+    { "id": "glow_paint", "why": "Spraypaint. The can empties." },
+    { "id": "glow_stick", "why": "Snapped once, lasts ten hours, then it is rubbish." },
+    { "id": "road_flare", "why": "Burns for an hour and is gone." },
+    { "id": "personal_carepak", "why": "A wash kit with one clean-up in it." },
+    { "id": "vial_of_biotoxin", "why": "A vial. Emptied into someone, or onto something." },
+    { "id": "vial_of_poison", "why": "A vial, and the dose in it is the item." }
+  ],
+  "_deliberatelyNotHere": "Duct Tape and Rope come off a roll and survive being used; an Airhypo is the injector rather than the dose (the drug is not in this catalog, so nothing is tracked for it); a Memory Chip is written to and rewritten; Handcuffs stay on the person you put them on but are still a thing that exists. All of these are used, not spent."
+}
