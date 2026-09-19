@@ -1,0 +1,460 @@
+{
+  "_note": {
+    "why": "Twenty things to put on a battlefield. Cover is what turns a position into a choice — engine/cover.ts says so and PRODUCT.md agrees — but the only authored furniture the game had was the eight pieces standing in the Night Shift courtyard. An arena built from those alone is the same fight in a different colour, and 'a car' was not available to put in one.",
+    "houseRule": true,
+    "provenance": "The MATERIALS and their HP are the printed table (CP:R pg. 182, transcribed in data/rules/cover.json) and are not invented here. What IS a house judgement is which material each of these objects is made of, and how many 2m sections it covers — the book does not print a bus. Every entry carries a `why` saying which printed row it is being read against, so a disagreement is an argument about one line rather than a mystery.",
+    "sections": "pg. 182 makes a 2m by 2m section the unit that 'can be attacked just like you can', so a prop is a LIST of sections, each with its own material, HP and id. A sedan is an engine block you can hide behind and a passenger door you cannot: two sections, never one shared pool. Offsets are metres from the prop's own origin and always land on the 2m lattice the battlemat is drawn on.",
+    "notCover": "Three entries are scenery: thin plaster, foam, plastic and ordinary glass are printed as '0 HP (Not Cover)', and the golden rule says a thing that cannot stop a bullet is not cover at all. The engine treats those as absent from every sightline — which is exactly why they are worth having authored, because a chain-link fence and a cubicle wall stop a person walking and stop nothing else, and an arena that wants that effect should not have to fake it with something bulletproof.",
+    "crossable": "`blocksMovement: false` is for things you can step over or through — a knee-high barrier, a planter. You can shelter behind them and still cross them, which is a different tactical object from a wall.",
+    "art": "`art` names the sprite this prop will draw as. Nothing renders it yet: the combat board's prop art is hand-drawn per object in three damage states, and these have none, so anything placed today falls back to the crate texture the way an unknown id already does. The name is chosen with the item so the two cannot drift apart later.",
+    "notModelledYet": "Fuel drums and vehicles do not explode: the explosives rule (pg. 174) is not implemented, so a drum is a steel barrel and nothing more. Nor does breaking a window open a route — scenery that blocks movement blocks it at full HP and at zero."
+  },
+  "props": [
+    {
+      "key": "sedan",
+      "label": "a parked sedan",
+      "category": "vehicle",
+      "art": "sedan",
+      "why": "The printed table names a car door as Thin Steel and an engine block as Thick Steel. A car is both, which is why it is worth having: the bonnet end is the safe end, and everyone who has played a firefight learns that the hard way once.",
+      "sections": [
+        {
+          "key": "engine",
+          "label": "the sedan's engine block",
+          "material": "steel",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "cabin",
+          "label": "the sedan's cabin and doors",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "motorcycle",
+      "label": "a motorcycle on its stand",
+      "category": "vehicle",
+      "art": "motorcycle",
+      "why": "The smallest thing in the library, and the most arguable. There is no row under Thin Steel, so a bike reads as one — the frame, the engine, the tank. Generous for a machine you can see daylight through; the alternative was to call it wood, which is worse.",
+      "sections": [
+        {
+          "key": "frame",
+          "label": "the motorcycle's frame and engine",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "cargo_van",
+      "label": "a cargo van",
+      "category": "vehicle",
+      "art": "cargo-van",
+      "why": "The delivery truck already in the courtyard, at street size: a cab and engine worth Thick Steel, and a box body that is a shipping container with wheels — Thin Steel, printed.",
+      "sections": [
+        {
+          "key": "cab",
+          "label": "the van's cab and engine block",
+          "material": "steel",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "box_front",
+          "label": "the van's cargo box",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        },
+        {
+          "key": "box_rear",
+          "label": "the van's rear doors",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 4,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "city_bus",
+      "label": "a city bus",
+      "category": "vehicle",
+      "art": "city-bus",
+      "why": "The biggest thing here: eight metres of it, which is most of a small arena and a wall you have to go round rather than through. Engine block at the front reads Thick Steel, the panelled body Thin.",
+      "sections": [
+        {
+          "key": "engine",
+          "label": "the bus's engine housing",
+          "material": "steel",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "front",
+          "label": "the bus's front section",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        },
+        {
+          "key": "middle",
+          "label": "the bus's middle section",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 4,
+          "dy": 0
+        },
+        {
+          "key": "rear",
+          "label": "the bus's rear section",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 6,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "jersey_barrier",
+      "label": "a concrete jersey barrier",
+      "category": "street",
+      "art": "jersey-barrier",
+      "why": "The roadwork barrier on every closed lane in the city. Concrete, and thick enough to read as the printed Thick row — but waist high, so you can go over it, which is the whole reason to put one down rather than a wall.",
+      "sections": [
+        {
+          "key": "span",
+          "label": "a concrete jersey barrier",
+          "material": "concrete",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0,
+          "blocksMovement": false
+        }
+      ]
+    },
+    {
+      "key": "utility_pole",
+      "label": "a utility pole",
+      "category": "street",
+      "art": "utility-pole",
+      "why": "Printed by name under Thick Concrete. Narrow, so it covers one person and only from one angle — the cheapest piece of real cover a street can offer.",
+      "sections": [
+        {
+          "key": "pole",
+          "label": "a utility pole",
+          "material": "concrete",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "data_term",
+      "label": "a public data terminal",
+      "category": "street",
+      "art": "data-term",
+      "why": "Printed by name under Thick Concrete, and on half the street corners in Night City. Somebody is always standing at one, which makes it a place a fight can start as well as a place to stand in one.",
+      "sections": [
+        {
+          "key": "terminal",
+          "label": "a public data terminal",
+          "material": "concrete",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "vending_bank",
+      "label": "a bank of vending machines",
+      "category": "street",
+      "art": "vending-bank",
+      "why": "A steel cabinet full of cans, which is a refrigerator by another name — Thin Steel, printed. Four metres of frontage, because they are never installed alone.",
+      "sections": [
+        {
+          "key": "left",
+          "label": "a vending machine",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "right",
+          "label": "a vending machine",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "food_cart",
+      "label": "a street food cart",
+      "category": "street",
+      "art": "food-cart",
+      "why": "The steel counter and the griddle under it: Thin Steel. The most common object on a Night City pavement and the one most likely to be between two people when it starts.",
+      "sections": [
+        {
+          "key": "cart",
+          "label": "a street food cart",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "planter",
+      "label": "a concrete planter",
+      "category": "street",
+      "art": "planter",
+      "why": "Municipal landscaping doubling as vehicle denial: a concrete box of earth, thick and knee-high. Crossable, so it shapes a fight without walling it off.",
+      "sections": [
+        {
+          "key": "box",
+          "label": "a concrete planter",
+          "material": "concrete",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0,
+          "blocksMovement": false
+        }
+      ]
+    },
+    {
+      "key": "bus_shelter",
+      "label": "a bus shelter",
+      "category": "street",
+      "art": "bus-shelter",
+      "why": "Ordinary glass in a light frame. The printed table calls thin glass and plastic 0 HP (Not Cover), so this stops nobody — but it is still a structure you walk around, which is the point of having it.",
+      "sections": [
+        {
+          "key": "shelter",
+          "label": "a bus shelter",
+          "material": "plaster",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "chainlink_fence",
+      "label": "a chain-link fence",
+      "category": "street",
+      "art": "chainlink-fence",
+      "why": "The clearest case for scenery in the library: a fence stops a person and stops no bullet at all. Authored as 0 HP so the engine never treats it as cover, and left blocking so it still decides where people can walk.",
+      "sections": [
+        {
+          "key": "span_west",
+          "label": "a chain-link fence",
+          "material": "plaster",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "span_east",
+          "label": "a chain-link fence",
+          "material": "plaster",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "shipping_container",
+      "label": "a shipping container",
+      "category": "industrial",
+      "art": "shipping-container",
+      "why": "Printed by name under Thin Steel. Six metres of it: the one piece here that can divide an arena in half on its own.",
+      "sections": [
+        {
+          "key": "west",
+          "label": "a shipping container",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "middle",
+          "label": "a shipping container",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        },
+        {
+          "key": "east",
+          "label": "a shipping container's doors",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 4,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "fuel_drums",
+      "label": "a cluster of fuel drums",
+      "category": "industrial",
+      "art": "fuel-drums",
+      "why": "Steel barrels, read as Thin Steel. They do not go up: the explosives rule is not implemented, so anyone who puts these down should know they are barrels rather than a set piece.",
+      "sections": [
+        {
+          "key": "drums",
+          "label": "a cluster of fuel drums",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "steel_shelving",
+      "label": "a run of steel shelving",
+      "category": "industrial",
+      "art": "steel-shelving",
+      "why": "Stockroom racking, loaded. Thin Steel, and four metres long, which is what makes a warehouse fight a maze rather than a room.",
+      "sections": [
+        {
+          "key": "bay_west",
+          "label": "a loaded shelving bay",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "bay_east",
+          "label": "a loaded shelving bay",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "bar_counter",
+      "label": "a bar counter",
+      "category": "interior",
+      "art": "bar-counter",
+      "why": "Printed by name under Thick Wood — 'a bar'. The one piece of interior furniture the book rates as real cover, and the reason a firefight in a club happens across the room rather than in it.",
+      "sections": [
+        {
+          "key": "west",
+          "label": "the bar counter",
+          "material": "wood",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "east",
+          "label": "the bar counter",
+          "material": "wood",
+          "thickness": "thick",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "overturned_table",
+      "label": "an overturned table",
+      "category": "interior",
+      "art": "overturned-table",
+      "why": "Printed by name under Thin Wood, at 5 HP: the classic thing to hide behind and the fastest thing in the game to lose. Worth authoring precisely because it does not last.",
+      "sections": [
+        {
+          "key": "table",
+          "label": "an overturned table",
+          "material": "wood",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "server_rack",
+      "label": "a server rack",
+      "category": "interior",
+      "art": "server-rack",
+      "why": "A steel cabinet of electronics: Thin Steel. Puts real cover inside the kind of room a netrunning job ends in.",
+      "sections": [
+        {
+          "key": "rack",
+          "label": "a server rack",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "teller_screen",
+      "label": "a bulletproof teller screen",
+      "category": "interior",
+      "art": "teller-screen",
+      "why": "The printed Bulletproof Glass row exists for exactly this, and nothing in the game used it. Thick, at 30 HP — you can see the person you are shooting at the whole time you fail to hit them.",
+      "sections": [
+        {
+          "key": "left",
+          "label": "a bulletproof teller screen",
+          "material": "bulletproof_glass",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "right",
+          "label": "a bulletproof teller screen",
+          "material": "bulletproof_glass",
+          "thickness": "thick",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "cubicle_wall",
+      "label": "an office cubicle wall",
+      "category": "interior",
+      "art": "cubicle-wall",
+      "why": "Printed by name as the example of what is NOT cover — thin foam and fabric, 0 HP. Authored so an office can be full of furniture that hides you from sight and does nothing else whatsoever.",
+      "sections": [
+        {
+          "key": "partition",
+          "label": "an office cubicle wall",
+          "material": "plaster",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    }
+  ]
+}
