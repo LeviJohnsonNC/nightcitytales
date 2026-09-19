@@ -49,6 +49,10 @@ import {
   districtOfPlace,
   whoIsAt,
   flagMeaning,
+  getDistrict,
+  getPlace,
+  isCombatZone,
+  partOfDay,
 } from "@/engine";
 
 import { NpcText } from "@/features/cast/NpcText";
@@ -71,6 +75,9 @@ import {
 import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
+import { CityTurns } from "./CityTurns";
+import { SceneHero } from "./SceneHero";
+import type { TurnContext } from "./cityTurns";
 import { hauntPeople } from "./lifeModel";
 import { placeHistory } from "@/features/campaign/placeState";
 import { ShopSheet } from "./ShopSheet";
@@ -227,6 +234,26 @@ const LIFE_EVENT_TYPES = new Set([
 ]);
 
 /**
+ * What the log actually shows: the Life event types, minus the narration that
+ * is already printed in its own block below the input.
+ *
+ * Shared, because the screen has to ask the same question the log answers — an
+ * opening with nothing in it is what puts the scene picture at full height, and
+ * a second copy of this filter would drift from the first the day one of the
+ * event types moves.
+ */
+function shownLifeEvents(events: CampaignEvent[], suppressText?: string): CampaignEvent[] {
+  const norm = (t: string) => t.replace(/\s+/g, " ").trim();
+  const suppressed = suppressText ? norm(suppressText) : null;
+  return events
+    .filter((e) => LIFE_EVENT_TYPES.has(e.type))
+    .filter(
+      (e) => !(suppressed && e.type === "life_narration" && norm(e.summary ?? "") === suppressed),
+    )
+    .slice(-40);
+}
+
+/**
  * The running log. The current turn's narration is shown below the input in its
  * own block, so any narration text identical to it is dropped here: the same
  * paragraph twice reads as a bug, because it is one.
@@ -235,32 +262,29 @@ function LifeLog({
   events,
   busy,
   suppressText,
+  turnContext,
 }: {
   events: CampaignEvent[];
   busy: boolean;
   suppressText?: string;
+  /** Where and when the character is, for the line shown while the turn runs. */
+  turnContext: TurnContext;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [events.length]);
-  const norm = (t: string) => t.replace(/\s+/g, " ").trim();
-  const suppressed = suppressText ? norm(suppressText) : null;
-  const shown = events
-    .filter((e) => LIFE_EVENT_TYPES.has(e.type))
-    .filter(
-      (e) => !(suppressed && e.type === "life_narration" && norm(e.summary ?? "") === suppressed),
-    )
-    .slice(-40);
+  const shown = shownLifeEvents(events, suppressText);
+  // Nothing has happened yet: the scene above is the screen, and an empty
+  // bordered box under it reads as something that failed to load.
+  if (shown.length === 0 && !busy) return null;
   // One scroller on a phone (the page); the desktop column keeps its own.
   return (
     <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
-      {shown.length === 0 && !busy ? (
-        <p className="text-sm text-muted-foreground">The city hums on without you…</p>
-      ) : (
-        shown.map((e) => <LifeEvent key={e.id} event={e} />)
-      )}
-      {busy && <p className="text-sm italic text-muted-foreground">Night City turns…</p>}
+      {shown.map((e) => (
+        <LifeEvent key={e.id} event={e} />
+      ))}
+      {busy && <CityTurns context={turnContext} seed={events.length} />}
       <div ref={endRef} />
     </div>
   );
@@ -827,6 +851,25 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
       resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
   };
 
+  const locationKey = bundle.campaign.location_key ?? DEFAULT_START;
+  const hasLog = shownLifeEvents(bundle.events, life.narration?.text).length > 0;
+
+  /**
+   * What the wait is allowed to know: where they are, and roughly when. Three
+   * map lookups, computed inline rather than memoised — this sits after the
+   * screen's early returns, where a hook cannot go.
+   */
+  const turnContext: TurnContext = (() => {
+    const at = resolvePosition(locationKey);
+    const district = at ? getDistrict(at.districtKey) : undefined;
+    const place = at?.placeKey ? getPlace(at.placeKey) : undefined;
+    return {
+      dayPart: partOfDay(bundle.clock.minute),
+      ...(district ? { districtName: district.name, combatZone: isCombatZone(district.key) } : {}),
+      ...(place ? { placeName: place.name } : {}),
+    };
+  })();
+
   const chips = [
     { label: "HP", value: `${bundle.vitals.hp_current}/${bundle.vitals.hp_max}` },
     { label: "Wound", value: bundle.vitals.wound_state },
@@ -962,9 +1005,13 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               </div>
             </div>
 
+            {/* Where you are, before anything has happened here. */}
+            <SceneHero locationKey={locationKey} opening={!hasLog} />
+
             <LifeLog
               events={bundle.events}
               busy={life.busy}
+              turnContext={turnContext}
               {...(life.narration ? { suppressText: life.narration.text } : {})}
             />
 
