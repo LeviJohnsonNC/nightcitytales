@@ -1,0 +1,61 @@
+{
+  "_note": "Stock art for walk-on roles the GM might name in passing — a bartender, a beat cop — who are not part of the standing cast in cast-content.json and get no dossier of their own, just a face. Looked up by features/cast/flavorArt.ts via `subject` (and optionally `gender`); `id` is the file's slug under public/images/flavor/, encoded at the same two WebP widths as cast art (tools/art/webp.mjs --widths=1024,512).",
+  "_schema": {
+    "id": "string — file slug under public/images/flavor/, no extension or width suffix",
+    "type": "\"person\" for now — reserved for a future non-person tier of static flavor art",
+    "subject": "string — stable kebab-case role slug a caller looks up by, shared across every gender variant of the same role",
+    "gender": "\"male\" | \"female\""
+  },
+  "entries": [
+    { "id": "av-cab-driver-female", "type": "person", "subject": "av-cab-driver", "gender": "female" },
+    { "id": "av-cab-driver-male", "type": "person", "subject": "av-cab-driver", "gender": "male" },
+    { "id": "clinic-nurse-female", "type": "person", "subject": "clinic-nurse", "gender": "female" },
+    { "id": "clinic-nurse-male", "type": "person", "subject": "clinic-nurse", "gender": "male" },
+    { "id": "club-bouncer-female", "type": "person", "subject": "club-bouncer", "gender": "female" },
+    { "id": "club-bouncer-male", "type": "person", "subject": "club-bouncer", "gender": "male" },
+    {
+      "id": "convenience-clerk-female",
+      "type": "person",
+      "subject": "convenience-clerk",
+      "gender": "female"
+    },
+    {
+      "id": "convenience-clerk-male",
+      "type": "person",
+      "subject": "convenience-clerk",
+      "gender": "male"
+    },
+    {
+      "id": "corpo-lobby-receptionist-female",
+      "type": "person",
+      "subject": "corpo-lobby-receptionist",
+      "gender": "female"
+    },
+    {
+      "id": "corpo-lobby-receptionist-male",
+      "type": "person",
+      "subject": "corpo-lobby-receptionist",
+      "gender": "male"
+    },
+    { "id": "dive-bar-tender-female", "type": "person", "subject": "dive-bar-tender", "gender": "female" },
+    { "id": "dive-bar-tender-male", "type": "person", "subject": "dive-bar-tender", "gender": "male" },
+    { "id": "ncpd-beat-cop-female", "type": "person", "subject": "ncpd-beat-cop", "gender": "female" },
+    { "id": "ncpd-beat-cop-male", "type": "person", "subject": "ncpd-beat-cop", "gender": "male" },
+    {
+      "id": "net-cafe-operator-female",
+      "type": "person",
+      "subject": "net-cafe-operator",
+      "gender": "female"
+    },
+    {
+      "id": "net-cafe-operator-male",
+      "type": "person",
+      "subject": "net-cafe-operator",
+      "gender": "male"
+    },
+    { "id": "noodle-bar-cook-female", "type": "person", "subject": "noodle-bar-cook", "gender": "female" },
+    { "id": "noodle-bar-cook-male", "type": "person", "subject": "noodle-bar-cook", "gender": "male" },
+    { "id": "street-vendor-female", "type": "person", "subject": "street-vendor", "gender": "female" },
+    { "id": "street-vendor-male", "type": "person", "subject": "street-vendor", "gender": "male" }
+  ]
+}
