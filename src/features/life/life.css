@@ -1,0 +1,148 @@
+/*
+ * Life's two pieces of motion: the wait, and the scene above it.
+ *
+ * Both are deliberately quiet. The player sees the wait several hundred times
+ * in a session and the scene sits on screen the whole time, so anything that
+ * flickers or twitches stops being atmosphere within an hour. What is left is
+ * light moving slowly: a sweep through the letters, a pulse on a glyph, one
+ * scan line crossing a photograph every twelve seconds.
+ *
+ * Every animation here is neutralized by the global prefers-reduced-motion
+ * block in styles.css, which collapses durations rather than removing rules —
+ * so each of these must be legible at its END state. The shimmer's gradient
+ * therefore leaves the text at full opacity, and the scan lines park offscreen.
+ */
+
+/* ---------------------------------------------------------------- the wait */
+
+.life-turn {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+/*
+ * The sweep. A bright band travels through a gradient that is otherwise the
+ * line's own dimmed colour, clipped to the glyphs — light passing behind a sign
+ * rather than the text blinking. `--turn-hue` is set per line by the component.
+ */
+.life-turn-text {
+  background-image: linear-gradient(
+    100deg,
+    var(--turn-dim) 0%,
+    var(--turn-dim) 38%,
+    var(--turn-hue) 50%,
+    var(--turn-dim) 62%,
+    var(--turn-dim) 100%
+  );
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: life-turn-sweep 2.6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+@keyframes life-turn-sweep {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}
+
+/* The glyph in front of the line: a signal, breathing rather than spinning. */
+.life-turn-mark {
+  color: var(--turn-hue);
+  animation: life-turn-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes life-turn-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    text-shadow: none;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 10px var(--turn-hue);
+  }
+}
+
+/* A hairline under the line, travelling the width of the column and back. */
+.life-turn-rule {
+  background-image: linear-gradient(90deg, transparent, var(--turn-hue), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: life-turn-rule 2.6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+@keyframes life-turn-rule {
+  from {
+    background-position: -40% 0;
+  }
+  to {
+    background-position: 140% 0;
+  }
+}
+
+/* --------------------------------------------------------------- the scene */
+
+/* The photograph arrives rather than appearing: a slow lift out of the dark. */
+.scene-hero-img {
+  animation: scene-hero-in 1200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes scene-hero-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * One scan line, crossing every twelve seconds. Long gaps are the whole point:
+ * a sweep you can set your watch by reads as a loading bar, and one that
+ * arrives while you are reading something else reads as a live feed.
+ */
+.scene-hero-scan {
+  animation: scene-hero-scan 12s linear infinite;
+}
+
+@keyframes scene-hero-scan {
+  0% {
+    transform: translateY(-2rem);
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.55;
+  }
+  22% {
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(var(--scan-travel, 22rem));
+    opacity: 0;
+  }
+}
+
+/* The stand-in when a place has no photograph: a dead sign, lit from behind. */
+.scene-hero-plate {
+  background-image:
+    radial-gradient(90% 120% at 18% 110%, rgba(255, 61, 154, 0.3), transparent 60%),
+    radial-gradient(80% 110% at 82% 120%, rgba(52, 213, 230, 0.22), transparent 58%),
+    radial-gradient(140% 100% at 50% -20%, rgba(161, 92, 255, 0.26), transparent 70%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(236, 241, 255, 0.08) 0px,
+      rgba(236, 241, 255, 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    linear-gradient(180deg, #120e2b 0%, #0b0819 100%);
+}
