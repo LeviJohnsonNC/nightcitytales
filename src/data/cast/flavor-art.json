@@ -7,11 +7,26 @@
     "gender": "\"male\" | \"female\""
   },
   "entries": [
-    { "id": "av-cab-driver-female", "type": "person", "subject": "av-cab-driver", "gender": "female" },
+    {
+      "id": "av-cab-driver-female",
+      "type": "person",
+      "subject": "av-cab-driver",
+      "gender": "female"
+    },
     { "id": "av-cab-driver-male", "type": "person", "subject": "av-cab-driver", "gender": "male" },
-    { "id": "clinic-nurse-female", "type": "person", "subject": "clinic-nurse", "gender": "female" },
+    {
+      "id": "clinic-nurse-female",
+      "type": "person",
+      "subject": "clinic-nurse",
+      "gender": "female"
+    },
     { "id": "clinic-nurse-male", "type": "person", "subject": "clinic-nurse", "gender": "male" },
-    { "id": "club-bouncer-female", "type": "person", "subject": "club-bouncer", "gender": "female" },
+    {
+      "id": "club-bouncer-female",
+      "type": "person",
+      "subject": "club-bouncer",
+      "gender": "female"
+    },
     { "id": "club-bouncer-male", "type": "person", "subject": "club-bouncer", "gender": "male" },
     {
       "id": "convenience-clerk-female",
@@ -37,9 +52,24 @@
       "subject": "corpo-lobby-receptionist",
       "gender": "male"
     },
-    { "id": "dive-bar-tender-female", "type": "person", "subject": "dive-bar-tender", "gender": "female" },
-    { "id": "dive-bar-tender-male", "type": "person", "subject": "dive-bar-tender", "gender": "male" },
-    { "id": "ncpd-beat-cop-female", "type": "person", "subject": "ncpd-beat-cop", "gender": "female" },
+    {
+      "id": "dive-bar-tender-female",
+      "type": "person",
+      "subject": "dive-bar-tender",
+      "gender": "female"
+    },
+    {
+      "id": "dive-bar-tender-male",
+      "type": "person",
+      "subject": "dive-bar-tender",
+      "gender": "male"
+    },
+    {
+      "id": "ncpd-beat-cop-female",
+      "type": "person",
+      "subject": "ncpd-beat-cop",
+      "gender": "female"
+    },
     { "id": "ncpd-beat-cop-male", "type": "person", "subject": "ncpd-beat-cop", "gender": "male" },
     {
       "id": "net-cafe-operator-female",
@@ -53,9 +83,24 @@
       "subject": "net-cafe-operator",
       "gender": "male"
     },
-    { "id": "noodle-bar-cook-female", "type": "person", "subject": "noodle-bar-cook", "gender": "female" },
-    { "id": "noodle-bar-cook-male", "type": "person", "subject": "noodle-bar-cook", "gender": "male" },
-    { "id": "street-vendor-female", "type": "person", "subject": "street-vendor", "gender": "female" },
+    {
+      "id": "noodle-bar-cook-female",
+      "type": "person",
+      "subject": "noodle-bar-cook",
+      "gender": "female"
+    },
+    {
+      "id": "noodle-bar-cook-male",
+      "type": "person",
+      "subject": "noodle-bar-cook",
+      "gender": "male"
+    },
+    {
+      "id": "street-vendor-female",
+      "type": "person",
+      "subject": "street-vendor",
+      "gender": "female"
+    },
     { "id": "street-vendor-male", "type": "person", "subject": "street-vendor", "gender": "male" }
   ]
 }

@@ -41,9 +41,10 @@ describe("flavorArt()", () => {
     // Every current subject has both genders, so exercise the fallback path
     // directly against a gender the catalog does not define for anyone yet.
     const art = flavorArt("dive-bar-tender", "unspecified" as never);
-    expect(["/images/flavor/dive-bar-tender-male.webp", "/images/flavor/dive-bar-tender-female.webp"]).toContain(
-      art?.src,
-    );
+    expect([
+      "/images/flavor/dive-bar-tender-male.webp",
+      "/images/flavor/dive-bar-tender-female.webp",
+    ]).toContain(art?.src);
   });
 
   it("picks a variant when no gender is given at all", () => {
