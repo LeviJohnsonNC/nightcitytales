@@ -33,9 +33,7 @@ import {
 import { readRoleLifepath } from "./roleLifepathState";
 import { SINGLE_LIFEPATH_TABLES } from "./lifepathState";
 import type { ChargenState } from "./store";
-import { StatValue } from "./StatValue";
-import { statColor, statFraction } from "./statBands";
-import { STAT_ICONS } from "./statIcons";
+import { StatCard } from "./StatCard";
 
 function Panel({
   title,
@@ -110,67 +108,6 @@ function Box({
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">{label}</p>
       <div className="num text-2xl font-bold leading-tight text-text">{value}</div>
       {sub && <p className="font-mono text-[10px] tracking-wide text-text-dim">{sub}</p>}
-    </div>
-  );
-}
-
-/**
- * One STAT, as a card.
- *
- * Three things at once, in the order the eye takes them: the icon says which
- * STAT, the lit edge says how strong it is, and the number says exactly. The
- * edge is the ramp from `statBands.ts` — neon red at 2 through to neon green
- * at 8 — so a row of cards reads as a shape before a single number is read,
- * which is what the five-band legend under this panel was doing badly.
- */
-function StatCard({ stat, value }: { stat: string; value: number | null }) {
-  const Icon = STAT_ICONS[stat as keyof typeof STAT_ICONS];
-  const color = typeof value === "number" ? statColor(value) : null;
-  return (
-    <div
-      className="relative overflow-hidden border border-hairline bg-surface-raised py-2 pl-4 pr-3 transition-colors hover:border-primary/60 hover:bg-surface/80 hover:shadow-[0_0_10px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] active:bg-surface/60"
-      style={
-        color
-          ? ({
-              borderLeftColor: color,
-              // The lit edge, and the faintest wash of the same colour across
-              // the card so a strong STAT reads warm rather than just outlined.
-              backgroundImage: `linear-gradient(90deg, color-mix(in oklab, ${color} 14%, transparent), transparent 60%)`,
-            } as React.CSSProperties)
-          : undefined
-      }
-    >
-      {color && typeof value === "number" && (
-        <>
-          {/* The edge is a meter as well as a colour. A red-green ramp alone
-              says nothing to a red-green colour-blind reader, and the height
-              of the lit part says the same thing the hue does. */}
-          <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-hairline/60" />
-          <span
-            aria-hidden
-            className="absolute bottom-0 left-0 w-1"
-            style={{
-              height: `${18 + statFraction(value) * 82}%`,
-              background: color,
-              boxShadow: `0 0 10px -2px ${color}`,
-            }}
-          />
-        </>
-      )}
-      <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
-        {Icon && (
-          <Icon
-            aria-hidden
-            className="size-3.5"
-            strokeWidth={2.25}
-            style={color ? { color } : undefined}
-          />
-        )}
-        {stat.toUpperCase()}
-      </p>
-      <div className="num text-2xl font-bold leading-tight text-text">
-        <StatValue value={value} showIcon={false} className="text-text" />
-      </div>
     </div>
   );
 }
