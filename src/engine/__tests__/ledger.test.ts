@@ -7,6 +7,7 @@ import {
   readBackupCalledEventData,
   readDeathSaveEventData,
   readSkillCheckEventData,
+  readWalkOnsEventData,
 } from "../ledger";
 
 /**
@@ -233,6 +234,36 @@ describe("the read-only payloads", () => {
     expect(readBackupCalledEventData({ responded: false })).toEqual({ responded: false });
     // A call with no answer recorded is not a call that was answered.
     expect(readBackupCalledEventData({})).toBeNull();
+  });
+});
+
+describe("readWalkOnsEventData", () => {
+  it("reads back a resolved list exactly as written", () => {
+    const walkOns = [
+      { subject: "dive-bar-tender", gender: "male" },
+      { subject: "ncpd-beat-cop", gender: "female" },
+    ];
+    expect(readWalkOnsEventData({ walkOns })).toEqual(walkOns);
+  });
+
+  it("drops an item missing a subject or carrying an unrecognized gender", () => {
+    expect(
+      readWalkOnsEventData({
+        walkOns: [
+          { subject: "dive-bar-tender", gender: "male" },
+          { gender: "male" },
+          { subject: "ncpd-beat-cop", gender: "unspecified" },
+          "not an object",
+        ],
+      }),
+    ).toEqual([{ subject: "dive-bar-tender", gender: "male" }]);
+  });
+
+  it("treats a missing, non-array, null, or malformed payload as no walk-ons", () => {
+    expect(readWalkOnsEventData({})).toEqual([]);
+    expect(readWalkOnsEventData({ walkOns: "not an array" })).toEqual([]);
+    expect(readWalkOnsEventData(null)).toEqual([]);
+    expect(readWalkOnsEventData([1, 2])).toEqual([]);
   });
 });
 

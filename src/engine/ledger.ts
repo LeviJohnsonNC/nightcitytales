@@ -283,3 +283,35 @@ export function readBackupCalledEventData(raw: unknown): BackupCalledEventData |
   if (typeof d["responded"] !== "boolean") return null;
   return { responded: d["responded"] };
 }
+
+// ---------------------------------------------------------------------------
+// walkOns — a field riding on life_narration/gm_narration, not an event of its
+// own. Those two types are otherwise prose with no contract to break, but this
+// one field IS read back (to show a walk-on's face on the same line, including
+// on scrollback), so it gets the same round-trip guarantee as the mechanical
+// events above rather than being read ad hoc where it is rendered.
+// ---------------------------------------------------------------------------
+
+/** A walk-on the turn named, already resolved to a concrete gender. */
+export type WalkOnEventData = { subject: string; gender: "male" | "female" }[];
+
+/**
+ * No builder function: the value written IS this shape already —
+ * `resolveWalkOns` in features/cast/walkOnMention.ts produces exactly
+ * `{ subject, gender }[]`, validated against the flavor-art catalog before it
+ * ever reaches here. Only the read side needs to distrust the jsonb column.
+ */
+export function readWalkOnsEventData(raw: unknown): WalkOnEventData {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const list = (raw as RawPayload)["walkOns"];
+  if (!Array.isArray(list)) return [];
+  const out: WalkOnEventData = [];
+  for (const item of list) {
+    if (!item || typeof item !== "object") continue;
+    const w = item as RawPayload;
+    const subject = str(w["subject"]);
+    const gender = str(w["gender"]);
+    if (subject && (gender === "male" || gender === "female")) out.push({ subject, gender });
+  }
+  return out;
+}

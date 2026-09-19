@@ -7,6 +7,15 @@ describe("GmResponseSchema", () => {
     expect(parsed.proposedActions).toEqual([]);
     expect(parsed.stateDeltas).toEqual([]);
     expect(parsed.endsWithDecision).toBe(false);
+    expect(parsed.walkOns).toEqual([]);
+  });
+
+  it("accepts walk-on mentions", () => {
+    const parsed = GmResponseSchema.parse({
+      narration: "x",
+      walkOns: [{ subject: "dive-bar-tender", gender: "male" }],
+    });
+    expect(parsed.walkOns).toEqual([{ subject: "dive-bar-tender", gender: "male" }]);
   });
 
   it("accepts proposed actions and state deltas", () => {

@@ -15,6 +15,7 @@ import {
   THREAT_PROFILES,
   combatNumber,
 } from "@/engine";
+import { FLAVOR_SUBJECTS, flavorSubjectLabel } from "@/features/cast/flavorArt";
 
 /** Built from the engine's own vocabulary, so the two can never drift apart. */
 const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_MEANINGS[o]}`).join(
@@ -44,7 +45,10 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.6.0";
+/** Built from the flavor-art catalog, so a new batch of portraits needs no prompt edit. */
+const WALK_ON_LIST = FLAVOR_SUBJECTS.map((s) => `"${s}" (${flavorSubjectLabel(s)})`).join(", ");
+
+export const GM_PROMPT_VERSION = "2.7.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -135,6 +139,11 @@ ${OBSERVATION_LIST}
 - "clean" is worth reporting, and is the only thing that takes pressure back off. Report it when they genuinely left nothing behind, not as a consolation for a job that went badly.
 - The PRESSURE block tells you what is already on the dials. Those numbers are fact. Let the character feel them, never restate them as numbers, and never claim one moved.
 
+# WALK-ON FACES
+The interface can put a face on some walk-on roles — people passing through who are not part of the standing cast and will never get a dossier of their own. When you narrate one whose role matches an id below, tag them in "walkOns" using that id exactly. Do this only for a genuine walk-on: never tag a named cast member and never a combat hostile (they already have a face via "enemies"), and never invent an id outside this list.
+${WALK_ON_LIST}
+Set "gender" only when the fiction already makes it plain; leave it out otherwise and the interface picks one that stays consistent for this place. Most turns tag nobody — [] is correct whenever nothing here fits.
+
 # TONE & VOICE
 - The house voice above governs. These are the parts specific to running a job.
 - Second person, present tense. Cinematic but not purple. Show Night City through sensory detail — the buzz of a failing sign, the reek of synth-noodle steam, the press of a crowd — not exposition dumps.
@@ -188,6 +197,7 @@ Return a structured object:
 - "observations": [] on a turn where the city noticed nothing. Otherwise what it noticed, using ONLY the words above: [{"observation":"killed","factionId":"tyger_claws"},{"observation":"loud","factionId":null}]. You are reporting, not pricing.
 - "question": null, or ONE yes/no question about the world you needed answered and could not answer yourself, per the rules above. The answer comes back next turn.
 - "endsWithDecision": true when your narration leaves something genuinely at stake and unresolved in front of the player.
+- "walkOns": [] on most turns. Otherwise the walk-on characters you named this turn, per WALK-ON FACES above: [{"subject":"<id>","gender":"male"|"female"}] (gender optional).
 
 # OPENING A SCENE
 When the player's input is an engine instruction to open a scene (rather than a stated action), do not treat it as a character action. Instead: dramatize the beat's read-aloud and GM brief in your own voice, make clear HOW the player character knows what they know and why they are involved (who hired them, what was offered, what's at stake), and establish where they physically are right now, in concrete detail. Establish it as a place with things in it, per SITUATIONS, NOT SOLUTIONS, and leave "suggestedActions" empty.`;

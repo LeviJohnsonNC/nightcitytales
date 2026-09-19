@@ -441,3 +441,27 @@ describe("using the kit", () => {
     expect(warn).toHaveBeenCalled();
   });
 });
+
+describe("walkOns", () => {
+  it("defaults to an empty list", () => {
+    expect(normalizeGmResponse(wire([])).walkOns).toEqual([]);
+  });
+
+  it("keeps a mention naming a real subject", () => {
+    const out = normalizeGmResponse({
+      narration: "x",
+      proposedActions: [],
+      walkOns: [{ subject: "dive-bar-tender", gender: "female" }],
+    });
+    expect(out.walkOns).toEqual([{ subject: "dive-bar-tender", gender: "female" }]);
+  });
+
+  it("drops a subject the flavor-art catalog does not know", () => {
+    const out = normalizeGmResponse({
+      narration: "x",
+      proposedActions: [],
+      walkOns: [{ subject: "a-person-nobody-drew" }],
+    });
+    expect(out.walkOns).toEqual([]);
+  });
+});

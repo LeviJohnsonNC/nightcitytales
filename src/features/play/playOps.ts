@@ -27,6 +27,7 @@ import { useCombatPlayback } from "./useCombatPlayback";
  */
 import { z } from "zod";
 import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/gmResponse";
+import { resolveWalkOns } from "@/features/cast/walkOnMention";
 import {
   advance,
   availableExits,
@@ -564,6 +565,13 @@ export async function narrate(
     data: {
       endsWithDecision: gm.endsWithDecision,
       suggestedActions: options.fixedResult ? [] : gm.suggestedActions,
+      // Resolved HERE, once, with the campaign+place seed the response schema
+      // never sees — never re-picked on a later render, so a walk-on's face
+      // stays the same face across scrollback and reload.
+      walkOns: resolveWalkOns(
+        gm.walkOns,
+        `${campaignId}:${bundle.campaign.location_key ?? DEFAULT_START}`,
+      ),
     } as unknown as Json,
     ...beatFields,
   });

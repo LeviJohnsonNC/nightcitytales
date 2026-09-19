@@ -6,6 +6,7 @@
  */
 import { z } from "zod";
 import { clampDispositionDelta, isAnswerableQuestion } from "@/engine";
+import { normalizeWalkOnMentions, type WalkOnMention } from "@/features/cast/walkOnMention";
 
 export const LIFE_ACTION_KINDS = [
   "skill_check",
@@ -140,6 +141,13 @@ export type LifeResponse = {
    * did not need to ask, which is most of them.
    */
   question: string | null;
+  /**
+   * Walk-on characters named this turn who are not part of the standing cast —
+   * a bartender, a beat cop — matched against the flavor-art catalog. Shape and
+   * vocabulary only: which gender each one actually gets is resolved later, in
+   * lifeOps.ts, where the campaign and place seed live.
+   */
+  walkOns: WalkOnMention[];
 };
 
 /**
@@ -157,6 +165,7 @@ export const LifeWireResponseSchema = z.object({
   observations: z.array(z.unknown()).nullish(),
   newSituation: z.unknown().nullish(),
   question: z.unknown().nullish(),
+  walkOns: z.array(z.unknown()).nullish(),
 });
 export type LifeWireResponse = z.infer<typeof LifeWireResponseSchema>;
 
@@ -457,5 +466,6 @@ export function normalizeLifeResponse(
     // predicate decides, so a model asking "what is in the crate?" is dropped
     // here rather than handed a yes/no that means nothing.
     question: normalizeQuestion(wire.question),
+    walkOns: normalizeWalkOnMentions(wire.walkOns),
   };
 }

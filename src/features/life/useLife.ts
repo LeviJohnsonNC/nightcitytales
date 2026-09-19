@@ -18,6 +18,7 @@ import {
   truthsAt,
 } from "@/engine";
 import { travelTo } from "@/features/atlas/travel";
+import { readWalkOnsEventData } from "@/engine";
 import { rest } from "@/features/downtime/downtimeOps";
 import { type CheckRoll, type PendingCheck, pendingChecksFrom } from "@/features/play/checkPrompt";
 import { localExpertIn } from "@/features/play/playModel";
@@ -186,6 +187,7 @@ export function useLife(campaignId: string) {
         return {
           title: typeof data?.title === "string" ? data.title : "Night City",
           text: event.summary ?? "",
+          walkOns: readWalkOnsEventData(event.data),
         };
       }
     }
