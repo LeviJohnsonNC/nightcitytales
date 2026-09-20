@@ -2,15 +2,34 @@
  * The LIFE turn — a server function that asks the model (via the Lovable AI
  * gateway) to dress the situation the application selected and parse the
  * player's intent into Life-resolvable actions. Mirrors gmTurn.server.ts: the
- * API key never leaves the server.
+ * API key never leaves the server, and every turn comes back stamped with its
+ * provenance (see engine/ledger.ts).
+ *
+ * LIFE_MODEL picks the model for this loop. It falls back to GM_MODEL, which is
+ * what Life read before it had an override of its own — so an existing GM_MODEL
+ * setting keeps steering both loops until somebody deliberately splits them.
+ * Life and Jobs run from separate prompts on purpose; being unable to point
+ * them at different models made half of that separation untestable.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { LIFE_SYSTEM_PROMPT } from "./lifeSystemPrompt";
+import { type TurnProvenance } from "@/engine";
+import { LIFE_SYSTEM_PROMPT, LIFE_PROMPT_VERSION } from "./lifeSystemPrompt";
 import { LifeWireResponseSchema, normalizeLifeResponse, type LifeResponse } from "./lifeResponse";
 
 const DEFAULT_LIFE_MODEL = "google/gemini-3.7-flash";
+
+/** A Life turn, plus the record of who wrote it. Mirrors GmTurnResult. */
+export type LifeTurnResult = LifeResponse & { provenance: TurnProvenance };
+
+/**
+ * The DOMAIN shape, not the wire shape: lifeOps.ts builds the payload with
+ * ledger.ts's `turnProvenanceData` at the moment it writes the event.
+ */
+function lifeProvenance(model: string, servedModel: string | null): TurnProvenance {
+  return { narrator: "life", promptVersion: LIFE_PROMPT_VERSION, model, servedModel };
+}
 
 const LifeTurnInput = z.object({
   /** The rendered context slice + player input (see renderLifeUserPrompt). */
@@ -35,23 +54,26 @@ function lifeError(error: unknown, model: string): Error {
 export const lifeTurnFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => LifeTurnInput.parse(input))
-  .handler(async ({ data }): Promise<LifeResponse> => {
+  .handler(async ({ data }): Promise<LifeTurnResult> => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI is not configured for this app.");
 
-    const model = process.env["GM_MODEL"] ?? DEFAULT_LIFE_MODEL;
+    const model = process.env["LIFE_MODEL"] ?? process.env["GM_MODEL"] ?? DEFAULT_LIFE_MODEL;
     const { generateObject } = await import("ai");
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
 
     const gateway = createLovableAiGatewayProvider(key);
     try {
-      const { object } = await generateObject({
+      const { object, response } = await generateObject({
         model: gateway(model),
         schema: LifeWireResponseSchema,
         system: LIFE_SYSTEM_PROMPT,
         prompt: data.userPrompt,
       });
-      return normalizeLifeResponse(object);
+      return {
+        ...normalizeLifeResponse(object),
+        provenance: lifeProvenance(model, response.modelId),
+      };
     } catch (error) {
       throw lifeError(error, model);
     }

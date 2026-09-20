@@ -6,11 +6,16 @@
  *
  * GM_MODEL must be a model slug the Lovable gateway exposes; override it with
  * the GM_MODEL env var.
+ *
+ * Every turn comes back stamped with its provenance — which prompt, at which
+ * version, asked which model, and which model the gateway says replied. See
+ * engine/ledger.ts for why that is worth a field.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { GM_SYSTEM_PROMPT } from "./gmSystemPrompt";
+import { type TurnProvenance } from "@/engine";
+import { GM_SYSTEM_PROMPT, GM_PROMPT_VERSION } from "./gmSystemPrompt";
 import {
   GmWireResponseSchema,
   normalizeGmResponse,
@@ -19,6 +24,25 @@ import {
 } from "./gmResponse";
 
 const DEFAULT_GM_MODEL = "google/gemini-3.7-flash";
+
+/**
+ * A GM turn, plus the record of who wrote it.
+ *
+ * An added field rather than a wrapper, so the one caller reads `gm.narration`
+ * exactly as before and `gm.provenance` when it writes the event.
+ */
+export type GmTurnResult = GmResponse & { provenance: TurnProvenance };
+
+/**
+ * The provenance every turn carries, whether the structured output held or not.
+ *
+ * The DOMAIN shape, not the wire shape: playOps.ts builds the payload with
+ * ledger.ts's `turnProvenanceData` at the moment it writes the event, so the
+ * field names are produced in one place, as every other ledger payload is.
+ */
+function gmProvenance(model: string, servedModel: string | null): TurnProvenance {
+  return { narrator: "gm", promptVersion: GM_PROMPT_VERSION, model, servedModel };
+}
 
 const GmTurnInput = z.object({
   /** The rendered context slice + player input (see renderGmUserPrompt). */
@@ -58,7 +82,7 @@ export const gmTurnFn = createServerFn({ method: "POST" })
   // nothing else; this is what stops a stranger with curl.
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => GmTurnInput.parse(input))
-  .handler(async ({ data }): Promise<GmResponse> => {
+  .handler(async ({ data }): Promise<GmTurnResult> => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI is not configured for this app.");
 
@@ -68,13 +92,16 @@ export const gmTurnFn = createServerFn({ method: "POST" })
 
     const gateway = createLovableAiGatewayProvider(key);
     try {
-      const { object } = await generateObject({
+      const { object, response } = await generateObject({
         model: gateway(model),
         schema: GmWireResponseSchema,
         system: GM_SYSTEM_PROMPT,
         prompt: data.userPrompt,
       });
-      return normalizeGmResponse(object);
+      // What the gateway says actually answered, which is not always what was
+      // asked for. A turn blamed on a prompt change that was really a silent
+      // model swap is the most expensive kind of wrong.
+      return { ...normalizeGmResponse(object), provenance: gmProvenance(model, response.modelId) };
     } catch (error) {
       // Structured output failed, but the turn did not.
       //
@@ -89,8 +116,11 @@ export const gmTurnFn = createServerFn({ method: "POST" })
       // the error is raised only when there is nothing to show. What CANNOT be
       // recovered — the proposed actions — is dropped rather than guessed; see
       // salvageGmResponse.
+      // A salvaged turn is still a turn this prompt and this model produced,
+      // and it is the turn most worth being able to attribute later. The served
+      // model is unknown here: the call threw before the response metadata.
       const salvaged = salvageGmResponse(rawTextOf(error));
-      if (salvaged) return salvaged;
+      if (salvaged) return { ...salvaged, provenance: gmProvenance(model, null) };
       throw gmError(error, model);
     }
   });

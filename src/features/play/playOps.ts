@@ -108,6 +108,7 @@ import {
   truthsInBeat,
   truthsInMission,
   type PlaceState,
+  turnProvenanceDataIfAny,
 } from "@/engine";
 
 import {
@@ -572,6 +573,9 @@ export async function narrate(
         gm.walkOns,
         `${campaignId}:${bundle.campaign.location_key ?? DEFAULT_START}`,
       ),
+      // Which prompt, at which version, asked which model — and who answered.
+      // Built here rather than spelled out, per ledger.ts.
+      ...turnProvenanceDataIfAny(gm.provenance),
     } as unknown as Json,
     ...beatFields,
   });
