@@ -1057,7 +1057,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                 <p className="whitespace-pre-wrap text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
                   <NpcText text={life.narration.text} />
                 </p>
-                <WalkOnStrip walkOns={life.narration.walkOns} />
+                <WalkOnStrip walkOns={life.narration.walkOns} defaultOpen />
               </section>
             )}
 
