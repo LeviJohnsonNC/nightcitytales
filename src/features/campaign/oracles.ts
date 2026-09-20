@@ -384,7 +384,11 @@ export async function answerPendingQuestion(
 ): Promise<OracleAnswer | null> {
   const question = pendingQuestionFrom(await listCampaignFlags(campaignId));
   if (!question) return null;
-  await setCampaignFlag(campaignId, PENDING_QUESTION_FLAG, null as unknown as Json);
+  // Cleared, not nulled: campaign_flags.value is NOT NULL, and pendingQuestionFrom
+  // already treats anything that isn't a parseable question string as "none" — so
+  // the same bare-flag sentinel setCampaignFlag defaults to elsewhere reads back
+  // as cleared without writing a value the column can't hold.
+  await setCampaignFlag(campaignId, PENDING_QUESTION_FLAG);
   const result = rollOracle(OPEN_QUESTION, rng);
   await logSecretOracle(campaignId, result);
   return { question, answer: result.text, key: result.key };
