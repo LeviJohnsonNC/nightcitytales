@@ -17,6 +17,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
@@ -283,9 +284,19 @@ function LifeLog({
   // Nothing has happened yet: the scene above is the screen, and an empty
   // bordered box under it reads as something that failed to load.
   if (shown.length === 0 && !busy) return null;
-  // One scroller on a phone (the page); the desktop column keeps its own.
+  // One scroller on a phone (the page); the desktop column keeps its own,
+  // but only once there is a real log to scroll. Growing to fill the
+  // column's minimum height is right for a log with turns in it — it is
+  // dead air under a single waiting line, which is all this box holds
+  // before the first turn has landed.
+  const growsToFillColumn = shown.length > 0;
   return (
-    <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
+    <div
+      className={cn(
+        "space-y-3 border border-border bg-card/40 p-4",
+        growsToFillColumn && "lg:flex-1 lg:overflow-y-auto",
+      )}
+    >
       {shown.map((e) => (
         <LifeEvent key={e.id} event={e} />
       ))}
