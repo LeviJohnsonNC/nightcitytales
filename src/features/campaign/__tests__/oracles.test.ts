@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { setCampaignFlag } from "@/lib/backend";
 import type { CampaignFlag, Json } from "@/lib/backend";
 
 /**
@@ -364,6 +365,16 @@ describe("questions", () => {
     });
     expect(ledger[0]!.type).toBe("oracle_secret");
     expect(pendingQuestionFrom(rows())).toBeNull();
+  });
+
+  it("never asks the store to hold a null value when clearing the question", async () => {
+    // campaign_flags.value is NOT NULL — a real backend rejects a null write
+    // outright, which this mock's plain Map cannot catch on its own.
+    await askOracle("c", "Is the side door already unlocked?");
+    await answerPendingQuestion("c", face(10, 10));
+    for (const call of vi.mocked(setCampaignFlag).mock.calls) {
+      expect(call[2]).not.toBeNull();
+    }
   });
 
   it("answers each question once", async () => {
