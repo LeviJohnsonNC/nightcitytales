@@ -36,7 +36,14 @@ import { usePlay } from "./usePlay";
 import type { PlayBundle } from "./playOps";
 import type { RollRecord } from "./checkPrompt";
 
-function EventBlock({ event }: { event: CampaignEvent }) {
+function EventBlock({
+  event,
+  isCurrentTurn = false,
+}: {
+  event: CampaignEvent;
+  /** The pinned "latest result" view, not the scrolling journal — always the newest turn. */
+  isCurrentTurn?: boolean;
+}) {
   const text = event.summary ?? "";
   switch (event.type) {
     case "player_input":
@@ -49,7 +56,7 @@ function EventBlock({ event }: { event: CampaignEvent }) {
           <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
             <NpcText text={text} />
           </p>
-          <WalkOnStrip walkOns={readWalkOnsEventData(event.data)} />
+          <WalkOnStrip walkOns={readWalkOnsEventData(event.data)} defaultOpen={isCurrentTurn} />
         </div>
       );
 
@@ -99,10 +106,13 @@ function NarrativeLog({
   events,
   readAloud,
   busy,
+  isCurrentTurn = false,
 }: {
   events: CampaignEvent[];
   readAloud?: string | undefined;
   busy: boolean;
+  /** This list IS the pinned "latest result" view, not the scrolling journal. */
+  isCurrentTurn?: boolean;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -124,7 +134,7 @@ function NarrativeLog({
       {events.length === 0 && !readAloud ? (
         <p className="text-sm text-muted-foreground">Night City holds its breath…</p>
       ) : (
-        events.map((e) => <EventBlock key={e.id} event={e} />)
+        events.map((e) => <EventBlock key={e.id} event={e} isCurrentTurn={isCurrentTurn} />)
       )}
       {busy && <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>}
       <div ref={endRef} />
@@ -861,6 +871,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
               <NarrativeLog
                 events={bundle.events.filter((event) => event.type === "gm_narration").slice(-1)}
                 busy={play.busy || play.opening}
+                isCurrentTurn
               />
             </div>
           </>
