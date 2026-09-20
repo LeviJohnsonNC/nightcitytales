@@ -17,7 +17,6 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
@@ -264,43 +263,24 @@ function shownLifeEvents(events: CampaignEvent[], suppressText?: string): Campai
  * own block, so any narration text identical to it is dropped here: the same
  * paragraph twice reads as a bug, because it is one.
  */
-function LifeLog({
-  events,
-  busy,
-  suppressText,
-  turnContext,
-}: {
-  events: CampaignEvent[];
-  busy: boolean;
-  suppressText?: string;
-  /** Where and when the character is, for the line shown while the turn runs. */
-  turnContext: TurnContext;
-}) {
+function LifeLog({ events, suppressText }: { events: CampaignEvent[]; suppressText?: string }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [events.length]);
   const shown = shownLifeEvents(events, suppressText);
   // Nothing has happened yet: the scene above is the screen, and an empty
-  // bordered box under it reads as something that failed to load.
-  if (shown.length === 0 && !busy) return null;
-  // One scroller on a phone (the page); the desktop column keeps its own,
-  // but only once there is a real log to scroll. Growing to fill the
-  // column's minimum height is right for a log with turns in it — it is
-  // dead air under a single waiting line, which is all this box holds
-  // before the first turn has landed.
-  const growsToFillColumn = shown.length > 0;
+  // bordered box under it reads as something that failed to load. The wait
+  // itself is no longer this component's problem — it renders once, at the
+  // bottom of the screen, above the input, rather than at the tail of
+  // whatever this box happens to hold.
+  if (shown.length === 0) return null;
+  // One scroller on a phone (the page); the desktop column keeps its own.
   return (
-    <div
-      className={cn(
-        "space-y-3 border border-border bg-card/40 p-4",
-        growsToFillColumn && "lg:flex-1 lg:overflow-y-auto",
-      )}
-    >
+    <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
       {shown.map((e) => (
         <LifeEvent key={e.id} event={e} />
       ))}
-      {busy && <CityTurns context={turnContext} seed={events.length} />}
       <div ref={endRef} />
     </div>
   );
@@ -1026,8 +1006,6 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
             <LifeLog
               events={bundle.events}
-              busy={life.busy}
-              turnContext={turnContext}
               {...(life.narration ? { suppressText: life.narration.text } : {})}
             />
 
@@ -1090,6 +1068,11 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
             )}
 
             {life.hook && <HookCard life={life} />}
+
+            {/* The wait, pinned above the input rather than at the tail of
+                whatever box it used to share — the lowest thing on the
+                screen until the turn actually lands. */}
+            {life.busy && <CityTurns context={turnContext} seed={bundle.events.length} />}
 
             <BottomDock>
               <InputBar
