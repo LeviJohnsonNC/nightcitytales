@@ -136,7 +136,12 @@ function NarrativeLog({
       ) : (
         events.map((e) => <EventBlock key={e.id} event={e} isCurrentTurn={isCurrentTurn} />)
       )}
-      {busy && <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>}
+      {/* Only the pinned "latest result" panel shows this inline — the
+          scrolling journal's wait is rendered standalone, at the true
+          bottom of the screen, above the input. */}
+      {isCurrentTurn && busy && (
+        <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>
+      )}
       <div ref={endRef} />
     </div>
   );
@@ -878,11 +883,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         }
         journal={
           <>
-            <NarrativeLog
-              events={bundle.events}
-              readAloud={bundle.beat?.readAloud}
-              busy={play.busy || play.opening}
-            />
+            <NarrativeLog events={bundle.events} readAloud={bundle.beat?.readAloud} busy={false} />
             {rail}
           </>
         }
@@ -999,11 +1000,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             the column past the viewport and take the input bar with it.
           */}
           <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-            <NarrativeLog
-              events={bundle.events}
-              readAloud={bundle.beat?.readAloud}
-              busy={play.busy || play.opening}
-            />
+            <NarrativeLog events={bundle.events} readAloud={bundle.beat?.readAloud} busy={false} />
             {play.actionError && (
               <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
                 <p className="text-sm text-destructive">{play.actionError.message}</p>
@@ -1051,6 +1048,12 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             busy={play.busy || play.opening}
             character={bundle.character}
           />
+          {/* The wait, pinned above the input rather than at the tail of the
+              scroller above — the lowest thing on the screen until the turn
+              actually lands. */}
+          {(play.busy || play.opening) && (
+            <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>
+          )}
           <BottomDock>
             <InputBar
               onSend={play.submit}
