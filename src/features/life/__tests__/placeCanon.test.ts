@@ -16,6 +16,16 @@ import { LIFE_SYSTEM_PROMPT } from "../lifeSystemPrompt";
 import { renderLifeUserPrompt, type LifeContext } from "../lifeContext";
 
 /**
+ * Every prompt that narrates the world to the player. A rule the two of them
+ * share is asserted against both, because the last time one was fixed the other
+ * was not.
+ */
+const EVERY_NARRATOR_PROMPT: ReadonlyArray<readonly [string, string]> = [
+  ["gm", GM_SYSTEM_PROMPT],
+  ["life", LIFE_SYSTEM_PROMPT],
+];
+
+/**
  * What the narrator is told about where the character is standing.
  *
  * The dossiers were written to be read and were never sent to the model, which
@@ -292,6 +302,37 @@ describe("which specifics belong to the narrator", () => {
     expect(CYBERPUNK_STYLE_GUIDE).not.toMatch(/specifics \([^)]*a price/i);
     expect(CYBERPUNK_STYLE_GUIDE).toMatch(/A NUMBER IS NOT YOURS/);
     expect(CYBERPUNK_STYLE_GUIDE).toMatch(/Never price it yourself/);
+  });
+
+  it("does not ask for a number back in any prompt the scrub missed", () => {
+    // The scrub above reached the style guide and stopped there. Life went on
+    // telling the narrator to state "a distance in metres ... a price" among
+    // the concrete specifics, a few hundred words below the rule forbidding it,
+    // because SITUATIONS NOT SOLUTIONS existed twice and only one copy was
+    // ever edited. Both now come from narratorRules.ts; this holds every prompt
+    // to the style guide rather than only the style guide to itself.
+    for (const [name, prompt] of EVERY_NARRATOR_PROMPT) {
+      expect(prompt, name).not.toMatch(/stated concretely:[^\n]*\ba price\b/i);
+      expect(prompt, name).not.toMatch(/stated concretely:[^\n]*\bmetres\b/i);
+      expect(prompt, name).not.toMatch(/stated concretely:[^\n]*\b(twelve|two|three) \w+/i);
+    }
+  });
+
+  it("tells every narrator what the closed observation words mean", () => {
+    // Life carried the vocabulary and none of the definitions, so two modes
+    // reported to one list by two standards.
+    for (const [name, prompt] of EVERY_NARRATOR_PROMPT) {
+      expect(prompt, name).toMatch(/A body is "killed"/);
+      expect(prompt, name).toMatch(/is not "loud"/);
+      expect(prompt, name).toMatch(/not as a consolation for a turn that went badly/);
+    }
+  });
+
+  it("gives every narrator the same DV ladder", () => {
+    for (const [name, prompt] of EVERY_NARRATOR_PROMPT) {
+      expect(prompt, name).toContain("Simple 9, Everyday 13, Difficult 15");
+      expect(prompt, name).toContain("Legendary 29");
+    }
   });
 
   it("still wants the specifics that are the narrator's", () => {
