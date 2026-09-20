@@ -315,3 +315,102 @@ export function readWalkOnsEventData(raw: unknown): WalkOnEventData {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// provenance — like walkOns, a field riding on life_narration/gm_narration
+// rather than an event of its own.
+//
+// WHY. The two prompts carry version numbers (GM_PROMPT_VERSION,
+// LIFE_PROMPT_VERSION) that have been bumped about nineteen times between them
+// and are read by NOTHING: zero imports, zero reads, never reaching an event, a
+// log or a query. So "did 2.7.0 narrate worse than 2.6.0" is not a hard
+// question, it is an unanswerable one — the ledger records what the narrator
+// said and nothing about which narrator said it.
+//
+// This is the field that makes it answerable. It is deliberately about the
+// CALL, not the answer: which prompt, at which version, asked which model, and
+// which model the gateway says actually replied. A gateway that falls back to a
+// different model is otherwise invisible, and a turn blamed on a prompt change
+// that was really a silent model swap is the most expensive kind of wrong.
+//
+// Nothing renders it. Its readers are ledger queries and the eval harness that
+// follows, which is a weaker claim than the mechanical events above make — but
+// the round-trip guarantee is the point either way, because a field nobody
+// looks at until they need it is exactly the field whose names rot.
+// ---------------------------------------------------------------------------
+
+/** Which of the two narrators wrote a turn. They are separate prompts on purpose. */
+export type Narrator = "gm" | "life";
+
+/** Which prompt, at which version, asked which model — and who answered. */
+export type TurnProvenance = {
+  narrator: Narrator;
+  /** The version the prompt module declares, e.g. "2.8.0". */
+  promptVersion: string;
+  /** The model slug the server asked the gateway for. */
+  model: string;
+  /** What the gateway says actually answered, when it says. Null when it did not. */
+  servedModel: string | null;
+};
+
+/**
+ * The wire shape. Snake_case and nested under one key, so a turn's payload
+ * gains one field rather than four loose ones that read like game state.
+ */
+type TurnProvenanceWire = {
+  provenance: {
+    narrator: Narrator;
+    prompt_version: string;
+    model: string;
+    served_model: string | null;
+  };
+};
+
+/** Build the provenance payload. The only place these names are written. */
+export function turnProvenanceData(input: {
+  narrator: Narrator;
+  promptVersion: string;
+  model: string;
+  servedModel?: string | null;
+}): TurnProvenanceWire {
+  return {
+    provenance: {
+      narrator: input.narrator,
+      prompt_version: input.promptVersion,
+      model: input.model,
+      served_model: input.servedModel ?? null,
+    },
+  };
+}
+
+/**
+ * The same payload, or nothing at all when the turn arrived without provenance.
+ *
+ * Provenance is bookkeeping. By the time a narration event is written the dice
+ * have been rolled, the damage applied and the encounter saved — so a missing
+ * stamp must cost the record of who wrote the turn and NOT the turn. The type
+ * says it is always there; the type is a promise made by a server function
+ * across a serialization boundary, and a stale client bundle or a test double
+ * can break it. Spread this rather than calling the builder directly at a
+ * write site, the same way `resolveWalkOns` tolerates an absent list.
+ */
+export function turnProvenanceDataIfAny(
+  provenance: TurnProvenance | null | undefined,
+): TurnProvenanceWire | Record<string, never> {
+  return provenance ? turnProvenanceData(provenance) : {};
+}
+
+/** Read a provenance payload back, or null when the turn carries none. */
+export function readTurnProvenance(raw: unknown): TurnProvenance | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const bag = (raw as RawPayload)["provenance"];
+  if (!bag || typeof bag !== "object" || Array.isArray(bag)) return null;
+  const d = bag as RawPayload;
+  const narrator = str(d["narrator"]);
+  const promptVersion = str(d["prompt_version"]);
+  const model = str(d["model"]);
+  if ((narrator !== "gm" && narrator !== "life") || promptVersion === null || model === null) {
+    return null;
+  }
+  return { narrator, promptVersion, model, servedModel: str(d["served_model"]) };
+}

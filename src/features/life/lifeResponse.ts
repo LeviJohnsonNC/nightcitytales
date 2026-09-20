@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { clampDispositionDelta, isAnswerableQuestion } from "@/engine";
 import { normalizeWalkOnMentions, type WalkOnMention } from "@/features/cast/walkOnMention";
-import { PUBLISHED_DVS } from "@/features/narration/narratorRules";
+import { snapDv } from "@/features/narration/narratorRules";
 
 export const LIFE_ACTION_KINDS = [
   "skill_check",
@@ -188,21 +188,6 @@ function num(value: unknown): number | undefined {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
-}
-
-/**
- * Anything off the printed ladder is snapped to the nearest printed value. The
- * ladder itself is the one in narratorRules.ts, which is also the one the prompt
- * tells the model to use — a normalizer built from a second copy of a table is
- * a normalizer that can disagree with the instruction it is enforcing.
- */
-function snapDv(value: number | undefined): number {
-  if (value === undefined) return 13;
-  let best = PUBLISHED_DVS[0] as number;
-  for (const dv of PUBLISHED_DVS) {
-    if (Math.abs(dv - value) < Math.abs(best - value)) best = dv;
-  }
-  return best;
 }
 
 /** Longest single Life action, mirroring the engine's clamp. */

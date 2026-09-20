@@ -54,6 +54,7 @@ import {
   neighboursOf,
   streetsIn,
   resolveTravelIntent,
+  turnProvenanceDataIfAny,
 } from "@/engine";
 import { resolveWalkOns } from "@/features/cast/walkOnMention";
 import {
@@ -111,8 +112,8 @@ import {
 } from "@/features/downtime/downtimeOps";
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
 import { renderLifeUserPrompt, type LifeContext, type LifeWireOffer } from "./lifeContext";
-import { lifeTurnFn } from "./lifeTurn.server";
-import type { LifeActionCard, LifeResponse } from "./lifeResponse";
+import { lifeTurnFn, type LifeTurnResult } from "./lifeTurn.server";
+import type { LifeActionCard } from "./lifeResponse";
 import { MAX_LIFE_OPTIONS, mergeOptions, venueOptions } from "./lifeOptions";
 import {
   askTagFrom,
@@ -732,10 +733,16 @@ type TurnOutcome = {
   travelRefused?: string;
 };
 
-/** Persist a clock delta and the situations/flags the turn produced. */
+/**
+ * Persist a clock delta and the situations/flags the turn produced.
+ *
+ * Takes the turn RESULT rather than the bare response: the narration event it
+ * writes records which prompt and model produced the turn, and that is known at
+ * the call, not in the model's answer.
+ */
 async function applyResponse(
   bundle: LifeBundle,
-  response: LifeResponse,
+  response: LifeTurnResult,
   turn: TurnOptions,
 ): Promise<TurnOutcome> {
   const campaignId = bundle.campaign.id;
@@ -771,6 +778,9 @@ async function applyResponse(
         response.walkOns,
         `${campaignId}:${bundle.campaign.location_key ?? DEFAULT_START}`,
       ),
+      // Which prompt, at which version, asked which model — and who answered.
+      // Built here rather than spelled out, per ledger.ts.
+      ...turnProvenanceDataIfAny(response.provenance),
     } as unknown as Json,
   });
 

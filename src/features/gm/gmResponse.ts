@@ -15,6 +15,7 @@ import {
   isThreatKey,
 } from "@/engine";
 import { normalizeWalkOnMentions, WalkOnMentionSchema } from "@/features/cast/walkOnMention";
+import { snapDv } from "@/features/narration/narratorRules";
 
 /**
  * A hostile, as much of one as the model is allowed to author.
@@ -418,7 +419,7 @@ export function normalizeGmResponse(
         proposedActions.push({
           kind: "skill_check",
           skillId,
-          dv: num(a["dv"]) ?? 13,
+          dv: snapDv(num(a["dv"])),
           intent,
           ...(atKey && atName ? { npcKey: atKey, npcName: atName } : {}),
         });

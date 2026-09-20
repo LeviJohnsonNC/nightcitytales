@@ -47,6 +47,34 @@ const DV_NAMES = [
 
 const DV_LADDER_TEXT = DV_NAMES.map((name, i) => `${name} ${PUBLISHED_DVS[i]}`).join(", ");
 
+/** What an unstated difficulty becomes: Everyday, the ladder's ordinary rung. */
+export const DEFAULT_DV = 13;
+
+/**
+ * Snap a difficulty the model proposed onto the printed ladder.
+ *
+ * The prompt says to use one of seven values; a normalizer is what makes that
+ * true. Life had this and the Job loop did not (`dv: num(a["dv"]) ?? 13`), so a
+ * Job turn could run at DV 12 or DV 19 — difficulties the published table has
+ * no rung for, set by the narrator, which is the one thing the narrator may
+ * never do. Both loops now enforce the rule the prompt states.
+ *
+ * Nearest wins, and a tie takes the EASIER rung — DV 14 becomes Everyday 13,
+ * not Difficult 15. That is not an argument, it is Life's behaviour since the
+ * Life normalizer was written, and this function exists to give the Job loop
+ * the rule Life already had rather than to change what either one does. A
+ * deliberate decision to round the other way belongs in its own change, with
+ * the play to justify it.
+ */
+export function snapDv(value: number | undefined | null): number {
+  if (value === undefined || value === null || !Number.isFinite(value)) return DEFAULT_DV;
+  let best: number = PUBLISHED_DVS[0];
+  for (const dv of PUBLISHED_DVS) {
+    if (Math.abs(dv - value) < Math.abs(best - value)) best = dv;
+  }
+  return best;
+}
+
 /** Built from the engine's own vocabulary, so the two can never drift apart. */
 const OBSERVATION_LIST = OBSERVATIONS.map((o) => `  - "${o}" — ${OBSERVATION_MEANINGS[o]}`).join(
   "\n",

@@ -8,6 +8,10 @@ import {
   readDeathSaveEventData,
   readSkillCheckEventData,
   readWalkOnsEventData,
+  readTurnProvenance,
+  turnProvenanceData,
+  turnProvenanceDataIfAny,
+  type TurnProvenance,
 } from "../ledger";
 
 /**
@@ -277,5 +281,78 @@ describe("payloadOf", () => {
     expect(payloadOf({ data: null })).toEqual({});
     expect(payloadOf({ data: [1, 2] })).toEqual({});
     expect(payloadOf({ data: "words" })).toEqual({});
+  });
+});
+
+describe("turn provenance", () => {
+  const written: TurnProvenance = {
+    narrator: "gm",
+    promptVersion: "2.8.0",
+    model: "google/gemini-3.7-flash",
+    servedModel: "google/gemini-3.7-flash-002",
+  };
+
+  it("round-trips whatever the writer produced", () => {
+    // The assertion that matters. The wire names are snake_case and the domain
+    // names are not; this is what stops the two spellings drifting apart.
+    expect(readTurnProvenance(turnProvenanceData(written))).toEqual(written);
+  });
+
+  it("round-trips a Life turn whose served model the gateway never reported", () => {
+    const salvaged: TurnProvenance = {
+      narrator: "life",
+      promptVersion: "2.13.0",
+      model: "google/gemini-3.7-flash",
+      servedModel: null,
+    };
+    expect(readTurnProvenance(turnProvenanceData(salvaged))).toEqual(salvaged);
+  });
+
+  it("defaults an omitted served model to null rather than undefined", () => {
+    // jsonb has no undefined. A field written as undefined simply vanishes, and
+    // a reader looking for it cannot tell "not reported" from "never recorded".
+    const built = turnProvenanceData({
+      narrator: "gm",
+      promptVersion: "2.8.0",
+      model: "m",
+    });
+    expect(built.provenance.served_model).toBeNull();
+  });
+
+  it("reads nothing from a turn written before the field existed", () => {
+    // Every narration event already in the ledger. Null is the honest answer:
+    // those turns genuinely have no provenance, and inventing one would be
+    // worse than admitting it.
+    expect(readTurnProvenance({ walkOns: [], title: "A quiet evening" })).toBeNull();
+  });
+
+  it("refuses a payload whose narrator is not one of the two", () => {
+    expect(
+      readTurnProvenance({
+        provenance: { narrator: "oracle", prompt_version: "1", model: "m", served_model: null },
+      }),
+    ).toBeNull();
+  });
+
+  it("writes nothing rather than throwing when a turn arrives with no provenance", () => {
+    // Bookkeeping must never cost a turn. By the time the narration event is
+    // written the dice have been rolled and the encounter saved, so a caller
+    // that did not supply a stamp loses the stamp and keeps the turn. A test
+    // double returning a bare response is how this was found.
+    expect(turnProvenanceDataIfAny(undefined)).toEqual({});
+    expect(turnProvenanceDataIfAny(null)).toEqual({});
+    expect(readTurnProvenance({ ...turnProvenanceDataIfAny(undefined) })).toBeNull();
+  });
+
+  it("writes the full stamp when there is one", () => {
+    expect(turnProvenanceDataIfAny(written)).toEqual(turnProvenanceData(written));
+  });
+
+  it("treats a missing, null, array or malformed payload as no provenance", () => {
+    expect(readTurnProvenance({})).toBeNull();
+    expect(readTurnProvenance(null)).toBeNull();
+    expect(readTurnProvenance([1, 2])).toBeNull();
+    expect(readTurnProvenance({ provenance: "2.8.0" })).toBeNull();
+    expect(readTurnProvenance({ provenance: { narrator: "gm" } })).toBeNull();
   });
 });
