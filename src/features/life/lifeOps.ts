@@ -111,6 +111,7 @@ import {
   type DowntimeBundle,
 } from "@/features/downtime/downtimeOps";
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
+import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 import { renderLifeUserPrompt, type LifeContext, type LifeWireOffer } from "./lifeContext";
 import { lifeTurnFn, type LifeTurnResult } from "./lifeTurn.server";
 import type { LifeActionCard } from "./lifeResponse";
@@ -627,7 +628,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           })
             .filter((a) => !a.skillId)
             .map((a) => `${a.label} (${a.placeName})`),
-          nearby: positionDistrict.locations.slice(0, 8).map((l) => l.name),
+          nearby: withinBudget(positionDistrict.locations, PACKET_BUDGET.nearby).map((l) => l.name),
           streets: streetsIn(positionDistrict.key).map((s) => s.name),
           destinations: reachableDestinations(
             bundle.campaign.location_key ?? DEFAULT_START,

@@ -4,6 +4,7 @@
  * the ONE situation the app selected, the standing pressures, the people who
  * matter, and what the character can actually do. Nothing else.
  */
+import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 import {
   formatLifeClock,
   formatDuration,
@@ -311,7 +312,9 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     }
     if (p.discovered?.length) {
       parts.push("", "-- WHAT THEY HAVE FOUND HERE --");
-      for (const fact of p.discovered) parts.push(`  - ${fact}`);
+      for (const fact of withinBudget(p.discovered, PACKET_BUDGET.placeKnown)) {
+        parts.push(`  - ${fact}`);
+      }
       parts.push(
         "The character searched and turned these up. They are established facts now: do not " +
           "contradict one, do not walk one back, and do not re-reveal one as though it were new. " +
@@ -378,7 +381,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       parts.push(
         "Districts this one BORDERS, and which way they lie (from the atlas, not from you):",
       );
-      for (const n of p.neighbours) parts.push(`  - ${n}`);
+      for (const n of withinBudget(p.neighbours, PACKET_BUDGET.neighbours)) parts.push(`  - ${n}`);
       parts.push(
         'Never state a compass direction that is not in that list. If the player names a direction, propose travel with "direction" and let the engine walk the map. Districts not on this list are elsewhere in the city: reachable, but not next door, and not somewhere you may point to.',
       );
@@ -429,7 +432,10 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
 
   if (context.capabilities?.length) {
     parts.push("", "== WHAT THEY CAN ACTUALLY DO (never propose anything outside this) ==");
-    for (const c of context.capabilities) parts.push(`- ${c}`);
+    // Bounded: the kit grows every time they buy something.
+    for (const c of withinBudget(context.capabilities, PACKET_BUDGET.capabilities)) {
+      parts.push(`- ${c}`);
+    }
   }
 
   // The Role as something to reach for, which the capability block above can
@@ -470,7 +476,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
 
   if (context.otherSituations.length) {
     parts.push("", "== ALSO OUTSTANDING (continuity only; do not switch to these) ==");
-    for (const s of context.otherSituations.slice(0, 6)) {
+    for (const s of withinBudget(context.otherSituations, PACKET_BUDGET.otherSituations)) {
       parts.push(`- [${s.category}] ${s.title} — ${s.summary}`);
     }
   }
@@ -492,7 +498,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       "== PEOPLE THEY KNOW (use these; do not invent new named faces while these exist) ==",
       "These are recurring characters. They keep their names, their voices and their grudges.",
     );
-    for (const p of context.people.slice(0, 10)) {
+    for (const p of withinBudget(context.people, PACKET_BUDGET.people)) {
       const seen = p.lastSeenDay ? `, last dealt with day ${p.lastSeenDay}` : ", not seen yet";
       const role = p.role ? `${p.role.replace(/_/g, " ")}, ` : "";
       parts.push(
@@ -500,7 +506,9 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       );
       if (p.standing) parts.push(`    ${p.standing}`);
       if (p.tie) parts.push(`    From their history together: ${p.tie}`);
-      for (const fact of p.known ?? []) parts.push(`    The player has worked out: ${fact}`);
+      for (const fact of withinBudget(p.known ?? [], PACKET_BUDGET.npcKnown)) {
+        parts.push(`    The player has worked out: ${fact}`);
+      }
       if (p.guarded) {
         parts.push(
           "    GUARDED: they have noticed being worked on and have stopped volunteering " +
