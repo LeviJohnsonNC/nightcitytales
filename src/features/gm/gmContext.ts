@@ -5,6 +5,7 @@
  * summary of recent events — never the whole transcript. That bounded slice is
  * what keeps a long campaign from drifting.
  */
+import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 import { renderRoleAffordanceLines } from "@/engine";
 import type { Beat, BeatExit, Mission, MissionObjective } from "@/engine";
 
@@ -275,11 +276,13 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       const own = f.known.filter((fact) => !(f.asALocal ?? []).includes(fact));
       if (own.length) {
         parts.push("What their own time here has taught them:");
-        for (const fact of own) parts.push(`  - ${fact}`);
+        for (const fact of withinBudget(own, PACKET_BUDGET.placeKnown)) parts.push(`  - ${fact}`);
       }
       if (f.asALocal?.length) {
         parts.push("What they know because they are a local here, not because they have been in:");
-        for (const fact of f.asALocal) parts.push(`  - ${fact}`);
+        for (const fact of withinBudget(f.asALocal, PACKET_BUDGET.placeKnown)) {
+          parts.push(`  - ${fact}`);
+        }
       }
       if (f.known.length) {
         parts.push(
@@ -311,7 +314,7 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
     if (p.nearby.length) parts.push(line("Nearby places", p.nearby.join(", ")));
     if (p.neighbours?.length) {
       parts.push("Which way is which (from the atlas, not from you):");
-      for (const n of p.neighbours) parts.push(`  - ${n}`);
+      for (const n of withinBudget(p.neighbours, PACKET_BUDGET.neighbours)) parts.push(`  - ${n}`);
       parts.push("Never state a compass direction that is not in that list.");
     }
     parts.push("Use these canonical names. Do not invent districts or relocate the job.");
@@ -351,7 +354,11 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
 
   if (context.capabilities?.length) {
     parts.push("", "== WHAT THEY CAN ACTUALLY DO (never propose anything outside this) ==");
-    for (const c of context.capabilities) parts.push(`- ${c}`);
+    // Bounded: the kit grows every time they buy something, and this block was
+    // the fastest-growing thing in the packet.
+    for (const c of withinBudget(context.capabilities, PACKET_BUDGET.capabilities)) {
+      parts.push(`- ${c}`);
+    }
   }
 
   // The Role as something to reach for, which the capability block above can
@@ -366,19 +373,23 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   const activeObjectives = context.objectives.filter((o) => o.status === "active");
   if (activeObjectives.length) {
     parts.push("", "== OBJECTIVES ==");
-    for (const o of activeObjectives) parts.push(`- ${o.text}`);
+    for (const o of withinBudget(activeObjectives, PACKET_BUDGET.objectives)) {
+      parts.push(`- ${o.text}`);
+    }
   }
 
   if (context.npcsPresent.length) {
     parts.push("", "== NPCS PRESENT (use the key in [brackets] as npcKey) ==");
-    for (const npc of context.npcsPresent) {
+    for (const npc of withinBudget(context.npcsPresent, PACKET_BUDGET.npcsPresent)) {
       const key = npc.key ? ` [${npc.key}]` : "";
       parts.push(
         `- ${npc.name}${key} (disposition ${npc.disposition}, ${npc.status})${npc.notes ? ` — ${npc.notes}` : ""}`,
       );
       if (npc.standing) parts.push(`    ${npc.standing}`);
       if (npc.tie) parts.push(`    From their history together: ${npc.tie}`);
-      for (const fact of npc.known ?? []) parts.push(`    The player has worked out: ${fact}`);
+      for (const fact of withinBudget(npc.known ?? [], PACKET_BUDGET.npcKnown)) {
+        parts.push(`    The player has worked out: ${fact}`);
+      }
       if (npc.guarded) {
         parts.push(
           "    GUARDED: they have noticed being worked on and have stopped volunteering " +

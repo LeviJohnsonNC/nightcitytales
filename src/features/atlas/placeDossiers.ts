@@ -12,6 +12,7 @@
  * the atlas's own place and district keys, so nothing has to be kept in step by
  * hand.
  */
+import { clipDossier } from "@/features/narration/packetBudget";
 
 export type PlaceDossierEntry = {
   /**
@@ -1940,6 +1941,15 @@ export function placeArtwork(entry: PlaceDossierEntry): PlaceArtwork | undefined
  * they are standing in: the venue when they are at one, the district when they
  * are not. One dossier a turn, never the whole city.
  */
+/**
+ * The dossier for the prompt, trimmed to what the packet can afford.
+ *
+ * The full text is what the atlas screen shows a reader. What the narrator gets
+ * is the same text cut to a budget at a paragraph boundary — see
+ * `clipDossier`, which explains why the cut comes off the end. The largest was
+ * 4,962 characters going in verbatim, wrapped in most of a thousand more
+ * telling the model not to quote it.
+ */
 export function dossierForPrompt(
   placeKey: string | null | undefined,
   districtKey: string | null | undefined,
@@ -1947,7 +1957,7 @@ export function dossierForPrompt(
   for (const key of [placeKey, districtKey]) {
     if (!key) continue;
     const entry = placeDossier(key);
-    if (entry) return { name: key, text: entry.text };
+    if (entry) return { name: key, text: clipDossier(entry.text) };
   }
   return undefined;
 }

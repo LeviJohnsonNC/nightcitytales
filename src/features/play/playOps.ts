@@ -17,6 +17,7 @@
 import { publishCombatFrames } from "./combatPlayback";
 import { loadPlaceStates } from "@/features/campaign/placeState";
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
+import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 import { sinceWords } from "@/features/life/lifeOps";
 import { useCombatPlayback } from "./useCombatPlayback";
 /**
@@ -492,7 +493,7 @@ export async function narrate(
             })(),
             gangs: jobDistrict.gangs,
             combatZone: isCombatZone(jobDistrict.key),
-            nearby: jobDistrict.locations.slice(0, 8).map((l) => l.name),
+            nearby: withinBudget(jobDistrict.locations, PACKET_BUDGET.nearby).map((l) => l.name),
             neighbours: neighboursOf(bundle.campaign.location_key ?? DEFAULT_START).map(
               (n) => `${n.name} — ${directionName(n.direction)}, ${n.minutes} min`,
             ),
