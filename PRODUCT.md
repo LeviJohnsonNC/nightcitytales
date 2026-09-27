@@ -328,6 +328,14 @@ set of rules, and they sit beside the brakes rather than under them.
   you do?" — something happening.
 - **Quiet is not inert.** An honest quiet evening still has something in the
   room. Quiet means nobody manufactured a crisis; it never means nothing to do.
+- **A roll that risks nothing does not stop the game.** Asking a neighbour where
+  people drink gets no dice. A check that could fail but would cost nothing if
+  it did — catching the bartender's eye — rolls itself in the same turn when
+  the narrator marks it low-stakes AND the engine agrees it is Everyday or
+  easier, uncontested, outside a fight (`engine/autoRoll.ts`). The player
+  still sees the die, marked "auto", with the full trace one tap away. It
+  spends no Luck, because Luck is a choice and nobody was asked to make one.
+  Anything that matters is still the player's button.
 
 The failure these exist for is specific: every rule this project wrote for the
 narrator used to be a brake, so every revision could only make it do less, and
@@ -663,6 +671,7 @@ Practical smells, in roughly descending severity.
   somewhere. A trip that cannot be worked out is the engine not knowing where,
   not the character failing to leave.
 - A scene in progress was hijacked by a topic the engine did not raise.
+- Something that risks nothing was put to the player as a roll to press.
 
 ---
 

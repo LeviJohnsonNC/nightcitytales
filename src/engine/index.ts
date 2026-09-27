@@ -6,6 +6,7 @@ export * from "./derivedColumns";
 export * from "./rollLog";
 export * from "./rulesData";
 export * from "./checkDV";
+export * from "./autoRoll";
 export * from "./statGeneration";
 export * from "./skillAllocation";
 export * from "./humanity";

@@ -74,7 +74,9 @@ import {
   statsRecord,
   type CurrentStatsContext,
 } from "@/features/play/playModel";
-import { oppositionFor, type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
+import { type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
+import { rollPendingCheck } from "@/features/play/rollCheck";
+import { RollLine } from "@/features/play/RollLine";
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
 import { CityTurns } from "./CityTurns";
@@ -127,11 +129,7 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
       );
 
     case "skill_check":
-      return (
-        <p className="font-mono text-xs text-muted-foreground">
-          <span className="text-accent">◆</span> {text}
-        </p>
-      );
+      return <RollLine event={event} text={text} />;
     case "pressure_arrived":
       return (
         <p className="my-1 border-l-2 border-destructive bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
@@ -874,34 +872,15 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
   ];
 
   /** The engine rolls; the card only animates toward what it rolled. */
-  const rollCheck = (pending: PendingCheck, luckSpend: number): CheckRoll => {
-    const actor = actorFor(bundle.character, rollContext);
-    const luckSpent = clampLuckSpend(luckSpend, luckLeft);
-    const spend = luckModifier(luckSpent);
-    const wounds = woundActionPenalty(bundle.vitals.wound_state as WoundStateCode);
-    const situational = [
-      ...(spend ? [spend] : []),
-      ...(wounds !== 0 ? [{ label: "Wounds", value: wounds }] : []),
-    ];
-    const modifiers = situational.length > 0 ? { modifiers: situational } : {};
-    const opposition = oppositionFor(pending);
-    if (opposition) {
-      return {
-        kind: "opposed",
-        luckSpent,
-        result: opposedCheckForCharacter(actor, pending.skillId, opposition, undefined, {
-          actorName: bundle.character.character.name,
-          ...modifiers,
-        }),
-      };
-    }
-    if (pending.dv === null) throw new Error("That check has neither a DV nor an opponent.");
-    return {
-      kind: "dv",
-      luckSpent,
-      result: skillCheckForCharacter(actor, pending.skillId, pending.dv, undefined, modifiers),
-    };
-  };
+  const rollCheck = (pending: PendingCheck, luckSpend: number): CheckRoll =>
+    rollPendingCheck({
+      campaign: bundle.campaign,
+      character: bundle.character,
+      vitals: bundle.vitals,
+      inventory: bundle.inventory,
+      pending,
+      luckSpend,
+    });
 
   const knownPlaces = knownPlacesOf(bundle.campaign);
 

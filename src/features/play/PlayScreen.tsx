@@ -1,4 +1,5 @@
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
+import { RollLine } from "./RollLine";
 import { portraitById, portraitArt } from "@/features/chargen/art";
 /**
  * The play screen: the narrative log and input in the center, with the
@@ -61,6 +62,7 @@ function EventBlock({
       );
 
     case "skill_check":
+      return <RollLine event={event} text={text} />;
     case "attack":
     case "death_save":
       return (

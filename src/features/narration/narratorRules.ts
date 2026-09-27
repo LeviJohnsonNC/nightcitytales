@@ -176,6 +176,15 @@ Set "gender" only when the fiction already makes it plain; leave it out otherwis
 }
 
 /**
+ * When a check is small enough to roll itself.
+ *
+ * The narrator's half of engine/autoRoll.ts. It can only ever make a check
+ * less automatic: an unmarked check waits for the player, and the engine
+ * refuses the mark on anything harder than Everyday or against a person.
+ */
+export const LOW_STAKES_RULE = `- Mark a check "stakes":"low" when failing would change nothing that matters: the bartender does not hear you the first time, the vending machine eats the coin, the crowd is slow to part. The engine then rolls it at once and the player sees the result, without being stopped to press a button. Leave the mark off whenever failure would cost them something real — money, time that matters, a person's goodwill, their safety, their cover — and whenever they would want to decide whether to push their Luck. When in doubt, leave it off.`;
+
+/**
  * FOLLOW THROUGH — the rule that was missing.
  *
  * Every other rule in this file is a brake, and brakes were all either prompt
@@ -231,4 +240,12 @@ export function carryOnLine(said: string): string {
     "them free to, carry out the rest of what they said, per FOLLOW THROUGH, in this same turn " +
     "so they never have to say it twice. If the result stops them, the rest does not happen."
   );
+}
+
+/**
+ * Whether the model marked a check as small. Read loosely, because models
+ * drift on the word; anything else — including no mark at all — is not small.
+ */
+export function isLowStakes(value: unknown): boolean {
+  return typeof value === "string" && ["low", "trivial", "minor"].includes(value.toLowerCase());
 }

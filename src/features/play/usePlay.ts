@@ -17,6 +17,7 @@ import {
 } from "./checkPrompt";
 import { type PendingDeathSave, pendingDeathSaveFrom } from "./deathSavePrompt";
 import { actorFor, jobOutcome, statsRecord } from "./playModel";
+import { rollPendingCheck } from "./rollCheck";
 import {
   combatAwarenessAllocation,
   combatAwarenessFor,
@@ -455,53 +456,14 @@ export function usePlay(campaignId: string) {
      */
     rollCheck: (pending: PendingCheck, luckSpend = 0): CheckRoll => {
       if (!bundle) throw new Error("Still loading.");
-      const actor = actorFor(bundle.character, {
+      return rollPendingCheck({
+        campaign: bundle.campaign,
+        character: bundle.character,
         vitals: bundle.vitals,
         inventory: bundle.inventory,
-        // A Local Expert check is about the neighbourhood the character is
-        // standing in, and is worth nothing in one they are not a local in.
-        districtKey:
-          resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
-      });
-      // Clamp against the live pool, not against what the card offered: the
-      // stepper cannot talk the engine into spending points that are not there.
-      const luckSpent = clampLuckSpend(
+        pending,
         luckSpend,
-        luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character)),
-      );
-      const spend = luckModifier(luckSpent);
-      // Being hurt follows you out of the fight: the same −2/−4 the engine
-      // already applies to attacks now rides on every other Check too.
-      const wounds = woundActionPenalty(bundle.vitals.wound_state as WoundStateCode);
-      const situational = [
-        ...(spend ? [spend] : []),
-        ...(wounds !== 0 ? [{ label: "Wounds", value: wounds }] : []),
-        // What your Role brings to this particular check — a Solo's Threat
-        // Detection on a Perception roll, a Fixer's Operator Rank on a deal.
-        ...roleCheckModifiers({
-          campaign: bundle.campaign,
-          character: bundle.character,
-          skillId: pending.skillId,
-        }),
-      ];
-      const modifiers = situational.length > 0 ? { modifiers: situational } : {};
-      const opposition = oppositionFor(pending);
-      if (opposition) {
-        return {
-          kind: "opposed",
-          luckSpent,
-          result: opposedCheckForCharacter(actor, pending.skillId, opposition, undefined, {
-            actorName: bundle.character.character.name,
-            ...modifiers,
-          }),
-        };
-      }
-      if (pending.dv === null) throw new Error("That check has neither a DV nor an opponent.");
-      return {
-        kind: "dv",
-        luckSpent,
-        result: skillCheckForCharacter(actor, pending.skillId, pending.dv, undefined, modifiers),
-      };
+      });
     },
     /** The character's Role Ability and Rank, for the panel that spends it. */
     roleAbility: bundle ? liveRoleAbility(bundle.character) : null,

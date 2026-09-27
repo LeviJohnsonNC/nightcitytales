@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { clampDispositionDelta, isAnswerableQuestion, isPlaceTag, tagNamed } from "@/engine";
 import { normalizeWalkOnMentions, type WalkOnMention } from "@/features/cast/walkOnMention";
-import { snapDv } from "@/features/narration/narratorRules";
+import { isLowStakes, snapDv } from "@/features/narration/narratorRules";
 
 export const LIFE_ACTION_KINDS = [
   "skill_check",
@@ -40,6 +40,13 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
      */
     npcKey: z.string().optional(),
     npcName: z.string().optional(),
+    /**
+     * "low" when failing would change nothing that matters. The engine may then
+     * roll it in the same turn instead of stopping for the player — if it also
+     * agrees the check is small (see engine/autoRoll.ts). Absent is the default
+     * and always means the player rolls.
+     */
+    stakes: z.literal("low").optional(),
   }),
   z.object({
     kind: z.literal("opposed_check"),
@@ -335,6 +342,7 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
         intent,
         ...(atKey ? { npcKey: atKey } : {}),
         ...(atName ? { npcName: atName } : {}),
+        ...(isLowStakes(a["stakes"]) ? { stakes: "low" as const } : {}),
       });
       continue;
     }

@@ -55,6 +55,7 @@ import {
   streetsIn,
   resolveTravelIntent,
   turnProvenanceDataIfAny,
+  mayRollItself,
 } from "@/engine";
 import { resolveWalkOns } from "@/features/cast/walkOnMention";
 import {
@@ -148,6 +149,7 @@ import {
   type OracleAnswer,
 } from "@/features/campaign/oracles";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
+import { rollPendingCheck } from "@/features/play/rollCheck";
 import { saidBefore } from "@/features/narration/narratorRules";
 import { travelTo } from "@/features/atlas/travel";
 import {
@@ -427,6 +429,11 @@ export type TurnOptions = {
   spend?: { amount: number; reason: string };
   /** Narrate a committed engine result without applying model-authored actions. */
   fixedResult?: boolean;
+  /**
+   * This turn narrates a check the engine rolled by itself. Another small check
+   * it proposes waits for the player, so one turn can never roll a chain.
+   */
+  autoRolled?: boolean;
   /**
    * What the player typed. Set by `liveTurn` on the turn they typed it, and
    * carried into the follow-up that narrates an engine result — the arrival,
@@ -1131,6 +1138,8 @@ async function applyResponse(
             // against a DV used to carry nobody, so it could not read anybody.
             ...(action.npcKey ? { npcKey: action.npcKey } : {}),
             ...(action.npcName ? { npcName: action.npcName } : {}),
+            // The narrator's half of whether this may roll itself.
+            ...(action.stakes === "low" ? { stakes: "low" } : {}),
           } as unknown as Json,
         });
       } else {
@@ -1469,6 +1478,68 @@ export async function liveTurn(
     // re-derived, so nothing else would ever take it off the board.
     await settleMoves(bundle.campaign.id, npcKey);
   }
+
+  // Only worth a reload when the narrator actually marked something small.
+  if (response.proposedActions.some((a) => a.kind === "skill_check" && a.stakes === "low")) {
+    await rollWhatIsSmall(bundle, turn);
+  }
+}
+
+/**
+ * Roll the check this turn just posted, if it is small enough not to need the
+ * player.
+ *
+ * The narrator marks a check low-stakes; the engine decides (`mayRollItself`).
+ * When both agree, the check is rolled here with no Luck and settled exactly as
+ * if the player had pressed the button — same roll, same ledger row, same
+ * follow-up — so the only thing the player loses is the wait. The row is
+ * marked as automatic and the log shows it.
+ *
+ * Only a check posted by THIS turn, and only when it posted exactly one: an
+ * older prompt the player has not rolled yet was put in front of them and is
+ * theirs to press, and rolling one of two would reorder what they were asked.
+ */
+async function rollWhatIsSmall(before: LifeBundle, turn: TurnOptions): Promise<void> {
+  if (turn.options || turn.fixedResult || turn.autoRolled) return;
+  const posted = new Set(before.events.map((e) => e.id));
+  const fresh = await loadLife(before.campaign.id);
+  const pending = pendingChecksFrom(
+    fresh.events,
+    fresh.character,
+    fresh.vitals.wound_state as WoundStateCode,
+    {
+      vitals: fresh.vitals,
+      inventory: fresh.inventory,
+      districtKey:
+        resolvePosition(fresh.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+    },
+  );
+  // Exactly one new check: rolling one of two would reorder what was asked.
+  const newChecks = pending.filter((p) => !posted.has(p.eventId));
+  if (newChecks.length !== 1) return;
+  const check = newChecks[0]!;
+  const prompt = fresh.events.find((e) => e.id === check.eventId);
+  // A negotiation's check settles the terms of a job; that is never small.
+  if (askTagFrom(prompt)) return;
+  const marked = (prompt?.data as { stakes?: unknown } | null)?.stakes === "low";
+  if (
+    !mayRollItself({
+      lowStakes: marked,
+      dv: check.dv,
+      opposed: check.opposition !== null,
+      inCombat: false,
+    })
+  ) {
+    return;
+  }
+  const roll = rollPendingCheck({
+    campaign: fresh.campaign,
+    character: fresh.character,
+    vitals: fresh.vitals,
+    inventory: fresh.inventory,
+    pending: check,
+  });
+  await commitLifeCheck(fresh, check, roll, { auto: true });
 }
 
 /**
@@ -1571,6 +1642,8 @@ export async function commitLifeCheck(
   bundle: LifeBundle,
   pending: PendingCheck,
   roll: CheckRoll,
+  /** `auto` when the engine rolled it without the player (see rollWhatIsSmall). */
+  opts: { auto?: boolean } = {},
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
 
@@ -1624,6 +1697,7 @@ export async function commitLifeCheck(
     intent: pending.intent,
     promptEventId: pending.eventId,
     luckSpent: roll.luckSpent,
+    ...(opts.auto ? { auto: true } : {}),
   });
   const dv = pending.dv ?? 0;
   const verdict = roll.result.success ? "SUCCESS" : "FAILURE";
@@ -1651,6 +1725,7 @@ export async function commitLifeCheck(
   await liveTurn(fresh, "", {
     minutes: 0,
     ...saidBefore(bundle.events, pending.eventId),
+    ...(opts.auto ? { autoRolled: true } : {}),
     resolved:
       `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".` +
       (found ? ` ${found}` : "") +

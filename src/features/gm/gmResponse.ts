@@ -15,7 +15,7 @@ import {
   isThreatKey,
 } from "@/engine";
 import { normalizeWalkOnMentions, WalkOnMentionSchema } from "@/features/cast/walkOnMention";
-import { snapDv } from "@/features/narration/narratorRules";
+import { snapDv, isLowStakes } from "@/features/narration/narratorRules";
 
 /**
  * A hostile, as much of one as the model is allowed to author.
@@ -52,6 +52,8 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
      */
     npcKey: z.string().optional(),
     npcName: z.string().optional(),
+    /** "low" when failing would change nothing that matters; see engine/autoRoll.ts. */
+    stakes: z.literal("low").optional(),
   }),
   /**
    * A check against a person who is actively resisting: both sides roll
@@ -422,6 +424,7 @@ export function normalizeGmResponse(
           dv: snapDv(num(a["dv"])),
           intent,
           ...(atKey && atName ? { npcKey: atKey, npcName: atName } : {}),
+          ...(isLowStakes(a["stakes"]) ? { stakes: "low" as const } : {}),
         });
       else warn(`GM proposed a check with no skill, dropped: ${JSON.stringify(raw)}`);
     } else if (kind === "opposed_check") {

@@ -343,11 +343,17 @@ The work, with what the location layer already covered marked:
   moved to a d10 so a quiet evening has a little more in it. The eval gained
   two more checks and four more scenarios, and runs on OpenRouter or Google AI
   Studio keys, since the Lovable key cannot leave Lovable.
+  Then quick dice: a check the narrator marks low-stakes and the engine
+  agrees is small (`engine/autoRoll.ts` — Everyday or easier, uncontested, no
+  fight, the only new check that turn) rolls itself in the same turn, shown in
+  the log as "auto" with the full trace behind it; asking a neighbour the way
+  gets no dice at all. Life and Jobs now roll through one function
+  (`play/rollCheck.ts`), which also gave Life rolls the Role bonuses the Job
+  copy had and the Life copy had quietly dropped.
   Still to do, in order: run the evals and tune from what they say (the prompts
   still carry most of their old brakes; cutting them blind was not worth the
-  risk), trivial asks resolving without dice and low-stakes checks rolling
-  themselves, unnamed local spots for the districts the atlas gives no bar,
-  and a stronger model if the evals say it plays better.
+  risk), unnamed local spots for the districts the atlas gives no bar, and a
+  stronger model if the evals say it plays better.
 
 Success: the player opens the game, understands their immediate problem in
 seconds, decides, sees the cost, and moves on.

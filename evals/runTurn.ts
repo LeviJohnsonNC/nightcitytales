@@ -120,6 +120,11 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
         observations: gm.observations.map((o) => o.observation),
         walkOns: gm.walkOns.map((w) => w.subject),
         proposedActionCount: gm.proposedActions.length,
+        checks: gm.proposedActions.flatMap((a) =>
+          a.kind === "skill_check"
+            ? [{ skillId: a.skillId, dv: a.dv, lowStakes: a.stakes === "low" }]
+            : [],
+        ),
       },
     };
   }
@@ -154,6 +159,11 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
           : [],
       ),
       spends: life.proposedActions.filter((a) => a.kind === "spend").length,
+      checks: life.proposedActions.flatMap((a) =>
+        a.kind === "skill_check"
+          ? [{ skillId: a.skillId, dv: a.dv, lowStakes: a.stakes === "low" }]
+          : [],
+      ),
     },
   };
 }
