@@ -58,14 +58,21 @@ beforeAll(() => {
 for (const scenario of SCENARIOS) {
   describe(`${scenario.id} — ${scenario.about}`, () => {
     const results: TurnResult[] = [];
+    /** How long each call took: a turn the player waits on is part of how it plays. */
+    const seconds: number[] = [];
     const model = modelFor(scenario.narrator);
     const ctx: CheckContext = { ...scenario.expect, packet: scenario.packet };
 
     beforeAll(async () => {
-      for (let i = 0; i < REPEATS; i++) results.push(await runTurn(scenario, model));
+      for (let i = 0; i < REPEATS; i++) {
+        const started = Date.now();
+        const result = await runTurn(scenario, model);
+        results.push(result);
+        seconds.push((Date.now() - started) / 1000);
+      }
       const served = [...new Set(results.map((r) => r.servedModel ?? "unknown"))];
       console.log(`\n  ${scenario.id} · asked ${model} · answered ${served.join(", ")}`);
-      if (TRANSCRIPT) appendFileSync(TRANSCRIPT, transcriptOf(scenario, results));
+      if (TRANSCRIPT) appendFileSync(TRANSCRIPT, transcriptOf(scenario, results, seconds));
     }, 120_000);
 
     for (const check of ALL_CHECKS) {
@@ -96,14 +103,21 @@ function describe_(finding: Finding): string {
   return finding.note ? `"${finding.quote}" (${finding.note})` : `"${finding.quote}"`;
 }
 
-function transcriptOf(scenario: (typeof SCENARIOS)[number], results: TurnResult[]): string {
+function transcriptOf(
+  scenario: (typeof SCENARIOS)[number],
+  results: TurnResult[],
+  seconds: number[],
+): string {
   const said = scenario.packet.split("== PLAYER INPUT ==")[1]?.trim() ?? "";
   const runs = results.map(({ turn }, i) => {
     const { narration, ...rest } = turn;
     const mechanics = Object.entries(rest)
       .filter(([, v]) => (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== 0))
       .map(([k, v]) => `${k}: ${JSON.stringify(v)}`);
-    return [`### run ${i + 1}`, "", narration, "", ...mechanics.map((m) => `- ${m}`)].join("\n");
+    const took = seconds[i] !== undefined ? ` (${seconds[i]!.toFixed(1)}s)` : "";
+    return [`### run ${i + 1}${took}`, "", narration, "", ...mechanics.map((m) => `- ${m}`)].join(
+      "\n",
+    );
   });
   return `\n## ${scenario.id}\n\n_${scenario.about}_\n\n> ${said}\n\n${runs.join("\n\n")}\n`;
 }
