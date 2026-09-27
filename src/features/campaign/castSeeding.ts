@@ -14,6 +14,8 @@
 import {
   generateCast,
   isDossierFact,
+  readCastPlan,
+  CAST_PLAN_KEY,
   raiseSuspicion,
   revealText,
   rollJobSeed,
@@ -99,6 +101,14 @@ export function lifepathTiesFrom(character: FullCharacter): LifepathTies {
     enemy,
     tragicLove: entryText(firstLove),
   };
+}
+
+/** What creation decided about the cast, read off the saved character. */
+export function castPlanFrom(
+  character: Pick<FullCharacter, "lifepath">,
+): ReturnType<typeof readCastPlan> {
+  const general = (character.lifepath?.general ?? {}) as Record<string, unknown>;
+  return readCastPlan(general[CAST_PLAN_KEY]);
 }
 
 // ---------------------------------------------------------------------------
@@ -198,8 +208,16 @@ export async function ensureCast(input: {
 }): Promise<EnsureCastResult> {
   if (castSeedFrom(input.flags) !== null) return { npcs: input.npcs, seeded: false };
 
-  const seed = rollJobSeed();
-  const cast = generateCast({ seed, ties: lifepathTiesFrom(input.character) });
+  // Creation may already have decided: the fixer who interviewed the character
+  // and whoever they picked are written into the saved Lifepath, and the
+  // campaign seeds exactly those people rather than rolling strangers.
+  const plan = castPlanFrom(input.character);
+  const seed = plan?.seed ?? rollJobSeed();
+  const cast = generateCast({
+    seed,
+    ties: lifepathTiesFrom(input.character),
+    ...(plan ? { picks: plan.picks } : {}),
+  });
   const existing = new Map(input.npcs.map((npc) => [npc.npc_id ?? npc.name, npc]));
 
   for (const member of cast) {

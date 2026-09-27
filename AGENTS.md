@@ -400,10 +400,22 @@ The current starter mission is `A Night at the Opera`, defined in
 
 ## Character creation and persistence
 
-The creation sequence is Method, Role, Lifepath, STATs, Skills, Starting Gear or
-Cyberware, Gear & Armor, Lifestyle, Identity, and Final Sheet. Step visibility
-depends on the creation method; use the helpers in `src/features/chargen/steps.ts`
-instead of hardcoding the sequence.
+The creation sequence is the Meet, Role, Method, Lifepath, STATs, Skills,
+Starting Gear or Cyberware, Gear & Armor, Lifestyle, Identity, and the File. Step
+visibility depends on the creation method; use the helpers in
+`src/features/chargen/steps.ts` instead of hardcoding the sequence. Method
+follows Role on purpose, and changing it clears only what it makes — STATs,
+Skills and gear — never the Role, the Lifepath, the name or the fixer.
+
+Creation is told as an interview. The Meet deals three fixers from the draft's
+cast plan (`fixerCandidates`), the player picks one, and that fixer asks each
+step's question from `src/data/cast/fixer-interview.json` — written per fixer, in
+their own voice, and held by a test to a line for every step and Role. The draft
+carries the plan as `castPlan` (seed and picks); the save writes it into the
+general Lifepath under `castPlan`, and `ensureCast` seeds the campaign's six from
+it, so the fixer who interviewed the character and the people the File shows
+are exactly the people the campaign meets. `meetToCampaign.test.ts` holds those
+two paths together; keep it passing when either one changes.
 
 Zustand owns the active wizard state. Supabase stores the newest draft as JSON,
 with a two-second autosave debounce. Editing a saved character creates a new

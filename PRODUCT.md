@@ -507,6 +507,28 @@ chosen results are both audited and both legitimate. Whatever else changes here,
 creation should keep producing a person with specific problems rather than a
 statistically valid character.
 
+**The player it is for** has probably played Cyberpunk 2077 and never opened the
+book. Two goals, in order: making the character is fun, and at the end they
+cannot wait to play them. Faithful to the rules still matters, and a rule may be
+bent on purpose when it buys a lot of either goal — say so in the data, as a
+house rule, rather than quietly.
+
+**It is a meet, not a form.** The player picks which of three fixers they are
+here to see, and that fixer asks every question after it, in their own voice:
+what do you do, how do you want to do this, where do you come from, what can you
+actually do. The fixer is the campaign's fixer. By the time the character walks
+into the city they have already met the person who will call with work.
+
+**The world waiting is visible before it arrives.** The last screen reads the
+file back — a face, a name typed onto it, where they sleep — and shows the
+people already out there: the one who wants them dead, the one who has their
+back, the one who still thinks about them. Then it walks them straight into the
+cold open. It does not end on a save button.
+
+**Language is the fiction's, numbers are the engine's.** A step is titled with
+the question somebody would actually ask, not the name of a rules table, and the
+rulebook's term sits beside the plain one rather than in front of it.
+
 ---
 
 ## Interface

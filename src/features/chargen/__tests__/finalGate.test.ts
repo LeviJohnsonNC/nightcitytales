@@ -49,6 +49,7 @@ function draft(over: Partial<ChargenState> = {}): ChargenState {
     visited: ["method"],
     rollLog: [],
     background: "",
+    castPlan: null,
     ...over,
   };
 }
@@ -193,6 +194,7 @@ describe("step validators the gate depends on", () => {
     // it has been visited — fine for a display-only step, and silent if a step
     // that needs rules ever lands there. This pins the set that has real rules.
     const withRules: ChargenStep[] = [
+      "fixer",
       "method",
       "role",
       "lifepath",

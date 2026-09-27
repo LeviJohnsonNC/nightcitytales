@@ -4,6 +4,7 @@ import { GearPanel } from "./GearPanel";
 import { IdentityPanel } from "./IdentityPanel";
 import { LifepathPanel } from "./LifepathPanel";
 import { LifestylePanel } from "./LifestylePanel";
+import { FixerMeet } from "./FixerMeet";
 import { MethodPanel } from "./MethodPanel";
 import { ReviewPanel } from "./ReviewPanel";
 import { RolePanel } from "./RolePanel";
@@ -27,6 +28,9 @@ export function StepPanel({
   onRequestRole: (roleId: string) => void;
 }) {
   switch (step) {
+    case "fixer":
+      return <FixerMeet state={state} />;
+
     case "method":
       return <MethodPanel state={state} onRequestMethod={onRequestMethod} />;
 

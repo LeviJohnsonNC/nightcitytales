@@ -3,6 +3,7 @@ import rolesData from "@/data/rules/roles.json";
 import {
   EMPTY_LIFESTYLE,
   EMPTY_LOADOUT,
+  type CastPlan,
   type CreationMethod,
   type LifestyleChoice,
   type Loadout,
@@ -12,6 +13,7 @@ import {
   type StatKey,
 } from "@/engine";
 import {
+  clearedByMethodChange,
   clearedByRoleChange,
   normalizeStep,
   resolveStepForMethod,
@@ -62,6 +64,13 @@ export type ChargenState = {
   rollLog: LoggedRoll[];
   /** AI-woven, hand-editable character background prose from the Lifepath. */
   background: string;
+  /**
+   * The campaign's people, decided here: the seed the standing six are drawn
+   * from and whoever the player picked, starting with the fixer who is
+   * interviewing them. Saved into the Lifepath so the campaign seeds the same
+   * people. Null until the Meet deals the room.
+   */
+  castPlan: CastPlan | null;
 };
 
 export type ChargenActions = {
@@ -69,7 +78,7 @@ export type ChargenActions = {
   next: () => void;
   back: () => void;
   patch: (partial: Partial<ChargenState>) => void;
-  /** Changing method restarts the character; keeps the draft id so autosave overwrites. */
+  /** Changing method clears STATs, Skills and gear; who the character is survives. */
   selectMethod: (method: CreationMethod) => void;
   /** Changing Role wipes skills, gear, cyberware and Role-specific Lifepath. */
   selectRole: (roleId: string) => void;
@@ -79,7 +88,7 @@ export type ChargenActions = {
 
 const initialState: ChargenState = {
   draftId: null,
-  step: "method",
+  step: "fixer",
   method: null,
   roleId: null,
   roleAbility: null,
@@ -97,9 +106,10 @@ const initialState: ChargenState = {
   lifepath: { general: {}, roleSpecific: {} },
   loadout: EMPTY_LOADOUT,
   lifestyle: EMPTY_LIFESTYLE,
-  visited: ["method"],
+  visited: ["fixer"],
   rollLog: [],
   background: "",
+  castPlan: null,
 };
 
 function withVisit(state: ChargenState, step: ChargenStep): ChargenStep[] {
@@ -144,11 +154,9 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
       s.method === method
         ? { method }
         : {
-            ...initialState,
-            draftId: s.draftId,
+            ...clearedByMethodChange(),
             method,
             step: resolveStepForMethod(s.step, method),
-            visited: s.visited,
           },
     ),
   selectRole: (roleId) =>

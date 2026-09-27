@@ -19,9 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import type { CreationMethod } from "@/engine";
 import { useChargenStore } from "./store";
+import { CharacterFile } from "./CharacterFile";
+import { FixerLine } from "./FixerLine";
 import { StepPanel } from "./StepPanels";
 import { StepRail } from "./StepRail";
-import { stepsFor } from "./steps";
+import { methodChangeLosesWork, stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
 import { stepStatuses, validateStep } from "./validation";
 
@@ -55,6 +57,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const statuses = stepStatuses(state);
   const { violations } = validateStep(state.step, state);
   const index = stepIds.indexOf(def.id);
+  const fixer = state.castPlan?.picks.fixer ?? null;
 
   // Every step starts at the top, no matter how far down the previous one was scrolled.
   useEffect(() => {
@@ -68,8 +71,8 @@ export function ChargenWizard({ userId }: { userId: string }) {
     Object.keys(state.lifepath.roleSpecific).length > 0;
 
   function requestMethod(method: CreationMethod) {
-    // Method is switchable freely until a Role is locked; after that it restarts.
-    if (state.method && state.method !== method && state.roleId) {
+    // Switching is free until it would throw away STATs, Skills or gear.
+    if (state.method && state.method !== method && methodChangeLosesWork(state)) {
       setPending({ kind: "method", method });
       return;
     }
@@ -93,7 +96,10 @@ export function ChargenWizard({ userId }: { userId: string }) {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
-      <aside className="lg:sticky lg:top-8 lg:self-start">
+      <aside className="space-y-4 lg:sticky lg:top-8 lg:self-start">
+        <div className="hidden lg:block">
+          <CharacterFile state={state} />
+        </div>
         <StepRail steps={steps} current={state.step} statuses={statuses} onSelect={state.setStep} />
       </aside>
 
@@ -102,8 +108,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
         <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border border-border bg-background/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
           <div className="flex min-w-0 items-center gap-3">
             <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-              Step {String(def.index).padStart(2, "0")} /{" "}
-              {String(steps.length - 1).padStart(2, "0")}
+              {def.index + 1} / {steps.length}
             </span>
             <span className="hidden truncate text-sm font-semibold tracking-tight sm:inline">
               {def.title}
@@ -123,28 +128,30 @@ export function ChargenWizard({ userId }: { userId: string }) {
           </div>
         </div>
 
-        <header className="border-b border-border pb-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-            Step {String(def.index).padStart(2, "0")} / {String(steps.length - 1).padStart(2, "0")}
-          </p>
-          <div className="mt-1 flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
+        <header className="space-y-4 border-b border-border pb-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+              {def.title}
+            </p>
             {STEP_HELP[def.id] && (
               <button
                 type="button"
                 aria-label={`About ${def.title}`}
                 onClick={() => setHelpOpen(true)}
-                className="flex h-6 w-6 items-center justify-center rounded-full border border-border font-mono text-xs text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+                className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-muted-foreground transition-colors hover:border-accent hover:text-accent"
               >
                 ?
               </button>
             )}
+            <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              {SAVE_LABEL[saveStatus]}
+              {saveError ? ` · ${saveError}` : ""}
+            </span>
           </div>
-
-          <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            {SAVE_LABEL[saveStatus]}
-            {saveError ? ` — ${saveError}` : ""}
-          </p>
+          {def.id !== "fixer" && <FixerLine fixer={fixer} step={def.id} roleId={state.roleId} />}
+          {(def.id === "fixer" || !fixer) && (
+            <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
+          )}
         </header>
 
         <StepPanel
@@ -176,7 +183,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
           <div className="flex items-center gap-3">
             {violations.length > 0 && (
               <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Fix the listed rules to continue
+                Answer what is missing to go on
               </span>
             )}
             <Button
@@ -193,18 +200,18 @@ export function ChargenWizard({ userId }: { userId: string }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {pending?.kind === "method" ? "Restart this character?" : "Change Role?"}
+              {pending?.kind === "method" ? "Change how you build?" : "Change Role?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {pending?.kind === "method"
-                ? "Changing the creation method restarts the character. Every choice you have made so far is discarded."
+                ? "Changing how you build clears your STATs, Skills and gear. Your Role, your story, your name and your fixer all stay."
                 : "Changing your Role wipes your Skills, Gear, Cyberware, and the Role-specific part of your Lifepath. Your STATs and general Lifepath are kept."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep what I have</AlertDialogCancel>
             <AlertDialogAction onClick={applyPending}>
-              {pending?.kind === "method" ? "Restart" : "Change Role"}
+              {pending?.kind === "method" ? "Change it" : "Change Role"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

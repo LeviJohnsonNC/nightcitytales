@@ -35,6 +35,11 @@ function statsAssigned(state: ChargenState): boolean {
 
 export function validateStep(step: ChargenStep, state: ChargenState): StepValidation {
   switch (step) {
+    case "fixer":
+      return state.castPlan?.picks.fixer
+        ? { violations: [], untouched: false }
+        : { violations: ["Pick who you are here to see."], untouched: true };
+
     case "method":
       return state.method
         ? { violations: [], untouched: false }

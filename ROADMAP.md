@@ -9,7 +9,36 @@ current state of the code.
 
 ---
 
-## Now: the Tomorrow Test — shipped
+## Now: character creation as act one
+
+Creation was faithful, reasonably stylish, and a form: step one asked how much
+paperwork you wanted, twenty Lifepath tables sat in compact rows behind a "roll
+all remaining" button, the character had no face or name until step nine, and
+it ended on "Save to roster". The player it is for has played Cyberpunk 2077 and
+never opened the book, and the step that lost them was Skills.
+
+The plan, in phases:
+
+1. **The meet and the launch — shipped.** Three fixers, one chair: the one you
+   pick asks every question in their own voice and becomes your campaign's
+   fixer. Method follows Role and no longer wipes the character. The rail is
+   topped by the file the fixer is keeping on you. The last screen reads the
+   file back, shows the three people already waiting in the city, and "Enter
+   Night City" saves, starts the campaign and goes straight into the cold open.
+2. **Skills that mean something.** Three ways to be each Role as legal presets,
+   odds in plain words ("pick a lock: 65%") computed by the engine, and a
+   fine-tune drawer.
+3. **The Lifepath as an interview.** One question at a time, in chapters, with
+   the fixer reacting; and when the enemy, friend and lost love are rolled, the
+   player meets the candidates who fit and picks.
+4. **A portrait that develops** as the answers come in.
+5. **Music**, built with the Suno tracks as they arrive.
+6. **Polish**: STAT reveals and one Edgerunner reroll (a house rule), one-click
+   loadouts, handle suggestions, a shareable character card.
+
+---
+
+## Also shipped: the Tomorrow Test
 
 The central claim in `PRODUCT.md` is that tomorrow remembers what happened
 today. The loop — Life → Hook → Job → Aftermath → changed Life — existed as
