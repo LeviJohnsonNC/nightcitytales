@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { fixerCandidates, rollJobSeed } from "@/engine";
 import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import { cn } from "@/lib/utils";
+import { Backdrop } from "./Backdrop";
 import { fixerVoice } from "./interview";
 import { useChargenStore, type ChargenState } from "./store";
 import "./interview.css";
@@ -40,6 +41,7 @@ export function FixerMeet({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-8">
       <section className="relative overflow-hidden border border-hairline bg-surface px-6 py-10 sm:px-10">
+        <Backdrop name="scene-meet" text="left" />
         <div aria-hidden className="cg-rain" />
         <div className="relative space-y-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-accent">

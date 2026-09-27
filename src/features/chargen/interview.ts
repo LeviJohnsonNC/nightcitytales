@@ -17,6 +17,8 @@ import type { ChargenStep } from "./steps";
 export type FixerVoice = {
   /** Where the meet happens. */
   where: string;
+  /** The uploaded backdrop of that place, by file name (docs/art-style.md). */
+  venue: string;
   /** Why you would pick them, in one line. */
   pitch: string;
   /** What they say when you sit down. */

@@ -3,6 +3,7 @@
   "fixers": {
     "Ilsa Bräun": {
       "where": "An office above a Northside freight yard. Heated, quiet, and full of actual paper.",
+      "venue": "venue-ilsa-braun",
       "pitch": "Moves things that are not supposed to move, on time, every time. Hates waste. Pays in full.",
       "greeting": "Sit. You are four minutes early, which I will note in your favour. I am going to ask you some questions and write the answers down. On paper. Paper can be burned.",
       "ask": {
@@ -41,6 +42,7 @@
     },
     "Marcus \"Tally\" Oyelaran": {
       "where": "The back half of a Heywood laundromat that has not washed a shirt in ten years.",
+      "venue": "venue-tally",
       "pitch": "Warm, generous, buys the first drink and the second. Keeps a ledger of every favour, including this one.",
       "greeting": "Come in, come in, sit, you want something? On me. No, I insist. We'll call it a welcome. I'm just going to make a little note.",
       "ask": {
@@ -79,6 +81,7 @@
     },
     "Dinh Bao Tran": {
       "where": "A food court on the second level. He picked the table nearest two exits.",
+      "venue": "venue-dinh-bao-tran",
       "pitch": "Sells access to buildings, and nothing else. Talks in timings. Right often enough that crews who ignore him stop booking.",
       "greeting": "Sit facing the escalator. We have about twenty minutes before the lunch rush. I will ask. You will answer. Short is fine.",
       "ask": {
@@ -117,6 +120,7 @@
     },
     "Rosalind Achebe": {
       "where": "A members' lounge in the Executive Zone. The drinks cost more than a week of ammunition. She is paying.",
+      "venue": "venue-rosalind-achebe",
       "pitch": "Brokers for people who own things. Charming in a way that feels like being professionally handled, because it is.",
       "greeting": "Darling, sit. Order anything, the house knows me. My clients will never meet you, so tonight I am going to find out everything they would have wanted to know.",
       "ask": {
@@ -155,6 +159,7 @@
     },
     "Yuri Pastrana": {
       "where": "A truck stop bar on the Badlands edge. The parking lot is worth more than the building.",
+      "venue": "venue-yuri-pastrana",
       "pitch": "Loud, fast, calls you family and means it. Moves cargo the corps wrote off. Nobody gets left on the sand.",
       "greeting": "Sit down, sit down! You look like you drove here in something terrible. Drink this. Now, family, let's find out who you are.",
       "ask": {
@@ -193,6 +198,7 @@
     },
     "Kit Mwangi": {
       "where": "Whichever noodle bar has the best privacy this week. Kit is already halfway through a bowl.",
+      "venue": "venue-kit-mwangi",
       "pitch": "Best information broker under forty. Two hundred people on a small monthly retainer. Burned three corps and keeps score.",
       "greeting": "Hey. Sit, sit. I already know some of this, I just want to hear how you tell it. Go fast, I get bored.",
       "ask": {
