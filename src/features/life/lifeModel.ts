@@ -20,6 +20,7 @@ import {
   getDistrict,
   isGuarded,
   nearestWithTag,
+  regularOf,
   publicView,
   resolveDestination,
   tagNamed,
@@ -327,8 +328,13 @@ export function placesToOffer(
   kind: PlaceTag | undefined,
   known: readonly string[],
   limit = 3,
+  places?: Record<string, PlaceState>,
 ): { place: NearbyPlace; kind: PlaceTag }[] {
-  if (kind) return nearestWithTag(from, kind, { known, limit }).map((place) => ({ place, kind }));
+  if (kind) {
+    return nearestWithTag(from, kind, { known, limit, regular: regularOf(kind, places) }).map(
+      (place) => ({ place, kind }),
+    );
+  }
   const here = resolvePosition(from)?.placeKey;
   const out: { place: NearbyPlace; kind: PlaceTag }[] = [];
   for (const each of EVERYDAY_KINDS) {
@@ -341,20 +347,31 @@ export function placesToOffer(
 }
 
 /** "bar: Forlorn Hope, Little China — 14 min on foot" for each everyday kind. */
-export function nearestByKindLines(from: string, known: readonly string[]): string[] {
+export function nearestByKindLines(
+  from: string,
+  known: readonly string[],
+  places?: Record<string, PlaceState>,
+): string[] {
   const out: string[] = [];
   for (const kind of EVERYDAY_KINDS) {
-    const [nearest] = nearestWithTag(from, kind, { known, limit: 1 });
+    const regular = regularOf(kind, places);
+    const [nearest] = nearestWithTag(from, kind, { known, limit: 1, regular });
     if (!nearest) continue;
     const district = getDistrict(nearest.districtKey)?.name ?? nearest.districtKey;
     const here = resolvePosition(from)?.placeKey === nearest.key;
+    const theirs = nearest.key === regular ? " (their regular)" : "";
     out.push(
       here
-        ? `${kind}: ${nearest.name} — where they are standing`
-        : `${kind}: ${nearest.name}, ${district} — ${nearest.minutes} min on foot`,
+        ? `${kind}: ${nearest.name}${theirs} — where they are standing`
+        : `${kind}: ${nearest.name}${theirs}, ${district} — ${nearest.minutes} min on foot`,
     );
   }
   return out;
+}
+
+/** A haunt list with the character's regular added, once, when there is one. */
+function withRegular(haunts: string[], regular: string | undefined): string[] {
+  return regular && !haunts.includes(regular) ? [...haunts, regular] : haunts;
 }
 
 /**
@@ -455,9 +472,16 @@ export function hauntPeople(
    * default rather than leaving somebody nowhere.
    */
   homeDistrictKey?: string | null,
+  /**
+   * What the campaign has done to its places, when the caller has it. Used for
+   * one thing: the character's regular bar joins their friend's haunts, so the
+   * bar they keep going back to is somewhere the friend turns up.
+   */
+  places?: Record<string, PlaceState>,
 ): HauntPerson[] {
   const seen = new Set<string>();
   const out: HauntPerson[] = [];
+  const regularBar = regularOf("bar", places);
   for (const npc of npcs) {
     if (npc.status === "dead") continue;
     const member = castMemberFrom(npc);
@@ -470,8 +494,12 @@ export function hauntPeople(
       name: npc.name,
       role: member.role,
       // Home is where the character actually lives, which is where they should
-      // be able to run into people.
-      haunts: hauntsFor(member.role, homeDistrictKey || DEFAULT_START, campaign.id),
+      // be able to run into people. A friend also drinks where the character
+      // does, once there is somewhere the character does.
+      haunts: withRegular(
+        hauntsFor(member.role, homeDistrictKey || DEFAULT_START, campaign.id),
+        member.role === "friend" ? regularBar : undefined,
+      ),
     });
   }
   return out;

@@ -85,3 +85,31 @@ describe("where the cast are", () => {
     expect(hauntPeople(npcs, campaign, "kabuki")).toEqual(hauntPeople(npcs, campaign, "kabuki"));
   });
 });
+
+describe("the character's regular", () => {
+  const friend = npcRow("friend-1", "Kiro", "friend");
+  const regularBar = {
+    placeKey: "h7",
+    dials: {},
+    flags: [],
+    visits: 9,
+    firstVisitDay: 1,
+    lastVisitDay: 9,
+  };
+
+  it("becomes somewhere their friend turns up", () => {
+    const [kiro] = hauntPeople([friend], campaign, "little_europe", { h7: regularBar });
+    expect(kiro!.haunts).toContain("h7");
+  });
+
+  it("is not added to anybody else's haunts", () => {
+    const [sable] = hauntPeople([npcs[0]!], campaign, "little_europe", { h7: regularBar });
+    expect(sable!.haunts).not.toContain("h7");
+  });
+
+  it("changes nothing for a character with no regular", () => {
+    expect(hauntPeople([friend], campaign, "little_europe", {})).toEqual(
+      hauntPeople([friend], campaign, "little_europe"),
+    );
+  });
+});

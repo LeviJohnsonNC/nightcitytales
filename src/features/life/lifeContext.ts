@@ -174,6 +174,8 @@ export type LifeContext = {
       asALocal?: string[];
       /** How much of a local they are here, when they are one. */
       localExpert?: { level: number; districtName: string };
+      /** This is their regular: the place of its kind they keep coming back to. */
+      regular?: boolean;
     };
     /**
      * Hidden truths the character has FOUND here, and only those.
@@ -318,6 +320,13 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       // visit, so it is stated BEFORE the standing lines are acted on: without
       // it the narrator reads "never been here" and introduces the character to
       // their own neighbourhood.
+      if (f.regular) {
+        parts.push(
+          "This is THEIR REGULAR. The staff know them by name and know what they usually have; " +
+            "somebody may start pouring or cooking it before they ask. Greet them the way a place " +
+            "greets a regular: warmly, briefly, and without a speech about it.",
+        );
+      }
       if (f.localExpert) {
         parts.push(
           `This is their NEIGHBOURHOOD: they are a local in ${f.localExpert.districtName} ` +

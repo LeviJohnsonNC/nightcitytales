@@ -250,3 +250,29 @@ describe("the packet frames a scene in progress, and a friend coming over", () =
     expect(already).toContain("already came over");
   });
 });
+
+describe("the packet at their regular", () => {
+  const place = {
+    where: "The Paper Lantern",
+    district: "Old Japantown",
+    area: "The Island",
+    security: "Kimen-Gumi",
+    gangs: [],
+    combatZone: false,
+    nearby: [],
+  };
+  const familiarity = { visits: 9, standing: "known" as const, since: "", known: [] };
+
+  it("tells the narrator the staff know them", () => {
+    const packet = renderLifeUserPrompt(
+      { ...BASE, place: { ...place, familiarity: { ...familiarity, regular: true } } },
+      "x",
+    );
+    expect(packet).toContain("THEIR REGULAR");
+  });
+
+  it("says nothing of the kind anywhere else", () => {
+    const packet = renderLifeUserPrompt({ ...BASE, place: { ...place, familiarity } }, "x");
+    expect(packet).not.toContain("THEIR REGULAR");
+  });
+});

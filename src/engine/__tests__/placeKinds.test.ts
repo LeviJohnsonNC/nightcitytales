@@ -58,10 +58,17 @@ describe("nearestWithTag — which real place answers for a kind", () => {
   });
 
   it("finds one in the next district over when there is none underfoot", () => {
-    // Old Japantown has no bar in the atlas at all. "Find a bar" still has an answer.
-    const [nearest] = nearestWithTag("old_japantown", "bar");
+    // The Hot Zone has no bar at all. "Find a bar" still has an answer.
+    const [nearest] = nearestWithTag("the_hot_zone", "bar");
     expect(nearest).toBeDefined();
-    expect(nearest!.districtKey).not.toBe("old_japantown");
+    expect(nearest!.districtKey).not.toBe("the_hot_zone");
+  });
+
+  it("finds the bar on the character's own street when there is one", () => {
+    // Old Japantown used to have none, which sent "find a bar" from the
+    // Precipice across a district line. It has the Paper Lantern now.
+    const [nearest] = nearestWithTag("h5", "bar");
+    expect(nearest!.districtKey).toBe("old_japantown");
   });
 
   it("goes back to a bar they know over a stranger that is barely nearer", () => {

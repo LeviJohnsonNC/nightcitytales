@@ -343,6 +343,14 @@ The station's answer to this environment is equipment and chrome. Some of its fi
 That doesn't make the work clean. Firefighters see what remains after Night City's worst nights. They know which landlords bypass safety systems, which gangs burn buildings for territory, which corporations quietly transport hazardous materials through residential blocks, and which "accidental" fires always seem to happen just before redevelopment contracts are signed. They also arrive before investigators do. Before cleanup crews do. Before somebody has remembered to remove the evidence. A firefighter can become an extraordinary contact in Night City because they don't merely know where the bodies are buried. **Sometimes they're the ones who pulled the bodies out.**`,
   },
 
+  c6: {
+    text: `The Ledger is a hotel-lobby bar with no hotel attached: marble floor, low lamps, deep leather chairs and a bartender in a waistcoat, all on the ground floor of a building that is otherwise offices. It was built for the Chamber of Commerce, the consortium of fixers and execs who carved Downtown out of Little Europe, and it serves them exactly the way they like to be served: discreetly, expensively and without anybody at the next table appearing to listen.
+
+The prices are high on purpose. They keep the room select, and a room where everybody can afford the drinks is a room where everybody can afford to be seen. Deals are not signed here. They are agreed here, over a second glass, and signed somewhere with better lawyers.
+
+**If you want work in Downtown, the Ledger is where somebody decides whether you are the kind of person they would give it to. Dress for it.**`,
+  },
+
   the_hot_zone: {
     image: "the-hot-zone",
     text: `The Hot Zone is where Night City keeps its ghost. Twenty-two years ago, this was the center of corporate power on the West Coast, a vertical kingdom of banks, luxury hotels, media towers, corporate plazas, AV pads, restaurants, and mirrored skyscrapers where fortunes moved faster than traffic below. Then the bomb went off beneath Arasaka Towers in 2023. Buildings folded into one another. Streets vanished beneath rubble. Underground infrastructure collapsed or flooded. Cars burned where they stopped. Thousands of people disappeared beneath concrete, steel, glass, and ash. Night City eventually rebuilt around the crater, but it never rebuilt **here**. Step across the invisible boundary into the Hot Zone and the modern city simply ends. No bright storefronts. No dependable CitiNet. No traffic. No advertisements politely asking for your money. Just shattered towers leaning against a red sky and twenty years of wind moving through empty windows.
@@ -740,6 +748,22 @@ Cleaning is automated through ceiling-mounted water jets that hose down the room
 Yet the hotel has customers precisely because it's terrible. No cameras. No questions. No desk clerk remembering your face. Need somewhere to hide for forty-eight hours? Somewhere to conduct a meeting neither participant wants recorded? Somewhere your enemies can't simply bribe reception for your room number? The Unnamed Cube Hotel suddenly starts looking downright luxurious. Just wedge something beneath the door, keep your weapon within reach, and store electronics above floor level. Privacy is expensive in Night City. Here it's cheap because absolutely everything else is awful.`,
   },
 
+  h7: {
+    text: `The Paper Lantern is a bar the width of a hallway, wedged into a shopfront between the container stacks of the Precipice and the security gates of the Highcourt Plaza. It has a counter, a row of stools, a paper lantern that has not been lit since before the Collapse, and a license from nobody. It stays open because the family heads who elect Old Japantown's city manager have decided it should, and in this district that is the only permit that counts.
+
+The Kimen-Gumi drink here for free and sit nearest the door. Everybody else pays, keeps their voice at the level of the room, and does not ask why the owner never seems to run short of anything. The regulars are container families, off-shift orderlies from Crisis Medical and the occasional Highcourt guest who wanted to see the neighbourhood without leaving the block. It is quiet, it is warm, and on a bad night in a district surrounded by combat zone that is a genuine luxury.
+
+**Nobody comes to the Paper Lantern to be seen. They come because it is the one room in walking distance where somebody will pour them a drink and not ask what they are running from.**`,
+  },
+
+  h8: {
+    text: `Nakamura's Counter is six stools, one enormous pot and a man who has been stirring it for longer than most of his customers have been alive. The broth has reportedly never been allowed to go cold, which the regulars repeat with the solemnity other districts reserve for founding myths. The noodles are fresh, the portions are honest, and the mushrooms come from Mrs. Suzuki's Bodega, which is the only answer anybody has ever been given about where they come from.
+
+It is not a restaurant. There is no menu, no reservation and nowhere to wait: you stand behind whoever is eating until a stool comes free, and you eat what is in the pot. Shroomers and Kimen-Gumi both eat here and both behave, because Nakamura has fed half the district on credit at one time or another and the other half knows it.
+
+**In a neighbourhood that survives by knowing who it can trust, the Counter is where Old Japantown keeps its tab, and Nakamura remembers every name on it.**`,
+  },
+
   south_night_city: {
     image: "south-night-city",
     text: `South Night City is where Night City put everything respectable neighborhoods didn't want to look at. Long before the Fourth Corporate War, this was the industrial backside of the metropolis: warehouses, shabby worker housing, port infrastructure, freight yards, utility facilities, cheap commercial blocks, and miles of buildings constructed because somebody needed somewhere to put the people who kept the rest of the city running. Then 2023 shook the peninsula, refugees flooded south, infrastructure failed, gangs moved into the vacuum, and entire stretches of the district slipped into Combat Zone status. Twenty years later, factories still operate beside apartment blocks, freight still moves through streets where burned cars haven't been cleared, and thousands of people continue living beneath the industrial haze because being poor does not make somebody temporary.
@@ -823,6 +847,14 @@ For edgerunners, the Chapel is the kind of place where a simple reconnaissance j
 The students living here occupy a surreal academic frontier. One direction leads toward fortified NCU, lecture halls, libraries, professors, and students complaining about cafeteria prices. The other leads deeper into a Combat Zone. Gunfire at night is common enough to interfere with sleep, making noise-canceling headphones less study equipment than quality-of-life cyberware. Residents learn to identify weapons by sound with a competence rarely included on university transcripts. A freshman might spend the afternoon discussing philosophy and the evening pushing their desk against the container door because something loud is happening outside.
 
 Naturally, the Bay develops fierce camaraderie. Seven containers is small enough that everybody knows everyone else's problems. Notes get shared. Food gets shared. Somebody with a Tech skill keeps everyone's electricity alive. Somebody's friend from Parkside brings contraband booze. If one resident hasn't returned after class, people notice. NCU teaches its students theory. University Cargo Bay provides the practicum in surviving Night City long enough to graduate.`,
+  },
+
+  i9: {
+    text: `The Chapel Steps is not a business so much as a treaty. Half a dozen food carts cook on scavenged burners across the broad steps of the Union Chapel Building, each one with its own specialty, its own prices and its own arrangement with whichever gang was collecting last. The smoke rises past the boarded-up doors of a building everybody agrees is abandoned, in theory.
+
+The food is cheap, hot and surprisingly good, because in South Night City a cart that makes people sick does not get a second week. The crowd is everybody: factory workers, Silverhand artists, Zoners, students walking up from the Cargo Bay. City Manager Haakensen's people come by for their cut on no particular schedule, and the carts pay it the way you pay weather.
+
+**Some people swear the Reckoners eat here too, quietly, before going down into the chapel basement. The cart owners have never seen anything, and they would like to keep it that way.**`,
   },
 
   port_of_night_city: {
@@ -1338,6 +1370,14 @@ WorldSat isn't merely another corporate tenant. Its New Westbrook facility is **
 The strangest thing is how automated much of the complex is. Past the guards, cliffs, sensors, Militech operators, and hardened infrastructure are systems doing their work with relatively little human attention. For a sufficiently skilled team, that makes WorldSat one of Night City's ultimate infiltration targets. Plug into the right equipment and information no longer stops at the city limits. A runner could contact someone overseas, intercept a corporate transmission, send data beyond local censorship, compromise a satellite connection, or discover exactly who has been listening to whom. **Network 54 controls what Night City sees. WorldSat controls whether Night City can speak to the rest of the planet. That is the kind of power people build cliffs, commandos, and sniper nests around.**`,
   },
 
+  p12: {
+    text: `The Studio Audience sits across the road from the walls of the fake city where Network 54 films The Combat Zone, and it has made the show its whole personality. Every screen plays the broadcast. The bar keeps a board of live odds on who walks out, chalked up by hand and updated faster than the network's own graphics. On episode nights the place is packed with tent-city locals, off-duty Network 54 crew and tourists who wanted to be close to the action without being in it.
+
+Nobody here is naive about what they are watching. The regulars have seen neighbours go over that wall, and some of them have seen neighbours come back. That is exactly why the betting is so serious: this is the only room in New Westbrook where knowing the contestants personally counts as an edge.
+
+**The Studio Audience is the loudest bar in the district and the one place in it where the show feels real, which is a very Night City sort of compliment.**`,
+  },
+
   charter_hill: {
     image: "charter-hill",
     text: `Charter Hill is where Night City keeps the people who have **almost made it**. The streets are clean enough that garbage attracts complaints instead of scavengers. Militech patrols keep random violence admirably inconvenient. Apartments have real windows. Restaurants know what linen is. The residents possess expense accounts, corporate healthcare, respectable wardrobes, and enough money to consider poverty a subject suitable for documentaries. Yet on clear days the walls of the **Executive Zone** remain visible from the hills, looming above the district like the finish line of a race everyone here insists they aren't running. Charter Hill is affluent. Comfortable. Influential. And absolutely saturated with the awareness that somewhere nearby, somebody has more.
@@ -1662,6 +1702,14 @@ That creates a delicious infiltration problem. Traditional corporate security ca
 The imitation is not entirely cynical. Zhirafa employees have historically had a good relationship with the Tech-heavy community at the Ironworks, and the MicroVillage reflects that connection. Vendors gather outside selling food and drinks at unusually generous prices for corporate housing. The luxury goods can be startlingly cheap, especially alcohol. **Vodka can cost less than bottled water**, an economic arrangement that ensures evenings occasionally develop more enthusiasm than planning. Residents work hard and, once shifts end, can drink hard enough to provide tomorrow's machinery with new cautionary examples about human inefficiency.
 
 For edgerunners, the MicroVillage is almost perfect social infiltration territory. It sits close to the headquarters, houses people with legitimate access to Zhirafa systems, and encourages exactly the sort of informal after-hours mixing that security departments pretend training seminars can eliminate. Engineers complain over cheap cocktails. Techs from the Ironworks visit friends. Someone brings home a component they intended to inspect off the clock. Somebody else mentions tomorrow's prototype test after their fourth vodka. A corporate operative could spend weeks trying to breach Zhirafa's drones and encrypted systems. **A competent Fixer might simply buy an engineer another round and ask how work is going.**`,
+  },
+
+  u6: {
+    text: `The Shift Change occupies a gutted loading bay on the edge of the Heywood Industrial Zone, and it is two businesses depending on the hour. By day it is a canteen: long steel tables, trays of whatever the kitchen bought cheap that morning, and a queue of dock crews, factory hands and Fixie's Couriers eating fast between runs. When the whistle goes at the end of the second shift, somebody pulls the shutters halfway down, the coffee urn becomes a bar, and the same tables fill with the same people for different reasons.
+
+It is neutral ground in the way only a place everyone needs can be. Zhirafa contractors who are not supposed to leave the office park drink next to DeadWoods who are not supposed to be allowed in. Couriers trade gossip about who is shipping what. The owner takes cash, scrip and favours, and remembers which is which.
+
+**The Arroyo Concern runs the district. The Shift Change is where the district finds out what the Arroyo Concern is going to do next.**`,
   },
 
   santo_domingo: {

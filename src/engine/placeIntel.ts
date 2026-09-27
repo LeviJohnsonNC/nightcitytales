@@ -401,6 +401,36 @@ export function standingFor(visits: number): PlaceStanding {
 }
 
 /**
+ * The character's REGULAR of a kind — their bar, their noodle place — or none.
+ *
+ * Not a new count: a place becomes a regular at the same depth the intel ladder
+ * already calls knowing it well (`known`), and of the places of that kind they
+ * know that well, it is the one they have been to most (the most recent visit
+ * breaking a tie). A character with no regular has none; the engine never
+ * appoints one.
+ *
+ * What it buys, all of it information and recognition rather than dice: a trip
+ * to "a bar" goes to their bar, the staff greet them as a regular, and the
+ * friend in their cast starts drinking there too.
+ */
+export function regularOf(
+  kind: PlaceTag,
+  places: Record<string, PlaceState> | undefined,
+): string | undefined {
+  let best: PlaceState | undefined;
+  for (const state of Object.values(places ?? {})) {
+    if (state.visits < KNOWS_IT_WELL) continue;
+    if (!getPlace(state.placeKey) || !tagsOf(state.placeKey).includes(kind)) continue;
+    const better =
+      !best ||
+      state.visits > best.visits ||
+      (state.visits === best.visits && (state.lastVisitDay ?? -1) > (best.lastVisitDay ?? -1));
+    if (better) best = state;
+  }
+  return best?.placeKey;
+}
+
+/**
  * What the narrator should know about how familiar this place is.
  *
  * Null for somewhere the atlas does not have. A place with no stored state is

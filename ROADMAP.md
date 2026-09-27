@@ -350,10 +350,15 @@ The work, with what the location layer already covered marked:
   gets no dice at all. Life and Jobs now roll through one function
   (`play/rollCheck.ts`), which also gave Life rolls the Role bonuses the Job
   copy had and the Life copy had quietly dropped.
+  Then everyday ground: six house-rule venues (a bar and a noodle counter in
+  Old Japantown, one each in Heywood Industrial, Downtown, New Westbrook and
+  South Night City) for districts the atlas gave nowhere to drink or eat, and
+  a character's REGULAR (`regularOf`: the place of a kind they know best) —
+  "find a bar" goes there, the staff greet them as one, and their friend
+  drinks there too. The six still need pictures.
   Still to do, in order: run the evals and tune from what they say (the prompts
   still carry most of their old brakes; cutting them blind was not worth the
-  risk), unnamed local spots for the districts the atlas gives no bar, and a
-  stronger model if the evals say it plays better.
+  risk), and a stronger model if the evals say it plays better.
 
 Success: the player opens the game, understands their immediate problem in
 seconds, decides, sees the cost, and moves on.
@@ -696,6 +701,7 @@ Severity is what happens if it is ignored, not how hard it is to fix:
 | 6   | Operational  | The `portraits` storage bucket is never created by a migration. Its policies are — policies alone do not create a bucket.                                                                                                                                                                                                                                                                                                                                                                           |
 | 7   | Operational  | `campaign_places` (migration `20260904030000`) must be applied to any database predating it. No backfill is needed, but the first Life turn throws without the table.                                                                                                                                                                                                                                                                                                                               |
 | 8   | Operational  | The append-only ledger is auditable, not tamper-proof: an authenticated user can insert arbitrary event types into a campaign they own. Fine as a record, not a boundary — do not build anti-cheat on it.                                                                                                                                                                                                                                                                                           |
+| 17  | Operational  | `tools/atlas/tag_places.py` no longer reproduces `places.gameplay.json`. It fails its own assertion on `l4`, and it has never read `places.houserule.json`, so every house-rule place (the Exec Zone's, the Heywood Docks', the six everyday venues) is tagged by hand in the JSON — and it WRITES the file before that assertion fails, so running it as `AGENTS.md` describes wipes those tags. Either teach it the house-rule file and patch `l4`, or retire it and say the JSON is hand-kept.   |
 | 9   | Incomplete   | Lifepath narrative, pronouns and self-description are assembled at creation and have nowhere to persist. The save payload carries them; the schema has no column.                                                                                                                                                                                                                                                                                                                                   |
 | 10  | ~~Resolved~~ | Mission objectives close (`completes`/`fails` on a beat exit, `validateMission` rejecting an objective nothing can close), and a finished job now writes the campaign status rather than leaving it to close-out. It writes `active`: a campaign is a life, not a job. What remains is not a debt but a question — `won` is in `CAMPAIGN_STATUSES` and nothing in the game has ever written it, so nobody has decided what it would mean for a life in Night City to be over and to have gone well. |
 | 11  | Incomplete   | Non-combat structured world-state deltas the GM proposes are only partially wired into persistence.                                                                                                                                                                                                                                                                                                                                                                                                 |
