@@ -10,6 +10,7 @@ import {
   isAreaScoped,
   isHomeArea,
   localExpertAreaOptions,
+  matchingPreset,
   readLifestyle,
   skillEntryLimits,
   type SkillLimits,
@@ -29,6 +30,8 @@ import {
 } from "@/engine";
 import { displayValue, readGeneralLifepath } from "./lifepathState";
 import { SkillInfo } from "./SkillInfo";
+import { FineTune, OddsBar, WaysToWork, WhatYouCanDo } from "./SkillWays";
+import { taskOdds } from "./skillTasks";
 import { useChargenStore, type ChargenState } from "./store";
 
 /** Rulebook categories, in the order skills.json lists them. */
@@ -170,6 +173,7 @@ function SkillRow({
   const stat = statValue(state, skill.stat);
   const base = stat === null ? null : skillBase(stat, entry.level);
   const cost = skillPointCost(entry.skillId, 0, entry.level);
+  const odds = taskOdds(entry, state.stats);
   const home = homeDistrictOf(state);
   const label = skillEntryName(entry, home);
   // A place-scoped line still holding the printed placeholder: say where it
@@ -199,6 +203,12 @@ function SkillRow({
           {skill.stat.toUpperCase()} · {skill.category}
           {!entry.granted && ` · ${cost} pts`}
         </p>
+        {odds && (
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-text-muted">
+            <span>{odds.task}</span>
+            <OddsBar percent={odds.percent} />
+          </p>
+        )}
         {awaitingHome && (
           <p className="mt-1 text-xs text-text-muted">
             Your own neighbourhood — it becomes the district you pick at Outfit &amp; Lifestyle.
@@ -683,18 +693,59 @@ function Chip({
   );
 }
 
+/**
+ * The Skills step, asked the way somebody who has never opened the book can
+ * answer it.
+ *
+ * It used to open straight onto eighty-six points and twenty rows of plus and
+ * minus, and it was the step where a new player stopped caring. Now it asks how
+ * you work (three legal presets per Role), shows what that means as tasks with
+ * your real odds, and keeps every Level by hand in a drawer for the player who
+ * wants it. The drawer is the same editor as before, with the same validators;
+ * nothing a preset writes could not have been written by hand.
+ */
 export function SkillsPanel({ state }: { state: ChargenState }) {
   if (!state.method) {
-    return <p className="text-sm text-text-muted">Choose a creation method first.</p>;
+    return <p className="text-sm text-text-muted">Choose how you build first.</p>;
   }
-  if (state.method !== "complete_package" && !state.roleId) {
+  if (!state.roleId) {
     return (
       <p className="text-sm text-text-muted">
-        Pick a Role first — the Skill package is read from that Role's list.
+        Pick a Role first. Your Skills are read from what that Role does.
       </p>
     );
   }
-  if (state.method === "streetrat") return <StreetratBranch state={state} />;
-  if (state.method === "edgerunner") return <EdgerunnerBranch state={state} />;
-  return <CompletePackageBranch state={state} />;
+  const granted = grantedLanguage(state);
+  const home = homeDistrictOf(state);
+
+  if (state.method === "streetrat") {
+    const fixed = rolePackageEntries(state.roleId);
+    return (
+      <div className="space-y-6">
+        <WhatYouCanDo state={state} entries={granted ? [...fixed, granted] : fixed} home={home} />
+        <FineTune open={false}>
+          <StreetratBranch state={state} />
+        </FineTune>
+      </div>
+    );
+  }
+
+  const method = state.method;
+  const shown = granted ? [...state.skills, granted] : state.skills;
+  const handBuilt =
+    state.skills.length > 0 &&
+    !matchingPreset({ method, roleId: state.roleId, entries: state.skills });
+  return (
+    <div className="space-y-6">
+      <WaysToWork state={state} method={method} />
+      <WhatYouCanDo state={state} entries={shown} home={home} />
+      <FineTune open={handBuilt}>
+        {method === "edgerunner" ? (
+          <EdgerunnerBranch state={state} />
+        ) : (
+          <CompletePackageBranch state={state} />
+        )}
+      </FineTune>
+    </div>
+  );
 }

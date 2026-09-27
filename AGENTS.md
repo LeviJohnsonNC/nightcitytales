@@ -417,6 +417,14 @@ it, so the fixer who interviewed the character and the people the File shows
 are exactly the people the campaign meets. `meetToCampaign.test.ts` holds those
 two paths together; keep it passing when either one changes.
 
+The Skills step leads with presets and odds rather than points. A preset
+(`src/data/rules/skill-presets.json`, `houseRule: true`) names focus and support
+Skills from the Role's printed twenty, and `presetEntries` builds an allocation
+that spends the budget exactly and passes `validateSkillEntries` for both
+methods — `skillPresets.test.ts` holds every preset of every Role to that. The
+odds a player sees are `checkPercent` over their real STAT and Level against a
+DV named in `src/features/chargen/skillTasks.ts`, never a number typed there.
+
 Zustand owns the active wizard state. Supabase stores the newest draft as JSON,
 with a two-second autosave debounce. Editing a saved character creates a new
 draft and does not mutate the original character in place.

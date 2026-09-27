@@ -1,0 +1,236 @@
+{
+  "houseRule": true,
+  "note": "Three ways to be each Role at the Skills step, for a player who has never opened the book. A preset is not a new rule and grants nothing: it names the Skills a way of working leans on, and engine/skillPresets.ts turns that into an ordinary allocation that the printed validators accept for Edgerunner and Complete Package alike (every Role Skill kept at the floor or above, focus Skills raised to the cap first, support Skills next, the budget spent exactly). Every name must be one of that Role's printed twenty Skills; a test holds each preset to legality. The house rule is only that these three are the ones offered.",
+  "roles": {
+    "rockerboy": [
+      {
+        "id": "headliner",
+        "name": "The Headliner",
+        "pitch": "The crowd came for you. Every room is a stage and you know exactly where the light is.",
+        "focus": ["Play Instrument", "Composition", "Persuasion", "Human Perception"],
+        "support": ["Wardrobe & Style", "Personal Grooming", "Conversation"]
+      },
+      {
+        "id": "street_poet",
+        "name": "The Street Poet",
+        "pitch": "You know every block, and every block knows your words. The song is a map and a warning.",
+        "focus": ["Streetwise", "Persuasion", "Composition", "Human Perception"],
+        "support": ["Local Expert", "Conversation", "Evasion"]
+      },
+      {
+        "id": "riot",
+        "name": "The Riot",
+        "pitch": "The show ends when the fight does. You play loud and you hit harder.",
+        "focus": ["Brawling", "Melee Weapon", "Play Instrument", "Evasion"],
+        "support": ["Handgun", "Athletics", "Persuasion"]
+      }
+    ],
+    "solo": [
+      {
+        "id": "gunslinger",
+        "name": "The Gunslinger",
+        "pitch": "Fast hands, faster eyes. You are already moving when they reach for iron.",
+        "focus": ["Handgun", "Evasion", "Perception", "Athletics"],
+        "support": ["Stealth", "Tactics", "Brawling"]
+      },
+      {
+        "id": "bodyguard",
+        "name": "The Bodyguard",
+        "pitch": "Somebody is paying you to stand in the doorway. Nobody gets through it.",
+        "focus": ["Shoulder Arms", "Perception", "Human Perception", "Tactics"],
+        "support": ["Autofire", "Evasion", "Resist Torture/Drugs"]
+      },
+      {
+        "id": "blade",
+        "name": "The Blade",
+        "pitch": "Quiet, close and over before the alarm. You prefer it personal.",
+        "focus": ["Melee Weapon", "Evasion", "Athletics", "Stealth"],
+        "support": ["Brawling", "Perception", "Interrogation"]
+      }
+    ],
+    "netrunner": [
+      {
+        "id": "ghost",
+        "name": "The Ghost",
+        "pitch": "In, out, and nobody ever knew. Locks and cameras are just questions you already answered.",
+        "focus": ["Electronics/Security Tech", "Stealth", "Cryptography", "Perception"],
+        "support": ["Conceal/Reveal Object", "Evasion", "Library Search"]
+      },
+      {
+        "id": "archivist",
+        "name": "The Archivist",
+        "pitch": "Every secret leaves a record. You are the one who finds it and reads it first.",
+        "focus": ["Library Search", "Cryptography", "Education", "Human Perception"],
+        "support": ["Electronics/Security Tech", "Conversation", "Basic Tech"]
+      },
+      {
+        "id": "tinkerer",
+        "name": "The Tinkerer",
+        "pitch": "Chrome, code and a soldering iron. If it has a port, it can be taught new tricks.",
+        "focus": ["Cybertech", "Basic Tech", "Handgun", "Perception"],
+        "support": ["Electronics/Security Tech", "Evasion", "Conceal/Reveal Object"]
+      }
+    ],
+    "tech": [
+      {
+        "id": "bench_genius",
+        "name": "The Bench Genius",
+        "pitch": "Give you a week and a pile of scrap and you will hand back something the corps would kill for.",
+        "focus": ["Basic Tech", "Weaponstech", "Cybertech", "Science"],
+        "support": ["Education", "Perception", "Electronics/Security Tech"]
+      },
+      {
+        "id": "gearhead",
+        "name": "The Gearhead",
+        "pitch": "Engines, rigs, anything with wheels. You keep the crew moving and you drive it home.",
+        "focus": ["Land Vehicle Tech", "Basic Tech", "Shoulder Arms", "Athletics"],
+        "support": ["Weaponstech", "Evasion", "Perception"]
+      },
+      {
+        "id": "breaker",
+        "name": "The Breaker",
+        "pitch": "Doors, panels, alarms. What the building says no to, you talk out of it.",
+        "focus": ["Electronics/Security Tech", "Stealth", "Basic Tech", "Perception"],
+        "support": ["Evasion", "Shoulder Arms", "Athletics"]
+      }
+    ],
+    "medtech": [
+      {
+        "id": "trauma_surgeon",
+        "name": "The Trauma Surgeon",
+        "pitch": "Bring them in bleeding and they walk out. Your hands are steadier than anybody's nerves.",
+        "focus": ["Paramedic", "First Aid", "Science", "Concentration"],
+        "support": ["Cybertech", "Human Perception", "Basic Tech"]
+      },
+      {
+        "id": "field_medic",
+        "name": "The Field Medic",
+        "pitch": "You patch people up under fire, and you shoot back while you do it.",
+        "focus": ["First Aid", "Paramedic", "Shoulder Arms", "Evasion"],
+        "support": ["Athletics", "Perception", "Resist Torture/Drugs"]
+      },
+      {
+        "id": "diagnostician",
+        "name": "The Diagnostician",
+        "pitch": "Symptoms, lies and wounds all tell a story. You read them before anybody speaks.",
+        "focus": ["Deduction", "Science", "Human Perception", "First Aid"],
+        "support": ["Education", "Cybertech", "Conversation"]
+      }
+    ],
+    "media": [
+      {
+        "id": "investigator",
+        "name": "The Investigator",
+        "pitch": "Follow the money, the lies and the missing hour. The story is always under the story.",
+        "focus": ["Deduction", "Library Search", "Human Perception", "Perception"],
+        "support": ["Lip Reading", "Composition", "Stealth"]
+      },
+      {
+        "id": "face",
+        "name": "The Face",
+        "pitch": "Everyone talks to you. A smile, a favour, a drink, and the quote is yours.",
+        "focus": ["Persuasion", "Conversation", "Bribery", "Human Perception"],
+        "support": ["Composition", "Photography/Film", "Evasion"]
+      },
+      {
+        "id": "stringer",
+        "name": "The Stringer",
+        "pitch": "You get the shot nobody else got, from somewhere nobody else would stand.",
+        "focus": ["Photography/Film", "Stealth", "Composition", "Evasion"],
+        "support": ["Perception", "Handgun", "Lip Reading"]
+      }
+    ],
+    "exec": [
+      {
+        "id": "dealmaker",
+        "name": "The Dealmaker",
+        "pitch": "Every meeting is a negotiation and you have never walked out of one poorer.",
+        "focus": ["Business", "Persuasion", "Human Perception", "Conversation"],
+        "support": ["Accounting", "Personal Grooming", "Lip Reading"]
+      },
+      {
+        "id": "operator",
+        "name": "The Operator",
+        "pitch": "You know where the paper goes and who signs it. Systems bend when you lean on them.",
+        "focus": ["Bureaucracy", "Accounting", "Deduction", "Education"],
+        "support": ["Business", "Lip Reading", "Perception"]
+      },
+      {
+        "id": "shark",
+        "name": "The Shark",
+        "pitch": "You read the room, you read the lips, and you keep a pistol in the briefcase.",
+        "focus": ["Lip Reading", "Human Perception", "Persuasion", "Handgun"],
+        "support": ["Deduction", "Evasion", "Personal Grooming"]
+      }
+    ],
+    "lawman": [
+      {
+        "id": "detective",
+        "name": "The Detective",
+        "pitch": "Every crime scene talks. You listen longer than the people who made it.",
+        "focus": ["Deduction", "Criminology", "Interrogation", "Human Perception"],
+        "support": ["Perception", "Tracking", "Handgun"]
+      },
+      {
+        "id": "enforcer",
+        "name": "The Enforcer",
+        "pitch": "When the badge is not enough, you are. You go through the door first.",
+        "focus": ["Shoulder Arms", "Handgun", "Athletics", "Evasion"],
+        "support": ["Autofire", "Perception", "Brawling"]
+      },
+      {
+        "id": "tracker",
+        "name": "The Tracker",
+        "pitch": "Nobody runs far enough. You find the trail, and you follow it to the end.",
+        "focus": ["Tracking", "Perception", "Handgun", "Stealth"],
+        "support": ["Athletics", "Criminology", "Evasion"]
+      }
+    ],
+    "fixer": [
+      {
+        "id": "broker",
+        "name": "The Broker",
+        "pitch": "You know what everybody wants and who has it. Your cut is the whole point.",
+        "focus": ["Trading", "Business", "Persuasion", "Human Perception"],
+        "support": ["Bribery", "Streetwise", "Conversation"]
+      },
+      {
+        "id": "street_fixer",
+        "name": "The Street Fixer",
+        "pitch": "Every corner owes you a favour. The neighbourhood is your office and your armour.",
+        "focus": ["Streetwise", "Bribery", "Handgun", "Local Expert"],
+        "support": ["Persuasion", "Evasion", "Perception"]
+      },
+      {
+        "id": "forger",
+        "name": "The Forger",
+        "pitch": "Papers, locks and quiet exits. You make the impossible look like it was always allowed.",
+        "focus": ["Forgery", "Pick Lock", "Stealth", "Perception"],
+        "support": ["Trading", "Business", "Evasion"]
+      }
+    ],
+    "nomad": [
+      {
+        "id": "road_warrior",
+        "name": "The Road Warrior",
+        "pitch": "Foot down, gun out, family in the back. You get everyone through.",
+        "focus": ["Drive Land Vehicle", "Handgun", "Evasion", "Perception"],
+        "support": ["Melee Weapon", "Athletics", "Tracking"]
+      },
+      {
+        "id": "scout",
+        "name": "The Scout",
+        "pitch": "You go ahead of the convoy and come back with what is waiting. Nobody sees you do it.",
+        "focus": ["Tracking", "Wilderness Survival", "Stealth", "Perception"],
+        "support": ["Animal Handling", "Athletics", "Handgun"]
+      },
+      {
+        "id": "trader",
+        "name": "The Trader",
+        "pitch": "Every town on the road buys something and sells something. You know both prices.",
+        "focus": ["Trading", "Persuasion", "Drive Land Vehicle", "Human Perception"],
+        "support": ["Conversation", "Local Expert", "Melee Weapon"]
+      }
+    ]
+  }
+}
