@@ -27,9 +27,10 @@ ChatGPT makes landscape images at 3:2. The app crops them with
 - **Vignettes** can use the whole frame.
 - **Backdrops** are cropped to a wide strip, so everything that matters goes in
   the middle horizontal band. The backdrop wrapper says so.
-- Name the file exactly as listed. Upload it through Lovable like every other
-  asset (it lands in `src/assets/<name>.asset.json`). A slot with no file falls
-  back to the plain look, so images can arrive in any order.
+- Name the file exactly as listed. Either upload it through Lovable like every
+  other asset (it lands in `src/assets/<name>.asset.json`), or commit the file
+  itself into `src/assets/creator/`. A slot with no file falls back to the
+  plain look, so images can arrive in any order.
 
 ## Vignette wrapper
 

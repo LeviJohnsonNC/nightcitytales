@@ -19,7 +19,8 @@ describes the sound instead.
 
 Generate two to four takes and keep the best. Cues that loop should hold a
 steady groove to the very end; the reveal should land its first drop fast.
-Upload the chosen take through Lovable under the exact file name. A cue with no
+Upload the chosen take through Lovable under the exact file name, or commit
+the file itself into `src/assets/creator/`. A cue with no
 file is silence, so tracks can arrive in any order.
 
 Where they play is `src/features/chargen/music/soundtrack.ts`.

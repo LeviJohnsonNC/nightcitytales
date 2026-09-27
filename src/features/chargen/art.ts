@@ -35,6 +35,29 @@ for (const [path, pointer] of Object.entries(POINTER_MODULES)) {
   if (pointer.asset_id) POINTERS.set(pointer.asset_id, url);
 }
 
+/**
+ * Files committed straight into src/assets/creator, rather than uploaded
+ * through Lovable. Vite bundles each one and hands back its URL, so a slot
+ * resolves the same whichever way its file arrived. Registered by file name,
+ * with and without the extension, and case-insensitively: a file saved as
+ * "Scene-Meet.PNG" still fills the "scene-meet" slot. A Lovable pointer of
+ * the same name wins, because it is the one somebody uploaded on purpose.
+ */
+const COMMITTED_FILES = import.meta.glob<string>(["../../assets/creator/*", "!**/*.md"], {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+const MEDIA = /\.(png|jpe?g|webp|mp3|m4a|ogg|wav)$/;
+
+const COMMITTED = new Map<string, string>();
+for (const [path, url] of Object.entries(COMMITTED_FILES)) {
+  const file = path.split("/").pop()!.toLowerCase();
+  if (!MEDIA.test(file)) continue;
+  COMMITTED.set(file, url);
+  COMMITTED.set(file.replace(/\.[^.]+$/, ""), url);
+}
+
 /** Every pointer name the registry knows, for the art audit in the style guide. */
 export function registeredPointers(): string[] {
   return [...new Set(POINTERS.values())];
@@ -53,7 +76,10 @@ function pointerUrl(pointer: string | null | undefined): string | null {
  * an answer the caller can render: silence, or the plain look.
  */
 export function uploadedAsset(name: string): string | null {
-  return pointerUrl(name);
+  const key = name.toLowerCase();
+  return (
+    pointerUrl(name) ?? COMMITTED.get(key) ?? COMMITTED.get(key.replace(/\.[^.]+$/, "")) ?? null
+  );
 }
 
 export type FocalPoint = [number, number];
