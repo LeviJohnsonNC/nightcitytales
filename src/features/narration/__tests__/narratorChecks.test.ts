@@ -107,6 +107,24 @@ describe("a number the engine did not give it", () => {
     expect(noUnsourcedNumber.run(turn({ narration: "The clock reads 20:47." }), CTX)).toEqual([]);
   });
 
+  it("allows the packet's amount said in words, and only that amount", () => {
+    // Verbatim from the first live run: the packet priced the drink "10eb" and
+    // gave the bar as "2 min on foot", and the narrator said "ten eddies" and
+    // "two minutes". That is quoting the engine, not pricing it.
+    const ctx = {
+      ...CTX,
+      packet:
+        "Have a drink (The Paper Lantern, 10eb)\n  - bar: The Paper Lantern — 2 min on foot\n",
+    };
+    const said = (narration: string) => noUnsourcedNumber.run(turn({ narration }), ctx);
+    expect(said("She slides it over. Ten eddies.")).toEqual([]);
+    expect(said("It's two minutes that way, past the noodle stand.")).toEqual([]);
+    expect(said("Eleven eddies, and don't argue.")).not.toEqual([]);
+    expect(said("Twenty minutes that way.")).not.toEqual([]);
+    // Same amount, different unit: the packet's 10eb is not ten minutes.
+    expect(said("Back in ten minutes.")).not.toEqual([]);
+  });
+
   it("does not flag counting the things in a room", () => {
     // "one guard smoking by the loading dock" is exactly the specific the
     // narrator is ASKED for. A checker that flagged it would be telling the

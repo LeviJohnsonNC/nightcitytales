@@ -168,6 +168,36 @@ const NUMBER_WORDS = [
 
 const QUANTITY = `(?:\\d[\\d,]*(?:\\.\\d+)?|${NUMBER_WORDS})`;
 
+const WORD_VALUES: Record<string, number> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  fifteen: 15,
+  twenty: 20,
+  thirty: 30,
+  forty: 40,
+  fifty: 50,
+  hundred: 100,
+  thousand: 1000,
+};
+
+/** The amount a matched quantity names: "10eb" and "ten eddies" are both 10. */
+function amountOf(quote: string): number | null {
+  const digits = /\d[\d,]*(?:\.\d+)?/.exec(quote);
+  if (digits) return Number(digits[0].replace(/,/g, ""));
+  const word = new RegExp(NUMBER_WORDS, "i").exec(quote);
+  return word ? (WORD_VALUES[word[0].toLowerCase()] ?? null) : null;
+}
+
 /**
  * The units that make a number the ENGINE's.
  *
@@ -206,8 +236,12 @@ const UNIT_PATTERNS: { label: string; re: RegExp }[] = [
  * specifics, two hundred words below the rule forbidding exactly that, and the
  * model resolved the tension by pricing a bowl of noodles at 5eb.
  *
- * A match is allowed when its text appears in the packet, because then the
- * engine said it first and repeating it is not inventing it.
+ * A match is allowed when the packet states the same amount in the same kind
+ * of unit, because then the engine said it first and repeating it is not
+ * inventing it. Compared by amount, not by text: the packet writes "10eb" and
+ * "2 min on foot", a narrator saying "ten eddies" and "two minutes" is quoting
+ * the engine, and matching on text alone flagged exactly those turns in the
+ * first live eval run as invented numbers.
  */
 export const noUnsourcedNumber: Check = {
   id: "no-unsourced-number",
@@ -218,11 +252,16 @@ export const noUnsourcedNumber: Check = {
     const findings: Finding[] = [];
     const seen = new Set<string>();
     for (const { label, re } of UNIT_PATTERNS) {
+      const given = new Set(
+        [...ctx.packet.matchAll(re)].map((m) => amountOf(m[0])).filter((n) => n !== null),
+      );
       for (const match of turn.narration.matchAll(re)) {
         const quote = match[0].trim();
         const key = quote.toLowerCase();
         if (seen.has(key)) continue;
         if (haystack.includes(key)) continue;
+        const amount = amountOf(quote);
+        if (amount !== null && given.has(amount)) continue;
         seen.add(key);
         findings.push({ quote, note: `${label} the packet never states` });
       }

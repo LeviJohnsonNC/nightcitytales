@@ -249,3 +249,29 @@ export function carryOnLine(said: string): string {
 export function isLowStakes(value: unknown): boolean {
   return typeof value === "string" && ["low", "trivial", "minor"].includes(value.toLowerCase());
 }
+
+/**
+ * One item of a list the model returned, as an object, or null.
+ *
+ * The wire schemas take `z.array(z.unknown())` on purpose, so an item the
+ * model got slightly wrong reaches the normalizer instead of failing the whole
+ * turn. The cost of that looseness: under strict structured output an
+ * unconstrained item may come back as a JSON STRING of the object. Found by
+ * the eval, where every proposed check arrived as `"{\"kind\": ...}"` and was
+ * dropped, so a risky intent never reached the dice. An object encoded as a
+ * string is still the object the model meant; anything else is not one.
+ */
+export function wireObject(item: unknown): Record<string, unknown> | null {
+  if (typeof item === "string") {
+    const text = item.trim();
+    if (!text.startsWith("{")) return null;
+    try {
+      item = JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+  return item && typeof item === "object" && !Array.isArray(item)
+    ? (item as Record<string, unknown>)
+    : null;
+}

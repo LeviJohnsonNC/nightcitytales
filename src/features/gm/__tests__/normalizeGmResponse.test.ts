@@ -465,3 +465,25 @@ describe("walkOns", () => {
     expect(out.walkOns).toEqual([]);
   });
 });
+
+describe("an action the model wrote as a JSON string", () => {
+  it("is the action it encodes, not a dropped item", () => {
+    // Verbatim shape from a live eval run under strict structured output.
+    const gm = normalizeGmResponse(
+      wire(['{"kind": "skill_check", "skillId": "pick_lock", "dv": 9, "intent": "Pick the lock"}']),
+      quiet,
+    );
+    expect(gm.proposedActions).toEqual([
+      { kind: "skill_check", skillId: "pick_lock", dv: 9, intent: "Pick the lock" },
+    ]);
+  });
+
+  it("still drops a string that is not an object", () => {
+    const warnings: string[] = [];
+    const gm = normalizeGmResponse(wire(["pick the lock", "{not json", "[1,2]"]), {
+      onWarn: (m) => warnings.push(m),
+    });
+    expect(gm.proposedActions).toEqual([]);
+    expect(warnings.length).toBeGreaterThan(0);
+  });
+});

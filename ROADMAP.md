@@ -427,9 +427,16 @@ The work, with what the location layer already covered marked:
   a tell when you run into them, forks its ending on your involvement, and
   reveals what was really going on only to a player who got involved. The arc
   timings are pacing guesses.
-  Still to do, in order: run the evals and tune from what they say (the prompts
-  still carry most of their old brakes; cutting them blind was not worth the
-  risk), and a stronger model if the evals say it plays better.
+  The evals have now run live (14 scenarios, three repeats each). The first
+  run's worst findings were the harness's, not the narrator's: it asked for
+  strict structured output, which play does not, and every proposed check came
+  back as a string and was dropped; and the number detector flagged "ten
+  eddies" against a packet that said "10eb". With both fixed, what is left is
+  the narrator occasionally inventing a duration ("twenty minutes"), about one
+  run in three on a few scenarios.
+  Still to do, in order: tune from what the evals say (the prompts still carry
+  most of their old brakes; cutting them blind was not worth the risk), and a
+  stronger model if the evals say it plays better.
 
 Success: the player opens the game, understands their immediate problem in
 seconds, decides, sees the cost, and moves on.
