@@ -4,8 +4,9 @@
     npx prettier --write src/data/atlas   # this writes compact JSON; the repo does not
 
 The atlas itself is never touched. This reads night-city.json and writes the
-house-rule file beside it: a district profile for each of the 24 districts and
-gameplay tags for each of the 156 locations.
+house-rule file beside it: a district profile for each of the 24 districts,
+gameplay tags for each of the printed locations, and the hand-written tags of
+the locations places.houserule.json appends (HOUSE_RULE_TAGS below).
 
 TAGS ARE DRAFTED FROM THE PRINTED BLURB, AND DRAFTS ARE WRONG
 Matching runs on the blurb only. Names are traps: the Garden of Earthly
@@ -124,14 +125,54 @@ PATCH = {
     "q2": ["club", "crowd"],
     "t2": ["gang_turf", "corp_hq", "shop"],
     "t9": ["housing", "shop", "food"],
-    "u5": ["container_housing", "housing", "office"],
+    "u5": ["container_housing", "housing", "corp_housing", "office"],
     "v4": ["housing"],
     "v7": ["garage", "market", "nomad", "crowd"],
     "w3": ["restaurant", "food", "crowd"],
+    "a3": ["housing", "corp_housing"],
+    "a5": ["housing", "corp_housing"],
+    "f2": ["lab", "housing", "corp_housing"],
+    "l4": ["housing"],
+    "m1": ["housing", "corp_housing", "secure"],
+    "n3": ["housing", "corp_housing"],
+    "n10": ["hospital", "housing", "corp_housing"],
+    "p6": ["media", "luxury_housing", "corp_housing"],
+    "p10": ["office", "housing", "corp_housing"],
+    "t1": ["housing", "corp_housing"],
 }
 
 
 atlas = json.load(open("src/data/atlas/night-city.json"))
+house_rule = json.load(open("src/data/atlas/places.houserule.json"))
+
+# The locations the atlas does not print (places.houserule.json), tagged by
+# hand: they have no printed blurb for the rules to read, and each was written
+# with its ground in mind. Kept here so a re-run carries them rather than
+# wiping them. Adding a house-rule place means adding its tags here.
+HOUSE_RULE_TAGS = {
+    "r1": ["transit", "secure"],
+    "r2": ["shop", "food", "secure"],
+    "r3": ["luxury_housing", "government", "secure"],
+    "r4": ["leisure", "restaurant", "secure"],
+    "r5": ["secure", "office"],
+    "r6": ["flophouse", "housing", "derelict", "crowd"],
+    "k2": ["transit", "garage", "repair"],
+    "k3": ["market", "fence", "shop"],
+    "k4": ["nomad", "housing", "food"],
+    "s2": ["docks", "water", "warehouse"],
+    "s3": ["secure", "office", "warehouse"],
+    "s4": ["bar", "fence", "gang_turf"],
+    "m3": ["secure", "transit"],
+    "m4": ["garage", "repair", "warehouse"],
+    "o3": ["market", "shop", "crowd", "food"],
+    "o4": ["ripperdoc", "gang_turf", "shop"],
+    "h7": ["bar"],
+    "h8": ["food"],
+    "u6": ["bar", "food", "crowd"],
+    "c6": ["bar"],
+    "p12": ["bar", "crowd"],
+    "i9": ["food", "crowd"],
+}
 
 
 def draft_tags() -> dict[str, list[str]]:
@@ -193,6 +234,7 @@ TAG_MEANINGS = {
     "housing": "people live here",
     "luxury_housing": "people live here, and it cost them",
     "container_housing": "people live here, in what used to be freight",
+    "corp_housing": "people live here because they work for the company that owns it",
     "flophouse": "people sleep here, which is not the same thing",
     "clinic": "someone who can close a wound",
     "hospital": "a real medical facility with a real bill",
@@ -263,6 +305,7 @@ ARENA_BY_TAG = [
     ["media", "club_interior"],
     ["religious", "club_interior"],
     ["luxury_housing", "club_interior"],
+    ["corp_housing", "club_interior"],
     ["secure", "club_interior"],
     ["gang_turf", "street"],
 ]
@@ -301,13 +344,26 @@ for d in atlas["districts"]:
     for l in d["locations"]:
         out["places"][l["key"]] = {"tags": tags[l["key"]]}
 
+# Appended after the printed ones, in the house-rule file's own order, the same
+# way geography.ts appends them to the atlas.
+house_rule_keys = [p["key"] for places in house_rule["districts"].values() for p in places]
+missing = [k for k in house_rule_keys if k not in HOUSE_RULE_TAGS]
+stale = [k for k in HOUSE_RULE_TAGS if k not in house_rule_keys]
+assert not missing, f"house-rule places with no tags: {missing}"
+assert not stale, f"tags for house-rule places that do not exist: {stale}"
+for key in house_rule_keys:
+    out["places"][key] = {"tags": HOUSE_RULE_TAGS[key]}
+
+# Every check runs BEFORE the write. This used to write first and assert after,
+# so a failed run left the file half-regenerated with the house-rule tags gone.
+untagged = [k for k, v in out["places"].items() if not v["tags"]]
+unknown = sorted({t for p in out["places"].values() for t in p["tags"]} - set(TAG_MEANINGS))
+unused = sorted(set(TAG_MEANINGS) - {t for p in out["places"].values() for t in p["tags"]})
+assert not untagged, f"no tags for {untagged}"
+assert not unknown, f"tags with no meaning: {unknown}"
+assert not unused, f"tags nothing carries: {unused}"
+
 json.dump(out, open("src/data/atlas/places.gameplay.json", "w"), indent=2, ensure_ascii=False)
 print("districts", len(out["districts"]), "places", len(out["places"]))
 c = collections.Counter(t for p in out["places"].values() for t in p["tags"])
 print("tags used", len(c), "of", len(TAG_MEANINGS))
-print("unused:", sorted(set(TAG_MEANINGS) - set(c)) or "none")
-
-untagged = [k for k, v in out["places"].items() if not v["tags"]]
-unused = sorted(set(TAG_MEANINGS) - {t for p in out["places"].values() for t in p["tags"]})
-assert not untagged, f"no tags for {untagged}"
-assert not unused, f"tags nothing carries: {unused}"
