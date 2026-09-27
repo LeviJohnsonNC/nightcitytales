@@ -45,6 +45,12 @@ export type ChargenState = {
   portraitTakes: string[];
   /** How many images this draft has generated. Caps runaway spend. */
   portraitGenerations: number;
+  /**
+   * How far the file's picture has developed (0 none, 3 file photo). Drawing a
+   * portrait by hand sets it to the last stage, so development never paints
+   * over a picture the player chose.
+   */
+  portraitStage: number;
   stats: Partial<StatBlock>;
   /**
    * Which template row each STAT came from. `row` is the single Streetrat row;
@@ -100,6 +106,7 @@ const initialState: ChargenState = {
   portraitPath: null,
   portraitTakes: [],
   portraitGenerations: 0,
+  portraitStage: 0,
   stats: {},
   statRolls: { row: null, rows: {} },
   skills: [],

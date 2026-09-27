@@ -42,7 +42,14 @@ The plan, in phases:
    was rolled, always including the dice's own choice, and the pick rides the
    cast plan into the campaign. A pick only stands while it still fits the
    Lifepath; change what was rolled and it gives way to the dice.
-4. **A portrait that develops** as the answers come in.
+4. **A portrait that develops — shipped.** The file gets a picture as soon as
+   there is something to picture: a grainy surveillance still once the Role,
+   pronouns and look are known (pronouns are now asked with who you are), a
+   better one under the lights once the STATs say how they are built, and a
+   file photo once the kit is chosen. Each is one generation from the existing
+   cap of six, so three stay the player's; drawing one by hand stops
+   development. `faceFact` pins age, face shape, eyes and one mark from the
+   draft's seed so every stage describes the same person.
 5. **Music**, built with the Suno tracks as they arrive.
 6. **Polish**: STAT reveals and one Edgerunner reroll (a house rule), one-click
    loadouts, handle suggestions, a shareable character card.

@@ -4,6 +4,9 @@ import { sentenceFor } from "./lifepathNarrative";
 import { readGeneralLifepath } from "./lifepathState";
 import type { ChargenState } from "./store";
 import { usePortraitUrl } from "./usePortraitUrl";
+import { PORTRAIT_STAGES, firstPictureNeeds, type PortraitStage } from "./portraitStages";
+import type { DevelopingPortrait } from "./useDevelopingPortrait";
+import { cn } from "@/lib/utils";
 import "./interview.css";
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
@@ -20,8 +23,25 @@ const AT_A_GLANCE = ["personality", "value_most", "life_goals"] as const;
  * few lines of who this person is — that is progress toward somebody you want
  * to play.
  */
-export function CharacterFile({ state }: { state: ChargenState }) {
-  const portrait = usePortraitUrl(state.portraitPath);
+/** How each stage of the picture is shown: a grainy still, then better light, then clean. */
+const STAGE_LOOK: Record<PortraitStage, string> = {
+  1: "grayscale contrast-125 brightness-90 blur-[0.6px]",
+  2: "saturate-[0.55] contrast-110",
+  3: "",
+};
+
+export function CharacterFile({
+  state,
+  developing,
+}: {
+  state: ChargenState;
+  developing?: DevelopingPortrait;
+}) {
+  const stored = usePortraitUrl(state.portraitPath);
+  const inFlight = developing?.developing ?? null;
+  const portrait = (inFlight && developing?.preview) || stored;
+  const stage = Math.min(3, Math.max(1, inFlight ?? state.portraitStage)) as PortraitStage;
+  const needs = firstPictureNeeds(state);
   const fixer = state.castPlan?.picks.fixer ?? null;
   const role = state.roleId ? ROLE_NAMES[state.roleId]?.name : null;
   const handle = state.handle.trim();
@@ -44,13 +64,39 @@ export function CharacterFile({ state }: { state: ChargenState }) {
 
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-background/60">
         {portrait ? (
-          <img
-            src={portrait}
-            alt={handle || name || "Your portrait"}
-            className="h-full w-full object-cover"
-          />
+          <>
+            <img
+              src={portrait}
+              alt={handle || name || "Your portrait"}
+              className={cn(
+                "h-full w-full object-cover transition-[filter] duration-1000",
+                STAGE_LOOK[stage],
+              )}
+            />
+            {stage === 1 && <div aria-hidden className="cg-still absolute inset-0" />}
+          </>
         ) : (
           <Silhouette />
+        )}
+        {inFlight && (
+          <p className="cg-breathe absolute inset-x-0 bottom-0 bg-background/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
+            Developing · {PORTRAIT_STAGES[inFlight].name}
+          </p>
+        )}
+      </div>
+      <div className="border-b border-hairline px-3 py-2 text-[11px] leading-snug text-text-dim">
+        {inFlight ? (
+          PORTRAIT_STAGES[inFlight].caption
+        ) : developing?.failed ? (
+          <button type="button" onClick={developing.retry} className="hover:text-text">
+            The picture did not come out. Try again.
+          </button>
+        ) : state.portraitPath && state.portraitStage > 0 ? (
+          `${PORTRAIT_STAGES[Math.min(3, state.portraitStage) as PortraitStage].name}. ${PORTRAIT_STAGES[Math.min(3, state.portraitStage) as PortraitStage].caption}`
+        ) : needs.length > 0 ? (
+          `A picture develops once the file has ${needs.join(", ")}.`
+        ) : (
+          "A picture is on its way."
         )}
       </div>
 

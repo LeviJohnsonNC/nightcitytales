@@ -421,6 +421,12 @@ also lets the player choose their enemy, friend and lost love from
 `generateCast` honours a pick only while it still fits, so editing the Lifepath
 after choosing can never leave a contradiction on the file.
 
+The file's portrait develops in three stages (`portraitStages.ts`, driven by
+`useDevelopingPortrait`), each one generation from the same capped budget the
+portrait studio spends. It never runs while the draft is loading, never retries
+a failed stage by itself, and never paints over a portrait the player drew by
+hand — `portraitStage` 3 means "the picture on the file is final".
+
 The Skills step leads with presets and odds rather than points. A preset
 (`src/data/rules/skill-presets.json`, `houseRule: true`) names focus and support
 Skills from the Role's printed twenty, and `presetEntries` builds an allocation
