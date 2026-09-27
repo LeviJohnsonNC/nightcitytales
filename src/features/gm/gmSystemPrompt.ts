@@ -40,7 +40,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.12.0";
+export const GM_PROMPT_VERSION = "2.13.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -156,7 +156,7 @@ ${unknownFactsSection({
 - Never give real-world harmful instructions (weapon or drug synthesis, hacking real systems) even as in-fiction flavour — keep such things abstract and mechanical, resolved by the engine, never a how-to.
 
 # YOUR OUTPUT
-Return a structured object:
+Return a structured JSON object:
 - "narration": the prose the player reads this turn (in voice, per the rules above).
 - "proposedActions": the mechanical actions the engine should resolve from the player's stated intent. Propose; do not resolve. Every item is an object whose discriminator field is named EXACTLY "kind". Use these shapes verbatim — a different field name means the engine never sees the action and the player never gets to roll:
   - {"kind": "skill_check", "skillId": "<id from the SKILLS list, in brackets>", "dv": 9|13|15|17|21|24|29, "intent": "<what the player is attempting>", "npcKey": "<optional: who it is aimed at, when it is aimed at a person nobody is resisting with>", "npcName": "<optional, with npcKey>", "stakes": "low" (optional, see CHECKS)}

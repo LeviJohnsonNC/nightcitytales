@@ -18,7 +18,7 @@ import { CYBERPUNK_STYLE_GUIDE } from "@/lib/prose-style";
 /** Built from the engine's vocabulary, so the doors and the prompt cannot drift. */
 const CHOICE_LIST = OPENING_CHOICES.map((c) => `  - "${c}" — ${OPENING_MEANINGS[c]}`).join("\n");
 
-export const OPENING_PROMPT_VERSION = "1.0.0";
+export const OPENING_PROMPT_VERSION = "1.1.0";
 
 export const OPENING_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -64,7 +64,7 @@ Your job is to write how each one sounds TO THIS CHARACTER TONIGHT, from the sce
 Also return "title": two to five words naming this night, the way an episode is named. Concrete, from the scene. Not the character's name, not "Night City", not a cliché about neon or rain.
 
 # OUTPUT
-Return a structured object:
+Return a structured JSON object:
 - "title": the episode title.
 - "opening": the prose, two to three paragraphs separated by blank lines.
 - "choices": exactly four objects, one per door, each { "choice": one of the ids above, "label": "...", "line": "..." }. Every id exactly once.`;
