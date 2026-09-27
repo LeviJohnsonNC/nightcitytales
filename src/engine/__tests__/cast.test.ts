@@ -113,11 +113,16 @@ describe("the Lifepath the character actually rolled", () => {
     }
   });
 
-  it("does not change who the people are, only what is known about them", () => {
+  it("lets the Lifepath choose who fits, and changes nothing else", () => {
     const withTies = generateCast({ seed: 42, ties: TIES });
     const without = generateCast({ seed: 42 });
-    expect(withTies.map((m) => m.name)).toEqual(without.map((m) => m.name));
+    // One draw per field either way, so everything else lands where it did.
     expect(withTies.map((m) => m.dossier)).toEqual(without.map((m) => m.dossier));
+    expect(withTies.map((m) => m.standing)).toEqual(without.map((m) => m.standing));
+    // Ex-lover fits any enemy, so the enemy is who they would have been.
+    expect(memberInRole(withTies, "enemy")!.name).toBe(memberInRole(without, "enemy")!.name);
+    // A lover who vanished is the old flame whose bio has her vanishing.
+    expect(memberInRole(withTies, "old_flame")!.name).toBe("Nadia Sirko");
   });
 
   it("skips a partly answered enemy rather than printing blanks", () => {
