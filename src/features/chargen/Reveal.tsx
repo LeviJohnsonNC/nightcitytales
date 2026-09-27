@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { districtOfPlace, getPlace, type CastMember, type CastRole } from "@/engine";
 import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import rolesData from "@/data/rules/roles.json";
+import { Backdrop } from "./Backdrop";
 import { fixerVoice } from "./interview";
 import { castForState } from "./revealModel";
 import type { ChargenState } from "./store";
@@ -45,6 +46,7 @@ export function Reveal({
 
   return (
     <section className="relative overflow-hidden border border-hairline bg-surface">
+      <Backdrop name="scene-reveal" text="all" />
       <div aria-hidden className="cg-rain" />
       <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <div className="cg-arrive aspect-[3/4] w-full overflow-hidden border border-hairline bg-background/60">

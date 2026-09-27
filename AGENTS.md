@@ -641,6 +641,8 @@ having is usually the check that trips one time in three.
   and the in-app portrait look for characters. When asking the user to
   generate an image, hand them a complete prompt built from the right wrapper,
   and add it to that file.
+- New music follows `docs/soundtrack.md`: the Suno settings, and every track's
+  prompt under the file name it is uploaded as.
 - Never commit secrets or print environment-variable values in logs. Public
   Supabase keys are not service-role credentials, but environment files should
   still be handled cautiously.

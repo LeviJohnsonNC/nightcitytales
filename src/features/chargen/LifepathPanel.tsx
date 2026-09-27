@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,9 @@ import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import { fixerChapterLine, type LifepathChapterId } from "./interview";
 import { PeoplePicker } from "./PeoplePicker";
 import { PronounPicker } from "./PronounPicker";
+import { Backdrop } from "./Backdrop";
+import { uploadedAsset } from "./art";
+import { setCueOverride } from "./music/musicDirector";
 import "./interview.css";
 
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -209,6 +212,12 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
   const next = chapters[index + 1];
   const fixer = state.castPlan?.picks.fixer ?? null;
 
+  // The people chapter has its own music; every other chapter plays the step's.
+  useEffect(() => {
+    setCueOverride(chapterId === "people" ? "people" : null);
+  }, [chapterId]);
+  useEffect(() => () => setCueOverride(null), []);
+
   function goTo(id: LifepathChapterId) {
     setChapterId(id);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -376,19 +385,27 @@ function ChapterLine({
   const npc = fixer ? findNpc(fixer) : null;
   const art = npc ? npcArtwork(npc) : null;
   return (
-    <header className="flex items-start gap-3">
-      {art && line && (
-        <img
-          src={art.srcSet.split(" ")[0]}
-          alt={fixer ?? ""}
-          className="h-12 w-12 shrink-0 border border-hairline object-cover object-top"
-        />
-      )}
-      <div className="space-y-1">
-        <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
-          {title}
-        </h3>
-        {line && <p className="text-base italic leading-snug text-text-muted">“{line}”</p>}
+    <header className="relative overflow-hidden">
+      <Backdrop name={`chapter-${chapter}`} text="left" />
+      <div
+        className={cn(
+          "relative flex items-start gap-3",
+          uploadedAsset(`chapter-${chapter}`) && "min-h-32 border border-hairline p-4",
+        )}
+      >
+        {art && line && (
+          <img
+            src={art.srcSet.split(" ")[0]}
+            alt={fixer ?? ""}
+            className="h-12 w-12 shrink-0 border border-hairline object-cover object-top"
+          />
+        )}
+        <div className="space-y-1">
+          <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
+            {title}
+          </h3>
+          {line && <p className="text-base italic leading-snug text-text-muted">“{line}”</p>}
+        </div>
       </div>
     </header>
   );

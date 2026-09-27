@@ -45,6 +45,17 @@ function pointerUrl(pointer: string | null | undefined): string | null {
   return POINTERS.get(pointer) ?? null;
 }
 
+/**
+ * An uploaded asset by its file name, with or without the extension, or null
+ * when nothing by that name has been uploaded yet. For slots that are not in
+ * the manifest because there is exactly one file per slot and its name is the
+ * contract: the character-creation soundtrack and backdrops. A null is always
+ * an answer the caller can render: silence, or the plain look.
+ */
+export function uploadedAsset(name: string): string | null {
+  return pointerUrl(name);
+}
+
 export type FocalPoint = [number, number];
 export type Presentation = "masc" | "femme" | "androgynous";
 

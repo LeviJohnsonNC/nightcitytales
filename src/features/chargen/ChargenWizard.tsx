@@ -19,13 +19,20 @@ import {
 } from "@/components/ui/dialog";
 import type { CreationMethod } from "@/engine";
 import { useChargenStore } from "./store";
+import { cn } from "@/lib/utils";
+import { uploadedAsset } from "./art";
+import { Backdrop } from "./Backdrop";
 import { CharacterFile } from "./CharacterFile";
+import { fixerVoice } from "./interview";
 import { FixerLine } from "./FixerLine";
 import { StepPanel } from "./StepPanels";
 import { StepRail } from "./StepRail";
 import { methodChangeLosesWork, stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
 import { useDevelopingPortrait } from "./useDevelopingPortrait";
+import { MusicToggle } from "./music/MusicToggle";
+import { currentCue, setBaseCue } from "./music/musicDirector";
+import { cueForStep } from "./music/soundtrack";
 import { stepStatuses, validateStep } from "./validation";
 
 type PendingChange =
@@ -59,12 +66,30 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const { violations } = validateStep(state.step, state);
   const index = stepIds.indexOf(def.id);
   const fixer = state.castPlan?.picks.fixer ?? null;
+  // The fixer's own place, behind their question, once there is a fixer and an image of it.
+  const venue = def.id !== "fixer" ? (fixerVoice(fixer)?.venue ?? null) : null;
+  const venueShown = Boolean(venue && uploadedAsset(venue));
   const developing = useDevelopingPortrait(state, userId, saveStatus !== "loading");
 
   // Every step starts at the top, no matter how far down the previous one was scrolled.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [state.step]);
+
+  // The soundtrack follows the scene. No cleanup here on purpose: two steps
+  // that share a cue must not restart it.
+  useEffect(() => {
+    setBaseCue(cueForStep(state.step));
+  }, [state.step]);
+
+  // Leaving the creator stops the music, except the reveal, which carries the
+  // character into night one.
+  useEffect(
+    () => () => {
+      if (currentCue() !== "reveal") setBaseCue(null);
+    },
+    [],
+  );
 
   const hasDependentData =
     state.skills.length > 0 ||
@@ -117,6 +142,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <MusicToggle />
             <Button variant="outline" size="sm" onClick={state.back} disabled={index === 0}>
               Back
             </Button>
@@ -130,30 +156,38 @@ export function ChargenWizard({ userId }: { userId: string }) {
           </div>
         </div>
 
-        <header className="space-y-4 border-b border-border pb-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-              {def.title}
-            </p>
-            {STEP_HELP[def.id] && (
-              <button
-                type="button"
-                aria-label={`About ${def.title}`}
-                onClick={() => setHelpOpen(true)}
-                className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-muted-foreground transition-colors hover:border-accent hover:text-accent"
-              >
-                ?
-              </button>
-            )}
-            <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-              {SAVE_LABEL[saveStatus]}
-              {saveError ? ` · ${saveError}` : ""}
-            </span>
-          </div>
-          {def.id !== "fixer" && <FixerLine fixer={fixer} step={def.id} roleId={state.roleId} />}
-          {(def.id === "fixer" || !fixer) && (
-            <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
+        <header
+          className={cn(
+            "relative space-y-4 overflow-hidden border-b border-border pb-5",
+            venueShown && "border border-hairline px-5 pt-5",
           )}
+        >
+          <Backdrop name={venue} text="left" />
+          <div className="relative space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+                {def.title}
+              </p>
+              {STEP_HELP[def.id] && (
+                <button
+                  type="button"
+                  aria-label={`About ${def.title}`}
+                  onClick={() => setHelpOpen(true)}
+                  className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+                >
+                  ?
+                </button>
+              )}
+              <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                {SAVE_LABEL[saveStatus]}
+                {saveError ? ` · ${saveError}` : ""}
+              </span>
+            </div>
+            {def.id !== "fixer" && <FixerLine fixer={fixer} step={def.id} roleId={state.roleId} />}
+            {(def.id === "fixer" || !fixer) && (
+              <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
+            )}
+          </div>
         </header>
 
         <StepPanel
