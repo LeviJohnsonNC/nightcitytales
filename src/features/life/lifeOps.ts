@@ -15,6 +15,7 @@
  * No React and no TanStack Query in here. useLife.ts binds these to the query
  * client.
  */
+import { checkResolvedLine } from "./checkResult";
 import {
   advanceClock,
   ageSituations,
@@ -1754,7 +1755,6 @@ export async function commitLifeCheck(
     ...(opts.auto ? { auto: true } : {}),
   });
   const dv = pending.dv ?? 0;
-  const verdict = roll.result.success ? "SUCCESS" : "FAILURE";
   // What the engine says was there to find, before the narrator is asked to
   // describe the looking.
   const found = await applySearch(bundle, pending, roll);
@@ -1780,10 +1780,14 @@ export async function commitLifeCheck(
     minutes: 0,
     ...saidBefore(bundle.events, pending.eventId),
     ...(opts.auto ? { autoRolled: true } : {}),
-    resolved:
-      `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".` +
-      (found ? ` ${found}` : "") +
-      insightLine(read),
+    resolved: checkResolvedLine({
+      skillName: pending.skillName,
+      formula: roll.result.formula,
+      success: roll.result.success === true,
+      margin: roll.result.total - dv,
+      intent: pending.intent,
+      extra: (found ? ` ${found}` : "") + insightLine(read),
+    }),
   });
 }
 

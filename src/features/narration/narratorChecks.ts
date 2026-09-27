@@ -78,6 +78,8 @@ export type CheckableTurn = {
   spends?: number;
   /** The DV checks it proposed, and whether each was marked low-stakes. */
   checks?: { skillId: string; dv: number; lowStakes: boolean }[];
+  /** True when it put the job waiting on the wire on the table. Life only. */
+  offersWork?: boolean;
 };
 
 /** What the model was given, and what the scenario says about this turn. */
@@ -129,6 +131,14 @@ export type CheckContext = {
    * marked low-stakes, so the player is not stopped to press a button for it.
    */
   nothingRiding?: boolean;
+  /**
+   * A check the engine has already settled, which this turn narrates. The turn
+   * may not propose it again, and may not say any of `contradicts`: phrases
+   * that would mean the other outcome happened.
+   */
+  resolved?: { skillId: string; contradicts: string[] };
+  /** A WORK ON THE WIRE block is in the packet: the job must be offered this turn. */
+  wireJob?: boolean;
 };
 
 export type Check = {
@@ -398,6 +408,56 @@ export const withheldStaysWithheld: Check = {
       }
     }
     return findings;
+  },
+};
+
+/**
+ * A result the engine settled is the result the prose tells.
+ *
+ * Every roll the player makes comes back through this turn, so it is the most
+ * frequent turn in the game, and until these scenarios it was not in the eval
+ * at all.
+ */
+export const resultStands: Check = {
+  id: "result-stands",
+  title: "narrated the settled result, and did not ask for it again",
+  source:
+    'Both prompts: "When you are given a RESOLVED result, narrate exactly that result ... never propose the same check again."',
+  run(turn, ctx) {
+    if (!ctx.resolved) return [];
+    const findings: Finding[] = [];
+    if ((turn.checks ?? []).some((c) => c.skillId === ctx.resolved!.skillId)) {
+      findings.push({ quote: ctx.resolved.skillId, note: "proposed the settled check again" });
+    }
+    const prose = turn.narration.toLowerCase();
+    for (const phrase of ctx.resolved.contradicts) {
+      const at = prose.indexOf(phrase.toLowerCase());
+      if (at >= 0) {
+        findings.push({
+          quote: quoteAround(turn.narration, at, phrase.length),
+          note: "narrated the other outcome",
+        });
+      }
+    }
+    return findings;
+  },
+};
+
+/**
+ * The job on the wire is offered on the night it is there.
+ *
+ * The prompt is blunt about it: the phone has already rung. A narrator that
+ * sits on the offer for a better moment leaves the player in a Life phase with
+ * no way into the work the engine already rolled for them.
+ */
+export const offersTheWire: Check = {
+  id: "offers-the-wire",
+  title: "offered the job that was on the wire",
+  source:
+    'Life prompt: "When the block IS in front of you, the phone has already rung. Offer it this turn."',
+  run(turn, ctx) {
+    if (!ctx.wireJob || turn.offersWork) return [];
+    return [{ quote: firstSentence(turn.narration), note: "no hook_offer proposed" }];
   },
 };
 
@@ -686,6 +746,8 @@ export const ALL_CHECKS: Check[] = [
   smallChecksRollThemselves,
   quietStaysQuiet,
   endsOnTheWorld,
+  resultStands,
+  offersTheWire,
   opensOnSomething,
   withinProseBudget,
 ];

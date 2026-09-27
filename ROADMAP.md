@@ -446,8 +446,17 @@ The work, with what the location layer already covered marked:
   smells; a shared rule and the `opens-on-something` check hold that. One brake
   was cut: a refused trip was told to "say in a sentence where they are
   standing", which produced a dead line every time.
-  Still to do: the remaining brakes, one at a time against the transcripts,
-  and a stronger model if the evals say it plays better.
+  The second pass added the turns the eval had never seen: a Job roll that
+  succeeds, one that fails, a Life roll that fails, and a night with work on
+  the wire. Their result lines are built by the same functions play calls
+  (`gm/checkResult.ts`, `life/checkResult.ts`), and two checks hold them:
+  `result-stands` and `offers-the-wire`. The remaining brakes were read against
+  those transcripts and none was doing visible harm, so they stay. The one
+  habit left across every scenario was an invented duration ("three hours
+  ago", "every forty seconds"); a line naming the words to use instead took it
+  from about one turn in three to none in twenty. Eval, 18 scenarios x 3:
+  376/378.
+  Still to do: a stronger model, if the evals say it plays better.
 
 Success: the player opens the game, understands their immediate problem in
 seconds, decides, sees the cost, and moves on.

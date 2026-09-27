@@ -10,6 +10,8 @@ import {
   knownNpcKeysOnly,
   namesNoWayIn,
   noUnsourcedNumber,
+  offersTheWire,
+  resultStands,
   opensOnSomething,
   optionsOnlyWhenAsked,
   quietStaysQuiet,
@@ -465,5 +467,42 @@ describe("the opening line", () => {
     ]) {
       expect(opensOnSomething.run(turn({ narration: prose }), CTX), prose).toEqual([]);
     }
+  });
+});
+
+describe("a settled result", () => {
+  const ctx = {
+    ...CTX,
+    resolved: { skillId: "pick_lock", contradicts: ["clicks open", "swings open"] },
+  };
+
+  it("catches the settled check asked for again, and the other outcome told", () => {
+    const again = turn({
+      narration: "The pins will not set.",
+      checks: [{ skillId: "pick_lock", dv: 13, lowStakes: false }],
+    });
+    expect(resultStands.run(again, ctx)).toHaveLength(1);
+    const flipped = turn({ narration: "One more twist and the drawer clicks open." });
+    expect(resultStands.run(flipped, ctx)[0]?.note).toBe("narrated the other outcome");
+  });
+
+  it("passes the result told straight, and a different check that follows from it", () => {
+    const fine = turn({
+      narration: "The pick snaps off in the cylinder. Down the hall, a door opens.",
+      checks: [{ skillId: "stealth", dv: 13, lowStakes: false }],
+    });
+    expect(resultStands.run(fine, ctx)).toEqual([]);
+    expect(resultStands.run(fine, CTX)).toEqual([]);
+  });
+});
+
+describe("the job on the wire", () => {
+  it("catches a night with work on the wire that never offers it", () => {
+    const ctx = { ...CTX, wireJob: true };
+    expect(offersTheWire.run(turn({ narration: "The rain comes down." }), ctx)).toHaveLength(1);
+    expect(
+      offersTheWire.run(turn({ narration: "Your agent buzzes.", offersWork: true }), ctx),
+    ).toEqual([]);
+    expect(offersTheWire.run(turn({ narration: "The rain comes down." }), CTX)).toEqual([]);
   });
 });

@@ -177,6 +177,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
           : [],
       ),
       spends: life.proposedActions.filter((a) => a.kind === "spend").length,
+      offersWork: life.proposedActions.some((a) => a.kind === "hook_offer"),
       checks: life.proposedActions.flatMap((a) =>
         a.kind === "skill_check"
           ? [{ skillId: a.skillId, dv: a.dv, lowStakes: a.stakes === "low" }]
