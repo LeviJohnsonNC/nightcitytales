@@ -27,7 +27,10 @@
  *    nowhere they can stand: no tags, so no actions, no dials, no beats, and no
  *    building for a job to be at. Those are appended to the printed list here,
  *    after it and never over it, so the transcription stays exactly what the
- *    publisher printed and `HOUSE_RULE_PLACES` says which ones are ours.
+ *    publisher printed and `HOUSE_RULE_PLACES` says which ones are ours. A
+ *    second, smaller set gives lived-in districts an ordinary evening: a bar or
+ *    somewhere to eat where the atlas prints neither, so "find a bar" in Old
+ *    Japantown does not send a player across a district line.
  */
 import atlas from "@/data/atlas/night-city.json";
 import houseRule from "@/data/atlas/places.houserule.json";

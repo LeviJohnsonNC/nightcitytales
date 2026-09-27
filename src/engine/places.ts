@@ -326,6 +326,13 @@ export type NearbyPlace = PlaceProfile & { minutes: number };
 export const KNOWN_PLACE_PULL_MINUTES = 10;
 
 /**
+ * How much further a character's REGULAR may be (`regularOf`) before the
+ * nearest place of its kind wins. A HOUSE RULE, and a guess: people cross a
+ * district for their own bar, and do not cross the city for it.
+ */
+export const REGULAR_PULL_MINUTES = 25;
+
+/**
  * Every place of a kind, nearest first, measured on foot from `from`.
  *
  * `known` is the places the character has stood in. Among the ones within
@@ -337,13 +344,20 @@ export const KNOWN_PLACE_PULL_MINUTES = 10;
 export function nearestWithTag(
   from: string | null | undefined,
   tag: PlaceTag,
-  opts: { known?: readonly string[]; limit?: number } = {},
+  opts: { known?: readonly string[]; limit?: number; regular?: string | undefined } = {},
 ): NearbyPlace[] {
   const known = new Set(opts.known ?? []);
   const found = placesWithTag(tag)
     .map((p) => ({ ...p, minutes: travelTrip(from, p.key, "foot").minutes }))
     .sort((a, b) => a.minutes - b.minutes || a.name.localeCompare(b.name));
   const nearest = found[0];
+  // Their regular first, when it is within reach: "find a bar" means their bar.
+  const regular = opts.regular ? found.find((p) => p.key === opts.regular) : undefined;
+  if (regular && nearest && regular.minutes <= nearest.minutes + REGULAR_PULL_MINUTES) {
+    found.splice(found.indexOf(regular), 1);
+    found.unshift(regular);
+    return found.slice(0, opts.limit ?? found.length);
+  }
   if (nearest && known.size) {
     const pull = found.find(
       (p) => known.has(p.key) && p.minutes <= nearest.minutes + KNOWN_PLACE_PULL_MINUTES,

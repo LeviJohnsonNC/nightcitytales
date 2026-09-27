@@ -234,7 +234,8 @@ SCENARIOS.push(
 // Follow-through
 //
 // One transcript, played as four turns. The character lives in The Precipice,
-// a container stack in Old Japantown, a district with no bar in the atlas.
+// a container stack in Old Japantown, which then had no bar at all (it has the
+// Paper Lantern now, a house-rule venue, so the nearest bar is two blocks away).
 // "Go find a bar and order a drink" was refused as "not a place on the map";
 // the neighbour's directions named a cellar the map had never heard of; "go
 // there" was refused too; and each refusal walked the character back up the

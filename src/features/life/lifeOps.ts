@@ -180,6 +180,8 @@ import {
   reachableDestinations,
   canTravel,
   nearestWithTag,
+  regularOf,
+  tagsOf,
   type NearbyPlace,
   type PlaceTag,
 } from "@/engine";
@@ -557,6 +559,7 @@ type PlaceFamiliaritySlice = {
   /** The part of `known` that being a local accounts for, not having been here. */
   asALocal: string[];
   localExpert?: { level: number; districtName: string };
+  regular?: boolean;
 };
 
 /**
@@ -590,8 +593,12 @@ function familiarityFor(
   if (!placeKey) return {};
   const read = placeFamiliarity(placeKey, places[placeKey], day, localExpertLevel);
   if (!read) return {};
+  // Their regular of any kind this place is: the bar they drink at, the counter
+  // they eat at. Recognition, not a discount.
+  const regular = tagsOf(placeKey).some((tag) => regularOf(tag, places) === placeKey);
   return {
     familiarity: {
+      ...(regular ? { regular: true } : {}),
       visits: read.visits,
       standing: read.standing,
       since: sinceWords(read.daysSince),
@@ -699,6 +706,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
                     bundle.npcs,
                     bundle.campaign,
                     bundle.character.finance?.home_district_key,
+                    bundle.places,
                   ),
                   day: bundle.clock.day,
                   minute: bundle.clock.minute,
@@ -754,6 +762,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           nearestByKind: nearestByKindLines(
             bundle.campaign.location_key ?? DEFAULT_START,
             knownVenueKeysOf(bundle.campaign),
+            bundle.places,
           ),
           nearby: withinBudget(positionDistrict.locations, PACKET_BUDGET.nearby).map((l) => l.name),
           streets: streetsIn(positionDistrict.key).map((s) => s.name),
@@ -1049,7 +1058,9 @@ async function applyResponse(
       // called "a bar". The engine picks it; the narrator never has to.
       const kind = kindOfTrip(action, turn.said);
       const known = knownVenueKeysOf(bundle.campaign);
-      const sought = kind ? nearestWithTag(from, kind, { known, limit: 1 }) : [];
+      const sought = kind
+        ? nearestWithTag(from, kind, { known, limit: 1, regular: regularOf(kind, bundle.places) })
+        : [];
       const destination = sought[0]?.key ?? action.destination;
       // A move in the fiction is a move on the map. The engine resolves the
       // name against the atlas, prices the trip from the house-rule table, and
@@ -1069,7 +1080,7 @@ async function applyResponse(
       if (!decision.ok) {
         await refuse(decision.reason, "impossible");
         outcome.travelRefused = decision.reason;
-        const offer = placesToOffer(from, kind, known);
+        const offer = placesToOffer(from, kind, known, 3, bundle.places);
         if (offer.length) outcome.travelChoices = offer.map((o) => travelCard(o.place, o.kind));
         continue;
       }

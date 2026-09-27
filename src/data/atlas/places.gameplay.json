@@ -746,6 +746,24 @@
     },
     "o4": {
       "tags": ["ripperdoc", "gang_turf", "shop"]
+    },
+    "h7": {
+      "tags": ["bar"]
+    },
+    "h8": {
+      "tags": ["food"]
+    },
+    "u6": {
+      "tags": ["bar", "food", "crowd"]
+    },
+    "c6": {
+      "tags": ["bar"]
+    },
+    "p12": {
+      "tags": ["bar", "crowd"]
+    },
+    "i9": {
+      "tags": ["food", "crowd"]
     }
   }
 }

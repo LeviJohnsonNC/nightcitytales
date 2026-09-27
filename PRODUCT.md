@@ -444,7 +444,11 @@ probably in — but that puts nothing on the board. Whether they come OVER is
 the engine's roll (`comesOver`), weighted by how strongly they feel about the
 character in either direction, once an evening; the narrator is told that they
 cross the room, never why. The world tick still owns people acting on their own
-initiative.
+initiative. And **a place the character keeps going back to becomes theirs**:
+the bar they know best of all the bars they know (`regularOf`, on the same
+ladder familiarity already runs on) is where "find a bar" takes them, where the
+staff know their usual, and where their friend starts turning up. Recognition,
+never a discount.
 
 ---
 
