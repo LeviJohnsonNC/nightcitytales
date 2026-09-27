@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   CREATION_METHODS,
   STAT_ORDER,
+  statRerollsLeft,
+  statRollCost,
   STAT_DESCRIPTIONS,
   defaultRng,
   deriveStats,
@@ -21,6 +23,8 @@ import { StatCard } from "./StatCard";
 import { statBand } from "./statBands";
 import { appendRoll } from "./rollLogStore";
 import { useChargenStore, type ChargenState } from "./store";
+import { STAT_GLANCE } from "./statFlavor";
+import "./interview.css";
 
 const COMPLETE = CREATION_METHODS.completePackage;
 
@@ -113,10 +117,26 @@ function Notice({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** How many rerolls are left, said plainly: the first roll stands. */
+function RerollNote({ used, what }: { used: number; what: string }) {
+  const left = statRerollsLeft(used);
+  return (
+    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-text-dim">
+      {left > 0
+        ? `First roll stands · ${left} reroll${left === 1 ? "" : "s"} left, for ${what}`
+        : "First roll stands · no rerolls left"}
+    </p>
+  );
+}
+
 function StreetratBranch({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const append = appendRoll;
   const roleId = state.roleId!;
+  const rowCost = statRollCost({
+    alreadyRolled: state.statRolls.row !== null,
+    used: state.statRerollsUsed,
+  });
 
   return (
     <div className="space-y-4">
@@ -125,13 +145,19 @@ function StreetratBranch({ state }: { state: ChargenState }) {
         or edited — that is the trade you made for a character in five minutes. The table below is
         the same one the die reads, so you can check the row yourself.
       </Notice>
+      <RerollNote used={state.statRerollsUsed} what="the whole row" />
       <div className="flex items-center gap-4">
         <DiceRoll
           sides={10}
           size={52}
           value={state.statRolls.row}
+          disabled={!rowCost.allowed}
           label={
-            state.statRolls.row ? "Re-roll the STAT template row" : "Roll the STAT template row"
+            state.statRolls.row
+              ? rowCost.allowed
+                ? "Spend your reroll on the STAT template row"
+                : "The row stands"
+              : "Roll the STAT template row"
           }
           roll={() => {
             const result = rollStreetratStats(roleId, defaultRng);
@@ -139,7 +165,12 @@ function StreetratBranch({ state }: { state: ChargenState }) {
               face: result.row,
               commit: () => {
                 append(`Streetrat STAT template row (${roleId})`, result.roll);
-                patch({ stats: result.stats, statRolls: { row: result.row, rows: {} } });
+                const s = useChargenStore.getState();
+                patch({
+                  stats: result.stats,
+                  statRolls: { row: result.row, rows: {} },
+                  statRerollsUsed: s.statRerollsUsed + (rowCost.spends ? 1 : 0),
+                });
               },
             };
           }}
@@ -163,8 +194,16 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [bursting, setBursting] = useState(false);
 
+  function costOf(stat: StatKey) {
+    return statRollCost({
+      alreadyRolled: state.stats[stat] !== undefined,
+      used: state.statRerollsUsed,
+    });
+  }
+
   function rollStat(stat: StatKey) {
     const result = rollEdgerunnerStat(roleId, stat, defaultRng);
+    const spends = costOf(stat).spends;
     return {
       face: result.row,
       commit: () => {
@@ -173,16 +212,21 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
         patch({
           stats: { ...s.stats, [stat]: result.value },
           statRolls: { row: null, rows: { ...s.statRolls.rows, [stat]: result.row } },
+          statRerollsUsed: s.statRerollsUsed + (spends ? 1 : 0),
         });
       },
     };
   }
 
-  /** Fire each card's own die in sequence so all ten animate. */
+  const unrolled = STAT_ORDER.filter((stat) => state.stats[stat] === undefined);
+
+  /** Fire each unrolled card's own die in sequence so they all animate. Never spends a reroll. */
   function rollAll() {
     const grid = gridRef.current;
     if (!grid || bursting) return;
-    const buttons = Array.from(grid.querySelectorAll<HTMLButtonElement>("button[data-stat-die]"));
+    const buttons = Array.from(
+      grid.querySelectorAll<HTMLButtonElement>("button[data-stat-die]"),
+    ).filter((b) => unrolled.includes(b.dataset["statDie"] as StatKey));
     setBursting(true);
     buttons.forEach((button, i) => {
       window.setTimeout(() => button.click(), i * 110);
@@ -196,9 +240,16 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
         Ten separate 1d10s, each read against that STAT's own column of the same Role table. Once a
         STAT lands it stays where it landed — no rearranging, no swapping between STATs.
       </Notice>
+      <RerollNote used={state.statRerollsUsed} what="one STAT" />
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={rollAll} disabled={bursting}>
-          {bursting ? "Rolling ten dice…" : "Roll all ten"}
+        <Button onClick={rollAll} disabled={bursting || unrolled.length === 0}>
+          {bursting
+            ? "Rolling…"
+            : unrolled.length === STAT_ORDER.length
+              ? "Roll all ten"
+              : unrolled.length > 0
+                ? `Roll the other ${unrolled.length}`
+                : "All ten rolled"}
         </Button>
         <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           or roll them one at a time below
@@ -211,7 +262,14 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
               <DiceRoll
                 sides={10}
                 value={state.statRolls.rows[stat] ?? null}
-                label={`${state.stats[stat] === undefined ? "Roll" : "Re-roll"} 1d10 for ${stat.toUpperCase()}`}
+                disabled={!costOf(stat).allowed}
+                label={
+                  state.stats[stat] === undefined
+                    ? `Roll 1d10 for ${stat.toUpperCase()}`
+                    : costOf(stat).allowed
+                      ? `Spend your reroll on ${stat.toUpperCase()}`
+                      : `${stat.toUpperCase()} stands`
+                }
                 buttonProps={{ "data-stat-die": stat }}
                 roll={() => rollStat(stat)}
               />
@@ -333,6 +391,34 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
   );
 }
 
+/**
+ * What the ten numbers make you, in two lines: your best STAT and your worst,
+ * said the way the street would say them. Ties go to the printed order.
+ */
+function AtAGlance({ stats }: { stats: Partial<StatBlock> }) {
+  if (!STAT_ORDER.every((stat) => typeof stats[stat] === "number")) return null;
+  const ranked = [...STAT_ORDER].sort((a, b) => (stats[b] as number) - (stats[a] as number));
+  const best = ranked[0]!;
+  const worst = [...STAT_ORDER].sort((a, b) => (stats[a] as number) - (stats[b] as number))[0]!;
+  if (stats[best] === stats[worst]) return null;
+  return (
+    <div className="cg-say grid gap-3 sm:grid-cols-2">
+      <div className="border-l-2 border-success bg-success/5 p-3">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
+          Your edge · {best.toUpperCase()} {stats[best]}
+        </p>
+        <p className="mt-1 text-base">{STAT_GLANCE[best].high}</p>
+      </div>
+      <div className="border-l-2 border-danger bg-danger/5 p-3">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
+          Your weak spot · {worst.toUpperCase()} {stats[worst]}
+        </p>
+        <p className="mt-1 text-base">{STAT_GLANCE[worst].low}</p>
+      </div>
+    </div>
+  );
+}
+
 export function StatsPanel({ state }: { state: ChargenState }) {
   if (!state.method) {
     return <p className="text-sm text-muted-foreground">Choose a creation method first.</p>;
@@ -350,6 +436,8 @@ export function StatsPanel({ state }: { state: ChargenState }) {
       {state.method === "streetrat" && <StreetratBranch state={state} />}
       {state.method === "edgerunner" && <EdgerunnerBranch state={state} />}
       {state.method === "complete_package" && <CompletePackageBranch state={state} />}
+
+      <AtAGlance stats={state.stats} />
 
       <div className="space-y-3">
         <h2 className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">

@@ -11,6 +11,7 @@ export * from "./checkOdds";
 export * from "./statGeneration";
 export * from "./skillAllocation";
 export * from "./skillPresets";
+export * from "./statRerolls";
 export * from "./humanity";
 export * from "./cyberwareInstall";
 export * from "./improvementPoints";

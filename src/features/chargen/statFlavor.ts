@@ -77,3 +77,51 @@ export const STAT_FLAVOR: Record<StatKey, StatFlavor> = {
       "Low LUCK means the dice are the whole story. No second chances, no almost — just whatever the d10 decided, every single time.",
   },
 };
+
+/**
+ * One line per STAT for when it is your best, and one for when it is your
+ * worst: the "you at a glance" read under the STATs step. Second person, no
+ * numbers, and never a rules claim.
+ */
+export const STAT_GLANCE: Record<StatKey, { high: string; low: string }> = {
+  int: {
+    high: "You notice what everyone else walks past.",
+    low: "The clue is on the table. Somebody else picks it up.",
+  },
+  ref: {
+    high: "You are already moving while they decide to.",
+    low: "In a fast room, you are the slow thing.",
+  },
+  dex: {
+    high: "You are hard to hit and harder to hold.",
+    low: "You fumble, you trip, you get caught halfway up the fence.",
+  },
+  tech: {
+    high: "If it has a panel, you can talk to it.",
+    low: "Machines do not like you, and they can tell.",
+  },
+  cool: {
+    high: "You stay convincing in rooms where nobody is buying.",
+    low: "Everyone knows what you want before you ask.",
+  },
+  will: {
+    high: "You keep walking when everything says run.",
+    low: "You blink first, and people have noticed.",
+  },
+  luck: {
+    high: "The city misses you more often than it should.",
+    low: "If something can go wrong, it picks you.",
+  },
+  move: {
+    high: "Nobody outruns you, and nobody gets away.",
+    low: "You get there. Eventually.",
+  },
+  body: {
+    high: "You take the hit and you are still standing.",
+    low: "One bad night could end you.",
+  },
+  emp: {
+    high: "You hear the lie under the apology.",
+    low: "People are harder to read than locks.",
+  },
+};

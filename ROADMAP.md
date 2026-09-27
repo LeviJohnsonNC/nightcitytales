@@ -58,8 +58,15 @@ The plan, in phases:
    venue sits behind their questions, and the meet, the reveal and each
    Lifepath chapter have backdrops. Every file is named in `docs/soundtrack.md`
    or `docs/art-style.md`, and a slot with no file keeps the plain look.
-6. **Polish**: STAT reveals and one Edgerunner reroll (a house rule), one-click
-   loadouts, handle suggestions, a shareable character card.
+6. **Polish — partly shipped.** Rolled STATs now count: the first roll stands
+   and each character carries one reroll (`chargen-house-rules.json`, a house
+   rule; the creator used to allow unlimited rerolls, which made the dice
+   decorative). Once the STATs are in, the step names your edge and your weak
+   spot in a line each. The Identity step asks the fixer for five handles (a
+   `handle_suggestions` job on the closed list). Still open: one-click
+   loadouts for Complete Package, which need a legality-checked shopping list
+   per preset against both budgets, and a shareable character card, which
+   needs an image-rendering dependency the project does not carry yet.
 
 ---
 

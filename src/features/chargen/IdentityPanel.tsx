@@ -11,6 +11,9 @@ import {
   selfDescriptionMissing,
 } from "./selfDescription";
 import { useChargenStore, type ChargenState } from "./store";
+import { suggestHandles } from "./handleSuggestions";
+import { fixerShortName } from "./interview";
+import "./interview.css";
 
 const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"];
 
@@ -20,6 +23,26 @@ export function IdentityPanel({ state, userId }: { state: ChargenState; userId: 
   const patch = useChargenStore((s) => s.patch);
   const [writing, setWriting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [handles, setHandles] = useState<string[]>([]);
+  const [naming, setNaming] = useState(false);
+  const [namingError, setNamingError] = useState<string | null>(null);
+  const fixer = state.castPlan?.picks.fixer ?? null;
+
+  async function askForHandles() {
+    setNaming(true);
+    setNamingError(null);
+    try {
+      const roleName = state.roleId ? ROLE_NAMES[state.roleId]?.name : undefined;
+      const next = await suggestHandles(state, roleName);
+      if (!next.length) throw new Error("No names came back. Ask again.");
+      setHandles(next);
+    } catch (e) {
+      setNamingError(e instanceof Error ? e.message : "Could not think of a name right now.");
+    } finally {
+      setNaming(false);
+    }
+  }
 
   const missing = selfDescriptionMissing(state);
   const canWrite = missing.length === 0;
@@ -61,6 +84,36 @@ export function IdentityPanel({ state, userId }: { state: ChargenState; userId: 
           <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim">
             This is what the GM will call you
           </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!state.roleId || naming}
+              onClick={askForHandles}
+            >
+              {naming
+                ? "Thinking of names…"
+                : handles.length
+                  ? "Ask again"
+                  : `Ask ${fixer ? fixerShortName(fixer) : "your fixer"} for a handle`}
+            </Button>
+            {handles.map((handle) => (
+              <button
+                key={handle}
+                type="button"
+                aria-pressed={state.handle === handle}
+                onClick={() => patch({ handle })}
+                className={`cg-say border px-3 py-1 font-mono text-[11px] tracking-[0.1em] transition-colors duration-200 ${
+                  state.handle === handle
+                    ? "border-ember bg-ember/15 text-text"
+                    : "border-hairline text-text-muted hover:border-ember/60"
+                }`}
+              >
+                {handle}
+              </button>
+            ))}
+          </div>
+          {namingError && <p className="text-sm text-danger">{namingError}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="chargen-pronouns">Pronouns</Label>

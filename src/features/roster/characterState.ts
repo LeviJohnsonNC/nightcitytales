@@ -199,6 +199,7 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
     portraitStage: 3,
     stats: statsFrom(full),
     statRolls: { row: null, rows: {} },
+    statRerollsUsed: 0,
     skills: full.skills.map((row) => ({
       skillId: row.skill_id,
       level: row.level,

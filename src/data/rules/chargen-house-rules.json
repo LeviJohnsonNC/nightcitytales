@@ -1,0 +1,5 @@
+{
+  "houseRule": true,
+  "note": "Character-creation rules this project bends on purpose. The book has no rerolls for rolled STATs: a Streetrat takes the row the die lands on, an Edgerunner takes each STAT as it falls. Before this file the creator allowed unlimited rerolls, which made the dice decorative. Now the first roll stands, and each character gets this many rerolls to spend: a whole Streetrat row, or one Edgerunner STAT, per reroll. Tune it here.",
+  "statRerolls": 1
+}

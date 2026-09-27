@@ -334,8 +334,9 @@ The service-role client bypasses RLS and is for trusted server-only operations.
 
 AI functionality currently lives in three paths:
 
-- Lifepath background and self-description generation through
-  `src/lib/background.functions.ts`.
+- Lifepath background, self-description and handle-suggestion generation
+  through `src/lib/background.functions.ts`, each a named job on the closed
+  list in `background.jobs.ts`.
 - GM turns through `src/features/gm/gmTurn.server.ts`.
 - Streaming portraits through `src/routes/api/generate-portrait.ts`.
 
@@ -426,6 +427,10 @@ The file's portrait develops in three stages (`portraitStages.ts`, driven by
 portrait studio spends. It never runs while the draft is loading, never retries
 a failed stage by itself, and never paints over a portrait the player drew by
 hand — `portraitStage` 3 means "the picture on the file is final".
+
+Rolled STATs count: the first roll stands and each character carries the
+rerolls `src/data/rules/chargen-house-rules.json` allows (`statRollCost`),
+counted on the draft as `statRerollsUsed` and kept across a method change.
 
 The Skills step leads with presets and odds rather than points. A preset
 (`src/data/rules/skill-presets.json`, `houseRule: true`) names focus and support
