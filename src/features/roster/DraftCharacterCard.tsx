@@ -14,7 +14,7 @@ export function DraftCharacterCard() {
   if (!data) return null;
 
   const state = (data.state ?? {}) as Partial<ChargenState>;
-  const step = (state.step ?? "method") as ChargenStep;
+  const step = (state.step ?? "fixer") as ChargenStep;
   const def = stepDefinition(step);
   const roleName = state.roleId ? (ROLE_NAMES[state.roleId]?.name ?? state.roleId) : null;
 

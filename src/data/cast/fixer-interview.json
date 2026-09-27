@@ -1,0 +1,191 @@
+{
+  "note": "What each fixer says while a new character is being made. Presentation copy in the house voice (src/lib/prose-style.ts): no rules values, no numbers, no em-dashes. Keys are the names in cast-content.json's fixer pool, and a test holds every fixer to a line for every step and every Role. `ask` is the question on each step; `roles` is the reaction to the Role the player picks; `verdict` closes the file.",
+  "fixers": {
+    "Ilsa Bräun": {
+      "where": "An office above a Northside freight yard. Heated, quiet, and full of actual paper.",
+      "pitch": "Moves things that are not supposed to move, on time, every time. Hates waste. Pays in full.",
+      "greeting": "Sit. You are four minutes early, which I will note in your favour. I am going to ask you some questions and write the answers down. On paper. Paper can be burned.",
+      "ask": {
+        "role": "First question. What is it that you do?",
+        "method": "How would you like this assessed? Quickly, by chance, or in full detail? I have time for all three.",
+        "lifepath": "Where do you come from? Leave nothing out. The things people leave out are the things that arrive at my door later.",
+        "stats": "Stand there, please. I want to see what I am working with.",
+        "skills": "Now the part that matters to a manifest. What can you actually do?",
+        "package": "What are you carrying today? Itemise it.",
+        "gear": "You have money. Spend it on things that will still work at four in the morning.",
+        "cyberware": "Chrome. Declare it. Everything installed in you is cargo somebody else may want.",
+        "lifestyle": "Where do you sleep? I need an address I can send paper to.",
+        "identity": "And the name that goes at the top of the file?",
+        "review": "Let me read it back to you."
+      },
+      "roles": {
+        "rockerboy": "A performer. Crowds are unpredictable cargo. I will not put you anywhere near a schedule.",
+        "solo": "A Solo. Good. Most of my problems are solved by somebody standing in the right doorway.",
+        "netrunner": "A Netrunner. Manifests are digital now, and so are the people who alter them. Useful.",
+        "tech": "A Tech. You fix things. I have forty trucks that disagree with you. Excellent.",
+        "medtech": "A Medtech. Nobody on my payroll has died on a run, and I would like to keep the record.",
+        "media": "Media. You understand that nothing I say is on the record. Nothing.",
+        "exec": "A corporate. I was one of you once. I know exactly what you are not telling me.",
+        "lawman": "A Lawman. Unusual, in this office. Badges open doors my paper cannot.",
+        "fixer": "Another fixer. Then you know I am not going to tell you who else I work with.",
+        "nomad": "A Nomad. You know roads. I know cargo. We will get along very well."
+      },
+      "verdict": "It is all in order. I will pay you on the hour and in full. Do not make me call anybody else."
+    },
+    "Marcus \"Tally\" Oyelaran": {
+      "where": "The back half of a Heywood laundromat that has not washed a shirt in ten years.",
+      "pitch": "Warm, generous, buys the first drink and the second. Keeps a ledger of every favour, including this one.",
+      "greeting": "Come in, come in, sit, you want something? On me. No, I insist. We'll call it a welcome. I'm just going to make a little note.",
+      "ask": {
+        "role": "So tell me, friend. What is it you do?",
+        "method": "How do you want to play this? Quick and easy, let the dice talk, or the whole long conversation? I'm in no hurry.",
+        "lifepath": "Where'd you come up? Family, friends, the people who hate you. Especially them. I like to know who I'm dealing with.",
+        "stats": "Stand up a second, let me get a look at you. Humour me.",
+        "skills": "What are you good at? Not modest good. Actually good.",
+        "package": "What'd you walk in with? Show me.",
+        "gear": "You've got a little money. Spend it well and I'll front you the rest some other time. Small favour.",
+        "cyberware": "Any chrome? Don't be shy, half this block is more machine than meat.",
+        "lifestyle": "And where are you sleeping these days? For the ledger.",
+        "identity": "Now what do I write at the top of the page?",
+        "review": "Let's see what we've got here."
+      },
+      "roles": {
+        "rockerboy": "A Rockerboy! Oh, I've got people who'd pay just to have you in the room. Just to be seen with you.",
+        "solo": "A Solo. Good. I always need somebody who can stand in a doorway and look expensive.",
+        "netrunner": "A Netrunner. Now you, you I can use. Everybody wants somebody else's files.",
+        "tech": "A Tech. Wonderful. Things break in this city faster than people do.",
+        "medtech": "A Medtech. Everybody owes their doctor. Everybody. You'll have friends by the weekend.",
+        "media": "Media. Lovely. We'll talk about what's printable and what's between friends.",
+        "exec": "A corpo. Out slumming, or out for good? Doesn't matter. The ledger doesn't judge.",
+        "lawman": "Law. Well. Everybody needs a friend on the other side of the line. Especially you.",
+        "fixer": "Another fixer. Then you know how this works. I'll owe you one. You'll owe me two.",
+        "nomad": "A Nomad! Family. You people keep your word, and I keep a very good record of who does."
+      },
+      "verdict": "There. That's a person I can work with. Small favour to start. Nothing you'll even notice."
+    },
+    "Dinh Bao Tran": {
+      "where": "A food court on the second level. He picked the table nearest two exits.",
+      "pitch": "Sells access to buildings, and nothing else. Talks in timings. Right often enough that crews who ignore him stop booking.",
+      "greeting": "Sit facing the escalator. We have about twenty minutes before the lunch rush. I will ask. You will answer. Short is fine.",
+      "ask": {
+        "role": "What do you do. One word is enough.",
+        "method": "How do you want to do this. Fast, by chance, or slowly. Fast is usually better.",
+        "lifepath": "Where you come from. Who knows your face. Who wants it gone.",
+        "stats": "Stand up. Walk to the pillar and back. I want to see how you move.",
+        "skills": "What can you do in ninety seconds that other people cannot.",
+        "package": "What are you carrying. Anything that shows on a scanner, say so now.",
+        "gear": "Buy what gets you through a door and back out. Nothing that rattles.",
+        "cyberware": "Chrome. Some doors can smell it. Tell me what is in you.",
+        "lifestyle": "Where do you sleep. How many ways out.",
+        "identity": "Name.",
+        "review": "Four minutes left. Let me read it back."
+      },
+      "roles": {
+        "rockerboy": "A Rockerboy. You bring a crowd. A crowd is cover. Good.",
+        "solo": "A Solo. Stand where I tell you and nobody gets hurt. Most jobs, that is the whole job.",
+        "netrunner": "A Netrunner. Doors have controllers. Controllers have ports. Very good.",
+        "tech": "A Tech. Locks, elevators, panels. You and I will be busy.",
+        "medtech": "A Medtech. I do not take jobs that put people through walls. You are insurance.",
+        "media": "Media. My buildings stay out of your stories. Agreed.",
+        "exec": "An Exec. You know how the floors above the lobby work. That is worth a great deal.",
+        "lawman": "A Lawman. You can walk through the front. That is rare.",
+        "fixer": "A fixer. Then you already know I will not tell you whose building it is.",
+        "nomad": "A Nomad. Somebody has to be waiting at the loading dock with the engine running."
+      },
+      "verdict": "Good. Ninety seconds on the landing. Do not stop. We will talk again."
+    },
+    "Rosalind Achebe": {
+      "where": "A members' lounge in the Executive Zone. The drinks cost more than a week of ammunition. She is paying.",
+      "pitch": "Brokers for people who own things. Charming in a way that feels like being professionally handled, because it is.",
+      "greeting": "Darling, sit. Order anything, the house knows me. My clients will never meet you, so tonight I am going to find out everything they would have wanted to know.",
+      "ask": {
+        "role": "Tell me what it is you do. Make it sound interesting.",
+        "method": "How shall we do this? Briskly, by fate, or the long elegant way? I adore the long way.",
+        "lifepath": "Where did you come from? I want the family, the friends, the heartbreak, and whoever would like you dead.",
+        "stats": "Stand in the light for me. Let me see what I would be selling.",
+        "skills": "What are you actually good at? Please do not say violence. Say it more tastefully.",
+        "package": "And what did you arrive with? Let me see.",
+        "gear": "You have a little money. Buy something that will not embarrass me in a lobby.",
+        "cyberware": "Any chrome? Discreet is better. My clients prefer not to see the wiring.",
+        "lifestyle": "Where do you live? I promise not to visit.",
+        "identity": "And the name? I need something I can say out loud in nice rooms.",
+        "review": "Let me look at the whole of you."
+      },
+      "roles": {
+        "rockerboy": "A Rockerboy. How thrilling. My clients adore a little danger at a party. From a distance.",
+        "solo": "A Solo. Wonderful. Please never break anything that has a provenance.",
+        "netrunner": "A Netrunner. My clients keep their secrets in very expensive boxes. You open boxes.",
+        "tech": "A Tech. Vaults, alarms, the little locks on little cabinets. Delightful.",
+        "medtech": "A Medtech. The rich do so hate going to hospitals. You will be popular.",
+        "media": "Media. Oh, careful, darling. Everything tonight is off the record. Everything.",
+        "exec": "An Exec. At last, somebody who knows which fork to use.",
+        "lawman": "Law. How refreshing. My clients will feel so safe.",
+        "fixer": "A colleague! We must never, ever work for the same person.",
+        "nomad": "A Nomad. My clients' things sometimes need to leave the city quietly. You would be perfect."
+      },
+      "verdict": "Yes. You will do very nicely. Wear something clean. Break nothing that is insured."
+    },
+    "Yuri Pastrana": {
+      "where": "A truck stop bar on the Badlands edge. The parking lot is worth more than the building.",
+      "pitch": "Loud, fast, calls you family and means it. Moves cargo the corps wrote off. Nobody gets left on the sand.",
+      "greeting": "Sit down, sit down! You look like you drove here in something terrible. Drink this. Now, family, let's find out who you are.",
+      "ask": {
+        "role": "So what do you do, eh? What are you for?",
+        "method": "How do we do this? Fast like a border run, roll the dice like a real gambler, or slow like my cousin's truck?",
+        "lifepath": "Where do you come from? Who are your people? Who's got a grudge? Out here that is the first thing we ask.",
+        "stats": "Stand up! Let me see you. Arms, legs, the eyes. Out here the eyes matter.",
+        "skills": "What can you do? Drive? Shoot? Talk? Fix a radiator in a dust storm?",
+        "package": "What'd you bring? Throw it on the table.",
+        "gear": "Money! Spend it on things that work with sand in them.",
+        "cyberware": "Any chrome in you? Out here we say chrome is fine until it needs a mechanic.",
+        "lifestyle": "Where do you sleep? A roof? A container? The back of a truck is no shame.",
+        "identity": "And what do we call you, eh? A real name. Something the family can shout.",
+        "review": "Okay, okay. Let me see the whole thing."
+      },
+      "roles": {
+        "rockerboy": "A Rockerboy! Every convoy needs music. You ride with me, you play.",
+        "solo": "A Solo. Good. The road is long and the people on it are not all family.",
+        "netrunner": "A Netrunner! Somebody who can talk to the border scanners. I love you already.",
+        "tech": "A Tech! You. You I will feed forever. My trucks are held together with prayers.",
+        "medtech": "A Medtech. Out here a Medtech is family on the first day. Nobody gets left on the sand.",
+        "media": "Media! Tell the city what happens out here. Not my part. The other parts.",
+        "exec": "An Exec, at my bar? Ha! Okay. Everybody gets one drink before I decide.",
+        "lawman": "A Lawman. Okay. Out here the law is whoever shows up. Show up for us.",
+        "fixer": "Another fixer! Good, good. You take the city, I take the roads, nobody fights.",
+        "nomad": "Nomad! Family! Which clan? No, don't tell me, I'll find out. Welcome home."
+      },
+      "verdict": "Good. You're family now. That means something. Nobody gets left on the sand, and neither do you."
+    },
+    "Kit Mwangi": {
+      "where": "Whichever noodle bar has the best privacy this week. Kit is already halfway through a bowl.",
+      "pitch": "Best information broker under forty. Two hundred people on a small monthly retainer. Burned three corps and keeps score.",
+      "greeting": "Hey. Sit, sit. I already know some of this, I just want to hear how you tell it. Go fast, I get bored.",
+      "ask": {
+        "role": "What do you do? I have a guess. Let's see if I'm right.",
+        "method": "How do you want to do this? Fast, dice, or the full build? Fast. Pick fast.",
+        "lifepath": "Where'd you come from? Family, friends, exes, enemies. I probably have files on two of them.",
+        "stats": "Hold still, I'm scanning you. Joking. Mostly. Let's see what you've got.",
+        "skills": "What are you actually good at? The real list, not the resume.",
+        "package": "What'd you walk in with? I'll know if you leave something out.",
+        "gear": "You've got some money. Spend it before you overthink it.",
+        "cyberware": "Chrome? Brand and model. I like to know what I'm working with.",
+        "lifestyle": "Where do you crash? I'll find out anyway, save me the afternoon.",
+        "identity": "Name, handle. The handle matters more. Make it good.",
+        "review": "Okay. Let me see the whole file."
+      },
+      "roles": {
+        "rockerboy": "A Rockerboy. Oh, you're going to make so much noise. I love noise. Noise is data.",
+        "solo": "A Solo. Called it. You sat down like somebody who checks the exits.",
+        "netrunner": "A Netrunner! Finally, somebody who reads as fast as I do.",
+        "tech": "A Tech. My sources keep bringing me broken things. You and I are going to be friends.",
+        "medtech": "A Medtech. Clinic records are the best gossip in this city. Just saying.",
+        "media": "Media. Okay. We are either going to be best friends or a very big problem.",
+        "exec": "An Exec? Ha. Which corp? I've probably burned them.",
+        "lawman": "A cop. Okay. Relax. I only sell what's true.",
+        "fixer": "A fixer! Competition. I love it. You're going to lose, but I love it.",
+        "nomad": "A Nomad. Roads, clans, borders. Nobody sells me road intel. Change that."
+      },
+      "verdict": "Got it. Filed. You're more interesting than I thought, which is rare. I'll call you."
+    }
+  }
+}

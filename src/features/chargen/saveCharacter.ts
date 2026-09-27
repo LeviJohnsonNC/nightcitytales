@@ -3,6 +3,7 @@
  * in one transaction. Derived columns come from the engine helper only.
  */
 import {
+  CAST_PLAN_KEY,
   derivedStatColumns,
   getCyberware,
   isChoice,
@@ -147,7 +148,11 @@ export function savePayload(
     gear,
     cyberware,
     lifepath: {
-      general: state.lifepath.general,
+      // The cast plan rides in the general Lifepath so the campaign can seed the
+      // people the player met here, with no column of its own to migrate.
+      general: state.castPlan
+        ? { ...state.lifepath.general, [CAST_PLAN_KEY]: state.castPlan }
+        : state.lifepath.general,
       role_specific: state.lifepath.roleSpecific,
       narrative: state.background.trim() || null,
     },

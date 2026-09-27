@@ -8,45 +8,81 @@ import { finalChecklist, gatePassed } from "./finalGate";
 import { saveCharacterFromState } from "./saveCharacter";
 import { assembledFromState, buildFromState } from "./sheetModel";
 import { useChargenStore, type ChargenState } from "./store";
+import { Reveal } from "./Reveal";
+import { startOrResumeAdventure } from "@/features/play/startAdventure";
 
 export function ReviewPanel({ state }: { state: ChargenState }) {
   const navigate = useNavigate();
   const setStep = useChargenStore((s) => s.setStep);
   const reset = useChargenStore((s) => s.reset);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<"roster" | "city" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const checks = useMemo(() => finalChecklist(state), [state]);
   const passed = gatePassed(checks);
   const build = useMemo(() => buildFromState(state), [state]);
   const sheet = useMemo(() => assembledFromState(state), [state]);
 
-  async function save() {
+  /**
+   * Save, and either file the character or walk them straight into the city.
+   * Entering starts the campaign here, so the last thing creation does is the
+   * first thing play does: the cold open, with the people this screen showed.
+   */
+  async function save(then: "roster" | "city") {
     // Re-run the gate at the moment of saving: an invalid character never saves.
     if (!gatePassed(finalChecklist(useChargenStore.getState()))) return;
-    setSaving(true);
+    setSaving(then);
     setError(null);
     try {
       const id = await saveCharacterFromState(state, build, sheet);
+      if (then === "city") {
+        const campaignId = await startOrResumeAdventure({
+          id,
+          name: state.name.trim(),
+          handle: state.handle.trim() || null,
+        });
+        reset();
+        await navigate({ to: "/play/$id", params: { id: campaignId } });
+        return;
+      }
       reset();
       await navigate({ to: "/character/$id", params: { id } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Saving failed.");
-      setSaving(false);
+      setSaving(null);
     }
   }
 
   return (
     <div className="space-y-6">
+      <div className="no-print">
+        <Reveal state={state} homePlaceKey={sheet.finance.homePlaceKey} />
+      </div>
+
       <section className="no-print border border-hairline bg-surface p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={save} disabled={!passed || saving}>
-            {saving ? "Saving…" : "Save to roster"}
+          <Button
+            size="lg"
+            className="px-8 text-base"
+            onClick={() => save("city")}
+            disabled={!passed || saving !== null}
+          >
+            {saving === "city" ? "The city is waking up…" : "Enter Night City"}
           </Button>
-          <PrintButton />
-          <Button variant="outline" onClick={() => downloadCharacterJson(state, build, sheet)}>
-            Export JSON
+          <Button
+            variant="outline"
+            onClick={() => save("roster")}
+            disabled={!passed || saving !== null}
+          >
+            {saving === "roster" ? "Saving…" : "Save to roster for later"}
           </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <PrintButton />
+            <Button variant="outline" onClick={() => downloadCharacterJson(state, build, sheet)}>
+              Export JSON
+            </Button>
+          </div>
         </div>
         {!passed && (
           <ul className="mt-3 space-y-2 border-t border-hairline pt-3">
@@ -80,7 +116,20 @@ export function ReviewPanel({ state }: { state: ChargenState }) {
         {error && <p className="mt-3 text-sm text-danger">{error}</p>}
       </section>
 
-      <CharacterSheet state={state} build={build} sheet={sheet} />
+      <section className="border border-hairline bg-surface">
+        <button
+          type="button"
+          aria-expanded={sheetOpen}
+          onClick={() => setSheetOpen((v) => !v)}
+          className="no-print w-full px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim hover:text-text"
+        >
+          {sheetOpen ? "Close the full file" : "Read the whole file · every number"}
+        </button>
+        {/* Always printed: the print button prints this page, open or not. */}
+        <div className={sheetOpen ? "border-t border-hairline p-4" : "hidden p-4 print:block"}>
+          <CharacterSheet state={state} build={build} sheet={sheet} />
+        </div>
+      </section>
     </div>
   );
 }

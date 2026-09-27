@@ -14,9 +14,13 @@ where it does.
 ## The two halves
 
 **Character creation** implements the published creation methods — Streetrat,
-Edgerunner and Complete Package — as a validated wizard: Method, Role, Lifepath,
-STATs, Skills, starting gear or cyberware, Gear & Armor, Lifestyle, Identity,
-Final Sheet. Drafts autosave, so a refresh costs nothing. Editing a saved
+Edgerunner and Complete Package — as a validated wizard told as a meet with a
+fixer: you pick which of three fixers to see, and they ask every question after
+that — Role, how you want to build (the method), Lifepath, STATs, Skills,
+starting gear or cyberware, Gear & Armor, Lifestyle, Identity — before reading
+the file back. The last screen shows the three people already waiting for you in
+the city and walks you straight into the campaign; the fixer you picked is your
+fixer there. Drafts autosave, so a refresh costs nothing. Editing a saved
 character opens a new draft rather than mutating the original.
 
 **The campaign** is a loop of four explicit phases:

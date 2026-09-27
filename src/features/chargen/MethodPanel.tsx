@@ -41,16 +41,13 @@ export function MethodPanel({
   state: ChargenState;
   onRequestMethod: (method: CreationMethod) => void;
 }) {
-  const locked = Boolean(state.roleId);
   const [info, setInfo] = useState<CreationMethod | null>(null);
   const infoCopy = METHOD_COPY.find((m) => m.id === info) ?? null;
 
   return (
     <div className="space-y-4">
       <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-        {locked
-          ? "Role locked — switching method now restarts the character"
-          : "Switch freely until you lock a Role"}
+        This only decides how your STATs, Skills and gear are made. You can change it later.
       </p>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -79,7 +76,10 @@ export function MethodPanel({
 
               <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold tracking-tight">{LABELS[method.id]}</h2>
+                  <h2 className="text-lg font-bold tracking-tight">{method.plain}</h2>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                    {LABELS[method.id]}
+                  </span>
                   <button
                     type="button"
                     onClick={() => setInfo(method.id)}
@@ -97,7 +97,7 @@ export function MethodPanel({
                   aria-pressed={selected}
                   onClick={() => onRequestMethod(method.id)}
                 >
-                  {selected ? "Selected" : locked ? "Switch & restart" : "Choose this method"}
+                  {selected ? "This one" : "Do it this way"}
                 </Button>
               </div>
             </article>

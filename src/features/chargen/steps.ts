@@ -2,6 +2,7 @@ import { EMPTY_LOADOUT, type CreationMethod } from "@/engine";
 import type { ChargenState } from "./store";
 
 export type ChargenStep =
+  | "fixer"
   | "method"
   | "role"
   | "lifepath"
@@ -25,26 +26,40 @@ export type StepDefinition = {
 };
 
 /**
- * The official Cyberpunk RED creation sequence. Lifepath precedes STATs.
- * This order is a rules value: do not reorder it.
+ * The sequence, told as a meet with a fixer.
+ *
+ * Every step is a question somebody in Night City is asking, which is why the
+ * titles are in the second person and none of them is the name of a rules
+ * table. The rules order within it is untouched — Role, then Lifepath, then
+ * STATs and Skills, then gear — with two changes, both on purpose:
+ *
+ *  - THE MEET COMES FIRST. Picking which fixer you are here to see is a choice
+ *    made inside the fiction before anything is asked of you, and that fixer
+ *    is carried into the campaign as your fixer.
+ *  - METHOD FOLLOWS ROLE. The printed book never says which comes first, and
+ *    "how much of this do you want to do by hand" is a worse opening question
+ *    than "what do you do". Method decides only how STATs, Skills and gear are
+ *    made, so choosing it second costs nothing and changing it later clears
+ *    only those.
  */
 export const CHARGEN_STEPS: StepDefinition[] = [
-  { id: "method", index: 0, title: "Method", blurb: "Streetrat / Edgerunner / Complete Package" },
-  { id: "role", index: 1, title: "Role", blurb: "Pick your Role and its Role Ability" },
-  { id: "lifepath", index: 2, title: "Lifepath", blurb: "General, then Role-specific" },
-  { id: "stats", index: 3, title: "STATs", blurb: "Branches by creation method" },
-  { id: "skills", index: 4, title: "Skills", blurb: "Branches by creation method" },
+  { id: "fixer", index: 0, title: "The Meet", blurb: "Pick who you are here to see" },
+  { id: "role", index: 1, title: "What You Do", blurb: "Your Role and what it gives you" },
+  { id: "method", index: 2, title: "The Terms", blurb: "Fast, rolled, or built by hand" },
+  { id: "lifepath", index: 3, title: "Your Story", blurb: "Where you come from, who is out there" },
+  { id: "stats", index: 4, title: "What You've Got", blurb: "Your ten STATs" },
+  { id: "skills", index: 5, title: "What You Can Do", blurb: "Your Skills" },
   {
     id: "package",
-    index: 5,
-    title: "Starting Gear",
-    blurb: "The kit and cyberware your Role is issued",
+    index: 6,
+    title: "Your Kit",
+    blurb: "The gear and chrome your Role is issued",
   },
-  { id: "gear", index: 6, title: "Gear & Armor", blurb: "Spend your eurobucks" },
-  { id: "cyberware", index: 7, title: "Cyberware", blurb: "Install chrome, pay Humanity" },
-  { id: "lifestyle", index: 8, title: "Outfit & Lifestyle", blurb: "Fashion, housing, lifestyle" },
-  { id: "identity", index: 9, title: "Identity", blurb: "Name, handle, portrait" },
-  { id: "review", index: 10, title: "Final Sheet", blurb: "Review every value, then save" },
+  { id: "gear", index: 7, title: "Night Market", blurb: "Spend your eurobucks" },
+  { id: "cyberware", index: 8, title: "Chrome", blurb: "Install cyberware, pay Humanity" },
+  { id: "lifestyle", index: 9, title: "Where You Sleep", blurb: "Home, lifestyle, fashion" },
+  { id: "identity", index: 10, title: "What They Call You", blurb: "Name, handle, face" },
+  { id: "review", index: 11, title: "The File", blurb: "Look it over, then walk in" },
 ];
 
 export const STEP_IDS: ChargenStep[] = CHARGEN_STEPS.map((s) => s.id);
@@ -77,9 +92,9 @@ export function stepIdsFor(method: CreationMethod | null | undefined): ChargenSt
 const LEGACY_STEPS: Record<string, ChargenStep> = { derived: "stats" };
 
 export function normalizeStep(step: string | null | undefined): ChargenStep {
-  if (!step) return "method";
+  if (!step) return "fixer";
   if (STEP_IDS.includes(step as ChargenStep)) return step as ChargenStep;
-  return LEGACY_STEPS[step] ?? "method";
+  return LEGACY_STEPS[step] ?? "fixer";
 }
 
 /** A hidden step can never be the current step: resolve it forward. */
@@ -105,11 +120,35 @@ export function stepIndex(step: ChargenStep): number {
 
 /**
  * Which later steps a change to an earlier step invalidates.
- * Changing method restarts the character entirely (handled separately).
  */
 export const DEPENDENTS: Record<string, ChargenStep[]> = {
   role: ["lifepath", "skills", "package", "gear", "cyberware"],
+  method: ["stats", "skills", "package", "gear", "cyberware"],
 };
+
+/**
+ * The parts of the draft a change of method clears: only what the method
+ * decides how to make. Who the character is — Role, Lifepath, name, face, home
+ * and the people they met — survives it.
+ */
+export function clearedByMethodChange(): Partial<ChargenState> {
+  return {
+    stats: {},
+    statRolls: { row: null, rows: {} },
+    skills: [],
+    loadout: EMPTY_LOADOUT,
+  };
+}
+
+/** True when a change of method would throw away work. */
+export function methodChangeLosesWork(state: ChargenState): boolean {
+  return (
+    Object.keys(state.stats).length > 0 ||
+    state.skills.length > 0 ||
+    state.loadout.lines.length > 0 ||
+    Object.keys(state.loadout.packageChoices).length > 0
+  );
+}
 
 /** The parts of the draft wiped when a Role change is confirmed. */
 export function clearedByRoleChange(state: ChargenState): Partial<ChargenState> {

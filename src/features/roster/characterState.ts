@@ -25,6 +25,7 @@ import {
 import { roleAbilityForRole, type ChargenState } from "@/features/chargen/store";
 import { STEP_IDS } from "@/features/chargen/steps";
 import type { CharacterGear, FullCharacter } from "@/lib/backend";
+import { castPlanFrom } from "@/features/campaign/castSeeding";
 
 const ARMOR_LOCATIONS: ArmorLocation[] = ["head", "body", "shield"];
 
@@ -218,6 +219,7 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
     visited: [...STEP_IDS],
     rollLog: [],
     background: "",
+    castPlan: castPlanFrom(full),
   };
 }
 

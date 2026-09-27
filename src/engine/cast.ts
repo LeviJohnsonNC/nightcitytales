@@ -329,7 +329,62 @@ export type CastSeedInput = {
   /** Drawn once per campaign and stored, so the cast is the same cast forever. */
   seed: number;
   ties?: LifepathTies;
+  /**
+   * People the player chose by name while creating the character — the fixer
+   * who interviewed them, and later whoever they picked for their enemy, friend
+   * and lost love. A pick replaces the drawn NAME only, and only when it is a
+   * name in that role's pool; the draw still happens, so every other field of
+   * the cast lands exactly where it would have.
+   */
+  picks?: CastPicks;
 };
+
+/** Names chosen by the player, by role. */
+export type CastPicks = Partial<Record<CastRole, string>>;
+
+/**
+ * What creation decided about the cast before there was a campaign: the seed
+ * the six are drawn from, and whoever the player picked. Written into the saved
+ * Lifepath so the campaign seeds the very people the player met.
+ */
+export type CastPlan = { seed: number; picks: CastPicks };
+
+/** The key in the saved general Lifepath that carries creation's cast plan. */
+export const CAST_PLAN_KEY = "castPlan";
+
+/** Read a stored plan back, or null when there is none or it is not one. */
+export function readCastPlan(value: unknown): CastPlan | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as { seed?: unknown; picks?: unknown };
+  if (typeof v.seed !== "number" || !Number.isFinite(v.seed)) return null;
+  const picks: CastPicks = {};
+  if (v.picks && typeof v.picks === "object") {
+    for (const role of CAST_ROLES) {
+      const name = (v.picks as Record<string, unknown>)[role];
+      if (typeof name === "string" && poolFor(role).names.includes(name)) picks[role] = name;
+    }
+  }
+  return { seed: v.seed >>> 0, picks };
+}
+
+/** How many fixers are waiting when a new character walks in. */
+export const FIXERS_AT_THE_MEET = 3;
+
+/**
+ * The fixers who will see a new character tonight: a stable handful of the
+ * pool, fixed by the plan's seed, so reloading the page does not reshuffle the
+ * room. Separate stream from the cast's own, so choosing among them never
+ * moves anybody else.
+ */
+export function fixerCandidates(seed: number, count = FIXERS_AT_THE_MEET): string[] {
+  const rng = seededRng((seed ^ 0x5eed_f1e7) >>> 0);
+  const names = [...poolFor("fixer").names];
+  for (let i = names.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [names[i], names[j]] = [names[j]!, names[i]!];
+  }
+  return names.slice(0, Math.max(1, Math.min(count, names.length)));
+}
 
 /**
  * The six, built from a seed.
@@ -348,7 +403,9 @@ export function generateCast(input: CastSeedInput): CastMember[] {
   for (const role of CAST_ROLES) {
     const pool = poolFor(role);
     // Still one draw, so the rest of the stream lands where it always did.
-    const name = pick(namesFitting(role, ties, pool.names), rng, `${role}.names`);
+    const drawn = pick(namesFitting(role, ties, pool.names), rng, `${role}.names`);
+    const chosen = input.picks?.[role];
+    const name = chosen && pool.names.includes(chosen) ? chosen : drawn;
     const member: CastMember = {
       key: uniqueKey(name, role, used),
       name,
