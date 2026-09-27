@@ -115,6 +115,13 @@ export type CheckContext = {
    * about. Directions given in the fiction must name one of them.
    */
   realAnswers?: string[];
+  /**
+   * Words for a background situation the player is NOT dealing with, in a
+   * scene they are in the middle of. None of them may take over the prose.
+   */
+  offScene?: string[];
+  /** Somebody the engine rolled as coming over. The prose must bring them. */
+  comesOver?: string;
 };
 
 export type Check = {
@@ -526,6 +533,50 @@ export const directionsAreReal: Check = {
   },
 };
 
+/**
+ * A scene in progress kept its subject.
+ *
+ * Scenario-driven: the scenario names a background situation (a chewed
+ * jacket) and the player does something else (asks the bartender what is
+ * good). The jacket may be true; it may not become the scene.
+ */
+export const staysInTheScene: Check = {
+  id: "stays-in-the-scene",
+  title: "kept the scene on what the player was doing",
+  source: 'PRODUCT.md: "A scene in progress was hijacked by a topic the engine did not raise."',
+  run(turn, ctx) {
+    const words = ctx.offScene;
+    if (!words?.length) return [];
+    const prose = turn.narration.toLowerCase();
+    return words
+      .filter((w) => prose.includes(w.toLowerCase()))
+      .map((w) => ({
+        quote: quoteAround(turn.narration, prose.indexOf(w.toLowerCase()), w.length),
+        note: "the background situation took over",
+      }));
+  },
+};
+
+/**
+ * Somebody the engine said comes over, came over.
+ *
+ * The roll was the engine's. A narrator that leaves them sitting in the corner
+ * has quietly overruled it, which is the same fault as inventing an arrival,
+ * pointed the other way.
+ */
+export const comesOverOnCue: Check = {
+  id: "comes-over-on-cue",
+  title: "brought over the person the engine said was coming",
+  source: 'PRODUCT.md: "Whether they come OVER is the engine\'s roll (`comesOver`)."',
+  run(turn, ctx) {
+    const who = ctx.comesOver;
+    if (!who) return [];
+    const first = who.split(/\s+/)[0]!.toLowerCase();
+    if (turn.narration.toLowerCase().includes(first)) return [];
+    return [{ quote: firstSentence(turn.narration), note: `${who} never appears` }];
+  },
+};
+
 /** Every check, in report order: severity first, taste never. */
 export const ALL_CHECKS: Check[] = [
   noUnsourcedNumber,
@@ -540,6 +591,8 @@ export const ALL_CHECKS: Check[] = [
   finishesTheRequest,
   staysPutOnRefusal,
   directionsAreReal,
+  staysInTheScene,
+  comesOverOnCue,
   quietStaysQuiet,
   endsOnTheWorld,
   withinProseBudget,

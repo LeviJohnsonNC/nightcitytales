@@ -255,6 +255,7 @@ export function recentLifeLines(
     "campaign_ended",
     "hook_offered",
     "hook_declined",
+    "cast_approached",
   ]);
   const out: string[] = [];
   let world = 0;
@@ -302,28 +303,6 @@ export function kindOfTrip(
   if (action.direction && !action.destination) return undefined;
   const mentioned = tagsMentioned(said);
   return mentioned.length === 1 ? mentioned[0] : undefined;
-}
-
-/**
- * What the player typed that led to a check, so the result can be followed by
- * the rest of it.
- *
- * The check's own `intent` is the narrator's paraphrase of one part of what
- * they said; "slip past the bouncer and get a drink at the bar" reached the
- * result as "slip past the bouncer", and the drink was gone. The last thing
- * they typed before the check was posted is what they actually asked for.
- */
-export function saidBefore(
-  events: readonly CampaignEvent[],
-  checkEventId: string | undefined,
-): { said?: string } {
-  const at = checkEventId ? events.findIndex((e) => e.id === checkEventId) : -1;
-  const end = at >= 0 ? at : events.length;
-  for (let i = end - 1; i >= 0; i -= 1) {
-    const e = events[i]!;
-    if (e.type === "player_input" && e.summary?.trim()) return { said: e.summary.trim() };
-  }
-  return {};
 }
 
 /**

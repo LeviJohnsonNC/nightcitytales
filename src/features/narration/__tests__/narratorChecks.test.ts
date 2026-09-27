@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALL_CHECKS,
   closedObservationWords,
+  comesOverOnCue,
   directionsAreReal,
   endsOnTheWorld,
   finishesTheRequest,
@@ -12,6 +13,7 @@ import {
   optionsOnlyWhenAsked,
   quietStaysQuiet,
   riskGetsDice,
+  staysInTheScene,
   staysPutOnRefusal,
   walkOnsFromCatalog,
   withheldStaysWithheld,
@@ -357,6 +359,34 @@ describe("follow-through: directions lead somewhere real", () => {
   it("catches the cellar three alleys down", () => {
     const prose = "He tells you which cellar hole three alleys down is serving real beer.";
     expect(directionsAreReal.run(turn({ narration: prose }), nearest)).not.toEqual([]);
+  });
+});
+
+describe("momentum: the scene keeps its subject", () => {
+  const scene = ctx({ offScene: ["jacket", "armor"] });
+
+  it("passes a turn about what the player did", () => {
+    const prose = "The bartender taps a bottle with no label. 'This, if you're brave.'";
+    expect(staysInTheScene.run(turn({ narration: prose }), scene)).toEqual([]);
+  });
+
+  it("catches the chewed jacket taking over the bar", () => {
+    const prose = "You glance at the torn jacket on the stool beside you. It needs patching.";
+    expect(staysInTheScene.run(turn({ narration: prose }), scene)).not.toEqual([]);
+  });
+});
+
+describe("momentum: somebody comes over when the engine says so", () => {
+  const cue = ctx({ comesOver: "Kiro Tanaka" });
+
+  it("passes when they cross the room", () => {
+    const prose = "Kiro slides onto the stool next to you without asking. 'You look terrible.'";
+    expect(comesOverOnCue.run(turn({ narration: prose }), cue)).toEqual([]);
+  });
+
+  it("catches them left in the corner", () => {
+    const prose = "The bar hums along. Someone laughs too loud by the jukebox.";
+    expect(comesOverOnCue.run(turn({ narration: prose }), cue)).not.toEqual([]);
   });
 });
 

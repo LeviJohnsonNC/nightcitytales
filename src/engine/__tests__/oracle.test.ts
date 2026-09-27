@@ -225,14 +225,15 @@ describe("reading results", () => {
   });
 
   it("does not mistake another table's result for the wire", () => {
-    // STREET's sixth face is "intrudes", not an offer of work.
-    expect(wireOffersWork(rollOracle(STREET, faceRng(STREET, 6)))).toBe(false);
+    // STREET's top face is "intrudes", not an offer of work.
+    expect(wireOffersWork(rollOracle(STREET, faceRng(STREET, 10)))).toBe(false);
     expect(streetIntrudes(rollOracle(WORK_ON_THE_WIRE, faceRng(WORK_ON_THE_WIRE, 6)))).toBe(false);
   });
 
-  it("reports an intrusion only on the street's last face", () => {
-    expect(streetIntrudes(rollOracle(STREET, faceRng(STREET, 6)))).toBe(true);
-    expect(streetIntrudes(rollOracle(STREET, faceRng(STREET, 5)))).toBe(false);
+  it("reports an intrusion only on the street's top faces", () => {
+    expect(streetIntrudes(rollOracle(STREET, faceRng(STREET, 10)))).toBe(true);
+    expect(streetIntrudes(rollOracle(STREET, faceRng(STREET, 9)))).toBe(true);
+    expect(streetIntrudes(rollOracle(STREET, faceRng(STREET, 8)))).toBe(false);
   });
 
   it("calls every complication real except the clean brief", () => {

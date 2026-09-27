@@ -23,6 +23,8 @@
  *    you go there, he is there. It does not generate a beat, put anything on
  *    the board, or ask anything of you. Somebody being somewhere is the texture
  *    that makes the place a place; the world tick still owns people ACTING.
+ *    Whether he then comes OVER is its own roll (`comesOver`), made by the
+ *    engine and weighted by how he feels about you.
  *
  * Deterministic, like the beats: the same campaign asked about the same evening
  * gives the same answer, so the map can say who is where without persisting
@@ -206,6 +208,52 @@ export function peopleAtHaunts(input: {
     }
   }
   return out;
+}
+
+/**
+ * How likely somebody who is in is to come OVER, by how they feel about the
+ * character (disposition, -3..3).
+ *
+ * U-shaped on purpose: strong feelings either way cross a room. A friend who
+ * has missed you and an enemy who has not forgotten are both walking over; an
+ * acquaintance nods and goes back to their drink. House-rule pacing numbers,
+ * unplayed, and kept here beside the presence table they multiply.
+ *
+ * Presence alone still asks nothing of anyone. This is the one door from "is
+ * here" to "wants a word", and the engine opens it, not the narrator: the
+ * narrator is told THAT they come over, never why.
+ */
+export const APPROACH_BY_DISPOSITION: Record<number, number> = {
+  [-3]: 0.6,
+  [-2]: 0.45,
+  [-1]: 0.25,
+  0: 0.2,
+  1: 0.3,
+  2: 0.45,
+  3: 0.6,
+};
+
+/**
+ * Whether the person the character has run into comes over to them.
+ *
+ * Deterministic for the evening, like presence: asking twice gives the same
+ * answer, so the narrator is not rolled at twice for one room.
+ */
+export function comesOver(args: {
+  person: HauntPerson;
+  disposition: number;
+  placeKey: string;
+  day: number;
+  minute: number;
+  seed: string;
+}): boolean {
+  const feeling = Math.max(-3, Math.min(3, Math.round(args.disposition)));
+  const chance = APPROACH_BY_DISPOSITION[feeling] ?? 0;
+  const roll =
+    hash(
+      `${args.seed}:${args.person.key}:${args.placeKey}:${args.day}:${partOfDay(args.minute)}:over`,
+    ) % 1000;
+  return roll < Math.round(chance * 1000);
 }
 
 /** Every role the haunts know about, for tests and tooling. */

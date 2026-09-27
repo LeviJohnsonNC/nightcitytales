@@ -143,30 +143,35 @@ export const COMPLICATION: OracleTable = {
 /**
  * What the evening is like when nothing is already demanding attention.
  *
- * Weighted hard toward nothing on purpose. A quiet turn is a real result, and
- * the Life loop needs somewhere for the character to simply exist.
+ * Weighted toward nothing on purpose. A quiet turn is a real result, and the
+ * Life loop needs somewhere for the character to simply exist.
+ *
+ * A d10 rather than the d6 it began as, so the dial could move a notch without
+ * quiet losing the majority: nothing 6 in 10 (was 4 in 6), colour 2 in 10 (was
+ * 1 in 6), an intrusion 2 in 10 (was 1 in 6). Playtest found the evenings too
+ * still to pull anyone forward. A pacing guess like the rest; tune it here.
  */
 export const STREET: OracleTable = {
   id: "street",
   label: "The street tonight",
-  die: 6,
+  die: 10,
   visibility: "open",
   entries: [
     {
       from: 1,
-      to: 4,
+      to: 6,
       key: "quiet",
       text: "Nothing happens. The city goes about its business without involving them.",
     },
     {
-      from: 5,
-      to: 5,
+      from: 7,
+      to: 8,
       key: "texture",
       text: "Something small and harmless is going on nearby. Colour, not a hook: it wants nothing from the character.",
     },
     {
-      from: 6,
-      to: 6,
+      from: 9,
+      to: 10,
       key: "intrudes",
       text: "Something on the street actually intrudes on the character's evening and asks something of them.",
     },

@@ -575,8 +575,10 @@ render today, deliberately: they are deterministic, so any movement at all is a
 real change to what gets sent on every turn.
 
 **A prompt change is verified by `bun run eval`, not by `bun run test`.** The
-eval calls a real model, so it needs `LOVABLE_API_KEY` and it bills the
-gateway; `evals/README.md` explains what it checks and how to read a report.
+eval calls a real model, so it needs a key and it costs money.
+`LOVABLE_API_KEY` cannot be exported from Lovable Cloud, so outside Lovable it
+runs on `OPENROUTER_API_KEY` or `GEMINI_API_KEY` against the same model;
+`evals/README.md` explains what it checks and how to read a report.
 It is deliberately not a CI gate — same reasoning as `supabase/replay/`, plus
 it would spend money on every push — and it is kept out structurally rather
 than by a runtime guard: `vitest.config.ts` includes `src/**` only, and the

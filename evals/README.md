@@ -15,19 +15,32 @@ stating a fact the character has not found.
 
 ## Running it
 
+The eval needs a key for a model it can call. Play uses the Lovable gateway,
+but `LOVABLE_API_KEY` cannot be exported from Lovable Cloud, so outside Lovable
+the eval calls the same model through a key you own. `runTurn.ts` takes the
+first of these it finds:
+
+| Variable                         | Where it goes                            | Notes                                                                           |
+| -------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`             | openrouter.ai                            | Same model slugs as the gateway (`google/gemini-3.7-flash`), so closest to play |
+| `GEMINI_API_KEY`                 | Google AI Studio's OpenAI-compatible API | Free tier; the `google/` prefix is dropped from the slug                        |
+| `EVAL_API_KEY` + `EVAL_BASE_URL` | any OpenAI-compatible endpoint           | For anything else                                                               |
+| `LOVABLE_API_KEY`                | the Lovable gateway                      | Only exists inside Lovable's own sandbox                                        |
+
 ```sh
-cp .env.example .env     # fill in LOVABLE_API_KEY
+cp .env.example .env     # fill in one of the keys above
 bun run eval             # every scenario, once each
 bun run eval -- --repeat 3
 bun run eval -- -t job-risky-intent
 ```
 
 Bun loads `.env` itself; there is no dotenv step. `GM_MODEL` and `LIFE_MODEL`
-pick the models, same as in play.
+pick the models, same as in play — set them if your provider names the model
+differently from the gateway. A cloud environment also needs the provider's
+host on its allowed list.
 
-It prints the call count it is about to make before it makes it, so a
-`--repeat 40` typo is visible rather than expensive. One scenario is one turn:
-roughly 8–10k tokens in, 1k out.
+The one difference from play is who serves the call. A result that only shows
+up through one provider is worth re-running through another before trusting.
 
 ## Reading a failure
 

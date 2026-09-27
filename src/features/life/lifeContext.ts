@@ -5,6 +5,7 @@
  * matter, and what the character can actually do. Nothing else.
  */
 import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
+import { carryOnLine } from "@/features/narration/narratorRules";
 import {
   formatLifeClock,
   formatDuration,
@@ -89,6 +90,12 @@ export type LifeContext = {
   };
   /** The situation the application chose for this turn. */
   situation: LifeSituation | null;
+  /**
+   * True when that situation is the scene they are already in, rather than
+   * something arriving this turn. It is then background: true, still theirs,
+   * and not a topic to steer the player back onto.
+   */
+  inScene?: boolean;
   /** Everything else still live, so the model can keep continuity. */
   otherSituations: LifeSituation[];
   clocks: LifeClock[];
@@ -200,7 +207,16 @@ export type LifeContext = {
      * address book. Presence only: they are here, they want nothing, and
      * whether that becomes anything is the player's move.
      */
-    whoIsHere?: { name: string; key: string } | undefined;
+    whoIsHere?:
+      | {
+          name: string;
+          key: string;
+          /** The engine rolled that they come over to the character, this turn. */
+          comingOver?: boolean;
+          /** They already came over earlier today. */
+          cameOver?: boolean;
+        }
+      | undefined;
     nearby: string[];
     /**
      * Good destinations to have in mind: what is underfoot, the named geography
@@ -369,13 +385,29 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     }
 
     if (p.whoIsHere) {
-      parts.push(
-        line("Somebody you know is here", `${p.whoIsHere.name} [${p.whoIsHere.key}]`),
-        "They are simply here. They did not come to find the character and they want nothing " +
-          "from them: write them into the scene as somebody who was already in it. Do not give " +
-          "them an errand, a warning or a favour to ask — if they had one, you would have been " +
-          "told.",
-      );
+      const w = p.whoIsHere;
+      parts.push(line("Somebody you know is here", `${w.name} [${w.key}]`));
+      if (w.comingOver) {
+        parts.push(
+          "They have seen the character and they are COMING OVER. The engine decided that before " +
+            "this turn: write them crossing to the character and opening their mouth. You are not " +
+            "told why. They may want something, or company, or to settle something; do not state " +
+            "a motive, and do not finish the conversation for the player. End on them there, " +
+            "waiting on an answer.",
+        );
+      } else if (w.cameOver) {
+        parts.push(
+          "They already came over earlier this evening. They are still around unless the RECENT " +
+            "lines say otherwise; do not have them make the same entrance twice.",
+        );
+      } else {
+        parts.push(
+          "They are simply here. They did not come to find the character and they want nothing " +
+            "from them: write them into the scene as somebody who was already in it. Do not give " +
+            "them an errand, a warning or a favour to ask — if they had one, you would have been " +
+            "told.",
+        );
+      }
     }
     if (p.business?.length) {
       parts.push(line("Ordinary business here", p.business.join(", ")));
@@ -419,14 +451,9 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       );
     }
     parts.push(
-      "Narrate this location by name and use only these canonical places. " +
-        "Do not move the character to another district yourself; travel is the player's call and the engine's clock. " +
-        'When the player says they are going somewhere, propose {"kind":"travel","destination":"<exact name from the list above>"}. ' +
-        "That list is what is worth suggesting, not the limit of where they can go: the engine " +
-        "knows every district, venue, bridge, bay and canal in Night City. If the player names " +
-        'somewhere that is not on it, put THEIR words in "destination" and let the engine ' +
-        "resolve or refuse them. Never swap a place they named for a heading, and never invent a " +
-        "street, bar or building that is not in the atlas.",
+      "Narrate this location by name and use only these canonical places. Do not move the " +
+        "character yourself: going somewhere is a travel proposal (see the travel shape), and " +
+        "never invent a street, bar or building that is not in the atlas.",
     );
   }
 
@@ -476,7 +503,12 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     for (const line of affordance) parts.push(line);
   }
 
-  parts.push("", "== CURRENT SITUATION (dress this one; do not replace it) ==");
+  parts.push(
+    "",
+    context.inScene
+      ? "== ON THEIR MIND (background; what the player does comes first) =="
+      : "== CURRENT SITUATION (what arrives now; dress this one, do not replace it) ==",
+  );
   if (context.situation) {
     const s = context.situation;
     parts.push(
@@ -496,10 +528,18 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
           : `This is happening at ${where.name}, elsewhere in this district. The character is not there: they have heard about it, or can see it from where they are. Getting to it is their decision, not yours.`,
       );
     }
+    parts.push(
+      context.inScene
+        ? "They are in the middle of a scene. Answer what they just did, in the place they are " +
+            "doing it. This is still true and still theirs, but do not steer them back to it: let " +
+            "it surface only where what they do touches it."
+        : "If the player has just done something, answer that first, then let this land in the " +
+            "moment it leaves them in. If they have not, open on it.",
+    );
   } else {
     parts.push(
-      "Nothing is pressing. Give them a quiet, specific moment in their own life and three " +
-        "concrete things they could do with the evening.",
+      "Nothing is pressing. Give them a specific moment in their own life with something live " +
+        "in it: a person, a sound, a thing that is happening and has not finished.",
     );
   }
 
@@ -658,16 +698,10 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       parts.push(
         "",
         "== WHAT THE PLAYER SAID ==",
-        `"${context.said}"`,
-        "The engine has done the part above. Now carry out the REST of what they said, in this " +
-          "same turn, so they never have to say it twice. Keep going until the first moment " +
-          "that genuinely needs them: something risky (propose the check and stop), a price the " +
-          "engine has not given you, somebody speaking to them, or something they could not have " +
-          "expected. A price the engine HAS given you is paid with a spend at exactly that price.",
-        "Do only what they said: nothing they did not ask for, and no second trip anywhere. If " +
-          "the result above stops them, the rest does not happen. If nothing is left to do, end " +
-          "on what is live in front of them. timeSpent counts only what happens after the part " +
-          "above.",
+        carryOnLine(context.said),
+        "A price the engine HAS given you is paid with a spend at exactly that price. No second " +
+          "trip anywhere. If nothing is left to do, end on what is live in front of them. " +
+          "timeSpent counts only what happens after the part above.",
       );
     }
   }

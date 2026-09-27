@@ -148,6 +148,7 @@ import {
   type OracleAnswer,
 } from "@/features/campaign/oracles";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
+import { saidBefore } from "@/features/narration/narratorRules";
 import { travelTo } from "@/features/atlas/travel";
 import {
   applyPlaceObservations,
@@ -168,6 +169,7 @@ import {
   searchWith,
   truthsAt,
   whoIsAt,
+  comesOver,
   type PlaceState,
   getDistrict,
   getPlace,
@@ -200,7 +202,6 @@ import {
   nearestByKindLines,
   placesToOffer,
   recentLifeLines,
-  saidBefore,
   situationFromRow,
   situationToUpsert,
   hauntPeople,
@@ -226,6 +227,13 @@ export type LifeBundle = {
   standings: FactionStanding[];
   /** The one situation this turn is about. */
   current: LifeSituation | null;
+  /**
+   * True when `current` is the scene the player is already in — same place,
+   * same day, same situation as the last turn — rather than something arriving.
+   * The narrator treats the two differently: one is background, the other
+   * walks in.
+   */
+  inScene: boolean;
   /** The offer on the table, when the campaign is in the hook phase. */
   hook: LifeHook | null;
   /**
@@ -311,6 +319,14 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     .reverse()
     .map((e) => (e.data as { situationKey?: unknown } | null)?.situationKey)
     .find((k): k is string => typeof k === "string");
+  // Still where the last turn left them, on the same day: a scene in progress,
+  // which keeps its situation rather than rotating to the next loudest thing.
+  const scene = lastSceneOf(events);
+  const inScene =
+    scene !== null &&
+    scene.at === (full.campaign.location_key ?? DEFAULT_START) &&
+    scene.day === clock.day;
+  const current = selectSituation(merged, clock.day, lastShownKey, { inScene });
 
   // There is always a job somewhere in Night City. Its seed is drawn once and
   // stored, so the same work is still on the wire after a reload, and so the
@@ -343,7 +359,8 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     situations: merged,
     pressure: pressureFrom(clockRows),
     standings: notableFrom(factionRows),
-    current: selectSituation(merged, clock.day, lastShownKey),
+    current,
+    inScene: inScene && current?.key === lastShownKey,
     hook,
     wire: hook ? null : wire,
     wireMissionId: hook ? null : wireMissionId,
@@ -462,6 +479,28 @@ const CROWD_WORDS: Record<string, string> = {
   steady: "people about, going somewhere",
   busy: "crowded, at most hours",
 };
+
+/** Whether this person has already come over to the character today. */
+function approachedToday(events: readonly CampaignEvent[], npcKey: string, day: number): boolean {
+  return events.some((e) => {
+    if (e.type !== "cast_approached") return false;
+    const data = e.data as { npcKey?: unknown; day?: unknown } | null;
+    return data?.npcKey === npcKey && data.day === day;
+  });
+}
+
+/** Where and on which day the last Life narration was written, if it says. */
+function lastSceneOf(events: readonly CampaignEvent[]): { at: string; day: number } | null {
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const e = events[i]!;
+    if (e.type !== "life_narration") continue;
+    const data = e.data as { at?: unknown; day?: unknown } | null;
+    return typeof data?.at === "string" && typeof data.day === "number"
+      ? { at: data.at, day: data.day }
+      : null;
+  }
+  return null;
+}
 
 /** The districts this campaign has actually set foot in. */
 function knownDistrictsOf(campaign: Campaign): Set<string> {
@@ -658,7 +697,31 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
                   minute: bundle.clock.minute,
                   seed: bundle.campaign.id,
                 });
-                return met ? { whoIsHere: { name: met.name, key: met.key } } : {};
+                if (!met) return {};
+                // Whether they come over is the engine's roll, once an evening:
+                // after they have, the next turn is told they already did.
+                const cameOver = approachedToday(bundle.events, met.key, bundle.clock.day);
+                const npc = bundle.npcs.find((n) => (n.npc_id ?? n.name) === met.key);
+                const comingOver =
+                  !cameOver &&
+                  !turn.options &&
+                  !turn.fixedResult &&
+                  comesOver({
+                    person: met,
+                    disposition: npc?.disposition ?? 0,
+                    placeKey: position.placeKey,
+                    day: bundle.clock.day,
+                    minute: bundle.clock.minute,
+                    seed: bundle.campaign.id,
+                  });
+                return {
+                  whoIsHere: {
+                    name: met.name,
+                    key: met.key,
+                    ...(comingOver ? { comingOver: true } : {}),
+                    ...(cameOver ? { cameOver: true } : {}),
+                  },
+                };
               })()
             : {}),
           // What the ground supports, as the character would find it: a local
@@ -722,6 +785,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
       })),
     },
     situation: bundle.current,
+    inScene: bundle.inScene,
     otherSituations: bundle.situations.filter(
       (s) => s.status === "live" && s.key !== bundle.current?.key,
     ),
@@ -809,6 +873,10 @@ async function applyResponse(
     summary: response.resolution ?? response.situation.description,
     data: {
       situationKey: bundle.current?.key ?? null,
+      // Where and when this was written, which is what makes the next turn a
+      // continuation of this scene rather than the opening of a new one.
+      at: bundle.campaign.location_key ?? DEFAULT_START,
+      day: bundle.clock.day,
       title: response.situation.title,
       actions: turn.cards ?? (turn.fixedResult ? [] : response.actions),
       // Resolved HERE, once, with the campaign+place seed the response schema
@@ -1343,6 +1411,18 @@ export async function liveTurn(
     : answered;
   const outcome = await applyResponse(bundle, response, asked);
 
+  // Somebody came over, because the engine said so before the turn ran. It is
+  // written down so it happens once an evening, not once a turn.
+  const over = context.place?.whoIsHere;
+  if (over?.comingOver) {
+    await appendCampaignEvent({
+      campaign_id: bundle.campaign.id,
+      type: "cast_approached",
+      summary: `${over.name} came over to them.`,
+      data: { npcKey: over.key, day: bundle.clock.day } as unknown as Json,
+    });
+  }
+
   // The model wrote its prose before the engine had decided anything, so a trip
   // it described is its own guess at where the player ended up. Now that the
   // move is committed, tell it what actually happened and let it write the
@@ -1358,7 +1438,7 @@ export async function liveTurn(
       // Reloaded, not patched: the trip moved the clock and may have cost
       // money, and this turn writes both from what the bundle says.
       const fresh = await loadLife(bundle.campaign.id);
-      await liveTurn({ ...fresh, current: bundle.current }, "", {
+      await liveTurn({ ...fresh, current: bundle.current, inScene: true }, "", {
         resolved: correction,
         said: asked.said,
         continuation: true,
