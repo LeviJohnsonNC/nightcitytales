@@ -57,6 +57,8 @@ export type ChargenState = {
    * `rows` is the per-STAT row for Edgerunner. Empty for Complete Package.
    */
   statRolls: { row: number | null; rows: Partial<Record<StatKey, number>> };
+  /** Rerolls spent on rolled STATs (house rule: `statRollCost`). Kept across a method change. */
+  statRerollsUsed: number;
   /** Sheet skill lines. Specialized skills may appear more than once. */
   skills: SkillEntry[];
   lifepath: { general: Record<string, unknown>; roleSpecific: Record<string, unknown> };
@@ -109,6 +111,7 @@ const initialState: ChargenState = {
   portraitStage: 0,
   stats: {},
   statRolls: { row: null, rows: {} },
+  statRerollsUsed: 0,
   skills: [],
   lifepath: { general: {}, roleSpecific: {} },
   loadout: EMPTY_LOADOUT,

@@ -9,5 +9,9 @@
  * The list is the point. The client names a job; the server decides what that
  * job tells the model.
  */
-export const BACKGROUND_JOBS = ["lifepath_background", "self_description"] as const;
+export const BACKGROUND_JOBS = [
+  "lifepath_background",
+  "self_description",
+  "handle_suggestions",
+] as const;
 export type BackgroundJob = (typeof BACKGROUND_JOBS)[number];

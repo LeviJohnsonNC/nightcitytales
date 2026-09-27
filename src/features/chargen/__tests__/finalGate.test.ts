@@ -51,6 +51,7 @@ function draft(over: Partial<ChargenState> = {}): ChargenState {
     background: "",
     castPlan: null,
     portraitStage: 0,
+    statRerollsUsed: 0,
     ...over,
   };
 }

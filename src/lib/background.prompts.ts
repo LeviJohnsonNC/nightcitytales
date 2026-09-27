@@ -41,9 +41,19 @@ const SELF_DESCRIPTION = [
   "Return only the sentence: no quotation marks, no preamble, no label, no list.",
 ].join(" ");
 
+const HANDLE_SUGGESTIONS = [
+  "You are a fixer in Night City naming a new edgerunner for the street.",
+  "Suggest FIVE street handles for the character described in the user message.",
+  "A handle is what the street calls somebody: one or two words, easy to shout across a bar, earned by what they do, how they look, or something that happened to them.",
+  "Draw on the concrete facts given: Role, how they work, their best STAT, their look, their past. Make the five different from each other in feel: one blunt, one ironic, one tied to their history, and so on.",
+  "Never use the name of a real person, brand, corporation, or existing fictional character, and never the character's legal name.",
+  "Return exactly five lines, one handle per line, with no numbering, bullets, quotation marks, explanations or other text.",
+].join(" ");
+
 const TASKS: Record<BackgroundJob, string> = {
   lifepath_background: LIFEPATH_BACKGROUND,
   self_description: SELF_DESCRIPTION,
+  handle_suggestions: HANDLE_SUGGESTIONS,
 };
 
 /** The system prompt for a job, in the house voice. */
