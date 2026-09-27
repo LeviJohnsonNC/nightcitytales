@@ -124,6 +124,10 @@ function worstCaseLifePacket(): string {
     recentEvents: Array.from({ length: 6 }, (_, i) => `Something that happened, ${i}`),
     chronicle: Array.from({ length: 16 }, (_, i) => `Campaign memory, line ${i}.`),
     capabilities: Array.from({ length: 60 }, (_, i) => `A weapon or a piece of kit, ${i}`),
+    // A follow-up that carries the player's words: the largest shape a Life
+    // turn takes, since the carry-through instruction rides on the result.
+    resolved: "The character has ARRIVED. They travelled from one place to another on foot.",
+    said: "Go find a bar, sit down at the counter and order a drink.",
   };
   return renderLifeUserPrompt(ctx, "I go out and find somewhere to eat.");
 }
@@ -135,13 +139,17 @@ describe("the packet has a ceiling", () => {
    * is close enough to reason about, so these are roughly 3,250 and 1,800
    * tokens of context on top of the system prompt.
    *
-   * Set deliberately tight — the fixtures render to 12,450 and 7,270 today, so
+   * Set deliberately tight — the fixtures render to 12,450 and 8,234 today, so
    * there is about four percent of slack. That is the point. The fixtures are
    * deterministic, so any movement at all is a real change to what the model is
    * sent, and a change worth making is worth noticing.
+   *
+   * Life moved from 7,600 on purpose: a follow-up turn now carries the player's
+   * own words and the instruction to finish them, about 960 characters, because
+   * without it "walk to the bar and sit down at the counter" stopped at the door.
    */
   const GM_CEILING = 13_000;
-  const LIFE_CEILING = 7_600;
+  const LIFE_CEILING = 8_600;
 
   it("holds for a Job turn with every list past its cap", () => {
     const packet = worstCaseGmPacket();

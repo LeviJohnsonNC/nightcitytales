@@ -2,13 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   ALL_CHECKS,
   closedObservationWords,
+  directionsAreReal,
   endsOnTheWorld,
+  finishesTheRequest,
+  goesWhereAsked,
   knownNpcKeysOnly,
   namesNoWayIn,
   noUnsourcedNumber,
   optionsOnlyWhenAsked,
   quietStaysQuiet,
   riskGetsDice,
+  staysPutOnRefusal,
   walkOnsFromCatalog,
   withheldStaysWithheld,
   withinProseBudget,
@@ -275,6 +279,84 @@ describe("prose budget", () => {
 
   it("says nothing when the scenario set no budget", () => {
     expect(withinProseBudget.run(turn({ narration: "word ".repeat(500) }), CTX)).toEqual([]);
+  });
+});
+
+describe("follow-through: a trip to a kind of place", () => {
+  const asked = ctx({ tripToKind: "bar" });
+
+  it("passes a trip that seeks the kind", () => {
+    expect(goesWhereAsked.run(turn({ trips: [{ seek: "bar" }] }), asked)).toEqual([]);
+  });
+
+  it("passes a trip to a real bar by name", () => {
+    expect(goesWhereAsked.run(turn({ trips: [{ destination: "Forlorn Hope" }] }), asked)).toEqual(
+      [],
+    );
+  });
+
+  it('catches the transcript: "a bar" refused, then nothing', () => {
+    expect(goesWhereAsked.run(turn({ trips: [] }), asked)).not.toEqual([]);
+  });
+
+  it("catches a trip to somewhere that is not a bar", () => {
+    const clinic = turn({ trips: [{ destination: "Crisis Medical Center" }] });
+    expect(goesWhereAsked.run(clinic, asked)).not.toEqual([]);
+  });
+});
+
+describe("follow-through: the rest of the request", () => {
+  const rest = ctx({ carryThrough: ["counter", "drink", "pour"] });
+
+  it("passes when the prose got to the counter", () => {
+    const prose =
+      "You take the stool at the end of the counter and the bartender slides a glass over.";
+    expect(finishesTheRequest.run(turn({ narration: prose }), rest)).toEqual([]);
+  });
+
+  it("passes on a spend, however it is worded", () => {
+    expect(finishesTheRequest.run(turn({ spends: 1 }), rest)).toEqual([]);
+  });
+
+  it("catches an arrival that stops at the door", () => {
+    const prose = "Forlorn Hope sits under a dead sign, the door propped with a crate.";
+    expect(finishesTheRequest.run(turn({ narration: prose }), rest)).not.toEqual([]);
+  });
+});
+
+describe("follow-through: a refused trip stays put", () => {
+  const refused = ctx({ staysPut: true });
+
+  it("catches the transcript's retreat up the stairs", () => {
+    const prose =
+      "Wandering the alleys without a heading is just a good way to burn shoe leather, so " +
+      "you haul yourself back up the rusted steel stairs to your own lock.";
+    expect(staysPutOnRefusal.run(turn({ narration: prose }), refused)).not.toEqual([]);
+  });
+
+  it("catches ending up right where you started", () => {
+    const prose = "It leaves you right where you started on your own walkway.";
+    expect(staysPutOnRefusal.run(turn({ narration: prose }), refused)).not.toEqual([]);
+  });
+
+  it("allows standing still and thinking", () => {
+    const prose =
+      "You stop on the landing, rain ticking on the rail, and weigh which way the night goes.";
+    expect(staysPutOnRefusal.run(turn({ narration: prose }), refused)).toEqual([]);
+  });
+});
+
+describe("follow-through: directions lead somewhere real", () => {
+  const nearest = ctx({ realAnswers: ["Forlorn Hope", "Chrome Cross"] });
+
+  it("passes directions to a place the engine offered", () => {
+    const prose = "He jerks his chin north. 'Forlorn Hope. Beer's real, mostly.'";
+    expect(directionsAreReal.run(turn({ narration: prose }), nearest)).toEqual([]);
+  });
+
+  it("catches the cellar three alleys down", () => {
+    const prose = "He tells you which cellar hole three alleys down is serving real beer.";
+    expect(directionsAreReal.run(turn({ narration: prose }), nearest)).not.toEqual([]);
   });
 });
 

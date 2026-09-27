@@ -11,7 +11,16 @@
  * that each watch for something specific beat twenty that all watch a quiet
  * evening go by.
  */
-import { NIGHT_AT_THE_OPERA, getBeat } from "@/engine";
+import {
+  NIGHT_AT_THE_OPERA,
+  describePosition,
+  getBeat,
+  getDistrict,
+  nearestWithTag,
+  placeActions,
+  reachableDestinations,
+  resolvePosition,
+} from "@/engine";
 import {
   buildGmContext,
   renderGmUserPrompt,
@@ -20,6 +29,7 @@ import {
 import { GM_SYSTEM_PROMPT } from "@/features/gm/gmSystemPrompt";
 import { renderLifeUserPrompt, type LifeContext } from "@/features/life/lifeContext";
 import { LIFE_SYSTEM_PROMPT } from "@/features/life/lifeSystemPrompt";
+import { describeTravelOutcome, nearestByKindLines } from "@/features/life/lifeModel";
 import type { CheckContext } from "@/features/narration/narratorChecks";
 
 /** What the checks need beyond the packet, which the runner fills in. */
@@ -216,6 +226,151 @@ SCENARIOS.push(
       mustStayQuiet: false,
       riskyIntent: false,
       wordBudget: 160,
+    },
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Follow-through
+//
+// One transcript, played as four turns. The character lives in The Precipice,
+// a container stack in Old Japantown, a district with no bar in the atlas.
+// "Go find a bar and order a drink" was refused as "not a place on the map";
+// the neighbour's directions named a cellar the map had never heard of; "go
+// there" was refused too; and each refusal walked the character back up the
+// stairs. None of the checks before these could see any of it, because every
+// one of them was watching for the narrator doing too much.
+// ---------------------------------------------------------------------------
+
+const HOME = "h5";
+
+/**
+ * Where the character is standing, the way buildContext puts it: the same
+ * engine calls, so the model sees the place play would show it.
+ */
+function placeAt(at: string): NonNullable<LifeContext["place"]> {
+  const position = resolvePosition(at)!;
+  const district = getDistrict(position.districtKey)!;
+  return {
+    where: describePosition(at),
+    district: district.name,
+    area: "Night City",
+    security: district.security,
+    gangs: district.gangs,
+    combatZone: false,
+    business: placeActions({ districtKey: district.key, placeKey: position.placeKey, places: {} })
+      .filter((a) => !a.skillId)
+      .map((a) => `${a.label} (${a.placeName}${a.cost !== null ? `, ${a.cost}eb` : ""})`),
+    nearby: district.locations.slice(0, 8).map((l) => l.name),
+    destinations: reachableDestinations(at).map((d) => d.name),
+    nearestByKind: nearestByKindLines(at, []),
+  };
+}
+
+const NEAREST_BARS = nearestWithTag(HOME, "bar", { limit: 3 });
+const BAR = NEAREST_BARS[0]!;
+
+const atHome: LifeContext = {
+  ...quietEvening,
+  place: placeAt(HOME),
+  recentEvents: [
+    "Six o'clock hits the corrugated iron like a dull chime. The neighbour's pirate rig hums through the floor.",
+  ],
+};
+
+const REQUEST = "Go find a bar and order a drink";
+
+/** The engine's own words for a settled trip, which always has some. */
+function settled(outcome: Parameters<typeof describeTravelOutcome>[0]): string {
+  const text = describeTravelOutcome(outcome);
+  if (!text) throw new Error("a settled trip always has something to say");
+  return text;
+}
+
+SCENARIOS.push(
+  {
+    id: "life-find-a-bar",
+    narrator: "life",
+    about: '"find a bar" goes to a real bar instead of being refused',
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(atHome, REQUEST),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      tripToKind: "bar",
+    },
+  },
+  {
+    id: "life-arrival-finishes",
+    narrator: "life",
+    about: "arriving at the bar still orders the drink",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...quietEvening,
+        place: placeAt(BAR.key),
+        resolved: settled({
+          travelled: {
+            from: describePosition(HOME),
+            to: describePosition(BAR.key),
+            minutes: BAR.minutes,
+            mode: "on foot",
+          },
+        }),
+        said: REQUEST,
+      },
+      "(open the moment)",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      carryThrough: ["glass", "pour", "drink", "counter", "stool", "bottle", "beer"],
+      wordBudget: 180,
+    },
+  },
+  {
+    id: "life-asks-directions",
+    narrator: "life",
+    about: "a neighbour's directions name a bar the map can take you to",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(atHome, "Ask someone where a good bar is"),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      realAnswers: NEAREST_BARS.map((b) => b.name),
+    },
+  },
+  {
+    id: "life-refused-trip-stays-put",
+    narrator: "life",
+    about: "a trip the engine could not place leaves the character where they were",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...atHome,
+        resolved: settled({
+          travelRefused: "Nowhere was named and no heading was given.",
+        }),
+      },
+      "(open the moment)",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      staysPut: true,
+      wordBudget: 80,
     },
   },
 );

@@ -16,7 +16,19 @@ import {
   type LifeSituation,
   type LifeStateInput,
 } from "@/engine";
-import { isGuarded, publicView } from "@/engine";
+import {
+  getDistrict,
+  isGuarded,
+  nearestWithTag,
+  publicView,
+  resolveDestination,
+  tagNamed,
+  tagsMentioned,
+  type NearbyPlace,
+  type PlaceTag,
+} from "@/engine";
+import { PACKET_BUDGET } from "@/features/narration/packetBudget";
+import type { LifeActionCard } from "./lifeResponse";
 import { downtimeView } from "@/features/downtime/downtimeModel";
 import { castMemberFrom, guardednessOf, knownFactsOf } from "@/features/campaign/castSeeding";
 import type { HauntPerson, PlaceState } from "@/engine";
@@ -215,8 +227,22 @@ export function derivedSituations(input: LifeBundleInput): LifeSituation[] {
   ];
 }
 
-/** The last few things that happened, for continuity in the prompt. */
-export function recentLifeLines(events: CampaignEvent[], limit = 6): string[] {
+/**
+ * The last few things that happened, for continuity in the prompt — including
+ * what the player said.
+ *
+ * The player's own lines used to be left out, so the narrator saw six turns of
+ * its own prose and never the words it was answering. "Go there" had nothing to
+ * point at except whatever the narrator had last chosen to write, and a request
+ * that was only half done could not be seen to be half done. `limit` bounds the
+ * world's lines; the player's are interleaved where they fell, and bounded
+ * separately so a burst of typing cannot push the fiction out of the window.
+ */
+export function recentLifeLines(
+  events: CampaignEvent[],
+  limit = 6,
+  playerLimit: number = PACKET_BUDGET.playerLines,
+): string[] {
   const interesting = new Set([
     "life_narration",
     "life_action",
@@ -230,10 +256,193 @@ export function recentLifeLines(events: CampaignEvent[], limit = 6): string[] {
     "hook_offered",
     "hook_declined",
   ]);
-  return events
-    .filter((e) => interesting.has(e.type) && e.summary)
-    .slice(-limit)
-    .map((e) => e.summary as string);
+  const out: string[] = [];
+  let world = 0;
+  let player = 0;
+  for (let i = events.length - 1; i >= 0 && world < limit; i -= 1) {
+    const e = events[i]!;
+    if (!e.summary) continue;
+    if (e.type === "player_input") {
+      if (player >= playerLimit) continue;
+      player += 1;
+      out.push(`The player said: "${e.summary}"`);
+    } else if (interesting.has(e.type)) {
+      world += 1;
+      out.push(e.summary);
+    }
+  }
+  return out.reverse();
+}
+
+/**
+ * Which real place answers a trip to a KIND of place.
+ *
+ * Asked for directly (`seek`), named as a kind in the destination ("a bar",
+ * "the cellar bar down the alley"), or — only when what the narrator proposed
+ * resolves to nothing at all — read
+ * out of the player's own words, and only when those name exactly one kind.
+ * Guessing between two would be choosing for them.
+ */
+export function kindOfTrip(
+  action: {
+    seek?: string | undefined;
+    destination?: string | undefined;
+    direction?: string | undefined;
+  },
+  said: string | undefined,
+): PlaceTag | undefined {
+  if (action.seek) return action.seek;
+  if (action.destination && resolveDestination(action.destination)) return undefined;
+  const named = tagNamed(action.destination);
+  if (named) return named;
+  // A place the narrator described but the map has never heard of — "the
+  // cellar bar three alleys down" — is still, recognisably, a bar.
+  const described = tagsMentioned(action.destination);
+  if (described.length === 1) return described[0];
+  if (action.direction && !action.destination) return undefined;
+  const mentioned = tagsMentioned(said);
+  return mentioned.length === 1 ? mentioned[0] : undefined;
+}
+
+/**
+ * What the player typed that led to a check, so the result can be followed by
+ * the rest of it.
+ *
+ * The check's own `intent` is the narrator's paraphrase of one part of what
+ * they said; "slip past the bouncer and get a drink at the bar" reached the
+ * result as "slip past the bouncer", and the drink was gone. The last thing
+ * they typed before the check was posted is what they actually asked for.
+ */
+export function saidBefore(
+  events: readonly CampaignEvent[],
+  checkEventId: string | undefined,
+): { said?: string } {
+  const at = checkEventId ? events.findIndex((e) => e.id === checkEventId) : -1;
+  const end = at >= 0 ? at : events.length;
+  for (let i = end - 1; i >= 0; i -= 1) {
+    const e = events[i]!;
+    if (e.type === "player_input" && e.summary?.trim()) return { said: e.summary.trim() };
+  }
+  return {};
+}
+
+/**
+ * The everyday kinds of place the narrator is told the nearest of.
+ *
+ * What people go out for on an ordinary evening. A fence or a ripperdoc is not
+ * on it: where those are is something a character has to know, and the
+ * standing cast already carries a ripperdoc.
+ */
+const EVERYDAY_KINDS: PlaceTag[] = ["bar", "food", "club", "shop", "market", "clinic", "hotel"];
+
+/**
+ * Somewhere real to go, for a trip the engine could not place.
+ *
+ * Asked for a kind, the nearest few of that kind. Asked for nothing it could
+ * read — "go there", when "there" was never on the map — the nearest place of
+ * each everyday kind, one per place, so the player has something to press
+ * rather than a refusal. `limit` places at most.
+ */
+export function placesToOffer(
+  from: string,
+  kind: PlaceTag | undefined,
+  known: readonly string[],
+  limit = 3,
+): { place: NearbyPlace; kind: PlaceTag }[] {
+  if (kind) return nearestWithTag(from, kind, { known, limit }).map((place) => ({ place, kind }));
+  const here = resolvePosition(from)?.placeKey;
+  const out: { place: NearbyPlace; kind: PlaceTag }[] = [];
+  for (const each of EVERYDAY_KINDS) {
+    if (out.length >= limit) break;
+    const [place] = nearestWithTag(from, each, { known, limit: 1 });
+    if (!place || place.key === here || out.some((o) => o.place.key === place.key)) continue;
+    out.push({ place, kind: each });
+  }
+  return out;
+}
+
+/** "bar: Forlorn Hope, Little China — 14 min on foot" for each everyday kind. */
+export function nearestByKindLines(from: string, known: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const kind of EVERYDAY_KINDS) {
+    const [nearest] = nearestWithTag(from, kind, { known, limit: 1 });
+    if (!nearest) continue;
+    const district = getDistrict(nearest.districtKey)?.name ?? nearest.districtKey;
+    const here = resolvePosition(from)?.placeKey === nearest.key;
+    out.push(
+      here
+        ? `${kind}: ${nearest.name} — where they are standing`
+        : `${kind}: ${nearest.name}, ${district} — ${nearest.minutes} min on foot`,
+    );
+  }
+  return out;
+}
+
+/**
+ * What the engine actually did with a turn, as opposed to what the model wrote.
+ * The two can differ — the model proposes a move and the engine picks the
+ * destination — and where they do, the fiction has to be told.
+ */
+export type TurnOutcome = {
+  /** Where the engine can offer to take them instead, when a trip was refused. */
+  travelChoices?: LifeActionCard[];
+  travelled?: {
+    from: string;
+    to: string;
+    minutes: number;
+    direction?: string;
+    stoppedAt?: "water" | "edge" | "arrived";
+    mode: string;
+    /** How far the trip covered, in city blocks, when it was a walk along a heading. */
+    blocks?: number;
+    /** Bridges the route crossed, by name, in order. */
+    bridges?: string[];
+  };
+  travelRefused?: string;
+};
+
+/** What to tell the narrator about a move the engine has already committed. */
+export function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
+  if (outcome.travelRefused) {
+    return (
+      `The trip could not be worked out: ${outcome.travelRefused} The character is exactly ` +
+      "where they were, and nothing went wrong for them. Say in a sentence where they are " +
+      "standing, still thinking about where to go. Do NOT walk them back anywhere, do not have " +
+      "them give up, and do not describe them arriving anywhere." +
+      (outcome.travelChoices?.length
+        ? " The interface is offering them the nearest real places to go; do not list them."
+        : "")
+    );
+  }
+  const trip = outcome.travelled;
+  if (!trip) return undefined;
+  const far = trip.blocks ? `${trip.blocks} block${trip.blocks === 1 ? "" : "s"}` : undefined;
+  if (trip.stoppedAt === "water" || trip.stoppedAt === "edge") {
+    const edge =
+      trip.stoppedAt === "water"
+        ? "the waterfront, with nothing but water beyond it"
+        : "the edge of the city, where the streets give out";
+    return (
+      `The character went ${trip.direction ? `${trip.direction} ` : ""}${trip.mode} as far as ` +
+      `that way goes${far ? ` — ${far}` : ""} and came up against ${edge}. It took ` +
+      `${trip.minutes} minutes and they are now at ${trip.to}, which is a different spot from ` +
+      "where they set off even if it is the same district. Narrate reaching that edge in two or " +
+      "three sentences: what is in front of them, what is behind. Do not send them onwards."
+    );
+  }
+  const crossing = trip.bridges?.length
+    ? ` The way there crossed ${trip.bridges.join(", then ")}, so that is on the route and ` +
+      "worth a line."
+    : "";
+  return (
+    `The character has ARRIVED. They travelled ${trip.direction ? `${trip.direction} ` : ""}` +
+    `${far ? `${far} ` : ""}from ${trip.from} to ${trip.to} ${trip.mode}, and it took ` +
+    `${trip.minutes} minutes.` +
+    `${crossing} That destination, that heading and how they got there are facts — the engine ` +
+    "chose them, not you. Narrate the arrival in two or three sentences: where they are standing " +
+    "now, what is in front of them. Do not name a different place, do not contradict the " +
+    "heading, and do not send them anywhere else."
+  );
 }
 
 /** The phase the campaign is in right now, defaulting to Life. */

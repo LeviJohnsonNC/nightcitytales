@@ -18,7 +18,7 @@
  * or to a rule one of the prompts states in so many words. A check that traces
  * to neither is a taste argument, and this file is not where those are settled.
  */
-import { OBSERVATIONS } from "@/engine";
+import { OBSERVATIONS, hasTag, resolveDestination, resolvePosition, tagNamed } from "@/engine";
 import { FLAVOR_SUBJECTS } from "@/features/cast/flavorArt";
 
 /**
@@ -69,6 +69,13 @@ export type CheckableTurn = {
   walkOns: string[];
   /** How many mechanical actions it proposed. */
   proposedActionCount: number;
+  /**
+   * The trips it proposed, as the narrator wrote them. Life only; a Job turn
+   * cannot travel, and leaves this out.
+   */
+  trips?: { destination?: string; seek?: string; direction?: string }[];
+  /** How many spends it proposed. Paying for the drink is ordering it. */
+  spends?: number;
 };
 
 /** What the model was given, and what the scenario says about this turn. */
@@ -91,6 +98,23 @@ export type CheckContext = {
   wordBudget?: number;
   /** True when the player's stated intent could plausibly have failed. */
   riskyIntent: boolean;
+  /**
+   * The player asked to go to a KIND of place ("find a bar"), and a trip that
+   * reaches one is the only acceptable answer.
+   */
+  tripToKind?: string;
+  /**
+   * What the rest of the player's request looks like once it has been done:
+   * words the prose would use for it. Any one of them, or a spend, counts.
+   */
+  carryThrough?: string[];
+  /** A trip could not be worked out; the character must stay where they are. */
+  staysPut?: boolean;
+  /**
+   * The real places the engine offered as the nearest of the kind being asked
+   * about. Directions given in the fiction must name one of them.
+   */
+  realAnswers?: string[];
 };
 
 export type Check = {
@@ -389,6 +413,119 @@ export const quietStaysQuiet: Check = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// FOLLOW-THROUGH — the GM doing too little
+//
+// Every check above catches the narrator doing too much. Nothing caught it
+// doing too little, so every revision could only ever add a brake, and the
+// game that resulted stopped at the door of every bar it was asked to sit in.
+// ---------------------------------------------------------------------------
+
+/**
+ * Asked for a kind of place, it proposed a trip that gets there.
+ *
+ * Read from what the engine would do with the proposal, not from the prose:
+ * the turn passes if its trip names the kind (`seek`), names it in words, or
+ * names a real place that carries the tag.
+ */
+export const goesWhereAsked: Check = {
+  id: "goes-where-asked",
+  title: "proposed a trip that reaches the kind of place asked for",
+  source:
+    'PRODUCT.md: "A request the engine could have resolved was refused, or answered with nothing to press."',
+  run(turn, ctx) {
+    const kind = ctx.tripToKind;
+    if (!kind) return [];
+    const reaches = (turn.trips ?? []).some((trip) => {
+      if (trip.seek === kind || tagNamed(trip.destination) === kind) return true;
+      const key = resolveDestination(trip.destination);
+      const place = key ? resolvePosition(key)?.placeKey : undefined;
+      return place ? hasTag(place, kind) : false;
+    });
+    if (reaches) return [];
+    const proposed = (turn.trips ?? []).map((t) => JSON.stringify(t)).join(" ") || "no trip";
+    return [{ quote: proposed, note: `the player asked for a ${kind}` }];
+  },
+};
+
+/**
+ * With the first half resolved, it did the second half too.
+ *
+ * Scenario-driven: only the scenario knows what "sat down and ordered" looks
+ * like in prose. A spend counts on its own, because paying for the drink is
+ * ordering it however the sentence is worded.
+ */
+export const finishesTheRequest: Check = {
+  id: "finishes-the-request",
+  title: "carried out the rest of what the player said",
+  source: 'PRODUCT.md: "The player had to say the same thing twice."',
+  run(turn, ctx) {
+    const words = ctx.carryThrough;
+    if (!words?.length) return [];
+    if ((turn.spends ?? 0) > 0) return [];
+    const prose = turn.narration.toLowerCase();
+    if (words.some((w) => prose.includes(w.toLowerCase()))) return [];
+    return [{ quote: firstSentence(turn.narration), note: `never reached: ${words.join(" / ")}` }];
+  },
+};
+
+/** The retreats that turned "that is not on the map" into going home. */
+const RETREATS = [
+  /\b(?:head|headed|heading|go|went|going|walk|walked|haul|hauled|climb|climbed|trudge|trudged)\s+(?:yourself\s+)?back\b/gi,
+  /\bback (?:up|to) (?:the |your )?(?:stairs|container|walkway|place|room|flat|apartment)\b/gi,
+  /\bright where you started\b/gi,
+  /\bgive up\b/gi,
+];
+
+/**
+ * A trip that could not be worked out left the character standing still.
+ *
+ * The transcript this exists for: "a bar is not a place on the map" became the
+ * character hauling themselves back up the stairs to their own door, twice. A
+ * refusal is the engine not knowing where to go, not the character failing.
+ */
+export const staysPutOnRefusal: Check = {
+  id: "stays-put-on-refusal",
+  title: "left the character where they were when a trip was refused",
+  source:
+    'PRODUCT.md: "A turn left the character where they started after they asked to go somewhere."',
+  run(turn, ctx) {
+    if (!ctx.staysPut) return [];
+    const findings: Finding[] = [];
+    for (const re of RETREATS) {
+      for (const match of turn.narration.matchAll(re)) {
+        findings.push({
+          quote: quoteAround(turn.narration, match.index ?? 0, match[0].length),
+          note: "walked them back",
+        });
+      }
+    }
+    return findings;
+  },
+};
+
+/**
+ * Directions given in the fiction lead somewhere real.
+ *
+ * "A cellar hole three alleys down" was a good line and a dead end: the map had
+ * never heard of it, so "go there" was refused. Whoever gives directions names
+ * one of the places the engine said were nearest.
+ */
+export const directionsAreReal: Check = {
+  id: "directions-are-real",
+  title: "gave directions to a place the map knows",
+  source:
+    'PRODUCT.md: "A request the engine could have resolved was refused, or answered with nothing to press."',
+  run(turn, ctx) {
+    const answers = ctx.realAnswers;
+    if (!answers?.length) return [];
+    const prose = turn.narration.toLowerCase().replace(/[’']/g, "'");
+    const named = answers.some((a) => prose.includes(a.toLowerCase().replace(/[’']/g, "'")));
+    if (named) return [];
+    return [{ quote: firstSentence(turn.narration), note: `named none of: ${answers.join(", ")}` }];
+  },
+};
+
 /** Every check, in report order: severity first, taste never. */
 export const ALL_CHECKS: Check[] = [
   noUnsourcedNumber,
@@ -399,6 +536,10 @@ export const ALL_CHECKS: Check[] = [
   namesNoWayIn,
   optionsOnlyWhenAsked,
   riskGetsDice,
+  goesWhereAsked,
+  finishesTheRequest,
+  staysPutOnRefusal,
+  directionsAreReal,
   quietStaysQuiet,
   endsOnTheWorld,
   withinProseBudget,

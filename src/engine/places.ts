@@ -36,7 +36,14 @@
  */
 import gameplay from "@/data/atlas/places.gameplay.json";
 import { ARENA_KEYS, DEFAULT_ARENA_KEY } from "./battlefield";
-import { DISTRICTS, getDistrict, getPlace, isCombatZone, type District } from "./geography";
+import {
+  DISTRICTS,
+  getDistrict,
+  getPlace,
+  isCombatZone,
+  travelTrip,
+  type District,
+} from "./geography";
 
 // ---------------------------------------------------------------------------
 // The file.
@@ -222,6 +229,131 @@ export function placesWithTag(tag: PlaceTag, districtKeyOrCode?: string): PlaceP
 export function districtsWithTag(tag: PlaceTag): District[] {
   const keys = new Set(placesWithTag(tag).map((p) => p.districtKey));
   return DISTRICTS.filter((d) => keys.has(d.key));
+}
+
+// ---------------------------------------------------------------------------
+// Asking for a KIND of place.
+// ---------------------------------------------------------------------------
+
+/**
+ * Words people use for a kind of place that are not the tag's own name.
+ *
+ * Small on purpose. The narrator is asked to name the tag itself (`seek`), so
+ * this only has to catch the player's own words when it does not — "go find a
+ * bar and order a drink" was refused as "a bar is not a place on the map",
+ * which is true of every bar and the opposite of what was asked. Nothing here
+ * adds a place: it only says which tag a word is reaching for.
+ */
+const KIND_WORDS: Record<string, PlaceTag> = {
+  pub: "bar",
+  dive: "bar",
+  nightclub: "club",
+  noodles: "food",
+  diner: "restaurant",
+  doc: "clinic",
+  doctor: "clinic",
+  medic: "clinic",
+  ripper: "ripperdoc",
+  store: "shop",
+  motel: "hotel",
+  mechanic: "garage",
+};
+
+/**
+ * What "somewhere to ___" is reaching for. Verbs, so only ever read as the
+ * whole of a phrase: "order a drink" in the middle of a sentence is not a
+ * request to be taken to a bar.
+ */
+const SOMEWHERE_TO: Record<string, PlaceTag> = {
+  drink: "bar",
+  eat: "food",
+  sleep: "hotel",
+  shop: "shop",
+};
+
+/**
+ * The tag a phrase is asking for, when it names a kind rather than a place.
+ *
+ * "a bar", "somewhere to eat", "the nearest clinic". Returns undefined for a
+ * proper name, and for anything that does not reduce to one kind: guessing
+ * between two is choosing for the player.
+ */
+export function tagNamed(text: string | null | undefined): PlaceTag | undefined {
+  if (!text) return undefined;
+  const lower = text.toLowerCase().replace(/[^a-z\s_-]/g, " ");
+  const verb = lower.match(/\bsomewhere\s+to\s+([a-z]+)\s*$/)?.[1];
+  if (verb && SOMEWHERE_TO[verb]) return SOMEWHERE_TO[verb];
+  const phrase = lower
+    .replace(/\b(?:a|an|some|the|any|nearest|closest|nearby|local|good|decent|cheap)\b/g, " ")
+    .replace(/\bsomewhere\s+(?:to|for|with)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!phrase) return undefined;
+  return tagOfWord(phrase) ?? tagOfWord(phrase.replace(/ /g, "_"));
+}
+
+function tagOfWord(word: string): PlaceTag | undefined {
+  const singular = word.endsWith("s") ? word.slice(0, -1) : undefined;
+  if (Object.hasOwn(DATA.tags, word)) return word;
+  if (singular && Object.hasOwn(DATA.tags, singular)) return singular;
+  return KIND_WORDS[word];
+}
+
+/**
+ * The kinds of place a sentence mentions, in the order it mentions them.
+ *
+ * For reading the player's own words when a trip could not be resolved from
+ * what the narrator proposed. Each kind appears once.
+ */
+export function tagsMentioned(text: string | null | undefined): PlaceTag[] {
+  if (!text) return [];
+  const out: PlaceTag[] = [];
+  for (const word of text.toLowerCase().split(/[^a-z_]+/)) {
+    const tag = word ? tagOfWord(word) : undefined;
+    if (tag && !out.includes(tag)) out.push(tag);
+  }
+  return out;
+}
+
+/** A place of some kind, and how long it is on foot from where somebody stands. */
+export type NearbyPlace = PlaceProfile & { minutes: number };
+
+/**
+ * How much further a place the character already knows may be before a closer
+ * stranger wins. A HOUSE RULE, and a guess: people go back to the bar they know
+ * rather than the one that is two minutes nearer, but not across town for it.
+ */
+export const KNOWN_PLACE_PULL_MINUTES = 10;
+
+/**
+ * Every place of a kind, nearest first, measured on foot from `from`.
+ *
+ * `known` is the places the character has stood in. Among the ones within
+ * `KNOWN_PLACE_PULL_MINUTES` of the nearest, a known one comes first.
+ *
+ * Measured on foot because "nearest" is a question about the city, not about
+ * whether a cab turns up; the trip itself is priced however they actually go.
+ */
+export function nearestWithTag(
+  from: string | null | undefined,
+  tag: PlaceTag,
+  opts: { known?: readonly string[]; limit?: number } = {},
+): NearbyPlace[] {
+  const known = new Set(opts.known ?? []);
+  const found = placesWithTag(tag)
+    .map((p) => ({ ...p, minutes: travelTrip(from, p.key, "foot").minutes }))
+    .sort((a, b) => a.minutes - b.minutes || a.name.localeCompare(b.name));
+  const nearest = found[0];
+  if (nearest && known.size) {
+    const pull = found.find(
+      (p) => known.has(p.key) && p.minutes <= nearest.minutes + KNOWN_PLACE_PULL_MINUTES,
+    );
+    if (pull && pull !== nearest) {
+      found.splice(found.indexOf(pull), 1);
+      found.unshift(pull);
+    }
+  }
+  return found.slice(0, opts.limit ?? found.length);
 }
 
 // ---------------------------------------------------------------------------
