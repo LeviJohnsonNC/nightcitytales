@@ -14,6 +14,7 @@
  * No React and no TanStack Query in here. usePlay.ts is the thin half that
  * binds these to the query client.
  */
+import { checkResolvedInput, critNote } from "@/features/gm/checkResult";
 import { publishCombatFrames } from "./combatPlayback";
 import { loadPlaceStates } from "@/features/campaign/placeState";
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
@@ -1051,12 +1052,6 @@ async function payLuck(bundle: PlayBundle, spend: number): Promise<void> {
   });
 }
 
-function critNote(critical: "success" | "failure" | null): string {
-  if (critical === "success") return " (Critical Success: an extra d10 was added)";
-  if (critical === "failure") return " (Critical Failure: an extra d10 was subtracted)";
-  return "";
-}
-
 /**
  * Persist a rolled opposed check: the two rolls to the ledger, the NPC's numbers
  * to their row so the same face opposes the same way next time, and then the
@@ -1315,8 +1310,6 @@ async function resolveCheck(
   });
   await payLuck(bundle, luckSpent);
 
-  const verdict = result.success ? "SUCCESS" : "FAILURE";
-  const crit = critNote(result.critical);
   const fresh: PlayBundle = {
     ...bundle,
     events: await listCampaignEvents(campaignId),
@@ -1338,7 +1331,15 @@ async function resolveCheck(
     : null;
   await narrate(
     fresh,
-    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again.${found ? ` ${found}` : ""}${insightLine(read)}${carryOn(bundle, pending.eventId)} End on a decision.)`,
+    checkResolvedInput({
+      skillName: pending.skillName,
+      formula: result.formula,
+      critical: result.critical,
+      success: result.success === true,
+      margin: result.total - pending.dv,
+      intent: pending.intent,
+      extra: `${found ? ` ${found}` : ""}${insightLine(read)}${carryOn(bundle, pending.eventId)}`,
+    }),
     {
       logInput: false,
       fixedResult: bundle.encounter?.state.status === "active",

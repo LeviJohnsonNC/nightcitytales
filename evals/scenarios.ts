@@ -26,7 +26,10 @@ import {
   renderGmUserPrompt,
   type GmCharacterSummary,
 } from "@/features/gm/gmContext";
+import { checkResolvedInput } from "@/features/gm/checkResult";
 import { GM_SYSTEM_PROMPT } from "@/features/gm/gmSystemPrompt";
+import { checkResolvedLine } from "@/features/life/checkResult";
+import { carryOnLine } from "@/features/narration/narratorRules";
 import { renderLifeUserPrompt, type LifeContext } from "@/features/life/lifeContext";
 import { LIFE_SYSTEM_PROMPT } from "@/features/life/lifeSystemPrompt";
 import { describeTravelOutcome, nearestByKindLines } from "@/features/life/lifeModel";
@@ -540,3 +543,142 @@ SCENARIOS.push({
     wordBudget: 160,
   },
 });
+
+// ---------------------------------------------------------------------------
+// Results, and work on the wire
+//
+// Every roll the player makes comes back through a result turn, which makes it
+// the most frequent turn in the game, and the last tuning pass found its worst
+// bug on exactly that kind of turn. The result lines are built by the same
+// functions play calls (gm/checkResult.ts, life/checkResult.ts), so the eval
+// asks what play asks.
+// ---------------------------------------------------------------------------
+
+const LOCK_INTENT = "Pick the lock on the filing cabinet";
+const LOCK_SAID = "I pick the lock on the filing cabinet and go through it.";
+
+SCENARIOS.push(
+  {
+    id: "job-check-succeeds",
+    narrator: "gm",
+    about: "a success is told as a success, and the rest of what they said follows",
+    system: GM_SYSTEM_PROMPT,
+    packet: renderGmUserPrompt(
+      officeMidScene,
+      checkResolvedInput({
+        skillName: "Pick Lock",
+        formula: "7 + DEX 7 + Pick Lock 4 = 18",
+        critical: null,
+        success: true,
+        margin: 9,
+        intent: LOCK_INTENT,
+        extra: ` ${carryOnLine(LOCK_SAID)}`,
+      }),
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: officeWithheld,
+      mustStayQuiet: false,
+      riskyIntent: false,
+      resolved: {
+        skillId: "pick_lock",
+        contradicts: ["won't budge", "will not budge", "still locked", "refuses to turn"],
+      },
+      wordBudget: 260,
+    },
+  },
+  {
+    id: "job-check-fails",
+    narrator: "gm",
+    about: "a failure stays a failure, and is not asked for again",
+    system: GM_SYSTEM_PROMPT,
+    packet: renderGmUserPrompt(
+      officeMidScene,
+      checkResolvedInput({
+        skillName: "Pick Lock",
+        formula: "2 + DEX 7 + Pick Lock 4 = 13",
+        critical: null,
+        success: false,
+        margin: -2,
+        intent: LOCK_INTENT,
+        extra: ` ${carryOnLine(LOCK_SAID)}`,
+      }),
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: officeWithheld,
+      mustStayQuiet: false,
+      riskyIntent: false,
+      resolved: {
+        skillId: "pick_lock",
+        contradicts: ["clicks open", "swings open", "pops open", "slides open", "springs open"],
+      },
+      wordBudget: 260,
+    },
+  },
+  {
+    id: "life-check-fails",
+    narrator: "life",
+    about: "a failed roll in Life leaves them somewhere worse, not at a retry",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...atTheBar,
+        said: "I talk my way past the bouncer into the back room.",
+        resolved: checkResolvedLine({
+          skillName: "Persuasion",
+          formula: "3 + COOL 6 + Persuasion 2 = 11",
+          success: false,
+          margin: -2,
+          intent: "Talk the bouncer into letting them into the back room",
+        }),
+      },
+      "(open the moment)",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      resolved: {
+        skillId: "persuasion",
+        contradicts: ["waves you through", "lets you through", "lets you in", "steps aside"],
+      },
+      wordBudget: 160,
+    },
+  },
+  {
+    id: "life-work-on-the-wire",
+    narrator: "life",
+    about: "the job the engine rolled is offered the night it is there",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...quietEvening,
+        wire: {
+          title: "A courier who never arrived",
+          brokerName: 'Marcus "Tally" Oyelaran',
+          brokerKey: "tally",
+          brokerLine: "Warm, generous, keeps a ledger of every favour.",
+          district: "Kabuki",
+          pitch: "A package left a clinic in Kabuki and never reached the buyer.",
+          ask: "Find out where it went and bring it back.",
+          payout: 1000,
+        },
+      },
+      "I stay in and do nothing much.",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: ["tally"],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      wireJob: true,
+      wordBudget: 180,
+    },
+  },
+);
