@@ -636,6 +636,11 @@ having is usually the check that trips one time in three.
 - Preserve unrelated working-tree changes and untracked assets; they belong to
   the user unless explicitly stated otherwise.
 - Do not bulk-delete or reformat image and archive directories as cleanup.
+- New artwork follows `docs/art-style.md`: the vignette wrapper for small
+  gameplay illustrations, the backdrop wrapper for large images behind text,
+  and the in-app portrait look for characters. When asking the user to
+  generate an image, hand them a complete prompt built from the right wrapper,
+  and add it to that file.
 - Never commit secrets or print environment-variable values in logs. Public
   Supabase keys are not service-role credentials, but environment files should
   still be handled cautiously.
