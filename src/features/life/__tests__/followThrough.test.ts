@@ -13,7 +13,8 @@ import { PACKET_BUDGET } from "@/features/narration/packetBudget";
 import { normalizeLifeResponse } from "../lifeResponse";
 import { renderLifeUserPrompt, type LifeContext } from "../lifeContext";
 import { hasTag } from "@/engine";
-import { kindOfTrip, placesToOffer, recentLifeLines, saidBefore } from "../lifeModel";
+import { saidBefore } from "@/features/narration/narratorRules";
+import { kindOfTrip, placesToOffer, recentLifeLines } from "../lifeModel";
 
 let seq = 0;
 const event = (type: string, summary: string, id = `e${++seq}`): CampaignEvent =>
@@ -127,7 +128,7 @@ describe("the follow-up packet carries the rest of the request", () => {
     );
     expect(packet).toContain("== WHAT THE PLAYER SAID ==");
     expect(packet).toContain('"walk to the bar and sit down"');
-    expect(packet).toContain("carry out the REST of what they said");
+    expect(packet).toContain("carry out the rest of what they said");
     expect(packet).not.toContain("in 1-3 sentences");
   });
 
@@ -196,5 +197,56 @@ describe("placesToOffer — somewhere to press when a trip could not be placed",
     expect(new Set(offer.map((o) => o.place.key)).size).toBe(offer.length);
     // Not where they are already standing.
     expect(offer.map((o) => o.place.key)).not.toContain("h5");
+  });
+});
+
+describe("the packet frames a scene in progress, and a friend coming over", () => {
+  const jacket = {
+    key: "armor_chewed",
+    category: "need" as const,
+    title: "The jacket is chewed",
+    summary: "It needs patching.",
+    status: "live" as const,
+    severity: 3,
+  };
+  const place = {
+    where: "Forlorn Hope",
+    district: "Little China",
+    area: "Watson",
+    security: "NCPD",
+    gangs: [],
+    combatZone: false,
+    nearby: [],
+  };
+
+  it("marks the situation as background while they are in a scene", () => {
+    const packet = renderLifeUserPrompt({ ...BASE, situation: jacket, inScene: true }, "x");
+    expect(packet).toContain("ON THEIR MIND");
+    expect(packet).not.toContain("CURRENT SITUATION");
+    expect(packet).toContain("do not steer them back to it");
+  });
+
+  it("marks it as arriving otherwise", () => {
+    const packet = renderLifeUserPrompt({ ...BASE, situation: jacket }, "x");
+    expect(packet).toContain("CURRENT SITUATION (what arrives now");
+  });
+
+  it("tells the narrator somebody is coming over, only when the engine said so", () => {
+    const coming = renderLifeUserPrompt(
+      { ...BASE, place: { ...place, whoIsHere: { name: "Kiro", key: "kiro", comingOver: true } } },
+      "x",
+    );
+    expect(coming).toContain("COMING OVER");
+    const sitting = renderLifeUserPrompt(
+      { ...BASE, place: { ...place, whoIsHere: { name: "Kiro", key: "kiro" } } },
+      "x",
+    );
+    expect(sitting).not.toContain("COMING OVER");
+    expect(sitting).toContain("They are simply here");
+    const already = renderLifeUserPrompt(
+      { ...BASE, place: { ...place, whoIsHere: { name: "Kiro", key: "kiro", cameOver: true } } },
+      "x",
+    );
+    expect(already).toContain("already came over");
   });
 });

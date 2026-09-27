@@ -18,6 +18,7 @@ import { publishCombatFrames } from "./combatPlayback";
 import { loadPlaceStates } from "@/features/campaign/placeState";
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
 import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
+import { carryOnLine, saidBefore } from "@/features/narration/narratorRules";
 import { sinceWords } from "@/features/life/lifeOps";
 import { useCombatPlayback } from "./useCombatPlayback";
 /**
@@ -375,6 +376,17 @@ export function snapshotFor(bundle: PlayBundle): CapabilitySnapshot {
     events: bundle.events,
     beatId: bundle.beat?.id ?? null,
   });
+}
+
+/**
+ * The rest of what the player said, for a result turn — empty when they said
+ * nothing else, or during a fight, where a Turn is one action and the next is
+ * theirs to choose.
+ */
+function carryOn(bundle: PlayBundle, promptEventId: string | undefined): string {
+  if (bundle.encounter?.state.status === "active") return "";
+  const { said } = saidBefore(bundle.events, promptEventId);
+  return said ? ` ${carryOnLine(said)}` : "";
 }
 
 function agreedPayoutFrom(flags: CampaignFlag[]): number | null {
@@ -1045,7 +1057,7 @@ async function commitOpposedCheck(
       `Player: ${result.actor.formula} = ${result.actor.total}${critNote(result.actor.critical)}. ` +
       `${opposition.npcName} (${opposition.skillName}): ${result.opponent.formula} = ${result.opponent.total}${critNote(result.opponent.critical)}. ` +
       `Outcome: ${verdict}. Narrate this exact outcome for the intent "${pending.intent}", showing how ${opposition.npcName} met it. ` +
-      `Do not re-decide it, do not soften a failure, do not propose the same check again.${insightLine(read)} End on a decision.)`,
+      `Do not re-decide it, do not soften a failure, do not propose the same check again.${insightLine(read)}${carryOn(bundle, pending.eventId)} End on a decision.)`,
     { logInput: false, fixedResult: bundle.encounter?.state.status === "active" },
   );
 }
@@ -1255,7 +1267,7 @@ async function resolveCheck(
     : null;
   await narrate(
     fresh,
-    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again.${found ? ` ${found}` : ""}${insightLine(read)} End on a decision.)`,
+    `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again.${found ? ` ${found}` : ""}${insightLine(read)}${carryOn(bundle, pending.eventId)} End on a decision.)`,
     { logInput: false, fixedResult: bundle.encounter?.state.status === "active" },
   );
 }

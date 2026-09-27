@@ -10,6 +10,8 @@ import {
   type LifePerson,
   type LifeSituation,
   type LifeStateInput,
+  interruptsScene,
+  selectSituation,
 } from "@/engine";
 
 /** A character with nothing wrong: no bills, no wounds, no empty magazines. */
@@ -274,5 +276,78 @@ describe("ageSituations", () => {
   it("is idempotent, which is the whole point", () => {
     const rows = [situation()];
     expect(ageSituations(ageSituations(rows, 16), 16)).toEqual(ageSituations(rows, 16));
+  });
+});
+
+/** A situation with no deadline at all. */
+const undue = (over: Partial<LifeSituation> = {}): LifeSituation => {
+  const { dueDay: _dueDay, ...rest } = situation(over);
+  return rest;
+};
+
+describe("a scene the player is in the middle of", () => {
+  const bar = undue({
+    key: "at_the_bar",
+    category: "opportunity",
+    severity: 1,
+    lastShownDay: 10,
+  });
+  const jacket = undue({
+    key: "armor_chewed",
+    category: "need",
+    severity: 3,
+    lastShownDay: 8,
+  });
+
+  it("rotates away from the last topic when they are not in a scene", () => {
+    expect(selectSituation([bar, jacket], 10, "at_the_bar")?.key).toBe("armor_chewed");
+  });
+
+  it("stays on the scene they are in", () => {
+    expect(selectSituation([bar, jacket], 10, "at_the_bar", { inScene: true })?.key).toBe(
+      "at_the_bar",
+    );
+  });
+
+  it("is broken into by work on the wire", () => {
+    const hook = undue({ key: "hook_x", category: "hook", severity: 3 });
+    expect(selectSituation([bar, hook], 10, "at_the_bar", { inScene: true })?.key).toBe("hook_x");
+  });
+
+  it("is broken into by somebody new and serious", () => {
+    const looking = undue({
+      key: "moved_vex",
+      category: "people",
+      severity: 4,
+    });
+    expect(interruptsScene(looking, 10)).toBe(true);
+    expect(selectSituation([bar, looking], 10, "at_the_bar", { inScene: true })?.key).toBe(
+      "moved_vex",
+    );
+  });
+
+  it("is broken into by a deadline once on the day it comes due, then not again", () => {
+    const rent = situation({ key: "rent", category: "need", severity: 2, dueDay: 10 });
+    expect(selectSituation([bar, rent], 10, "at_the_bar", { inScene: true })?.key).toBe("rent");
+    const raised = { ...rent, lastShownDay: 10 };
+    expect(interruptsScene(raised, 10)).toBe(false);
+  });
+
+  it("is not broken into by something that has already been put to them", () => {
+    const seen = undue({
+      key: "moved_vex",
+      category: "people",
+      severity: 5,
+      lastShownDay: 9,
+    });
+    expect(selectSituation([bar, seen], 10, "at_the_bar", { inScene: true })?.key).toBe(
+      "at_the_bar",
+    );
+  });
+
+  it("falls back to ordinary selection when the scene's situation is gone", () => {
+    expect(selectSituation([jacket], 10, "at_the_bar", { inScene: true })?.key).toBe(
+      "armor_chewed",
+    );
   });
 });

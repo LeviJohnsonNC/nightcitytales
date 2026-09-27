@@ -335,11 +335,19 @@ The work, with what the location layer already covered marked:
   refused trip that stays put and offers the nearest real places, and the
   player's own lines in Life's recent history. The eval gained four checks for
   the narrator doing too little, beside the eleven for too much.
-  Still to do, in order: the narrator's prompts rebalanced toward momentum (and
-  measured with those checks), the scene staying put while the player is in it,
-  trivial asks resolving without dice and low-stakes checks rolling themselves,
-  unnamed local spots for the districts the atlas gives no bar, and a stronger
-  model if the evals say it plays better.
+  Then momentum: a shared FOLLOW THROUGH rule in both prompts (and Job dice
+  results carry the player's words too), turns that end on something live,
+  the scene holding its situation while the player is in it
+  (`selectSituation`'s `inScene`, broken only by `interruptsScene`), the cast
+  able to come over on an engine roll (`comesOver`), and the street oracle
+  moved to a d10 so a quiet evening has a little more in it. The eval gained
+  two more checks and four more scenarios, and runs on OpenRouter or Google AI
+  Studio keys, since the Lovable key cannot leave Lovable.
+  Still to do, in order: run the evals and tune from what they say (the prompts
+  still carry most of their old brakes; cutting them blind was not worth the
+  risk), trivial asks resolving without dice and low-stakes checks rolling
+  themselves, unnamed local spots for the districts the atlas gives no bar,
+  and a stronger model if the evals say it plays better.
 
 Success: the player opens the game, understands their immediate problem in
 seconds, decides, sees the cost, and moves on.

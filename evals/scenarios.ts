@@ -374,3 +374,117 @@ SCENARIOS.push(
     },
   },
 );
+
+// ---------------------------------------------------------------------------
+// Momentum
+//
+// The same bar, four more ways the game used to stall: an ordinary request
+// that needed a second prompt, a scene hijacked by the next item on the list,
+// a friend left sitting in the corner after the engine said they came over,
+// and a Job turn that stopped before the easy half of what was asked.
+// ---------------------------------------------------------------------------
+
+const atTheBar: LifeContext = { ...quietEvening, place: placeAt(BAR.key) };
+
+const KIRO = {
+  key: "kiro",
+  name: "Kiro Tanaka",
+  disposition: 2,
+  status: "alive",
+  role: "friend",
+  standing: "An old friend from the block, who still calls when it matters.",
+};
+
+SCENARIOS.push(
+  {
+    id: "life-sits-and-orders",
+    narrator: "life",
+    about: "an ordinary request is done in one turn, not two",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(atTheBar, "I sit down at the counter and order a drink."),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      carryThrough: ["glass", "pour", "bottle", "beer", "slides"],
+      wordBudget: 160,
+    },
+  },
+  {
+    id: "life-scene-holds",
+    narrator: "life",
+    about: "a background worry does not take over the scene the player is in",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...atTheBar,
+        inScene: true,
+        situation: {
+          key: "armor_chewed",
+          category: "need",
+          title: "The jacket is chewed",
+          summary: "The armored jacket took a beating on the last job and needs patching.",
+          status: "live",
+          severity: 3,
+        },
+      },
+      "I ask the bartender what's good tonight.",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      offScene: ["jacket", "armor", "patch"],
+      wordBudget: 160,
+    },
+  },
+  {
+    id: "life-someone-comes-over",
+    narrator: "life",
+    about: "somebody the engine said comes over, comes over",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...atTheBar,
+        people: [KIRO],
+        place: {
+          ...placeAt(BAR.key),
+          whoIsHere: { name: KIRO.name, key: KIRO.key, comingOver: true },
+        },
+      },
+      "I nurse my drink and watch the door.",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [KIRO.key],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      comesOver: KIRO.name,
+      wordBudget: 180,
+    },
+  },
+  {
+    id: "job-does-the-easy-part",
+    narrator: "gm",
+    about: "a compound intent does the safe half and stops at the dice",
+    system: GM_SYSTEM_PROMPT,
+    packet: renderGmUserPrompt(
+      office,
+      "I sit down in Huntver's chair and go through the desk drawers.",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: officeWithheld,
+      mustStayQuiet: false,
+      riskyIntent: true,
+      carryThrough: ["chair", "sit", "seat"],
+      wordBudget: 260,
+    },
+  },
+);

@@ -54,9 +54,11 @@ one wins.
    model deciding, inventing, or quietly editing state.
 2. **Consequences persist.** An event that changes nothing durable is close to
    worthless, however well written.
-3. **The player acts; the game does not act for them.** Never resolve a
+3. **The player decides; the game carries it out.** Never resolve a
    meaningful decision on their behalf, and never present a choice whose outcome
-   is already fixed.
+   is already fixed. But what the player said, the game does — all of it, in
+   one turn, until the dice, a person or a surprise needs them again. Doing
+   what they asked is not acting for them; making them ask twice is a failure.
 4. **Concrete over abstract.** A named person at a named bar beats a "Socialize"
    button, every time.
 5. **The world is honest, not dramatic.** Quiet nights are correct answers.
@@ -142,7 +144,11 @@ Life is not a menu of everything theoretically possible. The application picks
 what is loudest right now (`src/engine/life.ts` scores candidates from real
 state: money owed, wounds, empty magazines, people neglected, pressures coming
 due) and the model only dresses the one that won. The model never remembers,
-escalates, or expires anything.
+escalates, or expires anything. While the player is in the middle of a scene —
+same place, same day — that situation holds, and only something that should
+interrupt (work on the wire, somebody new and serious, a deadline coming due)
+takes its place. A topic that rotates every turn is a scene that never gets
+played.
 
 Situations come from five places, and the mix is the pacing:
 
@@ -302,6 +308,35 @@ the answer is almost always a new closed vocabulary, not an exception.
 
 ---
 
+## Momentum
+
+The game pulls the player forward. That is not the narrator's taste; it is a
+set of rules, and they sit beside the brakes rather than under them.
+
+- **Follow through.** What the player says, the character does, all of it and
+  in order, until something needs them: a roll, a price the engine has not set,
+  a person speaking to them, a surprise. "Walk to the bar and sit down at the
+  counter" ends on the stool. `FOLLOW_THROUGH_RULE` in `narratorRules.ts`
+  states it once for both narrators, and a result from the engine — a trip, a
+  roll — carries the player's own words into the turn that narrates it.
+- **Resolve what the engine can.** "Find a bar" is a question the atlas can
+  answer (`nearestWithTag`), so it gets an answer, not a refusal. A trip that
+  genuinely cannot be placed leaves the character where they were, with real
+  places to press.
+- **End on something live.** Every turn closes on the world wanting an answer:
+  a person mid-sentence, a thing about to happen. Not a menu and not "What do
+  you do?" — something happening.
+- **Quiet is not inert.** An honest quiet evening still has something in the
+  room. Quiet means nobody manufactured a crisis; it never means nothing to do.
+
+The failure these exist for is specific: every rule this project wrote for the
+narrator used to be a brake, so every revision could only make it do less, and
+the game that resulted stopped at the door of every bar. The eval now measures
+both directions — too much and too little — and a change that fixes one by
+breaking the other has not helped.
+
+---
+
 ## People
 
 Relationships are a system, not dialogue flavor.
@@ -397,8 +432,11 @@ information, never in dice**: visits open rungs on facts the engine already
 holds about a place, because RED's DVs are printed and a home-field bonus is an
 invented rule. And **presence is not a summons**: the standing cast keep places
 (`engine/haunts.ts`), so if you go to the bar somebody drinks at, they are
-probably in — but that puts nothing on the board and asks nothing of you. The
-world tick still owns people acting.
+probably in — but that puts nothing on the board. Whether they come OVER is
+the engine's roll (`comesOver`), weighted by how strongly they feel about the
+character in either direction, once an evening; the narrator is told that they
+cross the room, never why. The world tick still owns people acting on their own
+initiative.
 
 ---
 
@@ -624,6 +662,7 @@ Practical smells, in roughly descending severity.
 - A turn left the character where they started after they asked to go
   somewhere. A trip that cannot be worked out is the engine not knowing where,
   not the character failing to leave.
+- A scene in progress was hijacked by a topic the engine did not raise.
 
 ---
 

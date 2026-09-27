@@ -24,6 +24,7 @@
  * the other.
  */
 import { FACTIONS, OBSERVATIONS, OBSERVATION_MEANINGS } from "@/engine";
+import type { CampaignEvent } from "@/lib/backend";
 import { FLAVOR_SUBJECTS, flavorSubjectLabel } from "@/features/cast/flavorArt";
 
 /**
@@ -106,7 +107,7 @@ This is the rule that separates a game from a chat, and it outranks your instinc
 - Put at least three usable specifics in any scene the player can act inside. State them flat, as facts. ${opts.notAHint}
 - A specific is a thing, not a quantity. The house style above says which specifics are yours: a brand, a street, a face, a smell, a rumor. A number is not one of them, so do not reach for a price, a distance, a duration or a fee to make a scene concrete. Say the case is locked, the queue is long, the walk is a few blocks. The engine owns every number and tells you the ones you may use.
 - NEVER name a way in. No "you could", no "perhaps", no "one option is", no "if you wanted to". Do not list approaches, do not rank them, do not hint at the one you think is best, and do not end on a question that is a menu wearing a coat ("front door or back?").
-- Do not end your narration with "What do you do?" The interface asks that. End on the world: the last thing they see or hear, still happening.
+- End on something LIVE: a person in the middle of doing something, a thing about to happen, a question somebody in the scene has just put to them. The last line is the world wanting an answer. Never end on "What do you do?" (the interface asks that) and never on a menu.
 - Say only what is knowable from where they are standing. If they cannot see inside the building, they cannot see inside the building. Withhold the rest without signalling that you are withholding it.
 - When the player attempts something you did not anticipate, adjudicate THAT. A stolen delivery uniform, a phone call about a gas leak, walking away: answer what they actually did. Never steer them back to something you had in mind, and never let a plan fail merely because it surprised you.
 - The world does not rearrange itself around a plan, for it or against it. A clever approach meets the situation exactly as described. So does a stupid one. The dice and the described facts decide, not how satisfying the outcome would be.`;
@@ -172,4 +173,62 @@ export function walkOnFacesSection(opts: { excludeHostiles: boolean }): string {
 The interface can put a face on some walk-on roles — people passing through who are not part of the standing cast and will never get a dossier of their own. When you narrate one whose role matches an id below, tag them in "walkOns" using that id exactly. Do this only for a genuine walk-on: never tag a named cast member${hostiles}, and never invent an id outside this list.
 ${WALK_ON_LIST}
 Set "gender" only when the fiction already makes it plain; leave it out otherwise and the interface picks one that stays consistent for this place. Most turns tag nobody — [] is correct whenever nothing here fits.`;
+}
+
+/**
+ * FOLLOW THROUGH — the rule that was missing.
+ *
+ * Every other rule in this file is a brake, and brakes were all either prompt
+ * had: the narrator was told a dozen ways not to do too much and never once to
+ * do what it was asked. It answered by doing the least it could — "walk to the
+ * bar and sit down at the counter" reached the door and stopped, and the
+ * player said it again. This is the accelerator, and it is shared because the
+ * failure is the same in a bar and in a corporate lobby.
+ *
+ * It does not license the narrator to act FOR the player. It carries out what
+ * they said, stops where the dice or a person or a surprise take over, and
+ * adds nothing of its own.
+ */
+export const FOLLOW_THROUGH_RULE = `# FOLLOW THROUGH
+The player says what their character does and you carry ALL of it out. "Walk to the bar and sit down at the counter" ends with them on the stool, not in the doorway. Go through everything they said, in order, until the first moment that genuinely needs them:
+- something that could fail and matters: propose the check and stop there;
+- a cost the engine has not priced for you;
+- somebody speaking to them, or turning on them;
+- something they could not have expected, that would change what they meant to do.
+Anything short of those simply happens, in the same turn: walking in, sitting down, ordering at a price the engine gave you, asking a stranger the way to a place the engine named. Those are not decisions and must never need a second prompt.
+Do only what they said. Never add an action of your own for them, never make a choice they would want a say in, and never skip past one of the stops above to get somewhere more interesting.`;
+
+/**
+ * The last thing the player typed before an engine result was posted.
+ *
+ * A check's `intent` is the narrator's paraphrase of one part of what they
+ * said: "slip past the bouncer and get a drink" reached the result as "slip
+ * past the bouncer", and the drink was gone. Both loops read the ledger the
+ * same way, so both ask here.
+ */
+export function saidBefore(
+  events: readonly CampaignEvent[],
+  promptEventId: string | undefined,
+): { said?: string } {
+  const at = promptEventId ? events.findIndex((e) => e.id === promptEventId) : -1;
+  const end = at >= 0 ? at : events.length;
+  for (let i = end - 1; i >= 0; i -= 1) {
+    const e = events[i]!;
+    if (e.type === "player_input" && e.summary?.trim()) return { said: e.summary.trim() };
+  }
+  return {};
+}
+
+/**
+ * What a result turn is told about the rest of the player's request.
+ *
+ * The mode-specific parts (a price, a second trip, the clock) stay with each
+ * mode; this is the part that is the same in both.
+ */
+export function carryOnLine(said: string): string {
+  return (
+    `The player said: "${said}". The engine has settled the part above. If the result leaves ` +
+    "them free to, carry out the rest of what they said, per FOLLOW THROUGH, in this same turn " +
+    "so they never have to say it twice. If the result stops them, the rest does not happen."
+  );
 }

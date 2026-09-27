@@ -314,7 +314,7 @@ export function complicationIsReal(memory: ComplicationMemory | null): boolean {
  * null when the evening has already been rolled — the scene simply continues,
  * and the model is told nothing rather than told the same thing twice.
  *
- * Open, and always logged. The log filling with "The street tonight: 1d6(2) = 2
+ * Open, and always logged. The log filling with "The street tonight: 1d10(2) = 2
  * → Nothing happens" is the feature working: it is the proof that the quiet
  * nights were rolled rather than chosen.
  */

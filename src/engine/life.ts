@@ -366,17 +366,59 @@ export function situationWeight(situation: LifeSituation, day: number): number {
 }
 
 /**
+ * How loud something new has to be to walk into a scene the player is in the
+ * middle of. A PACING GUESS: 4 is "somebody is on the step", 5 is "they are at
+ * the door right now". Anything quieter waits until the scene ends.
+ */
+export const SCENE_INTERRUPT_SEVERITY = 4;
+
+/**
+ * Whether a situation is loud enough to break into a scene in progress.
+ *
+ * Three things are: an offer of work (the phone rang), something new and
+ * serious that has not been put to the player at all yet (a person who came
+ * looking, a clock that arrived), and a deadline that has come due and has not
+ * been raised today. The rest is true, and stays in the sidebar, and is still
+ * there when they walk out.
+ */
+export function interruptsScene(situation: LifeSituation, day: number): boolean {
+  if (situation.category === "hook") return true;
+  if (situation.lastShownDay === undefined && situation.severity >= SCENE_INTERRUPT_SEVERITY) {
+    return true;
+  }
+  const raisedToday = situation.lastShownDay !== undefined && situation.lastShownDay >= day;
+  return situation.dueDay !== undefined && situation.dueDay <= day && !raisedToday;
+}
+
+/**
  * The situation to open this turn. Hooks outrank everything (the player is
  * being asked a direct question); otherwise the loudest live problem wins, and
  * the one shown last turn steps aside unless it escalated.
+ *
+ * `inScene` is the exception, and the player's: they are still where the last
+ * turn left them, on the same day, doing something. Then the situation stays
+ * the one they are in, and only something that `interruptsScene` may take its
+ * place. Without it the topic rotated every turn by design — the last one shown
+ * stepped aside — so a conversation at a bar counter was handed a chewed jacket
+ * to "dress" in the middle of it.
  */
 export function selectSituation(
   situations: LifeSituation[],
   day: number,
   lastShownKey?: string,
+  opts: { inScene?: boolean } = {},
 ): LifeSituation | null {
   const live = situations.filter((s) => s.status === "live");
   if (!live.length) return null;
+  const held = opts.inScene ? live.find((s) => s.key === lastShownKey) : undefined;
+  if (held) {
+    const breaking = live
+      .filter((s) => s.key !== held.key && interruptsScene(s, day))
+      .sort(
+        (a, b) => situationWeight(b, day) - situationWeight(a, day) || a.key.localeCompare(b.key),
+      );
+    return breaking[0] ?? held;
+  }
   const scored = live
     .map((s) => ({
       s,

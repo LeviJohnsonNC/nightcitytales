@@ -34,14 +34,74 @@ export function modelFor(narrator: "gm" | "life"): string {
   return override ?? process.env["GM_MODEL"] ?? DEFAULT_MODEL;
 }
 
-export async function runTurn(scenario: Scenario, model: string): Promise<TurnResult> {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key)
-    throw new Error("LOVABLE_API_KEY is not set. Copy .env.example to .env and fill it in.");
+/**
+ * Who answers the eval's calls.
+ *
+ * Play goes through the Lovable gateway, and LOVABLE_API_KEY cannot leave
+ * Lovable Cloud: it is provisioned for the project's own runtime and there is
+ * no way to export it. So outside Lovable the eval talks to the same model
+ * through a key you own, over the OpenAI-compatible API every one of these
+ * speaks. The model slug is the one play uses ("google/gemini-3.7-flash"),
+ * which OpenRouter takes as written and Google's own endpoint takes without
+ * the "google/" in front.
+ *
+ * First key found wins, in this order, so a machine with several set is
+ * predictable:
+ *   OPENROUTER_API_KEY   — openrouter.ai; same slugs as the gateway
+ *   GEMINI_API_KEY       — Google AI Studio; has a free tier
+ *   EVAL_API_KEY + EVAL_BASE_URL — any other OpenAI-compatible endpoint
+ *   LOVABLE_API_KEY      — inside Lovable's own sandbox, the real gateway
+ */
+export type EvalProvider = {
+  name: string;
+  baseURL: string;
+  apiKey: string;
+  /** The slug this provider expects for the model play would have asked for. */
+  modelId(model: string): string;
+};
 
+export function evalProvider(env: Record<string, string | undefined> = process.env): EvalProvider {
+  const openrouter = env["OPENROUTER_API_KEY"];
+  if (openrouter) {
+    return {
+      name: "openrouter",
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: openrouter,
+      modelId: (m) => m,
+    };
+  }
+  const gemini = env["GEMINI_API_KEY"];
+  if (gemini) {
+    return {
+      name: "google",
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+      apiKey: gemini,
+      modelId: (m) => m.replace(/^google\//, ""),
+    };
+  }
+  const own = env["EVAL_API_KEY"];
+  const ownUrl = env["EVAL_BASE_URL"];
+  if (own && ownUrl) return { name: "custom", baseURL: ownUrl, apiKey: own, modelId: (m) => m };
+  const lovable = env["LOVABLE_API_KEY"];
+  if (lovable) {
+    return {
+      name: "lovable",
+      baseURL: "https://ai.gateway.lovable.dev/v1",
+      apiKey: lovable,
+      modelId: (m) => m,
+    };
+  }
+  throw new Error(
+    "No eval key. Set OPENROUTER_API_KEY or GEMINI_API_KEY (see evals/README.md), " +
+      "or run inside Lovable where LOVABLE_API_KEY already exists.",
+  );
+}
+
+export async function runTurn(scenario: Scenario, model: string): Promise<TurnResult> {
+  const provider = evalProvider();
   const { generateObject } = await import("ai");
-  const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
-  const gateway = createLovableAiGatewayProvider(key);
+  const gateway = await providerFor(provider);
+  model = provider.modelId(model);
 
   if (scenario.narrator === "gm") {
     const { object, response } = await generateObject({
@@ -96,4 +156,23 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
       spends: life.proposedActions.filter((a) => a.kind === "spend").length,
     },
   };
+}
+
+/**
+ * The model factory for a provider. Lovable goes through the app's own gateway
+ * module so the eval sends exactly the headers play sends; everything else is
+ * a plain OpenAI-compatible client.
+ */
+async function providerFor(provider: EvalProvider) {
+  if (provider.name === "lovable") {
+    const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
+    return createLovableAiGatewayProvider(provider.apiKey);
+  }
+  const { createOpenAICompatible } = await import("@ai-sdk/openai-compatible");
+  return createOpenAICompatible({
+    name: provider.name,
+    baseURL: provider.baseURL,
+    apiKey: provider.apiKey,
+    supportsStructuredOutputs: true,
+  });
 }
