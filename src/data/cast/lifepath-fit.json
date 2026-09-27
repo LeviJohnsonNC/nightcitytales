@@ -1,0 +1,32 @@
+{
+  "houseRule": true,
+  "note": "Which of the standing cast can be the person a character's Lifepath already rolled. The cast's bios fix who each person is (Song Ha-eun is corporate, Razor runs a crew, Tobias Kanu serves warrants), and the Lifepath is quoted to the narrator as their shared history, so a character who rolled a Corporate exec for an enemy must not be handed a gang boss. enemyWho maps an Enemy 'who' result to the enemies whose bio can hold it; a result not listed fits anybody. Government official has no exact match in the pool and goes to Tobias Kanu, the one enemy who works warrants under a licence. tragicLove maps a Tragic Love Affair result either to 'lost' (the lover is dead or gone for good, so the old flame is someone from before and the line says so) or to the old flames whose bio can hold it. Unlisted results, and anything a player typed themselves, constrain nothing.",
+  "enemyWho": {
+    "Person working for you": [
+      "Corrado \"Razor\" Villanueva",
+      "Mirela Ionescu",
+      "Tobias Kanu",
+      "Lark Ferreira"
+    ],
+    "Person you work for": ["Song Ha-eun", "Mirela Ionescu", "Corrado \"Razor\" Villanueva"],
+    "Partner or coworker": [
+      "Song Ha-eun",
+      "Mirela Ionescu",
+      "Corrado \"Razor\" Villanueva",
+      "Tobias Kanu",
+      "Lark Ferreira"
+    ],
+    "Corporate exec": ["Song Ha-eun"],
+    "Government official": ["Tobias Kanu"],
+    "Boosterganger": ["Corrado \"Razor\" Villanueva"]
+  },
+  "tragicLove": {
+    "Your lover died in an accident.": "lost",
+    "Your lover mysteriously vanished.": ["Nadia Sirko"],
+    "Your lover was kidnapped.": "lost",
+    "Your lover went insane or cyberpsycho.": "lost",
+    "Your lover committed suicide.": "lost",
+    "Your lover was killed in a fight.": "lost",
+    "Your lover is imprisoned or exiled.": "lost"
+  }
+}

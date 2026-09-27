@@ -26,6 +26,7 @@
  * beyond the seeded stream and no knowledge of how any of it is stored.
  */
 import content from "@/data/cast/cast-content.json";
+import fitData from "@/data/cast/lifepath-fit.json";
 import { seededRng } from "./dice";
 import { clampDisposition } from "./campaign";
 import { stableKey } from "./mission";
@@ -257,11 +258,71 @@ function tieFor(role: CastRole, ties: LifepathTies): string | null {
       return ties.friend?.trim() || null;
     case "enemy":
       return enemyTie(ties.enemy);
-    case "old_flame":
-      return ties.tragicLove?.trim() || null;
+    case "old_flame": {
+      const love = ties.tragicLove?.trim();
+      if (!love) return null;
+      // The lover the Lifepath lost is not standing at the bar. Whoever holds
+      // this slot came before, and the narrator is told so rather than handed
+      // a death as somebody's shared history with a living person.
+      return loverIsLost(love)
+        ? `Not the one you lost. Your Lifepath says: "${sentence(love)}" This one came before that, and is still around.`
+        : love;
+    }
     default:
       return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Who can be the person the Lifepath already rolled.
+// ---------------------------------------------------------------------------
+
+type LifepathFit = {
+  houseRule: boolean;
+  enemyWho: Record<string, string[]>;
+  tragicLove: Record<string, "lost" | string[]>;
+};
+const FIT = fitData as unknown as LifepathFit;
+
+/** True when the fit table is what it claims to be: a house rule, tuned in data. */
+export const LIFEPATH_FIT_IS_HOUSE_RULE: boolean = FIT.houseRule;
+
+/** Table results are matched loosely: a trailing full stop or a capital is not a different roll. */
+function norm(text: string): string {
+  return text.trim().replace(/\.$/, "").toLowerCase();
+}
+
+function lookup<T>(table: Record<string, T>, value: string | null | undefined): T | undefined {
+  if (!value?.trim()) return undefined;
+  const wanted = norm(value);
+  const hit = Object.keys(table).find((key) => norm(key) === wanted);
+  return hit === undefined ? undefined : table[hit];
+}
+
+/** True when the rolled Tragic Love Affair leaves the lover dead or gone for good. */
+export function loverIsLost(tragicLove: string | null | undefined): boolean {
+  return lookup(FIT.tragicLove, tragicLove) === "lost";
+}
+
+/**
+ * The names from a role's pool whose bio can be the person the Lifepath rolled.
+ *
+ * Every bio fixes who somebody is, and the Lifepath is quoted to the narrator
+ * as their history with the character, so the two have to agree. A result the
+ * table does not constrain, or text a player typed, leaves the pool whole; a
+ * constraint that matches nobody in the pool also leaves it whole, because a
+ * cast with a slight mismatch is better than a cast with nobody in it.
+ */
+export function namesFitting(role: CastRole, ties: LifepathTies, names: string[]): string[] {
+  let allowed: string[] | undefined;
+  if (role === "enemy") allowed = lookup(FIT.enemyWho, ties.enemy?.who);
+  if (role === "old_flame") {
+    const fit = lookup(FIT.tragicLove, ties.tragicLove);
+    if (Array.isArray(fit)) allowed = fit;
+  }
+  if (!allowed) return names;
+  const fitting = names.filter((name) => allowed.includes(name));
+  return fitting.length ? fitting : names;
 }
 
 export type CastSeedInput = {
@@ -286,7 +347,8 @@ export function generateCast(input: CastSeedInput): CastMember[] {
 
   for (const role of CAST_ROLES) {
     const pool = poolFor(role);
-    const name = pick(pool.names, rng, `${role}.names`);
+    // Still one draw, so the rest of the stream lands where it always did.
+    const name = pick(namesFitting(role, ties, pool.names), rng, `${role}.names`);
     const member: CastMember = {
       key: uniqueKey(name, role, used),
       name,

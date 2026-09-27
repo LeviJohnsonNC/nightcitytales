@@ -95,7 +95,13 @@ which Skill can reach which rung and what having asked costs, so the nine
 printed Social Skills are nine Skills rather than one. Its data is
 `src/data/cast/social-reads.json`, flagged `houseRule: true`, and the axis it
 adds — suspicion — is spent on information and never on dice, the same ruling
-the city layer runs on. `arcs.ts` gives each of the six a story of their own,
+the city layer runs on. Which of the six can BE the enemy or the lost love
+a character's Lifepath rolled is `src/data/cast/lifepath-fit.json`
+(`houseRule: true`): each bio fixes who somebody is, so a rolled Corporate exec
+is drawn from the enemies whose bio is corporate, and a lover the Lifepath says
+is dead or gone is never quoted as a living old flame's history. A new name in
+a pool may need a row there; `anyCharacter.test.ts` sweeps every Lifepath roll
+and every district through the cast. `arcs.ts` gives each of the six a story of their own,
 from `src/data/cast/arcs.json` (`houseRule: true`): three stages of world-tick
 moves whose ending forks on whether the player got involved. Its state lives on
 the person's row (`campaign_npcs.data.arc`), a beat takes the world tick's one
