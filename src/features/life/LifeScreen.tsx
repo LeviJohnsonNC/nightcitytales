@@ -63,7 +63,12 @@ import { CheckCard } from "@/features/play/CheckCard";
 import { MapButton } from "@/features/atlas/MapButton";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { StatusRail } from "@/features/status/StatusRail";
-import { statusView, type StatusView } from "@/features/status/statusModel";
+import {
+  readDayBrief,
+  statusView,
+  welcomeBack,
+  type StatusView,
+} from "@/features/status/statusModel";
 import { ReceiptBar } from "@/features/status/ReceiptBar";
 import { snapshotOf } from "@/features/status/receipts";
 import { useReceipts } from "@/features/status/useReceipts";
@@ -130,6 +135,22 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
 
     case "skill_check":
       return <RollLine event={event} text={text} />;
+    case "day_began": {
+      const brief = readDayBrief(event.data);
+      if (!brief) return null;
+      return (
+        <div className="my-2 border-l-2 border-accent bg-accent/5 px-3 py-2">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+            Day {brief.day}
+          </p>
+          <ul className="mt-1 space-y-0.5 text-sm text-foreground">
+            {brief.lines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
     case "pressure_arrived":
       return (
         <p className="my-1 border-l-2 border-destructive bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
@@ -234,6 +255,8 @@ const LIFE_EVENT_TYPES = new Set([
   "cyberware_installed",
   // Somebody moved while the character was not looking.
   "world_moved",
+  // A new day, and what is waiting in it.
+  "day_began",
 ]);
 
 /**
@@ -833,6 +856,11 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
     currentKey: life.situation?.key ?? null,
   });
 
+  // Read at render rather than held in a hook: this sits after the screen's
+  // early returns, and the card should vanish the moment they act anyway —
+  // their own turn makes the newest event recent.
+  const returning = welcomeBack(bundle.events.at(-1)?.created_at, Date.now(), status.commitments);
+
   /**
    * The live context every number on this screen is read through: worn armor,
    * current Humanity, and the district under the character's feet. A Local
@@ -981,6 +1009,20 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
                 />
               </div>
             </div>
+
+            {/* Coming back after a while: the threads they left open, by name. */}
+            {returning && (
+              <div className="border-l-2 border-accent bg-accent/5 px-3 py-2">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+                  Where you left off
+                </p>
+                <ul className="mt-1 space-y-0.5 text-sm text-foreground">
+                  {returning.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Where you are, before anything has happened here. */}
             <SceneHero locationKey={locationKey} opening={!hasLog} />

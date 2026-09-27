@@ -353,7 +353,7 @@ export function commitmentsStatus(input: {
     open,
     dueToday,
     overdue,
-    line: commitmentLine(open, dueToday, overdue),
+    line: threadLine(commitments),
   };
 }
 
@@ -371,12 +371,68 @@ function compareCommitments(a: Commitment, b: Commitment): number {
   return b.severity - a.severity;
 }
 
-function commitmentLine(open: number, dueToday: number, overdue: number): string {
-  if (open === 0) return "Nothing owed";
-  const plate = `${open} open`;
-  if (overdue > 0) return `${plate} · ${overdue} overdue`;
-  if (dueToday > 0) return `${plate} · ${dueToday} due today`;
-  return plate;
+/**
+ * The chip's line: the most pressing thread BY NAME, and how many more.
+ *
+ * It used to be a count — "3 open · 1 due today" — which tells a player how
+ * busy they are and nothing about what with. A name is what pulls somebody
+ * back: "Rent — due tomorrow · +2 more" is a reason to open the game, and
+ * "3 open" is a to-do list. The list behind the chip is unchanged and sorted
+ * the same way, so the name here is always its first row.
+ */
+function threadLine(commitments: Commitment[]): string {
+  const open = commitments.filter((c) => c.status === "active");
+  const top = open[0];
+  if (!top) return "Nothing owed";
+  const due = dueLabel(top.dueInDays);
+  const more = open.length - 1;
+  return `${top.title}${due ? ` — ${due}` : ""}${more > 0 ? ` · +${more} more` : ""}`;
+}
+
+// ---------------------------------------------------------------------------
+// A new day, and what is waiting in it.
+// ---------------------------------------------------------------------------
+
+/** What a morning has in it, for the card that opens a new day. */
+export type DayBrief = {
+  day: number;
+  /** One short line each, most pressing first. Never empty: a free day says so. */
+  lines: string[];
+};
+
+/** The most a morning card says. More than this is a list, and lists get skimmed. */
+export const DAY_BRIEF_LINES = 4;
+
+/**
+ * What the character wakes up to, read off the same commitments the chip shows.
+ *
+ * Late first, then today, then tomorrow, then any clock one segment from
+ * arriving, then whoever is waiting on them. Nothing here is new information:
+ * it is the state they already have, put in front of them at the moment a day
+ * turns over, because that is the moment "what now?" gets asked.
+ */
+export function dayBrief(day: number, status: CommitmentsStatus): DayBrief {
+  const lines: string[] = [];
+  const open = status.commitments.filter((c) => c.status === "active");
+  for (const c of open) {
+    if (c.dueInDays !== null && c.dueInDays <= 1)
+      lines.push(`${c.title} — ${dueLabel(c.dueInDays)}`);
+  }
+  for (const c of open) {
+    if (c.meter && c.meter.segments - c.meter.filled <= 1)
+      lines.push(`${c.title} — close to coming due`);
+  }
+  for (const c of open) {
+    if (c.kind === "people" && c.dueInDays === null && c.severity >= 3) {
+      lines.push(`${c.title} — still waiting on you`);
+    }
+  }
+  return {
+    day,
+    lines: lines.length
+      ? lines.slice(0, DAY_BRIEF_LINES)
+      : ["Nothing is owed today. The day is yours."],
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -455,4 +511,42 @@ export function dueLabel(dueInDays: number | null): string | null {
 
 function plural(days: number): string {
   return days === 1 ? "day" : "days";
+}
+
+/** Read a `day_began` ledger row back into its brief, or null for anything else. */
+export function readDayBrief(data: unknown): DayBrief | null {
+  const d = data as { day?: unknown; lines?: unknown } | null;
+  if (!d || typeof d.day !== "number" || !Array.isArray(d.lines)) return null;
+  const lines = d.lines.filter((l): l is string => typeof l === "string");
+  return lines.length ? { day: d.day, lines } : null;
+}
+
+/** Real hours away before coming back gets a "where you left off" card. */
+export const WELCOME_BACK_AFTER_HOURS = 3;
+
+/**
+ * What a returning player is shown before anything else: the threads they left
+ * open, by name. Null when they were here recently, or when the campaign has no
+ * history to come back to.
+ *
+ * Real time, not game time, because the question is about the person: after a
+ * night away nobody remembers that the landlord was due Thursday, and a game
+ * that opens on "you are in a bar" has asked them to rebuild their own reasons
+ * to play.
+ */
+export function welcomeBack(
+  lastEventAt: string | null | undefined,
+  now: number,
+  status: CommitmentsStatus,
+): string[] | null {
+  if (!lastEventAt) return null;
+  const then = Date.parse(lastEventAt);
+  if (!Number.isFinite(then)) return null;
+  if (now - then < WELCOME_BACK_AFTER_HOURS * 3_600_000) return null;
+  const open = status.commitments.filter((c) => c.status === "active").slice(0, 3);
+  if (!open.length) return ["Nothing is owed. The night is yours."];
+  return open.map((c) => {
+    const due = dueLabel(c.dueInDays);
+    return `${c.title}${due ? ` — ${due}` : ""}`;
+  });
 }

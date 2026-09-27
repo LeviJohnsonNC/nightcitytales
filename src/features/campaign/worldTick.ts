@@ -21,6 +21,9 @@ import {
   MOVE_MEANINGS,
   MOVE_SEVERITY,
   describeMove,
+  dueArcBeat,
+  fillArc,
+  somebodyMoves,
   tickTheWorld,
   type NpcMove,
   type TickPerson,
@@ -37,6 +40,7 @@ import {
   type SituationUpsert,
 } from "@/lib/backend";
 import { logOpenOracle } from "./oracles";
+import { arcPeopleFor, saveFiredBeat, situationForBeat } from "./arcs";
 
 /** The last in-world day the world was allowed to move. */
 export const WORLD_TICK_FLAG = "world_tick_day";
@@ -220,6 +224,33 @@ export async function runWorldTick(input: WorldTickInput): Promise<WorldTickResu
     minute: input.minute,
   });
   await logOpenOracle(input.campaignId, decision.roll);
+
+  // On a day somebody moves, a story that is due moves instead of a one-off —
+  // unless a grudge has come due, which is somebody coming for you and outranks
+  // anybody's subplot. Still one person: an arc beat IS the day's move.
+  const fired =
+    somebodyMoves(decision.roll) && !decision.person?.grudgeDue
+      ? dueArcBeat(arcPeopleFor(input.npcs, input.campaignId), input.day)
+      : null;
+  if (fired) {
+    const npc = input.npcs.find((n) => (n.npc_id ?? n.name) === fired.person.key);
+    if (npc) await saveFiredBeat(input.campaignId, npc, fired);
+    await upsertSituations(input.campaignId, [situationForBeat(fired, input.day)]);
+    const title = fillArc(fired.beat.title, fired.person.name);
+    await appendCampaignEvent({
+      campaign_id: input.campaignId,
+      type: MOVED_EVENT,
+      summary: title,
+      data: {
+        npcKey: fired.person.key,
+        move: fired.beat.move,
+        arcId: fired.person.arc.id,
+        stage: fired.stage,
+        day: input.day,
+      } as unknown as Json,
+    });
+    return { ran: true, personName: fired.person.name, move: fired.beat.move, gigTaken: null };
+  }
 
   const situations: SituationUpsert[] = [];
   if (decision.person && decision.move) {

@@ -356,6 +356,16 @@ The work, with what the location layer already covered marked:
   a character's REGULAR (`regularOf`: the place of a kind they know best) —
   "find a bar" goes there, the staff greet them as one, and their friend
   drinks there too. The six still need pictures.
+  Then pull: the status chip names the most pressing thread instead of
+  counting them ("Rent — due tomorrow · +2 more"), a turn that crosses midnight
+  writes a Day card into the log with what is late, due and close, a player back
+  after hours away is met with the threads they left open, and a trip nobody
+  said how to make goes whichever way is quicker.
+  Then people with stories: each of the six carries an arc (`engine/arcs.ts`,
+  twelve in a house-rule library) that plays out in world-tick moves, shows as
+  a tell when you run into them, forks its ending on your involvement, and
+  reveals what was really going on only to a player who got involved. The arc
+  timings are pacing guesses.
   Still to do, in order: run the evals and tune from what they say (the prompts
   still carry most of their old brakes; cutting them blind was not worth the
   risk), and a stronger model if the evals say it plays better.

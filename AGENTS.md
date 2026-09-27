@@ -95,7 +95,12 @@ which Skill can reach which rung and what having asked costs, so the nine
 printed Social Skills are nine Skills rather than one. Its data is
 `src/data/cast/social-reads.json`, flagged `houseRule: true`, and the axis it
 adds — suspicion — is spent on information and never on dice, the same ruling
-the city layer runs on.
+the city layer runs on. `arcs.ts` gives each of the six a story of their own,
+from `src/data/cast/arcs.json` (`houseRule: true`): three stages of world-tick
+moves whose ending forks on whether the player got involved. Its state lives on
+the person's row (`campaign_npcs.data.arc`), a beat takes the world tick's one
+move for its day, and a stage's `reveal` is never sent to the model — it
+reaches the player only through involvement, beside their dossier facts.
 
 The city is a system in the engine, not a setting in the prose. `geography.ts`
 is the atlas as the publisher printed it and invents nothing; beside it,

@@ -373,6 +373,19 @@ moves. They ask for something, call in what they are owed, warn you, go quiet, o
 come looking. One person, not six. A city that does something to you every day is
 not alive, it is a notification tray.
 
+And they have stories of their own. Each of the six carries an **arc**
+(`src/engine/arcs.ts`, from a small house-rule library in
+`src/data/cast/arcs.json`): three stages, each a move the world tick already
+makes, running whether or not the character is paying attention. A friend goes
+quiet, then needs money, then either comes out the other side or turns up with
+a splinted hand, depending on whether the character got involved. A stage takes
+the world tick's move for its day, so there is still one person a day. The
+narrator is told only what anybody could see; the truth behind a stage is never
+sent to it, and reaches the player only by their getting involved, as something
+they have worked out. Running into somebody shows where they are in it — the
+tell, not the reason. This is the mechanism behind "I cannot believe that
+happened to my character": it happened to somebody they know.
+
 ---
 
 ## Pressure

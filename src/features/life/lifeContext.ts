@@ -217,6 +217,8 @@ export type LifeContext = {
           comingOver?: boolean;
           /** They already came over earlier today. */
           cameOver?: boolean;
+          /** What anybody could see about them lately: the visible edge of their own story. */
+          tell?: string;
         }
       | undefined;
     nearby: string[];
@@ -396,6 +398,12 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.whoIsHere) {
       const w = p.whoIsHere;
       parts.push(line("Somebody you know is here", `${w.name} [${w.key}]`));
+      if (w.tell) {
+        parts.push(
+          `Something about them lately, which anybody could see: ${w.tell} Show it; do not ` +
+            "explain it, and do not have them explain it. What is behind it is not yours to know.",
+        );
+      }
       if (w.comingOver) {
         parts.push(
           "They have seen the character and they are COMING OVER. The engine decided that before " +

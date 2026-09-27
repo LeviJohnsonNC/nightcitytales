@@ -3,7 +3,12 @@ import type { Campaign, CampaignVitals, FullCharacter } from "@/lib/backend";
 import type { LifeClock, LifeSituation, MissionObjective } from "@/engine";
 import {
   clockSeverity,
+  DAY_BRIEF_LINES,
+  WELCOME_BACK_AFTER_HOURS,
   commitmentsStatus,
+  dayBrief,
+  readDayBrief,
+  welcomeBack,
   dueClause,
   dueLabel,
   formatMoney,
@@ -316,8 +321,10 @@ describe("commitments hold what the player caused, and nothing else", () => {
     });
     expect(status.dueToday).toBe(1);
     expect(status.overdue).toBe(1);
-    // Overdue is the louder fact, so it is the one the chip says.
-    expect(status.line).toBe("2 open · 1 overdue");
+    // The chip names the most pressing thread, which is the late one.
+    const late = status.commitments[0]!;
+    expect(late.key).toBe("situation:late");
+    expect(status.line).toBe(`${late.title} — 3 days late · +1 more`);
   });
 
   it("marks the situation this turn is actually about", () => {
@@ -361,5 +368,65 @@ describe("dueLabel", () => {
     expect(dueLabel(3)).toBe("due in 3 days");
     expect(dueLabel(-1)).toBe("1 day late");
     expect(dueLabel(-4)).toBe("4 days late");
+  });
+});
+
+describe("a new day, and coming back", () => {
+  const day10 = (situations: Parameters<typeof commitmentsStatus>[0]["situations"]) =>
+    commitmentsStatus({ day: 10, clocks: [], situations });
+
+  it("wakes up to what is late, due today and due tomorrow, in that order", () => {
+    const brief = dayBrief(
+      10,
+      day10([
+        situation({ key: "later", title: "Later", dueDay: 15 }),
+        situation({ key: "tomorrow", title: "Tomorrow thing", dueDay: 11 }),
+        situation({ key: "late", title: "Late thing", dueDay: 8 }),
+        situation({ key: "today", title: "Today thing", dueDay: 10 }),
+      ]),
+    );
+    expect(brief.lines).toEqual([
+      "Late thing — 2 days late",
+      "Today thing — due today",
+      "Tomorrow thing — due tomorrow",
+    ]);
+  });
+
+  it("warns about a clock one segment from arriving", () => {
+    const status = commitmentsStatus({
+      day: 10,
+      situations: [],
+      clocks: [{ key: "ncpd", label: "NCPD Heat", filled: 5, segments: 6, hidden: false }],
+    } as Parameters<typeof commitmentsStatus>[0]);
+    expect(dayBrief(10, status).lines).toContain("NCPD Heat — close to coming due");
+  });
+
+  it("says a free day is free", () => {
+    expect(dayBrief(10, day10([])).lines).toEqual(["Nothing is owed today. The day is yours."]);
+  });
+
+  it("never runs longer than a glance", () => {
+    const many = Array.from({ length: 9 }, (_, i) =>
+      situation({ key: `s${i}`, title: `Thing ${i}`, dueDay: 10 }),
+    );
+    expect(dayBrief(10, day10(many)).lines).toHaveLength(DAY_BRIEF_LINES);
+  });
+
+  it("reads a day card back off the ledger, and nothing else", () => {
+    expect(readDayBrief({ day: 4, lines: ["a", 3, "b"] })).toEqual({ day: 4, lines: ["a", "b"] });
+    expect(readDayBrief({ day: "4", lines: [] })).toBeNull();
+    expect(readDayBrief(null)).toBeNull();
+  });
+
+  it("welcomes a player back only after real time away", () => {
+    const status = day10([situation({ key: "rent", title: "Rent", dueDay: 11 })]);
+    const at = "2026-09-27T12:00:00Z";
+    const hour = 3_600_000;
+    const then = Date.parse(at);
+    expect(welcomeBack(at, then + hour, status)).toBeNull();
+    expect(welcomeBack(at, then + WELCOME_BACK_AFTER_HOURS * hour, status)).toEqual([
+      "Rent — due tomorrow",
+    ]);
+    expect(welcomeBack(undefined, then, status)).toBeNull();
   });
 });
