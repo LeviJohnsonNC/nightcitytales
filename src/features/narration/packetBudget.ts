@@ -52,6 +52,13 @@ export const PACKET_BUDGET = {
   nearby: 8,
   neighbours: 8,
   /**
+   * The nearest place of each everyday kind. One line per kind, so this bounds
+   * how many kinds are listed, not how many places.
+   */
+  nearestByKind: 8,
+  /** What the player typed, among the recent lines. Their words, not the narrator's. */
+  playerLines: 3,
+  /**
    * People the character knows, and other situations still live.
    *
    * These two were already capped, by a bare `.slice()` in the Life renderer.

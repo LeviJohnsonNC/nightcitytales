@@ -5,7 +5,7 @@
  * no advance_beat, and no way to accept a job.
  */
 import { z } from "zod";
-import { clampDispositionDelta, isAnswerableQuestion } from "@/engine";
+import { clampDispositionDelta, isAnswerableQuestion, isPlaceTag, tagNamed } from "@/engine";
 import { normalizeWalkOnMentions, type WalkOnMention } from "@/features/cast/walkOnMention";
 import { snapDv } from "@/features/narration/narratorRules";
 
@@ -58,6 +58,11 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("travel"),
     destination: z.string().optional(),
+    /**
+     * A KIND of place the player asked for — "a bar", "somewhere to eat" — as a
+     * tag from the engine's closed list. The engine picks which one.
+     */
+    seek: z.string().optional(),
     /** A compass heading the player asked for; the engine picks the district. */
     direction: z.string().optional(),
     extent: z.enum(["near", "far"]).optional(),
@@ -267,9 +272,15 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
       const extentRaw = (str(a["extent"]) ?? "").toLowerCase();
       const mode = str(a["mode"]) ?? str(a["by"]) ?? str(a["transport"]);
       const blocks = num(a["blocks"]) ?? num(a["distanceBlocks"]);
+      // A kind of place, from the closed tag list. Taken as the tag itself or
+      // read out of words ("a bar"); anything else is dropped rather than
+      // guessed at, and the trip goes on the destination or heading alone.
+      const seekRaw = str(a["seek"]) ?? str(a["kind_of_place"]) ?? str(a["placeKind"]);
+      const seek = seekRaw ? (isPlaceTag(seekRaw) ? seekRaw : tagNamed(seekRaw)) : undefined;
       out.push({
         kind: "travel",
         ...(destination ? { destination } : {}),
+        ...(seek ? { seek } : {}),
         ...(direction ? { direction } : {}),
         ...(mode ? { mode } : {}),
         ...(blocks && blocks > 0 ? { blocks: clamp(blocks, 1, 200) } : {}),

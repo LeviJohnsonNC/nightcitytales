@@ -106,6 +106,15 @@ export type LifeContext = {
   /** What the engine already resolved, when this turn is a follow-up. */
   resolved?: string;
   /**
+   * What the player actually typed, when this turn is the follow-up to it.
+   *
+   * A follow-up used to be asked with an empty input, so "walk to the bar and
+   * sit down at the counter" reached the arrival as "(open the moment)" and the
+   * counter never happened. The engine resolved the first half; this is how the
+   * narrator learns there was a second.
+   */
+  said?: string;
+  /**
    * The job the engine has ready — present ONLY on a night the wire oracle
    * actually produced work. Its presence therefore DOES mean the offer lands
    * this turn; whether there was work at all stopped being the model's decision
@@ -203,6 +212,14 @@ export type LifeContext = {
     neighbours?: string[];
     /** The major roads through this district, by name. */
     streets?: string[];
+    /**
+     * The nearest real place of each everyday kind — "bar: Forlorn Hope, Little
+     * China, 14 min on foot" — picked by the engine. When somebody gives the
+     * character directions, or the player asks for "a bar", these are the
+     * answers, so the narrator never has to invent a cellar three alleys down
+     * that the map cannot take anyone to.
+     */
+    nearestByKind?: string[];
   } | null;
   /** True when the player asked what they could do, rather than doing it. */
   optionsRequested?: boolean;
@@ -388,6 +405,18 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     }
     if (p.destinations?.length) {
       parts.push(line("Places worth naming (use the exact name)", p.destinations.join(", ")));
+    }
+    if (p.nearestByKind?.length) {
+      parts.push("", "-- THE NEAREST OF EACH KIND (the engine picked these) --");
+      for (const n of withinBudget(p.nearestByKind, PACKET_BUDGET.nearestByKind)) {
+        parts.push(`  - ${n}`);
+      }
+      parts.push(
+        "When somebody here gives directions or recommends somewhere, it is one of these, by " +
+          'name. When the player asks for a KIND of place ("find a bar", "somewhere to eat"), ' +
+          'propose travel with "seek" set to that kind and let the engine take them to the ' +
+          "right one.",
+      );
     }
     parts.push(
       "Narrate this location by name and use only these canonical places. " +
@@ -621,8 +650,26 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       "",
       "== ALREADY RESOLVED BY THE ENGINE ==",
       context.resolved,
-      "Narrate exactly this in 1-3 sentences. Do not change a number and do not re-roll it.",
+      context.said
+        ? "Narrate exactly this first. Do not change a number and do not re-roll it."
+        : "Narrate exactly this in 1-3 sentences. Do not change a number and do not re-roll it.",
     );
+    if (context.said) {
+      parts.push(
+        "",
+        "== WHAT THE PLAYER SAID ==",
+        `"${context.said}"`,
+        "The engine has done the part above. Now carry out the REST of what they said, in this " +
+          "same turn, so they never have to say it twice. Keep going until the first moment " +
+          "that genuinely needs them: something risky (propose the check and stop), a price the " +
+          "engine has not given you, somebody speaking to them, or something they could not have " +
+          "expected. A price the engine HAS given you is paid with a spend at exactly that price.",
+        "Do only what they said: nothing they did not ask for, and no second trip anywhere. If " +
+          "the result above stops them, the rest does not happen. If nothing is left to do, end " +
+          "on what is live in front of them. timeSpent counts only what happens after the part " +
+          "above.",
+      );
+    }
   }
 
   parts.push("", "== PLAYER INPUT ==", playerInput);

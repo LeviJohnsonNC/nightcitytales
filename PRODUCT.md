@@ -615,6 +615,15 @@ Practical smells, in roughly descending severity.
 - A location is described rather than played: the entry changed, and what the
   place does did not.
 - The player is reading more than they are deciding.
+- The player had to say the same thing twice. "Walk to the bar and sit down at
+  the counter" that reaches the bar and stops at the door has done half of what
+  was asked, and the half it dropped was the player's.
+- A request the engine could have resolved was refused, or answered with nothing
+  to press. "Find a bar" has an answer in the atlas; "that is not a place on the
+  map" is the engine declining to look.
+- A turn left the character where they started after they asked to go
+  somewhere. A trip that cannot be worked out is the engine not knowing where,
+  not the character failing to leave.
 
 ---
 

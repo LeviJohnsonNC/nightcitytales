@@ -326,6 +326,20 @@ The work, with what the location layer already covered marked:
 - Strengthen recurring-person presentation: portraits, relationship signals.
   The cast now have places to be; they still have no faces on screen.
 - Let the player inspect campaign state without burying the active situation.
+- **Follow-through** — started. The narrator was stopping halfway: "walk to the
+  bar and sit down at the counter" reached the door, because the arrival was
+  narrated from an empty input, and "find a bar" was refused because no bar is
+  called "a bar". Shipped: travel to a KIND of place (`nearestWithTag`, `seek`),
+  the nearest of each everyday kind in the packet so directions name real
+  places, an arrival that carries the player's words and can finish them, a
+  refused trip that stays put and offers the nearest real places, and the
+  player's own lines in Life's recent history. The eval gained four checks for
+  the narrator doing too little, beside the eleven for too much.
+  Still to do, in order: the narrator's prompts rebalanced toward momentum (and
+  measured with those checks), the scene staying put while the player is in it,
+  trivial asks resolving without dice and low-stakes checks rolling themselves,
+  unnamed local spots for the districts the atlas gives no bar, and a stronger
+  model if the evals say it plays better.
 
 Success: the player opens the game, understands their immediate problem in
 seconds, decides, sees the cost, and moves on.

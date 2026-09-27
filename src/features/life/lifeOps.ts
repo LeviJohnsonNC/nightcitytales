@@ -175,6 +175,9 @@ import {
   resolvePosition,
   reachableDestinations,
   canTravel,
+  nearestWithTag,
+  type NearbyPlace,
+  type PlaceTag,
 } from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
@@ -192,10 +195,16 @@ import {
   clockFromRow,
   derivedSituations,
   lifePeople,
+  describeTravelOutcome,
+  kindOfTrip,
+  nearestByKindLines,
+  placesToOffer,
   recentLifeLines,
+  saidBefore,
   situationFromRow,
   situationToUpsert,
   hauntPeople,
+  type TurnOutcome,
 } from "./lifeModel";
 
 export type { LifeHook };
@@ -402,6 +411,25 @@ export type TurnOptions = {
   /** Narrate a committed engine result without applying model-authored actions. */
   fixedResult?: boolean;
   /**
+   * What the player typed. Set by `liveTurn` on the turn they typed it, and
+   * carried into the follow-up that narrates an engine result — the arrival,
+   * the dice — so the rest of what they said still happens.
+   */
+  said?: string;
+  /**
+   * This turn finishes what an earlier one started: the trip is done and the
+   * rest of the player's words are being carried out. It may spend, use kit
+   * and propose a check, and it may NOT travel — a second trip is a second
+   * request the player never made, and it is also how a follow-up would recurse.
+   */
+  continuation?: boolean;
+  /**
+   * Cards the ENGINE is offering on this turn, written as its options. Used
+   * when a trip could not be resolved: rather than a refusal and nothing to
+   * press, the nearest real places of the kind they asked for.
+   */
+  cards?: LifeActionCard[];
+  /**
    * What the oracles said before this turn ran. The model is handed these as
    * facts; it never learns that a die was involved in producing them.
    */
@@ -449,6 +477,28 @@ function knownPlacesOf(campaign: Campaign): string[] {
   const known = campaign.known_places;
   if (!Array.isArray(known)) return [];
   return (known as unknown[]).filter((v): v is string => typeof v === "string");
+}
+
+/** The venues among the places they have stood, by place key. */
+function knownVenueKeysOf(campaign: Campaign): string[] {
+  const out: string[] = [];
+  for (const raw of knownPlacesOf(campaign)) {
+    const key = resolvePosition(raw)?.placeKey;
+    if (key && !out.includes(key)) out.push(key);
+  }
+  return out;
+}
+
+/** A place the engine is offering as somewhere to go, written as an option card. */
+function travelCard(place: NearbyPlace, kind: PlaceTag): LifeActionCard {
+  const district = getDistrict(place.districtKey)?.name ?? place.districtKey;
+  return {
+    label: `Go to ${place.name}`,
+    description: `The nearest ${kind.replace(/_/g, " ")}, in ${district}.`,
+    timeMinutes: place.minutes,
+    knownCost: null,
+    skillId: null,
+  };
 }
 
 /** The context slice the Life model reasons over. Deterministic and small. */
@@ -627,7 +677,14 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
             roleId: bundle.character.character.role,
           })
             .filter((a) => !a.skillId)
-            .map((a) => `${a.label} (${a.placeName})`),
+            // The price, when the engine has one. It is what lets "order a
+            // drink" be paid for at the engine's number rather than stopped
+            // short of the counter for want of one.
+            .map((a) => `${a.label} (${a.placeName}${a.cost !== null ? `, ${a.cost}eb` : ""})`),
+          nearestByKind: nearestByKindLines(
+            bundle.campaign.location_key ?? DEFAULT_START,
+            knownVenueKeysOf(bundle.campaign),
+          ),
           nearby: withinBudget(positionDistrict.locations, PACKET_BUDGET.nearby).map((l) => l.name),
           streets: streetsIn(positionDistrict.key).map((s) => s.name),
           destinations: reachableDestinations(
@@ -685,6 +742,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     recentEvents: recentLifeLines(bundle.events),
     capabilities: renderCapabilityLines(capability),
     ...(turn.resolved ? { resolved: turn.resolved } : {}),
+    ...(turn.resolved && turn.said ? { said: turn.said } : {}),
     ...(turn.options ? { optionsRequested: true } : {}),
     ...(turn.oracle?.street ? { street: turn.oracle.street } : {}),
     ...(turn.oracle?.answer
@@ -714,27 +772,6 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
 }
 
 /**
- * What the engine actually did with a turn, as opposed to what the model wrote.
- * The two can differ — the model proposes a move and the engine picks the
- * destination — and where they do, the fiction has to be told.
- */
-type TurnOutcome = {
-  travelled?: {
-    from: string;
-    to: string;
-    minutes: number;
-    direction?: string;
-    stoppedAt?: "water" | "edge" | "arrived";
-    mode: string;
-    /** How far the trip covered, in city blocks, when it was a walk along a heading. */
-    blocks?: number;
-    /** Bridges the route crossed, by name, in order. */
-    bridges?: string[];
-  };
-  travelRefused?: string;
-};
-
-/**
  * Persist a clock delta and the situations/flags the turn produced.
  *
  * Takes the turn RESULT rather than the bare response: the narration event it
@@ -755,12 +792,14 @@ async function applyResponse(
   // took, clamped to something a single Life turn is allowed to eat.
   const carriesOwnTime =
     !turn.options && response.proposedActions.some((a) => a.kind === "travel" || a.kind === "rest");
-  const spent =
-    turn.minutes !== undefined
+  // A trip or a night's sleep charges its own duration where it is applied,
+  // so it wins even over minutes a card printed: charging both counted the
+  // same walk twice.
+  const spent = carriesOwnTime
+    ? 0
+    : turn.minutes !== undefined
       ? clampActionMinutes(turn.minutes)
-      : carriesOwnTime
-        ? 0
-        : clampActionMinutes(response.timeSpent);
+      : clampActionMinutes(response.timeSpent);
 
   await appendCampaignEvent({
     campaign_id: campaignId,
@@ -771,7 +810,7 @@ async function applyResponse(
     data: {
       situationKey: bundle.current?.key ?? null,
       title: response.situation.title,
-      actions: turn.fixedResult ? [] : response.actions,
+      actions: turn.cards ?? (turn.fixedResult ? [] : response.actions),
       // Resolved HERE, once, with the campaign+place seed the response schema
       // never sees — never re-picked on a later render, so a walk-on's face
       // stays the same face across scrollback and reload.
@@ -930,13 +969,20 @@ async function applyResponse(
       }
     } else if (action.kind === "travel") {
       const vehicleRule = liveVehicleRule(bundle.campaign, bundle.character);
+      const from = bundle.campaign.location_key ?? DEFAULT_START;
+      // "Find a bar" is a request for the nearest real bar, not for a place
+      // called "a bar". The engine picks it; the narrator never has to.
+      const kind = kindOfTrip(action, turn.said);
+      const known = knownVenueKeysOf(bundle.campaign);
+      const sought = kind ? nearestWithTag(from, kind, { known, limit: 1 }) : [];
+      const destination = sought[0]?.key ?? action.destination;
       // A move in the fiction is a move on the map. The engine resolves the
       // name against the atlas, prices the trip from the house-rule table, and
       // commits the same way the map's own travel button does — so the pin, the
       // header and the ledger all agree with the narration.
       const decision = resolveTravelIntent({
-        from: bundle.campaign.location_key ?? DEFAULT_START,
-        ...(action.destination ? { destination: action.destination } : {}),
+        from,
+        ...(destination ? { destination } : {}),
         ...(action.direction ? { direction: action.direction } : {}),
         ...(action.extent ? { extent: action.extent } : {}),
         ...(action.mode ? { mode: action.mode } : {}),
@@ -948,6 +994,8 @@ async function applyResponse(
       if (!decision.ok) {
         await refuse(decision.reason, "impossible");
         outcome.travelRefused = decision.reason;
+        const offer = placesToOffer(from, kind, known);
+        if (offer.length) outcome.travelChoices = offer.map((o) => travelCard(o.place, o.kind));
         continue;
       }
       const before = bundle.campaign.location_key ?? DEFAULT_START;
@@ -1270,14 +1318,29 @@ export async function liveTurn(
   const oracle = turn.fixedResult
     ? undefined
     : (turn.oracle ?? (await consultOracles(bundle, input, turn)));
-  const asked: TurnOptions = oracle ? { ...turn, oracle } : turn;
+  const asked: TurnOptions = {
+    ...turn,
+    ...(oracle ? { oracle } : {}),
+    ...(input.trim() && !turn.said ? { said: input.trim() } : {}),
+  };
   const context = buildContext(bundle, asked);
   const opening = turn.options
     ? "(the player is asking what they could do here)"
     : "(open the moment)";
-  const response = await lifeTurnFn({
+  const answered = await lifeTurnFn({
     data: { userPrompt: renderLifeUserPrompt(context, input || opening) },
   });
+  // A continuation finishes what the player asked; it does not go anywhere
+  // else. Dropped here, before anything is applied, so a second trip can
+  // neither be taken nor charged for.
+  const response = turn.continuation
+    ? {
+        ...answered,
+        proposedActions: answered.proposedActions.filter(
+          (a) => a.kind !== "travel" && a.kind !== "hook_offer",
+        ),
+      }
+    : answered;
   const outcome = await applyResponse(bundle, response, asked);
 
   // The model wrote its prose before the engine had decided anything, so a trip
@@ -1286,9 +1349,31 @@ export async function liveTurn(
   // arrival. Without this the narration can walk you east while the pin, the
   // header and the ledger all say you went west.
   const correction = describeTravelOutcome(outcome);
-  if (correction && !turn.fixedResult) {
+  if (correction && !turn.fixedResult && !turn.continuation) {
+    if (outcome.travelled && asked.said) {
+      // They got there, and there may be more to what they said: "walk to the
+      // bar AND sit down at the counter". The arrival is narrated as a turn of
+      // its own that can finish the job — spend at the engine's price, reach
+      // for kit, call for dice — rather than as prose that stops at the door.
+      // Reloaded, not patched: the trip moved the clock and may have cost
+      // money, and this turn writes both from what the bundle says.
+      const fresh = await loadLife(bundle.campaign.id);
+      await liveTurn({ ...fresh, current: bundle.current }, "", {
+        resolved: correction,
+        said: asked.said,
+        continuation: true,
+        // Nothing is re-rolled for the second half of one evening's errand.
+        oracle: {},
+      });
+      return;
+    }
     const fresh = { ...bundle, events: await listCampaignEvents(bundle.campaign.id) };
-    await liveTurn(fresh, "", { minutes: 0, resolved: correction, fixedResult: true });
+    await liveTurn(fresh, "", {
+      minutes: 0,
+      resolved: correction,
+      fixedResult: true,
+      ...(outcome.travelChoices?.length ? { cards: outcome.travelChoices } : {}),
+    });
     return;
   }
 
@@ -1401,46 +1486,6 @@ async function applySearch(
         "beside it and do not enlarge on what it means.";
 }
 
-/** What to tell the narrator about a move the engine has already committed. */
-function describeTravelOutcome(outcome: TurnOutcome): string | undefined {
-  if (outcome.travelRefused) {
-    return (
-      `The character did NOT travel. ${outcome.travelRefused} They are still where they were. ` +
-      "Narrate that in a sentence or two: the trip did not happen, and say why in the fiction " +
-      "rather than as a rule. Do not describe arriving anywhere."
-    );
-  }
-  const trip = outcome.travelled;
-  if (!trip) return undefined;
-  const far = trip.blocks ? `${trip.blocks} block${trip.blocks === 1 ? "" : "s"}` : undefined;
-  if (trip.stoppedAt === "water" || trip.stoppedAt === "edge") {
-    const edge =
-      trip.stoppedAt === "water"
-        ? "the waterfront, with nothing but water beyond it"
-        : "the edge of the city, where the streets give out";
-    return (
-      `The character went ${trip.direction ? `${trip.direction} ` : ""}${trip.mode} as far as ` +
-      `that way goes${far ? ` — ${far}` : ""} and came up against ${edge}. It took ` +
-      `${trip.minutes} minutes and they are now at ${trip.to}, which is a different spot from ` +
-      "where they set off even if it is the same district. Narrate reaching that edge in two or " +
-      "three sentences: what is in front of them, what is behind. Do not send them onwards."
-    );
-  }
-  const crossing = trip.bridges?.length
-    ? ` The way there crossed ${trip.bridges.join(", then ")}, so that is on the route and ` +
-      "worth a line."
-    : "";
-  return (
-    `The character has ARRIVED. They travelled ${trip.direction ? `${trip.direction} ` : ""}` +
-    `${far ? `${far} ` : ""}from ${trip.from} to ${trip.to} ${trip.mode}, and it took ` +
-    `${trip.minutes} minutes.` +
-    `${crossing} That destination, that heading and how they got there are facts — the engine ` +
-    "chose them, not you. Narrate the arrival in two or three sentences: where they are standing " +
-    "now, what is in front of them. Do not name a different place, do not contradict the " +
-    "heading, and do not send them onwards."
-  );
-}
-
 /** Roll a Life check the player pressed, then let the world answer it. */
 export async function commitLifeCheck(
   bundle: LifeBundle,
@@ -1485,6 +1530,7 @@ export async function commitLifeCheck(
     const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
     await liveTurn(fresh, "", {
       minutes: 0,
+      ...saidBefore(bundle.events, pending.eventId),
       resolved:
         `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".` +
         insightLine(read),
@@ -1524,6 +1570,7 @@ export async function commitLifeCheck(
   const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
   await liveTurn(fresh, "", {
     minutes: 0,
+    ...saidBefore(bundle.events, pending.eventId),
     resolved:
       `The ${pending.skillName} check is RESOLVED. ${roll.result.formula}. Outcome: ${verdict} by ${Math.abs(roll.result.total - dv)}, for the intent "${pending.intent}".` +
       (found ? ` ${found}` : "") +

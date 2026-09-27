@@ -82,6 +82,18 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
       observations: life.observations.map((o) => o.observation),
       walkOns: life.walkOns.map((w) => w.subject),
       proposedActionCount: life.proposedActions.filter((a) => a.kind !== "none").length,
+      trips: life.proposedActions.flatMap((a) =>
+        a.kind === "travel"
+          ? [
+              {
+                ...(a.destination ? { destination: a.destination } : {}),
+                ...(a.seek ? { seek: a.seek } : {}),
+                ...(a.direction ? { direction: a.direction } : {}),
+              },
+            ]
+          : [],
+      ),
+      spends: life.proposedActions.filter((a) => a.kind === "spend").length,
     },
   };
 }

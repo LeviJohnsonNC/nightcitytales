@@ -76,6 +76,18 @@ must trip it, and prose that must not.
 | `narrator.eval.ts`                            | Scenario × check, with the repeat counting.                                      |
 | `../src/features/narration/narratorChecks.ts` | The detectors. Pure, CI-tested.                                                  |
 
+## Too much, and too little
+
+The first eleven checks catch the narrator overreaching: pricing things,
+naming a way in, filling a quiet night. With nothing watching the other
+direction, every prompt revision could only add a brake, and the game that came
+out of it stopped at the door of every bar it was asked to sit in. The
+follow-through checks (`goes-where-asked`, `finishes-the-request`,
+`stays-put-on-refusal`, `directions-are-real`) catch the narrator doing too
+little, and the four `life-*` scenarios at the bottom of `scenarios.ts` replay
+the transcript that found it. A prompt change that makes one set pass by
+failing the other has not helped.
+
 ## Adding a scenario
 
 Keep the set small — each one costs a call per repeat, and six scenarios that
