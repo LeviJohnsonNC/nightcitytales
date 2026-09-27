@@ -27,7 +27,12 @@ export type FixerVoice = {
   roles: Record<string, string>;
   /** How they close the file. */
   verdict: string;
+  /** How they open each chapter of the Lifepath. */
+  chapters: Record<LifepathChapterId, string>;
 };
+
+/** The chapters the Lifepath is asked in. */
+export type LifepathChapterId = "origin" | "self" | "people" | "drive" | "work";
 
 const VOICES = (data as unknown as { fixers: Record<string, FixerVoice> }).fixers;
 
@@ -69,6 +74,14 @@ export function fixerSays(
   if (step === "fixer") return voice.greeting;
   if (step === "role" && roleId && voice.roles[roleId]) return voice.roles[roleId];
   return voice.ask[step] ?? null;
+}
+
+/** What the fixer says opening a chapter of the Lifepath. */
+export function fixerChapterLine(
+  name: string | null | undefined,
+  chapter: LifepathChapterId,
+): string | null {
+  return fixerVoice(name)?.chapters[chapter] ?? null;
 }
 
 /** The fixer's surname or handle, for tight spaces: "Tally", "Achebe", "Kit". */

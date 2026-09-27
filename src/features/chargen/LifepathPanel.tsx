@@ -31,19 +31,37 @@ import {
 } from "./lifepathState";
 import { readRoleLifepath, roleLifepathComplete, type RoleLifepath } from "./roleLifepathState";
 import { useChargenStore, type ChargenState } from "./store";
+import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
+import { fixerChapterLine, type LifepathChapterId } from "./interview";
+import { PeoplePicker } from "./PeoplePicker";
+import "./interview.css";
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
 
-/** Single-answer general tables, grouped for progressive disclosure. */
-const GENERAL_GROUPS: { title: string; ids: string[] }[] = [
+/**
+ * The Lifepath, asked as an interview in chapters.
+ *
+ * It used to be every table at once, in collapsible rows, with a "Roll all
+ * remaining" button inviting the player to skip the most dramatic part of
+ * making a character. Now it is five conversations with the fixer, one at a
+ * time: where you come from, who you are, who is still out there (where the
+ * people the dice roll become faces the player can choose), what you want, and
+ * how you came to the work. The tables, rolls and rules underneath are the
+ * same; only the order of asking changed.
+ */
+type Chapter = { id: LifepathChapterId; title: string; ids: string[] };
+
+const CHAPTERS: Chapter[] = [
   {
-    title: "Origins & Upbringing",
+    id: "origin",
+    title: "Where you come from",
     ids: ["cultural_origin", "family_background", "childhood_environment", "family_crisis"],
   },
   {
-    title: "Personality & Style",
+    id: "self",
+    title: "Who you are",
     ids: [
       "personality",
       "clothing_style",
@@ -51,10 +69,13 @@ const GENERAL_GROUPS: { title: string; ids: string[] }[] = [
       "affectation",
       "value_most",
       "feel_about_people",
+      "most_valued_person",
+      "most_valued_possession",
     ],
   },
-  { title: "What You Hold Close", ids: ["most_valued_person", "most_valued_possession"] },
-  { title: "Your Drive", ids: ["life_goals"] },
+  { id: "people", title: "Who is still out there", ids: [] },
+  { id: "drive", title: "What you want", ids: ["life_goals"] },
+  { id: "work", title: "About the work", ids: [] },
 ];
 
 export function LifepathPanel({ state }: { state: ChargenState }) {
@@ -118,10 +139,13 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
   ];
   const ready = missing.length === 0;
 
-  /** Fill every unanswered rollable table (leaves choices like enemies alone). */
-  function rollAllRemaining() {
+  /**
+   * Fill unanswered rollable tables (leaves choices like enemies alone): the
+   * general ones named, and the Role's own when asked.
+   */
+  function rollRemaining(ids: string[], includeRole: boolean) {
     const entries = { ...general.entries };
-    for (const id of SINGLE_LIFEPATH_TABLES) {
+    for (const id of ids) {
       if (!entries[id]) entries[id] = rollLifepathTable(id, Math.random).entry;
     }
     let language = general.language;
@@ -137,7 +161,7 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
     const nextGeneral: GeneralLifepath = { ...general, entries, language };
 
     let nextRole = roleLifepath;
-    if (state.roleId) {
+    if (state.roleId && includeRole) {
       const rEntries = { ...roleLifepath.entries };
       // Two passes: rolling a gate can reveal a dependent table.
       for (let pass = 0; pass < 2; pass++) {
@@ -163,19 +187,40 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
     });
   }
 
-  // Any single table not placed in a group still gets shown.
-  const grouped = new Set(GENERAL_GROUPS.flatMap((g) => g.ids));
-  const leftover = SINGLE_LIFEPATH_TABLES.filter((id) => !grouped.has(id));
-  const groups = leftover.length
-    ? [...GENERAL_GROUPS, { title: "More", ids: leftover }]
-    : GENERAL_GROUPS;
+  // Any single table not placed in a chapter still gets asked, with who you are.
+  const placed = new Set(CHAPTERS.flatMap((c) => c.ids));
+  const leftover = SINGLE_LIFEPATH_TABLES.filter((id) => !placed.has(id));
+  const chapters = CHAPTERS.map((c) =>
+    c.id === "self" ? { ...c, ids: [...c.ids, ...leftover] } : c,
+  );
+
+  const done: Record<LifepathChapterId, boolean> = {
+    origin: chapters[0]!.ids.every((id) => general.entries[id]) && Boolean(general.language),
+    self: chapters[1]!.ids.every((id) => general.entries[id]),
+    people: general.enemies.every((enemy) => enemy.injuredParty),
+    drive: chapters[3]!.ids.every((id) => general.entries[id]),
+    work: roleTables.length > 0 && roleAnswered >= roleTables.length,
+  };
+  const firstOpen = chapters.find((c) => !done[c.id])?.id ?? "origin";
+  const [chapterId, setChapterId] = useState<LifepathChapterId>(firstOpen);
+  const index = chapters.findIndex((c) => c.id === chapterId);
+  const chapter = chapters[index]!;
+  const next = chapters[index + 1];
+  const fixer = state.castPlan?.picks.fixer ?? null;
+
+  function goTo(id: LifepathChapterId) {
+    setChapterId(id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Sticky progress header */}
       <div className="sticky top-14 z-10 flex items-center justify-between gap-3 border border-hairline bg-surface/90 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">Lifepath</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
+            Your story
+          </p>
           <p className="text-sm font-semibold text-text num">
             {answered} of {total} answered
           </p>
@@ -188,85 +233,161 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
             />
           </div>
           <DiceSoundToggle />
-          <Button size="sm" variant="outline" onClick={rollAllRemaining}>
-            Roll all remaining
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => rollRemaining(SINGLE_LIFEPATH_TABLES, true)}
+          >
+            Roll everything left
           </Button>
         </div>
       </div>
 
-      {groups.map((group) => (
-        <GeneralGroup
-          key={group.title}
-          title={group.title}
-          ids={group.ids}
-          general={general}
-          onEntry={setEntry}
-          onLanguage={(language) => setGeneral({ ...general, language })}
-        />
-      ))}
+      <nav aria-label="Chapters" className="grid grid-cols-5 gap-1">
+        {chapters.map((c, i) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => goTo(c.id)}
+            aria-current={c.id === chapterId ? "step" : undefined}
+            className={cn(
+              "border-t-2 px-1 pt-2 text-left transition-colors",
+              c.id === chapterId
+                ? "border-ember text-text"
+                : done[c.id]
+                  ? "border-accent/60 text-text-muted hover:text-text"
+                  : "border-hairline text-text-dim hover:text-text",
+            )}
+          >
+            <span className="block font-mono text-[10px] tracking-[0.2em]">
+              {String(i + 1).padStart(2, "0")}
+              {done[c.id] ? " ✓" : ""}
+            </span>
+            <span className="block truncate text-xs font-semibold sm:text-sm">{c.title}</span>
+          </button>
+        ))}
+      </nav>
 
-      {/* Optional relationships, collapsed by default */}
-      <CollapsibleSection
-        title="People In Your Life"
-        note="Optional"
-        count={general.friends.length + general.enemies.length + general.tragicLove.length}
-        countLabel="added"
-        defaultOpen={false}
-      >
-        <div className="space-y-4">
-          <RepeatableSection
-            title="Friends"
-            tableId="friends"
-            entries={general.friends}
-            onChange={(friends) => setGeneral({ ...general, friends })}
-          />
-          <EnemySection
-            enemies={general.enemies}
-            onChange={(enemies) => setGeneral({ ...general, enemies })}
-          />
-          <RepeatableSection
-            title="Tragic Love Affairs"
-            tableId="tragic_love"
-            entries={general.tragicLove}
-            onChange={(tragicLove) => setGeneral({ ...general, tragicLove })}
-          />
-        </div>
-      </CollapsibleSection>
+      <section key={chapter.id} className="cg-say space-y-4">
+        <ChapterLine fixer={fixer} chapter={chapter.id} title={chapter.title} />
 
-      {state.roleId ? (
-        <CollapsibleSection
-          title={`${roleName ?? "Role"} Background`}
-          note="Mixed dice; branch tables appear once you answer their gate"
-          count={roleAnswered}
-          total={roleTables.length}
-          defaultOpen
-        >
-          <div className="grid gap-2 sm:grid-cols-2">
-            {roleTables.map((table) => (
-              <RoleLifepathTableCard
-                key={table.id}
-                roleId={state.roleId!}
-                table={table}
-                entry={roleLifepath.entries[table.id] ?? null}
-                onChange={setRoleEntry}
+        {chapter.ids.length > 0 && (
+          <GeneralGroup
+            title="Roll the dice, or choose"
+            ids={chapter.ids}
+            general={general}
+            onEntry={setEntry}
+            onLanguage={(language) => setGeneral({ ...general, language })}
+          />
+        )}
+
+        {chapter.id === "people" && (
+          <div className="space-y-6">
+            <div className="space-y-4 border border-hairline/60 bg-surface/40 p-4">
+              <RepeatableSection
+                title="Friends"
+                tableId="friends"
+                entries={general.friends}
+                onChange={(friends) => setGeneral({ ...general, friends })}
               />
-            ))}
+              <EnemySection
+                enemies={general.enemies}
+                onChange={(enemies) => setGeneral({ ...general, enemies })}
+              />
+              <RepeatableSection
+                title="Tragic Love Affairs"
+                tableId="tragic_love"
+                entries={general.tragicLove}
+                onChange={(tragicLove) => setGeneral({ ...general, tragicLove })}
+              />
+            </div>
+            <PeoplePicker state={state} />
           </div>
-        </CollapsibleSection>
-      ) : (
-        <p className="border border-dashed border-hairline p-4 text-sm text-text-dim">
-          Pick a Role and its own Lifepath tables appear here.
-        </p>
-      )}
+        )}
 
-      <BackgroundPanel
-        ready={ready}
-        missing={missing}
-        buildInput={() => buildBackgroundInput(general, roleLifepath, roleName, roleAbilityName)}
-        value={state.background}
-        onChange={(text) => patch({ background: text })}
-      />
+        {chapter.id === "work" &&
+          (state.roleId ? (
+            <div className="space-y-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {roleTables.map((table) => (
+                  <RoleLifepathTableCard
+                    key={table.id}
+                    roleId={state.roleId!}
+                    table={table}
+                    entry={roleLifepath.entries[table.id] ?? null}
+                    onChange={setRoleEntry}
+                  />
+                ))}
+              </div>
+              <BackgroundPanel
+                ready={ready}
+                missing={missing}
+                buildInput={() =>
+                  buildBackgroundInput(general, roleLifepath, roleName, roleAbilityName)
+                }
+                value={state.background}
+                onChange={(text) => patch({ background: text })}
+              />
+            </div>
+          ) : (
+            <p className="border border-dashed border-hairline p-4 text-sm text-text-dim">
+              Pick a Role and the questions about your work appear here.
+            </p>
+          ))}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
+          {chapter.id !== "people" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => rollRemaining(chapter.ids, chapter.id === "work")}
+              disabled={done[chapter.id]}
+            >
+              Roll this chapter
+            </Button>
+          ) : (
+            <span />
+          )}
+          {next && (
+            <Button size="sm" onClick={() => goTo(next.id)}>
+              Next: {next.title} →
+            </Button>
+          )}
+        </div>
+      </section>
     </div>
+  );
+}
+
+/** The fixer opening a chapter, face and all. */
+function ChapterLine({
+  fixer,
+  chapter,
+  title,
+}: {
+  fixer: string | null;
+  chapter: LifepathChapterId;
+  title: string;
+}) {
+  const line = fixerChapterLine(fixer, chapter);
+  const npc = fixer ? findNpc(fixer) : null;
+  const art = npc ? npcArtwork(npc) : null;
+  return (
+    <header className="flex items-start gap-3">
+      {art && line && (
+        <img
+          src={art.srcSet.split(" ")[0]}
+          alt={fixer ?? ""}
+          className="h-12 w-12 shrink-0 border border-hairline object-cover object-top"
+        />
+      )}
+      <div className="space-y-1">
+        <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
+          {title}
+        </h3>
+        {line && <p className="text-base italic leading-snug text-text-muted">“{line}”</p>}
+      </div>
+    </header>
   );
 }
 

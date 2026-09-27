@@ -11,7 +11,9 @@ import lifepath from "@/data/rules/lifepath-general.json";
 import content from "@/data/cast/cast-content.json";
 import fit from "@/data/cast/lifepath-fit.json";
 import {
+  CANDIDATES_OFFERED,
   CAST_ROLES,
+  castCandidates,
   DISTRICTS,
   LIFEPATH_FIT_IS_HOUSE_RULE,
   arcFor,
@@ -125,5 +127,38 @@ describe("any character's cast", () => {
         for (const key of haunts) expect(getPlace(key), key).toBeDefined();
       }
     }
+  });
+});
+
+describe("choosing your people", () => {
+  it("offers only people who fit, always including the dice's own pick", () => {
+    for (let i = 0; i < 60; i += 1) {
+      const seed = i * 7907 + 5;
+      const ties = tiesFor(i);
+      for (const role of ["enemy", "friend", "old_flame"] as const) {
+        const { drawn, candidates } = castCandidates({ seed, ties, role });
+        expect(candidates).toContain(drawn);
+        expect(new Set(candidates).size).toBe(candidates.length);
+        expect(candidates.length).toBeGreaterThanOrEqual(1);
+        expect(candidates.length).toBeLessThanOrEqual(CANDIDATES_OFFERED);
+        const allowed = role === "enemy" ? FIT.enemyWho[ties.enemy!.who!] : undefined;
+        if (allowed) for (const name of candidates) expect(allowed).toContain(name);
+        expect(castCandidates({ seed, ties, role })).toEqual({ drawn, candidates });
+        // Whoever is picked from the offer is who the campaign gets.
+        for (const name of candidates) {
+          const cast = generateCast({ seed, ties, picks: { [role]: name } });
+          expect(cast.find((m) => m.role === role)!.name).toBe(name);
+        }
+      }
+    }
+  });
+
+  it("lets a pick that no longer fits the Lifepath give way to the dice", () => {
+    const seed = 99;
+    const picks = { enemy: "Deacon Ferris" };
+    const fits = generateCast({ seed, ties: { enemy: { who: "Ex-friend" } }, picks });
+    expect(fits.find((m) => m.role === "enemy")!.name).toBe("Deacon Ferris");
+    const stale = generateCast({ seed, ties: { enemy: { who: "Corporate exec" } }, picks });
+    expect(stale.find((m) => m.role === "enemy")!.name).toBe("Song Ha-eun");
   });
 });
