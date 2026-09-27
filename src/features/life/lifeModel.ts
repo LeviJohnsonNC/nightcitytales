@@ -32,6 +32,7 @@ import { PACKET_BUDGET } from "@/features/narration/packetBudget";
 import type { LifeActionCard } from "./lifeResponse";
 import { downtimeView } from "@/features/downtime/downtimeModel";
 import { castMemberFrom, guardednessOf, knownFactsOf } from "@/features/campaign/castSeeding";
+import { arcLearnedOf } from "@/features/campaign/arcs";
 import type { HauntPerson, PlaceState } from "@/engine";
 import type {
   Campaign,
@@ -114,6 +115,9 @@ export function lifePeople(npcs: CampaignNpc[], today: number): LifePersonSummar
       // the six with a dossier.
       const guarded = isGuarded(guardednessOf(n, today));
       const view = member ? publicView(member, knownFactsOf(n), guarded) : null;
+      // What getting involved in their own story has taught the character.
+      const learned = arcLearnedOf(n);
+      const known = [...(view?.known ?? []), ...learned];
       return {
         key: n.npc_id ?? n.name,
         name: n.name,
@@ -127,7 +131,7 @@ export function lifePeople(npcs: CampaignNpc[], today: number): LifePersonSummar
               role: view.role,
               standing: view.standing,
               ...(view.tie ? { tie: view.tie } : {}),
-              ...(view.known.length ? { known: view.known } : {}),
+              ...(known.length ? { known } : {}),
             }
           : {}),
       };

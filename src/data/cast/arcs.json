@@ -1,0 +1,474 @@
+{
+  "houseRule": true,
+  "note": "Personal storylines for the standing six. Cyberpunk RED gives a GM a Lifepath and leaves the rest to them; this is the rest, written as a small library the engine draws from. Each arc is three stages. The first two are moves the world tick already knows how to make; the third forks on whether the character got involved with the second. 'brief' is what the narrator is told happened, and is only ever what somebody standing there could see or hear. 'reveal' is the truth behind a stage, and reaches the player only if they engage with it. 'tell' is what the person looks like while that stage is live, for when the character runs into them. 'after' is in-world days since the previous beat (or since the campaign began, for the first). Timings are pacing guesses; tune them here.",
+  "arcs": [
+    {
+      "id": "the_debt",
+      "roles": ["friend", "old_flame"],
+      "foreshadow": "{name} keeps checking their Agent and counting their cash twice.",
+      "stages": [
+        {
+          "after": 3,
+          "move": "goes_quiet",
+          "title": "{name} has gone quiet",
+          "brief": "{name} has stopped answering messages for a couple of days, and when they do surface they are jumpy and change the subject.",
+          "tell": "{name} flinches when their Agent buzzes and does not answer it."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} needs money",
+          "brief": "{name} asks to borrow eurobucks and will not say what for unless somebody pushes.",
+          "tell": "{name} has sold the good jacket, and is wearing the bad one.",
+          "reveal": "{name} owes money to a loan shark who breaks fingers, and the interest has doubled twice."
+        },
+        {
+          "after": 4,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} is out from under it",
+            "brief": "{name} is clear of the debt, and knows exactly who got them there.",
+            "tell": "{name} is laughing again, loudly, the way they used to.",
+            "disposition": 2
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name} has a new scar",
+            "brief": "{name} turned up with a splinted hand and a new scar, and changes the subject every time it comes up.",
+            "tell": "{name} keeps the splinted hand in a pocket.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_big_break",
+      "roles": ["friend"],
+      "foreshadow": "{name} is dressed better than usual and cannot stop smiling at their Agent.",
+      "stages": [
+        {
+          "after": 4,
+          "move": "offers_help",
+          "title": "{name} is celebrating",
+          "brief": "{name} has had an offer from a corp recruiter and wants to buy the drinks.",
+          "tell": "{name} is buying rounds and talking about uptown."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} wants a second opinion",
+          "brief": "{name} asks the character to look over the contract they have been handed, and something in it has them worried.",
+          "tell": "{name} has a printed contract folded in an inside pocket and keeps touching it.",
+          "reveal": "The contract {name} was offered is a buyout: the corp would own their chrome, their medical care and the next ten years of their life."
+        },
+        {
+          "after": 4,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} walked away from it",
+            "brief": "{name} tore the contract up, is poorer and freer for it, and has not forgotten who read it with them.",
+            "tell": "{name} is back in the old jacket and seems lighter in it.",
+            "disposition": 1
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name} signed",
+            "brief": "{name} signed. They have a corp badge now and a new address uptown, and they answer messages a day late if at all.",
+            "tell": "{name} is wearing a corp lanyard and checking the time.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_rise",
+      "roles": ["enemy"],
+      "foreshadow": "{name} is wearing something that cost real money, and watching the room like they own some of it.",
+      "stages": [
+        {
+          "after": 3,
+          "move": "goes_quiet",
+          "title": "{name} has dropped out of sight",
+          "brief": "Nobody has seen {name} for days, and the people who used to drink with them have stopped talking about it.",
+          "tell": "{name} is never alone any more."
+        },
+        {
+          "after": 3,
+          "move": "moves_against",
+          "title": "{name} has new friends",
+          "brief": "{name} has turned up with a crew at their back, and somebody saw them asking where the character sleeps.",
+          "tell": "{name} has a crew at a nearby table, and they are all looking at the character.",
+          "reveal": "{name} has bought their way into a gang by promising them the character."
+        },
+        {
+          "after": 3,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} wants to talk",
+            "brief": "{name} sends word that they want to settle it without anybody bleeding. The crew behind them is gone.",
+            "tell": "{name} is alone again, and looks it.",
+            "disposition": 1
+          },
+          "ignored": {
+            "move": "comes_looking",
+            "title": "{name} is coming",
+            "brief": "{name} and their new friends are looking for the character, and not to talk.",
+            "tell": "{name} is not here. That is worse.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_setup",
+      "roles": ["enemy"],
+      "foreshadow": "{name} smiles at the character across the room as if they know something.",
+      "stages": [
+        {
+          "after": 4,
+          "move": "moves_against",
+          "title": "{name} has been telling stories",
+          "brief": "People the character knows have been hearing a story about them from {name}'s crowd, and the story is neither flattering nor true.",
+          "tell": "{name} stops talking when the character comes in."
+        },
+        {
+          "after": 3,
+          "move": "moves_against",
+          "title": "{name} is behind the story",
+          "brief": "The story about the character traces back to {name}, who has been telling it to anyone who will buy them a drink.",
+          "tell": "{name} is holding court, and the character's name comes up.",
+          "reveal": "{name} gave the character's name to the NCPD as the shooter in a job the character had nothing to do with."
+        },
+        {
+          "after": 4,
+          "involved": {
+            "move": "goes_quiet",
+            "title": "{name} has backed off",
+            "brief": "{name} has stopped telling the story, and it has stopped spreading.",
+            "tell": "{name} will not meet the character's eye.",
+            "disposition": 1
+          },
+          "ignored": {
+            "move": "moves_against",
+            "title": "{name}'s story stuck",
+            "brief": "{name}'s story about the character has reached people who act on stories, and doors that used to open for them have started staying shut.",
+            "tell": "{name} raises a glass to the character, slowly.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_squeeze",
+      "roles": ["fixer"],
+      "foreshadow": "{name} is on their third coffee and has not touched their food.",
+      "stages": [
+        {
+          "after": 4,
+          "move": "goes_quiet",
+          "title": "{name} is not taking calls",
+          "brief": "{name} has stopped returning messages, and the regulars at their usual table say they have not been in.",
+          "tell": "{name} is sitting with their back to the wall, which they never used to bother with."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} needs a quiet hand",
+          "brief": "{name} asks the character to carry something across town, no questions, and looks like they have not slept.",
+          "tell": "{name} has a new Agent and keeps the old one switched off on the table.",
+          "reveal": "{name} is being squeezed by a corporate security officer who will burn their whole network unless they deliver."
+        },
+        {
+          "after": 4,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} owes you",
+            "brief": "{name} is back at their table, and makes a point of telling people the character's name is good there.",
+            "tell": "{name} waves the character over before they have sat down.",
+            "disposition": 2
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name}'s table is empty",
+            "brief": "{name} has vanished, and so has half their network. Whoever is taking their calls does not know the character.",
+            "tell": "{name}'s table has somebody else at it.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_rival",
+      "roles": ["fixer"],
+      "foreshadow": "{name} is watching the door more than the room tonight.",
+      "stages": [
+        {
+          "after": 3,
+          "move": "warns_you",
+          "title": "{name} has heard something",
+          "brief": "{name} mentions, too casually, that somebody new is offering better rates to the runners who used to work for them.",
+          "tell": "{name} is counting who is not at the bar tonight."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} wants a message delivered",
+          "brief": "{name} asks the character to pay the newcomer a visit and make an impression, and is vague about how big an impression.",
+          "tell": "{name} has a name written on a napkin and keeps turning it over.",
+          "reveal": "The newcomer undercutting {name} is being bankrolled by somebody {name} once sold out."
+        },
+        {
+          "after": 4,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} is back on top",
+            "brief": "{name} has their runners back and wants the character to have first pick of the next good job.",
+            "tell": "{name} is holding court again.",
+            "disposition": 2
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name} lost the room",
+            "brief": "{name} has lost half their runners to the newcomer, and has less work to go around and less patience.",
+            "tell": "{name} is drinking alone.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_supplier",
+      "roles": ["ripperdoc"],
+      "foreshadow": "{name} has a fresh crate of parts nobody is allowed to open.",
+      "stages": [
+        {
+          "after": 4,
+          "move": "warns_you",
+          "title": "{name} wants to see your chrome",
+          "brief": "{name} tells the character to come in and have their chrome looked at soon, and will not say why over the Agent.",
+          "tell": "{name} keeps glancing at the character's implants."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} needs something collected",
+          "brief": "{name} asks the character to pick up a crate of parts from a supplier and bring it straight back, unopened.",
+          "tell": "{name} has taken the serial plates off everything on the shelves.",
+          "reveal": "{name}'s cheap supplier has been selling implants taken from people who never agreed to give them up."
+        },
+        {
+          "after": 4,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} cleaned house",
+            "brief": "{name} has a new supplier and a clearer conscience, and moves the character to the front of the queue.",
+            "tell": "{name} is humming over their work again.",
+            "disposition": 2
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name}'s clinic is shut",
+            "brief": "The clinic's shutter is down with an NCPD seal across it, and {name} is not answering.",
+            "tell": "{name} looks like they have been in a cell.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_patient",
+      "roles": ["ripperdoc"],
+      "foreshadow": "{name} smells of sedative and has a fresh scratch down one arm.",
+      "stages": [
+        {
+          "after": 3,
+          "move": "goes_quiet",
+          "title": "{name} has been closing early",
+          "brief": "{name} has been closing early all week, and the clinic smells of sedative.",
+          "tell": "{name} jumps at a noise from the back room."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} needs a strong pair of hands",
+          "brief": "{name} asks the character to come by after hours, and not to bring anybody.",
+          "tell": "{name} has restraints drying on the rack beside the gloves.",
+          "reveal": "{name} is keeping a patient sedated in the back room: a regular sliding into cyberpsychosis, whom {name} will not hand over."
+        },
+        {
+          "after": 3,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} pulled them back",
+            "brief": "The patient is out of the restraints and home, quieter than before, and {name} will not forget who stood in that room with them.",
+            "tell": "{name} is sleeping at night again, and it shows.",
+            "disposition": 2
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "MaxTac came for {name}'s patient",
+            "brief": "MaxTac came to the clinic in the night. {name} is out on bail and does not want to talk about it.",
+            "tell": "{name} has a new lock on the back room and nothing behind it.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_sale",
+      "roles": ["landlord"],
+      "foreshadow": "{name} is being polite to somebody in a suit, which is new.",
+      "stages": [
+        {
+          "after": 4,
+          "move": "warns_you",
+          "title": "{name} has news",
+          "brief": "{name} mentions that men in suits have been measuring the stairwell.",
+          "tell": "{name} has a glossy brochure with the building on it and keeps not throwing it away."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} wants to know who is buying",
+          "brief": "{name} asks the character to find out who the buyers really are before any of the tenants sign anything.",
+          "tell": "{name} is knocking on every door on the floor.",
+          "reveal": "The buyers {name} is dealing with are a front for a corporation clearing the whole block, and every tenant would be out within the month."
+        },
+        {
+          "after": 4,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name}'s sale fell through",
+            "brief": "The suits have stopped coming, and {name} is telling anybody who will listen that the character is the best tenant they have.",
+            "tell": "{name} has fixed the stairwell light, finally.",
+            "disposition": 2
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name} sold",
+            "brief": "{name} signed, and the new owners have started renovating the floor below. The noise starts at six.",
+            "tell": "{name} will not look at the character.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_family",
+      "roles": ["landlord"],
+      "foreshadow": "{name} has not collected from the floor this week, and the door to their flat stays shut.",
+      "stages": [
+        {
+          "after": 3,
+          "move": "goes_quiet",
+          "title": "{name} is distracted",
+          "brief": "{name} has forgotten to collect from the floor, and does not seem to have noticed.",
+          "tell": "{name} has a kid's jacket hanging by the door and keeps looking at it."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} asks for help",
+          "brief": "{name} asks the character, quietly, whether they know anybody who can find somebody.",
+          "tell": "{name} has a photo of a teenager tucked into the doorframe.",
+          "reveal": "{name}'s kid ran off with a gang and has not been home in over a week."
+        },
+        {
+          "after": 4,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name}'s kid is home",
+            "brief": "{name}'s kid is home, sullen and safe, and {name} will not hear a word said against the character.",
+            "tell": "There are two voices arguing behind {name}'s door again, which is how it should be.",
+            "disposition": 2
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name} has aged",
+            "brief": "{name} has aged ten years in a fortnight, and the kid's jacket is gone from the hook.",
+            "tell": "{name} nods to the character and nothing more.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_return",
+      "roles": ["old_flame"],
+      "foreshadow": "{name} looks like they have been travelling, and keeps an eye on the door.",
+      "stages": [
+        {
+          "after": 3,
+          "move": "warns_you",
+          "title": "{name} is back",
+          "brief": "{name} is back in the city after a long time gone, and has sent word that they would like to see the character.",
+          "tell": "{name} is sitting where they can see every way in."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} needs somewhere to lie low",
+          "brief": "{name} asks to sleep on the character's floor for a few nights, and keeps looking at the door while they ask.",
+          "tell": "{name} has one bag, packed, and never lets it out of reach.",
+          "reveal": "{name} left the city owing somebody dangerous, and that somebody has heard they are back."
+        },
+        {
+          "after": 3,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} is square",
+            "brief": "{name} settled what they owed, with the character's help, and is staying. They want the character to know that.",
+            "tell": "{name} has unpacked the bag.",
+            "disposition": 2
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name} left again",
+            "brief": "{name} is gone again without a goodbye, and somebody has been asking the neighbours where they went.",
+            "tell": "{name} is not here, and a stranger is asking after them.",
+            "disposition": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "the_wedding",
+      "roles": ["old_flame"],
+      "foreshadow": "{name} is wearing a ring and turning it round and round.",
+      "stages": [
+        {
+          "after": 4,
+          "move": "warns_you",
+          "title": "{name} has news",
+          "brief": "{name} is getting married, and wanted the character to hear it from them.",
+          "tell": "{name} has a ring on, and keeps turning it."
+        },
+        {
+          "after": 3,
+          "move": "asks_a_favour",
+          "title": "{name} wants to talk",
+          "brief": "{name} asks to meet somewhere quiet the night before, and will not say what about.",
+          "tell": "{name} has not slept, and is pretending that is about the party.",
+          "reveal": "{name} is marrying into a corp family to pay off a parent's medical debt, and is not sure they can go through with it."
+        },
+        {
+          "after": 3,
+          "involved": {
+            "move": "offers_help",
+            "title": "{name} made their choice",
+            "brief": "{name} made their choice with a clearer head, and wants the character to know the talk mattered.",
+            "tell": "{name} is smiling in a way that looks like they mean it.",
+            "disposition": 1
+          },
+          "ignored": {
+            "move": "goes_quiet",
+            "title": "{name} is married",
+            "brief": "{name} is married, and the message they sent afterwards was three words long.",
+            "tell": "{name} does not stay long.",
+            "disposition": -1
+          }
+        }
+      ]
+    }
+  ]
+}

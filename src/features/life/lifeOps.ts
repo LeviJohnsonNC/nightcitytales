@@ -150,6 +150,7 @@ import {
 } from "@/features/campaign/oracles";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { rollPendingCheck } from "@/features/play/rollCheck";
+import { arcSituationKey, arcTellFor, noteArcInvolvement } from "@/features/campaign/arcs";
 import { saidBefore } from "@/features/narration/narratorRules";
 import { commitmentsStatus, dayBrief } from "@/features/status/statusModel";
 import { travelTo } from "@/features/atlas/travel";
@@ -730,12 +731,15 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
                     minute: bundle.clock.minute,
                     seed: bundle.campaign.id,
                   });
+                // What their own story looks like from across the room.
+                const tell = arcTellFor(npc, bundle.campaign.id);
                 return {
                   whoIsHere: {
                     name: met.name,
                     key: met.key,
                     ...(comingOver ? { comingOver: true } : {}),
                     ...(cameOver ? { cameOver: true } : {}),
+                    ...(tell ? { tell } : {}),
                   },
                 };
               })()
@@ -1508,6 +1512,12 @@ export async function liveTurn(
     // Unlike the derived `person_` situations, a move is written rather than
     // re-derived, so nothing else would ever take it off the board.
     await settleMoves(bundle.campaign.id, npcKey);
+    // And a beat of their own story is answered by getting involved in it,
+    // which is what turns the ending the warm way and tells the player what
+    // was really going on.
+    if (npc && bundle.current?.key === arcSituationKey(npcKey)) {
+      await noteArcInvolvement(bundle.campaign.id, npc);
+    }
   }
 
   // Only worth a reload when the narrator actually marked something small.
