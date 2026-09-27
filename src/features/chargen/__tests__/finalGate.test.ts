@@ -50,6 +50,7 @@ function draft(over: Partial<ChargenState> = {}): ChargenState {
     rollLog: [],
     background: "",
     castPlan: null,
+    portraitStage: 0,
     ...over,
   };
 }

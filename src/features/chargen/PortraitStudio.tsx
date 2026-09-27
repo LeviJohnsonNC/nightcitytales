@@ -48,6 +48,9 @@ export function PortraitStudio({ state, userId }: { state: ChargenState; userId:
         portraitPath: path,
         portraitTakes: takes,
         portraitGenerations: state.portraitGenerations + 1,
+        // Drawn by hand: this is the picture on the file now, and nothing
+        // develops over it.
+        portraitStage: 3,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not draw a portrait right now.");

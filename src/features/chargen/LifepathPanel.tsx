@@ -34,6 +34,7 @@ import { useChargenStore, type ChargenState } from "./store";
 import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import { fixerChapterLine, type LifepathChapterId } from "./interview";
 import { PeoplePicker } from "./PeoplePicker";
+import { PronounPicker } from "./PronounPicker";
 import "./interview.css";
 
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -270,6 +271,8 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
 
       <section key={chapter.id} className="cg-say space-y-4">
         <ChapterLine fixer={fixer} chapter={chapter.id} title={chapter.title} />
+
+        {chapter.id === "self" && <PronounPicker state={state} />}
 
         {chapter.ids.length > 0 && (
           <GeneralGroup

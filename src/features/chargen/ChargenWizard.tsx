@@ -25,6 +25,7 @@ import { StepPanel } from "./StepPanels";
 import { StepRail } from "./StepRail";
 import { methodChangeLosesWork, stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
+import { useDevelopingPortrait } from "./useDevelopingPortrait";
 import { stepStatuses, validateStep } from "./validation";
 
 type PendingChange =
@@ -58,6 +59,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const { violations } = validateStep(state.step, state);
   const index = stepIds.indexOf(def.id);
   const fixer = state.castPlan?.picks.fixer ?? null;
+  const developing = useDevelopingPortrait(state, userId, saveStatus !== "loading");
 
   // Every step starts at the top, no matter how far down the previous one was scrolled.
   useEffect(() => {
@@ -98,7 +100,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
     <div className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
       <aside className="space-y-4 lg:sticky lg:top-8 lg:self-start">
         <div className="hidden lg:block">
-          <CharacterFile state={state} />
+          <CharacterFile state={state} developing={developing} />
         </div>
         <StepRail steps={steps} current={state.step} statuses={statuses} onSelect={state.setStep} />
       </aside>

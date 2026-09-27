@@ -28,6 +28,7 @@ import { genderFromPronouns, type GenderRead } from "./selfDescription";
 import { stepsFor } from "./steps";
 import { validateStep } from "./validation";
 import type { ChargenState } from "./store";
+import { faceFact } from "./portraitStages";
 
 export const MAX_PORTRAIT_TAKES = 4;
 export const MAX_PORTRAIT_GENERATIONS = 6;
@@ -150,6 +151,10 @@ export function buildPortraitFacts(state: ChargenState, roleName?: string): Port
     const label = firstId ? safe(() => getRoleLifepathTable(state.roleId!, firstId).label) : null;
     if (entry && label) facts.push({ label, value: displayValue(entry) });
   }
+
+  // The same face at every stage of the picture, and after every reload.
+  const face = faceFact(state.castPlan?.seed);
+  if (face) facts.push(face);
 
   // Wardrobe: what they paid for beats what they rolled, and both are shown.
   const wardrobe = state.loadout.lines
