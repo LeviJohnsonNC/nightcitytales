@@ -456,7 +456,15 @@ The work, with what the location layer already covered marked:
   ago", "every forty seconds"); a line naming the words to use instead took it
   from about one turn in three to none in twenty. Eval, 18 scenarios x 3:
   376/378.
-  Still to do: a stronger model, if the evals say it plays better.
+  Model comparison, the same 18 scenarios twice each: `gemini-3.7-flash` (the
+  default) 356/357, $0.0055 a turn, 5.6s; `gemini-3.8-flash` 376/378, $0.010,
+  12.1s, and reads the same; `openai/gpt-5.6-sol` 378/378, $0.0083, 11.5s, and
+  reads better — shorter, harder, closer to the house voice. Every Sol call
+  failed until all three output specs said "JSON": OpenAI refuses JSON mode
+  otherwise, so no OpenAI model could have run either loop through the
+  gateway. Still to do: decide whether Sol's prose is worth twice the wait,
+  per loop (GM_MODEL and LIFE_MODEL are separate), and confirm the Lovable
+  gateway serves it.
 
 Success: the player opens the game, understands their immediate problem in
 seconds, decides, sees the cost, and moves on.

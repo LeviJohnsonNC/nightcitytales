@@ -17,7 +17,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.20.0";
+export const LIFE_PROMPT_VERSION = "2.21.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -91,7 +91,7 @@ ${walkOnFacesSection({ excludeHostiles: false })}
 - Nothing catastrophic needs to happen, and a crisis every turn is a notification tray, not a city. But a scene is never inert: somebody is doing something, and it ends on something live the player can answer.
 
 # YOUR OUTPUT
-Return a structured object:
+Return a structured JSON object:
 - "situation": { "title": short and concrete, "description": the prose the player reads, per the rules above }
 - "timeSpent": whole minutes the player's action took, from their side of it. A call is about 15, a conversation 20, an errand 45, crossing town 40, shopping 90, an evening somewhere 240, a night's sleep 480. Use 0 when they have not acted yet (opening a moment, or asking what their options are), and 0 whenever you also propose "travel" or "rest", which carry their own duration. The engine clamps this and owns the clock.
 - "actions": [] on an ordinary turn; 3-4 objects ONLY when the context says they asked for options: { "label": under ~6 words, "description": one short line of what it means, "timeMinutes": integer minutes, "knownCost": eurobucks the character knows up front or null, "skillId": the skill id from the SKILLS list or null }
