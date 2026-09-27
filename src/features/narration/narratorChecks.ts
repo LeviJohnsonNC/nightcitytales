@@ -76,6 +76,8 @@ export type CheckableTurn = {
   trips?: { destination?: string; seek?: string; direction?: string }[];
   /** How many spends it proposed. Paying for the drink is ordering it. */
   spends?: number;
+  /** The DV checks it proposed, and whether each was marked low-stakes. */
+  checks?: { skillId: string; dv: number; lowStakes: boolean }[];
 };
 
 /** What the model was given, and what the scenario says about this turn. */
@@ -122,6 +124,11 @@ export type CheckContext = {
   offScene?: string[];
   /** Somebody the engine rolled as coming over. The prose must bring them. */
   comesOver?: string;
+  /**
+   * Failing here would cost the character nothing. Any check proposed must be
+   * marked low-stakes, so the player is not stopped to press a button for it.
+   */
+  nothingRiding?: boolean;
 };
 
 export type Check = {
@@ -577,6 +584,24 @@ export const comesOverOnCue: Check = {
   },
 };
 
+/**
+ * A check that risks nothing did not stop the game for a button press.
+ *
+ * Passing: no check at all, or every check marked low-stakes. Scenario-driven,
+ * because only the scenario knows that nothing rides on it.
+ */
+export const smallChecksRollThemselves: Check = {
+  id: "small-checks-roll-themselves",
+  title: "did not stop the player for a roll that risks nothing",
+  source: 'PRODUCT.md: "Something that risks nothing was put to the player as a roll to press."',
+  run(turn, ctx) {
+    if (!ctx.nothingRiding) return [];
+    return (turn.checks ?? [])
+      .filter((c) => !c.lowStakes)
+      .map((c) => ({ quote: `${c.skillId} DV ${c.dv}`, note: "not marked low-stakes" }));
+  },
+};
+
 /** Every check, in report order: severity first, taste never. */
 export const ALL_CHECKS: Check[] = [
   noUnsourcedNumber,
@@ -593,6 +618,7 @@ export const ALL_CHECKS: Check[] = [
   directionsAreReal,
   staysInTheScene,
   comesOverOnCue,
+  smallChecksRollThemselves,
   quietStaysQuiet,
   endsOnTheWorld,
   withinProseBudget,

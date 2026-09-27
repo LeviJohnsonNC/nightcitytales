@@ -488,3 +488,28 @@ SCENARIOS.push(
     },
   },
 );
+
+// ---------------------------------------------------------------------------
+// Quick dice
+//
+// A crowded bar, and the player wants the bartender. If that needs a roll at
+// all, it is one that risks nothing, and it should roll itself rather than
+// stop the game for a button.
+// ---------------------------------------------------------------------------
+
+SCENARIOS.push({
+  id: "life-small-roll-rolls-itself",
+  narrator: "life",
+  about: "a roll that risks nothing is marked to roll itself, or not asked for",
+  system: LIFE_SYSTEM_PROMPT,
+  packet: renderLifeUserPrompt(atTheBar, "I try to catch the bartender's eye over the crowd."),
+  expect: {
+    optionsRequested: false,
+    knownNpcKeys: [],
+    withheldTruths: [],
+    mustStayQuiet: false,
+    riskyIntent: false,
+    nothingRiding: true,
+    wordBudget: 160,
+  },
+});

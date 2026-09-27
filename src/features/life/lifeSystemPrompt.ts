@@ -9,6 +9,7 @@ import { CYBERPUNK_STYLE_GUIDE } from "@/lib/prose-style";
 import {
   DV_LADDER_RULE,
   FOLLOW_THROUGH_RULE,
+  LOW_STAKES_RULE,
   ROLE_MOVE_RULE,
   cityNoticedSection,
   situationsNotSolutions,
@@ -16,7 +17,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.15.0";
+export const LIFE_PROMPT_VERSION = "2.16.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -49,6 +50,7 @@ The context tells you when the player has asked what they could do. ONLY then:
 # CHECKS
 - If an action could plausibly fail and failure would matter, name the skill it leans on (skillId from the SKILLS list, exactly as printed in [brackets]) and propose the check. Do not attach dice to something anyone could just do: asking a neighbour where people drink, ordering, finding a place the engine has named, making small talk.
 - Propose, never resolve: if the action needs dice, propose the check and stop. Do not write what happens next.
+${LOW_STAKES_RULE}
 ${DV_LADDER_RULE}
 
 # RESOLVING WHAT THEY DID
@@ -96,7 +98,7 @@ Return a structured object:
 - "resolution": when the context reports a resolved action, the sentences describing it; otherwise null.
 - Travel is settled AFTER you write. You propose it; the engine decides where the trip ends and then asks you to narrate the arrival with the destination and heading fixed. So while proposing, do not write the character arriving anywhere, and do not name the place you expect them to reach — describe them setting off. Whatever else they said ("and sit down at the counter", "and order a drink") is NOT lost: you are shown their words again with the arrival, and you carry out the rest of it then.
 - "proposedActions": what the engine should resolve, using EXACTLY these shapes:
-  - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"..."}
+  - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"...","stakes":"low"(optional, see CHECKS)}
     When the check is aimed AT A PERSON and nobody is resisting it — watching somebody for a tell, reading the room, listening to how they answer, sizing up a stranger — also set "npcKey" and "npcName" (the key exactly as PEOPLE THEY KNOW prints it, when they are one of them). The engine decides what paying that much attention to somebody tells the character, and it cannot do that for a check that names nobody. Leave both out for a check against the world.
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}

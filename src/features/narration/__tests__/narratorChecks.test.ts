@@ -13,6 +13,7 @@ import {
   optionsOnlyWhenAsked,
   quietStaysQuiet,
   riskGetsDice,
+  smallChecksRollThemselves,
   staysInTheScene,
   staysPutOnRefusal,
   walkOnsFromCatalog,
@@ -387,6 +388,29 @@ describe("momentum: somebody comes over when the engine says so", () => {
   it("catches them left in the corner", () => {
     const prose = "The bar hums along. Someone laughs too loud by the jukebox.";
     expect(comesOverOnCue.run(turn({ narration: prose }), cue)).not.toEqual([]);
+  });
+});
+
+describe("momentum: a roll that risks nothing rolls itself", () => {
+  const idle = ctx({ nothingRiding: true });
+
+  it("passes a turn with no check", () => {
+    expect(smallChecksRollThemselves.run(turn({ checks: [] }), idle)).toEqual([]);
+  });
+
+  it("passes a check marked low-stakes", () => {
+    const marked = turn({ checks: [{ skillId: "perception", dv: 13, lowStakes: true }] });
+    expect(smallChecksRollThemselves.run(marked, idle)).toEqual([]);
+  });
+
+  it("catches a button press for nothing", () => {
+    const unmarked = turn({ checks: [{ skillId: "streetwise", dv: 13, lowStakes: false }] });
+    expect(smallChecksRollThemselves.run(unmarked, idle)).not.toEqual([]);
+  });
+
+  it("says nothing when something does ride on it", () => {
+    const unmarked = turn({ checks: [{ skillId: "streetwise", dv: 13, lowStakes: false }] });
+    expect(smallChecksRollThemselves.run(unmarked, CTX)).toEqual([]);
   });
 });
 

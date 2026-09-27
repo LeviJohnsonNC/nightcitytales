@@ -19,6 +19,7 @@ import { loadPlaceStates } from "@/features/campaign/placeState";
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
 import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 import { carryOnLine, saidBefore } from "@/features/narration/narratorRules";
+import { rollPendingCheck } from "./rollCheck";
 import { sinceWords } from "@/features/life/lifeOps";
 import { useCombatPlayback } from "./useCombatPlayback";
 /**
@@ -73,6 +74,7 @@ import {
   resolveSkillId,
   woundActionPenalty,
   skillCheckForCharacter,
+  mayRollItself,
   type Beat,
   type BeatExit,
   type BeginTurnResult,
@@ -397,7 +399,13 @@ function agreedPayoutFrom(flags: CampaignFlag[]): number | null {
 export async function narrate(
   bundle: PlayBundle,
   input: string,
-  options: { logInput?: boolean; optionsRequested?: boolean; fixedResult?: boolean } = {},
+  options: {
+    logInput?: boolean;
+    optionsRequested?: boolean;
+    fixedResult?: boolean;
+    /** This turn narrates a check the engine rolled itself; see rollWhatIsSmall. */
+    autoRolled?: boolean;
+  } = {},
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
   const beatId = bundle.beat?.id ?? null;
@@ -690,6 +698,8 @@ export async function narrate(
           // Social check against a DV named nobody and so could read nobody.
           ...(action.npcKey ? { npcKey: action.npcKey } : {}),
           ...(action.npcName ? { npcName: action.npcName } : {}),
+          // The narrator's half of whether this may roll itself.
+          ...(action.stakes === "low" ? { stakes: "low" } : {}),
         } as unknown as Json,
         ...beatFields,
       });
@@ -965,6 +975,62 @@ export async function narrate(
   if (live && live !== bundle.encounter && !attackPosted && postedSkillIds.size === 0) {
     await finishCombatAction(bundle, live, beatId);
   }
+
+  // Only worth a reload when the narrator actually marked something small.
+  const markedSmall = gm.proposedActions.some(
+    (a) => a.kind === "skill_check" && a.stakes === "low",
+  );
+  if (markedSmall && !options.optionsRequested && !options.fixedResult && !options.autoRolled) {
+    await rollWhatIsSmall(bundle);
+  }
+}
+
+/**
+ * Roll the one check this turn posted, if it is small enough not to need the
+ * player — the Job half of the Life rule of the same name.
+ *
+ * Never in a fight: a roll there is somebody's Turn. Never when the turn posted
+ * two checks: rolling one and leaving the other would reorder what the player
+ * was asked. Settled through `resolveCheck`, the path the button takes, so the
+ * ledger, the Luck (none) and the follow-up narration are the button's.
+ */
+async function rollWhatIsSmall(before: PlayBundle): Promise<void> {
+  const posted = new Set(before.events.map((e) => e.id));
+  const fresh = await loadPlay(before.campaign.id);
+  if (fresh.encounter?.state.status === "active") return;
+  const newChecks = pendingChecksFrom(
+    fresh.events,
+    fresh.character,
+    fresh.vitals.wound_state as WoundStateCode,
+    {
+      vitals: fresh.vitals,
+      inventory: fresh.inventory,
+      districtKey:
+        resolvePosition(fresh.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+    },
+  ).filter((p) => !posted.has(p.eventId));
+  if (newChecks.length !== 1) return;
+  const check = newChecks[0]!;
+  const prompt = fresh.events.find((e) => e.id === check.eventId);
+  const marked = (prompt?.data as { stakes?: unknown } | null)?.stakes === "low";
+  if (
+    !mayRollItself({
+      lowStakes: marked,
+      dv: check.dv,
+      opposed: check.opposition !== null,
+      inCombat: false,
+    })
+  ) {
+    return;
+  }
+  const roll = rollPendingCheck({
+    campaign: fresh.campaign,
+    character: fresh.character,
+    vitals: fresh.vitals,
+    inventory: fresh.inventory,
+    pending: check,
+  });
+  await resolveCheck(fresh, check, roll, { auto: true });
 }
 
 /**
@@ -1226,6 +1292,7 @@ async function resolveCheck(
   bundle: PlayBundle,
   pending: PendingCheck,
   roll: CheckRoll,
+  opts: { auto?: boolean } = {},
 ): Promise<void> {
   const luckSpent = roll.luckSpent;
   if (roll.kind === "opposed") {
@@ -1241,6 +1308,7 @@ async function resolveCheck(
     intent: pending.intent,
     promptEventId: pending.eventId,
     ...(pending.beatId ? { beatId: pending.beatId } : {}),
+    ...(opts.auto ? { auto: true } : {}),
   });
   await payLuck(bundle, luckSpent);
 
@@ -1268,7 +1336,11 @@ async function resolveCheck(
   await narrate(
     fresh,
     `(ENGINE: the ${pending.skillName} check is RESOLVED. ${result.formula}${crit}. Outcome: ${verdict} by ${Math.abs(result.total - pending.dv)}. Narrate this exact outcome for the intent "${pending.intent}". Do not re-decide it, do not soften a failure, do not propose the same check again.${found ? ` ${found}` : ""}${insightLine(read)}${carryOn(bundle, pending.eventId)} End on a decision.)`,
-    { logInput: false, fixedResult: bundle.encounter?.state.status === "active" },
+    {
+      logInput: false,
+      fixedResult: bundle.encounter?.state.status === "active",
+      ...(opts.auto ? { autoRolled: true } : {}),
+    },
   );
 }
 
