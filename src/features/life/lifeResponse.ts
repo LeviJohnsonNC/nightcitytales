@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { clampDispositionDelta, isAnswerableQuestion, isPlaceTag, tagNamed } from "@/engine";
 import { normalizeWalkOnMentions, type WalkOnMention } from "@/features/cast/walkOnMention";
-import { isLowStakes, snapDv } from "@/features/narration/narratorRules";
+import { isLowStakes, snapDv, wireObject } from "@/features/narration/narratorRules";
 
 export const LIFE_ACTION_KINDS = [
   "skill_check",
@@ -234,8 +234,8 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
   if (!Array.isArray(raw)) return [];
   const out: LifeProposedAction[] = [];
   for (const item of raw) {
-    if (!item || typeof item !== "object") continue;
-    const a = item as Loose;
+    const a = wireObject(item);
+    if (!a) continue;
     const kindRaw = (str(a["kind"]) ?? str(a["type"]) ?? "").toLowerCase().replace(/[\s-]+/g, "_");
     const skillId = str(a["skillId"]) ?? str(a["skill_id"]) ?? str(a["skill"]);
     const opposingSkillId = str(a["opposingSkillId"]) ?? str(a["opposing_skill_id"]);

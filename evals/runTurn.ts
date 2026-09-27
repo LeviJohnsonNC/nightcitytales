@@ -15,7 +15,12 @@
  * the rule in boundaries.test.ts, and while nothing in `evals/` ships to a
  * browser, using the established pattern means the question never comes up.
  */
-import { normalizeGmResponse, GmWireResponseSchema } from "@/features/gm/gmResponse";
+import {
+  normalizeGmResponse,
+  salvageGmResponse,
+  GmWireResponseSchema,
+  type GmResponse,
+} from "@/features/gm/gmResponse";
 import { normalizeLifeResponse, LifeWireResponseSchema } from "@/features/life/lifeResponse";
 import type { CheckableTurn } from "@/features/narration/narratorChecks";
 import type { Scenario } from "./scenarios";
@@ -104,15 +109,28 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
   model = provider.modelId(model);
 
   if (scenario.narrator === "gm") {
-    const { object, response } = await generateObject({
-      model: gateway(model),
-      schema: GmWireResponseSchema,
-      system: scenario.system,
-      prompt: scenario.packet,
-    });
-    const gm = normalizeGmResponse(object);
+    // Play salvages a reply that was prose instead of the object
+    // (gmTurn.server.ts), so the eval does too: otherwise one of those turns
+    // fails the whole scenario and every check in it goes unmeasured.
+    let gm: GmResponse;
+    let servedModel: string | null = null;
+    try {
+      const { object, response } = await generateObject({
+        model: gateway(model),
+        schema: GmWireResponseSchema,
+        system: scenario.system,
+        prompt: scenario.packet,
+      });
+      gm = normalizeGmResponse(object);
+      servedModel = response.modelId ?? null;
+    } catch (error) {
+      const text = (error as { text?: unknown })?.text;
+      const salvaged = salvageGmResponse(typeof text === "string" ? text : null);
+      if (!salvaged) throw error;
+      gm = salvaged;
+    }
     return {
-      servedModel: response.modelId ?? null,
+      servedModel,
       turn: {
         narration: gm.narration,
         offeredOptions: gm.suggestedActions.map((a) => a.label),
@@ -183,6 +201,8 @@ async function providerFor(provider: EvalProvider) {
     name: provider.name,
     baseURL: provider.baseURL,
     apiKey: provider.apiKey,
-    supportsStructuredOutputs: true,
+    // Not supportsStructuredOutputs: play's provider (ai-gateway.server.ts)
+    // leaves it off, and with it on the model wrote every proposed action as a
+    // JSON string, so the eval measured a failure play never has.
   });
 }

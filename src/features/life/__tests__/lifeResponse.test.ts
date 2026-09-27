@@ -216,3 +216,21 @@ describe("walkOns", () => {
     expect(parsed.walkOns).toEqual([]);
   });
 });
+
+describe("an action the model wrote as a JSON string", () => {
+  it("is the action it encodes, not a dropped item", () => {
+    const result = normalizeLifeResponse(
+      {
+        proposedActions: [
+          '{"kind":"skill_check","skillId":"persuasion","dv":13,"intent":"haggle"}',
+        ],
+      },
+      silent,
+    );
+    expect(result.proposedActions[0]).toMatchObject({
+      kind: "skill_check",
+      skillId: "persuasion",
+      dv: 13,
+    });
+  });
+});

@@ -15,7 +15,7 @@ import {
   isThreatKey,
 } from "@/engine";
 import { normalizeWalkOnMentions, WalkOnMentionSchema } from "@/features/cast/walkOnMention";
-import { snapDv, isLowStakes } from "@/features/narration/narratorRules";
+import { snapDv, isLowStakes, wireObject } from "@/features/narration/narratorRules";
 
 /**
  * A hostile, as much of one as the model is allowed to author.
@@ -399,11 +399,11 @@ export function normalizeGmResponse(
   const proposedActions: GmProposedAction[] = [];
   const rawActions = wire.proposedActions ?? [];
   for (const raw of rawActions) {
-    if (!raw || typeof raw !== "object") {
+    const a = wireObject(raw);
+    if (!a) {
       warn(`GM proposed a non-object action, dropped: ${JSON.stringify(raw)}`);
       continue;
     }
-    const a = raw as Loose;
     const kind = actionKindOf(a);
     const intent = str(a["intent"]) ?? str(a["description"]) ?? "";
     if (kind === null) {

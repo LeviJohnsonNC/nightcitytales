@@ -39,6 +39,26 @@ pick the models, same as in play — set them if your provider names the model
 differently from the gateway. A cloud environment also needs the provider's
 host on its allowed list.
 
+In a Claude Code cloud session the key is best stored as a credential on the
+environment rather than as a variable: the session's proxy adds it to every
+request to `openrouter.ai`, and the key itself never enters the container. Two
+things follow. The eval still needs `OPENROUTER_API_KEY` set to pick OpenRouter,
+so give it any placeholder and the proxy replaces the header. And Node's
+`fetch` ignores `HTTPS_PROXY` unless told otherwise, which sends it around the
+proxy and so around the key:
+
+```sh
+NODE_USE_ENV_PROXY=1 OPENROUTER_API_KEY=placeholder bun run eval -- --repeat 3
+```
+
+The eval calls the model the way play does, which is WITHOUT strict structured
+output (`ai-gateway.server.ts` leaves `supportsStructuredOutputs` off). The
+first live run had it on, and under it the model wrote every proposed action as
+a JSON string, so the eval reported risky intents never reaching the dice: a
+failure of the harness, not of the narrator. When a Job turn comes back as
+prose instead of an object, the eval salvages it the way play does rather than
+failing the scenario.
+
 The one difference from play is who serves the call. A result that only shows
 up through one provider is worth re-running through another before trusting.
 
