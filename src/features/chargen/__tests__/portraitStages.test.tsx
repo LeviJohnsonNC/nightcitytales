@@ -101,3 +101,13 @@ describe("the file, while there is no picture yet", () => {
     expect(html).toContain("No photo on file");
   });
 });
+
+describe("a draft from before the picture developed", () => {
+  it("keeps the portrait it already has: nothing develops over a hand-drawn face", () => {
+    useChargenStore.getState().hydrate({ portraitPath: "user/draft/portrait.png" } as never);
+    expect(useChargenStore.getState().portraitStage).toBe(3);
+    useChargenStore.getState().reset();
+    useChargenStore.getState().hydrate({ portraitPath: null } as never);
+    expect(useChargenStore.getState().portraitStage).toBe(0);
+  });
+});

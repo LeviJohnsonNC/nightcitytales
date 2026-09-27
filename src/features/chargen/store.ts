@@ -178,6 +178,10 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
   hydrate: (state) =>
     set((s) => {
       const next = { ...s, ...state };
+      // A draft saved before the portrait developed in stages carries no
+      // stage; if it already has a portrait, that one was drawn by hand and
+      // nothing may develop over it.
+      if (state.portraitStage === undefined && next.portraitPath) next.portraitStage = 3;
       const step = resolveStepForMethod(normalizeStep(next.step), next.method);
       return {
         ...next,

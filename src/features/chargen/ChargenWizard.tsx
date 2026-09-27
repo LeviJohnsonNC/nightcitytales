@@ -183,8 +183,12 @@ export function ChargenWizard({ userId }: { userId: string }) {
                 {saveError ? ` · ${saveError}` : ""}
               </span>
             </div>
-            {def.id !== "fixer" && <FixerLine fixer={fixer} step={def.id} roleId={state.roleId} />}
-            {(def.id === "fixer" || !fixer) && (
+            {/* The Lifepath's chapters each open with the fixer's own line, so
+                the step does not ask a question of its own on top of them. */}
+            {def.id !== "fixer" && def.id !== "lifepath" && (
+              <FixerLine fixer={fixer} step={def.id} roleId={state.roleId} />
+            )}
+            {(def.id === "fixer" || def.id === "lifepath" || !fixer) && (
               <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
             )}
           </div>
@@ -198,7 +202,8 @@ export function ChargenWizard({ userId }: { userId: string }) {
           onRequestRole={requestRole}
         />
 
-        {violations.length > 0 && (
+        {/* The File lists what is missing in its own checklist, with a way to each step. */}
+        {violations.length > 0 && def.id !== "review" && (
           <ul className="space-y-1.5 text-sm text-foreground">
             {violations.map((violation) => (
               <li key={violation} className="flex items-start gap-2.5">
