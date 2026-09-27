@@ -24,11 +24,16 @@ const SLOTS: { role: CastRole; label: string; empty: string }[] = [
   },
 ];
 
-/** The first sentence of somebody's bio: enough to choose on, not enough to spoil them. */
+/**
+ * The opening of somebody's bio: enough to choose on, not enough to spoil
+ * them. A first sentence too short to say anything ("Deacon Ferris preaches.")
+ * brings the next one with it.
+ */
 function firstSentence(bio: string | null | undefined): string {
   if (!bio) return "";
-  const match = /^.*?[.!?](\s|$)/.exec(bio.trim());
-  return (match ? match[0] : bio).trim();
+  const sentences = bio.trim().match(/[^.!?]+[.!?]+(\s|$)/g) ?? [bio.trim()];
+  const first = sentences[0]!.trim();
+  return first.length < 40 && sentences[1] ? `${first} ${sentences[1].trim()}` : first;
 }
 
 /**
@@ -115,7 +120,7 @@ export function PeoplePicker({ state }: { state: ChargenState }) {
                     )}
                     <span className="min-w-0 space-y-1 p-3">
                       <span className="block text-sm font-bold leading-tight">{name}</span>
-                      <span className="line-clamp-3 block text-xs leading-snug text-text-muted">
+                      <span className="line-clamp-3 text-xs leading-snug text-text-muted">
                         {firstSentence(npc?.bio)}
                       </span>
                       {selected && (

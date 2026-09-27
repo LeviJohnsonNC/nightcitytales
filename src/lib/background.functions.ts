@@ -21,6 +21,14 @@ const MODEL = "google/gemini-3.7-flash";
  */
 const MAX_USER_CHARS = 20_000;
 
+/**
+ * Backgrounds, one-liners and handle suggestions are asked for a few times in
+ * a sitting, and the handle button invites repeated clicks, so the endpoint is
+ * metered like the portrait route. See rate-limit.server.ts for what an
+ * in-memory limit does and does not promise.
+ */
+const PROSE_LIMIT = { limit: 30, windowMs: 5 * 60_000 };
+
 const PromptInput = z.object({
   job: z.enum(BACKGROUND_JOBS),
   user: z.string().min(1).max(MAX_USER_CHARS),
@@ -30,9 +38,14 @@ export const generateBackgroundFn = createServerFn({ method: "POST" })
   // Spends AI credits — see gmTurn.server.ts.
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => PromptInput.parse(input))
-  .handler(async ({ data }): Promise<{ text: string }> => {
+  .handler(async ({ data, context }): Promise<{ text: string }> => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI is not configured for this app.");
+
+    const { takeToken } = await import("./rate-limit.server");
+    if (!takeToken(`prose:${context.userId}`, PROSE_LIMIT).allowed) {
+      throw new Error("That is a lot of writing in a short time. Try again in a few minutes.");
+    }
 
     const { streamText } = await import("ai");
     const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");

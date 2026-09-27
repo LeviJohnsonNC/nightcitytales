@@ -14,6 +14,13 @@ const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }
 /** The answers that say most about somebody at a glance, in the order a file would list them. */
 const AT_A_GLANCE = ["personality", "value_most", "life_goals"] as const;
 
+/** How each stage of the picture is shown: a grainy still, then better light, then clean. */
+const STAGE_LOOK: Record<PortraitStage, string> = {
+  1: "grayscale contrast-125 brightness-90 blur-[0.6px]",
+  2: "saturate-[0.55] contrast-110",
+  3: "",
+};
+
 /**
  * The file the fixer is keeping on you, filling in as you answer.
  *
@@ -23,13 +30,6 @@ const AT_A_GLANCE = ["personality", "value_most", "life_goals"] as const;
  * few lines of who this person is — that is progress toward somebody you want
  * to play.
  */
-/** How each stage of the picture is shown: a grainy still, then better light, then clean. */
-const STAGE_LOOK: Record<PortraitStage, string> = {
-  1: "grayscale contrast-125 brightness-90 blur-[0.6px]",
-  2: "saturate-[0.55] contrast-110",
-  3: "",
-};
-
 export function CharacterFile({
   state,
   developing,
