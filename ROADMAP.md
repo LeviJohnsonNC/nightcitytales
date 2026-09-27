@@ -25,9 +25,15 @@ The plan, in phases:
    topped by the file the fixer is keeping on you. The last screen reads the
    file back, shows the three people already waiting in the city, and "Enter
    Night City" saves, starts the campaign and goes straight into the cold open.
-2. **Skills that mean something.** Three ways to be each Role as legal presets,
-   odds in plain words ("pick a lock: 65%") computed by the engine, and a
-   fine-tune drawer.
+2. **Skills that mean something — shipped.** The step asks "how do you work?":
+   three ways to be each Role (`skill-presets.json`, a house rule only in which
+   three are offered) that `engine/skillPresets.ts` turns into an ordinary,
+   exactly-spent allocation the printed validators accept under Edgerunner and
+   Complete Package alike. What that makes the character good at is shown as
+   tasks with their real odds — `engine/checkOdds.ts`, exact over the crit
+   rules, against a DV named on the printed ladder — and every Level by hand
+   lives in a fine-tune drawer, where each row shows its odds too. A Streetrat
+   sees their fixed package as things they can already do.
 3. **The Lifepath as an interview.** One question at a time, in chapters, with
    the fixer reacting; and when the enemy, friend and lost love are rolled, the
    player meets the candidates who fit and picks.
