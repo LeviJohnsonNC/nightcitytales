@@ -10,6 +10,7 @@ import {
   knownNpcKeysOnly,
   namesNoWayIn,
   noUnsourcedNumber,
+  opensOnSomething,
   optionsOnlyWhenAsked,
   quietStaysQuiet,
   riskGetsDice,
@@ -441,6 +442,28 @@ describe("the check list itself", () => {
     for (const check of ALL_CHECKS) {
       expect(check.source, check.id).toMatch(/PRODUCT\.md|AGENTS\.md|prompts?:/i);
       expect(check.title, check.id).not.toBe("");
+    }
+  });
+});
+
+describe("the opening line", () => {
+  it("catches an opening that is a list of smells", () => {
+    for (const prose of [
+      "The fourth floor of the Social Sciences building smells like ozone, damp carpet, and thirty years of tenure. It is late.",
+      "The Paper Lantern smells of stale rice wine, burnt cooking oil, and ozone. You sit.",
+      "The stairwell reeks of fried cabbage, damp plaster and cheap ozone. The rain has stopped.",
+    ]) {
+      expect(opensOnSomething.run(turn({ narration: prose }), CTX), prose).not.toEqual([]);
+    }
+  });
+
+  it("leaves a single smell, a later smell, and an opening on action alone", () => {
+    for (const prose of [
+      "The corridor smells of bleach. A guard is asleep in the booth.",
+      "You slide onto the stool. The place smells like fried oil, ozone and wet coats.",
+      "The bartender slides a glass across without a word.",
+    ]) {
+      expect(opensOnSomething.run(turn({ narration: prose }), CTX), prose).toEqual([]);
     }
   });
 });

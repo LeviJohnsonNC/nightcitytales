@@ -5,6 +5,7 @@
  * summary of recent events — never the whole transcript. That bounded slice is
  * what keeps a long campaign from drifting.
  */
+import { ALREADY_HERE_LINE } from "@/features/narration/narratorRules";
 import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 import { renderRoleAffordanceLines } from "@/engine";
 import type { Beat, BeatExit, Mission, MissionObjective } from "@/engine";
@@ -93,6 +94,12 @@ export type GmContextInput = {
    */
   capabilities?: string[];
   clock?: string;
+  /**
+   * This beat has already been narrated, so the scene was set on that turn and
+   * every turn after it is mid-scene. Independent of the place block, which a
+   * job at a district rather than a named venue does not get.
+   */
+  sceneSet?: boolean;
   /** Where the job is happening, out of the Night City Atlas. */
   place?: {
     where: string;
@@ -183,6 +190,7 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   parts.push(line("Mission", `${mission.title} — Beat: ${beat.title} (${beat.type})`));
   if (context.clock) parts.push(line("Time", context.clock));
   parts.push(line("GM brief", beat.gmBrief));
+  if (context.sceneSet) parts.push(ALREADY_HERE_LINE);
   if (context.discoveredBeatTruths?.length) {
     parts.push("", "-- WHAT THEY HAVE UNCOVERED IN THIS JOB --");
     for (const fact of context.discoveredBeatTruths) parts.push(`  - ${fact}`);

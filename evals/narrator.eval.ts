@@ -14,7 +14,13 @@
  *   bun run eval
  *   bun run eval -- --repeat 3
  *   bun run eval -- -t job-risky-intent
+ *   TRANSCRIPT=/tmp/turns.md bun run eval   # also write every turn out in full
+ *
+ * The checks measure whether a turn broke a rule, not whether it was any good.
+ * TRANSCRIPT is for the other half: reading what the narrator actually wrote,
+ * which is the only measure of prose quality this project has.
  */
+import { appendFileSync, writeFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { ALL_CHECKS, type CheckContext, type Finding } from "@/features/narration/narratorChecks";
 import { GM_PROMPT_VERSION } from "@/features/gm/gmSystemPrompt";
@@ -30,7 +36,16 @@ function readFlag(name: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
+/** Where to write every turn in full, when set. */
+const TRANSCRIPT = process.env["TRANSCRIPT"];
+
 beforeAll(() => {
+  if (TRANSCRIPT) {
+    writeFileSync(
+      TRANSCRIPT,
+      `# Narrator transcript\n\nGM prompt ${GM_PROMPT_VERSION} · Life prompt ${LIFE_PROMPT_VERSION}\n`,
+    );
+  }
   const calls = SCENARIOS.length * REPEATS;
   // Said out loud before a penny is spent, so a --repeat 40 typo is visible
   // rather than expensive.
@@ -50,6 +65,7 @@ for (const scenario of SCENARIOS) {
       for (let i = 0; i < REPEATS; i++) results.push(await runTurn(scenario, model));
       const served = [...new Set(results.map((r) => r.servedModel ?? "unknown"))];
       console.log(`\n  ${scenario.id} · asked ${model} · answered ${served.join(", ")}`);
+      if (TRANSCRIPT) appendFileSync(TRANSCRIPT, transcriptOf(scenario, results));
     }, 120_000);
 
     for (const check of ALL_CHECKS) {
@@ -78,4 +94,16 @@ for (const scenario of SCENARIOS) {
 
 function describe_(finding: Finding): string {
   return finding.note ? `"${finding.quote}" (${finding.note})` : `"${finding.quote}"`;
+}
+
+function transcriptOf(scenario: (typeof SCENARIOS)[number], results: TurnResult[]): string {
+  const said = scenario.packet.split("== PLAYER INPUT ==")[1]?.trim() ?? "";
+  const runs = results.map(({ turn }, i) => {
+    const { narration, ...rest } = turn;
+    const mechanics = Object.entries(rest)
+      .filter(([, v]) => (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== 0))
+      .map(([k, v]) => `${k}: ${JSON.stringify(v)}`);
+    return [`### run ${i + 1}`, "", narration, "", ...mechanics.map((m) => `- ${m}`)].join("\n");
+  });
+  return `\n## ${scenario.id}\n\n_${scenario.about}_\n\n> ${said}\n\n${runs.join("\n\n")}\n`;
 }

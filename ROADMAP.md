@@ -434,9 +434,20 @@ The work, with what the location layer already covered marked:
   eddies" against a packet that said "10eb". With both fixed, what is left is
   the narrator occasionally inventing a duration ("twenty minutes"), about one
   run in three on a few scenarios.
-  Still to do, in order: tune from what the evals say (the prompts still carry
-  most of their old brakes; cutting them blind was not worth the risk), and a
-  stronger model if the evals say it plays better.
+  The first tuning pass read the transcripts (`TRANSCRIPT=` on the eval) rather
+  than the pass counts, which were already near the ceiling, and found three
+  things no check had counted. A turn narrating an engine result showed the
+  player only its `resolution`, which the model wrote as a one-line log ("You
+  walked two minutes to The Paper Lantern"), while the actual scene it wrote in
+  `description` was discarded; the prompt now says `resolution` IS the turn. A
+  visit is counted on arrival, so every turn of a first visit was told to
+  establish the room again; `stillHere` (Life) and `sceneSet` (Job) now say the
+  scene is already set. And twenty of twenty-eight turns opened on a list of
+  smells; a shared rule and the `opens-on-something` check hold that. One brake
+  was cut: a refused trip was told to "say in a sentence where they are
+  standing", which produced a dead line every time.
+  Still to do: the remaining brakes, one at a time against the transcripts,
+  and a stronger model if the evals say it plays better.
 
 Success: the player opens the game, understands their immediate problem in
 seconds, decides, sees the cost, and moves on.

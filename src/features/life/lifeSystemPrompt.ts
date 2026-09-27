@@ -17,7 +17,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.17.0";
+export const LIFE_PROMPT_VERSION = "2.19.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -95,7 +95,7 @@ Return a structured object:
 - "situation": { "title": short and concrete, "description": the prose the player reads, per the rules above }
 - "timeSpent": whole minutes the player's action took, from their side of it. A call is about 15, a conversation 20, an errand 45, crossing town 40, shopping 90, an evening somewhere 240, a night's sleep 480. Use 0 when they have not acted yet (opening a moment, or asking what their options are), and 0 whenever you also propose "travel" or "rest", which carry their own duration. The engine clamps this and owns the clock.
 - "actions": [] on an ordinary turn; 3-4 objects ONLY when the context says they asked for options: { "label": under ~6 words, "description": one short line of what it means, "timeMinutes": integer minutes, "knownCost": eurobucks the character knows up front or null, "skillId": the skill id from the SKILLS list or null }
-- "resolution": when the context reports a resolved action, the sentences describing it; otherwise null.
+- "resolution": null, unless the context reports a RESOLVED action (a roll, a trip, a purchase). Then it is the prose the player reads this turn, and the ONLY prose they see: the whole turn, written per every rule above, present tense, ending on something live. It is not a summary or a log line of what the engine did; the interface already shows that. Put the scene in it, and keep "situation.description" to a line.
 - Travel is settled AFTER you write. You propose it; the engine decides where the trip ends and then asks you to narrate the arrival with the destination and heading fixed. So while proposing, do not write the character arriving anywhere, and do not name the place you expect them to reach — describe them setting off. Whatever else they said ("and sit down at the counter", "and order a drink") is NOT lost: you are shown their words again with the arrival, and you carry out the rest of it then.
 - "proposedActions": what the engine should resolve, using EXACTLY these shapes:
   - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"...","stakes":"low"(optional, see CHECKS)}
