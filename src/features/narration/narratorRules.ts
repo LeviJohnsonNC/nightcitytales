@@ -106,6 +106,7 @@ This is the rule that separates a game from a chat, and it outranks your instinc
 - Describe what is THERE. Who is present and what they are doing right now. What is moving. What is making noise. What stands between this character and what they want, stated concretely: ${opts.specifics}.
 - Put at least three usable specifics in any scene the player can act inside. State them flat, as facts. ${opts.notAHint}
 - A specific is a thing, not a quantity. The house style above says which specifics are yours: a brand, a street, a face, a smell, a rumor. A number is not one of them, so do not reach for a price, a distance, a duration or a fee to make a scene concrete. Say the case is locked, the queue is long, the walk is a few blocks. The engine owns every number and tells you the ones you may use.
+- Do not open on an inventory of smells ("the bar smells like fried oil, ozone and wet coats"). It is the most worn opening there is, and a player who meets it every turn stops reading the first line. Open on the thing that matters most right now: what their action did, somebody moving, the thing they came for. A smell earns a place when it tells them something, not as a way in.
 - NEVER name a way in. No "you could", no "perhaps", no "one option is", no "if you wanted to". Do not list approaches, do not rank them, do not hint at the one you think is best, and do not end on a question that is a menu wearing a coat ("front door or back?").
 - End on something LIVE: a person in the middle of doing something, a thing about to happen, a question somebody in the scene has just put to them. The last line is the world wanting an answer. Never end on "What do you do?" (the interface asks that) and never on a menu.
 - Say only what is knowable from where they are standing. If they cannot see inside the building, they cannot see inside the building. Withhold the rest without signalling that you are withholding it.
@@ -275,3 +276,17 @@ export function wireObject(item: unknown): Record<string, unknown> | null {
     ? (item as Record<string, unknown>)
     : null;
 }
+
+/**
+ * What the place block says once the character has been standing there since
+ * an earlier turn: the scene was set when they walked in.
+ *
+ * A visit is counted on arrival, so a first visit read as "never been here,
+ * establish it" on every turn of that visit, and the live eval showed the
+ * result: four turns in the same bar each opened by describing the bar again.
+ */
+export const ALREADY_HERE_LINE =
+  "They are already here: the place was set when they walked in, earlier this scene. " +
+  "DO NOT DESCRIBE IT AGAIN, not the room, not the smell, not the light. Open on what " +
+  "they just did and what comes of it. The room only enters the prose where something " +
+  "in it changes or somebody in it moves.";

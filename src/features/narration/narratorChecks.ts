@@ -405,6 +405,32 @@ export const withheldStaysWithheld: Check = {
 // Pacing
 // ---------------------------------------------------------------------------
 
+/**
+ * The first line is not a list of smells.
+ *
+ * Found by reading the first transcript rather than by any count: twenty of
+ * twenty-eight turns opened "X smells like A, B, and C", ozone in most of
+ * them, including turns in a bar the player was already sitting in. Each one
+ * is fine; all of them together are the narrator's single loudest tic.
+ */
+export const opensOnSomething: Check = {
+  id: "opens-on-something",
+  title: "did not open on a list of smells",
+  source: 'Both prompts: "Do not open on an inventory of smells."',
+  run(turn) {
+    const first = firstSentence(turn.narration);
+    const smell = /\b(?:smells?|smelled|smelling|reeks?|stinks?)\s+(?:like|of)\b(.*)/i.exec(first);
+    if (!smell) return [];
+    // A list: two commas, or a comma and an "and". One smell is a detail.
+    const rest = smell[1] ?? "";
+    const commas = (rest.match(/,/g) ?? []).length;
+    if (commas >= 2 || (commas >= 1 && /\band\b/i.test(rest))) {
+      return [{ quote: first, note: "the turn opens on a list of smells" }];
+    }
+    return [];
+  },
+};
+
 export const withinProseBudget: Check = {
   id: "within-prose-budget",
   title: "stayed inside its prose budget",
@@ -660,6 +686,7 @@ export const ALL_CHECKS: Check[] = [
   smallChecksRollThemselves,
   quietStaysQuiet,
   endsOnTheWorld,
+  opensOnSomething,
   withinProseBudget,
 ];
 

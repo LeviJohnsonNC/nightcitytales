@@ -240,6 +240,13 @@ export type LifeBundle = {
    * walks in.
    */
   inScene: boolean;
+  /**
+   * True when the character is still where the last turn left them, on the
+   * same day, whatever the situation. The place was established on the turn
+   * they arrived, and a visit is counted on arrival, so without this every
+   * later turn of a first visit was told to establish the room again.
+   */
+  stillHere: boolean;
   /** The offer on the table, when the campaign is in the hook phase. */
   hook: LifeHook | null;
   /**
@@ -367,6 +374,7 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     standings: notableFrom(factionRows),
     current,
     inScene: inScene && current?.key === lastShownKey,
+    stillHere: inScene,
     hook,
     wire: hook ? null : wire,
     wireMissionId: hook ? null : wireMissionId,
@@ -557,6 +565,8 @@ type PlaceFamiliaritySlice = {
   visits: number;
   standing: "first" | "returning" | "known";
   since: string;
+  /** Already established this visit: they have been here since an earlier turn today. */
+  stillHere?: boolean;
   known: string[];
   /** The part of `known` that being a local accounts for, not having been here. */
   asALocal: string[];
@@ -591,6 +601,7 @@ function familiarityFor(
   places: Record<string, PlaceState>,
   day: number,
   localExpertLevel = 0,
+  stillHere = false,
 ): { familiarity: PlaceFamiliaritySlice } | Record<string, never> {
   if (!placeKey) return {};
   const read = placeFamiliarity(placeKey, places[placeKey], day, localExpertLevel);
@@ -601,6 +612,7 @@ function familiarityFor(
   return {
     familiarity: {
       ...(regular ? { regular: true } : {}),
+      ...(stillHere ? { stillHere: true } : {}),
       visits: read.visits,
       standing: read.standing,
       since: sinceWords(read.daysSince),
@@ -679,6 +691,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
             bundle.places,
             bundle.clock.day,
             localExpertIn(bundle.character, standingDistrictKey),
+            bundle.stillHere,
           ),
           // What they have SEARCHED OUT here, which is a different thing from
           // what they know by being familiar with it. Only the found ones: the

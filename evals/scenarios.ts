@@ -115,6 +115,12 @@ const OFFICE_TELLS: Record<string, string[]> = {
   photo: ["barbara", "dahl"],
 };
 
+/**
+ * The office after the scene has opened: the turn play actually sends when the
+ * player acts, and the one that used to describe the corridor all over again.
+ */
+const officeMidScene = buildGmContext({ ...office, sceneSet: true });
+
 const officeWithheld = (officeBeat.truths ?? [])
   .filter((t) => OFFICE_TELLS[t.id])
   .map((t) => ({ truth: t.fact, tells: OFFICE_TELLS[t.id] as string[] }));
@@ -140,7 +146,10 @@ export const SCENARIOS: Scenario[] = [
     narrator: "gm",
     about: "an intent that could plausibly fail must reach the dice, not the prose",
     system: GM_SYSTEM_PROMPT,
-    packet: renderGmUserPrompt(office, "I pick the lock on the filing cabinet and go through it."),
+    packet: renderGmUserPrompt(
+      officeMidScene,
+      "I pick the lock on the filing cabinet and go through it.",
+    ),
     expect: {
       optionsRequested: false,
       knownNpcKeys: [],
@@ -156,7 +165,7 @@ export const SCENARIOS: Scenario[] = [
     about: "the one turn a suggestion list is legal, and the Role move inside it",
     system: GM_SYSTEM_PROMPT,
     packet: renderGmUserPrompt(
-      buildGmContext({ ...office, optionsRequested: true }),
+      buildGmContext({ ...officeMidScene, optionsRequested: true }),
       "(What are my options here?)",
     ),
     expect: {
@@ -312,7 +321,11 @@ SCENARIOS.push(
     packet: renderLifeUserPrompt(
       {
         ...quietEvening,
-        place: placeAt(BAR.key),
+        // Just arrived: the one turn of a first visit that establishes it.
+        place: {
+          ...placeAt(BAR.key),
+          familiarity: { visits: 1, standing: "first", since: "", known: [] },
+        },
         resolved: settled({
           travelled: {
             from: describePosition(HOME),
@@ -385,7 +398,18 @@ SCENARIOS.push(
 // and a Job turn that stopped before the easy half of what was asked.
 // ---------------------------------------------------------------------------
 
-const atTheBar: LifeContext = { ...quietEvening, place: placeAt(BAR.key) };
+/**
+ * Sitting in the bar they walked into on an earlier turn today: a first visit,
+ * already established. Play marks it so (`stillHere`), and without the mark the
+ * scenario asked the model to describe a room the player was already in.
+ */
+const atTheBar: LifeContext = {
+  ...quietEvening,
+  place: {
+    ...placeAt(BAR.key),
+    familiarity: { visits: 1, standing: "first", since: "", known: [], stillHere: true },
+  },
+};
 
 const KIRO = {
   key: "kiro",
@@ -439,7 +463,9 @@ SCENARIOS.push(
       withheldTruths: [],
       mustStayQuiet: false,
       riskyIntent: false,
-      offScene: ["jacket", "armor", "patch"],
+      // The player's own jacket, not any jacket: the first live run flagged a
+      // table of gangers "in matching embroidered jackets".
+      offScene: ["your jacket", "your armor", "your armour", "armored jacket", "patch"],
       wordBudget: 160,
     },
   },
@@ -453,7 +479,7 @@ SCENARIOS.push(
         ...atTheBar,
         people: [KIRO],
         place: {
-          ...placeAt(BAR.key),
+          ...atTheBar.place!,
           whoIsHere: { name: KIRO.name, key: KIRO.key, comingOver: true },
         },
       },
@@ -475,7 +501,7 @@ SCENARIOS.push(
     about: "a compound intent does the safe half and stops at the dice",
     system: GM_SYSTEM_PROMPT,
     packet: renderGmUserPrompt(
-      office,
+      officeMidScene,
       "I sit down in Huntver's chair and go through the desk drawers.",
     ),
     expect: {

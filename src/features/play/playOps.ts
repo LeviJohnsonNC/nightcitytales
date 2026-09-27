@@ -469,6 +469,9 @@ export async function narrate(
   const jobPosition = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
   const jobDistrict = jobPosition ? getDistrict(jobPosition.districtKey) : undefined;
   const context = buildGmContext({
+    // Once this beat has been narrated, the scene was set on that turn, and
+    // every turn after it is mid-scene.
+    ...(needsOpeningScene(bundle) ? {} : { sceneSet: true }),
     ...(jobDistrict
       ? {
           place: {

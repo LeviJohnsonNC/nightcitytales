@@ -406,9 +406,10 @@ export function describeTravelOutcome(outcome: TurnOutcome): string | undefined 
   if (outcome.travelRefused) {
     return (
       `The trip could not be worked out: ${outcome.travelRefused} The character is exactly ` +
-      "where they were, and nothing went wrong for them. Say in a sentence where they are " +
-      "standing, still thinking about where to go. Do NOT walk them back anywhere, do not have " +
-      "them give up, and do not describe them arriving anywhere." +
+      "where they were, and nothing went wrong for them. Keep them there and write the moment " +
+      "they are standing in, ending on something live around them, as any scene does. Do NOT " +
+      "walk them back anywhere, do not have them give up or call it a false start, and do not " +
+      "describe them arriving anywhere." +
       (outcome.travelChoices?.length
         ? " The interface is offering them the nearest real places to go; do not list them."
         : "")

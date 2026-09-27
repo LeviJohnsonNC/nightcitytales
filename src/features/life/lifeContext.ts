@@ -5,7 +5,7 @@
  * matter, and what the character can actually do. Nothing else.
  */
 import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
-import { carryOnLine } from "@/features/narration/narratorRules";
+import { ALREADY_HERE_LINE, carryOnLine } from "@/features/narration/narratorRules";
 import {
   formatLifeClock,
   formatDuration,
@@ -164,6 +164,11 @@ export type LifeContext = {
       standing: "first" | "returning" | "known";
       /** Pre-worded, so the renderer never does arithmetic on days. */
       since: string;
+      /**
+       * They have been standing here since an earlier turn today: the place was
+       * established when they walked in, whatever their standing with it.
+       */
+      stillHere?: boolean;
       known: string[];
       /**
        * The part of `known` that comes from being a local in this district
@@ -299,7 +304,9 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     if (p.familiarity) {
       const f = p.familiarity;
       parts.push("", "-- HOW WELL THEY KNOW THIS PLACE --");
-      if (f.standing === "first") {
+      if (f.stillHere) {
+        parts.push(ALREADY_HERE_LINE);
+      } else if (f.standing === "first") {
         parts.push(
           "They have never been here before. Establish it: what it is, what it looks like, what " +
             "is going on in it. This is the one visit that gets the full picture.",

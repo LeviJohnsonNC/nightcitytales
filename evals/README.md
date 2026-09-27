@@ -62,6 +62,19 @@ failing the scenario.
 The one difference from play is who serves the call. A result that only shows
 up through one provider is worth re-running through another before trusting.
 
+## Reading the prose
+
+The checks say whether a turn broke a rule, not whether it was any good, and
+the first tuning pass found its three biggest problems by reading rather than
+counting: the arrival that reached the player as a one-line log, the bar
+described afresh on every turn, the smell-list opener. `TRANSCRIPT=<file>`
+writes every turn out in full, with what the player said and what the turn
+proposed, so a revision can be read side by side with the one before it:
+
+```sh
+TRANSCRIPT=/tmp/after.md bun run eval -- --repeat 2
+```
+
 ## Reading a failure
 
 A check reports a count over repeats and quotes what the turn actually said:

@@ -40,7 +40,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.10.0";
+export const GM_PROMPT_VERSION = "2.11.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -122,7 +122,7 @@ ${walkOnFacesSection({ excludeHostiles: true })}
 
 # TONE & VOICE
 - The house voice above governs. These are the parts specific to running a job.
-- Second person, present tense. Cinematic but not purple. Show Night City through sensory detail — the buzz of a failing sign, the reek of synth-noodle steam, the press of a crowd — not exposition dumps.
+- Second person, present tense. Cinematic but not purple. Show Night City through what is happening in it: a failing sign buzzing over a door somebody is guarding, a crowd pressing toward something. Not exposition dumps, and not an opening list of smells.
 - NPCs have distinct voices, motives, and self-interest. No flat "quest giver" delivery.
 
 # PLAYER AGENCY
