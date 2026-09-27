@@ -1047,6 +1047,17 @@ export type Arrival = {
 export type TravelDecision = Arrival | { ok: false; reason: string };
 
 /**
+ * The quicker of walking and a cab, for a trip nobody said how to make. A tie
+ * walks: there is no point waiting for a car to arrive somewhere you already
+ * are.
+ */
+export function quickerTrip(from: string | null | undefined, to: string): Trip {
+  const walk = travelTrip(from, to, "foot");
+  const cab = travelTrip(from, to, "cab");
+  return cab.minutes < walk.minutes ? cab : walk;
+}
+
+/**
  * Decide a move. When the player named a heading the engine picks the district;
  * when the narrator named a place as well, the bearing has to agree with the
  * heading or the move is refused. The model proposes, the engine decides.
@@ -1059,8 +1070,12 @@ export function resolveTravelIntent(intent: TravelIntent): TravelDecision {
   // wins when it is "foot".
   const mode: TravelMode =
     intent.vehicle && saidMode !== "foot" ? intent.vehicle : (saidMode ?? DEFAULT_MODE);
+  // Nobody said how, and there is nothing of their own parked outside: they
+  // go whichever way gets them there sooner. Assuming a cab sent a player two
+  // blocks to a bar by taxi — seven minutes, most of them waiting for it.
+  const chooseQuicker = !saidMode && !intent.vehicle;
   const arrive = (to: string, heading?: Compass): Arrival => {
-    const trip = travelTrip(intent.from, to, mode);
+    const trip = chooseQuicker ? quickerTrip(intent.from, to) : travelTrip(intent.from, to, mode);
     return {
       ok: true,
       to,

@@ -290,7 +290,9 @@ export function StatusStrip({ status }: { status: StatusView }) {
           {status.money.line}
         </span>
         <span className="num shrink-0 text-xs text-muted-foreground">{status.growth.ip} IP</span>
-        <span className="num shrink-0 text-xs text-muted-foreground">
+        {/* A name now, not a count, so it is the one part of the strip allowed to
+            shrink: it truncates rather than pushing the caret off a phone. */}
+        <span className="num min-w-0 truncate text-xs text-muted-foreground">
           {status.commitments.line}
         </span>
         <Caret className="ml-auto" />

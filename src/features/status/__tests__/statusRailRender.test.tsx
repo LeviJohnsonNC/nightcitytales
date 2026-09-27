@@ -78,8 +78,9 @@ describe("the rail renders", () => {
 
   it("counts the commitments and not the leads", () => {
     // Two live situations, one of them an opportunity, plus a clock: the chip
-    // says two, because the opportunity is not something the player took on.
-    expect(html).toContain("2 open");
+    // names the first and counts ONE more, because the opportunity is not
+    // something the player took on.
+    expect(html).toContain("The landlord wants his money — due in 2 days · +1 more");
   });
 });
 
@@ -110,6 +111,6 @@ describe("the collapsed strip", () => {
     const html = renderToStaticMarkup(<StatusStrip status={view()} />);
     expect(html).toContain("€4,350");
     expect(html).toContain("3 IP");
-    expect(html).toContain("2 open");
+    expect(html).toContain("The landlord wants his money — due in 2 days · +1 more");
   });
 });

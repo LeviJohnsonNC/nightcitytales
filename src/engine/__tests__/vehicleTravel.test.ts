@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   DISTRICTS,
   getVehicle,
+  quickerTrip,
   resolveTravelIntent,
   travelMinutes,
   travelTrip,
@@ -79,5 +80,29 @@ describe("resolveTravelIntent with wheels outside", () => {
   it("changes nothing for a character who has none", () => {
     const decision = arrive({ from, destination: to, vehicle: null });
     expect(decision.minutes).toBe(arrive({ from, destination: to }).minutes);
+  });
+});
+
+describe("a trip nobody said how to make", () => {
+  it("walks a short errand rather than waiting for a cab", () => {
+    // The Precipice to the Paper Lantern: two blocks. A cab spends most of its
+    // time turning up.
+    const decision = resolveTravelIntent({ from: "h5", destination: "The Paper Lantern" });
+    expect(decision.ok).toBe(true);
+    const trip = decision as Extract<typeof decision, { ok: true }>;
+    expect(trip.mode).toBe("foot");
+    expect(trip.minutes).toBe(quickerTrip("h5", "h7").minutes);
+    expect(trip.minutes).toBeLessThanOrEqual(travelMinutes("h5", "h7", "cab"));
+  });
+
+  it("takes a cab across the city", () => {
+    const decision = resolveTravelIntent({ from: "h5", destination: "rancho_coronado" });
+    const trip = decision as Extract<typeof decision, { ok: true }>;
+    expect(trip.mode).toBe("cab");
+  });
+
+  it("still does what the player said", () => {
+    const decision = resolveTravelIntent({ from: "h5", destination: "h7", mode: "cab" });
+    expect((decision as Extract<typeof decision, { ok: true }>).mode).toBe("cab");
   });
 });

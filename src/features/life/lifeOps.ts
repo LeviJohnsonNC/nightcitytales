@@ -151,6 +151,7 @@ import {
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { rollPendingCheck } from "@/features/play/rollCheck";
 import { saidBefore } from "@/features/narration/narratorRules";
+import { commitmentsStatus, dayBrief } from "@/features/status/statusModel";
 import { travelTo } from "@/features/atlas/travel";
 import {
   applyPlaceObservations,
@@ -1286,6 +1287,25 @@ async function applyResponse(
   clock = advanceClock(clock, spent);
   if (clock.day !== bundle.clock.day || clock.minute !== bundle.clock.minute) {
     await setCampaignClock(campaignId, clock);
+  }
+
+  // A new day: what they wake up to, written into the log where the night
+  // ended. It is the moment "what now?" gets asked, so it gets an answer.
+  if (clock.day > bundle.clock.day) {
+    const brief = dayBrief(
+      clock.day,
+      commitmentsStatus({
+        day: clock.day,
+        situations: bundle.situations,
+        clocks: bundle.pressure.map((p) => p.clock).filter((c) => !c.hidden),
+      }),
+    );
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "day_began",
+      summary: `Day ${brief.day}`,
+      data: brief as unknown as Json,
+    });
   }
   return outcome;
 }
