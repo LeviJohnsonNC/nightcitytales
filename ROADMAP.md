@@ -34,9 +34,14 @@ The plan, in phases:
    rules, against a DV named on the printed ladder — and every Level by hand
    lives in a fine-tune drawer, where each row shows its odds too. A Streetrat
    sees their fixed package as things they can already do.
-3. **The Lifepath as an interview.** One question at a time, in chapters, with
-   the fixer reacting; and when the enemy, friend and lost love are rolled, the
-   player meets the candidates who fit and picks.
+3. **The Lifepath as an interview — shipped.** Five chapters asked one at a
+   time — where you come from, who you are, who is still out there, what you
+   want, about the work — each opened by the fixer in their own voice, each
+   with its own roll. In "who is still out there" the enemy, friend and lost
+   love become faces: `castCandidates` offers the people whose bio fits what
+   was rolled, always including the dice's own choice, and the pick rides the
+   cast plan into the campaign. A pick only stands while it still fits the
+   Lifepath; change what was rolled and it gives way to the dice.
 4. **A portrait that develops** as the answers come in.
 5. **Music**, built with the Suno tracks as they arrive.
 6. **Polish**: STAT reveals and one Edgerunner reroll (a house rule), one-click

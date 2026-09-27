@@ -30,7 +30,14 @@
         "fixer": "Another fixer. Then you know I am not going to tell you who else I work with.",
         "nomad": "A Nomad. You know roads. I know cargo. We will get along very well."
       },
-      "verdict": "It is all in order. I will pay you on the hour and in full. Do not make me call anybody else."
+      "verdict": "It is all in order. I will pay you on the hour and in full. Do not make me call anybody else.",
+      "chapters": {
+        "origin": "Start at the beginning. Where were you born, who raised you, and what went wrong. Something always went wrong.",
+        "self": "Now describe yourself. Not how you would like to be seen. How a customs officer would write you down.",
+        "people": "Who knows you? Who owes you, and who would like to see you fail? These are the people who arrive at my door.",
+        "drive": "And what do you want? A person who does not know is a person who can be bought by anyone.",
+        "work": "Last. The work itself. How did you come to do what you do?"
+      }
     },
     "Marcus \"Tally\" Oyelaran": {
       "where": "The back half of a Heywood laundromat that has not washed a shirt in ten years.",
@@ -61,7 +68,14 @@
         "fixer": "Another fixer. Then you know how this works. I'll owe you one. You'll owe me two.",
         "nomad": "A Nomad! Family. You people keep your word, and I keep a very good record of who does."
       },
-      "verdict": "There. That's a person I can work with. Small favour to start. Nothing you'll even notice."
+      "verdict": "There. That's a person I can work with. Small favour to start. Nothing you'll even notice.",
+      "chapters": {
+        "origin": "Start me at the start, friend. Mama, papa, the block, the bad year. Everybody's got a bad year.",
+        "self": "Now tell me about you. The look, the habits, the thing you always carry. I like details.",
+        "people": "Okay, the good part. Who loves you, who hates you, who got away? I want names. Names are my whole business.",
+        "drive": "What are you after, in the end? Money, revenge, a quiet life? No wrong answers. Some expensive ones.",
+        "work": "And the job. How'd you end up doing what you do? There's always a story."
+      }
     },
     "Dinh Bao Tran": {
       "where": "A food court on the second level. He picked the table nearest two exits.",
@@ -92,7 +106,14 @@
         "fixer": "A fixer. Then you already know I will not tell you whose building it is.",
         "nomad": "A Nomad. Somebody has to be waiting at the loading dock with the engine running."
       },
-      "verdict": "Good. Ninety seconds on the landing. Do not stop. We will talk again."
+      "verdict": "Good. Ninety seconds on the landing. Do not stop. We will talk again.",
+      "chapters": {
+        "origin": "Where you come from. Short.",
+        "self": "What you look like. What people remember about you. That is what gets you stopped at a door.",
+        "people": "Who knows your face. Who wants it gone. Who you would go back for.",
+        "drive": "What you want. One sentence.",
+        "work": "How you learned the work. Where. Who taught you."
+      }
     },
     "Rosalind Achebe": {
       "where": "A members' lounge in the Executive Zone. The drinks cost more than a week of ammunition. She is paying.",
@@ -123,7 +144,14 @@
         "fixer": "A colleague! We must never, ever work for the same person.",
         "nomad": "A Nomad. My clients' things sometimes need to leave the city quietly. You would be perfect."
       },
-      "verdict": "Yes. You will do very nicely. Wear something clean. Break nothing that is insured."
+      "verdict": "Yes. You will do very nicely. Wear something clean. Break nothing that is insured.",
+      "chapters": {
+        "origin": "Tell me where you come from, darling. Every good story has a terrible first chapter.",
+        "self": "Now yourself. The clothes, the hair, the little habits. I am deciding which rooms you can walk into.",
+        "people": "The fun part. Who adores you, who loathes you, and who broke your heart? Leave nothing out.",
+        "drive": "What do you want, in the end? Be honest. I find ambition terribly attractive.",
+        "work": "And the work. How did someone like you become someone like this?"
+      }
     },
     "Yuri Pastrana": {
       "where": "A truck stop bar on the Badlands edge. The parking lot is worth more than the building.",
@@ -154,7 +182,14 @@
         "fixer": "Another fixer! Good, good. You take the city, I take the roads, nobody fights.",
         "nomad": "Nomad! Family! Which clan? No, don't tell me, I'll find out. Welcome home."
       },
-      "verdict": "Good. You're family now. That means something. Nobody gets left on the sand, and neither do you."
+      "verdict": "Good. You're family now. That means something. Nobody gets left on the sand, and neither do you.",
+      "chapters": {
+        "origin": "Where are you from, eh? Which family, which road, which bad luck? Out here we all have some.",
+        "self": "Tell me about you. How you dress, what you care about. I can tell a lot from boots.",
+        "people": "Who's your family, who's your enemy, who broke your heart? Out here that is the whole story of a person.",
+        "drive": "And what do you want? A road? A home? Somebody's head? I don't judge.",
+        "work": "The work now. How did you learn it? Who taught you?"
+      }
     },
     "Kit Mwangi": {
       "where": "Whichever noodle bar has the best privacy this week. Kit is already halfway through a bowl.",
@@ -185,7 +220,14 @@
         "fixer": "A fixer! Competition. I love it. You're going to lose, but I love it.",
         "nomad": "A Nomad. Roads, clans, borders. Nobody sells me road intel. Change that."
       },
-      "verdict": "Got it. Filed. You're more interesting than I thought, which is rare. I'll call you."
+      "verdict": "Got it. Filed. You're more interesting than I thought, which is rare. I'll call you.",
+      "chapters": {
+        "origin": "Origin story, go. Family, block, the moment it all went sideways. Fast version.",
+        "self": "Now you. Look, vibe, habits. The stuff my sources would notice.",
+        "people": "Friends, enemies, exes. I probably have a file on at least one of them. Let's see if I'm right.",
+        "drive": "End game? What do you actually want? Everybody lies on this one. Try not to.",
+        "work": "And the work. How'd you get into it? I love a good origin."
+      }
     }
   }
 }

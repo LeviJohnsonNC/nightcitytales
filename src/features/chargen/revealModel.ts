@@ -1,4 +1,4 @@
-import { generateCast, type CastMember } from "@/engine";
+import { generateCast, type CastMember, type LifepathTies } from "@/engine";
 import { lifepathTiesFrom } from "@/features/campaign/castSeeding";
 import type { FullCharacter } from "@/lib/backend";
 import type { ChargenState } from "./store";
@@ -12,8 +12,16 @@ import type { ChargenState } from "./store";
  */
 export function castForState(state: ChargenState): CastMember[] {
   if (!state.castPlan) return [];
-  const ties = lifepathTiesFrom({
+  return generateCast({
+    seed: state.castPlan.seed,
+    ties: tiesForState(state),
+    picks: state.castPlan.picks,
+  });
+}
+
+/** What the draft's Lifepath says about the people in the character's life. */
+export function tiesForState(state: ChargenState): LifepathTies {
+  return lifepathTiesFrom({
     lifepath: { general: state.lifepath.general },
   } as unknown as FullCharacter);
-  return generateCast({ seed: state.castPlan.seed, ties, picks: state.castPlan.picks });
 }

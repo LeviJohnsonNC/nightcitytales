@@ -415,7 +415,11 @@ carries the plan as `castPlan` (seed and picks); the save writes it into the
 general Lifepath under `castPlan`, and `ensureCast` seeds the campaign's six from
 it, so the fixer who interviewed the character and the people the File shows
 are exactly the people the campaign meets. `meetToCampaign.test.ts` holds those
-two paths together; keep it passing when either one changes.
+two paths together; keep it passing when either one changes. The Lifepath step
+also lets the player choose their enemy, friend and lost love from
+`castCandidates` — only people whose bio fits what was rolled — and
+`generateCast` honours a pick only while it still fits, so editing the Lifepath
+after choosing can never leave a contradiction on the file.
 
 The Skills step leads with presets and odds rather than points. A preset
 (`src/data/rules/skill-presets.json`, `houseRule: true`) names focus and support

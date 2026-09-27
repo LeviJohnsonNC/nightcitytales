@@ -403,9 +403,13 @@ export function generateCast(input: CastSeedInput): CastMember[] {
   for (const role of CAST_ROLES) {
     const pool = poolFor(role);
     // Still one draw, so the rest of the stream lands where it always did.
-    const drawn = pick(namesFitting(role, ties, pool.names), rng, `${role}.names`);
+    const fitting = namesFitting(role, ties, pool.names);
+    const drawn = pick(fitting, rng, `${role}.names`);
+    // A pick only stands while it still fits the Lifepath: change the enemy you
+    // rolled from an Ex-lover to a Corporate exec after choosing Razor, and the
+    // choice quietly gives way to the dice rather than contradicting the file.
     const chosen = input.picks?.[role];
-    const name = chosen && pool.names.includes(chosen) ? chosen : drawn;
+    const name = chosen && fitting.includes(chosen) ? chosen : drawn;
     const member: CastMember = {
       key: uniqueKey(name, role, used),
       name,
@@ -436,4 +440,47 @@ function uniqueKey(name: string, role: CastRole, used: Set<string>): string {
 /** The member holding a given job in the cast, if the campaign has one. */
 export function memberInRole(cast: CastMember[], role: CastRole): CastMember | null {
   return cast.find((member) => member.role === role) ?? null;
+}
+
+/** How many people creation offers for each personal slot. */
+export const CANDIDATES_OFFERED = 3;
+
+/**
+ * Who could be this character's enemy, friend or lost love, for the player to
+ * choose between.
+ *
+ * Only people whose bio fits what the Lifepath rolled (`namesFitting`), dealt
+ * in a stable order from the plan's seed, and always including whoever the
+ * dice would pick — so "let the dice decide" is one of the faces on offer, not
+ * a stranger behind a curtain. When only one person fits, there is no choice
+ * to make, and the list is that one.
+ */
+export function castCandidates(input: {
+  seed: number;
+  ties?: LifepathTies;
+  role: CastRole;
+  count?: number;
+}): { drawn: string; candidates: string[] } {
+  const ties = input.ties ?? {};
+  const drawn = generateCast({ seed: input.seed, ties }).find((m) => m.role === input.role)!.name;
+  const fitting = namesFitting(input.role, ties, poolFor(input.role).names);
+  const rng = seededRng((input.seed ^ hashRole(input.role)) >>> 0);
+  const shuffled = [...fitting];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+  }
+  const count = Math.max(1, input.count ?? CANDIDATES_OFFERED);
+  const offered = shuffled.slice(0, count);
+  if (!offered.includes(drawn)) offered[offered.length - 1] = drawn;
+  return { drawn, candidates: offered };
+}
+
+function hashRole(role: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < role.length; i += 1) {
+    h ^= role.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h;
 }

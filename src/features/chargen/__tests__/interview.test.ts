@@ -32,6 +32,9 @@ describe("the fixer interview", () => {
       }
       for (const step of INTERVIEW_STEPS) expect(voice.ask[step], `${name} ${step}`).toBeTruthy();
       for (const role of ROLE_IDS) expect(voice.roles[role], `${name} ${role}`).toBeTruthy();
+      for (const chapter of ["origin", "self", "people", "drive", "work"] as const) {
+        expect(voice.chapters[chapter], `${name} ${chapter}`).toBeTruthy();
+      }
     }
   });
 
@@ -45,6 +48,7 @@ describe("the fixer interview", () => {
         voice.verdict,
         ...Object.values(voice.ask),
         ...Object.values(voice.roles),
+        ...Object.values(voice.chapters),
       ];
       for (const line of lines) {
         expect(line, line).not.toMatch(/—/);
