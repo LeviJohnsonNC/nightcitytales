@@ -85,3 +85,169 @@ export const ROLE_HOOK: Record<string, string> = {
   fixer: "Be the number everyone has saved.",
   nomad: "Always know the way out.",
 };
+
+/**
+ * "On your first night": what each Role is like to BE, told as a scene rather
+ * than a rule. No Rank, no dice, no STATs — a player deciding who to be wants
+ * the feeling first. The numbers are not dropped: they are `roleOpening` in
+ * the engine, computed from the functions play runs on, and the Role page
+ * shows them under "Read the printed rule".
+ *
+ * Every beat is a promise the game keeps. Each one names, in the comment
+ * beside it, what in the engine makes it true; if that changes, this does.
+ */
+export type FirstNightBeat = { title: string; body: string };
+
+export const ROLE_FIRST_NIGHT: Record<string, FirstNightBeat[]> = {
+  rockerboy: [
+    // Charismatic Impact against a crowd (engine/roleAbility.ts, CHARISMATIC_AUDIENCES).
+    {
+      title: "The room turns.",
+      body: "You step up onto a crate outside a shuttered club and forty strangers stop scrolling. You don't need a gun when a crowd will do the shoving for you.",
+    },
+    // charismaticFavor: a fan won over owes a real favour.
+    {
+      title: "One person, won over.",
+      body: "The guard, the bartender, the scared kid with the keys. Win one of them and they owe you something real: a door left unlocked, your name said in the right ear.",
+    },
+    {
+      title: "Your face opens doors.",
+      body: "Half the city has heard your songs. The other half has heard about you. Both let you in.",
+    },
+  ],
+  solo: [
+    // Threat Detection.
+    {
+      title: "You saw it from the door.",
+      body: "Two men by the noodle cart, one hand in a pocket. You already know which one moves first.",
+    },
+    // Initiative Reaction + Spot Weakness.
+    {
+      title: "It starts on your time.",
+      body: "When it goes loud, you are already moving, and your first shot is already where it needs to be.",
+    },
+    // Damage Deflection.
+    {
+      title: "The first one that finds you hurts less.",
+      body: "You have been hit before. You have learned exactly how to take it, and how to keep walking.",
+    },
+  ],
+  netrunner: [
+    // Unbuilt: roleOpening.netrunner.unbuilt.
+    {
+      title: "Not tonight.",
+      body: "The NET is getting its own update. Everything else about a Netrunner works, but jacking in does not yet. Pick another Role for now, and come back when the wires are live.",
+    },
+  ],
+  tech: [
+    // Field Expertise: repairs.
+    {
+      title: "It's broken. Good.",
+      body: "A jammed pistol, a lock that sparked dead, a drone that fell out of the sky. Everyone else sees junk. You see an evening's work.",
+    },
+    // planFabrication: materials at a fraction of the price, a week of bench time.
+    {
+      title: "What the city won't sell you, you build.",
+      body: "A blade nobody stocks, a part nobody makes any more. Give you the scrap and a week at the bench and it's yours, for a fifth of what it costs across a counter.",
+    },
+    // A failed build costs the time, never the materials.
+    {
+      title: "Failure is just Tuesday.",
+      body: "When a build goes wrong you lose the week, not the parts. They're still on the bench in the morning. Try again.",
+    },
+  ],
+  medtech: [
+    {
+      title: "Somebody is bleeding out on a bar floor.",
+      body: "Everyone is shouting. You're already kneeling, gloves on, counting.",
+    },
+    // Pharmaceuticals: Speedheal.
+    {
+      title: "Your own pharmacy.",
+      body: "The good drugs aren't sold in Night City. You make them, and one dose of what you cook puts a friend back on their feet.",
+    },
+    {
+      title: "Back on the street first.",
+      body: "You patch yourself better than anyone patches you. You're up and working while the rest of the crew is still healing.",
+    },
+  ],
+  media: [
+    {
+      title: "Somebody paid to bury this.",
+      body: "You found it anyway: the file, the witness, the photo nobody was meant to see. Now you decide who reads it.",
+    },
+    // storyImpactFor: a proven story sets a faction back.
+    {
+      title: "Print it, and it costs them.",
+      body: "Prove it and publish, and whatever they were building against you slows to a crawl. The local ones lose their jobs. Sometimes they lose their freedom.",
+    },
+    // Evidence is counted from discovered truths, never typed in.
+    {
+      title: "They'll know it was you.",
+      body: "Every organisation that runs this city reads the feeds. Your byline is a weapon, and it has your name on it.",
+    },
+  ],
+  exec: [
+    // Team Members.
+    {
+      title: "You don't do it yourself.",
+      body: "Somebody on your payroll does the thing you would otherwise have to. They have opinions about it. You pay them not to share them.",
+    },
+    // Corporate housing.
+    {
+      title: "The company keeps a roof over you.",
+      body: "Rent is somebody else's problem, which in Night City is most of a salary.",
+    },
+    {
+      title: "Your name still opens doors.",
+      body: "Not every door, and never the same one twice. Spend it carefully.",
+    },
+  ],
+  lawman: [
+    // Backup: a call that can fail (roll under Rank).
+    {
+      title: "Shots fired. You call it in.",
+      body: "If the dispatcher comes through, four armed officers are on their way, and they shoot at whoever is shooting at you. Tonight, they might even be on time.",
+    },
+    {
+      title: "Run the plate.",
+      body: "A name, a face, a licence plate. You can check any of them against what the file holds, and the file holds a lot.",
+    },
+    {
+      title: "The badge does half the work.",
+      body: "Most of this city is more afraid of paperwork than of a fight. You carry the paperwork.",
+    },
+  ],
+  fixer: [
+    // Reach: a price category always sourceable.
+    {
+      title: "Three calls.",
+      body: "Whatever they need, you know someone who has it. Short of the truly exotic, it's never a question of whether. Only of when, and what it costs them.",
+    },
+    // hagglePercent.
+    {
+      title: "Nobody pays the first price.",
+      body: "The first number a seller says is never the one you pay. They know it. You know it. You both enjoy the dance.",
+    },
+    {
+      title: "Everyone owes you.",
+      body: "Favours are a currency in this city, and you're the only one in the room keeping the ledger.",
+    },
+  ],
+  nomad: [
+    // motorpoolFor: the first vehicle, parked.
+    {
+      title: "Your car's outside.",
+      body: "Right where you left it, keys in your pocket. You cross Night City faster than any cab, and you never wait on a corner hoping one comes.",
+    },
+    // The rest of the Family Motorpool, one out at a time.
+    {
+      title: "The Family has more.",
+      body: "A bike, a boat, a gyrocopter that doesn't care about bridges. Call for it tonight and the Family has it waiting for you in the morning.",
+    },
+    {
+      title: "You always know the way out.",
+      body: "Which is the difference between a bad night and a story you get to tell.",
+    },
+  ],
+};

@@ -7,30 +7,32 @@
  * entry — "Rockerboys ARE street poets" — aimed at a reader rather than at
  * somebody deciding who to be.
  *
- * Three things replace it, in the order a person actually asks them:
+ * The Roles come as a cover-flow carousel, in an order shuffled once per
+ * character (so no Role is always first), and the one in the middle is the one
+ * the page is about. Below it, in the order a person actually asks:
  *
  *  - WHAT WOULD I DO? One street corner, shown identically to every Role, and
  *    underneath it what THIS one sees in it. Switch Roles and the alley does
- *    not move; the answer does. That comparison is the whole decision, and it
- *    is the one thing a list of ten descriptions can never make.
- *  - WHAT DO I GET? Concrete things, on the first night, COMPUTED — the bench's
- *    real prices, the Fixer's real Reach, the Nomad's real motorpool, from the
- *    same engine functions play runs on (engine/roleOpening.ts). A promise the
- *    creator makes has to be a promise the game keeps.
- *  - AND THE RULES? Still here, one click away, at the bottom. No longer the
- *    door.
+ *    not move; the answer does.
+ *  - WHAT IS IT LIKE? The first night, told as a scene (`ROLE_FIRST_NIGHT`),
+ *    with no game terms in it. Every beat is something the engine keeps.
+ *  - AND THE RULES? The printed rule and the first night in numbers — computed
+ *    from the functions play runs on (engine/roleOpening.ts) — one click away
+ *    at the bottom. No longer the door.
  *
- * The book's own tagline and lore are not thrown away — they are moved below
- * the fold, for the player who is already sold and wants to sink in.
+ * Choosing is one action: the bar pinned to the bottom of the screen takes the
+ * Role in the middle and moves on, and the fixer's reaction opens the next
+ * step. There is no separate "choose" followed by a hunt for Next.
  */
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
-import { SHARED_SCENE, roleAnswer, roleOpening, type RoleOpening } from "@/engine";
+import { SHARED_SCENE, roleAnswer, roleOpening, seededRng, type RoleOpening } from "@/engine";
 import { cn } from "@/lib/utils";
 import { ArtSlot } from "./ArtSlot";
 import { roleArt, sceneArt } from "./art";
-import { ROLE_HOOK, ROLE_PLAYS_LIKE } from "./copy";
+import { ROLE_FIRST_NIGHT, ROLE_HOOK, ROLE_PLAYS_LIKE } from "./copy";
 import { emphasizeTerms, loreParagraphs } from "./loreFormat";
 import type { ChargenState } from "./store";
 
@@ -47,10 +49,12 @@ const ROLES = Object.values(rolesData.roles as unknown as Record<string, Role>);
 /** Strip the leading "Plays like:" label so we can present it ourselves. */
 function playsBody(roleId: string): string {
   const raw = ROLE_PLAYS_LIKE[roleId] ?? "";
-  return raw.replace(/^plays like:\s*/i, "");
+  const body = raw.replace(/^plays like:\s*/i, "");
+  // It read as the second half of "Plays like: …"; on its own it starts a sentence.
+  return body.charAt(0).toUpperCase() + body.slice(1);
 }
 
-/** Presentation-only: banner crops that would otherwise clip the character's head. */
+/** Presentation-only: crops that would otherwise clip the character's head. */
 const SPOTLIGHT_FOCAL: Record<string, [number, number]> = {
   rockerboy: [0.5, 0.15],
   solo: [0.5, 0.15],
@@ -67,50 +71,183 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-function RoleTile({
-  role,
-  committed,
-  previewed,
-  onPreview,
+/** The Roles in this character's order: shuffled once, from the draft's own seed, so a reload keeps it. */
+function shuffledRoles(seed: number): Role[] {
+  const rng = seededRng((seed ^ 0x201e5) >>> 0);
+  const order = [...ROLES];
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [order[i], order[j]] = [order[j]!, order[i]!];
+  }
+  return order;
+}
+
+/** How far card `i` sits from the middle, going round the shorter way. */
+function offsetFrom(i: number, index: number, n: number): number {
+  let d = (i - index) % n;
+  if (d > n / 2) d -= n;
+  if (d < -n / 2) d += n;
+  return d;
+}
+
+/**
+ * Cover-flow: the Role in the middle large and lit, its neighbours angled back
+ * on either side. Arrows, a swipe, the arrow keys, or a click on a side card
+ * turn it; the dots under it jump.
+ */
+function RoleCarousel({
+  roles,
+  index,
+  onIndex,
+  committedId,
 }: {
-  role: Role;
-  committed: boolean;
-  previewed: boolean;
-  onPreview: () => void;
+  roles: Role[];
+  index: number;
+  onIndex: (index: number) => void;
+  committedId: string | null;
 }) {
-  const hook = ROLE_HOOK[role.id];
-  const unbuilt = roleOpening(role.id, role.roleAbility.startingRank)?.unbuilt === true;
+  const n = roles.length;
+  const drag = useRef<{ x: number; id: number } | null>(null);
+  const go = (by: number) => onIndex((index + by + n) % n);
+
+  function onPointerUp(e: PointerEvent<HTMLDivElement>) {
+    const start = drag.current;
+    drag.current = null;
+    if (!start || start.id !== e.pointerId) return;
+    const dx = e.clientX - start.x;
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onPreview}
-      aria-pressed={previewed}
-      className={cn(
-        "group relative block aspect-[16/10] w-full overflow-hidden border bg-card text-left transition-colors",
-        committed
-          ? "border-primary"
-          : previewed
-            ? "border-accent"
-            : "border-border hover:border-accent/60",
-      )}
+    <section
+      aria-roledescription="carousel"
+      aria-label="Roles"
+      className="space-y-4"
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight") go(1);
+        else if (e.key === "ArrowLeft") go(-1);
+        else return;
+        e.preventDefault();
+      }}
     >
-      <ArtSlot art={roleArt(role.id, role.name)} label={role.name} className="border-0" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-      {committed && (
-        <span className="absolute right-2 top-2 z-10 bg-primary px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-primary-foreground">
-          Selected
-        </span>
-      )}
-      {!committed && unbuilt && (
-        <span className="absolute right-2 top-2 z-10 bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
-          Coming later
-        </span>
-      )}
-      <div className="absolute bottom-2 left-3 right-3">
-        <h3 className="truncate text-base font-bold tracking-tight">{role.name}</h3>
-        {hook && <p className="truncate text-[11px] leading-tight text-accent">{hook}</p>}
+      <div
+        className="relative aspect-[100/50] w-full touch-pan-y select-none overflow-hidden [perspective:1600px] md:aspect-[100/38]"
+        onPointerDown={(e) => {
+          drag.current = { x: e.clientX, id: e.pointerId };
+        }}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => {
+          drag.current = null;
+        }}
+      >
+        {roles.map((role, i) => {
+          const d = offsetFrom(i, index, n);
+          const away = Math.abs(d);
+          const centre = d === 0;
+          const hidden = away > 2;
+          const hook = ROLE_HOOK[role.id];
+          const unbuilt = roleOpening(role.id, role.roleAbility.startingRank)?.unbuilt === true;
+          return (
+            <button
+              key={role.id}
+              type="button"
+              tabIndex={centre ? 0 : -1}
+              aria-hidden={hidden}
+              aria-current={centre ? "true" : undefined}
+              aria-label={centre ? `${role.name}: ${hook ?? ""}` : `Show ${role.name}`}
+              onClick={() => (centre ? undefined : onIndex(i))}
+              className={cn(
+                "absolute left-1/2 top-1/2 aspect-[16/9] w-[80%] overflow-hidden border text-left md:w-[62%]",
+                "transition-[transform,opacity,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                centre
+                  ? committedId === role.id
+                    ? "cursor-default border-primary shadow-[0_0_40px_-8px_var(--color-primary)]"
+                    : "cursor-default border-accent/70 shadow-[0_20px_60px_-20px_rgb(0_0_0/0.9)]"
+                  : "cursor-pointer border-border",
+              )}
+              style={{
+                transform: `translate(-50%, -50%) translateX(${d * 56}%) translateZ(${-away * 180}px) rotateY(${-Math.sign(d) * Math.min(away, 1) * 32}deg) scale(${centre ? 1 : 0.9})`,
+                zIndex: 10 - away,
+                opacity: hidden ? 0 : away === 2 ? 0.35 : 1,
+                filter: centre ? "none" : `brightness(${away === 1 ? 0.5 : 0.35}) saturate(0.8)`,
+                pointerEvents: hidden ? "none" : undefined,
+              }}
+            >
+              <ArtSlot
+                art={roleArt(role.id, role.name)}
+                label={role.name}
+                className="border-0"
+                focalOverride={SPOTLIGHT_FOCAL[role.id]}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/25 to-transparent" />
+              {committedId === role.id && (
+                <span className="absolute right-3 top-3 bg-primary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-primary-foreground">
+                  Your Role
+                </span>
+              )}
+              {committedId !== role.id && unbuilt && (
+                <span className="absolute right-3 top-3 bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+                  Coming later
+                </span>
+              )}
+              <div className="absolute inset-x-0 bottom-0 space-y-1 p-4 sm:p-6">
+                <h3
+                  className={cn(
+                    "font-bold tracking-tight transition-[font-size] duration-500",
+                    centre ? "text-3xl sm:text-5xl" : "text-xl",
+                  )}
+                >
+                  {role.name}
+                </h3>
+                {centre && hook && <p className="text-sm text-accent sm:text-base">{hook}</p>}
+              </div>
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          aria-label="Previous Role"
+          onClick={() => go(-1)}
+          className="absolute left-2 top-1/2 z-20 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-border bg-background/70 text-foreground backdrop-blur transition-colors hover:border-accent hover:text-accent sm:left-4"
+        >
+          <ChevronLeft className="size-5" aria-hidden />
+        </button>
+        <button
+          type="button"
+          aria-label="Next Role"
+          onClick={() => go(1)}
+          className="absolute right-2 top-1/2 z-20 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-border bg-background/70 text-foreground backdrop-blur transition-colors hover:border-accent hover:text-accent sm:right-4"
+        >
+          <ChevronRight className="size-5" aria-hidden />
+        </button>
       </div>
-    </button>
+
+      <div className="flex items-center justify-center gap-4">
+        <span className="font-mono text-[11px] tracking-[0.25em] text-muted-foreground">
+          {String(index + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+        </span>
+        <div className="flex gap-1.5" role="group" aria-label="Jump to a Role">
+          {roles.map((role, i) => (
+            <button
+              key={role.id}
+              type="button"
+              aria-label={role.name}
+              aria-current={i === index ? "true" : undefined}
+              onClick={() => onIndex(i)}
+              className={cn(
+                "h-1 rounded-full transition-all duration-500",
+                i === index
+                  ? "w-8 bg-accent"
+                  : committedId === role.id
+                    ? "w-3 bg-primary"
+                    : "w-3 bg-border hover:bg-muted-foreground",
+              )}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -165,23 +302,18 @@ function TheAlley({ roleId, roleName }: { roleId: string; roleName: string }) {
   );
 }
 
-/** What the Role hands you on day one. Every figure computed, none transcribed. */
-function TonightYouHave({ opening }: { opening: RoleOpening }) {
+/** The first night, as a scene: what being this Role feels like. */
+function FirstNight({ roleId, unbuilt }: { roleId: string; unbuilt: boolean }) {
+  const beats = ROLE_FIRST_NIGHT[roleId] ?? [];
+  if (beats.length === 0) return null;
   return (
-    <div className="space-y-3">
-      <Eyebrow>{opening.unbuilt ? "Before you pick this" : "On your first night"}</Eyebrow>
-      <ul className="space-y-3">
-        {opening.facts.map((fact) => (
-          <li key={fact.label}>
-            <p
-              className={cn(
-                "text-sm font-semibold",
-                opening.unbuilt ? "text-muted-foreground" : "text-foreground",
-              )}
-            >
-              {fact.label}
-            </p>
-            <p className="text-sm leading-relaxed text-muted-foreground">{fact.detail}</p>
+    <div className="space-y-4">
+      <Eyebrow>{unbuilt ? "Before you pick this" : "On your first night"}</Eyebrow>
+      <ul className="space-y-4">
+        {beats.map((beat) => (
+          <li key={beat.title} className="space-y-1">
+            <p className="text-base font-semibold leading-snug text-foreground">{beat.title}</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">{beat.body}</p>
           </li>
         ))}
       </ul>
@@ -189,17 +321,23 @@ function TonightYouHave({ opening }: { opening: RoleOpening }) {
   );
 }
 
-function RoleSpotlight({
-  role,
-  committed,
-  onChoose,
-}: {
-  role: Role;
-  committed: boolean;
-  onChoose: () => void;
-}) {
+/** The first night in numbers — every figure computed by the engine — beside the printed rule. */
+function InNumbers({ opening }: { opening: RoleOpening }) {
+  return (
+    <ul className="space-y-2">
+      {opening.facts.map((fact) => (
+        <li key={fact.label} className="text-xs leading-relaxed">
+          <span className="font-semibold text-foreground">{fact.label}.</span>{" "}
+          <span className="text-muted-foreground">{fact.detail}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RoleSpotlight({ role }: { role: Role }) {
   const [loreOpen, setLoreOpen] = useState(false);
-  const [abilityOpen, setAbilityOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const plays = playsBody(role.id);
   const paragraphs = loreParagraphs(role.flavorText);
   const emphasisTerms = [`${role.name}s`, role.name, role.roleAbility.name];
@@ -207,65 +345,33 @@ function RoleSpotlight({
 
   return (
     <div className="overflow-hidden border border-border bg-card">
-      <div className="relative h-48 border-b border-border sm:h-64">
-        <ArtSlot
-          art={roleArt(role.id, role.name)}
-          label={role.name}
-          className="border-0"
-          focalOverride={SPOTLIGHT_FOCAL[role.id]}
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
-        <h2 className="absolute bottom-3 left-4 text-2xl font-bold tracking-tight sm:text-3xl">
-          {role.name}
-        </h2>
-      </div>
-
       {/* The promise, in the player's own second person, before anything else. */}
       {opening && (
-        <p className="border-b border-border px-4 py-3 text-base leading-snug sm:text-lg">
+        <p className="border-b border-border px-4 py-4 text-lg leading-snug sm:px-6 sm:text-xl">
           {opening.headline}
         </p>
       )}
 
-      <div className="grid gap-4 p-4 lg:grid-cols-2 lg:gap-6">
-        <div className="min-w-0 space-y-3">
+      <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-2 lg:gap-6">
+        <div className="min-w-0">
           <TheAlley roleId={role.id} roleName={role.name} />
         </div>
 
-        <div className="min-w-0 space-y-4 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-          {opening && <TonightYouHave opening={opening} />}
-
-          <div className="space-y-3 border-t border-border pt-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <Eyebrow>Role Ability</Eyebrow>
-              <span className="font-mono text-base font-bold tracking-tight">
-                {role.roleAbility.name}
-                <span className="ml-2 text-primary">Rank {role.roleAbility.startingRank}</span>
-              </span>
-            </div>
-
-            <Button
-              className="w-full"
-              variant={committed ? "outline" : "default"}
-              disabled={committed}
-              onClick={onChoose}
-            >
-              {committed ? `Selected: ${role.name}` : `Choose the ${role.name}`}
-            </Button>
+        <div className="min-w-0 space-y-5 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          <FirstNight roleId={role.id} unbuilt={opening?.unbuilt === true} />
+          <div className="flex items-baseline justify-between gap-3 border-t border-border pt-4">
+            <Eyebrow>Role Ability</Eyebrow>
+            <span className="font-mono text-base font-bold tracking-tight">
+              {role.roleAbility.name}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Spans both columns above — a one-line pitch belongs to the whole Role, not one side of it. */}
-      {plays && (
-        <p className="border-l-2 border-t border-border border-l-primary/70 bg-primary/5 px-4 py-3 text-sm leading-relaxed">
-          <span className="font-semibold text-primary">Plays like:</span> {plays}
-        </p>
-      )}
-
       {/* Below the fold: the book's own words, for somebody already sold. */}
-      <div className="space-y-3 border-t border-border bg-background/40 p-4">
+      <div className="space-y-3 border-t border-border bg-background/40 p-4 sm:p-6">
         <p className="text-sm text-accent">{role.tagline}</p>
+        {plays && <p className="text-sm leading-relaxed text-foreground">{plays}</p>}
         <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
           {(loreOpen ? paragraphs : paragraphs.slice(0, 1)).map((para, i) => (
             <p key={i} className={cn(!loreOpen && "line-clamp-3")}>
@@ -294,20 +400,70 @@ function RoleSpotlight({
           )}
           <button
             type="button"
-            onClick={() => setAbilityOpen((v) => !v)}
-            aria-expanded={abilityOpen}
+            onClick={() => setRulesOpen((v) => !v)}
+            aria-expanded={rulesOpen}
             className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground hover:underline"
           >
-            {abilityOpen ? "Hide the printed rule" : "Read the printed rule"}
+            {rulesOpen ? "Hide the printed rule" : "Read the printed rule"}
           </button>
         </div>
 
-        {abilityOpen && (
-          <p className="max-h-64 overflow-y-auto whitespace-pre-line border border-border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
-            {role.roleAbility.mechanicalText}
+        {rulesOpen && (
+          <div className="space-y-3 border border-border bg-background p-3">
+            {opening && !opening.unbuilt && (
+              <div className="space-y-2">
+                <Eyebrow>Your first night, in numbers</Eyebrow>
+                <InNumbers opening={opening} />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Eyebrow>
+                {role.roleAbility.name} · starts at Rank {role.roleAbility.startingRank}
+              </Eyebrow>
+              <p className="max-h-64 overflow-y-auto whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
+                {role.roleAbility.mechanicalText}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The one action on this page, pinned to the bottom of the screen: take the
+ * Role in the middle of the carousel and move on. It follows the carousel, so
+ * it is never below the fold and never about a Role you scrolled past.
+ */
+function ChooseBar({
+  role,
+  committed,
+  onChoose,
+}: {
+  role: Role;
+  committed: boolean;
+  onChoose: () => void;
+}) {
+  const opening = roleOpening(role.id, role.roleAbility.startingRank);
+  const unbuilt = opening?.unbuilt === true;
+  return (
+    <div className="sticky bottom-4 z-20 flex items-center gap-4 border border-border bg-background/85 px-4 py-3 shadow-[0_12px_40px_-12px_rgb(0_0_0/0.9)] backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">{role.name}</p>
+        {opening && (
+          <p className="hidden truncate text-xs text-muted-foreground sm:block">
+            {opening.headline}
           </p>
         )}
       </div>
+      <Button onClick={onChoose} disabled={unbuilt} className="shrink-0">
+        {unbuilt
+          ? "Not playable yet"
+          : committed
+            ? `Continue as ${role.name} →`
+            : `Be the ${role.name} →`}
+      </Button>
     </div>
   );
 }
@@ -317,42 +473,28 @@ export function RolePanel({
   onRequestRole,
 }: {
   state: ChargenState;
-  onRequestRole: (roleId: string) => void;
+  onRequestRole: (roleId: string, advance?: boolean) => void;
 }) {
-  const [previewId, setPreviewId] = useState<string>(state.roleId ?? ROLES[0]!.id);
-  const preview = ROLES.find((r) => r.id === previewId) ?? ROLES[0]!;
-  const detailsRef = useRef<HTMLDivElement>(null);
-
-  function previewRole(roleId: string) {
-    setPreviewId(roleId);
-    requestAnimationFrame(() => {
-      detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      detailsRef.current?.focus({ preventScroll: true });
-    });
-  }
+  const seed = state.castPlan?.seed ?? 0;
+  const roles = useMemo(() => shuffledRoles(seed), [seed]);
+  const startAt = Math.max(
+    0,
+    roles.findIndex((r) => r.id === state.roleId),
+  );
+  const [index, setIndex] = useState(startAt);
+  // The order changes if the draft's seed arrives after the first render.
+  useEffect(() => setIndex(startAt), [roles]); // eslint-disable-line react-hooks/exhaustive-deps
+  const role = roles[index] ?? roles[0]!;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        {ROLES.map((role) => (
-          <RoleTile
-            key={role.id}
-            role={role}
-            committed={state.roleId === role.id}
-            previewed={previewId === role.id}
-            onPreview={() => previewRole(role.id)}
-          />
-        ))}
-      </div>
-
-      <div ref={detailsRef} tabIndex={-1} className="scroll-mt-20 outline-none">
-        <RoleSpotlight
-          key={preview.id}
-          role={preview}
-          committed={state.roleId === preview.id}
-          onChoose={() => onRequestRole(preview.id)}
-        />
-      </div>
+      <RoleCarousel roles={roles} index={index} onIndex={setIndex} committedId={state.roleId} />
+      <RoleSpotlight key={role.id} role={role} />
+      <ChooseBar
+        role={role}
+        committed={state.roleId === role.id}
+        onChoose={() => onRequestRole(role.id, true)}
+      />
     </div>
   );
 }
