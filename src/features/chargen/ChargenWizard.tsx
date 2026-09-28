@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { uploadedAsset } from "./art";
 import { Backdrop } from "./Backdrop";
 import { CharacterFile } from "./CharacterFile";
-import { fixerSays, fixerShortName, fixerVoice } from "./interview";
+import { fixerMethodReaction, fixerSays, fixerShortName, fixerVoice } from "./interview";
 import { FixerLine } from "./FixerLine";
 import { StepPanel } from "./StepPanels";
 import { StepRail } from "./StepRail";
@@ -36,7 +36,7 @@ import { finishTrackThenStop, startMusic, stopMusic } from "./music/musicDirecto
 import { stepStatuses, validateStep } from "./validation";
 
 type PendingChange =
-  | { kind: "method"; method: CreationMethod }
+  | { kind: "method"; method: CreationMethod; advance: boolean }
   | { kind: "role"; roleId: string; advance: boolean }
   | null;
 
@@ -88,7 +88,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
   // title over it, and no red "missing" line before the player has done anything.
   const atMeet = def.id === "fixer";
   // Steps whose own screen already says what is missing; a red list under them is a scolding.
-  const quiet = atMeet || def.id === "role";
+  const quiet = atMeet || def.id === "role" || def.id === "method";
   const nextLabel = atMeet && fixer ? `Sit down with ${fixerShortName(fixer)}` : "Next";
 
   // Back always goes somewhere: from the first step, out to the roster. The
@@ -102,6 +102,10 @@ export function ChargenWizard({ userId }: { userId: string }) {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [state.step]);
+
+  // Arriving with the fixer's reaction: the Lifepath, whose chapters normally
+  // speak for the fixer, shows it too on that one arrival.
+  const carriedHere = carried !== null && carried.step === def.id;
 
   // A carried reaction belongs to the step it was carried onto, and only once.
   useEffect(() => {
@@ -125,13 +129,24 @@ export function ChargenWizard({ userId }: { userId: string }) {
     Object.keys(state.loadout.packageChoices).length > 0 ||
     Object.keys(state.lifepath.roleSpecific).length > 0;
 
-  function requestMethod(method: CreationMethod) {
+  /** Take these terms, and with `advance`, go straight on with the fixer's reaction. */
+  function takeMethod(method: CreationMethod, advance: boolean) {
+    if (state.method !== method) state.selectMethod(method);
+    if (!advance) return;
+    const ids = stepsFor(method).map((s) => s.id);
+    const nextId = ids[ids.indexOf("method") + 1];
+    const line = fixerMethodReaction(fixer, method);
+    if (line && nextId) setCarried({ step: nextId, line });
+    useChargenStore.getState().setStep(nextId ?? "method");
+  }
+
+  function requestMethod(method: CreationMethod, advance = false) {
     // Switching is free until it would throw away STATs, Skills or gear.
     if (state.method && state.method !== method && methodChangeLosesWork(state)) {
-      setPending({ kind: "method", method });
+      setPending({ kind: "method", method, advance });
       return;
     }
-    state.selectMethod(method);
+    takeMethod(method, advance);
   }
 
   /** Take the Role, and with `advance`, go straight on to the next step with the fixer's reaction. */
@@ -154,7 +169,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
 
   function applyPending() {
     if (!pending) return;
-    if (pending.kind === "method") state.selectMethod(pending.method);
+    if (pending.kind === "method") takeMethod(pending.method, pending.advance);
     else takeRole(pending.roleId, pending.advance);
     setPending(null);
   }
@@ -218,15 +233,15 @@ export function ChargenWizard({ userId }: { userId: string }) {
             <div className="relative w-full space-y-3">
               {/* The Lifepath's chapters each open with the fixer's own line, so
                   the step does not ask a question of its own on top of them. */}
-              {def.id !== "lifepath" && (
+              {(def.id !== "lifepath" || carriedHere) && (
                 <FixerLine
                   fixer={fixer}
                   step={def.id}
                   roleId={state.roleId}
-                  lead={carried?.step === def.id ? carried.line : null}
+                  lead={carriedHere ? carried.line : null}
                 />
               )}
-              {(def.id === "lifepath" || !fixer) && (
+              {((def.id === "lifepath" && !carriedHere) || !fixer) && (
                 <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
               )}
               {saveStatus === "error" && (

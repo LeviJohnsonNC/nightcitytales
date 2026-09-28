@@ -31,6 +31,11 @@
         "fixer": "Another fixer. Then you know I am not going to tell you who else I work with.",
         "nomad": "A Nomad. You know roads. I know cargo. We will get along very well."
       },
+      "methods": {
+        "streetrat": "Quickly. Good. A standard form, filled in correctly, is worth more than a clever one.",
+        "edgerunner": "By chance. I disapprove, and I will write down exactly what the dice say.",
+        "complete_package": "In full detail. Take your time. I have a pen, and I am never in a hurry."
+      },
       "verdict": "It is all in order. I will pay you on the hour and in full. Do not make me call anybody else.",
       "chapters": {
         "origin": "Start at the beginning. Where were you born, who raised you, and what went wrong. Something always went wrong.",
@@ -69,6 +74,11 @@
         "lawman": "Law. Well. Everybody needs a friend on the other side of the line. Especially you.",
         "fixer": "Another fixer. Then you know how this works. I'll owe you one. You'll owe me two.",
         "nomad": "A Nomad! Family. You people keep your word, and I keep a very good record of who does."
+      },
+      "methods": {
+        "streetrat": "Quick and easy! Less paperwork for me, more drinks for you. I'll still make a little note.",
+        "edgerunner": "Let the dice talk! A gambler. I like gamblers. They always end up owing somebody.",
+        "complete_package": "The whole conversation, eh? Sit back, get comfortable, this one's on me. Well. On the ledger."
       },
       "verdict": "There. That's a person I can work with. Small favour to start. Nothing you'll even notice.",
       "chapters": {
@@ -109,6 +119,11 @@
         "fixer": "A fixer. Then you already know I will not tell you whose building it is.",
         "nomad": "A Nomad. Somebody has to be waiting at the loading dock with the engine running."
       },
+      "methods": {
+        "streetrat": "Fast. Good. We will beat the lunch rush.",
+        "edgerunner": "By chance. Fine. Roll where I can see it.",
+        "complete_package": "Slowly. Then we skip lunch. Start now."
+      },
       "verdict": "Good. Ninety seconds on the landing. Do not stop. We will talk again.",
       "chapters": {
         "origin": "Where you come from. Short.",
@@ -147,6 +162,11 @@
         "lawman": "Law. How refreshing. My clients will feel so safe.",
         "fixer": "A colleague! We must never, ever work for the same person.",
         "nomad": "A Nomad. My clients' things sometimes need to leave the city quietly. You would be perfect."
+      },
+      "methods": {
+        "streetrat": "Briskly. Darling, some of my best clients came off the rack. We tailor later.",
+        "edgerunner": "By fate. How romantic. My clients never leave anything to chance.",
+        "complete_package": "The long elegant way. I knew I was going to like you."
       },
       "verdict": "Yes. You will do very nicely. Wear something clean. Break nothing that is insured.",
       "chapters": {
@@ -187,6 +207,11 @@
         "fixer": "Another fixer! Good, good. You take the city, I take the roads, nobody fights.",
         "nomad": "Nomad! Family! Which clan? No, don't tell me, I'll find out. Welcome home."
       },
+      "methods": {
+        "streetrat": "Fast! That's family. Grab your kit, the convoy doesn't wait for anybody.",
+        "edgerunner": "Dice! Ha! The road rolls dice on you every day, might as well start now.",
+        "complete_package": "Slow like my cousin's truck, eh? Fine, fine. Somebody get this one another drink."
+      },
       "verdict": "Good. You're family now. That means something. Nobody gets left on the sand, and neither do you.",
       "chapters": {
         "origin": "Where are you from, eh? Which family, which road, which bad luck? Out here we all have some.",
@@ -225,6 +250,11 @@
         "lawman": "A cop. Okay. Relax. I only sell what's true.",
         "fixer": "A fixer! Competition. I love it. You're going to lose, but I love it.",
         "nomad": "A Nomad. Roads, clans, borders. Nobody sells me road intel. Change that."
+      },
+      "methods": {
+        "streetrat": "Fast. See? This is why we get along.",
+        "edgerunner": "Dice. Chaotic. Respect. Go.",
+        "complete_package": "The full build. Ugh. Okay. I'm ordering another bowl."
       },
       "verdict": "Got it. Filed. You're more interesting than I thought, which is rare. I'll call you.",
       "chapters": {

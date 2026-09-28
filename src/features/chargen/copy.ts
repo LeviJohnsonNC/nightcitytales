@@ -13,32 +13,46 @@ export type MethodCopy = {
   body: string;
   choice: string;
   time: string;
+  /** How much the player decides, 1 (fewest choices) to 3 (every choice). */
+  level: 1 | 2 | 3;
+  /** What happens to each of the three things a method decides, in plain words. */
+  decides: { body: string; skills: string; gear: string };
 };
 
 export const METHOD_COPY: MethodCopy[] = [
   {
     id: "streetrat",
     plain: "Fast lane",
-    headline: "One roll and you are on the street. Everything else comes ready to wear.",
-    body: "One roll of 1d10 hands you a whole pre-built STAT row, no haggling. Skills, guns, armor, and chrome all come pre-set for your Role, straight off the rack. You still walk the full Lifepath, and you still pocket 500eb to spend however you please.",
+    headline: "One roll for your body. Your Role hands you the skills and the kit.",
+    body: "One roll of 1d10 hands you a whole pre-built STAT row, no haggling, and the house gives you a reroll if you hate it. Your Skills come set for your Role, and so do your guns, armor and chrome, with a few picks along the way. You still walk the full Lifepath, and you still pocket 500eb to spend however you please.",
     choice: "Low",
     time: "~5 minutes",
+    level: 1,
+    decides: { body: "One roll", skills: "Set for your Role", gear: "Your Role's kit, and cash" },
   },
   {
     id: "edgerunner",
     plain: "Roll the dice",
     headline: "Let fate hand you your body. You decide what you learned to do with it.",
-    body: "You roll 1d10 per STAT against your Role's table and live with what the dice give you. The Skills are yours, though: 86 points to spread across your Role's 20 Skills however you see fit. Gear's pre-set, plus 500eb in your pocket.",
+    body: "You roll 1d10 per STAT against your Role's table and live with what the dice give you, bar the one reroll the house allows. The Skills are yours, though: 86 points to spread across your Role's 20 Skills however you see fit. Your gear comes set for your Role, with a few picks, plus 500eb in your pocket.",
     choice: "Medium",
     time: "~15 minutes",
+    level: 2,
+    decides: {
+      body: "Rolled, one by one",
+      skills: "You choose",
+      gear: "Your Role's kit, and cash",
+    },
   },
   {
     id: "complete_package",
     plain: "Full control",
-    headline: "Every number is yours. Build exactly the edgerunner you can already see.",
+    headline: "Every number is yours. Build exactly the person you can already see.",
     body: "62 points to buy your STATs, 86 Skill Points for any Skills you like, and 2,550eb to work the Night Market yourself. On top of that, 800eb that only burns on Fashion and Fashionware, because looking good is part of the job.",
     choice: "Total",
     time: "~40 minutes",
+    level: 3,
+    decides: { body: "You set it", skills: "You choose", gear: "You shop for all of it" },
   },
 ];
 
