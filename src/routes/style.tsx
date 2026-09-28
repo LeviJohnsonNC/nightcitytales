@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DiceShowcase } from "@/features/dice/DiceShowcase";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -271,6 +272,10 @@ function StylePage() {
             </li>
           ))}
         </ol>
+      </Section>
+
+      <Section title="Dice">
+        <DiceShowcase />
       </Section>
 
       <Section title="Key-art slot">

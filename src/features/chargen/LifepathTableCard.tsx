@@ -80,6 +80,7 @@ export function LifepathTableCard({
           <DiceRoll
             sides={10}
             value={entry?.roll ?? null}
+            autoRoll="change"
             roll={() => {
               const rolled = rollLifepathTable(tableId, Math.random);
               return { face: rolled.entry.roll ?? 1, commit: () => onChange(rolled.entry) };

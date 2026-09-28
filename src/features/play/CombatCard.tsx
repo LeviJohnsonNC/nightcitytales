@@ -28,6 +28,8 @@ import { useMemo, useState } from "react";
 import { LuckStepper } from "./LuckStepper";
 import type { CapabilitySnapshot, PerformAttackResult } from "@/engine";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
+import { DamageDice } from "@/features/dice/DamageDice";
+import { RollMath } from "@/features/dice/RollMath";
 import type { FullCharacter } from "@/lib/backend";
 import { attackOption, type AttackOption, type PendingAttack } from "./attackPrompt";
 
@@ -174,8 +176,10 @@ export function CombatCard({
               disabled={busy || !ready}
               roll={() => {
                 const rolled = roll(chosen!, luck);
+                const crit = rolled.attack.critical;
                 return {
                   face: rolled.attack.rolls[0] ?? 1,
+                  tone: crit === "success" ? "crit" : crit === "failure" ? "fumble" : null,
                   commit: () => {
                     setResult(rolled);
                     onSettled(chosen!, rolled, luck);
@@ -197,53 +201,42 @@ export function CombatCard({
             <DiceRoll
               sides={10}
               value={result.attack.rolls[0] ?? null}
-              roll={() => ({ face: result.attack.rolls[0] ?? 1, commit: () => {} })}
               size={40}
-              disabled
+              tone={
+                result.attack.critical === "success"
+                  ? "crit"
+                  : result.attack.critical === "failure"
+                    ? "fumble"
+                    : null
+              }
+              flashOnMount
             />
             {critDie !== null && (
-              <DiceRoll
-                sides={10}
-                value={critDie}
-                roll={() => ({ face: critDie, commit: () => {} })}
-                size={32}
-                disabled
-              />
+              <DiceRoll sides={10} value={critDie} size={32} autoRoll="mount" delay={150} />
             )}
-            <p
-              className={`text-sm font-bold ${
-                result.attack.hit ? "text-accent" : "text-destructive"
-              }`}
-            >
-              {result.attack.hit ? "HIT" : "MISS"}
-            </p>
-            <p className="num font-mono text-[11px] text-muted-foreground">
-              {result.attack.formula}
-            </p>
           </div>
+          <RollMath
+            rolls={result.attack.rolls}
+            modifiers={result.attack.modifiers}
+            total={result.attack.total}
+            target={result.attack.dv !== null ? { kind: "dv", dv: result.attack.dv } : null}
+            success={result.attack.hit}
+            margin={result.attack.dv !== null ? result.attack.margin : null}
+            words={{ success: "Hit", failure: "Miss" }}
+            delay={critDie !== null ? 1000 : 60}
+          />
 
           {result.damage && result.applied && (
-            <>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {result.damage.rolls.map((face, i) => (
-                  <DiceRoll
-                    key={i}
-                    sides={6}
-                    value={face}
-                    roll={() => ({ face, commit: () => {} })}
-                    size={26}
-                    disabled
-                  />
-                ))}
-                {/* The three-cell result grid, as one line. Every number that
-                    was in it is still here, in the order the rules apply them:
-                    rolled, then what the armour let through. */}
-                <p className="num font-mono text-[11px]">
-                  {result.damage.total} damage ·{" "}
-                  <span className="font-bold">{result.applied.damageThroughArmor}</span> through
-                  armor
-                </p>
-              </div>
+            <DamageDice
+              rolls={result.damage.rolls}
+              total={result.damage.total}
+              criticalInjury={result.applied.criticalInjury}
+              size={28}
+              delay={critDie !== null ? 2000 : 1300}
+            >
+              <p className="num font-mono text-[11px]">
+                <span className="font-bold">{result.applied.damageThroughArmor}</span> through armor
+              </p>
               <p className="num font-mono text-[11px] text-muted-foreground">
                 {pending.target.name} → {result.applied.hpAfter}/{pending.target.hpMax} HP · SP{" "}
                 {result.applied.spAfter}
@@ -258,10 +251,10 @@ export function CombatCard({
               </p>
               {result.applied.criticalInjury && (
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-neon-pink">
-                  Critical Injury — two or more 6s, +5 straight to HP
+                  Two or more 6s: +5 straight to HP
                 </p>
               )}
-            </>
+            </DamageDice>
           )}
         </>
       )}
