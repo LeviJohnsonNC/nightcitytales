@@ -1,0 +1,759 @@
+/*
+ * NCAmp's skins.
+ *
+ * Every size here is in the player's own native pixels (a main window is
+ * 275×116, as it always was); the strip and the windows are scaled up whole
+ * with `zoom`, so bevels stay one pixel wide at every size. A skin is only
+ * colours: the two below set the same variables.
+ */
+
+.ncamp {
+  position: relative;
+  font-family: "Silkscreen", var(--font-mono);
+  font-size: 8px;
+  line-height: 1;
+  -webkit-font-smoothing: none;
+  user-select: none;
+}
+
+/* ── skins ─────────────────────────────────────────────────────────────── */
+
+.ncamp[data-skin="classic"] {
+  --frame: #2c2c40;
+  --frame-hi: #5a5a78;
+  --frame-lo: #0e0e16;
+  --title-stripe: #c7a445;
+  --title-stripe-lo: #6b5520;
+  --title-text: #e8e8f0;
+  --lcd-bg: #000;
+  --lcd: #00e200;
+  --lcd-dim: #0b3a0b;
+  --btn: #bcbccb;
+  --btn-hi: #f4f4ff;
+  --btn-lo: #55556a;
+  --btn-icon: #26263a;
+  --btn-on: #00e200;
+  --label: #c8c8d8;
+  --groove: #10101a;
+  --fill: #3a6a14;
+  --thumb: #d8c06a;
+  --pl-text: #00e200;
+  --pl-current: #ffffff;
+  --pl-select: #0000c6;
+  --vis-top: #e0321a;
+  --vis-mid: #e8d21c;
+  --vis-bottom: #18c418;
+  --vis-peak: #c8c8d8;
+  --vis-scope: #e8d21c;
+  --glow: none;
+}
+
+.ncamp[data-skin="night"] {
+  --frame: #1a0f30;
+  --frame-hi: #4a2c80;
+  --frame-lo: #060310;
+  --title-stripe: #ff2a8a;
+  --title-stripe-lo: #1fb8d0;
+  --title-text: #f2e8ff;
+  --lcd-bg: #07030f;
+  --lcd: #3af2ff;
+  --lcd-dim: #0b2a33;
+  --btn: #2a1a4a;
+  --btn-hi: #7a4ac0;
+  --btn-lo: #0a0518;
+  --btn-icon: #3af2ff;
+  --btn-on: #ff4fa8;
+  --label: #c9b8ec;
+  --groove: #07030f;
+  --fill: #ff2a8a;
+  --thumb: #3af2ff;
+  --pl-text: #3af2ff;
+  --pl-current: #ff6fb8;
+  --pl-select: #3b1466;
+  --vis-top: #ff2a8a;
+  --vis-mid: #b04aff;
+  --vis-bottom: #3af2ff;
+  --vis-peak: #f2e8ff;
+  --vis-scope: #3af2ff;
+  --glow: 0 0 3px color-mix(in oklab, var(--lcd) 60%, transparent);
+}
+
+/* ── shared pieces ─────────────────────────────────────────────────────── */
+
+.ncamp-lcd {
+  background: var(--lcd-bg);
+  color: var(--lcd);
+  text-shadow: var(--glow);
+  box-shadow:
+    inset 1px 1px 0 var(--frame-lo),
+    inset -1px -1px 0 var(--frame-hi);
+}
+
+.ncamp-glyph {
+  width: 8px;
+  height: 8px;
+  fill: currentColor;
+  shape-rendering: crispEdges;
+}
+
+.ncamp-btn {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: var(--btn-icon);
+  background: linear-gradient(var(--btn-hi) -60%, var(--btn) 45%, var(--btn-lo) 160%);
+  box-shadow:
+    inset 1px 1px 0 var(--btn-hi),
+    inset -1px -1px 0 var(--btn-lo),
+    0 0 0 1px var(--frame-lo);
+  font: inherit;
+  cursor: pointer;
+}
+.ncamp-btn:active:not(:disabled) {
+  box-shadow:
+    inset -1px -1px 0 var(--btn-hi),
+    inset 1px 1px 0 var(--btn-lo),
+    0 0 0 1px var(--frame-lo);
+  transform: translate(0.5px, 0.5px);
+}
+.ncamp-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.ncamp-btn:focus-visible,
+.ncamp-slider:focus-visible,
+.ncamp-pl-list:focus-visible,
+.ncamp-clutter button:focus-visible,
+.ncamp-shade-title:focus-visible {
+  outline: 1px solid var(--lcd);
+  outline-offset: 1px;
+}
+
+/* An on/off button: a small lamp that lights. */
+.ncamp-toggle {
+  position: relative;
+  padding: 0 3px 0 7px;
+  font-size: 6px;
+  letter-spacing: 0.5px;
+  color: var(--btn-icon);
+}
+.ncamp-toggle::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin-top: -1.5px;
+  background: var(--lcd-dim);
+}
+.ncamp-toggle.is-on::before {
+  background: var(--btn-on);
+  box-shadow: 0 0 2px var(--btn-on);
+}
+
+.ncamp-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.ncamp-marquee-track {
+  display: inline-flex;
+  animation: ncamp-marquee linear infinite;
+  animation-timing-function: steps(160);
+}
+.ncamp-marquee-track > span {
+  white-space: pre;
+  padding-left: 2px;
+}
+@keyframes ncamp-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ncamp-vis {
+  display: block;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+
+.ncamp-digits .is-lit {
+  fill: var(--lcd);
+}
+.ncamp-digits .is-dim {
+  fill: var(--lcd-dim);
+  opacity: 0.35;
+}
+.ncamp-digits g rect:not([class]) {
+  fill: var(--lcd);
+}
+.is-blink {
+  animation: ncamp-blink 1s steps(1) infinite;
+}
+@keyframes ncamp-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.is-beckon {
+  animation: ncamp-beckon 1.2s steps(2) infinite;
+}
+@keyframes ncamp-beckon {
+  50% {
+    box-shadow:
+      inset 1px 1px 0 var(--btn-hi),
+      0 0 0 1px var(--btn-on),
+      0 0 4px var(--btn-on);
+  }
+}
+
+/* Sliders: a groove, a coloured fill, and a thumb. */
+.ncamp-slider {
+  position: relative;
+  height: 7px;
+  background: var(--groove);
+  box-shadow:
+    inset 1px 1px 0 var(--frame-lo),
+    inset -1px -1px 0 var(--frame-hi);
+  cursor: pointer;
+  touch-action: none;
+}
+.ncamp-slider-fill {
+  position: absolute;
+  left: 1px;
+  top: 2px;
+  bottom: 2px;
+  background: var(--fill);
+  opacity: 0.8;
+}
+.ncamp-thumb {
+  position: absolute;
+  top: -2px;
+  width: 11px;
+  height: 11px;
+  margin-left: -5.5px;
+  background: linear-gradient(var(--btn-hi), var(--thumb) 50%, var(--btn-lo));
+  box-shadow:
+    inset 1px 1px 0 var(--btn-hi),
+    inset -1px -1px 0 var(--btn-lo),
+    0 0 0 1px var(--frame-lo);
+}
+.ncamp-slider.is-vertical {
+  width: 7px;
+  height: 63px;
+}
+.ncamp-slider.is-vertical .ncamp-slider-fill {
+  top: auto;
+  bottom: 1px;
+  left: 2px;
+  right: 2px;
+}
+.ncamp-slider.is-vertical .ncamp-thumb {
+  top: auto;
+  left: -2px;
+  margin: 0 0 -3px;
+  width: 11px;
+  height: 6px;
+}
+.ncamp-slider.is-disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── windowshade: the strip in the bar ─────────────────────────────────── */
+
+.ncamp-shade {
+  zoom: 2;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+  padding: 0 3px;
+  background: linear-gradient(var(--frame-hi) -80%, var(--frame) 40%, var(--frame-lo) 180%);
+  box-shadow:
+    inset 1px 1px 0 var(--frame-hi),
+    inset -1px -1px 0 var(--frame-lo),
+    0 0 0 0.5px var(--frame-lo);
+}
+.ncamp-shade-title {
+  width: 96px;
+  height: 9px;
+  padding: 0 1px;
+  border: 0;
+  font: inherit;
+  font-size: 6px;
+  cursor: pointer;
+  background: var(--lcd-bg);
+  color: var(--lcd);
+  text-shadow: var(--glow);
+  box-shadow:
+    inset 1px 1px 0 var(--frame-lo),
+    inset -1px -1px 0 var(--frame-hi);
+  text-align: left;
+}
+.ncamp-shade-vis {
+  padding: 1px;
+  background: var(--lcd-bg);
+  box-shadow:
+    inset 1px 1px 0 var(--frame-lo),
+    inset -1px -1px 0 var(--frame-hi);
+}
+.ncamp-shade-time {
+  width: 24px;
+  font-size: 6px;
+  color: var(--lcd);
+  text-shadow: var(--glow);
+  text-align: right;
+}
+.ncamp-shade-buttons {
+  display: flex;
+  gap: 1px;
+}
+.ncamp-mini {
+  width: 8px;
+  height: 8px;
+}
+.ncamp-mini .ncamp-glyph {
+  width: 6px;
+  height: 6px;
+}
+.ncamp-expand {
+  margin-left: 1px;
+}
+
+@media (max-width: 767px) {
+  .ncamp-shade-vis {
+    display: none;
+  }
+  .ncamp-shade-title {
+    width: 60px;
+  }
+}
+@media (max-width: 519px) {
+  .ncamp-shade-title,
+  .ncamp-shade-time,
+  .ncamp-expand {
+    display: none;
+  }
+}
+
+/* ── the stack of windows under the bar ────────────────────────────────── */
+
+.ncamp-stack {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  width: 275px;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.6);
+}
+
+.ncamp-window {
+  position: relative;
+  background: var(--frame);
+  box-shadow:
+    inset 1px 1px 0 var(--frame-hi),
+    inset -1px -1px 0 var(--frame-lo);
+  color: var(--label);
+}
+
+.ncamp-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+  padding: 0 3px 0 4px;
+  background: linear-gradient(var(--frame-hi), var(--frame) 70%);
+}
+.ncamp-titlebar-stripes {
+  flex: 1;
+  height: 6px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--title-stripe) 0 1px,
+    var(--title-stripe-lo) 1px 2px
+  );
+}
+.ncamp-titlebar-text {
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--title-text);
+}
+.ncamp-tb-btn {
+  display: grid;
+  place-items: center;
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: 7px;
+  line-height: 1;
+  color: var(--btn-icon);
+  background: var(--btn);
+  box-shadow:
+    inset 1px 1px 0 var(--btn-hi),
+    inset -1px -1px 0 var(--btn-lo);
+  cursor: pointer;
+}
+
+.ncamp-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── main window (275×116) ─────────────────────────────────────────────── */
+
+.ncamp-main {
+  height: 116px;
+}
+.ncamp-clutter {
+  position: absolute;
+  left: 10px;
+  top: 22px;
+  display: flex;
+  flex-direction: column;
+  width: 8px;
+  gap: 0;
+}
+.ncamp-clutter button {
+  height: 8.5px;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: 6px;
+  color: var(--label);
+  background: var(--frame-lo);
+  cursor: pointer;
+}
+.ncamp-clutter button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ncamp-clutter button.is-on {
+  color: var(--btn-on);
+}
+
+.ncamp-display {
+  position: absolute;
+  left: 22px;
+  top: 22px;
+  width: 90px;
+  height: 42px;
+}
+.ncamp-status {
+  position: absolute;
+  left: 5px;
+  top: 6px;
+  color: var(--lcd);
+}
+.ncamp-status[data-status="stopped"] {
+  opacity: 0.6;
+}
+.ncamp-clock {
+  position: absolute;
+  left: 24px;
+  top: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  filter: drop-shadow(var(--glow, none));
+}
+.ncamp-display-vis {
+  position: absolute;
+  left: 7px;
+  top: 22px;
+}
+
+.ncamp-info-title {
+  position: absolute;
+  left: 116px;
+  top: 22px;
+  width: 152px;
+  height: 11px;
+  padding: 0 2px;
+  font-size: 7px;
+}
+.ncamp-info-row {
+  position: absolute;
+  left: 116px;
+  top: 38px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 6px;
+}
+.ncamp-num {
+  width: 17px;
+  height: 9px;
+  padding-right: 1px;
+  font-size: 7px;
+  line-height: 9px;
+  text-align: right;
+}
+.ncamp-num.is-short {
+  width: 12px;
+}
+.ncamp-unit {
+  color: var(--label);
+}
+.ncamp-lamp {
+  opacity: 0.35;
+}
+.ncamp-lamp.is-lit {
+  opacity: 1;
+  color: var(--lcd);
+  text-shadow: var(--glow);
+}
+.ncamp-lamp.is-dim {
+  opacity: 0.25;
+}
+
+.ncamp-levels {
+  position: absolute;
+  left: 116px;
+  top: 52px;
+  gap: 4px;
+}
+.ncamp-volume {
+  width: 66px;
+}
+.ncamp-balance {
+  width: 36px;
+}
+.ncamp-levels .ncamp-toggle {
+  height: 11px;
+  width: 23px;
+}
+
+.ncamp-seek {
+  position: absolute;
+  left: 14px;
+  top: 71px;
+  width: 250px;
+}
+.ncamp-seek .ncamp-thumb {
+  width: 22px;
+  margin-left: -11px;
+}
+
+.ncamp-transport {
+  position: absolute;
+  left: 14px;
+  top: 88px;
+  gap: 0;
+}
+.ncamp-big {
+  width: 23px;
+  height: 18px;
+}
+.ncamp-big .ncamp-glyph {
+  width: 9px;
+  height: 9px;
+}
+.ncamp-eject {
+  width: 22px;
+  height: 15px;
+  margin-left: 6px;
+}
+.ncamp-shuffle {
+  width: 44px;
+  height: 15px;
+  margin-left: 6px;
+}
+.ncamp-repeat {
+  width: 28px;
+  height: 15px;
+  margin-left: 2px;
+}
+.ncamp-logo {
+  margin-left: 6px;
+  font-size: 9px;
+  color: var(--title-stripe);
+  text-shadow: 1px 1px 0 var(--frame-lo);
+}
+
+/* ── equalizer (275×116) ───────────────────────────────────────────────── */
+
+.ncamp-eq {
+  height: 116px;
+  border-top: 1px solid var(--frame-lo);
+}
+.ncamp-eq-top {
+  position: absolute;
+  left: 12px;
+  right: 10px;
+  top: 18px;
+  gap: 4px;
+}
+.ncamp-eq-top .ncamp-toggle {
+  height: 11px;
+}
+.ncamp-eq-curve {
+  width: 113px;
+  height: 19px;
+  margin-left: 6px;
+}
+.ncamp-eq-zero {
+  stroke: var(--lcd-dim);
+  stroke-width: 1;
+}
+.ncamp-eq-line {
+  fill: none;
+  stroke: var(--lcd);
+  stroke-width: 1;
+}
+.ncamp-presets {
+  position: relative;
+  margin-left: auto;
+}
+.ncamp-menu {
+  position: absolute;
+  right: 0;
+  top: 13px;
+  z-index: 2;
+  min-width: 64px;
+  margin: 0;
+  padding: 1px;
+  list-style: none;
+  background: var(--frame);
+  box-shadow:
+    inset 1px 1px 0 var(--frame-hi),
+    inset -1px -1px 0 var(--frame-lo),
+    0 3px 8px rgb(0 0 0 / 0.6);
+}
+.ncamp-menu button {
+  display: block;
+  width: 100%;
+  padding: 2px 4px;
+  border: 0;
+  font: inherit;
+  font-size: 6px;
+  text-align: left;
+  color: var(--label);
+  background: none;
+  cursor: pointer;
+}
+.ncamp-menu button:hover,
+.ncamp-menu button:focus-visible {
+  background: var(--pl-select);
+  color: var(--pl-current);
+  outline: none;
+}
+
+.ncamp-eq-sliders {
+  position: absolute;
+  left: 14px;
+  top: 42px;
+  display: flex;
+  gap: 11px;
+}
+.ncamp-eq-band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ncamp-eq-label {
+  font-size: 5px;
+  color: var(--label);
+}
+.ncamp-eq-scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 63px;
+  margin: 0 -4px 0 -2px;
+  font-size: 5px;
+  color: var(--label);
+}
+.ncamp-eq-note {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  margin: 0;
+  font-size: 5px;
+  text-align: center;
+  color: var(--label);
+}
+
+/* ── playlist ──────────────────────────────────────────────────────────── */
+
+.ncamp-pl {
+  border-top: 1px solid var(--frame-lo);
+  padding-bottom: 4px;
+}
+.ncamp-pl-list {
+  height: 150px;
+  margin: 4px 10px 0;
+  padding: 2px 1px;
+  overflow-y: auto;
+  list-style: none;
+  font-size: 7px;
+  color: var(--pl-text);
+  scrollbar-width: thin;
+  scrollbar-color: var(--btn) var(--lcd-bg);
+}
+.ncamp-pl-row {
+  display: flex;
+  gap: 4px;
+  height: 11px;
+  align-items: center;
+  padding: 0 2px;
+  cursor: default;
+}
+.ncamp-pl-row.is-selected {
+  background: var(--pl-select);
+}
+.ncamp-pl-row.is-current {
+  color: var(--pl-current);
+}
+.ncamp-pl-name {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ncamp-pl-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 5px 10px 0;
+}
+.ncamp-pl-btn {
+  width: 25px;
+  height: 17px;
+  padding: 0;
+  font-size: 6px;
+}
+.ncamp-pl-btn::before {
+  display: none;
+}
+.ncamp-pl-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.ncamp-pl-total {
+  padding: 1px 3px;
+  font-size: 6px;
+}
+.ncamp-micro {
+  width: 8px;
+  height: 7px;
+}
+.ncamp-micro .ncamp-glyph {
+  width: 5px;
+  height: 5px;
+}
