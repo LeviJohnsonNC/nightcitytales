@@ -36,7 +36,8 @@ describe("the meet, drawn", () => {
       <FixerMeet state={draft({ castPlan: { seed: SEED, picks: { fixer: FIXER } } })} />,
     );
     for (const name of ROOM) expect(html).toContain(escaped(name));
-    expect(html.match(/\/images\/cast\//g)?.length).toBeGreaterThanOrEqual(ROOM.length);
+    // Each fixer is drawn in their own venue at the meet, not in the square-on cast portrait.
+    expect(html.match(/meet-[a-z-]+\.webp/g)?.length).toBeGreaterThanOrEqual(ROOM.length);
     expect(html).toContain(escaped(fixerVoice(FIXER)!.greeting));
     expect(html).toContain("Your fixer");
   });
