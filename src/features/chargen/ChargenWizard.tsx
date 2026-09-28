@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { uploadedAsset } from "./art";
 import { Backdrop } from "./Backdrop";
 import { CharacterFile } from "./CharacterFile";
-import { fixerVoice } from "./interview";
+import { fixerShortName, fixerVoice } from "./interview";
 import { FixerLine } from "./FixerLine";
 import { StepPanel } from "./StepPanels";
 import { StepRail } from "./StepRail";
@@ -58,6 +59,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const { status: saveStatus, error: saveError } = useDraftSync(userId);
   const [pending, setPending] = useState<PendingChange>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const navigate = useNavigate();
 
   const steps = stepsFor(state.method);
   const stepIds = steps.map((s) => s.id);
@@ -70,6 +72,17 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const venue = def.id !== "fixer" ? (fixerVoice(fixer)?.venue ?? null) : null;
   const venueShown = Boolean(venue && uploadedAsset(venue));
   const developing = useDevelopingPortrait(state, userId, saveStatus !== "loading");
+  // The meet opens on its own scene, which is the page's heading: no second
+  // title over it, and no red "missing" line before the player has done anything.
+  const atMeet = def.id === "fixer";
+  const nextLabel = atMeet && fixer ? `Sit down with ${fixerShortName(fixer)}` : "Next";
+
+  // Back always goes somewhere: from the first step, out to the roster. The
+  // draft autosaves, so leaving loses nothing.
+  function goBack() {
+    if (index === 0) void navigate({ to: "/roster" });
+    else state.back();
+  }
 
   // Every step starts at the top, no matter how far down the previous one was scrolled.
   useEffect(() => {
@@ -143,7 +156,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <MusicToggle />
-            <Button variant="outline" size="sm" onClick={state.back} disabled={index === 0}>
+            <Button variant="outline" size="sm" onClick={goBack}>
               Back
             </Button>
             <Button
@@ -151,48 +164,50 @@ export function ChargenWizard({ userId }: { userId: string }) {
               onClick={state.next}
               disabled={violations.length > 0 || index === stepIds.length - 1}
             >
-              Next
+              {nextLabel}
             </Button>
           </div>
         </div>
 
-        <header
-          className={cn(
-            "relative space-y-4 overflow-hidden border-b border-border pb-5",
-            venueShown && "border border-hairline px-5 pt-5",
-          )}
-        >
-          <Backdrop name={venue} text="left" />
-          <div className="relative space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-                {def.title}
-              </p>
-              {STEP_HELP[def.id] && (
-                <button
-                  type="button"
-                  aria-label={`About ${def.title}`}
-                  onClick={() => setHelpOpen(true)}
-                  className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-muted-foreground transition-colors hover:border-accent hover:text-accent"
-                >
-                  ?
-                </button>
+        {!atMeet && (
+          <header
+            className={cn(
+              "relative space-y-4 overflow-hidden border-b border-border pb-5",
+              venueShown && "border border-hairline px-5 pt-5",
+            )}
+          >
+            <Backdrop name={venue} text="left" />
+            <div className="relative space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+                  {def.title}
+                </p>
+                {STEP_HELP[def.id] && (
+                  <button
+                    type="button"
+                    aria-label={`About ${def.title}`}
+                    onClick={() => setHelpOpen(true)}
+                    className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+                  >
+                    ?
+                  </button>
+                )}
+                <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {SAVE_LABEL[saveStatus]}
+                  {saveError ? ` · ${saveError}` : ""}
+                </span>
+              </div>
+              {/* The Lifepath's chapters each open with the fixer's own line, so
+                  the step does not ask a question of its own on top of them. */}
+              {def.id !== "lifepath" && (
+                <FixerLine fixer={fixer} step={def.id} roleId={state.roleId} />
               )}
-              <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                {SAVE_LABEL[saveStatus]}
-                {saveError ? ` · ${saveError}` : ""}
-              </span>
+              {(def.id === "lifepath" || !fixer) && (
+                <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
+              )}
             </div>
-            {/* The Lifepath's chapters each open with the fixer's own line, so
-                the step does not ask a question of its own on top of them. */}
-            {def.id !== "fixer" && def.id !== "lifepath" && (
-              <FixerLine fixer={fixer} step={def.id} roleId={state.roleId} />
-            )}
-            {(def.id === "fixer" || def.id === "lifepath" || !fixer) && (
-              <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
-            )}
-          </div>
-        </header>
+          </header>
+        )}
 
         <StepPanel
           step={state.step}
@@ -203,7 +218,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
         />
 
         {/* The File lists what is missing in its own checklist, with a way to each step. */}
-        {violations.length > 0 && def.id !== "review" && (
+        {violations.length > 0 && def.id !== "review" && !atMeet && (
           <ul className="space-y-1.5 text-sm text-foreground">
             {violations.map((violation) => (
               <li key={violation} className="flex items-start gap-2.5">
@@ -218,11 +233,11 @@ export function ChargenWizard({ userId }: { userId: string }) {
         )}
 
         <div className="flex items-center justify-between border-t border-border pt-4">
-          <Button variant="outline" onClick={state.back} disabled={index === 0}>
+          <Button variant="outline" onClick={goBack}>
             Back
           </Button>
           <div className="flex items-center gap-3">
-            {violations.length > 0 && (
+            {violations.length > 0 && !atMeet && (
               <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
                 Answer what is missing to go on
               </span>
@@ -231,7 +246,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
               onClick={state.next}
               disabled={violations.length > 0 || index === stepIds.length - 1}
             >
-              Next
+              {nextLabel}
             </Button>
           </div>
         </div>

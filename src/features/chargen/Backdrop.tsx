@@ -12,25 +12,44 @@ import { uploadedAsset } from "./art";
 export function Backdrop({
   name,
   text = "left",
+  focus,
+  drift = false,
+  scrim,
   className,
 }: {
   /** The uploaded file's name, without the extension. */
   name: string | null | undefined;
   /** Which side interface text sits on, so the scrim darkens it. */
   text?: "left" | "right" | "all";
+  /** Where the crop centres, as CSS object-position, when the middle is the wrong part to keep. */
+  focus?: string;
+  /** A very slow push-in, for a scene the player sits on rather than a step's banner. */
+  drift?: boolean;
+  /** Replaces the default scrim, for a picture whose quiet side is narrower than half. */
+  scrim?: string;
   className?: string;
 }) {
   const url = name ? uploadedAsset(name) : null;
   if (!url) return null;
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0", className)}>
-      <img src={url} alt="" className="h-full w-full object-cover" />
+      <img
+        src={url}
+        alt=""
+        style={focus ? { objectPosition: focus } : undefined}
+        className={cn("h-full w-full object-cover", drift && "cg-drift")}
+      />
       <div
         className={cn(
           "absolute inset-0",
-          text === "left" && "bg-gradient-to-r from-background via-background/85 to-background/30",
-          text === "right" && "bg-gradient-to-l from-background via-background/85 to-background/30",
-          text === "all" && "bg-background/75",
+          scrim ??
+            cn(
+              text === "left" &&
+                "bg-gradient-to-r from-background via-background/85 to-background/30",
+              text === "right" &&
+                "bg-gradient-to-l from-background via-background/85 to-background/30",
+              text === "all" && "bg-background/75",
+            ),
         )}
       />
     </div>

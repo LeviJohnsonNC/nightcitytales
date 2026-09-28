@@ -11,11 +11,20 @@
  * out there" chapter). Keeping them apart means it does not matter which of the
  * two effects React runs first.
  *
- * Nothing plays before the player has touched the page (browsers refuse
- * autoplay, and a page that starts shouting is rude anyway), while the tab is
- * hidden, or when the player has turned it off. A cue with no uploaded file is
- * silence, so the creator works the same before the soundtrack exists.
- * Everything is inert outside a browser.
+ * It tries to play as soon as a cue is set. Arriving from the roster is a
+ * click, and a browser that has seen one lets the page play sound; waiting for
+ * a SECOND touch, as this once did, left the meet silent until the player
+ * clicked something on it. When the browser does refuse — a reload, or /create
+ * opened directly, where no page can play sound before a touch — the player is
+ * told the music is waiting (`onMusicBlocked`) and the next touch starts it.
+ *
+ * Two audio elements are made once and reused for every cue, crossfading
+ * between them, rather than a new one per cue: Safari unlocks an element, not
+ * a page, so an element that has played once may play again unprompted.
+ *
+ * Nothing plays while the tab is hidden or when the player has turned it off.
+ * A cue with no uploaded file is silence, so the creator works the same before
+ * the soundtrack exists. Everything is inert outside a browser.
  */
 import { uploadedAsset } from "../art";
 import { CUE_FILES, cueLoops, type Cue } from "./soundtrack";
@@ -31,10 +40,17 @@ type Voice = { cue: Cue; el: HTMLAudioElement };
 let base: Cue | null = null;
 let override: Cue | null = null;
 let current: Voice | null = null;
-let unlocked = false;
+/** False only after the browser has refused to play; a touch sets it again. */
+let allowed = true;
+/** When a touch last started music the browser had refused, so the toggle can ignore that click. */
+let unblockedAt = -Infinity;
 let listening = false;
 let enabled = readEnabled();
 const listeners = new Set<(on: boolean) => void>();
+const blockedListeners = new Set<(blocked: boolean) => void>();
+/** The two reusable elements, made on first use. */
+let pool: HTMLAudioElement[] = [];
+const fades = new Map<HTMLAudioElement, number>();
 
 function browser(): boolean {
   return typeof window !== "undefined" && typeof Audio !== "undefined";
@@ -49,8 +65,16 @@ function readEnabled(): boolean {
   return true;
 }
 
-/** Ramp one voice's volume, then optionally let it go. */
+function setAllowed(next: boolean): void {
+  if (allowed === next) return;
+  allowed = next;
+  blockedListeners.forEach((fn) => fn(!next));
+}
+
+/** Ramp one element's volume, then optionally let it go. A new fade cancels the old. */
 function fade(el: HTMLAudioElement, to: number, then?: () => void): void {
+  const running = fades.get(el);
+  if (running !== undefined) window.clearInterval(running);
   const from = el.volume;
   const steps = Math.max(1, Math.round(FADE_MS / STEP_MS));
   let i = 0;
@@ -59,18 +83,34 @@ function fade(el: HTMLAudioElement, to: number, then?: () => void): void {
     el.volume = Math.max(0, Math.min(1, from + ((to - from) * i) / steps));
     if (i >= steps) {
       window.clearInterval(timer);
+      fades.delete(el);
       then?.();
     }
   }, STEP_MS);
+  fades.set(el, timer);
 }
 
 function release(voice: Voice | null): void {
   if (!voice) return;
-  fade(voice.el, 0, () => {
-    voice.el.pause();
-    voice.el.removeAttribute("src");
-    voice.el.load();
-  });
+  fade(voice.el, 0, () => voice.el.pause());
+}
+
+/** The element not carrying `outgoing`, which is still fading out and must be left to finish. */
+function spareElement(outgoing: HTMLAudioElement | undefined): HTMLAudioElement {
+  if (pool.length === 0) {
+    pool = [new Audio(), new Audio()];
+    for (const el of pool) el.preload = "auto";
+  }
+  return pool[0] === outgoing ? pool[1]! : pool[0]!;
+}
+
+/**
+ * A play() the browser turned down. Only the autoplay rule waits for a touch;
+ * a file this browser cannot decode is silence, and asking the player to tap
+ * for music that will never come would be a lie.
+ */
+function refused(error: unknown): void {
+  if ((error as { name?: string } | null)?.name === "NotAllowedError") setAllowed(false);
 }
 
 function wanted(): Cue | null {
@@ -80,7 +120,7 @@ function wanted(): Cue | null {
 function apply(): void {
   if (!browser()) return;
   const cue = wanted();
-  if (!unlocked || !enabled || cue === null) {
+  if (!enabled || cue === null) {
     release(current);
     current = null;
     return;
@@ -90,25 +130,41 @@ function apply(): void {
     current?.el.pause();
     return;
   }
+  if (!allowed) return; // Refused once already; the next touch tries again.
   if (current?.cue === cue) {
-    if (current.el.paused && !current.el.ended) void current.el.play().catch(() => {});
+    if (current.el.paused && !current.el.ended) {
+      const el = current.el;
+      void el.play().then(
+        () => fade(el, LEVEL),
+        (e: unknown) => refused(e),
+      );
+    }
     return;
   }
-  release(current);
-  current = null;
   const url = uploadedAsset(CUE_FILES[cue]);
+  const outgoing = current;
+  release(outgoing);
+  current = null;
   if (!url) return; // Not uploaded yet: silence, and the creator carries on.
-  const el = new Audio(url);
+  const el = spareElement(outgoing?.el);
+  const running = fades.get(el);
+  if (running !== undefined) window.clearInterval(running);
+  fades.delete(el);
+  el.pause();
+  el.src = url;
   el.loop = cueLoops(cue);
   el.volume = 0;
-  el.preload = "auto";
-  current = { cue, el };
+  el.currentTime = 0;
+  const voice = { cue, el };
+  current = voice;
   void el.play().then(
-    () => fade(el, LEVEL),
     () => {
-      // Refused (usually autoplay). Try again on the next touch.
-      if (current?.el === el) current = null;
-      unlocked = false;
+      if (current === voice) fade(el, LEVEL);
+    },
+    (e: unknown) => {
+      // Keep nothing half-started; if it was the autoplay rule, the next touch plays the cue.
+      if (current === voice) current = null;
+      refused(e);
     },
   );
 }
@@ -116,9 +172,11 @@ function apply(): void {
 function listen(): void {
   if (listening || !browser()) return;
   listening = true;
+  // Runs inside the gesture, so the play() it leads to counts as the player's.
   const unlock = () => {
-    if (unlocked) return;
-    unlocked = true;
+    if (allowed) return;
+    setAllowed(true);
+    unblockedAt = performance.now();
     apply();
   };
   window.addEventListener("pointerdown", unlock, { capture: true });
@@ -157,8 +215,28 @@ export function setMusicEnabled(on: boolean): void {
     /* ignore */
   }
   listeners.forEach((fn) => fn(on));
-  if (on) unlocked = true; // The click that turned it on is the gesture.
+  if (on) setAllowed(true); // The click that turned it on is the gesture.
   apply();
+}
+
+/** True while the browser has refused to play and is waiting for a touch. */
+export function isMusicBlocked(): boolean {
+  return !allowed;
+}
+
+/**
+ * Whether a touch in the last moment was the one that started refused music.
+ * That touch is usually a click on the music switch itself, which would
+ * otherwise turn off the music it has just started.
+ */
+export function justUnblocked(): boolean {
+  return performance.now() - unblockedAt < 1000;
+}
+
+/** Subscribe to the browser refusing (true) and then allowing (false) the music. */
+export function onMusicBlocked(fn: (blocked: boolean) => void): () => void {
+  blockedListeners.add(fn);
+  return () => blockedListeners.delete(fn);
 }
 
 /** Subscribe to the toggle, so every control shows the same state. */

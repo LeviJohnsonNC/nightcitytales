@@ -30,12 +30,6 @@ import { validateStep } from "./validation";
 
 export type PortraitStage = 1 | 2 | 3;
 
-export const PORTRAIT_STAGES: Record<PortraitStage, { name: string; caption: string }> = {
-  1: { name: "Surveillance still", caption: "Long lens, bad light. Enough to know the face." },
-  2: { name: "Under the lights", caption: "A better look, now they know how you carry yourself." },
-  3: { name: "File photo", caption: "Kitted out, the way the street will see you." },
-};
-
 /** The Lifepath answers the first picture needs: how somebody looks at a glance. */
 export const LOOK_ANSWERS = ["clothing_style", "hairstyle", "affectation"] as const;
 
@@ -111,4 +105,39 @@ export function faceFact(seed: number | null | undefined): { label: string; valu
     label: "Face (keep consistent)",
     value: `${pick(AGES)}, ${pick(SHAPES)}, ${pick(EYES)}, ${pick(MARKS)}`,
   };
+}
+
+/**
+ * How far through the interview the file is: the share of this method's steps
+ * that have been visited and answered. A step that asks nothing still has to
+ * be reached, so skipping ahead does not sharpen the picture.
+ */
+export function fileProgress(state: ChargenState): number {
+  const steps = stepsFor(state.method);
+  if (steps.length === 0) return 0;
+  const done = steps.filter(
+    (s) => state.visited.includes(s.id) && validateStep(s.id, state).violations.length === 0,
+  ).length;
+  return done / steps.length;
+}
+
+/**
+ * The band of clarity each stage's picture develops through, from 0 (black)
+ * to 1 (sharp). A new picture only arrives three times — that is the budget —
+ * but the file keeps coming into focus between them, one answered step at a
+ * time. The first still is barely a face on purpose; the file photo is close
+ * to clear the moment it lands, because by then the player may have drawn it
+ * by hand and should be able to see what they drew.
+ */
+const CLARITY_BANDS: Record<PortraitStage, [number, number]> = {
+  1: [0.1, 0.35],
+  2: [0.4, 0.7],
+  3: [0.85, 1],
+};
+
+/** How clear the picture on the file is. 0 before there is one. */
+export function portraitClarity(stage: 0 | PortraitStage, progress: number): number {
+  if (stage === 0) return 0;
+  const [floor, ceiling] = CLARITY_BANDS[stage];
+  return Math.min(ceiling, Math.max(floor, progress));
 }

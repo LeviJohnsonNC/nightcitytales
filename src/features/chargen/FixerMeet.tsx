@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { fixerCandidates, rollJobSeed } from "@/engine";
 import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import { cn } from "@/lib/utils";
+import { uploadedAsset } from "./art";
 import { Backdrop } from "./Backdrop";
 import { fixerVoice } from "./interview";
 import { useChargenStore, type ChargenState } from "./store";
@@ -22,11 +23,24 @@ import "./interview.css";
 export function FixerMeet({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const plan = state.castPlan;
+  const greeting = useRef<HTMLQuoteElement>(null);
+  const chosenNow = plan?.picks.fixer ?? null;
+  const seen = useRef(chosenNow);
 
   // The room is dealt once per draft and kept, so a reload shows the same three.
   useEffect(() => {
     if (!plan) patch({ castPlan: { seed: rollJobSeed(), picks: {} } });
   }, [plan, patch]);
+
+  // Picking somebody is answered by them speaking, and the line lands below the
+  // cards, off the bottom of a laptop screen. Bring it up, but only for a pick
+  // made here: coming back to a step already answered should not scroll.
+  useEffect(() => {
+    if (chosenNow === seen.current) return;
+    seen.current = chosenNow;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    greeting.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "nearest" });
+  }, [chosenNow]);
 
   if (!plan) return null;
   const room = fixerCandidates(plan.seed);
@@ -40,17 +54,26 @@ export function FixerMeet({ state }: { state: ChargenState }) {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden border border-hairline bg-surface px-6 py-10 sm:px-10">
-        <Backdrop name="scene-meet" text="left" />
+      {/* The scene is the page's heading. The picture is a view out of a
+          rain-streaked window, so the crop keeps the frame and the tops of the
+          towers, and the scrim only darkens the part the words sit on. */}
+      <section className="relative flex min-h-[22rem] items-center overflow-hidden border border-hairline bg-surface px-6 py-12 sm:min-h-[26rem] sm:px-10">
+        <Backdrop
+          name="scene-meet"
+          focus="58% 32%"
+          drift
+          scrim="bg-[linear-gradient(90deg,var(--color-background)_0%,color-mix(in_oklab,var(--color-background)_82%,transparent)_42%,color-mix(in_oklab,var(--color-background)_40%,transparent)_66%,transparent_88%)]"
+        />
         <div aria-hidden className="cg-rain" />
-        <div className="relative space-y-4">
+        <div className="relative max-w-[42rem] space-y-5">
           <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-accent">
             Night City · 2045
           </p>
-          <h2 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-            You need work. Three fixers will see you tonight.
-          </h2>
-          <p className="max-w-2xl text-base leading-relaxed text-text-muted">
+          <h1 className="text-balance text-3xl font-bold leading-[1.1] tracking-tight [text-shadow:0_2px_18px_rgb(0_0_0/0.6)] sm:text-4xl">
+            <span className="block">You need work.</span>
+            <span className="block">Three fixers will see you tonight.</span>
+          </h1>
+          <p className="max-w-[26rem] text-pretty text-base leading-relaxed text-foreground/80">
             Pick one. Whoever you sit down with asks the questions, writes down the answers, and is
             the one who calls when there is a job.
           </p>
@@ -60,7 +83,10 @@ export function FixerMeet({ state }: { state: ChargenState }) {
       <div className="grid gap-5 lg:grid-cols-3">
         {room.map((name, i) => {
           const npc = findNpc(name);
-          const art = npc ? npcArtwork(npc) : null;
+          // The meet's own picture of them, in their venue, when one has been
+          // made; otherwise the square-on portrait every other screen uses.
+          const scene = npc ? uploadedAsset(`meet-${npc.id}`) : null;
+          const art = scene ? { src: scene, srcSet: undefined } : npc ? npcArtwork(npc) : null;
           const line = fixerVoice(name);
           const selected = chosen === name;
           return (
@@ -86,6 +112,7 @@ export function FixerMeet({ state }: { state: ChargenState }) {
                     srcSet={art.srcSet}
                     sizes="(min-width: 1024px) 22rem, 90vw"
                     alt={name}
+                    style={scene ? { objectPosition: "50% 30%" } : undefined}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                   />
                 ) : null}
@@ -110,6 +137,7 @@ export function FixerMeet({ state }: { state: ChargenState }) {
 
       {voice && chosen && (
         <blockquote
+          ref={greeting}
           key={chosen}
           className="cg-say border-l-2 border-ember bg-ember/5 px-6 py-5 text-lg leading-relaxed"
         >

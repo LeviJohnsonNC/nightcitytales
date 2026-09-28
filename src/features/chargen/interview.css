@@ -126,17 +126,6 @@
   animation: cg-arrive 900ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
-/* The first picture is a long-lens still: scanlines over it, like a feed. */
-.cg-still {
-  pointer-events: none;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    rgb(0 0 0 / 0.22) 0 1px,
-    transparent 1px 3px
-  );
-  mix-blend-mode: multiply;
-}
-
 /* While a picture develops. */
 .cg-breathe {
   animation: cg-breathe 2.4s ease-in-out infinite;
@@ -150,4 +139,58 @@
   50% {
     opacity: 1;
   }
+}
+
+/* A scene the player sits on: a push-in too slow to notice until it has moved. */
+.cg-drift {
+  transform-origin: 62% 40%;
+  animation: cg-drift 40s ease-in-out infinite alternate;
+}
+
+@keyframes cg-drift {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.07);
+  }
+}
+
+/* The music switch while the browser holds the music until the page is touched. */
+.cg-beckon {
+  animation: cg-beckon 1.8s ease-in-out infinite;
+}
+
+@keyframes cg-beckon {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent, #5ee) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+/* A new picture on the file, coming up out of the black like instant film. */
+.cg-develop {
+  animation: cg-develop 6s ease-out backwards;
+}
+
+@keyframes cg-develop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The chemistry at work while a picture is still being taken. */
+.cg-sheen {
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    color-mix(in oklab, var(--color-accent, #5ee) 18%, transparent) 50%,
+    transparent 70%
+  );
 }
