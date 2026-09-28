@@ -22,7 +22,7 @@ export function Backdrop({
   /** Which side interface text sits on, so the scrim darkens it. */
   text?: "left" | "right" | "all";
   /** Where the crop centres, as CSS object-position, when the middle is the wrong part to keep. */
-  focus?: string;
+  focus?: string | undefined;
   /** A very slow push-in, for a scene the player sits on rather than a step's banner. */
   drift?: boolean;
   /** Replaces the default scrim, for a picture whose quiet side is narrower than half. */
@@ -32,7 +32,14 @@ export function Backdrop({
   const url = name ? uploadedAsset(name) : null;
   if (!url) return null;
   return (
-    <div aria-hidden className={cn("pointer-events-none absolute inset-0", className)}>
+    // Inline margin 0: a parent's `space-y-*` gives every child but the last a
+    // bottom margin, and on an absolutely placed layer that margin lifts its
+    // bottom edge off the frame — a strip of bare background under the picture.
+    <div
+      aria-hidden
+      className={cn("pointer-events-none absolute inset-0", className)}
+      style={{ margin: 0 }}
+    >
       <img
         src={url}
         alt=""

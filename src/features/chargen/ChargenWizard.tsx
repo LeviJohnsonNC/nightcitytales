@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { uploadedAsset } from "./art";
 import { Backdrop } from "./Backdrop";
 import { CharacterFile } from "./CharacterFile";
-import { fixerShortName, fixerVoice } from "./interview";
+import { fixerSays, fixerShortName, fixerVoice } from "./interview";
 import { FixerLine } from "./FixerLine";
 import { StepPanel } from "./StepPanels";
 import { StepRail } from "./StepRail";
@@ -36,15 +36,25 @@ import { finishTrackThenStop, startMusic, stopMusic } from "./music/musicDirecto
 import { stepStatuses, validateStep } from "./validation";
 
 type PendingChange =
-  { kind: "method"; method: CreationMethod } | { kind: "role"; roleId: string } | null;
+  | { kind: "method"; method: CreationMethod }
+  | { kind: "role"; roleId: string; advance: boolean }
+  | null;
 
-const SAVE_LABEL: Record<string, string> = {
-  loading: "Loading draft…",
-  idle: "Draft ready",
-  saving: "Saving…",
-  saved: "Draft saved",
-  error: "Save failed",
+/**
+ * Where each fixer's venue is cropped behind their question. The banner is a
+ * wide strip of a 16:9 picture, and the middle of it is rarely the part worth
+ * keeping: the words sit on the left, so this aims at the detail on the right.
+ */
+const VENUE_FOCUS: Record<string, string> = {
+  "venue-ilsa-braun": "60% 30%",
+  "venue-tally": "60% 32%",
+  "venue-dinh-bao-tran": "55% 42%",
+  "venue-rosalind-achebe": "60% 40%",
+  "venue-yuri-pastrana": "55% 50%",
+  "venue-kit-mwangi": "60% 28%",
 };
+
+const SAVE_FAILED = "Save failed";
 
 const STEP_HELP: Record<string, { title: string; body: string }> = {
   gear: {
@@ -58,6 +68,9 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const { status: saveStatus, error: saveError } = useDraftSync(userId);
   const [pending, setPending] = useState<PendingChange>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  // The fixer's reaction to the Role, carried onto the next step's question
+  // when choosing the Role is also what moved the player on.
+  const [carried, setCarried] = useState<{ step: string; line: string } | null>(null);
   const navigate = useNavigate();
 
   const steps = stepsFor(state.method);
@@ -74,6 +87,8 @@ export function ChargenWizard({ userId }: { userId: string }) {
   // The meet opens on its own scene, which is the page's heading: no second
   // title over it, and no red "missing" line before the player has done anything.
   const atMeet = def.id === "fixer";
+  // Steps whose own screen already says what is missing; a red list under them is a scolding.
+  const quiet = atMeet || def.id === "role";
   const nextLabel = atMeet && fixer ? `Sit down with ${fixerShortName(fixer)}` : "Next";
 
   // Back always goes somewhere: from the first step, out to the roster. The
@@ -87,6 +102,11 @@ export function ChargenWizard({ userId }: { userId: string }) {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [state.step]);
+
+  // A carried reaction belongs to the step it was carried onto, and only once.
+  useEffect(() => {
+    if (carried && state.step !== carried.step) setCarried(null);
+  }, [state.step, carried]);
 
   // The creator is scored by a shuffled playlist, whatever the step. Leaving
   // it for the game lets the track that is playing carry the character into
@@ -114,18 +134,28 @@ export function ChargenWizard({ userId }: { userId: string }) {
     state.selectMethod(method);
   }
 
-  function requestRole(roleId: string) {
+  /** Take the Role, and with `advance`, go straight on to the next step with the fixer's reaction. */
+  function takeRole(roleId: string, advance: boolean) {
+    if (state.roleId !== roleId) state.selectRole(roleId);
+    if (!advance) return;
+    const line = fixerSays(fixer, "role", roleId);
+    const nextId = stepIds[stepIds.indexOf("role") + 1];
+    if (line && nextId) setCarried({ step: nextId, line });
+    useChargenStore.getState().setStep(nextId ?? "role");
+  }
+
+  function requestRole(roleId: string, advance = false) {
     if (state.roleId && state.roleId !== roleId && hasDependentData) {
-      setPending({ kind: "role", roleId });
+      setPending({ kind: "role", roleId, advance });
       return;
     }
-    state.selectRole(roleId);
+    takeRole(roleId, advance);
   }
 
   function applyPending() {
     if (!pending) return;
     if (pending.kind === "method") state.selectMethod(pending.method);
-    else state.selectRole(pending.roleId);
+    else takeRole(pending.roleId, pending.advance);
     setPending(null);
   }
 
@@ -167,38 +197,43 @@ export function ChargenWizard({ userId }: { userId: string }) {
         {!atMeet && (
           <header
             className={cn(
-              "relative space-y-4 overflow-hidden border-b border-border pb-5",
-              venueShown && "border border-hairline px-5 pt-5",
+              "relative overflow-hidden border-b border-border pb-5",
+              venueShown && "flex min-h-[11rem] items-center border border-hairline px-5 pt-5",
             )}
           >
-            <Backdrop name={venue} text="left" />
-            <div className="relative space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-                  {def.title}
-                </p>
-                {STEP_HELP[def.id] && (
-                  <button
-                    type="button"
-                    aria-label={`About ${def.title}`}
-                    onClick={() => setHelpOpen(true)}
-                    className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-muted-foreground transition-colors hover:border-accent hover:text-accent"
-                  >
-                    ?
-                  </button>
-                )}
-                <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {SAVE_LABEL[saveStatus]}
-                  {saveError ? ` · ${saveError}` : ""}
-                </span>
-              </div>
+            <Backdrop name={venue} text="left" focus={venue ? VENUE_FOCUS[venue] : undefined} />
+            {/* The step's name is in the bar above and the list beside; the
+                header is the fixer's question, and nothing else unless it is
+                help, or a save that failed. */}
+            {STEP_HELP[def.id] && (
+              <button
+                type="button"
+                aria-label={`About ${def.title}`}
+                onClick={() => setHelpOpen(true)}
+                className="absolute right-3 top-3 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-background/60 font-mono text-[10px] text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+              >
+                ?
+              </button>
+            )}
+            <div className="relative w-full space-y-3">
               {/* The Lifepath's chapters each open with the fixer's own line, so
                   the step does not ask a question of its own on top of them. */}
               {def.id !== "lifepath" && (
-                <FixerLine fixer={fixer} step={def.id} roleId={state.roleId} />
+                <FixerLine
+                  fixer={fixer}
+                  step={def.id}
+                  roleId={state.roleId}
+                  lead={carried?.step === def.id ? carried.line : null}
+                />
               )}
               {(def.id === "lifepath" || !fixer) && (
                 <h1 className="text-3xl font-bold tracking-tight">{def.title}</h1>
+              )}
+              {saveStatus === "error" && (
+                <p className="font-mono text-[10px] uppercase tracking-wider text-destructive">
+                  {SAVE_FAILED}
+                  {saveError ? ` · ${saveError}` : ""}
+                </p>
               )}
             </div>
           </header>
@@ -213,7 +248,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
         />
 
         {/* The File lists what is missing in its own checklist, with a way to each step. */}
-        {violations.length > 0 && def.id !== "review" && !atMeet && (
+        {violations.length > 0 && def.id !== "review" && !quiet && (
           <ul className="space-y-1.5 text-sm text-foreground">
             {violations.map((violation) => (
               <li key={violation} className="flex items-start gap-2.5">
@@ -232,7 +267,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
             Back
           </Button>
           <div className="flex items-center gap-3">
-            {violations.length > 0 && !atMeet && (
+            {violations.length > 0 && !quiet && (
               <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
                 Answer what is missing to go on
               </span>

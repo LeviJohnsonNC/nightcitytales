@@ -18,10 +18,13 @@ export function FixerLine({
   fixer,
   step,
   roleId,
+  lead,
 }: {
   fixer: string | null | undefined;
   step: ChargenStep;
   roleId: string | null;
+  /** A line said first — the reaction to the answer the player just gave. */
+  lead?: string | null;
 }) {
   const line = fixerSays(fixer, step, roleId);
   if (!fixer || !line) return null;
@@ -37,6 +40,11 @@ export function FixerLine({
         />
       )}
       <div className="min-w-0 space-y-1">
+        {lead && (
+          <p key={lead} className="cg-say text-base leading-snug text-text-muted sm:text-lg">
+            “{lead}”
+          </p>
+        )}
         <p key={line} className="cg-say text-xl leading-snug tracking-tight sm:text-2xl">
           “{line}”
         </p>

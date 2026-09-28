@@ -25,7 +25,8 @@ export function StepPanel({
   state: ChargenState;
   userId: string;
   onRequestMethod: (method: CreationMethod) => void;
-  onRequestRole: (roleId: string) => void;
+  /** With `advance`, choosing the Role also moves on to the next step. */
+  onRequestRole: (roleId: string, advance?: boolean) => void;
 }) {
   switch (step) {
     case "fixer":
