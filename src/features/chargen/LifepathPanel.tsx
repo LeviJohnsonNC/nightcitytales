@@ -18,7 +18,6 @@ import {
 } from "@/engine";
 import { BackgroundPanel } from "./BackgroundPanel";
 import { DiceRoll } from "./DiceRoll";
-import { DiceSoundToggle } from "./DiceSoundToggle";
 import { LifepathTableCard } from "./LifepathTableCard";
 import { RoleLifepathTableCard } from "./RoleLifepathTableCard";
 import { buildBackgroundInput } from "./lifepathBackground";
@@ -235,7 +234,6 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
               style={{ width: `${pct}%` }}
             />
           </div>
-          <DiceSoundToggle />
           <Button
             size="sm"
             variant="outline"
