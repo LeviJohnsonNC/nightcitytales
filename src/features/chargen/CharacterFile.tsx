@@ -17,11 +17,13 @@ const AT_A_GLANCE = ["personality", "value_most", "life_goals"] as const;
 
 /**
  * Where the photo sits inside `file-polaroid`, as percentages of that image,
- * measured from the uploaded file. Until it is uploaded the print is drawn in
- * CSS with the same proportions: the classic instant print, a square window
- * with a thin border and a deep bottom margin.
+ * measured from the uploaded file with its window cut out. The photo goes
+ * BEHIND the print and runs a little past the window on every side, so the
+ * painted, ragged edge of the window frames it and the paperclip stays on top.
+ * Until the art is uploaded the print is drawn in CSS with the same shape.
  */
-const POLAROID_WINDOW = { top: 5.6, left: 5.7, width: 88.6, height: 74 };
+const POLAROID_WINDOW = { top: 11.07, left: 6.79, width: 86.21, height: 69.2 };
+const WINDOW_BLEED = 1.2;
 
 /**
  * A picture half-developed, as a CSS filter: blurred, dim, flat and brown when
@@ -83,8 +85,11 @@ export function CharacterFile({
       aria-label="Your file"
       style={folder ? { backgroundImage: `url(${folder})` } : undefined}
       className={cn(
-        "relative flex flex-col items-center bg-cover bg-top px-5 pb-5 pt-6",
-        folder ? "aspect-[2/3]" : "border border-hairline bg-surface",
+        "relative flex flex-col items-center bg-cover bg-top",
+        // The folder art has a metal rim; everything sits inside it.
+        folder
+          ? "aspect-[2/3] px-[10%] pb-[10%] pt-[9%]"
+          : "border border-hairline bg-surface px-5 pb-5 pt-6",
       )}
     >
       <Print
@@ -170,24 +175,26 @@ function Print({
   return (
     <div
       className={cn(
-        "relative w-[72%] -rotate-2 shadow-[0_10px_24px_rgb(0_0_0/0.55)]",
-        !frame && "bg-[#e9e4d6] px-[5.7%] pb-[22%] pt-[5.7%]",
+        "relative w-[72%] -rotate-2",
+        frame
+          ? "drop-shadow-[0_10px_14px_rgb(0_0_0/0.6)]"
+          : "bg-[#e9e4d6] px-[5.7%] pb-[22%] pt-[5.7%] shadow-[0_10px_24px_rgb(0_0_0/0.55)]",
       )}
     >
       {frame ? (
         <>
-          <img src={frame} alt="" aria-hidden className="relative block w-full" />
           <div
             className="absolute"
             style={{
-              top: `${POLAROID_WINDOW.top}%`,
-              left: `${POLAROID_WINDOW.left}%`,
-              width: `${POLAROID_WINDOW.width}%`,
-              height: `${POLAROID_WINDOW.height}%`,
+              top: `${(POLAROID_WINDOW.top - WINDOW_BLEED).toFixed(2)}%`,
+              left: `${(POLAROID_WINDOW.left - WINDOW_BLEED).toFixed(2)}%`,
+              width: `${(POLAROID_WINDOW.width + 2 * WINDOW_BLEED).toFixed(2)}%`,
+              height: `${(POLAROID_WINDOW.height + 2 * WINDOW_BLEED).toFixed(2)}%`,
             }}
           >
             {photo}
           </div>
+          <img src={frame} alt="" aria-hidden className="relative block w-full" />
         </>
       ) : (
         <div className="relative aspect-square w-full">{photo}</div>

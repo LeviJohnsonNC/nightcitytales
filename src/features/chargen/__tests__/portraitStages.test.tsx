@@ -100,7 +100,7 @@ describe("the file, while there is no picture yet", () => {
   it("is an undeveloped print, and explains nothing", () => {
     const html = renderToStaticMarkup(<CharacterFile state={draft({ roleId: "solo" })} />);
     expect(html).toContain("No photo on file");
-    expect(html).not.toContain("<img");
+    expect(html).not.toContain('alt="Your portrait"');
     expect(html).not.toContain("A picture develops");
   });
 });
