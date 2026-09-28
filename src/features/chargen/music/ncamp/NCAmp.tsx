@@ -12,10 +12,23 @@
  * the player likes it laid out — skin, which windows are open, double size,
  * the visualizer, elapsed or remaining — in this browser only.
  *
- * Two skins: Classic (grey, gold and LCD green) and Night City (the app's own
- * neon). The O in the clutterbar switches between them, as options always did.
+ * Three skins. Street, the default, is drawn in the creator's own panels,
+ * hairlines and type so it sits in the bar like the rest of the page; only the
+ * scrolling title keeps the pixel font. Classic is the grey, gold and LCD
+ * green of the original, and Neon is that shape lit in the app's colours.
+ * The Skin row atop the open player chooses between them, and the O in the
+ * clutterbar still cycles them, as options always did.
+ *
+ * The dice button in the strip is the creator's one switch for dice sound:
+ * the music and the rolls answer to the same player.
  */
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import {
+  isDiceSoundEnabled,
+  onDiceSoundChange,
+  playSettle,
+  setDiceSoundEnabled,
+} from "@/features/dice/fx";
 import { cn } from "@/lib/utils";
 import { EQ_BANDS, EQ_PRESETS, EQ_RANGE_DB, bandLabel, clampDb } from "../equalizer";
 import {
@@ -50,9 +63,11 @@ import {
 } from "./parts";
 import "./ncamp.css";
 
-type Skin = "classic" | "night";
+type Skin = "street" | "classic" | "night";
 type Ui = {
   skin: Skin;
+  /** Which default the saved skin was chosen against; see `readUi`. */
+  skinRev: number;
   open: boolean;
   eq: boolean;
   pl: boolean;
@@ -62,8 +77,14 @@ type Ui = {
 };
 
 const UI_KEY = "nct.ncamp.ui";
+/**
+ * Bumped when the default skin changes, so a player who never chose one (or
+ * chose before Street existed) lands on the new default once.
+ */
+const SKIN_REV = 2;
 const DEFAULT_UI: Ui = {
-  skin: "classic",
+  skin: "street",
+  skinRev: SKIN_REV,
   open: false,
   eq: true,
   pl: true,
@@ -71,14 +92,19 @@ const DEFAULT_UI: Ui = {
   vis: "spectrum",
   remaining: false,
 };
-const SKIN_NAMES: Record<Skin, string> = { classic: "Classic", night: "Night City" };
+const SKINS: Skin[] = ["street", "classic", "night"];
+const SKIN_NAMES: Record<Skin, string> = { street: "Street", classic: "Classic", night: "Neon" };
 const IDLE_TEXT = "NCAMP 2077  ***  NIGHT CITY'S FINEST MEDIA PLAYER";
 const BLOCKED_TEXT = "PRESS PLAY  ***  THE BROWSER IS HOLDING THE MUSIC UNTIL YOU DO";
 
 function readUi(): Ui {
   try {
     const raw = JSON.parse(localStorage.getItem(UI_KEY) ?? "null") as Partial<Ui> | null;
-    return { ...DEFAULT_UI, ...(raw ?? {}), open: false };
+    const ui = { ...DEFAULT_UI, ...(raw ?? {}), open: false };
+    if (ui.skinRev !== SKIN_REV || !SKINS.includes(ui.skin)) {
+      return { ...ui, skin: DEFAULT_UI.skin, skinRev: SKIN_REV };
+    }
+    return ui;
   } catch {
     return DEFAULT_UI;
   }
@@ -179,6 +205,7 @@ export function NCAmp() {
           aria-label="NCAmp"
           style={{ zoom: ui.double ? 2 : 1.5 }}
         >
+          <SkinRow skin={ui.skin} onChange={(skin) => setUi({ skin })} />
           <MainWindow
             state={state}
             ui={ui}
@@ -213,8 +240,13 @@ function Shade({
     state.status === "stopped"
       ? ""
       : formatTime(ui.remaining ? state.duration - state.position : state.position);
+  const progress = state.duration ? Math.min(1, state.position / state.duration) : 0;
   return (
-    <div className="ncamp-shade" data-status={state.status}>
+    <div
+      className="ncamp-shade"
+      data-status={state.status}
+      style={{ "--ncamp-progress": progress } as CSSProperties}
+    >
       <button
         type="button"
         className="ncamp-shade-title"
@@ -251,6 +283,61 @@ function Shade({
           <path d={ui.open ? "M1 6l3-4 3 4z" : "M1 2l3 4 3-4z"} />
         </svg>
       </Btn>
+      <DiceSoundButton />
+    </div>
+  );
+}
+
+/** Dice sound on or off: the one switch for it, lit while the dice have a voice. */
+function DiceSoundButton() {
+  const [on, setOn] = useState(true);
+  // The saved choice is read on the client only, so the server render matches.
+  useEffect(() => {
+    setOn(isDiceSoundEnabled());
+    return onDiceSoundChange(setOn);
+  }, []);
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label="Dice sound"
+      title={on ? "Dice sound on" : "Dice sound off"}
+      className={cn("ncamp-btn ncamp-mini ncamp-dice", on && "is-on")}
+      onClick={() => {
+        setDiceSoundEnabled(!on);
+        if (!on) playSettle(8, 10);
+      }}
+    >
+      <svg viewBox="0 0 8 8" aria-hidden className="ncamp-glyph">
+        {/* A die showing three, its pips cut through. */}
+        <path
+          fillRule="evenodd"
+          d="M1.5 .5h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1zM1.75 1.75v1.25h1.25V1.75zM3.375 3.375v1.25h1.25v-1.25zM5 5v1.25h1.25V5z"
+        />
+        {!on && <path d="M.2 7.1L7.1.2l.7.7L.9 7.8z" className="ncamp-dice-off" />}
+      </svg>
+    </button>
+  );
+}
+
+/** The skins, by name, atop the open player: where anyone would look for them. */
+function SkinRow({ skin, onChange }: { skin: Skin; onChange: (skin: Skin) => void }) {
+  return (
+    <div className="ncamp-window ncamp-skins" role="radiogroup" aria-label="Skin">
+      <span className="ncamp-skins-label">SKIN</span>
+      {SKINS.map((s) => (
+        <button
+          key={s}
+          type="button"
+          role="radio"
+          aria-checked={skin === s}
+          className={cn("ncamp-skins-btn", skin === s && "is-on")}
+          onClick={() => onChange(s)}
+        >
+          {SKIN_NAMES[s]}
+        </button>
+      ))}
     </div>
   );
 }
@@ -334,7 +421,7 @@ function MainWindow({
           type="button"
           title={`Skin: ${SKIN_NAMES[ui.skin]} (click to change)`}
           aria-label={`Skin: ${SKIN_NAMES[ui.skin]}. Change skin`}
-          onClick={() => setUi({ skin: ui.skin === "classic" ? "night" : "classic" })}
+          onClick={() => setUi({ skin: SKINS[(SKINS.indexOf(ui.skin) + 1) % SKINS.length]! })}
         >
           O
         </button>

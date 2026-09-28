@@ -3,8 +3,11 @@
  *
  * Every size here is in the player's own native pixels (a main window is
  * 275×116, as it always was); the strip and the windows are scaled up whole
- * with `zoom`, so bevels stay one pixel wide at every size. A skin is only
- * colours: the two below set the same variables.
+ * with `zoom`, so bevels stay one pixel wide at every size. Classic and Neon
+ * are only colours: they set the same variables. Street goes further — it sets
+ * them to the creator's own palette and then, at the end of this file, trades
+ * the bevels for the page's hairlines and type, so the player sits in the bar
+ * like one more control rather than a window from another desktop.
  */
 
 .ncamp {
@@ -17,6 +20,39 @@
 }
 
 /* ── skins ─────────────────────────────────────────────────────────────── */
+
+/* The page's tokens (surface, hairline, text, ember, cool), as the player's. */
+.ncamp[data-skin="street"] {
+  --frame: var(--color-surface);
+  --frame-hi: var(--color-hairline);
+  --frame-lo: #0d0a24;
+  --title-stripe: var(--color-ember);
+  --title-stripe-lo: transparent;
+  --title-text: var(--color-text-dim);
+  --lcd-bg: transparent;
+  --lcd: var(--color-text);
+  --lcd-dim: var(--color-hairline);
+  --btn: transparent;
+  --btn-hi: var(--color-hairline);
+  --btn-lo: var(--color-hairline);
+  --btn-icon: var(--color-text-muted);
+  --btn-on: var(--color-ember);
+  --label: var(--color-text-dim);
+  --groove: var(--color-hairline);
+  --fill: var(--color-ember);
+  --thumb: var(--color-text);
+  --pl-text: var(--color-text-muted);
+  --pl-current: var(--color-ember);
+  --pl-select: var(--color-surface-raised);
+  --vis-top: #ff3d9a;
+  --vis-mid: #b04aff;
+  --vis-bottom: #34d5e6;
+  --vis-peak: #ecf1ff;
+  --vis-scope: #34d5e6;
+  --glow: none;
+  /* One device pixel at the strip's 2× and the windows' 1.5×. */
+  --hair: 0.5px;
+}
 
 .ncamp[data-skin="classic"] {
   --frame: #2c2c40;
@@ -525,7 +561,7 @@
   gap: 4px;
 }
 .ncamp-volume {
-  width: 66px;
+  width: 60px;
 }
 .ncamp-balance {
   width: 36px;
@@ -756,4 +792,394 @@
 .ncamp-micro .ncamp-glyph {
   width: 5px;
   height: 5px;
+}
+
+/* ── the dice switch and the skin row, in every skin ───────────────────── */
+
+.ncamp-dice {
+  margin-left: 2px;
+}
+.ncamp-dice {
+  opacity: 0.55;
+}
+.ncamp-dice.is-on {
+  color: var(--btn-on);
+  opacity: 1;
+}
+.ncamp-dice-off {
+  fill: var(--frame-lo);
+}
+
+.ncamp-skins {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--frame-lo);
+}
+.ncamp-skins-label {
+  margin-right: auto;
+  font-size: 6px;
+  letter-spacing: 1px;
+  color: var(--label);
+}
+.ncamp-skins-btn {
+  height: 9px;
+  padding: 0 4px;
+  border: 0;
+  font: inherit;
+  font-size: 6px;
+  color: var(--label);
+  background: var(--frame-lo);
+  cursor: pointer;
+}
+.ncamp-skins-btn.is-on {
+  color: var(--btn-on);
+  box-shadow: inset 0 0 0 1px var(--btn-on);
+}
+.ncamp-skins-btn:focus-visible {
+  outline: 1px solid var(--lcd);
+  outline-offset: 1px;
+}
+
+/* ── Street: the page's own shape ──────────────────────────────────────── */
+/*
+ * Everything below only restyles; the layout above stays, so every feature
+ * is in the same place in every skin.
+ */
+
+.ncamp[data-skin="street"] {
+  font-family: var(--font-mono);
+  -webkit-font-smoothing: antialiased;
+}
+/* The one nod to the original: the scrolling title keeps its pixels. */
+.ncamp[data-skin="street"] .ncamp-marquee {
+  font-family: "Silkscreen", var(--font-mono);
+  -webkit-font-smoothing: none;
+}
+
+.ncamp[data-skin="street"] .ncamp-lcd,
+.ncamp[data-skin="street"] .ncamp-shade-title,
+.ncamp[data-skin="street"] .ncamp-shade-vis {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Buttons: bare icons that light like the page's outline buttons. */
+.ncamp[data-skin="street"] .ncamp-btn,
+.ncamp[data-skin="street"] .ncamp-tb-btn {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 1px;
+  transition:
+    color 120ms,
+    background-color 120ms;
+}
+.ncamp[data-skin="street"] .ncamp-btn:hover:not(:disabled),
+.ncamp[data-skin="street"] .ncamp-tb-btn:hover {
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+}
+.ncamp[data-skin="street"] .ncamp-btn:active:not(:disabled) {
+  box-shadow: none;
+  transform: none;
+  color: var(--color-ember);
+}
+.ncamp[data-skin="street"] .ncamp-btn:focus-visible,
+.ncamp[data-skin="street"] .ncamp-slider:focus-visible,
+.ncamp[data-skin="street"] .ncamp-pl-list:focus-visible,
+.ncamp[data-skin="street"] .ncamp-clutter button:focus-visible,
+.ncamp[data-skin="street"] .ncamp-shade-title:focus-visible,
+.ncamp[data-skin="street"] .ncamp-skins-btn:focus-visible {
+  outline: 1px solid var(--color-cool);
+  outline-offset: 0;
+}
+.ncamp[data-skin="street"] .is-beckon {
+  animation: ncamp-street-beckon 1.6s ease-in-out infinite;
+}
+@keyframes ncamp-street-beckon {
+  50% {
+    color: var(--color-ember);
+    box-shadow: inset 0 0 0 var(--hair) var(--color-ember);
+  }
+}
+
+/* The strip: a panel as tall as Back and Next, with the track's progress
+   drawn along its foot like the story's own progress bar. */
+.ncamp[data-skin="street"] .ncamp-shade {
+  position: relative;
+  height: 16px;
+  gap: 2px;
+  padding: 0 3px 0 5px;
+  border-radius: 1px;
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 var(--hair) var(--color-hairline);
+}
+.ncamp[data-skin="street"] .ncamp-shade::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  width: calc(var(--ncamp-progress, 0) * 100%);
+  background: var(--color-ember);
+  box-shadow: 0 0 3px var(--color-ember);
+  transition: width 250ms linear;
+}
+.ncamp[data-skin="street"] .ncamp-shade-title {
+  color: var(--color-text-muted);
+  font-size: 5px;
+}
+.ncamp[data-skin="street"] .ncamp-shade[data-status="playing"] .ncamp-shade-title {
+  color: var(--color-text);
+}
+.ncamp[data-skin="street"] .ncamp-shade-time {
+  font-size: 6px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ncamp[data-skin="street"] .ncamp-shade-buttons {
+  gap: 0;
+  padding-left: 3px;
+  border-left: var(--hair) solid var(--color-hairline);
+}
+.ncamp[data-skin="street"] .ncamp-mini {
+  width: 11px;
+  height: 11px;
+}
+.ncamp[data-skin="street"] .ncamp-expand,
+.ncamp[data-skin="street"] .ncamp-dice {
+  margin-left: 0;
+}
+.ncamp[data-skin="street"] .ncamp-dice {
+  border-left: var(--hair) solid var(--color-hairline);
+  border-radius: 0;
+  width: 13px;
+  padding-left: 2px;
+}
+
+/* The windows: page panels, stacked, with small tracked headings. */
+.ncamp[data-skin="street"] .ncamp-stack {
+  --hair: 0.67px;
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 var(--hair) var(--color-hairline),
+    0 10px 30px rgb(5 3 20 / 0.7);
+}
+.ncamp[data-skin="street"] .ncamp-window {
+  background: var(--color-surface);
+  box-shadow: none;
+}
+.ncamp[data-skin="street"] .ncamp-eq,
+.ncamp[data-skin="street"] .ncamp-pl,
+.ncamp[data-skin="street"] .ncamp-skins {
+  border-top: 0;
+  border-bottom: 0;
+}
+.ncamp[data-skin="street"] .ncamp-main,
+.ncamp[data-skin="street"] .ncamp-eq,
+.ncamp[data-skin="street"] .ncamp-pl {
+  border-top: var(--hair) solid var(--color-hairline);
+}
+.ncamp[data-skin="street"] .ncamp-titlebar {
+  background: none;
+  padding: 0 4px 0 8px;
+}
+.ncamp[data-skin="street"] .ncamp-titlebar-stripes:first-child {
+  display: none;
+}
+.ncamp[data-skin="street"] .ncamp-titlebar-stripes {
+  height: var(--hair);
+  background: var(--color-hairline);
+}
+.ncamp[data-skin="street"] .ncamp-titlebar-text {
+  font-size: 5px;
+  letter-spacing: 2px;
+  color: var(--color-text-dim);
+}
+.ncamp[data-skin="street"] .ncamp-tb-btn {
+  color: var(--color-text-dim);
+}
+
+.ncamp[data-skin="street"] .ncamp-skins {
+  padding: 0 4px 0 8px;
+}
+.ncamp[data-skin="street"] .ncamp-skins-label {
+  font-size: 5px;
+  letter-spacing: 2px;
+}
+.ncamp[data-skin="street"] .ncamp-skins-btn {
+  border-radius: 1px;
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--hair) var(--color-hairline);
+  font-size: 5.5px;
+}
+.ncamp[data-skin="street"] .ncamp-skins-btn:hover {
+  color: var(--color-text);
+}
+.ncamp[data-skin="street"] .ncamp-skins-btn.is-on {
+  color: var(--color-text);
+  background: color-mix(in oklab, var(--color-ember) 22%, transparent);
+  box-shadow: inset 0 0 0 var(--hair) var(--color-ember);
+}
+
+/* Toggles: an outline chip whose lamp is the ember. */
+.ncamp[data-skin="street"] .ncamp-toggle {
+  box-shadow: inset 0 0 0 var(--hair) var(--color-hairline);
+  font-size: 5px;
+  color: var(--color-text-muted);
+}
+.ncamp[data-skin="street"] .ncamp-toggle::before {
+  border-radius: 50%;
+}
+.ncamp[data-skin="street"] .ncamp-toggle.is-on {
+  color: var(--color-text);
+}
+.ncamp[data-skin="street"] .ncamp-toggle.is-on::before {
+  box-shadow: 0 0 3px var(--color-ember);
+}
+
+.ncamp[data-skin="street"] .ncamp-clutter button {
+  background: transparent;
+  font-size: 5px;
+  color: var(--color-text-dim);
+}
+.ncamp[data-skin="street"] .ncamp-clutter button:hover:not(:disabled) {
+  color: var(--color-text);
+}
+.ncamp[data-skin="street"] .ncamp-clutter button.is-on {
+  color: var(--color-ember);
+}
+
+.ncamp[data-skin="street"] .ncamp-display {
+  border-radius: 1px;
+  background: #0d0a24;
+  box-shadow: inset 0 0 0 var(--hair) var(--color-hairline);
+}
+.ncamp[data-skin="street"] .ncamp-status {
+  color: var(--color-ember);
+}
+.ncamp[data-skin="street"] .ncamp-info-title {
+  color: var(--color-text);
+  box-shadow: inset 0 calc(-1 * var(--hair)) 0 var(--color-hairline);
+}
+.ncamp[data-skin="street"] .ncamp-num {
+  color: var(--color-text);
+  box-shadow: inset 0 calc(-1 * var(--hair)) 0 var(--color-hairline);
+}
+.ncamp[data-skin="street"] .ncamp-unit {
+  font-size: 5px;
+}
+.ncamp[data-skin="street"] .ncamp-lamp.is-lit {
+  color: var(--color-cool);
+}
+.ncamp[data-skin="street"] .ncamp-logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--color-ember);
+  text-shadow: none;
+}
+
+/* Sliders: a hairline track, an ember fill, a small bright thumb. */
+.ncamp[data-skin="street"] .ncamp-slider {
+  background: linear-gradient(var(--color-hairline), var(--color-hairline)) center / 100% 1px
+    no-repeat;
+  box-shadow: none;
+}
+.ncamp[data-skin="street"] .ncamp-slider-fill {
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  opacity: 1;
+  border-radius: 1px;
+}
+.ncamp[data-skin="street"] .ncamp-thumb {
+  top: 1.5px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--color-text);
+  box-shadow: 0 0 3px var(--color-ember);
+}
+.ncamp[data-skin="street"] .ncamp-seek .ncamp-thumb {
+  width: 4px;
+  margin-left: -2px;
+}
+.ncamp[data-skin="street"] .ncamp-slider.is-vertical {
+  background: linear-gradient(var(--color-hairline), var(--color-hairline)) center / 1px 100%
+    no-repeat;
+}
+.ncamp[data-skin="street"] .ncamp-slider.is-vertical .ncamp-slider-fill {
+  left: 3px;
+  right: 3px;
+  top: auto;
+  bottom: 0;
+}
+.ncamp[data-skin="street"] .ncamp-slider.is-vertical .ncamp-thumb {
+  left: 1px;
+  width: 5px;
+  height: 3px;
+  margin: 0 0 -1.5px;
+  border-radius: 1px;
+}
+
+.ncamp[data-skin="street"] .ncamp-eq-curve {
+  border-radius: 1px;
+  background: #0d0a24;
+  box-shadow: inset 0 0 0 var(--hair) var(--color-hairline);
+}
+.ncamp[data-skin="street"] .ncamp-eq-line {
+  stroke: var(--color-ember);
+}
+.ncamp[data-skin="street"] .ncamp-eq-label,
+.ncamp[data-skin="street"] .ncamp-eq-scale,
+.ncamp[data-skin="street"] .ncamp-eq-note {
+  font-size: 4.5px;
+  color: var(--color-text-dim);
+}
+.ncamp[data-skin="street"] .ncamp-menu {
+  border-radius: 1px;
+  background: var(--color-surface-raised);
+  box-shadow:
+    0 0 0 var(--hair) var(--color-hairline),
+    0 4px 12px rgb(5 3 20 / 0.7);
+}
+
+.ncamp[data-skin="street"] .ncamp-pl-list {
+  font-size: 6px;
+  background: #0d0a24;
+  box-shadow: inset 0 0 0 var(--hair) var(--color-hairline);
+  border-radius: 1px;
+  scrollbar-color: var(--color-hairline) transparent;
+}
+.ncamp[data-skin="street"] .ncamp-pl-row {
+  border-radius: 1px;
+}
+.ncamp[data-skin="street"] .ncamp-pl-row:hover {
+  color: var(--color-text);
+}
+.ncamp[data-skin="street"] .ncamp-pl-row.is-current {
+  box-shadow: inset 1px 0 0 var(--color-ember);
+}
+.ncamp[data-skin="street"] .ncamp-pl-total {
+  color: var(--color-text-muted);
+}
+
+/* A phone keeps only the buttons, as the other skins do, packed tighter. */
+@media (max-width: 519px) {
+  .ncamp[data-skin="street"] .ncamp-shade {
+    padding: 0 2px;
+  }
+  .ncamp[data-skin="street"] .ncamp-shade-buttons {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .ncamp[data-skin="street"] .ncamp-mini {
+    width: 9px;
+  }
+  .ncamp[data-skin="street"] .ncamp-dice {
+    width: 11px;
+  }
 }

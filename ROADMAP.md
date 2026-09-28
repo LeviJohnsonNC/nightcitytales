@@ -57,8 +57,9 @@ The plan, in phases:
    waits for a touch where the browser insists, is remembered on or off, and
    the track playing at "Enter Night City" finishes in the game. It is played
    through NCAmp, a from-scratch Winamp 2 homage in the top bar: windowshade
-   strip, main window, a real ten-band EQ, playlist, two skins. It lives in the
-   creator for now and is meant to move app-wide. Each fixer's
+   strip, main window, a real ten-band EQ, playlist, and three skins — Street
+   (the default, drawn in the page's own panels and type), Classic and Neon. Its
+   strip also carries the one dice-sound switch. It lives in the creator for now and is meant to move app-wide. Each fixer's
    venue sits behind their questions, and the meet, the reveal and each
    Lifepath chapter have backdrops. Every file is named in `docs/soundtrack.md`
    or `docs/art-style.md`, and a slot with no file keeps the plain look.
