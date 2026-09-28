@@ -31,7 +31,7 @@ import { StepRail } from "./StepRail";
 import { methodChangeLosesWork, stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
 import { useDevelopingPortrait } from "./useDevelopingPortrait";
-import { MusicToggle } from "./music/MusicToggle";
+import { NCAmp } from "./music/ncamp/NCAmp";
 import { finishTrackThenStop, startMusic, stopMusic } from "./music/musicDirector";
 import { stepStatuses, validateStep } from "./validation";
 
@@ -150,7 +150,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <MusicToggle />
+            <NCAmp />
             <Button variant="outline" size="sm" onClick={goBack}>
               Back
             </Button>

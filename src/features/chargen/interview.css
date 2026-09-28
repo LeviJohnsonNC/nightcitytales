@@ -156,21 +156,6 @@
   }
 }
 
-/* The music switch while the browser holds the music until the page is touched. */
-.cg-beckon {
-  animation: cg-beckon 1.8s ease-in-out infinite;
-}
-
-@keyframes cg-beckon {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent, #5ee) 55%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 5px transparent;
-  }
-}
-
 /* A new picture on the file, coming up out of the black like instant film. */
 .cg-develop {
   animation: cg-develop 6s ease-out backwards;

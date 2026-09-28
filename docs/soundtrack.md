@@ -36,6 +36,11 @@ never a code change; `src/features/chargen/music/soundtrack.ts` finds them by
 name. A test checks that every track in the rotation has its prompt here, so
 write the prompt down when you add one.
 
+**Give it a title.** NCAmp, the player in the creator's top bar, lists each
+song by the title it has here. Add the new song's title to `SONG_TITLES` in
+`src/features/chargen/music/trackTitles.ts` (a test fails until you do); a
+track without one still plays, named after its file.
+
 **A second take is `-v2` on the end** (`music-badlands-highway-v2.m4a`, then
 `-v3`, and so on). Every take plays, never straight after another take of the
 same song, and they all share the song's one prompt below.
