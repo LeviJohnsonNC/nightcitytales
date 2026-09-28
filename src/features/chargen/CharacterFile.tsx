@@ -1,10 +1,11 @@
 import rolesData from "@/data/rules/roles.json";
+import { uploadedAsset } from "./art";
 import { fixerShortName } from "./interview";
 import { sentenceFor } from "./lifepathNarrative";
 import { readGeneralLifepath } from "./lifepathState";
 import type { ChargenState } from "./store";
 import { usePortraitUrl } from "./usePortraitUrl";
-import { PORTRAIT_STAGES, firstPictureNeeds, type PortraitStage } from "./portraitStages";
+import { fileProgress, portraitClarity, type PortraitStage } from "./portraitStages";
 import type { DevelopingPortrait } from "./useDevelopingPortrait";
 import { cn } from "@/lib/utils";
 import "./interview.css";
@@ -14,21 +15,44 @@ const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }
 /** The answers that say most about somebody at a glance, in the order a file would list them. */
 const AT_A_GLANCE = ["personality", "value_most", "life_goals"] as const;
 
-/** How each stage of the picture is shown: a grainy still, then better light, then clean. */
-const STAGE_LOOK: Record<PortraitStage, string> = {
-  1: "grayscale contrast-125 brightness-90 blur-[0.6px]",
-  2: "saturate-[0.55] contrast-110",
-  3: "",
-};
+/**
+ * Where the photo sits inside `file-polaroid`, as percentages of that image,
+ * measured from the uploaded file. Until it is uploaded the print is drawn in
+ * CSS with the same proportions: the classic instant print, a square window
+ * with a thin border and a deep bottom margin.
+ */
+const POLAROID_WINDOW = { top: 5.6, left: 5.7, width: 88.6, height: 74 };
+
+/**
+ * A picture half-developed, as a CSS filter: blurred, dim, flat and brown when
+ * it has just come out of the camera, and sharp and full-colour once the file
+ * has everything. `clarity` runs 0 to 1.
+ */
+function developedLook(clarity: number): string {
+  const c = Math.max(0, Math.min(1, clarity));
+  const r = (n: number) => Math.round(n * 100) / 100;
+  return [
+    `blur(${r((1 - c) * 12)}px)`,
+    `brightness(${r(0.5 + 0.5 * c)})`,
+    `contrast(${r(0.75 + 0.25 * c)})`,
+    `saturate(${r(0.15 + 0.85 * c)})`,
+    `sepia(${r(0.45 * (1 - c))})`,
+  ].join(" ");
+}
 
 /**
  * The file the fixer is keeping on you, filling in as you answer.
  *
+ * A folder with an instant print clipped to it. The print starts black, the
+ * way one does out of the camera; the first picture comes up as a smear of a
+ * face, and it sharpens as the answers come in — steadily, one answered step
+ * at a time, with a fresh picture at each of the three stages the budget pays
+ * for (`portraitClarity`). It explains none of this. It is a photograph
+ * developing, and a player can see that.
+ *
  * Replaces the top of the step rail as the thing that tells a player how far
- * they have come. A list of eleven steps with "in progress" beside them is
- * progress through a form; a face arriving, a handle being typed, a Role and a
- * few lines of who this person is — that is progress toward somebody you want
- * to play.
+ * they have come: a face arriving, a handle being typed, a Role and a few
+ * lines of who this person is is progress toward somebody you want to play.
  */
 export function CharacterFile({
   state,
@@ -40,8 +64,9 @@ export function CharacterFile({
   const stored = usePortraitUrl(state.portraitPath);
   const inFlight = developing?.developing ?? null;
   const portrait = (inFlight && developing?.preview) || stored;
-  const stage = Math.min(3, Math.max(1, inFlight ?? state.portraitStage)) as PortraitStage;
-  const needs = firstPictureNeeds(state);
+  const stage = (portrait ? Math.min(3, Math.max(1, inFlight ?? state.portraitStage)) : 0) as
+    0 | PortraitStage;
+  const clarity = portraitClarity(stage, fileProgress(state));
   const fixer = state.castPlan?.picks.fixer ?? null;
   const role = state.roleId ? ROLE_NAMES[state.roleId]?.name : null;
   const handle = state.handle.trim();
@@ -50,57 +75,41 @@ export function CharacterFile({
   const glance = AT_A_GLANCE.map((id) => entries[id])
     .filter((entry) => entry !== undefined)
     .map((entry) => sentenceFor(entry));
+  const folder = uploadedAsset("file-folder");
+  const print = uploadedAsset("file-polaroid");
 
   return (
-    <section aria-label="Your file" className="border border-hairline bg-surface">
-      <div className="flex items-center justify-between border-b border-hairline px-3 py-2">
-        <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent">File</span>
-        {fixer && (
-          <span className="truncate font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
-            Kept by {fixerShortName(fixer)}
-          </span>
-        )}
-      </div>
+    <section
+      aria-label="Your file"
+      style={folder ? { backgroundImage: `url(${folder})` } : undefined}
+      className={cn(
+        "relative flex flex-col items-center bg-cover bg-top px-5 pb-5 pt-6",
+        folder ? "aspect-[2/3]" : "border border-hairline bg-surface",
+      )}
+    >
+      <Print
+        frame={print}
+        portrait={portrait}
+        clarity={clarity}
+        developing={inFlight !== null}
+        alt={handle || name || "Your portrait"}
+      />
+      {developing?.failed && !inFlight && (
+        <button
+          type="button"
+          onClick={developing.retry}
+          className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim hover:text-text"
+        >
+          Retake
+        </button>
+      )}
 
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-background/60">
-        {portrait ? (
-          <>
-            <img
-              src={portrait}
-              alt={handle || name || "Your portrait"}
-              className={cn(
-                "h-full w-full object-cover transition-[filter] duration-1000",
-                STAGE_LOOK[stage],
-              )}
-            />
-            {stage === 1 && <div aria-hidden className="cg-still absolute inset-0" />}
-          </>
-        ) : (
-          <Silhouette />
-        )}
-        {inFlight && (
-          <p className="cg-breathe absolute inset-x-0 bottom-0 bg-background/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
-            Developing · {PORTRAIT_STAGES[inFlight].name}
+      <div className="mt-5 w-full space-y-2 font-mono">
+        {fixer && (
+          <p className="truncate text-[10px] uppercase tracking-[0.22em] text-text-dim">
+            Kept by {fixerShortName(fixer)}
           </p>
         )}
-      </div>
-      <div className="border-b border-hairline px-3 py-2 text-[11px] leading-snug text-text-dim">
-        {inFlight ? (
-          PORTRAIT_STAGES[inFlight].caption
-        ) : developing?.failed ? (
-          <button type="button" onClick={developing.retry} className="hover:text-text">
-            The picture did not come out. Try again.
-          </button>
-        ) : state.portraitPath && state.portraitStage > 0 ? (
-          `${PORTRAIT_STAGES[Math.min(3, state.portraitStage) as PortraitStage].name}. ${PORTRAIT_STAGES[Math.min(3, state.portraitStage) as PortraitStage].caption}`
-        ) : needs.length > 0 ? (
-          `A picture develops once the file has ${needs.join(", ")}.`
-        ) : (
-          "A picture is on its way."
-        )}
-      </div>
-
-      <div className="space-y-2 p-3">
         <div>
           <p
             key={handle}
@@ -108,12 +117,12 @@ export function CharacterFile({
           >
             {handle ? `"${handle}"` : "Unknown"}
           </p>
-          <p className="truncate text-sm text-text-muted">
-            {[name, role].filter(Boolean).join(" · ") || "No name on file yet"}
+          <p className="truncate text-xs text-text-muted">
+            {[name, role].filter(Boolean).join(" · ") || "No name on file"}
           </p>
         </div>
         {glance.length > 0 && (
-          <ul className="space-y-1 border-t border-hairline pt-2 text-[13px] leading-snug text-text-muted">
+          <ul className="space-y-1 border-t border-foreground/15 pt-2 text-[11px] leading-snug text-text-muted">
             {glance.map((line) => (
               <li key={line}>{line}</li>
             ))}
@@ -124,17 +133,66 @@ export function CharacterFile({
   );
 }
 
-/** Nobody has taken a picture yet. A shape, and a note saying so. */
-function Silhouette() {
+/**
+ * The instant print. Black until there is a picture; a new picture comes up
+ * out of the black over a few seconds, like film developing, and a change in
+ * clarity eases rather than jumps.
+ */
+function Print({
+  frame,
+  portrait,
+  clarity,
+  developing,
+  alt,
+}: {
+  frame: string | null;
+  portrait: string | null;
+  clarity: number;
+  developing: boolean;
+  alt: string;
+}) {
+  const photo = (
+    <div className="absolute inset-0 overflow-hidden bg-black">
+      {portrait && (
+        <img
+          key={portrait}
+          src={portrait}
+          alt={alt}
+          data-clarity={Math.round(clarity * 100)}
+          style={{ filter: developedLook(clarity) }}
+          className="cg-develop h-full w-full scale-105 object-cover transition-[filter] duration-[3000ms]"
+        />
+      )}
+      {developing && <div aria-hidden className="cg-breathe cg-sheen absolute inset-0" />}
+    </div>
+  );
+
   return (
-    <div className="flex h-full flex-col items-center justify-end">
-      <svg viewBox="0 0 100 110" aria-hidden className="h-4/5 w-4/5 text-hairline">
-        <circle cx="50" cy="38" r="20" fill="currentColor" />
-        <path d="M10 110c2-26 19-40 40-40s38 14 40 40z" fill="currentColor" />
-      </svg>
-      <p className="absolute top-3 font-mono text-[10px] uppercase tracking-[0.25em] text-text-dim">
-        No photo on file
-      </p>
+    <div
+      className={cn(
+        "relative w-[72%] -rotate-2 shadow-[0_10px_24px_rgb(0_0_0/0.55)]",
+        !frame && "bg-[#e9e4d6] px-[5.7%] pb-[22%] pt-[5.7%]",
+      )}
+    >
+      {frame ? (
+        <>
+          <img src={frame} alt="" aria-hidden className="relative block w-full" />
+          <div
+            className="absolute"
+            style={{
+              top: `${POLAROID_WINDOW.top}%`,
+              left: `${POLAROID_WINDOW.left}%`,
+              width: `${POLAROID_WINDOW.width}%`,
+              height: `${POLAROID_WINDOW.height}%`,
+            }}
+          >
+            {photo}
+          </div>
+        </>
+      ) : (
+        <div className="relative aspect-square w-full">{photo}</div>
+      )}
+      {!portrait && <span className="sr-only">No photo on file</span>}
     </div>
   );
 }
