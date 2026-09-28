@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Backdrop } from "../Backdrop";
 import { INTERVIEW_FIXERS, fixerVoice } from "../interview";
-import { playlist } from "../music/soundtrack";
+import { playlist, songOf } from "../music/soundtrack";
 
 const ART_GUIDE = readFileSync("docs/art-style.md", "utf8");
 const SOUNDTRACK = readFileSync("docs/soundtrack.md", "utf8");
@@ -38,6 +38,9 @@ describe("backdrop names", () => {
 
 describe("soundtrack names", () => {
   it("has a written prompt for every track in the rotation", () => {
-    for (const track of playlist()) expect(SOUNDTRACK, track).toContain(`\`${track}.mp3\``);
+    // A second take (-v2) shares its song's prompt.
+    for (const track of playlist()) {
+      expect(SOUNDTRACK, track).toContain(`\`${songOf(track)}.mp3\``);
+    }
   });
 });

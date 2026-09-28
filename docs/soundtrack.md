@@ -36,6 +36,10 @@ never a code change; `src/features/chargen/music/soundtrack.ts` finds them by
 name. A test checks that every track in the rotation has its prompt here, so
 write the prompt down when you add one.
 
+**A second take is `-v2` on the end** (`music-badlands-highway-v2.m4a`, then
+`-v3`, and so on). Every take plays, never straight after another take of the
+same song, and they all share the song's one prompt below.
+
 What that asks of a track, now that any of them can play under any step:
 
 - **Stay under the reading.** It plays at a third of full volume behind text
