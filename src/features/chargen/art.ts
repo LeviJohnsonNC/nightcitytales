@@ -82,6 +82,22 @@ export function uploadedAsset(name: string): string | null {
   );
 }
 
+/**
+ * Every uploaded asset whose name starts with `prefix`, by bare name (no
+ * extension), each once. For a slot that is a SET rather than one file — the
+ * creator's playlist is every `music-*` track there is — so adding one is an
+ * upload, never a code change.
+ */
+export function uploadedAssetNames(prefix: string): string[] {
+  const key = prefix.toLowerCase();
+  const names = new Set<string>();
+  for (const name of [...POINTERS.keys(), ...COMMITTED.keys()]) {
+    const bare = name.toLowerCase().replace(/\.[^.]+$/, "");
+    if (bare.startsWith(key) && uploadedAsset(bare)) names.add(bare);
+  }
+  return [...names].sort();
+}
+
 export type FocalPoint = [number, number];
 export type Presentation = "masc" | "femme" | "androgynous";
 

@@ -1,45 +1,52 @@
 /**
  * The character creator's soundtrack, played.
  *
- * One player for the whole creator, crossfading between cues as the scene
- * changes. It is a module rather than a component because the reveal's track
- * has to outlive the page that starts it: "Enter Night City" navigates to the
- * cold open and the music keeps going.
+ * A shuffled playlist (`soundtrack.ts`): one track after another, each fading
+ * into the next a few seconds before it ends, reshuffling when the round is
+ * done. Where the player is in the creator no longer decides what plays — the
+ * steps took thirty seconds or ten minutes, and music cut to fit them either
+ * stopped short or wore out.
  *
- * Two voices decide what plays: the BASE cue, set by the step, and an OVERRIDE
- * a part of a step can hold while it is on screen (the Lifepath's "who is still
- * out there" chapter). Keeping them apart means it does not matter which of the
- * two effects React runs first.
+ * It is a module rather than a component because the music has to outlive the
+ * page that starts it: "Enter Night City" navigates to the cold open, and the
+ * track that was playing carries on into it and ends there, with nothing after.
  *
- * It tries to play as soon as a cue is set. Arriving from the roster is a
- * click, and a browser that has seen one lets the page play sound; waiting for
- * a SECOND touch, as this once did, left the meet silent until the player
- * clicked something on it. When the browser does refuse — a reload, or /create
- * opened directly, where no page can play sound before a touch — the player is
- * told the music is waiting (`onMusicBlocked`) and the next touch starts it.
+ * It tries to play as soon as the creator opens. Arriving from the roster is a
+ * click, and a browser that has seen one lets the page play sound. When the
+ * browser does refuse — a reload, or /create opened directly, where no page
+ * can play sound before a touch — the player is told the music is waiting
+ * (`onMusicBlocked`) and the next touch starts it.
  *
- * Two audio elements are made once and reused for every cue, crossfading
- * between them, rather than a new one per cue: Safari unlocks an element, not
- * a page, so an element that has played once may play again unprompted.
+ * Two audio elements are made once and reused for every track, crossfading
+ * between them: Safari unlocks an element, not a page, so an element that has
+ * played once may play again unprompted.
  *
  * Nothing plays while the tab is hidden or when the player has turned it off.
- * A cue with no uploaded file is silence, so the creator works the same before
- * the soundtrack exists. Everything is inert outside a browser.
+ * With no tracks uploaded it is silence, and the creator works the same.
+ * Everything is inert outside a browser.
  */
 import { uploadedAsset } from "../art";
-import { CUE_FILES, cueLoops, type Cue } from "./soundtrack";
+import { playlist, shuffleRound } from "./soundtrack";
 
 const STORAGE_KEY = "nct.music";
 /** Music sits under the reading, never over it. */
 const LEVEL = 0.35;
+/** Starting, stopping, pausing: quick enough to feel like a response. */
 const FADE_MS = 1400;
+/** One track into the next: long enough to be a blend rather than a cut. */
+const CROSSFADE_MS = 5000;
 const STEP_MS = 50;
 
-type Voice = { cue: Cue; el: HTMLAudioElement };
+type Voice = { track: string; el: HTMLAudioElement };
 
-let base: Cue | null = null;
-let override: Cue | null = null;
+/** Whether the creator (or the track it handed on) wants music at all. */
+let active = false;
+/** Play out the current track, then stop: the hand-off into night one. */
+let finishing = false;
 let current: Voice | null = null;
+/** What is left of this round of the shuffle. */
+let queue: string[] = [];
+let lastPlayed: string | null = null;
 /** False only after the browser has refused to play; a touch sets it again. */
 let allowed = true;
 /** When a touch last started music the browser had refused, so the toggle can ignore that click. */
@@ -72,11 +79,11 @@ function setAllowed(next: boolean): void {
 }
 
 /** Ramp one element's volume, then optionally let it go. A new fade cancels the old. */
-function fade(el: HTMLAudioElement, to: number, then?: () => void): void {
+function fade(el: HTMLAudioElement, to: number, ms: number, then?: () => void): void {
   const running = fades.get(el);
   if (running !== undefined) window.clearInterval(running);
   const from = el.volume;
-  const steps = Math.max(1, Math.round(FADE_MS / STEP_MS));
+  const steps = Math.max(1, Math.round(ms / STEP_MS));
   let i = 0;
   const timer = window.setInterval(() => {
     i += 1;
@@ -90,83 +97,126 @@ function fade(el: HTMLAudioElement, to: number, then?: () => void): void {
   fades.set(el, timer);
 }
 
-function release(voice: Voice | null): void {
+function release(voice: Voice | null, ms = FADE_MS): void {
   if (!voice) return;
-  fade(voice.el, 0, () => voice.el.pause());
+  fade(voice.el, 0, ms, () => voice.el.pause());
+}
+
+/** The two elements, made once, each handing on to the next track as it nears its end. */
+function elements(): HTMLAudioElement[] {
+  if (pool.length > 0) return pool;
+  pool = [new Audio(), new Audio()];
+  for (const el of pool) {
+    el.preload = "auto";
+    el.loop = false;
+    const nearEnd = () => {
+      if (current?.el !== el || !Number.isFinite(el.duration)) return;
+      if (el.duration - el.currentTime <= CROSSFADE_MS / 1000) advance();
+    };
+    el.addEventListener("timeupdate", nearEnd);
+    el.addEventListener("ended", () => {
+      if (current?.el === el) advance();
+    });
+  }
+  return pool;
 }
 
 /** The element not carrying `outgoing`, which is still fading out and must be left to finish. */
 function spareElement(outgoing: HTMLAudioElement | undefined): HTMLAudioElement {
-  if (pool.length === 0) {
-    pool = [new Audio(), new Audio()];
-    for (const el of pool) el.preload = "auto";
-  }
-  return pool[0] === outgoing ? pool[1]! : pool[0]!;
+  const [a, b] = elements();
+  return a === outgoing ? b! : a!;
 }
 
 /**
  * A play() the browser turned down. Only the autoplay rule waits for a touch;
- * a file this browser cannot decode is silence, and asking the player to tap
+ * a file this browser cannot decode is skipped, and asking the player to tap
  * for music that will never come would be a lie.
  */
-function refused(error: unknown): void {
-  if ((error as { name?: string } | null)?.name === "NotAllowedError") setAllowed(false);
+function refused(error: unknown): boolean {
+  if ((error as { name?: string } | null)?.name !== "NotAllowedError") return false;
+  setAllowed(false);
+  return true;
 }
 
-function wanted(): Cue | null {
-  return override ?? base;
+/** The next track to play, reshuffling when the round runs out. */
+function nextTrack(): string | null {
+  if (queue.length === 0) queue = shuffleRound(playlist(), lastPlayed);
+  return queue.shift() ?? null;
 }
 
-function apply(): void {
-  if (!browser()) return;
-  const cue = wanted();
-  if (!enabled || cue === null) {
-    release(current);
-    current = null;
-    return;
-  }
-  // A hidden tab pauses in place, so coming back picks the track up where it was.
-  if (document.hidden) {
-    current?.el.pause();
-    return;
-  }
-  if (!allowed) return; // Refused once already; the next touch tries again.
-  if (current?.cue === cue) {
-    if (current.el.paused && !current.el.ended) {
-      const el = current.el;
-      void el.play().then(
-        () => fade(el, LEVEL),
-        (e: unknown) => refused(e),
-      );
-    }
-    return;
-  }
-  const url = uploadedAsset(CUE_FILES[cue]);
-  const outgoing = current;
-  release(outgoing);
-  current = null;
-  if (!url) return; // Not uploaded yet: silence, and the creator carries on.
+/** Start the next track on the spare element, fading it in over `ms`. */
+function startNext(outgoing: Voice | null, ms: number, attempts = playlist().length): void {
+  const track = nextTrack();
+  const url = track ? uploadedAsset(track) : null;
+  if (!track || !url) return; // Nothing uploaded: silence, and the creator carries on.
   const el = spareElement(outgoing?.el);
   const running = fades.get(el);
   if (running !== undefined) window.clearInterval(running);
   fades.delete(el);
   el.pause();
   el.src = url;
-  el.loop = cueLoops(cue);
   el.volume = 0;
   el.currentTime = 0;
-  const voice = { cue, el };
+  const voice = { track, el };
   current = voice;
+  lastPlayed = track;
   void el.play().then(
     () => {
-      if (current === voice) fade(el, LEVEL);
+      if (current === voice) fade(el, LEVEL, ms);
     },
     (e: unknown) => {
-      // Keep nothing half-started; if it was the autoplay rule, the next touch plays the cue.
-      if (current === voice) current = null;
-      refused(e);
+      if (current !== voice) return;
+      current = null;
+      if (refused(e)) {
+        // Keep the track for the touch that will start it.
+        queue.unshift(track);
+        return;
+      }
+      // Undecodable here: try the next one, once round the list at most.
+      if (attempts > 1) startNext(outgoing, ms, attempts - 1);
     },
   );
+}
+
+/** The current track is nearly over: hand on to the next, or end the music if it was the last. */
+function advance(): void {
+  const outgoing = current;
+  current = null;
+  if (finishing || !active) {
+    release(outgoing, CROSSFADE_MS);
+    active = false;
+    finishing = false;
+    return;
+  }
+  release(outgoing, CROSSFADE_MS);
+  if (!enabled || !allowed || document.hidden) return;
+  startNext(outgoing, CROSSFADE_MS);
+}
+
+function apply(): void {
+  if (!browser()) return;
+  if (!active || !enabled) {
+    release(current);
+    current = null;
+    return;
+  }
+  // A hidden tab pauses in place, so coming back picks the track up where it was.
+  if (document.hidden) {
+    for (const el of pool) el.pause();
+    return;
+  }
+  if (!allowed) return; // Refused once already; the next touch tries again.
+  if (current) {
+    if (current.el.paused && !current.el.ended) {
+      const el = current.el;
+      void el.play().then(
+        () => fade(el, LEVEL, FADE_MS),
+        (e: unknown) => refused(e),
+      );
+    }
+    return;
+  }
+  startNext(null, FADE_MS);
 }
 
 function listen(): void {
@@ -184,23 +234,39 @@ function listen(): void {
   document.addEventListener("visibilitychange", apply);
 }
 
-/** The step's cue. Null stops the music (leaving the creator). */
-export function setBaseCue(cue: Cue | null): void {
+/** The creator is open: play the shuffled soundtrack. Already playing, it carries on. */
+export function startMusic(): void {
   listen();
-  base = cue;
+  active = true;
+  finishing = false;
   apply();
 }
 
-/** A part of a step holding its own cue while on screen; null hands back to the step. */
-export function setCueOverride(cue: Cue | null): void {
-  listen();
-  override = cue;
+/** Leaving the creator: fade out now. */
+export function stopMusic(): void {
+  active = false;
+  finishing = false;
   apply();
 }
 
-/** What is playing, or would be once the page is touched. */
-export function currentCue(): Cue | null {
-  return wanted();
+/**
+ * Leaving the creator INTO the game: let the track that is playing run out,
+ * then stop, so the character walks into night one under the music they were
+ * made to and nothing starts after it.
+ */
+export function finishTrackThenStop(): void {
+  if (current && !current.el.paused) finishing = true;
+  else stopMusic();
+}
+
+/** What is playing now, by name; null when nothing is. */
+export function currentTrack(): string | null {
+  return current?.track ?? null;
+}
+
+/** Whether the creator currently wants music (it may still be waiting for a touch). */
+export function isMusicActive(): boolean {
+  return active;
 }
 
 export function isMusicEnabled(): boolean {

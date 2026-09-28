@@ -1,43 +1,45 @@
 /**
- * Which piece of music belongs to which part of making a character.
+ * The character creator's soundtrack: every track there is, shuffled.
  *
- * Five cues, each a file the player's soundtrack is uploaded as. The creator
- * is one long scene with a shape — a quiet, dangerous room; a conversation; the
- * people who are waiting; the montage of becoming somebody; the reveal — and
- * the music follows the shape rather than the page.
+ * It used to give each part of the creator its own cue — a track for the
+ * meet, one for the interview, one for the build — and it did not survive
+ * play. A player spends thirty seconds on one step and ten minutes on another,
+ * so a cue either cut off before it had gone anywhere or looped until it wore
+ * thin. Now the creator is simply scored: the tracks play one after another in
+ * a shuffled order, each fading into the next.
  *
- * Pure: a step in, a cue out. What plays it is `musicDirector.ts`.
+ * The playlist is every uploaded file named `music-…`, so a new track joins
+ * the rotation by being uploaded; nothing here lists them.
+ *
+ * Pure apart from reading which files exist. What plays it is `musicDirector.ts`.
  */
-import type { ChargenStep } from "../steps";
+import { uploadedAssetNames } from "../art";
 
-export type Cue = "meet" | "interview" | "people" | "build" | "reveal";
+/** The file-name prefix that puts a track in the creator's rotation. */
+export const TRACK_PREFIX = "music-";
 
-/** The uploaded file each cue plays, by name. A missing file is silence. */
-export const CUE_FILES: Record<Cue, string> = {
-  meet: "music-meet.mp3",
-  interview: "music-interview.mp3",
-  people: "music-people.mp3",
-  build: "music-build.mp3",
-  reveal: "music-reveal.mp3",
-};
-
-/** The reveal plays once and carries into night one; everything else loops. */
-export function cueLoops(cue: Cue): boolean {
-  return cue !== "reveal";
+/** Every track in the rotation, by name. Empty until something is uploaded. */
+export function playlist(): string[] {
+  return uploadedAssetNames(TRACK_PREFIX);
 }
 
-/** The cue for a step. The people chapter of the Lifepath overrides this from inside it. */
-export function cueForStep(step: ChargenStep): Cue {
-  switch (step) {
-    case "fixer":
-      return "meet";
-    case "role":
-    case "method":
-    case "lifepath":
-      return "interview";
-    case "review":
-      return "reveal";
-    default:
-      return "build";
+/**
+ * One round of the rotation: every track once, in a random order. When the
+ * last round ended on the track this one would open with, the two swap, so a
+ * reshuffle never plays the same track twice in a row.
+ */
+export function shuffleRound(
+  tracks: readonly string[],
+  lastPlayed: string | null,
+  rng: () => number = Math.random,
+): string[] {
+  const round = [...tracks];
+  for (let i = round.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [round[i], round[j]] = [round[j]!, round[i]!];
   }
+  if (round.length > 1 && round[0] === lastPlayed) {
+    [round[0], round[1]] = [round[1]!, round[0]!];
+  }
+  return round;
 }

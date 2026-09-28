@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Backdrop } from "../Backdrop";
 import { INTERVIEW_FIXERS, fixerVoice } from "../interview";
-import { CUE_FILES } from "../music/soundtrack";
+import { playlist } from "../music/soundtrack";
 
 const ART_GUIDE = readFileSync("docs/art-style.md", "utf8");
 const SOUNDTRACK = readFileSync("docs/soundtrack.md", "utf8");
@@ -37,7 +37,7 @@ describe("backdrop names", () => {
 });
 
 describe("soundtrack names", () => {
-  it("asks for every cue the creator plays", () => {
-    for (const file of Object.values(CUE_FILES)) expect(SOUNDTRACK, file).toContain(file);
+  it("has a written prompt for every track in the rotation", () => {
+    for (const track of playlist()) expect(SOUNDTRACK, track).toContain(`\`${track}.mp3\``);
   });
 });

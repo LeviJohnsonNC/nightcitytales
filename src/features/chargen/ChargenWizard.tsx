@@ -32,8 +32,7 @@ import { methodChangeLosesWork, stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
 import { useDevelopingPortrait } from "./useDevelopingPortrait";
 import { MusicToggle } from "./music/MusicToggle";
-import { currentCue, setBaseCue } from "./music/musicDirector";
-import { cueForStep } from "./music/soundtrack";
+import { finishTrackThenStop, startMusic, stopMusic } from "./music/musicDirector";
 import { stepStatuses, validateStep } from "./validation";
 
 type PendingChange =
@@ -89,20 +88,16 @@ export function ChargenWizard({ userId }: { userId: string }) {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [state.step]);
 
-  // The soundtrack follows the scene. No cleanup here on purpose: two steps
-  // that share a cue must not restart it.
+  // The creator is scored by a shuffled playlist, whatever the step. Leaving
+  // it for the game lets the track that is playing carry the character into
+  // night one and end there; leaving it any other way fades it out.
   useEffect(() => {
-    setBaseCue(cueForStep(state.step));
-  }, [state.step]);
-
-  // Leaving the creator stops the music, except the reveal, which carries the
-  // character into night one.
-  useEffect(
-    () => () => {
-      if (currentCue() !== "reveal") setBaseCue(null);
-    },
-    [],
-  );
+    startMusic();
+    return () => {
+      if (window.location.pathname.startsWith("/play/")) finishTrackThenStop();
+      else stopMusic();
+    };
+  }, []);
 
   const hasDependentData =
     state.skills.length > 0 ||
