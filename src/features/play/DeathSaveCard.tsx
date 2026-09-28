@@ -6,6 +6,7 @@
 import { useState } from "react";
 import type { BeginTurnResult } from "@/engine";
 import { DiceRoll } from "@/features/chargen/DiceRoll";
+import { DeathMonitor } from "@/features/dice/DeathMonitor";
 import type { PendingDeathSave } from "./deathSavePrompt";
 
 export function DeathSaveCard({
@@ -41,58 +42,51 @@ export function DeathSaveCard({
         one failed save is death.
       </p>
 
-      {save === null ? (
-        <div className="flex items-center gap-3">
-          <DiceRoll
-            sides={10}
-            value={null}
-            label="Roll your Death Save"
-            size={52}
-            disabled={busy}
-            roll={() => {
-              const rolled = roll();
-              return {
-                face: rolled.deathSave?.roll ?? 1,
-                commit: () => {
-                  setResult(rolled);
-                  onSettled(rolled);
-                },
-              };
-            }}
-          />
-          <div>
-            <p className="text-sm font-semibold">Roll 1d10</p>
-            <p className="text-xs text-muted-foreground">
+      {/* One die, on the monitor, from the roll to the verdict: the trace
+          behind it is the only thing that changes. */}
+      <DeathMonitor state={save === null ? "waiting" : save.survived ? "survived" : "dead"}>
+        <DiceRoll
+          sides={10}
+          value={save?.roll ?? null}
+          label="Roll your Death Save"
+          size={52}
+          disabled={busy || save !== null}
+          tone={save === null ? null : save.survived ? "win" : "fumble"}
+          roll={() => {
+            const rolled = roll();
+            return {
+              face: rolled.deathSave?.roll ?? 1,
+              tone: rolled.deathSave && !rolled.deathSave.survived ? "fumble" : null,
+              commit: () => {
+                setResult(rolled);
+                onSettled(rolled);
+              },
+            };
+          }}
+        />
+        {save === null ? (
+          <p className="text-sm">
+            <span className="font-semibold">Roll 1d10.</span>{" "}
+            <span className="text-muted-foreground">
               You need under {pending.body} after the +{pending.penalty} penalty.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <DiceRoll
-              sides={10}
-              value={save.roll}
-              roll={() => ({ face: save.roll, commit: () => {} })}
-              size={52}
-              disabled
-            />
-            <p
-              className={
-                save.survived
-                  ? "text-lg font-bold text-accent"
-                  : "text-lg font-bold text-destructive"
-              }
-            >
-              {save.survived ? "Still breathing" : "Dead"}
-            </p>
-          </div>
-          <p className="font-mono text-xs text-muted-foreground">
-            d10({save.roll}) + {save.penalty} = {save.effective} vs BODY {pending.body}
-            {save.autoFail ? " — natural 10, automatic failure" : ""}. Next save at +
-            {save.penaltyAfter}.
+            </span>
           </p>
-        </div>
+        ) : (
+          <p
+            className={
+              save.survived ? "text-lg font-bold text-accent" : "text-lg font-bold text-destructive"
+            }
+          >
+            {save.survived ? "Still breathing" : "Dead"}
+          </p>
+        )}
+      </DeathMonitor>
+      {save !== null && (
+        <p className="font-mono text-xs text-muted-foreground">
+          d10({save.roll}) + {save.penalty} = {save.effective} vs BODY {pending.body}
+          {save.autoFail ? " — natural 10, automatic failure" : ""}. Next save at +
+          {save.penaltyAfter}.
+        </p>
       )}
     </section>
   );

@@ -305,17 +305,49 @@ function applyMix(): void {
       filter.gain.value = eq.on ? (eq.bands[i] ?? 0) : 0;
     });
     graph.panner.pan.value = prefs.balance;
-    graph.master.gain.value = prefs.volume;
+    graph.master.gain.value = prefs.volume * duckLevel;
     return;
   }
-  for (const el of pool) el.volume = clamp01((levels.get(el) ?? 0) * prefs.volume);
+  for (const el of pool) el.volume = clamp01((levels.get(el) ?? 0) * prefs.volume * duckLevel);
 }
 
 function setLevel(el: HTMLAudioElement, level: number): void {
   levels.set(el, level);
   const voice = graph?.voices.get(el);
   if (voice) voice.gain.value = level;
-  else el.volume = Math.max(0, Math.min(1, level * prefs.volume));
+  else el.volume = Math.max(0, Math.min(1, level * prefs.volume * duckLevel));
+}
+
+// ── ducking ──────────────────────────────────────────────────────────────
+
+/** How far under the music sits while something else speaks: 1 is not at all. */
+let duckLevel = 1;
+let duckTimer: number | null = null;
+let duckUntil = 0;
+/** How far the music dips under a dice roll. */
+const DUCK_DEPTH = 0.65;
+
+/**
+ * Dip the music for `ms`, then bring it back: a dice roll is heard over the
+ * soundtrack rather than fighting it. Overlapping dips extend one another
+ * instead of stacking deeper.
+ */
+export function duckMusic(ms: number): void {
+  if (typeof window === "undefined") return;
+  duckUntil = Math.max(duckUntil, performance.now() + ms);
+  if (duckTimer !== null) return;
+  duckTimer = window.setInterval(() => {
+    const target = performance.now() < duckUntil ? DUCK_DEPTH : 1;
+    // Down fast, back up slowly.
+    const rate = target < duckLevel ? 0.35 : 0.06;
+    duckLevel += (target - duckLevel) * rate;
+    if (target === 1 && Math.abs(1 - duckLevel) < 0.01) {
+      duckLevel = 1;
+      window.clearInterval(duckTimer!);
+      duckTimer = null;
+    }
+    applyMix();
+  }, STEP_MS);
 }
 
 /** Ramp one element's fade level, then optionally let it go. A new fade cancels the old. */

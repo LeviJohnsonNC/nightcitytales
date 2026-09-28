@@ -11,7 +11,9 @@
  * opposing die can never be re-rolled into a better answer.
  */
 import { useState } from "react";
-import { DiceRoll } from "@/features/chargen/DiceRoll";
+import { DiceRoll, type DieTone } from "@/features/chargen/DiceRoll";
+import { playClash } from "@/features/dice/fx";
+import { RollMath } from "@/features/dice/RollMath";
 import { LuckStepper } from "./LuckStepper";
 import { describeOutlook } from "./outlook";
 import type { CheckRoll, PendingCheck, PendingOpposition } from "./checkPrompt";
@@ -36,28 +38,9 @@ function SideHeading({ who, detail }: { who: string; detail: string }) {
   );
 }
 
-/** The verdict line, in the language the rules use for it. */
-function Verdict({ roll }: { roll: Extract<CheckRoll, { kind: "opposed" }> }) {
-  const { result } = roll;
-  if (result.tie) {
-    return (
-      <div>
-        <p className="text-lg font-bold text-destructive">Failure — tied</p>
-        <p className="text-xs text-muted-foreground">
-          Both totals came to {result.actor.total}. A tie goes to the one resisting.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <p
-      className={
-        result.success ? "text-lg font-bold text-accent" : "text-lg font-bold text-destructive"
-      }
-    >
-      {result.success ? "Success" : "Failure"} by {Math.abs(result.margin)}
-    </p>
-  );
+/** How a check's first die lands: a natural 10 flares, a natural 1 glitches. */
+function toneOf(critical: "success" | "failure" | null): DieTone {
+  return critical === "success" ? "crit" : critical === "failure" ? "fumble" : null;
 }
 
 /** The wound tax on this roll, stated plainly rather than buried in the total. */
@@ -101,6 +84,10 @@ function OpposedBody({
   // much of that result the player has turned over so far.
   const [rolled, setRolled] = useState<Extract<CheckRoll, { kind: "opposed" }> | null>(null);
   const [opponentRevealed, setOpponentRevealed] = useState(false);
+  // The two dice meet, then the result is shown on them: the loser shatters.
+  const [clash, setClash] = useState(false);
+  const [decided, setDecided] = useState(false);
+  const actorWon = rolled ? rolled.result.success : null;
 
   const actorDie = rolled?.result.actor.rolls[0] ?? null;
   const actorCrit =
@@ -148,28 +135,29 @@ function OpposedBody({
         disabled={busy || rolled !== null}
       />
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className={`flex flex-wrap items-center gap-4 ${clash ? "dice-clash" : ""}`}>
         <div className="flex items-center gap-2">
-          <DiceRoll
-            sides={10}
-            value={actorDie}
-            label={`Roll your 1d10 for ${pending.skillName}`}
-            size={52}
-            disabled={busy || rolled !== null}
-            roll={() => {
-              const next = roll(luck);
-              if (next.kind !== "opposed") throw new Error("This check is opposed.");
-              return { face: next.result.actor.rolls[0] ?? 1, commit: () => setRolled(next) };
-            }}
-          />
-          {actorCrit !== null && (
+          <span className="clash-left inline-block">
             <DiceRoll
               sides={10}
-              value={actorCrit}
-              roll={() => ({ face: actorCrit, commit: () => {} })}
-              size={38}
-              disabled
+              value={actorDie}
+              label={`Roll your 1d10 for ${pending.skillName}`}
+              size={52}
+              disabled={busy || rolled !== null}
+              tone={decided ? (actorWon ? "win" : "lose") : null}
+              roll={() => {
+                const next = roll(luck);
+                if (next.kind !== "opposed") throw new Error("This check is opposed.");
+                return {
+                  face: next.result.actor.rolls[0] ?? 1,
+                  tone: toneOf(next.result.actor.critical),
+                  commit: () => setRolled(next),
+                };
+              }}
             />
+          </span>
+          {actorCrit !== null && (
+            <DiceRoll sides={10} value={actorCrit} size={38} autoRoll="mount" delay={150} />
           )}
           <div>
             <p className="text-sm font-semibold">Your roll</p>
@@ -179,34 +167,42 @@ function OpposedBody({
           </div>
         </div>
 
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">vs</p>
+        <p className="clash-vs font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          vs
+        </p>
 
         <div className="flex items-center gap-2">
-          <DiceRoll
-            sides={10}
-            value={opponentRevealed ? opponentDie : null}
-            label={`Roll ${opposition.npcName}'s 1d10`}
-            size={52}
-            disabled={busy || rolled === null || opponentRevealed}
-            roll={() => {
-              if (!rolled) throw new Error("Roll your own die first.");
-              return {
-                face: rolled.result.opponent.rolls[0] ?? 1,
-                commit: () => {
-                  setOpponentRevealed(true);
-                  onSettled(rolled);
-                },
-              };
-            }}
-          />
-          {opponentRevealed && opponentCrit !== null && (
+          <span className="clash-right inline-block">
             <DiceRoll
               sides={10}
-              value={opponentCrit}
-              roll={() => ({ face: opponentCrit, commit: () => {} })}
-              size={38}
-              disabled
+              value={opponentRevealed ? opponentDie : null}
+              label={`Roll ${opposition.npcName}'s 1d10`}
+              size={52}
+              disabled={busy || rolled === null || opponentRevealed}
+              tone={decided ? (actorWon ? "lose" : "win") : null}
+              roll={() => {
+                if (!rolled) throw new Error("Roll your own die first.");
+                return {
+                  face: rolled.result.opponent.rolls[0] ?? 1,
+                  tone: toneOf(rolled.result.opponent.critical),
+                  commit: () => {
+                    setOpponentRevealed(true);
+                    setClash(true);
+                    window.setTimeout(
+                      () => {
+                        setDecided(true);
+                        playClash();
+                      },
+                      opponentCrit !== null ? 900 : 260,
+                    );
+                    onSettled(rolled);
+                  },
+                };
+              }}
             />
+          </span>
+          {opponentRevealed && opponentCrit !== null && (
+            <DiceRoll sides={10} value={opponentCrit} size={38} autoRoll="mount" delay={150} />
           )}
           <div>
             <p className="text-sm font-semibold">{opposition.npcName}</p>
@@ -231,10 +227,18 @@ function OpposedBody({
 
       {rolled && opponentRevealed && (
         <div className="space-y-2">
-          <Verdict roll={rolled} />
+          <RollMath
+            rolls={rolled.result.actor.rolls}
+            modifiers={rolled.result.actor.modifiers}
+            total={rolled.result.actor.total}
+            target={{ kind: "vs", total: rolled.result.opponent.total, name: opposition.npcName }}
+            success={rolled.result.success}
+            margin={rolled.result.tie ? null : rolled.result.margin}
+            tie={rolled.result.tie}
+            delay={opponentCrit !== null ? 1100 : 450}
+          />
           <CritLine critical={rolled.result.actor.critical} who="Your" />
           <CritLine critical={rolled.result.opponent.critical} who={`${opposition.npcName}'s`} />
-          <p className="font-mono text-xs text-muted-foreground">{rolled.result.actor.formula}</p>
           <p className="font-mono text-xs text-muted-foreground">
             {rolled.result.opponent.formula}
           </p>
@@ -291,6 +295,7 @@ function DvBody({
                 if (next.kind !== "dv") throw new Error("This check is rolled against a DV.");
                 return {
                   face: next.result.rolls[0] ?? 1,
+                  tone: toneOf(next.result.critical),
                   commit: () => {
                     setRolled(next);
                     onSettled(next);
@@ -307,36 +312,29 @@ function DvBody({
           </div>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center gap-3">
             <DiceRoll
               sides={10}
               value={result.rolls[0] ?? null}
-              roll={() => ({ face: result.rolls[0] ?? 1, commit: () => {} })}
               size={52}
-              disabled
+              tone={toneOf(result.critical)}
+              flashOnMount
             />
             {critDie !== null && (
-              <DiceRoll
-                sides={10}
-                value={critDie}
-                roll={() => ({ face: critDie, commit: () => {} })}
-                size={40}
-                disabled
-              />
+              <DiceRoll sides={10} value={critDie} size={40} autoRoll="mount" delay={150} />
             )}
-            <p
-              className={
-                result.success
-                  ? "text-lg font-bold text-accent"
-                  : "text-lg font-bold text-destructive"
-              }
-            >
-              {result.success ? "Success" : "Failure"} by {Math.abs(result.total - dv)}
-            </p>
           </div>
+          <RollMath
+            rolls={result.rolls}
+            modifiers={result.modifiers}
+            total={result.total}
+            target={{ kind: "dv", dv }}
+            success={result.success}
+            margin={result.total - dv}
+            delay={critDie !== null ? 1000 : 60}
+          />
           <CritLine critical={result.critical} who="" />
-          <p className="font-mono text-xs text-muted-foreground">{result.formula}</p>
         </div>
       )}
     </>

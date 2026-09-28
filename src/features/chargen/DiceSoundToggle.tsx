@@ -7,9 +7,9 @@ import {
   setDiceSoundEnabled,
 } from "./diceSound";
 
-/** Small speaker toggle for dice audio. Off by default, persisted. */
+/** Small speaker toggle for dice audio. On by default, persisted. */
 export function DiceSoundToggle({ className }: { className?: string }) {
-  const [on, setOn] = useState(false);
+  const [on, setOn] = useState(true);
 
   // Read the persisted value on the client only (avoids SSR mismatch).
   useEffect(() => {
