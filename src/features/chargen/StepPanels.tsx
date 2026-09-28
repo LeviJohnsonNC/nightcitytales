@@ -24,7 +24,8 @@ export function StepPanel({
   step: ChargenStep;
   state: ChargenState;
   userId: string;
-  onRequestMethod: (method: CreationMethod) => void;
+  /** With `advance`, choosing the terms also moves on to the next step. */
+  onRequestMethod: (method: CreationMethod, advance?: boolean) => void;
   /** With `advance`, choosing the Role also moves on to the next step. */
   onRequestRole: (roleId: string, advance?: boolean) => void;
 }) {

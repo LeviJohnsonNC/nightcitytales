@@ -27,6 +27,8 @@ export type FixerVoice = {
   ask: Partial<Record<ChargenStep, string>>;
   /** Their reaction to the Role the character picks. */
   roles: Record<string, string>;
+  /** Their reaction to the terms the character picks, by creation method. */
+  methods: Record<string, string>;
   /** How they close the file. */
   verdict: string;
   /** How they open each chapter of the Lifepath. */
@@ -76,6 +78,15 @@ export function fixerSays(
   if (step === "fixer") return voice.greeting;
   if (step === "role" && roleId && voice.roles[roleId]) return voice.roles[roleId];
   return voice.ask[step] ?? null;
+}
+
+/** The fixer's reaction to the terms the character picked, or null. */
+export function fixerMethodReaction(
+  name: string | null | undefined,
+  method: string | null,
+): string | null {
+  if (!method) return null;
+  return fixerVoice(name)?.methods[method] ?? null;
 }
 
 /** What the fixer says opening a chapter of the Lifepath. */
