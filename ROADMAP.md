@@ -50,11 +50,12 @@ The plan, in phases:
    cap of six, so three stay the player's; drawing one by hand stops
    development. `faceFact` pins age, face shape, eyes and one mark from the
    draft's seed so every stage describes the same person.
-5. **Music and backdrops — shipped, waiting on files.** A soundtrack in five
-   cues that follows the scene rather than the page (the meet, the interview,
-   the people chapter, the build, the reveal), crossfading, off until the
-   player touches the page, remembered on or off, and silent for any cue not
-   uploaded yet. The reveal plays once and carries into night one. Each fixer's
+5. **Music and backdrops — shipped.** The creator plays every `music-…` track
+   in a shuffled order, each crossfading into the next; the per-step cues it
+   started with were dropped because steps last thirty seconds or ten minutes
+   and the music could not fit either. It starts on arrival from the roster,
+   waits for a touch where the browser insists, is remembered on or off, and
+   the track playing at "Enter Night City" finishes in the game. Each fixer's
    venue sits behind their questions, and the meet, the reveal and each
    Lifepath chapter have backdrops. Every file is named in `docs/soundtrack.md`
    or `docs/art-style.md`, and a slot with no file keeps the plain look.

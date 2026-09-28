@@ -1,45 +1,65 @@
 import { describe, expect, it } from "vitest";
-import { CHARGEN_STEPS } from "../steps";
-import { CUE_FILES, cueForStep, cueLoops } from "../music/soundtrack";
+import { seededRng } from "@/engine";
+import { playlist, shuffleRound, TRACK_PREFIX } from "../music/soundtrack";
 import {
-  currentCue,
+  currentTrack,
+  finishTrackThenStop,
+  isMusicActive,
   isMusicEnabled,
-  setBaseCue,
-  setCueOverride,
   setMusicEnabled,
+  startMusic,
+  stopMusic,
 } from "../music/musicDirector";
 
-describe("the creator's soundtrack", () => {
-  it("gives every step a cue, and follows the shape of the scene", () => {
-    for (const step of CHARGEN_STEPS) expect(CUE_FILES[cueForStep(step.id)]).toBeTruthy();
-    expect(cueForStep("fixer")).toBe("meet");
-    expect(cueForStep("role")).toBe("interview");
-    expect(cueForStep("lifepath")).toBe("interview");
-    expect(cueForStep("skills")).toBe("build");
-    expect(cueForStep("identity")).toBe("build");
-    expect(cueForStep("review")).toBe("reveal");
+describe("the creator's playlist", () => {
+  it("is every uploaded music- track, each once", () => {
+    const tracks = playlist();
+    // The five the creator shipped with; more join by being uploaded.
+    for (const name of ["music-meet", "music-interview", "music-people", "music-build"]) {
+      expect(tracks).toContain(name);
+    }
+    expect(new Set(tracks).size).toBe(tracks.length);
+    for (const name of tracks) expect(name.startsWith(TRACK_PREFIX)).toBe(true);
+  });
+});
+
+describe("a round of the shuffle", () => {
+  const TRACKS = ["music-a", "music-b", "music-c", "music-d", "music-e"];
+
+  it("plays every track once, in an order the seed decides", () => {
+    const round = shuffleRound(TRACKS, null, seededRng(7));
+    expect([...round].sort()).toEqual(TRACKS);
+    expect(shuffleRound(TRACKS, null, seededRng(7))).toEqual(round);
+    const orders = new Set(
+      Array.from({ length: 20 }, (_, i) => shuffleRound(TRACKS, null, seededRng(i)).join()),
+    );
+    expect(orders.size).toBeGreaterThan(5);
   });
 
-  it("loops everything but the reveal, which plays once into night one", () => {
-    expect(cueLoops("interview")).toBe(true);
-    expect(cueLoops("reveal")).toBe(false);
+  it("never opens on the track the last round ended with", () => {
+    for (let seed = 0; seed < 200; seed += 1) {
+      const round = shuffleRound(TRACKS, "music-c", seededRng(seed));
+      expect(round[0]).not.toBe("music-c");
+      expect([...round].sort()).toEqual(TRACKS);
+    }
   });
 
-  it("names every cue's file the way the art guide asks for it", () => {
-    for (const file of Object.values(CUE_FILES)) expect(file).toMatch(/^music-[a-z]+\.mp3$/);
+  it("copes with one track or none", () => {
+    expect(shuffleRound(["music-a"], "music-a")).toEqual(["music-a"]);
+    expect(shuffleRound([], null)).toEqual([]);
   });
 });
 
 describe("the director, outside a browser", () => {
-  it("does nothing and throws nothing, and an override wins over the step", () => {
-    expect(() => setBaseCue("interview")).not.toThrow();
-    expect(currentCue()).toBe("interview");
-    setCueOverride("people");
-    expect(currentCue()).toBe("people");
-    setCueOverride(null);
-    expect(currentCue()).toBe("interview");
-    setBaseCue(null);
-    expect(currentCue()).toBeNull();
+  it("does nothing and throws nothing", () => {
+    expect(() => startMusic()).not.toThrow();
+    expect(isMusicActive()).toBe(true);
+    expect(currentTrack()).toBeNull();
+    expect(() => finishTrackThenStop()).not.toThrow();
+    expect(isMusicActive()).toBe(false);
+    startMusic();
+    stopMusic();
+    expect(isMusicActive()).toBe(false);
     setMusicEnabled(false);
     expect(isMusicEnabled()).toBe(false);
     setMusicEnabled(true);

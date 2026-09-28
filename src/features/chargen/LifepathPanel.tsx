@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,6 @@ import { PeoplePicker } from "./PeoplePicker";
 import { PronounPicker } from "./PronounPicker";
 import { Backdrop } from "./Backdrop";
 import { uploadedAsset } from "./art";
-import { setCueOverride } from "./music/musicDirector";
 import "./interview.css";
 
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -211,12 +210,6 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
   const chapter = chapters[index]!;
   const next = chapters[index + 1];
   const fixer = state.castPlan?.picks.fixer ?? null;
-
-  // The people chapter has its own music; every other chapter plays the step's.
-  useEffect(() => {
-    setCueOverride(chapterId === "people" ? "people" : null);
-  }, [chapterId]);
-  useEffect(() => () => setCueOverride(null), []);
 
   function goTo(id: LifepathChapterId) {
     setChapterId(id);
