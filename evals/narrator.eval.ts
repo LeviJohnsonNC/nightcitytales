@@ -48,9 +48,11 @@ import {
 import { GM_PROMPT_VERSION } from "@/features/gm/gmSystemPrompt";
 import { LIFE_PROMPT_VERSION } from "@/features/life/lifeSystemPrompt";
 import { PAIRS, SCENARIOS, type Scenario } from "./scenarios";
+import { SESSIONS, type Session } from "./sessions";
 import { withRetry } from "./pacing";
 import { evalProvider, modelFor, runTurn } from "./runTurn";
-import { scorePair, scoreTurns } from "./score";
+import { scorePair, scoreSession, scoreTurns, type SessionTurn } from "./score";
+import { ALL_SESSION_CHECKS } from "@/features/narration/sessionChecks";
 
 /** How many times each scenario is asked. `REPEAT=N`, or `--repeat N` where the runner allows it. */
 const REPEATS = Math.max(1, Number(process.env["REPEAT"] ?? readFlag("--repeat") ?? 5));
@@ -87,11 +89,12 @@ beforeAll(() => {
       `# Narrator transcript\n\nGM prompt ${GM_PROMPT_VERSION} · Life prompt ${LIFE_PROMPT_VERSION}\n`,
     );
   }
-  const calls = (SCENARIOS.length + PAIRS.length * 2) * REPEATS;
+  const sessionCalls = SESSIONS.reduce((n, session) => n + session.inputs.length, 0);
+  const calls = (SCENARIOS.length + PAIRS.length * 2 + sessionCalls) * REPEATS;
   // Said out loud before a penny is spent, so a REPEAT=40 typo is visible
   // rather than expensive.
   console.log(
-    `\n  ${SCENARIOS.length} scenarios + ${PAIRS.length} pairs × ${REPEATS} repeat(s) = ${calls} model calls\n` +
+    `\n  ${SCENARIOS.length} scenarios + ${PAIRS.length} pairs + ${SESSIONS.length} sessions × ${REPEATS} repeat(s) = ${calls} model calls\n` +
       `  GM prompt ${GM_PROMPT_VERSION} · Life prompt ${LIFE_PROMPT_VERSION}\n`,
   );
 });
@@ -303,6 +306,98 @@ for (const pair of PAIRS) {
             .map((line) => `  ${line}`)
             .join("\n")}`,
         ).toEqual([]);
+      });
+    }
+  });
+}
+
+/**
+ * Play one session through, turn by turn: each reply goes into the next turn's
+ * packet. The turns of a session are sequential by nature; the repeats of it are
+ * what run at once.
+ */
+async function playSession(session: Session, model: string) {
+  const said: { input: string; narration: string }[] = [];
+  const turns: SessionTurn[] = [];
+  const started = Date.now();
+  let servedModel: string | null = null;
+  for (const [t, input] of session.inputs.entries()) {
+    const packet = session.packet(t, said);
+    const scenario: Scenario = {
+      id: `${session.id}#${t + 1}`,
+      narrator: session.narrator,
+      about: session.about,
+      system: session.system,
+      packet,
+      expect: session.expect,
+    };
+    const result = await withRetry(() => runTurn(scenario, model));
+    turns.push({ turn: result.turn, ctx: { ...session.expect, packet } });
+    said.push({ input, narration: result.turn.narration });
+    servedModel = result.servedModel ?? servedModel;
+  }
+  return { turns, servedModel, seconds: (Date.now() - started) / 1000 };
+}
+
+for (const session of SESSIONS) {
+  describe(`${session.id} — ${session.about}`, () => {
+    const model = modelFor(session.narrator);
+    const firstCtx: CheckContext = { ...session.expect, packet: session.packet(0, []) };
+    const checks = [
+      ...ALL_CHECKS.filter((check) => isApplicable(check, firstCtx)),
+      ...ALL_SESSION_CHECKS,
+    ];
+    let records: CheckRecord[] = [];
+
+    beforeAll(async () => {
+      let runs: Awaited<ReturnType<typeof playSession>>[];
+      try {
+        runs = await Promise.all(
+          Array.from({ length: REPEATS }, () => playSession(session, model)),
+        );
+      } catch (error) {
+        record.scenarios.push(failedScenario(session.id, "single", session, model, error));
+        throw error;
+      }
+      records = scoreSession(runs.map((r) => r.turns));
+      record.scenarios.push({
+        id: session.id,
+        kind: "single",
+        narrator: session.narrator,
+        about: session.about,
+        model,
+        servedModels: [...new Set(runs.map((r) => r.servedModel ?? "unknown"))],
+        // The last turn stands for the run in tools that read one turn per run;
+        // the whole session is in `raw`.
+        runs: runs.map((r) => ({
+          seconds: r.seconds,
+          turn: r.turns[r.turns.length - 1]!.turn,
+          raw: { session: r.turns.map((t) => t.turn) },
+        })),
+        checks: records,
+      });
+      console.log(`\n  ${session.id} · asked ${model} · ${session.inputs.length} turns`);
+      if (TRANSCRIPT) {
+        appendFileSync(
+          TRANSCRIPT,
+          `\n## ${session.id}\n\n_${session.about}_\n\n` +
+            runs
+              .map(
+                (r, i) =>
+                  `### session ${i + 1}\n\n` +
+                  r.turns
+                    .map((t, n) => `> ${session.inputs[n]}\n\n${t.turn.narration}\n`)
+                    .join("\n"),
+              )
+              .join("\n"),
+        );
+      }
+    }, 900_000);
+
+    for (const check of checks) {
+      it(check.title, () => {
+        const found = records.find((r) => r.id === check.id)!;
+        expect(found.failures, report(found, check.source)).toEqual([]);
       });
     }
   });

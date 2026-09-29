@@ -123,9 +123,9 @@ const OFFICE_TELLS: Record<string, string[]> = {
  * The office after the scene has opened: the turn play actually sends when the
  * player acts, and the one that used to describe the corridor all over again.
  */
-const officeMidScene = buildGmContext({ ...office, sceneSet: true });
+export const officeMidScene = buildGmContext({ ...office, sceneSet: true });
 
-const officeWithheld = (officeBeat.truths ?? [])
+export const officeWithheld = (officeBeat.truths ?? [])
   .filter((t) => OFFICE_TELLS[t.id])
   .map((t) => ({ truth: t.fact, tells: OFFICE_TELLS[t.id] as string[] }));
 
@@ -407,7 +407,7 @@ SCENARIOS.push(
  * already established. Play marks it so (`stillHere`), and without the mark the
  * scenario asked the model to describe a room the player was already in.
  */
-const atTheBar: LifeContext = {
+export const atTheBar: LifeContext = {
   ...quietEvening,
   place: {
     ...placeAt(BAR.key),

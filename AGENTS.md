@@ -662,6 +662,11 @@ prose. The ledger does not keep the packet a turn was written from, so that is
 all it can run, and it says so. It reads other people's narration with either a
 service-role key or one user's token; the key stays on the developer's machine.
 
+A scene that only goes wrong over several turns is a session in `evals/sessions.ts`:
+scripted player inputs, each reply fed into the next packet through play's own
+`recentLifeLines`/`recentEventLines`, scored by the single-turn checks on every
+turn plus `narration/sessionChecks.ts` for what needs more than one.
+
 `bun run eval:judge` is the quality half the checks cannot measure: a model from
 a different family than the narrator reads two narrations of one scene (pure
 logic in `narration/judge.ts`, the call in `evals/judgeCall.ts`), each pair in

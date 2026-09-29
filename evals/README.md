@@ -233,6 +233,42 @@ as `scenarios.ts` renders it now (a record does not keep its packet), so judge
 runs made close to the change. Reports go to `results/judged/`, a subdirectory,
 so `eval:compare` never reads one as a run.
 
+## Sessions
+
+Every scenario above is one turn, asked cold. Some things only show over a
+scene: the room described again on turn four, a line quoted back, a withheld
+fact that leaks once enough has been said around it. `sessions.ts` scripts a
+run of player inputs in one scene (five at the bar, four in Huntver's office).
+After each reply the narration goes into the next turn's RECENT block through
+the same functions play uses (`recentLifeLines`, `recentEventLines`), so the
+window and the trimming are play's own.
+
+```sh
+bun run eval -t session-          # only the sessions
+```
+
+A run of a session is one whole session. Every single-turn check that applies
+runs on every turn and fails the run if any turn breaks it, with the turn named
+in the finding (`turn 5: money the packet never states`). Checks that need more
+than one turn live in `narration/sessionChecks.ts`; today that is one, a run of
+`REPEAT_RUN_WORDS` (7) words a later turn shares with an earlier one. Sessions
+are compared like any other scenario, by `eval:compare`.
+
+Two differences from play, both on purpose. The inputs are scripted, not chosen
+by a model, so a difference between two runs is the narrator's and not a
+player's. And a check the narrator proposes is not rolled: in play it becomes a
+prompt and a result turn, here the scene moves on to the next input.
+
+**What it found (gemini-3.7-flash, five sessions of each, prompts 2.15/2.23):**
+nothing that grows with the turn count. Two single-turn misses in forty-five
+turns, about the ordinary rate. No verbatim repetition at five words or more in
+any session; the model does recycle motifs ("two cloudy ice cubes", "the guy in
+the Tyger Claws jacket") at four words, which reads as continuity, not as
+repeating itself. The repeat check has only been shown to fire on hand-written
+prose, so treat a clean result as "not found", not "cannot happen". Not yet
+covered: an NPC changing name or manner between turns, which needs a notion of
+who a named person is that the checks do not have.
+
 ## Reading a failure
 
 A check reports a count over repeats and quotes what the turn actually said:
@@ -279,6 +315,8 @@ must trip it, and prose that must not.
 | `runTurn.ts`                                  | The model call, and reducing a response to what a check can read.                 |
 | `narrator.eval.ts`                            | Scenario × check, with the repeat counting, and the results file.                 |
 | `compare.ts`                                  | Two results files, side by side. A thin wrapper.                                  |
+| `sessions.ts`                                 | Scripted multi-turn scenes, each reply fed into the next turn's packet.           |
+| `../src/features/narration/sessionChecks.ts`  | Checks that need more than one turn. Pure, CI-tested.                             |
 | `judge.ts`, `judgeCall.ts`, `pacing.ts`       | The judged layer's CLI and model call, and the pacing both model scripts share.   |
 | `../src/features/narration/judge.ts`          | The rubric, verdict parsing, order swap, sign test, calibration. Pure, CI-tested. |
 | `../src/features/narration/narratorChecks.ts` | The detectors. Pure, CI-tested.                                                   |
