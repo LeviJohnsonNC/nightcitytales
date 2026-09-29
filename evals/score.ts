@@ -39,6 +39,19 @@ export function scorePair(
   paired: PairedContext,
 ): CheckRecord[] {
   return ALL_PAIRED_CHECKS.filter((check) => check.applies(paired)).map((check) => {
+    // A check that can be measured as a rate is recorded as one: a count of runs
+    // is something a later run can be compared with, and one yes or no is not.
+    const rate = check.rate?.(a, b, paired);
+    if (rate) {
+      return {
+        id: check.id,
+        title: check.title,
+        runs: rate.runs,
+        failures: rate.failing.map((finding, run) => ({ run, findings: [finding] })),
+        rate: true as const,
+        held: rate.held,
+      };
+    }
     const findings = check.run(a, b, paired);
     return {
       id: check.id,

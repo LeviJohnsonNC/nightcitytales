@@ -160,3 +160,31 @@ describe("comparing two runs", () => {
     expect(formatSummary(b)).toContain("could not be asked: s2 (Rate limit exceeded)");
   });
 });
+
+describe("rate cells", () => {
+  it("are reported as measurements and kept out of the clean-run totals", () => {
+    const r = record(5, {
+      s1: [check("rule", 5, [])],
+      p: [{ ...check("rate", 20, [0, 1, 2]), rate: true, held: true }],
+    });
+    const s = summarize(r);
+    expect(s.cells).toBe(1);
+    expect(s.totalRuns).toBe(5);
+    expect(s.failing).toEqual([]);
+    expect(s.rates).toEqual([
+      { scenario: "p", title: "title of rate", clean: 17, runs: 20, held: true },
+    ]);
+    expect(formatSummary(r)).toContain("17/20  held   p > title of rate");
+  });
+
+  it("are still compared like any other count, so a change in the rate can be called", () => {
+    const rate = (failed: number[]): CheckRecord => ({
+      ...check("rate", 20, failed),
+      rate: true,
+      held: true,
+    });
+    const lots = Array.from({ length: 12 }, (_, i) => i);
+    const cmp = compareRecords(record(5, { p: [rate([0])] }), record(5, { p: [rate(lots)] }));
+    expect(cmp.changes[0]!.verdict).toBe("regressed"); // 19/20 -> 8/20
+  });
+});
