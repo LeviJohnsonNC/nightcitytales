@@ -22,6 +22,7 @@ export async function judgePair(input: {
   scene: string;
   a: string;
   b: string;
+  intent?: string;
 }): Promise<Judgement | null> {
   const provider = evalProvider();
   const { generateText } = await import("ai");
