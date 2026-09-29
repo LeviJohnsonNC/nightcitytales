@@ -142,6 +142,50 @@ balance, a bad key) instead of asking every remaining scenario the same
 question. OpenRouter keys carry their own limit, separate from the account's
 credit: adding credit does not lift a key that has reached its own.
 
+## Replaying real turns
+
+The eval asks a model about invented scenes and costs money per call. Every turn
+anyone has actually played is already in the ledger, stamped with the prompt
+version and model that wrote it, and scoring it costs nothing:
+
+```sh
+bun run eval:replay --file rows.json         # rows exported from campaign_events
+bun run eval:replay                          # reads the project's own ledger
+bun run eval:replay --since 2026-09-20 --narrator gm --json groups.json
+```
+
+Reading the project needs `SUPABASE_URL` and one of:
+
+- `SUPABASE_SERVICE_ROLE_KEY` — every campaign. It bypasses RLS, so keep it on
+  your machine and out of commits, logs and browsers.
+- `SUPABASE_ACCESS_TOKEN` with `SUPABASE_PUBLISHABLE_KEY` — one signed-in user's
+  own campaigns, through RLS.
+
+The report groups turns by narrator, prompt version and model, counts how many
+broke each rule (quoting a few), gives the prose length, and sets each version
+against the one before it with the same significance test `eval:compare` uses.
+A version that ran on a different model is not compared with the one before it,
+because the change could be the model.
+
+**What it can and cannot score.** The ledger keeps what the narrator said, not
+what it was handed, so only checks that read the prose alone can run: no way in
+named, no "What do you do?", no list of smells. The number check needs the
+packet to know whether the engine said a figure first, so it appears apart as an
+upper bound on figures stated, never as a failure. "Options only when asked"
+cannot run at all: a Life turn stores its `actions` whether the narrator offered
+them or the engine did (a trip that could not be worked out writes the nearest
+real places as cards, in the same shape), so counting them would report the
+engine working as the narrator misbehaving.
+
+**It is a lead, not a result.** Two versions were played by different people on
+different nights, and the turns of one campaign are more alike than turns of two.
+When a version moves, `bun run eval` asks both versions the same questions and is
+what confirms it. A failing real turn is also the best source of a new scenario:
+copy its situation into `scenarios.ts`.
+
+The turns are your players' private narration. The report quotes short
+fragments; do not paste it where it should not go.
+
 ## Reading a failure
 
 A check reports a count over repeats and quotes what the turn actually said:

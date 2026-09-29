@@ -17,6 +17,7 @@
     "eval": "vitest run --config vitest.evals.config.ts",
     "eval:compare": "bun evals/compare.ts",
     "eval:rescore": "bun evals/rescore.ts",
+    "eval:replay": "bun evals/replay.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
