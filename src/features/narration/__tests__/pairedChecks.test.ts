@@ -54,6 +54,28 @@ describe("the difference did not change the dice", () => {
     expect(run(a, b)[0]!.note).toContain("whether to roll");
   });
 
+  it("counts an opposed check as a roll, and flags a porter who is stronger for one of them", () => {
+    const fight = (total: number) =>
+      turn({
+        opposed: [
+          {
+            skillId: "persuasion",
+            npcKey: "porter",
+            opposingSkillId: "resist",
+            opposingTotal: total,
+          },
+        ],
+      });
+    // Both sides rolled, at overlapping strengths: nothing to say.
+    expect(run([fight(12), fight(14)], [fight(14), fight(12)])).toEqual([]);
+    // One side always gets the roll and the other never does.
+    expect(run([fight(12)], [turn()])[0]!.note).toContain("whether to roll");
+    // Every run of one side faced stronger opposition than every run of the other.
+    const found = run([fight(16), fight(17)], [fight(11), fight(12)]);
+    expect(found).toHaveLength(1);
+    expect(found[0]!.quote).toContain("opposition");
+  });
+
   it("says nothing when neither side rolled, and only applies when the scenario says the dice must match", () => {
     expect(run([turn()], [turn()])).toEqual([]);
     expect(readingDoesNotMoveTheDice.applies(CTX)).toBe(false);

@@ -49,6 +49,7 @@ import { GM_PROMPT_VERSION } from "@/features/gm/gmSystemPrompt";
 import { LIFE_PROMPT_VERSION } from "@/features/life/lifeSystemPrompt";
 import { PAIRS, SCENARIOS, type Scenario } from "./scenarios";
 import { evalProvider, modelFor, runTurn } from "./runTurn";
+import { scorePair, scoreTurns } from "./score";
 
 /** How many times each scenario is asked. `REPEAT=N`, or `--repeat N` where the runner allows it. */
 const REPEATS = Math.max(1, Number(process.env["REPEAT"] ?? readFlag("--repeat") ?? 5));
@@ -193,14 +194,10 @@ function failedScenario(
 
 /** What each applicable check made of these turns. */
 function checkRecords(asked: Asked, ctx: CheckContext): CheckRecord[] {
-  return ALL_CHECKS.filter((check) => isApplicable(check, ctx)).map((check) => ({
-    id: check.id,
-    title: check.title,
-    runs: asked.length,
-    failures: asked
-      .map(({ result }, run) => ({ run, findings: check.run(result.turn, ctx) }))
-      .filter(({ findings }) => findings.length > 0),
-  }));
+  return scoreTurns(
+    asked.map(({ result }) => result.turn),
+    ctx,
+  );
 }
 
 function scenarioRecord(
@@ -218,7 +215,7 @@ function scenarioRecord(
     about: scenario.about,
     model,
     servedModels: [...new Set(asked.map((a) => a.result.servedModel ?? "unknown"))],
-    runs: asked.map(({ result, seconds }) => ({ seconds, turn: result.turn })),
+    runs: asked.map(({ result, seconds }) => ({ seconds, turn: result.turn, raw: result.raw })),
     checks,
   };
 }
@@ -312,17 +309,7 @@ for (const pair of PAIRS) {
       }
       const turnsA = a!.map((x) => x.result.turn);
       const turnsB = b!.map((x) => x.result.turn);
-      comparison = paired.map((check) => {
-        const findings = check.run(turnsA, turnsB, pair.paired);
-        return {
-          id: check.id,
-          title: check.title,
-          // One comparison over all the runs, so it holds or it does not: counted
-          // as one run, not as a failure in one of three.
-          runs: 1,
-          failures: findings.length ? [{ run: 0, findings }] : [],
-        };
-      });
+      comparison = scorePair(turnsA, turnsB, pair.paired);
       record.scenarios.push({
         id: `${pair.id} [compared]`,
         kind: "pair",

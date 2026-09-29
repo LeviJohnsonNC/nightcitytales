@@ -78,6 +78,13 @@ export type CheckableTurn = {
   spends?: number;
   /** The DV checks it proposed, and whether each was marked low-stakes. */
   checks?: { skillId: string; dv: number; lowStakes: boolean }[];
+  /**
+   * The opposed checks it proposed. Job only. The narrator supplies who opposes
+   * and what they bring, so the size of the opposition is a number the narrator
+   * chose: `opposingTotal` is the level of the skill they resist with plus the
+   * STAT it is printed under.
+   */
+  opposed?: { skillId: string; npcKey: string; opposingSkillId: string; opposingTotal: number }[];
   /** True when it put the job waiting on the wire on the table. Life only. */
   offersWork?: boolean;
 };

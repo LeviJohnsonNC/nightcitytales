@@ -39,7 +39,7 @@ export type ScenarioRecord = {
   about: string;
   model: string;
   servedModels: string[];
-  runs: { seconds: number; turn: CheckableTurn }[];
+  runs: { seconds: number; turn: CheckableTurn; raw?: unknown }[];
   checks: CheckRecord[];
   /**
    * Set when the model could not be asked (a rate limit, an outage). Such a
@@ -56,6 +56,8 @@ export type EvalRecord = {
   prompts: { gm: string; life: string };
   repeats: number;
   scenarios: ScenarioRecord[];
+  /** Scored again after the run, by `eval:rescore`, with the checks as they are now. */
+  rescored?: true;
 };
 
 /** A change is called when the chance of seeing it from one unchanged rate is under this. */
@@ -274,7 +276,8 @@ function quoteOf(change: Change): string | null {
 }
 
 function header(label: string, r: EvalRecord): string {
-  return `${label}: GM ${r.prompts.gm} · Life ${r.prompts.life} · ${r.repeats} run(s) each · ${r.startedAt}`;
+  const scored = r.rescored ? " · re-scored with the current checks" : "";
+  return `${label}: GM ${r.prompts.gm} · Life ${r.prompts.life} · ${r.repeats} run(s) each · ${r.startedAt}${scored}`;
 }
 
 /** Cells only one run had, a line a scenario rather than a line a check. */

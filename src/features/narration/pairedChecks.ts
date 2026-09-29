@@ -60,7 +60,8 @@ export const readingDoesNotMoveTheDice: PairedCheck = {
   applies: (ctx) => ctx.sameDice === true,
   run(a, b, ctx) {
     const findings: Finding[] = [];
-    const rolled = (turns: CheckableTurn[]) => turns.map((t) => t.checks?.length ?? 0);
+    const rolled = (turns: CheckableTurn[]) =>
+      turns.map((t) => (t.checks?.length ?? 0) + (t.opposed?.length ?? 0));
     const ra = rolled(a);
     const rb = rolled(b);
     const [la, lb] = ctx.labels;
@@ -92,6 +93,20 @@ export const readingDoesNotMoveTheDice: PairedCheck = {
         findings.push({
           quote: `${skill}: ${la} DV ${range(x)}, ${lb} DV ${range(y)}`,
           note: "every run of one variant was harder than every run of the other",
+        });
+      }
+    }
+    // The opposition the narrator chose: the porter's skill plus his STAT. This is
+    // where a reading of who is asking could quietly become a harder fight.
+    const strength = (turns: CheckableTurn[]) =>
+      turns.flatMap((t) => (t.opposed ?? []).map((o) => o.opposingTotal));
+    const sa = strength(a);
+    const sb = strength(b);
+    if (sa.length > 0 && sb.length > 0) {
+      if (Math.min(...sa) > Math.max(...sb) || Math.min(...sb) > Math.max(...sa)) {
+        findings.push({
+          quote: `opposition: ${la} ${range(sa)}, ${lb} ${range(sb)}`,
+          note: "every run of one variant faced stronger opposition than every run of the other",
         });
       }
     }

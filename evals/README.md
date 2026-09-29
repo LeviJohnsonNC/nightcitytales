@@ -124,6 +124,19 @@ bun run eval
 bun run eval:compare ../nct-before/evals/results/<time>.json evals/results/<time>.json
 ```
 
+**Comparing across a change to the checks.** Every turn is saved in the file (the
+reduced form the checks read, and `raw`, the whole normalized reply), so a run can
+be scored again without asking the model:
+
+```sh
+bun run eval:rescore evals/results/<run>.json     # writes <run>.rescored.json, marked as such
+```
+
+Do this to the older run before comparing a prompt change to it whenever the
+checks changed in between. Otherwise a cell that moved might have moved because
+the check did, not the prompt. The comparison's header says which file was
+re-scored.
+
 A run stops at the first error no retry can fix (a key's total limit, a spent
 balance, a bad key) instead of asking every remaining scenario the same
 question. OpenRouter keys carry their own limit, separate from the account's

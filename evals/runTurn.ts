@@ -30,6 +30,12 @@ const DEFAULT_MODEL = "google/gemini-3.7-flash";
 /** What one call came back with, plus who answered. */
 export type TurnResult = {
   turn: CheckableTurn;
+  /**
+   * The whole normalized reply, kept in the record. A check written next month
+   * that needs a field `turn` does not carry can then score today's run without
+   * asking the model again.
+   */
+  raw: unknown;
   /** What the gateway says actually replied, which is not always what was asked. */
   servedModel: string | null;
 };
@@ -146,6 +152,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
     }
     return {
       servedModel,
+      raw: gm,
       turn: {
         narration: gm.narration,
         offeredOptions: gm.suggestedActions.map((a) => a.label),
@@ -156,6 +163,18 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
         checks: gm.proposedActions.flatMap((a) =>
           a.kind === "skill_check"
             ? [{ skillId: a.skillId, dv: a.dv, lowStakes: a.stakes === "low" }]
+            : [],
+        ),
+        opposed: gm.proposedActions.flatMap((a) =>
+          a.kind === "opposed_check"
+            ? [
+                {
+                  skillId: a.skillId,
+                  npcKey: a.npcKey,
+                  opposingSkillId: a.opposingSkillId,
+                  opposingTotal: a.opposingSkillLevel + a.opposingStatValue,
+                },
+              ]
             : [],
         ),
       },
@@ -172,6 +191,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
   const life = normalizeLifeResponse(object);
   return {
     servedModel: response.modelId ?? null,
+    raw: life,
     turn: {
       // Life's prose is the situation's description, or the resolution when the
       // turn was a follow-up. Both are what the player reads.
