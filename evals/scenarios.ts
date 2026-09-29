@@ -34,6 +34,7 @@ import { renderLifeUserPrompt, type LifeContext } from "@/features/life/lifeCont
 import { LIFE_SYSTEM_PROMPT } from "@/features/life/lifeSystemPrompt";
 import { describeTravelOutcome, nearestByKindLines } from "@/features/life/lifeModel";
 import type { CheckContext } from "@/features/narration/narratorChecks";
+import type { PairedContext } from "@/features/narration/pairedChecks";
 
 /** What the checks need beyond the packet, which the runner fills in. */
 export type ScenarioExpectation = Omit<CheckContext, "packet">;
@@ -513,7 +514,15 @@ SCENARIOS.push(
       withheldTruths: officeWithheld,
       mustStayQuiet: false,
       riskyIntent: true,
-      carryThrough: ["chair", "sit", "seat"],
+      carryThrough: [
+        "chair",
+        "sit",
+        "seat",
+        "swivel",
+        "drop into",
+        "settle into",
+        "lower yourself",
+      ],
       wordBudget: 260,
     },
   },
@@ -682,3 +691,162 @@ SCENARIOS.push(
     },
   },
 );
+
+// ---------------------------------------------------------------------------
+// Pairs
+//
+// The same scene twice, differing in ONE input. Each side is held to the
+// ordinary checks, and the two are held to each other: what must not change
+// (the dice) and what must (the fiction). See `pairedChecks.ts`.
+// ---------------------------------------------------------------------------
+
+export type PairedScenario = {
+  id: string;
+  narrator: "gm" | "life";
+  about: string;
+  system: string;
+  /** What the ordinary checks need, applied to both sides. */
+  expect: ScenarioExpectation;
+  variants: [{ label: string; packet: string }, { label: string; packet: string }];
+  paired: PairedContext;
+};
+
+/** The night porter outside Huntver's office: somebody to lean on. */
+const PORTER = {
+  name: "Emil, the night porter",
+  key: "porter",
+  disposition: 0,
+  status: "alive",
+  standing: "Watches the corridor outside Huntver's office, and has since before the fire.",
+};
+
+const OLD_MAN = "man, elderly";
+const YOUNG_WOMAN = "woman, young";
+
+/**
+ * Words that show the narrator saw who was standing there. Heuristic and
+ * authored, like a withheld truth's tells: the first live run of this pair had
+ * the narrator writing "seventy-odd years of mileage" and "your youth" while
+ * the first list looked for "old man" and "young", so a paraphrase is the rule
+ * rather than the exception. Read the transcript before believing a failure.
+ * A cue is a whole word, or a stem when it ends in `*`.
+ */
+const OLD_MAN_CUES = [
+  "old",
+  "older",
+  "elderly",
+  "grey",
+  "gray",
+  "greying",
+  "weathered",
+  "mileage",
+  "decades",
+  "grandfather",
+  "your age",
+  "his age",
+  "aged",
+  "frail",
+  "cane",
+  "sir",
+];
+const YOUNG_WOMAN_CUES = ["young*", "youth*", "girl", "kid", "miss", "lady", "ma'am"];
+
+const guardTalk = (appearsAs: string) =>
+  renderGmUserPrompt(
+    buildGmContext({
+      ...officeMidScene,
+      character: { ...CHARACTER, appearsAs },
+      npcsPresent: [PORTER],
+    }),
+    "I tell the porter I need to see Huntver's private files and that he needs to look the other way.",
+  );
+
+const atTheCounter = (appearsAs: string) =>
+  renderLifeUserPrompt(
+    { ...atTheBar, character: { ...LIFE_CHARACTER, appearsAs } },
+    "I walk up to the counter and ask the bartender what's good tonight.",
+  );
+
+const optionsFor = (role: string) =>
+  renderGmUserPrompt(
+    buildGmContext({
+      ...officeMidScene,
+      character: { ...CHARACTER, role },
+      optionsRequested: true,
+    }),
+    "(What are my options here?)",
+  );
+
+export const PAIRS: PairedScenario[] = [
+  {
+    id: "pair-appearance-moves-no-dice",
+    narrator: "gm",
+    about: "who is asking must not change what the dice ask, and must change the porter's face",
+    system: GM_SYSTEM_PROMPT,
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [PORTER.key],
+      withheldTruths: officeWithheld,
+      mustStayQuiet: false,
+      riskyIntent: true,
+      wordBudget: 260,
+    },
+    variants: [
+      { label: "71-year-old man", packet: guardTalk(OLD_MAN) },
+      { label: "22-year-old woman", packet: guardTalk(YOUNG_WOMAN) },
+    ],
+    paired: {
+      labels: ["71-year-old man", "22-year-old woman"],
+      sameDice: true,
+      cues: [OLD_MAN_CUES, YOUNG_WOMAN_CUES],
+    },
+  },
+  {
+    id: "pair-appearance-first-impression",
+    narrator: "life",
+    about: "the bartender's first look at somebody differs with who walks up",
+    system: LIFE_SYSTEM_PROMPT,
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      wordBudget: 160,
+    },
+    variants: [
+      { label: "71-year-old man", packet: atTheCounter(OLD_MAN) },
+      { label: "22-year-old woman", packet: atTheCounter(YOUNG_WOMAN) },
+    ],
+    paired: {
+      labels: ["71-year-old man", "22-year-old woman"],
+      cues: [OLD_MAN_CUES, YOUNG_WOMAN_CUES],
+    },
+  },
+  {
+    id: "pair-role-sees-the-room",
+    narrator: "gm",
+    about: "the same office offers a Solo and a Netrunner different first moves",
+    system: GM_SYSTEM_PROMPT,
+    expect: {
+      optionsRequested: true,
+      knownNpcKeys: [],
+      withheldTruths: officeWithheld,
+      mustStayQuiet: false,
+      riskyIntent: false,
+      wordBudget: 260,
+    },
+    variants: [
+      { label: "Solo", packet: optionsFor("solo") },
+      { label: "Netrunner", packet: optionsFor("netrunner") },
+    ],
+    paired: {
+      labels: ["Solo", "Netrunner"],
+      optionsDiffer: true,
+      cues: [
+        [],
+        ["deck", "cyberdeck", "terminal", "network", "jack", "hack", "netrun", "ICE", "wireless"],
+      ],
+    },
+  },
+];

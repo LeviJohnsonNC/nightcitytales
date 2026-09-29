@@ -13,7 +13,7 @@ import type { Beat, BeatExit, Mission, MissionObjective } from "@/engine";
 export type GmCharacterSummary = {
   name: string;
   handle?: string;
-  /** Sex and age, as a stranger would read them: "man, 71, elderly". */
+  /** Sex and how old they look, as a stranger would read them: "man, elderly". */
   appearsAs?: string;
   role: string;
   hp: number;

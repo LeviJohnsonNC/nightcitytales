@@ -65,12 +65,18 @@ export function readIdentity(value: unknown): Identity {
 }
 
 /**
- * The line the narrator reads: "man, 71, elderly". Null unless there is
- * something to say, so an older character with no record adds nothing.
+ * The line the narrator reads: "man, elderly". Null unless there is something
+ * to say, so a character with no record adds nothing.
+ *
+ * The band, never the number. A stranger sees a face, not a birth certificate,
+ * and the first eval of this line found a bartender saying "not many solos make
+ * it to seventy-one" and a porter sizing up somebody "twenty-two years old".
+ * The exact age is on the file, in the portrait and on the sheet; it is not
+ * something the people the character meets can know.
  */
 export function identityLine(identity: Identity): string | null {
   const parts: string[] = [];
   if (identity.sex) parts.push(data.sex[identity.sex].noun);
-  if (identity.age !== null) parts.push(String(identity.age), ageBand(identity.age).label);
+  if (identity.age !== null) parts.push(ageBand(identity.age).label);
   return parts.length ? parts.join(", ") : null;
 }

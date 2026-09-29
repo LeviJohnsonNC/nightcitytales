@@ -434,7 +434,9 @@ limits and age bands in `data/rules/identity.json` (`houseRule: true`). Pronouns
 follow from the sex chosen, so the draft still carries them. The save writes
 `{ sex, age }` into the general Lifepath under `IDENTITY_KEY`, beside the cast
 plan, so no migration is needed; `identityFrom` reads it back and the narrators
-get one "Reads as" line (`appearsAsProp`). It moves no die: the shared
+get one "Reads as" line (`appearsAsProp`), which is a band ("man, elderly") and
+never the number: a stranger sees a face, not a birth certificate, and
+`statesNoExactAge` holds the narrator to it. It moves no die: the shared
 `APPEARANCE_RULE` colours a stranger's first assumption and says in so many
 words that it never changes a DV, a price or an outcome.
 
@@ -645,6 +647,13 @@ eval lives in `evals/` and ends in `.eval.ts`. Run it after touching a system
 prompt, a context renderer or a response normalizer. A single run is not a
 verdict: pass `--repeat 3` and read the counts, because the finding worth
 having is usually the check that trips one time in three.
+
+Every run leaves `evals/results/<time>.json`, and `bun run eval:compare` sets
+two side by side. It calls a change only when Fisher's exact test says chance is
+an unlikely explanation, which needs five runs a side (the default): two runs of
+the same prompt once disagreed 3/3 against 0/3, so "it moved" is not evidence.
+A scene that must differ in one input, such as who is standing there, is a pair
+in `evals/scenarios.ts` (`pairedChecks.ts`), not a single-turn check.
 
 ## Repository hygiene
 

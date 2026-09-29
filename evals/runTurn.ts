@@ -30,9 +30,29 @@ const DEFAULT_MODEL = "google/gemini-3.7-flash";
 /** What one call came back with, plus who answered. */
 export type TurnResult = {
   turn: CheckableTurn;
+  /**
+   * The whole normalized reply, kept in the record. A check written next month
+   * that needs a field `turn` does not carry can then score today's run without
+   * asking the model again.
+   */
+  raw: unknown;
   /** What the gateway says actually replied, which is not always what was asked. */
   servedModel: string | null;
 };
+
+/**
+ * An output cap for the eval's calls, when set (`EVAL_MAX_TOKENS`).
+ *
+ * Play sets none, and neither does the eval by default, so the two measure the
+ * same thing. But a provider that reserves credit for the largest reply a call
+ * MIGHT make will refuse one on a small balance: OpenRouter asked for 65,536
+ * tokens of headroom per call and stopped a run at a balance that would have
+ * paid for a hundred real ones. A turn is a few hundred tokens, so a cap of a
+ * few thousand changes no reply and lets a small balance through.
+ */
+const MAX_OUTPUT_TOKENS = process.env["EVAL_MAX_TOKENS"]
+  ? Number(process.env["EVAL_MAX_TOKENS"])
+  : undefined;
 
 export function modelFor(narrator: "gm" | "life"): string {
   const override = narrator === "life" ? process.env["LIFE_MODEL"] : undefined;
@@ -120,6 +140,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
         schema: GmWireResponseSchema,
         system: scenario.system,
         prompt: scenario.packet,
+        ...(MAX_OUTPUT_TOKENS ? { maxOutputTokens: MAX_OUTPUT_TOKENS } : {}),
       });
       gm = normalizeGmResponse(object);
       servedModel = response.modelId ?? null;
@@ -131,6 +152,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
     }
     return {
       servedModel,
+      raw: gm,
       turn: {
         narration: gm.narration,
         offeredOptions: gm.suggestedActions.map((a) => a.label),
@@ -143,6 +165,18 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
             ? [{ skillId: a.skillId, dv: a.dv, lowStakes: a.stakes === "low" }]
             : [],
         ),
+        opposed: gm.proposedActions.flatMap((a) =>
+          a.kind === "opposed_check"
+            ? [
+                {
+                  skillId: a.skillId,
+                  npcKey: a.npcKey,
+                  opposingSkillId: a.opposingSkillId,
+                  opposingTotal: a.opposingSkillLevel + a.opposingStatValue,
+                },
+              ]
+            : [],
+        ),
       },
     };
   }
@@ -152,10 +186,12 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
     schema: LifeWireResponseSchema,
     system: scenario.system,
     prompt: scenario.packet,
+    ...(MAX_OUTPUT_TOKENS ? { maxOutputTokens: MAX_OUTPUT_TOKENS } : {}),
   });
   const life = normalizeLifeResponse(object);
   return {
     servedModel: response.modelId ?? null,
+    raw: life,
     turn: {
       // Life's prose is the situation's description, or the resolution when the
       // turn was a follow-up. Both are what the player reads.

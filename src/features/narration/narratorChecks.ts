@@ -78,6 +78,13 @@ export type CheckableTurn = {
   spends?: number;
   /** The DV checks it proposed, and whether each was marked low-stakes. */
   checks?: { skillId: string; dv: number; lowStakes: boolean }[];
+  /**
+   * The opposed checks it proposed. Job only. The narrator supplies who opposes
+   * and what they bring, so the size of the opposition is a number the narrator
+   * chose: `opposingTotal` is the level of the skill they resist with plus the
+   * STAT it is printed under.
+   */
+  opposed?: { skillId: string; npcKey: string; opposingSkillId: string; opposingTotal: number }[];
   /** True when it put the job waiting on the wire on the table. Life only. */
   offersWork?: boolean;
 };
@@ -143,6 +150,14 @@ export type CheckContext = {
 
 export type Check = {
   id: string;
+  /**
+   * Whether this scenario gives the check anything to measure. A check that is
+   * not applicable is not run and not reported: every check used to be held to
+   * every scenario, and most of those cells passed because the check had
+   * nothing to look at, which buried the ones that meant something.
+   * Absent means always.
+   */
+  applies?(ctx: CheckContext): boolean;
   /** What passing looks like, phrased for a report line. */
   title: string;
   /** Where the rule is written down. */
@@ -239,6 +254,27 @@ const UNIT_PATTERNS: { label: string; re: RegExp }[] = [
 ];
 
 /**
+ * How long a duration can be before it stops being texture.
+ *
+ * "Four seconds of silence" and "look the other way for five minutes" are how
+ * people talk, not a claim about what the engine will charge the clock. The
+ * first live runs flagged exactly those and nothing else, and the ruling was
+ * that they should not count. Anything from ten minutes up, and every hour,
+ * day and week, is still a duration the engine owns: "it takes twenty minutes"
+ * is a promise about the clock.
+ */
+export const SHORT_DURATION_MINUTES = 10;
+
+function isShortDuration(quote: string): boolean {
+  if (/second/i.test(quote)) return true;
+  if (/\bmin/i.test(quote)) {
+    const amount = amountOf(quote);
+    return amount !== null && amount < SHORT_DURATION_MINUTES;
+  }
+  return false;
+}
+
+/**
  * A number in prose that nothing in the packet produced.
  *
  * The flagship check, and the one with the most history: Life used to tell the
@@ -267,6 +303,7 @@ export const noUnsourcedNumber: Check = {
       );
       for (const match of turn.narration.matchAll(re)) {
         const quote = match[0].trim();
+        if (label === "duration" && isShortDuration(quote)) continue;
         const key = quote.toLowerCase();
         if (seen.has(key)) continue;
         if (haystack.includes(key)) continue;
@@ -274,6 +311,50 @@ export const noUnsourcedNumber: Check = {
         if (amount !== null && given.has(amount)) continue;
         seen.add(key);
         findings.push({ quote, note: `${label} the packet never states` });
+      }
+    }
+    return findings;
+  },
+};
+
+// ---------------------------------------------------------------------------
+// A FACE, NOT A BIRTH CERTIFICATE
+// ---------------------------------------------------------------------------
+
+const AGE_WORDS =
+  "(?:(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?|sixteen|seventeen|eighteen|nineteen)";
+const AGE_NUMBER = `(?:1[6-9]|[2-8]\\d|90|${AGE_WORDS})`;
+
+/** Ways of stating somebody's age in years. A guess ("seventy-odd") is not one. */
+const EXACT_AGE: RegExp[] = [
+  new RegExp(`\\b${AGE_NUMBER}[- ]years?[- ]old\\b`, "gi"),
+  new RegExp(`\\baged?\\s+${AGE_NUMBER}\\b`, "gi"),
+  new RegExp(`\\b(?:age|years) of ${AGE_NUMBER}\\b`, "gi"),
+];
+
+/**
+ * The narrator did not state the character's age as a number of years.
+ *
+ * The first eval of the "Reads as" line had a bartender saying "not many solos
+ * make it to seventy-one" and a porter sizing up somebody "twenty-two years
+ * old", because the packet gave the exact age. The line is now a band and the
+ * rule says so. This catches the number anyway, since a model can also invent
+ * one. It can match a machine's age ("a twenty-year-old sedan"); the quote says
+ * which.
+ */
+export const statesNoExactAge: Check = {
+  id: "states-no-exact-age",
+  applies: (ctx) => /Reads as:/.test(ctx.packet),
+  title: "did not state the character's age as a number",
+  source: 'Both prompts: "A stranger sees a face, not a birth certificate." (APPEARANCE_RULE)',
+  run(turn) {
+    const findings: Finding[] = [];
+    for (const re of EXACT_AGE) {
+      for (const match of turn.narration.matchAll(re)) {
+        findings.push({
+          quote: quoteAround(turn.narration, match.index ?? 0, match[0].length),
+          note: "an exact age in years",
+        });
       }
     }
     return findings;
@@ -396,6 +477,7 @@ export const walkOnsFromCatalog: Check = {
  */
 export const withheldStaysWithheld: Check = {
   id: "withheld-stays-withheld",
+  applies: (ctx) => ctx.withheldTruths.length > 0,
   title: "did not state a fact the character has not found",
   source: "AGENTS.md: Beat.truths is held apart from gmBrief because the brief reaches the model.",
   run(turn, ctx) {
@@ -420,6 +502,7 @@ export const withheldStaysWithheld: Check = {
  */
 export const resultStands: Check = {
   id: "result-stands",
+  applies: (ctx) => ctx.resolved !== undefined,
   title: "narrated the settled result, and did not ask for it again",
   source:
     'Both prompts: "When you are given a RESOLVED result, narrate exactly that result ... never propose the same check again."',
@@ -452,6 +535,7 @@ export const resultStands: Check = {
  */
 export const offersTheWire: Check = {
   id: "offers-the-wire",
+  applies: (ctx) => ctx.wireJob === true,
   title: "offered the job that was on the wire",
   source:
     'Life prompt: "When the block IS in front of you, the phone has already rung. Offer it this turn."',
@@ -493,6 +577,7 @@ export const opensOnSomething: Check = {
 
 export const withinProseBudget: Check = {
   id: "within-prose-budget",
+  applies: (ctx) => ctx.wordBudget !== undefined,
   title: "stayed inside its prose budget",
   source: 'PRODUCT.md: "The player is reading more than they are deciding."',
   run(turn, ctx) {
@@ -512,6 +597,7 @@ export const withinProseBudget: Check = {
  */
 export const riskGetsDice: Check = {
   id: "risk-gets-dice",
+  applies: (ctx) => ctx.riskyIntent,
   title: "proposed a check for a risky intent",
   source:
     'PRODUCT.md: "A scene resolves entirely in narration when it could plausibly have failed."',
@@ -530,6 +616,7 @@ export const riskGetsDice: Check = {
  */
 export const quietStaysQuiet: Check = {
   id: "quiet-stays-quiet",
+  applies: (ctx) => ctx.mustStayQuiet,
   title: "left a quiet evening quiet",
   source:
     'PRODUCT.md: "A quiet evening has been filled with a stranger, a phone call, or a noise."',
@@ -569,6 +656,7 @@ export const quietStaysQuiet: Check = {
  */
 export const goesWhereAsked: Check = {
   id: "goes-where-asked",
+  applies: (ctx) => ctx.tripToKind !== undefined,
   title: "proposed a trip that reaches the kind of place asked for",
   source:
     'PRODUCT.md: "A request the engine could have resolved was refused, or answered with nothing to press."',
@@ -596,6 +684,7 @@ export const goesWhereAsked: Check = {
  */
 export const finishesTheRequest: Check = {
   id: "finishes-the-request",
+  applies: (ctx) => (ctx.carryThrough?.length ?? 0) > 0,
   title: "carried out the rest of what the player said",
   source: 'PRODUCT.md: "The player had to say the same thing twice."',
   run(turn, ctx) {
@@ -625,6 +714,7 @@ const RETREATS = [
  */
 export const staysPutOnRefusal: Check = {
   id: "stays-put-on-refusal",
+  applies: (ctx) => ctx.staysPut === true,
   title: "left the character where they were when a trip was refused",
   source:
     'PRODUCT.md: "A turn left the character where they started after they asked to go somewhere."',
@@ -652,6 +742,7 @@ export const staysPutOnRefusal: Check = {
  */
 export const directionsAreReal: Check = {
   id: "directions-are-real",
+  applies: (ctx) => ctx.realAnswers !== undefined,
   title: "gave directions to a place the map knows",
   source:
     'PRODUCT.md: "A request the engine could have resolved was refused, or answered with nothing to press."',
@@ -674,6 +765,7 @@ export const directionsAreReal: Check = {
  */
 export const staysInTheScene: Check = {
   id: "stays-in-the-scene",
+  applies: (ctx) => (ctx.offScene?.length ?? 0) > 0,
   title: "kept the scene on what the player was doing",
   source: 'PRODUCT.md: "A scene in progress was hijacked by a topic the engine did not raise."',
   run(turn, ctx) {
@@ -698,6 +790,7 @@ export const staysInTheScene: Check = {
  */
 export const comesOverOnCue: Check = {
   id: "comes-over-on-cue",
+  applies: (ctx) => ctx.comesOver !== undefined,
   title: "brought over the person the engine said was coming",
   source: 'PRODUCT.md: "Whether they come OVER is the engine\'s roll (`comesOver`)."',
   run(turn, ctx) {
@@ -717,6 +810,7 @@ export const comesOverOnCue: Check = {
  */
 export const smallChecksRollThemselves: Check = {
   id: "small-checks-roll-themselves",
+  applies: (ctx) => ctx.nothingRiding === true,
   title: "did not stop the player for a roll that risks nothing",
   source: 'PRODUCT.md: "Something that risks nothing was put to the player as a roll to press."',
   run(turn, ctx) {
@@ -750,9 +844,15 @@ export const ALL_CHECKS: Check[] = [
   offersTheWire,
   opensOnSomething,
   withinProseBudget,
+  statesNoExactAge,
 ];
 
 // ---------------------------------------------------------------------------
+
+/** Whether a check has anything to measure in a scenario. */
+export function isApplicable(check: Check, ctx: CheckContext): boolean {
+  return check.applies ? check.applies(ctx) : true;
+}
 
 function firstSentence(text: string): string {
   const match = text.trim().match(/^.{0,160}?[.!?](?:\s|$)/s);
