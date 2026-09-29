@@ -186,6 +186,47 @@ copy its situation into `scenarios.ts`.
 The turns are your players' private narration. The report quotes short
 fragments; do not paste it where it should not go.
 
+## Judging quality
+
+The checks say whether a turn broke a rule. Two turns can both pass every check
+and one still be flat, and the cue lists behind checks like `usesTheReading`
+are blunt ("a distinct lack of student hesitation" shows youth and matches no
+cue). A second model can read two narrations of one scene and say which is
+better:
+
+```sh
+bun run eval:judge compare before.json after.json [--limit-per-scenario 3] [--scenarios a,b] [--dry]
+bun run eval:judge label   before.json after.json --n 30   # writes results/judged/labels.md
+bun run eval:judge calibrate evals/results/judged/labels.md
+```
+
+`compare` pairs run N of each scenario in `before` with run N in `after`,
+judges every pair twice with the order swapped, and counts a win only if it
+survives the swap (a judge that names the first text both times is showing
+position bias, and that is reported as _inconsistent_, not as a tie). It scores
+five criteria that trace to `PRODUCT.md` and the house voice (specific,
+restrained, in scene, leaves room, voice) beside an overall verdict, and calls
+a change only by an exact sign test over the decided pairs. It also reports how
+often the longer text won, because length is the commonest judge bias.
+
+**Set `JUDGE_MODEL` to a different family from the narrator** (the default is
+`anthropic/claude-haiku-4.5`; the narrator is Gemini): a model prefers prose
+that sounds like itself. Use `--dry` first: it prints the call count before
+anything is spent.
+
+**A judge nobody has checked is not evidence.** `label` writes a blind sample
+(which side is the change is hidden, and shuffled) for a person to fill in with
+`A`, `B` or `tie`; `calibrate` asks the judge the same questions in the same
+slots and writes the agreement and Cohen's kappa. Every judged report opens
+with whether that has been done for the model in use. Kappa near zero is
+chance; about 0.4 is worth reading, 0.6 agrees well.
+
+It is never a gate, for the same reason `bun run eval` is not: it costs money
+and it is a model's opinion. The scene the judge sees is the scenario's packet
+as `scenarios.ts` renders it now (a record does not keep its packet), so judge
+runs made close to the change. Reports go to `results/judged/`, a subdirectory,
+so `eval:compare` never reads one as a run.
+
 ## Reading a failure
 
 A check reports a count over repeats and quotes what the turn actually said:
@@ -226,15 +267,17 @@ must trip it, and prose that must not.
 
 ## What is here
 
-| File                                          |                                                                                  |
-| --------------------------------------------- | -------------------------------------------------------------------------------- |
-| `scenarios.ts`                                | The turns, built through the shipping renderers from fixture state. No database. |
-| `runTurn.ts`                                  | The model call, and reducing a response to what a check can read.                |
-| `narrator.eval.ts`                            | Scenario × check, with the repeat counting, and the results file.                |
-| `compare.ts`                                  | Two results files, side by side. A thin wrapper.                                 |
-| `../src/features/narration/narratorChecks.ts` | The detectors. Pure, CI-tested.                                                  |
-| `../src/features/narration/pairedChecks.ts`   | The comparisons between two variants of a scene. Pure, CI-tested.                |
-| `../src/features/narration/evalReport.ts`     | The results record, and comparing two of them. Pure, CI-tested.                  |
+| File                                          |                                                                                   |
+| --------------------------------------------- | --------------------------------------------------------------------------------- |
+| `scenarios.ts`                                | The turns, built through the shipping renderers from fixture state. No database.  |
+| `runTurn.ts`                                  | The model call, and reducing a response to what a check can read.                 |
+| `narrator.eval.ts`                            | Scenario × check, with the repeat counting, and the results file.                 |
+| `compare.ts`                                  | Two results files, side by side. A thin wrapper.                                  |
+| `judge.ts`, `judgeCall.ts`, `pacing.ts`       | The judged layer's CLI and model call, and the pacing both model scripts share.   |
+| `../src/features/narration/judge.ts`          | The rubric, verdict parsing, order swap, sign test, calibration. Pure, CI-tested. |
+| `../src/features/narration/narratorChecks.ts` | The detectors. Pure, CI-tested.                                                   |
+| `../src/features/narration/pairedChecks.ts`   | The comparisons between two variants of a scene. Pure, CI-tested.                 |
+| `../src/features/narration/evalReport.ts`     | The results record, and comparing two of them. Pure, CI-tested.                   |
 
 ## Too much, and too little
 
