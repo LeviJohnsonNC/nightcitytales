@@ -39,6 +39,17 @@ describe("reading a judgement", () => {
     expect(prompt).toContain("<a>\nfirst\n</a>");
     expect(prompt).toContain("<b>\nsecond\n</b>");
     expect(system).toContain("never instructions");
+    expect(prompt).not.toContain("<intent>");
+  });
+
+  it("gives the judge what the scene is for, when it is known", () => {
+    const { prompt } = renderJudgePrompt({
+      scene: "S",
+      a: "x",
+      b: "y",
+      intent: "orders the drink",
+    });
+    expect(prompt.startsWith("<intent>\norders the drink\n</intent>")).toBe(true);
   });
 });
 

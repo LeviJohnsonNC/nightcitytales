@@ -139,8 +139,8 @@ async function runCompare() {
   const rows: { pair: Pair; outcome: Outcome | "unparseable" }[] = [];
   for (const pair of pairs) {
     const [one, two] = await Promise.all([
-      judgePair({ scene: pair.scene, a: pair.before, b: pair.after }),
-      judgePair({ scene: pair.scene, a: pair.after, b: pair.before }),
+      judgePair({ scene: pair.scene, intent: pair.about, a: pair.before, b: pair.after }),
+      judgePair({ scene: pair.scene, intent: pair.about, a: pair.after, b: pair.before }),
     ]);
     if (!one || !two) {
       rows.push({ pair, outcome: "unparseable" });
@@ -243,6 +243,7 @@ async function runCalibrate() {
     if (!human || !pair) continue;
     const verdict = await judgePair({
       scene: pair.scene,
+      intent: pair.about,
       a: flipped ? pair.after : pair.before,
       b: flipped ? pair.before : pair.after,
     });
