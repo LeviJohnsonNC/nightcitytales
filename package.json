@@ -18,6 +18,7 @@
     "eval:compare": "bun evals/compare.ts",
     "eval:rescore": "bun evals/rescore.ts",
     "eval:replay": "bun evals/replay.ts",
+    "eval:judge": "bun evals/judge.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

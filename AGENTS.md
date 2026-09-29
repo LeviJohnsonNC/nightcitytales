@@ -662,6 +662,15 @@ prose. The ledger does not keep the packet a turn was written from, so that is
 all it can run, and it says so. It reads other people's narration with either a
 service-role key or one user's token; the key stays on the developer's machine.
 
+`bun run eval:judge` is the quality half the checks cannot measure: a model from
+a different family than the narrator reads two narrations of one scene (pure
+logic in `narration/judge.ts`, the call in `evals/judgeCall.ts`), each pair in
+both orders so position bias shows as _inconsistent_ rather than as a win. It is
+never a gate and never trusted uncalibrated: `label` writes a blind sample for a
+person and `calibrate` scores the judge against them, and every report says
+whether that has been done. Its reports live in `evals/results/judged/` so
+`eval:compare` does not mistake one for a run.
+
 ## Repository hygiene
 
 - Preserve unrelated working-tree changes and untracked assets; they belong to

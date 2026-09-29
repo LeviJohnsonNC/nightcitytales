@@ -228,7 +228,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
  * module so the eval sends exactly the headers play sends; everything else is
  * a plain OpenAI-compatible client.
  */
-async function providerFor(provider: EvalProvider) {
+export async function providerFor(provider: EvalProvider) {
   if (provider.name === "lovable") {
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
     return createLovableAiGatewayProvider(provider.apiKey);
