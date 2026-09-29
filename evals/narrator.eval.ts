@@ -119,12 +119,30 @@ async function paced(): Promise<void> {
   if (at > now) await new Promise((resolve) => setTimeout(resolve, at - now));
 }
 
-/** A call that failed once for a network reason gets one more go before the scenario is lost. */
+/**
+ * Errors no retry can fix: the key, its limit, the balance. A rate limit is NOT
+ * one of these ("Rate limit exceeded" passes) because waiting does fix it.
+ */
+const FATAL =
+  /key limit|total limit|more credits|insufficient|invalid api key|unauthori[sz]ed|forbidden|\b(?:401|402|403)\b/i;
+let fatalError: unknown = null;
+
+/**
+ * A call that failed once for a network reason gets one more go before the
+ * scenario is lost. One that failed for a reason waiting cannot fix stops the
+ * run: the first run with a spent key spent three and a half minutes asking
+ * twenty-five scenarios a question every one of them was going to be refused.
+ */
 async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  if (fatalError) throw fatalError;
   await paced();
   try {
     return await fn();
-  } catch {
+  } catch (error) {
+    if (FATAL.test(String((error as Error)?.message ?? error))) {
+      fatalError = error;
+      throw error;
+    }
     await paced();
     return fn();
   }
@@ -164,7 +182,12 @@ function failedScenario(
     servedModels: [],
     runs: [],
     checks: [],
-    error: message.split("\n")[0]!.slice(0, 200),
+    // No links: a provider's error can point at the page for managing the key.
+    error: message
+      .split("\n")[0]!
+      .replace(/https?:\/\/\S+/g, "")
+      .trim()
+      .slice(0, 200),
   };
 }
 

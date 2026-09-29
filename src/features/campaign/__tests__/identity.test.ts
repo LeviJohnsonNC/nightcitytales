@@ -9,7 +9,7 @@ describe("who the character is on sight, in the campaign", () => {
   it("reads sex and age off the saved Lifepath and hands the narrator one line", () => {
     expect(identityFrom(saved({ sex: "female", age: 22 }))).toEqual({ sex: "female", age: 22 });
     expect(appearsAsProp(saved({ sex: "male", age: 71 }))).toEqual({
-      appearsAs: "man, 71, elderly",
+      appearsAs: "man, elderly",
     });
   });
 

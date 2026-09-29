@@ -247,6 +247,27 @@ const UNIT_PATTERNS: { label: string; re: RegExp }[] = [
 ];
 
 /**
+ * How long a duration can be before it stops being texture.
+ *
+ * "Four seconds of silence" and "look the other way for five minutes" are how
+ * people talk, not a claim about what the engine will charge the clock. The
+ * first live runs flagged exactly those and nothing else, and the ruling was
+ * that they should not count. Anything from ten minutes up, and every hour,
+ * day and week, is still a duration the engine owns: "it takes twenty minutes"
+ * is a promise about the clock.
+ */
+export const SHORT_DURATION_MINUTES = 10;
+
+function isShortDuration(quote: string): boolean {
+  if (/second/i.test(quote)) return true;
+  if (/\bmin/i.test(quote)) {
+    const amount = amountOf(quote);
+    return amount !== null && amount < SHORT_DURATION_MINUTES;
+  }
+  return false;
+}
+
+/**
  * A number in prose that nothing in the packet produced.
  *
  * The flagship check, and the one with the most history: Life used to tell the
@@ -275,6 +296,7 @@ export const noUnsourcedNumber: Check = {
       );
       for (const match of turn.narration.matchAll(re)) {
         const quote = match[0].trim();
+        if (label === "duration" && isShortDuration(quote)) continue;
         const key = quote.toLowerCase();
         if (seen.has(key)) continue;
         if (haystack.includes(key)) continue;
@@ -282,6 +304,50 @@ export const noUnsourcedNumber: Check = {
         if (amount !== null && given.has(amount)) continue;
         seen.add(key);
         findings.push({ quote, note: `${label} the packet never states` });
+      }
+    }
+    return findings;
+  },
+};
+
+// ---------------------------------------------------------------------------
+// A FACE, NOT A BIRTH CERTIFICATE
+// ---------------------------------------------------------------------------
+
+const AGE_WORDS =
+  "(?:(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?|sixteen|seventeen|eighteen|nineteen)";
+const AGE_NUMBER = `(?:1[6-9]|[2-8]\\d|90|${AGE_WORDS})`;
+
+/** Ways of stating somebody's age in years. A guess ("seventy-odd") is not one. */
+const EXACT_AGE: RegExp[] = [
+  new RegExp(`\\b${AGE_NUMBER}[- ]years?[- ]old\\b`, "gi"),
+  new RegExp(`\\baged?\\s+${AGE_NUMBER}\\b`, "gi"),
+  new RegExp(`\\b(?:age|years) of ${AGE_NUMBER}\\b`, "gi"),
+];
+
+/**
+ * The narrator did not state the character's age as a number of years.
+ *
+ * The first eval of the "Reads as" line had a bartender saying "not many solos
+ * make it to seventy-one" and a porter sizing up somebody "twenty-two years
+ * old", because the packet gave the exact age. The line is now a band and the
+ * rule says so. This catches the number anyway, since a model can also invent
+ * one. It can match a machine's age ("a twenty-year-old sedan"); the quote says
+ * which.
+ */
+export const statesNoExactAge: Check = {
+  id: "states-no-exact-age",
+  applies: (ctx) => /Reads as:/.test(ctx.packet),
+  title: "did not state the character's age as a number",
+  source: 'Both prompts: "A stranger sees a face, not a birth certificate." (APPEARANCE_RULE)',
+  run(turn) {
+    const findings: Finding[] = [];
+    for (const re of EXACT_AGE) {
+      for (const match of turn.narration.matchAll(re)) {
+        findings.push({
+          quote: quoteAround(turn.narration, match.index ?? 0, match[0].length),
+          note: "an exact age in years",
+        });
       }
     }
     return findings;
@@ -771,6 +837,7 @@ export const ALL_CHECKS: Check[] = [
   offersTheWire,
   opensOnSomething,
   withinProseBudget,
+  statesNoExactAge,
 ];
 
 // ---------------------------------------------------------------------------

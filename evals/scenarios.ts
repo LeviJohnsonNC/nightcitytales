@@ -720,8 +720,8 @@ const PORTER = {
   standing: "Watches the corridor outside Huntver's office, and has since before the fire.",
 };
 
-const OLD_MAN = "man, 71, elderly";
-const YOUNG_WOMAN = "woman, 22, young";
+const OLD_MAN = "man, elderly";
+const YOUNG_WOMAN = "woman, young";
 
 /**
  * Words that show the narrator saw who was standing there. Heuristic and
@@ -740,7 +740,6 @@ const OLD_MAN_CUES = [
   "greying",
   "weathered",
   "mileage",
-  "seventy*",
   "decades",
   "grandfather",
   "your age",
@@ -750,17 +749,7 @@ const OLD_MAN_CUES = [
   "cane",
   "sir",
 ];
-const YOUNG_WOMAN_CUES = [
-  "young*",
-  "youth*",
-  "twenty*",
-  "girl",
-  "kid",
-  "miss",
-  "lady",
-  "ma'am",
-  "years old",
-];
+const YOUNG_WOMAN_CUES = ["young*", "youth*", "girl", "kid", "miss", "lady", "ma'am"];
 
 const guardTalk = (appearsAs: string) =>
   renderGmUserPrompt(

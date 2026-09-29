@@ -112,8 +112,22 @@ At five, 5/5 against 0/5 (p = 0.008) and 5/5 against 1/5 (p = 0.048) can. A
 comparison of fewer than five runs a side says so at the top and calls
 nothing. The logic is `src/features/narration/evalReport.ts`, which CI tests.
 
-To answer "did this revision help": run before the change, make it, run again,
-compare. Keep the first file; the second will not be reproducible.
+To answer "did this revision help": run BEFORE the change, make it, run again,
+compare. Keep the first file; it cannot be recreated once the prompt has moved.
+If the change is already made, the before-run can come from the commit before it
+in a second checkout:
+
+```sh
+git worktree add ../nct-before <commit-before> && ln -s "$PWD/node_modules" ../nct-before/node_modules
+(cd ../nct-before && bun run eval)     # leaves ../nct-before/evals/results/<time>.json
+bun run eval
+bun run eval:compare ../nct-before/evals/results/<time>.json evals/results/<time>.json
+```
+
+A run stops at the first error no retry can fix (a key's total limit, a spent
+balance, a bad key) instead of asking every remaining scenario the same
+question. OpenRouter keys carry their own limit, separate from the account's
+credit: adding credit does not lift a key that has reached its own.
 
 ## Reading a failure
 

@@ -19,6 +19,7 @@ import {
   smallChecksRollThemselves,
   staysInTheScene,
   staysPutOnRefusal,
+  statesNoExactAge,
   walkOnsFromCatalog,
   withheldStaysWithheld,
   withinProseBudget,
@@ -126,6 +127,20 @@ describe("a number the engine did not give it", () => {
     expect(said("Twenty minutes that way.")).not.toEqual([]);
     // Same amount, different unit: the packet's 10eb is not ten minutes.
     expect(said("Back in ten minutes.")).not.toEqual([]);
+  });
+
+  it("lets short durations through, because that is how people talk", () => {
+    // Verbatim from the first live runs: every one of these was flagged, and the
+    // ruling was that none of them should count.
+    const said = (narration: string) => noUnsourcedNumber.run(turn({ narration }), CTX);
+    expect(said("The silence holds for four seconds.")).toEqual([]);
+    expect(said("It resists for two seconds, then gives.")).toEqual([]);
+    expect(said("Look the other way for five minutes.")).toEqual([]);
+    // From ten minutes up, and every hour, day and week, it is a claim about the clock.
+    expect(said("It takes ten minutes.")).not.toEqual([]);
+    expect(said("Back in twenty minutes.")).not.toEqual([]);
+    expect(said("Gone for two hours.")).not.toEqual([]);
+    expect(said("Three days from now.")).not.toEqual([]);
   });
 
   it("does not flag counting the things in a room", () => {
@@ -504,5 +519,30 @@ describe("the job on the wire", () => {
       offersTheWire.run(turn({ narration: "Your agent buzzes.", offersWork: true }), ctx),
     ).toEqual([]);
     expect(offersTheWire.run(turn({ narration: "The rain comes down." }), CTX)).toEqual([]);
+  });
+});
+
+describe("states-no-exact-age", () => {
+  const withLine = ctx({ packet: "== CHARACTER ==\nReads as: man, elderly\n" });
+  const said = (narration: string) => statesNoExactAge.run(turn({ narration }), withLine);
+
+  it("catches an age said as a number, the way the first eval did", () => {
+    expect(said("To him, you are twenty-two years old and standing after hours.")).toHaveLength(1);
+    expect(said("A 71-year-old man in a heavy coat.")).toHaveLength(1);
+    expect(said("She is aged 34, by the look of her.")).toHaveLength(1);
+    expect(said("At the age of seventy-one you learn patience.")).toHaveLength(1);
+  });
+
+  it("lets a stranger's guess through, and things that are not ages", () => {
+    expect(said("Seventy-odd years of mileage on that face.")).toEqual([]);
+    expect(said("Barely out of school, by the look of you.")).toEqual([]);
+    expect(said("He gives your grey hair a slow once-over.")).toEqual([]);
+    // Below sixteen is a machine or a grudge, not the character.
+    expect(said("A ten-year-old grudge and a five-year-old jacket.")).toEqual([]);
+  });
+
+  it("only applies when the packet carries the line", () => {
+    expect(statesNoExactAge.applies?.(withLine)).toBe(true);
+    expect(statesNoExactAge.applies?.(ctx({}))).toBe(false);
   });
 });

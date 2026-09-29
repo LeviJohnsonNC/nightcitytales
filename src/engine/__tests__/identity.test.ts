@@ -38,9 +38,13 @@ describe("identity", () => {
     expect(readIdentity(null)).toEqual({ sex: null, age: null });
   });
 
-  it("says who somebody is on sight, or nothing at all", () => {
-    expect(identityLine({ sex: "male", age: 71 })).toBe("man, 71, elderly");
-    expect(identityLine({ sex: "female", age: 22 })).toBe("woman, 22, young");
+  it("says who somebody is on sight, or nothing at all, and never the number", () => {
+    for (let age = 16; age <= 90; age += 1) {
+      expect(identityLine({ sex: "male", age })).not.toMatch(/\d/);
+    }
+    expect(identityLine({ sex: "male", age: 71 })).toBe("man, elderly");
+    expect(identityLine({ sex: "female", age: 22 })).toBe("woman, young");
+    expect(identityLine({ sex: "female", age: null })).toBe("woman");
     expect(identityLine({ sex: null, age: null })).toBeNull();
   });
 

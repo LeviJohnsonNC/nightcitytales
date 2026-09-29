@@ -434,7 +434,9 @@ limits and age bands in `data/rules/identity.json` (`houseRule: true`). Pronouns
 follow from the sex chosen, so the draft still carries them. The save writes
 `{ sex, age }` into the general Lifepath under `IDENTITY_KEY`, beside the cast
 plan, so no migration is needed; `identityFrom` reads it back and the narrators
-get one "Reads as" line (`appearsAsProp`). It moves no die: the shared
+get one "Reads as" line (`appearsAsProp`), which is a band ("man, elderly") and
+never the number: a stranger sees a face, not a birth certificate, and
+`statesNoExactAge` holds the narrator to it. It moves no die: the shared
 `APPEARANCE_RULE` colours a stranger's first assumption and says in so many
 words that it never changes a DV, a price or an outcome.
 
