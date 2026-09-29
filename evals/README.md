@@ -29,10 +29,26 @@ first of these it finds:
 
 ```sh
 cp .env.example .env     # fill in one of the keys above
-bun run eval             # every scenario, once each
-bun run eval -- --repeat 3
-bun run eval -- -t job-risky-intent
+bun run eval             # every scenario and pair, five runs each
+REPEAT=5 bun run eval    # more runs (vitest rejects a --repeat flag, so it is a variable)
+bun run eval -t job-risky-intent
+bun run eval:compare     # the two newest runs, side by side
 ```
+
+Five runs is the default because fewer cannot tell a change from chance (see
+"Comparing two runs"). The runs of a scenario are asked together, but the
+calls are paced to `EVAL_RPM` a minute (default 15): a provider limits requests
+a minute, and the first live run of this harness lost three scenarios to a new
+OpenRouter account's twenty. A full run is about 130 calls, so around nine
+minutes at the default. A scenario the model could not be asked is recorded
+with its error and left out of any comparison, rather than counted as a check
+that stopped running.
+
+`EVAL_MAX_TOKENS` caps a reply. Play sets no cap and neither does the eval, so
+the two measure the same thing, but OpenRouter reserves credit for the largest
+reply a call might make (65,536 tokens) and refuses one on a small balance long
+before the balance is spent. A turn is a few hundred tokens, so a cap of 4096
+changes no reply and lets a small balance through.
 
 Bun loads `.env` itself; there is no dotenv step. `GM_MODEL` and `LIFE_MODEL`
 pick the models, same as in play — set them if your provider names the model
@@ -48,7 +64,7 @@ so give it any placeholder and the proxy replaces the header. And Node's
 proxy and so around the key:
 
 ```sh
-NODE_USE_ENV_PROXY=1 OPENROUTER_API_KEY=placeholder bun run eval -- --repeat 3
+NODE_USE_ENV_PROXY=1 OPENROUTER_API_KEY=placeholder bun run eval
 ```
 
 The eval calls the model the way play does, which is WITHOUT strict structured
@@ -72,8 +88,32 @@ writes every turn out in full, with what the player said and what the turn
 proposed, so a revision can be read side by side with the one before it:
 
 ```sh
-TRANSCRIPT=/tmp/after.md bun run eval -- --repeat 2
+TRANSCRIPT=/tmp/after.md REPEAT=2 bun run eval
 ```
+
+## Comparing two runs
+
+Every run writes `evals/results/<time>.json` (or `RESULTS=<file>`; the folder is
+git-ignored): the prompt versions, the model that answered, every turn, and what
+each check made of it. `bun run eval:compare` sets the two newest side by side,
+or name two files. It prints what got worse first, with what the new run
+actually said, then what got better.
+
+A cell is called a regression or an improvement only when Fisher's exact test
+says the two counts are unlikely to be the same rate (p < 0.05). Anything else
+that moved is listed as **unclear**, with the run to read. This is not
+pedantry: the first two runs this was ever used on had identical prompts and
+still disagreed, one check going from 3/3 clean to 0/3, which a "half the runs
+moved" rule had called a regression that never happened.
+
+It also means the number of runs decides what can be seen. At three a side the
+biggest possible swing, 3/3 against 0/3, has p = 0.1 and can never be called.
+At five, 5/5 against 0/5 (p = 0.008) and 5/5 against 1/5 (p = 0.048) can. A
+comparison of fewer than five runs a side says so at the top and calls
+nothing. The logic is `src/features/narration/evalReport.ts`, which CI tests.
+
+To answer "did this revision help": run before the change, make it, run again,
+compare. Keep the first file; the second will not be reproducible.
 
 ## Reading a failure
 
@@ -119,8 +159,11 @@ must trip it, and prose that must not.
 | --------------------------------------------- | -------------------------------------------------------------------------------- |
 | `scenarios.ts`                                | The turns, built through the shipping renderers from fixture state. No database. |
 | `runTurn.ts`                                  | The model call, and reducing a response to what a check can read.                |
-| `narrator.eval.ts`                            | Scenario × check, with the repeat counting.                                      |
+| `narrator.eval.ts`                            | Scenario × check, with the repeat counting, and the results file.                |
+| `compare.ts`                                  | Two results files, side by side. A thin wrapper.                                 |
 | `../src/features/narration/narratorChecks.ts` | The detectors. Pure, CI-tested.                                                  |
+| `../src/features/narration/pairedChecks.ts`   | The comparisons between two variants of a scene. Pure, CI-tested.                |
+| `../src/features/narration/evalReport.ts`     | The results record, and comparing two of them. Pure, CI-tested.                  |
 
 ## Too much, and too little
 
@@ -134,11 +177,43 @@ little, and the four `life-*` scenarios at the bottom of `scenarios.ts` replay
 the transcript that found it. A prompt change that makes one set pass by
 failing the other has not helped.
 
+## Pairs
+
+A single turn can only say whether it broke a rule. It cannot say what a rule
+about a DIFFERENCE means: that a 71-year-old man and a 22-year-old woman in the
+same scene get the same dice and a different porter, or that a Solo and a
+Netrunner in the same office are offered different first moves. A prompt that
+ignores the line passes every single-turn check, and so does one that lets it
+move a difficulty.
+
+A pair (`PAIRS` in `scenarios.ts`) is the same scene twice, differing in one
+input. Each side is held to the ordinary checks, and the two are held to each
+other by `pairedChecks.ts`:
+
+- **the difference moved no difficulty and skipped no roll** — a skill whose
+  difficulty in every run of one side is above every run of the other, or one
+  side always going to the dice while the other never does.
+- **the narrator used the difference** — at least half the runs of a side reach
+  for one of its authored cue words. A line the model ignores in every run is
+  dead weight in the packet. The cues are heuristic words, like a withheld
+  truth's tells: read the transcript before trusting a failure.
+- **the options diverge** — they differ more between the two sides than a side
+  differs from itself. Needs two runs a side to have a variation to compare with.
+
+A difference smaller than the model's own variation is not a difference, which
+is why every comparison is between the runs of one side and the runs of the
+other rather than between two turns.
+
 ## Adding a scenario
 
 Keep the set small — each one costs a call per repeat, and six scenarios that
 each watch for something specific beat twenty that all watch a quiet evening go
 by. A new one earns its place by catching something none of the others can.
+
+Only the checks a scenario gives something to measure are run and reported: a
+check declares `applies(ctx)`, and `checkApplicability.test.ts` holds the gate to
+the check's own early return, so a gate that drifts cannot quietly stop a check
+measuring something.
 
 `expect` is what the checks cannot work out for themselves: whether the player
 asked for options, whether the intent was risky, whether the evening was rolled

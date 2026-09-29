@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "eval": "vitest run --config vitest.evals.config.ts",
+    "eval:compare": "bun evals/compare.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

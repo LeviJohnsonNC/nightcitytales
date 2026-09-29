@@ -39,3 +39,6 @@ dist-ssr
 # Python bytecode from the atlas tracing tool
 __pycache__/
 *.pyc
+
+# Eval runs: one JSON per run, compared with `bun run eval:compare`.
+evals/results/

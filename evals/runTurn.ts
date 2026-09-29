@@ -34,6 +34,20 @@ export type TurnResult = {
   servedModel: string | null;
 };
 
+/**
+ * An output cap for the eval's calls, when set (`EVAL_MAX_TOKENS`).
+ *
+ * Play sets none, and neither does the eval by default, so the two measure the
+ * same thing. But a provider that reserves credit for the largest reply a call
+ * MIGHT make will refuse one on a small balance: OpenRouter asked for 65,536
+ * tokens of headroom per call and stopped a run at a balance that would have
+ * paid for a hundred real ones. A turn is a few hundred tokens, so a cap of a
+ * few thousand changes no reply and lets a small balance through.
+ */
+const MAX_OUTPUT_TOKENS = process.env["EVAL_MAX_TOKENS"]
+  ? Number(process.env["EVAL_MAX_TOKENS"])
+  : undefined;
+
 export function modelFor(narrator: "gm" | "life"): string {
   const override = narrator === "life" ? process.env["LIFE_MODEL"] : undefined;
   return override ?? process.env["GM_MODEL"] ?? DEFAULT_MODEL;
@@ -120,6 +134,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
         schema: GmWireResponseSchema,
         system: scenario.system,
         prompt: scenario.packet,
+        ...(MAX_OUTPUT_TOKENS ? { maxOutputTokens: MAX_OUTPUT_TOKENS } : {}),
       });
       gm = normalizeGmResponse(object);
       servedModel = response.modelId ?? null;
@@ -152,6 +167,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
     schema: LifeWireResponseSchema,
     system: scenario.system,
     prompt: scenario.packet,
+    ...(MAX_OUTPUT_TOKENS ? { maxOutputTokens: MAX_OUTPUT_TOKENS } : {}),
   });
   const life = normalizeLifeResponse(object);
   return {

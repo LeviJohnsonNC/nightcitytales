@@ -646,6 +646,13 @@ prompt, a context renderer or a response normalizer. A single run is not a
 verdict: pass `--repeat 3` and read the counts, because the finding worth
 having is usually the check that trips one time in three.
 
+Every run leaves `evals/results/<time>.json`, and `bun run eval:compare` sets
+two side by side. It calls a change only when Fisher's exact test says chance is
+an unlikely explanation, which needs five runs a side (the default): two runs of
+the same prompt once disagreed 3/3 against 0/3, so "it moved" is not evidence.
+A scene that must differ in one input, such as who is standing there, is a pair
+in `evals/scenarios.ts` (`pairedChecks.ts`), not a single-turn check.
+
 ## Repository hygiene
 
 - Preserve unrelated working-tree changes and untracked assets; they belong to

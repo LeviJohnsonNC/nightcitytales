@@ -143,6 +143,14 @@ export type CheckContext = {
 
 export type Check = {
   id: string;
+  /**
+   * Whether this scenario gives the check anything to measure. A check that is
+   * not applicable is not run and not reported: every check used to be held to
+   * every scenario, and most of those cells passed because the check had
+   * nothing to look at, which buried the ones that meant something.
+   * Absent means always.
+   */
+  applies?(ctx: CheckContext): boolean;
   /** What passing looks like, phrased for a report line. */
   title: string;
   /** Where the rule is written down. */
@@ -396,6 +404,7 @@ export const walkOnsFromCatalog: Check = {
  */
 export const withheldStaysWithheld: Check = {
   id: "withheld-stays-withheld",
+  applies: (ctx) => ctx.withheldTruths.length > 0,
   title: "did not state a fact the character has not found",
   source: "AGENTS.md: Beat.truths is held apart from gmBrief because the brief reaches the model.",
   run(turn, ctx) {
@@ -420,6 +429,7 @@ export const withheldStaysWithheld: Check = {
  */
 export const resultStands: Check = {
   id: "result-stands",
+  applies: (ctx) => ctx.resolved !== undefined,
   title: "narrated the settled result, and did not ask for it again",
   source:
     'Both prompts: "When you are given a RESOLVED result, narrate exactly that result ... never propose the same check again."',
@@ -452,6 +462,7 @@ export const resultStands: Check = {
  */
 export const offersTheWire: Check = {
   id: "offers-the-wire",
+  applies: (ctx) => ctx.wireJob === true,
   title: "offered the job that was on the wire",
   source:
     'Life prompt: "When the block IS in front of you, the phone has already rung. Offer it this turn."',
@@ -493,6 +504,7 @@ export const opensOnSomething: Check = {
 
 export const withinProseBudget: Check = {
   id: "within-prose-budget",
+  applies: (ctx) => ctx.wordBudget !== undefined,
   title: "stayed inside its prose budget",
   source: 'PRODUCT.md: "The player is reading more than they are deciding."',
   run(turn, ctx) {
@@ -512,6 +524,7 @@ export const withinProseBudget: Check = {
  */
 export const riskGetsDice: Check = {
   id: "risk-gets-dice",
+  applies: (ctx) => ctx.riskyIntent,
   title: "proposed a check for a risky intent",
   source:
     'PRODUCT.md: "A scene resolves entirely in narration when it could plausibly have failed."',
@@ -530,6 +543,7 @@ export const riskGetsDice: Check = {
  */
 export const quietStaysQuiet: Check = {
   id: "quiet-stays-quiet",
+  applies: (ctx) => ctx.mustStayQuiet,
   title: "left a quiet evening quiet",
   source:
     'PRODUCT.md: "A quiet evening has been filled with a stranger, a phone call, or a noise."',
@@ -569,6 +583,7 @@ export const quietStaysQuiet: Check = {
  */
 export const goesWhereAsked: Check = {
   id: "goes-where-asked",
+  applies: (ctx) => ctx.tripToKind !== undefined,
   title: "proposed a trip that reaches the kind of place asked for",
   source:
     'PRODUCT.md: "A request the engine could have resolved was refused, or answered with nothing to press."',
@@ -596,6 +611,7 @@ export const goesWhereAsked: Check = {
  */
 export const finishesTheRequest: Check = {
   id: "finishes-the-request",
+  applies: (ctx) => (ctx.carryThrough?.length ?? 0) > 0,
   title: "carried out the rest of what the player said",
   source: 'PRODUCT.md: "The player had to say the same thing twice."',
   run(turn, ctx) {
@@ -625,6 +641,7 @@ const RETREATS = [
  */
 export const staysPutOnRefusal: Check = {
   id: "stays-put-on-refusal",
+  applies: (ctx) => ctx.staysPut === true,
   title: "left the character where they were when a trip was refused",
   source:
     'PRODUCT.md: "A turn left the character where they started after they asked to go somewhere."',
@@ -652,6 +669,7 @@ export const staysPutOnRefusal: Check = {
  */
 export const directionsAreReal: Check = {
   id: "directions-are-real",
+  applies: (ctx) => ctx.realAnswers !== undefined,
   title: "gave directions to a place the map knows",
   source:
     'PRODUCT.md: "A request the engine could have resolved was refused, or answered with nothing to press."',
@@ -674,6 +692,7 @@ export const directionsAreReal: Check = {
  */
 export const staysInTheScene: Check = {
   id: "stays-in-the-scene",
+  applies: (ctx) => (ctx.offScene?.length ?? 0) > 0,
   title: "kept the scene on what the player was doing",
   source: 'PRODUCT.md: "A scene in progress was hijacked by a topic the engine did not raise."',
   run(turn, ctx) {
@@ -698,6 +717,7 @@ export const staysInTheScene: Check = {
  */
 export const comesOverOnCue: Check = {
   id: "comes-over-on-cue",
+  applies: (ctx) => ctx.comesOver !== undefined,
   title: "brought over the person the engine said was coming",
   source: 'PRODUCT.md: "Whether they come OVER is the engine\'s roll (`comesOver`)."',
   run(turn, ctx) {
@@ -717,6 +737,7 @@ export const comesOverOnCue: Check = {
  */
 export const smallChecksRollThemselves: Check = {
   id: "small-checks-roll-themselves",
+  applies: (ctx) => ctx.nothingRiding === true,
   title: "did not stop the player for a roll that risks nothing",
   source: 'PRODUCT.md: "Something that risks nothing was put to the player as a roll to press."',
   run(turn, ctx) {
@@ -753,6 +774,11 @@ export const ALL_CHECKS: Check[] = [
 ];
 
 // ---------------------------------------------------------------------------
+
+/** Whether a check has anything to measure in a scenario. */
+export function isApplicable(check: Check, ctx: CheckContext): boolean {
+  return check.applies ? check.applies(ctx) : true;
+}
 
 function firstSentence(text: string): string {
   const match = text.trim().match(/^.{0,160}?[.!?](?:\s|$)/s);
