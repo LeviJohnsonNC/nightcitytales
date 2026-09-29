@@ -15,7 +15,7 @@ import {
 } from "@/features/narration/narratorChecks";
 import { ALL_PAIRED_CHECKS, type PairedContext } from "@/features/narration/pairedChecks";
 import type { CheckRecord } from "@/features/narration/evalReport";
-import { ALL_SESSION_CHECKS } from "@/features/narration/sessionChecks";
+import { ALL_SESSION_CHECKS, type SessionScene } from "@/features/narration/sessionChecks";
 
 /** What each applicable check made of these turns. */
 export function scoreTurns(turns: CheckableTurn[], ctx: CheckContext): CheckRecord[] {
@@ -73,7 +73,7 @@ export type SessionTurn = { turn: CheckableTurn; ctx: CheckContext };
  * turn five, and that only shows if the turn number survives into the report.
  * Checks the scenario gives nothing to measure are left out, as everywhere else.
  */
-export function scoreSession(runs: SessionTurn[][]): CheckRecord[] {
+export function scoreSession(runs: SessionTurn[][], scene?: SessionScene): CheckRecord[] {
   const applicable = ALL_CHECKS.filter((check) =>
     runs.some((run) => run.some(({ ctx }) => isApplicable(check, ctx))),
   );
@@ -102,10 +102,15 @@ export function scoreSession(runs: SessionTurn[][]): CheckRecord[] {
     failures: runs
       .map((run, index) => ({
         run: index,
-        findings: check.run(run.map(({ turn }) => turn)).map(({ turn, note, ...f }) => ({
-          ...f,
-          note: `turn ${turn}${note ? `: ${note}` : ""}`,
-        })),
+        findings: check
+          .run(
+            run.map(({ turn }) => turn),
+            scene,
+          )
+          .map(({ turn, note, ...f }) => ({
+            ...f,
+            note: `turn ${turn}${note ? `: ${note}` : ""}`,
+          })),
       }))
       .filter(({ findings }) => findings.length > 0),
   }));

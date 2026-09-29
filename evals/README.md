@@ -238,7 +238,7 @@ so `eval:compare` never reads one as a run.
 Every scenario above is one turn, asked cold. Some things only show over a
 scene: the room described again on turn four, a line quoted back, a withheld
 fact that leaks once enough has been said around it. `sessions.ts` scripts a
-run of player inputs in one scene (five at the bar, four in Huntver's office).
+run of player inputs in one scene (five at the bar, five with one bartender who is asked his name twice, four in Huntver's office).
 After each reply the narration goes into the next turn's RECENT block through
 the same functions play uses (`recentLifeLines`, `recentEventLines`), so the
 window and the trimming are play's own.
@@ -250,9 +250,18 @@ bun run eval -t session-          # only the sessions
 A run of a session is one whole session. Every single-turn check that applies
 runs on every turn and fails the run if any turn breaks it, with the turn named
 in the finding (`turn 5: money the packet never states`). Checks that need more
-than one turn live in `narration/sessionChecks.ts`; today that is one, a run of
-`REPEAT_RUN_WORDS` (7) words a later turn shares with an earlier one. Sessions
-are compared like any other scenario, by `eval:compare`.
+than one turn live in `narration/sessionChecks.ts`: a run of `REPEAT_RUN_WORDS`
+(7) words a later turn shares with an earlier one, and `keeps-its-people`, which
+holds a named person to one name and one job. The second reads "Kenji, the
+bartender", "the barkeep, Kenji," and "Name's Kenji" whatever the scene. A
+session that declares an `interlocutor` (the one person the player deals with
+all scene) also gets its names read off how a model writes them: a name opening
+a sentence with a verb, and a name alone in quotes, the answer to "who are you".
+The name most turns open on is taken as theirs; a different name given alone in
+quotes, or another name opening sentences in two turns the first is absent from,
+is a rename. A name seen once does not count: the owner discussed in turn three
+("Sato gets a cut") opens a sentence too. Sessions are compared like any other
+scenario, by `eval:compare`.
 
 Two differences from play, both on purpose. The inputs are scripted, not chosen
 by a model, so a difference between two runs is the narrator's and not a
@@ -264,10 +273,14 @@ nothing that grows with the turn count. Two single-turn misses in forty-five
 turns, about the ordinary rate. No verbatim repetition at five words or more in
 any session; the model does recycle motifs ("two cloudy ice cubes", "the guy in
 the Tyger Claws jacket") at four words, which reads as continuity, not as
-repeating itself. The repeat check has only been shown to fire on hand-written
-prose, so treat a clean result as "not found", not "cannot happen". Not yet
-covered: an NPC changing name or manner between turns, which needs a notion of
-who a named person is that the checks do not have.
+repeating itself. The bartender session asks his name in turn one and again in
+turn five: five of five kept it (Kenji, Tadashi and Katsuo, never two in one
+session). Neither session check has been seen to fire on a live turn, only on
+hand-written prose; the one attempt to make them fire, a smaller model, could
+not produce the response schema at all. Treat a clean result as "not found", not
+"cannot happen". The name check is a heuristic over how this model writes, and
+the first version, which read only "Kenji, the bartender", found a name in none
+of 25 turns and would have passed anything.
 
 ## Reading a failure
 

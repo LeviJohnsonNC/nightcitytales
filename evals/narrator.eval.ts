@@ -359,7 +359,10 @@ for (const session of SESSIONS) {
         record.scenarios.push(failedScenario(session.id, "single", session, model, error));
         throw error;
       }
-      records = scoreSession(runs.map((r) => r.turns));
+      records = scoreSession(
+        runs.map((r) => r.turns),
+        { interlocutor: session.interlocutor },
+      );
       record.scenarios.push({
         id: session.id,
         kind: "single",
