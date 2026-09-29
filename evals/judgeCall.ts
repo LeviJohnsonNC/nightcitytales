@@ -35,7 +35,7 @@ export async function judgePair(input: {
         system,
         prompt,
         temperature: 0,
-        maxOutputTokens: 600,
+        maxOutputTokens: 1500,
       }),
     );
     const judgement = parseJudgement(text);

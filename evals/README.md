@@ -221,6 +221,12 @@ slots and writes the agreement and Cohen's kappa. Every judged report opens
 with whether that has been done for the model in use. Kappa near zero is
 chance; about 0.4 is worth reading, 0.6 agrees well.
 
+**Where it stands (30 blind pairs, one labeller, scene intent given to the
+judge):** haiku-4.5 kappa 0.19, sonnet-4.5 0.24, sonnet-5.5 0.27, opus-5.5
+-0.06. None reaches 0.4, and on 30 pairs the error on a kappa is about ±0.15,
+so the models are not distinguishable from each other. Read a judged report as
+a prompt to go and read the turns, not as a measurement.
+
 It is never a gate, for the same reason `bun run eval` is not: it costs money
 and it is a model's opinion. The scene the judge sees is the scenario's packet
 as `scenarios.ts` renders it now (a record does not keep its packet), so judge
