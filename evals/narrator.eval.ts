@@ -280,6 +280,8 @@ for (const pair of PAIRS) {
     const paired = ALL_PAIRED_CHECKS.filter((check) => check.applies(pair.paired));
     const records: Record<string, CheckRecord[]> = {};
     let comparison: CheckRecord[] = [];
+    /** What each paired check concluded. The record carries the rate; this is the verdict. */
+    const verdicts: Record<string, Finding[]> = {};
 
     beforeAll(async () => {
       let both: Asked[];
@@ -310,6 +312,7 @@ for (const pair of PAIRS) {
       const turnsA = a!.map((x) => x.result.turn);
       const turnsB = b!.map((x) => x.result.turn);
       comparison = scorePair(turnsA, turnsB, pair.paired);
+      for (const check of paired) verdicts[check.id] = check.run(turnsA, turnsB, pair.paired);
       record.scenarios.push({
         id: `${pair.id} [compared]`,
         kind: "pair",
@@ -334,12 +337,15 @@ for (const pair of PAIRS) {
 
     for (const check of paired) {
       it(check.title, () => {
-        const found = comparison.find((r) => r.id === check.id)!;
-        // A paired check is one comparison over all the runs, not one per run.
+        const found = verdicts[check.id] ?? [];
+        // The record carries a rate where a check has one; whether it held is
+        // the check's own verdict, not "no run fell short".
+        const rate = comparison.find((r) => r.id === check.id);
+        const counted = rate?.rate ? `${rate.runs - rate.failures.length}/${rate.runs} runs\n` : "";
         expect(
-          found.failures,
-          `rule: ${check.source}\n${found.failures
-            .flatMap((f) => f.findings.map(describe_))
+          found,
+          `${counted}rule: ${check.source}\n${found
+            .map(describe_)
             .map((line) => `  ${line}`)
             .join("\n")}`,
         ).toEqual([]);

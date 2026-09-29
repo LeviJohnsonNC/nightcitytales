@@ -223,9 +223,23 @@ other by `pairedChecks.ts`:
 - **the narrator used the difference** — at least half the runs of a side reach
   for one of its authored cue words. A line the model ignores in every run is
   dead weight in the packet. The cues are heuristic words, like a withheld
-  truth's tells: read the transcript before trusting a failure.
-- **the options diverge** — they differ more between the two sides than a side
-  differs from itself. Needs two runs a side to have a variation to compare with.
+  truth's tells: read the transcript before trusting a failure. Recorded as a
+  rate (runs that showed a cue, out of all runs), so two runs can be compared.
+- **the options diverge** — every turn is asked which side its options look
+  like. If the difference changed nothing, about half are right by luck; if it
+  changed them, nearly all are. The rate is recorded, and whether it beats luck
+  is decided by shuffling the labels and asking how often a random split does as
+  well (a seeded permutation test, so the same turns always give the same p).
+  Needs four runs a side to be able to say anything at all, and at four a single
+  odd run is enough to lose it: five, the default, is where it holds up.
+
+A rate cell is a measurement, not a rule: the summary lists it under "rates"
+with whether it held, keeps it out of the clean-run totals, and `eval:compare`
+tests a change in it like any other count. Its pass or fail is the check's own
+verdict. Near the line that verdict can still tip between two runs of the same
+prompt (8/10 turns told apart, then 9/10, straddled it) while the count barely
+moved; trust the count and the comparison, and read the verdict as a prompt to
+look.
 
 A difference smaller than the model's own variation is not a difference, which
 is why every comparison is between the runs of one side and the runs of the

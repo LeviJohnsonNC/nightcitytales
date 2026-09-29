@@ -29,6 +29,13 @@ export type CheckRecord = {
   title: string;
   runs: number;
   failures: { run: number; findings: Finding[] }[];
+  /**
+   * A measurement rather than a rule: `failures` are the runs that did not fit,
+   * and whether the check held is `held`, not "no failures". Reported as a rate
+   * and compared like any other count.
+   */
+  rate?: true;
+  held?: boolean;
 };
 
 export type ScenarioRecord = {
@@ -128,6 +135,8 @@ export type Summary = {
   medianSeconds: number | null;
   /** Scenarios that could not be asked at all. */
   errored: { scenario: string; error: string }[];
+  /** Measurements reported as rates. Not rules, so not counted in the totals above. */
+  rates: { scenario: string; title: string; clean: number; runs: number; held: boolean }[];
 };
 
 export function summarize(record: EvalRecord): Summary {
@@ -136,9 +145,20 @@ export function summarize(record: EvalRecord): Summary {
   let clean = 0;
   let total = 0;
   const errored: Summary["errored"] = [];
+  const rates: Summary["rates"] = [];
   for (const scenario of record.scenarios) {
     if (scenario.error) errored.push({ scenario: scenario.id, error: scenario.error });
     for (const check of scenario.checks) {
+      if (check.rate) {
+        rates.push({
+          scenario: scenario.id,
+          title: check.title,
+          clean: cleanRuns(check),
+          runs: check.runs,
+          held: check.held !== false,
+        });
+        continue;
+      }
       cells += 1;
       clean += cleanRuns(check);
       total += check.runs;
@@ -161,6 +181,7 @@ export function summarize(record: EvalRecord): Summary {
     failing,
     medianSeconds: median(record.scenarios.flatMap((s) => s.runs.map((r) => r.seconds))),
     errored,
+    rates,
   };
 }
 
@@ -172,6 +193,14 @@ export function formatSummary(record: EvalRecord): string {
   ];
   if (s.failing.length === 0) lines.push("  nothing broke");
   for (const e of s.errored) lines.push(`  could not be asked: ${e.scenario} (${e.error})`);
+  if (s.rates.length > 0) {
+    lines.push("rates (measurements, not rules):");
+    for (const r of s.rates) {
+      lines.push(
+        `  ${r.clean}/${r.runs}  ${r.held ? "held " : "BROKE"}  ${r.scenario} > ${r.title}`,
+      );
+    }
+  }
   for (const f of s.failing) {
     lines.push(`  ${f.clean}/${f.runs}  ${f.scenario} > ${f.title}`);
   }

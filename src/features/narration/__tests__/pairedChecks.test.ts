@@ -126,29 +126,75 @@ describe("the narrator used the difference it was given", () => {
   });
 });
 
-describe("the options differ more between the two than the model differs from itself", () => {
-  const run = (a: CheckableTurn[], b: CheckableTurn[]) =>
-    optionsDiverge.run(a, b, { ...CTX, optionsDiffer: true });
+describe("the options tell the two sides apart by more than the model's own variation", () => {
   const opts = (...labels: string[]) => turn({ offeredOptions: labels });
+  const solo = () => opts("Kick the door", "Check the corridor");
+  const runner = () => opts("Jack the terminal", "Trace the network");
+  const four = (make: () => CheckableTurn) => [make(), make(), make(), make()];
+  const ctx: PairedContext = { ...CTX, optionsDiffer: true };
+  const rate = (a: CheckableTurn[], b: CheckableTurn[]) => optionsDiverge.rate!(a, b, ctx);
 
-  it("passes when each side is consistent and the two sides are not alike", () => {
-    const a = [
-      opts("Kick the door", "Check the corridor"),
-      opts("Kick the door", "Check the corridor"),
-    ];
-    const b = [
-      opts("Jack the terminal", "Trace the network"),
-      opts("Jack the terminal", "Trace the network"),
-    ];
-    expect(run(a, b)).toEqual([]);
+  it("holds, and says every turn was told apart, when each side is consistent and the sides differ", () => {
+    const r = rate(four(solo), four(runner))!;
+    expect(r.runs).toBe(8);
+    expect(r.failing).toEqual([]);
+    expect(r.held).toBe(true);
+    expect(optionsDiverge.run(four(solo), four(runner), ctx)).toEqual([]);
   });
 
-  it("flags two sides that are no less alike than one side is with itself", () => {
-    const same = () => opts("Kick the door", "Check the corridor");
-    expect(run([same(), same()], [same(), same()])).toHaveLength(1);
+  it("does not hold when the two sides offer the same options", () => {
+    const r = rate(four(solo), four(solo))!;
+    expect(r.failing).toHaveLength(8);
+    expect(r.held).toBe(false);
+    expect(optionsDiverge.run(four(solo), four(solo), ctx)[0]!.quote).toContain("p =");
   });
 
-  it("says nothing with one run a side, because there is no variation to compare with", () => {
-    expect(run([opts("Kick the door")], [opts("Kick the door")])).toEqual([]);
+  it("is a rate: one odd run costs one, and does not flip the verdict at the default five runs", () => {
+    const five = (make: () => CheckableTurn) => [...four(make), make()];
+    const a = [...four(solo), runner()];
+    const r = rate(a, five(runner))!;
+    // The odd turn looks like the other side, and only it is misattributed.
+    expect(r.runs).toBe(10);
+    expect(r.failing).toHaveLength(1);
+    expect(r.held).toBe(true);
+  });
+
+  it("cannot hold with a single odd run at four a side: there are too few ways to split eight turns", () => {
+    const a = [solo(), solo(), solo(), runner()];
+    expect(rate(a, four(runner))!.held).toBe(false);
+  });
+
+  it("gives the same answer every time for the same turns", () => {
+    const a = [solo(), opts("Kick the door", "Wait"), solo(), solo()];
+    const b = [runner(), opts("Trace the network", "Wait"), runner(), runner()];
+    expect(rate(a, b)).toEqual(rate(a, b));
+  });
+
+  it("says nothing with fewer runs than it takes to tell anything apart", () => {
+    expect(rate([solo(), solo(), solo()], [runner(), runner(), runner()])).toBeNull();
+    expect(optionsDiverge.run([solo()], [runner()], ctx)).toEqual([]);
+  });
+});
+
+describe("the uptake check as a rate", () => {
+  const ctx: PairedContext = { ...CTX, cues: [["grey"], ["young*"]] };
+
+  it("counts the runs that showed the cue, and holds when half did", () => {
+    const a = [turn({ narration: "grey hair" }), turn({ narration: "nothing" })];
+    const b = [turn({ narration: "so young" }), turn({ narration: "so young" })];
+    const r = usesTheReading.rate!(a, b, ctx)!;
+    expect(r.runs).toBe(4);
+    expect(r.failing).toHaveLength(1);
+    expect(r.failing[0]!.quote).toContain("old man run 2");
+    expect(r.held).toBe(true);
+  });
+
+  it("does not hold when fewer than half showed it", () => {
+    const a = [turn(), turn(), turn(), turn({ narration: "grey" })];
+    expect(usesTheReading.rate!(a, [turn({ narration: "young" })], ctx)!.held).toBe(false);
+  });
+
+  it("has no rate when there are no cues to count", () => {
+    expect(usesTheReading.rate!([turn()], [turn()], { ...CTX, cues: [[], []] })).toBeNull();
   });
 });
