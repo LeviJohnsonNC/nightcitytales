@@ -127,6 +127,21 @@ export const ROLE_MOVE_RULE = `At least ONE of them must be a move only THIS cha
 - If the scene genuinely gives that Role nothing — no people for a Rockerboy, no machine for a Tech, no road for a Nomad — say nothing about it and write ordinary options instead. A forced Role move is worse than none.`;
 
 /**
+ * WHO THEY ARE ON SIGHT.
+ *
+ * The context's "Reads as" line gives the character's sex and age. It is a
+ * first impression and never a verdict: it changes what a stranger assumes and
+ * how they speak, not the difficulty of anything. DVs stay on the published
+ * ladder and the engine still owns every number, so this rule is only about
+ * the first beat of a meeting.
+ */
+export const APPEARANCE_RULE = `# WHO THEY ARE ON SIGHT
+The context's "Reads as" line says what a stranger sees: the character's sex and age. Let it colour the FIRST beat of a meeting the way it would in this city. A 71-year-old man and a 22-year-old woman walking into the same bar are not greeted, sized up, underestimated, pitied, flirted with, warned or trusted in the same way, and a fixer, a ganger and a clerk each make a different assumption from the same face.
+- It is an assumption, not a fact: what the character then says and does can overturn it, and often should. Let their reputation, Role and conduct overrule the first impression by the second exchange.
+- Keep it specific and human, a look, a tone, what is said or not said, and never a lecture. It is not the subject of every scene; most of the time it changes nothing and you say nothing.
+- It never changes a difficulty, a price, a roll or an outcome. Those belong to the engine.`;
+
+/**
  * WHAT THE CITY NOTICED — the observation report.
  *
  * Fully shared, definitions included. Life used to carry the vocabulary without

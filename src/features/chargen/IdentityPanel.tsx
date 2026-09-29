@@ -15,8 +15,6 @@ import { suggestHandles } from "./handleSuggestions";
 import { fixerShortName } from "./interview";
 import "./interview.css";
 
-const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"];
-
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
 
 export function IdentityPanel({ state, userId }: { state: ChargenState; userId: string }) {
@@ -114,32 +112,6 @@ export function IdentityPanel({ state, userId }: { state: ChargenState; userId: 
             ))}
           </div>
           {namingError && <p className="text-sm text-danger">{namingError}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="chargen-pronouns">Pronouns</Label>
-          <Input
-            id="chargen-pronouns"
-            value={state.pronouns}
-            onChange={(e) => patch({ pronouns: e.target.value })}
-            placeholder="Anything you like"
-          />
-          <div className="flex flex-wrap gap-2">
-            {PRONOUN_PRESETS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                aria-pressed={state.pronouns === preset}
-                onClick={() => patch({ pronouns: preset })}
-                className={`border px-3 py-1 font-mono text-[11px] tracking-[0.1em] transition-colors duration-200 ${
-                  state.pronouns === preset
-                    ? "border-ember bg-ember/15 text-text"
-                    : "border-hairline text-text-muted hover:border-ember/60"
-                }`}
-              >
-                {preset}
-              </button>
-            ))}
-          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="chargen-description">One-line self-description (optional)</Label>

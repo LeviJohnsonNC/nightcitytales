@@ -15,6 +15,7 @@ import {
   rollRoleLifepathTable,
   visibleRoleLifepathTables,
   type LifepathEntryRecord,
+  validAge,
 } from "@/engine";
 import { BackgroundPanel } from "./BackgroundPanel";
 import { DiceRoll } from "./DiceRoll";
@@ -33,7 +34,8 @@ import { useChargenStore, type ChargenState } from "./store";
 import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import { fixerChapterLine, type LifepathChapterId } from "./interview";
 import { PeoplePicker } from "./PeoplePicker";
-import { PronounPicker } from "./PronounPicker";
+import { FixerLine } from "./FixerLine";
+import { WhoPicker } from "./WhoPicker";
 import { Backdrop } from "./Backdrop";
 import { uploadedAsset } from "./art";
 import "./interview.css";
@@ -80,7 +82,14 @@ const CHAPTERS: Chapter[] = [
   { id: "work", title: "About the work", ids: [] },
 ];
 
-export function LifepathPanel({ state }: { state: ChargenState }) {
+export function LifepathPanel({
+  state,
+  lead = null,
+}: {
+  state: ChargenState;
+  /** The fixer's reaction to the answer that brought the player here. */
+  lead?: string | null | undefined;
+}) {
   const patch = useChargenStore((s) => s.patch);
   const general = readGeneralLifepath(state.lifepath.general);
   const roleLifepath = readRoleLifepath(state.lifepath.roleSpecific, state.roleId);
@@ -198,7 +207,10 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
 
   const done: Record<LifepathChapterId, boolean> = {
     origin: chapters[0]!.ids.every((id) => general.entries[id]) && Boolean(general.language),
-    self: chapters[1]!.ids.every((id) => general.entries[id]),
+    self:
+      chapters[1]!.ids.every((id) => general.entries[id]) &&
+      Boolean(state.sex) &&
+      validAge(state.age) !== null,
     people: general.enemies.every((enemy) => enemy.injuredParty),
     drive: chapters[3]!.ids.every((id) => general.entries[id]),
     work: roleTables.length > 0 && roleAnswered >= roleTables.length,
@@ -217,6 +229,10 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
 
   return (
     <div className="space-y-4">
+      {/* The chapter's own header, in the place every other step's fixer line has,
+          with the chapter's scene behind it. */}
+      <ChapterLine fixer={fixer} chapter={chapter.id} title={chapter.title} lead={lead} />
+
       {/* Sticky progress header */}
       <div className="sticky top-14 z-10 flex items-center justify-between gap-3 border border-hairline bg-surface/90 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
         <div>
@@ -264,15 +280,13 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
               {String(i + 1).padStart(2, "0")}
               {done[c.id] ? " ✓" : ""}
             </span>
-            <span className="block truncate text-xs font-semibold sm:text-sm">{c.title}</span>
+            <span className="block text-xs font-semibold leading-tight sm:text-sm">{c.title}</span>
           </button>
         ))}
       </nav>
 
       <section key={chapter.id} className="cg-say space-y-4">
-        <ChapterLine fixer={fixer} chapter={chapter.id} title={chapter.title} />
-
-        {chapter.id === "self" && <PronounPicker state={state} />}
+        {chapter.id === "self" && <WhoPicker state={state} />}
 
         {chapter.ids.length > 0 && (
           <GeneralGroup
@@ -338,65 +352,57 @@ export function LifepathPanel({ state }: { state: ChargenState }) {
             </p>
           ))}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
-          {chapter.id !== "people" ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => rollRemaining(chapter.ids, chapter.id === "work")}
-              disabled={done[chapter.id]}
-            >
-              Roll this chapter
-            </Button>
-          ) : (
-            <span />
-          )}
-          {next && (
+        {next && (
+          <div className="flex justify-end border-t border-hairline pt-4">
             <Button size="sm" onClick={() => goTo(next.id)}>
               Next: {next.title} →
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </section>
     </div>
   );
 }
 
-/** The fixer opening a chapter, face and all. */
+/**
+ * The fixer opening a chapter, dressed exactly as they are on every other step:
+ * the same portrait, the same size of type, the same frame over the chapter's
+ * own scene. The chapter's name rides small beside theirs.
+ */
 function ChapterLine({
   fixer,
   chapter,
   title,
+  lead,
 }: {
   fixer: string | null;
   chapter: LifepathChapterId;
   title: string;
+  lead: string | null;
 }) {
   const line = fixerChapterLine(fixer, chapter);
-  const npc = fixer ? findNpc(fixer) : null;
-  const art = npc ? npcArtwork(npc) : null;
+  const scene = uploadedAsset(`chapter-${chapter}`);
   return (
-    <header className="relative overflow-hidden">
+    <header
+      className={cn(
+        "relative overflow-hidden",
+        scene ? "flex min-h-[11rem] items-center border border-hairline px-5 py-5" : "pb-1",
+      )}
+    >
       <Backdrop name={`chapter-${chapter}`} text="left" />
-      <div
-        className={cn(
-          "relative flex items-start gap-3",
-          uploadedAsset(`chapter-${chapter}`) && "min-h-32 border border-hairline p-4",
-        )}
-      >
-        {art && line && (
-          <img
-            src={art.srcSet.split(" ")[0]}
-            alt={fixer ?? ""}
-            className="h-12 w-12 shrink-0 border border-hairline object-cover object-top"
+      <div className="relative w-full">
+        {fixer && line ? (
+          <FixerLine
+            fixer={fixer}
+            step="lifepath"
+            roleId={null}
+            say={line}
+            caption={title}
+            lead={lead}
           />
+        ) : (
+          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
         )}
-        <div className="space-y-1">
-          <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
-            {title}
-          </h3>
-          {line && <p className="text-base italic leading-snug text-text-muted">“{line}”</p>}
-        </div>
       </div>
     </header>
   );

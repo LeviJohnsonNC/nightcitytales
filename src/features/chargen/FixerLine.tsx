@@ -19,14 +19,20 @@ export function FixerLine({
   step,
   roleId,
   lead,
+  say,
+  caption,
 }: {
   fixer: string | null | undefined;
   step: ChargenStep;
   roleId: string | null;
   /** A line said first — the reaction to the answer the player just gave. */
   lead?: string | null;
+  /** The line to say, when it is not the step's own question (a Lifepath chapter's). */
+  say?: string | null;
+  /** Said after the name, small: which chapter this is. */
+  caption?: string;
 }) {
-  const line = fixerSays(fixer, step, roleId);
+  const line = say ?? fixerSays(fixer, step, roleId);
   if (!fixer || !line) return null;
   const npc = findNpc(fixer);
   const art = npc ? npcArtwork(npc) : null;
@@ -48,7 +54,10 @@ export function FixerLine({
         <p key={line} className="cg-say text-xl leading-snug tracking-tight sm:text-2xl">
           “{line}”
         </p>
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">{fixer}</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
+          {fixer}
+          {caption ? ` · ${caption}` : ""}
+        </p>
       </div>
     </div>
   );

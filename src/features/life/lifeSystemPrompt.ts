@@ -9,6 +9,7 @@ import { CYBERPUNK_STYLE_GUIDE } from "@/lib/prose-style";
 import {
   DV_LADDER_RULE,
   FOLLOW_THROUGH_RULE,
+  APPEARANCE_RULE,
   LOW_STAKES_RULE,
   ROLE_MOVE_RULE,
   cityNoticedSection,
@@ -17,7 +18,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.21.0";
+export const LIFE_PROMPT_VERSION = "2.22.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -39,6 +40,8 @@ ${situationsNotSolutions({
     "a door that is locked, a shift change, a queue out onto the pavement, a case behind glass, a man who has not looked up from his phone since they walked in",
   notAHint: "The delivery van backing toward the gate is not a hint, it is a van.",
 })}
+
+${APPEARANCE_RULE}
 
 # WHEN THEY ASK FOR OPTIONS
 The context tells you when the player has asked what they could do. ONLY then:

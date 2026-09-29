@@ -64,6 +64,21 @@ describe("savePayload", () => {
     expect(payload.draft_id).toBe("draft-1");
   });
 
+  it("saves who the character is on sight in the general Lifepath, where the campaign reads it", () => {
+    const build = makeBuild();
+    const payload = savePayload(
+      makeState({ sex: "male", age: 71 }),
+      build,
+      assembleCharacter(build),
+    );
+    expect((payload.lifepath.general as Record<string, unknown>)["identity"]).toEqual({
+      sex: "male",
+      age: 71,
+    });
+    const bare = savePayload(makeState(), build, assembleCharacter(build));
+    expect((bare.lifepath.general as Record<string, unknown>)["identity"]).toBeUndefined();
+  });
+
   it("starts current HP at the derived maximum", () => {
     const build = makeBuild();
     const payload = savePayload(makeState(), build, assembleCharacter(build));

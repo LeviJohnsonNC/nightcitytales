@@ -43,7 +43,7 @@ export function RoleLifepathTableCard({
   return (
     <article
       className={cn(
-        "border border-hairline bg-surface px-3 py-2.5 transition-colors duration-200",
+        "min-w-0 border border-hairline bg-surface px-3 py-2.5 transition-colors duration-200",
         entry && "border-ember/40 bg-surface-raised",
         table.dependsOn && "border-l-2 border-l-cool",
       )}

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { districtOfPlace, getPlace, type CastMember, type CastRole } from "@/engine";
+import { districtOfPlace, getPlace, sexLabel, type CastMember, type CastRole } from "@/engine";
 import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import rolesData from "@/data/rules/roles.json";
 import { Backdrop } from "./Backdrop";
@@ -8,6 +8,15 @@ import { castForState } from "./revealModel";
 import type { ChargenState } from "./store";
 import { usePortraitUrl } from "./usePortraitUrl";
 import "./interview.css";
+
+/** "Female, 34": the file's two facts about who this is on sight. */
+function whoLine(state: ChargenState): string | null {
+  const parts = [
+    state.sex ? sexLabel(state.sex) : null,
+    state.age !== null ? String(state.age) : null,
+  ];
+  return parts.filter(Boolean).join(", ") || null;
+}
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
 
@@ -71,9 +80,7 @@ export function Reveal({
               {handle || state.name || "Unknown"}
             </h2>
             <p className="text-lg text-text-muted">
-              {[handle ? state.name : null, role, state.pronouns || null]
-                .filter(Boolean)
-                .join(" · ")}
+              {[handle ? state.name : null, role, whoLine(state)].filter(Boolean).join(" · ")}
             </p>
             {place && (
               <p className="text-sm text-text-muted">

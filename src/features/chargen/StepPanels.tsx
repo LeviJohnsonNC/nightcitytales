@@ -18,12 +18,15 @@ export function StepPanel({
   step,
   state,
   userId,
+  lead,
   onRequestMethod,
   onRequestRole,
 }: {
   step: ChargenStep;
   state: ChargenState;
   userId: string;
+  /** The fixer's reaction to the answer that brought the player here, for a step that speaks for them. */
+  lead?: string | null;
   /** With `advance`, choosing the terms also moves on to the next step. */
   onRequestMethod: (method: CreationMethod, advance?: boolean) => void;
   /** With `advance`, choosing the Role also moves on to the next step. */
@@ -46,7 +49,7 @@ export function StepPanel({
       return <ReviewPanel state={state} />;
 
     case "lifepath":
-      return <LifepathPanel state={state} />;
+      return <LifepathPanel state={state} lead={lead} />;
     case "stats":
       return <StatsPanel state={state} />;
 

@@ -5,7 +5,7 @@
  * already decided, build a prompt in the house voice, and call the model
  * server-side so LOVABLE_API_KEY never reaches the browser.
  */
-import { getLifepathTable } from "@/engine";
+import { getLifepathTable, validAge } from "@/engine";
 import { generateBackgroundFn } from "@/lib/background.functions";
 import { displayValue, readGeneralLifepath } from "./lifepathState";
 import type { ChargenState } from "./store";
@@ -29,6 +29,7 @@ export type SelfDescriptionInput = {
   handle: string;
   pronouns: string;
   gender: GenderRead;
+  age: number | null;
   role: string | null;
   roleAbility: string | null;
   facts: { label: string; value: string }[];
@@ -61,6 +62,7 @@ export function buildSelfDescriptionInput(
     handle: state.handle.trim(),
     pronouns: state.pronouns.trim(),
     gender: genderFromPronouns(state.pronouns),
+    age: validAge(state.age),
     role: roleName ?? null,
     roleAbility: state.roleAbility?.name ?? null,
     facts,
@@ -72,7 +74,8 @@ export function selfDescriptionMissing(state: ChargenState): string[] {
   const missing: string[] = [];
   if (!state.name.trim()) missing.push("name");
   if (!state.handle.trim()) missing.push("handle");
-  if (!state.pronouns.trim()) missing.push("pronouns");
+  if (!state.sex) missing.push("sex");
+  if (validAge(state.age) === null) missing.push("age");
   if (!state.roleId) missing.push("a Role");
   return missing;
 }

@@ -4,6 +4,7 @@
  */
 import {
   CAST_PLAN_KEY,
+  IDENTITY_KEY,
   derivedStatColumns,
   getCyberware,
   isChoice,
@@ -150,9 +151,14 @@ export function savePayload(
     lifepath: {
       // The cast plan rides in the general Lifepath so the campaign can seed the
       // people the player met here, with no column of its own to migrate.
-      general: state.castPlan
-        ? { ...state.lifepath.general, [CAST_PLAN_KEY]: state.castPlan }
-        : state.lifepath.general,
+      general: {
+        ...state.lifepath.general,
+        ...(state.castPlan ? { [CAST_PLAN_KEY]: state.castPlan } : {}),
+        // Sex and age ride the same way: the campaign reads them off the saved Lifepath.
+        ...(state.sex || typeof state.age === "number"
+          ? { [IDENTITY_KEY]: { sex: state.sex, age: state.age } }
+          : {}),
+      },
       role_specific: state.lifepath.roleSpecific,
       narrative: state.background.trim() || null,
     },

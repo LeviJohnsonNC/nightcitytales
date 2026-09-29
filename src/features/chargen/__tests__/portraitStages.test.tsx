@@ -59,12 +59,14 @@ function draft(over: Partial<ChargenState> = {}): ChargenState {
 }
 
 describe("when the picture can develop", () => {
-  it("waits for the Role, the pronouns and how they look", () => {
-    expect(firstPictureNeeds(draft())).toEqual(["what you do", "your pronouns", "how you look"]);
+  it("waits for the Role, sex and age, and how they look", () => {
+    expect(firstPictureNeeds(draft())).toEqual(["what you do", "your sex and age", "how you look"]);
     expect(portraitStageReady(draft())).toBe(0);
     const looked = draft({
       roleId: "solo",
       pronouns: "she/her",
+      sex: "female",
+      age: 34,
       lifepath: { general: LOOKS as unknown as Record<string, unknown>, roleSpecific: {} },
     });
     expect(firstPictureNeeds(looked)).toEqual([]);
@@ -76,6 +78,8 @@ describe("when the picture can develop", () => {
     const base = draft({
       roleId: "solo",
       pronouns: "she/her",
+      sex: "female",
+      age: 34,
       stats: STATS,
       lifepath: { general: LOOKS as unknown as Record<string, unknown>, roleSpecific: {} },
     });

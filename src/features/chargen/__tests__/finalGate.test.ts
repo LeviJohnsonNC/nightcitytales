@@ -35,6 +35,8 @@ function draft(over: Partial<ChargenState> = {}): ChargenState {
     name: "",
     handle: "",
     pronouns: "",
+    sex: null,
+    age: null,
     selfDescription: "",
     portrait: null,
     portraitPath: null,

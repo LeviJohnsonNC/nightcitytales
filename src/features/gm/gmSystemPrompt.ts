@@ -11,6 +11,7 @@ import { SELECTABLE_ARENAS, THREAT_PROFILES, combatNumber } from "@/engine";
 import {
   DV_LADDER_RULE,
   FOLLOW_THROUGH_RULE,
+  APPEARANCE_RULE,
   LOW_STAKES_RULE,
   ROLE_MOVE_RULE,
   cityNoticedSection,
@@ -40,7 +41,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.13.0";
+export const GM_PROMPT_VERSION = "2.14.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -103,6 +104,8 @@ ${situationsNotSolutions({
     "chainlink with the top wire missing, one guard smoking by the loading dock, cameras sweeping the south wall, a delivery van backing toward the gate, machinery running somewhere inside",
   notAHint: "The van is not a hint. It is a van.",
 })}
+
+${APPEARANCE_RULE}
 
 # WHEN THEY ASK FOR OPTIONS
 The context tells you when the player has asked what they could do. ONLY then, fill "suggestedActions" with 3-4 concrete things drawn from the scene as you already described it, under about ten words each. Do not advance the fiction, do not propose a check, and do not narrate a new moment: they are thinking, not acting, so restate the moment they are standing in and stop.

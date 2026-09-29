@@ -21,7 +21,12 @@ import {
   type StatKey,
 } from "@/engine";
 import type { GmCharacterSummary, GmNpcSummary } from "@/features/gm/gmContext";
-import { castMemberFrom, guardednessOf, knownFactsOf } from "@/features/campaign/castSeeding";
+import {
+  castMemberFrom,
+  guardednessOf,
+  appearsAsProp,
+  knownFactsOf,
+} from "@/features/campaign/castSeeding";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import type {
   CampaignEvent,
@@ -234,6 +239,7 @@ export function characterSummary(
     keySkills: keySkills(full, 8, context),
     availableSkills: gmSkillList(full, 40, context),
     ...(full.character.handle ? { handle: full.character.handle } : {}),
+    ...appearsAsProp(full),
   };
 }
 

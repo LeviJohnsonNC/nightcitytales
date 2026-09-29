@@ -137,7 +137,12 @@ import {
   reconcileOpposition,
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
-import { castMemberInRole, ensureCast, markDealtWith } from "@/features/campaign/castSeeding";
+import {
+  castMemberInRole,
+  ensureCast,
+  appearsAsProp,
+  markDealtWith,
+} from "@/features/campaign/castSeeding";
 import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
 import { rememberDeclined, runWorldTick, settleMoves } from "@/features/campaign/worldTick";
 import {
@@ -797,6 +802,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     character: {
       name: bundle.character.character.name,
       ...(bundle.character.character.handle ? { handle: bundle.character.character.handle } : {}),
+      ...appearsAsProp(bundle.character),
       role: bundle.character.character.role,
       hp: bundle.vitals.hp_current,
       hpMax: bundle.vitals.hp_max,
