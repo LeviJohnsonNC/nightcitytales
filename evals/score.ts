@@ -15,6 +15,7 @@ import {
 } from "@/features/narration/narratorChecks";
 import { ALL_PAIRED_CHECKS, type PairedContext } from "@/features/narration/pairedChecks";
 import type { CheckRecord } from "@/features/narration/evalReport";
+import { ALL_SESSION_CHECKS } from "@/features/narration/sessionChecks";
 
 /** What each applicable check made of these turns. */
 export function scoreTurns(turns: CheckableTurn[], ctx: CheckContext): CheckRecord[] {
@@ -60,4 +61,53 @@ export function scorePair(
       failures: findings.length ? [{ run: 0, findings }] : [],
     };
   });
+}
+
+/** One turn of a session, with the context it was asked under. */
+export type SessionTurn = { turn: CheckableTurn; ctx: CheckContext };
+
+/**
+ * A session scored as a whole. A run here is one full session, and a check
+ * fails it if ANY turn broke it, with the turn named in the finding: what a
+ * session is for is seeing whether a rule that holds on turn one still holds on
+ * turn five, and that only shows if the turn number survives into the report.
+ * Checks the scenario gives nothing to measure are left out, as everywhere else.
+ */
+export function scoreSession(runs: SessionTurn[][]): CheckRecord[] {
+  const applicable = ALL_CHECKS.filter((check) =>
+    runs.some((run) => run.some(({ ctx }) => isApplicable(check, ctx))),
+  );
+  const perTurn = applicable.map((check) => ({
+    id: check.id,
+    title: check.title,
+    runs: runs.length,
+    failures: runs
+      .map((run, index) => ({
+        run: index,
+        findings: run.flatMap(({ turn, ctx }, t) =>
+          isApplicable(check, ctx)
+            ? check.run(turn, ctx).map((f) => ({
+                ...f,
+                note: `turn ${t + 1}${f.note ? `: ${f.note}` : ""}`,
+              }))
+            : [],
+        ),
+      }))
+      .filter(({ findings }) => findings.length > 0),
+  }));
+  const acrossTurns = ALL_SESSION_CHECKS.map((check) => ({
+    id: check.id,
+    title: check.title,
+    runs: runs.length,
+    failures: runs
+      .map((run, index) => ({
+        run: index,
+        findings: check.run(run.map(({ turn }) => turn)).map(({ turn, note, ...f }) => ({
+          ...f,
+          note: `turn ${turn}${note ? `: ${note}` : ""}`,
+        })),
+      }))
+      .filter(({ findings }) => findings.length > 0),
+  }));
+  return [...perTurn, ...acrossTurns];
 }
