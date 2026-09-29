@@ -231,6 +231,18 @@ export function seeded(seed: number): () => number {
   };
 }
 
+/**
+ * Which pairs go in the blind file with the after text in slot A. One
+ * generator drawn `count` times: seeding a fresh generator per item with
+ * neighbouring seeds gave the same first draw every time, so every pair was
+ * flipped and the "blind" file had the change always in slot A.
+ */
+export function assignFlips(count: number, seed: number): boolean[] {
+  const rand = seeded(seed);
+  for (let i = 0; i < 8; i += 1) rand(); // xorshift's first draws are correlated with the seed
+  return Array.from({ length: count }, () => rand() < 0.5);
+}
+
 export function shuffled<T>(items: T[], seed: number): T[] {
   const rand = seeded(seed);
   const out = [...items];
