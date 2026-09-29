@@ -1,0 +1,16 @@
+{
+  "_source": "House rule. Who a character is on sight — sex and age — is not in the Cyberpunk RED book, which prints no age or sex mechanics. It is kept as a record the narrator reads so a stranger's first reaction to a 71-year-old man and a 22-year-old woman can differ; it moves no die and no DV.",
+  "houseRule": true,
+  "age": { "min": 16, "max": 90 },
+  "bands": [
+    { "id": "young", "from": 16, "label": "young" },
+    { "id": "prime", "from": 25, "label": "in their prime" },
+    { "id": "middle", "from": 40, "label": "middle-aged" },
+    { "id": "older", "from": 55, "label": "older" },
+    { "id": "elder", "from": 70, "label": "elderly" }
+  ],
+  "sex": {
+    "male": { "label": "Male", "noun": "man", "pronouns": "he/him" },
+    "female": { "label": "Female", "noun": "woman", "pronouns": "she/her" }
+  }
+}

@@ -44,7 +44,7 @@ describe("the Lifepath, in chapters", () => {
       expect(html).toContain(title);
     }
     expect(html).toContain(escaped(fixerChapterLine(FIXER, "origin")!));
-    expect(html).toContain("Roll this chapter");
+    expect(html).not.toContain("Roll this chapter");
     expect(html).toContain("Next: Who you are");
   });
 });

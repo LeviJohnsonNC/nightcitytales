@@ -11,6 +11,8 @@ import {
   type SkillEntry,
   type StatBlock,
   type StatKey,
+  sexFromPronouns,
+  type Sex,
 } from "@/engine";
 import {
   clearedByMethodChange,
@@ -36,7 +38,11 @@ export type ChargenState = {
   roleAbility: { id: string; name: string; rank: number } | null;
   name: string;
   handle: string;
+  /** Derived from `sex` (he/him, she/her); kept because the file and the prompts read it. */
   pronouns: string;
+  /** Who the character is on sight. Asked with who you are; read by the narrator. */
+  sex: Sex | null;
+  age: number | null;
   selfDescription: string;
   portrait: string | null;
   /** Storage path of the chosen AI portrait, in the private portraits bucket. */
@@ -103,6 +109,8 @@ const initialState: ChargenState = {
   name: "",
   handle: "",
   pronouns: "",
+  sex: null,
+  age: null,
   selfDescription: "",
   portrait: null,
   portraitPath: null,
@@ -183,6 +191,9 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
       // nothing may develop over it.
       if (state.portraitStage === undefined && next.portraitPath) next.portraitStage = 3;
       const step = resolveStepForMethod(normalizeStep(next.step), next.method);
+      // A draft saved before the file asked for sex carries only pronouns.
+      if (!next.sex) next.sex = sexFromPronouns(next.pronouns);
+      if (next.age === undefined) next.age = null;
       return {
         ...next,
         step,

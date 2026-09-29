@@ -16,6 +16,10 @@ import {
   isDossierFact,
   readCastPlan,
   CAST_PLAN_KEY,
+  IDENTITY_KEY,
+  identityLine,
+  readIdentity,
+  type Identity,
   raiseSuspicion,
   revealText,
   rollJobSeed,
@@ -320,4 +324,18 @@ export async function markDealtWith(
   await saveCampaignNpc(campaignId, npc.npc_id ?? npc.name, {
     data: { ...data, lastSeenDay: day } as unknown as Json,
   });
+}
+
+/** Who the character is on sight (sex, age), read off the saved character. */
+export function identityFrom(character: Pick<FullCharacter, "lifepath">): Identity {
+  const general = (character.lifepath?.general ?? {}) as Record<string, unknown>;
+  return readIdentity(general[IDENTITY_KEY]);
+}
+
+/** The narrator's "Reads as" line for a packet's character, or nothing when there is none. */
+export function appearsAsProp(
+  character: Pick<FullCharacter, "lifepath">,
+): { appearsAs: string } | Record<string, never> {
+  const appearsAs = identityLine(identityFrom(character));
+  return appearsAs ? { appearsAs } : {};
 }

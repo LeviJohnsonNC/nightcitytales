@@ -18,6 +18,7 @@ const Facts = z.object({
   handle: z.string().max(120).default(""),
   pronouns: z.string().max(60).default(""),
   gender: z.enum(["female", "male", "non-binary", "unspecified"]),
+  age: z.number().int().min(10).max(120).nullable().default(null),
   role: z.string().max(60).nullable(),
   roleAbility: z.string().max(60).nullable(),
   facts: z.array(z.object({ label: z.string().max(60), value: z.string().max(300) })).max(20),

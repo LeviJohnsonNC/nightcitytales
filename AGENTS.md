@@ -428,6 +428,16 @@ portrait studio spends. It never runs while the draft is loading, never retries
 a failed stage by itself, and never paints over a portrait the player drew by
 hand — `portraitStage` 3 means "the picture on the file is final".
 
+Who a character is on sight — sex (male or female) and age — is asked with the
+Lifepath's "Who you are" chapter and kept in `engine/identity.ts`, with its
+limits and age bands in `data/rules/identity.json` (`houseRule: true`). Pronouns
+follow from the sex chosen, so the draft still carries them. The save writes
+`{ sex, age }` into the general Lifepath under `IDENTITY_KEY`, beside the cast
+plan, so no migration is needed; `identityFrom` reads it back and the narrators
+get one "Reads as" line (`appearsAsProp`). It moves no die: the shared
+`APPEARANCE_RULE` colours a stranger's first assumption and says in so many
+words that it never changes a DV, a price or an outcome.
+
 Rolled STATs count: the first roll stands and each character carries the
 rerolls `src/data/rules/chargen-house-rules.json` allows (`statRollCost`),
 counted on the draft as `statRerollsUsed` and kept across a method change.

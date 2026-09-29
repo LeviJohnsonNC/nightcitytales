@@ -89,6 +89,8 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const atMeet = def.id === "fixer";
   // Steps whose own screen already says what is missing; a red list under them is a scolding.
   const quiet = atMeet || def.id === "role" || def.id === "method";
+  // The Lifepath's chapters each have a header of their own, in this one's place.
+  const ownsHeader = def.id === "lifepath";
   const nextLabel = atMeet && fixer ? `Sit down with ${fixerShortName(fixer)}` : "Next";
 
   // Back always goes somewhere: from the first step, out to the roster. The
@@ -185,16 +187,16 @@ export function ChargenWizard({ userId }: { userId: string }) {
 
       <section className="min-w-0 space-y-6">
         {/* Sticky quick-nav so Back/Next are always reachable without scrolling the panel. */}
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border border-border bg-background/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-2 border border-border bg-background/90 px-3 py-3 sm:gap-3 sm:px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+          <div className="min-w-0 space-y-0.5">
+            <span className="block whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.12em] text-accent sm:tracking-[0.25em]">
               {def.index + 1} / {steps.length}
             </span>
-            <span className="hidden truncate text-sm font-semibold tracking-tight sm:inline">
+            <span className="block text-[10px] font-semibold leading-tight tracking-tight text-text-muted sm:whitespace-nowrap sm:text-[11px]">
               {def.title}
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <NCAmp />
             <Button variant="outline" size="sm" onClick={goBack}>
               Back
@@ -209,7 +211,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
           </div>
         </div>
 
-        {!atMeet && (
+        {!atMeet && !ownsHeader && (
           <header
             className={cn(
               "relative overflow-hidden border-b border-border pb-5",
@@ -254,8 +256,16 @@ export function ChargenWizard({ userId }: { userId: string }) {
           </header>
         )}
 
+        {ownsHeader && saveStatus === "error" && (
+          <p className="font-mono text-[10px] uppercase tracking-wider text-destructive">
+            {SAVE_FAILED}
+            {saveError ? ` · ${saveError}` : ""}
+          </p>
+        )}
+
         <StepPanel
           step={state.step}
+          lead={carriedHere ? carried.line : null}
           state={state}
           userId={userId}
           onRequestMethod={requestMethod}

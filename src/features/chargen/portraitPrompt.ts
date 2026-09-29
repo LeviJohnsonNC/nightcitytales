@@ -8,6 +8,7 @@
  * the roster comes out of the same art department.
  */
 import {
+  ageBand,
   getCyberware,
   getFashion,
   getGearPackage,
@@ -19,6 +20,7 @@ import {
   packageCyberwareIds,
   resolvePackageItem,
   startingLifestylePlan,
+  validAge,
   wornArmor,
   type CartLine,
 } from "@/engine";
@@ -37,6 +39,8 @@ export type PortraitFacts = {
   handle: string;
   pronouns: string;
   gender: GenderRead;
+  /** Years, so the face is drawn at the age the file says. */
+  age: number | null;
   role: string | null;
   roleAbility: string | null;
   facts: { label: string; value: string }[];
@@ -210,6 +214,7 @@ export function buildPortraitFacts(state: ChargenState, roleName?: string): Port
     handle: state.handle.trim(),
     pronouns: state.pronouns.trim(),
     gender: genderFromPronouns(state.pronouns),
+    age: validAge(state.age),
     role: roleName ?? null,
     roleAbility: state.roleAbility?.name ?? null,
     facts,
@@ -274,6 +279,11 @@ export function buildPortraitPrompt(facts: PortraitFacts): string {
   if (facts.role) lines.push(`- Occupation on The Street: ${facts.role}`);
   if (facts.roleAbility) lines.push(`- Known for: ${facts.roleAbility}`);
   lines.push(`- Presents as: ${genderPhrase(facts.gender)} (pronouns ${facts.pronouns || "n/a"})`);
+  if (facts.age !== null) {
+    lines.push(
+      `- Age: ${facts.age} (${ageBand(facts.age).label}) — let the face, skin and hair show exactly that age`,
+    );
+  }
   if (facts.build) lines.push(`- Build: ${facts.build}`);
   for (const f of facts.facts) lines.push(`- ${f.label}: ${f.value}`);
   if (facts.wardrobe.length) lines.push(`- Wearing: ${facts.wardrobe.join("; ")}`);
@@ -316,7 +326,8 @@ export function portraitMissing(state: ChargenState): string[] {
   const missing: string[] = [];
   if (!state.name.trim()) missing.push("name");
   if (!state.handle.trim()) missing.push("handle");
-  if (!state.pronouns.trim()) missing.push("pronouns");
+  if (!state.sex) missing.push("sex");
+  if (validAge(state.age) === null) missing.push("age");
 
   const ids = stepsFor(state.method);
   for (const step of ids) {

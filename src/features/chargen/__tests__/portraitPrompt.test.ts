@@ -6,6 +6,7 @@ const facts = {
   handle: "Static",
   pronouns: "she/her",
   gender: "female" as const,
+  age: 34,
   role: "Netrunner",
   roleAbility: "Interface",
   facts: [{ label: "Hairstyle", value: "Shaved" }],
@@ -23,6 +24,8 @@ const baseState = {
   name: "Jo",
   handle: "Static",
   pronouns: "she/her",
+  sex: "female",
+  age: 34,
   selfDescription: "",
   method: "complete_package",
   roleId: null,
@@ -108,7 +111,14 @@ describe("portrait prompt", () => {
   });
 
   it("blocks generation until identity and earlier steps are done", () => {
-    const empty = { name: "", handle: "", pronouns: "", method: null } as ChargenState;
+    const empty = {
+      name: "",
+      handle: "",
+      pronouns: "",
+      sex: null,
+      age: null,
+      method: null,
+    } as ChargenState;
     const missing = portraitMissing({
       ...empty,
       lifepath: { general: {}, roleSpecific: {} },
@@ -119,7 +129,8 @@ describe("portrait prompt", () => {
     } as unknown as ChargenState);
     expect(missing).toContain("name");
     expect(missing).toContain("handle");
-    expect(missing).toContain("pronouns");
+    expect(missing).toContain("sex");
+    expect(missing).toContain("age");
     expect(missing.length).toBeGreaterThan(3);
   });
 });

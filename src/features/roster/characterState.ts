@@ -21,11 +21,12 @@ import {
   type Loadout,
   type PackageEntry,
   type StatBlock,
+  pronounsFor,
 } from "@/engine";
 import { roleAbilityForRole, type ChargenState } from "@/features/chargen/store";
 import { STEP_IDS } from "@/features/chargen/steps";
 import type { CharacterGear, FullCharacter } from "@/lib/backend";
-import { castPlanFrom } from "@/features/campaign/castSeeding";
+import { castPlanFrom, identityFrom } from "@/features/campaign/castSeeding";
 
 const ARMOR_LOCATIONS: ArmorLocation[] = ["head", "body", "shield"];
 
@@ -172,6 +173,7 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
   const method = full.character.creation_method as CreationMethod;
   const roleId = full.character.role;
   const housing = full.finance?.housing ?? "";
+  const identity = identityFrom(full);
 
   return {
     draftId: null,
@@ -189,7 +191,9 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
       : abilityFor(roleId),
     name: full.character.name,
     handle: full.character.handle ?? "",
-    pronouns: "",
+    pronouns: identity.sex ? pronounsFor(identity.sex) : "",
+    sex: identity.sex,
+    age: identity.age,
     selfDescription: "",
     portrait: full.character.portrait_id,
     portraitPath: (full.character as { portrait_path?: string | null }).portrait_path ?? null,

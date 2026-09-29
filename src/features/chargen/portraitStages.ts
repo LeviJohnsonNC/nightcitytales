@@ -6,7 +6,7 @@
  * there is something to picture, and a better one each time the answers give
  * the camera more to work with:
  *
- *  1. SURVEILLANCE STILL — the Role, pronouns, and how they look (clothes,
+ *  1. SURVEILLANCE STILL — the Role, sex and age, and how they look (clothes,
  *     hair, the thing they are never without) from the Lifepath.
  *  2. UNDER THE LIGHTS — the same, once the STATs say how they are built.
  *  3. FILE PHOTO — once the gear and chrome they carry are chosen.
@@ -22,7 +22,7 @@
  *
  * Pure. Nothing here generates, stores or spends anything.
  */
-import { STAT_ORDER, seededRng } from "@/engine";
+import { STAT_ORDER, seededRng, validAge } from "@/engine";
 import { readGeneralLifepath } from "./lifepathState";
 import type { ChargenState } from "./store";
 import { stepsFor } from "./steps";
@@ -37,7 +37,7 @@ export const LOOK_ANSWERS = ["clothing_style", "hairstyle", "affectation"] as co
 export function firstPictureNeeds(state: ChargenState): string[] {
   const needs: string[] = [];
   if (!state.roleId) needs.push("what you do");
-  if (!state.pronouns.trim()) needs.push("your pronouns");
+  if (!state.sex || validAge(state.age) === null) needs.push("your sex and age");
   const entries = readGeneralLifepath(state.lifepath.general).entries;
   if (LOOK_ANSWERS.some((id) => !entries[id])) needs.push("how you look");
   return needs;

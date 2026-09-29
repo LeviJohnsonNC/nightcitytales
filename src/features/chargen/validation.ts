@@ -14,7 +14,7 @@ import {
   validateSkillEntries,
   validateLifestyle,
 } from "@/engine";
-import type { StatBlock } from "@/engine";
+import { AGE_MAX, AGE_MIN, validAge, type StatBlock } from "@/engine";
 import { generalLifepathComplete, readGeneralLifepath } from "./lifepathState";
 import { readRoleLifepath, roleLifepathComplete } from "./roleLifepathState";
 import type { ChargenState } from "./store";
@@ -57,7 +57,12 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
         Object.keys(general.entries).length === 0 && Object.keys(role.entries).length === 0;
       if (untouched) return { violations: ["No Lifepath tables answered yet."], untouched };
       return {
-        violations: [...generalLifepathComplete(general), ...roleLifepathComplete(role)],
+        violations: [
+          ...(state.sex ? [] : ["Choose male or female."]),
+          ...(validAge(state.age) === null ? [`Enter your age (${AGE_MIN}–${AGE_MAX}).`] : []),
+          ...generalLifepathComplete(general),
+          ...roleLifepathComplete(role),
+        ],
         untouched,
       };
     }

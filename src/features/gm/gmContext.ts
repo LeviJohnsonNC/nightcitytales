@@ -13,6 +13,8 @@ import type { Beat, BeatExit, Mission, MissionObjective } from "@/engine";
 export type GmCharacterSummary = {
   name: string;
   handle?: string;
+  /** Sex and age, as a stranger would read them: "man, 71, elderly". */
+  appearsAs?: string;
   role: string;
   hp: number;
   hpMax: number;
@@ -335,6 +337,7 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       `${character.name}${character.handle ? ` "${character.handle}"` : ""} — ${character.role}`,
     ),
   );
+  if (character.appearsAs) parts.push(line("Reads as", character.appearsAs));
   const vitals = [`HP ${character.hp}/${character.hpMax} (${character.woundState})`];
   if (character.humanity !== undefined && character.humanityMax !== undefined) {
     vitals.push(`Humanity ${character.humanity}/${character.humanityMax}`);
