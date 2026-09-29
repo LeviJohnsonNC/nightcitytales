@@ -33,6 +33,8 @@ export type Session = {
   system: string;
   /** What the player says, in order. */
   inputs: string[];
+  /** The one job the player deals with all scene, when there is one: names given in it belong to that job. */
+  interlocutor?: string;
   /** What every turn is held to. */
   expect: ScenarioExpectation;
   /** The packet for turn `turn` (0-based), given what has been said so far. */
@@ -69,6 +71,39 @@ export const SESSIONS: Session[] = [
       "I ask if there is any work going.",
       "I finish the drink and watch the room for a while.",
       "I ask the bartender about the men in the back booth.",
+    ],
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      wordBudget: 180,
+    },
+    packet(turn, said) {
+      const seed = [event("life_narration", "You walked into the bar a little while ago.")];
+      return renderLifeUserPrompt(
+        {
+          ...atTheBar,
+          inScene: turn > 0,
+          recentEvents: recentLifeLines(ledger(seed, said, "life")),
+        },
+        this.inputs[turn]!,
+      );
+    },
+  },
+  {
+    id: "session-life-the-bartender",
+    narrator: "life",
+    about: "five turns with one bartender: whoever he says he is in turn one, he is in turn five",
+    system: LIFE_SYSTEM_PROMPT,
+    interlocutor: "bartender",
+    inputs: [
+      "I sit at the counter, order a drink, and ask the bartender his name.",
+      "I ask him how long he has worked here.",
+      "I ask him who owns the place.",
+      "I ask him what he did before this.",
+      "I thank him, leave a tip, and ask his name again. I did not catch it.",
     ],
     expect: {
       optionsRequested: false,
