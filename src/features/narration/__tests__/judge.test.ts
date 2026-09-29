@@ -7,6 +7,7 @@ import {
   parseLabels,
   renderJudgePrompt,
   renderLabels,
+  assignFlips,
   shuffled,
   signTest,
   tally,
@@ -136,5 +137,15 @@ describe("blind labels", () => {
     expect(shuffled(xs, 7)).toEqual(shuffled(xs, 7));
     expect(shuffled(xs, 7)).not.toEqual(xs);
     expect([...shuffled(xs, 7)].sort((a, b) => a - b)).toEqual(xs);
+  });
+});
+
+describe("blind slot assignment", () => {
+  it("mixes the slots, and the same way for the same seed", () => {
+    const flips = assignFlips(30, 20260929);
+    expect(flips).toEqual(assignFlips(30, 20260929));
+    const flipped = flips.filter(Boolean).length;
+    expect(flipped).toBeGreaterThan(8);
+    expect(flipped).toBeLessThan(22);
   });
 });

@@ -26,6 +26,7 @@ import type { EvalRecord } from "@/features/narration/evalReport";
 import {
   JUDGE_CRITERIA,
   agreement,
+  assignFlips,
   combineOrders,
   lengthBias,
   parseLabels,
@@ -203,8 +204,9 @@ function runLabel() {
   const n = Number(flag("--n") ?? 30);
   const pairs = shuffled(buildPairs(beforePath, afterPath), 20260929).slice(0, n);
   const key: LabelKey = [];
+  const flips = assignFlips(pairs.length, 20260929);
   const items = pairs.map((p, i) => {
-    const flipped = shuffled([false, true], 1000 + i)[0]!;
+    const flipped = flips[i]!;
     key.push({ id: p.id, flipped });
     return {
       id: p.id,
