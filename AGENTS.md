@@ -655,6 +655,13 @@ the same prompt once disagreed 3/3 against 0/3, so "it moved" is not evidence.
 A scene that must differ in one input, such as who is standing there, is a pair
 in `evals/scenarios.ts` (`pairedChecks.ts`), not a single-turn check.
 
+`bun run eval:replay` scores the turns players have actually had, for nothing:
+it reads `campaign_events`, groups narration by the prompt version and model
+stamped on it (`readTurnProvenance`), and runs the checks that need only the
+prose. The ledger does not keep the packet a turn was written from, so that is
+all it can run, and it says so. It reads other people's narration with either a
+service-role key or one user's token; the key stays on the developer's machine.
+
 ## Repository hygiene
 
 - Preserve unrelated working-tree changes and untracked assets; they belong to

@@ -213,6 +213,23 @@ export function formatSummary(record: EvalRecord): string {
 
 export type Verdict = "regressed" | "improved" | "unclear" | "same" | "new" | "gone";
 
+/**
+ * What to call a move from one count of clean runs to another: the same rule for
+ * an eval cell and for a group of real turns. Not a change unless Fisher's exact
+ * test says chance is an unlikely explanation.
+ */
+export function verdictOf(
+  cleanBefore: number,
+  runsBefore: number,
+  cleanAfter: number,
+  runsAfter: number,
+): "regressed" | "improved" | "unclear" | "same" {
+  const delta = cleanAfter / Math.max(1, runsAfter) - cleanBefore / Math.max(1, runsBefore);
+  if (Math.abs(delta) < 1e-9) return "same";
+  const p = fisherExact(cleanBefore, runsBefore, cleanAfter, runsAfter);
+  return p >= ALPHA ? "unclear" : delta < 0 ? "regressed" : "improved";
+}
+
 export type Change = {
   scenario: string;
   check: string;
@@ -266,17 +283,12 @@ export function compareRecords(before: EvalRecord, after: EvalRecord): Compariso
     if (!was) verdict = "new";
     else if (!now) verdict = "gone";
     else {
-      const delta = passRate(now.check) - passRate(was.check);
-      if (Math.abs(delta) < 1e-9) verdict = "same";
-      else {
-        const p = fisherExact(
-          cleanRuns(was.check),
-          was.check.runs,
-          cleanRuns(now.check),
-          now.check.runs,
-        );
-        verdict = p >= ALPHA ? "unclear" : delta < 0 ? "regressed" : "improved";
-      }
+      verdict = verdictOf(
+        cleanRuns(was.check),
+        was.check.runs,
+        cleanRuns(now.check),
+        now.check.runs,
+      );
     }
     changes.push({
       scenario: ref.scenario,
