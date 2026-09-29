@@ -4,7 +4,51 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useChargenStore, type ChargenState } from "./store";
 
-const SYMBOL: Record<Sex, string> = { male: "♂", female: "♀" };
+/**
+ * Mars and Venus drawn as strokes rather than typed as glyphs, so they can carry
+ * a neon glow and stay crisp at any size. Cyan for one, magenta for the other:
+ * the two neon hues the rest of the file already lives in.
+ */
+const GLYPH: Record<Sex, { paths: string[]; tone: string; on: string; off: string }> = {
+  male: {
+    paths: [
+      "M10.5 13.5m-5.5 0a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0",
+      "M14.4 9.6L20 4",
+      "M14.5 4H20v5.5",
+    ],
+    tone: "text-neon-cyan",
+    on: "border-neon-cyan bg-neon-cyan/10 shadow-[0_0_16px_-3px_var(--color-neon-cyan),inset_0_0_12px_-6px_var(--color-neon-cyan)]",
+    off: "hover:border-neon-cyan/60 hover:shadow-[0_0_12px_-5px_var(--color-neon-cyan)]",
+  },
+  female: {
+    paths: ["M12 9.5m-5.5 0a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0", "M12 15v7", "M8.5 18.5h7"],
+    tone: "text-neon-pink",
+    on: "border-neon-pink bg-neon-pink/10 shadow-[0_0_16px_-3px_var(--color-neon-pink),inset_0_0_12px_-6px_var(--color-neon-pink)]",
+    off: "hover:border-neon-pink/60 hover:shadow-[0_0_12px_-5px_var(--color-neon-pink)]",
+  },
+};
+
+function SexGlyph({ sex, lit }: { sex: Sex; lit: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      className={cn(
+        "size-7 fill-none stroke-current transition-[filter,opacity] duration-200",
+        lit
+          ? "opacity-100 [filter:drop-shadow(0_0_2px_currentColor)_drop-shadow(0_0_7px_currentColor)]"
+          : "opacity-55",
+      )}
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {GLYPH[sex].paths.map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  );
+}
 
 /**
  * Who a stranger sees: sex and age. Asked with who you are, because the first
@@ -36,13 +80,12 @@ export function WhoPicker({ state }: { state: ChargenState }) {
             title={sexLabel(sex)}
             onClick={() => patch({ sex, pronouns: pronounsFor(sex) })}
             className={cn(
-              "grid size-10 place-items-center border text-2xl leading-none transition-colors duration-200",
-              state.sex === sex
-                ? "border-ember bg-ember/15 text-text"
-                : "border-hairline text-text-muted hover:border-ember/60",
+              "grid size-11 place-items-center border transition-[border-color,background-color,box-shadow] duration-200",
+              GLYPH[sex].tone,
+              state.sex === sex ? GLYPH[sex].on : cn("border-hairline", GLYPH[sex].off),
             )}
           >
-            <span aria-hidden>{SYMBOL[sex]}</span>
+            <SexGlyph sex={sex} lit={state.sex === sex} />
           </button>
         ))}
       </div>
@@ -56,22 +99,18 @@ export function WhoPicker({ state }: { state: ChargenState }) {
         <Input
           id="chargen-age"
           inputMode="numeric"
-          className="h-10 w-20 text-center font-mono text-lg"
+          className={cn("h-10 w-20 text-center font-mono text-lg", invalid && "border-destructive")}
           value={typed}
           maxLength={2}
           placeholder="--"
           aria-invalid={invalid}
+          title={`${AGE_MIN}–${AGE_MAX}`}
           onChange={(e) => {
             const digits = e.target.value.replace(/\D/g, "");
             setTyped(digits);
             patch({ age: validAge(digits) });
           }}
         />
-        <span
-          className={cn("font-mono text-[11px]", invalid ? "text-destructive" : "text-text-dim")}
-        >
-          {AGE_MIN}–{AGE_MAX}
-        </span>
       </div>
     </div>
   );
