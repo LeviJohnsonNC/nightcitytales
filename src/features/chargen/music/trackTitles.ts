@@ -24,6 +24,11 @@ export const SONG_TITLES: Record<string, string> = {
   "music-badlands-highway": "Badlands Highway",
   "music-chrome-heart": "Chrome Heart",
   "music-after-hours": "After Hours",
+  "music-coyote-run": "Coyote Run",
+  "music-ninety-floors-up": "Ninety Floors Up",
+  "music-drowned-arcade": "Drowned Arcade",
+  "music-black-ice": "Black ICE",
+  "music-first-light": "First Light",
 };
 
 /** The take number of a `-v2`/`-v3` track, or null for the first take. */
