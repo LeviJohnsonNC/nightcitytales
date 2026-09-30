@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { STAT_SCALE, statBand, statColor, statFraction } from "../statBands";
+import { STAT_ORDER } from "@/engine";
+import { STAT_SCALE, statBand, statColor, statFraction, statHighlights } from "../statBands";
 
 describe("STAT presentation bands", () => {
   it.each([
@@ -37,5 +38,34 @@ describe("the STAT ramp", () => {
     const hues = [2, 3, 4, 5, 6, 7, 8].map((v) => Number(statColor(v).match(/hsl\((\d+)/)![1]));
     for (let i = 1; i < hues.length; i++) expect(hues[i]!).toBeGreaterThan(hues[i - 1]!);
     expect(new Set(hues).size).toBe(hues.length);
+  });
+});
+
+describe("naming an edge and a weak spot", () => {
+  const all = (value: number) => Object.fromEntries(STAT_ORDER.map((s) => [s, value]));
+
+  it("names neither for a character with nothing at the extremes", () => {
+    expect(statHighlights(all(6), STAT_ORDER)).toEqual({ edge: null, weak: null });
+    // Nine sixes and a 5: the old strip called INT the weak spot on a 6.
+    expect(statHighlights({ ...all(6), int: 5 }, STAT_ORDER)).toEqual({ edge: null, weak: null });
+    expect(statHighlights({ ...all(6), int: 4, ref: 7 }, STAT_ORDER).weak).toBeNull();
+  });
+
+  it("names an edge from the top band and a weak spot from the bottom two", () => {
+    expect(statHighlights({ ...all(6), ref: 7 }, STAT_ORDER)).toEqual({ edge: "ref", weak: null });
+    expect(statHighlights({ ...all(6), emp: 3 }, STAT_ORDER)).toEqual({ edge: null, weak: "emp" });
+    expect(statHighlights({ ...all(6), dex: 8, emp: 2 }, STAT_ORDER)).toEqual({
+      edge: "dex",
+      weak: "emp",
+    });
+  });
+
+  it("breaks a tie in the printed order", () => {
+    const both = statHighlights({ ...all(6), tech: 8, dex: 8 }, STAT_ORDER);
+    expect(both.edge).toBe(STAT_ORDER.indexOf("dex") < STAT_ORDER.indexOf("tech") ? "dex" : "tech");
+  });
+
+  it("says nothing until every STAT is in", () => {
+    expect(statHighlights({ int: 8, emp: 2 }, STAT_ORDER)).toEqual({ edge: null, weak: null });
   });
 });

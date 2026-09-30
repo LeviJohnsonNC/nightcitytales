@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { STAT_DESCRIPTIONS, getSkill, statTemplateRange } from "@/engine";
+import { SKILLS, STAT_DESCRIPTIONS, getRoleSkillIds, getSkill, statTemplateRange } from "@/engine";
 import type { StatKey } from "@/engine";
 import { STAT_FLAVOR } from "./statFlavor";
 import { StatBandIndicator } from "./StatValue";
@@ -83,6 +83,80 @@ function StatScale({ stat, value }: { stat: StatKey; value: number | null }) {
   );
 }
 
+/**
+ * The Skills that run off a STAT, and how many of them the Role brings. Counted
+ * from skills.json and the Role's package, so the line stays true when either
+ * changes.
+ */
+function skillsOnStat(stat: StatKey, roleId?: string | null) {
+  const all = SKILLS.filter((skill) => skill.stat === stat);
+  const roleOnes = roleId
+    ? getRoleSkillIds(roleId)
+        .map((id) => getSkill(id))
+        .filter((skill) => skill.stat === stat)
+    : [];
+  return { total: all.length, roleOnes };
+}
+
+/** One STAT's briefing, opened and closed by whoever is showing it. */
+export function StatInfoModal({
+  stat,
+  value,
+  roleId,
+  open,
+  onOpenChange,
+}: {
+  stat: StatKey;
+  value: number | null;
+  /** When a Role is chosen, the briefing says how many of its Skills lean on this STAT. */
+  roleId?: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const info = STAT_DESCRIPTIONS[stat];
+  const flavor = STAT_FLAVOR[stat];
+  const { total, roleOnes } = skillsOnStat(stat, roleId);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display tracking-tight">
+            {info ? info.name : stat.toUpperCase()}
+          </DialogTitle>
+          <DialogDescription className="font-mono text-[11px] uppercase tracking-[0.18em]">
+            {info ? `${info.stat} · ${info.group}` : "STAT"}
+          </DialogDescription>
+        </DialogHeader>
+        {info ? (
+          <div className="space-y-3">
+            <p className="text-[0.95rem] leading-relaxed text-text">{info.description}</p>
+            <p className="text-[0.95rem] leading-relaxed text-text-muted">{flavor.atTheTable}</p>
+            <p className="text-[0.95rem] leading-relaxed text-text-muted">{flavor.whenItsThin}</p>
+            <p className="text-sm text-text-muted">Drives: {info.drives}</p>
+            {total > 0 && (
+              <p className="border-l-2 border-hairline pl-3 text-sm text-text-muted">
+                {total} Skill{total === 1 ? "" : "s"} in the game roll off {stat.toUpperCase()}.
+                {roleId &&
+                  (roleOnes.length > 0
+                    ? ` ${roleOnes.length} of the ones your Role starts with: ${roleOnes
+                        .map((skill) => skill.name)
+                        .join(", ")}.`
+                    : " None of the ones your Role starts with, so it pays off later or not at all.")}
+              </p>
+            )}
+            <StatScale stat={stat} value={value} />
+          </div>
+        ) : (
+          <p className="text-sm text-text-muted">
+            No entry for {stat.toUpperCase()} in src/data/rules/creation-rules.json →
+            statDescriptions.stats.
+          </p>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /** A STAT box that opens its own briefing when clicked. */
 export function StatInfoDialog({
   stat,
@@ -94,8 +168,6 @@ export function StatInfoDialog({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const info = STAT_DESCRIPTIONS[stat];
-  const flavor = STAT_FLAVOR[stat];
   return (
     <>
       <button
@@ -106,32 +178,7 @@ export function StatInfoDialog({
       >
         {children}
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-display tracking-tight">
-              {info ? info.name : stat.toUpperCase()}
-            </DialogTitle>
-            <DialogDescription className="font-mono text-[11px] uppercase tracking-[0.18em]">
-              {info ? `${info.stat} · ${info.group}` : "STAT"}
-            </DialogDescription>
-          </DialogHeader>
-          {info ? (
-            <div className="space-y-3">
-              <p className="text-[0.95rem] leading-relaxed text-text">{info.description}</p>
-              <p className="text-[0.95rem] leading-relaxed text-text-muted">{flavor.atTheTable}</p>
-              <p className="text-[0.95rem] leading-relaxed text-text-muted">{flavor.whenItsThin}</p>
-              <p className="text-sm text-text-muted">Drives: {info.drives}</p>
-              <StatScale stat={stat} value={value} />
-            </div>
-          ) : (
-            <p className="text-sm text-text-muted">
-              No entry for {stat.toUpperCase()} in src/data/rules/creation-rules.json →
-              statDescriptions.stats.
-            </p>
-          )}
-        </DialogContent>
-      </Dialog>
+      <StatInfoModal stat={stat} value={value} open={open} onOpenChange={setOpen} />
     </>
   );
 }

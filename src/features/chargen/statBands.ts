@@ -6,6 +6,7 @@ import {
   Minus,
   type LucideIcon,
 } from "lucide-react";
+import type { StatKey } from "@/engine";
 
 export type StatBand = {
   label: "Very Bad" | "Bad" | "Neutral / Average" | "Good" | "Very Good";
@@ -112,4 +113,29 @@ export function statColor(value: number): string {
   const hue = Math.round(f * 150);
   const lightness = Math.round(58 + f * 8);
   return `hsl(${hue} 90% ${lightness}%)`;
+}
+
+/**
+ * The best and the worst of ten STATs, but only when they are worth naming.
+ *
+ * An edge is a STAT in the top band ("Very Good", 7 and up); a weak spot is one
+ * in the bottom two ("Bad" or "Very Bad", 3 and under). Read off the bands, so
+ * the words on the strip and the colours on the cards cannot disagree, and
+ * symmetric around 5, the ordinary competent adult. A character with every STAT
+ * near the middle has neither, and is told neither: ten sixes do not have a
+ * weakest. Ties go to the printed order.
+ */
+export function statHighlights(
+  stats: Partial<Record<StatKey, number>>,
+  order: readonly StatKey[],
+): { edge: StatKey | null; weak: StatKey | null } {
+  if (!order.every((stat) => typeof stats[stat] === "number")) return { edge: null, weak: null };
+  const value = (stat: StatKey) => stats[stat] as number;
+  const best = order.reduce((a, b) => (value(b) > value(a) ? b : a));
+  const worst = order.reduce((a, b) => (value(b) < value(a) ? b : a));
+  const label = (stat: StatKey) => statBand(value(stat)).label;
+  return {
+    edge: label(best) === "Very Good" ? best : null,
+    weak: label(worst) === "Very Bad" || label(worst) === "Bad" ? worst : null,
+  };
 }

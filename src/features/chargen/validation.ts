@@ -3,6 +3,7 @@
  * only decides which validator applies to which step and phrases the result.
  */
 import {
+  CREATION_METHODS,
   STAT_ORDER,
   budgetStates,
   deriveStats,
@@ -70,7 +71,13 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
     case "stats": {
       if (state.method === "complete_package") {
         const result = validateCompletePackageStats(state.stats);
-        const untouched = Object.keys(state.stats).length === 0;
+        // The point-buy opens with every STAT at the floor, so "nothing chosen yet"
+        // is that, or nothing at all.
+        const untouched = STAT_ORDER.every(
+          (stat) =>
+            state.stats[stat] === undefined ||
+            state.stats[stat] === CREATION_METHODS.completePackage.statMin,
+        );
         return {
           violations: untouched ? ["No STATs allocated yet."] : result.violations,
           untouched,
