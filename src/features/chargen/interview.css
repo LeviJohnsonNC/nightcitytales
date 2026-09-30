@@ -179,3 +179,17 @@
     transparent 70%
   );
 }
+
+/* A STAT number landing after a point is bought or given back. Re-keyed on the value. */
+.stat-pop {
+  animation: stat-pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes stat-pop {
+  from {
+    transform: scale(1.22);
+  }
+  to {
+    transform: none;
+  }
+}

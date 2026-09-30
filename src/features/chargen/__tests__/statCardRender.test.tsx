@@ -102,13 +102,42 @@ describe("the Complete Package point-buy", () => {
     emp: 4,
   };
 
-  it("draws the same cards as the other methods, with a lower and a raise on each", () => {
+  it("draws a card per STAT with the number, a pip scale, and a lower and a raise", () => {
     const out = html(spent);
-    expect(out.split(BADGE).length - 1).toBe(STAT_ORDER.length);
     for (const stat of STAT_ORDER) {
       expect(out).toContain(`aria-label="Lower ${stat.toUpperCase()}"`);
       expect(out).toContain(`aria-label="Raise ${stat.toUpperCase()}"`);
+      expect(out).toContain(`aria-label="What is ${stat.toUpperCase()} good for?"`);
     }
+    // Seven pips a card, one per point from 2 to 8, described for a screen reader.
+    expect(out.split('aria-label="2 on a scale of 2 to 8"').length - 1).toBe(STAT_ORDER.length);
+    expect(out.split("<i ").length - 1).toBe(STAT_ORDER.length * 7);
+  });
+
+  it("tags the top of the scale, and the edge and the weak spot, only when they exist", () => {
+    expect(html(spent)).not.toContain("MAX");
+    expect(html(spent)).not.toContain("EDGE");
+    expect(html(spent)).not.toContain("WEAK");
+    // Shaped and spent to the last point: 8 + 8 + 8 + 8 + 8 + 8 + 2 + 6 + 2 + 4.
+    const shaped = {
+      ...spent,
+      int: 8,
+      ref: 8,
+      dex: 8,
+      tech: 8,
+      cool: 8,
+      will: 8,
+      luck: 2,
+      move: 6,
+      body: 2,
+      emp: 4,
+    };
+    // Mid-build the extremes are arbitrary, so nothing is named yet.
+    expect(html({ ...spent, dex: 8 })).not.toContain("EDGE");
+    const out = html(shaped);
+    expect(out).toContain("MAX");
+    expect(out).toContain("EDGE");
+    expect(out).toContain("WEAK");
   });
 
   it("has no typed numbers, no min-and-max line and no explainer", () => {
