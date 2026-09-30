@@ -18,6 +18,7 @@
  * `children` is what a caller adds under the number — the die for the STAT it
  * is rolling, the row it came from.
  */
+import { cn } from "@/lib/utils";
 import { StatValue } from "./StatValue";
 import { statColor, statFraction } from "./statBands";
 import { STAT_ICONS } from "./statIcons";
@@ -25,10 +26,17 @@ import { STAT_ICONS } from "./statIcons";
 export function StatCard({
   stat,
   value,
+  onInfo,
   children,
 }: {
   stat: string;
   value: number | null | undefined;
+  /**
+   * When given, the label and the number become a button that opens the STAT's
+   * briefing. Only that top block: `children` hold their own controls, and a
+   * button inside a button is not a thing a browser will let you have.
+   */
+  onInfo?: () => void;
   children?: React.ReactNode;
 }) {
   const Icon = STAT_ICONS[stat as keyof typeof STAT_ICONS];
@@ -74,13 +82,49 @@ export function StatCard({
         />
       )}
 
-      <p className="relative font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim">
-        {stat.toUpperCase()}
-      </p>
-      <div className="relative num text-2xl font-bold leading-tight text-text">
-        <StatValue value={value} showIcon={false} className="text-text" />
-      </div>
+      {onInfo ? (
+        <button
+          type="button"
+          onClick={onInfo}
+          aria-label={`What is ${stat.toUpperCase()} good for?`}
+          className="relative block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+        >
+          <CardFace stat={stat} value={value} interactive />
+        </button>
+      ) : (
+        <div className="relative">
+          <CardFace stat={stat} value={value} />
+        </div>
+      )}
       {children && <div className="relative mt-2">{children}</div>}
     </div>
+  );
+}
+
+/** The label and the number: the part of a card that is the same however it is used. */
+function CardFace({
+  stat,
+  value,
+  interactive = false,
+}: {
+  stat: string;
+  value: number | null | undefined;
+  interactive?: boolean;
+}) {
+  return (
+    <>
+      <p
+        className={cn(
+          "font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim",
+          // A dotted rule says "this explains itself", as the old hover did.
+          interactive && "underline decoration-dotted underline-offset-4",
+        )}
+      >
+        {stat.toUpperCase()}
+      </p>
+      <div className="num text-2xl font-bold leading-tight text-text">
+        <StatValue value={value} showIcon={false} className="text-text" />
+      </div>
+    </>
   );
 }

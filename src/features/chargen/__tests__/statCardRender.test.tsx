@@ -82,3 +82,67 @@ describe("the STATs step of creation", () => {
     }
   });
 });
+
+describe("the Complete Package point-buy", () => {
+  const html = (stats: Record<string, number>) =>
+    renderToStaticMarkup(<StatsPanel state={state({ method: "complete_package", stats })} />);
+  const spent = Object.fromEntries(STAT_ORDER.map((s) => [s, 2]));
+  // Six 8s, then 2, 6, 2, 4: sixty-two points exactly.
+  const SPENT_ALL = {
+    ...spent,
+    int: 8,
+    ref: 8,
+    dex: 8,
+    tech: 8,
+    cool: 8,
+    will: 8,
+    luck: 2,
+    move: 6,
+    body: 2,
+    emp: 4,
+  };
+
+  it("draws the same cards as the other methods, with a lower and a raise on each", () => {
+    const out = html(spent);
+    expect(out.split(BADGE).length - 1).toBe(STAT_ORDER.length);
+    for (const stat of STAT_ORDER) {
+      expect(out).toContain(`aria-label="Lower ${stat.toUpperCase()}"`);
+      expect(out).toContain(`aria-label="Raise ${stat.toUpperCase()}"`);
+    }
+  });
+
+  it("has no typed numbers, no min-and-max line and no explainer", () => {
+    const out = html(spent);
+    expect(out).not.toContain("<input");
+    expect(out).not.toMatch(/of 62 spent/);
+    expect(out).not.toMatch(/min 2/);
+    expect(out).not.toContain("You can go over budget");
+  });
+
+  it("shows what is left, and says so once it is all spent", () => {
+    expect(html(spent)).toContain(">42<");
+    expect(html(spent)).not.toContain("All spent");
+    const full = SPENT_ALL;
+    expect(html(full)).toContain("All spent");
+  });
+
+  it("stops the raise buttons when the pool is empty or the STAT is full", () => {
+    const full = SPENT_ALL;
+    const out = html(full);
+    // Nothing left to spend, so every raise is disabled, including on the 2s.
+    const raises = out.match(/<button[^>]*aria-label="Raise [A-Z]+"[^>]*>/g) ?? [];
+    expect(raises).toHaveLength(STAT_ORDER.length);
+    expect(raises.every((tag) => tag.includes("disabled"))).toBe(true);
+    // A 2 cannot be lowered.
+    const lowerLuck = out.match(/<button[^>]*aria-label="Lower LUCK"[^>]*>/)?.[0] ?? "";
+    expect(lowerLuck).toContain("disabled");
+  });
+
+  it("makes the derived tiles something you can open", () => {
+    const out = html(spent);
+    for (const title of ["Hit Points", "Seriously Wounded", "Death Save", "Humanity"]) {
+      expect(out).toContain(`aria-label="What is ${title}?"`);
+    }
+    expect(out).toContain(`aria-label="What is INT good for?"`);
+  });
+});

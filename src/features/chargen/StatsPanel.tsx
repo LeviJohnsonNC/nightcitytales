@@ -1,26 +1,34 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   CREATION_METHODS,
   STAT_ORDER,
   statRerollsLeft,
   statRollCost,
-  STAT_DESCRIPTIONS,
+  adjustCompletePackageStat,
+  normalizeCompletePackageStats,
   defaultRng,
   deriveStats,
   rollEdgerunnerStat,
   rollStreetratStats,
+  startingCompletePackageStats,
   validateCompletePackageStats,
 } from "@/engine";
 import type { StatBlock, StatKey } from "@/engine";
 import { DiceRoll } from "./DiceRoll";
 import { StatTemplateTable } from "./StatTemplateTable";
-import { StatBandIndicator } from "./StatValue";
 import { StatCard } from "./StatCard";
-import { statBand } from "./statBands";
+import { statHighlights } from "./statBands";
+import { DERIVED_KEYS, DERIVED_TITLES, derivedBriefing, type DerivedKey } from "./derivedFlavor";
+import { StatInfoModal } from "./SheetInfo";
 import { appendRoll } from "./rollLogStore";
 import { useChargenStore, type ChargenState } from "./store";
 import { STAT_GLANCE } from "./statFlavor";
@@ -28,54 +36,144 @@ import "./interview.css";
 
 const COMPLETE = CREATION_METHODS.completePackage;
 
-/** Per-STAT meaning comes from creation-rules.json → statDescriptions. */
-function StatMeaning({ stat }: { stat: StatKey }) {
-  const info = STAT_DESCRIPTIONS[stat];
-  if (!info) {
-    return (
-      <span>
-        No entry for {stat.toUpperCase()} in src/data/rules/creation-rules.json →
-        statDescriptions.stats.
-      </span>
-    );
-  }
+/**
+ * A STAT card that explains itself: the label and the number open the STAT's
+ * briefing, the same one the character sheet opens.
+ */
+function InfoStatCard({
+  stat,
+  value,
+  roleId,
+  children,
+}: {
+  stat: StatKey;
+  value: number | undefined;
+  roleId: string | null;
+  children?: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
   return (
-    <span className="block space-y-1">
-      <span className="block font-semibold">
-        {info.stat} — {info.name}
-      </span>
-      <span className="block">{info.description}</span>
-      <span className="block text-text-muted">Drives: {info.drives}</span>
-    </span>
+    <>
+      <StatCard stat={stat} value={value} onInfo={() => setOpen(true)}>
+        {children}
+      </StatCard>
+      <StatInfoModal
+        stat={stat}
+        value={value ?? null}
+        roleId={roleId}
+        open={open}
+        onOpenChange={setOpen}
+      />
+    </>
+  );
+}
+
+/** How far a number has just moved, for the second or so after it does. */
+function useRecentChange(value: number | undefined): number | null {
+  const previous = useRef(value);
+  const [change, setChange] = useState<number | null>(null);
+  useEffect(() => {
+    const before = previous.current;
+    previous.current = value;
+    if (typeof value !== "number" || typeof before !== "number" || value === before) return;
+    setChange(value - before);
+    const timer = window.setTimeout(() => setChange(null), 1600);
+    return () => window.clearTimeout(timer);
+  }, [value]);
+  return change;
+}
+
+function DerivedTile({
+  dkey,
+  value,
+  math,
+  stats,
+}: {
+  dkey: DerivedKey;
+  value: number | undefined;
+  math: string;
+  stats: Partial<StatBlock>;
+}) {
+  const [open, setOpen] = useState(false);
+  const change = useRecentChange(value);
+  const complete = STAT_ORDER.every((s) => typeof stats[s] === "number");
+  const briefing = complete ? derivedBriefing(dkey, stats as StatBlock) : null;
+  return (
+    <>
+      <button
+        type="button"
+        disabled={!briefing}
+        onClick={() => setOpen(true)}
+        aria-label={`What is ${DERIVED_TITLES[dkey]}?`}
+        className="relative border border-border bg-card p-3 text-left transition-colors enabled:cursor-pointer enabled:hover:border-primary/60 enabled:hover:bg-surface/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+      >
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground underline decoration-dotted underline-offset-4">
+          {DERIVED_TITLES[dkey]}
+        </p>
+        <p className="num mt-1 font-mono text-3xl font-bold tabular-nums text-foreground">
+          {value ?? "—"}
+        </p>
+        <p className="mt-1 font-mono text-[10px] text-muted-foreground">{math}</p>
+        {change !== null && (
+          <span
+            aria-hidden
+            className={cn(
+              "num absolute right-3 top-3 font-mono text-sm font-bold",
+              change > 0 ? "text-success" : "text-danger",
+            )}
+          >
+            {change > 0 ? "+" : "−"}
+            {Math.abs(change)}
+          </span>
+        )}
+      </button>
+      {briefing && (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="font-display tracking-tight">{briefing.title}</DialogTitle>
+              <DialogDescription className="font-mono text-[11px] uppercase tracking-[0.18em]">
+                {briefing.yours}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {briefing.body.map((paragraph, i) => (
+                <p
+                  key={paragraph}
+                  className={cn(
+                    "text-[0.95rem] leading-relaxed",
+                    i === 0 ? "text-text" : "text-text-muted",
+                  )}
+                >
+                  {paragraph}
+                </p>
+              ))}
+              <p className="border-l-2 border-hairline pl-3 text-sm text-text-muted">
+                {briefing.movedBy}
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
 
 function DerivedPreview({ stats }: { stats: Partial<StatBlock> }) {
   const complete = STAT_ORDER.every((s) => typeof stats[s] === "number");
   const derived = complete ? deriveStats(stats as StatBlock) : null;
-  const rows = [
-    { label: "Hit Points", value: derived?.hpMax, math: "10 + 5 × ⌈(BODY + WILL) / 2⌉" },
-    {
-      label: "Seriously Wounded",
-      value: derived?.seriouslyWoundedThreshold,
-      math: "⌈HP / 2⌉",
-    },
-    { label: "Death Save", value: derived?.deathSave, math: "BODY" },
-    { label: "Humanity", value: derived?.humanityMax, math: "EMP × 10" },
+  const rows: { key: DerivedKey; value: number | undefined; math: string }[] = [
+    { key: "hp", value: derived?.hpMax, math: "10 + 5 × ⌈(BODY + WILL) / 2⌉" },
+    { key: "seriously", value: derived?.seriouslyWoundedThreshold, math: "⌈HP / 2⌉" },
+    { key: "death", value: derived?.deathSave, math: "BODY" },
+    { key: "humanity", value: derived?.humanityMax, math: "EMP × 10" },
   ];
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {rows.map((row) => (
-        <div key={row.label} className="border border-border bg-card p-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {row.label}
-          </p>
-          <p className="num mt-1 font-mono text-3xl font-bold tabular-nums text-foreground">
-            {row.value ?? "—"}
-          </p>
-          <p className="mt-1 font-mono text-[10px] text-muted-foreground">{row.math}</p>
-        </div>
-      ))}
+      {DERIVED_KEYS.map((key) => {
+        const row = rows.find((r) => r.key === key)!;
+        return <DerivedTile key={key} dkey={key} value={row.value} math={row.math} stats={stats} />;
+      })}
     </div>
   );
 }
@@ -92,18 +190,20 @@ function DerivedPreview({ stats }: { stats: Partial<StatBlock> }) {
 function StatReadout({
   stats,
   rows,
+  roleId,
 }: {
   stats: Partial<StatBlock>;
   rows?: Partial<Record<StatKey, number>>;
+  roleId: string | null;
 }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
       {STAT_ORDER.map((stat) => (
-        <StatCard key={stat} stat={stat} value={stats[stat]}>
+        <InfoStatCard key={stat} stat={stat} value={stats[stat]} roleId={roleId}>
           {rows?.[stat] !== undefined && (
             <p className="font-mono text-[10px] text-text-dim">row {rows[stat]}</p>
           )}
-        </StatCard>
+        </InfoStatCard>
       ))}
     </div>
   );
@@ -181,7 +281,7 @@ function StreetratBranch({ state }: { state: ChargenState }) {
             : "Click the die to roll your row."}
         </p>
       </div>
-      <StatReadout stats={state.stats} />
+      <StatReadout stats={state.stats} roleId={roleId} />
       <StatTemplateTable roleId={roleId} highlightRow={state.statRolls.row} />
     </div>
   );
@@ -257,7 +357,7 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
       </div>
       <div ref={gridRef} className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {STAT_ORDER.map((stat) => (
-          <StatCard key={stat} stat={stat} value={state.stats[stat]}>
+          <InfoStatCard key={stat} stat={stat} value={state.stats[stat]} roleId={roleId}>
             <div className="flex justify-start" data-stat-die-wrap={stat}>
               <DiceRoll
                 sides={10}
@@ -274,7 +374,7 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
                 roll={() => rollStat(stat)}
               />
             </div>
-          </StatCard>
+          </InfoStatCard>
         ))}
       </div>
       <StatTemplateTable roleId={roleId} highlightCells={state.statRolls.rows} />
@@ -282,25 +382,85 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
   );
 }
 
+/**
+ * A − or + that keeps going while it is held. The first press acts at once, so
+ * a tap is one point; a hold waits a beat and then repeats. Keyboard presses
+ * arrive as clicks with no pointer (`detail` 0) and act once, since the pointer
+ * handlers never saw them.
+ */
+function StepButton({
+  label,
+  disabled,
+  onStep,
+  children,
+}: {
+  label: string;
+  disabled: boolean;
+  onStep: () => void;
+  children: React.ReactNode;
+}) {
+  const delay = useRef<number | undefined>(undefined);
+  const repeat = useRef<number | undefined>(undefined);
+  const stop = () => {
+    window.clearTimeout(delay.current);
+    window.clearInterval(repeat.current);
+  };
+  useEffect(() => stop, []);
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      aria-label={label}
+      disabled={disabled}
+      className="size-9 p-0 font-mono text-base"
+      onPointerDown={() => {
+        if (disabled) return;
+        onStep();
+        stop();
+        delay.current = window.setTimeout(() => {
+          repeat.current = window.setInterval(onStep, 90);
+        }, 380);
+      }}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      onBlur={stop}
+      onClick={(e) => {
+        if (e.detail === 0) onStep();
+      }}
+    >
+      {children}
+    </Button>
+  );
+}
+
 function CompletePackageBranch({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const result = validateCompletePackageStats(state.stats);
   const remaining = result.pointsRemaining;
+  const roleId = state.roleId;
 
-  function setStat(stat: StatKey, raw: string) {
-    if (raw === "") {
-      const { [stat]: _drop, ...rest } = state.stats;
-      patch({ stats: rest });
-      return;
+  // Every STAT starts at the floor, so a "+" always adds one to a real number
+  // and the pool is simply what is left. A draft saved before the controls
+  // stopped taking typed numbers is brought inside the rules the same way.
+  const complete = STAT_ORDER.every((stat) => typeof state.stats[stat] === "number");
+  const legal =
+    complete &&
+    validateCompletePackageStats(state.stats).violations.every((v) => v.includes("unspent"));
+  useEffect(() => {
+    if (Object.keys(state.stats).length === 0) {
+      patch({ stats: startingCompletePackageStats() });
+    } else if (!legal) {
+      patch({ stats: normalizeCompletePackageStats(state.stats) });
     }
-    const value = Number.parseInt(raw, 10);
-    if (Number.isNaN(value)) return;
-    patch({ stats: { ...state.stats, [stat]: value } });
-  }
+  }, [state.stats, legal, patch]);
 
-  function step(stat: StatKey, delta: number) {
-    const current = state.stats[stat] ?? COMPLETE.statMin;
-    patch({ stats: { ...state.stats, [stat]: current + delta } });
+  /** Read fresh each time: a held button fires faster than React re-renders. */
+  function move(stat: StatKey, delta: number) {
+    const current = useChargenStore.getState().stats;
+    const next = adjustCompletePackageStat(current, stat, delta);
+    if (next !== current) patch({ stats: next });
   }
 
   function spreadEvenly() {
@@ -311,110 +471,83 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
   }
 
   return (
-    <TooltipProvider delayDuration={150}>
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-card p-4">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              Points remaining
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-card p-4">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            Points remaining
+          </p>
+          <p className="num font-mono text-4xl font-bold tabular-nums text-foreground">
+            {remaining}
+          </p>
+          {remaining === 0 && (
+            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-success">
+              All spent
             </p>
-            <p
-              className={cn(
-                "num font-mono text-4xl font-bold tabular-nums",
-                remaining < 0 ? "text-destructive" : "text-foreground",
-              )}
-            >
-              {remaining}
-            </p>
-            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-              {result.pointsSpent} of {COMPLETE.statPoints} spent · min {COMPLETE.statMin} · max{" "}
-              {COMPLETE.statMax}
-            </p>
-          </div>
-          <Button variant="outline" onClick={spreadEvenly}>
-            Spread evenly
-          </Button>
+          )}
         </div>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          {STAT_ORDER.map((stat) => {
-            const value = state.stats[stat];
-            const outOfRange =
-              typeof value === "number" && (value > COMPLETE.statMax || value < COMPLETE.statMin);
-            return (
-              <div
-                key={stat}
-                className={cn(
-                  "flex items-center gap-3 border border-border bg-card p-3",
-                  typeof value === "number" && statBand(value).borderClass,
-                  typeof value === "number" && statBand(value).backgroundClass,
-                  outOfRange && "border-destructive",
-                )}
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="w-16 cursor-help font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground underline decoration-dotted underline-offset-4">
-                      {stat.toUpperCase()}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs text-sm">
-                    <StatMeaning stat={stat} />
-                  </TooltipContent>
-                </Tooltip>
-                <Button variant="outline" size="sm" onClick={() => step(stat, -1)}>
-                  −
-                </Button>
-                <Input
-                  inputMode="numeric"
-                  aria-label={`${stat.toUpperCase()} value`}
-                  className="num w-16 text-center font-mono tabular-nums"
-                  value={value === undefined ? "" : String(value)}
-                  onChange={(e) => setStat(stat, e.target.value)}
-                />
-                <Button variant="outline" size="sm" onClick={() => step(stat, 1)}>
-                  +
-                </Button>
-                <StatBandIndicator value={value} className="ml-auto" />
-              </div>
-            );
-          })}
-        </div>
-
-        <Notice>
-          You can go over budget while you shuffle numbers around — nothing is blocked mid-edit. You
-          just can't leave this step until the total is exactly {COMPLETE.statPoints} and every STAT
-          sits between {COMPLETE.statMin} and {COMPLETE.statMax}. Watch the Hit Points and Death
-          Save below as you move BODY and WILL: that is your survivability being bought.
-        </Notice>
+        <Button variant="outline" onClick={spreadEvenly}>
+          Spread evenly
+        </Button>
       </div>
-    </TooltipProvider>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {STAT_ORDER.map((stat) => {
+          const value = state.stats[stat];
+          const at = typeof value === "number" ? value : COMPLETE.statMin;
+          return (
+            <InfoStatCard key={stat} stat={stat} value={value} roleId={roleId}>
+              <div className="flex items-center gap-2">
+                <StepButton
+                  label={`Lower ${stat.toUpperCase()}`}
+                  disabled={at <= COMPLETE.statMin}
+                  onStep={() => move(stat, -1)}
+                >
+                  −
+                </StepButton>
+                <StepButton
+                  label={`Raise ${stat.toUpperCase()}`}
+                  disabled={at >= COMPLETE.statMax || remaining <= 0}
+                  onStep={() => move(stat, 1)}
+                >
+                  +
+                </StepButton>
+              </div>
+            </InfoStatCard>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
 /**
- * What the ten numbers make you, in two lines: your best STAT and your worst,
- * said the way the street would say them. Ties go to the printed order.
+ * What the ten numbers make you, said the way the street would say it: the STAT
+ * you are best at and the one you are worst at, but only when either is worth
+ * naming. Ten sixes have no weak spot, and a strip that invents one teaches the
+ * wrong thing (`statHighlights` holds the line).
  */
 function AtAGlance({ stats }: { stats: Partial<StatBlock> }) {
-  if (!STAT_ORDER.every((stat) => typeof stats[stat] === "number")) return null;
-  const ranked = [...STAT_ORDER].sort((a, b) => (stats[b] as number) - (stats[a] as number));
-  const best = ranked[0]!;
-  const worst = [...STAT_ORDER].sort((a, b) => (stats[a] as number) - (stats[b] as number))[0]!;
-  if (stats[best] === stats[worst]) return null;
+  const { edge, weak } = statHighlights(stats, STAT_ORDER);
+  if (!edge && !weak) return null;
   return (
-    <div className="cg-say grid gap-3 sm:grid-cols-2">
-      <div className="border-l-2 border-success bg-success/5 p-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
-          Your edge · {best.toUpperCase()} {stats[best]}
-        </p>
-        <p className="mt-1 text-base">{STAT_GLANCE[best].high}</p>
-      </div>
-      <div className="border-l-2 border-danger bg-danger/5 p-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
-          Your weak spot · {worst.toUpperCase()} {stats[worst]}
-        </p>
-        <p className="mt-1 text-base">{STAT_GLANCE[worst].low}</p>
-      </div>
+    <div className={cn("cg-say grid gap-3", edge && weak && "sm:grid-cols-2")}>
+      {edge && (
+        <div className="border-l-2 border-success bg-success/5 p-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
+            Your edge · {edge.toUpperCase()} {stats[edge]}
+          </p>
+          <p className="mt-1 text-base">{STAT_GLANCE[edge].high}</p>
+        </div>
+      )}
+      {weak && (
+        <div className="border-l-2 border-danger bg-danger/5 p-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
+            Your weak spot · {weak.toUpperCase()} {stats[weak]}
+          </p>
+          <p className="mt-1 text-base">{STAT_GLANCE[weak].low}</p>
+        </div>
+      )}
     </div>
   );
 }

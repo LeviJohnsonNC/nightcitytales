@@ -65,6 +65,66 @@ export function rollEdgerunnerStats(roleId: string, rng: RNG): EdgerunnerResult 
   return { stats, rows, rolls };
 }
 
+/**
+ * Every STAT at the Complete Package floor: where the point-buy starts, so a
+ * "+" always adds one to a real number and the pool is what is left over.
+ */
+export function startingCompletePackageStats(): StatBlock {
+  const stats = {} as StatBlock;
+  for (const stat of STAT_ORDER) stats[stat] = COMPLETE_PACKAGE.statMin;
+  return stats;
+}
+
+/**
+ * A saved allocation made safe to edit with the point-buy controls: every STAT
+ * present and whole, inside the minimum and maximum, and no more points spent
+ * than the budget holds. Drafts written before the controls stopped allowing
+ * typed numbers can carry a 10, a 0, or a total over budget, and a stepper that
+ * refuses to leave the rules would leave that STAT stuck. Over budget is trimmed
+ * from the highest STAT first, so the shape of the build survives.
+ */
+export function normalizeCompletePackageStats(stats: Partial<StatBlock>): StatBlock {
+  const min = COMPLETE_PACKAGE.statMin;
+  const max = COMPLETE_PACKAGE.statMax;
+  const out = {} as StatBlock;
+  for (const stat of STAT_ORDER) {
+    const raw = stats[stat];
+    out[stat] =
+      typeof raw === "number" && Number.isFinite(raw)
+        ? Math.min(max, Math.max(min, Math.round(raw)))
+        : min;
+  }
+  let spent = STAT_ORDER.reduce((sum, stat) => sum + out[stat], 0);
+  while (spent > COMPLETE_PACKAGE.statPoints) {
+    const highest = STAT_ORDER.reduce((a, b) => (out[b] > out[a] ? b : a));
+    out[highest] -= 1;
+    spent -= 1;
+  }
+  return out;
+}
+
+/**
+ * Move one STAT by `delta` without leaving the rules: never below the minimum,
+ * never above the maximum, and never spending more points than the budget has.
+ * A move that would break any of them changes nothing and returns the same
+ * object, so a caller can tell a refusal from a change by identity. A STAT not
+ * yet set counts as the minimum, which is what it costs.
+ */
+export function adjustCompletePackageStat(
+  stats: Partial<StatBlock>,
+  stat: StatKey,
+  delta: number,
+): Partial<StatBlock> {
+  const min = COMPLETE_PACKAGE.statMin;
+  const max = COMPLETE_PACKAGE.statMax;
+  const current = stats[stat] ?? min;
+  const next = current + delta;
+  if (next < min || next > max) return stats;
+  const spent = STAT_ORDER.reduce((sum, key) => sum + (stats[key] ?? min), 0);
+  if (spent + delta > COMPLETE_PACKAGE.statPoints) return stats;
+  return { ...stats, [stat]: next };
+}
+
 export type StatValidation = {
   valid: boolean;
   pointsSpent: number;

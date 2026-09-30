@@ -440,6 +440,17 @@ never the number: a stranger sees a face, not a birth certificate, and
 `APPEARANCE_RULE` colours a stranger's first assumption and says in so many
 words that it never changes a DV, a price or an outcome.
 
+The Complete Package point-buy cannot be overspent, even for a moment:
+`adjustCompletePackageStat` (`engine/statGeneration.ts`) refuses any move below
+the minimum, above the maximum, or past the budget, and the step has no typed
+numbers at all. Every STAT opens at the floor so the pool is simply what is
+left, and `normalizeCompletePackageStats` brings a draft saved under the old
+free-typing controls inside the rules. The STAT cards and the four derived
+numbers open house-voice briefings (`statFlavor.ts`, `derivedFlavor.ts`) whose
+figures are read from `deriveStats` and `creation-rules.json`; the "edge" and
+"weak spot" strip names one only when a STAT is in the top band or the bottom
+two (`statHighlights`), so ten sixes get neither.
+
 Rolled STATs count: the first roll stands and each character carries the
 rerolls `src/data/rules/chargen-house-rules.json` allows (`statRollCost`),
 counted on the draft as `statRerollsUsed` and kept across a method change.
