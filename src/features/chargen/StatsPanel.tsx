@@ -25,6 +25,7 @@ import {
 import type { StatBlock, StatKey } from "@/engine";
 import { DiceRoll } from "./DiceRoll";
 import { StatTemplateTable } from "./StatTemplateTable";
+import { PointBuyCard } from "./PointBuyCard";
 import { StatCard } from "./StatCard";
 import { statHighlights } from "./statBands";
 import { DERIVED_KEYS, DERIVED_TITLES, derivedBriefing, type DerivedKey } from "./derivedFlavor";
@@ -382,64 +383,15 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
   );
 }
 
-/**
- * A − or + that keeps going while it is held. The first press acts at once, so
- * a tap is one point; a hold waits a beat and then repeats. Keyboard presses
- * arrive as clicks with no pointer (`detail` 0) and act once, since the pointer
- * handlers never saw them.
- */
-function StepButton({
-  label,
-  disabled,
-  onStep,
-  children,
-}: {
-  label: string;
-  disabled: boolean;
-  onStep: () => void;
-  children: React.ReactNode;
-}) {
-  const delay = useRef<number | undefined>(undefined);
-  const repeat = useRef<number | undefined>(undefined);
-  const stop = () => {
-    window.clearTimeout(delay.current);
-    window.clearInterval(repeat.current);
-  };
-  useEffect(() => stop, []);
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      aria-label={label}
-      disabled={disabled}
-      className="size-9 p-0 font-mono text-base"
-      onPointerDown={() => {
-        if (disabled) return;
-        onStep();
-        stop();
-        delay.current = window.setTimeout(() => {
-          repeat.current = window.setInterval(onStep, 90);
-        }, 380);
-      }}
-      onPointerUp={stop}
-      onPointerLeave={stop}
-      onPointerCancel={stop}
-      onBlur={stop}
-      onClick={(e) => {
-        if (e.detail === 0) onStep();
-      }}
-    >
-      {children}
-    </Button>
-  );
-}
-
 function CompletePackageBranch({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const result = validateCompletePackageStats(state.stats);
   const remaining = result.pointsRemaining;
   const roleId = state.roleId;
+  // Named once the points are all spent: mid-build the extremes are whichever
+  // STAT happens to come first among the ones not yet raised, which says nothing.
+  const { edge, weak } =
+    remaining === 0 ? statHighlights(state.stats, STAT_ORDER) : { edge: null, weak: null };
 
   // Every STAT starts at the floor, so a "+" always adds one to a real number
   // and the pool is simply what is left. A draft saved before the controls
@@ -472,19 +424,23 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-card p-4 max-sm:px-4 max-sm:py-2.5 max-sm:sticky max-sm:top-14 max-sm:z-10 max-sm:bg-card/95 max-sm:backdrop-blur">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             Points remaining
           </p>
-          <p className="num font-mono text-4xl font-bold tabular-nums text-foreground">
-            {remaining}
-          </p>
-          {remaining === 0 && (
-            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-success">
-              All spent
+          {/* The number and the confirmation share a line, so the bar does not
+              grow, and shove the cards down, the moment the last point is spent. */}
+          <div className="flex items-baseline gap-3">
+            <p className="num font-mono text-4xl font-bold tabular-nums text-foreground max-sm:text-3xl">
+              {remaining}
             </p>
-          )}
+            {remaining === 0 && (
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-success">
+                All spent
+              </p>
+            )}
+          </div>
         </div>
         <Button variant="outline" onClick={spreadEvenly}>
           Spread evenly
@@ -493,27 +449,18 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {STAT_ORDER.map((stat) => {
-          const value = state.stats[stat];
-          const at = typeof value === "number" ? value : COMPLETE.statMin;
+          const at = state.stats[stat] ?? COMPLETE.statMin;
           return (
-            <InfoStatCard key={stat} stat={stat} value={value} roleId={roleId}>
-              <div className="flex items-center gap-2">
-                <StepButton
-                  label={`Lower ${stat.toUpperCase()}`}
-                  disabled={at <= COMPLETE.statMin}
-                  onStep={() => move(stat, -1)}
-                >
-                  −
-                </StepButton>
-                <StepButton
-                  label={`Raise ${stat.toUpperCase()}`}
-                  disabled={at >= COMPLETE.statMax || remaining <= 0}
-                  onStep={() => move(stat, 1)}
-                >
-                  +
-                </StepButton>
-              </div>
-            </InfoStatCard>
+            <PointBuyCard
+              key={stat}
+              stat={stat}
+              value={at}
+              roleId={roleId}
+              canLower={at > COMPLETE.statMin}
+              canRaise={at < COMPLETE.statMax && remaining > 0}
+              onStep={(delta) => move(stat, delta)}
+              mark={stat === edge ? "edge" : stat === weak ? "weak" : null}
+            />
           );
         })}
       </div>
@@ -527,8 +474,8 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
  * naming. Ten sixes have no weak spot, and a strip that invents one teaches the
  * wrong thing (`statHighlights` holds the line).
  */
-function AtAGlance({ stats }: { stats: Partial<StatBlock> }) {
-  const { edge, weak } = statHighlights(stats, STAT_ORDER);
+function AtAGlance({ stats, settled }: { stats: Partial<StatBlock>; settled: boolean }) {
+  const { edge, weak } = settled ? statHighlights(stats, STAT_ORDER) : { edge: null, weak: null };
   if (!edge && !weak) return null;
   return (
     <div className={cn("cg-say grid gap-3", edge && weak && "sm:grid-cols-2")}>
@@ -570,7 +517,13 @@ export function StatsPanel({ state }: { state: ChargenState }) {
       {state.method === "edgerunner" && <EdgerunnerBranch state={state} />}
       {state.method === "complete_package" && <CompletePackageBranch state={state} />}
 
-      <AtAGlance stats={state.stats} />
+      <AtAGlance
+        stats={state.stats}
+        settled={
+          state.method !== "complete_package" ||
+          validateCompletePackageStats(state.stats).pointsRemaining === 0
+        }
+      />
 
       <div className="space-y-3">
         <h2 className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">

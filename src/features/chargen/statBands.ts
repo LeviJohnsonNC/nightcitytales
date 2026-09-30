@@ -133,6 +133,8 @@ export function statHighlights(
   const value = (stat: StatKey) => stats[stat] as number;
   const best = order.reduce((a, b) => (value(b) > value(a) ? b : a));
   const worst = order.reduce((a, b) => (value(b) < value(a) ? b : a));
+  // Ten of the same number has no best and no worst.
+  if (value(best) === value(worst)) return { edge: null, weak: null };
   const label = (stat: StatKey) => statBand(value(stat)).label;
   return {
     edge: label(best) === "Very Good" ? best : null,

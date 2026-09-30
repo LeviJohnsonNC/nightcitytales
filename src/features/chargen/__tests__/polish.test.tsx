@@ -70,16 +70,14 @@ describe("what the STATs make you", () => {
 
   it("names the edge and the weak spot once every STAT is in", () => {
     const html = renderToStaticMarkup(
-      <StatsPanel state={draft({ method: "complete_package", roleId: "solo", stats: STATS })} />,
+      <StatsPanel state={draft({ method: "streetrat", roleId: "solo", stats: STATS })} />,
     );
     expect(html).toContain("Your edge · REF 8");
     expect(html).toContain(STAT_GLANCE.ref.high);
     expect(html).toContain("Your weak spot · EMP 3");
     expect(html).toContain(STAT_GLANCE.emp.low);
     const partial = renderToStaticMarkup(
-      <StatsPanel
-        state={draft({ method: "complete_package", roleId: "solo", stats: { int: 6 } })}
-      />,
+      <StatsPanel state={draft({ method: "streetrat", roleId: "solo", stats: { int: 6 } })} />,
     );
     expect(partial).not.toContain("Your edge");
   });
