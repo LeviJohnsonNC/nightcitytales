@@ -330,6 +330,145 @@ instrumental, slow noir synth jazz, warm Rhodes electric piano, brushed electron
 
 Exclude: `vocals, upbeat, big drop, trap, acoustic guitar, swing big band`
 
+### Five more, second round
+
+Another spread. "Coyote Run" is the one that stays closest to "Badlands
+Highway" — the same guitar, later at night and in more trouble. The others
+go elsewhere: a corporate tower, a drowned resort, the Net, and the one
+dawn in a playlist that is otherwise all night.
+
+### `music-coyote-run.mp3` — "Coyote Run"
+
+A nomad smuggling run across the border after dark, headlights off. The
+darker sibling of "Badlands Highway". Duration 3:45. Weirdness 45%.
+
+Structure:
+
+```text
+[Instrumental]
+[Intro: desert wind, a low tremolo guitar swell]
+[Groove: rolling toms, pulsing analog bass]
+[Tremolo baritone guitar melody, spaghetti western]
+[Build: dark arpeggios and a distant whistle-like synth]
+[Groove, heavier]
+[Guitar melody, doubled an octave up]
+[Outro: drums drop away, tremolo guitar and wind fade gently]
+```
+
+Styles:
+
+```text
+instrumental, dark desert noir synthwave, spaghetti western tremolo baritone guitar drenched in spring reverb, rolling tom drums, pulsing analog synth bass, dark minor arpeggios, whistle-like synth lead used sparingly, moonlit border crossing with the headlights off, tense and cinematic, 92 bpm
+```
+
+Exclude: `vocals, country vocals, acoustic guitar, banjo, harmonica, happy, EDM drop, metal`
+
+### `music-ninety-floors-up.mp3` — "Ninety Floors Up"
+
+A corporate tower at night: glass, money and somebody watching. Sleek rather
+than loud. Duration 3:30. Weirdness 35%.
+
+Structure:
+
+```text
+[Instrumental]
+[Intro: glassy bell motif, soft sub pulse]
+[Groove: crisp minimal drums, sequenced bass]
+[Bell motif and cold string-like pads]
+[Variation: FM plucks answer the motif]
+[Breakdown: bells and sub only]
+[Groove]
+[Outro: drums fall away, bell motif fades gently]
+```
+
+Styles:
+
+```text
+instrumental, sleek corporate cyberpunk, minimalist electronic, glassy FM bell motif, crisp minimal drums, tight sequenced synth bass, cold string-like synth pads, polished and expensive, quietly sinister, penthouse office above a neon skyline, 108 bpm
+```
+
+Exclude: `vocals, big drop, dubstep, trap, acoustic guitar, happy, orchestral`
+
+### `music-drowned-arcade.mp3` — "Drowned Arcade"
+
+Pacifica: a resort that was never finished, half flooded, the arcade signs
+still flickering. The slowest and dreamiest in the rotation. Duration 4:00.
+Weirdness 55%.
+
+Structure:
+
+```text
+[Instrumental]
+[Intro: waves, a detuned chord through tape echo]
+[Dub pulse: soft kick, deep round bass]
+[Echoing chord stabs and warbling pads]
+[Variation: a faded arcade melody, chorus and delay]
+[Dub pulse]
+[Outro: beat drops out, echoes and waves fade gently]
+```
+
+Styles:
+
+```text
+instrumental, dub techno vaporwave, deep round sub bass, soft muffled kick, echoing chord stabs through tape delay, warbling detuned pads, faded arcade melody drowned in chorus, ocean waves, abandoned beach resort at night, flickering neon, hazy and melancholic, 80 bpm
+```
+
+Exclude: `vocals, upbeat, big drop, trap, acoustic guitar, happy, hard techno`
+
+### `music-black-ice.mp3` — "Black ICE"
+
+A netrunner jacked in: data, speed and something waiting in the dark. The
+most propulsive in the rotation, still steady enough to read over. Duration
+3:30. Weirdness 45%.
+
+Structure:
+
+```text
+[Instrumental]
+[Intro: data chatter, a filtered arpeggio fades in]
+[Groove A: breakbeat drums, driving sequenced bass]
+[Cold lead synth hook]
+[Groove B: second arpeggio, glitch fills]
+[Breakdown: arpeggio and pads only]
+[Groove A]
+[Cold lead synth hook]
+[Outro: drums fall away, arpeggio filters down gently]
+```
+
+Styles:
+
+```text
+instrumental, darksynth breakbeat, fast sequenced analog arpeggios, chopped breakbeat drums, driving distorted synth bass, cold digital lead synth hook, glitch fills and data chatter, netrunner diving through black ICE, focused and relentless but not loud, 124 bpm
+```
+
+Exclude: `vocals, dubstep wobble, EDM festival drop, trap, acoustic guitar, happy, metal`
+
+### `music-first-light.mp3` — "First Light"
+
+Dawn over the city after a long night. The one warm, hopeful track in the
+rotation, bittersweet rather than bright. Duration 3:45. Weirdness 30%.
+
+Structure:
+
+```text
+[Instrumental]
+[Intro: soft synth pads swell, distant traffic]
+[Groove: warm gated drums, round synth bass]
+[Chorused clean guitar melody]
+[Lead synth answers the guitar]
+[Groove, fuller]
+[Guitar and lead together]
+[Outro: drums drop away, pads and guitar fade gently]
+```
+
+Styles:
+
+```text
+instrumental, nostalgic dreamy synthwave, warm lush analog pads, chorused clean electric guitar melody, gated reverb drums, round warm synth bass, soaring gentle lead synth, sunrise over a tired city after a long night, bittersweet and hopeful, 100 bpm
+```
+
+Exclude: `vocals, big drop, aggressive, trap, dubstep, acoustic guitar, metal`
+
 ## Elsewhere in the game
 
 - `neon-storm-front.mp3`: the combat track, played under the battlefield by
