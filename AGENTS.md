@@ -448,8 +448,8 @@ left, and `normalizeCompletePackageStats` brings a draft saved under the old
 free-typing controls inside the rules. The STAT cards and the four derived
 numbers open house-voice briefings (`statFlavor.ts`, `derivedFlavor.ts`) whose
 figures are read from `deriveStats` and `creation-rules.json`; the "edge" and
-"weak spot" strip names one only when a STAT is in the top band or the bottom
-two (`statHighlights`), so ten sixes get neither.
+"weak spot" strip names every STAT in the top band or the bottom two
+(`statHighlights`), and only once the points are spent, so ten sixes get neither.
 
 Rolled STATs count: the first roll stands and each character carries the
 rerolls `src/data/rules/chargen-house-rules.json` allows (`statRollCost`),

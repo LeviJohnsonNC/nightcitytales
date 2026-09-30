@@ -63,14 +63,6 @@ function StatScale({ stat, value }: { stat: StatKey; value: number | null }) {
             }
           />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-full bg-gradient-to-b from-white/12 to-transparent" />
-          {value !== null && (
-            <span
-              className="num absolute top-1/2 -translate-y-1/2 font-mono text-[11px] font-semibold text-text"
-              style={{ left: `clamp(0.5rem, ${pct}% - 0.75rem, calc(100% - 1.75rem))` }}
-            >
-              {value}
-            </span>
-          )}
         </div>
         <span className="num font-mono text-xs text-text-dim">{max}</span>
       </div>
