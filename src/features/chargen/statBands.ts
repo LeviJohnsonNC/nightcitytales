@@ -116,28 +116,27 @@ export function statColor(value: number): string {
 }
 
 /**
- * The best and the worst of ten STATs, but only when they are worth naming.
+ * The STATs worth naming: every one in the top band is an edge, every one in
+ * the bottom two is a weak spot.
  *
- * An edge is a STAT in the top band ("Very Good", 7 and up); a weak spot is one
- * in the bottom two ("Bad" or "Very Bad", 3 and under). Read off the bands, so
- * the words on the strip and the colours on the cards cannot disagree, and
- * symmetric around 5, the ordinary competent adult. A character with every STAT
- * near the middle has neither, and is told neither: ten sixes do not have a
- * weakest. Ties go to the printed order.
+ * Read off the bands ("Very Good", 7 and up; "Bad" or "Very Bad", 3 and under),
+ * so the words on the strip and the colours on the cards cannot disagree, and
+ * symmetric around 5, the ordinary competent adult. There can be several of
+ * either, or none: a character with every STAT near the middle has neither, and
+ * is told neither. Strongest first for edges and weakest first for weak spots,
+ * ties in the printed order.
  */
 export function statHighlights(
   stats: Partial<Record<StatKey, number>>,
   order: readonly StatKey[],
-): { edge: StatKey | null; weak: StatKey | null } {
-  if (!order.every((stat) => typeof stats[stat] === "number")) return { edge: null, weak: null };
+): { edges: StatKey[]; weak: StatKey[] } {
+  if (!order.every((stat) => typeof stats[stat] === "number")) return { edges: [], weak: [] };
   const value = (stat: StatKey) => stats[stat] as number;
-  const best = order.reduce((a, b) => (value(b) > value(a) ? b : a));
-  const worst = order.reduce((a, b) => (value(b) < value(a) ? b : a));
-  // Ten of the same number has no best and no worst.
-  if (value(best) === value(worst)) return { edge: null, weak: null };
-  const label = (stat: StatKey) => statBand(value(stat)).label;
+  const band = (stat: StatKey) => statBand(value(stat)).label;
   return {
-    edge: label(best) === "Very Good" ? best : null,
-    weak: label(worst) === "Very Bad" || label(worst) === "Bad" ? worst : null,
+    edges: order.filter((stat) => band(stat) === "Very Good").sort((a, b) => value(b) - value(a)),
+    weak: order
+      .filter((stat) => band(stat) === "Very Bad" || band(stat) === "Bad")
+      .sort((a, b) => value(a) - value(b)),
   };
 }

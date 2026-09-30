@@ -72,14 +72,29 @@ describe("what the STATs make you", () => {
     const html = renderToStaticMarkup(
       <StatsPanel state={draft({ method: "streetrat", roleId: "solo", stats: STATS })} />,
     );
-    expect(html).toContain("Your edge · REF 8");
+    expect(html).toContain("Your edge");
+    expect(html).toContain("REF 8");
     expect(html).toContain(STAT_GLANCE.ref.high);
-    expect(html).toContain("Your weak spot · EMP 3");
+    expect(html).toContain("Your weak spot");
+    expect(html).toContain("EMP 3");
     expect(html).toContain(STAT_GLANCE.emp.low);
     const partial = renderToStaticMarkup(
       <StatsPanel state={draft({ method: "streetrat", roleId: "solo", stats: { int: 6 } })} />,
     );
     expect(partial).not.toContain("Your edge");
+  });
+
+  it("lists every edge and every weak spot when there are several", () => {
+    const many = { ...STATS, int: 8, dex: 8, luck: 7, ref: 2, emp: 3, tech: 3 };
+    const html = renderToStaticMarkup(
+      <StatsPanel state={draft({ method: "streetrat", roleId: "solo", stats: many })} />,
+    );
+    expect(html).toContain("Your edges");
+    expect(html).toContain("Your weak spots");
+    for (const stat of ["int", "dex", "luck"] as const)
+      expect(html).toContain(STAT_GLANCE[stat].high);
+    for (const stat of ["ref", "emp", "tech"] as const)
+      expect(html).toContain(STAT_GLANCE[stat].low);
   });
 
   it("tells a roller the first roll stands", () => {

@@ -41,31 +41,43 @@ describe("the STAT ramp", () => {
   });
 });
 
-describe("naming an edge and a weak spot", () => {
+describe("naming edges and weak spots", () => {
   const all = (value: number) => Object.fromEntries(STAT_ORDER.map((s) => [s, value]));
 
-  it("names neither for a character with nothing at the extremes", () => {
-    expect(statHighlights(all(6), STAT_ORDER)).toEqual({ edge: null, weak: null });
+  it("names none for a character with nothing at the extremes", () => {
+    expect(statHighlights(all(6), STAT_ORDER)).toEqual({ edges: [], weak: [] });
     // Nine sixes and a 5: the old strip called INT the weak spot on a 6.
-    expect(statHighlights({ ...all(6), int: 5 }, STAT_ORDER)).toEqual({ edge: null, weak: null });
-    expect(statHighlights({ ...all(6), int: 4, ref: 7 }, STAT_ORDER).weak).toBeNull();
+    expect(statHighlights({ ...all(6), int: 5 }, STAT_ORDER)).toEqual({ edges: [], weak: [] });
+    expect(statHighlights({ ...all(6), int: 4, ref: 6 }, STAT_ORDER).weak).toEqual([]);
   });
 
   it("names an edge from the top band and a weak spot from the bottom two", () => {
-    expect(statHighlights({ ...all(6), ref: 7 }, STAT_ORDER)).toEqual({ edge: "ref", weak: null });
-    expect(statHighlights({ ...all(6), emp: 3 }, STAT_ORDER)).toEqual({ edge: null, weak: "emp" });
-    expect(statHighlights({ ...all(6), dex: 8, emp: 2 }, STAT_ORDER)).toEqual({
-      edge: "dex",
-      weak: "emp",
-    });
+    expect(statHighlights({ ...all(6), ref: 7 }, STAT_ORDER)).toEqual({ edges: ["ref"], weak: [] });
+    expect(statHighlights({ ...all(6), emp: 3 }, STAT_ORDER)).toEqual({ edges: [], weak: ["emp"] });
   });
 
-  it("breaks a tie in the printed order", () => {
-    const both = statHighlights({ ...all(6), tech: 8, dex: 8 }, STAT_ORDER);
-    expect(both.edge).toBe(STAT_ORDER.indexOf("dex") < STAT_ORDER.indexOf("tech") ? "dex" : "tech");
+  it("names every STAT in the band, not just the best or the worst", () => {
+    const both = statHighlights(
+      { ...all(6), int: 8, dex: 8, luck: 7, ref: 2, emp: 3, tech: 3 },
+      STAT_ORDER,
+    );
+    expect(both.edges.sort()).toEqual(["dex", "int", "luck"]);
+    expect(both.weak.sort()).toEqual(["emp", "ref", "tech"]);
+  });
+
+  it("puts the strongest edge first and the weakest weak spot first, ties in printed order", () => {
+    const order = statHighlights(
+      { ...all(6), luck: 7, dex: 8, int: 8, emp: 3, ref: 2 },
+      STAT_ORDER,
+    );
+    const printed = (a: string, b: string) =>
+      STAT_ORDER.indexOf(a as never) < STAT_ORDER.indexOf(b as never);
+    expect(order.edges[order.edges.length - 1]).toBe("luck");
+    expect(printed(order.edges[0]!, order.edges[1]!)).toBe(true);
+    expect(order.weak).toEqual(["ref", "emp"]);
   });
 
   it("says nothing until every STAT is in", () => {
-    expect(statHighlights({ int: 8, emp: 2 }, STAT_ORDER)).toEqual({ edge: null, weak: null });
+    expect(statHighlights({ int: 8, emp: 2 }, STAT_ORDER)).toEqual({ edges: [], weak: [] });
   });
 });

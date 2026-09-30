@@ -98,7 +98,6 @@ export function PointBuyCard({
   const [open, setOpen] = useState(false);
   const Icon = STAT_ICONS[stat];
   const color = statColor(value);
-  const maxed = value >= STAT_SCALE.max;
   const upper = stat.toUpperCase();
   const accent = mark === "weak" ? "var(--color-danger)" : color;
 
@@ -131,15 +130,6 @@ export function PointBuyCard({
           />
         )}
       </div>
-
-      {maxed && (
-        <span
-          className="absolute right-9 top-2 border px-1.5 py-px font-mono text-[9px] font-bold tracking-[0.18em]"
-          style={{ color, borderColor: `color-mix(in oklab, ${color} 60%, transparent)` }}
-        >
-          MAX
-        </span>
-      )}
 
       <div className="relative grid flex-1 content-center justify-items-center gap-2.5 px-2 pb-2.5 pt-2">
         {/* Re-keyed on the value, so every change plays the pop. */}

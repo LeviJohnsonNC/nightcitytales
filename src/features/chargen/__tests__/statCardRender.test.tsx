@@ -114,8 +114,7 @@ describe("the Complete Package point-buy", () => {
     expect(out.split("<i ").length - 1).toBe(STAT_ORDER.length * 7);
   });
 
-  it("tags the top of the scale, and the edge and the weak spot, only when they exist", () => {
-    expect(html(spent)).not.toContain("MAX");
+  it("tags the edges and the weak spots, all of them, only when they exist", () => {
     expect(html(spent)).not.toContain("EDGE");
     expect(html(spent)).not.toContain("WEAK");
     // Shaped and spent to the last point: 8 + 8 + 8 + 8 + 8 + 8 + 2 + 6 + 2 + 4.
@@ -135,7 +134,8 @@ describe("the Complete Package point-buy", () => {
     // Mid-build the extremes are arbitrary, so nothing is named yet.
     expect(html({ ...spent, dex: 8 })).not.toContain("EDGE");
     const out = html(shaped);
-    expect(out).toContain("MAX");
+    // Never a MAX label: the pips already say how full a STAT is.
+    expect(out).not.toContain("MAX");
     expect(out).toContain("EDGE");
     expect(out).toContain("WEAK");
   });

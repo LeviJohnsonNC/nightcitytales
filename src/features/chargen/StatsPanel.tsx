@@ -390,8 +390,8 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
   const roleId = state.roleId;
   // Named once the points are all spent: mid-build the extremes are whichever
   // STAT happens to come first among the ones not yet raised, which says nothing.
-  const { edge, weak } =
-    remaining === 0 ? statHighlights(state.stats, STAT_ORDER) : { edge: null, weak: null };
+  const { edges, weak } =
+    remaining === 0 ? statHighlights(state.stats, STAT_ORDER) : { edges: [], weak: [] };
 
   // Every STAT starts at the floor, so a "+" always adds one to a real number
   // and the pool is simply what is left. A draft saved before the controls
@@ -459,7 +459,7 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
               canLower={at > COMPLETE.statMin}
               canRaise={at < COMPLETE.statMax && remaining > 0}
               onStep={(delta) => move(stat, delta)}
-              mark={stat === edge ? "edge" : stat === weak ? "weak" : null}
+              mark={edges.includes(stat) ? "edge" : weak.includes(stat) ? "weak" : null}
             />
           );
         })}
@@ -475,26 +475,59 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
  * wrong thing (`statHighlights` holds the line).
  */
 function AtAGlance({ stats, settled }: { stats: Partial<StatBlock>; settled: boolean }) {
-  const { edge, weak } = settled ? statHighlights(stats, STAT_ORDER) : { edge: null, weak: null };
-  if (!edge && !weak) return null;
+  const { edges, weak } = settled ? statHighlights(stats, STAT_ORDER) : { edges: [], weak: [] };
+  if (edges.length === 0 && weak.length === 0) return null;
   return (
-    <div className={cn("cg-say grid gap-3", edge && weak && "sm:grid-cols-2")}>
-      {edge && (
-        <div className="border-l-2 border-success bg-success/5 p-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
-            Your edge · {edge.toUpperCase()} {stats[edge]}
-          </p>
-          <p className="mt-1 text-base">{STAT_GLANCE[edge].high}</p>
-        </div>
+    <div
+      className={cn(
+        "cg-say grid items-start gap-3",
+        edges.length > 0 && weak.length > 0 && "sm:grid-cols-2",
       )}
-      {weak && (
-        <div className="border-l-2 border-danger bg-danger/5 p-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
-            Your weak spot · {weak.toUpperCase()} {stats[weak]}
-          </p>
-          <p className="mt-1 text-base">{STAT_GLANCE[weak].low}</p>
-        </div>
+    >
+      <GlanceList kind="edge" stats={stats} which={edges} />
+      <GlanceList kind="weak" stats={stats} which={weak} />
+    </div>
+  );
+}
+
+/** One side of the strip: a line per STAT, since there can be several. */
+function GlanceList({
+  kind,
+  stats,
+  which,
+}: {
+  kind: "edge" | "weak";
+  stats: Partial<StatBlock>;
+  which: StatKey[];
+}) {
+  if (which.length === 0) return null;
+  const edge = kind === "edge";
+  return (
+    <div
+      className={cn(
+        "border-l-2 p-3",
+        edge ? "border-success bg-success/5" : "border-danger bg-danger/5",
       )}
+    >
+      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
+        {edge
+          ? which.length === 1
+            ? "Your edge"
+            : "Your edges"
+          : which.length === 1
+            ? "Your weak spot"
+            : "Your weak spots"}
+      </p>
+      <ul className="mt-1 space-y-1.5">
+        {which.map((stat) => (
+          <li key={stat} className="flex items-baseline gap-3 text-base">
+            <span className="w-14 shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-text-dim">
+              {stat.toUpperCase()} {stats[stat]}
+            </span>
+            <span>{edge ? STAT_GLANCE[stat].high : STAT_GLANCE[stat].low}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
