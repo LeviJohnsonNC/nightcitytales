@@ -12,7 +12,7 @@ import {
   clampDb,
   dbToGain,
   normalizeEq,
-} from "../music/equalizer";
+} from "../equalizer";
 import {
   getPlayerState,
   next,
@@ -25,9 +25,9 @@ import {
   setShuffle,
   setVolume,
   stop,
-} from "../music/musicDirector";
-import { playlist, songOf } from "../music/soundtrack";
-import { SONG_TITLES, formatTime, inTitleOrder, takeOf, trackTitle } from "../music/trackTitles";
+} from "../musicDirector";
+import { playlist, songOf } from "../soundtrack";
+import { SONG_TITLES, formatTime, inTitleOrder, takeOf, trackTitle } from "../trackTitles";
 
 describe("the equalizer", () => {
   it("has the ten classic bands, and every preset sets all ten within range", () => {

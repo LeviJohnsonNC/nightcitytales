@@ -10,7 +10,7 @@
  * Everything is inert outside a browser, when Web Audio is missing, and when
  * the player has turned dice sound off. Nothing here decides anything.
  */
-import { duckMusic } from "@/features/chargen/music/musicDirector";
+import { duckMusic } from "@/features/music/musicDirector";
 
 const STORAGE_KEY = "nct.dice.sound";
 /** Under the music, not over it. */

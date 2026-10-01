@@ -19,7 +19,7 @@ import { PHOTO_ANCHOR_Y, POLAROID_WINDOW } from "@/features/chargen/polaroidCrop
 import { uploadedAsset } from "@/features/chargen/art";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { cityLights, SEARCH_STEPS, searchCounts } from "./cityLights";
-import { releaseDuck } from "@/features/chargen/music/musicDirector";
+import { releaseDuck } from "@/features/music/musicDirector";
 import { acquireDescentAudio, landDescentAudio, releaseDescentAudio } from "./descentAudio";
 import { descentElapsed } from "./descentClock";
 import { CITY_SEED, lightCount, prefersReducedMotion, weakDevice } from "./descentDevice";

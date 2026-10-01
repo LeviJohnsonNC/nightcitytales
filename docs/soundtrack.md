@@ -32,13 +32,13 @@ played (never opening on the one that just ended). Choosing "Enter Night City"
 lets the track that is playing finish in the game, and nothing starts after it.
 
 **Any file named `music-…` is in the rotation.** Adding a song is an upload,
-never a code change; `src/features/chargen/music/soundtrack.ts` finds them by
+never a code change; `src/features/music/soundtrack.ts` finds them by
 name. A test checks that every track in the rotation has its prompt here, so
 write the prompt down when you add one.
 
 **Give it a title.** NCAmp, the player in the creator's top bar, lists each
 song by the title it has here. Add the new song's title to `SONG_TITLES` in
-`src/features/chargen/music/trackTitles.ts` (a test fails until you do); a
+`src/features/music/trackTitles.ts` (a test fails until you do); a
 track without one still plays, named after its file.
 
 **A second take is `-v2` on the end** (`music-badlands-highway-v2.m4a`, then

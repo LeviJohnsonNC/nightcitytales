@@ -31,8 +31,8 @@ import { StepRail } from "./StepRail";
 import { methodChangeLosesWork, stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
 import { useDevelopingPortrait } from "./useDevelopingPortrait";
-import { NCAmp } from "./music/ncamp/NCAmp";
-import { finishTrackThenStop, startMusic, stopMusic } from "./music/musicDirector";
+import { NCAmp } from "@/features/music/ncamp/NCAmp";
+import { finishTrackThenStop, startMusic, stopMusic } from "@/features/music/musicDirector";
 import { stepStatuses, validateStep } from "./validation";
 
 type PendingChange =

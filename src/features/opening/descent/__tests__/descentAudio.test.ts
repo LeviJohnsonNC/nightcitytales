@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const music = vi.hoisted(() => ({ enabled: true, ducks: [] as number[], releases: 0 }));
-vi.mock("@/features/chargen/music/musicDirector", () => ({
+vi.mock("@/features/music/musicDirector", () => ({
   isMusicEnabled: () => music.enabled,
   duckMusic: (_ms: number, depth?: number) => music.ducks.push(depth ?? 0.65),
   releaseDuck: () => {

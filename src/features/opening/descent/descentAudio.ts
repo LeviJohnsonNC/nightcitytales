@@ -10,7 +10,7 @@
  * The audio outlives the screen on purpose. `landed()` leaves a little rain
  * under the prose for a while, and a later screen can still reach it.
  */
-import { duckMusic, isMusicEnabled, releaseDuck } from "@/features/chargen/music/musicDirector";
+import { duckMusic, isMusicEnabled, releaseDuck } from "@/features/music/musicDirector";
 import {
   HEARTBEATS,
   cuesBetween,
