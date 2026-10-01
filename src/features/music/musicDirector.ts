@@ -31,7 +31,7 @@
  * Nothing plays while the tab is hidden, and a player who pressed Stop is
  * remembered as having done so. Everything is inert outside a browser.
  */
-import { uploadedAsset } from "../art";
+import { uploadedAsset } from "@/features/chargen/art";
 import { EQ_BANDS, dbToGain, normalizeEq, type EqSettings } from "./equalizer";
 import { playlist as rotation, shuffleRound } from "./soundtrack";
 import { inTitleOrder } from "./trackTitles";

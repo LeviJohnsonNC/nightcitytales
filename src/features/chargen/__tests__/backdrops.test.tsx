@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Backdrop } from "../Backdrop";
 import { INTERVIEW_FIXERS, fixerVoice } from "../interview";
-import { playlist, songOf } from "../music/soundtrack";
+import { playlist, songOf } from "@/features/music/soundtrack";
 
 const ART_GUIDE = readFileSync("docs/art-style.md", "utf8");
 const SOUNDTRACK = readFileSync("docs/soundtrack.md", "utf8");

@@ -14,7 +14,7 @@
  *
  * Pure apart from reading which files exist. What plays it is `musicDirector.ts`.
  */
-import { uploadedAssetNames } from "../art";
+import { uploadedAssetNames } from "@/features/chargen/art";
 
 /** The file-name prefix that puts a track in the creator's rotation. */
 export const TRACK_PREFIX = "music-";

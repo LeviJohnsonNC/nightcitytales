@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seededRng } from "@/engine";
-import { playlist, shuffleRound, songOf, TRACK_PREFIX } from "../music/soundtrack";
+import { playlist, shuffleRound, songOf, TRACK_PREFIX } from "../soundtrack";
 import {
   currentTrack,
   finishTrackThenStop,
@@ -9,7 +9,7 @@ import {
   setMusicEnabled,
   startMusic,
   stopMusic,
-} from "../music/musicDirector";
+} from "../musicDirector";
 
 describe("the creator's playlist", () => {
   it("is every uploaded music- track, each once", () => {
