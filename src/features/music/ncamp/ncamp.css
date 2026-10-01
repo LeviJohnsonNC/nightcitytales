@@ -201,6 +201,18 @@
   animation: ncamp-marquee linear infinite;
   animation-timing-function: steps(160);
 }
+.ncamp-marquee-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  pointer-events: none;
+}
+.ncamp-marquee-still {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+  padding-left: 2px;
+}
 .ncamp-marquee-track > span {
   white-space: pre;
   padding-left: 2px;
@@ -362,6 +374,22 @@
 }
 .ncamp-expand {
   margin-left: 1px;
+}
+
+/* On the desktop game screens the strip is a full-width row of its own: the
+   title takes whatever the controls leave, instead of a fixed window that
+   floats at the right and crops every title. */
+[data-player-strip] .ncamp,
+[data-player-strip] .ncamp-shade {
+  width: 100%;
+}
+[data-player-strip] .ncamp-shade {
+  gap: 5px;
+}
+[data-player-strip] .ncamp-shade-title {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
 }
 
 @media (max-width: 767px) {
