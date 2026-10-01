@@ -12,7 +12,7 @@ import { Users } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
-import { NpcName } from "@/features/cast/NpcName";
+import { NpcDossier, NpcName } from "@/features/cast/NpcName";
 import { getFaction, isHostile, standingBand, type FactionStanding } from "@/engine";
 import { cn } from "@/lib/utils";
 import { dispositionBand, relevantPeople, type PersonTone } from "./hudModel";
@@ -98,6 +98,24 @@ function Detail({ person }: { person: HudPerson }) {
   );
 }
 
+/** The same facts as `Detail`, set under the name in a dossier rather than in a popover. */
+function Relation({ person }: { person: HudPerson }) {
+  const band = dispositionBand(person.disposition);
+  return (
+    <div className="space-y-1 border-y border-hairline/60 py-2">
+      <p className={cn("num font-mono text-[10px] uppercase tracking-[0.16em]", WORD[band.tone])}>
+        {band.label} ({person.disposition})
+      </p>
+      {person.standing && <p className="text-sm text-muted-foreground">{person.standing}</p>}
+      {(person.known ?? []).map((fact) => (
+        <p key={fact} className="text-sm text-neon-pink">
+          {fact}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function Standings({ standings }: { standings: readonly FactionStanding[] }) {
   if (standings.length === 0) return null;
   return (
@@ -132,25 +150,54 @@ export function PeopleStrip({
   people: readonly HudPerson[];
   standings: readonly FactionStanding[];
 }) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
   if (people.length === 0 && standings.length === 0) return null;
   const shown = relevantPeople(people);
+  const opened = openKey ? people.find((p) => p.key === openKey) : undefined;
+  const openedNpc = opened ? findNpc(opened.name) : null;
   return (
     <section className="space-y-2">
+      {opened && openedNpc && (
+        <NpcDossier
+          npc={openedNpc}
+          open
+          onOpenChange={(v) => !v && setOpenKey(null)}
+          relation={<Relation person={opened} />}
+        />
+      )}
       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">People</p>
       <div className="flex items-start gap-2">
-        {shown.map((person) => (
-          <Popover key={person.key}>
-            <PopoverTrigger
-              aria-label={person.name}
-              className="shrink-0 transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
-            >
-              <Face person={person} size="md" />
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 max-w-[calc(100vw-2rem)]">
-              <Detail person={person} />
-            </PopoverContent>
-          </Popover>
-        ))}
+        {shown.map((person) => {
+          const npc = findNpc(person.name);
+          // Somebody with a dossier opens it, full size; anybody without one
+          // (the city's own people, a name the model supplied) gets the small card.
+          if (npc) {
+            return (
+              <button
+                key={person.key}
+                type="button"
+                aria-label={`Open dossier for ${person.name}`}
+                onClick={() => setOpenKey(person.key)}
+                className="shrink-0 transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
+              >
+                <Face person={person} size="md" />
+              </button>
+            );
+          }
+          return (
+            <Popover key={person.key}>
+              <PopoverTrigger
+                aria-label={person.name}
+                className="shrink-0 transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
+              >
+                <Face person={person} size="md" />
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-72 max-w-[calc(100vw-2rem)]">
+                <Detail person={person} />
+              </PopoverContent>
+            </Popover>
+          );
+        })}
         <Sheet>
           <SheetTrigger
             aria-label="Everyone you know, and where you stand"

@@ -18,10 +18,13 @@ export function NpcDossier({
   npc,
   open,
   onOpenChange,
+  relation,
 }: {
   npc: NpcEntry;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** What this person is to the character right now: shown under their name. */
+  relation?: React.ReactNode;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,6 +53,7 @@ export function NpcDossier({
               {npc.role}
             </p>
             <h2 className="text-lg font-bold leading-tight">{npc.name}</h2>
+            {relation}
             {npc.bio ? (
               <div className="space-y-3 pt-1">
                 {npc.bio.split("\n\n").map((para, i) => (

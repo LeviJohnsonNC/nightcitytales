@@ -38,6 +38,18 @@ describe("the people strip", () => {
     expect(html).not.toContain("standing line");
   });
 
+  it("opens a person with a dossier at full size, and keeps the small card for anybody without one", () => {
+    const withDossier = renderToStaticMarkup(
+      <PeopleStrip
+        people={[person("1", "Nnamdi Cole", 2, 9), person("2", "Nobody Known", 0, 8)]}
+        standings={[]}
+      />,
+    );
+    expect(withDossier).toContain('aria-label="Open dossier for Nnamdi Cole"');
+    expect(withDossier).toContain('aria-label="Nobody Known"');
+    expect(withDossier).not.toContain('aria-label="Open dossier for Nobody Known"');
+  });
+
   it("draws nothing when there is nobody and nothing to stand on", () => {
     expect(renderToStaticMarkup(<PeopleStrip people={[]} standings={[]} />)).toBe("");
   });
