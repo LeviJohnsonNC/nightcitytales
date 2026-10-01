@@ -40,3 +40,55 @@ export function woundBadge(
 ): { label: string; tone: BarTone } | null {
   return WOUND_LABEL[(state ?? "").trim().toLowerCase()] ?? null;
 }
+
+// ── people ───────────────────────────────────────────────────────────────
+
+export type PersonTone = "hostile" | "cold" | "neutral" | "warm";
+
+/** Where someone stands with the character, in a word and a colour. Wording as the old People list had it. */
+export function dispositionBand(disposition: number): { label: string; tone: PersonTone } {
+  if (disposition <= -3) return { label: "hostile", tone: "hostile" };
+  if (disposition === -2) return { label: "hates you", tone: "hostile" };
+  if (disposition === -1) return { label: "cold", tone: "cold" };
+  if (disposition === 0) return { label: "neutral", tone: "neutral" };
+  if (disposition === 1) return { label: "warm", tone: "warm" };
+  if (disposition === 2) return { label: "close", tone: "warm" };
+  return { label: "devoted", tone: "warm" };
+}
+
+/** How many people the rail shows before "all". */
+export const PEOPLE_SHOWN = 5;
+
+type Ranked = { disposition: number; lastSeenDay?: number | undefined };
+
+/**
+ * The few worth a tile right now: whoever was seen most recently, then
+ * whoever feels strongest about you either way. Stable for ties, so the strip
+ * does not reshuffle between turns when nothing has changed.
+ */
+export function relevantPeople<T extends Ranked>(people: readonly T[], shown = PEOPLE_SHOWN): T[] {
+  return people
+    .map((p, i) => ({ p, i }))
+    .sort(
+      (a, b) =>
+        (b.p.lastSeenDay ?? -Infinity) - (a.p.lastSeenDay ?? -Infinity) ||
+        Math.abs(b.p.disposition) - Math.abs(a.p.disposition) ||
+        a.i - b.i,
+    )
+    .slice(0, shown)
+    .map(({ p }) => p);
+}
+
+// ── change ───────────────────────────────────────────────────────────────
+
+/** A value part-way from one number to another, `t` from 0 to 1, easing out. */
+export function tween(from: number, to: number, t: number): number {
+  const k = Math.min(1, Math.max(0, t));
+  return from + (to - from) * (1 - (1 - k) ** 3);
+}
+
+/** Which way a value just moved, if it did. */
+export function changeDirection(prev: number | undefined, next: number): "up" | "down" | null {
+  if (prev === undefined || prev === next) return null;
+  return next > prev ? "up" : "down";
+}

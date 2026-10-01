@@ -187,7 +187,10 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   bars that change colour as they empty, Luck as pips), `ResourceStrip` (money,
   growth and commitments as three chips whose detail opens in a popover) and an
   action dock of `DockTile`s that trigger the Record, Shop, Ripperdoc and Bench
-  sheets. `hudModel.ts` holds the bands and pips; they are a look, not a rule.
+  sheets. People are `PeopleStrip`: five faces with a disposition ring, the rest
+  and the faction standings behind "All". `hudModel.ts` holds the bands, pips and
+  who is worth a tile; they are a look, not a rule. Vitals flash and the
+  balance counts when they change (`useChange.ts`), and stay still under reduced motion.
 - `src/features/opening/` owns the cold open: the first screen of a campaign,
   written once by the model, whose four doors are the engine's. `descent/` is
   the ten seconds while it is written — the neon map's lights narrowed by the
