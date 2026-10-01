@@ -124,6 +124,20 @@ describe("the sound of the descent", () => {
     expect(made.contexts).toBe(1);
   });
 
+  it("keeps being played with after it lands: keys, signs and a door, none of which throw", async () => {
+    const { acquireDescentAudio, landDescentAudio, liveDescentAudio } =
+      await import("../descentAudio");
+    acquireDescentAudio();
+    landDescentAudio();
+    const audio = liveDescentAudio()!;
+    for (let i = 0; i < 20; i++) audio.type();
+    audio.sign();
+    audio.door();
+    audio.dispose();
+    audio.type();
+    expect(made.contexts).toBe(1);
+  });
+
   it("is one sound across the handover from one screen to the next", async () => {
     const { acquireDescentAudio, releaseDescentAudio } = await import("../descentAudio");
     const first = acquireDescentAudio();

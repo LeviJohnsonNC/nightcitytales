@@ -18,10 +18,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PHOTO_ANCHOR_Y, POLAROID_WINDOW } from "@/features/chargen/polaroidCrop";
 import { uploadedAsset } from "@/features/chargen/art";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
-import { cityLights, LIGHT_COUNT, LIGHT_COUNT_LOW, SEARCH_STEPS, searchCounts } from "./cityLights";
+import { cityLights, SEARCH_STEPS, searchCounts } from "./cityLights";
 import { releaseDuck } from "@/features/chargen/music/musicDirector";
 import { acquireDescentAudio, landDescentAudio, releaseDescentAudio } from "./descentAudio";
 import { descentElapsed } from "./descentClock";
+import { CITY_SEED, lightCount, prefersReducedMotion, weakDevice } from "./descentDevice";
 import { HINGE_BUZZ, LOCK_BUZZ, haptic } from "./descentHaptics";
 import type { DescentFacts } from "./descentFacts";
 import { createRenderer, type Renderer } from "./descentRender";
@@ -42,25 +43,10 @@ import {
 import { scrambled, typed } from "./descentText";
 import "./descent.css";
 
-/** The city is the same city every time: only the player's light is theirs. */
-const CITY_SEED = 0x7000000;
 const POPULATION = 7_000_000;
 
 const TAGLINE_A = "Somewhere in seven million people,";
 const TAGLINE_B = "one of them is you.";
-
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
-function weakDevice(): boolean {
-  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
-  const cores = navigator.hardwareConcurrency ?? 8;
-  const coarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
-  return cores <= 4 || coarse;
-}
 
 function format(n: number): string {
   return n.toLocaleString("en-US");
@@ -143,7 +129,7 @@ export function Descent({
   const city = useMemo(
     () =>
       cityLights({
-        count: lowPower ? LIGHT_COUNT_LOW : LIGHT_COUNT,
+        count: lightCount(lowPower),
         seed: CITY_SEED,
         districtKey: facts?.districtKey ?? null,
         placeKey: facts?.placeKey ?? null,

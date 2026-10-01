@@ -79,13 +79,30 @@ describe("the cold open draws", () => {
     expect(html.indexOf("Sundown")).toBeLessThan(html.indexOf("The Sixth Floor"));
   });
 
-  it("reveals the doors only after the prose has landed", () => {
+  it("keeps the doors dark until the prose has been read to the end", () => {
     // The pacing is the welcome: a player who has just built a character should
-    // read the scene before being asked to act in it.
-    const proseDelay = /animation-delay:360ms/.exec(html);
-    const doorDelay = /animation-delay:1060ms/.exec(html);
-    expect(proseDelay).not.toBeNull();
-    expect(doorDelay).not.toBeNull();
+    // read the scene before being asked to act in it. Nothing has been typed yet.
+    expect(html.match(/data-lit="no"/g)).toHaveLength(4);
+    expect(html).not.toContain('data-lit="yes"');
+    expect(html).not.toContain("open-doors-on");
+    expect(html).toContain("open-doors");
+  });
+
+  it("types the prose for eyes and gives screen readers all of it", () => {
+    for (const paragraph of opening.paragraphs) {
+      expect(html).toContain(`<span class="sr-only">${paragraph}</span>`);
+    }
+    expect(html).toContain('aria-hidden="true"');
+  });
+
+  it("slams the title down and numbers the doors on key caps", () => {
+    expect(html).toContain("open-slam");
+    for (let n = 1; n <= 4; n++) expect(html).toContain(`<kbd class="open-key num">${n}</kbd>`);
+  });
+
+  it("lights each door in its own colour", () => {
+    for (const hue of ["cyan", "pink", "violet", "amber"])
+      expect(html).toContain(`data-hue="${hue}"`);
   });
 });
 

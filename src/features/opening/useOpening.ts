@@ -17,6 +17,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { OpeningChoice } from "@/engine";
 import { chooseOpening, generateOpening, loadOpeningBundle } from "./openingOps";
 
+/** How long the scene takes to fall away when a door is taken. */
+const EXIT_MS = 750;
+const pause = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 export function useOpening(campaignId: string) {
   const queryClient = useQueryClient();
 
@@ -41,7 +45,9 @@ export function useOpening(campaignId: string) {
   const choose = useMutation({
     mutationFn: async (choice: OpeningChoice) => {
       if (!bundle.data) throw new Error("The campaign is still loading.");
-      await chooseOpening(bundle.data, choice);
+      // The scene pulls back into the dark while the door is applied; the next
+      // screen must not arrive before that has been seen.
+      await Promise.all([chooseOpening(bundle.data, choice), pause(EXIT_MS)]);
     },
     onSuccess: async () => {
       // The phase may have moved and the situations certainly have, so

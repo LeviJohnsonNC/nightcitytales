@@ -89,3 +89,195 @@
 .open-door-passed {
   opacity: 0.35;
 }
+
+/*
+ * The landing: the window kept behind the prose, a title that slams, text that
+ * is typed, and doors that come on like signs.
+ */
+
+.open-backdrop {
+  background: #06040f;
+}
+
+/* The same glass the descent held on, a little dimmer so the prose is readable. */
+.open-backdrop-canvas {
+  filter: blur(9px) brightness(0.62) saturate(1.2);
+  transform: scale(1.04);
+}
+
+.open-backdrop-frame {
+  opacity: 0.55;
+}
+
+.open-backdrop-veil {
+  background:
+    linear-gradient(to bottom, rgba(6, 4, 15, 0.55), rgba(6, 4, 15, 0.1) 30%, rgba(6, 4, 15, 0.45)),
+    radial-gradient(ellipse at center, transparent 40%, rgba(3, 2, 10, 0.7) 100%);
+}
+
+/* The cut from the descent: the new scene comes up out of the dark. */
+.open-arrive {
+  animation: open-arrive 900ms ease-out backwards;
+}
+
+@keyframes open-arrive {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The title card, slammed down: it lands hard, with the colour split catching up. */
+.open-slam {
+  animation: open-slam 950ms cubic-bezier(0.16, 1, 0.3, 1) 200ms backwards;
+}
+
+@keyframes open-slam {
+  0% {
+    opacity: 0;
+    transform: scale(1.14);
+    letter-spacing: 0.18em;
+    filter: blur(8px);
+    text-shadow:
+      -8px 0 rgba(0, 240, 255, 0.9),
+      8px 0 rgba(255, 40, 140, 0.9);
+  }
+  35% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: none;
+    letter-spacing: normal;
+    filter: none;
+  }
+}
+
+/* The prose sits on dark glass so it reads over lights. */
+.open-glass {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 2px solid rgba(255, 61, 154, 0.55);
+  background: rgba(6, 4, 15, 0.52);
+  backdrop-filter: blur(3px);
+}
+
+.open-doors {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+
+.open-doors-on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* A door, as a neon sign. It flickers on, then hums. */
+.open-sign {
+  --sign: 64, 224, 255;
+  border: 1px solid rgba(var(--sign), 0.5);
+  background: rgba(6, 4, 15, 0.6);
+  opacity: 0;
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    border-color 160ms ease;
+}
+
+.open-sign[data-hue="pink"] {
+  --sign: 255, 61, 154;
+}
+
+.open-sign[data-hue="violet"] {
+  --sign: 170, 110, 255;
+}
+
+.open-sign[data-hue="amber"] {
+  --sign: 255, 176, 70;
+}
+
+.open-sign[data-lit="yes"] {
+  opacity: 1;
+  animation: open-flicker 700ms steps(1, end) backwards;
+  box-shadow:
+    0 0 14px -4px rgba(var(--sign), 0.55),
+    inset 0 0 14px -9px rgba(var(--sign), 0.5);
+}
+
+@keyframes open-flicker {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  14% {
+    opacity: 0.1;
+  }
+  26% {
+    opacity: 1;
+  }
+  34% {
+    opacity: 0.3;
+  }
+  46% {
+    opacity: 0.9;
+  }
+  52% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.open-sign[data-lit="yes"]:hover:not(:disabled),
+.open-sign[data-lit="yes"]:focus-visible {
+  border-color: rgba(var(--sign), 0.95);
+  box-shadow:
+    0 0 22px -2px rgba(var(--sign), 0.8),
+    inset 0 0 18px -6px rgba(var(--sign), 0.6);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.open-sign-taken {
+  border-color: rgba(var(--sign), 1) !important;
+  box-shadow:
+    0 0 28px 0 rgba(var(--sign), 0.9),
+    inset 0 0 20px -4px rgba(var(--sign), 0.7) !important;
+}
+
+/* The ones not taken go dark, like a street's lights failing one by one. */
+.open-sign-passed {
+  opacity: 0.12 !important;
+  box-shadow: none !important;
+  transition: opacity 500ms ease;
+}
+
+.open-key {
+  min-width: 1.35rem;
+  border: 1px solid rgba(var(--sign), 0.7);
+  border-bottom-width: 2px;
+  padding: 0 0.3rem;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.35rem;
+  color: rgb(var(--sign));
+}
+
+/* Taking a door: the scene pulls back into the dark. */
+.open-exit {
+  animation: open-exit 700ms ease-in forwards;
+}
+
+@keyframes open-exit {
+  to {
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(0.985);
+  }
+}
