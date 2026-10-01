@@ -26,3 +26,6 @@ export function lightCount(weak: boolean): number {
 
 /** The city is the same city every time: only the player's light is theirs. */
 export const CITY_SEED = 0x7000000;
+
+/** The storm is the same storm every time, in the descent and in the scene it lands on. */
+export const RAIN_SEED = 0x5a1d;

@@ -32,47 +32,13 @@
   mix-blend-mode: multiply;
 }
 
-/* Rain, falling the whole way through, and heavier on the glass. */
-.dsc-rain {
+/* The rain is a canvas of its own (rain.ts), over the lights and under the glass's grime. */
+.dsc-rain-canvas {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  opacity: 0.2;
-  transition: opacity 1200ms ease;
-  background-image:
-    repeating-linear-gradient(
-      101deg,
-      transparent 0 26px,
-      rgba(150, 220, 255, 0.55) 26px 27px,
-      transparent 27px 71px
-    ),
-    repeating-linear-gradient(
-      99deg,
-      transparent 0 41px,
-      rgba(255, 255, 255, 0.3) 41px 42px,
-      transparent 42px 103px
-    );
-  background-size:
-    100% 190px,
-    100% 270px;
-  animation: dsc-rain 1.1s linear infinite;
-}
-
-.dsc-rain[data-heavy="yes"] {
-  opacity: 0.4;
-}
-
-@keyframes dsc-rain {
-  from {
-    background-position:
-      0 0,
-      0 0;
-  }
-  to {
-    background-position:
-      -42px 190px,
-      -48px 270px;
-  }
 }
 
 .dsc-hud {
