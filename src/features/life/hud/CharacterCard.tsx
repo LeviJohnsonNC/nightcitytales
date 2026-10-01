@@ -139,35 +139,39 @@ export function CharacterCard({
       )}
     >
       <div className="flex gap-3 p-3">
-        <PortraitLightbox
-          src={generated ?? (preset ? portraitArt(preset).src : null)}
-          alt={`${name} portrait`}
-          subtitle={handle ? `"${handle}"` : undefined}
-          className="h-24 w-[4.5rem] shrink-0"
-        >
-          <div className="relative h-full w-full overflow-hidden border border-hairline bg-ground">
-            {generated ? (
-              <img
-                src={generated}
-                alt={`${name} portrait`}
-                className="h-full w-full object-cover object-top"
-              />
-            ) : preset ? (
-              <ArtSlot art={portraitArt(preset)} label={name} />
-            ) : (
+        {/* The size lives out here: with no picture on file the lightbox renders its
+            children bare, and a portrait slot that sizes itself fills the card. */}
+        <div className="h-24 w-[4.5rem] shrink-0">
+          <PortraitLightbox
+            src={generated ?? (preset ? portraitArt(preset).src : null)}
+            alt={`${name} portrait`}
+            subtitle={handle ? `"${handle}"` : undefined}
+            className="h-full w-full"
+          >
+            <div className="relative h-full w-full overflow-hidden border border-hairline bg-ground">
+              {generated ? (
+                <img
+                  src={generated}
+                  alt={`${name} portrait`}
+                  className="h-full w-full object-cover object-top"
+                />
+              ) : preset ? (
+                <ArtSlot art={portraitArt(preset)} label={name} />
+              ) : (
+                <span
+                  aria-hidden
+                  className="flex h-full items-center justify-center bg-[radial-gradient(120%_90%_at_50%_0%,color-mix(in_oklab,var(--color-neon-purple)_24%,transparent),transparent_70%)] text-3xl font-bold text-text-dim"
+                >
+                  {name.trim().charAt(0).toUpperCase()}
+                </span>
+              )}
               <span
                 aria-hidden
-                className="flex h-full items-center justify-center bg-[radial-gradient(120%_90%_at_50%_0%,color-mix(in_oklab,var(--color-neon-purple)_24%,transparent),transparent_70%)] text-3xl font-bold text-text-dim"
-              >
-                {name.trim().charAt(0).toUpperCase()}
-              </span>
-            )}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 shadow-[inset_0_0_14px_rgba(0,0,0,0.6)]"
-            />
-          </div>
-        </PortraitLightbox>
+                className="pointer-events-none absolute inset-0 shadow-[inset_0_0_14px_rgba(0,0,0,0.6)]"
+              />
+            </div>
+          </PortraitLightbox>
+        </div>
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-lg font-bold leading-tight">{name}</h2>
           <p className="truncate text-xs text-muted-foreground">
