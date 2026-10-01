@@ -147,6 +147,7 @@ export function CharacterSheet({
   sheet,
   improvementPoints,
   carrying,
+  stickyIdentity = false,
 }: {
   state: ChargenState;
   build: CharacterBuild;
@@ -163,6 +164,12 @@ export function CharacterSheet({
    * their hands. Creation passes nothing and the panel does not appear.
    */
   carrying?: React.ReactNode;
+  /**
+   * Keep the identity card at the top of the scroll as a compact bar, for a
+   * sheet read in a drawer, where the name and portrait are what you lose first
+   * scrolling down. The self-description, too long for a bar, sits just below it.
+   */
+  stickyIdentity?: boolean;
 }) {
   const roles = rolesData.roles as unknown as Record<string, { name: string }>;
   const role = build.roleId ? (roles[build.roleId] ?? null) : null;
@@ -196,7 +203,13 @@ export function CharacterSheet({
   return (
     <div className="sheet space-y-4">
       {/* 1 — Identity */}
-      <section className="sheet-page-1 grid gap-4 border border-hairline bg-surface p-4 sm:grid-cols-[10rem_minmax(0,1fr)]">
+      <section
+        className={
+          stickyIdentity
+            ? "sheet-page-1 sticky top-0 z-10 mt-6 grid grid-cols-[4rem_minmax(0,1fr)] gap-3 border border-hairline bg-surface p-3 pr-12 shadow-[0_8px_12px_-8px_rgba(0,0,0,0.7)]"
+            : "sheet-page-1 grid gap-4 border border-hairline bg-surface p-4 sm:grid-cols-[10rem_minmax(0,1fr)]"
+        }
+      >
         <div className="neon-frame aspect-[3/4] w-full overflow-hidden">
           {generatedPortrait ? (
             <PortraitLightbox
@@ -227,28 +240,47 @@ export function CharacterSheet({
           )}
         </div>
         <div className="min-w-0 space-y-1">
-          <p className="font-display text-lg font-bold uppercase tracking-[0.22em] text-ember">
+          <p
+            className={
+              stickyIdentity
+                ? "font-display text-xs font-bold uppercase tracking-[0.22em] text-ember"
+                : "font-display text-lg font-bold uppercase tracking-[0.22em] text-ember"
+            }
+          >
             {role ? role.name : "No Role"}
           </p>
-          <h1 className="font-display text-3xl font-bold leading-tight text-text">
+          <h1
+            className={
+              stickyIdentity
+                ? "font-display text-xl font-bold leading-tight text-text"
+                : "font-display text-3xl font-bold leading-tight text-text"
+            }
+          >
             {build.name || "Unnamed"}
           </h1>
           <p className="text-sm text-text-muted">
             {build.handle ? `"${build.handle}"` : "no handle"}
           </p>
           {build.roleAbility && (
-            <p className="mt-3 font-mono text-xs uppercase tracking-[0.14em] text-text-muted">
+            <p
+              className={`${stickyIdentity ? "mt-1" : "mt-3"} font-mono text-xs uppercase tracking-[0.14em] text-text-muted`}
+            >
               Role Ability — {build.roleAbility.name}{" "}
               <span className="num text-ember">Rank {build.roleAbility.rank}</span>
             </p>
           )}
-          {build.selfDescription && (
+          {build.selfDescription && !stickyIdentity && (
             <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-text-muted">
               {build.selfDescription}
             </p>
           )}
         </div>
       </section>
+      {stickyIdentity && build.selfDescription && (
+        <p className="whitespace-pre-line border border-hairline bg-surface p-4 text-sm leading-relaxed text-text-muted">
+          {build.selfDescription}
+        </p>
+      )}
 
       {/* 2 — STATs */}
       <Panel title="STATs">

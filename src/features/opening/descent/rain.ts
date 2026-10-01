@@ -45,6 +45,8 @@ export type RainDrawOptions = {
   intensity?: number;
   lightning?: number;
   wetness?: number;
+  /** A multiple of how fast it falls: 1 is the descent's pace. */
+  speed?: number;
 };
 
 export type Rain = {
@@ -278,7 +280,12 @@ export function createRain(
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
       const lit = still ? 0 : (drawOpts?.lightning ?? lightningAt(ms));
-      streaks(ms, dt, still ? 0 : (drawOpts?.intensity ?? rainIntensity(ms)), lit);
+      streaks(
+        ms,
+        dt * (drawOpts?.speed ?? 1),
+        still ? 0 : (drawOpts?.intensity ?? rainIntensity(ms)),
+        lit,
+      );
       if (lit > 0.01) {
         // The flash: the whole sky, for the length of a breath.
         ctx.globalCompositeOperation = "lighter";
