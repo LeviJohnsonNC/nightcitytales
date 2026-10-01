@@ -7,6 +7,7 @@ import { ArtSlot } from "@/features/chargen/ArtSlot";
 import { portraitArt, portraitById } from "@/features/chargen/art";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { cn } from "@/lib/utils";
+import { useChangeFlash } from "./useChange";
 import { barTone, fillFraction, luckPips, woundBadge, type BarTone } from "./hudModel";
 
 const FILL: Record<BarTone, string> = {
@@ -36,8 +37,15 @@ export function VitalBar({
 }) {
   const fraction = fillFraction(current, max);
   const t = tone ?? barTone(fraction);
+  const flash = useChangeFlash(current);
   return (
-    <div>
+    <div
+      className={cn(
+        "-mx-1 px-1 transition-colors duration-500 motion-reduce:transition-none",
+        flash === "down" && "bg-destructive/25",
+        flash === "up" && "bg-success/20",
+      )}
+    >
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
           {label}
@@ -122,7 +130,13 @@ export function CharacterCard({
   const preset = portraitId ? portraitById(portraitId) : undefined;
   const badge = woundBadge(wound);
   return (
-    <section className="neon-frame-cyan relative overflow-hidden bg-card">
+    <section
+      className={cn(
+        "neon-frame-cyan relative overflow-hidden bg-card transition-shadow duration-500 motion-reduce:transition-none",
+        barTone(fillFraction(hp.current, hp.max)) === "danger" &&
+          "shadow-[inset_0_0_28px_-6px_var(--color-destructive)]",
+      )}
+    >
       <div className="flex gap-3 p-3">
         <div className="relative h-24 w-[4.5rem] shrink-0 overflow-hidden border border-hairline bg-ground">
           {generated ? (

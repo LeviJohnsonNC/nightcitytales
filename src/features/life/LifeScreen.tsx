@@ -26,9 +26,7 @@ import {
   clampLuckSpend,
   formatDuration,
   formatLifeClock,
-  getFaction,
   getSkill,
-  isHostile,
   knownTerms,
   luckModifier,
   luckPoolMax,
@@ -37,7 +35,6 @@ import {
   openAsks,
   resolveSkillId,
   skillCheckForCharacter,
-  standingBand,
   DEFAULT_START,
   woundActionPenalty,
   type WoundStateCode,
@@ -56,7 +53,6 @@ import {
 } from "@/engine";
 
 import { NpcText } from "@/features/cast/NpcText";
-import { NpcName } from "@/features/cast/NpcName";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
 import { readWalkOnsEventData } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
@@ -64,6 +60,7 @@ import { MapButton } from "@/features/atlas/MapButton";
 import { CampaignHeader } from "@/features/play/CampaignHeader";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { CharacterCard } from "./hud/CharacterCard";
+import { PeopleStrip } from "./hud/PeopleStrip";
 import { ResourceStrip } from "./hud/ResourceStrip";
 import {
   readDayBrief,
@@ -97,17 +94,6 @@ import { WorkshopSheet } from "./WorkshopSheet";
 import { RecordSheet } from "./RecordSheet";
 import type { LifeActionCard } from "./lifeResponse";
 import { cardInput } from "./lifeOptions";
-
-/** Where someone stands with the character, in words rather than a number. */
-function dispositionLabel(disposition: number): string {
-  if (disposition <= -3) return "hostile";
-  if (disposition === -2) return "hates you";
-  if (disposition === -1) return "cold";
-  if (disposition === 0) return "neutral";
-  if (disposition === 1) return "warm";
-  if (disposition === 2) return "close";
-  return "devoted";
-}
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -654,56 +640,7 @@ function LifeRail({
        */}
       <ResourceStrip status={status} />
 
-      {life.people.length > 0 && (
-        <section className="space-y-2 border border-border bg-card p-4">
-          <Label>People</Label>
-          <ul className="space-y-2">
-            {life.people.slice(0, 8).map((person) => (
-              <li key={person.key} className="text-sm">
-                <span className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2">
-                  <span className="min-w-0 truncate font-medium">
-                    <NpcName name={person.name} />
-                  </span>
-                  <span className="num shrink-0 font-mono text-[10px] uppercase tracking-[0.16em]">
-                    {dispositionLabel(person.disposition)} ({person.disposition})
-                  </span>
-                </span>
-                {person.standing && (
-                  <span className="block text-xs text-muted-foreground">{person.standing}</span>
-                )}
-                {(person.known ?? []).map((fact) => (
-                  <span key={fact} className="mt-1 block text-xs text-neon-pink">
-                    {fact}
-                  </span>
-                ))}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {life.standings.length > 0 && (
-        <section className="space-y-2 border border-border bg-card p-4">
-          <Label>Standing</Label>
-          <ul className="space-y-1">
-            {life.standings.map((s) => (
-              <li
-                key={s.factionId}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2"
-              >
-                <span className="truncate text-sm">{getFaction(s.factionId).name}</span>
-                <span
-                  className={`num shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] ${
-                    isHostile(s.standing) ? "text-destructive" : "text-muted-foreground"
-                  }`}
-                >
-                  {standingBand(s.standing).label} ({s.standing})
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <PeopleStrip people={life.people} standings={life.standings} />
 
       <div className="grid grid-cols-2 gap-2">
         <RecordSheet bundle={bundle} />

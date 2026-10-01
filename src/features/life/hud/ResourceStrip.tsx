@@ -10,8 +10,9 @@ import { Coins, ListChecks, TrendingUp } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CommitmentsPanel, GrowthDetail, MoneyDetail } from "@/features/status/StatusRail";
-import type { MoneyTone, StatusView } from "@/features/status/statusModel";
+import { formatMoney, type MoneyTone, type StatusView } from "@/features/status/statusModel";
 import { fillFraction } from "./hudModel";
+import { useChangeFlash, useCountTo } from "./useChange";
 
 const MONEY_TONE: Record<MoneyTone, string> = {
   ok: "text-foreground",
@@ -75,13 +76,21 @@ function Chip({
 
 export function ResourceStrip({ status }: { status: StatusView }) {
   const { money, growth, commitments } = status;
+  const counted = useCountTo(money.eurobucks);
+  const moved = useChangeFlash(money.eurobucks);
   return (
     <section className="grid grid-cols-3 gap-2">
       <Chip
         label="Money"
         icon={<Coins className="size-4" />}
-        figure={money.line}
-        tone={MONEY_TONE[money.tone]}
+        figure={counted === money.eurobucks ? money.line : formatMoney(counted)}
+        tone={
+          moved === "down"
+            ? "text-destructive"
+            : moved === "up"
+              ? "text-success"
+              : MONEY_TONE[money.tone]
+        }
         alert={money.tone === "due"}
       >
         <MoneyDetail status={money} />
