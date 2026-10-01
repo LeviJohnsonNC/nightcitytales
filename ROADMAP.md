@@ -58,11 +58,13 @@ The plan, in phases:
    started with were dropped because steps last thirty seconds or ten minutes
    and the music could not fit either. It starts on arrival from the roster,
    waits for a touch where the browser insists, is remembered on or off, and
-   the track playing at "Enter Night City" finishes in the game. It is played
-   through NCAmp, a from-scratch Winamp 2 homage in the top bar: windowshade
+   the track playing at "Enter Night City" carries on into the game. It is played
+   through NCAmp, a from-scratch Winamp 2 homage: windowshade
    strip, main window, a real ten-band EQ, playlist, and three skins — Street
    (the default, drawn in the page's own panels and type), Classic and Neon. Its
-   strip also carries the one dice-sound switch. It lives in the creator for now and is meant to move app-wide. Each fixer's
+   strip also carries the one dice-sound switch. It sits in the creator's top
+   bar and, in the game, under the campaign header (in the status bar on a
+   phone), with the playlist stepping aside for a fight's own track. Each fixer's
    venue sits behind their questions, and the meet, the reveal and each
    Lifepath chapter have backdrops. Every file is named in `docs/soundtrack.md`
    or `docs/art-style.md`, and a slot with no file keeps the plain look.

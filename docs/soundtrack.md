@@ -21,7 +21,7 @@ Generate two to four takes and keep the best. Upload the chosen take through
 Lovable under the exact file name, or commit the file itself into
 `src/assets/creator/` (an `.m4a` or `.mp3`, not a `.wav`).
 
-## Character creation: one shuffled playlist
+## One shuffled playlist, in the creator and the game
 
 The creator does not give each step its own music. It used to, and it did not
 survive play: a player spends thirty seconds on one step and ten minutes on the
@@ -29,7 +29,10 @@ next, so a cue either cut off before it went anywhere or looped until it wore
 thin. Now every track plays one after another in a shuffled order, each fading
 into the next over five seconds, and the order reshuffles when every track has
 played (never opening on the one that just ended). Choosing "Enter Night City"
-lets the track that is playing finish in the game, and nothing starts after it.
+carries the track that is playing straight into the game, which takes the same
+playlist up without a break: the player sits under the campaign header on a
+desktop and in the status bar on a phone, and a player who pressed Stop stays
+silent. The cold open ducks it for the descent and swells it back at the cut.
 
 **Any file named `music-…` is in the rotation.** Adding a song is an upload,
 never a code change; `src/features/music/soundtrack.ts` finds them by
@@ -472,4 +475,8 @@ Exclude: `vocals, big drop, aggressive, trap, dubstep, acoustic guitar, metal`
 ## Elsewhere in the game
 
 - `neon-storm-front.mp3`: the combat track, played under the battlefield by
-  `src/features/play/useCombatFeedback.ts`.
+  `src/features/play/useCombatFeedback.ts`. While it is audible the playlist
+  steps aside (`holdMusic`, which fades it out and leaves it where it was) and
+  comes back after (`releaseMusic`); the player's marquee says what is holding
+  it. A player who asks for music by name during a fight (Play, Next, a track in
+  the list) gets it, and the hold ends.

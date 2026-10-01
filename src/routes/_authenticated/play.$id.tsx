@@ -6,6 +6,7 @@ import { OpeningScreen } from "@/features/opening/OpeningScreen";
 import { Descent } from "@/features/opening/descent/Descent";
 import { descentArmed } from "@/features/opening/descent/descentClock";
 import { needsOpening } from "@/features/opening/openingOps";
+import { useGameMusic } from "@/features/music/useGameMusic";
 import { getCampaign, listCampaignFlags } from "@/lib/backend";
 import { phaseOf } from "@/engine";
 
@@ -26,6 +27,9 @@ export const Route = createFileRoute("/_authenticated/play/$id")({
  */
 function PlayPage() {
   const { id } = Route.useParams();
+  // Here, once, rather than on each screen below: Life, a job and the cold open
+  // trade places inside this route, and none of those moves should touch the music.
+  useGameMusic();
   const { data, isPending, error } = useQuery({
     queryKey: ["campaign-phase", id],
     queryFn: async () => {

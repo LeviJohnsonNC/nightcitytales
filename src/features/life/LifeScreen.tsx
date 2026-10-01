@@ -61,6 +61,7 @@ import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
 import { readWalkOnsEventData } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
 import { MapButton } from "@/features/atlas/MapButton";
+import { CampaignHeader } from "@/features/play/CampaignHeader";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { StatusRail } from "@/features/status/StatusRail";
 import {
@@ -983,32 +984,33 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="flex flex-col gap-3 lg:min-h-[70vh]">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:sticky lg:top-0 lg:z-20 lg:-mx-4 lg:border-b lg:border-border lg:bg-background/95 lg:px-4 lg:py-3 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70">
-              <div className="min-w-0">
-                <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
-                  {bundle.campaign.name}
-                </h1>
+            <CampaignHeader
+              title={bundle.campaign.name}
+              subtitle={
                 <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
                   Life · {formatLifeClock(bundle.clock)} · day {bundle.clock.day}
                 </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapButton
-                  locationKey={bundle.campaign.location_key ?? DEFAULT_START}
-                  knownPlaces={knownPlaces}
-                  onTravel={life.travelTo}
-                  travelBusy={life.travelBusy}
-                  {...(life.vehicleRule ? { travelMode: life.vehicleRule } : {})}
-                  signals={signals}
-                  placeHere={placeHere}
-                />
-                <SheetDrawer
-                  character={bundle.character}
-                  inventory={bundle.inventory}
-                  cyberware={bundle.cyberware}
-                />
-              </div>
-            </div>
+              }
+              className="lg:sticky lg:top-0 lg:z-20 lg:bg-background/95 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70"
+              actions={
+                <>
+                  <MapButton
+                    locationKey={bundle.campaign.location_key ?? DEFAULT_START}
+                    knownPlaces={knownPlaces}
+                    onTravel={life.travelTo}
+                    travelBusy={life.travelBusy}
+                    {...(life.vehicleRule ? { travelMode: life.vehicleRule } : {})}
+                    signals={signals}
+                    placeHere={placeHere}
+                  />
+                  <SheetDrawer
+                    character={bundle.character}
+                    inventory={bundle.inventory}
+                    cyberware={bundle.cyberware}
+                  />
+                </>
+              }
+            />
 
             {/* Coming back after a while: the threads they left open, by name. */}
             {returning && (
