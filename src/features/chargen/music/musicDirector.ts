@@ -326,18 +326,23 @@ let duckTimer: number | null = null;
 let duckUntil = 0;
 /** How far the music dips under a dice roll. */
 const DUCK_DEPTH = 0.65;
+/** The depth of the dip in force now; the deepest of any that overlap. */
+let duckDepth = DUCK_DEPTH;
 
 /**
  * Dip the music for `ms`, then bring it back: a dice roll is heard over the
  * soundtrack rather than fighting it. Overlapping dips extend one another
- * instead of stacking deeper.
+ * instead of stacking deeper — unless one asks for a deeper `depth`, as the
+ * descent into a new campaign does, in which case the deepest wins.
  */
-export function duckMusic(ms: number): void {
+export function duckMusic(ms: number, depth: number = DUCK_DEPTH): void {
   if (typeof window === "undefined") return;
-  duckUntil = Math.max(duckUntil, performance.now() + ms);
+  const now = performance.now();
+  duckDepth = now < duckUntil ? Math.min(duckDepth, depth) : depth;
+  duckUntil = Math.max(duckUntil, now + ms);
   if (duckTimer !== null) return;
   duckTimer = window.setInterval(() => {
-    const target = performance.now() < duckUntil ? DUCK_DEPTH : 1;
+    const target = performance.now() < duckUntil ? duckDepth : 1;
     // Down fast, back up slowly.
     const rate = target < duckLevel ? 0.35 : 0.06;
     duckLevel += (target - duckLevel) * rate;
@@ -348,6 +353,11 @@ export function duckMusic(ms: number): void {
     }
     applyMix();
   }, STEP_MS);
+}
+
+/** End a dip now, so the music swells back rather than waiting out the time it was asked for. */
+export function releaseDuck(): void {
+  duckUntil = 0;
 }
 
 /** Ramp one element's fade level, then optionally let it go. A new fade cancels the old. */
