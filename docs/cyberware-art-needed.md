@@ -4,20 +4,21 @@ None of the 96 cyberware items has art. The manifest key for each is `cyberware.
 
 Nine items share an id with a **gear** picture that already exists (marked ★). That picture is keyed `gear.<id>`, so it is not used for the cyberware version, but it could be reused or restyled for it.
 
-| Category | Items |
-|---|---|
-| Fashionware (7) | Biomonitor, Chemskin, EMP Threading, Light Tattoo, Shift Tacts, Skinwatch, Techhair |
-| Neuralware (12) | Neural Link, Braindance Recorder, Chipware Socket, Interface Plugs, Kerenzikov, Sandevistan, Chemical Analyzer ★, Memory Chip ★, Olfactory Boost, Pain Editor, Skill Chip, Tactile Boost |
-| Cyberoptics (13) | Cybereye, Anti-Dazzle, Chyron, Color Shift, Dartgun, Image Enhance, Low Light / Infrared / UV, MicroOptics, MicroVideo, Radiation Detector, Targeting Scope, TeleOptics, Virtuality |
-| Cyberaudio (12) | Cyberaudio Suite, Amplified Hearing, Audio Recorder ★, Bug Detector ★, Homing Tracer ★, Internal Agent, Level Damper, Radio Communicator ★, Radio Scanner / Music Player ★, Radar Detector ★, Scrambler / Descrambler ★, Voice Stress Analyzer |
-| Internal (13) | AudioVox, Contraceptive Implant, Enhanced Antibodies, Cybersnake, Gills, Grafted Muscle and Bone Lace, Independent Air Supply, Midnight Lady™ Sexual Implant, Mr. Studd™ Sexual Implant, Nasal Filters, Radar / Sonar Implant, Toxin Binders, Vampyres |
-| External (4) | Hidden Holster, Skin Weave, Subdermal Armor, Subdermal Pocket |
-| Cyberlimbs (30) | Cyberarm, Standard Hand, Big Knucks, Cyberdeck (Cyberarm), Grapple Hand, Medscanner (Cyberarm), Popup Grenade Launcher, Popup Melee Weapon, Popup Shield, Popup Ranged Weapon, Quick Change Mount, Rippers, Scratchers, Shoulder Cam, Slice 'N Dice, Subdermal Grip, Techscanner (Cyberarm), Tool Hand, Wolvers, Cyberleg, Standard Foot, Grip Foot, Jump Booster, Skate Foot, Talon Foot, Web Foot, Hardened Shielding, Plastic Covering, Realskinn™ Covering, Superchrome® Covering |
-| Borgware (5) | Artificial Shoulder Mount, Implanted Linear Frame ß (Beta), Implanted Linear Frame ∑ (Sigma), MultiOptic Mount, Sensor Array |
+| Category         | Items                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fashionware (7)  | Biomonitor, Chemskin, EMP Threading, Light Tattoo, Shift Tacts, Skinwatch, Techhair                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Neuralware (12)  | Neural Link, Braindance Recorder, Chipware Socket, Interface Plugs, Kerenzikov, Sandevistan, Chemical Analyzer ★, Memory Chip ★, Olfactory Boost, Pain Editor, Skill Chip, Tactile Boost                                                                                                                                                                                                                                                                                              |
+| Cyberoptics (13) | Cybereye, Anti-Dazzle, Chyron, Color Shift, Dartgun, Image Enhance, Low Light / Infrared / UV, MicroOptics, MicroVideo, Radiation Detector, Targeting Scope, TeleOptics, Virtuality                                                                                                                                                                                                                                                                                                   |
+| Cyberaudio (12)  | Cyberaudio Suite, Amplified Hearing, Audio Recorder ★, Bug Detector ★, Homing Tracer ★, Internal Agent, Level Damper, Radio Communicator ★, Radio Scanner / Music Player ★, Radar Detector ★, Scrambler / Descrambler ★, Voice Stress Analyzer                                                                                                                                                                                                                                        |
+| Internal (13)    | AudioVox, Contraceptive Implant, Enhanced Antibodies, Cybersnake, Gills, Grafted Muscle and Bone Lace, Independent Air Supply, Midnight Lady™ Sexual Implant, Mr. Studd™ Sexual Implant, Nasal Filters, Radar / Sonar Implant, Toxin Binders, Vampyres                                                                                                                                                                                                                                |
+| External (4)     | Hidden Holster, Skin Weave, Subdermal Armor, Subdermal Pocket                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Cyberlimbs (30)  | Cyberarm, Standard Hand, Big Knucks, Cyberdeck (Cyberarm), Grapple Hand, Medscanner (Cyberarm), Popup Grenade Launcher, Popup Melee Weapon, Popup Shield, Popup Ranged Weapon, Quick Change Mount, Rippers, Scratchers, Shoulder Cam, Slice 'N Dice, Subdermal Grip, Techscanner (Cyberarm), Tool Hand, Wolvers, Cyberleg, Standard Foot, Grip Foot, Jump Booster, Skate Foot, Talon Foot, Web Foot, Hardened Shielding, Plastic Covering, Realskinn™ Covering, Superchrome® Covering |
+| Borgware (5)     | Artificial Shoulder Mount, Implanted Linear Frame ß (Beta), Implanted Linear Frame ∑ (Sigma), MultiOptic Mount, Sensor Array                                                                                                                                                                                                                                                                                                                                                          |
 
 ## Full list
 
 ### Fashionware
+
 - Biomonitor (`biomonitor`)
 - Chemskin (`chemskin`)
 - EMP Threading (`emp_threading`)
@@ -27,6 +28,7 @@ Nine items share an id with a **gear** picture that already exists (marked ★).
 - Techhair (`techhair`)
 
 ### Neuralware
+
 - Neural Link (`neural_link`) , foundational
 - Braindance Recorder (`braindance_recorder`)
 - Chipware Socket (`chipware_socket`)
@@ -41,6 +43,7 @@ Nine items share an id with a **gear** picture that already exists (marked ★).
 - Tactile Boost (`tactile_boost`)
 
 ### Cyberoptics
+
 - Cybereye (`cybereye`) , foundational
 - Anti-Dazzle (`anti_dazzle`)
 - Chyron (`chyron`)
@@ -56,6 +59,7 @@ Nine items share an id with a **gear** picture that already exists (marked ★).
 - Virtuality (`virtuality`)
 
 ### Cyberaudio
+
 - Cyberaudio Suite (`cyberaudio_suite`) , foundational
 - Amplified Hearing (`amplified_hearing`)
 - Audio Recorder (`audio_recorder`) ★
@@ -70,6 +74,7 @@ Nine items share an id with a **gear** picture that already exists (marked ★).
 - Voice Stress Analyzer (`voice_stress_analyzer`)
 
 ### Internal
+
 - AudioVox (`audiovox`)
 - Contraceptive Implant (`contraceptive_implant`)
 - Enhanced Antibodies (`enhanced_antibodies`)
@@ -85,12 +90,14 @@ Nine items share an id with a **gear** picture that already exists (marked ★).
 - Vampyres (`vampyres`)
 
 ### External
+
 - Hidden Holster (`hidden_holster`)
 - Skin Weave (`skin_weave`)
 - Subdermal Armor (`subdermal_armor`)
 - Subdermal Pocket (`subdermal_pocket`)
 
 ### Cyberlimbs
+
 - Cyberarm (`cyberarm`) , foundational
 - Standard Hand (`standard_hand`)
 - Big Knucks (`big_knucks`)
@@ -123,9 +130,9 @@ Nine items share an id with a **gear** picture that already exists (marked ★).
 - Superchrome® Covering (`superchrome_covering`)
 
 ### Borgware
+
 - Artificial Shoulder Mount (`artificial_shoulder_mount`)
 - Implanted Linear Frame ß (Beta) (`implanted_linear_frame_beta`)
 - Implanted Linear Frame ∑ (Sigma) (`implanted_linear_frame_sigma`)
 - MultiOptic Mount (`multioptic_mount`)
 - Sensor Array (`sensor_array`)
-
