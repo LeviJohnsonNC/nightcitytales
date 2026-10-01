@@ -183,6 +183,14 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   deliberately extreme packet and asserts a ceiling with about four percent of
   slack; when it fails, either trim the addition or raise the number here on
   purpose, and never nudge it.
+- `src/features/opening/` owns the cold open: the first screen of a campaign,
+  written once by the model, whose four doors are the engine's. `descent/` is
+  the ten seconds while it is written — the neon map's lights narrowed by the
+  player's own facts, a fall into their window, a hold there for as long as the
+  model needs, then a cut to the prose. It is presentation only: no paid call,
+  no rule, no write, and a pure function of the time since "Enter Night City"
+  was pressed (`descentClock`), so the screens that render it in turn never
+  restart it. The counter's numbers are theatre, and `cityLights.ts` says so.
 - `src/features/atlas/` owns the map modal, place dossiers, travel, and the
   components that render a place name as something you can open.
 - `src/features/cast/` owns NPC directories and the bios the player has earned.

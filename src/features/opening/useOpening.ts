@@ -66,5 +66,7 @@ export function useOpening(campaignId: string) {
     chooseError: choose.error as Error | null,
     /** The character whose night this is, for the screen's own furniture. */
     character: bundle.data?.character ?? null,
+    /** Everything the opening is written from, which the descent narrows the city by. */
+    bundle: bundle.data ?? null,
   };
 }

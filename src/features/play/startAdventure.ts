@@ -19,13 +19,25 @@ import { startCampaignForCharacter } from "@/features/campaign/newCampaign";
 export async function startOrResumeAdventure(
   character: Pick<Character, "id" | "name" | "handle">,
 ): Promise<string> {
+  return (await startAdventure(character)).id;
+}
+
+/**
+ * The same, saying which it did. A new campaign is about to open on its cold
+ * open, which has an entrance of its own; a resumed one is not, and the caller
+ * that arms that entrance has to know the difference.
+ */
+export async function startAdventure(
+  character: Pick<Character, "id" | "name" | "handle">,
+): Promise<{ id: string; created: boolean }> {
   const existing = await getActiveCampaignForCharacter(character.id);
-  if (existing) return existing.id;
-  return startCampaignForCharacter(character, {
+  if (existing) return { id: existing.id, created: false };
+  const id = await startCampaignForCharacter(character, {
     // Looked up here rather than passed in, so no caller can forget it and no
     // caller has to carry a finance row it does not otherwise need.
     homePlaceKey: await homeFor(character.id),
   });
+  return { id, created: true };
 }
 
 /**

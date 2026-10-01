@@ -79,6 +79,7 @@ export * from "./arcs";
 export * from "./chronicle";
 export * from "./missions";
 export * from "./geography";
+export { GRID_HEIGHT, GRID_WIDTH, cityCells } from "./cityGrid";
 export * from "./places";
 export * from "./placeBeats";
 export * from "./placeSignals";

@@ -87,6 +87,28 @@ function rowOf(y: number): number {
   return Math.floor((y / 100) * GRID_HEIGHT);
 }
 
+/**
+ * Every cell of the raster that is city, as map percentages with its district.
+ * For something that wants the ground itself — a field of lights, a heat map —
+ * rather than a question about one point. Unpacked fresh each call; callers
+ * that need it often keep it.
+ */
+export function cityCells(): Array<{ x: number; y: number; district: string }> {
+  const out: Array<{ x: number; y: number; district: string }> = [];
+  for (let row = 0; row < GRID_HEIGHT; row++) {
+    for (let column = 0; column < GRID_WIDTH; column++) {
+      const value = CELLS[row * GRID_WIDTH + column]!;
+      if (!value) continue;
+      out.push({
+        x: ((column + 0.5) / GRID_WIDTH) * 100,
+        y: ((row + 0.5) / GRID_HEIGHT) * 100,
+        district: KEYS[value - 1]!,
+      });
+    }
+  }
+  return out;
+}
+
 /** The district covering a point, or undefined where the city is not. */
 export function districtAtPoint(point: MapPoint): string | undefined {
   const value = valueAt(columnOf(point.x), rowOf(point.y));
