@@ -187,10 +187,14 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   written once by the model, whose four doors are the engine's. `descent/` is
   the ten seconds while it is written — the neon map's lights narrowed by the
   player's own facts, a fall into their window, a hold there for as long as the
-  model needs, then a cut to the prose. It is presentation only: no paid call,
-  no rule, no write, and a pure function of the time since "Enter Night City"
-  was pressed (`descentClock`), so the screens that render it in turn never
-  restart it. The counter's numbers are theatre, and `cityLights.ts` says so.
+  model needs, then a cut to the prose — and it has a score, synthesised in Web
+  Audio (`descentSoundPlan` is what and when, `descentAudio` how; silent with the
+  music off). The prose then arrives on the same window (`LandingBackdrop`,
+  tinted for the hour), typed at reading pace, with doors that come on like
+  signs. All of it is presentation only: no paid call, no rule, no write. The
+  descent is a pure function of the time since "Enter Night City" was pressed
+  (`descentClock`), so the screens that render it in turn never restart it, and
+  the counter's numbers are theatre, which `cityLights.ts` says.
 - `src/features/atlas/` owns the map modal, place dossiers, travel, and the
   components that render a place name as something you can open.
 - `src/features/cast/` owns NPC directories and the bios the player has earned.

@@ -29,6 +29,12 @@ export type DescentAudio = {
   hinge(): void;
   /** The prose has landed: one low note, and rain left under it. */
   landed(): void;
+  /** A key struck: the prose being typed. */
+  type(): void;
+  /** A neon sign catching: a door coming on. */
+  sign(): void;
+  /** A door taken: the rain swells and the scene falls away. */
+  door(): void;
   dispose(fadeMs?: number): void;
 };
 
@@ -262,6 +268,42 @@ export function createDescentAudio(): DescentAudio | null {
       rainLow.frequency.setTargetAtTime(2400, now, 0.8);
       current = audio;
       ambientTimer = window.setTimeout(() => audio.dispose(2500), AMBIENT_MS);
+    },
+
+    type() {
+      if (disposed) return;
+      burst({
+        type: "bandpass",
+        from: 2300 + Math.random() * 900,
+        q: 5,
+        peak: 0.022,
+        attack: 0.001,
+        decay: 0.022,
+      });
+    },
+
+    sign() {
+      if (disposed) return;
+      burst({ type: "highpass", from: 5200, peak: 0.05, attack: 0.002, decay: 0.07 });
+      note({ type: "sawtooth", from: 118, peak: 0.012, decay: 0.5 });
+    },
+
+    door() {
+      if (disposed) return;
+      const now = ctx.currentTime;
+      rainGain.gain.cancelScheduledValues(now);
+      rainGain.gain.setTargetAtTime(0.15, now, 0.2);
+      rainLow.frequency.setTargetAtTime(7000, now, 0.3);
+      burst({
+        type: "bandpass",
+        from: 5000,
+        to: 300,
+        q: 1.2,
+        peak: 0.16,
+        attack: 0.05,
+        decay: 0.7,
+      });
+      note({ type: "sine", from: 90, to: 40, peak: 0.3, decay: 0.9 });
     },
 
     dispose(fadeMs = 600) {
