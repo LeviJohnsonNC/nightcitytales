@@ -195,6 +195,10 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   descent is a pure function of the time since "Enter Night City" was pressed
   (`descentClock`), so the screens that render it in turn never restart it, and
   the counter's numbers are theatre, which `cityLights.ts` says.
+  The rain is canvas, not CSS: `rainModel.ts` is the storm as seeded numbers
+  (depth layers, wind, lightning timed a beat before the score's thunder, drops
+  and their trails) and `rain.ts` draws it, including beads on the glass that
+  refract the bokeh canvas. `LandingBackdrop` runs the same storm under the prose.
 - `src/features/music/` owns the soundtrack: the director (one shuffled playlist,
   a module that outlives any screen), `soundtrack.ts`/`trackTitles.ts` (any
   uploaded `music-…` file is in the rotation, and needs a title and a prompt in

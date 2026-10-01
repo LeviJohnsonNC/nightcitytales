@@ -22,9 +22,16 @@ import { cityLights, SEARCH_STEPS, searchCounts } from "./cityLights";
 import { releaseDuck } from "@/features/music/musicDirector";
 import { acquireDescentAudio, landDescentAudio, releaseDescentAudio } from "./descentAudio";
 import { descentElapsed } from "./descentClock";
-import { CITY_SEED, lightCount, prefersReducedMotion, weakDevice } from "./descentDevice";
+import {
+  CITY_SEED,
+  RAIN_SEED,
+  lightCount,
+  prefersReducedMotion,
+  weakDevice,
+} from "./descentDevice";
 import { HINGE_BUZZ, LOCK_BUZZ, haptic } from "./descentHaptics";
 import type { DescentFacts } from "./descentFacts";
+import { createRain, type Rain } from "./rain";
 import { createRenderer, type Renderer } from "./descentRender";
 import {
   BLACK_END_MS,
@@ -109,7 +116,9 @@ export function Descent({
   const counterRef = useRef<HTMLSpanElement>(null);
   const taglineRef = useRef<HTMLParagraphElement>(null);
   const handleRef = useRef<HTMLSpanElement>(null);
+  const rainCanvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
+  const rainRef = useRef<Rain | null>(null);
 
   const [beat, setBeat] = useState<Beat>("black");
   const [step, setStep] = useState(0);
@@ -156,9 +165,24 @@ export function Descent({
     let landedSound = false;
     const renderer = createRenderer(canvas, cityRef.current, lowPower ? 1.25 : 2);
     rendererRef.current = renderer;
-    const onResize = () => renderer.resize();
+    // The rain is drawn over the lights, and the beads on the glass refract them.
+    const rainCanvas = rainCanvasRef.current;
+    const rain = rainCanvas
+      ? createRain(rainCanvas, {
+          source: canvas,
+          weak: lowPower,
+          seed: RAIN_SEED,
+          dprCap: lowPower ? 1.25 : 2,
+        })
+      : null;
+    rainRef.current = rain;
+    const onResize = () => {
+      renderer.resize();
+      rain?.resize();
+    };
     window.addEventListener("resize", onResize);
     renderer.resize();
+    rain?.resize();
 
     let virtual = reduced
       ? REDUCED_START_MS
@@ -185,6 +209,7 @@ export function Descent({
       }
 
       renderer.draw(virtual);
+      rain?.draw(virtual, now, { still: reduced });
       audio?.update(virtual, previous);
       if (previous < SEARCH_END_MS && virtual >= SEARCH_END_MS) haptic(LOCK_BUZZ);
       previous = virtual;
@@ -260,6 +285,8 @@ export function Descent({
       document.removeEventListener("visibilitychange", onVisibility);
       renderer.dispose();
       rendererRef.current = null;
+      rain?.dispose();
+      rainRef.current = null;
       // Left before it finished — an error, a reload — so the sound goes too.
       if (!landedSound) releaseDescentAudio();
     };
@@ -307,7 +334,7 @@ export function Descent({
         ref={canvasRef}
         className={`dsc-canvas absolute inset-0 h-full w-full ${windowUp ? "dsc-canvas-glass" : ""}`}
       />
-      <div aria-hidden className="dsc-rain" data-heavy={inWindow ? "yes" : "no"} />
+      <canvas ref={rainCanvasRef} aria-hidden className="dsc-rain-canvas" />
       <div aria-hidden className="dsc-scan" />
       <div aria-hidden className="dsc-vignette" />
 
