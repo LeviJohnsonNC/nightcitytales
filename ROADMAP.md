@@ -46,10 +46,13 @@ The plan, in phases:
    there is something to picture: a grainy surveillance still once the Role,
    pronouns and look are known (pronouns are now asked with who you are), a
    better one under the lights once the STATs say how they are built, and a
-   file photo once the kit is chosen. Each is one generation from the existing
-   cap of six, so three stay the player's; drawing one by hand stops
-   development. `faceFact` pins age, face shape, eyes and one mark from the
-   draft's seed so every stage describes the same person.
+   file photo once the kit is chosen. Each is one generation from the cap of six;
+   the other three retry a failed stage or redraw a picture whose Role, sex, age
+   or look changed. It sharpens along one curve and is fully clear on reaching the
+   Identity step, which has no portrait of its own. `faceFact` pins age, face
+   shape, eyes and one mark from the draft's seed so every stage describes the
+   same person. Still open: the stages are fresh generations, so pose and
+   composition can drift between them.
 5. **Music and backdrops — shipped.** The creator plays every `music-…` track
    in a shuffled order, each crossfading into the next; the per-step cues it
    started with were dropped because steps last thirty seconds or ten minutes

@@ -11,10 +11,9 @@
  *  2. UNDER THE LIGHTS — the same, once the STATs say how they are built.
  *  3. FILE PHOTO — once the gear and chrome they carry are chosen.
  *
- * Each stage is one generation from the same capped budget the portrait studio
- * spends, so three are automatic and the rest stay the player's own. Once the
- * player draws a portrait by hand, development stops: theirs is the one on
- * the file.
+ * Each stage is one generation from a capped budget. Three are the stages; the
+ * rest are spent on retrying a stage that failed and on developing the picture
+ * again when who the character is on sight changes (`portraitIsStale`).
  *
  * Every image is generated fresh, so a face would drift from stage to stage.
  * `faceFact` pins the few things a face is recognised by — age, shape, eyes,
@@ -23,7 +22,7 @@
  * Pure. Nothing here generates, stores or spends anything.
  */
 import { STAT_ORDER, seededRng, validAge } from "@/engine";
-import { readGeneralLifepath } from "./lifepathState";
+import { displayValue, readGeneralLifepath } from "./lifepathState";
 import type { ChargenState } from "./store";
 import { stepsFor } from "./steps";
 import { validateStep } from "./validation";
@@ -55,10 +54,41 @@ export function portraitStageReady(state: ChargenState): 0 | PortraitStage {
   return kitted ? 3 : 2;
 }
 
-/** The stage to develop next, if any: straight to the best the answers support. */
+/**
+ * Who the picture is of: Role, sex, age, how they look and the draft's seed.
+ * Gear and chrome are deliberately not in it — buying a jacket must not redraw
+ * a face — but changing the answers that make the face does.
+ */
+export function portraitBasis(state: ChargenState): string {
+  const entries = readGeneralLifepath(state.lifepath.general).entries;
+  return JSON.stringify([
+    state.roleId,
+    state.sex,
+    validAge(state.age),
+    state.castPlan?.seed ?? null,
+    ...LOOK_ANSWERS.map((id) => (entries[id] ? displayValue(entries[id]) : null)),
+  ]);
+}
+
+/** A picture drawn as somebody the answers no longer describe. */
+export function portraitIsStale(state: ChargenState): boolean {
+  return (
+    state.portraitPath !== null &&
+    state.portraitBasis !== null &&
+    state.portraitBasis !== portraitBasis(state)
+  );
+}
+
+/**
+ * The stage to develop next, if any: straight to the best the answers support.
+ * A stale picture develops again at that best stage even if it is not a better
+ * one, because it is a picture of the wrong person.
+ */
 export function nextStageToDevelop(state: ChargenState): PortraitStage | null {
   const ready = portraitStageReady(state);
-  return ready !== 0 && ready > state.portraitStage ? ready : null;
+  if (ready === 0) return null;
+  if (portraitIsStale(state)) return ready;
+  return ready > state.portraitStage ? ready : null;
 }
 
 const AGES = [
@@ -108,36 +138,64 @@ export function faceFact(seed: number | null | undefined): { label: string; valu
 }
 
 /**
- * How far through the interview the file is: the share of this method's steps
- * that have been visited and answered. A step that asks nothing still has to
- * be reached, so skipping ahead does not sharpen the picture.
+ * How far through the interview the file is: the share of the steps BEFORE the
+ * one that asks for a name that have been visited and answered. A step that
+ * asks nothing still has to be reached, so skipping ahead does not sharpen the
+ * picture. It is 1 on arriving at the identity step — the file does not wait
+ * for the player to type a handle before it is in focus.
  */
 export function fileProgress(state: ChargenState): number {
   const steps = stepsFor(state.method);
-  if (steps.length === 0) return 0;
-  const done = steps.filter(
+  const identity = steps.findIndex((s) => s.id === "identity");
+  const before = identity >= 0 ? steps.slice(0, identity) : steps;
+  if (before.length === 0) return 0;
+  const done = before.filter(
     (s) => state.visited.includes(s.id) && validateStep(s.id, state).violations.length === 0,
   ).length;
-  return done / steps.length;
+  return done / before.length;
 }
 
 /**
- * The band of clarity each stage's picture develops through, from 0 (black)
- * to 1 (sharp). A new picture only arrives three times — that is the budget —
- * but the file keeps coming into focus between them, one answered step at a
- * time. The first still is barely a face on purpose; the file photo is close
- * to clear the moment it lands, because by then the player may have drawn it
- * by hand and should be able to see what they drew.
+ * How far through the interview the FIRST picture can appear: the Lifepath is
+ * the step that answers how they look. The curve starts here, so the first
+ * still is as blurred as the file ever gets and every answered step after it
+ * sharpens the picture a little.
  */
-const CLARITY_BANDS: Record<PortraitStage, [number, number]> = {
-  1: [0.1, 0.35],
-  2: [0.4, 0.7],
-  3: [0.85, 1],
-};
+export function firstPictureProgress(state: ChargenState): number {
+  const steps = stepsFor(state.method);
+  const identity = steps.findIndex((s) => s.id === "identity");
+  const lifepath = steps.findIndex((s) => s.id === "lifepath");
+  if (identity <= 0 || lifepath < 0) return 0;
+  return (lifepath + 1) / identity;
+}
 
-/** How clear the picture on the file is. 0 before there is one. */
-export function portraitClarity(stage: 0 | PortraitStage, progress: number): number {
+/** How blurred the very first still is. Barely a face, on purpose. */
+export const CLARITY_FLOOR = 0.1;
+
+/**
+ * The most each stage's picture may be developed before a better one exists.
+ * It is a ceiling, not a band: the curve rises on its own and only waits at a
+ * ceiling if the next picture is slow, so a file photo is never sharp before
+ * the gear is on it.
+ */
+const CLARITY_CEILING: Record<PortraitStage, number> = { 1: 0.5, 2: 0.8, 3: 1 };
+
+/**
+ * How clear the picture on the file is, 0 (black) to 1 (sharp). One curve from
+ * the first picture to the identity step — every answered step is a little
+ * less fuzzy — and a new picture arrives at the clarity the curve is already
+ * at, so nothing jumps. `start` is where the curve begins (`firstPictureProgress`).
+ * `lifted` removes the ceiling when no better picture is coming (it failed, or
+ * the budget is spent), so the file never stays blurred for want of one.
+ */
+export function portraitClarity(
+  stage: 0 | PortraitStage,
+  progress: number,
+  start = 0,
+  lifted = false,
+): number {
   if (stage === 0) return 0;
-  const [floor, ceiling] = CLARITY_BANDS[stage];
-  return Math.min(ceiling, Math.max(floor, progress));
+  const along = start >= 1 ? 1 : (progress - start) / (1 - start);
+  const raw = CLARITY_FLOOR + (1 - CLARITY_FLOOR) * Math.min(1, Math.max(0, along));
+  return Math.min(lifted ? 1 : CLARITY_CEILING[stage], raw);
 }

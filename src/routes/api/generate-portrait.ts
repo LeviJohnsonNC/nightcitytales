@@ -12,7 +12,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { buildPortraitPrompt } from "@/features/chargen/portraitPrompt";
+import { PORTRAIT_SIZE, buildPortraitPrompt } from "@/features/chargen/portraitPrompt";
 
 const Facts = z.object({
   handle: z.string().max(120).default(""),
@@ -81,7 +81,7 @@ export const Route = createFileRoute("/api/generate-portrait")({
           body: JSON.stringify({
             model: MODEL,
             prompt: buildPortraitPrompt(facts),
-            size: "1024x1536",
+            size: `${PORTRAIT_SIZE.width}x${PORTRAIT_SIZE.height}`,
             quality: "low",
             n: 1,
             ...(stream ? { stream: true, partial_images: 1 } : {}),

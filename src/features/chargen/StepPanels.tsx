@@ -17,14 +17,12 @@ import type { ChargenStep } from "./steps";
 export function StepPanel({
   step,
   state,
-  userId,
   lead,
   onRequestMethod,
   onRequestRole,
 }: {
   step: ChargenStep;
   state: ChargenState;
-  userId: string;
   /** The fixer's reaction to the answer that brought the player here, for a step that speaks for them. */
   lead?: string | null;
   /** With `advance`, choosing the terms also moves on to the next step. */
@@ -43,7 +41,7 @@ export function StepPanel({
       return <RolePanel state={state} onRequestRole={onRequestRole} />;
 
     case "identity":
-      return <IdentityPanel state={state} userId={userId} />;
+      return <IdentityPanel state={state} />;
 
     case "review":
       return <ReviewPanel state={state} />;

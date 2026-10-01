@@ -201,6 +201,7 @@ export function stateFromCharacter(full: FullCharacter): ChargenState {
     portraitGenerations: 0,
     // A saved character already has its face; nothing develops over it.
     portraitStage: 3,
+    portraitBasis: null,
     stats: statsFrom(full),
     statRolls: { row: null, rows: {} },
     statRerollsUsed: 0,

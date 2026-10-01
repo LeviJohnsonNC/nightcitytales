@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPortraitFacts, buildPortraitPrompt, portraitMissing } from "../portraitPrompt";
+import { PORTRAIT_SIZE, buildPortraitFacts, buildPortraitPrompt } from "../portraitPrompt";
 import type { ChargenState } from "../store";
 
 const facts = {
@@ -110,27 +110,11 @@ describe("portrait prompt", () => {
     expect(built.humanity).toBeNull();
   });
 
-  it("blocks generation until identity and earlier steps are done", () => {
-    const empty = {
-      name: "",
-      handle: "",
-      pronouns: "",
-      sex: null,
-      age: null,
-      method: null,
-    } as ChargenState;
-    const missing = portraitMissing({
-      ...empty,
-      lifepath: { general: {}, roleSpecific: {} },
-      stats: {},
-      skills: [],
-      loadout: { lines: [], packageChoices: {} },
-      lifestyle: {},
-    } as unknown as ChargenState);
-    expect(missing).toContain("name");
-    expect(missing).toContain("handle");
-    expect(missing).toContain("sex");
-    expect(missing).toContain("age");
-    expect(missing.length).toBeGreaterThan(3);
+  it("composes for the square crop the file shows it in", () => {
+    const prompt = buildPortraitPrompt(buildPortraitFacts(baseState, "Solo"));
+    expect(prompt).toContain("headroom");
+    expect(prompt).toContain("upper-third line");
+    expect(prompt).toContain("2:3");
+    expect(PORTRAIT_SIZE.height / PORTRAIT_SIZE.width).toBe(1.5);
   });
 });

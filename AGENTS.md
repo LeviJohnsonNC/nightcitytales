@@ -423,10 +423,18 @@ also lets the player choose their enemy, friend and lost love from
 after choosing can never leave a contradiction on the file.
 
 The file's portrait develops in three stages (`portraitStages.ts`, driven by
-`useDevelopingPortrait`), each one generation from the same capped budget the
-portrait studio spends. It never runs while the draft is loading, never retries
-a failed stage by itself, and never paints over a portrait the player drew by
-hand — `portraitStage` 3 means "the picture on the file is final".
+`useDevelopingPortrait`), each one generation from a capped budget of six: three
+are the stages, the rest retry a failed stage once and develop the picture
+again when who it is of changes (`portraitBasis`: Role, sex, age, how they look
+and the seed — never gear). It never runs while the draft is loading and never
+retries a failed stage more than once by itself. There is no portrait studio
+and the Identity page draws nothing: the file's picture is the only one, and
+`portraitStage` 3 on a saved character means "the picture on the file is final".
+It is one clarity curve (`portraitClarity`) from the first picture to arriving at
+the Identity step, where it is fully clear; a new picture dissolves in over the
+last (`CharacterFile`), and `polaroidCrop.ts` holds how the near-square print
+window crops a 2:3 portrait — anchored high, because the prompt composes the
+head at the top.
 
 Who a character is on sight — sex (male or female) and age — is asked with the
 Lifepath's "Who you are" chapter and kept in `engine/identity.ts`, with its
