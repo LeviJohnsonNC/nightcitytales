@@ -12,6 +12,9 @@ import {
 } from "@/features/opening/descent/descentDevice";
 import { STORM_HORIZON_MS, STORM_SEED, flashAt, stormIntensity, strikeTimes } from "./landingStorm";
 
+/** A rain you watch rather than one you fall through: a third of the descent's pace. */
+export const RAIN_SPEED = 0.35;
+
 /** Where the wind's phase starts, so the first gust is not the descent's. */
 const WIND_OFFSET_MS = 12_000;
 
@@ -48,6 +51,7 @@ export function HeroRain({ faceAt = "74% 38%" }: { faceAt?: string }) {
         intensity: stormIntensity(ms),
         lightning: lit,
         wetness: 0,
+        speed: RAIN_SPEED,
       });
       if (flashRef.current) flashRef.current.style.opacity = String(Math.min(1, lit * 1.2));
     };

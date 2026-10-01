@@ -65,7 +65,7 @@ const inventory: CampaignInventoryItem[] = [
   } as unknown as CampaignInventoryItem,
 ];
 
-function sheetHtml(carrying?: React.ReactNode) {
+function sheetHtml(carrying?: React.ReactNode, stickyIdentity = false) {
   const state = stateFromCharacter(character);
   const build = buildFromState(state);
   return renderToStaticMarkup(
@@ -75,9 +75,23 @@ function sheetHtml(carrying?: React.ReactNode) {
       sheet={assembleCharacter(build)}
       improvementPoints={0}
       {...(carrying ? { carrying } : {})}
+      {...(stickyIdentity ? { stickyIdentity } : {})}
     />,
   );
 }
+
+describe("the identity card in a drawer", () => {
+  it("is a sticky bar when asked, and the page's own card otherwise", () => {
+    const sticky = sheetHtml(undefined, true);
+    expect(sticky).toContain("sticky top-0");
+    expect(sheetHtml()).not.toContain("sticky top-0");
+  });
+
+  it("still names the character, once", () => {
+    const html = sheetHtml(undefined, true);
+    expect(html.match(/>V<\/h1>/g)).toHaveLength(1);
+  });
+});
 
 describe("the STATs panel", () => {
   const html = sheetHtml();

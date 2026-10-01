@@ -45,13 +45,17 @@ export function SheetDrawer({
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-full overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-3xl"
+        // No top padding: the identity bar sticks to the very top of the scroll, and a gap
+        // above it would show the sheet sliding by.
+        className="w-full overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-0 sm:max-w-3xl"
       >
-        <SheetHeader>
+        {/* The name is on the card below; the dialog still needs a title to be named. */}
+        <SheetHeader className="sr-only">
           <SheetTitle>{character.character.name}</SheetTitle>
         </SheetHeader>
-        <div className="mt-4">
+        <div>
           <CharacterSheet
+            stickyIdentity
             state={state}
             build={build}
             sheet={sheet}
