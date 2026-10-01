@@ -1,6 +1,6 @@
 /**
  * Ambient weather for the landing key art. Purely decorative: slow fog and
- * occasional AV headlight sweeps. No rain, no glitch, no scanlines.
+ * occasional AV headlight sweeps. The rain is `HeroRain`'s; no glitch, no scanlines.
  */
 
 const AV_SWEEPS = [

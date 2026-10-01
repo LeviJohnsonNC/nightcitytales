@@ -35,10 +35,22 @@ import {
   type Tint,
 } from "./rainModel";
 
+/**
+ * `still` draws the glass and no falling. The rest are for a screen that is not
+ * the descent and keeps its own weather: how hard it falls, how lit the sky is
+ * and how wet the glass is, each in place of what the descent's clock would say.
+ */
+export type RainDrawOptions = {
+  still?: boolean;
+  intensity?: number;
+  lightning?: number;
+  wetness?: number;
+};
+
 export type Rain = {
   resize(): void;
   /** `ms` is the time into the descent; `now` is the real clock. `still` draws the glass and no falling. */
-  draw(ms: number, now: number, opts?: { still?: boolean }): void;
+  draw(ms: number, now: number, opts?: RainDrawOptions): void;
   dispose(): void;
 };
 
@@ -265,8 +277,8 @@ export function createRain(
       last = now;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
-      const lit = still ? 0 : lightningAt(ms);
-      streaks(ms, dt, still ? 0 : rainIntensity(ms), lit);
+      const lit = still ? 0 : (drawOpts?.lightning ?? lightningAt(ms));
+      streaks(ms, dt, still ? 0 : (drawOpts?.intensity ?? rainIntensity(ms)), lit);
       if (lit > 0.01) {
         // The flash: the whole sky, for the length of a breath.
         ctx.globalCompositeOperation = "lighter";
@@ -274,7 +286,7 @@ export function createRain(
         ctx.fillRect(0, 0, width, height);
         ctx.globalCompositeOperation = "source-over";
       }
-      glass(dt, glassWetness(ms));
+      glass(dt, drawOpts?.wetness ?? glassWetness(ms));
     },
     dispose() {
       layers = [];
