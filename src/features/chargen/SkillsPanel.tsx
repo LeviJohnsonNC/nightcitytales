@@ -9,10 +9,11 @@ import {
   canAddSkillEntry,
   isAreaScoped,
   isHomeArea,
-  localExpertAreaOptions,
   matchingPreset,
   readLifestyle,
   skillEntryLimits,
+  specializationOptions,
+  STAT_ORDER,
   type SkillLimits,
   SKILL_PACKAGE_RULES,
   getSkill,
@@ -30,6 +31,7 @@ import {
 } from "@/engine";
 import { displayValue, readGeneralLifepath } from "./lifepathState";
 import { SkillInfo } from "./SkillInfo";
+import { AreaPicker, SpecializationPicker } from "./SkillPickers";
 import { FineTune, OddsBar, WaysToWork, WhatYouCanDo } from "./SkillWays";
 import { taskOdds } from "./skillTasks";
 import { useChargenStore, type ChargenState } from "./store";
@@ -76,84 +78,6 @@ function Notice({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * The controls make illegal states unreachable, so the only thing left to say
- * is how many points are still unspent.
- */
-function Guidance({ remaining }: { remaining: number }) {
-  if (remaining === 0) {
-    return (
-      <p className="border-l-2 border-success bg-success/5 p-3 text-sm text-text-muted">
-        Every Skill rule is satisfied — you can move on.
-      </p>
-    );
-  }
-  return (
-    <p className="border-l-2 border-ember/70 bg-ember/5 p-3 text-sm text-text-muted">
-      You have {remaining} Skill {remaining === 1 ? "Point" : "Points"} left to spend.
-    </p>
-  );
-}
-
-/**
- * The neighbourhood a Local Expert line is for.
- *
- * A picker rather than a text box, and that is the whole point of the step: the
- * Skill is only worth its Level in one district, so the specialization has to
- * be a district the engine can resolve. Typed by hand it was "Night City", "my
- * block", or a typo — none of which name ground the city has.
- *
- * `Your Home` is offered first and is the default, because it is what the
- * printed Role packages grant and because the address is chosen at a later step
- * the printed creation order will not let us move. Choosing a district here
- * instead is for the player who wants to be a local somewhere they do not live.
- */
-function AreaPicker({
-  value,
-  onChange,
-  suggested,
-  label,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  /** District keys the character's childhood points at. A highlight, never a filter. */
-  suggested: string[];
-  label: string;
-}) {
-  const options = useMemo(() => localExpertAreaOptions(), []);
-  const groups = useMemo(() => {
-    const byArea = new Map<string, typeof options>();
-    for (const option of options) {
-      const bucket = byArea.get(option.areaName);
-      if (bucket) bucket.push(option);
-      else byArea.set(option.areaName, [option]);
-    }
-    return [...byArea.entries()];
-  }, [options]);
-  const hint = new Set(suggested);
-
-  return (
-    <select
-      className="w-56 border border-hairline bg-surface-raised px-2 py-1 text-sm text-text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      aria-label={label}
-    >
-      <option value={HOME_AREA}>Your Home (decided at Lifestyle)</option>
-      {groups.map(([areaName, districts]) => (
-        <optgroup key={areaName} label={areaName}>
-          {districts.map((district) => (
-            <option key={district.districtKey} value={district.districtKey}>
-              {district.districtName}
-              {hint.has(district.districtKey) ? " ★" : ""}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
-  );
-}
-
 function SkillRow({
   entry,
   state,
@@ -161,6 +85,7 @@ function SkillRow({
   limits,
   onLevel,
   onRemove,
+  basicMin,
 }: {
   entry: SkillEntry;
   state: ChargenState;
@@ -168,6 +93,8 @@ function SkillRow({
   limits?: SkillLimits | undefined;
   onLevel?: ((level: number) => void) | undefined;
   onRemove?: (() => void) | undefined;
+  /** Set on a Basic Skill that can be raised but never removed: the floor it must keep. */
+  basicMin?: number | undefined;
 }) {
   const skill = getSkill(entry.skillId);
   const stat = statValue(state, skill.stat);
@@ -251,10 +178,19 @@ function SkillRow({
         <p className="num font-mono text-2xl font-bold tabular-nums text-ember">{base ?? "—"}</p>
       </div>
 
-      {onRemove && (
+      {onRemove ? (
         <Button variant="ghost" size="sm" onClick={onRemove}>
           Remove
         </Button>
+      ) : (
+        basicMin !== undefined && (
+          <span
+            title={`A Basic Skill: every character keeps it at ${basicMin} or better`}
+            className="w-24 whitespace-nowrap text-right font-mono text-[10px] uppercase tracking-[0.15em] text-text-dim"
+          >
+            Basic · min {basicMin}
+          </span>
+        )
       )}
     </div>
   );
@@ -266,14 +202,19 @@ function CategoryGroups({
   readOnly,
   limitsFor,
   onLevel,
+  removable,
   onRemove,
+  basicMin,
 }: {
   entries: SkillEntry[];
   state: ChargenState;
   readOnly?: boolean | undefined;
   limitsFor?: ((entry: SkillEntry) => SkillLimits) | undefined;
   onLevel?: ((entry: SkillEntry, level: number) => void) | undefined;
+  /** Which lines may be removed; a line it rejects shows no Remove button. */
+  removable?: ((entry: SkillEntry) => boolean) | undefined;
   onRemove?: ((entry: SkillEntry) => void) | undefined;
+  basicMin?: number | undefined;
 }) {
   return (
     <div className="space-y-4">
@@ -294,7 +235,14 @@ function CategoryGroups({
                   readOnly={readOnly}
                   limits={limitsFor ? limitsFor(entry) : undefined}
                   onLevel={onLevel ? (level) => onLevel(entry, level) : undefined}
-                  onRemove={onRemove ? () => onRemove(entry) : undefined}
+                  onRemove={
+                    onRemove && (!removable || removable(entry)) ? () => onRemove(entry) : undefined
+                  }
+                  basicMin={
+                    onRemove && removable && !entry.granted && !removable(entry)
+                      ? basicMin
+                      : undefined
+                  }
                 />
               ))}
             </div>
@@ -305,17 +253,16 @@ function CategoryGroups({
   );
 }
 
-function Budget({
-  spent,
-  remaining,
-  budget,
-}: {
-  spent: number;
-  remaining: number;
-  budget: number;
-}) {
+/** The one place the points left are said. Zero reads as done rather than as a number. */
+function Budget({ remaining }: { remaining: number }) {
+  const done = remaining === 0;
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-3 border border-hairline bg-surface p-4">
+    <div
+      className={cn(
+        "flex flex-wrap items-baseline justify-between gap-3 border bg-surface p-4",
+        done ? "border-success/60" : "border-hairline",
+      )}
+    >
       <div>
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
           Skill Points remaining
@@ -323,16 +270,25 @@ function Budget({
         <p
           className={cn(
             "num font-mono text-4xl font-bold tabular-nums",
-            remaining < 0 ? "text-danger" : "text-text",
+            remaining < 0 ? "text-danger" : done ? "text-success" : "text-text",
           )}
         >
           {remaining}
         </p>
       </div>
-      <p className="font-mono text-[11px] text-text-dim">
-        {spent} of {budget} spent · ×2 Skills cost 2 points per Level
+      <p className="text-sm text-text-muted">
+        {done ? "Every Skill rule is satisfied — you can move on." : "Spend them all to go on."}
       </p>
     </div>
+  );
+}
+
+/** What the bar beside each Skill on the sheet is. */
+function OddsKey() {
+  return (
+    <p className="text-xs text-text-dim">
+      The bar is your chance at the sample task beside each Skill.
+    </p>
   );
 }
 
@@ -394,17 +350,8 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
 
   return (
     <div className="space-y-4">
-      <Notice>
-        Only this Role's listed Skills are available to an Edgerunner, each starting at the floor of{" "}
-        {EDGERUNNER_RULES.minLevel} and capped at {EDGERUNNER_RULES.maxLevel}. The Skill Base on the
-        right is the number you actually roll in play: STAT + Skill Level.
-      </Notice>
-      <Budget
-        spent={result.pointsSpent}
-        remaining={result.pointsRemaining}
-        budget={EDGERUNNER_RULES.skillPoints}
-      />
-      <Guidance remaining={result.pointsRemaining} />
+      <Budget remaining={result.pointsRemaining} />
+      <OddsKey />
       <CategoryGroups
         entries={granted ? [...state.skills, granted] : state.skills}
         state={state}
@@ -419,9 +366,9 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const granted = grantedLanguage(state);
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
-  const [stat, setStat] = useState<string | null>(null);
   const [roleOnly, setRoleOnly] = useState(false);
+  const [showChosen, setShowChosen] = useState(false);
+  const [openStats, setOpenStats] = useState<ReadonlySet<string>>(new Set());
   const [spec, setSpec] = useState<Record<string, string>>({});
 
   const roleSkillIds = useMemo(
@@ -464,27 +411,23 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
 
   const result = validateSkillEntries({ method: "complete_package", entries: state.skills });
 
-  const stats = [...new Set(SKILLS.map((s) => s.stat))];
-  const visible = SKILLS.filter((skill) => {
-    if (query && !skill.name.toLowerCase().includes(query.toLowerCase())) return false;
-    if (category && skill.category !== category) return false;
-    if (stat && skill.stat !== stat) return false;
-    if (roleOnly && !roleSkillIds.has(skill.id)) return false;
-    return true;
-  });
-
   const limitsFor = (entry: SkillEntry) =>
     skillEntryLimits({ method: "complete_package", entries: state.skills, entry });
 
   /** Level a newly added Skill starts at, and what it costs. */
   const ADD_LEVEL = COMPLETE_RULES.basicSkillMinimum;
 
+  /** A Skill with one line only is "chosen" once it is on the sheet. */
+  const isChosen = (skill: SkillDefinition) =>
+    !skill.requiresSpecialization && state.skills.some((e) => e.skillId === skill.id);
+  const chosenCount = SKILLS.filter(isChosen).length;
+
   /**
    * The specialization the controls are currently offering for this Skill.
    *
    * A place-scoped Skill defaults to the printed placeholder rather than to
    * nothing, so its picker always has a legal value selected and "Add" is never
-   * disabled for a Skill the player has not typed into.
+   * disabled for a Skill the player has not picked from.
    */
   function chosenSpec(skill: SkillDefinition): string | null {
     if (!skill.requiresSpecialization) return null;
@@ -533,38 +476,49 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
     });
   }
 
+  /** Basic Skills and the granted Language are the sheet's floor; everything else may go. */
+  const removable = (entry: SkillEntry) => !entry.granted && !BASIC_SKILLS.includes(entry.skillId);
+
+  const needle = query.trim().toLowerCase();
+  const searching = needle !== "";
+  const groups = STAT_ORDER.map((stat) => {
+    const skills = SKILLS.filter((skill) => {
+      if (skill.stat !== stat) return false;
+      if (searching && !skill.name.toLowerCase().includes(needle)) return false;
+      if (roleOnly && !roleSkillIds.has(skill.id)) return false;
+      if (!showChosen && isChosen(skill)) return false;
+      return true;
+    }).sort(
+      (a, b) =>
+        Number(roleSkillIds.has(b.id)) - Number(roleSkillIds.has(a.id)) ||
+        a.name.localeCompare(b.name),
+    );
+    return { stat, skills };
+  }).filter((group) => group.skills.length > 0);
+
+  function toggleStat(stat: string) {
+    setOpenStats((current) => {
+      const next = new Set(current);
+      if (!next.delete(stat)) next.add(stat);
+      return next;
+    });
+  }
+
   return (
     <div className="space-y-5">
-      <Notice>
-        The whole Master Skill List is open to you — {COMPLETE_RULES.skillPoints} points, no Skill
-        above {COMPLETE_RULES.maxLevel}, and the 13 Basic Skills at{" "}
-        {COMPLETE_RULES.basicSkillMinimum} or better. The "Suggested for your Role" chip only
-        filters the list; it never restricts what you may buy.
-        {childhoodDistricts.length > 0 && (
-          <>
-            {" "}
-            A ★ in the Local Expert list marks a neighbourhood your childhood points at — a
-            suggestion, nothing more.
-          </>
-        )}
-      </Notice>
-      <Budget
-        spent={result.pointsSpent}
-        remaining={result.pointsRemaining}
-        budget={COMPLETE_RULES.skillPoints}
-      />
-      <Guidance remaining={result.pointsRemaining} />
+      <Budget remaining={result.pointsRemaining} />
 
       <section className="space-y-3">
         <h3 className="font-mono text-[11px] uppercase tracking-[0.25em] text-ember">Your sheet</h3>
+        <OddsKey />
         <CategoryGroups
           entries={granted ? [...state.skills, granted] : state.skills}
           state={state}
           limitsFor={limitsFor}
           onLevel={(entry, level) => !entry.granted && setLevel(entry, level)}
-          onRemove={(entry) =>
-            !entry.granted && !BASIC_SKILLS.includes(entry.skillId) ? removeSkill(entry) : undefined
-          }
+          removable={removable}
+          onRemove={removeSkill}
+          basicMin={COMPLETE_RULES.basicSkillMinimum}
         />
       </section>
 
@@ -582,88 +536,150 @@ function CompletePackageBranch({ state }: { state: ChargenState }) {
           <Chip active={roleOnly} onClick={() => setRoleOnly(!roleOnly)}>
             Suggested for your Role
           </Chip>
-          {CATEGORIES.map((c) => (
-            <Chip
-              key={c}
-              active={category === c}
-              onClick={() => setCategory(category === c ? null : c)}
-            >
-              {c}
-            </Chip>
-          ))}
-          {stats.map((s) => (
-            <Chip key={s} active={stat === s} onClick={() => setStat(stat === s ? null : s)}>
-              {s.toUpperCase()}
-            </Chip>
-          ))}
+          <Chip active={showChosen} onClick={() => setShowChosen(!showChosen)}>
+            Show chosen ({chosenCount})
+          </Chip>
         </div>
 
-        <div className="border border-hairline bg-surface">
-          {visible.map((skill) => {
-            const taken = state.skills.some(
-              (e) => e.skillId === skill.id && !skill.requiresSpecialization,
-            );
-            const add = addability(skill);
+        <div className="space-y-2">
+          {groups.map(({ stat, skills }) => {
+            const open = searching || openStats.has(stat);
+            const suggested = skills.filter((skill) => roleSkillIds.has(skill.id)).length;
             return (
-              <div
-                key={skill.id}
-                className="flex flex-wrap items-center gap-3 border-b border-hairline px-4 py-2 last:border-b-0"
-              >
-                <div className="min-w-52 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-text">
-                      {skill.name}
-                      {skill.doubleCost && (
-                        <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-ember">
-                          ×2
-                        </span>
-                      )}
-                      {roleSkillIds.has(skill.id) && (
-                        <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-cool">
-                          Role
-                        </span>
-                      )}
-                    </p>
-                    <SkillInfo skillId={skill.id} />
-                  </div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
-                    {skill.stat.toUpperCase()} · {skill.category}
-                  </p>
-                </div>
-                {skill.requiresSpecialization &&
-                  (isAreaScoped(skill.id) ? (
-                    <AreaPicker
-                      value={spec[skill.id] ?? HOME_AREA}
-                      onChange={(value) => setSpec((s) => ({ ...s, [skill.id]: value }))}
-                      suggested={childhoodDistricts}
-                      label={`${skill.name} ${skill.specializationLabel ?? "location"}`}
-                    />
-                  ) : (
-                    <Input
-                      className="w-48"
-                      value={spec[skill.id] ?? ""}
-                      onChange={(e) => setSpec((s) => ({ ...s, [skill.id]: e.target.value }))}
-                      placeholder={skill.specializationLabel ?? "specialization"}
-                      aria-label={`${skill.name} ${skill.specializationLabel ?? "specialization"}`}
-                    />
-                  ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={taken || !add.allowed}
-                  title={taken ? "Already on your sheet" : (add.reason ?? `Add ${skill.name}`)}
-                  onClick={() => addSkill(skill)}
+              <section key={stat} className="border border-hairline bg-surface">
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  onClick={() => toggleStat(stat)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left hover:bg-surface-raised"
                 >
-                  {taken ? "On sheet" : "Add"}
-                </Button>
-              </div>
+                  <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-text">
+                    {stat.toUpperCase()}
+                    <span className="ml-3 text-text-dim">{skills.length}</span>
+                    {suggested > 0 && (
+                      <span className="ml-3 text-cool">{suggested} for your Role</span>
+                    )}
+                  </span>
+                  <span aria-hidden className="font-mono text-text-dim">
+                    {open ? "−" : "+"}
+                  </span>
+                </button>
+                {open && (
+                  <div className="border-t border-hairline">
+                    {skills.map((skill) => (
+                      <MasterRow
+                        key={skill.id}
+                        skill={skill}
+                        state={state}
+                        isRole={roleSkillIds.has(skill.id)}
+                        chosen={isChosen(skill)}
+                        add={addability(skill)}
+                        spec={spec[skill.id] ?? (isAreaScoped(skill.id) ? HOME_AREA : "")}
+                        childhoodDistricts={childhoodDistricts}
+                        onSpec={(value) => setSpec((s) => ({ ...s, [skill.id]: value }))}
+                        onAdd={() => addSkill(skill)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
             );
           })}
-          {visible.length === 0 && (
-            <p className="p-4 text-sm text-text-muted">No Skill matches those filters.</p>
+          {groups.length === 0 && (
+            <p className="border border-hairline bg-surface p-4 text-sm text-text-muted">
+              No Skill matches those filters.
+            </p>
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+function MasterRow({
+  skill,
+  state,
+  isRole,
+  chosen,
+  add,
+  spec,
+  childhoodDistricts,
+  onSpec,
+  onAdd,
+}: {
+  skill: SkillDefinition;
+  state: ChargenState;
+  isRole: boolean;
+  chosen: boolean;
+  add: { allowed: boolean; reason: string | null };
+  spec: string;
+  childhoodDistricts: string[];
+  onSpec: (value: string) => void;
+  onAdd: () => void;
+}) {
+  const options = specializationOptions(skill.id);
+  const lines = state.skills.filter((e) => e.skillId === skill.id).length;
+  const specLabel = skill.specializationLabel ?? "specialization";
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-b border-hairline px-4 py-2 last:border-b-0">
+      <div className="min-w-52 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-text">
+            {skill.name}
+            {skill.doubleCost && (
+              <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-ember">
+                ×2
+              </span>
+            )}
+            {isRole && (
+              <span className="ml-2 font-mono text-[10px] uppercase tracking-widest text-cool">
+                Role
+              </span>
+            )}
+          </p>
+          <SkillInfo skillId={skill.id} />
+        </div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
+          {skill.category}
+          {lines > 0 && skill.requiresSpecialization && ` · ${lines} chosen`}
+        </p>
+      </div>
+      {skill.requiresSpecialization &&
+        (isAreaScoped(skill.id) ? (
+          <AreaPicker
+            value={spec || HOME_AREA}
+            onChange={onSpec}
+            suggested={childhoodDistricts}
+            label={`${skill.name} ${specLabel}`}
+          />
+        ) : options ? (
+          <SpecializationPicker
+            skillId={skill.id}
+            options={options}
+            value={spec}
+            onChange={onSpec}
+            taken={state.skills}
+            label={`${skill.name} ${specLabel}`}
+            placeholder={`Pick ${specLabel}`}
+          />
+        ) : (
+          <Input
+            className="w-48"
+            value={spec}
+            onChange={(e) => onSpec(e.target.value)}
+            placeholder={specLabel}
+            aria-label={`${skill.name} ${specLabel}`}
+          />
+        ))}
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={chosen || !add.allowed}
+        title={chosen ? "Already on your sheet" : (add.reason ?? `Add ${skill.name}`)}
+        onClick={onAdd}
+      >
+        {chosen ? "Chosen" : "Add"}
+      </Button>
     </div>
   );
 }

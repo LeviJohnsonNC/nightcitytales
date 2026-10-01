@@ -1,0 +1,38 @@
+{
+  "houseRule": true,
+  "note": "The book makes a player NAME a Language, a field of Science, a Martial Arts form or an instrument each time they raise one of these Skills, and prints only 'common options' (skills.json descriptions: Geology, Mathematics, Physics, Zoology, Anthropology, Biology, Chemistry, History; Karate, Taekwondo, Judo, Aikido; singing, guitar, drums, violin, piano). These lists are the house rule: common names offered as a pick-list so a typo cannot become a second Skill. They are suggestions, never a limit — engine/specializations.ts always lets the player type another. Language adds no list of its own: it is every language the Cultural Origin tables name, plus Streetslang, which the Role packages grant.",
+  "extraLanguages": ["Streetslang"],
+  "options": {
+    "science": [
+      "Anthropology",
+      "Biology",
+      "Chemistry",
+      "Geology",
+      "History",
+      "Mathematics",
+      "Physics",
+      "Zoology"
+    ],
+    "martial_arts": [
+      "Aikido",
+      "Capoeira",
+      "Judo",
+      "Karate",
+      "Krav Maga",
+      "Muay Thai",
+      "Taekwondo",
+      "Wrestling"
+    ],
+    "play_instrument": [
+      "Bass",
+      "Drums",
+      "Guitar",
+      "Keyboard",
+      "Piano",
+      "Saxophone",
+      "Singing",
+      "Synthesizer",
+      "Violin"
+    ]
+  }
+}

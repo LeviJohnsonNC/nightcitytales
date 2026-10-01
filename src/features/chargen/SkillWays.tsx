@@ -18,6 +18,12 @@ type Method = "edgerunner" | "complete_package";
 /** How many things the "what you can do" list shows. Enough to see a shape. */
 const SHOWN = 6;
 
+/**
+ * How likely a task must be to count as something you can DO. Presentation, not
+ * a rule: the odds themselves are the engine's, this only picks which to boast of.
+ */
+const LIKELY = 80;
+
 /** A chance as a bar and a number, coloured by how much you would want to bet on it. */
 export function OddsBar({ percent, className }: { percent: number; className?: string }) {
   const tone = percent >= 70 ? "bg-success" : percent >= 40 ? "bg-accent" : "bg-text-dim";
@@ -107,12 +113,14 @@ export function WaysToWork({ state, method }: { state: ChargenState; method: Met
 }
 
 /**
- * What this character can actually do, and how likely it is to work.
+ * What this character can actually do: the things their best Skills make
+ * likely, one line each, "Athletics: Clear the gap between two rooftops".
  *
- * The Skills a character has invested in, shown as tasks with odds rather
- * than as numbers. Odds come from the engine against a DV on the printed
- * ladder; nothing here is estimated. Before the STATs exist it says so rather
- * than showing a chance it cannot know.
+ * Only tasks the engine puts at LIKELY or better are listed, best first, so a
+ * short list is an honest one. The odds come from the engine against a DV on
+ * the printed ladder and are not shown — being on the list is the claim. The
+ * bars live in the fine-tune rows, where moving a Level moves them. Before the
+ * STATs exist it says so rather than quoting a chance it cannot know.
  */
 export function WhatYouCanDo({
   state,
@@ -124,9 +132,9 @@ export function WhatYouCanDo({
   home: string | null;
 }) {
   const lines = entries
-    .filter((e) => e.level >= 4)
     .map((entry) => ({ entry, odds: taskOdds(entry, state.stats) }))
     .filter((l): l is { entry: SkillEntry; odds: NonNullable<typeof l.odds> } => l.odds !== null)
+    .filter((l) => l.odds.percent >= LIKELY)
     .sort((a, b) => b.odds.percent - a.odds.percent || b.entry.level - a.entry.level)
     .slice(0, SHOWN);
 
@@ -137,32 +145,19 @@ export function WhatYouCanDo({
 
   return (
     <section className="space-y-3 border border-hairline bg-surface p-4">
-      <div className="flex flex-wrap items-baseline gap-3">
-        <h2 className="text-lg font-bold tracking-tight">What you can do</h2>
-        <p className="text-sm text-text-muted">
-          Your real chances, from your STATs and Skills against the book&apos;s difficulties.
-        </p>
-      </div>
+      <h2 className="text-lg font-bold tracking-tight">What you can do</h2>
       {lines.length === 0 ? (
         <p className="text-sm italic text-text-dim">
           {statsMissing
-            ? "Set your STATs first and your chances show up here."
-            : "Nothing stands out yet. Pick how you work, or raise a Skill."}
+            ? "Set your STATs first and what you are good at shows up here."
+            : "Nothing is a sure thing yet. Pick how you work, or raise a Skill."}
         </p>
       ) : (
         <ul className="divide-y divide-hairline">
           {lines.map(({ entry, odds }) => (
-            <li
-              key={skillEntryKey(entry)}
-              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm">{odds.task}</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
-                  {skillEntryName(entry, home)} {entry.level} · {odds.dvName}
-                </span>
-              </span>
-              <OddsBar percent={odds.percent} />
+            <li key={skillEntryKey(entry)} className="py-2 text-sm">
+              <span className="font-bold">{skillEntryName(entry, home)}</span>
+              <span className="text-text-muted">: {odds.task}</span>
             </li>
           ))}
         </ul>
