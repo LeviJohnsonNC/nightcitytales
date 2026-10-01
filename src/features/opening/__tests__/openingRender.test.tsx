@@ -52,12 +52,13 @@ const state: ScreenState = {
 
 vi.mock("../useOpening", () => ({ useOpening: () => state }));
 
-const { OpeningScreen } = await import("../OpeningScreen");
+const { OpeningScreen, OpeningStage } = await import("../OpeningScreen");
 
 const render = () => renderToStaticMarkup(<OpeningScreen campaignId="c1" />);
+const renderStage = () => renderToStaticMarkup(<OpeningStage open={state as never} />);
 
 describe("the cold open draws", () => {
-  const html = render();
+  const html = renderStage();
 
   it("shows the night's title and every paragraph", () => {
     expect(html).toContain("The Sixth Floor");
@@ -89,12 +90,21 @@ describe("the cold open draws", () => {
 });
 
 describe("while the city is deciding", () => {
-  it("shows something in the voice rather than a spinner", () => {
+  it("is the descent, not a spinner and not the prose", () => {
     state.opening = null;
     state.writing = true;
     const html = render();
-    expect(html).toContain("Somewhere in seven million people");
+    expect(html).toContain("Night City is deciding what kind of night this is");
+    expect(html).toContain("Population");
     expect(html).not.toContain("What do you do first?");
+  });
+
+  it("starts with the descent even when the prose is already there: the fall is the welcome", () => {
+    state.opening = opening;
+    state.writing = false;
+    const html = render();
+    expect(html).toContain("Population");
+    expect(html).not.toContain("The Sixth Floor");
   });
 });
 

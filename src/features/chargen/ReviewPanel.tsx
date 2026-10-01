@@ -9,7 +9,9 @@ import { saveCharacterFromState } from "./saveCharacter";
 import { assembledFromState, buildFromState } from "./sheetModel";
 import { useChargenStore, type ChargenState } from "./store";
 import { Reveal } from "./Reveal";
-import { startOrResumeAdventure } from "@/features/play/startAdventure";
+import { Curtain } from "@/features/opening/descent/Curtain";
+import { armDescent, disarmDescent } from "@/features/opening/descent/descentClock";
+import { startAdventure } from "@/features/play/startAdventure";
 
 export function ReviewPanel({ state }: { state: ChargenState }) {
   const navigate = useNavigate();
@@ -34,21 +36,27 @@ export function ReviewPanel({ state }: { state: ChargenState }) {
     if (!gatePassed(finalChecklist(useChargenStore.getState()))) return;
     setSaving(then);
     setError(null);
+    // The descent is timed from this press, not from when the next screen
+    // mounts, so the seconds the campaign takes to start are part of it.
+    if (then === "city") armDescent();
     try {
       const id = await saveCharacterFromState(state, build, sheet);
       if (then === "city") {
-        const campaignId = await startOrResumeAdventure({
+        const adventure = await startAdventure({
           id,
           name: state.name.trim(),
           handle: state.handle.trim() || null,
         });
+        // A campaign that already existed has no cold open to descend into.
+        if (!adventure.created) disarmDescent();
         reset();
-        await navigate({ to: "/play/$id", params: { id: campaignId } });
+        await navigate({ to: "/play/$id", params: { id: adventure.id } });
         return;
       }
       reset();
       await navigate({ to: "/character/$id", params: { id } });
     } catch (e) {
+      disarmDescent();
       setError(e instanceof Error ? e.message : "Saving failed.");
       setSaving(null);
     }
@@ -56,6 +64,7 @@ export function ReviewPanel({ state }: { state: ChargenState }) {
 
   return (
     <div className="space-y-6">
+      {saving === "city" && <Curtain />}
       <div className="no-print">
         <Reveal state={state} homePlaceKey={sheet.finance.homePlaceKey} />
       </div>

@@ -10,9 +10,11 @@
  * of them leads somewhere genuinely different, which is the difference between
  * a choice and a menu.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { OpeningChoice } from "@/engine";
+import { Descent } from "./descent/Descent";
+import { buildDescentFacts } from "./descent/descentFacts";
 import { useOpening } from "./useOpening";
 import type { OpeningDoor } from "./openingResponse";
 import "./opening.css";
@@ -30,18 +32,6 @@ function Standfirst({ character }: { character: ReturnType<typeof useOpening>["c
       {character.character.role ? ` · ${character.character.role}` : ""}
       {" · night one"}
     </p>
-  );
-}
-
-/** No spinner. The city is deciding what kind of night this is. */
-function Writing() {
-  return (
-    <div className="flex min-h-[60vh] flex-col justify-center gap-4">
-      <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-accent">Night City</p>
-      <p className="open-breathe text-lg text-muted-foreground">
-        Somewhere in seven million people, one of them is you.
-      </p>
-    </div>
   );
 }
 
@@ -100,8 +90,8 @@ function Door({
   );
 }
 
-export function OpeningScreen({ campaignId }: { campaignId: string }) {
-  const open = useOpening(campaignId);
+/** The prose and the doors: the screen the descent lands on. */
+export function OpeningStage({ open }: { open: ReturnType<typeof useOpening> }) {
   const { opening, choose, choosing } = open;
   /** The door being applied, so it can stay lit while the writes land. */
   const takenRef = useRef<OpeningChoice | null>(null);
@@ -125,7 +115,7 @@ export function OpeningScreen({ campaignId }: { campaignId: string }) {
 
   const body = () => {
     if (open.error) return <Failed message={open.error.message} onRetry={open.retry} />;
-    if (open.writing || !opening) return <Writing />;
+    if (!opening) return null;
 
     const doorsDelay = opening.paragraphs.length * PROSE_STEP_MS + AFTER_PROSE_MS;
     const taken = choosing ? takenRef.current : null;
@@ -201,4 +191,31 @@ export function OpeningScreen({ campaignId }: { campaignId: string }) {
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-5 py-12 sm:py-16">{body()}</div>
     </div>
   );
+}
+
+/**
+ * The first screen of a campaign: the descent while the night is written, then
+ * the night itself.
+ */
+export function OpeningScreen({ campaignId }: { campaignId: string }) {
+  const open = useOpening(campaignId);
+  /** The descent has handed over: from here on the screen is the prose. */
+  const [landed, setLanded] = useState(false);
+  const descentFacts = useMemo(
+    () => (open.bundle ? buildDescentFacts(open.bundle) : null),
+    [open.bundle],
+  );
+
+  // The ten seconds the night takes to write belong to the descent. An error
+  // ends it at once, because there is nothing left to wait for.
+  if (!open.error && !landed) {
+    return (
+      <Descent
+        facts={descentFacts}
+        ready={!open.writing && open.opening !== null}
+        onDone={() => setLanded(true)}
+      />
+    );
+  }
+  return <OpeningStage open={open} />;
 }
