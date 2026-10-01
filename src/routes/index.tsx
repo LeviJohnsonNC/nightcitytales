@@ -39,6 +39,12 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+/**
+ * The scene from the game beside the runner (`HeroDemoCard`). Built and tested,
+ * but not shown while its look is reworked: flip this to bring it back.
+ */
+const SHOW_HERO_DEMO = false;
+
 /* ---------- small shared pieces ---------- */
 
 function Eyebrow({ children }: { children: ReactNode }) {
@@ -148,7 +154,7 @@ function Index() {
         <Atmosphere />
         <HeroRain />
 
-        {wide && (
+        {SHOW_HERO_DEMO && wide && (
           <HeroDemoCard className="absolute bottom-10 right-8 z-10 w-[19rem] xl:right-[6vw]" />
         )}
 
@@ -189,7 +195,7 @@ function Index() {
               ))}
             </ul>
 
-            {!wide && <HeroDemoCard className="mt-10 max-w-sm" />}
+            {SHOW_HERO_DEMO && !wide && <HeroDemoCard className="mt-10 max-w-sm" />}
           </div>
         </div>
       </section>
