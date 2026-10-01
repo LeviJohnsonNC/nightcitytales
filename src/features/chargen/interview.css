@@ -170,6 +170,11 @@
   }
 }
 
+/* A later picture dissolving in over the one it replaces; the old one stays under it. */
+.cg-fade-in {
+  animation: cg-develop 1.6s ease-in-out backwards;
+}
+
 /* The chemistry at work while a picture is still being taken. */
 .cg-sheen {
   background: linear-gradient(

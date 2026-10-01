@@ -1,7 +1,7 @@
 /**
  * The portrait that develops: when each stage becomes possible, that a stage
- * is developed once and never over a hand-drawn picture, and that every stage
- * describes the same face.
+ * is developed once, that a picture of the wrong person is developed again,
+ * and that every stage describes the same face.
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -13,7 +13,9 @@ import {
   fileProgress,
   firstPictureNeeds,
   nextStageToDevelop,
+  portraitBasis,
   portraitClarity,
+  portraitIsStale,
   portraitStageReady,
 } from "../portraitStages";
 import { useChargenStore, type ChargenState } from "../store";
@@ -74,7 +76,7 @@ describe("when the picture can develop", () => {
     expect(portraitStageReady({ ...looked, stats: STATS })).toBe(2);
   });
 
-  it("develops each stage once, jumps to the best available, and never over a hand-drawn one", () => {
+  it("develops each stage once and jumps to the best available", () => {
     const base = draft({
       roleId: "solo",
       pronouns: "she/her",
@@ -110,17 +112,34 @@ describe("the file, while there is no picture yet", () => {
 });
 
 describe("how clear the picture is", () => {
-  it("is black with no picture, and sharpens within each stage's band as steps are answered", () => {
+  it("is black with no picture, and starts barely a face", () => {
     expect(portraitClarity(0, 1)).toBe(0);
-    // The first still is barely a face however far the file has come.
-    expect(portraitClarity(1, 0)).toBe(0.1);
-    expect(portraitClarity(1, 0.9)).toBe(0.35);
-    // Between the bands, it follows the answers.
-    expect(portraitClarity(2, 0.5)).toBe(0.5);
-    expect(portraitClarity(2, 0.3)).toBe(0.4);
-    // The file photo is nearly clear when it lands, and clear at the end.
-    expect(portraitClarity(3, 0.7)).toBe(0.85);
-    expect(portraitClarity(3, 1)).toBe(1);
+    expect(portraitClarity(1, 0.4, 0.4)).toBeCloseTo(0.1);
+  });
+
+  it("only ever gets clearer as the interview goes on, from the first picture to the identity step", () => {
+    for (const stage of [1, 2, 3] as const) {
+      let last = 0;
+      for (let progress = 0; progress <= 1.0001; progress += 0.05) {
+        const clarity = portraitClarity(stage, progress, 0.4);
+        expect(clarity).toBeGreaterThanOrEqual(last);
+        last = clarity;
+      }
+    }
+    // The same curve at every stage: a new picture arrives at the clarity the
+    // last one had reached, never at a band of its own.
+    expect(portraitClarity(2, 0.6, 0.4)).toBe(portraitClarity(1, 0.6, 0.4));
+    expect(portraitClarity(3, 0.9, 0.4)).toBeGreaterThan(portraitClarity(3, 0.8, 0.4));
+  });
+
+  it("is fully clear on arriving at the identity step, once the file photo is there", () => {
+    expect(portraitClarity(3, 1, 0.4)).toBe(1);
+  });
+
+  it("waits at a ceiling for a better picture, unless none is coming", () => {
+    expect(portraitClarity(1, 1, 0.4)).toBe(0.5);
+    expect(portraitClarity(2, 1, 0.4)).toBe(0.8);
+    expect(portraitClarity(2, 1, 0.4, true)).toBe(1);
   });
 
   it("counts only steps that were reached and answered", () => {
@@ -134,20 +153,74 @@ describe("how clear the picture is", () => {
     expect(fileProgress(met)).toBeLessThan(0.2);
   });
 
-  it("puts the stage's clarity on the picture", () => {
+  it("puts the clarity on the picture", () => {
     const html = renderToStaticMarkup(
       <CharacterFile
         state={draft()}
-        developing={{ preview: "data:image/png;base64,x", developing: 1, failed: null, retry() {} }}
+        developing={{
+          preview: { key: "frame:1", src: "data:image/png;base64,x" },
+          latest: null,
+          developing: 1,
+          failed: null,
+          stalled: false,
+          retry() {},
+        }}
       />,
     );
+    // No steps answered yet: the floor.
     expect(html).toContain('data-clarity="10"');
     expect(html).toContain("blur(10.8px)");
   });
 });
 
+describe("a picture of somebody the answers no longer describe", () => {
+  const drawn = draft({
+    roleId: "solo",
+    pronouns: "she/her",
+    sex: "female",
+    age: 34,
+    stats: STATS,
+    lifepath: { general: LOOKS as unknown as Record<string, unknown>, roleSpecific: {} },
+    portraitPath: "u/d/p.png",
+    portraitStage: 2,
+  });
+  const recorded = { ...drawn, portraitBasis: portraitBasis(drawn) };
+
+  it("is fresh until who they are on sight changes", () => {
+    expect(portraitIsStale(recorded)).toBe(false);
+    expect(nextStageToDevelop(recorded)).toBeNull();
+    // Gear, STATs and the name are not the face.
+    expect(
+      portraitBasis({ ...recorded, name: "Somebody Else", stats: { ...STATS, body: 3 } }),
+    ).toBe(recorded.portraitBasis);
+  });
+
+  it("is developed again, at the best stage now possible, when the sex, age, Role or look changes", () => {
+    for (const change of [{ sex: "male" as const }, { age: 61 }, { roleId: "fixer" }]) {
+      const changed = { ...recorded, ...change };
+      expect(portraitIsStale(changed), JSON.stringify(change)).toBe(true);
+      expect(nextStageToDevelop(changed), JSON.stringify(change)).toBe(2);
+    }
+    const hair = {
+      ...recorded,
+      lifepath: {
+        general: {
+          ...LOOKS,
+          entries: { ...LOOKS.entries, hairstyle: entry("hairstyle", "Shaved") },
+        } as unknown as Record<string, unknown>,
+        roleSpecific: {},
+      },
+    };
+    expect(portraitIsStale(hair)).toBe(true);
+  });
+
+  it("is never stale when nothing recorded who it was of, as with a saved face", () => {
+    expect(portraitIsStale({ ...drawn, portraitBasis: null, sex: "male" })).toBe(false);
+  });
+});
+
 describe("a draft from before the picture developed", () => {
-  it("keeps the portrait it already has: nothing develops over a hand-drawn face", () => {
+  it("keeps the portrait it already has: nothing develops over a saved face", () => {
     useChargenStore.getState().hydrate({ portraitPath: "user/draft/portrait.png" } as never);
     expect(useChargenStore.getState().portraitStage).toBe(3);
     useChargenStore.getState().reset();

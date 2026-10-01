@@ -35,6 +35,9 @@ import { faceFact } from "./portraitStages";
 export const MAX_PORTRAIT_TAKES = 4;
 export const MAX_PORTRAIT_GENERATIONS = 6;
 
+/** The size every portrait is generated at. The file's crop is worked out from it. */
+export const PORTRAIT_SIZE = { width: 1024, height: 1536 };
+
 export type PortraitFacts = {
   handle: string;
   pronouns: string;
@@ -231,7 +234,7 @@ export function buildPortraitFacts(state: ChargenState, roleName?: string): Port
 
 const HOUSE_LOOK = [
   "Painterly cyberpunk character portrait, rendered as digital oil painting with visible brush texture and matte-painting finish, not photorealism, not 3D render, not anime cel shading.",
-  "Single subject, waist-up, facing the camera, 3:4 portrait framing with the head and shoulders filling the frame.",
+  "Single subject, chest-up, facing the camera, in a tall 2:3 frame. It will be cropped to a square of the top two-thirds, so compose for that: the eyes sit on the upper-third line, there is a hand's width of clear headroom above the hair, and the shoulders and collar are fully in frame by the two-thirds line. Nothing important below it.",
   "Neon-noir palette: deep navy and cobalt shadow, electric cyan, violet, magenta and hot pink light, with one warm sunset-orange or rose accent.",
   "Cinematic lighting: strong coloured rim light along the jaw and shoulders, soft neon bloom, screen and signage glow, deep shadow, wet chrome and reflective metal catching coloured light.",
   "Shallow backdrop directly behind the shoulders, dissolving fast into volumetric haze and fog. The setting is atmosphere, never the subject.",
@@ -315,27 +318,4 @@ function genderPhrase(gender: GenderRead): string {
     default:
       return "gender unspecified, ambiguous presentation";
   }
-}
-
-/**
- * Everything still missing before a portrait can be generated: the identity
- * fields, plus every earlier required step of the wizard passing its own
- * validation. Self-description stays optional.
- */
-export function portraitMissing(state: ChargenState): string[] {
-  const missing: string[] = [];
-  if (!state.name.trim()) missing.push("name");
-  if (!state.handle.trim()) missing.push("handle");
-  if (!state.sex) missing.push("sex");
-  if (validAge(state.age) === null) missing.push("age");
-
-  const ids = stepsFor(state.method);
-  for (const step of ids) {
-    if (step.id === "identity" || step.id === "review") continue;
-    // Only actual rule violations block a portrait. Steps where buying
-    // nothing is legal (Gear & Armor, Cyberware) must not gate on "untouched".
-    const { violations } = validateStep(step.id, state);
-    if (violations.length > 0) missing.push(step.title);
-  }
-  return [...new Set(missing)];
 }

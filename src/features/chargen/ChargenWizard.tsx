@@ -267,7 +267,6 @@ export function ChargenWizard({ userId }: { userId: string }) {
           step={state.step}
           lead={carriedHere ? carried.line : null}
           state={state}
-          userId={userId}
           onRequestMethod={requestMethod}
           onRequestRole={requestRole}
         />

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PortraitStudio } from "./PortraitStudio";
 import {
   buildSelfDescriptionInput,
   generateSelfDescription,
@@ -17,7 +16,7 @@ import "./interview.css";
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
 
-export function IdentityPanel({ state, userId }: { state: ChargenState; userId: string }) {
+export function IdentityPanel({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
   const [writing, setWriting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -146,11 +145,6 @@ export function IdentityPanel({ state, userId }: { state: ChargenState; userId: 
             Anything written here is yours to edit or replace.
           </p>
         </div>
-      </div>
-
-      <div className="space-y-3">
-        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-text-dim">Portrait</p>
-        <PortraitStudio state={state} userId={userId} />
       </div>
     </div>
   );

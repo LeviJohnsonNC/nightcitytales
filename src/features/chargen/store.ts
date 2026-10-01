@@ -52,11 +52,16 @@ export type ChargenState = {
   /** How many images this draft has generated. Caps runaway spend. */
   portraitGenerations: number;
   /**
-   * How far the file's picture has developed (0 none, 3 file photo). Drawing a
-   * portrait by hand sets it to the last stage, so development never paints
-   * over a picture the player chose.
+   * How far the file's picture has developed (0 none, 3 file photo). A draft
+   * that already has a picture and no stage is a saved face: it stays.
    */
   portraitStage: number;
+  /**
+   * Who the picture was drawn as (`portraitBasis`): Role, sex, age and how they
+   * look. If the answers move away from it the picture is of somebody else and
+   * is developed again. Null on a picture nothing may redraw.
+   */
+  portraitBasis: string | null;
   stats: Partial<StatBlock>;
   /**
    * Which template row each STAT came from. `row` is the single Streetrat row;
@@ -117,6 +122,7 @@ const initialState: ChargenState = {
   portraitTakes: [],
   portraitGenerations: 0,
   portraitStage: 0,
+  portraitBasis: null,
   stats: {},
   statRolls: { row: null, rows: {} },
   statRerollsUsed: 0,
@@ -187,8 +193,8 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
     set((s) => {
       const next = { ...s, ...state };
       // A draft saved before the portrait developed in stages carries no
-      // stage; if it already has a portrait, that one was drawn by hand and
-      // nothing may develop over it.
+      // stage; if it already has a portrait, that one is final and nothing
+      // may develop over it.
       if (state.portraitStage === undefined && next.portraitPath) next.portraitStage = 3;
       const step = resolveStepForMethod(normalizeStep(next.step), next.method);
       // A draft saved before the file asked for sex carries only pronouns.
