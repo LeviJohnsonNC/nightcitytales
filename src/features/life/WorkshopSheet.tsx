@@ -12,6 +12,8 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DockTile } from "./hud/DockTile";
+import { Wrench } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { describeDuration, FABRICABLE_KINDS, type ItemKind } from "@/engine";
 import { useWorkshop, type BenchItem } from "./useWorkshop";
@@ -89,9 +91,7 @@ export function WorkshopSheet({ bundle }: { bundle: LifeBundle }) {
   return (
     <Sheet onOpenChange={(open) => !open && workshop.clearMessage()}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full">
-          Get to the bench
-        </Button>
+        <DockTile icon={<Wrench className="size-6" />} label="Bench" />
       </SheetTrigger>
       <SheetContent
         side="right"

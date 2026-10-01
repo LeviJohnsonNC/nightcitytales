@@ -12,6 +12,8 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DockTile } from "./hud/DockTile";
+import { ShoppingBag } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   catalogItem,
@@ -206,9 +208,7 @@ export function ShopSheet({ bundle }: { bundle: LifeBundle }) {
   return (
     <Sheet onOpenChange={(open) => !open && shop.endVisit()}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full">
-          Go shopping
-        </Button>
+        <DockTile icon={<ShoppingBag className="size-6" />} label="Shop" />
       </SheetTrigger>
       <SheetContent
         side="right"

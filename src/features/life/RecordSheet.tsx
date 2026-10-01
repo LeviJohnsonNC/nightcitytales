@@ -6,8 +6,9 @@
  * not only to the prompt — and since the chronicle is assembled rather than
  * written, what you read here is exactly what the GM is working from.
  */
-import { Button } from "@/components/ui/button";
 import { NpcName } from "@/features/cast/NpcName";
+import { DockTile } from "./hud/DockTile";
+import { ScrollText } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { getFaction, isFactionId, standingBand } from "@/engine";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
@@ -70,9 +71,7 @@ export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full">
-          The record
-        </Button>
+        <DockTile icon={<ScrollText className="size-6" />} label="Record" />
       </SheetTrigger>
       <SheetContent
         side="right"

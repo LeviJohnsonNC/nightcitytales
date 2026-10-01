@@ -63,7 +63,8 @@ import { CheckCard } from "@/features/play/CheckCard";
 import { MapButton } from "@/features/atlas/MapButton";
 import { CampaignHeader } from "@/features/play/CampaignHeader";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
-import { StatusRail } from "@/features/status/StatusRail";
+import { CharacterCard } from "./hud/CharacterCard";
+import { ResourceStrip } from "./hud/ResourceStrip";
 import {
   readDayBrief,
   statusView,
@@ -634,50 +635,24 @@ function LifeRail({
 }) {
   return (
     <>
-      <section className="space-y-3 border border-border bg-card p-4">
-        <div className="min-w-0">
-          <h2 className="text-lg font-bold leading-tight">{bundle.character.character.name}</h2>
-          <p className="text-sm text-muted-foreground">
-            {bundle.character.character.handle ? `"${bundle.character.character.handle}" · ` : ""}
-            {bundle.character.character.role}
-          </p>
-        </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div>
-            <Label>HP</Label>
-            <p className="num text-lg font-bold">
-              {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
-            </p>
-          </div>
-          <div>
-            <Label>Wound</Label>
-            <p className="text-sm font-semibold capitalize">{bundle.vitals.wound_state}</p>
-          </div>
-          <div>
-            <Label>Humanity</Label>
-            <p className="num text-lg font-bold">
-              {bundle.vitals.humanity_current}/{bundle.vitals.humanity_max}
-            </p>
-          </div>
-        </div>
-        {luckMax > 0 && (
-          <div>
-            <Label>Luck</Label>
-            <p className="num text-base font-bold">
-              {luckLeft}/{luckMax}
-            </p>
-          </div>
-        )}
-      </section>
+      <CharacterCard
+        name={bundle.character.character.name}
+        handle={bundle.character.character.handle}
+        role={bundle.character.character.role}
+        portraitPath={bundle.character.character.portrait_path}
+        portraitId={bundle.character.character.portrait_id}
+        hp={{ current: bundle.vitals.hp_current, max: bundle.vitals.hp_max }}
+        humanity={{ current: bundle.vitals.humanity_current, max: bundle.vitals.humanity_max }}
+        luck={{ left: luckLeft, max: luckMax }}
+        wound={bundle.vitals.wound_state}
+      />
 
       {/*
-       * Where they stand: what rent is doing, what the banked points are close
-       * to buying, and what they have taken on. This replaced both the bare
-       * Eurobucks number above and the old "On your plate" list — the first was
-       * a score rather than a pressure, and the second put a lead the world was
-       * dangling on the same footing as a promise the player made.
+       * Where they stand, as three chips: what rent is doing, what the banked
+       * points are close to buying, and what they have taken on. The detail
+       * waits behind each one rather than standing open down the rail.
        */}
-      <StatusRail status={status} />
+      <ResourceStrip status={status} />
 
       {life.people.length > 0 && (
         <section className="space-y-2 border border-border bg-card p-4">
@@ -730,17 +705,20 @@ function LifeRail({
         </section>
       )}
 
-      <RecordSheet bundle={bundle} />
+      <div className="grid grid-cols-2 gap-2">
+        <RecordSheet bundle={bundle} />
+        <ShopSheet bundle={bundle} />
+        <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
+        {/* Renders nothing at all for a character without Maker. */}
+        <WorkshopSheet bundle={bundle} />
+      </div>
 
-      <ShopSheet bundle={bundle} />
-
-      <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
-      {/* Renders nothing at all for a character without Maker. */}
-      <WorkshopSheet bundle={bundle} />
-
-      <Button asChild variant="outline" size="sm" className="w-full">
-        <Link to="/roster">Back to the roster</Link>
-      </Button>
+      <Link
+        to="/roster"
+        className="block text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim hover:text-foreground"
+      >
+        Back to the roster
+      </Link>
     </>
   );
 }
