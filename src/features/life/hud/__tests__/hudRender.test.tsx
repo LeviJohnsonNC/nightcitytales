@@ -56,6 +56,23 @@ describe("the character card", () => {
     expect(html).not.toContain("Wounded");
   });
 
+  it("opens the portrait full size when there is one to open", () => {
+    const html = renderToStaticMarkup(
+      <CharacterCard
+        name="Shane McMahn"
+        role="lawman"
+        portraitId="__missing__"
+        hp={{ current: 40, max: 40 }}
+        humanity={{ current: 46, max: 60 }}
+        luck={{ left: 4, max: 6 }}
+        wound="none"
+      />,
+    );
+    // No picture on file means nothing to open: an initial, not a dead button.
+    expect(html).not.toContain("full size");
+    expect(html).toContain(">S<");
+  });
+
   it("goes red and says so when hurt", () => {
     const html = card(8, "serious");
     expect(html).toContain("bg-destructive");

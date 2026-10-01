@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import "./life.css";
 import { sceneArt } from "./sceneArt";
+import { sceneOpen } from "./sceneOpen";
 
 /** How long a new location stays open before settling back to the strip. */
 const ARRIVAL_MS = 6000;
@@ -31,17 +32,19 @@ export function SceneHero({
 }) {
   const scene = sceneArt(locationKey);
   const [arrived, setArrived] = useState(false);
+  const [override, setOverride] = useState<boolean | null>(null);
   const previous = useRef(locationKey);
 
   useEffect(() => {
     if (previous.current === locationKey) return;
     previous.current = locationKey;
     setArrived(true);
+    setOverride(null);
     const timer = setTimeout(() => setArrived(false), ARRIVAL_MS);
     return () => clearTimeout(timer);
   }, [locationKey]);
 
-  const open = opening || arrived;
+  const open = sceneOpen({ opening, arrived, override });
 
   // Nothing to show. Every atlas place and district has a picture, so this is
   // the guard for one added without art rather than a state the game is in.
@@ -74,7 +77,16 @@ export function SceneHero({
       />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent" />
 
-      <figcaption className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3">
+      {/* The whole picture is the switch: tap the strip to see the place, tap again to put it away. */}
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={open ? "Collapse the picture" : "Expand the picture"}
+        onClick={() => setOverride(!open)}
+        className="absolute inset-0 z-10 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
+      />
+
+      <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3">
         <div className="min-w-0">
           <p className="truncate font-mono text-[11px] uppercase tracking-[0.24em] text-chrome">
             {scene.title}
