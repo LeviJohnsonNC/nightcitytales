@@ -71,6 +71,8 @@ describe("the character card", () => {
     // No picture on file means nothing to open: an initial, not a dead button.
     expect(html).not.toContain("full size");
     expect(html).toContain(">S<");
+    // ...and the slot keeps its own size, so the name stays beside it.
+    expect(html).toContain("h-24 w-[4.5rem] shrink-0");
   });
 
   it("goes red and says so when hurt", () => {

@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { useMinWidth } from "@/hooks/use-min-width";
 import { getCurrentUser, onAuthChange, type AuthUser } from "@/lib/backend";
 import { Atmosphere, SignFlicker, WindowGlints } from "@/features/landing/Atmosphere";
+import { HeroDemoCard } from "@/features/landing/HeroDemoCard";
 import { HeroParallax } from "@/features/landing/HeroParallax";
 import { HeroRain } from "@/features/landing/HeroRain";
 import { Reveal } from "@/features/landing/Reveal";
@@ -69,6 +71,8 @@ function Index() {
     return unsubscribe;
   }, []);
 
+  // One copy, placed by width: over the art on a desktop, under the copy on a phone.
+  const wide = useMinWidth(1024);
   const signedIn = Boolean(user);
   const startLabel = signedIn ? "Continue your story" : "Enter Night City";
   const startTo = signedIn ? "/roster" : "/login";
@@ -144,6 +148,10 @@ function Index() {
         <Atmosphere />
         <HeroRain />
 
+        {wide && (
+          <HeroDemoCard className="absolute bottom-10 right-8 z-10 w-[19rem] xl:right-[6vw]" />
+        )}
+
         <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl items-center px-5 py-24 sm:px-8">
           <div className="lp-boot w-full max-w-xl lg:max-w-[56%]">
             <Eyebrow>A solo RPG powered by an AI Game Master</Eyebrow>
@@ -180,6 +188,8 @@ function Index() {
                 </li>
               ))}
             </ul>
+
+            {!wide && <HeroDemoCard className="mt-10 max-w-sm" />}
           </div>
         </div>
       </section>

@@ -228,6 +228,10 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   and `landingStorm.ts` decides, seeded, when the sky lights up and the runner's
   face with it. `HeroParallax` leans the art toward the pointer. Both draw
   nothing under reduced motion.
+  `HeroDemoCard` is a scene from the game over the art: the Life screen's real
+  `CharacterCard` with the Game Master typing beneath it, driven by `heroDemo.ts`,
+  a pure looping script of invented lines and numbers. It is decoration, with no
+  account, write or model call behind it.
 - `src/features/campaign/` maps pure engine campaign state to persisted rows and
   append-only ledger events.
 - `src/features/dev/` holds developer tooling, currently the `/combat`
