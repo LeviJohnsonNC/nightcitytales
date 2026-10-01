@@ -3,6 +3,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, onAuthChange, type AuthUser } from "@/lib/backend";
 import { Atmosphere, SignFlicker, WindowGlints } from "@/features/landing/Atmosphere";
+import { HeroParallax } from "@/features/landing/HeroParallax";
+import { HeroRain } from "@/features/landing/HeroRain";
 import { Reveal } from "@/features/landing/Reveal";
 import { LandingNav } from "@/features/landing/LandingNav";
 import heroArt from "@/assets/hero-one.jpg.asset.json";
@@ -68,7 +70,7 @@ function Index() {
   }, []);
 
   const signedIn = Boolean(user);
-  const startLabel = signedIn ? "Continue your story" : "Start your story";
+  const startLabel = signedIn ? "Continue your story" : "Enter Night City";
   const startTo = signedIn ? "/roster" : "/login";
 
   return (
@@ -77,13 +79,15 @@ function Index() {
 
       {/* ============================ 1. HERO ============================ */}
       <section className="relative min-h-[100svh] w-full overflow-hidden">
-        <img
-          src={heroArt.url}
-          alt=""
-          aria-hidden
-          className="lp-drift absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition: "72% 45%" }}
-        />
+        <HeroParallax>
+          <img
+            src={heroArt.url}
+            alt=""
+            aria-hidden
+            className="lp-drift absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: "72% 45%" }}
+          />
+        </HeroParallax>
         {/* Copy-side scrim: heavy left, opening toward the skyline. */}
         <div
           aria-hidden
@@ -138,33 +142,44 @@ function Index() {
         />
         <WindowGlints />
         <Atmosphere />
+        <HeroRain />
 
         <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl items-center px-5 py-24 sm:px-8">
-          <div className="lp-boot w-full max-w-xl lg:max-w-[45%]">
+          <div className="lp-boot w-full max-w-xl lg:max-w-[56%]">
             <Eyebrow>A solo RPG powered by an AI Game Master</Eyebrow>
-            <h1 className="mt-5 pb-[0.08em] font-display text-[2.75rem] leading-[1.04] tracking-[-0.03em] text-chrome sm:text-6xl xl:text-7xl">
-              Live your life in Night City.
+            <h1 className="mt-5 pb-[0.08em] font-display text-[clamp(2rem,10vw,2.75rem)] leading-[1.04] tracking-[-0.03em] sm:text-6xl xl:text-7xl">
+              {/* One gradient a line, so the last word is as bright as the first, and
+                  the name of the city never breaks across two. */}
+              <span className="block text-chrome sm:whitespace-nowrap">Live your life in</span>
+              <span className="block whitespace-nowrap text-chrome">Night City.</span>
             </h1>
             <p className="mt-6 max-w-lg text-base leading-relaxed text-text-muted sm:text-lg">
-              Take dangerous jobs. Build relationships. Make enemies. Fight to survive. And live
-              with everything that follows.
+              Rent comes due. Your fixer keeps calling. Your ripperdoc remembers what you owe. An AI
+              tells the story, and the dice are never its to roll.
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-5">
-              <Button asChild size="lg" className="uppercase tracking-[0.18em]">
+              <Button asChild size="lg" className="lp-cta h-12 px-9 uppercase tracking-[0.2em]">
                 <Link to={startTo}>{startLabel}</Link>
               </Button>
               <a
                 href="#the-game"
-                className="font-mono text-[11px] uppercase tracking-[0.22em] text-text-muted transition-colors hover:text-text"
+                className="border-b border-text-dim/60 pb-0.5 font-mono text-[11px] uppercase tracking-[0.22em] text-text transition-colors hover:border-ember hover:text-ember"
               >
                 See how it plays ↓
               </a>
             </div>
 
-            <p className="mt-10 font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
-              Built on Cyberpunk RED · Solo play · Persistent campaign
-            </p>
+            <ul className="mt-10 flex flex-wrap gap-2">
+              {["Built on Cyberpunk RED", "Solo play", "Persistent campaign"].map((chip) => (
+                <li
+                  key={chip}
+                  className="border border-hairline/80 bg-surface/50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted backdrop-blur-sm"
+                >
+                  {chip}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>

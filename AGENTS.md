@@ -223,6 +223,11 @@ not in the JSON, or the next run will drop them. Re-running it should leave
 - `src/features/downtime/` owns the downtime panel and its operations.
 - `src/features/items/` owns the item directory and inline item rendering.
 - `src/features/landing/` owns the public landing page's presentation only.
+  Its hero is weather over a painting: `HeroRain` draws the opening's storm
+  (`opening/descent/rain.ts`, with its own intensity and lightning handed in)
+  and `landingStorm.ts` decides, seeded, when the sky lights up and the runner's
+  face with it. `HeroParallax` leans the art toward the pointer. Both draw
+  nothing under reduced motion.
 - `src/features/campaign/` maps pure engine campaign state to persisted rows and
   append-only ledger events.
 - `src/features/dev/` holds developer tooling, currently the `/combat`
