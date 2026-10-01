@@ -87,7 +87,7 @@ function Row({ left, right }: { left: string; right: string }) {
 }
 
 /** Where the money actually goes, once a month, whether or not the job pays. */
-function MoneyDetail({ status }: { status: MoneyStatus }) {
+export function MoneyDetail({ status }: { status: MoneyStatus }) {
   const { rates } = status;
   return (
     <div className="space-y-1">
@@ -116,7 +116,7 @@ function MoneyDetail({ status }: { status: MoneyStatus }) {
 }
 
 /** What the banked points are actually close to buying. */
-function GrowthDetail({ status }: { status: GrowthStatus }) {
+export function GrowthDetail({ status }: { status: GrowthStatus }) {
   if (!status.next) {
     return (
       <p className="text-xs text-muted-foreground">

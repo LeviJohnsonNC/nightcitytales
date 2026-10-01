@@ -183,6 +183,11 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   deliberately extreme packet and asserts a ceiling with about four percent of
   slack; when it fails, either trim the addition or raise the number here on
   purpose, and never nudge it.
+  The Life rail is a HUD, not a form (`life/hud/`): `CharacterCard` (portrait,
+  bars that change colour as they empty, Luck as pips), `ResourceStrip` (money,
+  growth and commitments as three chips whose detail opens in a popover) and an
+  action dock of `DockTile`s that trigger the Record, Shop, Ripperdoc and Bench
+  sheets. `hudModel.ts` holds the bands and pips; they are a look, not a rule.
 - `src/features/opening/` owns the cold open: the first screen of a campaign,
   written once by the model, whose four doors are the engine's. `descent/` is
   the ten seconds while it is written — the neon map's lights narrowed by the

@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DockTile } from "./hud/DockTile";
+import { Cpu } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CYBERWARE, formatDuration, getCyberware } from "@/engine";
 import type { LifeBundle } from "./lifeOps";
@@ -37,9 +39,7 @@ export function RipperdocSheet({
       }}
     >
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full">
-          See your ripperdoc
-        </Button>
+        <DockTile icon={<Cpu className="size-6" />} label="Ripperdoc" />
       </SheetTrigger>
       <SheetContent
         side="right"
