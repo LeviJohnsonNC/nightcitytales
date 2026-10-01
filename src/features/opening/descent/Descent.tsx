@@ -19,7 +19,10 @@ import { PHOTO_ANCHOR_Y, POLAROID_WINDOW } from "@/features/chargen/polaroidCrop
 import { uploadedAsset } from "@/features/chargen/art";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { cityLights, LIGHT_COUNT, LIGHT_COUNT_LOW, SEARCH_STEPS, searchCounts } from "./cityLights";
+import { releaseDuck } from "@/features/chargen/music/musicDirector";
+import { acquireDescentAudio, landDescentAudio, releaseDescentAudio } from "./descentAudio";
 import { descentElapsed } from "./descentClock";
+import { HINGE_BUZZ, LOCK_BUZZ, haptic } from "./descentHaptics";
 import type { DescentFacts } from "./descentFacts";
 import { createRenderer, type Renderer } from "./descentRender";
 import {
@@ -161,6 +164,10 @@ export function Descent({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    // The music steps back for the fall and swells again at the cut; the sound
+    // of the descent is made here, and is silent for a player who has music off.
+    const audio = acquireDescentAudio();
+    let landedSound = false;
     const renderer = createRenderer(canvas, cityRef.current, lowPower ? 1.25 : 2);
     rendererRef.current = renderer;
     const onResize = () => renderer.resize();
@@ -170,6 +177,7 @@ export function Descent({
     let virtual = reduced
       ? REDUCED_START_MS
       : virtualTime(descentElapsed(), factsRef.current !== null);
+    let previous = virtual;
     let last = performance.now();
     let raf = 0;
     let hingeAt: number | null = null;
@@ -191,6 +199,9 @@ export function Descent({
       }
 
       renderer.draw(virtual);
+      audio?.update(virtual, previous);
+      if (previous < SEARCH_END_MS && virtual >= SEARCH_END_MS) haptic(LOCK_BUZZ);
+      previous = virtual;
 
       const nextBeat = beatAt(virtual);
       if (nextBeat !== shownBeat) {
@@ -238,9 +249,14 @@ export function Descent({
       if (virtual >= DIVE_END_MS && readyRef.current && hingeAt === null) {
         hingeAt = now;
         setHinging(true);
+        audio?.hinge();
+        releaseDuck();
+        haptic(HINGE_BUZZ);
       }
       if (hingeAt !== null && !finished && now - hingeAt >= HINGE_MS) {
         finished = true;
+        landedSound = true;
+        landDescentAudio();
         doneRef.current();
         return;
       }
@@ -258,6 +274,8 @@ export function Descent({
       document.removeEventListener("visibilitychange", onVisibility);
       renderer.dispose();
       rendererRef.current = null;
+      // Left before it finished — an error, a reload — so the sound goes too.
+      if (!landedSound) releaseDescentAudio();
     };
   }, [reduced, lowPower]);
 
