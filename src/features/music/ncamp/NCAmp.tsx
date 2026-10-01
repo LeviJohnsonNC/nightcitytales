@@ -132,6 +132,8 @@ function useUi(): [Ui, (patch: Partial<Ui>) => void] {
 
 /** "3. Night City Tales - Badlands Highway (3:45)". */
 function lineFor(state: PlayerState, track: string | null): string {
+  // Something else is scoring the moment; say what, and that the playlist is waiting.
+  if (state.held) return `${state.held.toUpperCase()}  ***  THE PLAYLIST WAITS`;
   if (!track) return IDLE_TEXT;
   const n = state.tracks.indexOf(track) + 1;
   const length = state.durations[track];

@@ -198,9 +198,13 @@ not in the JSON, or the next run will drop them. Re-running it should leave
 - `src/features/music/` owns the soundtrack: the director (one shuffled playlist,
   a module that outlives any screen), `soundtrack.ts`/`trackTitles.ts` (any
   uploaded `music-…` file is in the rotation, and needs a title and a prompt in
-  `docs/soundtrack.md`), and NCAmp, the player that views it. It was the
-  creator's and lived in `features/chargen/music/`; it is shared now, so keep it
-  free of anything that only the creator knows.
+  `docs/soundtrack.md`), and NCAmp, the player that views it. It is shared by the
+  creator and the game and must stay free of anything only one of them knows.
+  The game starts it ONCE, in `useGameMusic` on the `/play/:id` route, so moving
+  between Life, a job and the cold open never restarts it; the player is mounted
+  under `CampaignHeader` on a desktop and in `MobileStatusBar` on a phone, one of
+  the two at a time (`useMinWidth`). Something that scores its own moment — a
+  fight's track — calls `holdMusic`/`releaseMusic` rather than playing over it.
 - `src/features/atlas/` owns the map modal, place dossiers, travel, and the
   components that render a place name as something you can open.
 - `src/features/cast/` owns NPC directories and the bios the player has earned.

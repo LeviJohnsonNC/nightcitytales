@@ -10,13 +10,13 @@
  * strip in the bar and the full window can never disagree.
  *
  * It is a module rather than a component because the music has to outlive the
- * page that starts it: "Enter Night City" navigates to the cold open, and the
- * track that was playing carries on into it and ends there, with nothing after.
+ * page that starts it: "Enter Night City" navigates from the creator into the
+ * game, and the track that was playing carries on across it without a break.
  *
- * It tries to play as soon as the creator opens. Arriving from the roster is a
- * click, and a browser that has seen one lets the page play sound. When the
- * browser does refuse — a reload, or /create opened directly — the player
- * says the music is waiting and the next touch starts it.
+ * It tries to play as soon as the creator or the game opens. Arriving from the
+ * roster is a click, and a browser that has seen one lets the page play sound.
+ * When the browser does refuse — a reload, or a page opened directly — the
+ * player says the music is waiting and the next touch starts it.
  *
  * Sound goes through Web Audio when every track is served from this site:
  * each element → its own fade gain → preamp → ten filters → balance → volume
@@ -61,6 +61,8 @@ export type PlayerState = {
   duration: number;
   /** The browser is holding the music until the page is touched. */
   blocked: boolean;
+  /** What is scoring the moment in its place (a fight), or null. */
+  held: string | null;
   /** Every track in the rotation, in playlist order. */
   tracks: string[];
   /** Lengths, in seconds, as they become known. */
@@ -91,10 +93,16 @@ type Graph = {
   voices: Map<HTMLAudioElement, GainNode>;
 };
 
-/** Whether the creator (or the track it handed on) wants music at all. */
+/** Whether the creator or the game wants music at all. */
 let active = false;
-/** Play out the current track, then stop: the hand-off into night one. */
-let finishing = false;
+/**
+ * Something else is scoring the moment — a fight — and the playlist is out of
+ * its way. The name is what the player sees. The track is paused, not stopped:
+ * it comes back where it was, and the player's own Pause is untouched.
+ */
+let held: string | null = null;
+/** Whether the playlist was sounding when it was held, and so is owed a return. */
+let heldWhilePlaying = false;
 /** False after the player pressed Stop (remembered); Play sets it again. */
 let enabled = readEnabled();
 /** The player pressed Pause; the track waits where it is. */
@@ -202,6 +210,7 @@ function buildSnapshot(): PlayerState {
     position: el ? el.currentTime || 0 : 0,
     duration: el && Number.isFinite(el.duration) ? el.duration : 0,
     blocked: !allowed && enabled && active,
+    held,
     tracks: browser() ? playlist() : [],
     durations: { ...durations },
     bitrates: { ...bitrates },
@@ -506,11 +515,9 @@ function begin(track: string, ms: number, attempts = playlist().length): void {
 /** The current track is nearly over: hand on to the next, or end if that was the last. */
 function advance(): void {
   const outgoing = current;
-  if (finishing || !active) {
+  if (!active) {
     current = null;
     release(outgoing, CROSSFADE_MS);
-    active = false;
-    finishing = false;
     emit();
     return;
   }
@@ -541,7 +548,7 @@ function apply(): void {
     for (const el of pool) el.pause();
     return;
   }
-  if (!allowed || paused) return;
+  if (!allowed || paused || held) return;
   if (current) {
     if (current.el.paused && !current.el.ended) resume();
     return;
@@ -579,31 +586,56 @@ function listen(): void {
   document.addEventListener("visibilitychange", apply);
 }
 
-// ── the creator's hooks ──────────────────────────────────────────────────
+// ── the screens' hooks ───────────────────────────────────────────────────
 
-/** The creator is open: play the soundtrack. Already playing, it carries on. */
+/** The creator or the game is open: play the soundtrack. Already playing, it carries on. */
 export function startMusic(): void {
   listen();
   active = true;
-  finishing = false;
   apply();
 }
 
-/** Leaving the creator: fade out now. */
+/** Leaving for somewhere with no soundtrack: fade out now. */
 export function stopMusic(): void {
   active = false;
-  finishing = false;
+  held = null;
+  heldWhilePlaying = false;
   apply();
 }
 
 /**
- * Leaving the creator INTO the game: let the track that is playing run out,
- * then stop, so the character walks into night one under the music they were
- * made to and nothing starts after it.
+ * Step the playlist aside for something that scores the moment itself, and
+ * bring it back after. A fight plays its own track; two soundtracks at once is
+ * a mess. The playlist fades out and waits where it is.
  */
-export function finishTrackThenStop(): void {
-  if (current && !current.el.paused) finishing = true;
-  else stopMusic();
+export function holdMusic(reason: string): void {
+  if (!browser()) return;
+  if (held !== null) {
+    held = reason;
+    emit();
+    return;
+  }
+  held = reason;
+  heldWhilePlaying = !!current && !current.el.paused && !paused;
+  if (heldWhilePlaying) release(current, 700);
+  emit();
+}
+
+/** The moment is over: the playlist comes back from where it was left, if it was playing. */
+export function releaseMusic(): void {
+  if (held === null) return;
+  held = null;
+  const owed = heldWhilePlaying;
+  heldWhilePlaying = false;
+  if (owed && active && enabled && !paused) apply();
+  emit();
+}
+
+/** The player asked for music by name; whatever stepped the playlist aside loses. */
+function overrideHold(): void {
+  if (held === null) return;
+  held = null;
+  heldWhilePlaying = false;
 }
 
 // ── the controls ─────────────────────────────────────────────────────────
@@ -619,6 +651,7 @@ function turnOn(): void {
 
 /** Play: resume a pause, restart the track playing, or start the last one again. */
 export function play(): void {
+  overrideHold();
   listen();
   turnOn();
   active = true;
@@ -656,6 +689,7 @@ export function stop(): void {
 
 /** Next track, by the shuffle and repeat rules — but the button always goes somewhere. */
 export function next(): void {
+  overrideHold();
   const track = pickNext() ?? playlist()[0];
   if (!track) return;
   turnOn();
@@ -665,6 +699,7 @@ export function next(): void {
 
 /** The track before this one, or the one above it in the list without a history. */
 export function previous(): void {
+  overrideHold();
   const tracks = playlist();
   if (tracks.length === 0) return;
   const earlier = history.slice(0, -1);
@@ -681,6 +716,7 @@ export function previous(): void {
 
 /** Play this track now (a double-click in the playlist). */
 export function playTrack(track: string): void {
+  overrideHold();
   if (!playlist().includes(track)) return;
   queue = queue.filter((t) => t !== track);
   turnOn();

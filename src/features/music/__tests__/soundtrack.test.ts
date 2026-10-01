@@ -3,7 +3,8 @@ import { seededRng } from "@/engine";
 import { playlist, shuffleRound, songOf, TRACK_PREFIX } from "../soundtrack";
 import {
   currentTrack,
-  finishTrackThenStop,
+  holdMusic,
+  releaseMusic,
   isMusicActive,
   isMusicEnabled,
   setMusicEnabled,
@@ -75,7 +76,9 @@ describe("the director, outside a browser", () => {
     expect(() => startMusic()).not.toThrow();
     expect(isMusicActive()).toBe(true);
     expect(currentTrack()).toBeNull();
-    expect(() => finishTrackThenStop()).not.toThrow();
+    expect(() => holdMusic("Neon Storm Front")).not.toThrow();
+    expect(() => releaseMusic()).not.toThrow();
+    stopMusic();
     expect(isMusicActive()).toBe(false);
     startMusic();
     stopMusic();

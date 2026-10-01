@@ -7,6 +7,9 @@
  * and up both of these disappear and the original desktop layout stands.
  */
 import type { ReactNode } from "react";
+import { DESKTOP_PX } from "@/features/music/PlayerStrip";
+import { NCAmp } from "@/features/music/ncamp/NCAmp";
+import { useMinWidth } from "@/hooks/use-min-width";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export type StatChip = { label: string; value: string };
@@ -21,31 +24,41 @@ export function MobileStatusBar({
   chips: StatChip[];
   children: ReactNode;
 }) {
+  // The desktop has the player in the campaign header; this bar is the phone's.
+  const desktop = useMinWidth(DESKTOP_PX);
   return (
     <div
       className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur lg:hidden"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <Sheet>
-        <SheetTrigger asChild>
-          <button
-            type="button"
-            className="flex min-h-11 w-full items-center gap-4 overflow-x-auto px-4 py-2 text-left"
-            aria-label={`${title} — open full status`}
-          >
-            {chips.map((chip) => (
-              <span key={chip.label} className="flex shrink-0 items-baseline gap-1">
-                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  {chip.label}
+        <div className="flex items-center">
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className="flex min-h-11 min-w-0 flex-1 items-center gap-4 overflow-x-auto px-4 py-2 text-left"
+              aria-label={`${title} — open full status`}
+            >
+              {chips.map((chip) => (
+                <span key={chip.label} className="flex shrink-0 items-baseline gap-1">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    {chip.label}
+                  </span>
+                  <span className="num text-sm font-bold">{chip.value}</span>
                 </span>
-                <span className="num text-sm font-bold">{chip.value}</span>
+              ))}
+              <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+                Status ▾
               </span>
-            ))}
-            <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
-              Status ▾
-            </span>
-          </button>
-        </SheetTrigger>
+            </button>
+          </SheetTrigger>
+          {/* Beside the trigger, not inside it: a button cannot hold buttons. */}
+          {!desktop && (
+            <div className="shrink-0 pr-3" data-player-strip>
+              <NCAmp />
+            </div>
+          )}
+        </div>
         <SheetContent
           side="bottom"
           className="max-h-[85dvh] overflow-y-auto"

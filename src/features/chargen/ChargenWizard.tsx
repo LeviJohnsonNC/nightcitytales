@@ -32,7 +32,7 @@ import { methodChangeLosesWork, stepsFor } from "./steps";
 import { useDraftSync } from "./useDraftSync";
 import { useDevelopingPortrait } from "./useDevelopingPortrait";
 import { NCAmp } from "@/features/music/ncamp/NCAmp";
-import { finishTrackThenStop, startMusic, stopMusic } from "@/features/music/musicDirector";
+import { startMusic, stopMusic } from "@/features/music/musicDirector";
 import { stepStatuses, validateStep } from "./validation";
 
 type PendingChange =
@@ -115,13 +115,13 @@ export function ChargenWizard({ userId }: { userId: string }) {
   }, [state.step, carried]);
 
   // The creator is scored by a shuffled playlist, whatever the step. Leaving
-  // it for the game lets the track that is playing carry the character into
-  // night one and end there; leaving it any other way fades it out.
+  // it for the game leaves the music running — the game takes it up without a
+  // break, so the character walks into night one under the same track — and
+  // leaving it any other way fades it out.
   useEffect(() => {
     startMusic();
     return () => {
-      if (window.location.pathname.startsWith("/play/")) finishTrackThenStop();
-      else stopMusic();
+      if (!window.location.pathname.startsWith("/play/")) stopMusic();
     };
   }, []);
 

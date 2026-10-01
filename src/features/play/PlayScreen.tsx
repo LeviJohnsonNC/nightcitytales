@@ -21,6 +21,7 @@ import { DeathSaveCard } from "./DeathSaveCard";
 
 import { JobCard } from "./JobCard";
 import { MapButton } from "@/features/atlas/MapButton";
+import { CampaignHeader } from "./CampaignHeader";
 import { SheetDrawer } from "./SheetDrawer";
 import { BottomDock, MobileStatusBar } from "./mobileShell";
 import { StatusStrip } from "@/features/status/StatusRail";
@@ -959,35 +960,36 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
 
       <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex flex-col gap-3 lg:h-[calc(100dvh-3rem)]">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 lg:-mx-4 lg:flex-none lg:border-b lg:border-border lg:bg-background lg:px-4 lg:py-3">
-            <div className="min-w-0">
-              <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
-                {bundle.campaign.name}
-              </h1>
-              {bundle.beat && (
+          <CampaignHeader
+            title={bundle.campaign.name}
+            subtitle={
+              bundle.beat && (
                 <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
                   {bundle.mission?.title} · {bundle.beat.title}
                 </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <MapButton
-                locationKey={bundle.campaign.location_key ?? DEFAULT_START}
-                knownPlaces={
-                  Array.isArray(bundle.campaign.known_places)
-                    ? (bundle.campaign.known_places as unknown[]).filter(
-                        (v): v is string => typeof v === "string",
-                      )
-                    : []
-                }
-              />
-              <SheetDrawer
-                character={bundle.character}
-                inventory={bundle.inventory}
-                cyberware={bundle.cyberware}
-              />
-            </div>
-          </div>
+              )
+            }
+            className="lg:flex-none lg:bg-background"
+            actions={
+              <>
+                <MapButton
+                  locationKey={bundle.campaign.location_key ?? DEFAULT_START}
+                  knownPlaces={
+                    Array.isArray(bundle.campaign.known_places)
+                      ? (bundle.campaign.known_places as unknown[]).filter(
+                          (v): v is string => typeof v === "string",
+                        )
+                      : []
+                  }
+                />
+                <SheetDrawer
+                  character={bundle.character}
+                  inventory={bundle.inventory}
+                  cyberware={bundle.cyberware}
+                />
+              </>
+            }
+          />
           {/*
             Everything that grows, in one scroller.
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { PlaybackFrame } from "./combatPlayback";
+import { holdMusic, releaseMusic } from "@/features/music/musicDirector";
 import { createCombatAudio } from "./combatSound";
 import { scheduleCombatCues, feedbackOffset } from "./combatFeedback";
 import combatMusic from "@/assets/neon-storm-front.mp3.asset.json";
@@ -8,6 +9,8 @@ import combatMusic from "@/assets/neon-storm-front.mp3.asset.json";
  * The fight's backing track rides under the effects, not over them: a shot or
  * a body hit must always be the loudest thing the player hears.
  */
+/** What the player says is holding the playlist. */
+const COMBAT_TRACK_NAME = "Neon Storm Front";
 const MUSIC_LEVEL = 0.3;
 
 export function useCombatFeedback(frame?: PlaybackFrame | null) {
@@ -73,6 +76,13 @@ export function useCombatFeedback(frame?: PlaybackFrame | null) {
     if (muted) track.pause();
     else void track.play().catch(() => {});
   }, [muted, volume]);
+  // The fight is scored by its own track, so the playlist steps aside for as
+  // long as that is audible and comes back when it is not (muted, or over).
+  useEffect(() => {
+    if (muted) return;
+    holdMusic(COMBAT_TRACK_NAME);
+    return () => releaseMusic();
+  }, [muted]);
   useEffect(() => {
     setOffset({ x: 0, y: 0 });
     if (!frame || frame.animate === false) {
