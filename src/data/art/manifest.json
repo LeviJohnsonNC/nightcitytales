@@ -608,6 +608,156 @@
       "src": "/images/armor/leathers-head.webp",
       "alt": "Leathers head armor art",
       "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.anti_dazzle": {
+      "src": "/images/cyberware/anti_dazzle.webp",
+      "alt": "Anti-Dazzle art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.biomonitor": {
+      "src": "/images/cyberware/biomonitor.webp",
+      "alt": "Biomonitor art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.braindance_recorder": {
+      "src": "/images/cyberware/braindance_recorder.webp",
+      "alt": "Braindance Recorder art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.chemskin": {
+      "src": "/images/cyberware/chemskin.webp",
+      "alt": "Chemskin art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.chipware_socket": {
+      "src": "/images/cyberware/chipware_socket.webp",
+      "alt": "Chipware Socket art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.chyron": {
+      "src": "/images/cyberware/chyron.webp",
+      "alt": "Chyron art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.color_shift": {
+      "src": "/images/cyberware/color_shift.webp",
+      "alt": "Color Shift art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.cybereye": {
+      "src": "/images/cyberware/cybereye.webp",
+      "alt": "Cybereye art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.cybereye_dartgun": {
+      "src": "/images/cyberware/cybereye_dartgun.webp",
+      "alt": "Dartgun art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.emp_threading": {
+      "src": "/images/cyberware/emp_threading.webp",
+      "alt": "EMP Threading art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.image_enhance": {
+      "src": "/images/cyberware/image_enhance.webp",
+      "alt": "Image Enhance art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.interface_plugs": {
+      "src": "/images/cyberware/interface_plugs.webp",
+      "alt": "Interface Plugs art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.kerenzikov": {
+      "src": "/images/cyberware/kerenzikov.webp",
+      "alt": "Kerenzikov art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.light_tattoo": {
+      "src": "/images/cyberware/light_tattoo.webp",
+      "alt": "Light Tattoo art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.low_light_infrared_uv": {
+      "src": "/images/cyberware/low_light_infrared_uv.webp",
+      "alt": "Low Light / Infrared / UV art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.microoptics": {
+      "src": "/images/cyberware/microoptics.webp",
+      "alt": "MicroOptics art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.microvideo": {
+      "src": "/images/cyberware/microvideo.webp",
+      "alt": "MicroVideo art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.neural_link": {
+      "src": "/images/cyberware/neural_link.webp",
+      "alt": "Neural Link art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.olfactory_boost": {
+      "src": "/images/cyberware/olfactory_boost.webp",
+      "alt": "Olfactory Boost art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.pain_editor": {
+      "src": "/images/cyberware/pain_editor.webp",
+      "alt": "Pain Editor art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.radiation_detector": {
+      "src": "/images/cyberware/radiation_detector.webp",
+      "alt": "Radiation Detector art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.sandevistan": {
+      "src": "/images/cyberware/sandevistan.webp",
+      "alt": "Sandevistan art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.shift_tacts": {
+      "src": "/images/cyberware/shift_tacts.webp",
+      "alt": "Shift Tacts art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.skill_chip": {
+      "src": "/images/cyberware/skill_chip.webp",
+      "alt": "Skill Chip art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.skinwatch": {
+      "src": "/images/cyberware/skinwatch.webp",
+      "alt": "Skinwatch art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.tactile_boost": {
+      "src": "/images/cyberware/tactile_boost.webp",
+      "alt": "Tactile Boost art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.targeting_scope": {
+      "src": "/images/cyberware/targeting_scope.webp",
+      "alt": "Targeting Scope art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.techhair": {
+      "src": "/images/cyberware/techhair.webp",
+      "alt": "Techhair art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.teleoptics": {
+      "src": "/images/cyberware/teleoptics.webp",
+      "alt": "TeleOptics art",
+      "focalPoint": [0.5, 0.5]
+    },
+    "cyberware.virtuality": {
+      "src": "/images/cyberware/virtuality.webp",
+      "alt": "Virtuality art",
+      "focalPoint": [0.5, 0.5]
     }
   },
   "portraits": []
