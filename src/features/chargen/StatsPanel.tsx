@@ -87,12 +87,10 @@ function useRecentChange(value: number | undefined): number | null {
 function DerivedTile({
   dkey,
   value,
-  math,
   stats,
 }: {
   dkey: DerivedKey;
   value: number | undefined;
-  math: string;
   stats: Partial<StatBlock>;
 }) {
   const [open, setOpen] = useState(false);
@@ -114,7 +112,6 @@ function DerivedTile({
         <p className="num mt-1 font-mono text-3xl font-bold tabular-nums text-foreground">
           {value ?? "—"}
         </p>
-        <p className="mt-1 font-mono text-[10px] text-muted-foreground">{math}</p>
         {change !== null && (
           <span
             aria-hidden
@@ -163,17 +160,17 @@ function DerivedTile({
 function DerivedPreview({ stats }: { stats: Partial<StatBlock> }) {
   const complete = STAT_ORDER.every((s) => typeof stats[s] === "number");
   const derived = complete ? deriveStats(stats as StatBlock) : null;
-  const rows: { key: DerivedKey; value: number | undefined; math: string }[] = [
-    { key: "hp", value: derived?.hpMax, math: "10 + 5 × ⌈(BODY + WILL) / 2⌉" },
-    { key: "seriously", value: derived?.seriouslyWoundedThreshold, math: "⌈HP / 2⌉" },
-    { key: "death", value: derived?.deathSave, math: "BODY" },
-    { key: "humanity", value: derived?.humanityMax, math: "EMP × 10" },
+  const rows: { key: DerivedKey; value: number | undefined }[] = [
+    { key: "hp", value: derived?.hpMax },
+    { key: "seriously", value: derived?.seriouslyWoundedThreshold },
+    { key: "death", value: derived?.deathSave },
+    { key: "humanity", value: derived?.humanityMax },
   ];
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {DERIVED_KEYS.map((key) => {
         const row = rows.find((r) => r.key === key)!;
-        return <DerivedTile key={key} dkey={key} value={row.value} math={row.math} stats={stats} />;
+        return <DerivedTile key={key} dkey={key} value={row.value} stats={stats} />;
       })}
     </div>
   );
@@ -560,7 +557,7 @@ export function StatsPanel({ state }: { state: ChargenState }) {
 
       <div className="space-y-3">
         <h2 className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-          Derived STATs — live preview
+          Derived STATs
         </h2>
         <DerivedPreview stats={state.stats} />
       </div>
