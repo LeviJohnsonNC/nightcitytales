@@ -4,7 +4,15 @@
  * canvas at the player's native pixel size; the windows are scaled up whole
  * with CSS `zoom`, so everything stays on the same pixel grid.
  */
-import { useEffect, useRef, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 import { analyserSize, readAnalyser } from "../musicDirector";
 
@@ -135,19 +143,44 @@ export function Digits({ text, className }: { text: string; className?: string }
 
 /** The scrolling title, `***` between laps, stepped a pixel at a time like the original. */
 export function Marquee({ text, className }: { text: string; className?: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const plain = useRef<HTMLSpanElement>(null);
+  // A title that fits sits still and stays readable; only one too long for its
+  // window scrolls. Measured against an unseen copy of the text on its own.
+  const [scrolls, setScrolls] = useState(false);
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (!box.current || !plain.current) return;
+      setScrolls(plain.current.offsetWidth > box.current.clientWidth);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined" || !box.current) return;
+    const watch = new ResizeObserver(measure);
+    watch.observe(box.current);
+    return () => watch.disconnect();
+  }, [text]);
   const lap = `${text}  ***  `;
   // Roughly 5 native pixels a character; about 20 of them a second.
   const seconds = Math.max(4, (lap.length * 5) / 20);
   return (
-    <div className={cn("ncamp-marquee", className)} aria-live="off">
-      <span
-        className="ncamp-marquee-track"
-        style={{ animationDuration: `${seconds}s` }}
-        aria-label={text}
-      >
-        <span aria-hidden>{lap}</span>
-        <span aria-hidden>{lap}</span>
+    <div ref={box} className={cn("ncamp-marquee", className)} aria-live="off">
+      <span ref={plain} className="ncamp-marquee-measure" aria-hidden>
+        {text}
       </span>
+      {scrolls ? (
+        <span
+          className="ncamp-marquee-track"
+          style={{ animationDuration: `${seconds}s` }}
+          aria-label={text}
+        >
+          <span aria-hidden>{lap}</span>
+          <span aria-hidden>{lap}</span>
+        </span>
+      ) : (
+        <span className="ncamp-marquee-still" aria-label={text}>
+          {text}
+        </span>
+      )}
     </div>
   );
 }
