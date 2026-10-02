@@ -377,6 +377,134 @@ page and is the thing that would actually settle a hard choice.
 
 ---
 
+## Next: the climb — progression you can see
+
+D&D asks "how powerful have I become?" RED asks "how far have I climbed?" A
+veteran Solo is still a person a shotgun can end, and the Skill numbers move
+surprisingly little across a campaign. What changes is everything around them:
+the chrome, the gun, the home, who returns your calls, who has heard of you. The
+game holds most of that and shows almost none of it as a climb. The player
+should always know three things: what they could work on, where they stand, and
+that something just went up.
+
+### Where it stands, graded
+
+Graded on what a player experiences, not on what the engine models somewhere.
+
+| Track                         | Grade | Why                                                                                                                                                                                                                                                                                                                |
+| ----------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Skills                        | 5     | The spend is rule-checked and atomic. But IP arrives only when a job closes, Life earns none, and work is on the wire one night in six. The price was half the printed one, and a raise leaves no trace in the campaign: `spend_ip_on_skill` writes the sheet and no event, so there is no receipt and no history. |
+| Role Ability                  | 2     | Rank 4 forever. `character_role_ability.rank` exists and `roleOpening.ts` already computes what each Rank gives; only the purchase is missing.                                                                                                                                                                     |
+| Gear and chrome               | 6     | Shop, ripperdoc, bench and Excellent-quality items are all real. Nothing shows the kit you have now against the kit you started with.                                                                                                                                                                              |
+| Wealth, access, connections   | 4     | Home and Lifestyle are fixed at creation: the home is on `character_finance` and nothing in play writes it. Pay is a random band (`generator.ts`) unrelated to track record or danger.                                                                                                                             |
+| Reputation and story position | 2     | The p.193 ladder is shown once, at creation, as 0. Faction standing moves, and nothing reads it but prose — the "dial nobody meets" `PRODUCT.md` names. The chronicle is the one thing that remembers you.                                                                                                         |
+
+### Rulings, settled with the product owner
+
+- **Skill Levels cost 20 × the new Level, as printed.** `ip-costs.json` said 10.
+  A character who bought Levels at the old price keeps them; banked IP is
+  simply worth half what it was.
+- **A "session" is everything since the last award.** The Aftermath judgement
+  covers the whole stretch since the previous `ip_awarded`, Life included, so
+  Explorer, Socializer and Roleplayer play in Life counts. A Life stretch that
+  crosses an in-world week with no award is judged at the week's turn on the
+  playstyle columns, so a long life between jobs is not worth zero.
+- **This reverses the earlier "no ambition track" ruling** in
+  `docs/progression-and-first-play-plan.md`, deliberately and narrowly: the
+  player sees what each currency can buy next and its distance, and pins up to
+  three. Nothing in it is generated, offered or dangled. It is a price list
+  the player aims, not a quest board.
+- **Better work is more dangerous work.** A higher tier of offer chooses the pay
+  band and the opposition together. Pay that climbs while danger stays flat is
+  "Eurobucks that only ever go up".
+
+### What keeps it RED
+
+- IP never buys a STAT or a Hit Point. The vertical track stays flat because
+  that is what keeps a shotgun an event.
+- No track turns into a die bonus the narrator can grant. Reputation's dice are
+  the printed ones (recognition, Facedown), rolled by the engine.
+- Losses are shown alongside gains. Humanity spent, enemies made and debts carried
+  are part of how far you have come. A climb that only goes up is a score.
+- Money is shown as what it bought and what it costs per month, never as a
+  balance that grew.
+
+### The plan, in order
+
+**1. Raises leave a trace — first.**
+
+- `ip-costs.json` to 20, with tests.
+- `spend_ip_on_skill` takes the campaign and appends a `skill_raised` event in
+  the same transaction, with the payload built and read in `engine/ledger.ts`.
+  Adding a defaulted parameter makes a second overload, so drop and recreate the
+  function; run `supabase/replay/` and regenerate the types.
+- Receipts gain `Handgun 6 → 7`, the exact form `PRODUCT.md` gives.
+- Any Skill can be bought from 0, not only Local Expert; the spend path already
+  accepts Level 0 → 1.
+- `ip_awarded` moves its payload into `ledger.ts` too.
+
+**2. IP that arrives.** The judgement window becomes "since the last award"
+rather than the last sixty events, bounded through `packetBudget.ts`, plus the
+Life week-turn award. The three writes in `settleIp` (event, campaign, finance)
+fold into one transaction while they are being touched; today a failure between
+them can lose an award.
+
+**3. Role Rank.** `spend_ip_on_role_rank` (60 × the new Rank, added to
+`ip-costs.json`) beside the Skill function, with a `role_rank_raised` event and
+a receipt. The spend screen previews the next Rank from `roleOpening.ts`, so
+"Rank 5" reads as what it gives — a bigger Combat Awareness pool, a better
+Backup tier — rather than as a number. Multiclassing waits.
+
+**4. Within reach.** One sheet from the Life dock, everything engine-priced:
+
+- IP: every Skill's next Level, and the next Rank.
+- Eurobucks: chrome you could install (with its Humanity cost), and housing
+  once step 7 lands.
+- Standing: the next band for each faction you have touched, and the next
+  Reputation level.
+
+Each row shows its distance. The player pins up to three; a pin is a ledger
+event (`goal_pinned`, latest wins), so it needs no column. The Growth chip shows
+the top pin and falls back to the cheapest raise. Reaching a pin gets its own
+receipt. People stay off the list, because a person's feelings are meant to be
+felt, not tracked.
+
+**5. Then and now.** A section of the Record sheet, derived from data that
+already exists rather than a new snapshot. Day one is `character_gear` (play
+never writes it), cyberware with `installed_day` 1, the cast as generated, and
+neutral standings. Since then: `skill_raised` and `role_rank_raised` events and
+the live rows. Grouped by track, losses beside gains. Aftermath does not get a
+copy: the settlement report already is "since the last job", and two would
+drift.
+
+**6. Standing and Reputation that do something.**
+
+- Reputation is the highest deed earned, worked out from `reputation_earned`
+  events that settlement writes from a closed list of deeds
+  (`reputation-deeds.json`, house rule): witnesses, a published story, the
+  target's weight. A clean exit earns no Reputation — the trade between heat
+  and fame is the point.
+- The engine rolls the printed recognition die when the character meets someone
+  new and hands the narrator the fact. Facedown arrives as an engine-resolved
+  opposed check.
+- Job tiers (`job-tiers.json`, house rule): jobs finished, Reputation, the
+  fixer's disposition and the patron's faction standing pick a tier, and the
+  tier picks the reward band, force and force size together. The engine chooses
+  the job _seed_ that fits the tier, so a stored job id still names the same job.
+  The player is told when they are offered a new tier of work.
+
+**7. Moving house.** Home and Lifestyle move to the campaign, falling back to
+`character_finance` for campaigns that predate it. A move is a Life action
+priced by `downtime.ts`: a deposit now and a different rent every month. It
+is a trade-off, not a reward, which is why it belongs.
+
+Not scheduled, on purpose: **favours** as held objects (too close to a second
+dial for disposition until play shows the need), **multiclassing**, and
+**buying a vehicle** (the specs are ours, not the book's, and nothing can
+damage one yet).
+
+---
+
 ## Next: make Life feel like the actual game
 
 Life is where the player spends most of their time and is currently the weakest

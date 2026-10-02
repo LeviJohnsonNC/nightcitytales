@@ -261,9 +261,13 @@ Settled with the product owner before writing this:
 
 - Goals mean **commitments the player made**, not generated opportunities and
   not a long-term ambition track.
+  _Since narrowed:_ the player can now see what each currency buys next and pin
+  up to three — still nothing generated or offered. See "Next: the climb" in
+  `ROADMAP.md`.
 - Money leads with **runway**, not balance.
 - IP shows the **banked total and the gap to the cheapest available raise**. No
   live playstyle meter during a job — that would invite playing to the meter.
+  _Since:_ the gap to the top pinned goal, falling back to the cheapest raise.
 - The opening's four choices **really branch**.
 - Night at the Opera becomes **something `take_work` can offer**.
 - The rail is **full in Life, collapsed in Play**.
