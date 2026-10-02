@@ -798,8 +798,8 @@ Phase 1 foundation:
 - Neutral civilians stay down without attacking or being counted as allies.
   Fleeing through scene exits is later work.
 - Negative HP is preserved by the save transaction for mortal players and NPCs.
-  Migration `20261002050000_save_mortally_wounded_combatants.sql` is **pending
-  deployment**, verified on disposable PostgreSQL 16 with ownership, stale-write
+  Migration `20261002050000_save_mortally_wounded_combatants.sql` was applied
+  October 2, 2026, and verified on disposable PostgreSQL 16 with ownership, stale-write
   and rollback regressions in CI.
 
 The Phase 2 scene/origin/result boundaries are recorded in
@@ -822,7 +822,25 @@ Phase 2a authored proof:
 - Entry through the RPC serializes on the campaign and rejects another active
   encounter. Snapshot saves require a supported protocol and an expected version.
   A distinct entry RPC prevents an unmigrated database from ignoring the layout.
-  Migration `20261002060000_encounter_layout_snapshot.sql` is pending deployment.
+  Migration `20261002060000_encounter_layout_snapshot.sql` was applied October 2, 2026.
+
+Phase 2b receipt/recovery slice:
+
+- New snapshot fights require the separate `start_scene_encounter` capability.
+  Entry captures phase/location/mission/beat and the authored actor manifest,
+  checks the expected origin, and commits initiative with its ledger boundary.
+  Replaying the identical command returns the same fight, even after completion.
+- State saves commit queued NPC/attack rolls and terminal scene results together.
+  Retrying the identical latest save is a no-op; conflicting or older writes are
+  rejected. Completed scenes cannot be reopened by the save RPC.
+- A reload on an NPC's turn offers **Continue combat**, resolving the current
+  actor rather than skipping them. Re-seeding the North Heywood fixture while a
+  fight is active resumes it instead of ending it.
+- This is not whole-command atomicity: Luck, reload inventory, Backup, death
+  narration/Job failure, and some player action logs still have separate writes.
+  General persistent noncombat scene instances and mission-runtime revisions
+  remain outstanding. Origin metadata is not that scene lifecycle.
+- Migration `20261002070000_scene_combat_receipts.sql` is pending deployment.
 
 This is a harness proof, **not the Phase 2 exit gate**. Still required: persistent
 noncombat scene instances with origin/revision tracking, atomic command receipts

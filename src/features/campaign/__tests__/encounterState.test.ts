@@ -298,3 +298,52 @@ it("loads a saved custom layout without losing cover damage or moving actors", a
     expect.objectContaining({ layout_version: 1, version: 8, cover: { [piece.id]: 5 } }),
   );
 });
+
+it("commits the terminal scene result and supplied rolls with the state save", async () => {
+  const { northHeywoodScene } = await import("@/engine");
+  const layout = northHeywoodScene().layout;
+  const live = {
+    id: "scene",
+    arena: layout.arena.key,
+    layout,
+    origin: { version: 1, phase: "life" },
+    version: 4,
+    cover: {},
+    state: {
+      round: 2,
+      activeIndex: 0,
+      order: ["p"],
+      status: "friendlies_won",
+      combatants: {
+        p: {
+          id: "p",
+          name: "Red",
+          isPlayer: true,
+          side: "friendly",
+          hp: -2,
+          woundState: "mortal",
+          deathSavePenalty: 1,
+          spHead: 7,
+          spBody: 6,
+          defeated: false,
+          initiative: 10,
+        },
+      },
+    },
+    data: { p: { key: "player", position: { x: 9, y: 19 } } },
+  };
+  const event = { campaign_id: "c", type: "attack", summary: "A resolved shot", data: {} };
+  const saved = await saveLiveEncounter(live as never, null, [event]);
+  expect(saved.version).toBe(5);
+  expect(saveEncounter).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      lifecycle_version: 1,
+      version: 4,
+      events: [event],
+      completion: {
+        summary: expect.stringContaining("Red remains here at -2 HP, mortally wounded"),
+        data: expect.objectContaining({ encounterId: "scene", status: "friendlies_won" }),
+      },
+    }),
+  );
+});

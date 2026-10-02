@@ -6,14 +6,14 @@ adventure prose is not enabled.
 
 ## Trying it
 
-1. Apply the pending migrations through `20261002060000_encounter_layout_snapshot.sql`
+1. Apply the pending migrations through `20261002070000_scene_combat_receipts.sql`
    to the test environment. The new entry RPC fails explicitly if absent.
 2. Use an existing, expendable campaign with its opening completed. Open `/combat`
    and choose **Ulysses Street intersection**. The fixture has its own opposition;
    ordinary force selection is hidden for it.
 3. Read the authored scene and start the encounter. The harness moves the campaign
-   to North Heywood and preserves its current phase and mission runtime. It can
-   end a previous active test fight, wound the character and spend real ammunition.
+   to North Heywood and preserves its current phase and mission runtime. It resumes
+   an existing fight if present; a new fight can wound the character and spend real ammunition.
 4. The player starts at the crosswalk. The Thorton is across the road, the rifleman
    beside the fender, the lookout farther along the curb, and two neutral workers
    near the broth cart. “Heavy rifle” is concretely an Assault Rifle for this proof.
@@ -21,7 +21,8 @@ adventure prose is not enabled.
    this is representative test content, not a new published civilian stat block.
 5. Move, shoot, reload and end turns through the existing controls. Initiative
    resolves normally: starting the fixture grants no free opening shot. Reload the
-   page during the fight to check geometry, damage and actor positions.
+   page during the fight to check geometry, damage and actor positions. If initiative
+   is on an NPC after an interruption, press **Continue combat** to resolve that turn.
 6. When the encounter ends, the originating phase resumes. Life displays the
    factual ending and includes it in subsequent narration context. A dead character
    reaches the terminal screen. The completed encounter retains the geometry,
@@ -64,3 +65,23 @@ Life combat on the strength of this harness alone.
 The unit/render suite, typecheck, code lint, production build and clean local
 PostgreSQL replay pass. Authenticated browser play and a live narrator evaluation
 remain unverified; no narrator API key was available in this environment.
+
+## Entry and save receipts
+
+New snapshots require the receipt migration. Entry freezes the origin and actor
+manifest and writes `encounter_started` in the same transaction as initiative.
+An identical command ID/payload returns its original encounter; reusing the ID
+with different content is rejected. The database compares phase, location and
+mission to the expected origin before entry. It does not yet check mission-runtime
+or noncombat-scene revisions.
+
+NPC dice traces and player attacks can be queued into the encounter save. A
+terminal save requires the factual scene result and commits its `encounter_ended`
+event, stable completion ID and final version together. `closeOutFight` only
+returns that description for new fights; it does not append a second ending.
+The latest exact save retry returns without another state change or event. An
+older retry or a different payload at the same revision is rejected.
+
+Legacy fights keep their prior protocol. There is no automatic migration of an
+in-progress fight, no automatic prose-to-combat entry, and no noncombat scene
+revisit model in this slice. Live browser and narrator checks remain outstanding.

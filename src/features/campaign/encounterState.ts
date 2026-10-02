@@ -5,6 +5,9 @@
  */
 import {
   arenaFor,
+  battlefieldResult,
+  battlefieldResultText,
+  encounterEndEventData,
   readBattlefieldSnapshot,
   readBattlefieldPositions,
   type BattlefieldSnapshot,
@@ -15,6 +18,9 @@ import {
 } from "@/engine";
 import {
   getActiveEncounter,
+  getCampaign,
+  type Json,
+  type CampaignEventInsert,
   getEncounter,
   saveEncounter,
   startEncounter as startEncounterRpc,
@@ -36,6 +42,7 @@ export type LiveEncounter = {
   /** Which of the engine's arenas this fight is happening on. */
   arena: string | null;
   layout?: BattlefieldSnapshot;
+  origin?: Json;
   /**
    * Damage taken by each piece of that arena's cover, keyed by its authored id.
    *
@@ -64,6 +71,8 @@ function liveFrom(full: FullEncounter): LiveEncounter {
   // left standing between two squares the board cannot draw them on.
   const layout =
     full.encounter.layout == null ? undefined : readBattlefieldSnapshot(full.encounter.layout);
+  if (full.encounter.origin && (full.encounter.origin as { version?: unknown }).version !== 1)
+    throw new Error("Unsupported scene origin. Refresh the game.");
   const ground = layout?.arena ?? arenaFor(arena);
   // Read against the authored arena: an id no arena knows is dropped rather
   // than trusted into a live fight. The database validated shape and sign;
@@ -95,6 +104,7 @@ function liveFrom(full: FullEncounter): LiveEncounter {
     data,
     arena,
     ...(layout ? { layout } : {}),
+    ...(full.encounter.origin ? { origin: full.encounter.origin } : {}),
     cover,
     version: full.encounter.version ?? 0,
   };
@@ -118,8 +128,35 @@ export async function createLiveEncounter(input: {
   data: Record<string, CombatantData>;
   arena: string | null;
   layout?: BattlefieldSnapshot;
+  sceneSource?: Json;
 }): Promise<LiveEncounter> {
-  const id = await startEncounterRpc(startEncounterPayload(input));
+  const payload = startEncounterPayload(input);
+  if (input.layout) {
+    const full = await getCampaign(input.campaignId);
+    if (!full) throw new Error("Campaign not found.");
+    payload.lifecycle_version = 1;
+    payload.command_id = crypto.randomUUID();
+    payload.expected_origin = {
+      phase: full.campaign.phase,
+      location: full.campaign.location_key,
+      missionId: full.campaign.current_mission_id,
+    };
+    if (input.sceneSource) payload.scene_source = input.sceneSource;
+  }
+  const id = await startEncounterRpc(payload);
+  if (input.layout) {
+    // Read the committed state, including on an entry receipt replay.
+    const persisted = await getEncounter(id);
+    if (!persisted) throw new Error("Created encounter could not be loaded. Reload the campaign.");
+    const restored = liveFrom(persisted);
+    // Role effects are derived, not stored. Keep the entry caller's calculation
+    // on the matching player for the opening NPC turns.
+    for (const actor of Object.values(restored.state.combatants)) {
+      const effects = input.state.combatants[actor.id]?.roleEffects;
+      if (effects) actor.roleEffects = effects;
+    }
+    return restored;
+  }
   // A row nobody has saved yet is at the column's default.
   return {
     id,
@@ -159,6 +196,7 @@ const CHANGED = "encounter changed";
 export async function saveLiveEncounter(
   live: LiveEncounter,
   ammo: { inventoryId: string; loaded: number } | null = null,
+  events: CampaignEventInsert[] = [],
 ): Promise<LiveEncounter> {
   const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
   if (!player) throw new Error("The encounter has no player combatant.");
@@ -213,6 +251,27 @@ export async function saveLiveEncounter(
     version: live.version,
     ...(ammo ? { ammo: { inventory_id: ammo.inventoryId, loaded: ammo.loaded } } : {}),
   };
+  if (live.origin) {
+    payload.lifecycle_version = 1;
+    payload.events = events as unknown as Json[];
+    if (live.state.status !== "active") {
+      if (!live.layout) throw new Error("Scene encounter is missing its saved layout.");
+      const result = battlefieldResult({
+        state: live.state,
+        arena: live.layout.arena,
+        cover: live.cover,
+        data: live.data,
+      });
+      payload.completion = {
+        summary: battlefieldResultText(result),
+        data: encounterEndEventData({
+          encounterId: live.id,
+          status: live.state.status,
+          sceneResult: result,
+        }) as unknown as Json,
+      };
+    }
+  }
   try {
     await saveEncounter(payload);
   } catch (error) {

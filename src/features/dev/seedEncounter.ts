@@ -134,6 +134,7 @@ export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
   // a live encounter would leave two actives and `getActiveEncounter` would
   // pick whichever the database felt like.
   const live = await getActiveEncounter(campaignId);
+  if (live && scene) return { campaignId, encounterId: live.id };
   if (live) await endEncounter(live.id);
 
   // Ordinary arena tests use the authored Job beat. The scene proof preserves

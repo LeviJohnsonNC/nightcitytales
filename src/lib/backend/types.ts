@@ -109,7 +109,9 @@ export type FullCampaign = {
 
 // --- Play engine (encounters) -----------------------------------------------
 
-export type Encounter = Row<"encounters">;
+// Additive migration fields are narrowed by encounterState; generated Cloud
+// types are refreshed by the deployment workflow after the migration is applied.
+export type Encounter = Row<"encounters"> & { origin?: Json | null };
 export type EncounterInsert = Insert<"encounters">;
 export type EncounterUpdate = Update<"encounters">;
 

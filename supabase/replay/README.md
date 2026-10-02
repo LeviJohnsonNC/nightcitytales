@@ -96,3 +96,6 @@ This is a focused RPC check, not a complete Supabase integration test.
 For scene snapshots, also run `psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/battlefield-layout.test.sql`.
 CI checks snapshot persistence, immutable geometry, duplicate active-entry rejection,
 and required snapshot protocol and concurrency versions in a rolled-back transaction.
+
+`scene-receipts.test.sql` checks origin validation, entry replay, exact-save replay,
+stale conflicts, atomic completion, ledger-failure rollback, and receipt ownership.

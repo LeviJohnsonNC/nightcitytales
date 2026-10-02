@@ -195,7 +195,8 @@ function CombatHarness() {
           {live.data.encounter ? (
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm text-muted-foreground">
-                A fight is already running on it. Seeding will close that one first.
+                A fight is already running. The North Heywood option resumes it; ordinary arena
+                tests close it first.
               </p>
               <Button
                 size="sm"

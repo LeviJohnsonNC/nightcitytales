@@ -47,11 +47,15 @@ with exact injuries, ammunition, casualties, withdrawals and object damage.
 
 ## Current limitations and deployment
 
-The foundation still uses the existing multi-write encounter/ledger flow.
-Cross-tab encounter version checks exist, but the whole action is not atomic.
+Lifecycle-enabled snapshots now commit entry and terminal receipts with state,
+plus queued NPC and player-attack events. Identical latest-save replay is a no-op;
+older/conflicting writes fail. Other action costs and some ledger writes still
+span transactions, so the whole player command is not yet atomic. Origin captures
+phase/location/mission/beat and authored source, not a versioned noncombat scene.
 Life/Hook now yield to an already-active encounter and resume afterward.
 Automatic entry from adventure prose and generated scene layouts remain disabled.
-The signed-HP migration is pending deployment (see `supabase/migrations/APPLIED.md`).
+The signed-HP and layout migrations were applied October 2, 2026. The receipt
+migration remains pending (see `supabase/migrations/APPLIED.md`).
 Old mortal turns without a saved death-save round cannot prove they already
 rolled; they require one save when first loaded after upgrading. New saves
 preserve the obligation marker. Neutrals currently stay down; fleeing and
