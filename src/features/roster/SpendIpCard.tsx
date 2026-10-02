@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   availableSkillRaises,
+  describeRoleRankRaise,
   describeSkillRaise,
   EARNED_AREA_RULE,
   IP_COSTS,
@@ -18,15 +19,18 @@ import {
   MAX_SKILL_LEVEL,
   skillEntryName,
   skillLineKey,
+  roleAbilityOf,
+  spendOnRoleRank,
   spendOnSkill,
   untrainedSkillRaises,
   type EarnedArea,
+  type RoleRankRaise,
   type SkillRaise,
 } from "@/engine";
 import { ReceiptBar } from "@/features/status/ReceiptBar";
 import { skillReceipts, type SkillSnapshot } from "@/features/status/receipts";
 import { useReceipts } from "@/features/status/useReceipts";
-import { spendIpOnSkill, type FullCharacter } from "@/lib/backend";
+import { spendIpOnRoleRank, spendIpOnSkill, type FullCharacter } from "@/lib/backend";
 
 function RaiseRow({
   raise,
@@ -66,6 +70,74 @@ function RaiseRow({
         </>
       )}
     </li>
+  );
+}
+
+/**
+ * The next Rank of the character's Role Ability, and what it gives.
+ *
+ * The preview is the engine's diff of the Role's opening at this Rank and the
+ * next (`roleRankPreview`), so it can only promise what play will deliver. A
+ * Rank that changes nothing visible says where the next change is, rather than
+ * selling it as more than it is.
+ */
+function RoleRankRow({
+  raise,
+  onBuy,
+  busy,
+}: {
+  raise: RoleRankRaise;
+  onBuy: () => void;
+  busy: boolean;
+}) {
+  const preview = raise.preview;
+  return (
+    <div className="space-y-2 border-b border-border pb-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0 flex-1 truncate text-sm">
+          {raise.abilityName}
+          <span className="ml-2 font-mono text-xs text-muted-foreground">
+            {raise.atMax
+              ? `Rank ${raise.currentRank} (max)`
+              : `Rank ${raise.currentRank} → ${raise.nextRank}`}
+          </span>
+        </span>
+        {!raise.atMax && !raise.unbuilt && (
+          <>
+            <span className="font-mono text-xs text-muted-foreground">{raise.cost} I.P.</span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!raise.affordable || busy}
+              onClick={onBuy}
+            >
+              Raise
+            </Button>
+          </>
+        )}
+      </div>
+      {raise.unbuilt ? (
+        <p className="text-xs text-muted-foreground">
+          Not for sale yet: {raise.abilityName} arrives with its own update, and a Rank that does
+          nothing is not worth points.
+        </p>
+      ) : preview && preview.changes.length > 0 ? (
+        <ul className="space-y-1 text-xs text-muted-foreground">
+          {preview.changes.map((change) => (
+            <li key={change.label}>
+              <span className="text-foreground">{change.label}.</span> {change.detail}
+            </li>
+          ))}
+        </ul>
+      ) : preview ? (
+        <p className="text-xs text-muted-foreground">
+          Nothing new opens at Rank {preview.nextRank}
+          {preview.nextChangeAt !== null
+            ? `; the next change is at Rank ${preview.nextChangeAt}.`
+            : "."}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -151,6 +223,12 @@ export function SpendIpCard({
   const affordable = raises.filter((r) => r.affordable);
   const untrained = untrainedSkillRaises(skills, improvementPoints);
 
+  const roleId = character.character.role ?? null;
+  const ability = roleAbilityOf(roleId);
+  const rank = character.roleAbility?.rank ?? ability?.startingRank ?? null;
+  const rankRaise =
+    roleId && rank !== null ? describeRoleRankRaise(roleId, rank, improvementPoints) : null;
+
   // The sheet as it stands, so a Level bought shows as `Handgun 6 → 7` when the
   // refreshed character arrives — the same receipt, and the same timing, as a
   // Life turn's.
@@ -165,8 +243,13 @@ export function SpendIpCard({
         level: s.level,
       };
     }
+    // The Rank rides in the same snapshot, so buying one reads
+    // `Combat Awareness 4 → 5` on the same strip.
+    if (ability && rank !== null) {
+      snapshot[`role:${ability.abilityId}`] = { name: ability.abilityName, level: rank };
+    }
     return snapshot;
-  }, [character.skills, homeDistrictKey]);
+  }, [character.skills, homeDistrictKey, ability, rank]);
   const receipts = useReceipts(sheet, skillReceipts);
 
   // A district is bought as a Level 1 line, priced by the same rule as every
@@ -205,6 +288,23 @@ export function SpendIpCard({
     },
   });
 
+  const buyRank = useMutation({
+    mutationFn: async () => {
+      if (!roleId || rank === null) throw new Error("This character has no Role Ability on file.");
+      // The engine re-validates before spending, as for a Skill.
+      const plan = spendOnRoleRank(roleId, rank, improvementPoints);
+      return spendIpOnRoleRank(character.character.id, plan.abilityId, plan.newRank, plan.spent);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["character", character.character.id] });
+      if (campaignId) {
+        void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+        void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
+      }
+    },
+  });
+  const busy = buy.isPending || buyRank.isPending;
+
   const shown = showAll ? raises : affordable;
 
   // Nothing banked, nothing to decide: the card stays out of the way until the
@@ -223,6 +323,8 @@ export function SpendIpCard({
 
       <ReceiptBar receipts={receipts} />
 
+      {rankRaise && <RoleRankRow raise={rankRaise} onBuy={() => buyRank.mutate()} busy={busy} />}
+
       <p className="text-xs text-muted-foreground">
         A Skill costs {IP_COSTS.skillCostPerLevel} I.P. times its new Level (doubled for a Skill the
         sheet flags x2), one Level at a time, up to Level {MAX_SKILL_LEVEL}.
@@ -234,12 +336,7 @@ export function SpendIpCard({
       ) : (
         <ul className="max-h-72 overflow-y-auto">
           {shown.map((raise) => (
-            <RaiseRow
-              key={raise.key}
-              raise={raise}
-              onBuy={(r) => buy.mutate(r)}
-              busy={buy.isPending}
-            />
+            <RaiseRow key={raise.key} raise={raise} onBuy={(r) => buy.mutate(r)} busy={busy} />
           ))}
         </ul>
       )}
@@ -263,7 +360,7 @@ export function SpendIpCard({
                   key={raise.key}
                   raise={raise}
                   onBuy={(r) => buy.mutate(r)}
-                  busy={buy.isPending}
+                  busy={busy}
                   verb="Learn"
                 />
               ))}
@@ -288,7 +385,7 @@ export function SpendIpCard({
                 area={area}
                 raise={raise}
                 onBuy={(r) => buy.mutate(r)}
-                busy={buy.isPending}
+                busy={busy}
               />
             ))}
           </ul>
@@ -296,6 +393,9 @@ export function SpendIpCard({
       )}
 
       {buy.error && <p className="text-sm text-destructive">{(buy.error as Error).message}</p>}
+      {buyRank.error && (
+        <p className="text-sm text-destructive">{(buyRank.error as Error).message}</p>
+      )}
     </section>
   );
 }

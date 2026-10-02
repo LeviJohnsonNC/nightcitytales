@@ -10,6 +10,8 @@
  */
 import { getSkill, IP_COSTS, SKILL_RULES, SKILLS } from "./rulesData";
 import { skillEntryName } from "./skillAllocation";
+import { roleAbilityOf } from "./roleAbility";
+import { roleOpening, roleRankPreview, type RoleRankPreview } from "./roleOpening";
 
 /** The highest Skill Level reachable in play (skills.json _rules). */
 export const MAX_SKILL_LEVEL: number = SKILL_RULES.maxLevelInPlay;
@@ -185,4 +187,105 @@ export function spendOnSkill(
     );
   }
   return { skillId, specialization, newLevel, spent: cost, remaining: availableIp - cost };
+}
+
+// ---------------------------------------------------------------------------
+// Role Ability Ranks. The same rule as a Skill at a different price: the new
+// Rank times the per-Rank cost (ip-costs.json), one Rank at a time.
+// ---------------------------------------------------------------------------
+
+/** The highest Rank a Role Ability reaches (ip-costs.json `roleRankMax`). */
+export const ROLE_RANK_MAX: number = IP_COSTS.roleRankMax;
+
+/** What it costs to take a Role Ability from `newRank - 1` to `newRank`. */
+export function roleRankRaiseCost(newRank: number): number {
+  if (!Number.isInteger(newRank)) {
+    throw new Error(`A Rank must be a whole number, got ${newRank}.`);
+  }
+  if (newRank < 1 || newRank > ROLE_RANK_MAX) {
+    throw new Error(`Rank ${newRank} is outside the printed range 1-${ROLE_RANK_MAX}.`);
+  }
+  return newRank * IP_COSTS.roleRankCostPerRank;
+}
+
+export type RoleRankRaise = {
+  roleId: string;
+  abilityId: string;
+  abilityName: string;
+  currentRank: number;
+  nextRank: number;
+  cost: number;
+  affordable: boolean;
+  atMax: boolean;
+  /**
+   * True when the Role Ability is not modelled yet. Its Rank is not for sale:
+   * points spent on something that does nothing is not progression.
+   */
+  unbuilt: boolean;
+  /** What the next Rank gives, from the Role's own opening. Null at the ceiling. */
+  preview: RoleRankPreview | null;
+};
+
+/** Describe the next Rank of a character's Role Ability against a pool of I.P. */
+export function describeRoleRankRaise(
+  roleId: string,
+  currentRank: number,
+  availableIp: number,
+): RoleRankRaise | null {
+  const ability = roleAbilityOf(roleId);
+  if (!ability) return null;
+  const rank = Math.trunc(currentRank);
+  const atMax = rank >= ROLE_RANK_MAX;
+  const nextRank = atMax ? rank : rank + 1;
+  const cost = atMax ? 0 : roleRankRaiseCost(nextRank);
+  const unbuilt = roleOpening(roleId, rank)?.unbuilt ?? false;
+  return {
+    roleId,
+    abilityId: ability.abilityId,
+    abilityName: ability.abilityName,
+    currentRank: rank,
+    nextRank,
+    cost,
+    affordable: !atMax && !unbuilt && cost <= availableIp,
+    atMax,
+    unbuilt,
+    preview: atMax ? null : roleRankPreview(roleId, rank, ROLE_RANK_MAX),
+  };
+}
+
+export type RoleRankSpend = {
+  abilityId: string;
+  newRank: number;
+  spent: number;
+  remaining: number;
+};
+
+/**
+ * Validate a Rank purchase and return what it costs. Pure — the caller persists
+ * it. Throws rather than clamping, like `spendOnSkill`.
+ */
+export function spendOnRoleRank(
+  roleId: string,
+  currentRank: number,
+  availableIp: number,
+): RoleRankSpend {
+  const raise = describeRoleRankRaise(roleId, currentRank, availableIp);
+  if (!raise) throw new Error(`The ${roleId} Role has no Role Ability on file.`);
+  if (raise.unbuilt) {
+    throw new Error(`${raise.abilityName} is not built yet, so its Rank is not for sale.`);
+  }
+  if (raise.atMax) {
+    throw new Error(`${raise.abilityName} is already at Rank ${ROLE_RANK_MAX}, the maximum.`);
+  }
+  if (raise.cost > availableIp) {
+    throw new Error(
+      `Raising ${raise.abilityName} to Rank ${raise.nextRank} costs ${raise.cost} I.P.; only ${availableIp} available.`,
+    );
+  }
+  return {
+    abilityId: raise.abilityId,
+    newRank: raise.nextRank,
+    spent: raise.cost,
+    remaining: availableIp - raise.cost,
+  };
 }

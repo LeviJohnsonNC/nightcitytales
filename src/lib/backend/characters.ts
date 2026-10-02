@@ -247,6 +247,35 @@ export async function spendIpOnSkill(
 }
 
 /**
+ * Buy one Rank of the character's Role Ability with Improvement Points. Returns
+ * the I.P. left. One transaction: the Rank, the balance, and a
+ * `role_rank_raised` event on the character's active campaign.
+ */
+export async function spendIpOnRoleRank(
+  characterId: string,
+  abilityId: string,
+  newRank: number,
+  cost: number,
+): Promise<number> {
+  const { data, error } = await backendClient.rpc("spend_ip_on_role_rank", {
+    p_character_id: characterId,
+    p_ability_id: abilityId,
+    p_new_rank: newRank,
+    p_cost: cost,
+  });
+  // Pending migration (APPLIED.md): say what is missing rather than PostgREST's
+  // schema-cache message, and leave everything else working.
+  if (
+    error &&
+    (error.code === "PGRST202" || error.message.includes("Could not find the function"))
+  ) {
+    throw new Error("Role Ability Ranks can be bought once the database is updated.");
+  }
+  if (error) throw new Error(error.message);
+  return data as number;
+}
+
+/**
  * The one payload the save_character database function accepts. It writes the
  * character and every attached table in a single transaction and clears the
  * draft, so a half-saved character cannot exist.

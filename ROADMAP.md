@@ -474,11 +474,22 @@ Graded on what a player experiences, not on what the engine models somewhere.
 - `ip_awarded` has a contract in `ledger.ts` that reads both its new shape
   (`kind`, `day`) and every award written before it.
 
-**3. Role Rank.** `spend_ip_on_role_rank` (60 × the new Rank, added to
-`ip-costs.json`) beside the Skill function, with a `role_rank_raised` event and
-a receipt. The spend screen previews the next Rank from `roleOpening.ts`, so
-"Rank 5" reads as what it gives — a bigger Combat Awareness pool, a better
-Backup tier — rather than as a number. Multiclassing waits.
+**3. Role Rank — shipped.**
+
+- `spend_ip_on_role_rank` (migration `20261002030000`) buys one Rank at 60 I.P.
+  times the new Rank (`ip-costs.json`, so Rank 4 → 5 is 300), up to 10. It
+  writes `role_rank_raised` to the active campaign in the same transaction, and
+  `roleRankRaised.test.ts` holds the SQL to the ledger contract and the ceiling.
+- The spend card leads with the Role Ability. Its preview is
+  `roleRankPreview`: a diff of `roleOpening` at this Rank and the next, so it
+  shows what play will actually deliver — "5 points, divided before the
+  shooting", a sheriff's department instead of beat cops, seven machines in
+  the Motorpool instead of four. A Rank that changes nothing visible says
+  where the next change is.
+- Maker and Medicine specialty pools are already derived from the Rank, so a
+  raised Rank arrives as new points to place on the Role Ability panel.
+- The Netrunner's Interface is not for sale until Netrunning is built.
+  Multiclassing waits.
 
 **4. Within reach.** One sheet from the Life dock, everything engine-priced:
 

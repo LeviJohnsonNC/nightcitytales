@@ -3,14 +3,17 @@
     "book": "Cyberpunk RED Core Rulebook",
     "publisher": "R. Talsorian Games",
     "pages": "406 (Improvement Points)",
-    "note": "Skill advancement only. Role Ability Ranks and STAT increases are out of scope for this file and must not be inferred from it."
+    "note": "Skill Levels and Role Ability Ranks. STAT increases are out of scope for this file and must not be inferred from it: I.P. never buys a STAT."
   },
   "_rules": {
     "skill": "Raising a Skill to a new Level costs the new Level multiplied by the per-level cost: 20 I.P. a Level, so Handgun 4 to 5 is 100 I.P. A Skill flagged doubleCost in skills.json costs twice that, the same x2 flag the printed sheet marks.",
     "levelling": "One Level at a time. Raising a Skill several Levels costs the sum of each step, so the price climbs as the Skill does.",
     "history": "This file said 10 until October 2026, half the printed price. Levels bought at the old price stand; banked I.P. buys half what it did.",
-    "maximum": "maxLevelInPlay in skills.json (10) is the ceiling; a Skill already there cannot be raised."
+    "maximum": "maxLevelInPlay in skills.json (10) is the ceiling; a Skill already there cannot be raised.",
+    "roleRank": "Raising a Role Ability to a new Rank costs the new Rank multiplied by the per-Rank cost: 60 I.P. a Rank, so Rank 4 to 5 is 300 I.P. One Rank at a time, up to roleRankMax."
   },
   "skillCostPerLevel": 20,
-  "doubleCostMultiplier": 2
+  "doubleCostMultiplier": 2,
+  "roleRankCostPerRank": 60,
+  "roleRankMax": 10
 }

@@ -42,6 +42,7 @@ export const LEDGER_EVENTS = {
   encounterStarted: "encounter_started",
   skillRaised: "skill_raised",
   ipAwarded: "ip_awarded",
+  roleRankRaised: "role_rank_raised",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -326,6 +327,33 @@ export function readSkillRaisedEventData(raw: unknown): SkillRaisedEventData | n
   // raise it could have written.
   if (toLevel !== fromLevel + 1) return null;
   return { skillId, specialization: str(d["specialization"]), fromLevel, toLevel, cost };
+}
+
+// ---------------------------------------------------------------------------
+// role_rank_raised — like skill_raised, written by the database:
+// `spend_ip_on_role_rank` appends it in the transaction that moves the Rank.
+// `roleRankRaised.test.ts` holds the SQL's keys to ROLE_RANK_RAISED_KEYS.
+// ---------------------------------------------------------------------------
+
+export type RoleRankRaisedEventData = {
+  abilityId: string;
+  fromRank: number;
+  toRank: number;
+  cost: number;
+};
+
+export const ROLE_RANK_RAISED_KEYS = ["ability_id", "from_rank", "to_rank", "cost"] as const;
+
+export function readRoleRankRaisedEventData(raw: unknown): RoleRankRaisedEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const abilityId = str(d["ability_id"]);
+  const fromRank = num(d["from_rank"]);
+  const toRank = num(d["to_rank"]);
+  const cost = num(d["cost"]);
+  if (abilityId === null || fromRank === null || toRank === null || cost === null) return null;
+  if (toRank !== fromRank + 1) return null;
+  return { abilityId, fromRank, toRank, cost };
 }
 
 // ---------------------------------------------------------------------------

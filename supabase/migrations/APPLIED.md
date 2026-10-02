@@ -97,6 +97,12 @@ once it has actually been run.
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
 
+- `20261002030000_spend_ip_on_role_rank.sql` — adds `spend_ip_on_role_rank`,
+  buying one Role Ability Rank with I.P. and appending `role_rank_raised` to the
+  active campaign. Until it runs the spend card's Raise button for a Rank says
+  "Role Ability Ranks can be bought once the database is updated"; nothing else
+  depends on it.
+
 - `20261002020000_award_improvement_points.sql` — adds
   `award_improvement_points`, the one transaction for an I.P. award (ledger
   event, the job's `ip_awarded` mark, the character's total). Until it runs,
