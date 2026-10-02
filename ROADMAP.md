@@ -431,17 +431,27 @@ Graded on what a player experiences, not on what the engine models somewhere.
 
 ### The plan, in order
 
-**1. Raises leave a trace — first.**
+**1. Raises leave a trace — shipped.**
 
-- `ip-costs.json` to 20, with tests.
-- `spend_ip_on_skill` takes the campaign and appends a `skill_raised` event in
-  the same transaction, with the payload built and read in `engine/ledger.ts`.
-  Adding a defaulted parameter makes a second overload, so drop and recreate the
-  function; run `supabase/replay/` and regenerate the types.
-- Receipts gain `Handgun 6 → 7`, the exact form `PRODUCT.md` gives.
-- Any Skill can be bought from 0, not only Local Expert; the spend path already
-  accepts Level 0 → 1.
-- `ip_awarded` moves its payload into `ledger.ts` too.
+- `ip-costs.json` charges the printed 20 I.P. a Level, held by a test
+  (Handgun 4 → 5 is 100).
+- `spend_ip_on_skill` appends a `skill_raised` event to the character's active
+  campaign in the same transaction (migration `20261002010000`, pending in
+  `APPLIED.md`). It finds the campaign itself rather than taking it as an
+  argument, so the signature and the generated types are unchanged, and a
+  raise from the roster is recorded too. The writer is SQL, so
+  `skillRaised.test.ts` holds the keys it spells to `SKILL_RAISED_KEYS` and
+  `readSkillRaisedEventData` in `engine/ledger.ts`.
+- The spend card shows `Handgun 6 → 7` as a receipt, from a diff of the sheet
+  (`skillReceipts`) on the same timing as a Life turn's receipts. It also now
+  refreshes the campaign bundle it sits in. Before, it kept offering the Level
+  just bought, and the database refused the second click.
+- Any Skill can be learned from Level 0 (`untrainedSkillRaises`), except the
+  five that need a name before they exist — Language, Science, Martial Arts, Play
+  Instrument and Local Expert. Local Expert keeps its own earned door; the other
+  four wait for a name picker on the spend card.
+- `ip_awarded`'s payload moves into `ledger.ts` with step 2, the first thing to
+  read it back.
 
 **2. IP that arrives.** The judgement window becomes "since the last award"
 rather than the last sixty events, bounded through `packetBudget.ts`, plus the

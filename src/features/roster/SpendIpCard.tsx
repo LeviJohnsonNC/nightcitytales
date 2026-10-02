@@ -5,7 +5,7 @@
  * transaction (spend_ip_on_skill), so this component only renders what a Level
  * costs and asks for it. It never computes a price of its own.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,22 +13,31 @@ import {
   availableSkillRaises,
   describeSkillRaise,
   EARNED_AREA_RULE,
+  IP_COSTS,
   LOCAL_EXPERT_SKILL_ID,
   MAX_SKILL_LEVEL,
+  skillEntryName,
+  skillLineKey,
   spendOnSkill,
+  untrainedSkillRaises,
   type EarnedArea,
   type SkillRaise,
 } from "@/engine";
+import { ReceiptBar } from "@/features/status/ReceiptBar";
+import { skillReceipts, type SkillSnapshot } from "@/features/status/receipts";
+import { useReceipts } from "@/features/status/useReceipts";
 import { spendIpOnSkill, type FullCharacter } from "@/lib/backend";
 
 function RaiseRow({
   raise,
   onBuy,
   busy,
+  verb = "Raise",
 }: {
   raise: SkillRaise;
   onBuy: (raise: SkillRaise) => void;
   busy: boolean;
+  verb?: string;
 }) {
   return (
     <li className="flex items-center justify-between gap-3 border-b border-border/50 py-1.5 last:border-b-0">
@@ -52,7 +61,7 @@ function RaiseRow({
             disabled={!raise.affordable || busy}
             onClick={() => onBuy(raise)}
           >
-            Raise
+            {verb}
           </Button>
         </>
       )}
@@ -108,9 +117,16 @@ export function SpendIpCard({
   character,
   improvementPoints,
   newAreas = [],
+  campaignId,
 }: {
   character: FullCharacter;
   improvementPoints: number;
+  /**
+   * The campaign whose screen this card sits on. Its bundle carries the
+   * character too, so a purchase has to refresh it as well — otherwise the card
+   * keeps offering the Level just bought, and the database (rightly) refuses it.
+   */
+  campaignId?: string;
   /**
    * Neighbourhoods the character could start knowing, from the campaign's own
    * record of where they have been. Empty off-campaign — the roster has no
@@ -121,6 +137,7 @@ export function SpendIpCard({
 }) {
   const queryClient = useQueryClient();
   const [showAll, setShowAll] = useState(false);
+  const [showNew, setShowNew] = useState(false);
 
   const skills = character.skills.map((s) => ({
     skillId: s.skill_id,
@@ -132,6 +149,25 @@ export function SpendIpCard({
   const homeDistrictKey = character.finance?.home_district_key ?? null;
   const raises = availableSkillRaises(skills, improvementPoints, homeDistrictKey);
   const affordable = raises.filter((r) => r.affordable);
+  const untrained = untrainedSkillRaises(skills, improvementPoints);
+
+  // The sheet as it stands, so a Level bought shows as `Handgun 6 → 7` when the
+  // refreshed character arrives — the same receipt, and the same timing, as a
+  // Life turn's.
+  const sheet = useMemo(() => {
+    const snapshot: SkillSnapshot = {};
+    for (const s of character.skills) {
+      snapshot[skillLineKey(s.skill_id, s.specialization)] = {
+        name: skillEntryName(
+          { skillId: s.skill_id, specialization: s.specialization },
+          homeDistrictKey,
+        ),
+        level: s.level,
+      };
+    }
+    return snapshot;
+  }, [character.skills, homeDistrictKey]);
+  const receipts = useReceipts(sheet, skillReceipts);
 
   // A district is bought as a Level 1 line, priced by the same rule as every
   // other first Level. The district KEY is the specialization, so the line the
@@ -162,14 +198,21 @@ export function SpendIpCard({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["character", character.character.id] });
+      if (campaignId) {
+        void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
+        void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
+      }
     },
   });
 
   const shown = showAll ? raises : affordable;
 
   // Nothing banked, nothing to decide: the card stays out of the way until the
-  // session hands over some I.P.
-  if (improvementPoints === 0) return null;
+  // session hands over some I.P. — unless the last point was just spent, in
+  // which case the receipt for it is the one thing worth showing.
+  if (improvementPoints === 0) {
+    return receipts.length > 0 ? <ReceiptBar receipts={receipts} /> : null;
+  }
 
   return (
     <section className="no-print space-y-3 rounded-md border border-border p-4">
@@ -178,9 +221,11 @@ export function SpendIpCard({
         <span className="font-mono text-sm">{improvementPoints} I.P. unspent</span>
       </div>
 
+      <ReceiptBar receipts={receipts} />
+
       <p className="text-xs text-muted-foreground">
-        A Skill costs its new Level in I.P. (doubled for a Skill the sheet flags x2), one Level at a
-        time, up to Level {MAX_SKILL_LEVEL}.
+        A Skill costs {IP_COSTS.skillCostPerLevel} I.P. times its new Level (doubled for a Skill the
+        sheet flags x2), one Level at a time, up to Level {MAX_SKILL_LEVEL}.
       </p>
       {shown.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -202,6 +247,29 @@ export function SpendIpCard({
         <Button size="sm" variant="ghost" onClick={() => setShowAll((v) => !v)}>
           {showAll ? "Show only what I can afford" : `Show all ${raises.length} skills`}
         </Button>
+      )}
+
+      {untrained.length > 0 && (
+        <div className="space-y-2 border-t border-border pt-3">
+          <Button size="sm" variant="ghost" onClick={() => setShowNew((v) => !v)}>
+            {showNew
+              ? "Hide Skills you have never trained"
+              : `Learn something new · ${untrained.length} Skills from Level 0`}
+          </Button>
+          {showNew && (
+            <ul className="max-h-60 overflow-y-auto">
+              {untrained.map((raise) => (
+                <RaiseRow
+                  key={raise.key}
+                  raise={raise}
+                  onBuy={(r) => buy.mutate(r)}
+                  busy={buy.isPending}
+                  verb="Learn"
+                />
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {areaOffers.length > 0 && (

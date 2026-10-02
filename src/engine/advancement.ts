@@ -8,7 +8,7 @@
  * x2. Levels are bought one at a time, so raising a Skill several Levels costs
  * the sum of each step and the price climbs as the Skill does.
  */
-import { getSkill, IP_COSTS, SKILL_RULES } from "./rulesData";
+import { getSkill, IP_COSTS, SKILL_RULES, SKILLS } from "./rulesData";
 import { skillEntryName } from "./skillAllocation";
 
 /** The highest Skill Level reachable in play (skills.json _rules). */
@@ -129,6 +129,23 @@ export function availableSkillRaises(
       if (a.cost !== b.cost) return a.cost - b.cost;
       return a.skillName.localeCompare(b.skillName);
     });
+}
+
+/**
+ * Every Skill the character has never trained, priced at Level 1, by name.
+ *
+ * Buying a Skill from nothing is an ordinary first Level at the ordinary price;
+ * the spend path always accepted it and the screen only ever offered the lines
+ * already on the sheet. Skills that need a name to exist are left out — a
+ * Language, a field of Science, a Martial Art, an instrument, a neighbourhood —
+ * because a Level of "Science" with no field is not a line the sheet can hold.
+ * Local Expert has its own door, opened by where the campaign says you have been.
+ */
+export function untrainedSkillRaises(skills: SkillLine[], availableIp: number): SkillRaise[] {
+  const trained = new Set(skills.filter((line) => line.level > 0).map((line) => line.skillId));
+  return SKILLS.filter((skill) => !skill.requiresSpecialization && !trained.has(skill.id))
+    .map((skill) => describeSkillRaise(skill.id, 0, availableIp))
+    .sort((a, b) => a.cost - b.cost || a.skillName.localeCompare(b.skillName));
 }
 
 export type SpendResult = {

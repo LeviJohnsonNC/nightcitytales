@@ -164,3 +164,26 @@ export function receiptsBetween(before: TurnSnapshot, after: TurnSnapshot): Rece
 
   return out;
 }
+
+/** The character's Skill lines at one moment, by line key, with the name to print. */
+export type SkillSnapshot = Record<string, { name: string; level: number }>;
+
+/**
+ * Levels bought between two moments: `Handgun 6 → 7`, the form PRODUCT.md
+ * gives for exactly this.
+ *
+ * A diff of the sheet rather than a read of the `skill_raised` event, for the
+ * same reason as the rest of this file: the sheet is what the player is looking
+ * at, and a receipt that disagreed with it would be worse than none. A line that
+ * appears from nowhere is a Skill bought from Level 0. Levels never fall in play,
+ * so a drop is not news — it is a different character's sheet, and says nothing.
+ */
+export function skillReceipts(before: SkillSnapshot, after: SkillSnapshot): Receipt[] {
+  const out: Receipt[] = [];
+  for (const [key, now] of Object.entries(after)) {
+    const was = before[key]?.level ?? 0;
+    if (now.level <= was) continue;
+    out.push({ key: `skill:${key}`, text: `${now.name} ${was} → ${now.level}`, tone: "good" });
+  }
+  return out;
+}

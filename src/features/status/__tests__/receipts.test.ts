@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { LifeClock } from "@/engine";
-import { elapsedLabel, receiptsBetween, snapshotOf, type TurnSnapshot } from "../receipts";
+import {
+  elapsedLabel,
+  receiptsBetween,
+  skillReceipts,
+  snapshotOf,
+  type TurnSnapshot,
+} from "../receipts";
 
 /**
  * "Show, do not explain."
@@ -126,5 +132,33 @@ describe("snapshotOf", () => {
     });
     expect(Object.keys(taken.people)).toEqual(["kiro", "A stranger"]);
     expect(taken.clocks["heat"]?.filled).toBe(2);
+  });
+});
+
+describe("skillReceipts", () => {
+  const before = {
+    "handgun::": { name: "Handgun", level: 6 },
+    "stealth::": { name: "Stealth", level: 4 },
+  };
+
+  it("names a Level bought, in the form PRODUCT.md gives", () => {
+    const after = { ...before, "handgun::": { name: "Handgun", level: 7 } };
+    expect(skillReceipts(before, after)).toEqual([
+      { key: "skill:handgun::", text: "Handgun 6 → 7", tone: "good" },
+    ]);
+  });
+
+  it("reads a line that appears from nowhere as a Skill bought from 0", () => {
+    const after = { ...before, "brawling::": { name: "Brawling", level: 1 } };
+    expect(skillReceipts(before, after).map((r) => r.text)).toEqual(["Brawling 0 → 1"]);
+  });
+
+  it("says nothing when nothing was bought", () => {
+    expect(skillReceipts(before, { ...before })).toEqual([]);
+  });
+
+  it("does not report a fall, which play cannot cause", () => {
+    const after = { ...before, "stealth::": { name: "Stealth", level: 3 } };
+    expect(skillReceipts(before, after)).toEqual([]);
   });
 });
