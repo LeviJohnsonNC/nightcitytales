@@ -15,6 +15,20 @@
       "when": 1790908119454,
       "tag": "0001_spend_ip_on_role_rank",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790964041259,
+      "tag": "0002_save_mortally_wounded_combatants",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790964076523,
+      "tag": "0003_encounter_layout_snapshot",
+      "breakpoints": true
     }
   ]
 }

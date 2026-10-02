@@ -1024,13 +1024,13 @@ export type Database = {
       encounters: {
         Row: {
           active_index: number
-          layout: Json | null
           arena: string | null
           beat_id: string | null
           campaign_id: string
           cover: Json
           created_at: string
           id: string
+          layout: Json | null
           name: string | null
           order_ids: Json
           round: number
@@ -1040,13 +1040,13 @@ export type Database = {
         }
         Insert: {
           active_index?: number
-          layout?: Json | null
           arena?: string | null
           beat_id?: string | null
           campaign_id: string
           cover?: Json
           created_at?: string
           id?: string
+          layout?: Json | null
           name?: string | null
           order_ids?: Json
           round?: number
@@ -1056,13 +1056,13 @@ export type Database = {
         }
         Update: {
           active_index?: number
-          layout?: Json | null
           arena?: string | null
           beat_id?: string | null
           campaign_id?: string
           cover?: Json
           created_at?: string
           id?: string
+          layout?: Json | null
           name?: string | null
           order_ids?: Json
           round?: number
@@ -1132,7 +1132,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      start_snapshot_encounter: { Args: { payload: Json }; Returns: string }
       award_improvement_points: { Args: { payload: Json }; Returns: number }
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
       install_cyberware: { Args: { payload: Json }; Returns: Json }
@@ -1164,6 +1163,7 @@ export type Database = {
       }
       start_campaign: { Args: { payload: Json }; Returns: string }
       start_encounter: { Args: { payload: Json }; Returns: string }
+      start_snapshot_encounter: { Args: { payload: Json }; Returns: string }
     }
     Enums: {
       [_ in never]: never
