@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   attackEventData,
+  goalsPinnedEventData,
   ipAwardedEventData,
+  readGoalsPinnedEventData,
   readIpAwardedEventData,
   deathSaveEventData,
   payloadOf,
@@ -396,5 +398,31 @@ describe("an Improvement Point award survives the round trip", () => {
     expect(readIpAwardedEventData({ kind: "life", day: 3 })).toBeNull();
     expect(readIpAwardedEventData({ award: { source: "group" } })).toBeNull();
     expect(readIpAwardedEventData(null)).toBeNull();
+  });
+});
+
+describe("pinned goals survive the round trip", () => {
+  it("reads back every kind of goal the builder writes", () => {
+    const goals = [
+      { kind: "skill" as const, skillId: "handgun", specialization: null, level: 7 },
+      { kind: "rank" as const, rank: 5 },
+      { kind: "chrome" as const, itemId: "kerenzikov", owned: 0 },
+      { kind: "standing" as const, factionId: "tyger_claws" as const, atLeast: 2 },
+    ];
+    const wire = JSON.parse(JSON.stringify(goalsPinnedEventData(goals)));
+    expect(readGoalsPinnedEventData(wire)).toEqual(goals);
+  });
+
+  it("drops an entry it cannot read rather than the whole list", () => {
+    expect(
+      readGoalsPinnedEventData({
+        goals: [
+          { kind: "rank", rank: 6 },
+          { kind: "standing", factionId: "not_a_faction", atLeast: 2 },
+          { kind: "mystery" },
+        ],
+      }),
+    ).toEqual([{ kind: "rank", rank: 6 }]);
+    expect(readGoalsPinnedEventData(null)).toEqual([]);
   });
 });

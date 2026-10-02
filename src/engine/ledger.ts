@@ -33,6 +33,9 @@
  * the player to read is prose, and prose has no contract to break.
  */
 
+import { isFactionId } from "./factions";
+import type { Goal } from "./goals";
+
 /** The event types whose payloads carry mechanical weight. */
 export const LEDGER_EVENTS = {
   attack: "attack",
@@ -43,6 +46,7 @@ export const LEDGER_EVENTS = {
   skillRaised: "skill_raised",
   ipAwarded: "ip_awarded",
   roleRankRaised: "role_rank_raised",
+  goalsPinned: "goals_pinned",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -432,6 +436,54 @@ export function readIpAwardedEventData(raw: unknown): IpAwardedEventData | null 
     day: num(d["day"]),
     playstyles: primary && secondary ? { primary, secondary } : null,
   };
+}
+
+// ---------------------------------------------------------------------------
+// goals_pinned — the player's pins, whole, each time they change. The latest
+// event is the list; nothing is merged. Read back on every Life load.
+// ---------------------------------------------------------------------------
+
+export function goalsPinnedEventData(goals: Goal[]): { goals: Goal[] } {
+  return { goals: goals.map((g) => ({ ...g })) };
+}
+
+function readGoal(raw: unknown): Goal | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  switch (d["kind"]) {
+    case "skill": {
+      const skillId = str(d["skillId"]);
+      const level = num(d["level"]);
+      if (skillId === null || level === null) return null;
+      return { kind: "skill", skillId, specialization: str(d["specialization"]), level };
+    }
+    case "rank": {
+      const rank = num(d["rank"]);
+      return rank === null ? null : { kind: "rank", rank };
+    }
+    case "chrome": {
+      const itemId = str(d["itemId"]);
+      const owned = num(d["owned"]);
+      if (itemId === null || owned === null) return null;
+      return { kind: "chrome", itemId, owned };
+    }
+    case "standing": {
+      const factionId = d["factionId"];
+      const atLeast = num(d["atLeast"]);
+      if (!isFactionId(factionId) || atLeast === null) return null;
+      return { kind: "standing", factionId, atLeast };
+    }
+    default:
+      return null;
+  }
+}
+
+/** The pinned goals, dropping any entry that no longer parses. */
+export function readGoalsPinnedEventData(raw: unknown): Goal[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const goals = (raw as RawPayload)["goals"];
+  if (!Array.isArray(goals)) return [];
+  return goals.map(readGoal).filter((g): g is Goal => g !== null);
 }
 
 // ---------------------------------------------------------------------------

@@ -26,6 +26,7 @@ import {
   type LifeClock,
   type LifeSituation,
   type MissionObjective,
+  type GoalProgress,
   type SkillRaise,
 } from "@/engine";
 import {
@@ -168,6 +169,8 @@ export function dueClause(due: { label: string; inDays: number }): string {
 
 export type GrowthStatus = {
   ip: number;
+  /** What the player has pinned, in pin order. Empty when nothing is. */
+  pinned: GoalProgress[];
   /** The cheapest raise that is not already at the ceiling, or null if none is. */
   next: SkillRaise | null;
   /** I.P. still needed for it. Zero when it can be bought right now. */
@@ -179,8 +182,10 @@ export type GrowthStatus = {
 export function growthStatus(input: {
   character: FullCharacter;
   improvementPoints: number;
+  pinned?: GoalProgress[];
 }): GrowthStatus {
   const ip = input.improvementPoints;
+  const pinned = input.pinned ?? [];
   const skills = input.character.skills.map((s) => ({
     skillId: s.skill_id,
     level: s.level,
@@ -193,7 +198,7 @@ export function growthStatus(input: {
       (raise) => !raise.atMax,
     ) ?? null;
 
-  if (!next) return { ip, next: null, gap: 0, ready: false, line: `${ip} IP` };
+  if (!next) return { ip, pinned, next: null, gap: 0, ready: false, line: `${ip} IP` };
 
   const gap = Math.max(0, next.cost - ip);
   // Which Skill it is does not belong on the face of the chip: the player is
@@ -202,6 +207,7 @@ export function growthStatus(input: {
   // still says which one, because that is where the choice is actually made.
   return {
     ip,
+    pinned,
     next,
     gap,
     ready: gap === 0,
@@ -460,6 +466,8 @@ export function statusView(input: {
   objectives?: MissionObjective[];
   missionTitle?: string | null;
   currentKey?: string | null;
+  /** Pinned goals' progress, when the screen knows them (Life does). */
+  pinned?: GoalProgress[];
 }): StatusView {
   const commitments = commitmentsStatus({
     day: input.campaign.day ?? 0,
@@ -479,6 +487,7 @@ export function statusView(input: {
     growth: growthStatus({
       character: input.character,
       improvementPoints: input.character.finance?.improvement_points ?? 0,
+      ...(input.pinned ? { pinned: input.pinned } : {}),
     }),
   };
 }

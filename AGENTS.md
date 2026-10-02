@@ -186,8 +186,13 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   The Life rail is a HUD, not a form (`life/hud/`): `CharacterCard` (portrait,
   bars that change colour as they empty, Luck as pips), `ResourceStrip` (money,
   growth and commitments as three chips whose detail opens in a popover) and an
-  action dock of `DockTile`s that trigger the Record, Shop, Ripperdoc and Bench
-  sheets. People are `PeopleStrip`: five faces with a disposition ring, the rest
+  action dock of `DockTile`s that trigger the Within reach, Record, Shop,
+  Ripperdoc and Bench sheets. Within reach is `engine/goals.ts` on screen: the
+  next rung of every Skill, the Rank, installable chrome and each faction's next
+  band, priced by the engine, with up to three pins stored as a `goals_pinned`
+  ledger event. The Growth chip follows the first pin. It is a price list, not
+  a quest board — nothing on it is generated or offered, and people are kept
+  off it on purpose. People are `PeopleStrip`: five faces with a disposition ring, the rest
   and the faction standings behind "All". `hudModel.ts` holds the bands, pips and
   who is worth a tile; they are a look, not a rule. Vitals flash and the
   balance counts when they change (`useChange.ts`), and stay still under reduced motion.

@@ -263,14 +263,6 @@ export async function spendIpOnRoleRank(
     p_new_rank: newRank,
     p_cost: cost,
   });
-  // Pending migration (APPLIED.md): say what is missing rather than PostgREST's
-  // schema-cache message, and leave everything else working.
-  if (
-    error &&
-    (error.code === "PGRST202" || error.message.includes("Could not find the function"))
-  ) {
-    throw new Error("Role Ability Ranks can be bought once the database is updated.");
-  }
   if (error) throw new Error(error.message);
   return data as number;
 }

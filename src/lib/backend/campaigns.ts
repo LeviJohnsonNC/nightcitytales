@@ -392,67 +392,8 @@ export async function commitIpAward(payload: AwardImprovementPointsPayload): Pro
   const { data, error } = await backendClient.rpc("award_improvement_points", {
     payload: payload as unknown as Json,
   });
-  if (error && isMissingAwardFunction(error)) return legacyIpAward(payload);
   if (error) throw new Error(error.message);
   return data as number;
-}
-
-/** PostgREST: no such function in the schema cache. Means "not migrated yet". */
-const UNDEFINED_FUNCTION = "PGRST202";
-
-function isMissingAwardFunction(error: { code?: string; message: string }): boolean {
-  if (error.code === UNDEFINED_FUNCTION) return true;
-  return (
-    error.message.includes("award_improvement_points") &&
-    (error.message.includes("Could not find") || error.message.includes("does not exist"))
-  );
-}
-
-/**
- * The writes `award_improvement_points` replaces, for a database that has not
- * run `20261002020000` yet — the APPLIED.md rule that code tolerates a pending
- * migration. Three writes, not one transaction, with the window checked first
- * rather than under a lock: exactly as safe as awards were before, and no less.
- * Delete once that migration is under Applied.
- */
-async function legacyIpAward(payload: AwardImprovementPointsPayload): Promise<number> {
-  const campaign = unwrap(
-    await backendClient
-      .from("campaigns")
-      .select("character_id, ip_awarded")
-      .eq("id", payload.campaign_id)
-      .single(),
-  ) as { character_id: string; ip_awarded: number | null } | null;
-  if (!campaign) throw new Error("campaign not found");
-  if (payload.kind === "job" && campaign.ip_awarded !== null) {
-    throw new Error("This job's Improvement Points have already been awarded.");
-  }
-  const last = await lastCampaignEventOfType(payload.campaign_id, "ip_awarded");
-  if ((last?.seq ?? null) !== payload.expected_last_award_seq) {
-    throw new Error("improvement points were awarded since this was judged");
-  }
-  await appendCampaignEvent({
-    campaign_id: payload.campaign_id,
-    type: "ip_awarded",
-    summary: payload.summary,
-    data: payload.data,
-  });
-  if (payload.kind === "job") {
-    await updateCampaign(payload.campaign_id, { ip_awarded: payload.ip });
-  }
-  const finance = unwrap(
-    await backendClient
-      .from("character_finance")
-      .select("improvement_points")
-      .eq("character_id", campaign.character_id)
-      .maybeSingle(),
-  ) as { improvement_points: number } | null;
-  const total = (finance?.improvement_points ?? 0) + payload.ip;
-  const res = await backendClient
-    .from("character_finance")
-    .upsert({ character_id: campaign.character_id, improvement_points: total });
-  if (res.error) throw new Error(res.error.message);
-  return total;
 }
 
 /** The newest event of one type, or null. Reads one row through the seq index. */

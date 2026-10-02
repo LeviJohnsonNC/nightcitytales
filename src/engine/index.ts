@@ -65,6 +65,7 @@ export * from "./cast";
 export * from "./identity";
 export * from "./socialRead";
 export * from "./factions";
+export * from "./goals";
 export * from "./clocks";
 export * from "./opening";
 export * from "./oracle";

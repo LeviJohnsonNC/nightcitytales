@@ -65,6 +65,7 @@ import {
   getCampaign,
   setInventoryQuantity,
   getCharacter,
+  lastCampaignEventOfType,
   listCampaignEvents,
   listCampaignTruths,
   recordTruthDiscovery,
@@ -193,6 +194,11 @@ import {
   type NearbyPlace,
   type PlaceTag,
   daysUntilLifeAward,
+  goalsPinnedEventData,
+  LEDGER_EVENTS,
+  MAX_PINNED_GOALS,
+  readGoalsPinnedEventData,
+  type Goal,
 } from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import {
@@ -297,6 +303,8 @@ export type LifeBundle = {
    * last time, so the pickers open on it.
    */
   ipAward: { daysUntil: number; lastPlaystyles: Playstyles | null };
+  /** The goals the player has pinned, in the order they pinned them. */
+  pinnedGoals: Goal[];
 };
 
 export async function loadLife(campaignId: string): Promise<LifeBundle> {
@@ -307,7 +315,7 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
   const character = await getCharacter(full.campaign.character_id);
   if (!character) throw new Error("This campaign's character no longer exists.");
 
-  const [events, situationRows, clockRows, factionRows, places, truths, lastAward] =
+  const [events, situationRows, clockRows, factionRows, places, truths, lastAward, pinsEvent] =
     await Promise.all([
       listCampaignEvents(campaignId),
       listSituations(campaignId),
@@ -316,6 +324,7 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
       loadPlaceStates(campaignId),
       listCampaignTruths(campaignId),
       readLastAward(campaignId),
+      lastCampaignEventOfType(campaignId, LEDGER_EVENTS.goalsPinned),
     ]);
 
   // The six the campaign lives among. Seeded once, from the character's own
@@ -407,7 +416,27 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
       daysUntil: daysUntilLifeAward({ day: clock.day, lastAwardDay: lastAward.day }),
       lastPlaystyles: lastAward.playstyles,
     },
+    pinnedGoals: pinsEvent ? readGoalsPinnedEventData(pinsEvent.data) : [],
   };
+}
+
+/**
+ * Replace the pinned goals. The list is written whole, as one ledger event; the
+ * newest is the list. Capped by the engine (`withPinned`), and checked again
+ * here, because a list the engine would not have made is not a list to store.
+ */
+export async function setPinnedGoals(bundle: LifeBundle, goals: Goal[]): Promise<void> {
+  if (goals.length > MAX_PINNED_GOALS) {
+    throw new Error(`Pin at most ${MAX_PINNED_GOALS} things at once.`);
+  }
+  await appendCampaignEvent({
+    campaign_id: bundle.campaign.id,
+    type: LEDGER_EVENTS.goalsPinned,
+    summary: goals.length
+      ? `Working toward ${goals.length} ${goals.length === 1 ? "thing" : "things"}.`
+      : "Nothing pinned.",
+    data: goalsPinnedEventData(goals) as unknown as Json,
+  });
 }
 
 /**

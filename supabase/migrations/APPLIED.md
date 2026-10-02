@@ -91,24 +91,13 @@ once it has actually been run.
 - `20260912141314_b9ce2474-7053-4d7e-be92-8e6af113fa0d.sql` — the copy that was
   actually applied. Identical DDL to the entry above.
 - `20261002010000_skill_raise_leaves_a_trace.sql`
+- `20261002020000_award_improvement_points.sql`
+- `20261002030000_spend_ip_on_role_rank.sql`
 
 ## Pending
 
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
-
-- `20261002030000_spend_ip_on_role_rank.sql` — adds `spend_ip_on_role_rank`,
-  buying one Role Ability Rank with I.P. and appending `role_rank_raised` to the
-  active campaign. Until it runs the spend card's Raise button for a Rank says
-  "Role Ability Ranks can be bought once the database is updated"; nothing else
-  depends on it.
-
-- `20261002020000_award_improvement_points.sql` — adds
-  `award_improvement_points`, the one transaction for an I.P. award (ledger
-  event, the job's `ip_awarded` mark, the character's total). Until it runs,
-  `commitIpAward` falls back to the three separate writes awards always made,
-  so nothing breaks; it is only not atomic. Once it is applied, move it up and
-  delete `legacyIpAward` in `src/lib/backend/campaigns.ts`.
 
 - `20260919050000_opening_premise_not_a_commitment.sql` — data only. Clears
   `due_day` on the opening's `opening_just_living` situation and marks it

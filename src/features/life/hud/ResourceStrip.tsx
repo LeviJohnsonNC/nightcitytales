@@ -10,6 +10,7 @@ import { Coins, ListChecks, TrendingUp } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CommitmentsPanel, GrowthDetail, MoneyDetail } from "@/features/status/StatusRail";
+import { goalChipFigure, goalFill } from "@/features/status/goalsModel";
 import { formatMoney, type MoneyTone, type StatusView } from "@/features/status/statusModel";
 import { fillFraction } from "./hudModel";
 import { useChangeFlash, useCountTo } from "./useChange";
@@ -76,6 +77,8 @@ function Chip({
 
 export function ResourceStrip({ status }: { status: StatusView }) {
   const { money, growth, commitments } = status;
+  // The first pin leads the chip; with none, it is the cheapest raise, as before.
+  const top = growth.pinned[0] ?? null;
   const counted = useCountTo(money.eurobucks);
   const moved = useChangeFlash(money.eurobucks);
   return (
@@ -98,8 +101,10 @@ export function ResourceStrip({ status }: { status: StatusView }) {
       <Chip
         label="Growth"
         icon={<TrendingUp className="size-4" />}
-        figure={`${growth.ip} IP`}
-        meter={growth.next ? fillFraction(growth.ip, growth.next.cost) : 1}
+        figure={top ? goalChipFigure(top) : `${growth.ip} IP`}
+        meter={
+          top ? (goalFill(top) ?? 0) : growth.next ? fillFraction(growth.ip, growth.next.cost) : 1
+        }
       >
         <GrowthDetail status={growth} />
       </Chip>
