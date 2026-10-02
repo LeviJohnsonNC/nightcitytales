@@ -531,12 +531,9 @@ export type Database = {
           created_at: string
           current_mission_id: string | null
           day: number
-          home_place_key: string | null
-          housing_id: string | null
           id: string
           ip_awarded: number | null
           known_places: Json
-          lifestyle_id: string | null
           location_key: string | null
           minute: number
           name: string
@@ -552,12 +549,9 @@ export type Database = {
           created_at?: string
           current_mission_id?: string | null
           day?: number
-          home_place_key?: string | null
-          housing_id?: string | null
           id?: string
           ip_awarded?: number | null
           known_places?: Json
-          lifestyle_id?: string | null
           location_key?: string | null
           minute?: number
           name: string
@@ -573,12 +567,9 @@ export type Database = {
           created_at?: string
           current_mission_id?: string | null
           day?: number
-          home_place_key?: string | null
-          housing_id?: string | null
           id?: string
           ip_awarded?: number | null
           known_places?: Json
-          lifestyle_id?: string | null
           location_key?: string | null
           minute?: number
           name?: string
@@ -1132,7 +1123,6 @@ export type Database = {
       award_improvement_points: { Args: { payload: Json }; Returns: number }
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
       install_cyberware: { Args: { payload: Json }; Returns: Json }
-      move_house: { Args: { payload: Json }; Returns: Json }
       owns_campaign: { Args: { _campaign_id: string }; Returns: boolean }
       owns_character: { Args: { _character_id: string }; Returns: boolean }
       owns_encounter: { Args: { _encounter_id: string }; Returns: boolean }
