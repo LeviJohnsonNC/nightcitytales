@@ -510,13 +510,28 @@ Graded on what a player experiences, not on what the engine models somewhere.
 - With this, `award_improvement_points` and `spend_ip_on_role_rank` moved to
   Applied and their "not migrated yet" fallbacks were deleted.
 
-**5. Then and now.** A section of the Record sheet, derived from data that
-already exists rather than a new snapshot. Day one is `character_gear` (play
-never writes it), cyberware with `installed_day` 1, the cast as generated, and
-neutral standings. Since then: `skill_raised` and `role_rank_raised` events and
-the live rows. Grouped by track, losses beside gains. Aftermath does not get a
-copy: the settlement report already is "since the last job", and two would
-drift.
+**5. Then and now — shipped.**
+
+- The Record sheet opens on day one beside today
+  (`features/campaign/thenAndNow.ts`, pure). It is derived from what already
+  exists rather than from a new snapshot:
+  - Day one is the saved character, which play never writes: its gear, its
+    chrome, its Humanity. Each person starts at their cast role's starting
+    disposition, and every faction starts with no opinion.
+  - What changed is the live rows, plus the ledger's `skill_raised`,
+    `role_rank_raised` and `ip_awarded` events, read once when the sheet opens
+    (`listCampaignEventsOfTypes`).
+- Five groups, each only when something moved: what you can do (Rank and
+  Skills, first Level to last, and I.P. earned), chrome and the Humanity it
+  cost, the weapons and armor you carry (ammunition is left out), who you know
+  in words rather than numbers ("Kiro: close → cold", a death), and who knows
+  your name.
+- Losses sit beside gains, and money is left out: a balance that grew is a
+  score.
+- Aftermath does not get a copy: the settlement report already is "since the
+  last job", and two would drift.
+- Raises bought before `skill_raised` existed (October 2026) left no event, so
+  an older campaign's "what you can do" starts from then.
 
 **6. Standing and Reputation that do something.**
 
