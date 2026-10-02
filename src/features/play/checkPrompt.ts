@@ -7,6 +7,7 @@
 import {
   areaForCheck,
   DIFFICULTY_VALUES,
+  FACEDOWN_CHECK_ID,
   describeDV,
   getSkill,
   shapeForSkill,
@@ -34,7 +35,13 @@ import { actorFor, effectiveStatsRecord, type CurrentStatsContext } from "./play
  * standing, without which a Local Expert prompt promised a Level the character
  * only has in another neighbourhood.
  */
-type LiveCheckContext = CurrentStatsContext;
+/**
+ * What a pending check is read against. `reputation` is only read by a
+ * Facedown, whose "Skill" is the character's Reputation; it is derived from the
+ * ledger by the caller (`reputationFromLedger`), and a caller that has not got
+ * it reads a Facedown at 0 rather than inventing one.
+ */
+type LiveCheckContext = CurrentStatsContext & { reputation?: number };
 
 /** The published DV bands, lowest first (src/data/rules/dv-table.json). */
 export const DV_BANDS = [...DIFFICULTY_VALUES].sort((a, b) => a.dv - b.dv);
@@ -176,6 +183,21 @@ function describeOpposition(raw: PromptOpposition | undefined): PendingOppositio
   const skillLevel = typeof raw.skillLevel === "number" ? raw.skillLevel : null;
   if (!skillId || !npcName || statValue === null || skillLevel === null) return null;
 
+  // A Facedown's other side is their COOL and their Reputation, not a Skill.
+  if (skillId === FACEDOWN_CHECK_ID) {
+    return {
+      npcKey: typeof raw.npcKey === "string" ? raw.npcKey : npcName,
+      npcName,
+      skillId,
+      skillName: "Reputation",
+      stat: "cool",
+      statValue,
+      skillLevel,
+      base: statValue + skillLevel,
+      remembered: raw.remembered === true,
+    };
+  }
+
   let skill;
   try {
     skill = getSkill(skillId);
@@ -238,6 +260,12 @@ export function describePendingCheck(
   const dvRaw = typeof data.dv === "number" ? data.dv : null;
   if (!opposition && dvRaw === null) return null;
 
+  if (skillId === FACEDOWN_CHECK_ID) {
+    return opposition
+      ? describeFacedown(event, data, opposition, character, woundState, context)
+      : null;
+  }
+
   let skill;
   try {
     skill = getSkill(skillId);
@@ -282,6 +310,45 @@ export function describePendingCheck(
     // Offered for either shape of check against a person: what the approach
     // reaches and what having tried costs.
     reads: opposition || target ? readOfferFor(skillId) : null,
+    intent: typeof data.intent === "string" ? data.intent : "",
+    beatId: event.beat_id ?? null,
+  };
+}
+
+/**
+ * A Facedown, as the card shows it before the dice: the character's COOL and
+ * Reputation against theirs. Reputation stands where a Skill would; there is no
+ * Skill, so there is no social read to offer and no Role bonus to add.
+ */
+function describeFacedown(
+  event: CampaignEvent,
+  data: PromptData,
+  opposition: PendingOpposition,
+  character: FullCharacter,
+  woundState: WoundStateCode,
+  context?: LiveCheckContext,
+): PendingCheck | null {
+  const stats = context
+    ? effectiveStatsRecord(character, context)
+    : (character.stats as Record<string, unknown> | null);
+  const statValue = stats && typeof stats["cool"] === "number" ? (stats["cool"] as number) : null;
+  if (statValue === null) return null;
+  const skillLevel = Math.max(0, Math.trunc(context?.reputation ?? 0));
+  return {
+    eventId: event.id,
+    skillId: FACEDOWN_CHECK_ID,
+    skillName: "Facedown",
+    stat: "cool",
+    statValue,
+    skillLevel,
+    base: statValue + skillLevel,
+    woundPenalty: woundActionPenalty(woundState),
+    dv: null,
+    bandName: null,
+    needed: null,
+    opposition,
+    target: null,
+    reads: null,
     intent: typeof data.intent === "string" ? data.intent : "",
     beatId: event.beat_id ?? null,
   };
@@ -466,4 +533,52 @@ export function rollHistory(events: CampaignEvent[], limit = 10): RollRecord[] {
     out.push(recordFrom(event, name));
   }
   return out;
+}
+
+/**
+ * The `check_prompt` a proposed Facedown becomes, in either loop. Written once
+ * here so the Job and Life turns post the same shape `describePendingCheck`
+ * reads back: their COOL is the opposing STAT, their Reputation the opposing
+ * "Skill", and the character's own Reputation is read at roll time from the
+ * ledger, never from the model.
+ */
+export function facedownPrompt(action: {
+  npcKey: string;
+  npcName: string;
+  opposingCool: number;
+  opposingReputation: number;
+  intent: string;
+}): { summary: string; data: Record<string, unknown> } {
+  return {
+    summary: `Facedown — ${action.npcName}`,
+    data: {
+      skillId: FACEDOWN_CHECK_ID,
+      skillName: "Facedown",
+      intent: action.intent,
+      opposition: {
+        npcKey: action.npcKey,
+        npcName: action.npcName,
+        skillId: FACEDOWN_CHECK_ID,
+        skillLevel: action.opposingReputation,
+        statValue: action.opposingCool,
+      },
+    },
+  };
+}
+
+/**
+ * What a Facedown's result means, for the narrator: somebody backed down. Empty
+ * for every other check. The engine has already decided who; this only says it
+ * in the words the rule uses, so the narration cannot have both of them stand
+ * firm.
+ */
+export function facedownOutcomeLine(
+  pending: Pick<PendingCheck, "skillId" | "opposition">,
+  success: boolean,
+): string {
+  if (pending.skillId !== FACEDOWN_CHECK_ID) return "";
+  const them = pending.opposition?.npcName ?? "they";
+  return success
+    ? ` It was a Facedown: ${them} backs down.`
+    : ` It was a Facedown: the character is the one who backs down.`;
 }

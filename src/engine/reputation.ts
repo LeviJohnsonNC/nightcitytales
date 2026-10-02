@@ -24,7 +24,11 @@
 import deedData from "@/data/rules/reputation-deeds.json";
 import tierData from "@/data/rules/job-tiers.json";
 import type { Observation } from "./clocks";
-import type { JobSettledEventData } from "./ledger";
+import { defaultRng, rollDie } from "./dice";
+import { readJobSettledEventData, type JobSettledEventData } from "./ledger";
+import { resolveOpposedCheck, type OpposedCheckResult } from "./opposedCheck";
+import type { SkillCheckModifier } from "./skillCheck";
+import type { RNG } from "./types";
 import type { Mission } from "./mission";
 import { REPUTATION } from "./rulesData";
 
@@ -131,4 +135,77 @@ export function missionFitsTier(mission: Mission, tier: JobTier): boolean {
   const size = mission.force?.size;
   if (perHead === undefined || size === undefined) return false;
   return tier.perHead.includes(perHead) && tier.forceSizes.includes(size);
+}
+
+/** Reputation from ledger rows: every `job_settled` receipt, read and scored. */
+export function reputationFromLedger(
+  events: { type: string; data: unknown }[],
+): ReputationStanding {
+  return reputationFrom(
+    events
+      .filter((e) => e.type === "job_settled")
+      .map((e) => readJobSettledEventData(e.data))
+      .filter((job): job is JobSettledEventData => job !== null),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Reputation's two printed uses at the table. Both are dice the engine rolls.
+// ---------------------------------------------------------------------------
+
+export type RecognitionRoll = { reputation: number; roll: number; heardOf: boolean };
+
+/**
+ * Has somebody meeting the character for the first time heard of them?
+ *
+ * As printed (p.193): they roll 1d10, and have heard of the character when the
+ * roll comes in UNDER the Reputation Level. Reputation 0 is never recognised,
+ * and is not rolled for.
+ */
+export function recognitionRoll(reputation: number, rng: RNG = defaultRng): RecognitionRoll {
+  const level = Math.max(0, Math.trunc(reputation));
+  if (level === 0) return { reputation: 0, roll: 0, heardOf: false };
+  const roll = rollDie(10, rng);
+  return { reputation: level, roll, heardOf: roll < level };
+}
+
+/** The pending-check id a Facedown travels under. It is not a Skill. */
+export const FACEDOWN_CHECK_ID = "facedown";
+
+export type FacedownInput = {
+  actorName: string;
+  actorCool: number;
+  actorReputation: number;
+  /** Luck and wounds: they ride on any Action, and a Facedown is one. */
+  actorModifiers?: SkillCheckModifier[];
+  opponentName: string;
+  opponentCool: number;
+  opponentReputation: number;
+};
+
+/**
+ * A Facedown: both sides roll COOL + Reputation + 1d10 and the loser backs
+ * down. Resolved by the same opposed-check rules as any contest — the actor
+ * must exceed, ties go where the rules data says, each side takes its own
+ * criticals — with Reputation standing where a Skill would.
+ */
+export function facedown(input: FacedownInput, rng: RNG = defaultRng): OpposedCheckResult {
+  return resolveOpposedCheck(
+    {
+      name: input.actorName,
+      statLabel: "COOL",
+      statValue: input.actorCool,
+      skillLabel: "Reputation",
+      skillValue: Math.max(0, Math.trunc(input.actorReputation)),
+      ...(input.actorModifiers ? { modifiers: input.actorModifiers } : {}),
+    },
+    {
+      name: input.opponentName,
+      statLabel: "COOL",
+      statValue: input.opponentCool,
+      skillLabel: "Reputation",
+      skillValue: Math.max(0, Math.trunc(input.opponentReputation)),
+    },
+    rng,
+  );
 }

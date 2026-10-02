@@ -556,15 +556,30 @@ Graded on what a player experiences, not on what the engine models somewhere.
   knows" line, the work on offer, and what the next tier needs. Rising in
   either is a receipt ("Reputation 3", "Fixers offer you steady work now").
 
-**6b. Being recognised.** Reputation's two printed dice uses, both engine-rolled:
+**6b. Being recognised — shipped.** Reputation's two printed dice uses, both
+the engine's:
 
-- the recognition roll (1d10 under the Reputation of the person met) when the
-  character meets somebody new, handed to the narrator as a fact;
-- Facedown (COOL + Reputation + 1d10, opposed), as an action the narrator can
-  propose and the engine resolves.
-
-Both change what the narrator is told and can ask for, so they arrive with a
-prompt version bump and `bun run eval`, in their own change.
+- The recognition roll (`recognitionRoll`): once a turn, before the packet is
+  built, the engine rolls whether somebody meeting the character for the first
+  time has heard of them (1d10 under their Reputation, p.193). The narrator gets
+  a "Reputation" line saying who knows and how it came out, with no number in
+  it, and the die is kept beside the narration in the ledger. At Reputation 0
+  nothing is rolled or sent, so a new character's packet is unchanged.
+- Facedown (`facedown`): COOL + Reputation + 1d10 against the same, resolved by
+  the ordinary opposed-check rules, and the loser backs down — no lingering
+  penalty, as the book has it. Either narrator proposes one
+  (`"kind":"facedown"`, with the other side's COOL and Reputation, clamped to a
+  person); it becomes an ordinary check card whose "Skill" is the character's
+  own Reputation, read from the ledger and never from the model. Luck and
+  wounds ride on it; no Role bonus does.
+- One shared `REPUTATION_RULE` in `narratorRules.ts`, in both prompts (GM
+  2.16.0, Life 2.24.0), and two detectors that trace to it:
+  `standoff-is-a-facedown` and `unheard-stays-unheard`.
+- Eval: the two new scenarios passed every check 3/3. One full run at one
+  repeat flagged five checks elsewhere (two unsourced durations, an age band,
+  a repeated phrase in a session) in scenarios whose packets did not change;
+  there was no baseline to compare against, so whether any of that is new is
+  still open. The verdict is `bun run eval:compare` over five runs a side.
 
 **7. Moving house.** Home and Lifestyle move to the campaign, falling back to
 `character_finance` for campaigns that predate it. A move is a Life action

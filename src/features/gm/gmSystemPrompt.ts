@@ -12,6 +12,7 @@ import {
   DV_LADDER_RULE,
   FOLLOW_THROUGH_RULE,
   APPEARANCE_RULE,
+  REPUTATION_RULE,
   LOW_STAKES_RULE,
   ROLE_MOVE_RULE,
   cityNoticedSection,
@@ -41,7 +42,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.15.0";
+export const GM_PROMPT_VERSION = "2.16.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -107,6 +108,8 @@ ${situationsNotSolutions({
 
 ${APPEARANCE_RULE}
 
+${REPUTATION_RULE}
+
 # WHEN THEY ASK FOR OPTIONS
 The context tells you when the player has asked what they could do. ONLY then, fill "suggestedActions" with 3-4 concrete things drawn from the scene as you already described it, under about ten words each. Do not advance the fiction, do not propose a check, and do not narrate a new moment: they are thinking, not acting, so restate the moment they are standing in and stop.
 ${ROLE_MOVE_RULE}
@@ -164,6 +167,7 @@ Return a structured JSON object:
 - "proposedActions": the mechanical actions the engine should resolve from the player's stated intent. Propose; do not resolve. Every item is an object whose discriminator field is named EXACTLY "kind". Use these shapes verbatim — a different field name means the engine never sees the action and the player never gets to roll:
   - {"kind": "skill_check", "skillId": "<id from the SKILLS list, in brackets>", "dv": 9|13|15|17|21|24|29, "intent": "<what the player is attempting>", "npcKey": "<optional: who it is aimed at, when it is aimed at a person nobody is resisting with>", "npcName": "<optional, with npcKey>", "stakes": "low" (optional, see CHECKS)}
   - {"kind": "opposed_check", "skillId": "<id from the SKILLS list>", "npcKey": "<stable key for the NPC>", "npcName": "<who is resisting>", "opposingSkillId": "<the printed skill they resist with>", "opposingSkillLevel": <0-10>, "opposingStatValue": <1-10>, "intent": "<what the player is attempting>"} — no DV: the other side's roll is the difficulty
+  - {"kind": "facedown", "npcKey": "<stable key for the NPC>", "npcName": "<who is staring them down>", "opposingCool": <1-10>, "opposingReputation": <0-10>, "intent": "<what the standoff is over>"} — see REPUTATION AND FACEDOWNS; never the character's own Reputation
   - {"kind": "start_encounter", "name": "<what the fight is>", "arena": "<one of the ARENAS ids>", "goal": "kill"|"capture"|"repel"|"rob"|"delay"|"protect", "enemies": [{"key": "<stable id>", "name": "<what they are called>", "profile": "<one of the THREATS ids>"}]} — no stats: the profile carries them. "goal" is WHY they are fighting, and most of the time it is not "kill": muggers want money, security wants you gone, cops want you in a car. A force whose goal is met stops shooting. Size the fight for ONE person: one mook is a real fight, two is dangerous, three or more is a situation the character is meant to solve some other way — sneak, talk, ambush, run — not a fair firefight.
   - {"kind": "attack", "targetId": "<the hostile's key>", "intent": "<what the player is doing>"} — no distance: the engine measures it
   - {"kind": "move", "targetId": "<the hostile's key>", "towards": "closer"|"away", "intent": "<what the player is doing>"} — no metres: the engine spends their MOVE

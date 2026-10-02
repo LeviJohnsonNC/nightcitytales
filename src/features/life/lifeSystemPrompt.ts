@@ -10,6 +10,7 @@ import {
   DV_LADDER_RULE,
   FOLLOW_THROUGH_RULE,
   APPEARANCE_RULE,
+  REPUTATION_RULE,
   LOW_STAKES_RULE,
   ROLE_MOVE_RULE,
   cityNoticedSection,
@@ -18,7 +19,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.23.0";
+export const LIFE_PROMPT_VERSION = "2.24.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -42,6 +43,8 @@ ${situationsNotSolutions({
 })}
 
 ${APPEARANCE_RULE}
+
+${REPUTATION_RULE}
 
 # WHEN THEY ASK FOR OPTIONS
 The context tells you when the player has asked what they could do. ONLY then:
@@ -104,6 +107,7 @@ Return a structured JSON object:
   - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"...","stakes":"low"(optional, see CHECKS)}
     When the check is aimed AT A PERSON and nobody is resisting it — watching somebody for a tell, reading the room, listening to how they answer, sizing up a stranger — also set "npcKey" and "npcName" (the key exactly as PEOPLE THEY KNOW prints it, when they are one of them). The engine decides what paying that much attention to somebody tells the character, and it cannot do that for a check that names nobody. Leave both out for a check against the world.
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
+  - {"kind":"facedown","npcKey":"<stable key>","npcName":"...","opposingCool":1-10,"opposingReputation":0-10,"intent":"..."} — see REPUTATION AND FACEDOWNS
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}
   - {"kind":"use_item","item":"<the thing they are using, as the kit list names it>","quantity":<integer>} — the engine decides whether using it USES IT UP: paint, a meal, a flare, a vial, a round off the ammunition rows is spent; a guitar, a scanner, a lockpick set is not. Never narrate them running out, and never tell them how many are left — the engine counts and the sheet says.
   - {"kind":"travel","destination":"<EXACT name from the travel list in WHERE YOU ARE>","seek":"<a kind of place>","direction":"north|northeast|east|southeast|south|southwest|west|northwest","extent":"near|far","mode":"foot|cab","blocks":<integer>,"minutes":<integer>} — propose this whenever the player says they are heading somewhere.

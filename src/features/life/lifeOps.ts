@@ -46,13 +46,13 @@ import {
   type GamePhase,
   type HookAsk,
   type FactionStanding,
-  type JobSettledEventData,
   type ReputationStanding,
   type TierStanding,
   isHostile,
   jobTierFor,
-  readJobSettledEventData,
-  reputationFrom,
+  reputationFromLedger,
+  recognitionRoll,
+  type RecognitionRoll,
   type LifeSituation,
   type Opposition,
   type WoundStateCode,
@@ -106,6 +106,8 @@ import { characterSummary, localExpertIn, statsRecord } from "@/features/play/pl
 import { gmSkillList } from "@/features/play/playModel";
 import {
   dvBandName,
+  facedownOutcomeLine,
+  facedownPrompt,
   pendingChecksFrom,
   snapToPublishedDv,
   type CheckRoll,
@@ -210,6 +212,7 @@ import {
   type Goal,
 } from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
+import { recognitionRecord, reputationProp } from "@/features/campaign/recognition";
 import {
   judgeAndAward,
   readLastAward,
@@ -464,11 +467,7 @@ export function climbFrom(input: {
   jobsFinished: number;
   npcs: CampaignNpc[];
 }): LifeBundle["climb"] {
-  const reputation = reputationFrom(
-    input.settled
-      .map((event) => readJobSettledEventData(event.data))
-      .filter((job): job is JobSettledEventData => job !== null),
-  );
+  const reputation = reputationFromLedger(input.settled);
   const fixer = castMemberInRole(input.npcs, "fixer");
   const tier = jobTierFor({
     reputation: reputation.level,
@@ -636,6 +635,11 @@ export type TurnOptions = {
     /** The answer to whatever the model asked last turn. */
     answer?: OracleAnswer;
   };
+  /**
+   * Whether a stranger met this turn has heard of the character: one d10 the
+   * engine rolls before the packet is built, and keeps beside the narration.
+   */
+  recognition?: RecognitionRoll;
 };
 
 /** Everywhere the campaign has recorded standing, as stored location keys. */
@@ -956,6 +960,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
       name: bundle.character.character.name,
       ...(bundle.character.character.handle ? { handle: bundle.character.character.handle } : {}),
       ...appearsAsProp(bundle.character),
+      ...(turn.recognition ? reputationProp(bundle.climb.reputation, turn.recognition) : {}),
       role: bundle.character.character.role,
       hp: bundle.vitals.hp_current,
       hpMax: bundle.vitals.hp_max,
@@ -1083,6 +1088,7 @@ async function applyResponse(
       // Which prompt, at which version, asked which model — and who answered.
       // Built here rather than spelled out, per ledger.ts.
       ...turnProvenanceDataIfAny(response.provenance),
+      ...(turn.recognition ? recognitionRecord(turn.recognition) : {}),
     } as unknown as Json,
   });
 
@@ -1307,6 +1313,14 @@ async function applyResponse(
       if (daysCrossed > 0) {
         await rest(await downtimeBundle(), daysCrossed, { advanceCalendar: false });
       }
+    } else if (action.kind === "facedown") {
+      const prompt = facedownPrompt(action);
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "check_prompt",
+        summary: prompt.summary,
+        data: prompt.data as unknown as Json,
+      });
     } else if (action.kind === "skill_check" || action.kind === "opposed_check") {
       const skillId = resolveSkillId(action.skillId);
       if (!skillId) continue;
@@ -1610,6 +1624,7 @@ export async function liveTurn(
   const asked: TurnOptions = {
     ...turn,
     ...(oracle ? { oracle } : {}),
+    recognition: turn.recognition ?? recognitionRoll(bundle.climb.reputation.level),
     ...(input.trim() && !turn.said ? { said: input.trim() } : {}),
   };
   const context = buildContext(bundle, asked);
@@ -1730,6 +1745,7 @@ async function rollWhatIsSmall(before: LifeBundle, turn: TurnOptions): Promise<v
       inventory: fresh.inventory,
       districtKey:
         resolvePosition(fresh.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+      reputation: fresh.climb.reputation.level,
     },
   );
   // Exactly one new check: rolling one of two would reorder what was asked.
@@ -1904,6 +1920,7 @@ export async function commitLifeCheck(
       ...saidBefore(bundle.events, pending.eventId),
       resolved:
         `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".` +
+        facedownOutcomeLine(pending, roll.result.success) +
         insightLine(read),
     });
     return;
