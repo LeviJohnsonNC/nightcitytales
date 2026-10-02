@@ -158,6 +158,7 @@ export async function saveLiveEncounter(
           // Damage Deflection are already spent this Round.
           data: {
             ...live.data[id],
+            ...(typeof c.deathSaveRound === "number" ? { deathSaveRound: c.deathSaveRound } : {}),
             ...(typeof c.lastHitRound === "number" ? { lastHitRound: c.lastHitRound } : {}),
             ...(typeof c.lastDamagedRound === "number"
               ? { lastDamagedRound: c.lastDamagedRound }

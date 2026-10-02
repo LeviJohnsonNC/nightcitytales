@@ -218,6 +218,7 @@ export async function beginEncounter(input: {
  * its Turn through the same loop, and must shoot the people it came to shoot.
  */
 function targetFor(state: EncounterState, actor: Combatant): Combatant | null {
+  if (actor.side === "neutral") return null;
   const standing = Object.values(state.combatants).filter((c) => !c.defeated);
   if (actor.side === "hostile") {
     // Hostiles go for the player first, and for their friends when the player
@@ -283,6 +284,14 @@ export async function runNpcTurns(
     }
     const live_actor = state.combatants[actor.id];
     if (!live_actor || live_actor.defeated) continue;
+
+    // Civilians have no implicit allegiance or weapon. Until scene exits exist,
+    // their conservative behavior is to stay down, without a morale withdrawal.
+    if (live_actor.side === "neutral") {
+      lines.push(`${live_actor.name} stays down and does not engage.`);
+      capture("status", lines.at(-1)!, { actorId: actor.id });
+      continue;
+    }
 
     // Do they still want to be here?
     //

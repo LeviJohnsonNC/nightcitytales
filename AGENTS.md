@@ -144,6 +144,10 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   `playOps.ts` is what a turn DOES — load, ask the model, validate, resolve in
   the engine, sequence the writes — and `usePlay.ts` is the thin half that binds
   it to TanStack Query.
+- `src/features/play/combatOps.ts` owns shared combat loading, board actions,
+  turn handover and death-save persistence. It accepts `CombatBundle`, which
+  requires no mission or narrator. `playOps.ts` handles the Job-specific
+  consequence of death; Life/Hook combat routing is the next scene milestone.
 - `src/features/life/` owns the Life phase: its screen, its own system prompt and
   response schema, the situation funnel, and the shop, ripperdoc and record
   sheets. Life's schema deliberately cannot express a job transition. Split the

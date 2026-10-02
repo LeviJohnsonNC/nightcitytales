@@ -111,3 +111,9 @@ these tables must tolerate their absence until the line moves up to Applied.
   the application has ever written `won`, so until this runs the only difference
   is that the database would still accept a value the app cannot produce. No
   code depends on it having run.
+
+- `20261002050000_save_mortally_wounded_combatants.sql` — **pending deployment**.
+  Verified on disposable PostgreSQL 16 after the baseline and subsequent migrations.
+  Allows the engine's negative HP for mortally wounded players and NPCs; retains
+  ownership, optimistic versioning, armor/ammunition checks and rollback. Not applied
+  to the live Supabase project by this change.

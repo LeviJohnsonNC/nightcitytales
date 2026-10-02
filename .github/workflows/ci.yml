@@ -80,3 +80,8 @@ jobs:
         env:
           PGURL: postgres://postgres:postgres@localhost:5432/postgres
         run: supabase/replay/replay.sh
+
+      - name: Combat persistence regression
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/postgres
+        run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/combat-state.test.sql

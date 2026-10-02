@@ -242,8 +242,14 @@ describe("turn operations are free of React", () => {
       "features/downtime/downtimeOps.ts",
       "features/life/lifeOps.ts",
       "features/opening/openingOps.ts",
+      "features/play/combatOps.ts",
       "features/play/playOps.ts",
     ]);
+  });
+
+  it("keeps shared combat independent of Job operations and narration", () => {
+    const specs = importsOf(readFileSync(join(SRC, "features/play/combatOps.ts"), "utf8"));
+    expect(specs.filter((spec) => /playOps|gmTurn|missionState|gmContext/.test(spec))).toEqual([]);
   });
 
   it("never imports React or the query client", () => {

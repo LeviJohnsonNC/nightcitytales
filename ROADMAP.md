@@ -779,6 +779,45 @@ Decide it deliberately rather than by default.
 
 ---
 
+## In progress: adventure scenes becoming battlefields
+
+The approved direction keeps the deterministic combat engine and introduces a
+persisted scene shared by narration and combat. The first playable slice will
+be the North Heywood street encounter, entered from Life or a Job and returned
+with the same people, objects and consequences.
+
+Phase 1 foundation:
+
+- Shared `combatOps.ts` loading/actions now require no mission. Job-specific
+  mission failure remains in `playOps.ts`; routine death saves report engine
+  results without a model call.
+- Enemy goals, threat roles and spent morale checks survive reload.
+- Death saves persist the round resolved, cannot repeat in that round, and
+  leave a surviving mortal player able to act. An owed roll is rendered from
+  state even if the ledger prompt write was interrupted.
+- Neutral civilians stay down without attacking or being counted as allies.
+  Fleeing through scene exits is later work.
+- Negative HP is preserved by the save transaction for mortal players and NPCs.
+  Migration `20261002050000_save_mortally_wounded_combatants.sql` is **pending
+  deployment**, verified on disposable PostgreSQL 16 with ownership, stale-write
+  and rollback regressions in CI.
+
+The Phase 2 scene/origin/result boundaries are recorded in
+`docs/scene-combat-contract.md`.
+
+Next: persist the scene/origin/result contracts and implement the authored street
+round trip with atomic entry, action and exit. Cross-write ledger/encounter
+atomicity and duplicate encounter prevention remain required before scene combat
+is enabled. No generated battlefields or Life combat routing ship in this phase.
+
+Compatibility: existing rows without enemy metadata retain their prior defaults.
+An active mortal turn saved before the death-save round marker existed cannot
+prove its obligation was already resolved; it requires a save once on upgrade.
+Newly resolved saves retain the marker across reload. Scene-backed encounters
+will require a versioned protocol rather than the legacy permissive writer.
+
+---
+
 ## In progress: combat as an interactive tactical mode
 
 `PRODUCT.md` makes the battlefield the fight and narration its support. Keep

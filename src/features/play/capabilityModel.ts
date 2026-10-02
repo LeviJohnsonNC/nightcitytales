@@ -11,6 +11,8 @@ import {
   TILE_METRES,
   ATTACK_COST,
   currentCombatant,
+  playerCombatant,
+  turnDeathSaveOwed,
   EMPTY_TURN_ECONOMY,
   arenaFor,
   coverBlocking,
@@ -251,11 +253,18 @@ export function buildCapabilitySnapshot(input: SnapshotInput): CapabilitySnapsho
   const ability = roleAbilityOf(input.character.character.role);
   const luckStats = { luck: stats["luck"] ?? 0 };
 
+  const fight = input.encounter?.state;
+  const player = fight ? playerCombatant(fight) : null;
+  const incapacitated =
+    fight?.status === "active" && player
+      ? player.defeated || turnDeathSaveOwed(fight)?.id === player.id
+      : input.vitals.hp_current <= 0;
+
   return {
     hp: input.vitals.hp_current,
     hpMax: input.vitals.hp_max,
     woundState: input.vitals.wound_state as WoundStateCode,
-    incapacitated: input.vitals.hp_current <= 0,
+    incapacitated,
     eurobucks: input.vitals.eurobucks,
     luck: luckRemaining(input.vitals.luck_current, luckStats),
     move,
