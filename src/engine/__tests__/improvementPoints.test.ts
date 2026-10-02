@@ -3,7 +3,10 @@ import {
   IP_PLAYSTYLES,
   IP_TIER_VALUES,
   awardImprovementPoints,
+  daysUntilLifeAward,
   getIpTier,
+  LIFE_AWARD_EVERY_DAYS,
+  lifeAwardDue,
   ipDescriptor,
   isIpTierValue,
   snapToIpTier,
@@ -72,5 +75,26 @@ describe("awardImprovementPoints", () => {
       standout: { playstyle: "explorer", ip: 20 },
     });
     expect(award).toMatchObject({ ip: 50, source: "group", fromStandout: false });
+  });
+});
+
+describe("when a stretch of life is worth judging", () => {
+  it("reads the period from the house rule", () => {
+    expect(LIFE_AWARD_EVERY_DAYS).toBe(7);
+  });
+
+  it("counts a fresh campaign from day one", () => {
+    expect(daysUntilLifeAward({ day: 1, lastAwardDay: null })).toBe(7);
+    expect(lifeAwardDue({ day: 7, lastAwardDay: null })).toBe(false);
+    expect(lifeAwardDue({ day: 8, lastAwardDay: null })).toBe(true);
+  });
+
+  it("counts from the last award, job or life", () => {
+    expect(daysUntilLifeAward({ day: 20, lastAwardDay: 16 })).toBe(3);
+    expect(lifeAwardDue({ day: 23, lastAwardDay: 16 })).toBe(true);
+  });
+
+  it("does not stack: a month without an award is one award, not four", () => {
+    expect(daysUntilLifeAward({ day: 40, lastAwardDay: 10 })).toBe(0);
   });
 });

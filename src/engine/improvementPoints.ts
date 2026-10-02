@@ -100,3 +100,33 @@ export function awardImprovementPoints(input: IpAwardInput): IpAward {
     fromStandout: useStandout,
   };
 }
+
+// ---------------------------------------------------------------------------
+// When an award is due. House rule (ip-awards.json `_houseRules`): the book
+// awards once a session, and a solo game's only natural session end is a job
+// closing. A life lived between jobs earns on the same table, on a schedule.
+// ---------------------------------------------------------------------------
+
+/** In-world days of life, with no award, after which one is due. */
+export const LIFE_AWARD_EVERY_DAYS: number = IP_AWARDS._houseRules.lifeAwardEveryDays;
+
+/** The day a campaign starts on, and so the start of its first stretch. */
+const FIRST_DAY = 1;
+
+/**
+ * Days until the life since the last award is worth judging; 0 means now.
+ *
+ * `lastAwardDay` is the in-world day of the previous award, or null when there
+ * has been none — the campaign's first day stands in. An award recorded before
+ * its day was written down (null as well) is treated the same way, which is
+ * the generous reading: an old campaign gets its first life award a week in,
+ * not never.
+ */
+export function daysUntilLifeAward(input: { day: number; lastAwardDay: number | null }): number {
+  const since = input.day - (input.lastAwardDay ?? FIRST_DAY);
+  return Math.max(0, LIFE_AWARD_EVERY_DAYS - since);
+}
+
+export function lifeAwardDue(input: { day: number; lastAwardDay: number | null }): boolean {
+  return daysUntilLifeAward(input) === 0;
+}

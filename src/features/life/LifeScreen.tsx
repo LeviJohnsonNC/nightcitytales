@@ -69,6 +69,7 @@ import {
   type StatusView,
 } from "@/features/status/statusModel";
 import { ReceiptBar } from "@/features/status/ReceiptBar";
+import { IpTallyCard } from "@/features/play/IpTallyCard";
 import { snapshotOf } from "@/features/status/receipts";
 import { useReceipts } from "@/features/status/useReceipts";
 import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
@@ -951,6 +952,20 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
             {/* What the turn just cost, under the log where the eye already is. */}
             <ReceiptBar receipts={receipts} />
+
+            {/* A week of life with no award is a session: judged here, on the
+                playstyle columns, the same table a job is judged on. */}
+            {life.phase === "life" && (life.ipDaysUntil === 0 || life.lifeIpTally) && (
+              <IpTallyCard
+                heading="a week on the street, since the last award"
+                tally={life.lifeIpTally}
+                busy={life.lifeIpBusy}
+                error={life.lifeIpError}
+                defaults={life.ipLastPlaystyles}
+                onTally={life.tallyLifeIp}
+                onDismiss={life.dismissLifeIp}
+              />
+            )}
 
             {life.actionError && (
               <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">

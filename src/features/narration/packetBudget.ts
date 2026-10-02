@@ -71,6 +71,12 @@ export const PACKET_BUDGET = {
   otherSituations: 6,
   /** Prose about where they are standing, in characters, not lines. */
   dossierChars: 2400,
+  /**
+   * Ledger lines an Improvement Point judgement reads. Not a turn's packet: it
+   * is sent once per award, and covers everything since the last one, so a long
+   * life between jobs is cut at its old end rather than allowed to grow.
+   */
+  ipJudgementLog: 120,
 } as const;
 
 /**

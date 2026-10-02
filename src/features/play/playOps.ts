@@ -35,7 +35,6 @@ import { resolveWalkOns } from "@/features/cast/walkOnMention";
 import {
   advance,
   availableExits,
-  awardImprovementPoints,
   beginTurn,
   currentBeat,
   getBeat,
@@ -53,7 +52,6 @@ import {
   type Point,
   clampDisposition,
   missionPayout,
-  type IpAward,
   type IpPlaystyle,
   clampLuckSpend,
   luckAfterSpend,
@@ -117,7 +115,6 @@ import {
 } from "@/engine";
 
 import {
-  addImprovementPoints,
   appendCampaignEvent,
   closeAftermath,
   getCampaign,
@@ -174,8 +171,7 @@ import {
   type ComplicationMemory,
 } from "@/features/campaign/oracles";
 import { gmTurnFn } from "@/features/gm/gmTurn.server";
-import { renderIpJudgementPrompt, type IpJudgement } from "@/features/gm/ipJudgement";
-import { ipJudgementFn } from "@/features/gm/ipJudgement.server";
+import { judgeAndAward, type IpTally } from "@/features/campaign/ipAward";
 import {
   actorFor,
   characterSummary,
@@ -207,7 +203,6 @@ import {
   dvBandName,
   oppositionFor,
   pendingChecksFrom,
-  rollHistory,
   snapToPublishedDv,
   type CheckRoll,
   type PendingCheck,
@@ -1989,17 +1984,17 @@ function missionFaction(mission: Mission): FactionId | null {
 }
 
 /**
- * The end-of-session I.P. award. The GM judges the session against the printed
- * table; the engine turns that judgement into the number, and it is written to
- * the campaign and to the character's permanent total exactly once.
+ * The end-of-session I.P. award. The GM judges everything since the last award
+ * against the printed table; the engine turns that judgement into the number,
+ * and `award_improvement_points` writes it to the ledger, the campaign and the
+ * character's permanent total in one transaction (`features/campaign/ipAward.ts`).
  */
-export type IpTally = { award: IpAward; judgement: IpJudgement; total: number };
+export type { IpTally } from "@/features/campaign/ipAward";
 
 export async function settleIp(
   bundle: PlayBundle,
   playstyles: { primary: IpPlaystyle; secondary: IpPlaystyle },
 ): Promise<IpTally> {
-  const campaignId = bundle.campaign.id;
   if (bundle.campaign.ip_awarded !== null && bundle.campaign.ip_awarded !== undefined) {
     throw new Error("This job's Improvement Points have already been awarded.");
   }
@@ -2011,43 +2006,16 @@ export async function settleIp(
         ? "The job was seen through to its resolution."
         : "The session ended with the job unfinished.";
 
-  const judgement = await ipJudgementFn({
-    data: {
-      userPrompt: renderIpJudgementPrompt({
-        missionTitle: bundle.mission?.title ?? bundle.campaign.name,
-        missionFinished,
-        outcome,
-        objectives: (bundle.runtime?.objectives ?? []).map((o) => ({
-          text: o.text,
-          status: o.status,
-        })),
-        primary: playstyles.primary,
-        secondary: playstyles.secondary,
-        log: bundle.events.slice(-60).map((e) => `[${e.type}] ${e.summary ?? ""}`),
-        rollCount: rollHistory(bundle.events).length,
-      }),
-    },
+  return judgeAndAward({
+    campaignId: bundle.campaign.id,
+    kind: "job",
+    day: bundle.campaign.day,
+    title: bundle.mission?.title ?? bundle.campaign.name,
+    finished: missionFinished,
+    outcome,
+    objectives: (bundle.runtime?.objectives ?? []).map((o) => ({ text: o.text, status: o.status })),
+    playstyles,
   });
-
-  const award = awardImprovementPoints({
-    missionFinished,
-    groupIp: judgement.groupIp,
-    primary: playstyles.primary,
-    secondary: playstyles.secondary,
-    primaryIp: judgement.primaryIp,
-    secondaryIp: judgement.secondaryIp,
-    standout: judgement.standout,
-  });
-
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "ip_awarded",
-    summary: `${award.ip} I.P. awarded (${award.source} column${award.fromStandout ? ", standout" : ""}): ${award.descriptor}`,
-    data: { award, judgement, playstyles } as unknown as Json,
-  });
-  await updateCampaign(campaignId, { ip_awarded: award.ip });
-  const total = await addImprovementPoints(bundle.campaign.character_id, award.ip);
-  return { award, judgement, total };
 }
 
 /** The character died: fail the job and close the campaign. */

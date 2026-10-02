@@ -207,6 +207,7 @@ export type IpTier = {
 /** The end-of-session I.P. award table, read from ip-awards.json. */
 export const IP_AWARDS = ipAwards as unknown as {
   _rules: { finished: string; unfinished: string };
+  _houseRules: { houseRule: true; lifeAwardEveryDays: number; note: string };
   playstyles: { id: string; name: string }[];
   tiers: IpTier[];
 };

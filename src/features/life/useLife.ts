@@ -31,7 +31,9 @@ import {
   liveTurn,
   loadLife,
   pushHook,
+  settleLifeIp,
 } from "./lifeOps";
+import type { IpTally, Playstyles } from "@/features/campaign/ipAward";
 
 export function useLife(campaignId: string) {
   const queryClient = useQueryClient();
@@ -66,6 +68,14 @@ export function useLife(campaignId: string) {
     mutationFn: () => {
       if (!bundle) throw new Error("Still loading.");
       return acceptHook(bundle);
+    },
+    onSuccess: invalidate,
+  });
+
+  const lifeIp = useMutation({
+    mutationFn: (playstyles: Playstyles) => {
+      if (!bundle) throw new Error("Still loading.");
+      return settleLifeIp(bundle, playstyles);
     },
     onSuccess: invalidate,
   });
@@ -258,6 +268,15 @@ export function useLife(campaignId: string) {
     acceptHook: () => accept.mutate(),
     declineHook: (reason: string) => decline.mutate(reason),
     pushHook: (ask: HookAsk) => push.mutate(ask),
+    /** In-world days until the life since the last award is judged; 0 means now. */
+    ipDaysUntil: bundle?.ipAward.daysUntil ?? null,
+    ipLastPlaystyles: bundle?.ipAward.lastPlaystyles ?? null,
+    /** Judge the life since the last award. Only offered once it is due. */
+    tallyLifeIp: (playstyles: Playstyles) => lifeIp.mutate(playstyles),
+    lifeIpTally: (lifeIp.data as IpTally | undefined) ?? null,
+    lifeIpBusy: lifeIp.isPending,
+    lifeIpError: (lifeIp.error as Error | null) ?? null,
+    dismissLifeIp: () => lifeIp.reset(),
     /** Cross the city. The engine prices the trip; the clock pays for it. */
     travelTo: (to: string) => travel.mutate(to),
     /** Whatever is out of the Family Motorpool, so the map quotes the real minutes. */

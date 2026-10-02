@@ -192,8 +192,15 @@ import {
   tagsOf,
   type NearbyPlace,
   type PlaceTag,
+  daysUntilLifeAward,
 } from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
+import {
+  judgeAndAward,
+  readLastAward,
+  type IpTally,
+  type Playstyles,
+} from "@/features/campaign/ipAward";
 import {
   applyPressure,
   notableFrom,
@@ -284,6 +291,12 @@ export type LifeBundle = {
    * it always did, the other means the character has not looked yet.
    */
   truthsAvailable: boolean;
+  /**
+   * Where the life since the last Improvement Point award stands: how many
+   * in-world days until it is judged (0: now), and what the player declared
+   * last time, so the pickers open on it.
+   */
+  ipAward: { daysUntil: number; lastPlaystyles: Playstyles | null };
 };
 
 export async function loadLife(campaignId: string): Promise<LifeBundle> {
@@ -294,14 +307,16 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
   const character = await getCharacter(full.campaign.character_id);
   if (!character) throw new Error("This campaign's character no longer exists.");
 
-  const [events, situationRows, clockRows, factionRows, places, truths] = await Promise.all([
-    listCampaignEvents(campaignId),
-    listSituations(campaignId),
-    listClocks(campaignId),
-    listCampaignFactions(campaignId),
-    loadPlaceStates(campaignId),
-    listCampaignTruths(campaignId),
-  ]);
+  const [events, situationRows, clockRows, factionRows, places, truths, lastAward] =
+    await Promise.all([
+      listCampaignEvents(campaignId),
+      listSituations(campaignId),
+      listClocks(campaignId),
+      listCampaignFactions(campaignId),
+      loadPlaceStates(campaignId),
+      listCampaignTruths(campaignId),
+      readLastAward(campaignId),
+    ]);
 
   // The six the campaign lives among. Seeded once, from the character's own
   // Lifepath, before anything reads the people: a campaign with nobody in it
@@ -388,7 +403,40 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     places,
     discoveredTruths: truths.rows.map((row) => row.truth_key),
     truthsAvailable: truths.available,
+    ipAward: {
+      daysUntil: daysUntilLifeAward({ day: clock.day, lastAwardDay: lastAward.day }),
+      lastPlaystyles: lastAward.playstyles,
+    },
   };
+}
+
+/**
+ * The life since the last award, judged once enough of it has been lived.
+ *
+ * House rule (`ip-awards.json` `_houseRules`): a solo game has no session to end
+ * but a job, and a week of life with no job in it would otherwise earn nothing.
+ * It is judged on the playstyle columns — no job finished — over everything
+ * since the last award, through the same transaction a job's award uses.
+ */
+export async function settleLifeIp(bundle: LifeBundle, playstyles: Playstyles): Promise<IpTally> {
+  if (bundle.phase !== "life") {
+    throw new Error("Improvement Points for a stretch of life are judged between jobs.");
+  }
+  if (bundle.ipAward.daysUntil > 0) {
+    throw new Error(
+      `Not yet: ${bundle.ipAward.daysUntil} more ${bundle.ipAward.daysUntil === 1 ? "day" : "days"} of life before it is judged.`,
+    );
+  }
+  return judgeAndAward({
+    campaignId: bundle.campaign.id,
+    kind: "life",
+    day: bundle.clock.day,
+    title: "Life between jobs",
+    finished: false,
+    outcome: "No job closed in this stretch. It is judged on how the character lived it.",
+    objectives: [],
+    playstyles,
+  });
 }
 
 /** The seed of the job on the wire, drawing and storing one the first time. */

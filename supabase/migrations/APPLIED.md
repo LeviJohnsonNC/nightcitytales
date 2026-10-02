@@ -90,17 +90,19 @@ once it has actually been run.
 - `20260912140000_campaign_truths.sql`
 - `20260912141314_b9ce2474-7053-4d7e-be92-8e6af113fa0d.sql` — the copy that was
   actually applied. Identical DDL to the entry above.
+- `20261002010000_skill_raise_leaves_a_trace.sql`
 
 ## Pending
 
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
 
-- `20261002010000_skill_raise_leaves_a_trace.sql` — `spend_ip_on_skill` also
-  appends a `skill_raised` event to the character's active campaign. Same
-  signature, so no type change. Until it runs a raise still works and simply
-  leaves no event; nothing reads the event yet but the Then and Now page still
-  to come.
+- `20261002020000_award_improvement_points.sql` — adds
+  `award_improvement_points`, the one transaction for an I.P. award (ledger
+  event, the job's `ip_awarded` mark, the character's total). Until it runs,
+  `commitIpAward` falls back to the three separate writes awards always made,
+  so nothing breaks; it is only not atomic. Once it is applied, move it up and
+  delete `legacyIpAward` in `src/lib/backend/campaigns.ts`.
 
 - `20260919050000_opening_premise_not_a_commitment.sql` — data only. Clears
   `due_day` on the opening's `opening_just_living` situation and marks it

@@ -285,6 +285,11 @@ The important transactional database boundaries are:
   tallies, the `job_settled` receipt, and the transition to Aftermath.
 - `close_aftermath(payload)`: clears the mission, refills Luck, appends the
   phase event, and moves the campaign back to Life together.
+- `award_improvement_points(payload)`: commits one I.P. award — the
+  `ip_awarded` event, a job's `ip_awarded` mark, and the character's total.
+  An award covers everything since the previous one, job or life, so the
+  caller sends the `seq` of the last award it judged from and the transaction
+  refuses when that is no longer the newest.
 - `install_cyberware(payload)`: commits one ripperdoc installation — payment,
   Humanity, the implants and their foundations, elapsed time, ripperdoc state,
   the ledger receipt, and passing on an active hook. Idempotent on the caller's

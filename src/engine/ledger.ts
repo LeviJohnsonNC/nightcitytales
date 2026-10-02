@@ -41,6 +41,7 @@ export const LEDGER_EVENTS = {
   backupCalled: "backup_called",
   encounterStarted: "encounter_started",
   skillRaised: "skill_raised",
+  ipAwarded: "ip_awarded",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -325,6 +326,84 @@ export function readSkillRaisedEventData(raw: unknown): SkillRaisedEventData | n
   // raise it could have written.
   if (toLevel !== fromLevel + 1) return null;
   return { skillId, specialization: str(d["specialization"]), fromLevel, toLevel, cost };
+}
+
+// ---------------------------------------------------------------------------
+// ip_awarded — read back to find where the next award's window starts, and
+// what the player last declared. Written through `award_improvement_points`,
+// which stores `data` as given, so the builder here is the whole contract.
+// ---------------------------------------------------------------------------
+
+/** What earned the points: a job closing, or a stretch of life with no award. */
+export type IpAwardKind = "job" | "life";
+
+export type IpAwardedEventData = {
+  ip: number;
+  /** "group" or a playstyle id: the column the award was read from. */
+  source: string;
+  descriptor: string;
+  fromStandout: boolean;
+  kind: IpAwardKind;
+  /** The in-world day of the award; null on an award written before it was kept. */
+  day: number | null;
+  playstyles: { primary: string; secondary: string } | null;
+};
+
+type IpAwardedWire = {
+  award: { ip: number; source: string; descriptor: string; fromStandout: boolean };
+  judgement: unknown;
+  playstyles: { primary: string; secondary: string };
+  kind: IpAwardKind;
+  day: number;
+};
+
+export function ipAwardedEventData(input: {
+  award: { ip: number; source: string; descriptor: string; fromStandout: boolean };
+  judgement: unknown;
+  playstyles: { primary: string; secondary: string };
+  kind: IpAwardKind;
+  day: number;
+}): IpAwardedWire {
+  return {
+    award: {
+      ip: input.award.ip,
+      source: input.award.source,
+      descriptor: input.award.descriptor,
+      fromStandout: input.award.fromStandout,
+    },
+    judgement: input.judgement,
+    playstyles: { primary: input.playstyles.primary, secondary: input.playstyles.secondary },
+    kind: input.kind,
+    day: input.day,
+  };
+}
+
+/**
+ * Reads both shapes: the one above, and the one every award before it wrote —
+ * the same `award` and `playstyles`, with no `kind` (all of them were jobs) and
+ * no `day`.
+ */
+export function readIpAwardedEventData(raw: unknown): IpAwardedEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const award = d["award"];
+  if (!award || typeof award !== "object" || Array.isArray(award)) return null;
+  const a = award as RawPayload;
+  const ip = num(a["ip"]);
+  const source = str(a["source"]);
+  if (ip === null || source === null) return null;
+  const ps = d["playstyles"];
+  const primary = ps && typeof ps === "object" ? str((ps as RawPayload)["primary"]) : null;
+  const secondary = ps && typeof ps === "object" ? str((ps as RawPayload)["secondary"]) : null;
+  return {
+    ip,
+    source,
+    descriptor: str(a["descriptor"]) ?? "",
+    fromStandout: a["fromStandout"] === true,
+    kind: d["kind"] === "life" ? "life" : "job",
+    day: num(d["day"]),
+    playstyles: primary && secondary ? { primary, secondary } : null,
+  };
 }
 
 // ---------------------------------------------------------------------------

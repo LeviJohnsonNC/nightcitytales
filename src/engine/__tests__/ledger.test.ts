@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   attackEventData,
+  ipAwardedEventData,
+  readIpAwardedEventData,
   deathSaveEventData,
   payloadOf,
   readAttackEventData,
@@ -354,5 +356,45 @@ describe("turn provenance", () => {
     expect(readTurnProvenance([1, 2])).toBeNull();
     expect(readTurnProvenance({ provenance: "2.8.0" })).toBeNull();
     expect(readTurnProvenance({ provenance: { narrator: "gm" } })).toBeNull();
+  });
+});
+
+describe("an Improvement Point award survives the round trip", () => {
+  const award = {
+    ip: 30,
+    source: "explorer",
+    descriptor: "Frequent and effective…",
+    fromStandout: false,
+  };
+
+  it("reads back what the builder writes", () => {
+    const wire = ipAwardedEventData({
+      award,
+      judgement: { reason: "x" },
+      playstyles: { primary: "explorer", secondary: "socializer" },
+      kind: "life",
+      day: 15,
+    });
+    expect(readIpAwardedEventData(JSON.parse(JSON.stringify(wire)))).toEqual({
+      ...award,
+      kind: "life",
+      day: 15,
+      playstyles: { primary: "explorer", secondary: "socializer" },
+    });
+  });
+
+  it("reads every award written before kind and day were kept, as a job with no day", () => {
+    const legacy = {
+      award: { ...award, ip: 40, source: "group" },
+      judgement: {},
+      playstyles: { primary: "warrior", secondary: "roleplayer" },
+    };
+    expect(readIpAwardedEventData(legacy)).toMatchObject({ ip: 40, kind: "job", day: null });
+  });
+
+  it("refuses a payload with no award in it", () => {
+    expect(readIpAwardedEventData({ kind: "life", day: 3 })).toBeNull();
+    expect(readIpAwardedEventData({ award: { source: "group" } })).toBeNull();
+    expect(readIpAwardedEventData(null)).toBeNull();
   });
 });
