@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { generateJob, seededRng } from "@/engine";
+import {
+  findFactionIn,
+  generateJob,
+  JOB_TIERS,
+  missionFitsTier,
+  seededRng,
+  type FactionId,
+} from "@/engine";
 import { SEED_CANDIDATES, pickJobSeed } from "../hookOffer";
 
 describe("the wire prefers ground you know", () => {
@@ -32,5 +39,33 @@ describe("the wire prefers ground you know", () => {
 
   it("looks at more than one candidate", () => {
     expect(SEED_CANDIDATES).toBeGreaterThan(1);
+  });
+});
+
+describe("the wire offers the work a crew has earned", () => {
+  it.each(JOB_TIERS.map((t) => [t.id, t] as const))(
+    "finds %s work almost every time it looks",
+    (_id, tier) => {
+      const rng = seededRng(2026);
+      let fits = 0;
+      const draws = 200;
+      for (let i = 0; i < draws; i += 1) {
+        const seed = pickJobSeed(new Set(), rng, { tier, hostile: new Set() });
+        if (missionFitsTier(generateJob(seed), tier)) fits += 1;
+      }
+      // The rarest tier is about one seed in ten; sixty-four looks miss it about
+      // one time in a thousand, so 195 of 200 is a generous floor.
+      expect(fits).toBeGreaterThanOrEqual(195);
+    },
+  );
+
+  it("does not put the character to work for a faction that wants them dead", () => {
+    const rng = seededRng(41);
+    const hostile = new Set<FactionId>(["arasaka", "militech", "trauma_team"]);
+    for (let i = 0; i < 100; i += 1) {
+      const seed = pickJobSeed(new Set(), rng, { tier: JOB_TIERS[0]!, hostile });
+      const employer = findFactionIn(generateJob(seed).offer?.patronOrg ?? null);
+      expect(employer === null || !hostile.has(employer)).toBe(true);
+    }
   });
 });

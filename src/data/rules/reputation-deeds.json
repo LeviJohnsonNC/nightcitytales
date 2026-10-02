@@ -1,0 +1,20 @@
+{
+  "houseRule": true,
+  "_source": "Cyberpunk RED Core Rulebook p.193 prints the Reputation ladder and says the GM awards a Level for notable deeds, a new deed replacing the old only when it is higher. Which deed is worth which Level is the GM's call; this table is ours, so the engine can make it from what a job actually left behind.",
+  "_rules": {
+    "deed": "A settled job is a deed unless it was clean. Its Level is the base, plus a step for each sign that people saw it, plus a step if it was loud, plus a step for a body count, plus a step for a fee big enough to be talked about, capped at jobCap.",
+    "clean": "A job the settlement calls clean earns no Reputation. Getting away without a trace is what takes pressure off; it is also what keeps your name out of the story. That trade is the point.",
+    "reputation": "A character's Reputation is the highest deed Level they have earned. It never goes down.",
+    "above": "Levels above jobCap are news stories and headlines. Nothing in the game writes the news yet, so nothing earns them yet."
+  },
+  "base": 1,
+  "seenBy": ["seen", "named", "witness"],
+  "seenByCap": 2,
+  "loud": 1,
+  "bodies": { "atLeast": 3, "adds": 1 },
+  "fee": [
+    { "atLeast": 1500, "adds": 1 },
+    { "atLeast": 3000, "adds": 2 }
+  ],
+  "jobCap": 6
+}

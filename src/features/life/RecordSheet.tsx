@@ -18,6 +18,7 @@ import { getFaction, isFactionId, standingBand } from "@/engine";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { pressureLines } from "@/features/campaign/pressure";
 import type { LifeBundle } from "./lifeOps";
+import { ClimbPanel } from "./ClimbPanel";
 
 function Row({
   label,
@@ -155,6 +156,7 @@ export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
         )}
 
         <div className="mt-5 space-y-5">
+          <ClimbPanel bundle={bundle} />
           <ThenAndNow bundle={bundle} open={open} />
 
           {people.length > 0 && (

@@ -18,6 +18,7 @@ import { MAX_PINNED_GOALS, type GoalProgress } from "@/engine";
 import { SpendIpCard } from "@/features/roster/SpendIpCard";
 import { goalFill, goalGapLabel } from "@/features/status/goalsModel";
 import { formatMoney } from "@/features/status/statusModel";
+import { ClimbPanel } from "./ClimbPanel";
 import { DockTile } from "./hud/DockTile";
 import type { useLife } from "./useLife";
 
@@ -170,6 +171,8 @@ export function WithinReachSheet({ life }: { life: Life }) {
               )}
             </Section>
           )}
+
+          <ClimbPanel bundle={bundle} />
 
           {reach.standing.length > 0 && (
             <Section title="Standing">

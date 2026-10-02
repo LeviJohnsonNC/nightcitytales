@@ -46,6 +46,13 @@ import {
   type GamePhase,
   type HookAsk,
   type FactionStanding,
+  type JobSettledEventData,
+  type ReputationStanding,
+  type TierStanding,
+  isHostile,
+  jobTierFor,
+  readJobSettledEventData,
+  reputationFrom,
   type LifeSituation,
   type Opposition,
   type WoundStateCode,
@@ -66,6 +73,7 @@ import {
   setInventoryQuantity,
   getCharacter,
   lastCampaignEventOfType,
+  listCampaignEventsOfTypes,
   listCampaignEvents,
   listCampaignTruths,
   recordTruthDiscovery,
@@ -131,6 +139,7 @@ import {
   wireOfferFor,
   JOB_PAYOUT_FLAG,
   NEXT_JOB_SEED_FLAG,
+  type JobSeedFilter,
   type LifeHook,
 } from "./hookOffer";
 import {
@@ -210,6 +219,7 @@ import {
 import {
   applyPressure,
   notableFrom,
+  standingsFrom,
   pressureFrom,
   pressureLines,
   readObservations,
@@ -305,6 +315,8 @@ export type LifeBundle = {
   ipAward: { daysUntil: number; lastPlaystyles: Playstyles | null };
   /** The goals the player has pinned, in the order they pinned them. */
   pinnedGoals: Goal[];
+  /** Who has heard of the character, and the work that brings them. */
+  climb: { reputation: ReputationStanding; tier: TierStanding };
 };
 
 export async function loadLife(campaignId: string): Promise<LifeBundle> {
@@ -315,17 +327,27 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
   const character = await getCharacter(full.campaign.character_id);
   if (!character) throw new Error("This campaign's character no longer exists.");
 
-  const [events, situationRows, clockRows, factionRows, places, truths, lastAward, pinsEvent] =
-    await Promise.all([
-      listCampaignEvents(campaignId),
-      listSituations(campaignId),
-      listClocks(campaignId),
-      listCampaignFactions(campaignId),
-      loadPlaceStates(campaignId),
-      listCampaignTruths(campaignId),
-      readLastAward(campaignId),
-      lastCampaignEventOfType(campaignId, LEDGER_EVENTS.goalsPinned),
-    ]);
+  const [
+    events,
+    situationRows,
+    clockRows,
+    factionRows,
+    places,
+    truths,
+    lastAward,
+    pinsEvent,
+    settledJobs,
+  ] = await Promise.all([
+    listCampaignEvents(campaignId),
+    listSituations(campaignId),
+    listClocks(campaignId),
+    listCampaignFactions(campaignId),
+    loadPlaceStates(campaignId),
+    listCampaignTruths(campaignId),
+    readLastAward(campaignId),
+    lastCampaignEventOfType(campaignId, LEDGER_EVENTS.goalsPinned),
+    listCampaignEventsOfTypes(campaignId, [LEDGER_EVENTS.jobSettled]),
+  ]);
 
   // The six the campaign lives among. Seeded once, from the character's own
   // Lifepath, before anything reads the people: a campaign with nobody in it
@@ -374,7 +396,18 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
   // There is always a job somewhere in Night City. Its seed is drawn once and
   // stored, so the same work is still on the wire after a reload, and so the
   // mission behind an offer exists BEFORE anyone pitches it.
-  const seed = await ensureNextJobSeed(campaignId, full.flags, knownDistrictsOf(full.campaign));
+  const climb = climbFrom({
+    settled: settledJobs,
+    jobsFinished: tallyFrom(full.flags).jobsFinished,
+    npcs: cast.npcs,
+  });
+  const filter = seedFilterFrom(climb.tier, standingsFrom(factionRows));
+  const seed = await ensureNextJobSeed(
+    campaignId,
+    full.flags,
+    knownDistrictsOf(full.campaign),
+    filter,
+  );
   // Work comes through the fixer the character actually has, not a new name.
   const { missionId: wireMissionId, wire } = wireOfferFor(
     seed,
@@ -391,7 +424,7 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     // A hook written before offers carried a mission. Rather than guess at what
     // job was meant, bind it to the one on the wire and roll a fresh one on:
     // from here the offer and the job it starts are the same object.
-    hook = await bindLegacyHook(campaignId, hookRow, seed, knownDistrictsOf(full.campaign));
+    hook = await bindLegacyHook(campaignId, hookRow, seed, knownDistrictsOf(full.campaign), filter);
   }
 
   return {
@@ -417,6 +450,39 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
       lastPlaystyles: lastAward.playstyles,
     },
     pinnedGoals: pinsEvent ? readGoalsPinnedEventData(pinsEvent.data) : [],
+    climb,
+  };
+}
+
+/**
+ * Reputation from every job the campaign has settled, and the tier of work it
+ * brings. The fixer is whoever holds that seat in the standing cast: a fixer
+ * who has gone cold puts the character up for less than they have earned.
+ */
+export function climbFrom(input: {
+  settled: CampaignEvent[];
+  jobsFinished: number;
+  npcs: CampaignNpc[];
+}): LifeBundle["climb"] {
+  const reputation = reputationFrom(
+    input.settled
+      .map((event) => readJobSettledEventData(event.data))
+      .filter((job): job is JobSettledEventData => job !== null),
+  );
+  const fixer = castMemberInRole(input.npcs, "fixer");
+  const tier = jobTierFor({
+    reputation: reputation.level,
+    jobsFinished: input.jobsFinished,
+    fixerDisposition: fixer?.disposition ?? null,
+  });
+  return { reputation, tier };
+}
+
+/** What the next job has to be: this tier's work, from nobody hostile. */
+function seedFilterFrom(tier: TierStanding, standings: FactionStanding[]): JobSeedFilter {
+  return {
+    tier: tier.tier,
+    hostile: new Set(standings.filter((s) => isHostile(s.standing)).map((s) => s.factionId)),
   };
 }
 
@@ -473,19 +539,28 @@ async function ensureNextJobSeed(
   campaignId: string,
   flags: CampaignFlag[],
   known: Set<string>,
+  filter: JobSeedFilter,
 ): Promise<number> {
   const stored = nextJobSeedFrom(flags);
   if (stored !== null) return stored;
   // Prefer work on ground the character has walked. "The target is holed up in
   // Coronado Heights" only lands if they have been to Coronado Heights.
-  const seed = pickJobSeed(known);
+  const seed = pickJobSeed(known, Math.random, filter);
   await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, seed as unknown as Json);
   return seed;
 }
 
 /** Draw the next job onto the wire, so the one just offered is not offered twice. */
-async function rollWireForward(campaignId: string, known: Set<string>): Promise<void> {
-  await setCampaignFlag(campaignId, NEXT_JOB_SEED_FLAG, pickJobSeed(known) as unknown as Json);
+async function rollWireForward(
+  campaignId: string,
+  known: Set<string>,
+  filter: JobSeedFilter,
+): Promise<void> {
+  await setCampaignFlag(
+    campaignId,
+    NEXT_JOB_SEED_FLAG,
+    pickJobSeed(known, Math.random, filter) as unknown as Json,
+  );
 }
 
 /** Give an offer that predates offer-time generation the job it will start. */
@@ -494,13 +569,14 @@ async function bindLegacyHook(
   situation: LifeSituation,
   seed: number,
   known: Set<string>,
+  filter: JobSeedFilter,
 ): Promise<LifeHook> {
   const { missionId } = wireOfferFor(seed);
   const mission = getMission(missionId);
   const offer = missionOffer(mission);
   const terms = offerTerms(mission);
   await upsertSituations(campaignId, [hookUpsert(situation.key, mission, offer, terms)]);
-  await rollWireForward(campaignId, known);
+  await rollWireForward(campaignId, known, filter);
   return { situationKey: situation.key, missionId, mission, offer, terms };
 }
 
@@ -1304,7 +1380,11 @@ async function applyResponse(
       // The wire moves on, so the same job is never offered twice — and
       // tonight's roll is spent, so the NEXT job does not turn up this evening
       // too if the player walks away from this one.
-      await rollWireForward(campaignId, knownDistrictsOf(bundle.campaign));
+      await rollWireForward(
+        campaignId,
+        knownDistrictsOf(bundle.campaign),
+        seedFilterFrom(bundle.climb.tier, bundle.standings),
+      );
       await spendWire(campaignId, clock.day);
       const to = nextPhase(bundle.phase, "offer_hook");
       if (to) await setCampaignPhase(campaignId, to);

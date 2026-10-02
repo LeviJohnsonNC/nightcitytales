@@ -4,6 +4,7 @@ import {
   goalsPinnedEventData,
   ipAwardedEventData,
   readGoalsPinnedEventData,
+  readJobSettledEventData,
   readIpAwardedEventData,
   deathSaveEventData,
   payloadOf,
@@ -424,5 +425,31 @@ describe("pinned goals survive the round trip", () => {
       }),
     ).toEqual([{ kind: "rank", rank: 6 }]);
     expect(readGoalsPinnedEventData(null)).toEqual([]);
+  });
+});
+
+describe("the settlement receipt, as Reputation reads it", () => {
+  // The shape settle_job stores: the whole AftermathReport as the event's data.
+  const receipt = {
+    findings: [
+      { observation: "witness", count: 2, because: "2 walked away" },
+      { observation: "loud", count: 1, because: "it was loud" },
+      { observation: "not_a_thing", count: 4, because: "drift" },
+    ],
+    payment: { agreed: 1500, paid: 1500, roll: {} },
+    mechanical: {},
+    survivors: [],
+  };
+
+  it("reads what was noticed and the fee agreed", () => {
+    expect(readJobSettledEventData(receipt)).toEqual({
+      noticed: { witness: 2, loud: 1 },
+      agreed: 1500,
+    });
+  });
+
+  it("refuses something that is not a receipt", () => {
+    expect(readJobSettledEventData({ payment: { agreed: 9 } })).toBeNull();
+    expect(readJobSettledEventData(null)).toBeNull();
   });
 });

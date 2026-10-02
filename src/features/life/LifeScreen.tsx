@@ -54,7 +54,7 @@ import {
 
 import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
-import { readWalkOnsEventData } from "@/engine";
+import { JOB_TIERS, readWalkOnsEventData } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
 import { MapButton } from "@/features/atlas/MapButton";
 import { CampaignHeader } from "@/features/play/CampaignHeader";
@@ -690,6 +690,11 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
           npcs: bundle.npcs,
           pressure: bundle.pressure,
           goals: life.pinned,
+          climb: {
+            reputation: bundle.climb.reputation.level,
+            tierIndex: JOB_TIERS.findIndex((t) => t.id === bundle.climb.tier.tier.id),
+            tierName: bundle.climb.tier.tier.name,
+          },
         })
       : null,
   );

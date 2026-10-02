@@ -1,0 +1,37 @@
+{
+  "houseRule": true,
+  "_source": "Ours. The book prices jobs by what they are, and leaves who gets offered what to the GM. These tiers make that the engine's: a crew nobody has heard of gets street work, and better-paid work is also more dangerous work, because pay that climbs while danger stays flat is eurobucks that only go up.",
+  "_rules": {
+    "tier": "The highest tier whose Reputation and jobs-finished requirements are both met.",
+    "fixer": "A fixer who has gone cold on you (disposition below coldBelow) puts you up for one tier less than you have earned.",
+    "fit": "A job fits a tier when its per-head fee and its force size are both the tier's. Overwhelming forces are never generated, so no tier asks for one.",
+    "hostile": "An employer whose faction is hostile to you does not hire you, whatever your tier."
+  },
+  "coldBelow": 0,
+  "tiers": [
+    {
+      "id": "street",
+      "name": "Street work",
+      "minReputation": 0,
+      "minJobsFinished": 0,
+      "perHead": [500, 1000],
+      "forceSizes": ["small", "standard"]
+    },
+    {
+      "id": "steady",
+      "name": "Steady work",
+      "minReputation": 3,
+      "minJobsFinished": 3,
+      "perHead": [1000, 1500],
+      "forceSizes": ["standard", "heavy"]
+    },
+    {
+      "id": "serious",
+      "name": "Serious work",
+      "minReputation": 5,
+      "minJobsFinished": 6,
+      "perHead": [1500, 2000],
+      "forceSizes": ["heavy"]
+    }
+  ]
+}
