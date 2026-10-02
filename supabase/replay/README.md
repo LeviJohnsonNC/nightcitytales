@@ -99,3 +99,6 @@ and required snapshot protocol and concurrency versions in a rolled-back transac
 
 `scene-receipts.test.sql` checks origin validation, entry replay, exact-save replay,
 stale conflicts, atomic completion, ledger-failure rollback, and receipt ownership.
+
+`persistent-scenes.test.sql` checks staging without combat, template/revisit
+continuity, scene-bound entry, deferred completion enforcement and owner-only reads.

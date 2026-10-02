@@ -95,3 +95,8 @@ jobs:
         run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/scene-receipts.test.sql
         env:
           PGURL: postgres://postgres:postgres@localhost:5432/postgres
+
+      - name: Persistent scene regression
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/postgres
+        run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/persistent-scenes.test.sql

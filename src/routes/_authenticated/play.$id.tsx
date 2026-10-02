@@ -1,3 +1,4 @@
+import { SceneContact } from "@/features/scenes/SceneContact";
 import { campaignScreen } from "@/features/play/campaignScreen";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -42,6 +43,7 @@ function PlayPage() {
         opening: needsOpening(full.campaign, flags),
         combat: Boolean(await getActiveEncounter(id)),
         status: full.campaign.status,
+        location: full.campaign.location_key,
       };
     },
   });
@@ -60,5 +62,12 @@ function PlayPage() {
   // campaign phase (or its cold opening) resumes; combat never changes phase.
   const screen = campaignScreen(data);
   if (screen === "opening") return <OpeningScreen campaignId={id} />;
-  return screen === "play" ? <PlayScreen campaignId={id} /> : <LifeScreen campaignId={id} />;
+  return (
+    <>
+      {!data.combat && data.status === "active" && (
+        <SceneContact campaignId={id} location={data.location} phase={data.phase} />
+      )}
+      {screen === "play" ? <PlayScreen campaignId={id} /> : <LifeScreen campaignId={id} />}
+    </>
+  );
 }

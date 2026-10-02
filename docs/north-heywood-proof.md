@@ -1,33 +1,31 @@
 # North Heywood authored combat proof
 
-This is Phase 2a of the approved scene-combat plan. It exercises a specific scene
+This covers the authored scene milestones, Phases 2a–2c, of the approved plan. It exercises a specific scene
 through the existing combat engine and diagram board. Automatic conversion of
 adventure prose is not enabled.
 
 ## Trying it
 
-1. Apply the pending migrations through `20261002070000_scene_combat_receipts.sql`
-   to the test environment. The new entry RPC fails explicitly if absent.
-2. Use an existing, expendable campaign with its opening completed. Open `/combat`
-   and choose **Ulysses Street intersection**. The fixture has its own opposition;
-   ordinary force selection is hidden for it.
-3. Read the authored scene and start the encounter. The harness moves the campaign
-   to North Heywood and preserves its current phase and mission runtime. It resumes
-   an existing fight if present; a new fight can wound the character and spend real ammunition.
-4. The player starts at the crosswalk. The Thorton is across the road, the rifleman
-   beside the fender, the lookout farther along the curb, and two neutral workers
-   near the broth cart. “Heavy rifle” is concretely an Assault Rifle for this proof.
-   The workers borrow the existing street-thug physiology with no weapon/attack;
-   this is representative test content, not a new published civilian stat block.
-5. Move, shoot, reload and end turns through the existing controls. Initiative
-   resolves normally: starting the fixture grants no free opening shot. Reload the
-   page during the fight to check geometry, damage and actor positions. If initiative
-   is on an NPC after an interruption, press **Continue combat** to resolve that turn.
-6. When the encounter ends, the originating phase resumes. Life displays the
-   factual ending and includes it in subsequent narration context. A dead character
-   reaches the terminal screen. The completed encounter retains the geometry,
-   actors and positions; its `encounter_ended` event includes a scene result with
-   stable entity keys, wounds, exit reasons and object condition.
+1. Apply migrations through `20261002080000_persistent_combat_scenes.sql` to the test
+   environment. Use an expendable campaign with its opening completed.
+2. In `/combat`, choose **Ulysses Street intersection**, then **Stage scene without
+   combat**. This relocates the campaign to North Heywood and saves the text scene,
+   people and map together. It preserves the campaign phase, wounds and ammunition.
+   Finish any existing fight first; persistent fights cannot be cleared without
+   their ending receipt.
+3. Back on the adventure screen, inspect the scene, refresh, then press **Enter
+   combat**. Initiative resolves normally; entering grants no free opening shot.
+4. Play through the normal board. The assault-rifle ganger, lookout, two neutral
+   workers, Thorton and broth cart come from the saved scene, not a newly resolved
+   template. If interrupted on an NPC turn, press **Continue combat** after reload.
+5. Finish the fight. The original phase resumes. Life shows the factual ending;
+   **Scene aftermath** exposes the saved summary. Death reaches the terminal screen.
+6. Leave and stage the same scene again. It retains its ID, completed encounter,
+   actor outcomes and damaged objects. It cannot respawn opponents or start a
+   second fight. This first lifecycle deliberately has one encounter per instance.
+
+The workers borrow the existing street-thug physiology with no weapon/attack;
+this remains representative test content, not a published civilian stat block.
 
 ## What is durable
 
@@ -44,10 +42,10 @@ it does not understand. The existing atomic HP/armor/ammo save remains in use.
 
 ## Work still required for the full Phase 2 gate
 
-- Persistent noncombat scene instances, origin/revision validation and revisit.
+- Re-engagement of survivors and noncombat changes to a scene after its first fight.
 - One idempotent transaction per entry/action/closure, including ledger receipts,
   Luck and reload inventory costs. The existing operation sequence still spans
-  multiple writes; interrupted opening/closure is not yet fully recoverable.
+  multiple writes; individual save receipts do not make the whole command atomic.
 - Preserve and execute the initiating freeform attack intent exactly once. The
   harness starts the tactical encounter and waits for normal player action.
 - An authenticated browser round trip on a migrated test database, including
@@ -73,7 +71,7 @@ manifest and writes `encounter_started` in the same transaction as initiative.
 An identical command ID/payload returns its original encounter; reusing the ID
 with different content is rejected. The database compares phase, location and
 mission to the expected origin before entry. It does not yet check mission-runtime
-or noncombat-scene revisions.
+revisions. Persistent-scene entry additionally checks its saved scene revision.
 
 NPC dice traces and player attacks can be queued into the encounter save. A
 terminal save requires the factual scene result and commits its `encounter_ended`
@@ -83,5 +81,21 @@ The latest exact save retry returns without another state change or event. An
 older retry or a different payload at the same revision is rejected.
 
 Legacy fights keep their prior protocol. There is no automatic migration of an
-in-progress fight, no automatic prose-to-combat entry, and no noncombat scene
-revisit model in this slice. Live browser and narrator checks remain outstanding.
+in-progress fight and no automatic prose-to-combat entry. Persistent scenes are
+created only by explicit staging; older standalone encounters are not retrofitted. Live browser and narrator checks remain outstanding.
+
+## Saved scene lifecycle
+
+`campaign_scenes` keeps the immutable starting manifest separately from the final
+result. Revision 0 is ready, 1 is in combat, and 2 is resolved. The completion
+projection runs inside the encounter receipt transaction; a deferred constraint
+rejects directly ending a persistent fight without its result. Staging an existing
+location/anchor reads the saved instance, even after a template edit. Entry checks
+actor keys, sides, names and positions against that instance. The engine still owns
+profiles and all rolls. Cross-phase revisits expose completed aftermath, while a
+ready scene cannot silently move into another mission.
+
+This does not yet feed a full structured scene projection into every narrator
+turn. It uses the staged narration and existing factual ending context. General
+freeform scene changes, world ticks, survivor re-engagement and NPC/item links are
+future work; ordinary prose must not be treated as a mechanical scene update.

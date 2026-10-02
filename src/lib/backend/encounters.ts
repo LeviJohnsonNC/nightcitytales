@@ -35,6 +35,7 @@ export type StartEncounterPayload = {
   command_id?: string;
   expected_origin?: { phase: string; location: string | null; missionId: string | null };
   scene_source?: Json;
+  scene_ref?: { id: string; revision: number };
   combatants: Array<{
     id: string;
     character_id?: string | null;
@@ -116,11 +117,13 @@ export async function startEncounter(payload: StartEncounterPayload): Promise<st
     args: { payload: Json },
   ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
   const { data, error } = await rpc(
-    payload.lifecycle_version
-      ? "start_scene_encounter"
-      : payload.layout
-        ? "start_snapshot_encounter"
-        : "start_encounter",
+    payload.scene_ref
+      ? "start_persisted_scene_encounter"
+      : payload.lifecycle_version
+        ? "start_scene_encounter"
+        : payload.layout
+          ? "start_snapshot_encounter"
+          : "start_encounter",
     { payload: payload as unknown as Json },
   );
   if (error) throw new Error(error.message);

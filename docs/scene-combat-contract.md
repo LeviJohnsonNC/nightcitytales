@@ -51,10 +51,12 @@ Lifecycle-enabled snapshots now commit entry and terminal receipts with state,
 plus queued NPC and player-attack events. Identical latest-save replay is a no-op;
 older/conflicting writes fail. Other action costs and some ledger writes still
 span transactions, so the whole player command is not yet atomic. Origin captures
-phase/location/mission/beat and authored source, not a versioned noncombat scene.
+phase/location/mission/beat and authored source. Explicitly staged scenes now also
+carry a stable scene ID/revision and persist their aftermath; one fight per scene
+is supported. General narration-driven scene changes and re-engagement remain future work.
 Life/Hook now yield to an already-active encounter and resume afterward.
 Automatic entry from adventure prose and generated scene layouts remain disabled.
-The signed-HP and layout migrations were applied October 2, 2026. The receipt
+The signed-HP and layout migrations were applied October 2, 2026. The receipt migration was also applied. The persistent-scene
 migration remains pending (see `supabase/migrations/APPLIED.md`).
 Old mortal turns without a saved death-save round cannot prove they already
 rolled; they require one save when first loaded after upgrading. New saves

@@ -244,6 +244,7 @@ describe("turn operations are free of React", () => {
       "features/opening/openingOps.ts",
       "features/play/combatOps.ts",
       "features/play/playOps.ts",
+      "features/scenes/sceneOps.ts",
     ]);
   });
 

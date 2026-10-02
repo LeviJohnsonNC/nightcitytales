@@ -101,8 +101,11 @@ New scene entries use `start_scene_encounter` and carry an immutable origin.
 Their save payloads require lifecycle protocol 1 and a terminal result when the
 fight ends. Queue NPC/attack events into `saveLiveEncounter` for these fights;
 never append another `encounter_ended` after the transaction has committed it.
-Legacy encounters without `origin` retain their previous protocol. Origin is not
-yet a persistent noncombat scene or a whole-command transaction.
+Legacy encounters without `origin` retain their previous protocol. `features/scenes` stages persistent authored instances before combat and reads
+those snapshots for entry. `campaign_scenes` owns their stable identity and result;
+the scene completion trigger runs in the receipt transaction. One fight per scene
+is supported for now. This is not yet a whole-command transaction or automatic
+scene generation from prose.
 
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says

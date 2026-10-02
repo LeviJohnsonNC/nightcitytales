@@ -43,8 +43,14 @@ function allowedValuesFor(table: string, column: string): string[] {
   for (const file of files) {
     const sql = readFileSync(join(MIGRATIONS, file), "utf8");
     // Only the sections of this file that concern the table in question.
-    for (const section of sql.split(/(?=CREATE TABLE|ALTER TABLE)/g)) {
-      if (!section.includes(`public.${table}`)) continue;
+    for (let section of sql.split(/(?=CREATE TABLE|ALTER TABLE)/g)) {
+      // A foreign key or function body can mention this table without defining
+      // its CHECK. Inspect only the DDL target, then stop at that statement.
+      const target = /^(?:CREATE TABLE(?: IF NOT EXISTS)?|ALTER TABLE)\s+public\.([a-z_]+)/i.exec(
+        section.trim(),
+      );
+      if (target?.[1] !== table) continue;
+      section = section.slice(0, section.indexOf(";") + 1);
       for (const match of section.matchAll(pattern)) {
         allowed = [...match[1]!.matchAll(/'([^']+)'/g)].map((v) => v[1]!);
       }

@@ -129,6 +129,7 @@ export async function createLiveEncounter(input: {
   arena: string | null;
   layout?: BattlefieldSnapshot;
   sceneSource?: Json;
+  sceneRef?: { id: string; revision: number };
 }): Promise<LiveEncounter> {
   const payload = startEncounterPayload(input);
   if (input.layout) {
@@ -142,6 +143,7 @@ export async function createLiveEncounter(input: {
       missionId: full.campaign.current_mission_id,
     };
     if (input.sceneSource) payload.scene_source = input.sceneSource;
+    if (input.sceneRef) payload.scene_ref = input.sceneRef;
   }
   const id = await startEncounterRpc(payload);
   if (input.layout) {
@@ -152,7 +154,10 @@ export async function createLiveEncounter(input: {
     // Role effects are derived, not stored. Keep the entry caller's calculation
     // on the matching player for the opening NPC turns.
     for (const actor of Object.values(restored.state.combatants)) {
-      const effects = input.state.combatants[actor.id]?.roleEffects;
+      const source = actor.isPlayer
+        ? Object.values(input.state.combatants).find((c) => c.isPlayer)
+        : input.state.combatants[actor.id];
+      const effects = source?.roleEffects;
       if (effects) actor.roleEffects = effects;
     }
     return restored;

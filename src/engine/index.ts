@@ -98,3 +98,5 @@ export * from "./home";
 export * from "./battlefieldSnapshot";
 export * from "./northHeywoodScene";
 export * from "./battlefieldResult";
+
+export * from "./persistentScene";

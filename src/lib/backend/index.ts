@@ -11,3 +11,5 @@ export * from "./places";
 export * from "./truths";
 export * from "./encounters";
 export * from "./missions";
+
+export * from "./scenes";

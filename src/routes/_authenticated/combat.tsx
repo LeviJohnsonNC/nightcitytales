@@ -1,3 +1,4 @@
+import { stageScene } from "@/features/scenes/sceneOps";
 /**
  * /combat — the battlefield harness.
  *
@@ -16,7 +17,7 @@
  * under this layout.
  */
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -134,6 +135,23 @@ function CombatHarness() {
     },
   });
 
+  const queryClient = useQueryClient();
+  const stage = useMutation({
+    mutationFn: async () => {
+      if (!live.data?.campaign) throw new Error("Start a campaign before staging this scene.");
+      await stageScene(live.data.campaign.id, northHeywoodScene());
+      return live.data.campaign.id;
+    },
+    onSuccess: async (id) => {
+      await Promise.all(
+        ["scene", "life", "play", "campaign-phase"].map((key) =>
+          queryClient.invalidateQueries({ queryKey: [key, id] }),
+        ),
+      );
+      void navigate({ to: "/play/$id", params: { id } });
+    },
+  });
+
   const clear = useMutation({
     mutationFn: async () => {
       const id = live.data?.encounter?.id;
@@ -195,9 +213,16 @@ function CombatHarness() {
           {live.data.encounter ? (
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm text-muted-foreground">
-                A fight is already running. The North Heywood option resumes it; ordinary arena
-                tests close it first.
+                A fight is already running. Finish it before staging a persistent scene; ordinary
+                arena tests close it first.
               </p>
+              <Link
+                to="/play/$id"
+                params={{ id: live.data.campaign.id }}
+                className="text-sm underline"
+              >
+                Resume campaign
+              </Link>
               <Button
                 size="sm"
                 variant="outline"
@@ -236,7 +261,8 @@ function CombatHarness() {
           <p>{NORTH_HEYWOOD.narration}</p>
           <p className="text-muted-foreground">
             This authored scene uses its own rifleman, lookout and two neutral workers. They want to
-            drive you away. No free opening shot: initiative decides who acts first.
+            drive you away. Stage it first, then choose Enter combat from the adventure screen. Your
+            current wounds and ammunition carry through. Revisits keep the saved aftermath.
           </p>
         </section>
       )}
@@ -263,31 +289,49 @@ function CombatHarness() {
         </Field>
       )}
 
-      <Field label="Starting condition">
-        <div className="grid gap-2 sm:grid-cols-2">
-          {WOUNDS.map((w) => (
-            <Choice key={w.value} active={w.value === wound} onClick={() => setWound(w.value)}>
-              <span className="block font-semibold">{w.label}</span>
-              <span className="block font-mono text-[10px] text-muted-foreground">{w.note}</span>
-            </Choice>
-          ))}
-        </div>
-        <Choice active={emptyMagazines} onClick={() => setEmptyMagazines((v) => !v)}>
-          <span className="block font-semibold">
-            {emptyMagazines ? "Magazines emptied" : "Magazines as carried"}
-          </span>
-          <span className="block font-mono text-[10px] text-muted-foreground">
-            empty every gun, to reach Reload and the empty-weapon refusal
-          </span>
-        </Choice>
-      </Field>
+      {arena !== NORTH_HEYWOOD.layout.arena.key && (
+        <Field label="Starting condition">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {WOUNDS.map((w) => (
+              <Choice key={w.value} active={w.value === wound} onClick={() => setWound(w.value)}>
+                <span className="block font-semibold">{w.label}</span>
+                <span className="block font-mono text-[10px] text-muted-foreground">{w.note}</span>
+              </Choice>
+            ))}
+          </div>
+          <Choice active={emptyMagazines} onClick={() => setEmptyMagazines((v) => !v)}>
+            <span className="block font-semibold">
+              {emptyMagazines ? "Magazines emptied" : "Magazines as carried"}
+            </span>
+            <span className="block font-mono text-[10px] text-muted-foreground">
+              empty every gun, to reach Reload and the empty-weapon refusal
+            </span>
+          </Choice>
+        </Field>
+      )}
 
+      {clear.error && <p className="text-sm text-destructive">{(clear.error as Error).message}</p>}
+      {stage.error && <p className="text-sm text-destructive">{(stage.error as Error).message}</p>}
       {start.error && <p className="text-sm text-destructive">{(start.error as Error).message}</p>}
 
       <div className="flex items-center gap-3">
-        <Button onClick={() => start.mutate()} disabled={!chosen || start.isPending}>
-          {start.isPending ? "Setting the board…" : "Start the fight"}
-        </Button>
+        {arena === northHeywoodScene().layout.arena.key && (
+          <Button
+            variant="outline"
+            onClick={() => stage.mutate()}
+            disabled={!live.data?.campaign || stage.isPending || start.isPending}
+          >
+            {stage.isPending ? "Setting the scene…" : "Stage scene without combat"}
+          </Button>
+        )}
+        {arena !== NORTH_HEYWOOD.layout.arena.key && (
+          <Button
+            onClick={() => start.mutate()}
+            disabled={!chosen || start.isPending || stage.isPending}
+          >
+            {start.isPending ? "Setting the board…" : "Start the fight"}
+          </Button>
+        )}
         <Button asChild variant="outline">
           <Link to="/roster">Back to the roster</Link>
         </Button>
