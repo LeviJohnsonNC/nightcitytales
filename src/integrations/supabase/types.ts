@@ -1029,10 +1029,14 @@ export type Database = {
           campaign_id: string
           cover: Json
           created_at: string
+          entry_command_id: string | null
+          entry_payload_hash: string | null
           id: string
+          last_command: Json | null
           layout: Json | null
           name: string | null
           order_ids: Json
+          origin: Json | null
           round: number
           status: string
           updated_at: string
@@ -1045,10 +1049,14 @@ export type Database = {
           campaign_id: string
           cover?: Json
           created_at?: string
+          entry_command_id?: string | null
+          entry_payload_hash?: string | null
           id?: string
+          last_command?: Json | null
           layout?: Json | null
           name?: string | null
           order_ids?: Json
+          origin?: Json | null
           round?: number
           status?: string
           updated_at?: string
@@ -1061,10 +1069,14 @@ export type Database = {
           campaign_id?: string
           cover?: Json
           created_at?: string
+          entry_command_id?: string | null
+          entry_payload_hash?: string | null
           id?: string
+          last_command?: Json | null
           layout?: Json | null
           name?: string | null
           order_ids?: Json
+          origin?: Json | null
           round?: number
           status?: string
           updated_at?: string
@@ -1163,6 +1175,7 @@ export type Database = {
       }
       start_campaign: { Args: { payload: Json }; Returns: string }
       start_encounter: { Args: { payload: Json }; Returns: string }
+      start_scene_encounter: { Args: { payload: Json }; Returns: string }
       start_snapshot_encounter: { Args: { payload: Json }; Returns: string }
     }
     Enums: {
