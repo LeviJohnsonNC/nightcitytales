@@ -103,6 +103,9 @@ once it has actually been run.
 - `20261002070000_scene_combat_receipts.sql` — applied October 2, 2026,
   confirmed by Levi; deployed via Drizzle migration 0004.
 
+- `20261002080000_persistent_combat_scenes.sql` — applied October 2, 2026,
+  confirmed by Levi; deployed via Drizzle migration 0005.
+
 ## Pending
 
 Written and merged, but NOT yet run against the database. The code that reads
@@ -120,6 +123,6 @@ these tables must tolerate their absence until the line moves up to Applied.
   is that the database would still accept a value the app cannot produce. No
   code depends on it having run.
 
-- `20261002080000_persistent_combat_scenes.sql` — **pending deployment**.
-  Persists authored scenes before initiative, validates scene revision/identity
-  on entry, and commits the aftermath with the encounter completion receipt.
+- `20261002090000_scene_attack_intent.sql` — **pending deployment**.
+  Atomically saves typed opening intent and player input with scene engagement.
+  Apply before deploying the typed scene-entry client.

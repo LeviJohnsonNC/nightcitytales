@@ -49,7 +49,10 @@ export function SceneContact({
             <p>{saved.summary}</p>
           </details>
         ) : (
-          <p className="text-xs text-muted-foreground">Initiative determines who acts first.</p>
+          <p className="text-xs text-muted-foreground">
+            Name your target with “shoot …” below, or type “open fire” to choose on the battlefield.
+            Initiative determines who acts first.
+          </p>
         )}
       </div>
       {saved.status === "ready" && (

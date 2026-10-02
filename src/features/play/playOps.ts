@@ -1,3 +1,4 @@
+import { trySceneAttack } from "@/features/scenes/sceneOps";
 import {
   commitDeathSave as commitCombatDeathSave,
   finishCombatAction,
@@ -349,6 +350,14 @@ export async function narrate(
     autoRolled?: boolean;
   } = {},
 ): Promise<void> {
+  if (
+    !bundle.encounter &&
+    !options.fixedResult &&
+    !options.optionsRequested &&
+    options.logInput !== false &&
+    (await trySceneAttack(bundle.campaign.id, input))
+  )
+    return;
   const campaignId = bundle.campaign.id;
   const beatId = bundle.beat?.id ?? null;
   const beatFields = beatId ? { beat_id: beatId } : {};

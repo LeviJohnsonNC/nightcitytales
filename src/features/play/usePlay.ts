@@ -16,7 +16,12 @@ import {
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { type AttackOption, type PendingAttack, pendingAttackFrom } from "./attackPrompt";
+import {
+  type AttackOption,
+  type PendingAttack,
+  pendingAttackFrom,
+  openingAttackIntentFrom,
+} from "./attackPrompt";
 import {
   type CheckRoll,
   type PendingCheck,
@@ -109,7 +114,7 @@ export function usePlay(campaignId: string) {
       if (!query.data) throw new Error("Still loading.");
       return narrate(query.data, input);
     },
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
 
   /**
@@ -590,6 +595,8 @@ export function usePlay(campaignId: string) {
     /** Call a shot on somebody, which posts the prompt the card resolves. */
     cancelShot: () => {
       if (pendingAttack) cancelShot.mutate(pendingAttack.eventId);
+      else if (bundle?.encounter && openingAttackIntentFrom(bundle.events, bundle.encounter))
+        cancelShot.mutate(bundle.encounter.id);
     },
     callShot: (targetId: string, weaponItemId: string) =>
       callShot.mutate({ targetId, weaponItemId }),

@@ -70,3 +70,44 @@ it("refuses entry after leaving the scene", async () => {
   await expect(enterSceneCombat("c", "scene", 0)).rejects.toThrow("no longer");
   expect(io.begin).not.toHaveBeenCalled();
 });
+
+it("intercepts supported text and carries intent into the same scene entry", async () => {
+  const { trySceneAttack } = await import("../sceneOps");
+  expect(await trySceneAttack("c", "shoot the rifleman with my pistol")).toBe(true);
+  expect(io.begin).toHaveBeenCalledWith(
+    expect.objectContaining({
+      initiatingIntent: {
+        version: 1,
+        input: "shoot the rifleman with my pistol",
+        targetKey: "rifle_ganger",
+        weapon: "pistol",
+      },
+    }),
+  );
+});
+it("leaves ordinary conversation and unstaged locations in the adventure", async () => {
+  const { trySceneAttack } = await import("../sceneOps");
+  expect(await trySceneAttack("c", "ask about the neighborhood")).toBe(false);
+  expect(io.read).not.toHaveBeenCalled();
+  io.read.mockResolvedValue(null);
+  expect(await trySceneAttack("c", "open fire")).toBe(false);
+  expect(io.begin).not.toHaveBeenCalled();
+});
+it("does not let a stale adventure tab create a second fight", async () => {
+  const { trySceneAttack } = await import("../sceneOps");
+  io.read.mockResolvedValue({ ...row(), status: "combat", encounter_id: "e", revision: 1 });
+  expect(await trySceneAttack("c", "open fire")).toBe(true);
+  expect(io.begin).not.toHaveBeenCalled();
+});
+it("refuses an invented target without beginning combat", async () => {
+  const { trySceneAttack } = await import("../sceneOps");
+  await expect(trySceneAttack("c", "shoot the dragon")).rejects.toThrow("Name one person");
+  expect(io.begin).not.toHaveBeenCalled();
+});
+
+it("does not hand resolved scene attacks to a narrator that could respawn the cast", async () => {
+  const { trySceneAttack } = await import("../sceneOps");
+  io.read.mockResolvedValue({ ...row(), status: "resolved", encounter_id: "e", revision: 2 });
+  await expect(trySceneAttack("c", "open fire")).rejects.toThrow("fight is finished");
+  expect(io.begin).not.toHaveBeenCalled();
+});

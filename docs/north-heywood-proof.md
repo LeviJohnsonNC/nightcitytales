@@ -81,7 +81,7 @@ The latest exact save retry returns without another state change or event. An
 older retry or a different payload at the same revision is rejected.
 
 Legacy fights keep their prior protocol. There is no automatic migration of an
-in-progress fight and no automatic prose-to-combat entry. Persistent scenes are
+in-progress fight. Typed entry is limited to explicitly staged scenes. Persistent scenes are
 created only by explicit staging; older standalone encounters are not retrofitted. Live browser and narrator checks remain outstanding.
 
 ## Saved scene lifecycle
@@ -99,3 +99,41 @@ This does not yet feed a full structured scene projection into every narrator
 turn. It uses the staged narration and existing factual ending context. General
 freeform scene changes, world ticks, survivor re-engagement and NPC/item links are
 future work; ordinary prose must not be treated as a mechanical scene update.
+
+## Typed opening request (Phase 2d)
+
+Deploy `20261002090000_scene_attack_intent.sql` before the client change. The
+previous persistent-scene migration has been confirmed applied. Typed requests
+use a distinct RPC entry point so an older deployment rejects them before writing
+a fight instead of silently dropping the request.
+
+1. Stage a fresh North Heywood scene from `/combat` and return to its adventure.
+2. Type **shoot the rifleman with my pistol**. The saved actors and map enter
+   combat; initiative may let the opposition act first. The rifleman shot is
+   queued for the player's roll with carried pistols only. Its range/cover/DV
+   come from current combat state. A missing or empty pistol cannot be fired.
+3. Refresh before the first Action. The request survives, including if the
+   opening NPC sequence needs **Continue combat** to finish. A Death Save, when
+   owed, still takes priority over an attack.
+4. Alternatively, on a fresh scene type **pull out my pistol and start blasting**.
+   The battlefield asks for a hostile target instead of guessing which ganger.
+5. Cancel, shoot, reload, or end the first turn. Refresh: the opening request must
+   not return. Cancel a blocked shot to move or choose a different weapon. Opening
+   NPC movement is reflected in the shot's current range and cover. The normal
+   engine remains authoritative for legal actions.
+6. Finish combat and verify the existing saved aftermath and phase return.
+
+This is deliberately a small full-command grammar: `shoot <name>`, `attack <name>`,
+`fire at <name>`, `open fire`, and `start blasting`, optionally preceded by `I` or
+`draw/pull out my pistol and`, or with `with my pistol` on a targeted shot. Named
+targets must uniquely match a saved hostile's name, name suffix or ID. Unknown,
+ambiguous and neutral targets are refused before initiative. Questions, threats,
+negations and conditional targets do not auto-enter. Unrecognized phrasing takes
+the existing narrator path; this is not general language understanding.
+
+Entry atomically records player input and the immutable intent with the existing
+scene/encounter transaction. The first accepted entry wins when tabs race. The
+prompt is derived from that origin and consumed by persisted first-turn Action
+state, turn progression, or the existing cancellation ledger. No extra shot is
+resolved before initiative, and there is no separate post-entry prompt write to
+lose on a failed response. Authenticated browser verification remains outstanding.

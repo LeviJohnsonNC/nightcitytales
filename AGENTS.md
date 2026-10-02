@@ -104,7 +104,11 @@ never append another `encounter_ended` after the transaction has committed it.
 Legacy encounters without `origin` retain their previous protocol. `features/scenes` stages persistent authored instances before combat and reads
 those snapshots for entry. `campaign_scenes` owns their stable identity and result;
 the scene completion trigger runs in the receipt transaction. One fight per scene
-is supported for now. This is not yet a whole-command transaction or automatic
+is supported for now. `sceneAttackIntent.ts` recognizes a narrow full-command
+vocabulary at saved scenes. The entry RPC persists its request in the immutable
+origin; attack previews recover it only while the first Action remains unspent.
+Do not bypass initiative or resolve a shot inside the entry parser.
+This is not yet a whole-command transaction or automatic
 scene generation from prose.
 
 The people are a system too. `cast.ts` holds who the standing six are and what

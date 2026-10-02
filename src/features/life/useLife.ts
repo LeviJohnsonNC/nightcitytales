@@ -66,7 +66,7 @@ export function useLife(campaignId: string) {
       if (!bundle) throw new Error("Still loading.");
       return liveTurn(bundle, input, rest);
     },
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
 
   const check = useMutation({

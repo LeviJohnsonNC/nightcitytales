@@ -762,3 +762,29 @@ export function readSceneCombatEnd(data: unknown): { title: string } | null {
     ? { title: raw.battlefield }
     : null;
 }
+
+/** The entry request lives in the immutable origin, so opening NPC turns cannot lose it. */
+export function readSceneAttackIntent(
+  origin: unknown,
+): import("./sceneAttackIntent").SceneAttackIntent | null {
+  if (!origin || typeof origin !== "object") return null;
+  const source = (origin as { source?: unknown }).source;
+  if (!source || typeof source !== "object") return null;
+  const intent = (source as { initiatingIntent?: unknown }).initiatingIntent;
+  if (!intent || typeof intent !== "object") return null;
+  const value = intent as Record<string, unknown>;
+  if (
+    value["version"] !== 1 ||
+    typeof value["input"] !== "string" ||
+    !value["input"].trim() ||
+    !(value["targetKey"] === null || typeof value["targetKey"] === "string") ||
+    !(value["weapon"] === null || value["weapon"] === "pistol")
+  )
+    return null;
+  return {
+    version: 1,
+    input: value["input"],
+    targetKey: value["targetKey"],
+    weapon: value["weapon"],
+  };
+}

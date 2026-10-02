@@ -82,6 +82,7 @@ type Props = {
   tools?: ReactNode;
   journal?: ReactNode;
   improvisation?: ReactNode;
+  openingRequest?: ReactNode;
   playback?: PlaybackFrame | null;
   feedback?: string | undefined;
   onSkipPlayback?: () => void;
@@ -118,6 +119,7 @@ export function CombatBoard({
   tools,
   journal,
   improvisation,
+  openingRequest,
   playback,
   feedback,
   onSkipPlayback,
@@ -1326,6 +1328,11 @@ export function CombatBoard({
           </div>
         </div>
         <aside className="combat-intel" aria-label="Tactical readout">
+          {openingRequest && (
+            <div className="p-3 text-sm" role="status">
+              {openingRequest}
+            </div>
+          )}
           <div className="combat-intel-heading">
             <span className="combat-eyebrow">
               {dice

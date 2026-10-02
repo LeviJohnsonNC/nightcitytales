@@ -1,3 +1,4 @@
+import type { SceneAttackIntent } from "@/engine";
 /**
  * Persisting a fight. The engine (src/engine/encounter.ts) owns the state
  * transitions; this module loads the rows into engine state and writes the
@@ -130,6 +131,7 @@ export async function createLiveEncounter(input: {
   layout?: BattlefieldSnapshot;
   sceneSource?: Json;
   sceneRef?: { id: string; revision: number };
+  initiatingIntent?: SceneAttackIntent;
 }): Promise<LiveEncounter> {
   const payload = startEncounterPayload(input);
   if (input.layout) {
@@ -144,6 +146,7 @@ export async function createLiveEncounter(input: {
     };
     if (input.sceneSource) payload.scene_source = input.sceneSource;
     if (input.sceneRef) payload.scene_ref = input.sceneRef;
+    if (input.initiatingIntent) payload.initiating_intent = input.initiatingIntent;
   }
   const id = await startEncounterRpc(payload);
   if (input.layout) {
