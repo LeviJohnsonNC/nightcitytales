@@ -1,3 +1,4 @@
+import { northHeywoodScene } from "@/engine";
 /**
  * Dropping straight into a fight, for testing the battlefield.
  *
@@ -35,6 +36,7 @@ import { startCampaignForCharacter } from "@/features/campaign/newCampaign";
 import { beginEncounter } from "@/features/play/combatFlow";
 import type { GmEnemy } from "@/features/gm/gmResponse";
 import {
+  appendCampaignEvent,
   getActiveCampaignForCharacter,
   getActiveEncounter,
   getCampaign,
@@ -110,6 +112,8 @@ export type SeedResult = { campaignId: string; encounterId: string };
  * only one at a time — and creates a scratch campaign otherwise.
  */
 export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
+  const fixture = northHeywoodScene();
+  const scene = options.arena === fixture.layout.arena.key ? fixture : null;
   const character: Pick<Character, "id" | "name" | "handle"> = {
     id: options.characterId,
     name: options.characterName,
@@ -117,6 +121,8 @@ export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
   };
 
   const existing = await getActiveCampaignForCharacter(options.characterId);
+  if (scene && !existing)
+    throw new Error("Start a campaign before testing the North Heywood scene.");
   const campaignId =
     existing?.id ??
     (await startCampaignForCharacter(character, {
@@ -130,12 +136,34 @@ export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
   const live = await getActiveEncounter(campaignId);
   if (live) await endEncounter(live.id);
 
-  // The job machinery owns the screen from here; the play route switches on
-  // phase alone. Set the mission first so the phase change never lands on a
-  // campaign with nowhere to be.
-  await updateCampaign(campaignId, { current_mission_id: NIGHT_AT_THE_OPERA.id, status: "active" });
-  await saveMissionRuntime(campaignId, runtimeAtBeat(NIGHT_AT_THE_OPERA, SANDBOX_BEAT_ID));
-  await setCampaignPhase(campaignId, "job");
+  // Ordinary arena tests use the authored Job beat. The scene proof preserves
+  // the campaign phase: active combat takes the screen, then returns to it.
+  if (scene) {
+    await updateCampaign(campaignId, { location_key: scene.locationKey });
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type:
+        existing?.phase === "job" || existing?.phase === "aftermath"
+          ? "gm_narration"
+          : "life_narration",
+      summary: scene.narration,
+      data: {
+        authoredScene: scene.template,
+        anchor: scene.anchor,
+        at: scene.locationKey,
+        day: existing?.day ?? 1,
+        title: scene.layout.arena.label,
+        actions: [],
+      },
+    });
+  } else {
+    await updateCampaign(campaignId, {
+      current_mission_id: NIGHT_AT_THE_OPERA.id,
+      status: "active",
+    });
+    await saveMissionRuntime(campaignId, runtimeAtBeat(NIGHT_AT_THE_OPERA, SANDBOX_BEAT_ID));
+    await setCampaignPhase(campaignId, "job");
+  }
 
   const full = await getCampaign(campaignId);
   if (!full?.vitals) throw new Error("The campaign has no vitals to fight with.");
@@ -177,16 +205,17 @@ export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
   const opened = await beginEncounter({
     campaignId,
     characterId: options.characterId,
-    beatId: SANDBOX_BEAT_ID,
-    name: "Battlefield test",
+    beatId: scene ? null : SANDBOX_BEAT_ID,
+    name: scene ? scene.layout.arena.label : "Battlefield test",
     character: sheet,
     vitals: fresh.vitals,
     inventory: fresh.inventory,
     enemies: enemiesFrom(members),
+    ...(scene ? { scene } : {}),
     arena: arenaKeyOr(options.arena),
     // What this lot came for. A scavver crew that has what it wanted stops
     // shooting, which is the difference between a bad night and a dead run.
-    goal: template.goal,
+    goal: scene ? "repel" : template.goal,
   });
 
   return { campaignId, encounterId: opened.live.id };

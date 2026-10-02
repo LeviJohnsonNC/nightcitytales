@@ -785,7 +785,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
     </>
   );
 
-  if (play.encounter) {
+  if (play.encounter && play.finished !== "died") {
     const locked =
       rollingAttack ||
       play.busy ||
@@ -835,21 +835,23 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
           />
         }
         improvisation={
-          <>
-            <InputBar
-              onSend={play.submit}
-              onAskOptions={play.askOptions}
-              showOptions={false}
-              busy={locked || Boolean(play.pendingAttack)}
-            />
-            <div className="combat-intent-result" aria-live="polite">
-              <NarrativeLog
-                events={bundle.events.filter((event) => event.type === "gm_narration").slice(-1)}
-                busy={play.busy || play.opening}
-                isCurrentTurn
+          bundle.mission ? (
+            <>
+              <InputBar
+                onSend={play.submit}
+                onAskOptions={play.askOptions}
+                showOptions={false}
+                busy={locked || Boolean(play.pendingAttack)}
               />
-            </div>
-          </>
+              <div className="combat-intent-result" aria-live="polite">
+                <NarrativeLog
+                  events={bundle.events.filter((event) => event.type === "gm_narration").slice(-1)}
+                  busy={play.busy || play.opening}
+                  isCurrentTurn
+                />
+              </div>
+            </>
+          ) : undefined
         }
         journal={
           <>

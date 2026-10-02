@@ -1,3 +1,4 @@
+import { battlefieldFor } from "@/engine";
 import { CombatPortrait } from "./CombatPortrait";
 import { BattlefieldCallout } from "./BattlefieldCallout";
 import { useBoardAnchor } from "./useBoardAnchor";
@@ -36,7 +37,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import {
-  arenaFor,
   blockedTiles,
   centreOf,
   coverBlocking,
@@ -180,7 +180,7 @@ export function CombatBoard({
     const standing = you ? live.data[you.id] : null;
     if (!standing) return null;
     return movementField({
-      arena: arenaFor(live.arena),
+      arena: battlefieldFor(live),
       cover: live.cover,
       from: standing.position,
       capability,
@@ -198,7 +198,7 @@ export function CombatBoard({
    */
   const sheltered = useMemo(() => {
     if (!live || !moveField) return null;
-    const ground = arenaFor(live.arena);
+    const ground = battlefieldFor(live);
     const hostiles = Object.values(live.state.combatants).flatMap((c) =>
       c.side === "hostile" && !c.defeated && live.data[c.id] ? [live.data[c.id]!.position] : [],
     );
@@ -231,7 +231,7 @@ export function CombatBoard({
     return found;
   }, [live, capability, moveField, assessedId, weaponForField]);
   if (!live) return null;
-  const arena = arenaFor(live.arena);
+  const arena = battlefieldFor(live);
   const courtyard = isCourtyard(arena.key);
   const scenic = courtyard && artEnabled && artReady;
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);

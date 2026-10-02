@@ -1,3 +1,9 @@
+import {
+  battlefieldFor,
+  battlefieldResult,
+  battlefieldResultText,
+  encounterEndEventData,
+} from "@/engine";
 import { publishCombatFrames, type CombatFrame } from "./combatPlayback";
 /**
  * Sequencing a fight: the engine resolves, this module persists and logs.
@@ -43,6 +49,9 @@ import {
   type CapabilitySnapshot,
   type CombatGoal,
   type Combatant,
+  type BattlefieldSnapshot,
+  type AuthoredScene,
+  readBattlefieldSnapshot,
   type CombatantRoleEffects,
   type EncounterState,
   type LegalityVerdict,
@@ -91,6 +100,8 @@ export async function beginEncounter(input: {
   enemies: GmEnemy[];
   /** Which of the engine's arenas this is happening in. */
   arena?: string;
+  layout?: BattlefieldSnapshot;
+  scene?: AuthoredScene;
   /**
    * What the opposition came for. Decides when they stop: a crew that came to
    * rob you has what it wanted once you are down, and leaves. Omitted, they
@@ -109,7 +120,14 @@ export async function beginEncounter(input: {
 
   // The place decides the opening ranges, and so the opening DVs. It is the
   // engine's arena, chosen from a closed list — not a number the GM sent.
-  const arena = arenaFor(input.arena);
+  const layout = input.scene?.layout ?? input.layout;
+  const arena = layout?.arena ?? arenaFor(input.arena);
+  if (input.scene) {
+    readBattlefieldSnapshot({
+      ...layout,
+      arena: { ...arena, hostileSlots: input.scene.actors.map((a) => a.position) },
+    });
+  }
   const spots = placeHostiles(arena, input.enemies.length);
   // Why they are here. The caller knows — a force template carries it, and a
   // GM-composed fight falls back to the old implicit answer rather than
@@ -127,16 +145,40 @@ export async function beginEncounter(input: {
   combatants.push(player.combatant);
   data[player.combatant.id] = player.data;
 
-  input.enemies.forEach((enemy, index) => {
-    // Never the player's own start: a hostile at 0 m would read a melee DV off
-    // a rifle and put somebody inside the character. placeHostiles always
-    // returns one spot per enemy, so this is a floor, not a path.
-    const spot = spots[index] ??
-      arena.hostileSlots[0] ?? { x: arena.playerStart.x, y: arena.extent.height };
-    const hostile = hostileCombatant(enemy, crypto.randomUUID(), spot, goal);
-    combatants.push(hostile.combatant);
-    data[hostile.combatant.id] = hostile.data;
-  });
+  if (input.scene) {
+    for (const actor of input.scene.actors) {
+      const built = hostileCombatant(
+        { key: actor.id, name: actor.name, profile: actor.profile?.key ?? "street_thug" },
+        crypto.randomUUID(),
+        actor.position,
+        goal,
+        actor.profile ?? undefined,
+      );
+      built.combatant.side = actor.side;
+      if (actor.side === "neutral") {
+        built.data = {
+          ...built.data,
+          weaponName: "Unarmed",
+          damageDice: 0,
+          rangeType: null,
+          attackSkill: 0,
+        };
+      }
+      combatants.push(built.combatant);
+      data[built.combatant.id] = built.data;
+    }
+  } else {
+    input.enemies.forEach((enemy, index) => {
+      // Never the player's own start: a hostile at 0 m would read a melee DV off
+      // a rifle and put somebody inside the character. placeHostiles always
+      // returns one spot per enemy, so this is a floor, not a path.
+      const spot = spots[index] ??
+        arena.hostileSlots[0] ?? { x: arena.playerStart.x, y: arena.extent.height };
+      const hostile = hostileCombatant(enemy, crypto.randomUUID(), spot, goal);
+      combatants.push(hostile.combatant);
+      data[hostile.combatant.id] = hostile.data;
+    });
+  }
 
   const state = rollInitiativeOrder(combatants);
   const live = await createLiveEncounter({
@@ -147,6 +189,7 @@ export async function beginEncounter(input: {
     state,
     data,
     arena: arena.key,
+    ...(layout ? { layout } : {}),
   });
 
   // Everyone who beat the player on Initiative acts before the player does.
@@ -172,7 +215,13 @@ export async function beginEncounter(input: {
   // one, and 5 HP left by Round 3. The verdict goes in the ledger where the GM
   // reads it, so the narration can carry the weight the numbers already have.
   const weight = weighForce(
-    input.enemies.map((e) => ({ key: e.key, name: e.name, profile: threatFor(e.profile) })),
+    input.scene
+      ? input.scene.actors.flatMap((a) =>
+          a.side === "hostile" && a.profile
+            ? [{ key: a.id, name: a.name, profile: a.profile }]
+            : [],
+        )
+      : input.enemies.map((e) => ({ key: e.key, name: e.name, profile: threatFor(e.profile) })),
   );
 
   // Written after the opening, so one event carries the whole start of the
@@ -254,7 +303,7 @@ export async function runNpcTurns(
   let data = live.data;
   // So does the cover, once somebody starts shooting it.
   let cover = live.cover;
-  const arena = arenaFor(live.arena);
+  const arena = battlefieldFor(live);
   const lines: string[] = [];
   const frames: CombatFrame[] = [];
   const capture = (kind: CombatFrame["kind"], text: string, details: Partial<CombatFrame> = {}) =>
@@ -573,14 +622,28 @@ export async function closeOutFight(
   // "All down" is no longer true of every win. They may have broken and run,
   // or taken what they came for and gone — and the ledger already carries which
   // it was, line by line. This says only the thing that is true in all three.
-  const summary = won
-    ? "The opposition is finished; the fight is over."
-    : "The player is down; the fight is over.";
+  const result = live.layout
+    ? battlefieldResult({
+        state: live.state,
+        arena: battlefieldFor(live),
+        cover: live.cover,
+        data: live.data,
+      })
+    : null;
+  const summary = result
+    ? battlefieldResultText(result)
+    : won
+      ? "The opposition is finished; the fight is over."
+      : "The player is down; the fight is over.";
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "encounter_ended",
     summary,
-    data: { encounterId: live.id, status: live.state.status } as unknown as Json,
+    data: encounterEndEventData({
+      encounterId: live.id,
+      status: live.state.status,
+      ...(result ? { sceneResult: result } : {}),
+    }) as unknown as Json,
     ...(beatId ? { beat_id: beatId } : {}),
   });
   return ` ${summary}`;
@@ -635,7 +698,7 @@ function planStep(input: {
   occupied: Point[];
 }): PlannedStep {
   const plan = previewMovement({
-    arena: arenaFor(input.live.arena),
+    arena: battlefieldFor(input.live),
     cover: input.live.cover,
     from: input.from,
     to: input.to,
@@ -677,10 +740,10 @@ export async function movePlayer(input: {
   const wanted = input.towards === "closer" ? Math.max(0, before - allowance) : before + allowance;
   const aim = stepToRange(from.position, to.position, wanted, allowance);
   const reached = previewMovementToward({
-    arena: arenaFor(live.arena),
+    arena: battlefieldFor(live),
     cover: live.cover,
     from: from.position,
-    toward: clampToArena(arenaFor(live.arena), aim.position),
+    toward: clampToArena(battlefieldFor(live), aim.position),
     capability: input.capability,
     occupied: othersStanding(live, player.id),
   });
@@ -754,7 +817,7 @@ export async function movePlayerTo(input: {
   const from = live.data[player.id];
   if (!from) return { live, refusal: null };
 
-  const arena = arenaFor(live.arena);
+  const arena = battlefieldFor(live);
   const wanted = input.to;
   const plan = planStep({
     live,

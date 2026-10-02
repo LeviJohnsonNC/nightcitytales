@@ -30,6 +30,7 @@ export type StartEncounterPayload = {
   order_ids: string[];
   /** Key from the engine's closed ARENAS list; null reads as open ground. */
   arena?: string | null;
+  layout?: Json;
   combatants: Array<{
     id: string;
     character_id?: string | null;
@@ -58,13 +59,14 @@ export type StartEncounterPayload = {
  */
 export type SaveEncounterPayload = {
   encounter_id: string;
+  layout_version?: number;
   round: number;
   active_index: number;
   order_ids: string[];
   status: string;
   /**
    * Damage taken by each piece of arena cover, keyed by its authored id.
-   * Geometry is never sent: it lives in engine/battlefield.ts. The transaction
+   * Geometry is frozen at entry for snapshot fights and is not sent on saves. The transaction
    * merges this by element-wise maximum rather than replacing it, so a save
    * built on a stale read can never un-damage a wall.
    */
@@ -100,9 +102,12 @@ export type SaveEncounterPayload = {
 
 /** Persist a fight in one transaction. Returns the new encounter id. */
 export async function startEncounter(payload: StartEncounterPayload): Promise<string> {
-  const { data, error } = await backendClient.rpc("start_encounter", {
-    payload: payload as unknown as Json,
-  });
+  const { data, error } = await backendClient.rpc(
+    payload.layout ? "start_snapshot_encounter" : "start_encounter",
+    {
+      payload: payload as unknown as Json,
+    },
+  );
   if (error) throw new Error(error.message);
   if (typeof data !== "string") {
     throw new Error("start_encounter did not return an encounter id.");

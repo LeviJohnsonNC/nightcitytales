@@ -1,4 +1,5 @@
-import { arenaFor, coverStatuses } from "@/engine";
+import { battlefieldFor } from "@/engine";
+import { coverStatuses } from "@/engine";
 import type { PlaybackFrame } from "./combatPlayback";
 import { SHOT_TIMING } from "./courtyard/characterAnimation";
 
@@ -67,7 +68,7 @@ export function feedbackCues(frame: PlaybackFrame): FeedbackCue[] {
   if (frame.hit === false) cues.push({ at: SHOT_TIMING.impact, sound: "miss" });
   if (frame.hit === true) {
     const cover = frame.coverPieceId
-      ? coverStatuses(arenaFor(frame.live.arena), frame.live.cover).find(
+      ? coverStatuses(battlefieldFor(frame.live), frame.live.cover).find(
           (s) => s.piece.id === frame.coverPieceId,
         )
       : null;

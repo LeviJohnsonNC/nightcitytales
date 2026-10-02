@@ -1,3 +1,4 @@
+import type { battlefieldResult } from "./battlefieldResult";
 /**
  * The payload contract for the ledger events the engine reads back.
  *
@@ -740,4 +741,24 @@ export function readMilestoneEventData(raw: unknown): MilestoneEventData | null 
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const settledEventId = str((raw as RawPayload)["settled_event_id"]);
   return settledEventId === null ? null : { settledEventId };
+}
+
+/** A scene-backed fight's factual return receipt; legacy endings omit sceneResult. */
+export function encounterEndEventData(input: {
+  encounterId: string;
+  status: string;
+  sceneResult?: ReturnType<typeof battlefieldResult>;
+}) {
+  return { ...input };
+}
+
+/** Only scene-backed endings supersede a Life narration. Never infer that from an old win flag. */
+export function readSceneCombatEnd(data: unknown): { title: string } | null {
+  if (!data || typeof data !== "object") return null;
+  const result = (data as { sceneResult?: unknown }).sceneResult;
+  if (!result || typeof result !== "object") return null;
+  const raw = result as { version?: unknown; battlefield?: unknown };
+  return raw.version === 1 && typeof raw.battlefield === "string"
+    ? { title: raw.battlefield }
+    : null;
 }

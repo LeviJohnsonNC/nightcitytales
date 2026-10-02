@@ -117,3 +117,9 @@ these tables must tolerate their absence until the line moves up to Applied.
   Allows the engine's negative HP for mortally wounded players and NPCs; retains
   ownership, optimistic versioning, armor/ammunition checks and rollback. Not applied
   to the live Supabase project by this change.
+
+- `20261002060000_encounter_layout_snapshot.sql` — **pending deployment**.
+  Adds immutable encounter layout snapshots, a capability-specific entry RPC,
+  required protocol/version on snapshot saves, and serialized entry that rejects
+  a second active encounter. Verified using the PostgreSQL 16 replay harness.
+  Does not modify existing encounter layouts or delete duplicate historical rows.

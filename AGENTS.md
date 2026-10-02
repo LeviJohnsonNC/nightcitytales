@@ -89,6 +89,15 @@ material a bus is made of is a judgement, and each entry carries the row it
 was read against. Three entries are scenery at 0 HP: a fence stops a person
 and no bullet, which the engine already models and nothing had used.
 
+Scene-backed encounters may carry an immutable `layout` snapshot. Read their
+geometry through `battlefieldFor(live)`, never by resolving `live.arena` alone.
+`battlefieldSnapshot.ts` validates saved bounds, grid positions, object IDs and
+frozen material HP; unknown versions or invalid positions fail explicitly rather
+than moving actors or substituting open ground. Legacy encounters without a
+snapshot keep the authored-arena path. The authored North Heywood proof is
+available only through the existing `/combat` harness; see
+`docs/north-heywood-proof.md` for its limits and deployment prerequisite.
+
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says
 which Skill can reach which rung and what having asked costs, so the nine
@@ -147,7 +156,7 @@ not in the JSON, or the next run will drop them. Re-running it should leave
 - `src/features/play/combatOps.ts` owns shared combat loading, board actions,
   turn handover and death-save persistence. It accepts `CombatBundle`, which
   requires no mission or narrator. `playOps.ts` handles the Job-specific
-  consequence of death; Life/Hook combat routing is the next scene milestone.
+  consequence of death; active encounters can overlay Life/Hook without changing their phase.
 - `src/features/life/` owns the Life phase: its screen, its own system prompt and
   response schema, the situation funnel, and the shop, ripperdoc and record
   sheets. Life's schema deliberately cannot express a job transition. Split the

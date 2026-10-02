@@ -8,9 +8,9 @@ owns death-save obligations; event history supplies the account of what happened
 
 ## Persistence contract for the next milestone
 
-These are the agreed boundaries for Phase 2, not fields accepted by the current
-legacy encounter RPC. Define executable schemas when the first scene persistence
-and routing consumers land together; do not send these fields to today's RPC.
+The geometry snapshot and factual combat-result projection are implemented for
+the authored harness proof. The complete scene/origin/command lifecycle below
+remains the Phase 2 target; see `north-heywood-proof.md` for the exact boundary.
 
 | Record       | Required information                                                                                                                                                                       | Authority                                                            |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
@@ -49,7 +49,8 @@ with exact injuries, ammunition, casualties, withdrawals and object damage.
 
 The foundation still uses the existing multi-write encounter/ledger flow.
 Cross-tab encounter version checks exist, but the whole action is not atomic.
-Life/Hook do not yet route into combat; no generated scene layout is enabled.
+Life/Hook now yield to an already-active encounter and resume afterward.
+Automatic entry from adventure prose and generated scene layouts remain disabled.
 The signed-HP migration is pending deployment (see `supabase/migrations/APPLIED.md`).
 Old mortal turns without a saved death-save round cannot prove they already
 rolled; they require one save when first loaded after upgrading. New saves

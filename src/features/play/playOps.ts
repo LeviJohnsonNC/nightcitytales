@@ -1636,6 +1636,7 @@ export async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void
 
 /** True when the current beat has never been narrated (fresh campaign or beat). */
 export function needsOpeningScene(bundle: PlayBundle): boolean {
+  if (bundle.encounter || bundle.campaign.status === "lost") return false;
   if (!bundle.mission || !bundle.beat) return false;
   return !bundle.events.some((e) => e.type === "gm_narration" && e.beat_id === bundle.beat?.id);
 }
