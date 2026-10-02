@@ -367,3 +367,58 @@ export function roleOpening(roleId: string | null | undefined, rank: number): Ro
 
 /** Every Role id this module can speak for, for the tests that hold it complete. */
 export const ROLE_OPENING_IDS: string[] = Object.keys(OPENINGS);
+
+export type RoleRankPreview = {
+  /** The Rank being looked at buying. */
+  nextRank: number;
+  /** What reads differently at that Rank, in the opening's own words. */
+  changes: RoleFact[];
+  /**
+   * When `changes` is empty, the nearest Rank above where something does read
+   * differently — or null when nothing up to the ceiling changes the picture.
+   */
+  nextChangeAt: number | null;
+};
+
+/** The facts that read differently at `to` than at `from`, compared line by line. */
+function factsThatMoved(roleId: string, from: number, to: number): RoleFact[] {
+  const before = roleOpening(roleId, from)?.facts ?? [];
+  const after = roleOpening(roleId, to)?.facts ?? [];
+  return after.filter((fact, i) => {
+    const was = before[i];
+    return !was || was.label !== fact.label || was.detail !== fact.detail;
+  });
+}
+
+/**
+ * What the next Rank of a Role Ability gives, computed rather than written.
+ *
+ * The opening already describes a Role at any Rank by calling the functions
+ * play runs on — the real Combat Awareness pool, the real Backup tier, the real
+ * Motorpool — so the difference between two Ranks is a diff of two openings.
+ * Nothing here can promise what the engine will not deliver, which is the rule
+ * the Role picker was rebuilt on.
+ *
+ * Not every Rank changes what the opening says; some only add to a roll. Then
+ * the preview says so, and names the Rank where the next visible change is.
+ */
+export function roleRankPreview(
+  roleId: string | null | undefined,
+  currentRank: number,
+  maxRank: number,
+): RoleRankPreview | null {
+  if (!roleId || !roleOpening(roleId, currentRank)) return null;
+  const nextRank = Math.trunc(currentRank) + 1;
+  if (nextRank > maxRank) return null;
+  const changes = factsThatMoved(roleId, currentRank, nextRank);
+  let nextChangeAt: number | null = null;
+  if (changes.length === 0) {
+    for (let rank = nextRank + 1; rank <= maxRank; rank += 1) {
+      if (factsThatMoved(roleId, rank - 1, rank).length > 0) {
+        nextChangeAt = rank;
+        break;
+      }
+    }
+  }
+  return { nextRank, changes, nextChangeAt };
+}

@@ -6,9 +6,14 @@ import {
   skillRaiseCost,
   skillLineKey,
   skillRaiseTotal,
+  describeRoleRankRaise,
+  ROLE_RANK_MAX,
+  roleRankRaiseCost,
+  spendOnRoleRank,
   spendOnSkill,
   untrainedSkillRaises,
 } from "../advancement";
+import { ROLE_OPENING_IDS } from "../roleOpening";
 import { getSkill, IP_COSTS, SKILLS } from "../rulesData";
 
 // "autofire" is flagged x2 on the printed sheet; "athletics" is not.
@@ -246,5 +251,63 @@ describe("untrainedSkillRaises", () => {
       newLevel: 1,
       remaining: 0,
     });
+  });
+});
+
+describe("Role Ability Ranks", () => {
+  it("cost the printed 60 I.P. times the new Rank, so 4 to 5 is 300", () => {
+    expect(IP_COSTS.roleRankCostPerRank).toBe(60);
+    expect(roleRankRaiseCost(5)).toBe(300);
+    expect(() => roleRankRaiseCost(ROLE_RANK_MAX + 1)).toThrow(/outside the printed range/);
+  });
+
+  it("describes a Solo's next Rank with what it gives, from the engine", () => {
+    const raise = describeRoleRankRaise("solo", 4, 300)!;
+    expect(raise).toMatchObject({
+      abilityId: "combat_awareness",
+      nextRank: 5,
+      cost: 300,
+      affordable: true,
+    });
+    expect(raise.preview?.changes.map((c) => c.label)).toContain(
+      "5 points, divided before the shooting",
+    );
+  });
+
+  it("does not sell a Rank of an ability that is not built", () => {
+    const raise = describeRoleRankRaise("netrunner", 4, 10_000)!;
+    expect(raise.unbuilt).toBe(true);
+    expect(raise.affordable).toBe(false);
+    expect(() => spendOnRoleRank("netrunner", 4, 10_000)).toThrow(/not built yet/);
+  });
+
+  it("stops at the ceiling", () => {
+    const raise = describeRoleRankRaise("fixer", ROLE_RANK_MAX, 10_000)!;
+    expect(raise).toMatchObject({ atMax: true, cost: 0, affordable: false, preview: null });
+    expect(() => spendOnRoleRank("fixer", ROLE_RANK_MAX, 10_000)).toThrow(/maximum/);
+  });
+
+  it("refuses a Rank the character cannot afford rather than shrinking it", () => {
+    expect(() => spendOnRoleRank("solo", 4, 299)).toThrow(/only 299 available/);
+    expect(spendOnRoleRank("solo", 4, 350)).toEqual({
+      abilityId: "combat_awareness",
+      newRank: 5,
+      spent: 300,
+      remaining: 50,
+    });
+  });
+
+  it("never previews nothing without saying where the next change is", () => {
+    for (const roleId of ROLE_OPENING_IDS) {
+      for (let rank = 1; rank < ROLE_RANK_MAX; rank += 1) {
+        const preview = describeRoleRankRaise(roleId, rank, 0)?.preview;
+        expect(preview, `${roleId} at ${rank}`).toBeTruthy();
+        if (preview!.changes.length > 0) {
+          expect(preview!.nextChangeAt).toBeNull();
+        } else if (preview!.nextChangeAt !== null) {
+          expect(preview!.nextChangeAt).toBeGreaterThan(preview!.nextRank);
+        }
+      }
+    }
   });
 });

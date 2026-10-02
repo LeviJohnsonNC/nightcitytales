@@ -190,9 +190,11 @@ export const IMPROVEMENT_POINTS = creationRules.improvementPoints;
 
 /** What advancement costs in I.P., read from ip-costs.json. */
 export const IP_COSTS = ipCosts as unknown as {
-  _rules: { skill: string; levelling: string; maximum: string };
+  _rules: { skill: string; levelling: string; maximum: string; roleRank: string };
   skillCostPerLevel: number;
   doubleCostMultiplier: number;
+  roleRankCostPerRank: number;
+  roleRankMax: number;
 };
 
 export type IpTier = {
