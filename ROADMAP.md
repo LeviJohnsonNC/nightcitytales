@@ -840,14 +840,30 @@ Phase 2b receipt/recovery slice:
   narration/Job failure, and some player action logs still have separate writes.
   General persistent noncombat scene instances and mission-runtime revisions
   remain outstanding. Origin metadata is not that scene lifecycle.
-- Migration `20261002070000_scene_combat_receipts.sql` is pending deployment.
+- Migration `20261002070000_scene_combat_receipts.sql` was applied October 2, 2026.
 
-This is a harness proof, **not the Phase 2 exit gate**. Still required: persistent
-noncombat scene instances with origin/revision tracking, atomic command receipts
-across state and ledger, idempotent entry/closure, capture of the initiating attack
-intent, and an authenticated browser round trip. Freeform Life combat entry is
-not enabled. Snapshot geometry and the current two-stage opening are not a
-substitute for those transactions. See `docs/north-heywood-proof.md`.
+Phase 2c persistent authored scenes:
+
+- `/combat` can stage North Heywood without combat. A scene instance freezes the
+  layout, actor identities and profiles before initiative. Staging commits the
+  relocation and narration with the scene and preserves wounds/ammunition.
+- The adventure screen offers **Enter combat** for a ready scene. Entry checks
+  scene revision, location, phase/mission, geometry, participants and spawn cells.
+  Repeated entry for that scene revision returns the same encounter.
+- Completion commits the scene's result and aftermath with the encounter receipt.
+  Revisit uses that saved result; a newer template cannot respawn the gangers.
+  Completed aftermath can be revisited across phases. Unfinished scenes retain
+  their originating phase/mission checks.
+- This first lifecycle supports one fight per instance. Later re-engagement of
+  survivors, world-tick changes and NPC/item links require current-state projection.
+- Migration `20261002080000_persistent_combat_scenes.sql` is pending deployment.
+
+This remains an authored proof, **not the full Phase 2 exit gate**. Remaining:
+mission-runtime revision tracking, all action/resource costs in atomic commands,
+preserving and executing the initiating freeform intent, and authenticated browser
+verification. Scene generation from adventure context is not enabled. The text
+scene is staged explicitly, and combat is entered by a button, not an intent parser.
+See `docs/north-heywood-proof.md`.
 
 Compatibility: existing rows without enemy metadata retain their prior defaults.
 An active mortal turn saved before the death-save round marker existed cannot

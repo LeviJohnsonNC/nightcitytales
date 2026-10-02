@@ -103,6 +103,7 @@ export async function beginEncounter(input: {
   arena?: string;
   layout?: BattlefieldSnapshot;
   scene?: AuthoredScene;
+  sceneRef?: { id: string; revision: number };
   /**
    * What the opposition came for. Decides when they stop: a crew that came to
    * rob you has what it wanted once you are down, and leaves. Omitted, they
@@ -191,6 +192,7 @@ export async function beginEncounter(input: {
     data,
     arena: arena.key,
     ...(layout ? { layout } : {}),
+    ...(input.sceneRef ? { sceneRef: input.sceneRef } : {}),
     ...(input.scene
       ? {
           sceneSource: {

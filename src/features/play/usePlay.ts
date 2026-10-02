@@ -101,6 +101,7 @@ export function usePlay(campaignId: string) {
       queryClient.invalidateQueries({ queryKey: ["play", campaignId] }),
       queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] }),
       queryClient.invalidateQueries({ queryKey: ["life", campaignId] }),
+      queryClient.invalidateQueries({ queryKey: ["scene", campaignId] }),
     ]);
 
   const turn = useMutation({

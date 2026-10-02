@@ -100,6 +100,9 @@ once it has actually been run.
 - `20261002060000_encounter_layout_snapshot.sql` — applied October 2, 2026,
   confirmed by Levi; deployed via Drizzle migration 0003.
 
+- `20261002070000_scene_combat_receipts.sql` — applied October 2, 2026,
+  confirmed by Levi; deployed via Drizzle migration 0004.
+
 ## Pending
 
 Written and merged, but NOT yet run against the database. The code that reads
@@ -117,7 +120,6 @@ these tables must tolerate their absence until the line moves up to Applied.
   is that the database would still accept a value the app cannot produce. No
   code depends on it having run.
 
-- `20261002070000_scene_combat_receipts.sql` — **pending deployment**.
-  Adds immutable origins, idempotent entry receipts, exact latest-save replay,
-  transactional NPC/attack events and terminal results for new snapshot fights.
-  Existing encounters retain their prior protocol.
+- `20261002080000_persistent_combat_scenes.sql` — **pending deployment**.
+  Persists authored scenes before initiative, validates scene revision/identity
+  on entry, and commits the aftermath with the encounter completion receipt.

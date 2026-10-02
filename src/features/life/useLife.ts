@@ -54,6 +54,7 @@ export function useLife(campaignId: string) {
     void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
     void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
     void queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] });
+    void queryClient.invalidateQueries({ queryKey: ["scene", campaignId] });
   };
 
   const bundle = query.data;

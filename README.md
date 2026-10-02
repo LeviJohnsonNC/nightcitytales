@@ -91,7 +91,7 @@ Bun is the package manager — `bun.lock` is what CI installs from.
 src/engine/      pure TypeScript rules engine — no React, no Supabase, no features
 src/data/rules/  published RED values as JSON
 src/data/atlas/  the printed atlas, plus the house rules built on it
-src/features/    chargen, roster, play, life, gm, campaign, atlas, cast,
+src/features/    chargen, roster, play, life, gm, campaign, scenes, atlas, cast,
                  downtime, items, landing, dev
 src/lib/backend/ the only place the Supabase client is touched
 src/routes/      file-based routes; routeTree.gen.ts is generated
@@ -140,3 +140,8 @@ This project is connected to [Lovable](https://lovable.dev) and can be developed
 in the [Lovable editor](https://lovable.dev/projects/2cad9dff-eecd-46d8-8b1f-749f46c6f3c6).
 Changes made there commit straight to this repository, and pushes to `main` sync
 back. Avoid rewriting published history on the connected branch.
+
+The authored North Heywood proof can now be staged as a persistent text scene from
+`/combat`, entered through the adventure screen, and revisited with its saved
+combat aftermath. This is an explicit test fixture; general prose-to-combat entry
+is not enabled. See [the scene proof notes](docs/north-heywood-proof.md).
