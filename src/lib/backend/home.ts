@@ -30,13 +30,7 @@ export async function moveHouse(payload: MoveHousePayload): Promise<Json> {
   const { data, error } = await backendClient.rpc("move_house", {
     payload: payload as unknown as Json,
   });
-  if (error) {
-    // Until the migration runs the function does not exist; say so in words.
-    if (/move_house/.test(error.message) && /(not find|does not exist)/i.test(error.message)) {
-      throw new Error("Moving house needs a database update that has not been applied yet.");
-    }
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
   if (!data || typeof data !== "object") throw new Error("The move returned no receipt.");
   return data;
 }
