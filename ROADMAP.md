@@ -856,13 +856,27 @@ Phase 2c persistent authored scenes:
   their originating phase/mission checks.
 - This first lifecycle supports one fight per instance. Later re-engagement of
   survivors, world-tick changes and NPC/item links require current-state projection.
-- Migration `20261002080000_persistent_combat_scenes.sql` is pending deployment.
+- Migration `20261002080000_persistent_combat_scenes.sql` was applied October 2, 2026.
+
+Phase 2d typed opening requests:
+
+- Life and Job inputs recognize a narrow set of direct attack commands at an
+  already staged scene: “shoot the rifleman”, “open fire”, and “pull out my pistol
+  and start blasting”. Unrecognized text still follows the existing narrator path.
+- Entry saves the original request and optional hostile target/pistol selection
+  with initiative and the player-input ledger row. Duplicate entry keeps the first
+  request. NPCs who beat the player still act first.
+- The first player turn restores a named shot from the immutable entry, using
+  current positions and weapon legality. Untargeted fire asks for a board target.
+  Cancellation, a spent first Action or a later round stops the opening request
+  from resurfacing. Normal ROF still allows a separately requested second shot.
+- Migration `20261002090000_scene_attack_intent.sql` is pending deployment.
 
 This remains an authored proof, **not the full Phase 2 exit gate**. Remaining:
 mission-runtime revision tracking, all action/resource costs in atomic commands,
-preserving and executing the initiating freeform intent, and authenticated browser
-verification. Scene generation from adventure context is not enabled. The text
-scene is staged explicitly, and combat is entered by a button, not an intent parser.
+broader freeform intent interpretation, and authenticated browser verification.
+Scene generation from adventure context is not enabled. The text scene must still
+be staged explicitly; the input bridge is a command vocabulary, not an AI parser.
 See `docs/north-heywood-proof.md`.
 
 Compatibility: existing rows without enemy metadata retain their prior defaults.

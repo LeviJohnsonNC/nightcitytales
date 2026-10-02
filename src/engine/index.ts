@@ -100,3 +100,4 @@ export * from "./northHeywoodScene";
 export * from "./battlefieldResult";
 
 export * from "./persistentScene";
+export * from "./sceneAttackIntent";

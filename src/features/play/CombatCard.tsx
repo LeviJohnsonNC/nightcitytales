@@ -123,6 +123,7 @@ export function CombatCard({
 
       {result === null ? (
         <>
+          {pending.intent && <p className="text-xs text-muted-foreground">{pending.intent}</p>}
           {/* Who, and what is left of them. The distance and the DV are on the
               roster row three lines up; the HP and SP are what the player is
               deciding against right now, so they come along. */}
@@ -145,7 +146,7 @@ export function CombatCard({
           {blocked && <p className="text-xs text-destructive">{blocked}</p>}
           {options.length === 0 && (
             <p className="text-xs text-destructive">
-              No catalog weapon on the sheet to resolve this attack with.
+              No carried weapon matches this attack. Cancel the shot to choose another weapon.
             </p>
           )}
 

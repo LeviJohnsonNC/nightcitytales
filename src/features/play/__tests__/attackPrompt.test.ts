@@ -233,3 +233,95 @@ describe("describeAttack", () => {
     expect(line).toContain("26 HP");
   });
 });
+
+describe("saved opening intent", () => {
+  const entered = (): LiveEncounter => ({
+    ...structuredClone(live),
+    origin: {
+      version: 1,
+      source: {
+        initiatingIntent: {
+          version: 1,
+          input: "shoot the runner with my pistol",
+          targetKey: "scav_1",
+          weapon: "pistol",
+        },
+      },
+    },
+  });
+  const start = event({ id: "entry", type: "encounter_started", data: { encounterId: "enc1" } });
+  it("recovers the requested target after NPC attacks and a reload, using current positions", () => {
+    const state = entered();
+    state.data["h"]!.position = { x: 0, y: 8 };
+    const pending = pendingAttackFrom([start, event({ type: "attack" })], character, state);
+    expect(pending?.eventId).toBe("entry");
+    expect(pending?.target.id).toBe("h");
+    expect(pending?.distance).toBe(8);
+    expect(pending?.weapons.every((weapon) => weapon.rangeType === "pistol")).toBe(true);
+  });
+  it("does not block NPC recovery with a premature attack card", () => {
+    const state = entered();
+    state.state.activeIndex = 1;
+    expect(pendingAttackFrom([start], character, state)).toBeNull();
+    state.state.activeIndex = 0;
+    expect(pendingAttackFrom([start], character, state)?.target.id).toBe("h");
+  });
+  it("does not substitute another weapon when the requested pistol is missing", () => {
+    const unarmed = { ...character, gear: [] };
+    expect(pendingAttackFrom([start], unarmed, entered())?.weapons).toEqual([]);
+  });
+  it("consumes the opening request on the first Action without requiring a separate event", () => {
+    const state = entered();
+    state.data["p"]!.turn = {
+      round: 1,
+      actionUsed: true,
+      shotsThisRound: 1,
+      shotWeaponId: "medium_pistol",
+      metresMoved: 0,
+    };
+    expect(pendingAttackFrom([start], character, state)).toBeNull();
+    state.state.round = 2;
+    delete state.data["p"]!.turn;
+    expect(pendingAttackFrom([start], character, state)).toBeNull();
+  });
+  it("does not resurrect a cancelled request or a target who left combat", () => {
+    const state = entered();
+    expect(
+      pendingAttackFrom(
+        [start, event({ type: "attack_cancelled", data: { promptId: "entry" } })],
+        character,
+        state,
+      ),
+    ).toBeNull();
+    state.state.combatants["h"]!.defeated = true;
+    expect(pendingAttackFrom([start], character, state)).toBeNull();
+  });
+  it("does not pull a prompt from an earlier encounter", () => {
+    const state = entered();
+    state.origin = { version: 1 };
+    expect(
+      pendingAttackFrom(
+        [event({ type: "attack_prompt", data: { targetId: "h" } }), start],
+        character,
+        state,
+      ),
+    ).toBeNull();
+  });
+  it("requires a target choice for untargeted fire and uses that choice afterwards", () => {
+    const state = entered();
+    state.origin = {
+      version: 1,
+      source: {
+        initiatingIntent: { version: 1, input: "open fire", targetKey: null, weapon: null },
+      },
+    };
+    expect(pendingAttackFrom([start], character, state)).toBeNull();
+    expect(
+      pendingAttackFrom(
+        [start, event({ type: "attack_prompt", data: { targetId: "h" } })],
+        character,
+        state,
+      )?.target.id,
+    ).toBe("h");
+  });
+});

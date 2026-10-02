@@ -143,5 +143,7 @@ back. Avoid rewriting published history on the connected branch.
 
 The authored North Heywood proof can now be staged as a persistent text scene from
 `/combat`, entered through the adventure screen, and revisited with its saved
-combat aftermath. This is an explicit test fixture; general prose-to-combat entry
-is not enabled. See [the scene proof notes](docs/north-heywood-proof.md).
+combat aftermath. At that saved scene, direct commands such as “shoot the rifleman”
+or “open fire” enter combat and retain the opening request through initiative.
+This is an explicit test fixture and a narrow command vocabulary; general scene
+generation and prose-to-combat interpretation are not enabled. See [the scene proof notes](docs/north-heywood-proof.md).

@@ -62,9 +62,32 @@ BEGIN
     PERFORM public.start_persisted_scene_encounter(jsonb_set(start_payload,'{combatants,0,data,position,x}','11'));
     RAISE EXCEPTION 'accepted different player position';
   EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'scene player does not match' THEN RAISE; END IF; END;
-  enc := public.start_persisted_scene_encounter(start_payload);
-  IF public.start_persisted_scene_encounter(start_payload) <> enc OR
+  -- Unknown targets and invalid weapon requests fail before any entry/input writes.
+  start_payload := start_payload || jsonb_build_object('initiating_intent',
+    jsonb_build_object('version',1,'input','pull out my pistol and start blasting',
+      'targetKey',NULL,'weapon','pistol'));
+  BEGIN
+    PERFORM public.start_scene_attack_encounter(jsonb_set(start_payload,'{initiating_intent,targetKey}','"invented"'));
+    RAISE EXCEPTION 'accepted invented target';
+  EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'invalid scene attack intent' THEN RAISE; END IF; END;
+  BEGIN
+    PERFORM public.start_scene_attack_encounter(jsonb_set(start_payload,'{initiating_intent,weapon}','"nuke"'));
+    RAISE EXCEPTION 'accepted unsupported weapon';
+  EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'invalid scene attack intent' THEN RAISE; END IF; END;
+  IF EXISTS(SELECT 1 FROM public.campaign_events WHERE type='player_input') OR EXISTS(SELECT 1 FROM public.encounters) THEN
+    RAISE EXCEPTION 'rejected request left partial state';
+  END IF;
+  enc := public.start_scene_attack_encounter(start_payload);
+  IF public.start_scene_attack_encounter(start_payload) <> enc OR
     (SELECT count(*) FROM public.encounters) <> 1 THEN RAISE EXCEPTION 'scene entry duplicated encounter'; END IF;
+  IF public.start_scene_attack_encounter(jsonb_set(start_payload,'{initiating_intent,input}','"open fire"')) <> enc THEN
+    RAISE EXCEPTION 'second request rerolled entry';
+  END IF;
+  IF (SELECT count(*) FROM public.campaign_events WHERE type='player_input') <> 1 OR
+    (SELECT e.origin->'source'->'initiatingIntent' FROM public.encounters e WHERE e.id=enc)
+      IS DISTINCT FROM start_payload->'initiating_intent' THEN
+    RAISE EXCEPTION 'entry lost or duplicated initiating intent';
+  END IF;
   IF NOT EXISTS(SELECT 1 FROM public.campaign_scenes WHERE id=(staged->>'id')::uuid
     AND status='combat' AND revision=1 AND encounter_id=enc) THEN RAISE EXCEPTION 'scene did not engage'; END IF;
   BEGIN
@@ -94,7 +117,7 @@ BEGIN
   revisited := public.stage_authored_scene(stage_payload);
   IF revisited->>'status' <> 'resolved' OR revisited->>'encounter_id' <> enc::text
     OR revisited->>'summary' <> 'The cruiser door is destroyed.' THEN RAISE EXCEPTION 'revisit respawned scene'; END IF;
-  IF public.start_persisted_scene_encounter(start_payload) <> enc THEN RAISE EXCEPTION 'entry retry respawned scene'; END IF;
+  IF public.start_scene_attack_encounter(start_payload) <> enc THEN RAISE EXCEPTION 'entry retry respawned scene'; END IF;
   UPDATE public.campaigns SET phase='hook' WHERE id=(start_payload->>'campaign_id')::uuid;
   revisited := public.stage_authored_scene(stage_payload);
   IF revisited->>'status' <> 'resolved' OR public.read_campaign_scene(jsonb_build_object('campaign_id',start_payload->>'campaign_id')) IS NULL THEN

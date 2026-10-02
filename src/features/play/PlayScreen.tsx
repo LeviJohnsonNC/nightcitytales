@@ -1,3 +1,4 @@
+import { openingAttackIntentFrom } from "./attackPrompt";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { RollLine } from "./RollLine";
 import { portraitById, portraitArt } from "@/features/chargen/art";
@@ -786,6 +787,18 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
   );
 
   if (play.encounter && play.finished !== "died") {
+    const openingIntent = openingAttackIntentFrom(bundle.events, play.encounter);
+    const requestedWeapons = openingIntent?.weapon
+      ? (play.capability?.weapons.filter((weapon) => weapon.rangeType === openingIntent.weapon) ??
+        [])
+      : [];
+    const selectedWeapon = openingIntent?.weapon
+      ? (requestedWeapons.find((weapon) => weapon.itemId === weaponId)?.itemId ??
+        requestedWeapons.find((weapon) => !weapon.broken && (weapon.roundsLoaded ?? 0) > 0)
+          ?.itemId ??
+        requestedWeapons[0]?.itemId ??
+        null)
+      : weaponId;
     const locked =
       rollingAttack ||
       play.busy ||
@@ -805,8 +818,12 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
         onEndTurn={play.endTurn}
         onReload={play.reload}
         onAttack={play.callShot}
-        weaponId={weaponId}
-        onWeaponId={setWeaponId}
+        weaponId={selectedWeapon}
+        onWeaponId={(id) => {
+          setWeaponId(id);
+          if (openingIntent?.weapon && !requestedWeapons.some((weapon) => weapon.itemId === id))
+            play.cancelShot();
+        }}
         busy={locked}
         playback={play.playback.frame}
         feedback={
@@ -833,6 +850,23 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
             inventory={bundle.inventory}
             cyberware={bundle.cyberware}
           />
+        }
+        openingRequest={
+          openingIntent && !play.pendingAttack ? (
+            <>
+              <p>{openingIntent.input}</p>
+              <p>
+                {!play.capability?.turn.isPlayerTurn
+                  ? "Initiative is resolving. Your opening request is saved."
+                  : openingIntent.weapon && !requestedWeapons.length
+                    ? "No carried pistol matches this request. Cancel to choose another weapon."
+                    : "Choose a hostile target on the battlefield."}
+              </p>
+              <button className="underline" onClick={play.cancelShot} disabled={locked}>
+                Cancel opening attack
+              </button>
+            </>
+          ) : null
         }
         improvisation={
           bundle.mission ? (
@@ -892,7 +926,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
                   busy={locked}
                   capability={play.capability}
                   luckRemaining={play.luck.remaining}
-                  weaponItemId={raisedWeapon(play.capability, weaponId)?.itemId ?? null}
+                  weaponItemId={raisedWeapon(play.capability, selectedWeapon)?.itemId ?? null}
                 />
               )}
               {play.pendingCheck && (

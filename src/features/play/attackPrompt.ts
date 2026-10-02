@@ -1,4 +1,4 @@
-import { battlefieldFor } from "@/engine";
+import { battlefieldFor, readSceneAttackIntent } from "@/engine";
 /**
  * Pending attacks — the bridge between "the GM proposed a shot" and "the player
  * rolled it", mirroring checkPrompt.ts. Pure: it reads the ledger, the live
@@ -133,6 +133,30 @@ export function findTarget(live: LiveEncounter, targetKey: string): Combatant | 
   );
 }
 
+/** Pending only until the first Action/turn is spent, or the player cancels it. */
+export function openingAttackIntentFrom(events: CampaignEvent[], live: LiveEncounter | null) {
+  if (!live || live.state.status !== "active" || live.state.round !== 1) return null;
+  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
+  if (!player || player.defeated || live.data[player.id]?.turn?.actionUsed) return null;
+  const intent = readSceneAttackIntent(live.origin);
+  if (!intent) return null;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i]!;
+    if (
+      event.type === "encounter_started" &&
+      (event.data as { encounterId?: string })?.encounterId === live.id
+    )
+      break;
+    if (event.type === "attack_cancelled") return null;
+    if (
+      event.type === "turn_ended" &&
+      (event.data as { encounterId?: string })?.encounterId === live.id
+    )
+      return null;
+  }
+  return intent;
+}
+
 /**
  * The attack awaiting the player's dice: the most recent attack_prompt with no
  * attack event resolving it afterwards.
@@ -148,12 +172,40 @@ export function pendingAttackFrom(
   if (!live || live.state.status !== "active") return null;
   const attacker = Object.values(live.state.combatants).find((c) => c.isPlayer);
   if (!attacker || attacker.defeated) return null;
+  // A saved entry may still be on an NPC turn after an interrupted response.
+  // Keep Continue combat available; the origin queues the shot until our turn.
+  if (live.origin && live.state.order[live.state.activeIndex] !== attacker.id) return null;
 
+  const opening = openingAttackIntentFrom(events, live);
+  // Scope scene prompts to this encounter. Opening NPC attacks do not cancel a
+  // request whose player's first Action is still unspent.
+  let start = -1;
+  for (let i = events.length - 1; i >= 0; i--) {
+    if (
+      events[i]!.type === "encounter_started" &&
+      (events[i]!.data as { encounterId?: string })?.encounterId === live.id
+    ) {
+      start = i;
+      break;
+    }
+  }
+  const scoped = live.origin ? events.slice(start + 1) : events;
+  const prompts: Pick<CampaignEvent, "id" | "type" | "beat_id" | "data">[] = opening?.targetKey
+    ? [
+        {
+          id: events[start]?.id ?? live.id,
+          type: "attack_prompt",
+          beat_id: null,
+          data: { targetId: opening.targetKey, intent: opening.input },
+        },
+        ...scoped,
+      ]
+    : scoped;
   const cancelled = new Set<string>();
-  for (let i = events.length - 1; i >= 0; i -= 1) {
-    const event = events[i];
+  for (let i = prompts.length - 1; i >= 0; i -= 1) {
+    const event = prompts[i];
     if (!event) continue;
-    if (event.type === "attack" || event.type === "turn_ended") return null;
+    if (event.type === "turn_ended" || (event.type === "attack" && !opening)) return null;
     if (event.type === "attack_cancelled") {
       const promptId = (event.data as { promptId?: unknown } | null)?.promptId;
       if (typeof promptId === "string") cancelled.add(promptId);
@@ -181,13 +233,15 @@ export function pendingAttackFrom(
       eventId: event.id,
       encounterVersion: live.version,
       beatId: event.beat_id ?? null,
-      intent: typeof data.intent === "string" ? data.intent : "",
+      intent: opening?.input ?? (typeof data.intent === "string" ? data.intent : ""),
       // Measured now, not read back off the prompt event: the player may have
       // moved, or a hostile may have closed, since the GM proposed the shot.
       distance: distanceToTarget(live, target.id),
       attacker,
       target,
-      weapons: weaponChoices(liveInventory(inventory, character)),
+      weapons: weaponChoices(liveInventory(inventory, character)).filter(
+        (weapon) => !opening?.weapon || weapon.rangeType === opening.weapon,
+      ),
       woundPenalty: woundActionPenalty(attacker.woundState),
       ...(blocking[0] ? { blockedBy: blocking[0].label } : {}),
       ...(vitals ? { effectiveStats: effectiveStatsRecord(character, { vitals, inventory }) } : {}),

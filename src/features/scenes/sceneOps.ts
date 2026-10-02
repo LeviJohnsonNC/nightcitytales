@@ -1,5 +1,8 @@
 import {
   readPersistentScene,
+  sceneAttackRequest,
+  resolveSceneAttack,
+  type SceneAttackIntent,
   readSceneManifest,
   type AuthoredScene,
   type PersistentScene,
@@ -33,6 +36,7 @@ export async function enterSceneCombat(
   campaignId: string,
   sceneId: string,
   revision: number,
+  initiatingIntent?: SceneAttackIntent,
 ): Promise<void> {
   const row = await readCampaignScene(campaignId, sceneId);
   if (!row) throw new Error("You are no longer at this scene.");
@@ -56,7 +60,24 @@ export async function enterSceneCombat(
     enemies: [],
     scene: saved.scene,
     sceneRef: { id: saved.id, revision: saved.revision },
+    ...(initiatingIntent ? { initiatingIntent } : {}),
     ...(effects ? { roleEffects: effects } : {}),
     goal: "repel",
   });
+}
+
+/** Intercept only explicit supported commands at an already saved scene. */
+export async function trySceneAttack(campaignId: string, input: string): Promise<boolean> {
+  const request = sceneAttackRequest(input);
+  if (!request) return false;
+  const saved = await loadCurrentScene(campaignId);
+  if (!saved) return false;
+  if (saved.status === "resolved")
+    throw new Error(
+      "This scene’s fight is finished. Starting another fight here is not supported yet.",
+    );
+  if (saved.status === "combat") return true; // stale adventure tab: reload the existing fight
+  const intent = resolveSceneAttack(request, saved.scene);
+  await enterSceneCombat(campaignId, saved.id, saved.revision, intent);
+  return true;
 }

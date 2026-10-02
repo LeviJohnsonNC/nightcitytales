@@ -1,3 +1,4 @@
+import { trySceneAttack } from "@/features/scenes/sceneOps";
 /**
  * A Life turn, applied.
  *
@@ -1612,6 +1613,8 @@ export async function liveTurn(
   input: string,
   turn: TurnOptions = {},
 ): Promise<void> {
+  if (!turn.fixedResult && !turn.continuation && (await trySceneAttack(bundle.campaign.id, input)))
+    return;
   if (input.trim()) {
     await appendCampaignEvent({
       campaign_id: bundle.campaign.id,

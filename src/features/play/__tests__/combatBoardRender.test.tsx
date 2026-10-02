@@ -303,3 +303,17 @@ it("offers to continue an interrupted scene NPC turn without offering a player a
   expect(html).toContain("Resolve NPC turns");
   expect(html).not.toMatch(/class="combat-end" disabled/);
 });
+
+it("shows an untargeted opening request without opening the improvisation dialog", () => {
+  const output = renderToStaticMarkup(
+    <CombatBoard
+      live={live}
+      capability={capability}
+      weaponId="very_heavy_pistol"
+      onWeaponId={() => {}}
+      openingRequest={<p>Choose a hostile target for your opening shot.</p>}
+    />,
+  );
+  expect(output).toContain("Choose a hostile target for your opening shot.");
+  expect(output).toContain('role="status"');
+});

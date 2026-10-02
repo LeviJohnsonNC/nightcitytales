@@ -1,3 +1,4 @@
+import type { SceneAttackIntent } from "@/engine";
 import {
   battlefieldFor,
   battlefieldResult,
@@ -104,6 +105,7 @@ export async function beginEncounter(input: {
   layout?: BattlefieldSnapshot;
   scene?: AuthoredScene;
   sceneRef?: { id: string; revision: number };
+  initiatingIntent?: SceneAttackIntent;
   /**
    * What the opposition came for. Decides when they stop: a crew that came to
    * rob you has what it wanted once you are down, and leaves. Omitted, they
@@ -193,6 +195,7 @@ export async function beginEncounter(input: {
     arena: arena.key,
     ...(layout ? { layout } : {}),
     ...(input.sceneRef ? { sceneRef: input.sceneRef } : {}),
+    ...(input.initiatingIntent ? { initiatingIntent: input.initiatingIntent } : {}),
     ...(input.scene
       ? {
           sceneSource: {
