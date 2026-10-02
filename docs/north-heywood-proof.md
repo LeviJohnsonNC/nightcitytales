@@ -123,7 +123,7 @@ a fight instead of silently dropping the request.
    engine remains authoritative for legal actions.
 6. Finish combat and verify the existing saved aftermath and phase return.
 
-This is deliberately a small full-command grammar: `shoot <name>`, `attack <name>`,
+This is deliberately a small full-command grammar: `shoot <name>`, `shoot at <name>`, `attack <name>`,
 `fire at <name>`, `open fire`, and `start blasting`, optionally preceded by `I` or
 `draw/pull out my pistol and`, or with `with my pistol` on a targeted shot. Named
 targets must uniquely match a saved hostile's name, name suffix or ID. Unknown,
@@ -137,3 +137,34 @@ prompt is derived from that origin and consumed by persisted first-turn Action
 state, turn progression, or the existing cancellation ledger. No extra shot is
 resolved before initiative, and there is no separate post-entry prompt write to
 lose on a failed response. Authenticated browser verification remains outstanding.
+
+## October 2 player playtest fixes
+
+A fresh Life adventure entered the correct saved intersection through `open fire`.
+The player then reproduced a rejected `shoot at the rifleman with my pistol`, a
+board stuck on “Resolving / Waiting on the dice” with End turn still working, and
+an `encounters_status_check` error on a later terminal save.
+
+- `shoot at` now resolves the same saved target as `shoot`.
+- Pointer events during an open dice card no longer store `resolving-action` as
+  persistent board intent. After the card closes, movement and target selection
+  resume from the previous selection. This is independent of the weapon's legal
+  ROF; a Very Heavy Pistol's ROF 1 still limits it to one shot per turn.
+- Apply `20261002100000_repair_encounter_status_constraint.sql` to reassert the
+  same outcome vocabulary the save RPC already validates. The repair preserves
+  active fights and combatants. It normalizes only legacy fled/abandoned statuses
+  to resolved. The deployment's exact constraint definition was not inspected;
+  a local regression recreates the historical narrow constraint, reproduces the
+  rejection, then verifies the repair and repeat application.
+
+After deploying the fixes, reload the existing fight to clear the old local
+interaction state and read the last committed state. A failed transaction must
+not be treated as a recorded shot or completed fight. Resume from that state;
+verify ammo changes, movement after firing, and the return to Life on completion.
+The previous screenshots showed an unchanged 8/8 magazine, so they do not prove
+that the reported first shot committed. The revised flow still needs player
+retesting in the deployed browser.
+
+The displaced scene controls, old home narration dominating the current scene,
+and diagram-only battlefield art remain known presentation work. These fixes do
+not claim to address those visual shortcomings.

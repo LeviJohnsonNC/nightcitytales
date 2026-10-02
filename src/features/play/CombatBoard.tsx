@@ -6,7 +6,7 @@ import {
   IDLE,
   interactionOf,
   lockedTarget,
-  nextInteraction,
+  dispatchInteraction,
   readTarget,
   readTile,
   type Interaction,
@@ -349,7 +349,7 @@ export function CombatBoard({
       : null;
   };
   const dispatch = (event: InteractionEvent) => {
-    setIntent((current) => nextInteraction(interactionOf(current, resolving), event));
+    setIntent((current) => dispatchInteraction(current, event, resolving));
     if (event.kind !== "hover-tile" && event.kind !== "hover-unit") setInspected(null);
   };
   const sameSquare = (tile: Tile) =>

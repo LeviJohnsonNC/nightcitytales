@@ -162,3 +162,12 @@ export function nextInteraction(state: Interaction, event: InteractionEvent): In
 export function interactionOf(state: Interaction, resolving: boolean): Interaction {
   return resolving ? { type: "resolving-action" } : state;
 }
+
+/** Pointer events must never store the transient resolving overlay as intent. */
+export function dispatchInteraction(
+  intent: Interaction,
+  event: InteractionEvent,
+  resolving: boolean,
+): Interaction {
+  return resolving ? intent : nextInteraction(intent, event);
+}

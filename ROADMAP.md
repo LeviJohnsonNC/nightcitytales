@@ -870,7 +870,16 @@ Phase 2d typed opening requests:
   current positions and weapon legality. Untargeted fire asks for a board target.
   Cancellation, a spent first Action or a later round stops the opening request
   from resurfacing. Normal ROF still allows a separately requested second shot.
-- Migration `20261002090000_scene_attack_intent.sql` is pending deployment.
+- Migration `20261002090000_scene_attack_intent.sql` was applied October 2, 2026.
+- Player testing confirmed `open fire` enters the saved scene in Life. Follow-up
+  fixes accept `shoot at`, keep pointer events during dice from permanently
+  locking the board, and reassert the encounter outcome constraint through
+  `20261002100000_repair_encounter_status_constraint.sql` (pending deployment).
+  The regression suite now tests the historical narrow constraint as well as
+  the canonical replay baseline. Deployed browser retesting remains required.
+- Presentation debt observed in that test: scene controls float above the game,
+  old home narration dominates the current scene, and this fixture still uses
+  diagram art and placeholder actor portraits.
 
 This remains an authored proof, **not the full Phase 2 exit gate**. Remaining:
 mission-runtime revision tracking, all action/resource costs in atomic commands,

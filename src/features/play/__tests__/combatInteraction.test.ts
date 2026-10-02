@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vitest";
 import {
   IDLE,
+  dispatchInteraction,
   interactionOf,
   lockedTarget,
   nextInteraction,
@@ -200,4 +201,22 @@ describe("while a command is running", () => {
     ] as InteractionEvent[])
       expect(nextInteraction(busy, event)).toBe(busy);
   });
+});
+
+it("keeps pointer events during a shot from permanently locking the board", () => {
+  let intent: Interaction = { type: "target-selected", targetId: "rifleman" };
+  for (const event of [
+    { kind: "leave-unit" },
+    { kind: "leave-board" },
+    { kind: "hover-tile", tile: tile(1, 1) },
+    { kind: "click-unit", targetId: "lookout" },
+  ] as InteractionEvent[]) {
+    intent = dispatchInteraction(intent, event, true);
+    expect(interactionOf(intent, true).type).toBe("resolving-action");
+  }
+  expect(interactionOf(intent, false)).toEqual({ type: "target-selected", targetId: "rifleman" });
+  intent = dispatchInteraction(intent, { kind: "click-tile", tile: tile(2, 2) }, false);
+  expect(intent).toEqual({ type: "move-preview", tile: tile(2, 2), locked: "rifleman" });
+  intent = dispatchInteraction(intent, { kind: "click-unit", targetId: "lookout" }, false);
+  expect(intent).toEqual({ type: "target-selected", targetId: "lookout" });
 });
