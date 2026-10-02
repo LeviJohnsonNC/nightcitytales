@@ -29,6 +29,13 @@
       "when": 1790964076523,
       "tag": "0003_encounter_layout_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790968197078,
+      "tag": "0004_scene_combat_receipts",
+      "breakpoints": true
     }
   ]
 }
