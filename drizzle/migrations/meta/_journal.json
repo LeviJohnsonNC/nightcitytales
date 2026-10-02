@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790908101224,
+      "tag": "0000_award_improvement_points",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790908119454,
+      "tag": "0001_spend_ip_on_role_rank",
+      "breakpoints": true
+    }
+  ]
+}
