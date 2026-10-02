@@ -859,6 +859,14 @@ const KNOWS_THE_NAME = [
 ];
 
 /**
+ * A negation in the few words before a match: "he hasn't heard of you", "she
+ * doesn't know who you are". Those say exactly what the engine's roll said, so
+ * they are not a recognition. Bare "no" is left out on purpose: "No, I've heard
+ * of you" is one.
+ */
+const NEGATED_BEFORE = /(?:\bnot|\bnever|n't|\bnobody|\bno one)\W+(?:\w+\W+){0,3}$/i;
+
+/**
  * Nobody recognised a character the engine said was not recognised.
  *
  * REPUTATION_RULE: "Never decide that somebody has heard of them when the line
@@ -874,7 +882,10 @@ export const unheardStaysUnheard: Check = {
     if (!ctx.strangerUnheard) return [];
     return KNOWS_THE_NAME.flatMap((re) => {
       const match = turn.narration.match(re);
-      return match ? [{ quote: match[0], note: "recognised against the engine's roll" }] : [];
+      if (!match || match.index === undefined) return [];
+      const before = turn.narration.slice(Math.max(0, match.index - 60), match.index);
+      if (NEGATED_BEFORE.test(before)) return [];
+      return [{ quote: match[0], note: "recognised against the engine's roll" }];
     });
   },
 };
