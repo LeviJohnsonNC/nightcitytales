@@ -33,6 +33,7 @@
  * the player to read is prose, and prose has no contract to break.
  */
 
+import { isObservation, type Observation } from "./clocks";
 import { isFactionId } from "./factions";
 import type { Goal } from "./goals";
 
@@ -47,6 +48,7 @@ export const LEDGER_EVENTS = {
   ipAwarded: "ip_awarded",
   roleRankRaised: "role_rank_raised",
   goalsPinned: "goals_pinned",
+  jobSettled: "job_settled",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -436,6 +438,39 @@ export function readIpAwardedEventData(raw: unknown): IpAwardedEventData | null 
     day: num(d["day"]),
     playstyles: primary && secondary ? { primary, secondary } : null,
   };
+}
+
+// ---------------------------------------------------------------------------
+// job_settled — the settlement receipt (`AftermathReport`), stored whole as the
+// event's data by `settle_job`. Reputation reads back only two parts of it:
+// what the city noticed, and the fee that was agreed.
+// ---------------------------------------------------------------------------
+
+export type JobSettledEventData = {
+  /** How many times each thing was noticed. Absent means not at all. */
+  noticed: Partial<Record<Observation, number>>;
+  /** The fee agreed for the job, or 0 when the receipt does not say. */
+  agreed: number;
+};
+
+export function readJobSettledEventData(raw: unknown): JobSettledEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const findings = d["findings"];
+  if (!Array.isArray(findings)) return null;
+  const noticed: Partial<Record<Observation, number>> = {};
+  for (const finding of findings) {
+    if (!finding || typeof finding !== "object") continue;
+    const f = finding as RawPayload;
+    const count = num(f["count"]);
+    if (isObservation(f["observation"]) && count !== null && count > 0) {
+      noticed[f["observation"]] = (noticed[f["observation"]] ?? 0) + count;
+    }
+  }
+  const payment = d["payment"];
+  const agreed =
+    payment && typeof payment === "object" ? (num((payment as RawPayload)["agreed"]) ?? 0) : 0;
+  return { noticed, agreed };
 }
 
 // ---------------------------------------------------------------------------

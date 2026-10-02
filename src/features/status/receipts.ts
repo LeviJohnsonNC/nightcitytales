@@ -39,6 +39,8 @@ export type TurnSnapshot = {
   clocks: Record<string, LifeClock>;
   /** Pinned goals and where each stands, when the screen has pins. */
   goals?: Record<string, { label: string; status: GoalStatus }>;
+  /** Reputation Level and the tier of work it brings, when the screen knows them. */
+  climb?: { reputation: number; tierIndex: number; tierName: string };
 };
 
 export function snapshotOf(input: {
@@ -47,6 +49,7 @@ export function snapshotOf(input: {
   npcs: { npc_id: string | null; name: string; disposition: number }[];
   pressure: { clock: LifeClock }[];
   goals?: GoalProgress[];
+  climb?: { reputation: number; tierIndex: number; tierName: string };
 }): TurnSnapshot {
   const people: TurnSnapshot["people"] = {};
   for (const npc of input.npcs) {
@@ -63,6 +66,7 @@ export function snapshotOf(input: {
     humanity: input.vitals.humanity_current,
     people,
     clocks,
+    ...(input.climb ? { climb: input.climb } : {}),
     ...(input.goals
       ? {
           goals: Object.fromEntries(
@@ -157,6 +161,21 @@ export function receiptsBetween(before: TurnSnapshot, after: TurnSnapshot): Rece
       tone: !was || now.filled > was.filled ? "bad" : "good",
       meter: { filled: now.filled, segments: now.segments },
     });
+  }
+
+  // Being heard of, and the work that follows. Both only ever go up, and both
+  // are worth a card the moment they do.
+  if (before.climb && after.climb) {
+    if (after.climb.reputation > before.climb.reputation) {
+      out.push({ key: "reputation", text: `Reputation ${after.climb.reputation}`, tone: "good" });
+    }
+    if (after.climb.tierIndex > before.climb.tierIndex) {
+      out.push({
+        key: "tier",
+        text: `Fixers offer you ${after.climb.tierName.toLowerCase()} now`,
+        tone: "good",
+      });
+    }
   }
 
   // A pinned goal coming within reach, or arriving, is the moment the player

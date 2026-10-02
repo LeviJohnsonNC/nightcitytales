@@ -665,6 +665,12 @@ publishing.ts` moves a faction's clock DOWN and their standing with it, and it
   `role-affordances.json` now serves two audiences: `reach`/`options` are the
   narrator's, in the third person, and `player`/`answers` are the player's, in
   the second. They must not converge — a test holds them apart.
+- **Reputation is derived, never stored.** `engine/reputation.ts` reads it off
+  every `job_settled` receipt on each Life load, and the work on offer
+  (`job-tiers.json`) is enforced by which job seed `pickJobSeed` draws, never by
+  editing a job. A new way to earn Reputation is a new row in
+  `reputation-deeds.json` read from something the engine already recorded, not
+  a number the narrator supplies.
 - **Ripperdoc pacing is a house rule** — 0/1/3 recovery days by install level,
   four surgery hours per physical implant, appointment delay by disposition.
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,

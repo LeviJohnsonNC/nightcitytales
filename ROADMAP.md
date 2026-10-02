@@ -533,21 +533,38 @@ Graded on what a player experiences, not on what the engine models somewhere.
 - Raises bought before `skill_raised` existed (October 2026) left no event, so
   an older campaign's "what you can do" starts from then.
 
-**6. Standing and Reputation that do something.**
+**6a. Reputation and the work it brings — shipped.**
 
-- Reputation is the highest deed earned, worked out from `reputation_earned`
-  events that settlement writes from a closed list of deeds
-  (`reputation-deeds.json`, house rule): witnesses, a published story, the
-  target's weight. A clean exit earns no Reputation — the trade between heat
-  and fame is the point.
-- The engine rolls the printed recognition die when the character meets someone
-  new and hands the narrator the fact. Facedown arrives as an engine-resolved
-  opposed check.
-- Job tiers (`job-tiers.json`, house rule): jobs finished, Reputation, the
-  fixer's disposition and the patron's faction standing pick a tier, and the
-  tier picks the reward band, force and force size together. The engine chooses
-  the job _seed_ that fits the tier, so a stored job id still names the same job.
-  The player is told when they are offered a new tier of work.
+- Reputation (`engine/reputation.ts`) is the printed ladder (p.193), and the
+  engine awards it from what each settled job left behind, read off the
+  `job_settled` receipt (`readJobSettledEventData`). A deed starts at 1 and
+  climbs a step each for being seen or named (two at most), being loud, a body
+  count, and a fee worth talking about, capped at 6
+  (`reputation-deeds.json`, house rule). A clean job earns nothing: that is the
+  trade between heat and fame. Reputation is the best deed so far; it is
+  derived on every Life load and never stored. Levels 7 and up are headlines,
+  and nothing writes the news yet.
+- Job tiers (`job-tiers.json`, house rule): street, steady and serious work,
+  each a pair of fees and force sizes, so better pay is a harder fight. The
+  tier is the highest that both Reputation and jobs finished reach, one lower
+  while the fixer is cold. `pickJobSeed` enforces it by choosing among 64 seeds
+  rather than editing a job, so a stored id still names the same job; a sweep
+  test holds every tier to being filled 195 times in 200.
+- Faction standing finally decides something: an employer whose faction is
+  hostile to you does not hire you.
+- The Record and Within reach sheets show Reputation with its printed "who
+  knows" line, the work on offer, and what the next tier needs. Rising in
+  either is a receipt ("Reputation 3", "Fixers offer you steady work now").
+
+**6b. Being recognised.** Reputation's two printed dice uses, both engine-rolled:
+
+- the recognition roll (1d10 under the Reputation of the person met) when the
+  character meets somebody new, handed to the narrator as a fact;
+- Facedown (COOL + Reputation + 1d10, opposed), as an action the narrator can
+  propose and the engine resolves.
+
+Both change what the narrator is told and can ask for, so they arrive with a
+prompt version bump and `bun run eval`, in their own change.
 
 **7. Moving house.** Home and Lifestyle move to the campaign, falling back to
 `character_finance` for campaigns that predate it. A move is a Life action

@@ -12,7 +12,9 @@
  */
 import {
   districtOfPlace,
+  findFactionIn,
   generateJob,
+  missionFitsTier,
   getMission,
   placeIntel,
   jobIdForSeed,
@@ -27,7 +29,7 @@ import {
   type Mission,
   type MissionOffer,
 } from "@/engine";
-import type { PlaceState, RNG } from "@/engine";
+import type { FactionId, JobTier, PlaceState, RNG } from "@/engine";
 import type { CampaignEvent, CampaignFlag, Json } from "@/lib/backend";
 import type { SituationUpsert } from "@/lib/backend";
 import type { LifeWireOffer } from "./lifeContext";
@@ -294,19 +296,66 @@ export function askTagFrom(event: CampaignEvent | undefined): HookAskTag | null 
 export const SEED_CANDIDATES = 18;
 
 /**
+ * How many seeds to look through when the work has to fit a tier as well. A
+ * Serious job needs both a top-half fee and a heavy force — about one seed in
+ * ten — so eighteen looks would miss it one time in six; sixty-four miss it
+ * about one time in a thousand. Each look is still pure arithmetic.
+ */
+export const TIERED_SEED_CANDIDATES = 64;
+
+export type JobSeedFilter = {
+  /** The work this crew gets offered (`jobTierFor`). */
+  tier: JobTier;
+  /** Factions hostile to the character: they do not hire them. */
+  hostile: Set<FactionId>;
+};
+
+/** The faction behind a job's employer, when the employer is one. */
+function patronFaction(seed: number): FactionId | null {
+  return findFactionIn(generateJob(seed).offer?.patronOrg ?? null);
+}
+
+/**
  * Draw a seed for the next job, preferring one whose work lands somewhere the
  * character has been.
  *
  * Falls through to the first candidate when nothing matches, which is the
  * common case early on: a character who has been nowhere gets work anywhere,
  * and the city opens up as they do.
+ *
+ * With a filter, the work also has to be the crew's tier — the fee and the
+ * force both — and nobody hostile to them is the employer. Those come first, a
+ * familiar district second: getting the right kind of work matters more than
+ * where it is. A seed is chosen, never a job edited, so a stored job id still
+ * names the same job.
  */
-export function pickJobSeed(knownDistricts: Set<string>, rng: RNG = Math.random): number {
-  const seeds = Array.from({ length: SEED_CANDIDATES }, () => rollJobSeed(rng));
-  if (!knownDistricts.size) return seeds[0]!;
-  const familiar = seeds.find((seed) => {
+export function pickJobSeed(
+  knownDistricts: Set<string>,
+  rng: RNG = Math.random,
+  filter?: JobSeedFilter,
+): number {
+  const count = filter ? TIERED_SEED_CANDIDATES : SEED_CANDIDATES;
+  const seeds = Array.from({ length: count }, () => rollJobSeed(rng));
+  const familiar = (seed: number) => {
     const district = generateJob(seed).offer?.districtKey;
     return district ? knownDistricts.has(district) : false;
-  });
-  return familiar ?? seeds[0]!;
+  };
+  if (!filter) {
+    if (!knownDistricts.size) return seeds[0]!;
+    return seeds.find(familiar) ?? seeds[0]!;
+  }
+  const hires = (seed: number) => {
+    const faction = patronFaction(seed);
+    return faction === null || !filter.hostile.has(faction);
+  };
+  const fits = seeds.filter(
+    (seed) => hires(seed) && missionFitsTier(generateJob(seed), filter.tier),
+  );
+  return (
+    fits.find(familiar) ??
+    fits[0] ??
+    seeds.find((seed) => hires(seed) && familiar(seed)) ??
+    seeds.find(hires) ??
+    seeds[0]!
+  );
 }

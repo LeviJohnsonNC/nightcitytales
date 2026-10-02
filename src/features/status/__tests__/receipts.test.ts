@@ -199,3 +199,30 @@ describe("pinned goals as receipts", () => {
     expect(receiptsBetween(at("ready"), at("far"))).toEqual([]);
   });
 });
+
+describe("being heard of, as receipts", () => {
+  const base: TurnSnapshot = {
+    day: 3,
+    minute: 600,
+    eurobucks: 100,
+    hp: 30,
+    humanity: 60,
+    people: {},
+    clocks: {},
+  };
+  const at = (reputation: number, tierIndex: number, tierName: string): TurnSnapshot => ({
+    ...base,
+    climb: { reputation, tierIndex, tierName },
+  });
+
+  it("names a new Reputation and a better tier of work", () => {
+    expect(
+      receiptsBetween(at(2, 0, "Street work"), at(3, 1, "Steady work")).map((r) => r.text),
+    ).toEqual(["Reputation 3", "Fixers offer you steady work now"]);
+  });
+
+  it("is silent when nothing rose, or when a cold fixer drops the tier", () => {
+    expect(receiptsBetween(at(3, 1, "Steady work"), at(3, 1, "Steady work"))).toEqual([]);
+    expect(receiptsBetween(at(3, 1, "Steady work"), at(3, 0, "Street work"))).toEqual([]);
+  });
+});
