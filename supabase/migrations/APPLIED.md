@@ -99,6 +99,13 @@ once it has actually been run.
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
 
+- `20261002040000_moving_house.sql` — adds `campaigns.housing_id`,
+  `lifestyle_id` and `home_place_key` (all nullable) and the `move_house`
+  transaction. Until it runs every campaign reads creation's home and rates,
+  exactly as before (`campaignHome` treats a missing column as "not moved"),
+  and the Home sheet's Move and Switch buttons fail with a message saying the
+  database update has not been applied.
+
 - `20260919050000_opening_premise_not_a_commitment.sql` — data only. Clears
   `due_day` on the opening's `opening_just_living` situation and marks it
   `data.premise`, so campaigns started before the fix stop being told one thing

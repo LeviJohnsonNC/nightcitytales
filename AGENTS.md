@@ -186,7 +186,7 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   The Life rail is a HUD, not a form (`life/hud/`): `CharacterCard` (portrait,
   bars that change colour as they empty, Luck as pips), `ResourceStrip` (money,
   growth and commitments as three chips whose detail opens in a popover) and an
-  action dock of `DockTile`s that trigger the Within reach, Record, Shop,
+  action dock of `DockTile`s that trigger the Within reach, Record, Home, Shop,
   Ripperdoc and Bench sheets. Within reach is `engine/goals.ts` on screen: the
   next rung of every Skill, the Rank, installable chrome and each faction's next
   band, priced by the engine, with up to three pins stored as a `goals_pinned`
@@ -299,6 +299,11 @@ The important transactional database boundaries are:
   Humanity, the implants and their foundations, elapsed time, ripperdoc state,
   the ledger receipt, and passing on an active hook. Idempotent on the caller's
   request id, which is also the receipt event's id.
+- `move_house(payload)`: commits one move or change of Lifestyle — the
+  deposit, the campaign's `housing_id`/`lifestyle_id`/`home_place_key`, the
+  clock, where the character stands, and the `moved_house` receipt. Refuses a
+  plan priced against a campaign that has changed since (`campaign changed`).
+  Idempotent on the caller's request id, which is also the receipt event's id.
 
 These closeout functions apply a plan computed in TypeScript. They validate
 ownership, phase, job identity, expected values, and ranges, but they must not
@@ -665,6 +670,16 @@ publishing.ts` moves a faction's clock DOWN and their standing with it, and it
   `role-affordances.json` now serves two audiences: `reach`/`options` are the
   narrator's, in the third person, and `player`/`answers` are the player's, in
   the second. They must not converge — a test holds them apart.
+- **Home lives on the campaign, and only the home moves.** `campaignHome`
+  (`features/campaign/home.ts`) reads the campaign's own columns once the
+  character has moved and creation's plan until then, and `lifestyleRates`
+  prices rent from it, so a campaign that never moved reads exactly as before.
+  `character_finance.home_district_key` stays the district the character grew
+  up in: Local Expert's "Your Home" and where the cast spend their evenings
+  read it, because what you know about a neighbourhood and who you know there
+  do not come with you in the van. `engine/home.ts` prices a move from the
+  printed rents and the house-rule `moving-house.json` (deposit, hours, and
+  which tagged buildings rent which kind of home).
 - **Reputation is derived, never stored.** `engine/reputation.ts` reads it off
   every `job_settled` receipt on each Life load, and the work on offer
   (`job-tiers.json`) is enforced by which job seed `pickJobSeed` draws, never by

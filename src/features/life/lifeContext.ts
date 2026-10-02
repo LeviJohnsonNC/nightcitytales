@@ -82,6 +82,8 @@ export type LifeContext = {
     appearsAs?: string;
     /** Reputation, who knows, and whether a stranger met this turn has heard of them. */
     reputation?: string;
+    /** Where they live and what they eat, by name: "Studio Apartment at Dock 14 (Little China); eats Kibble". */
+    home?: string;
     role: string;
     hp: number;
     hpMax: number;
@@ -494,6 +496,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
   );
   if (character.appearsAs) parts.push(line("Reads as", character.appearsAs));
   if (character.reputation) parts.push(line("Reputation", character.reputation));
+  if (character.home) parts.push(line("Home", character.home));
   const vitals = [`HP ${character.hp}/${character.hpMax} (${character.woundState})`];
   if (character.humanity !== undefined && character.humanityMax !== undefined) {
     vitals.push(`Humanity ${character.humanity}/${character.humanityMax}`);

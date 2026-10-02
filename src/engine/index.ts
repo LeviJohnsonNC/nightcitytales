@@ -93,3 +93,4 @@ export * from "./truth";
 export * from "./startingHome";
 
 export * from "./combatPreview";
+export * from "./home";

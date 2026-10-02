@@ -213,6 +213,7 @@ import {
 } from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
 import { recognitionRecord, reputationProp } from "@/features/campaign/recognition";
+import { homeLine } from "@/features/campaign/home";
 import {
   judgeAndAward,
   readLastAward,
@@ -961,6 +962,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
       ...(bundle.character.character.handle ? { handle: bundle.character.character.handle } : {}),
       ...appearsAsProp(bundle.character),
       ...(turn.recognition ? reputationProp(bundle.climb.reputation, turn.recognition) : {}),
+      home: homeLine(bundle.campaign, bundle.character),
       role: bundle.character.character.role,
       hp: bundle.vitals.hp_current,
       hpMax: bundle.vitals.hp_max,

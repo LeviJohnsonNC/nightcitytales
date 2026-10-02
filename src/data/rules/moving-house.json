@@ -1,0 +1,60 @@
+{
+  "houseRule": true,
+  "_source": "Ours. The book prints every rent and every Lifestyle (Core p.377-378, in creation-rules.json) and never says what moving costs, how long it takes, or which buildings rent which kind of home. A table does not need telling; an engine does.",
+  "_rules": {
+    "deposit": "Moving in costs the new place's rent for depositMonths months, up front, and the landlord keeps it. Somewhere that charges no rent asks for no deposit.",
+    "time": "A move takes moveMinutes on the clock: packing, hauling and the walk round with the super. Changing what you eat moves nothing and takes no time.",
+    "bills": "Nobody moves out owing. Whatever has come due under the old roof is settled first, at the old rates.",
+    "rates": "The new rent and Lifestyle are charged from the next month that comes due. The month already paid for is not refunded.",
+    "where": "A kind of home can be rented at a building carrying every tag in allOf and none in noneOf. Which tag means which kind of home is a judgement; each row says why.",
+    "granted": "A granted home is one a Role Ability hands over for nothing — the Exec's Corporate Conapt — and is offered only to a character whose Role grants it, at the same buildings creation offers.",
+    "notOffered": "Living on the street (a nightly Endurance check the engine does not run yet) and the Beaverville houses an Exec is handed at Rank 7 and 10 are not on the list."
+  },
+  "depositMonths": 1,
+  "moveMinutes": 480,
+  "housing": [
+    {
+      "id": "cube_hotel",
+      "allOf": ["hotel", "container_housing"],
+      "noneOf": [],
+      "why": "A cube hotel is a hotel built from freight; the atlas tags exactly those."
+    },
+    {
+      "id": "cargo_container",
+      "allOf": ["container_housing"],
+      "noneOf": [],
+      "why": "The same buildings creation offers a starting character's container, so the home you started in is always one you could have moved to."
+    },
+    {
+      "id": "studio_apartment",
+      "allOf": ["housing"],
+      "noneOf": ["corp_housing", "luxury_housing", "flophouse"],
+      "why": "Ordinary housing that a company does not own and that is not a flophouse."
+    },
+    {
+      "id": "two_bedroom",
+      "allOf": ["housing"],
+      "noneOf": ["corp_housing", "luxury_housing", "flophouse", "container_housing"],
+      "why": "As a studio, less the converted containers: two bedrooms is a real flat."
+    },
+    {
+      "id": "upscale_conapt",
+      "allOf": ["luxury_housing"],
+      "noneOf": ["corp_housing"],
+      "why": "Housing that cost its people, and that a company is not handing out."
+    },
+    {
+      "id": "luxury_penthouse",
+      "allOf": ["luxury_housing"],
+      "noneOf": ["corp_housing", "hotel"],
+      "why": "As upscale, less the hotel suites: a penthouse is owned air, not a long stay."
+    },
+    {
+      "id": "corporate_conapt",
+      "granted": true,
+      "allOf": ["corp_housing"],
+      "noneOf": ["luxury_housing"],
+      "why": "The buildings creation offers an Exec; the luxury ones are what Rank 7 hands out, not Rank 4."
+    }
+  ]
+}

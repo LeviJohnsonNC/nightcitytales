@@ -581,10 +581,41 @@ the engine's:
   there was no baseline to compare against, so whether any of that is new is
   still open. The verdict is `bun run eval:compare` over five runs a side.
 
-**7. Moving house.** Home and Lifestyle move to the campaign, falling back to
-`character_finance` for campaigns that predate it. A move is a Life action
-priced by `downtime.ts`: a deposit now and a different rent every month. It
-is a trade-off, not a reward, which is why it belongs.
+**7. Moving house — shipped.** A trade-off, not a reward, which is why it
+belongs.
+
+- Home and Lifestyle are the campaign's: `housing_id`, `lifestyle_id` and
+  `home_place_key` on `campaigns` (migration `20261002040000`), all nullable.
+  NULL means "where creation put them", so an existing campaign reads exactly as
+  it did and nothing is backfilled (`campaignHome`).
+- `engine/home.ts` prices a move from the printed rents and Lifestyles and the
+  house-rule `moving-house.json`:
+  - a deposit of one month's new rent;
+  - eight hours on the clock;
+  - nobody moves out owing;
+  - new rates from the next bill.
+
+  Which buildings rent which kind of home is read off the atlas tags, each row
+  with its reason. A cube hotel is a hotel made of freight; the Exec's conapt
+  is offered only to the Role it is granted to. Changing what you eat is free
+  and instant.
+
+- `move_house` commits the deposit, the new home, the clock, the character's
+  position and the `moved_house` receipt in one transaction. It is idempotent
+  on the request id and refuses a plan priced against a campaign that has since
+  changed.
+- The Home sheet on the Life dock shows where you live and what you eat. Each
+  offer shows its deposit, its monthly bill against today's, and how long the
+  move takes, or the engine's reason it is refused.
+- Rent, the Money chip and the opening read the campaign's rates.
+- The Life narrator gets one "Home" line with names only.
+- Then and now shows "Where you live", from the first move's start to the last
+  move's end.
+- Only the home moves. Local Expert's "Your Home" and the cast's haunts still
+  read the district the character grew up in.
+- Not done: living on the street (its nightly Endurance check is not modelled),
+  buying rather than renting, and the Beaverville houses an Exec is handed at
+  Rank 7 and 10.
 
 Not scheduled, on purpose: **favours** as held objects (too close to a second
 dial for disposition until play shows the need), **multiclassing**, and
