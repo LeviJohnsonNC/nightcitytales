@@ -43,6 +43,13 @@
       "when": 1790970414952,
       "tag": "0005_persistent_combat_scenes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790975421654,
+      "tag": "0006_scene_attack_intent",
+      "breakpoints": true
     }
   ]
 }

@@ -1241,6 +1241,7 @@ export type Database = {
         Args: { payload: Json }
         Returns: string
       }
+      start_scene_attack_encounter: { Args: { payload: Json }; Returns: string }
       start_scene_encounter: { Args: { payload: Json }; Returns: string }
       start_snapshot_encounter: { Args: { payload: Json }; Returns: string }
     }
