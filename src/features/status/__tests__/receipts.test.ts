@@ -162,3 +162,40 @@ describe("skillReceipts", () => {
     expect(skillReceipts(before, after)).toEqual([]);
   });
 });
+
+describe("pinned goals as receipts", () => {
+  const base: TurnSnapshot = {
+    day: 3,
+    minute: 600,
+    eurobucks: 100,
+    hp: 30,
+    humanity: 60,
+    people: {},
+    clocks: {},
+  };
+  const at = (status: "far" | "ready" | "done" | "blocked") => ({
+    ...base,
+    goals: { "rank:5": { label: "Combat Awareness Rank 5", status } },
+  });
+
+  it("says when a pin comes within reach", () => {
+    expect(receiptsBetween(at("far"), at("ready")).map((r) => r.text)).toEqual([
+      "Within reach: Combat Awareness Rank 5",
+    ]);
+  });
+
+  it("says when a pin is done", () => {
+    expect(receiptsBetween(at("ready"), at("done")).map((r) => r.text)).toEqual([
+      "Done: Combat Awareness Rank 5",
+    ]);
+  });
+
+  it("says nothing for a pin that did not move, or one just pinned", () => {
+    expect(receiptsBetween(at("far"), at("far"))).toEqual([]);
+    expect(receiptsBetween(base, at("ready"))).toEqual([]);
+  });
+
+  it("does not call a goal that slipped back out of reach news", () => {
+    expect(receiptsBetween(at("ready"), at("far"))).toEqual([]);
+  });
+});

@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
+import { goalGapLabel } from "./goalsModel";
 import {
   dueLabel,
   formatMoney,
@@ -117,6 +118,33 @@ export function MoneyDetail({ status }: { status: MoneyStatus }) {
 
 /** What the banked points are actually close to buying. */
 export function GrowthDetail({ status }: { status: GrowthStatus }) {
+  const pins =
+    status.pinned.length > 0 ? (
+      <div className="space-y-1 border-b border-border pb-2">
+        {status.pinned.map((goal) => (
+          <Row key={goal.key} left={goal.label} right={goalGapLabel(goal)} />
+        ))}
+      </div>
+    ) : null;
+  if (!status.next) {
+    return (
+      <div className="space-y-2">
+        {pins}
+        <p className="text-xs text-muted-foreground">
+          Every Skill is at the in-play ceiling. Points keep banking.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {pins}
+      <NextRaise status={status} />
+    </div>
+  );
+}
+
+function NextRaise({ status }: { status: GrowthStatus }) {
   if (!status.next) {
     return (
       <p className="text-xs text-muted-foreground">
@@ -133,7 +161,7 @@ export function GrowthDetail({ status }: { status: GrowthStatus }) {
       />
       <Row left={status.ready ? "Ready to spend" : "Still needed"} right={`${status.gap} IP`} />
       <p className="pt-1 text-xs text-muted-foreground">
-        Spend it in Downtime or on the character sheet.
+        Spend it under Within reach, in Downtime, or on the character sheet.
       </p>
     </div>
   );

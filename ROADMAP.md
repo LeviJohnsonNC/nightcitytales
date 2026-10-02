@@ -491,19 +491,24 @@ Graded on what a player experiences, not on what the engine models somewhere.
 - The Netrunner's Interface is not for sale until Netrunning is built.
   Multiclassing waits.
 
-**4. Within reach.** One sheet from the Life dock, everything engine-priced:
+**4. Within reach — shipped.**
 
-- IP: every Skill's next Level, and the next Rank.
-- Eurobucks: chrome you could install (with its Humanity cost), and housing
-  once step 7 lands.
-- Standing: the next band for each faction you have touched, and the next
-  Reputation level.
-
-Each row shows its distance. The player pins up to three; a pin is a ledger
-event (`goal_pinned`, latest wins), so it needs no column. The Growth chip shows
-the top pin and falls back to the cheapest raise. Reaching a pin gets its own
-receipt. People stay off the list, because a person's feelings are meant to be
-felt, not tracked.
+- `engine/goals.ts` prices four kinds of goal against the character as they
+  stand: a Skill Level and a Rank in I.P., a piece of chrome in eurobucks (with
+  its Humanity cost, and the reason when a full foundation or a missing one is
+  in the way rather than the price), and a faction's next band in standing.
+  Standing is never "ready": it is earned, not bought. A goal carries its own
+  target, so "done" means what the player meant when they pinned it.
+- The Within reach sheet heads the Life dock: the next rung of everything, one
+  step out, cheapest first, with the spend card under the I.P. section. A week
+  of life now earns I.P., and before this there was nowhere in Life to spend it.
+- Up to three pins, written whole as a `goals_pinned` ledger event (newest
+  wins, so no column). The Growth chip follows the first pin and falls back to
+  the cheapest raise. A pin coming within reach or arriving is a receipt under
+  the Life log ("Within reach: Combat Awareness Rank 5", "Done: Handgun 7").
+- People are not on it, by design.
+- With this, `award_improvement_points` and `spend_ip_on_role_rank` moved to
+  Applied and their "not migrated yet" fallbacks were deleted.
 
 **5. Then and now.** A section of the Record sheet, derived from data that
 already exists rather than a new snapshot. Day one is `character_gear` (play

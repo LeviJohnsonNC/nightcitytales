@@ -13,7 +13,7 @@
  *
  * Pure and React-free.
  */
-import { DOWNTIME_MONTH_DAYS, type LifeClock } from "@/engine";
+import { DOWNTIME_MONTH_DAYS, type GoalProgress, type GoalStatus, type LifeClock } from "@/engine";
 import { formatMoney } from "./statusModel";
 
 export type ReceiptTone = "good" | "bad" | "neutral";
@@ -37,6 +37,8 @@ export type TurnSnapshot = {
   /** Disposition by npc key, with the name to print. */
   people: Record<string, { name: string; disposition: number }>;
   clocks: Record<string, LifeClock>;
+  /** Pinned goals and where each stands, when the screen has pins. */
+  goals?: Record<string, { label: string; status: GoalStatus }>;
 };
 
 export function snapshotOf(input: {
@@ -44,6 +46,7 @@ export function snapshotOf(input: {
   vitals: { eurobucks: number; hp_current: number; humanity_current: number };
   npcs: { npc_id: string | null; name: string; disposition: number }[];
   pressure: { clock: LifeClock }[];
+  goals?: GoalProgress[];
 }): TurnSnapshot {
   const people: TurnSnapshot["people"] = {};
   for (const npc of input.npcs) {
@@ -60,6 +63,13 @@ export function snapshotOf(input: {
     humanity: input.vitals.humanity_current,
     people,
     clocks,
+    ...(input.goals
+      ? {
+          goals: Object.fromEntries(
+            input.goals.map((g) => [g.key, { label: g.label, status: g.status }]),
+          ),
+        }
+      : {}),
   };
 }
 
@@ -147,6 +157,19 @@ export function receiptsBetween(before: TurnSnapshot, after: TurnSnapshot): Rece
       tone: !was || now.filled > was.filled ? "bad" : "good",
       meter: { filled: now.filled, segments: now.segments },
     });
+  }
+
+  // A pinned goal coming within reach, or arriving, is the moment the player
+  // pinned it for. Only a change counts: pinning something already affordable
+  // is not news, and neither is a goal that was already done.
+  for (const [key, now] of Object.entries(after.goals ?? {})) {
+    const was = before.goals?.[key];
+    if (!was || was.status === now.status) continue;
+    if (now.status === "done") {
+      out.push({ key: `goal:${key}`, text: `Done: ${now.label}`, tone: "good" });
+    } else if (now.status === "ready" && was.status !== "done") {
+      out.push({ key: `goal:${key}`, text: `Within reach: ${now.label}`, tone: "good" });
+    }
   }
 
   // Time last, because it is the one thing that moves on almost every turn and

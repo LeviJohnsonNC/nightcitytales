@@ -9,10 +9,10 @@
  */
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { LifeClock, LifeSituation } from "@/engine";
+import { goalProgress, type GoalState, type LifeClock, type LifeSituation } from "@/engine";
 import type { Campaign, CampaignVitals, FullCharacter } from "@/lib/backend";
 import { statusView } from "../statusModel";
-import { CommitmentsPanel, StatusRail, StatusStrip } from "../StatusRail";
+import { CommitmentsPanel, GrowthDetail, StatusRail, StatusStrip } from "../StatusRail";
 
 const character = {
   character: { id: "ch1", name: "V", role: "solo" },
@@ -39,6 +39,16 @@ const situations: LifeSituation[] = [
     severity: 5,
   },
 ];
+
+const goalState: GoalState = {
+  ip: 3,
+  eurobucks: 4350,
+  skills: [{ skillId: "handgun", level: 4, specialization: null }],
+  roleId: "solo",
+  rank: 4,
+  installed: [],
+  standings: [],
+};
 
 const clocks: LifeClock[] = [
   { key: "heat", label: "NCPD Heat", filled: 2, segments: 6, hidden: false },
@@ -112,5 +122,27 @@ describe("the collapsed strip", () => {
     expect(html).toContain("€4,350");
     expect(html).toContain("3 IP");
     expect(html).toContain("The landlord wants his money — due in 2 days · +1 more");
+  });
+});
+
+describe("the growth detail with something pinned", () => {
+  it("lists the pins, in their own currency, above the next raise", () => {
+    const pinned = [
+      goalProgress({ kind: "rank", rank: 5 }, goalState),
+      goalProgress({ kind: "chrome", itemId: "neural_link", owned: 0 }, goalState),
+    ];
+    const status = statusView({
+      campaign: { id: "c1", day: 10, bills_paid_through_day: 0 } as Campaign,
+      vitals: { eurobucks: 4350 } as CampaignVitals,
+      character,
+      situations,
+      clocks,
+      pinned,
+    });
+    const html = renderToStaticMarkup(<GrowthDetail status={status.growth} />);
+    expect(html).toContain("Combat Awareness Rank 5");
+    expect(html).toContain("297 IP to go");
+    expect(html).toContain("Neural Link");
+    expect(html.indexOf("Neural Link")).toBeLessThan(html.indexOf("Handgun"));
   });
 });

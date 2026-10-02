@@ -18,7 +18,15 @@ import {
   truthsAt,
 } from "@/engine";
 import { travelTo } from "@/features/atlas/travel";
-import { readWalkOnsEventData } from "@/engine";
+import {
+  goalKey,
+  reachList,
+  readWalkOnsEventData,
+  withoutPinned,
+  withPinned,
+  type Goal,
+} from "@/engine";
+import { goalStateFrom, pinnedProgress } from "@/features/status/goalsModel";
 import { rest } from "@/features/downtime/downtimeOps";
 import { type CheckRoll, type PendingCheck, pendingChecksFrom } from "@/features/play/checkPrompt";
 import { localExpertIn } from "@/features/play/playModel";
@@ -31,6 +39,7 @@ import {
   liveTurn,
   loadLife,
   pushHook,
+  setPinnedGoals,
   settleLifeIp,
 } from "./lifeOps";
 import type { IpTally, Playstyles } from "@/features/campaign/ipAward";
@@ -68,6 +77,27 @@ export function useLife(campaignId: string) {
     mutationFn: () => {
       if (!bundle) throw new Error("Still loading.");
       return acceptHook(bundle);
+    },
+    onSuccess: invalidate,
+  });
+
+  // What the character could work toward, measured against what they hold now.
+  // Derived on render from rows the bundle already has; nothing is stored but
+  // the pins themselves.
+  const goalState = bundle
+    ? goalStateFrom({
+        character: bundle.character,
+        vitals: bundle.vitals,
+        cyberware: bundle.cyberware,
+        standings: bundle.standings,
+      })
+    : null;
+  const pinnedGoals = bundle?.pinnedGoals ?? [];
+
+  const pins = useMutation({
+    mutationFn: (goals: Goal[]) => {
+      if (!bundle) throw new Error("Still loading.");
+      return setPinnedGoals(bundle, goals);
     },
     onSuccess: invalidate,
   });
@@ -277,6 +307,15 @@ export function useLife(campaignId: string) {
     lifeIpBusy: lifeIp.isPending,
     lifeIpError: (lifeIp.error as Error | null) ?? null,
     dismissLifeIp: () => lifeIp.reset(),
+    /** Everything one step out, priced, for the Within Reach sheet. */
+    reach: goalState ? reachList(goalState) : null,
+    /** The pinned goals' progress, in pin order. */
+    pinned: goalState ? pinnedProgress(pinnedGoals, goalState) : [],
+    isPinned: (goal: Goal) => pinnedGoals.some((g) => goalKey(g) === goalKey(goal)),
+    pin: (goal: Goal) => pins.mutate(withPinned(pinnedGoals, goal)),
+    unpin: (key: string) => pins.mutate(withoutPinned(pinnedGoals, key)),
+    pinsBusy: pins.isPending,
+    pinsError: (pins.error as Error | null) ?? null,
     /** Cross the city. The engine prices the trip; the clock pays for it. */
     travelTo: (to: string) => travel.mutate(to),
     /** Whatever is out of the Family Motorpool, so the map quotes the real minutes. */

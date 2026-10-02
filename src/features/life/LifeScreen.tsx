@@ -93,6 +93,7 @@ import { ShopSheet } from "./ShopSheet";
 import { RipperdocSheet } from "./RipperdocSheet";
 import { WorkshopSheet } from "./WorkshopSheet";
 import { RecordSheet } from "./RecordSheet";
+import { WithinReachSheet } from "./WithinReachSheet";
 import type { LifeActionCard } from "./lifeResponse";
 import { cardInput } from "./lifeOptions";
 
@@ -644,6 +645,7 @@ function LifeRail({
       <PeopleStrip people={life.people} standings={life.standings} />
 
       <div className="grid grid-cols-2 gap-2">
+        <WithinReachSheet life={life} />
         <RecordSheet bundle={bundle} />
         <ShopSheet bundle={bundle} />
         <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
@@ -687,6 +689,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
           vitals: bundle.vitals,
           npcs: bundle.npcs,
           pressure: bundle.pressure,
+          goals: life.pinned,
         })
       : null,
   );
@@ -771,6 +774,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
     situations: life.situations,
     clocks: life.clocks,
     currentKey: life.situation?.key ?? null,
+    pinned: life.pinned,
   });
 
   // Read at render rather than held in a hook: this sits after the screen's
