@@ -73,6 +73,19 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
     opposingStatValue: z.number().int(),
     intent: z.string(),
   }),
+  /**
+   * A Facedown: two people staring each other down. Both sides roll COOL +
+   * Reputation + 1d10 and the loser backs down. The GM says who and what they
+   * bring; the engine supplies the character's own Reputation and rolls both.
+   */
+  z.object({
+    kind: z.literal("facedown"),
+    npcKey: z.string(),
+    npcName: z.string(),
+    opposingCool: z.number().int(),
+    opposingReputation: z.number().int(),
+    intent: z.string(),
+  }),
   z.object({
     kind: z.literal("start_encounter"),
     name: z.string(),
@@ -189,6 +202,7 @@ export const GmWireResponseSchema = z.object({
         "and the fields that kind needs: " +
         '{"kind":"skill_check","skillId":"<id from the SKILLS list>","dv":<number>,"intent":"<what they are attempting>"}; ' +
         '{"kind":"opposed_check","skillId":"<id from the SKILLS list>","npcKey":"<stable key>","npcName":"<who resists>","opposingSkillId":"<printed skill id they resist with>","opposingSkillLevel":<0-10>,"opposingStatValue":<1-10>,"intent":"<what they are attempting>"}; ' +
+        '{"kind":"facedown","npcKey":"<stable key>","npcName":"<who is staring them down>","opposingCool":<1-10>,"opposingReputation":<0-10>,"intent":"<what the standoff is over>"}; ' +
         '{"kind":"start_encounter","name":"<label>","arena":"<one of the ARENAS ids>","goal":"kill"|"capture"|"repel"|"rob"|"delay"|"protect","enemies":[{"key":"<stable id>","name":"<what they are called>","profile":"<one of the THREATS ids>"}]}; ' +
         '{"kind":"attack","targetId":"<enemy key>","intent":"<what they are doing>"}; ' +
         '{"kind":"move","targetId":"<enemy key>","towards":"closer"|"away","intent":"<what they are doing>"}; ' +
@@ -281,6 +295,10 @@ const ACTION_KIND_ALIASES: Record<string, GmProposedAction["kind"]> = {
   contest: "opposed_check",
   contested_check: "opposed_check",
   versus: "opposed_check",
+  facedown: "facedown",
+  face_down: "facedown",
+  stare_down: "facedown",
+  staredown: "facedown",
   skill: "skill_check",
   skill_roll: "skill_check",
   roll: "skill_check",
@@ -324,6 +342,8 @@ export function actionKindOf(item: Loose): GmProposedAction["kind"] | null {
   // Before the targetId rule below: a move also names a target, and reading it
   // as an attack would fire a gun the player never raised.
   if (str(item["towards"]) ?? str(item["direction"])) return "move";
+  if (num(item["opposingReputation"]) !== null || num(item["opposing_reputation"]) !== null)
+    return "facedown";
   // Opposed before plain: an item carrying an opposing side is a contest, and
   // reading it as a DV check would silently invent a difficulty nobody set.
   if (str(item["opposingSkillId"]) ?? str(item["opposing_skill_id"]) ?? str(item["opposingSkill"]))
@@ -456,6 +476,29 @@ export function normalizeGmResponse(
         });
       } else {
         warn(`GM proposed an opposed check missing a side, dropped: ${JSON.stringify(raw)}`);
+      }
+    } else if (kind === "facedown") {
+      const npcName = str(a["npcName"]) ?? str(a["npc_name"]) ?? str(a["opponent"]);
+      const npcKey = str(a["npcKey"]) ?? str(a["npc_key"]) ?? str(a["npcId"]) ?? npcName;
+      if (npcKey && npcName) {
+        proposedActions.push({
+          kind: "facedown",
+          npcKey,
+          npcName,
+          // A person's COOL is in the human band; a stranger's Reputation is on
+          // the printed ladder, and an unknown is nobody anybody has heard of.
+          opposingCool: clamp(num(a["opposingCool"]) ?? num(a["opposing_cool"]) ?? 5, 1, 10),
+          opposingReputation: clamp(
+            num(a["opposingReputation"]) ?? num(a["opposing_reputation"]) ?? 0,
+            0,
+            10,
+          ),
+          intent,
+        });
+      } else {
+        warn(
+          `GM proposed a facedown with nobody on the other side, dropped: ${JSON.stringify(raw)}`,
+        );
       }
     } else if (kind === "attack") {
       const targetId = str(a["targetId"]) ?? str(a["target"]) ?? str(a["target_id"]);

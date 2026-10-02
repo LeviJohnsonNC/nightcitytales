@@ -47,8 +47,24 @@ import {
 } from "@/features/narration/evalReport";
 import { GM_PROMPT_VERSION } from "@/features/gm/gmSystemPrompt";
 import { LIFE_PROMPT_VERSION } from "@/features/life/lifeSystemPrompt";
-import { PAIRS, SCENARIOS, type Scenario } from "./scenarios";
-import { SESSIONS, type Session } from "./sessions";
+import { PAIRS as ALL_PAIRS, SCENARIOS as ALL_SCENARIOS, type Scenario } from "./scenarios";
+import { SESSIONS as ALL_SESSIONS, type Session } from "./sessions";
+
+/**
+ * `ONLY=id,id` runs just those scenarios, pairs and sessions — for checking a
+ * new scenario cheaply before spending a full run on it. A full run is still
+ * the verdict on a prompt change; this is how you find out the new scenario
+ * is even asking the right question.
+ */
+const ONLY = (process.env["ONLY"] ?? "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
+const picked = <T extends { id: string }>(all: T[]): T[] =>
+  ONLY.length ? all.filter((item) => ONLY.includes(item.id)) : all;
+const SCENARIOS = picked(ALL_SCENARIOS);
+const PAIRS = picked(ALL_PAIRS);
+const SESSIONS = picked(ALL_SESSIONS);
 import { withRetry } from "./pacing";
 import { evalProvider, modelFor, runTurn } from "./runTurn";
 import { scorePair, scoreSession, scoreTurns, type SessionTurn } from "./score";

@@ -87,6 +87,8 @@ export type CheckableTurn = {
   opposed?: { skillId: string; npcKey: string; opposingSkillId: string; opposingTotal: number }[];
   /** True when it put the job waiting on the wire on the table. Life only. */
   offersWork?: boolean;
+  /** How many Facedowns it proposed. */
+  facedowns?: number;
 };
 
 /** What the model was given, and what the scenario says about this turn. */
@@ -133,6 +135,13 @@ export type CheckContext = {
   offScene?: string[];
   /** Somebody the engine rolled as coming over. The prose must bring them. */
   comesOver?: string;
+  /** The player squared up to somebody to make them back off: a Facedown. */
+  squaresUp?: boolean;
+  /**
+   * The engine rolled that a stranger met this turn has NOT heard of the
+   * character. Nobody new may then talk as if they know the name.
+   */
+  strangerUnheard?: boolean;
   /**
    * Failing here would cost the character nothing. Any check proposed must be
    * marked low-stakes, so the player is not stopped to press a button for it.
@@ -821,6 +830,55 @@ export const smallChecksRollThemselves: Check = {
   },
 };
 
+/**
+ * A standoff went to the dice as a Facedown.
+ *
+ * REPUTATION_RULE: "Propose one ("kind":"facedown") when the player squares up
+ * to somebody to make them back off without a fight." Resolving it in prose is
+ * the narrator deciding who blinked, which is the engine's.
+ */
+export const standoffIsAFacedown: Check = {
+  id: "standoff-is-a-facedown",
+  applies: (ctx) => ctx.squaresUp === true,
+  title: "proposed a Facedown when the player squared up",
+  source:
+    'Both prompts: "Propose one ("kind":"facedown") when the player squares up to somebody to make them back off without a fight." (REPUTATION_RULE)',
+  run(turn, ctx) {
+    if (!ctx.squaresUp || (turn.facedowns ?? 0) > 0) return [];
+    return [{ quote: firstSentence(turn.narration), note: "no facedown proposed" }];
+  },
+};
+
+/** Words a stranger uses when they know who they are talking to. */
+const KNOWS_THE_NAME = [
+  /\bheard of you\b/i,
+  /\bheard about you\b/i,
+  /\bknow (?:exactly )?who you are\b/i,
+  /\byour reputation\b/i,
+  /\byou'?re the one (?:who|that)\b/i,
+];
+
+/**
+ * Nobody recognised a character the engine said was not recognised.
+ *
+ * REPUTATION_RULE: "Never decide that somebody has heard of them when the line
+ * says not." Scenario-scoped: only a scenario knows that the die said no.
+ */
+export const unheardStaysUnheard: Check = {
+  id: "unheard-stays-unheard",
+  applies: (ctx) => ctx.strangerUnheard === true,
+  title: "a stranger the engine said had not heard of them did not know the name",
+  source:
+    'Both prompts: "Never decide that somebody has heard of them when the line says not." (REPUTATION_RULE)',
+  run(turn, ctx) {
+    if (!ctx.strangerUnheard) return [];
+    return KNOWS_THE_NAME.flatMap((re) => {
+      const match = turn.narration.match(re);
+      return match ? [{ quote: match[0], note: "recognised against the engine's roll" }] : [];
+    });
+  },
+};
+
 /** Every check, in report order: severity first, taste never. */
 export const ALL_CHECKS: Check[] = [
   noUnsourcedNumber,
@@ -831,6 +889,8 @@ export const ALL_CHECKS: Check[] = [
   namesNoWayIn,
   optionsOnlyWhenAsked,
   riskGetsDice,
+  standoffIsAFacedown,
+  unheardStaysUnheard,
   goesWhereAsked,
   finishesTheRequest,
   staysPutOnRefusal,

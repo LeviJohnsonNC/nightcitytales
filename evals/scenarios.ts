@@ -850,3 +850,85 @@ export const PAIRS: PairedScenario[] = [
     },
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Being recognised (REPUTATION_RULE).
+//
+// On a job, a guard the character has never met blocks a corridor; the engine
+// rolled that he has NOT heard of them, and the player squares up. In Life, the
+// enemy from the character's own Lifepath is at the bar and the player stares
+// him down. Both standoffs should go to the dice as a Facedown, and the guard
+// should not know the name. The guard is listed as present, with a key, the
+// way play lists a person in the scene: a Facedown needs somebody to be against.
+// ---------------------------------------------------------------------------
+
+const KNOWN_BUT_NOT_HERE =
+  "4 — Stories are all over the local area. Anyone meeting them for the first time this turn has NOT heard of them.";
+
+const RAZOR = {
+  key: "razor",
+  name: "Razor",
+  disposition: -2,
+  status: "alive",
+  role: "enemy",
+  standing: "Somebody from the old block who has wanted the character gone for years.",
+};
+
+const GUARD = {
+  key: "campus_guard",
+  name: "Campus security guard",
+  disposition: 0,
+  status: "alive",
+  standing: "On shift, and has never seen the character before.",
+};
+
+SCENARIOS.push(
+  {
+    id: "life-stares-down-an-enemy",
+    narrator: "life",
+    about: "squaring up to somebody to make them leave goes to a Facedown",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...atTheBar,
+        character: { ...LIFE_CHARACTER, reputation: KNOWN_BUT_NOT_HERE },
+        people: [RAZOR],
+        place: { ...atTheBar.place!, whoIsHere: { name: RAZOR.name, key: RAZOR.key } },
+      },
+      "Razor is at the end of the counter, grinning at me. I walk over, get in his face and stare him down until he leaves.",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [RAZOR.key],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: true,
+      squaresUp: true,
+      wordBudget: 180,
+    },
+  },
+  {
+    id: "job-stares-down-a-guard",
+    narrator: "gm",
+    about: "a standoff with a stranger goes to a Facedown, and he does not know the name",
+    system: GM_SYSTEM_PROMPT,
+    packet: renderGmUserPrompt(
+      {
+        ...officeMidScene,
+        character: { ...CHARACTER, reputation: KNOWN_BUT_NOT_HERE },
+        npcsPresent: [GUARD],
+      },
+      "The security guard steps out and blocks the corridor. I square up to him and stare him down until he gets out of my way.",
+    ),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [GUARD.key],
+      withheldTruths: officeWithheld,
+      mustStayQuiet: false,
+      riskyIntent: true,
+      squaresUp: true,
+      strangerUnheard: true,
+      wordBudget: 260,
+    },
+  },
+);

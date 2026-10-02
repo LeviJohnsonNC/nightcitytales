@@ -112,6 +112,11 @@ import {
   truthsInMission,
   type PlaceState,
   turnProvenanceDataIfAny,
+  FACEDOWN_CHECK_ID,
+  LEDGER_EVENTS,
+  recognitionRoll,
+  reputationFromLedger,
+  type ReputationStanding,
 } from "@/engine";
 
 import {
@@ -120,6 +125,7 @@ import {
   getCampaign,
   getCharacter,
   listCampaignEvents,
+  listCampaignEventsOfTypes,
   listCampaignTruths,
   recordTruthDiscovery,
   findCampaignNpc,
@@ -144,6 +150,7 @@ import {
 import { applyItemUse, planItemUse } from "@/features/campaign/itemUse";
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
+import { recognitionRecord, reputationProp } from "@/features/campaign/recognition";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
 import {
@@ -201,6 +208,8 @@ import {
 } from "./attackPrompt";
 import {
   dvBandName,
+  facedownOutcomeLine,
+  facedownPrompt,
   oppositionFor,
   pendingChecksFrom,
   snapToPublishedDv,
@@ -274,6 +283,11 @@ export type PlayBundle = {
   /** False until `campaign_truths` is migrated; the feature is then inert. */
   truthsAvailable: boolean;
   /**
+   * Who has heard of the character, from every job the campaign has settled.
+   * Read by a Facedown (COOL + Reputation) and by the recognition roll.
+   */
+  reputation: ReputationStanding;
+  /**
    * The fee agreed when this job was taken, when the player argued it up from
    * the printed reward. Null on a job nobody negotiated.
    */
@@ -327,7 +341,11 @@ export async function loadPlay(campaignId: string): Promise<PlayBundle> {
   // What this job has given up so far. Undiscovered beat truths never reach the
   // prompt, so the narrator cannot telegraph a twist it has not been told.
   const truths = await listCampaignTruths(campaignId);
+  const reputation = reputationFromLedger(
+    await listCampaignEventsOfTypes(campaignId, [LEDGER_EVENTS.jobSettled]),
+  );
   return {
+    reputation,
     campaign: full.campaign,
     places,
     discoveredTruths: truths.rows.map((row) => row.truth_key),
@@ -406,6 +424,9 @@ export async function narrate(
   const campaignId = bundle.campaign.id;
   const beatId = bundle.beat?.id ?? null;
   const beatFields = beatId ? { beat_id: beatId } : {};
+  // Whether a stranger met this turn has heard of them: rolled once, before the
+  // packet, and kept beside the narration it informed.
+  const recognition = recognitionRoll(bundle.reputation.level);
 
   if (options.logInput !== false) {
     await appendCampaignEvent({
@@ -549,12 +570,15 @@ export async function narrate(
     availableExits: bundle.availableExits,
     // Where they are standing goes with the sheet, so the Skill list reports
     // Local Expert for this district rather than for whichever one they know.
-    character: characterSummary(
-      bundle.character,
-      bundle.vitals,
-      bundle.inventory,
-      jobPosition?.districtKey ?? null,
-    ),
+    character: {
+      ...characterSummary(
+        bundle.character,
+        bundle.vitals,
+        bundle.inventory,
+        jobPosition?.districtKey ?? null,
+      ),
+      ...reputationProp(bundle.reputation, recognition),
+    },
     objectives: bundle.runtime.objectives,
     // With the day, so somebody who has closed up plays that way on a job too.
     npcsPresent: npcSummaries(bundle.npcs, bundle.campaign.day),
@@ -596,6 +620,7 @@ export async function narrate(
       // Which prompt, at which version, asked which model — and who answered.
       // Built here rather than spelled out, per ledger.ts.
       ...turnProvenanceDataIfAny(gm.provenance),
+      ...recognitionRecord(recognition),
     } as unknown as Json,
     ...beatFields,
   });
@@ -651,6 +676,7 @@ export async function narrate(
       vitals: bundle.vitals,
       inventory: bundle.inventory,
       districtKey: jobPosition?.districtKey ?? null,
+      reputation: bundle.reputation.level,
     },
   ).length;
   const checkBudget = Math.max(0, (fightRunning ? 1 : MAX_CHECKS_PER_TURN) - outstanding);
@@ -700,6 +726,23 @@ export async function narrate(
           // The narrator's half of whether this may roll itself.
           ...(action.stakes === "low" ? { stakes: "low" } : {}),
         } as unknown as Json,
+        ...beatFields,
+      });
+    } else if (action.kind === "facedown") {
+      // A standoff is a check like any other: it takes a slot in this turn's
+      // budget, and only one is ever on the table at once.
+      if (attackPosted || postedSkillIds.size >= checkBudget) {
+        console.warn("GM proposed a facedown with no room left this turn — not offered.");
+        continue;
+      }
+      if (postedSkillIds.has(FACEDOWN_CHECK_ID)) continue;
+      postedSkillIds.add(FACEDOWN_CHECK_ID);
+      const prompt = facedownPrompt(action);
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "check_prompt",
+        summary: prompt.summary,
+        data: prompt.data as unknown as Json,
         ...beatFields,
       });
     } else if (action.kind === "opposed_check") {
@@ -1006,6 +1049,7 @@ async function rollWhatIsSmall(before: PlayBundle): Promise<void> {
       inventory: fresh.inventory,
       districtKey:
         resolvePosition(fresh.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+      reputation: fresh.reputation.level,
     },
   ).filter((p) => !posted.has(p.eventId));
   if (newChecks.length !== 1) return;
@@ -1116,7 +1160,7 @@ async function commitOpposedCheck(
       `Player: ${result.actor.formula} = ${result.actor.total}${critNote(result.actor.critical)}. ` +
       `${opposition.npcName} (${opposition.skillName}): ${result.opponent.formula} = ${result.opponent.total}${critNote(result.opponent.critical)}. ` +
       `Outcome: ${verdict}. Narrate this exact outcome for the intent "${pending.intent}", showing how ${opposition.npcName} met it. ` +
-      `Do not re-decide it, do not soften a failure, do not propose the same check again.${insightLine(read)}${carryOn(bundle, pending.eventId)} End on a decision.)`,
+      `Do not re-decide it, do not soften a failure, do not propose the same check again.${facedownOutcomeLine(pending, result.success)}${insightLine(read)}${carryOn(bundle, pending.eventId)} End on a decision.)`,
     { logInput: false, fixedResult: bundle.encounter?.state.status === "active" },
   );
 }

@@ -31,6 +31,7 @@ first of these it finds:
 cp .env.example .env     # fill in one of the keys above
 bun run eval             # every scenario and pair, five runs each
 REPEAT=5 bun run eval    # more runs (vitest rejects a --repeat flag, so it is a variable)
+ONLY=life-stares-down-a-stranger REPEAT=3 bun run eval   # just these ids (scenarios, pairs or sessions)
 bun run eval -t job-risky-intent
 bun run eval:compare     # the two newest runs, side by side
 ```

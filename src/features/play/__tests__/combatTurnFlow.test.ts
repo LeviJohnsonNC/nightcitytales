@@ -163,6 +163,8 @@ function bundle(): PlayBundle {
     standings: [],
     factionStandings: [],
     tally: {},
+    // Nobody has heard of Red: no recognition line, nothing for a Facedown to add.
+    reputation: { level: 0, whoKnows: null, deeds: 0 },
     mission: NIGHT_AT_THE_OPERA,
     runtime: startMission(NIGHT_AT_THE_OPERA),
     beat: NIGHT_AT_THE_OPERA.beats[0],

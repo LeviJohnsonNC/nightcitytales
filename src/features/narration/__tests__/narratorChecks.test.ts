@@ -17,9 +17,11 @@ import {
   quietStaysQuiet,
   riskGetsDice,
   smallChecksRollThemselves,
+  standoffIsAFacedown,
   staysInTheScene,
   staysPutOnRefusal,
   statesNoExactAge,
+  unheardStaysUnheard,
   walkOnsFromCatalog,
   withheldStaysWithheld,
   withinProseBudget,
@@ -544,5 +546,52 @@ describe("states-no-exact-age", () => {
   it("only applies when the packet carries the line", () => {
     expect(statesNoExactAge.applies?.(withLine)).toBe(true);
     expect(statesNoExactAge.applies?.(ctx({}))).toBe(false);
+  });
+});
+
+describe("standoffIsAFacedown", () => {
+  const squaring = ctx({ squaresUp: true });
+
+  it("flags a standoff resolved in prose", () => {
+    const found = standoffIsAFacedown.run(
+      turn({
+        narration: "He looks at you for a long second, then steps aside. The door is yours.",
+      }),
+      squaring,
+    );
+    expect(found).toHaveLength(1);
+  });
+
+  it("is satisfied by a proposed Facedown", () => {
+    expect(standoffIsAFacedown.run(turn({ facedowns: 1 }), squaring)).toEqual([]);
+  });
+
+  it("does not apply when nobody squared up", () => {
+    expect(standoffIsAFacedown.applies?.(ctx({}))).toBe(false);
+  });
+});
+
+describe("unheardStaysUnheard", () => {
+  const unheard = ctx({ strangerUnheard: true });
+
+  it("flags a stranger who knows the name the engine said they did not", () => {
+    const found = unheardStaysUnheard.run(
+      turn({ narration: 'The bouncer squints. "I\'ve heard of you. Go on in."' }),
+      unheard,
+    );
+    expect(found.map((f) => f.quote)).toEqual(["heard of you"]);
+  });
+
+  it("lets a stranger size up a face", () => {
+    expect(
+      unheardStaysUnheard.run(
+        turn({ narration: 'The bouncer squints at your jacket. "Never seen you before."' }),
+        unheard,
+      ),
+    ).toEqual([]);
+  });
+
+  it("does not apply when the die said they had heard", () => {
+    expect(unheardStaysUnheard.applies?.(ctx({}))).toBe(false);
   });
 });

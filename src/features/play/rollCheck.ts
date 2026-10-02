@@ -12,7 +12,9 @@
  */
 import {
   DEFAULT_START,
+  FACEDOWN_CHECK_ID,
   clampLuckSpend,
+  facedown,
   luckModifier,
   luckRemaining,
   opposedCheckForCharacter,
@@ -62,6 +64,29 @@ export function rollPendingCheck(input: RollCheckInput): CheckRoll {
     ...roleCheckModifiers({ campaign, character, skillId: pending.skillId }),
   ];
   const modifiers = situational.length > 0 ? { modifiers: situational } : {};
+
+  // A Facedown is COOL + Reputation on both sides. Luck and wounds ride on it as
+  // on any Action; what a Role brings to a Skill does not, because there is none.
+  if (pending.skillId === FACEDOWN_CHECK_ID && pending.opposition) {
+    const personal = [
+      ...(spend ? [spend] : []),
+      ...(wounds !== 0 ? [{ label: "Wounds", value: wounds }] : []),
+    ];
+    return {
+      kind: "opposed",
+      luckSpent,
+      result: facedown({
+        actorName: character.character.name,
+        actorCool: pending.statValue,
+        actorReputation: pending.skillLevel,
+        ...(personal.length > 0 ? { actorModifiers: personal } : {}),
+        opponentName: pending.opposition.npcName,
+        opponentCool: pending.opposition.statValue,
+        opponentReputation: pending.opposition.skillLevel,
+      }),
+    };
+  }
+
   const opposition = oppositionFor(pending);
   if (opposition) {
     return {

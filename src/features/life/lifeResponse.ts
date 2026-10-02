@@ -12,6 +12,7 @@ import { isLowStakes, snapDv, wireObject } from "@/features/narration/narratorRu
 export const LIFE_ACTION_KINDS = [
   "skill_check",
   "opposed_check",
+  "facedown",
   "spend",
   "use_item",
   "travel",
@@ -56,6 +57,15 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
     opposingSkillId: z.string(),
     opposingSkillLevel: z.number().int(),
     opposingStatValue: z.number().int(),
+    intent: z.string(),
+  }),
+  /** COOL + Reputation + 1d10 each; the loser backs down. The engine rolls both. */
+  z.object({
+    kind: z.literal("facedown"),
+    npcKey: z.string(),
+    npcName: z.string(),
+    opposingCool: z.number().int(),
+    opposingReputation: z.number().int(),
     intent: z.string(),
   }),
   z.object({ kind: z.literal("spend"), amount: z.number().int(), reason: z.string() }),
@@ -300,6 +310,32 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
     }
     if (kindRaw === "rest" || kindRaw === "sleep") {
       out.push({ kind: "rest", hours: clamp(num(a["hours"]) ?? 8, 1, 24) });
+      continue;
+    }
+    if (
+      kindRaw === "facedown" ||
+      kindRaw === "face_down" ||
+      kindRaw === "stare_down" ||
+      kindRaw === "staredown"
+    ) {
+      const npcName = str(a["npcName"]) ?? str(a["npc_name"]) ?? str(a["opponent"]);
+      const npcKey = str(a["npcKey"]) ?? str(a["npc_key"]) ?? npcName;
+      if (!npcKey || !npcName) {
+        warn("Life model proposed a facedown with nobody on the other side, dropped.");
+        continue;
+      }
+      out.push({
+        kind: "facedown",
+        npcKey,
+        npcName,
+        opposingCool: clamp(num(a["opposingCool"] ?? a["opposing_cool"]) ?? 5, 1, 10),
+        opposingReputation: clamp(
+          num(a["opposingReputation"] ?? a["opposing_reputation"]) ?? 0,
+          0,
+          10,
+        ),
+        intent,
+      });
       continue;
     }
     if (kindRaw === "opposed_check" || (skillId && opposingSkillId)) {

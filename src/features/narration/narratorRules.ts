@@ -145,6 +145,19 @@ The context's "Reads as" line says what a stranger sees: the character's sex and
 - It never changes a difficulty, a price, a roll or an outcome. Those belong to the engine.`;
 
 /**
+ * REPUTATION AND FACEDOWNS — shared, because both narrators meet strangers and
+ * both can be stared down. Reputation is the engine's (derived from what jobs
+ * left behind) and so is whether a stranger has heard of the character (a d10
+ * rolled before the packet). The narrator plays both and decides neither.
+ */
+export const REPUTATION_RULE = `# REPUTATION AND FACEDOWNS
+The context's "Reputation" line, when there is one, says how far the character's name has travelled and whether somebody meeting them for the first time THIS turn has heard of them. The engine rolled that; play it. A stranger who has heard of them reacts to the name before the character has said a word, wary, impressed, eager or hostile as fits who they are; one who has not reacts to a face. People the character already knows are not strangers. With no Reputation line, nobody has heard of them.
+- Never decide that somebody has heard of them when the line says not, and never give them fame the line does not.
+- A Facedown is a standoff settled by staring each other down: both sides roll COOL + Reputation + 1d10, and the loser backs down. Propose one ("kind":"facedown") when the player squares up to somebody to make them back off without a fight: a bouncer, a ganger blocking an alley, a rival at the bar. Persuading, lying and bargaining are opposed Skill checks, not Facedowns.
+- For a Facedown give the other side's COOL (1-10) and their Reputation (0-10; most people nobody has heard of are 0 to 2). Never give the character's own: the engine has it.
+- When a Facedown comes back resolved, whoever lost backs down. Narrate exactly that.`;
+
+/**
  * WHAT THE CITY NOTICED — the observation report.
  *
  * Fully shared, definitions included. Life used to carry the vocabulary without

@@ -165,6 +165,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
             ? [{ skillId: a.skillId, dv: a.dv, lowStakes: a.stakes === "low" }]
             : [],
         ),
+        facedowns: gm.proposedActions.filter((a) => a.kind === "facedown").length,
         opposed: gm.proposedActions.flatMap((a) =>
           a.kind === "opposed_check"
             ? [
@@ -213,6 +214,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
           : [],
       ),
       spends: life.proposedActions.filter((a) => a.kind === "spend").length,
+      facedowns: life.proposedActions.filter((a) => a.kind === "facedown").length,
       offersWork: life.proposedActions.some((a) => a.kind === "hook_offer"),
       checks: life.proposedActions.flatMap((a) =>
         a.kind === "skill_check"

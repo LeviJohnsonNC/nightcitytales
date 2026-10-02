@@ -164,6 +164,7 @@ export function useLife(campaignId: string) {
           // character is standing in, not the one they happen to know.
           districtKey:
             resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+          reputation: bundle.climb.reputation.level,
         },
       )[0] ?? null)
     : null;

@@ -671,6 +671,12 @@ publishing.ts` moves a faction's clock DOWN and their standing with it, and it
   editing a job. A new way to earn Reputation is a new row in
   `reputation-deeds.json` read from something the engine already recorded, not
   a number the narrator supplies.
+  Its two dice are the engine's too: the recognition roll is made once a turn
+  before the packet and kept beside the narration, and a Facedown travels as an
+  ordinary check card whose id is `facedown` (`FACEDOWN_CHECK_ID`) — which is
+  not a Skill. Anything that reads `check_prompt` or `skill_check` events by
+  Skill id must tolerate it, as `describePendingCheck` and `rollPendingCheck`
+  do.
 - **Ripperdoc pacing is a house rule** — 0/1/3 recovery days by install level,
   four surgery hours per physical implant, appointment delay by disposition.
   `catalog.json` labels it as one beside the RED-sourced values. Tune it there,

@@ -287,6 +287,7 @@ export function usePlay(campaignId: string) {
             // character is standing in, not the one they happen to know.
             districtKey:
               resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.districtKey ?? null,
+            reputation: bundle.reputation.level,
           },
         )
       : [];
