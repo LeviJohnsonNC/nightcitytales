@@ -126,3 +126,26 @@ describe("North Heywood phase preservation", () => {
     );
   });
 });
+
+it("resumes an existing fight before changing the scene, vitals or inventory", async () => {
+  const backend = await import("@/lib/backend");
+  const { seedEncounter } = await import("../seedEncounter");
+  const { northHeywoodScene } = await import("@/engine");
+  vi.clearAllMocks();
+  vi.mocked(backend.getActiveCampaignForCharacter).mockResolvedValue({ id: "c" } as never);
+  vi.mocked(backend.getActiveEncounter).mockResolvedValue({ id: "existing" } as never);
+  expect(
+    await seedEncounter({
+      characterId: "p",
+      characterName: "Red",
+      characterHandle: null,
+      arena: northHeywoodScene().layout.arena.key,
+      wound: "none",
+      emptyMagazines: false,
+      force: { key: "street_crew", size: "standard" },
+    }),
+  ).toEqual({ campaignId: "c", encounterId: "existing" });
+  expect(backend.updateEncounter).not.toHaveBeenCalled();
+  expect(backend.updateCampaignVitals).not.toHaveBeenCalled();
+  expect(backend.updateCampaign).not.toHaveBeenCalled();
+});

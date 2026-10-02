@@ -31,6 +31,10 @@ export type StartEncounterPayload = {
   /** Key from the engine's closed ARENAS list; null reads as open ground. */
   arena?: string | null;
   layout?: Json;
+  lifecycle_version?: 1;
+  command_id?: string;
+  expected_origin?: { phase: string; location: string | null; missionId: string | null };
+  scene_source?: Json;
   combatants: Array<{
     id: string;
     character_id?: string | null;
@@ -60,6 +64,9 @@ export type StartEncounterPayload = {
 export type SaveEncounterPayload = {
   encounter_id: string;
   layout_version?: number;
+  lifecycle_version?: 1;
+  events?: Json[];
+  completion?: { summary: string; data: Json };
   round: number;
   active_index: number;
   order_ids: string[];
@@ -102,11 +109,19 @@ export type SaveEncounterPayload = {
 
 /** Persist a fight in one transaction. Returns the new encounter id. */
 export async function startEncounter(payload: StartEncounterPayload): Promise<string> {
-  const { data, error } = await backendClient.rpc(
-    payload.layout ? "start_snapshot_encounter" : "start_encounter",
-    {
-      payload: payload as unknown as Json,
-    },
+  // The Cloud generator gains this RPC after deployment. Keep the additive
+  // pre-deployment contract isolated at the backend boundary.
+  const rpc = backendClient.rpc.bind(backendClient) as (
+    name: string,
+    args: { payload: Json },
+  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+  const { data, error } = await rpc(
+    payload.lifecycle_version
+      ? "start_scene_encounter"
+      : payload.layout
+        ? "start_snapshot_encounter"
+        : "start_encounter",
+    { payload: payload as unknown as Json },
   );
   if (error) throw new Error(error.message);
   if (typeof data !== "string") {

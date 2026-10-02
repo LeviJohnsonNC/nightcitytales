@@ -24,7 +24,7 @@ import {
   type CampaignEvent,
   type Json,
 } from "@/lib/backend";
-import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
+import { attackEvent, logAttack, logDeathSave } from "@/features/campaign/combatLog";
 import { reloadWeapon } from "@/features/campaign/shopping";
 import {
   loadLiveEncounter,
@@ -137,11 +137,7 @@ export async function commitAttack(
   // The saved encounter, at its new version: the hostile Turns this attack
   // triggers save again, and sending the pre-attack token there would refuse
   // the fight's own next write.
-  const saved = await saveLiveEncounter(
-    live,
-    spent ? { inventoryId: spent.inventoryId, loaded: spent.ammoLoaded } : null,
-  );
-  await logAttack(
+  const attackArgs = [
     campaignId,
     { attack: result.attack, damage: result.damage, applied: result.applied },
     {
@@ -160,7 +156,13 @@ export async function commitAttack(
       ...(result.targetWoundState ? { targetWoundState: result.targetWoundState } : {}),
       beatId,
     },
+  ] as const;
+  const saved = await saveLiveEncounter(
+    live,
+    spent ? { inventoryId: spent.inventoryId, loaded: spent.ammoLoaded } : null,
+    live.origin ? [attackEvent(...attackArgs)] : [],
   );
+  if (!live.origin) await logAttack(...attackArgs);
   await payLuck(bundle, luckSpent);
   publishCombatFrames(campaignId, [
     {
@@ -393,7 +395,14 @@ export async function endPlayerTurn(bundle: CombatBundle): Promise<void> {
   // button off-turn, but a Turn belonging to somebody else must not be endable
   // through any path — handing it over would walk the order past whoever is
   // actually on the clock.
-  if (!currentCombatant(live.state)?.isPlayer) return;
+  if (!currentCombatant(live.state)?.isPlayer) {
+    if (!live.origin) return;
+    // An interrupted opening has committed initiative but no NPC action yet.
+    // Resolve the actor ON the clock; never skip them by advancing first.
+    const resumed = await runNpcTurns(bundle.campaign.id, bundle.beat?.id ?? null, live, "current");
+    await settleNpcTurns(bundle.campaign.id, bundle.beat?.id ?? null, resumed.live);
+    return;
+  }
   // A Mortally Wounded character rolls their Death Save before anything else
   // happens on their Turn (CP:R pg. 187). Handing the Turn over here would
   // walk the order straight past a save they owe.

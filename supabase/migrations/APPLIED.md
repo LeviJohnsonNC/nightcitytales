@@ -95,6 +95,11 @@ once it has actually been run.
 - `20261002030000_spend_ip_on_role_rank.sql`
 - `20261002040000_moving_house.sql`
 
+- `20261002050000_save_mortally_wounded_combatants.sql` — applied October 2, 2026,
+  confirmed by Levi; deployed via Drizzle migration 0002.
+- `20261002060000_encounter_layout_snapshot.sql` — applied October 2, 2026,
+  confirmed by Levi; deployed via Drizzle migration 0003.
+
 ## Pending
 
 Written and merged, but NOT yet run against the database. The code that reads
@@ -112,14 +117,7 @@ these tables must tolerate their absence until the line moves up to Applied.
   is that the database would still accept a value the app cannot produce. No
   code depends on it having run.
 
-- `20261002050000_save_mortally_wounded_combatants.sql` — **pending deployment**.
-  Verified on disposable PostgreSQL 16 after the baseline and subsequent migrations.
-  Allows the engine's negative HP for mortally wounded players and NPCs; retains
-  ownership, optimistic versioning, armor/ammunition checks and rollback. Not applied
-  to the live Supabase project by this change.
-
-- `20261002060000_encounter_layout_snapshot.sql` — **pending deployment**.
-  Adds immutable encounter layout snapshots, a capability-specific entry RPC,
-  required protocol/version on snapshot saves, and serialized entry that rejects
-  a second active encounter. Verified using the PostgreSQL 16 replay harness.
-  Does not modify existing encounter layouts or delete duplicate historical rows.
+- `20261002070000_scene_combat_receipts.sql` — **pending deployment**.
+  Adds immutable origins, idempotent entry receipts, exact latest-save replay,
+  transactional NPC/attack events and terminal results for new snapshot fights.
+  Existing encounters retain their prior protocol.

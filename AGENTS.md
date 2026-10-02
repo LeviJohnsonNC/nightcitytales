@@ -97,6 +97,12 @@ than moving actors or substituting open ground. Legacy encounters without a
 snapshot keep the authored-arena path. The authored North Heywood proof is
 available only through the existing `/combat` harness; see
 `docs/north-heywood-proof.md` for its limits and deployment prerequisite.
+New scene entries use `start_scene_encounter` and carry an immutable origin.
+Their save payloads require lifecycle protocol 1 and a terminal result when the
+fight ends. Queue NPC/attack events into `saveLiveEncounter` for these fights;
+never append another `encounter_ended` after the transaction has committed it.
+Legacy encounters without `origin` retain their previous protocol. Origin is not
+yet a persistent noncombat scene or a whole-command transaction.
 
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says

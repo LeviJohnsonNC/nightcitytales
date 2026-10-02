@@ -12,12 +12,9 @@ import {
   type DeathSaveResult,
   type MoraleCheck,
 } from "@/engine";
-import {
-  appendCampaignEvent,
-  type CampaignEvent,
-  type CampaignEventInsert,
-  type Json,
-} from "@/lib/backend";
+import { appendCampaignEvent, type CampaignEventInsert, type Json } from "@/lib/backend";
+
+type CombatEventWriter = (event: CampaignEventInsert) => Promise<unknown>;
 
 export type AttackParts = {
   attack: AttackResult;
@@ -112,16 +109,18 @@ export async function logAttack(
   campaignId: string,
   parts: AttackParts,
   context: AttackLogContext,
-): Promise<CampaignEvent> {
-  return appendCampaignEvent(attackEvent(campaignId, parts, context));
+  emit: CombatEventWriter = appendCampaignEvent,
+): Promise<unknown> {
+  return emit(attackEvent(campaignId, parts, context));
 }
 
 export async function logDeathSave(
   campaignId: string,
   result: DeathSaveResult,
   context: DeathSaveLogContext,
-): Promise<CampaignEvent> {
-  return appendCampaignEvent(deathSaveEvent(campaignId, result, context));
+  emit: CombatEventWriter = appendCampaignEvent,
+): Promise<unknown> {
+  return emit(deathSaveEvent(campaignId, result, context));
 }
 
 /**
@@ -170,7 +169,8 @@ export async function logCoverDamage(
   campaignId: string,
   shot: CoverShot,
   context: CoverLogContext,
-): Promise<CampaignEvent> {
+  emit: CombatEventWriter = appendCampaignEvent,
+): Promise<unknown> {
   const hit = shot.hit ?? null;
   const label = hit?.label ?? "cover";
   const summary = !hit
@@ -178,7 +178,7 @@ export async function logCoverDamage(
     : hit.destroyed
       ? `${context.attackerName} shoots ${label} apart.`
       : `${context.attackerName} hits ${label} — ${hit.hpBefore} to ${hit.hpAfter}.`;
-  return appendCampaignEvent({
+  return emit({
     campaign_id: campaignId,
     type: COVER_DAMAGE_EVENT,
     summary,
@@ -232,8 +232,9 @@ export async function logMorale(
   combatantName: string,
   check: MoraleCheck,
   beatId?: string | null,
-): Promise<CampaignEvent> {
-  return appendCampaignEvent({
+  emit: CombatEventWriter = appendCampaignEvent,
+): Promise<unknown> {
+  return emit({
     campaign_id: campaignId,
     type: MORALE_EVENT,
     summary: describeMorale(combatantName, check),

@@ -288,3 +288,18 @@ it("renders the saved North Heywood objects instead of falling back to a known a
   expect(html).toContain("Broth cart");
   expect(html).not.toContain("Yellow generator housing");
 });
+
+it("offers to continue an interrupted scene NPC turn without offering a player action", () => {
+  const html = renderToStaticMarkup(
+    <CombatBoard
+      live={{ ...live, origin: { version: 1 }, state: { ...live.state, activeIndex: 1 } }}
+      capability={capability}
+      weaponId={null}
+      onWeaponId={() => {}}
+      onEndTurn={() => {}}
+    />,
+  );
+  expect(html).toContain("Continue combat");
+  expect(html).toContain("Resolve NPC turns");
+  expect(html).not.toMatch(/class="combat-end" disabled/);
+});

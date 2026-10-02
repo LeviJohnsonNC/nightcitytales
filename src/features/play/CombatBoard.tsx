@@ -258,6 +258,12 @@ export function CombatBoard({
    * meant one stuck flag left the whole screen inert: no squares, every click
    * swallowed, no target lockable and therefore no shot possible.
    */
+  const canResume =
+    !!live.origin &&
+    !!active &&
+    !active.isPlayer &&
+    !player?.actor.defeated &&
+    live.state.status === "active";
   const canCommit = canAct && !busy && !dice;
   const weapon = raisedWeapon(capability, weaponId);
   const weaponArt = weapon ? itemArt(`weapon.${weapon.itemId}`, weapon.name) : null;
@@ -1638,18 +1644,20 @@ export function CombatBoard({
         </div>
         <button
           className="combat-end"
-          disabled={!canAct || !!dice || !onEndTurn}
+          disabled={(!canAct && !canResume) || busy || !!dice || !onEndTurn}
           onClick={onEndTurn}
         >
           <SkipForward size={19} />
           <span>
-            End turn
+            {canResume ? "Continue combat" : "End turn"}
             <small>
-              {remaining?.action
-                ? "Action ready"
-                : remaining?.attacks
-                  ? "Attack remaining"
-                  : "Action spent"}
+              {canResume
+                ? "Resolve NPC turns"
+                : remaining?.action
+                  ? "Action ready"
+                  : remaining?.attacks
+                    ? "Attack remaining"
+                    : "Action spent"}
             </small>
           </span>
         </button>

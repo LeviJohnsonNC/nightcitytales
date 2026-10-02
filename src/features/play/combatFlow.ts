@@ -70,6 +70,7 @@ import type { GmEnemy } from "@/features/gm/gmResponse";
 import {
   appendCampaignEvent,
   type CampaignInventoryItem,
+  type CampaignEventInsert,
   type CampaignVitals,
   type FullCharacter,
   type Json,
@@ -190,6 +191,16 @@ export async function beginEncounter(input: {
     data,
     arena: arena.key,
     ...(layout ? { layout } : {}),
+    ...(input.scene
+      ? {
+          sceneSource: {
+            template: input.scene.template,
+            templateVersion: input.scene.templateVersion,
+            anchor: input.scene.anchor,
+            actors: input.scene.actors,
+          } as unknown as Json,
+        }
+      : {}),
   });
 
   // Everyone who beat the player on Initiative acts before the player does.
@@ -226,24 +237,25 @@ export async function beginEncounter(input: {
 
   // Written after the opening, so one event carries the whole start of the
   // fight: who rolled what, and what the people who won the roll did with it.
-  await appendCampaignEvent({
-    campaign_id: input.campaignId,
-    type: "encounter_started",
-    summary:
-      `${input.name} — initiative: ${state.order
-        .map((id) => `${state.combatants[id]!.name} (${state.combatants[id]!.initiative ?? 0})`)
-        .join(", ")} — ${describeVerdict(weight.verdict)}.` +
-      (opened.lines.length > 0 ? ` ${opened.lines.join(" ")}` : ""),
-    data: {
-      encounterId: live.id,
-      verdict: weight.verdict,
-      load: weight.load,
-      mooks: weight.mooks,
-      lieutenants: weight.lieutenants,
-      bosses: weight.bosses,
-    } as unknown as Json,
-    ...(input.beatId ? { beat_id: input.beatId } : {}),
-  });
+  if (!live.origin)
+    await appendCampaignEvent({
+      campaign_id: input.campaignId,
+      type: "encounter_started",
+      summary:
+        `${input.name} — initiative: ${state.order
+          .map((id) => `${state.combatants[id]!.name} (${state.combatants[id]!.initiative ?? 0})`)
+          .join(", ")} — ${describeVerdict(weight.verdict)}.` +
+        (opened.lines.length > 0 ? ` ${opened.lines.join(" ")}` : ""),
+      data: {
+        encounterId: live.id,
+        verdict: weight.verdict,
+        load: weight.load,
+        mooks: weight.mooks,
+        lieutenants: weight.lieutenants,
+        bosses: weight.bosses,
+      } as unknown as Json,
+      ...(input.beatId ? { beat_id: input.beatId } : {}),
+    });
 
   // The same bookkeeping any stretch of NPC Turns earns — the opening is just
   // the one that happens before the player has acted once.
@@ -297,6 +309,12 @@ export async function runNpcTurns(
    */
   from: "current" | "next" = "next",
 ): Promise<{ live: LiveEncounter; lines: string[] }> {
+  if (
+    live.origin &&
+    (live.state.status !== "active" ||
+      (from === "current" && currentCombatant(live.state)?.isPlayer))
+  )
+    return { live, lines: [] };
   let state = live.state;
   // Positions change during these turns, so the data map is carried the same
   // way state is rather than mutated in place.
@@ -306,6 +324,12 @@ export async function runNpcTurns(
   const arena = battlefieldFor(live);
   const lines: string[] = [];
   const frames: CombatFrame[] = [];
+  const events: CampaignEventInsert[] = [];
+  const emit = live.origin
+    ? async (event: CampaignEventInsert) => {
+        events.push(event);
+      }
+    : undefined;
   const capture = (kind: CombatFrame["kind"], text: string, details: Partial<CombatFrame> = {}) =>
     frames.push({ live: { ...live, state, data, cover }, kind, text, ...details });
 
@@ -323,11 +347,16 @@ export async function runNpcTurns(
     state = begun.state;
     if (begun.deathSave) {
       if (begun.died) data = { ...data, [actor.id]: { ...data[actor.id]!, exitReason: "dead" } };
-      await logDeathSave(campaignId, begun.deathSave, {
-        combatantName: actor.name,
-        died: begun.died,
-        beatId,
-      });
+      await logDeathSave(
+        campaignId,
+        begun.deathSave,
+        {
+          combatantName: actor.name,
+          died: begun.died,
+          beatId,
+        },
+        emit,
+      );
       lines.push(`${actor.name} Death Save: ${begun.died ? "failed and is dead" : "survived"}.`);
       capture("status", lines.at(-1)!, { actorId: actor.id });
     }
@@ -357,7 +386,7 @@ export async function runNpcTurns(
         ...data,
         [actor.id]: { ...data[actor.id]!, moraleSpent: [...spent, trigger] },
       };
-      await logMorale(campaignId, actor.name, check, beatId);
+      await logMorale(campaignId, actor.name, check, beatId, emit);
       lines.push(describeMorale(actor.name, check));
       if (check.broke) {
         state = defeatCombatant(state, actor.id);
@@ -385,6 +414,7 @@ export async function runNpcTurns(
     const goal = combatGoalFor(stats?.combatGoal);
     if (target.isPlayer && goalSatisfiedBy(goal, target)) {
       state = defeatCombatant(state, actor.id);
+      data = { ...data, [actor.id]: { ...data[actor.id]!, exitReason: "withdrawn" } };
       lines.push(describeGoalMet(actor.name, goal));
       capture("status", lines.at(-1)!, { actorId: actor.id });
       continue;
@@ -474,6 +504,7 @@ export async function runNpcTurns(
           weapon: stats.weaponName,
           beatId,
         },
+        emit,
       );
       lines.push(
         !hit
@@ -522,6 +553,7 @@ export async function runNpcTurns(
         ...(result.targetWoundState ? { targetWoundState: result.targetWoundState } : {}),
         beatId,
       },
+      emit,
     );
     lines.push(describeAttack(actor.name, target.name, stats.weaponName, result));
     capture("attack", lines.at(-1)!, {
@@ -537,7 +569,7 @@ export async function runNpcTurns(
     });
   }
 
-  const next = await saveLiveEncounter({ ...live, state, data, cover });
+  const next = await saveLiveEncounter({ ...live, state, data, cover }, null, events);
   // No visual result escapes until the authoritative save succeeds.
   publishCombatFrames(
     campaignId,
@@ -635,17 +667,18 @@ export async function closeOutFight(
     : won
       ? "The opposition is finished; the fight is over."
       : "The player is down; the fight is over.";
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "encounter_ended",
-    summary,
-    data: encounterEndEventData({
-      encounterId: live.id,
-      status: live.state.status,
-      ...(result ? { sceneResult: result } : {}),
-    }) as unknown as Json,
-    ...(beatId ? { beat_id: beatId } : {}),
-  });
+  if (!live.origin)
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "encounter_ended",
+      summary,
+      data: encounterEndEventData({
+        encounterId: live.id,
+        status: live.state.status,
+        ...(result ? { sceneResult: result } : {}),
+      }) as unknown as Json,
+      ...(beatId ? { beat_id: beatId } : {}),
+    });
   return ` ${summary}`;
 }
 
