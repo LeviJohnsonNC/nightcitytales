@@ -23,7 +23,7 @@ export function sceneAttackRequest(input: string): SceneAttackRequest | null {
   const action = drawn?.[1] ?? text.replace(/^i /, "");
   if (/^(?:start blasting|open fire)$/.test(action))
     return { input: input.trim(), target: null, weapon: drawn ? "pistol" : null };
-  const shot = /^(?:shoot|attack|fire at) (?:the )?(.+?)( with my pistol)?$/.exec(action);
+  const shot = /^(?:shoot(?: at)?|attack|fire at) (?:the )?(.+?)( with my pistol)?$/.exec(action);
   if (!shot) return null;
   return { input: input.trim(), target: shot[1]!, weapon: drawn || shot[2] ? "pistol" : null };
 }

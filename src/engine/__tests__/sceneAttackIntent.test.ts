@@ -47,3 +47,21 @@ it("rejects unsupported saved intent versions and missing fields", () => {
     readSceneAttackIntent({ source: { initiatingIntent: { version: 1, input: "shoot" } } }),
   ).toBeNull();
 });
+
+it.each([
+  "shoot at the rifleman with my pistol",
+  "shoot at the rifleman",
+  "I shoot at the rifleman with my pistol!",
+  "draw my pistol and shoot at the rifleman",
+])("recognizes the playtest command: %s", (input) => {
+  const intent = resolveSceneAttack(sceneAttackRequest(input)!, northHeywoodScene());
+  expect(intent.targetKey).toBe("rifle_ganger");
+  expect(intent.input).toBe(input);
+});
+it.each([
+  "don't shoot at the rifleman",
+  "if he moves, shoot at the rifleman",
+  "can I shoot at the rifleman?",
+])("does not turn %s into an attack", (input) => {
+  expect(sceneAttackRequest(input)).toBeNull();
+});
