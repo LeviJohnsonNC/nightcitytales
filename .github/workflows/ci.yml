@@ -85,3 +85,8 @@ jobs:
         env:
           PGURL: postgres://postgres:postgres@localhost:5432/postgres
         run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/combat-state.test.sql
+
+      - name: Battlefield snapshot regression
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/postgres
+        run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/battlefield-layout.test.sql

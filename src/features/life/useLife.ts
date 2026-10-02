@@ -1,3 +1,4 @@
+import { readSceneCombatEnd } from "@/engine";
 /**
  * The Life loop, bound to React.
  *
@@ -191,6 +192,7 @@ export function useLife(campaignId: string) {
     for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
       const event = bundle.events[i];
       if (!event) continue;
+      if (event.type === "encounter_ended" && readSceneCombatEnd(event.data)) break;
       if (event.type !== "life_options" && event.type !== "life_narration") continue;
       // Whichever came last wins, so acting on anything clears the list: an
       // ordinary turn always answers with none of its own.
@@ -234,10 +236,18 @@ export function useLife(campaignId: string) {
     if (!bundle) return null;
     for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
       const event = bundle.events[i];
-      if (event?.type === "life_narration") {
+      if (
+        event?.type === "life_narration" ||
+        (event?.type === "encounter_ended" && readSceneCombatEnd(event.data))
+      ) {
         const data = event.data as { title?: unknown } | null;
         return {
-          title: typeof data?.title === "string" ? data.title : "Night City",
+          title:
+            event.type === "encounter_ended"
+              ? "After the fight"
+              : typeof data?.title === "string"
+                ? data.title
+                : "Night City",
           text: event.summary ?? "",
           walkOns: readWalkOnsEventData(event.data),
         };

@@ -250,3 +250,51 @@ describe("reload continuity", () => {
     });
   });
 });
+
+it("loads a saved custom layout without losing cover damage or moving actors", async () => {
+  const { northHeywoodScene, battlefieldFor } = await import("@/engine");
+  const layout = northHeywoodScene().layout;
+  const piece = layout.arena.cover![0]!;
+  getActiveEncounter.mockResolvedValue({ id: "enc-layout" });
+  getEncounter.mockResolvedValue({
+    encounter: {
+      id: "enc-layout",
+      arena: "unknown-template",
+      layout,
+      cover: { [piece.id]: 5 },
+      round: 2,
+      active_index: 0,
+      order_ids: ["p"],
+      status: "active",
+      version: 8,
+    },
+    combatants: [
+      {
+        id: "p",
+        name: "Player",
+        is_player: true,
+        side: "friendly",
+        hp_current: 20,
+        hp_max: 40,
+        wound_state: "serious",
+        ref: 6,
+        body: 6,
+        seriously_wounded_threshold: 20,
+        death_save_penalty: 0,
+        sp_head: 7,
+        sp_body: 7,
+        initiative: 10,
+        defeated: false,
+        data: { key: "player", position: { x: 11, y: 17 }, move: 6 },
+      },
+    ],
+  });
+  const live = (await loadLiveEncounter("c"))!;
+  expect(battlefieldFor(live)).toEqual(layout.arena);
+  expect(live.cover[piece.id]).toBe(5);
+  expect(live.data["p"]?.position).toEqual({ x: 11, y: 17 });
+  await saveLiveEncounter(live);
+  expect(saveEncounter).toHaveBeenLastCalledWith(
+    expect.objectContaining({ layout_version: 1, version: 8, cover: { [piece.id]: 5 } }),
+  );
+});

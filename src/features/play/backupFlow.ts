@@ -1,3 +1,4 @@
+import { battlefieldFor } from "@/engine";
 /**
  * A Lawman calling it in.
  *
@@ -12,7 +13,6 @@
  * zero, so the arithmetic matches the book exactly.
  */
 import {
-  arenaFor,
   clampToArena,
   joinEncounter,
   type BackupCall,
@@ -106,7 +106,7 @@ export async function arriveBackup(input: {
   // Backup turns up where the character is, spread along the line they came in
   // on. Nobody picks a distance: they arrive beside you and close from there
   // like anyone else.
-  const arena = arenaFor(input.live.arena);
+  const arena = battlefieldFor(input.live);
   const player = Object.values(input.live.state.combatants).find((c) => c.isPlayer);
   const rally = (player ? data[player.id]?.position : null) ?? arena.playerStart;
 

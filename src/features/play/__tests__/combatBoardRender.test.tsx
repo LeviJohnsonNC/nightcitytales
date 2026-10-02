@@ -271,3 +271,20 @@ describe("while the last action is still saving", () => {
     expect(html).toContain("Waiting on the last action");
   });
 });
+
+it("renders the saved North Heywood objects instead of falling back to a known arena", async () => {
+  const { northHeywoodScene } = await import("@/engine");
+  const scene = northHeywoodScene();
+  const saved = { ...live, arena: "unknown-scene-template", layout: scene.layout };
+  const html = renderToStaticMarkup(
+    <CombatBoard
+      live={saved}
+      capability={capability}
+      weaponId="very_heavy_pistol"
+      onWeaponId={() => {}}
+    />,
+  );
+  expect(html).toContain("Thorton cruiser");
+  expect(html).toContain("Broth cart");
+  expect(html).not.toContain("Yellow generator housing");
+});

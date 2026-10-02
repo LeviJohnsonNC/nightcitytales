@@ -52,6 +52,8 @@ export type CoverPiece = {
   rect: Rect;
   /** Intact footprint blocks walking unless explicitly authored as passable. */
   blocksMovement?: boolean;
+  /** Frozen HP for a validated encounter snapshot; authored arenas read the catalog. */
+  maxHp?: number;
 };
 
 /**

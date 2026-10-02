@@ -278,10 +278,15 @@ export function usePlay(campaignId: string) {
   const pendingDeathSave = bundle
     ? pendingDeathSaveFrom(bundle.encounter, bundle.beat?.id ?? null)
     : null;
+  const scenePromptEvents = bundle?.encounter?.layout
+    ? bundle.events.slice(
+        bundle.events.map((event) => event.type).lastIndexOf("encounter_started") + 1,
+      )
+    : (bundle?.events ?? []);
   const checkQueue =
     bundle && !pendingDeathSave
       ? pendingChecksFrom(
-          bundle.events,
+          scenePromptEvents,
           bundle.character,
           bundle.vitals.wound_state as WoundStateCode,
           {

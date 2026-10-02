@@ -805,10 +805,31 @@ Phase 1 foundation:
 The Phase 2 scene/origin/result boundaries are recorded in
 `docs/scene-combat-contract.md`.
 
-Next: persist the scene/origin/result contracts and implement the authored street
-round trip with atomic entry, action and exit. Cross-write ledger/encounter
-atomicity and duplicate encounter prevention remain required before scene combat
-is enabled. No generated battlefields or Life combat routing ship in this phase.
+Phase 2a authored proof:
+
+- Validated, immutable layout snapshots now carry resolved geometry and cover HP.
+  Board, movement, targeting, backup and playback use the same snapshot; reload
+  preserves custom object damage and actor positions.
+- `/combat` offers the Ulysses Street intersection: Thorton cruiser, broth cart,
+  rifleman, lookout and two neutral workers. Its profiles and positions are
+  authored, not inferred from arbitrary prose. It requires an existing campaign,
+  moves its location to North Heywood and preserves its Life/Hook/Job phase.
+- Active combat takes over the campaign screen without changing phase. On ending,
+  the original phase's screen resumes; dead characters reach the terminal screen.
+  Life shows and passes the factual ending to its narrator rather than displaying
+  the earlier scene as if nobody fired. Scene results retain stable actor keys,
+  HP/wounds, final positions, explicit deaths/withdrawals and object condition.
+- Entry through the RPC serializes on the campaign and rejects another active
+  encounter. Snapshot saves require a supported protocol and an expected version.
+  A distinct entry RPC prevents an unmigrated database from ignoring the layout.
+  Migration `20261002060000_encounter_layout_snapshot.sql` is pending deployment.
+
+This is a harness proof, **not the Phase 2 exit gate**. Still required: persistent
+noncombat scene instances with origin/revision tracking, atomic command receipts
+across state and ledger, idempotent entry/closure, capture of the initiating attack
+intent, and an authenticated browser round trip. Freeform Life combat entry is
+not enabled. Snapshot geometry and the current two-stage opening are not a
+substitute for those transactions. See `docs/north-heywood-proof.md`.
 
 Compatibility: existing rows without enemy metadata retain their prior defaults.
 An active mortal turn saved before the death-save round marker existed cannot

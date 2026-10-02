@@ -1,5 +1,6 @@
+import { battlefieldFor } from "@/engine";
 import Phaser from "phaser";
-import { arenaFor, coverStatuses, tileKey, TILE_METRES, type Point, type Tile } from "@/engine";
+import { coverStatuses, tileKey, TILE_METRES, type Point, type Tile } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { battlefieldProjection } from "../battlefieldProjection";
 import { frameDuration, type PlaybackFrame } from "../combatPlayback";
@@ -71,7 +72,7 @@ export function createCourtyard(
   let ready = false;
   let disposed = false;
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const arena = arenaFor(initial.live.arena);
+  const arena = battlefieldFor(initial.live);
   const kinds = hasYardProps(arena.key) ? PROP_KINDS : ["cargo" as const];
   const assets = [
     "ground",

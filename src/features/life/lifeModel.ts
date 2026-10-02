@@ -258,6 +258,7 @@ export function recentLifeLines(
     "skill_check",
     "mission_completed",
     "campaign_ended",
+    "encounter_ended",
     "hook_offered",
     "hook_declined",
     "cast_approached",

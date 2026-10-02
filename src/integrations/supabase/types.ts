@@ -1024,6 +1024,7 @@ export type Database = {
       encounters: {
         Row: {
           active_index: number
+          layout: Json | null
           arena: string | null
           beat_id: string | null
           campaign_id: string
@@ -1039,6 +1040,7 @@ export type Database = {
         }
         Insert: {
           active_index?: number
+          layout?: Json | null
           arena?: string | null
           beat_id?: string | null
           campaign_id: string
@@ -1054,6 +1056,7 @@ export type Database = {
         }
         Update: {
           active_index?: number
+          layout?: Json | null
           arena?: string | null
           beat_id?: string | null
           campaign_id?: string
@@ -1129,6 +1132,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      start_snapshot_encounter: { Args: { payload: Json }; Returns: string }
       award_improvement_points: { Args: { payload: Json }; Returns: number }
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
       install_cyberware: { Args: { payload: Json }; Returns: Json }

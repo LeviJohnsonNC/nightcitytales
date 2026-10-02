@@ -5,6 +5,9 @@
  */
 import {
   arenaFor,
+  readBattlefieldSnapshot,
+  readBattlefieldPositions,
+  type BattlefieldSnapshot,
   coverDamageFrom,
   snapToOpenTile,
   type CoverDamage,
@@ -32,6 +35,7 @@ export type LiveEncounter = {
   data: Record<string, CombatantData>;
   /** Which of the engine's arenas this fight is happening on. */
   arena: string | null;
+  layout?: BattlefieldSnapshot;
   /**
    * Damage taken by each piece of that arena's cover, keyed by its authored id.
    *
@@ -58,7 +62,9 @@ function liveFrom(full: FullEncounter): LiveEncounter {
   // loose metres, so they are snapped on the way in rather than migrated: the
   // worst case is a body shifting under a metre, and no fight in progress is
   // left standing between two squares the board cannot draw them on.
-  const ground = arenaFor(arena);
+  const layout =
+    full.encounter.layout == null ? undefined : readBattlefieldSnapshot(full.encounter.layout);
+  const ground = layout?.arena ?? arenaFor(arena);
   // Read against the authored arena: an id no arena knows is dropped rather
   // than trusted into a live fight. The database validated shape and sign;
   // identity is this layer's to check.
@@ -66,13 +72,29 @@ function liveFrom(full: FullEncounter): LiveEncounter {
   const data: Record<string, CombatantData> = {};
   for (const row of full.combatants) {
     const combatant = combatantDataOf(row);
-    data[row.id] = { ...combatant, position: snapToOpenTile(ground, cover, combatant.position) };
+    data[row.id] = layout
+      ? {
+          ...combatant,
+          position: readBattlefieldPositions(
+            layout,
+            [(row.data as { position?: unknown })?.position],
+            cover,
+          )[0]!,
+        }
+      : { ...combatant, position: snapToOpenTile(ground, cover, combatant.position) };
   }
+  if (layout)
+    readBattlefieldPositions(
+      layout,
+      full.combatants.filter((row) => !row.defeated).map((row) => data[row.id]!.position),
+      cover,
+    );
   return {
     id: full.encounter.id,
     state: stateFromRows(full),
     data,
     arena,
+    ...(layout ? { layout } : {}),
     cover,
     version: full.encounter.version ?? 0,
   };
@@ -95,10 +117,19 @@ export async function createLiveEncounter(input: {
   state: EncounterState;
   data: Record<string, CombatantData>;
   arena: string | null;
+  layout?: BattlefieldSnapshot;
 }): Promise<LiveEncounter> {
   const id = await startEncounterRpc(startEncounterPayload(input));
   // A row nobody has saved yet is at the column's default.
-  return { id, state: input.state, data: input.data, arena: input.arena, cover: {}, version: 0 };
+  return {
+    id,
+    state: input.state,
+    data: input.data,
+    arena: input.arena,
+    ...(input.layout ? { layout: input.layout } : {}),
+    cover: {},
+    version: 0,
+  };
 }
 
 /**
@@ -134,6 +165,7 @@ export async function saveLiveEncounter(
   const armor = live.data[player.id]?.armor;
   const payload: SaveEncounterPayload = {
     encounter_id: live.id,
+    ...(live.layout ? { layout_version: live.layout.version } : {}),
     round: live.state.round,
     cover: live.cover,
     active_index: live.state.activeIndex,

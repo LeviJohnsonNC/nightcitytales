@@ -1,3 +1,4 @@
+import { readSceneCombatEnd } from "@/engine";
 /**
  * LIFE — the screen between jobs. One situation at a time, a free-text box, and
  * a clock that costs something to spend.
@@ -239,6 +240,7 @@ function LifeEvent({ event, climber }: { event: CampaignEvent; climber?: Climber
 }
 
 const LIFE_EVENT_TYPES = new Set([
+  "encounter_ended",
   "player_input",
   "travelled",
   "action_refused",
@@ -288,9 +290,18 @@ function shownLifeEvents(events: CampaignEvent[], suppressText?: string): Campai
   const norm = (t: string) => t.replace(/\s+/g, " ").trim();
   const suppressed = suppressText ? norm(suppressText) : null;
   return events
-    .filter((e) => LIFE_EVENT_TYPES.has(e.type))
     .filter(
-      (e) => !(suppressed && e.type === "life_narration" && norm(e.summary ?? "") === suppressed),
+      (e) =>
+        LIFE_EVENT_TYPES.has(e.type) &&
+        (e.type !== "encounter_ended" || readSceneCombatEnd(e.data)),
+    )
+    .filter(
+      (e) =>
+        !(
+          suppressed &&
+          (e.type === "life_narration" || e.type === "encounter_ended") &&
+          norm(e.summary ?? "") === suppressed
+        ),
     )
     .slice(-40);
 }

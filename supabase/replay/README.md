@@ -92,3 +92,7 @@ CI runs this with the replay job. It creates fixtures inside a rolled-back
 transaction, switches to the authenticated role, and verifies signed mortal HP,
 death-save metadata, stale-version rejection, invalid-write rollback and ownership.
 This is a focused RPC check, not a complete Supabase integration test.
+
+For scene snapshots, also run `psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/battlefield-layout.test.sql`.
+CI checks snapshot persistence, immutable geometry, duplicate active-entry rejection,
+and required snapshot protocol and concurrency versions in a rolled-back transaction.

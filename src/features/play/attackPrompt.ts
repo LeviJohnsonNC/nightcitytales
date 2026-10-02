@@ -1,3 +1,4 @@
+import { battlefieldFor } from "@/engine";
 /**
  * Pending attacks — the bridge between "the GM proposed a shot" and "the player
  * rolled it", mirroring checkPrompt.ts. Pure: it reads the ledger, the live
@@ -5,7 +6,6 @@
  * from the engine or the rules data; nothing here invents a DV or a damage die.
  */
 import {
-  arenaFor,
   coverBlocking,
   getSkill,
   previewAttack,
@@ -174,7 +174,7 @@ export function pendingAttackFrom(
     const targetData = live.data[target.id];
     const blocking =
       player && targetData
-        ? coverBlocking(arenaFor(live.arena), player.position, targetData.position, live.cover)
+        ? coverBlocking(battlefieldFor(live), player.position, targetData.position, live.cover)
         : [];
 
     return {

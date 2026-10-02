@@ -23,6 +23,7 @@ import {
   woundStateFor,
   type ActionCost,
   type Arena,
+  type BattlefieldSnapshot,
   type CapabilitySnapshot,
   type Combatant,
   type EncounterState,
@@ -397,8 +398,9 @@ export function hostileCombatant(
   position: Point,
   /** Why they are fighting. Defaults to the old implicit answer: kill. */
   goal: CombatGoal = DEFAULT_COMBAT_GOAL,
+  savedProfile?: ThreatProfile,
 ): { combatant: Combatant; data: CombatantData } {
-  const profile = threatFor(enemy.profile);
+  const profile = savedProfile ?? threatFor(enemy.profile);
   const threshold = Math.ceil(profile.hp / 2);
   const combatant: Combatant = {
     id,
@@ -492,6 +494,7 @@ export function startEncounterPayload(input: {
   state: EncounterState;
   data: Record<string, CombatantData>;
   arena: string | null;
+  layout?: BattlefieldSnapshot;
 }): StartEncounterPayload {
   return {
     campaign_id: input.campaignId,
@@ -500,6 +503,7 @@ export function startEncounterPayload(input: {
     active_index: input.state.activeIndex,
     order_ids: input.state.order,
     arena: input.arena,
+    ...(input.layout ? { layout: input.layout as unknown as Json } : {}),
     combatants: input.state.order.map((id) => {
       const c = input.state.combatants[id]!;
       return {

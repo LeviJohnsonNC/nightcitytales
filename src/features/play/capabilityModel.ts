@@ -1,3 +1,4 @@
+import { battlefieldFor } from "@/engine";
 /**
  * Building the capability snapshot the legality gate judges against.
  *
@@ -14,7 +15,6 @@ import {
   playerCombatant,
   turnDeathSaveOwed,
   EMPTY_TURN_ECONOMY,
-  arenaFor,
   coverBlocking,
   describeWeapon,
   getCyberware,
@@ -145,7 +145,7 @@ export function targetCapabilities(
   if (!live || live.state.status !== "active") return [];
   const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
   const from = previewPosition ?? (player ? live.data[player.id]?.position : undefined);
-  const arena = arenaFor(live.arena);
+  const arena = battlefieldFor(live);
   const out: TargetCapability[] = [];
   for (const combatant of Object.values(live.state.combatants)) {
     if (combatant.isPlayer) continue;

@@ -19,7 +19,13 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SELECTABLE_ARENAS, FORCES, FORCE_SIZES, type ForceSize } from "@/engine";
+import {
+  SELECTABLE_ARENAS,
+  northHeywoodScene,
+  FORCES,
+  FORCE_SIZES,
+  type ForceSize,
+} from "@/engine";
 import { getActiveCampaignForCharacter, getActiveEncounter, listCharacters } from "@/lib/backend";
 import {
   endEncounter,
@@ -37,6 +43,9 @@ export const Route = createFileRoute("/_authenticated/combat")({
   }),
   component: CombatHarness,
 });
+
+const NORTH_HEYWOOD = northHeywoodScene();
+const HARNESS_ARENAS = [...SELECTABLE_ARENAS, NORTH_HEYWOOD.layout.arena];
 
 const WOUNDS: { value: SeedWound; label: string; note: string }[] = [
   { value: "none", label: "Unhurt", note: "full HP" },
@@ -135,7 +144,7 @@ function CombatHarness() {
   });
 
   const preview = previewForce(forceKey, size);
-  const arenaDef = SELECTABLE_ARENAS.find((a) => a.key === arena) ?? SELECTABLE_ARENAS[0]!;
+  const arenaDef = HARNESS_ARENAS.find((a) => a.key === arena) ?? SELECTABLE_ARENAS[0]!;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
@@ -150,8 +159,9 @@ function CombatHarness() {
           that is the shipping code.
         </p>
         <p className="text-sm text-destructive">
-          This writes to real campaign data: it moves the campaign into its Job phase, starts an
-          encounter, and can change HP and ammunition. Use a character you do not mind spending.
+          This writes to real campaign data and can change HP and ammunition. Ordinary arena tests
+          move the campaign into its Job phase; the North Heywood scene preserves its phase and
+          places it in North Heywood. Use a character you do not mind spending.
         </p>
       </header>
 
@@ -204,7 +214,7 @@ function CombatHarness() {
 
       <Field label={`Arena — ${arenaDef.extent.width} × ${arenaDef.extent.height} m`}>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {SELECTABLE_ARENAS.map((a) => (
+          {HARNESS_ARENAS.map((a) => (
             <Choice
               key={a.key}
               active={a.key === arena}
@@ -220,26 +230,37 @@ function CombatHarness() {
         </div>
       </Field>
 
-      <Field label="Opposition">
-        <div className="grid gap-2 sm:grid-cols-3">
-          {FORCES.map((f) => (
-            <Choice key={f.key} active={f.key === forceKey} onClick={() => setForceKey(f.key)}>
-              {f.label}
-            </Choice>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          {FORCE_SIZES.map((s) => (
-            <Choice key={s} active={s === size} onClick={() => setSize(s)}>
-              {s}
-            </Choice>
-          ))}
-        </div>
-        <p className="font-mono text-[11px] text-muted-foreground">
-          {preview.length} hostile{preview.length === 1 ? "" : "s"}:{" "}
-          {preview.map((m) => m.name).join(", ")}
-        </p>
-      </Field>
+      {arena === NORTH_HEYWOOD.layout.arena.key && (
+        <section className="space-y-2 border border-accent p-4 text-sm">
+          <p>{NORTH_HEYWOOD.narration}</p>
+          <p className="text-muted-foreground">
+            This authored scene uses its own rifleman, lookout and two neutral workers. They want to
+            drive you away. No free opening shot: initiative decides who acts first.
+          </p>
+        </section>
+      )}
+      {arena !== NORTH_HEYWOOD.layout.arena.key && (
+        <Field label="Opposition">
+          <div className="grid gap-2 sm:grid-cols-3">
+            {FORCES.map((f) => (
+              <Choice key={f.key} active={f.key === forceKey} onClick={() => setForceKey(f.key)}>
+                {f.label}
+              </Choice>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            {FORCE_SIZES.map((s) => (
+              <Choice key={s} active={s === size} onClick={() => setSize(s)}>
+                {s}
+              </Choice>
+            ))}
+          </div>
+          <p className="font-mono text-[11px] text-muted-foreground">
+            {preview.length} hostile{preview.length === 1 ? "" : "s"}:{" "}
+            {preview.map((m) => m.name).join(", ")}
+          </p>
+        </Field>
+      )}
 
       <Field label="Starting condition">
         <div className="grid gap-2 sm:grid-cols-2">

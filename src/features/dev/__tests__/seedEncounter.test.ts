@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 
 // The module reaches the backend adapter at import time. Nothing here calls it.
 vi.mock("@/lib/backend", () => ({
+  appendCampaignEvent: vi.fn(),
   getActiveCampaignForCharacter: vi.fn(),
   getActiveEncounter: vi.fn(),
   getCampaign: vi.fn(),
@@ -90,5 +91,38 @@ describe("enemiesFrom", () => {
     const small = previewForce("street_crew", "small").length;
     const heavy = previewForce("street_crew", "heavy").length;
     expect(heavy).toBeGreaterThan(small);
+  });
+});
+
+describe("North Heywood phase preservation", () => {
+  it.each(["life", "hook", "job"])("keeps a %s campaign in its original phase", async (phase) => {
+    const backend = await import("@/lib/backend");
+    const { beginEncounter } = await import("@/features/play/combatFlow");
+    const { seedEncounter } = await import("../seedEncounter");
+    const { northHeywoodScene } = await import("@/engine");
+    vi.clearAllMocks();
+    vi.mocked(backend.getActiveCampaignForCharacter).mockResolvedValue({ id: "c", phase } as never);
+    vi.mocked(backend.getActiveEncounter).mockResolvedValue(null);
+    vi.mocked(backend.getCampaign).mockResolvedValue({
+      campaign: { id: "c", character_id: "p", phase },
+      vitals: { hp_current: 30 },
+      inventory: [],
+    } as never);
+    vi.mocked(backend.getCharacter).mockResolvedValue({ character: { name: "Player" } } as never);
+    vi.mocked(beginEncounter).mockResolvedValue({ live: { id: "enc" }, lines: [] } as never);
+    await seedEncounter({
+      characterId: "p",
+      characterName: "Player",
+      characterHandle: null,
+      arena: northHeywoodScene().layout.arena.key,
+      force: { key: "street_crew", size: "standard" },
+      wound: "none",
+      emptyMagazines: false,
+    });
+    expect(backend.setCampaignPhase).not.toHaveBeenCalled();
+    expect(backend.updateCampaign).toHaveBeenCalledWith("c", { location_key: "north_heywood" });
+    expect(beginEncounter).toHaveBeenCalledWith(
+      expect.objectContaining({ scene: northHeywoodScene(), beatId: null, goal: "repel" }),
+    );
   });
 });

@@ -22,10 +22,9 @@
  * rather than merely damaged: the example rolls a Shoulder Arms Check against
  * a DV read off the weapon and the range, exactly as if shooting a person.
  *
- * Only DAMAGE is persisted, keyed by the piece's authored id. Geometry stays in
- * the engine, the way an arena key does: if a stored fight carried its own
- * copy of the shape, editing an arena would silently disagree with every
- * encounter in flight.
+ * Legacy arenas persist damage against authored IDs. Scene-backed encounters
+ * also freeze geometry and maximum HP at entry, so editing a template or
+ * material later does not change an ongoing fight.
  *
  * Pure: no React, no backend, no randomness that is not handed in.
  */
@@ -79,6 +78,7 @@ export type CoverDamage = Record<string, number>;
 
 /** The printed HP for this piece's material and thickness (pg. 182). */
 export function coverMaxHp(piece: CoverPiece): number {
+  if (piece.maxHp !== undefined) return piece.maxHp;
   const material = coverMaterial(piece.material);
   return piece.thickness === "thick" ? material.thickHp : material.thinHp;
 }
