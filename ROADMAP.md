@@ -453,11 +453,26 @@ Graded on what a player experiences, not on what the engine models somewhere.
 - `ip_awarded`'s payload moves into `ledger.ts` with step 2, the first thing to
   read it back.
 
-**2. IP that arrives.** The judgement window becomes "since the last award"
-rather than the last sixty events, bounded through `packetBudget.ts`, plus the
-Life week-turn award. The three writes in `settleIp` (event, campaign, finance)
-fold into one transaction while they are being touched; today a failure between
-them can lose an award.
+**2. IP that arrives — shipped.**
+
+- Every award, job or life, judges everything since the previous one
+  (`features/campaign/ipAward.ts`). It used to read the last sixty ledger rows,
+  and its roll count was quietly capped at ten. The window is bounded by
+  `PACKET_BUDGET.ipJudgementLog` and cut at its old end, and the judge is told
+  when it was cut.
+- Seven in-world days of life with no award is a session (`ip-awards.json`
+  `_houseRules`, flagged). The life since the last award is judged on the
+  playstyle columns, from a card under the Life log, and the pickers open on
+  what the player declared last time. A month without one is still one award,
+  not four.
+- `award_improvement_points` (migration `20261002020000`) writes the event, the
+  job's `ip_awarded` mark and the character's total in one transaction. The
+  caller sends the `seq` of the last award it judged from, so the same stretch
+  cannot be paid twice from two tabs. Until the migration is applied, the
+  client falls back to the old three writes (`legacyIpAward`), as `APPLIED.md`
+  requires.
+- `ip_awarded` has a contract in `ledger.ts` that reads both its new shape
+  (`kind`, `day`) and every award written before it.
 
 **3. Role Rank.** `spend_ip_on_role_rank` (60 × the new Rank, added to
 `ip-costs.json`) beside the Skill function, with a `role_rank_raised` event and

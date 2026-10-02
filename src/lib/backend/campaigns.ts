@@ -372,6 +372,121 @@ export async function appendCampaignEvent(event: CampaignEventInsert): Promise<C
   return unwrap(await backendClient.from("campaign_events").insert(event).select("*").single());
 }
 
+/** The payload `award_improvement_points` accepts. */
+export type AwardImprovementPointsPayload = {
+  campaign_id: string;
+  kind: "job" | "life";
+  ip: number;
+  summary: string;
+  data: Json;
+  /** The `seq` of the last `ip_awarded` event this award was judged after, or null. */
+  expected_last_award_seq: number | null;
+};
+
+/**
+ * Award Improvement Points in one transaction: the ledger event, the job's
+ * `ip_awarded` mark, and the character's total. Returns the new total. Refuses
+ * when another award has landed since the caller read the ledger.
+ */
+export async function commitIpAward(payload: AwardImprovementPointsPayload): Promise<number> {
+  const { data, error } = await backendClient.rpc("award_improvement_points", {
+    payload: payload as unknown as Json,
+  });
+  if (error && isMissingAwardFunction(error)) return legacyIpAward(payload);
+  if (error) throw new Error(error.message);
+  return data as number;
+}
+
+/** PostgREST: no such function in the schema cache. Means "not migrated yet". */
+const UNDEFINED_FUNCTION = "PGRST202";
+
+function isMissingAwardFunction(error: { code?: string; message: string }): boolean {
+  if (error.code === UNDEFINED_FUNCTION) return true;
+  return (
+    error.message.includes("award_improvement_points") &&
+    (error.message.includes("Could not find") || error.message.includes("does not exist"))
+  );
+}
+
+/**
+ * The writes `award_improvement_points` replaces, for a database that has not
+ * run `20261002020000` yet — the APPLIED.md rule that code tolerates a pending
+ * migration. Three writes, not one transaction, with the window checked first
+ * rather than under a lock: exactly as safe as awards were before, and no less.
+ * Delete once that migration is under Applied.
+ */
+async function legacyIpAward(payload: AwardImprovementPointsPayload): Promise<number> {
+  const campaign = unwrap(
+    await backendClient
+      .from("campaigns")
+      .select("character_id, ip_awarded")
+      .eq("id", payload.campaign_id)
+      .single(),
+  ) as { character_id: string; ip_awarded: number | null } | null;
+  if (!campaign) throw new Error("campaign not found");
+  if (payload.kind === "job" && campaign.ip_awarded !== null) {
+    throw new Error("This job's Improvement Points have already been awarded.");
+  }
+  const last = await lastCampaignEventOfType(payload.campaign_id, "ip_awarded");
+  if ((last?.seq ?? null) !== payload.expected_last_award_seq) {
+    throw new Error("improvement points were awarded since this was judged");
+  }
+  await appendCampaignEvent({
+    campaign_id: payload.campaign_id,
+    type: "ip_awarded",
+    summary: payload.summary,
+    data: payload.data,
+  });
+  if (payload.kind === "job") {
+    await updateCampaign(payload.campaign_id, { ip_awarded: payload.ip });
+  }
+  const finance = unwrap(
+    await backendClient
+      .from("character_finance")
+      .select("improvement_points")
+      .eq("character_id", campaign.character_id)
+      .maybeSingle(),
+  ) as { improvement_points: number } | null;
+  const total = (finance?.improvement_points ?? 0) + payload.ip;
+  const res = await backendClient
+    .from("character_finance")
+    .upsert({ character_id: campaign.character_id, improvement_points: total });
+  if (res.error) throw new Error(res.error.message);
+  return total;
+}
+
+/** The newest event of one type, or null. Reads one row through the seq index. */
+export async function lastCampaignEventOfType(
+  campaignId: string,
+  type: string,
+): Promise<CampaignEvent | null> {
+  const res = await backendClient
+    .from("campaign_events")
+    .select("*")
+    .eq("campaign_id", campaignId)
+    .eq("type", type)
+    .order("seq", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return unwrap(res) ?? null;
+}
+
+/**
+ * The newest `limit` events after a `seq`, oldest first. `afterSeq` null means
+ * from the campaign's start. Newest-bounded, like `listCampaignEvents`, so a
+ * long stretch is cut at its old end rather than its recent one.
+ */
+export async function listCampaignEventsAfter(
+  campaignId: string,
+  afterSeq: number | null,
+  limit: number,
+): Promise<CampaignEvent[]> {
+  let query = backendClient.from("campaign_events").select("*").eq("campaign_id", campaignId);
+  if (afterSeq !== null) query = query.gt("seq", afterSeq);
+  const res = await query.order("seq", { ascending: false }).limit(Math.max(1, Math.trunc(limit)));
+  return (unwrap(res) ?? []).reverse();
+}
+
 export type SettleJobPayload = {
   campaign_id: string;
   job_event_id: string;

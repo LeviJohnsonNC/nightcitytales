@@ -219,31 +219,6 @@ export async function saveFinance(finance: CharacterFinanceInsert) {
 }
 
 /**
- * Add end-of-session Improvement Points to a character's permanent total.
- * Returns the new total.
- */
-export async function addImprovementPoints(characterId: string, amount: number): Promise<number> {
-  const current = unwrap(
-    await backendClient
-      .from("character_finance")
-      .select("improvement_points")
-      .eq("character_id", characterId)
-      .maybeSingle(),
-  ) as { improvement_points: number } | null;
-  const total = (current?.improvement_points ?? 0) + amount;
-  if (!current) {
-    await saveFinance({ character_id: characterId, improvement_points: total });
-    return total;
-  }
-  const res = await backendClient
-    .from("character_finance")
-    .update({ improvement_points: total })
-    .eq("character_id", characterId);
-  if (res.error) throw new Error(res.error.message);
-  return total;
-}
-
-/**
  * Buy one Skill Level with Improvement Points. Returns the I.P. left.
  *
  * The deduction and the raise happen in one transaction (spend_ip_on_skill), so

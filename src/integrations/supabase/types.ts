@@ -1120,6 +1120,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_improvement_points: { Args: { payload: Json }; Returns: number }
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
       install_cyberware: { Args: { payload: Json }; Returns: Json }
       owns_campaign: { Args: { _campaign_id: string }; Returns: boolean }

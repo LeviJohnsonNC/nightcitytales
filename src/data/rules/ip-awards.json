@@ -4,6 +4,11 @@
     "finished": "If the mission was finished (successfully or unsuccessfully), the Players gain Improvement Points based on their Group's success (taking the value from the Group Column) unless they did something that the GM considers stand out from one of the other playstyles that would award them more points.",
     "unfinished": "If the players didn't finish the mission, they are awarded I.P. based on either their Primary or Secondary Playstyle, unless they did something that the GM considers stand out from one of the other playstyles that would award them more points."
   },
+  "_houseRules": {
+    "houseRule": true,
+    "lifeAwardEveryDays": 7,
+    "note": "Not in the book. RED awards I.P. once a session, and a solo game has no session to end: a job closing is one, but a long stretch of life between jobs would otherwise be worth nothing. So when this many in-world days pass with no award, the life since the last one is judged on the playstyle columns, the same way an unfinished mission is. Every award, job or life, covers everything since the previous one."
+  },
   "playstyles": [
     { "id": "warrior", "name": "Warrior" },
     { "id": "socializer", "name": "Socializer" },
