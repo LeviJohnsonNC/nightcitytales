@@ -575,11 +575,14 @@ the engine's:
 - One shared `REPUTATION_RULE` in `narratorRules.ts`, in both prompts (GM
   2.16.0, Life 2.24.0), and two detectors that trace to it:
   `standoff-is-a-facedown` and `unheard-stays-unheard`.
-- Eval: the two new scenarios passed every check 3/3. One full run at one
-  repeat flagged five checks elsewhere (two unsourced durations, an age band,
-  a repeated phrase in a session) in scenarios whose packets did not change;
-  there was no baseline to compare against, so whether any of that is new is
-  still open. The verdict is `bun run eval:compare` over five runs a side.
+- Eval: `eval:compare` over five runs a side, GM 2.15.0 / Life 2.23.0 against
+  2.16.0 / 2.24.0 on `google/gemini-3.7-flash` via OpenRouter (the "after" side
+  also carries step 7's Home line in the Life packet). No change in either
+  direction cleared Fisher's exact test: 14 cells moved within chance, 271 did
+  not move, and runs clean went from 1386/1401 to 1508/1521. The two new
+  scenarios were clean in 119 of 120 runs. The one failure was the detector's
+  own: "He hasn't heard of you" tripped `unheard-stays-unheard`, which now
+  ignores a match with a negation just before it.
 
 **7. Moving house — shipped.** A trade-off, not a reward, which is why it
 belongs.

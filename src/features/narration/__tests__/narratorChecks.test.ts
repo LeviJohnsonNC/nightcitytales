@@ -582,6 +582,24 @@ describe("unheardStaysUnheard", () => {
     expect(found.map((f) => f.quote)).toEqual(["heard of you"]);
   });
 
+  it("lets the narrator say in words that they have not heard of them", () => {
+    for (const narration of [
+      "He hasn't heard of you, but he sees the cut of your coat.",
+      "She doesn't know who you are, and does not care.",
+      "Nobody here has ever heard of you.",
+    ]) {
+      expect(unheardStaysUnheard.run(turn({ narration }), unheard)).toEqual([]);
+    }
+  });
+
+  it("still flags a recognition that only opens with a no", () => {
+    const found = unheardStaysUnheard.run(
+      turn({ narration: '"No, I\'ve heard of you. Go on in."' }),
+      unheard,
+    );
+    expect(found.map((f) => f.quote)).toEqual(["heard of you"]);
+  });
+
   it("lets a stranger size up a face", () => {
     expect(
       unheardStaysUnheard.run(
