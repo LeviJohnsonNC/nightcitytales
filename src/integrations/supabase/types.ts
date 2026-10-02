@@ -1030,6 +1030,7 @@ export type Database = {
           cover: Json
           created_at: string
           id: string
+          layout: Json | null
           name: string | null
           order_ids: Json
           round: number
@@ -1045,6 +1046,7 @@ export type Database = {
           cover?: Json
           created_at?: string
           id?: string
+          layout?: Json | null
           name?: string | null
           order_ids?: Json
           round?: number
@@ -1060,6 +1062,7 @@ export type Database = {
           cover?: Json
           created_at?: string
           id?: string
+          layout?: Json | null
           name?: string | null
           order_ids?: Json
           round?: number
@@ -1160,6 +1163,7 @@ export type Database = {
       }
       start_campaign: { Args: { payload: Json }; Returns: string }
       start_encounter: { Args: { payload: Json }; Returns: string }
+      start_snapshot_encounter: { Args: { payload: Json }; Returns: string }
     }
     Enums: {
       [_ in never]: never
