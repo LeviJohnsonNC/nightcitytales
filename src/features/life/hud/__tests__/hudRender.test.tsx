@@ -86,7 +86,8 @@ describe("the resource strip", () => {
   const html = renderToStaticMarkup(<ResourceStrip status={status} />);
   it("shows three chips with figures only", () => {
     expect(html).toContain("€1,540");
-    expect(html).toContain("3 IP");
+    // Progress against the cheapest raise (Handgun 4 → 5), not a bare balance.
+    expect(html).toContain("3/100 IP");
     expect(html).toContain('aria-label="Money"');
     expect(html).toContain('aria-label="Growth"');
     expect(html).toContain('aria-label="Commitments"');

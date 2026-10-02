@@ -209,3 +209,40 @@ export function facedown(input: FacedownInput, rng: RNG = defaultRng): OpposedCh
     rng,
   );
 }
+
+export type ClimbChange = {
+  /** What the latest job was worth as a deed; 0 for a clean job. */
+  deed: number;
+  before: ReputationStanding;
+  after: ReputationStanding;
+  tierBefore: JobTier;
+  tierAfter: JobTier;
+};
+
+/**
+ * What the latest settled job did to the character's name and the work they
+ * are offered, against where they stood before it.
+ *
+ * `jobsFinished` counts the latest job. The fixer's disposition is today's on
+ * both sides, so a change of tier here is always the job's doing and never a
+ * fixer warming up between screens. Null when nothing has settled.
+ */
+export function climbFromLastJob(input: {
+  jobs: JobSettledEventData[];
+  jobsFinished: number;
+  fixerDisposition: number | null;
+}): ClimbChange | null {
+  const last = input.jobs.at(-1);
+  if (!last) return null;
+  const before = reputationFrom(input.jobs.slice(0, -1));
+  const after = reputationFrom(input.jobs);
+  const tier = (reputation: number, jobsFinished: number) =>
+    jobTierFor({ reputation, jobsFinished, fixerDisposition: input.fixerDisposition }).tier;
+  return {
+    deed: deedLevel(last),
+    before,
+    after,
+    tierBefore: tier(before.level, Math.max(0, input.jobsFinished - 1)),
+    tierAfter: tier(after.level, input.jobsFinished),
+  };
+}

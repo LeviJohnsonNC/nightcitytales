@@ -101,7 +101,18 @@ export function ResourceStrip({ status }: { status: StatusView }) {
       <Chip
         label="Growth"
         icon={<TrendingUp className="size-4" />}
-        figure={top ? goalChipFigure(top) : `${growth.ip} IP`}
+        // Progress toward something, always: with nothing pinned it is the
+        // cheapest raise, so a new character reads "0/20 IP", not a balance of
+        // nothing.
+        figure={
+          top
+            ? goalChipFigure(top)
+            : growth.next
+              ? growth.ready
+                ? "ready"
+                : `${growth.ip}/${growth.next.cost} IP`
+              : `${growth.ip} IP`
+        }
         meter={
           top ? (goalFill(top) ?? 0) : growth.next ? fillFraction(growth.ip, growth.next.cost) : 1
         }

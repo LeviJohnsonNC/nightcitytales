@@ -686,6 +686,10 @@ publishing.ts` moves a faction's clock DOWN and their standing with it, and it
   editing a job. A new way to earn Reputation is a new row in
   `reputation-deeds.json` read from something the engine already recorded, not
   a number the narrator supplies.
+  A rise is told, not diffed: Reputation and the tier move at settlement, where
+  no Life turn sees them change, so `features/campaign/climbNews.ts` reads the
+  latest `job_settled` against the ones before it (`climbFromLastJob`). Aftermath
+  shows it, and `returnToLife` writes it once per job as a `milestone` event.
   Its two dice are the engine's too: the recognition roll is made once a turn
   before the packet and kept beside the narration, and a Facedown travels as an
   ordinary check card whose id is `facedown` (`FACEDOWN_CHECK_ID`) — which is

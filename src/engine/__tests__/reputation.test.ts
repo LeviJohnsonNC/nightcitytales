@@ -3,6 +3,7 @@ import jobContent from "@/data/missions/job-content.json";
 import { FORCE_SIZES } from "../threats";
 import type { JobSettledEventData } from "../ledger";
 import {
+  climbFromLastJob,
   deedLevel,
   JOB_TIERS,
   jobTierFor,
@@ -117,5 +118,37 @@ describe("the tier data asks only for work the generator can make", () => {
         Math.max(...JOB_TIERS[i - 1]!.forceSizes.map(rank)),
       );
     }
+  });
+});
+
+describe("what the latest job did", () => {
+  it("is nothing before a job has settled", () => {
+    expect(climbFromLastJob({ jobs: [], jobsFinished: 0, fixerDisposition: 1 })).toBeNull();
+  });
+
+  it("measures the latest job against the ones before it", () => {
+    const change = climbFromLastJob({
+      jobs: [job({}), job({ seen: 1, loud: 1 })],
+      jobsFinished: 2,
+      fixerDisposition: 1,
+    })!;
+    expect(change.deed).toBe(3);
+    expect(change.before.level).toBe(1);
+    expect(change.after.level).toBe(3);
+  });
+
+  it("sees a new tier arrive with the job that earned it", () => {
+    const steady = JOB_TIERS[1]!;
+    const jobs = [
+      ...Array.from({ length: steady.minJobsFinished - 1 }, () => job({})),
+      job({ seen: 1, named: 1 }, 3000),
+    ];
+    const change = climbFromLastJob({
+      jobs,
+      jobsFinished: steady.minJobsFinished,
+      fixerDisposition: 1,
+    })!;
+    expect(change.tierBefore.id).toBe(JOB_TIERS[0]!.id);
+    expect(change.tierAfter.id).toBe(steady.id);
   });
 });

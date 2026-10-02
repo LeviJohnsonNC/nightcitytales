@@ -114,6 +114,7 @@ import {
   turnProvenanceDataIfAny,
   FACEDOWN_CHECK_ID,
   LEDGER_EVENTS,
+  milestoneEventData,
   recognitionRoll,
   reputationFromLedger,
   type ReputationStanding,
@@ -170,6 +171,7 @@ import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
 import { settleAftermath } from "@/features/campaign/aftermath";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { tallyFrom, type CampaignTally } from "@/features/campaign/tally";
+import { climbNews, milestoneWritten } from "@/features/campaign/climbNews";
 import {
   answerPendingQuestion,
   askOracle,
@@ -287,6 +289,8 @@ export type PlayBundle = {
    * Read by a Facedown (COOL + Reputation) and by the recognition roll.
    */
   reputation: ReputationStanding;
+  /** Every `job_settled` and `milestone` event, whole: what the climb is read from. */
+  climbEvents: CampaignEvent[];
   /**
    * The fee agreed when this job was taken, when the player argued it up from
    * the printed reward. Null on a job nobody negotiated.
@@ -341,11 +345,17 @@ export async function loadPlay(campaignId: string): Promise<PlayBundle> {
   // What this job has given up so far. Undiscovered beat truths never reach the
   // prompt, so the narrator cannot telegraph a twist it has not been told.
   const truths = await listCampaignTruths(campaignId);
-  const reputation = reputationFromLedger(
-    await listCampaignEventsOfTypes(campaignId, [LEDGER_EVENTS.jobSettled]),
-  );
+  // Every settled job and every milestone, not the recent window: Reputation is
+  // the best deed of the whole campaign, and the news of the latest job is
+  // measured against all the ones before it.
+  const climbEvents = await listCampaignEventsOfTypes(campaignId, [
+    LEDGER_EVENTS.jobSettled,
+    LEDGER_EVENTS.milestone,
+  ]);
+  const reputation = reputationFromLedger(climbEvents);
   return {
     reputation,
+    climbEvents,
     campaign: full.campaign,
     places,
     discoveredTruths: truths.rows.map((row) => row.truth_key),
@@ -2089,6 +2099,23 @@ async function settleDeath(bundle: PlayBundle): Promise<void> {
  */
 export async function returnToLife(bundle: PlayBundle): Promise<void> {
   await closeAftermath(bundle.campaign.id, luckPoolMax(statsRecord(bundle.character)));
+  // What the job did for their name, kept in the Life log rather than only
+  // flashed: Reputation and the tier of work move at settlement, where no Life
+  // turn can see them change. Written once per settled job, after the phase
+  // has moved, so a failure here costs the line and never the return.
+  const news = climbNews({
+    events: bundle.climbEvents,
+    jobsFinished: bundle.tally.jobsFinished,
+    npcs: bundle.npcs,
+  });
+  if (news?.milestone && !milestoneWritten(bundle.climbEvents, news.settledEventId)) {
+    await appendCampaignEvent({
+      campaign_id: bundle.campaign.id,
+      type: LEDGER_EVENTS.milestone,
+      summary: news.milestone,
+      data: milestoneEventData({ settledEventId: news.settledEventId }) as unknown as Json,
+    });
+  }
 }
 
 /**

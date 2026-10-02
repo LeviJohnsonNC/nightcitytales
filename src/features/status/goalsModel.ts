@@ -83,7 +83,9 @@ export function goalChipFigure(progress: GoalProgress): string {
   if (progress.status === "blocked") return "blocked";
   switch (progress.currency) {
     case "ip":
-      return `${progress.gap} IP`;
+      // Progress against the price, not the gap: "97 IP" on its own reads as a
+      // balance, and the Growth chip sits beside the Money chip's balance.
+      return `${progress.have}/${progress.need} IP`;
     case "eb":
       return `€${progress.gap.toLocaleString()}`;
     case "standing":
