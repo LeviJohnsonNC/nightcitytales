@@ -1120,7 +1120,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      award_improvement_points: { Args: { payload: Json }; Returns: number }
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
       install_cyberware: { Args: { payload: Json }; Returns: Json }
       owns_campaign: { Args: { _campaign_id: string }; Returns: boolean }
@@ -1129,15 +1128,6 @@ export type Database = {
       save_character: { Args: { payload: Json }; Returns: string }
       save_encounter_state: { Args: { payload: Json }; Returns: undefined }
       settle_job: { Args: { payload: Json }; Returns: Json }
-      spend_ip_on_role_rank: {
-        Args: {
-          p_ability_id: string
-          p_character_id: string
-          p_cost: number
-          p_new_rank: number
-        }
-        Returns: number
-      }
       spend_ip_on_skill: {
         Args: {
           p_character_id: string
