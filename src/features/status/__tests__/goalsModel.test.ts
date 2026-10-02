@@ -19,7 +19,7 @@ describe("how a goal reads on the rail", () => {
       state,
     );
     expect(goalGapLabel(skill)).toBe(`${skill.gap} IP to go`);
-    expect(goalChipFigure(skill)).toBe(`${skill.gap} IP`);
+    expect(goalChipFigure(skill)).toBe(`${skill.have}/${skill.need} IP`);
     expect(goalFill(skill)).toBeCloseTo(50 / skill.need);
 
     const standing = goalProgress({ kind: "standing", factionId: "ncpd", atLeast: 0 }, state);

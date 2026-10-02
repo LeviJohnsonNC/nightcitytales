@@ -50,6 +50,7 @@ export const LEDGER_EVENTS = {
   goalsPinned: "goals_pinned",
   jobSettled: "job_settled",
   movedHouse: "moved_house",
+  milestone: "milestone",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -721,4 +722,22 @@ export function readMovedHouseEventData(raw: unknown): MovedHouseEventData | nul
     lifestyleCost,
     day,
   };
+}
+
+// ---------------------------------------------------------------------------
+// milestone — something on the climb went up (Reputation, the tier of work),
+// written once per settled job on the return to Life. Read back only to know
+// whether that job's milestone is already written.
+// ---------------------------------------------------------------------------
+
+export type MilestoneEventData = { settledEventId: string };
+
+export function milestoneEventData(input: MilestoneEventData): RawPayload {
+  return { settled_event_id: input.settledEventId };
+}
+
+export function readMilestoneEventData(raw: unknown): MilestoneEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const settledEventId = str((raw as RawPayload)["settled_event_id"]);
+  return settledEventId === null ? null : { settledEventId };
 }

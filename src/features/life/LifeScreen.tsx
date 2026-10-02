@@ -94,6 +94,8 @@ import { RipperdocSheet } from "./RipperdocSheet";
 import { WorkshopSheet } from "./WorkshopSheet";
 import { RecordSheet } from "./RecordSheet";
 import { HomeSheet } from "./HomeSheet";
+import { ClimbIntro } from "./ClimbIntro";
+import { climbLogLine } from "@/features/campaign/climbNews";
 import { WithinReachSheet } from "./WithinReachSheet";
 import type { LifeActionCard } from "./lifeResponse";
 import { cardInput } from "./lifeOptions";
@@ -106,7 +108,10 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LifeEvent({ event }: { event: CampaignEvent }) {
+type Climber = { roleId: string | null; homeDistrictKey: string | null };
+const NO_CLIMBER: Climber = { roleId: null, homeDistrictKey: null };
+
+function LifeEvent({ event, climber }: { event: CampaignEvent; climber?: Climber }) {
   const text = event.summary ?? "";
   if (!text) return null;
   switch (event.type) {
@@ -146,6 +151,18 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
       return (
         <p className="my-1 border-l-2 border-destructive bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
           {text}
+        </p>
+      );
+    // Something on the climb went up: a Skill, the Rank, a job's worth of name,
+    // the points that pay for the next one. Kept in the log, not flashed, so the
+    // player can scroll back to the night it happened.
+    case "milestone":
+    case "skill_raised":
+    case "role_rank_raised":
+    case "ip_awarded":
+      return (
+        <p className="my-1 border-l-2 border-accent bg-accent/10 px-3 py-2 text-sm font-semibold text-accent">
+          <span aria-hidden>▲</span> {climbLogLine(event, climber ?? NO_CLIMBER) ?? text}
         </p>
       );
     case "pressure_moved":
@@ -247,6 +264,11 @@ const LIFE_EVENT_TYPES = new Set([
   "cyberware_installed",
   // A new home, or a new Lifestyle: the deposit and the new monthly bill.
   "moved_house",
+  // The climb: what went up, and what paid for it.
+  "milestone",
+  "skill_raised",
+  "role_rank_raised",
+  "ip_awarded",
   // Somebody moved while the character was not looking.
   "world_moved",
   // A new day, and what is waiting in it.
@@ -278,7 +300,15 @@ function shownLifeEvents(events: CampaignEvent[], suppressText?: string): Campai
  * own block, so any narration text identical to it is dropped here: the same
  * paragraph twice reads as a bug, because it is one.
  */
-function LifeLog({ events, suppressText }: { events: CampaignEvent[]; suppressText?: string }) {
+function LifeLog({
+  events,
+  suppressText,
+  climber,
+}: {
+  events: CampaignEvent[];
+  suppressText?: string;
+  climber?: Climber;
+}) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -294,7 +324,7 @@ function LifeLog({ events, suppressText }: { events: CampaignEvent[]; suppressTe
   return (
     <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
       {shown.map((e) => (
-        <LifeEvent key={e.id} event={e} />
+        <LifeEvent key={e.id} event={e} {...(climber ? { climber } : {})} />
       ))}
       <div ref={endRef} />
     </div>
@@ -618,13 +648,17 @@ function LifeRail({
   luckLeft,
   luckMax,
   status,
+  intro = true,
 }: {
   life: ReturnType<typeof useLife>;
   bundle: NonNullable<ReturnType<typeof useLife>["bundle"]>;
   luckLeft: number;
   luckMax: number;
   status: StatusView;
+  /** False where the screen shows the day-one pointer itself (a phone). */
+  intro?: boolean;
 }) {
+  const [reachOpen, setReachOpen] = useState(false);
   return (
     <>
       <CharacterCard
@@ -648,8 +682,16 @@ function LifeRail({
 
       <PeopleStrip people={life.people} standings={life.standings} />
 
+      {intro && (
+        <ClimbIntro
+          campaignId={bundle.campaign.id}
+          pinnedCount={life.pinned.length}
+          onShow={() => setReachOpen(true)}
+        />
+      )}
+
       <div className="grid grid-cols-2 gap-2">
-        <WithinReachSheet life={life} />
+        <WithinReachSheet life={life} open={reachOpen} onOpenChange={setReachOpen} />
         <RecordSheet bundle={bundle} />
         <HomeSheet life={life} />
         <ShopSheet bundle={bundle} />
@@ -678,6 +720,7 @@ function knownPlacesOf(campaign: { known_places: unknown }): string[] {
 export function LifeScreen({ campaignId }: { campaignId: string }) {
   const life = useLife(campaignId);
   const bundle = life.bundle;
+  const [mobileReachOpen, setMobileReachOpen] = useState(false);
 
   /**
    * What the last turn cost.
@@ -909,8 +952,24 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
             luckLeft={luckLeft}
             luckMax={luckMax}
             status={status}
+            intro={false}
           />
         </MobileStatusBar>
+        {/* On a phone the rail waits behind the status bar, so the day-one
+            pointer stands in the column and opens Within reach itself. */}
+        <div className="px-4 lg:hidden [&>section]:mt-3">
+          <ClimbIntro
+            campaignId={bundle.campaign.id}
+            pinnedCount={life.pinned.length}
+            onShow={() => setMobileReachOpen(true)}
+          />
+          <WithinReachSheet
+            life={life}
+            open={mobileReachOpen}
+            onOpenChange={setMobileReachOpen}
+            trigger={false}
+          />
+        </div>
 
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="flex flex-col gap-3 lg:min-h-[70vh]">
@@ -961,6 +1020,10 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
 
             <LifeLog
               events={bundle.events}
+              climber={{
+                roleId: bundle.character.character.role ?? null,
+                homeDistrictKey: bundle.character.finance?.home_district_key ?? null,
+              }}
               {...(life.narration ? { suppressText: life.narration.text } : {})}
             />
 

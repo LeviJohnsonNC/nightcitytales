@@ -620,7 +620,46 @@ belongs.
   buying rather than renting, and the Beaverville houses an Exec is handed at
   Rank 7 and 10.
 
-Not scheduled, on purpose: **favours** as held objects (too close to a second
+**8. Feeling it — shipped.** A critique after step 7 re-scored the tracks:
+
+| Track                         | Before | After 1–7 |
+| ----------------------------- | ------ | --------- |
+| Skills                        | 5      | 8         |
+| Role Ability                  | 2      | 6         |
+| Gear and chrome               | 6      | 7         |
+| Wealth, access, connections   | 4      | 6         |
+| Reputation and story position | 2      | 5         |
+
+It found three ways the climb was built and still not felt:
+
+- **The biggest rises were silent.** Reputation and the tier of work move when a
+  job settles, in Aftermath. The Life screen opens with the new standing as its
+  baseline, so the turn receipt for them never fired.
+  - Aftermath now says "What it did for your name": the deed, Reputation before
+    and after, and a new tier.
+  - It is read off the ledger, the settled job against the ones before it
+    (`climbFromLastJob`, `features/campaign/climbNews.ts`).
+  - The return to Life writes the same news once per job as a `milestone`
+    event.
+- **Nothing pointed at Within reach.** A new character had 0 I.P. and a Growth
+  chip reading "0 IP".
+  - A day-one card now says what there is to climb and opens the sheet. On a
+    phone it sits in the column, because the rail is behind the status bar.
+  - It goes for good once something is pinned or it is dismissed.
+  - The chip reads progress against a price ("3/100 IP"), pinned or not, never a
+    bare balance beside the Money chip.
+- **Proud moments faded after seven seconds.** Skill raises, Rank raises, I.P.
+  awards and milestones are now lines in the Life log, named from their payloads
+  (`climbLogLine`) rather than the SQL's spelling of an id.
+
+Still owed:
+
+- Seeing the whole loop in a browser: nothing from steps 4–8 has been watched
+  rendering.
+- A pacing check: a simulated run of jobs that states when the first raise, the
+  first tier and the first Rank arrive.
+
+as held objects (too close to a second
 dial for disposition until play shows the need), **multiclassing**, and
 **buying a vehicle** (the specs are ours, not the book's, and nothing can
 damage one yet).

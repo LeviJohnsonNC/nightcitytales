@@ -104,7 +104,19 @@ function Section({
   );
 }
 
-export function WithinReachSheet({ life }: { life: Life }) {
+export function WithinReachSheet({
+  life,
+  open,
+  onOpenChange,
+  trigger = true,
+}: {
+  life: Life;
+  /** False for a copy opened only from elsewhere, with no dock tile of its own. */
+  trigger?: boolean;
+  /** Controlled from outside when something else opens it (the day-one pointer). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const [allChrome, setAllChrome] = useState(false);
   const bundle = life.bundle;
   const reach = life.reach;
@@ -115,14 +127,16 @@ export function WithinReachSheet({ life }: { life: Life }) {
   const ready = life.pinned.filter((p) => p.status === "ready").length;
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <DockTile
-          icon={<Crosshair className="size-6" />}
-          label="Within reach"
-          {...(ready > 0 ? { badge: "ready" } : {})}
-        />
-      </SheetTrigger>
+    <Sheet {...(open !== undefined ? { open } : {})} {...(onOpenChange ? { onOpenChange } : {})}>
+      {trigger && (
+        <SheetTrigger asChild>
+          <DockTile
+            icon={<Crosshair className="size-6" />}
+            label="Within reach"
+            {...(ready > 0 ? { badge: "ready" } : {})}
+          />
+        </SheetTrigger>
+      )}
       <SheetContent
         side="right"
         className="w-full overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md"

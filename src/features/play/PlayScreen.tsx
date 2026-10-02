@@ -32,6 +32,7 @@ import { RoleAbilityPanel } from "./RoleAbilityPanel";
 import { raisedWeapon } from "./encounterModel";
 import { gmSkillList, suggestionInput } from "./playModel";
 import { settlementFrom, wasShorted } from "./settlementReport";
+import { climbNews } from "@/features/campaign/climbNews";
 import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
 import { readWalkOnsEventData } from "@/engine";
@@ -541,6 +542,35 @@ function SettlementReport({ events }: { events: CampaignEvent[] }) {
   );
 }
 
+/**
+ * What the job did for their name: the deed, Reputation before and after, and
+ * the work fixers will offer now. Settlement is where these move, so this is
+ * the one screen that sees them change; the return to Life writes the same
+ * news into the log.
+ */
+function NameReport({ bundle }: { bundle: PlayBundle }) {
+  const news = climbNews({
+    events: bundle.climbEvents,
+    jobsFinished: bundle.tally.jobsFinished,
+    npcs: bundle.npcs,
+  });
+  if (!news) return null;
+  return (
+    <section className="space-y-1 border border-border bg-card/50 p-3">
+      <Label>What it did for your name</Label>
+      {news.lines.map((line) => (
+        <p
+          key={line.text}
+          className={line.tone === "good" ? "text-sm font-semibold text-accent" : "text-sm"}
+        >
+          {line.tone === "good" ? "▲ " : ""}
+          {line.text}
+        </p>
+      ))}
+    </section>
+  );
+}
+
 function IpPanel({ play }: { play: ReturnType<typeof usePlay> }) {
   return (
     <IpTallyCard
@@ -588,6 +618,7 @@ function WrapUpCard({
         {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
       </p>
       <SettlementReport events={bundle.events} />
+      {!died && <NameReport bundle={bundle} />}
       <IpPanel play={play} />
       {died ? (
         <Button asChild variant="outline" size="sm">
