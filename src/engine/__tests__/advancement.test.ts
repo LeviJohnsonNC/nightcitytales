@@ -7,8 +7,9 @@ import {
   skillLineKey,
   skillRaiseTotal,
   spendOnSkill,
+  untrainedSkillRaises,
 } from "../advancement";
-import { getSkill, IP_COSTS } from "../rulesData";
+import { getSkill, IP_COSTS, SKILLS } from "../rulesData";
 
 // "autofire" is flagged x2 on the printed sheet; "athletics" is not.
 const DOUBLE = "autofire";
@@ -18,6 +19,11 @@ describe("skillRaiseCost", () => {
   it("charges the new Level times the per-level cost", () => {
     expect(skillRaiseCost(NORMAL, 1)).toBe(1 * IP_COSTS.skillCostPerLevel);
     expect(skillRaiseCost(NORMAL, 5)).toBe(5 * IP_COSTS.skillCostPerLevel);
+  });
+
+  it("is the printed price: 20 I.P. a Level, so Handgun 4 to 5 is 100", () => {
+    expect(IP_COSTS.skillCostPerLevel).toBe(20);
+    expect(skillRaiseCost("handgun", 5)).toBe(100);
   });
 
   it("doubles a Skill the sheet flags x2", () => {
@@ -206,5 +212,39 @@ describe("naming a place-scoped Skill on the spend screen", () => {
     expect(fresh.currentLevel).toBe(0);
     expect(fresh.nextLevel).toBe(1);
     expect(fresh.cost).toBe(skillRaiseCost("local_expert", 1));
+  });
+});
+
+describe("untrainedSkillRaises", () => {
+  const skills = [
+    { skillId: NORMAL, level: 6 },
+    { skillId: "language", level: 4, specialization: "Streetslang" },
+  ];
+  const offered = untrainedSkillRaises(skills, skillRaiseCost(NORMAL, 1));
+
+  it("offers every Skill the sheet does not carry, at Level 1", () => {
+    expect(offered.some((r) => r.skillId === NORMAL)).toBe(false);
+    expect(offered.every((r) => r.currentLevel === 0 && r.nextLevel === 1)).toBe(true);
+    expect(offered.find((r) => r.skillId === "brawling")?.cost).toBe(skillRaiseCost("brawling", 1));
+  });
+
+  it("leaves out a Skill that needs a name before it can exist", () => {
+    for (const skill of SKILLS.filter((s) => s.requiresSpecialization)) {
+      expect(offered.some((r) => r.skillId === skill.id)).toBe(false);
+    }
+  });
+
+  it("puts the x2 Skills after the ordinary ones, and prices them honestly", () => {
+    const firstDouble = offered.findIndex((r) => r.doubleCost);
+    expect(offered.slice(firstDouble).every((r) => r.doubleCost)).toBe(true);
+    expect(offered.find((r) => r.skillId === DOUBLE)?.affordable).toBe(false);
+  });
+
+  it("is buyable through the ordinary spend path", () => {
+    const pick = offered[0]!;
+    expect(spendOnSkill(skills, pick.cost, pick.skillId)).toMatchObject({
+      newLevel: 1,
+      remaining: 0,
+    });
   });
 });

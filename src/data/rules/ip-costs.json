@@ -6,10 +6,11 @@
     "note": "Skill advancement only. Role Ability Ranks and STAT increases are out of scope for this file and must not be inferred from it."
   },
   "_rules": {
-    "skill": "Raising a Skill to a new Level costs the new Level multiplied by the per-level cost. A Skill flagged doubleCost in skills.json costs twice that, the same x2 flag the printed sheet marks.",
+    "skill": "Raising a Skill to a new Level costs the new Level multiplied by the per-level cost: 20 I.P. a Level, so Handgun 4 to 5 is 100 I.P. A Skill flagged doubleCost in skills.json costs twice that, the same x2 flag the printed sheet marks.",
     "levelling": "One Level at a time. Raising a Skill several Levels costs the sum of each step, so the price climbs as the Skill does.",
+    "history": "This file said 10 until October 2026, half the printed price. Levels bought at the old price stand; banked I.P. buys half what it did.",
     "maximum": "maxLevelInPlay in skills.json (10) is the ceiling; a Skill already there cannot be raised."
   },
-  "skillCostPerLevel": 10,
+  "skillCostPerLevel": 20,
   "doubleCostMultiplier": 2
 }

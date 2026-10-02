@@ -96,6 +96,12 @@ once it has actually been run.
 Written and merged, but NOT yet run against the database. The code that reads
 these tables must tolerate their absence until the line moves up to Applied.
 
+- `20261002010000_skill_raise_leaves_a_trace.sql` — `spend_ip_on_skill` also
+  appends a `skill_raised` event to the character's active campaign. Same
+  signature, so no type change. Until it runs a raise still works and simply
+  leaves no event; nothing reads the event yet but the Then and Now page still
+  to come.
+
 - `20260919050000_opening_premise_not_a_commitment.sql` — data only. Clears
   `due_day` on the opening's `opening_just_living` situation and marks it
   `data.premise`, so campaigns started before the fix stop being told one thing

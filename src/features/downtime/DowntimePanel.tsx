@@ -414,6 +414,7 @@ export function DowntimePanel({
             character={character}
             improvementPoints={character.finance?.improvement_points ?? 0}
             newAreas={newAreas}
+            campaignId={campaignId}
           />
         </div>
       </div>

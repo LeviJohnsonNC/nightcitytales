@@ -40,6 +40,7 @@ export const LEDGER_EVENTS = {
   skillCheck: "skill_check",
   backupCalled: "backup_called",
   encounterStarted: "encounter_started",
+  skillRaised: "skill_raised",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -282,6 +283,48 @@ export function readBackupCalledEventData(raw: unknown): BackupCalledEventData |
   const d = raw as RawPayload;
   if (typeof d["responded"] !== "boolean") return null;
   return { responded: d["responded"] };
+}
+
+// ---------------------------------------------------------------------------
+// skill_raised — written by the database, not by TypeScript. `spend_ip_on_skill`
+// appends it inside the same transaction that moves the Level, so the builder
+// is a `jsonb_build_object` in a migration. `SKILL_RAISED_KEYS` is what that SQL
+// must spell, and skillRaised.test.ts reads the newest definition of the
+// function to hold it to them.
+// ---------------------------------------------------------------------------
+
+/** One Level bought with Improvement Points. */
+export type SkillRaisedEventData = {
+  skillId: string;
+  /** The line's specialization, for a repeatable Skill; null otherwise. */
+  specialization: string | null;
+  fromLevel: number;
+  toLevel: number;
+  /** I.P. spent on this Level. */
+  cost: number;
+};
+
+/** The jsonb keys the SQL writer uses, in the order it writes them. */
+export const SKILL_RAISED_KEYS = [
+  "skill_id",
+  "specialization",
+  "from_level",
+  "to_level",
+  "cost",
+] as const;
+
+export function readSkillRaisedEventData(raw: unknown): SkillRaisedEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const skillId = str(d["skill_id"]);
+  const fromLevel = num(d["from_level"]);
+  const toLevel = num(d["to_level"]);
+  const cost = num(d["cost"]);
+  if (skillId === null || fromLevel === null || toLevel === null || cost === null) return null;
+  // One Level at a time is what the function enforces; anything else is not a
+  // raise it could have written.
+  if (toLevel !== fromLevel + 1) return null;
+  return { skillId, specialization: str(d["specialization"]), fromLevel, toLevel, cost };
 }
 
 // ---------------------------------------------------------------------------
