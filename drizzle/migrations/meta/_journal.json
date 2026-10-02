@@ -36,6 +36,13 @@
       "when": 1790968197078,
       "tag": "0004_scene_combat_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790970414952,
+      "tag": "0005_persistent_combat_scenes",
+      "breakpoints": true
     }
   ]
 }

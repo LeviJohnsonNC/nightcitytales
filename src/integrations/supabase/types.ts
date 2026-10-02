@@ -380,6 +380,66 @@ export type Database = {
           },
         ]
       }
+      campaign_scenes: {
+        Row: {
+          anchor: string
+          campaign_id: string
+          created_at: string
+          encounter_id: string | null
+          id: string
+          location_key: string
+          manifest: Json
+          origin: Json
+          result: Json | null
+          revision: number
+          status: string
+          summary: string | null
+        }
+        Insert: {
+          anchor: string
+          campaign_id: string
+          created_at?: string
+          encounter_id?: string | null
+          id?: string
+          location_key: string
+          manifest: Json
+          origin: Json
+          result?: Json | null
+          revision?: number
+          status?: string
+          summary?: string | null
+        }
+        Update: {
+          anchor?: string
+          campaign_id?: string
+          created_at?: string
+          encounter_id?: string | null
+          id?: string
+          location_key?: string
+          manifest?: Json
+          origin?: Json
+          result?: Json | null
+          revision?: number
+          status?: string
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_scenes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_scenes_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: true
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_situations: {
         Row: {
           campaign_id: string
@@ -1151,6 +1211,7 @@ export type Database = {
       owns_campaign: { Args: { _campaign_id: string }; Returns: boolean }
       owns_character: { Args: { _character_id: string }; Returns: boolean }
       owns_encounter: { Args: { _encounter_id: string }; Returns: boolean }
+      read_campaign_scene: { Args: { payload: Json }; Returns: Json }
       save_character: { Args: { payload: Json }; Returns: string }
       save_encounter_state: { Args: { payload: Json }; Returns: undefined }
       settle_job: { Args: { payload: Json }; Returns: Json }
@@ -1173,8 +1234,13 @@ export type Database = {
         }
         Returns: number
       }
+      stage_authored_scene: { Args: { payload: Json }; Returns: Json }
       start_campaign: { Args: { payload: Json }; Returns: string }
       start_encounter: { Args: { payload: Json }; Returns: string }
+      start_persisted_scene_encounter: {
+        Args: { payload: Json }
+        Returns: string
+      }
       start_scene_encounter: { Args: { payload: Json }; Returns: string }
       start_snapshot_encounter: { Args: { payload: Json }; Returns: string }
     }
