@@ -6,7 +6,11 @@
  * not only to the prompt — and since the chronicle is assembled rather than
  * written, what you read here is exactly what the GM is working from.
  */
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { NpcName } from "@/features/cast/NpcName";
+import { THEN_AND_NOW_EVENTS, thenAndNow, type ClimbSection } from "@/features/campaign/thenAndNow";
+import { listCampaignEventsOfTypes } from "@/lib/backend";
 import { DockTile } from "./hud/DockTile";
 import { ScrollText } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -42,6 +46,64 @@ function Row({
   );
 }
 
+const CLIMB_TONE: Record<ClimbSection["lines"][number]["tone"], string> = {
+  good: "text-accent",
+  bad: "text-destructive",
+  neutral: "text-muted-foreground",
+};
+
+/**
+ * Day one beside today, from `thenAndNow`. Losses sit with gains; a climb that
+ * only goes up is a score. Read only when the sheet is open, because it needs
+ * the whole campaign's raises and awards rather than a turn's window.
+ */
+function ThenAndNow({ bundle, open }: { bundle: LifeBundle; open: boolean }) {
+  const campaignId = bundle.campaign.id;
+  const events = useQuery({
+    queryKey: ["then-and-now", campaignId, bundle.events.at(-1)?.seq ?? 0],
+    queryFn: () => listCampaignEventsOfTypes(campaignId, THEN_AND_NOW_EVENTS),
+    enabled: open,
+  });
+  if (!events.data) return null;
+  const sections = thenAndNow({
+    day: bundle.clock.day,
+    character: bundle.character,
+    vitals: bundle.vitals,
+    inventory: bundle.inventory,
+    cyberware: bundle.cyberware,
+    npcs: bundle.npcs,
+    standings: bundle.standings,
+    events: events.data,
+  });
+  return (
+    <section className="border border-hairline p-3">
+      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        Then and now · day 1 to day {bundle.clock.day}
+      </p>
+      {sections.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          The same person who walked in on day one. Give it time.
+        </p>
+      ) : (
+        <div className="mt-2 space-y-3">
+          {sections.map((section) => (
+            <div key={section.title}>
+              <p className="text-xs text-muted-foreground">{section.title}</p>
+              <ul className="mt-1 space-y-0.5">
+                {section.lines.map((line) => (
+                  <li key={line.text} className={`text-sm ${CLIMB_TONE[line.tone]}`}>
+                    {line.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
@@ -54,6 +116,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
+  const [open, setOpen] = useState(false);
   const lines = chronicleFor({
     day: bundle.clock.day,
     events: bundle.events,
@@ -69,7 +132,7 @@ export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
   const clocks = bundle.pressure.filter((p) => !p.clock.hidden && p.clock.filled > 0);
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <DockTile icon={<ScrollText className="size-6" />} label="Record" />
       </SheetTrigger>
@@ -92,6 +155,8 @@ export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
         )}
 
         <div className="mt-5 space-y-5">
+          <ThenAndNow bundle={bundle} open={open} />
+
           {people.length > 0 && (
             <Section title="People">
               {people.map((npc) => (

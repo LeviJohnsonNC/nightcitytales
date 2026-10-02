@@ -413,6 +413,26 @@ export async function lastCampaignEventOfType(
 }
 
 /**
+ * Every event of the given types, oldest first, up to `limit`. For the few
+ * readers that need a whole campaign of one kind of thing — every Level bought,
+ * every award — rather than a turn's recent window.
+ */
+export async function listCampaignEventsOfTypes(
+  campaignId: string,
+  types: readonly string[],
+  limit = 1000,
+): Promise<CampaignEvent[]> {
+  const res = await backendClient
+    .from("campaign_events")
+    .select("*")
+    .eq("campaign_id", campaignId)
+    .in("type", [...types])
+    .order("seq", { ascending: true })
+    .limit(Math.max(1, Math.trunc(limit)));
+  return unwrap(res) ?? [];
+}
+
+/**
  * The newest `limit` events after a `seq`, oldest first. `afterSeq` null means
  * from the campaign's start. Newest-bounded, like `listCampaignEvents`, so a
  * long stretch is cut at its old end rather than its recent one.
