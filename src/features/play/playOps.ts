@@ -1,3 +1,22 @@
+import {
+  commitDeathSave as commitCombatDeathSave,
+  finishCombatAction,
+  loadCombat,
+  owesASave,
+  snapshotFor,
+} from "./combatOps";
+import { payLuck } from "./rollCosts";
+// Keep existing callers compatible while Life adopts the shared operations.
+export {
+  commitAttack,
+  commitBoardMove,
+  commitCallShot,
+  commitReload,
+  endPlayerTurn,
+  finishCombatAction,
+  owesASave,
+  snapshotFor,
+} from "./combatOps";
 /**
  * A play turn, applied.
  *
@@ -14,164 +33,103 @@
  * No React and no TanStack Query in here. usePlay.ts is the thin half that
  * binds these to the query client.
  */
-import { checkResolvedInput, critNote } from "@/features/gm/checkResult";
-import { publishCombatFrames } from "./combatPlayback";
-import { loadPlaceStates } from "@/features/campaign/placeState";
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
-import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
-import { carryOnLine, saidBefore } from "@/features/narration/narratorRules";
-import { rollPendingCheck } from "./rollCheck";
+import { loadPlaceStates } from "@/features/campaign/placeState";
+import { checkResolvedInput, critNote } from "@/features/gm/checkResult";
 import { sinceWords } from "@/features/life/lifeOps";
-import { useCombatPlayback } from "./useCombatPlayback";
+import { carryOnLine, saidBefore } from "@/features/narration/narratorRules";
+import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
+import { rollPendingCheck } from "./rollCheck";
 /**
  * The play loop. Loads a campaign's live state, and runs a turn: the player's
  * intent goes to the GM (gmTurnFn), the engine resolves any proposed skill
  * checks, and everything is appended to the campaign ledger. The engine owns the
  * dice and the beat position; this hook just sequences the calls and persists.
  */
-import { z } from "zod";
-import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/gmResponse";
-import { resolveWalkOns } from "@/features/cast/walkOnMention";
 import {
-  advance,
-  availableExits,
-  beginTurn,
-  currentBeat,
-  getBeat,
-  arenaForPlace,
-  findMission,
-  getMission,
-  failMission,
-  getSkill,
-  currentCombatant,
-  judgeAction,
-  remainingCombatTurn,
-  previewAttack,
-  type CapabilitySnapshot,
-  type LegalityVerdict,
-  type Point,
-  clampDisposition,
-  missionPayout,
-  type IpPlaystyle,
-  clampLuckSpend,
-  luckAfterSpend,
-  luckModifier,
+  DEDUCTION_SKILL,
+  DEFAULT_START,
+  FACEDOWN_CHECK_ID,
+  LEDGER_EVENTS,
   TIME_COSTS,
+  advance,
   advanceClock,
+  areaOf,
+  arenaForPlace,
+  availableExits,
+  currentBeat,
+  currentCombatant,
+  deductionOffer,
+  describePosition,
+  directionName,
+  failMission,
+  findFactionIn,
+  findMission,
+  getBeat,
+  getDistrict,
+  getFaction,
+  getMission,
+  getPlace,
+  getSkill,
+  isCombatZone,
+  isSearchSkill,
+  judgeAction,
+  knownTruths,
   luckPoolMax,
+  mayRollItself,
+  milestoneEventData,
+  missionPayout,
+  neighboursOf,
   nextPhase,
   phaseOf,
-  luckRemaining,
-  opposedCheckForCharacter,
-  performAttack,
-  BACKUP_TIERS,
-  backupTierFor,
-  callBackup,
-  charismaticImpactCheck,
-  getFaction,
-  type BelievabilityResult,
+  placeFamiliarity,
+  recognitionRoll,
+  reputationFromLedger,
+  resolvePosition,
   resolveSkillId,
-  woundActionPenalty,
-  skillCheckForCharacter,
-  mayRollItself,
+  searchWith,
+  searchesFor,
+  truthsAt,
+  truthsInBeat,
+  truthsInMission,
+  truthsRevealedAt,
+  turnProvenanceDataIfAny,
+  type BackupCall,
   type Beat,
   type BeatExit,
   type BeginTurnResult,
+  type BelievabilityResult,
+  type CharismaticImpactResult,
+  type FactionId,
+  type FactionStanding,
+  type IpPlaystyle,
+  type LegalityVerdict,
   type Mission,
   type MissionRuntime,
   type OpposedCheckResult,
   type Opposition,
-  type BackupCall,
-  type CharismaticImpactResult,
-  type PerformAttackResult,
-  type WoundStateCode,
-  findFactionIn,
-  type FactionId,
-  type ObservationReport,
-  type FactionStanding,
-  DEFAULT_START,
-  areaOf,
-  describePosition,
-  getDistrict,
-  isCombatZone,
-  resolvePosition,
-  directionName,
-  neighboursOf,
-  getPlace,
-  DEDUCTION_SKILL,
-  deductionOffer,
-  isSearchSkill,
-  knownTruths,
-  type SkillCheckResult,
-  placeFamiliarity,
-  searchWith,
-  searchesFor,
-  truthsAt,
-  truthsRevealedAt,
-  truthsInBeat,
-  truthsInMission,
   type PlaceState,
-  turnProvenanceDataIfAny,
-  FACEDOWN_CHECK_ID,
-  LEDGER_EVENTS,
-  milestoneEventData,
-  recognitionRoll,
-  reputationFromLedger,
   type ReputationStanding,
+  type SkillCheckResult,
+  type WoundStateCode,
 } from "@/engine";
+import { resolveWalkOns } from "@/features/cast/walkOnMention";
+import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/gmResponse";
+import { z } from "zod";
 
-import {
-  appendCampaignEvent,
-  closeAftermath,
-  getCampaign,
-  getCharacter,
-  listCampaignEvents,
-  listCampaignEventsOfTypes,
-  listCampaignTruths,
-  recordTruthDiscovery,
-  findCampaignNpc,
-  setCampaignClock,
-  listClocks,
-  setCampaignFlag,
-  type CampaignFlag,
-  setCampaignPhase,
-  setInventoryQuantity,
-  setNpcDisposition,
-  updateCampaign,
-  updateCampaignVitals,
-  type Campaign,
-  type CampaignEvent,
-  type CampaignInventoryItem,
-  type CampaignCyberware,
-  type CampaignNpc,
-  type CampaignVitals,
-  type FullCharacter,
-  type Json,
-} from "@/lib/backend";
+import { settleAftermath } from "@/features/campaign/aftermath";
+import { chronicleFor } from "@/features/campaign/chronicleModel";
+import { climbNews, milestoneWritten } from "@/features/campaign/climbNews";
+import { saveLiveEncounter, type LiveEncounter } from "@/features/campaign/encounterState";
+import { judgeAndAward, type IpTally } from "@/features/campaign/ipAward";
 import { applyItemUse, planItemUse } from "@/features/campaign/itemUse";
-import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
-import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
-import { recognitionRecord, reputationProp } from "@/features/campaign/recognition";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
-import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
+import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import {
   oppositionProfileOf,
   reconcileOpposition,
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
-import { logAttack, logDeathSave } from "@/features/campaign/combatLog";
-import { reloadWeapon } from "@/features/campaign/shopping";
-import {
-  loadLiveEncounter,
-  EncounterChangedError,
-  saveLiveEncounter,
-  type LiveEncounter,
-} from "@/features/campaign/encounterState";
-import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
-import { settleAftermath } from "@/features/campaign/aftermath";
-import { chronicleFor } from "@/features/campaign/chronicleModel";
-import { tallyFrom, type CampaignTally } from "@/features/campaign/tally";
-import { climbNews, milestoneWritten } from "@/features/campaign/climbNews";
 import {
   answerPendingQuestion,
   askOracle,
@@ -179,63 +137,6 @@ import {
   secretComplicationFor,
   type ComplicationMemory,
 } from "@/features/campaign/oracles";
-import { gmTurnFn } from "@/features/gm/gmTurn.server";
-import { judgeAndAward, type IpTally } from "@/features/campaign/ipAward";
-import {
-  actorFor,
-  characterSummary,
-  findNpcByKey,
-  localExpertIn,
-  npcDispositionAfter,
-  statsRecord,
-  npcSummaries,
-  jobOutcome,
-  recentEventLines,
-} from "./playModel";
-import {
-  beginEncounter,
-  closeOutFight,
-  describeAttack,
-  movePlayer,
-  movePlayerTo,
-  runNpcTurns,
-  settleNpcTurns,
-} from "./combatFlow";
-import {
-  distanceToTarget,
-  findTarget,
-  pendingAttackFrom,
-  type AttackOption,
-  type PendingAttack,
-} from "./attackPrompt";
-import {
-  dvBandName,
-  facedownOutcomeLine,
-  facedownPrompt,
-  oppositionFor,
-  pendingChecksFrom,
-  snapToPublishedDv,
-  type CheckRoll,
-  type PendingCheck,
-} from "./checkPrompt";
-import { deathSaveOwed, pendingDeathSaveFrom, type PendingDeathSave } from "./deathSavePrompt";
-import {
-  combatAwarenessAllocation,
-  execTeam,
-  liveRoleAbility,
-  medicineDoses,
-  medicineSpecialties,
-  makerSpecialties,
-  combatRoleEffects,
-  withPlayerRoleEffects,
-  makerSpecialtyBudget,
-  pendingBackup,
-  roleCheckModifiers,
-  withAbilityState,
-} from "./roleAbilityModel";
-import { arriveBackup, pendingBackupFrom } from "./backupFlow";
-import { publishStory } from "@/features/campaign/publishing";
-import { JOB_PAYOUT_FLAG } from "@/features/life/hookOffer";
 import {
   applyPressure,
   notableFrom,
@@ -246,13 +147,63 @@ import {
   standingLines,
   type LivePressure,
 } from "@/features/campaign/pressure";
+import { publishStory } from "@/features/campaign/publishing";
+import { recognitionRecord, reputationProp } from "@/features/campaign/recognition";
+import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
+import { applyInsight, insightLine } from "@/features/campaign/socialInsight";
+import { tallyFrom, type CampaignTally } from "@/features/campaign/tally";
+import { buildGmContext, renderGmUserPrompt } from "@/features/gm/gmContext";
+import { gmTurnFn } from "@/features/gm/gmTurn.server";
+import { JOB_PAYOUT_FLAG } from "@/features/life/hookOffer";
 import {
-  ammoAfterShot,
-  buildCapabilitySnapshot,
-  renderCapabilityLines,
-  withAttackSpent,
-} from "./capabilityModel";
+  appendCampaignEvent,
+  closeAftermath,
+  listCampaignEvents,
+  listCampaignEventsOfTypes,
+  listCampaignTruths,
+  listClocks,
+  recordTruthDiscovery,
+  setCampaignClock,
+  setCampaignFlag,
+  setCampaignPhase,
+  setInventoryQuantity,
+  setNpcDisposition,
+  updateCampaign,
+  type Campaign,
+  type CampaignCyberware,
+  type CampaignEvent,
+  type CampaignFlag,
+  type CampaignInventoryItem,
+  type CampaignNpc,
+  type CampaignVitals,
+  type FullCharacter,
+  type Json,
+} from "@/lib/backend";
+import { distanceToTarget, findTarget } from "./attackPrompt";
+import { pendingBackupFrom } from "./backupFlow";
+import { renderCapabilityLines } from "./capabilityModel";
+import {
+  dvBandName,
+  facedownOutcomeLine,
+  facedownPrompt,
+  pendingChecksFrom,
+  snapToPublishedDv,
+  type CheckRoll,
+  type PendingCheck,
+} from "./checkPrompt";
+import { beginEncounter, movePlayer } from "./combatFlow";
+import { type PendingDeathSave } from "./deathSavePrompt";
 import { spendTurn } from "./encounterModel";
+import {
+  characterSummary,
+  findNpcByKey,
+  localExpertIn,
+  npcDispositionAfter,
+  npcSummaries,
+  recentEventLines,
+  statsRecord,
+} from "./playModel";
+import { combatRoleEffects, liveRoleAbility, withAbilityState } from "./roleAbilityModel";
 
 /**
  * How many checks one turn may put on the table at once. Two lets a compound
@@ -313,12 +264,8 @@ export type PlayBundle = {
 };
 
 export async function loadPlay(campaignId: string): Promise<PlayBundle> {
-  const full = await getCampaign(campaignId);
-  if (!full) throw new Error("Campaign not found.");
-  if (!full.vitals) throw new Error("Campaign has no vitals to play with.");
-
-  const character = await getCharacter(full.campaign.character_id);
-  if (!character) throw new Error("This campaign's character no longer exists.");
+  const full = await loadCombat(campaignId);
+  const { character, events, encounter } = full;
 
   let mission: Mission | null = null;
   let runtime: MissionRuntime | null = null;
@@ -331,14 +278,6 @@ export async function loadPlay(campaignId: string): Promise<PlayBundle> {
     exits = availableExits(mission, runtime);
   }
 
-  const events = await listCampaignEvents(campaignId);
-  // A fight read back from the database has no Role Ability on it — combatant
-  // rows do not carry one — so the character's live division is put back on the
-  // player combatant here, once, before anything reads the encounter.
-  const encounter = withPlayerRoleEffects(
-    await loadLiveEncounter(campaignId),
-    combatRoleEffects(full.campaign, character),
-  );
   // What the character has already learned about the ground, so a job at a
   // building they have cased before is not introduced from scratch.
   const places = await loadPlaceStates(campaignId);
@@ -381,27 +320,6 @@ export async function loadPlay(campaignId: string): Promise<PlayBundle> {
     tally: tallyFrom(full.flags),
     complication: secretComplicationFor(full.flags, full.campaign.current_mission_id),
   };
-}
-
-/** The negotiated fee on the campaign's books, if this job carries one. */
-/**
- * What the character can actually do right now, off one bundle.
- *
- * One builder for every caller — the GM's context, the cards' greying-out, and
- * the board's own actions. Three copies of these seven fields is three chances
- * for one of them to be reading a different beat than the gate it feeds.
- */
-export function snapshotFor(bundle: PlayBundle): CapabilitySnapshot {
-  return buildCapabilitySnapshot({
-    character: bundle.character,
-    vitals: bundle.vitals,
-    inventory: bundle.inventory,
-    cyberware: bundle.cyberware,
-    roleState: bundle.campaign.role_state,
-    encounter: bundle.encounter,
-    events: bundle.events,
-    beatId: bundle.beat?.id ?? null,
-  });
 }
 
 /**
@@ -1087,21 +1005,6 @@ async function rollWhatIsSmall(before: PlayBundle): Promise<void> {
 }
 
 /**
- * Take the Luck a roll was made with out of the pool.
- *
- * Called when the roll is committed, not when the stepper moves: Luck is
- * dedicated before the dice and paid for once the dice have been thrown, so a
- * card the player abandons mid-turn costs them nothing.
- */
-async function payLuck(bundle: PlayBundle, spend: number): Promise<void> {
-  if (spend <= 0) return;
-  const remaining = luckRemaining(bundle.vitals.luck_current, statsRecord(bundle.character));
-  await updateCampaignVitals(bundle.campaign.id, {
-    luck_current: luckAfterSpend(remaining, spend),
-  });
-}
-
-/**
  * Persist a rolled opposed check: the two rolls to the ledger, the NPC's numbers
  * to their row so the same face opposes the same way next time, and then the
  * result to the GM to narrate exactly as it landed.
@@ -1536,417 +1439,6 @@ async function applyJobSearch(
 }
 
 /**
- * Persist the rolled attack and its costs, preserving the player's remaining
- * choices. Only a finished turn advances hostiles and narrates the exchange.
- */
-export async function commitAttack(
-  bundle: PlayBundle,
-  pending: PendingAttack,
-  option: AttackOption,
-  result: PerformAttackResult,
-  luckSpent = 0,
-): Promise<void> {
-  if (!bundle.encounter) throw new Error("There is no encounter to attack in.");
-  if (
-    pending.encounterVersion !== undefined &&
-    pending.encounterVersion !== bundle.encounter.version
-  ) {
-    throw new EncounterChangedError();
-  }
-  const preview = previewAttack(snapshotFor(bundle), pending.target.id, option.weapon.itemId);
-  if (preview.gap) throw new Error(preview.gap);
-  if (owesASave(bundle)) throw new Error("Resolve the Death Save before attacking.");
-  const campaignId = bundle.campaign.id;
-  const beatId = pending.beatId;
-
-  // The Round's bookkeeping: the Action is spent, the shot counts against the
-  // weapon's ROF, and a round comes out of the magazine.
-  const live: LiveEncounter = {
-    ...bundle.encounter,
-    state: result.state,
-    data: withAttackSpent(
-      { ...bundle.encounter, state: result.state },
-      pending.attacker.id,
-      option.weapon.itemId,
-    ),
-  };
-  const spent = ammoAfterShot(bundle.inventory, option.weapon.itemId);
-  // The saved encounter, at its new version: the hostile Turns this attack
-  // triggers save again, and sending the pre-attack token there would refuse
-  // the fight's own next write.
-  const saved = await saveLiveEncounter(
-    live,
-    spent ? { inventoryId: spent.inventoryId, loaded: spent.ammoLoaded } : null,
-  );
-  await logAttack(
-    campaignId,
-    { attack: result.attack, damage: result.damage, applied: result.applied },
-    {
-      attackerName: pending.attacker.name,
-      targetName: pending.target.name,
-      weapon: option.weapon.name,
-      ...(spent
-        ? {
-            ammo: {
-              inventoryId: spent.inventoryId,
-              before: spent.ammoLoaded + 1,
-              after: spent.ammoLoaded,
-            },
-          }
-        : {}),
-      ...(result.targetWoundState ? { targetWoundState: result.targetWoundState } : {}),
-      beatId,
-    },
-  );
-  await payLuck(bundle, luckSpent);
-  publishCombatFrames(campaignId, [
-    {
-      live: saved,
-      kind: "attack",
-      actorId: pending.attacker.id,
-      targetId: pending.target.id,
-      targetHpBefore: pending.target.hp,
-      hit: result.attack.hit,
-      weaponRange: option.weapon.rangeType,
-      attackStyle: option.weapon.melee ? "melee" : "ranged",
-      text: describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
-      impact: result.attack.hit
-        ? `HIT · ${pending.target.hp} → ${result.state.combatants[pending.target.id]?.hp} HP`
-        : "MISS",
-    },
-  ]);
-
-  await finishCombatAction(bundle, saved, beatId, [
-    describeAttack(pending.attacker.name, pending.target.name, option.weapon.name, result),
-  ]);
-}
-
-/** Retain the player's remaining choices; only a spent turn advances initiative. */
-export async function finishCombatAction(
-  bundle: PlayBundle,
-  live: LiveEncounter,
-  beatId: string | null,
-  lines: string[] = [],
-): Promise<void> {
-  if (live.state.status !== "active") {
-    await closeOutFight(bundle.campaign.id, beatId, live);
-    return;
-  }
-  if (deathSaveOwed(live)) return;
-  // Re-read ammunition and vitals after the action. Previewing against the
-  // pre-shot magazine would keep an empty weapon's second shot available.
-  const full = await getCampaign(bundle.campaign.id);
-  if (!full?.vitals) throw new Error("Campaign could not be reloaded after the action.");
-  const fresh = { ...bundle, vitals: full.vitals, inventory: full.inventory, encounter: live };
-  if (remainingCombatTurn(snapshotFor(fresh)).exhausted) {
-    await handOverTheTurn(fresh, live, beatId, lines);
-  }
-}
-
-/**
- * Is the player standing on their own Turn with a Death Save unrolled?
- *
- * CP:R pg. 187: a Mortally Wounded character makes the save at the start of
- * their Turn, before they do anything else. The board is disabled while one is
- * owed, but the rule belongs behind the buttons as well as on them — every
- * board action is a write, and a refusal that only lives in the component is
- * one stale render away from being no refusal at all.
- */
-export function owesASave(bundle: PlayBundle): boolean {
-  return Boolean(deathSaveOwed(bundle.encounter));
-}
-
-/**
- * The player walking to a spot they picked on the board.
- *
- * The first player action in the game that never goes near the model: the
- * board hands the engine a point, the engine prices and clamps it, and the GM
- * is told afterwards. An unused Action remains available; a move that spends
- * the final remaining choice hands the Turn over.
- */
-export async function commitBoardMove(bundle: PlayBundle, to: Point): Promise<void> {
-  if (!bundle.encounter) throw new Error("There is no fight to move in.");
-  if (owesASave(bundle)) return;
-  const beatId = bundle.beat?.id ?? null;
-  const moved = await movePlayerTo({
-    campaignId: bundle.campaign.id,
-    beatId,
-    live: bundle.encounter,
-    capability: snapshotFor(bundle),
-    to,
-    intent: "moves on the board",
-  });
-  if (moved.refusal) {
-    await appendCampaignEvent({
-      campaign_id: bundle.campaign.id,
-      type: "action_refused",
-      // The same shape narrate()'s own refusals take, so the GM reads one
-      // kind of refusal rather than two.
-      summary: `Not possible: ${moved.refusal.reason}`,
-      data: { code: moved.refusal.code } as unknown as Json,
-      ...(beatId ? { beat_id: beatId } : {}),
-    });
-  } else {
-    await finishCombatAction(bundle, moved.live, beatId);
-  }
-}
-
-/**
- * The player calling a shot by clicking somebody on the board.
- *
- * Deliberately the SMALLEST possible change to how an attack happens: it posts
- * the same attack_prompt the GM's proposal posts, so the card, the dice, the
- * Luck stepper and the whole resolution path behind them are untouched. Only
- * who started it moves — from the model naming a target to the player pointing
- * at one — and the gate judges it either way.
- */
-export async function commitCallShot(
-  bundle: PlayBundle,
-  targetId: string,
-  weaponItemId: string,
-): Promise<void> {
-  const live = bundle.encounter;
-  if (!live || live.state.status !== "active") return;
-  if (owesASave(bundle)) return;
-  const target = live.state.combatants[targetId];
-  if (!target || target.defeated || target.isPlayer) return;
-
-  // Clicking the same person twice is one shot, not two prompts.
-  //
-  // The ledger is append-only and the card reads the NEWEST unresolved prompt,
-  // so a second identical row changed nothing anybody could see — it just sat
-  // in the log, and in the eight lines of recent events the GM is handed, where
-  // a few impatient clicks push the actual fiction out of the window. Asked
-  // through the same function the card is rendered from, so "already prompted"
-  // and "already showing" cannot mean two different things.
-  const showing = pendingAttackFrom(
-    bundle.events,
-    bundle.character,
-    live,
-    bundle.inventory,
-    bundle.vitals,
-  );
-  if (showing && showing.target.id === target.id) return;
-  const campaignId = bundle.campaign.id;
-  const beatId = bundle.beat?.id ?? null;
-  const beatFields = beatId ? { beat_id: beatId } : {};
-
-  // Measured, never asserted — the same distance the DV on the board was read
-  // at, and the same one the card will re-measure when the trigger is pulled.
-  const metres = distanceToTarget(live, targetId);
-  const preview = previewAttack(snapshotFor(bundle), targetId, weaponItemId);
-  const verdict = preview.verdict;
-  if (preview.gap && verdict.ok) throw new Error(preview.gap);
-  if (!verdict.ok) {
-    await appendCampaignEvent({
-      campaign_id: campaignId,
-      type: "action_refused",
-      summary: `Not possible: ${verdict.reason}`,
-      data: { code: verdict.code } as unknown as Json,
-      ...beatFields,
-    });
-    return;
-  }
-
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "attack_prompt",
-    summary: `Attack ${target.name} at ${metres}m`,
-    data: {
-      targetId: target.id,
-      targetName: target.name,
-      distance: metres,
-      intent: "takes the shot",
-    } as unknown as Json,
-    ...beatFields,
-  });
-}
-
-/**
- * Putting rounds back in the gun, mid-fight.
- *
- * Reloading existed only in Life's shop, where nothing budgets a Turn. In a
- * firefight it is an Action like any other, so it goes through the gate — which
- * refuses it when the Action is spent, the gun is full, or there is nothing
- * left to load — and then spends what the gate priced.
- */
-export async function commitReload(bundle: PlayBundle, weaponItemId: string): Promise<void> {
-  if (owesASave(bundle)) return;
-  const campaignId = bundle.campaign.id;
-  const beatId = bundle.beat?.id ?? null;
-  const verdict = judgeAction(snapshotFor(bundle), { kind: "reload", weapon: weaponItemId });
-  if (!verdict.ok) {
-    await appendCampaignEvent({
-      campaign_id: campaignId,
-      type: "action_refused",
-      summary: `Not possible: ${verdict.reason}`,
-      data: { code: verdict.code } as unknown as Json,
-      ...(beatId ? { beat_id: beatId } : {}),
-    });
-    return;
-  }
-
-  const row = bundle.inventory.find((r) => r.slot === "weapon" && r.item_id === weaponItemId);
-  if (!row) return;
-  const done = await reloadWeapon(campaignId, row.id);
-  if (!done.ok) return;
-
-  // The Action, charged out of the fight's own economy. Outside combat there is
-  // no Turn to spend and nothing to write.
-  const live = bundle.encounter;
-  if (!live || live.state.status !== "active") return;
-  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
-  const existing = player ? live.data[player.id] : null;
-  if (!player || !existing) return;
-  const saved = await saveLiveEncounter({
-    ...live,
-    data: {
-      ...live.data,
-      [player.id]: {
-        ...existing,
-        turn: spendTurn(existing.turn, live.state.round, verdict.cost, weaponItemId),
-      },
-    },
-  });
-  publishCombatFrames(campaignId, [
-    { live: saved, kind: "reload", actorId: player.id, text: `${player.name} reloads.` },
-  ]);
-  await finishCombatAction(bundle, saved, beatId);
-}
-
-/**
- * The player giving up the rest of their Turn.
- *
- * What `handOverTheTurn` was built for and nothing could call: until the board
- * existed, attacking was the only thing that advanced a Round, so a character
- * who moved and chose not to shoot left the hostiles standing still.
- */
-export async function endPlayerTurn(bundle: PlayBundle): Promise<void> {
-  const live = bundle.encounter;
-  if (!live || live.state.status !== "active") return;
-  const player = Object.values(live.state.combatants).find((c) => c.isPlayer);
-  if (!player) return;
-  // Only the player's own Turn is theirs to give up. The board disables the
-  // button off-turn, but a Turn belonging to somebody else must not be endable
-  // through any path — handing it over would walk the order past whoever is
-  // actually on the clock.
-  if (!currentCombatant(live.state)?.isPlayer) return;
-  // A Mortally Wounded character rolls their Death Save before anything else
-  // happens on their Turn (CP:R pg. 187). Handing the Turn over here would
-  // walk the order straight past a save they owe.
-  if (owesASave(bundle)) return;
-  await handOverTheTurn(bundle, live, bundle.beat?.id ?? null, [
-    `${player.name} takes no further action and ends their Turn.`,
-  ]);
-}
-
-/**
- * Keys for player turns this session has already handed over.
- *
- * A double-submitted mutation would run the hostile Turns twice — free damage,
- * silently. The encounter version protects saves, while this guard also
- * avoids starting duplicate enemy work and ledger appends within this session.
- * The encounter's own (round, activeIndex) identifies the turn being ended, so
- * a second call with the same one is a duplicate and does nothing.
- *
- * Deliberately session-local and deliberately not a lock. It closes the
- * double-click and the retried mutation. Cross-tab writes also carry the
- * encounter version; the ledger still spans multiple writes (see AGENTS.md).
- */
-const handedOver = new Set<string>();
-
-/**
- * The player's Turn is over: the hostiles take theirs, Backup arrives if its
- * Round has come, the fight closes if it is finished, a Death Save is posted
- * if one is owed, and the GM narrates the lot — once.
- *
- * Extracted from commitAttack so that attacking is no longer the ONLY way a
- * Round can advance. Everything a player does that ends their Turn comes
- * through here, which is what stops a Move-and-pass from leaving the hostiles
- * standing still. `lines` is what the player just did, in the engine's own
- * words; every line this adds joins it, and the model narrates the whole
- * exchange in one call rather than one call per action.
- */
-async function handOverTheTurn(
-  bundle: PlayBundle,
-  from: LiveEncounter,
-  beatId: string | null,
-  lines: string[],
-): Promise<void> {
-  const campaignId = bundle.campaign.id;
-  const key = `${from.id}:${from.state.round}:${from.state.activeIndex}`;
-  if (handedOver.has(key)) return;
-  handedOver.add(key);
-  try {
-    await runTheTurnOver(bundle, from, beatId, lines, campaignId);
-  } catch (error) {
-    // A turn that FAILED has not been handed over. Leaving the key behind
-    // would make the fight unretryable — the player presses Retry, this
-    // returns silently, and the hostiles never move again.
-    handedOver.delete(key);
-    throw error;
-  }
-}
-
-async function runTheTurnOver(
-  bundle: PlayBundle,
-  from: LiveEncounter,
-  beatId: string | null,
-  lines: string[],
-  campaignId: string,
-): Promise<void> {
-  let live = from;
-  const npc = await runNpcTurns(campaignId, beatId, live);
-  live = npc.live;
-  lines.push(...npc.lines);
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    beat_id: beatId,
-    type: "turn_ended",
-    data: { encounterId: from.id, round: from.state.round },
-  });
-
-  // Backup that was called earlier turns up once its Round comes round, and
-  // joins the order from there. Checked after the hostile Turns, because that
-  // is what advances the Round.
-  const inbound = pendingBackup(bundle.campaign);
-  if (inbound && live.state.status === "active" && live.state.round >= inbound.arrivesOnRound) {
-    const tier = BACKUP_TIERS.find((t) => t.name === inbound.tierName) ?? null;
-    if (tier) {
-      const arrival = await arriveBackup({
-        campaignId,
-        beatId,
-        live,
-        tier,
-        groups: inbound.groups,
-      });
-      live = arrival.live;
-      lines.push(arrival.line);
-    }
-    await updateCampaign(campaignId, {
-      role_state: withAbilityState(bundle.campaign, "backup", {}) as Json,
-    });
-  }
-
-  // The fight's ending, and the Death Save a Mortally Wounded player owes
-  // before they can act again — the same pair the opening writes.
-  const { status, owed } = await settleNpcTurns(campaignId, beatId, live);
-
-  // Routine exchanges have a complete deterministic report. No model round trip
-  // is needed to tell the player who fired, what hit, or whose turn comes next.
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    beat_id: beatId,
-    type: "combat_exchange",
-    summary: [...lines, status].filter(Boolean).join(" "),
-    data: { encounterId: live.id, round: live.state.round },
-  });
-  publishCombatFrames(campaignId, [
-    { live, kind: "turn", text: status || (owed ? "Death Save required." : "Your turn.") },
-  ]);
-}
-
-/**
  * A finished job: pay the printed reward into the campaign's eurobucks, write
  * the wrap-up to the ledger, and close the campaign. Every number comes from
  * the mission's own reward block — nothing is invented here.
@@ -2072,21 +1564,6 @@ export async function settleIp(
   });
 }
 
-/** The character died: fail the job and close the campaign. */
-async function settleDeath(bundle: PlayBundle): Promise<void> {
-  const campaignId = bundle.campaign.id;
-  if (bundle.mission && bundle.runtime) {
-    await saveMissionRuntime(campaignId, failMission(bundle.runtime));
-  }
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "campaign_ended",
-    summary: `${bundle.character.character.name} died in Night City. The job is over.`,
-    data: { reason: "death" } as unknown as Json,
-  });
-  await updateCampaign(campaignId, { status: "lost" });
-}
-
 /**
  * Back to the street.
  *
@@ -2118,74 +1595,16 @@ export async function returnToLife(bundle: PlayBundle): Promise<void> {
   }
 }
 
-/**
- * Persist the player's rolled Death Save. The engine already applied it; this
- * writes it down and hands the GM the exact outcome to narrate.
- */
+/** Job-specific consequence of the shared combat death-save operation. */
 export async function commitDeathSave(
   bundle: PlayBundle,
   pending: PendingDeathSave,
   result: BeginTurnResult,
 ): Promise<void> {
-  if (!bundle.encounter) throw new Error("There is no encounter to save against.");
-  const campaignId = bundle.campaign.id;
-  const beatId = pending.beatId;
-  const save = result.deathSave;
-  if (!save) throw new Error("The engine did not roll a Death Save.");
-
-  const live = await saveLiveEncounter({
-    ...bundle.encounter,
-    state: result.state,
-    data: result.died
-      ? {
-          ...bundle.encounter.data,
-          [pending.combatant.id]: {
-            ...bundle.encounter.data[pending.combatant.id]!,
-            exitReason: "dead",
-          },
-        }
-      : bundle.encounter.data,
-  });
-  await logDeathSave(campaignId, save, {
-    combatantName: pending.combatant.name,
-    died: result.died,
-    beatId,
-  });
-
-  publishCombatFrames(campaignId, [
-    {
-      live,
-      kind: "status",
-      actorId: pending.combatant.id,
-      text: result.died
-        ? `${pending.combatant.name} failed the Death Save.`
-        : `${pending.combatant.name} survived the Death Save.`,
-    },
-  ]);
-
-  // closeOutFight alone, never settleNpcTurns: the save has just been ROLLED.
-  // Surviving one leaves the player Mortally Wounded and still on their own
-  // Turn, so asking for the prompt again here would owe them a second save for
-  // passing the first, forever.
-  const status = await closeOutFight(campaignId, beatId, live);
-  const line = result.died
-    ? `${pending.combatant.name} failed the Death Save and is DEAD (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}${save.autoFail ? ", a natural 10" : ""}).`
-    : `${pending.combatant.name} survived the Death Save (d10 ${save.roll} + ${save.penalty} = ${save.effective} vs BODY ${pending.body}); they are still Mortally Wounded and the next save is at +${save.penaltyAfter}.`;
-
-  if (result.died) await settleDeath(bundle);
-
-  const fresh: PlayBundle = {
-    ...bundle,
-    events: await listCampaignEvents(campaignId),
-    encounter: live,
-  };
-  await narrate(
-    fresh,
-    `(ENGINE: the Death Save is RESOLVED. ${line}${status} Narrate exactly this. Do not revive them, do not soften it, do not re-roll it. ${
-      result.died ? "Close the scene on that death." : "End on a decision."
-    })`,
-    { logInput: false },
-  );
+  await commitCombatDeathSave(bundle, pending, result);
+  if (result.died && bundle.mission && bundle.runtime) {
+    await saveMissionRuntime(bundle.campaign.id, failMission(bundle.runtime));
+  }
 }
 
 export async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void> {

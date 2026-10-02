@@ -84,3 +84,11 @@ When a batch of migrations has been applied to the deployed database:
 `baseline.sql` deliberately lives here rather than in `supabase/migrations/`.
 The deployed database is already in this state; nothing should ever apply it
 there.
+
+## Combat persistence regression
+
+After replay, run `psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/combat-state.test.sql`.
+CI runs this with the replay job. It creates fixtures inside a rolled-back
+transaction, switches to the authenticated role, and verifies signed mortal HP,
+death-save metadata, stale-version rejection, invalid-write rollback and ownership.
+This is a focused RPC check, not a complete Supabase integration test.

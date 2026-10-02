@@ -81,19 +81,21 @@ describe("deathSavePrompt", () => {
   });
 
   it("reads the pending prompt with the engine's BODY and penalty", () => {
-    const events = [event({ id: "p1", type: "death_save_prompt" })];
-    const pending = pendingDeathSaveFrom(events, encounter());
+    const pending = pendingDeathSaveFrom(encounter(), "b1");
     expect(pending?.body).toBe(6);
     expect(pending?.penalty).toBe(1);
   });
 
   it("treats a rolled save as no longer pending", () => {
-    const events = [
-      event({ id: "p1", type: "death_save_prompt" }),
-      event({ id: "r1", type: "death_save" }),
-    ];
-    expect(pendingDeathSaveFrom(events, encounter())).toBeNull();
+    const live = encounter();
+    live.state.combatants["p"]!.deathSaveRound = live.state.round;
+    expect(deathSaveOwed(live)).toBeNull();
+    expect(pendingDeathSaveFrom(live)).toBeNull();
   });
+});
+
+it("can recover an owed roll without relying on ledger events", () => {
+  expect(pendingDeathSaveFrom(encounter())?.combatant.id).toBe("p");
 });
 
 describe("newestPrompt", () => {
@@ -108,5 +110,39 @@ describe("newestPrompt", () => {
     expect(newestPrompt(events, { eventId: "chk" }, null)).toBe("check");
     expect(newestPrompt(events, null, { eventId: "atk" })).toBe("attack");
     expect(newestPrompt(events, null, null)).toBeNull();
+  });
+});
+
+describe("mortally wounded player capabilities", () => {
+  it("allows action after surviving, but not before the save or after death", async () => {
+    const { buildCapabilitySnapshot } = await import("../capabilityModel");
+    const live = encounter();
+    const snapshot = () =>
+      buildCapabilitySnapshot({
+        character: {
+          character: { name: "Red", role: "solo" },
+          stats: { body: 6, ref: 6, move: 6, luck: 3 },
+          skills: [],
+          gear: [],
+        } as never,
+        vitals: {
+          hp_current: 0,
+          hp_max: 40,
+          wound_state: "mortal",
+          eurobucks: 0,
+          luck_current: 3,
+        } as never,
+        inventory: [],
+        cyberware: [],
+        roleState: {},
+        encounter: live,
+        events: [],
+        beatId: null,
+      });
+    expect(snapshot().incapacitated).toBe(true);
+    live.state.combatants["p"]!.deathSaveRound = live.state.round;
+    expect(snapshot().incapacitated).toBe(false);
+    live.state.combatants["p"]!.defeated = true;
+    expect(snapshot().incapacitated).toBe(true);
   });
 });

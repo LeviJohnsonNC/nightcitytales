@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
+const getActiveEncounter = vi.fn();
+const getEncounter = vi.fn();
 const saveEncounter = vi.fn<(payload: unknown) => Promise<undefined>>(async () => undefined);
-vi.mock("@/lib/backend", () => ({ saveEncounter }));
+vi.mock("@/lib/backend", () => ({ saveEncounter, getActiveEncounter, getEncounter }));
 
-const { EncounterChangedError, saveLiveEncounter } = await import("../encounterState");
+const { EncounterChangedError, saveLiveEncounter, loadLiveEncounter } =
+  await import("../encounterState");
 
 describe("saveLiveEncounter", () => {
   it("persists the exchange and all durable player consequences together", async () => {
@@ -152,5 +155,98 @@ describe("the version token", () => {
     // Distinguishable, because the caller's answer is specific: re-read, never
     // retry the same payload.
     await expect(saveLiveEncounter(live as never)).rejects.toBeInstanceOf(EncounterChangedError);
+  });
+});
+
+describe("reload continuity", () => {
+  it("preserves death saves, enemy intent, morale, and role across a save/load cycle", async () => {
+    const full = {
+      encounter: {
+        id: "enc",
+        arena: "street",
+        cover: {},
+        round: 3,
+        active_index: 0,
+        order_ids: ["p", "h"],
+        status: "active",
+        version: 4,
+      },
+      combatants: [
+        {
+          id: "p",
+          is_player: true,
+          side: "friendly",
+          name: "Vela",
+          ref: 7,
+          body: 6,
+          hp_max: 40,
+          hp_current: 0,
+          seriously_wounded_threshold: 20,
+          wound_state: "mortal",
+          death_save_penalty: 1,
+          sp_head: 7,
+          sp_body: 7,
+          defeated: false,
+          initiative: 15,
+          data: { key: "player", deathSaveRound: 3 },
+        },
+        {
+          id: "h",
+          is_player: false,
+          side: "hostile",
+          name: "Guard",
+          ref: 6,
+          body: 6,
+          hp_max: 40,
+          hp_current: 15,
+          seriously_wounded_threshold: 20,
+          wound_state: "serious",
+          death_save_penalty: 0,
+          sp_head: 7,
+          sp_body: 7,
+          defeated: false,
+          initiative: 10,
+          data: {
+            key: "guard",
+            threatRole: "lieutenant",
+            combatGoal: "capture",
+            moraleSpent: ["wounded"],
+            lastHitRound: 3,
+            lastDamagedRound: 2,
+          },
+        },
+      ],
+    };
+    getActiveEncounter.mockResolvedValue(full.encounter);
+    getEncounter.mockResolvedValue(full);
+    const before = (await loadLiveEncounter("campaign"))!;
+    expect(before.data["h"]).toMatchObject({
+      threatRole: "lieutenant",
+      combatGoal: "capture",
+      moraleSpent: ["wounded"],
+    });
+    const { beginTurn } = await import("@/engine");
+    expect(
+      beginTurn(before.state, () => {
+        throw new Error("save already rolled");
+      }).deathSave,
+    ).toBeNull();
+    // The engine marker is authoritative, even when the companion data map is stale.
+    before.data["p"]!.deathSaveRound = 2;
+    await saveLiveEncounter(before);
+    const payload = saveEncounter.mock.lastCall![0] as { combatants: Record<string, unknown>[] };
+    full.combatants = full.combatants.map((row) => ({
+      ...row,
+      ...payload.combatants.find((saved) => saved["id"] === row.id),
+    })) as typeof full.combatants;
+    const after = (await loadLiveEncounter("campaign"))!;
+    expect(after.state.combatants["p"]?.deathSaveRound).toBe(3);
+    expect(after.data["h"]).toMatchObject({
+      threatRole: "lieutenant",
+      combatGoal: "capture",
+      moraleSpent: ["wounded"],
+      lastHitRound: 3,
+      lastDamagedRound: 2,
+    });
   });
 });

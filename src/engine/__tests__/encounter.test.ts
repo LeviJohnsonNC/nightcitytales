@@ -493,3 +493,22 @@ describe("Solo — Precision Attack", () => {
     expect(r.attack.modifiers.map((m) => m.label)).not.toContain("Precision Attack");
   });
 });
+
+describe("persisted death-save obligation", () => {
+  it("rolls once this round, then owes another save next round", () => {
+    const state = stateOf([
+      mk("p", { isPlayer: true, side: "friendly", hp: 0, woundState: "mortal" }),
+      mk("h"),
+    ]);
+    const first = beginTurn(state, seq([[1, 10]]));
+    expect(first.deathSave?.survived).toBe(true);
+    const repeated = beginTurn(first.state, () => {
+      throw new Error("duplicate roll");
+    });
+    expect(repeated.deathSave).toBeNull();
+    expect(repeated.state.combatants["p"]?.deathSavePenalty).toBe(1);
+    const nextRound = advanceTurn(advanceTurn(repeated.state));
+    expect(beginTurn(nextRound, seq([[1, 10]])).deathSave?.penaltyAfter).toBe(2);
+    expect(state.combatants["p"]?.deathSavePenalty).toBe(0);
+  });
+});

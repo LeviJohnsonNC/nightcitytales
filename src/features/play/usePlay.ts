@@ -1,3 +1,12 @@
+import {
+  commitAttack,
+  commitBoardMove,
+  commitCallShot,
+  commitReload,
+  endPlayerTurn,
+  owesASave,
+  snapshotFor,
+} from "./combatOps";
 /**
  * The play loop, bound to React.
  *
@@ -64,26 +73,19 @@ import {
 } from "@/engine";
 import { type Json, appendCampaignEvent, updateCampaign } from "@/lib/backend";
 import {
-  commitAttack,
   commitBackupCall,
-  commitBoardMove,
-  commitCallShot,
   commitCharismaticImpact,
   commitPublishedStory,
   commitCheck,
   commitDeathSave,
-  commitReload,
-  endPlayerTurn,
   latestSuggestions,
   loadPlay,
   narrate,
   needsOpeningScene,
   newestPrompt,
   openScene,
-  owesASave,
   returnToLife,
   settleIp,
-  snapshotFor,
   takeExit,
 } from "./playOps";
 import type { IpTally, PlayBundle } from "./playOps";
@@ -273,7 +275,9 @@ export function usePlay(campaignId: string) {
 
   // Exactly one card is ever live: a Death Save outranks everything (you cannot
   // act until you have made it), then whichever prompt the GM posted last.
-  const pendingDeathSave = bundle ? pendingDeathSaveFrom(bundle.events, bundle.encounter) : null;
+  const pendingDeathSave = bundle
+    ? pendingDeathSaveFrom(bundle.encounter, bundle.beat?.id ?? null)
+    : null;
   const checkQueue =
     bundle && !pendingDeathSave
       ? pendingChecksFrom(
@@ -646,7 +650,7 @@ export function usePlay(campaignId: string) {
       if (!bundle?.encounter) throw new Error("There is no encounter to save against.");
       return beginTurn(bundle.encounter.state);
     },
-    /** Record the rolled Death Save and let the GM narrate it. */
+    /** Record the rolled Death Save and report the engine outcome. */
     commitDeathSave: (pending: PendingDeathSave, result: BeginTurnResult) =>
       death.mutate({ pending, result }),
     deathBusy: death.isPending,

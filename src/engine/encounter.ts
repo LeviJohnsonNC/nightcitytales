@@ -42,6 +42,8 @@ export type Combatant = {
   seriouslyWoundedThreshold: number;
   woundState: WoundStateCode;
   deathSavePenalty: number;
+  /** Round in which this combatant already resolved their start-of-turn save. */
+  deathSaveRound?: number;
   spHead: number;
   spBody: number;
   /** Out of the fight: dead, unconscious, fled, or surrendered. */
@@ -221,6 +223,17 @@ export type BeginTurnResult = {
   died: boolean;
 };
 
+/** The current actor whose start-of-turn save is still unresolved. */
+export function turnDeathSaveOwed(state: EncounterState): Combatant | null {
+  const current = currentCombatant(state);
+  return current &&
+    !current.defeated &&
+    current.woundState === "mortal" &&
+    current.deathSaveRound !== state.round
+    ? current
+    : null;
+}
+
 /**
  * Resolve the start of the current combatant's Turn. A Mortally Wounded
  * combatant rolls a Death Save; failing it defeats (kills) them. Advancing the
@@ -228,14 +241,15 @@ export type BeginTurnResult = {
  */
 export function beginTurn(state: EncounterState, rng: RNG = defaultRng): BeginTurnResult {
   const next = clone(state);
-  const current = currentCombatant(next);
-  if (!current || current.woundState !== "mortal") {
+  const current = turnDeathSaveOwed(next);
+  if (!current) {
     return { state: next, deathSave: null, died: false };
   }
 
   const result = rollDeathSave(current.body, current.deathSavePenalty, rng);
   const updated = next.combatants[current.id]!;
   updated.deathSavePenalty = result.penaltyAfter;
+  updated.deathSaveRound = next.round;
   const died = !result.survived;
   if (died) updated.defeated = true;
   next.status = outcome(next);

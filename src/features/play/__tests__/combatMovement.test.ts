@@ -713,3 +713,24 @@ describe("saved animation receipts", () => {
     }
   });
 });
+
+describe("neutral civilians", () => {
+  it("waits without attacking or joining either side", async () => {
+    attackLog.length = 0;
+    coverLog.length = 0;
+    const live = fight({ order: ["n", "p", "h"] });
+    live.state.combatants["n"] = {
+      ...live.state.combatants["h"]!,
+      id: "n",
+      name: "Worker",
+      side: "neutral",
+    };
+    live.data["n"] = { ...live.data["h"]! };
+    const result = await runNpcTurns("c", null, live, "current");
+    expect(attackLog).toEqual([]);
+    expect(coverLog).toEqual([]);
+    expect(result.live.state.combatants["n"]?.defeated).toBe(false);
+    expect(result.live.state.order[result.live.state.activeIndex]).toBe("p");
+    expect(result.lines).toContain("Worker stays down and does not engage.");
+  });
+});

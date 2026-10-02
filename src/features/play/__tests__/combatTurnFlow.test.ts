@@ -191,6 +191,7 @@ function bundle(): PlayBundle {
 }
 const {
   commitAttack,
+  commitDeathSave,
   commitBoardMove,
   commitReload,
   commitCheck,
@@ -373,5 +374,45 @@ describe("shipping turn orchestration", () => {
     await finishCombatAction(b, b.encounter!, null);
     expect(io.close).toHaveBeenCalledOnce();
     expect(io.npc).not.toHaveBeenCalled();
+  });
+});
+
+describe("death-save commit", () => {
+  it("survives without a Job, a model call, or handing over the player's turn", async () => {
+    const { beginTurn } = await import("@/engine");
+    const { pendingDeathSaveFrom, deathSaveOwed } = await import("../deathSavePrompt");
+    const b = bundle();
+    b.mission = null;
+    b.runtime = null;
+    b.beat = null;
+    const p = b.encounter!.state.combatants["p"]!;
+    Object.assign(p, { hp: 0, woundState: "mortal", body: 6, deathSavePenalty: 0 });
+    const pending = pendingDeathSaveFrom(b.encounter)!;
+    await commitDeathSave(
+      b,
+      pending,
+      beginTurn(b.encounter!.state, () => 0),
+    );
+    expect(deathSaveOwed(io.latest as LiveEncounter)).toBeNull();
+    expect(io.narrate).not.toHaveBeenCalled();
+    expect(io.npc).not.toHaveBeenCalled();
+    expect(io.events.at(-1)?.["summary"]).toContain("survived the Death Save");
+  });
+
+  it("refuses a stale death-save card before saving", async () => {
+    const { beginTurn } = await import("@/engine");
+    const { pendingDeathSaveFrom } = await import("../deathSavePrompt");
+    const b = bundle();
+    Object.assign(b.encounter!.state.combatants["p"]!, {
+      hp: 0,
+      woundState: "mortal",
+      body: 6,
+      deathSavePenalty: 0,
+    });
+    const pending = pendingDeathSaveFrom(b.encounter)!;
+    const result = beginTurn(b.encounter!.state, () => 0);
+    b.encounter!.version += 1;
+    await expect(commitDeathSave(b, pending, result)).rejects.toThrow("fight moved on");
+    expect(io.save).not.toHaveBeenCalled();
   });
 });

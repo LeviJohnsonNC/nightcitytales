@@ -29,6 +29,7 @@ import {
   type Point,
   type WeaponCapability,
   DEFAULT_COMBAT_GOAL,
+  isCombatGoal,
   type CombatGoal,
   type ThreatProfile,
   type WeaponProfile,
@@ -117,6 +118,7 @@ export type CombatantData = {
    * bonus would fire on every attack of a fight that was saved and read back,
    * which is more than the rules give and worse than giving nothing.
    */
+  deathSaveRound?: number;
   lastHitRound?: number;
   lastDamagedRound?: number;
 };
@@ -208,9 +210,21 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
     move: typeof raw.move === "number" ? raw.move : DEFAULT_HOSTILE_MOVE,
     attackSkill: typeof raw.attackSkill === "number" ? raw.attackSkill : 0,
     ...(turn ? { turn } : {}),
+    ...(raw.threatRole === "mook" || raw.threatRole === "lieutenant" || raw.threatRole === "boss"
+      ? { threatRole: raw.threatRole }
+      : {}),
+    ...(Array.isArray(raw.moraleSpent)
+      ? {
+          moraleSpent: raw.moraleSpent.filter(
+            (value): value is string => typeof value === "string",
+          ),
+        }
+      : {}),
+    ...(isCombatGoal(raw.combatGoal) ? { combatGoal: raw.combatGoal } : {}),
     ...(raw.exitReason === "dead" || raw.exitReason === "withdrawn"
       ? { exitReason: raw.exitReason }
       : {}),
+    ...(typeof raw.deathSaveRound === "number" ? { deathSaveRound: raw.deathSaveRound } : {}),
     ...(typeof raw.lastHitRound === "number" ? { lastHitRound: raw.lastHitRound } : {}),
     ...(typeof raw.lastDamagedRound === "number" ? { lastDamagedRound: raw.lastDamagedRound } : {}),
     ...(armor && Object.keys(armor).length > 0 ? { armor } : {}),
@@ -422,11 +436,13 @@ export function hostileCombatant(
 
 /** The "first this Round" marks a combatant row is carrying, if any. */
 function roundMarks(row: EncounterCombatant): {
+  deathSaveRound?: number;
   lastHitRound?: number;
   lastDamagedRound?: number;
 } {
   const raw = (row.data ?? {}) as Partial<CombatantData>;
   return {
+    ...(typeof raw.deathSaveRound === "number" ? { deathSaveRound: raw.deathSaveRound } : {}),
     ...(typeof raw.lastHitRound === "number" ? { lastHitRound: raw.lastHitRound } : {}),
     ...(typeof raw.lastDamagedRound === "number" ? { lastDamagedRound: raw.lastDamagedRound } : {}),
   };
