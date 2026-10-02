@@ -25,6 +25,7 @@ import {
   withoutPinned,
   withPinned,
   type Goal,
+  type Home,
 } from "@/engine";
 import { goalStateFrom, pinnedProgress } from "@/features/status/goalsModel";
 import { rest } from "@/features/downtime/downtimeOps";
@@ -43,6 +44,7 @@ import {
   settleLifeIp,
 } from "./lifeOps";
 import type { IpTally, Playstyles } from "@/features/campaign/ipAward";
+import { commitMove } from "@/features/campaign/moving";
 
 export function useLife(campaignId: string) {
   const queryClient = useQueryClient();
@@ -98,6 +100,15 @@ export function useLife(campaignId: string) {
     mutationFn: (goals: Goal[]) => {
       if (!bundle) throw new Error("Still loading.");
       return setPinnedGoals(bundle, goals);
+    },
+    onSuccess: invalidate,
+  });
+
+  const move = useMutation({
+    mutationFn: (target: Home) => {
+      if (!bundle) throw new Error("Still loading.");
+      if (bundle.phase !== "life") throw new Error("Not with a job on the table.");
+      return commitMove(bundle, target);
     },
     onSuccess: invalidate,
   });
@@ -316,6 +327,10 @@ export function useLife(campaignId: string) {
     pin: (goal: Goal) => pins.mutate(withPinned(pinnedGoals, goal)),
     unpin: (key: string) => pins.mutate(withoutPinned(pinnedGoals, key)),
     pinsBusy: pins.isPending,
+    /** Move house, or change what you eat. Priced by the engine, one transaction. */
+    moveTo: (target: Home) => move.mutateAsync(target),
+    moveBusy: move.isPending,
+    moveError: (move.error as Error | null) ?? null,
     pinsError: (pins.error as Error | null) ?? null,
     /** Cross the city. The engine prices the trip; the clock pays for it. */
     travelTo: (to: string) => travel.mutate(to),

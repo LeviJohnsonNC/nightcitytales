@@ -97,7 +97,7 @@ export function moneyStatus(input: {
    */
   nearestDue?: { label: string; inDays: number } | null;
 }): MoneyStatus {
-  const rates = lifestyleRates(input.character);
+  const rates = lifestyleRates(input.character, input.campaign);
   const day = input.campaign.day ?? 0;
   const paidThrough = paidThroughDay(input.campaign, rates);
   const bills = billsDue({

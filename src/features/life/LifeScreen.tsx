@@ -93,6 +93,7 @@ import { ShopSheet } from "./ShopSheet";
 import { RipperdocSheet } from "./RipperdocSheet";
 import { WorkshopSheet } from "./WorkshopSheet";
 import { RecordSheet } from "./RecordSheet";
+import { HomeSheet } from "./HomeSheet";
 import { WithinReachSheet } from "./WithinReachSheet";
 import type { LifeActionCard } from "./lifeResponse";
 import { cardInput } from "./lifeOptions";
@@ -171,6 +172,7 @@ function LifeEvent({ event }: { event: CampaignEvent }) {
     case "purchase":
     case "reload":
     case "cyberware_installed":
+    case "moved_house":
       return (
         <p className="font-mono text-xs text-muted-foreground">
           <span className="text-accent">◆</span> {text}
@@ -243,6 +245,8 @@ const LIFE_EVENT_TYPES = new Set([
   "purchase",
   "reload",
   "cyberware_installed",
+  // A new home, or a new Lifestyle: the deposit and the new monthly bill.
+  "moved_house",
   // Somebody moved while the character was not looking.
   "world_moved",
   // A new day, and what is waiting in it.
@@ -647,6 +651,7 @@ function LifeRail({
       <div className="grid grid-cols-2 gap-2">
         <WithinReachSheet life={life} />
         <RecordSheet bundle={bundle} />
+        <HomeSheet life={life} />
         <ShopSheet bundle={bundle} />
         <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
         {/* Renders nothing at all for a character without Maker. */}

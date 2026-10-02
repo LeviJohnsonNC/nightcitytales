@@ -12,6 +12,9 @@ import {
   armorRepairCost,
   billsDue,
   getArmor,
+  homeRates,
+  housingById,
+  lifestyleById,
   planRest,
   selfCareBonus,
   speedhealAmount,
@@ -21,6 +24,7 @@ import {
   type MedicalDrug,
   type RestPlan,
 } from "@/engine";
+import { campaignHome, hasMoved } from "@/features/campaign/home";
 import { liveRoleAbility, medicineDoses, medicineSkills } from "@/features/play/roleAbilityModel";
 import type { Campaign, CampaignInventoryItem, CampaignVitals, FullCharacter } from "@/lib/backend";
 
@@ -36,8 +40,23 @@ export type LifestyleRates = {
   granted: boolean;
 };
 
-export function lifestyleRates(character: FullCharacter): LifestyleRates {
+export function lifestyleRates(character: FullCharacter, campaign?: Campaign): LifestyleRates {
   const plan = startingLifestylePlan(character.character.role ?? null);
+  // A campaign the character has moved in says where they live now; one they
+  // have not reads creation's plan, names and all, as it always did.
+  if (campaign && hasMoved(campaign)) {
+    const home = campaignHome(campaign, character);
+    const { rent, lifestyleCost } = homeRates(home);
+    return {
+      housingName: housingById(home.housingId)?.name ?? plan.housingName,
+      lifestyleName: lifestyleById(home.lifestyleId)?.name ?? plan.lifestyleName,
+      rent,
+      lifestyleCost,
+      perMonth: rent + lifestyleCost,
+      firstMonthFree: plan.firstMonthFree,
+      granted: plan.grantedByRoleAbility && home.housingId === plan.housingOption?.id,
+    };
+  }
   return {
     housingName: plan.housingName,
     lifestyleName: plan.lifestyleName,
@@ -202,7 +221,7 @@ export function downtimeView(input: {
   /** Days the player is considering resting. */
   restDays: number;
 }): DowntimeView {
-  const rates = lifestyleRates(input.character);
+  const rates = lifestyleRates(input.character, input.campaign);
   const paidThrough = paidThroughDay(input.campaign, rates);
   const day = input.campaign.day ?? 0;
   const stats = input.character.stats as { body?: number } | null;

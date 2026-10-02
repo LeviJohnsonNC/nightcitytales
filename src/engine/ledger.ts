@@ -49,6 +49,7 @@ export const LEDGER_EVENTS = {
   roleRankRaised: "role_rank_raised",
   goalsPinned: "goals_pinned",
   jobSettled: "job_settled",
+  movedHouse: "moved_house",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -650,4 +651,74 @@ export function readTurnProvenance(raw: unknown): TurnProvenance | null {
     return null;
   }
   return { narrator, promptVersion, model, servedModel: str(d["served_model"]) };
+}
+
+// ---------------------------------------------------------------------------
+// moved_house — a change of home or Lifestyle, written by `move_house`, which
+// builds `data` key by key. `movedHouse.test.ts` holds the SQL's keys to
+// MOVED_HOUSE_KEYS. Read back by Then and now: the first move's `from` is where
+// the character started, the last one's `to` is where they live.
+// ---------------------------------------------------------------------------
+
+export type MovedHouseEventData = {
+  fromPlace: string | null;
+  fromHousing: string;
+  fromLifestyle: string;
+  toPlace: string | null;
+  toHousing: string;
+  toLifestyle: string;
+  deposit: number;
+  rent: number;
+  lifestyleCost: number;
+  day: number;
+};
+
+export const MOVED_HOUSE_KEYS = [
+  "from_place",
+  "from_housing",
+  "from_lifestyle",
+  "to_place",
+  "to_housing",
+  "to_lifestyle",
+  "deposit",
+  "rent",
+  "lifestyle_cost",
+  "day",
+] as const;
+
+export function readMovedHouseEventData(raw: unknown): MovedHouseEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const fromHousing = str(d["from_housing"]);
+  const fromLifestyle = str(d["from_lifestyle"]);
+  const toHousing = str(d["to_housing"]);
+  const toLifestyle = str(d["to_lifestyle"]);
+  const deposit = num(d["deposit"]);
+  const rent = num(d["rent"]);
+  const lifestyleCost = num(d["lifestyle_cost"]);
+  const day = num(d["day"]);
+  if (
+    fromHousing === null ||
+    fromLifestyle === null ||
+    toHousing === null ||
+    toLifestyle === null ||
+    deposit === null ||
+    rent === null ||
+    lifestyleCost === null ||
+    day === null
+  ) {
+    return null;
+  }
+  return {
+    fromPlace: str(d["from_place"]),
+    fromHousing,
+    fromLifestyle,
+    toPlace: str(d["to_place"]),
+    toHousing,
+    toLifestyle,
+    deposit,
+    rent,
+    lifestyleCost,
+    day,
+  };
 }

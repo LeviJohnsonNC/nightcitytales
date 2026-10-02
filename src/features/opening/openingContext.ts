@@ -171,7 +171,7 @@ export function buildOpeningFacts(input: {
   cast: CastMember[];
 }): OpeningFacts {
   const { campaign, vitals, character } = input;
-  const rates = lifestyleRates(character);
+  const rates = lifestyleRates(character, campaign);
   const bills = billsDue({
     day: campaign.day ?? 0,
     paidThroughDay: paidThroughDay(campaign, rates),

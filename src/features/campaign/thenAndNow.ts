@@ -28,7 +28,11 @@ import {
   hasCyberware,
   isFactionId,
   itemName,
+  getPlace,
+  housingById,
+  lifestyleById,
   readIpAwardedEventData,
+  readMovedHouseEventData,
   readRoleRankRaisedEventData,
   readSkillRaisedEventData,
   roleAbilityOf,
@@ -54,7 +58,12 @@ export type ClimbLine = { text: string; tone: ClimbTone };
 export type ClimbSection = { title: string; lines: ClimbLine[] };
 
 /** The ledger events this reads, so the loader can ask for exactly these. */
-export const THEN_AND_NOW_EVENTS = ["skill_raised", "role_rank_raised", "ip_awarded"] as const;
+export const THEN_AND_NOW_EVENTS = [
+  "skill_raised",
+  "role_rank_raised",
+  "ip_awarded",
+  "moved_house",
+] as const;
 
 /** Slots on the saved sheet that hold a weapon or a piece of armor. */
 const KIT_SLOTS: Record<string, ItemKind> = {
@@ -195,6 +204,32 @@ export function thenAndNow(input: {
     ...kit.lost.map((name) => ({ text: `${name}, gone`, tone: "bad" as const })),
   ];
   if (kitLines.length) sections.push({ title: "What you carry", lines: kitLines });
+
+  // Home: the first move's "from" is where they started, the last one's "to"
+  // is where they live. Neither better nor worse — a dearer flat is a bigger
+  // bill — so it is told plainly.
+  const moves = input.events
+    .filter((e) => e.type === "moved_house")
+    .map((e) => readMovedHouseEventData(e.data))
+    .filter((m): m is NonNullable<typeof m> => m !== null);
+  const first = moves[0];
+  const last = moves.at(-1);
+  if (first && last) {
+    const homeLines: ClimbLine[] = [];
+    const where = (housing: string, place: string | null) =>
+      `${housingById(housing)?.name ?? housing}${place ? `, ${getPlace(place)?.name ?? place}` : ""}`;
+    const then = where(first.fromHousing, first.fromPlace);
+    const now = where(last.toHousing, last.toPlace);
+    if (then !== now) homeLines.push({ text: `${then} → ${now}`, tone: "neutral" });
+    if (first.fromLifestyle !== last.toLifestyle) {
+      const name = (id: string) => lifestyleById(id)?.name ?? id;
+      homeLines.push({
+        text: `${name(first.fromLifestyle)} → ${name(last.toLifestyle)}`,
+        tone: "neutral",
+      });
+    }
+    if (homeLines.length) sections.push({ title: "Where you live", lines: homeLines });
+  }
 
   // People: the standing six, against where each began. In words, not numbers:
   // how somebody feels about you is meant to be felt.
