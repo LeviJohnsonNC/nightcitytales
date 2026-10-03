@@ -159,4 +159,6 @@ The [spatial organization checkpoint](docs/spatial-organization.md) introduces c
 
 [Intersection checkpoint 1B](docs/intersection-networks.md) coordinates street proportions, frontage and a protected pedestrian network.
 
-[Checkpoint 1 closure](docs/checkpoint-one.md) strengthens corner silhouettes, office frames and the open-core plan, with structure/furnished review evidence.
+[Checkpoint 1](docs/checkpoint-one.md) is approved and complete: corner silhouettes, office frames, three distinct office topologies and furnished preservation.
+
+[Checkpoint 2A](docs/checkpoint-two.md) begins coordinated activity groups, with shared work pods and protected vendor/workshop working space.

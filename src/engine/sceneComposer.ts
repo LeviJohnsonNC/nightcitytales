@@ -156,14 +156,20 @@ function intersectionPlan(variant: number) {
       {
         id: "broth_cart",
         label: "Broth cart",
-        kind: "vendor",
+        kind: "vendor_stall",
         zone: "west-walk",
         at: { x: 8, y: 2 },
         required: true,
       },
       { id: "shop_east", kind: "frontage", zone: "east-walk", at: { x: 22, y: 0 } },
       { id: "shop_south", kind: "frontage", zone: "south-east-walk", at: { x: 22, y: 26 } },
-      { id: "deliveries", kind: "loading", zone: "service-court", at: { x: 2, y: crossing + 10 } },
+      {
+        id: "deliveries",
+        kind: "workshop_delivery",
+        zone: "service-court",
+        at: { x: 2, y: crossing + 10 },
+        required: true,
+      },
     ] as Slot[],
     player: { x: 17, y: crossing + 7 },
     actors: [
@@ -353,6 +359,10 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     (p) => rect(p.x - 1, p.y - 1, 2, 2),
   );
   reserved.push(...env.zones.filter((z) => z.kind === "aisle").map((z) => z.rect));
+  // Keep delivery and maintenance as complete alternatives, preserving both
+  // contextual ingredients without varying individual members independently.
+  if (kind === "intersection" && seed % 2 === 0)
+    plan.slots.find((s) => s.id === "deliveries")!.kind = "workshop_service";
   placeSceneClusters(arena, plan.slots, reserved, seed);
   const details: Slot[] = [];
   for (const z of env.zones.filter((z) => ["sidewalk", "frontage", "loading"].includes(z.kind))) {
