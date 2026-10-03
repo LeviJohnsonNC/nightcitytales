@@ -3,8 +3,23 @@ import { DIVE_END_MS, SEARCH_END_MS } from "../descentTimeline";
 const THUNDER_AT_MS = SEARCH_END_MS + 1250;
 import {
   LAYERS,
+  MAX_RESIDUE,
+  RAIN_EXIT_MS,
   TRAIL_SECONDS,
+  absorb,
+  cellLight,
   dropCount,
+  exitFade,
+  impactRate,
+  landDrop,
+  landingDrop,
+  lightGridFrom,
+  mergeDrops,
+  sheetAt,
+  stepResidue,
+  streakLength,
+  type Drop,
+  type Residue,
   glassWetness,
   leanDegrees,
   lightningAt,
@@ -139,5 +154,136 @@ describe("drops on the glass", () => {
     d.runs = false;
     stepDrop(d, TRAIL_SECONDS + 1, rand, 600);
     expect(d.trail).toHaveLength(0);
+  });
+});
+
+describe("streakLength", () => {
+  it("is a shorter streak for a slower rain, and never nothing", () => {
+    for (const layer of LAYERS) {
+      expect(streakLength(layer, 0.3)).toBeLessThan(streakLength(layer, 1));
+      expect(streakLength(layer, 0)).toBeGreaterThan(0);
+    }
+  });
+
+  it("grows with the depth: the near rain is the long rain", () => {
+    for (let i = 1; i < LAYERS.length; i++) {
+      expect(streakLength(LAYERS[i]!, 0.3)).toBeGreaterThan(streakLength(LAYERS[i - 1]!, 0.3));
+    }
+  });
+});
+
+describe("sheetAt", () => {
+  it("thins and thickens the rain across the wind, and moves with time", () => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (let u = 0; u < 4000; u += 7) {
+      const v = sheetAt(u, 0);
+      lo = Math.min(lo, v);
+      hi = Math.max(hi, v);
+    }
+    expect(lo).toBeGreaterThan(0.35);
+    expect(hi).toBeLessThan(1.3);
+    expect(hi - lo).toBeGreaterThan(0.5);
+    expect(sheetAt(500, 0)).not.toBeCloseTo(sheetAt(500, 1500), 2);
+  });
+});
+
+describe("exitFade", () => {
+  it("is all the rain until the scene goes, then none of it inside the exit", () => {
+    expect(exitFade(-10)).toBe(1);
+    expect(exitFade(0)).toBe(1);
+    expect(exitFade(RAIN_EXIT_MS)).toBe(0);
+    expect(exitFade(RAIN_EXIT_MS * 3)).toBe(0);
+    expect(RAIN_EXIT_MS).toBeLessThanOrEqual(500);
+  });
+
+  it("only ever falls, and most of it is gone in the first half", () => {
+    let last = 1;
+    for (let ms = 0; ms <= RAIN_EXIT_MS; ms += 10) {
+      const v = exitFade(ms);
+      expect(v).toBeLessThanOrEqual(last + 1e-9);
+      last = v;
+    }
+    expect(exitFade(RAIN_EXIT_MS / 2)).toBeLessThan(0.3);
+  });
+});
+
+describe("the city lighting the rain", () => {
+  /** A 3x1 picture: black, a magenta sign, white. */
+  const pixels = [0, 0, 0, 255, 255, 40, 200, 255, 255, 255, 255, 255];
+
+  it("is dark where the picture is dark and bright where it is lit", () => {
+    const grid = lightGridFrom(pixels, 3, 1);
+    expect(grid.lum[0]!).toBeLessThan(grid.lum[1]!);
+    expect(grid.lum[1]!).toBeLessThan(grid.lum[2]!);
+    expect(cellLight(grid, 0).bright).toBeLessThan(cellLight(grid, 2).bright);
+  });
+
+  it("keeps a little rain against black, and lends a sign its colour", () => {
+    const grid = lightGridFrom(pixels, 3, 1);
+    expect(cellLight(grid, 0).bright).toBeGreaterThan(0.05);
+    const [r, g] = cellLight(grid, 1).rgb;
+    expect(r).toBeGreaterThan(g);
+    // Quantised, so the streaks share a handful of sprites.
+    for (const c of cellLight(grid, 1).rgb) expect(c % 51).toBe(0);
+  });
+});
+
+describe("water gathering on the glass", () => {
+  const bead = (x: number, y: number, r: number, moving = false): Drop => ({
+    x,
+    y,
+    r,
+    runs: moving,
+    moving,
+    timer: 1,
+    speed: moving ? 100 : 0,
+    wobble: 0,
+    trail: [],
+    age: 1,
+    dying: null,
+  });
+
+  it("strikes harder in a harder rain, and not at all in none", () => {
+    expect(impactRate(1280, 800, 1, false)).toBeGreaterThan(impactRate(1280, 800, 0.3, false));
+    expect(impactRate(1280, 800, 0, false)).toBe(0);
+  });
+
+  it("keeps its water when two beads become one, and a heavy one starts to run", () => {
+    const a = bead(0, 0, 4);
+    absorb(a, bead(0, 0, 4));
+    expect(a.r).toBeCloseTo(Math.hypot(4, 4));
+    expect(a.runs).toBe(true);
+  });
+
+  it("lets a running drop take in the beads in its path, and leaves the rest", () => {
+    const drops = [bead(100, 100, 6, true), bead(102, 104, 2), bead(400, 400, 2)];
+    expect(mergeDrops(drops)).toBe(1);
+    expect(drops).toHaveLength(2);
+    expect(drops[0]!.r).toBeGreaterThan(6);
+  });
+
+  it("joins a drop that lands on a bead to it, and dries one when the glass is full", () => {
+    const rand = seeded(9);
+    const drops = [bead(50, 50, 3)];
+    expect(landDrop(drops, bead(51, 51, 2), 10, rand)).toBe(true);
+    expect(drops).toHaveLength(1);
+    const full = Array.from({ length: 4 }, (_, i) => bead(i * 100, 0, 2));
+    expect(landDrop(full, landingDrop(800, 600, rand), 4, rand)).toBe(false);
+    expect(full).toHaveLength(4);
+    expect(full.some((d) => d.dying !== null)).toBe(true);
+  });
+
+  it("dries its residue, and never holds more than it can draw", () => {
+    const specks: Residue[] = Array.from({ length: MAX_RESIDUE + 50 }, (_, i) => ({
+      x: 0,
+      y: 0,
+      r: 1,
+      age: 0,
+      life: i < 10 ? 1 : 100,
+    }));
+    stepResidue(specks, 2);
+    expect(specks.length).toBeLessThanOrEqual(MAX_RESIDUE);
+    expect(specks.every((s) => s.age < s.life)).toBe(true);
   });
 });
