@@ -2,13 +2,49 @@ import { describe, expect, it } from "vitest";
 import { composeScene, readBattlefieldSnapshot, rectInside } from "../index";
 
 describe("lived-in scene composition", () => {
+  it("keeps compact office support space behind the staff workspace", () => {
+    for (let seed = 1; seed <= 3; seed++) {
+      const arena = composeScene("office", seed).layout.arena;
+      expect(arena.extent).toEqual({ width: 24, height: 24 });
+      const connections = arena.environment!.interior!.connections;
+      expect(
+        connections
+          .filter((c) => c.to === "service" || c.from === "service")
+          .map((c) => [c.from, c.to]),
+      ).toEqual([
+        ["work", "service"],
+        ["service", "outside"],
+      ]);
+      expect(connections.some((c) => c.from === "reception" && c.to === "outside")).toBe(true);
+    }
+  });
+
+  it("defines intersection corner identities in structure geometry before props", () => {
+    for (let seed = 1; seed <= 3; seed++) {
+      const structures = composeScene("intersection", seed).layout.arena.environment!.structures;
+      const groups = [0, 1, 2, 3].map((n) =>
+        structures.filter((s) => s.id === `building_${n}` || s.id.startsWith(`building_${n}_`)),
+      );
+      expect(groups.map((g) => g.length)).toEqual([2, 1, 2, 2]);
+      expect(new Set(structures.map((s) => s.height)).size).toBeGreaterThanOrEqual(4);
+      expect(groups[1]!.every((s) => s.style === "residential")).toBe(true);
+      expect(groups[0]!.every((s) => s.style === "shop")).toBe(true);
+    }
+  });
+
   it.each(["office", "nightclub"] as const)(
     "furnishes %s without consuming circulation",
     (kind) => {
       for (let seed = 1; seed <= 3; seed++) {
         const { arena } = composeScene(kind, seed).layout;
         const env = arena.environment!;
-        expect(arena.cover!.length).toBeGreaterThanOrEqual(kind === "office" ? 35 : 28);
+        // Compare occupied area, not counts that reward oversized floor plans.
+        const furnishingArea = arena.cover!.reduce(
+          (sum, c) => sum + c.rect.width * c.rect.height,
+          0,
+        );
+        expect(furnishingArea / (arena.extent.width * arena.extent.height)).toBeGreaterThan(0.1);
+        expect(furnishingArea / (arena.extent.width * arena.extent.height)).toBeLessThan(0.4);
         expect(new Set(env.props.map((p) => p.art)).size).toBeGreaterThanOrEqual(6);
         expect(env.structures.every((s) => Math.min(s.rect.width, s.rect.height) === 0.5)).toBe(
           true,
@@ -36,11 +72,12 @@ describe("lived-in scene composition", () => {
     const env = snapshot.arena.environment!;
     env.recipeVersion = 3;
     env.structures = [];
-    for (let y = 0; y < 32; y += 2) {
+    for (let y = 0; y < snapshot.arena.extent.height; y += 2) {
       let start: number | null = null;
-      for (let x = 0; x <= 32; x += 2) {
+      for (let x = 0; x <= snapshot.arena.extent.width; x += 2) {
         const solid =
-          x < 32 && !env.zones.some((z) => rectInside({ x, y, width: 2, height: 2 }, z.rect));
+          x < snapshot.arena.extent.width &&
+          !env.zones.some((z) => rectInside({ x, y, width: 2, height: 2 }, z.rect));
         if (solid && start === null) start = x;
         if (!solid && start !== null) {
           env.structures.push({

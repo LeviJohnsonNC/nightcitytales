@@ -1337,3 +1337,7 @@ Deferred on purpose, so that deferring them stays a decision:
 - Netrunning as a first-class mode.
 - What happens after a character death.
 - General inventory consumption beyond ammunition.
+
+### Spatial composition follow-through
+
+[Checkpoint 1](docs/spatial-organization.md) adds compact office programs, distinct intersection corner structures and closer shared framing. Next: complete activity groups, structural attachments, then transfer and seed variation across the remaining archetypes. This checkpoint does not claim reference-quality environments.

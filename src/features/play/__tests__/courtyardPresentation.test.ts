@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { arenaFor, rectContains, coverStatuses, placeHostiles } from "@/engine";
+import { composeScene, arenaFor, rectContains, coverStatuses, placeHostiles } from "@/engine";
 import { battlefieldProjection } from "../battlefieldProjection";
-import { courtyardCamera, routePosition } from "../courtyard/courtyardPresentation";
+import {
+  battlefieldCameraPreset,
+  composedUnitMetrics,
+  courtyardCamera,
+  routePosition,
+} from "../courtyard/courtyardPresentation";
 
 describe("courtyard presentation remains registered to the tactical input surface", () => {
   it.each([
@@ -67,6 +72,22 @@ describe("courtyard presentation remains registered to the tactical input surfac
       expect(status.piece.rect.x + status.piece.rect.width).toBeLessThanOrEqual(arena.extent.width);
       expect(status.piece.rect.y + status.piece.rect.height).toBeLessThanOrEqual(
         arena.extent.height,
+      );
+    }
+  });
+});
+
+describe("composed scene scale", () => {
+  it("keeps character height proportional to a metre across scene sizes", () => {
+    const office = composeScene("office", 1).layout.arena;
+    const street = composeScene("intersection", 1).layout.arena;
+    const small = composedUnitMetrics(office),
+      large = composedUnitMetrics(street);
+    expect(small.top / large.top).toBeCloseTo(32 / 24);
+    expect(small.scale / large.scale).toBeCloseTo(small.top / large.top);
+    for (const arena of [office, street]) {
+      expect(battlefieldCameraPreset(arena).zoom).toBeGreaterThan(
+        battlefieldCameraPreset(arena, "overview").zoom,
       );
     }
   });

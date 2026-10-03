@@ -218,7 +218,11 @@ function paintBuilding(
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
-  const h = structure.height * 15;
+  const pixelsPerMetre = Math.hypot(
+    project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
+    project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
+  );
+  const h = structure.height * pixelsPerMetre;
   const base = corners(r),
     top = corners(r, h);
   if (structure.style === "interior-wall") {
@@ -425,7 +429,11 @@ export function createComposedEnvironment(
         { x: s.rect.x + s.rect.width, y: s.rect.y + s.rect.height },
       ].map(project);
       const left = Math.floor(Math.min(...corners.map((p) => p.x))) - 8;
-      const top = Math.floor(Math.min(...corners.map((p) => p.y)) - s.height * 15) - 16;
+      const pixelsPerMetre = Math.hypot(
+        project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
+        project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
+      );
+      const top = Math.floor(Math.min(...corners.map((p) => p.y)) - s.height * pixelsPerMetre) - 16;
       const bounds = {
         x: left,
         y: top,

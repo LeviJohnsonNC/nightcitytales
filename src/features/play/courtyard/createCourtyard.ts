@@ -9,7 +9,7 @@ import { coverStatuses, tileKey, TILE_METRES, type Point, type Tile } from "@/en
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { battlefieldProjection } from "../battlefieldProjection";
 import { frameDuration, type PlaybackFrame } from "../combatPlayback";
-import { courtyardCamera } from "./courtyardPresentation";
+import { courtyardCamera, composedUnitMetrics } from "./courtyardPresentation";
 import {
   animationCell,
   facingFor,
@@ -53,6 +53,8 @@ export type GridOverlay = {
 
 export type CourtyardModel = {
   live: LiveEncounter;
+  /** Inspection only; callers remount when switching the composition layer. */
+  structureOnly?: boolean;
   playback?: PlaybackFrame | null | undefined;
   aimTargetId?: string | null;
   camera: { x: number; y: number; zoom: number };
@@ -82,7 +84,7 @@ export function createCourtyard(
   if (!theme) throw new Error("No scenic art for this layout");
   const composed = theme === "composed";
   const street = theme === "street" || composed;
-  const unitScale = composed ? 0.52 : street ? 0.65 : 1;
+  const unitScale = composed ? composedUnitMetrics(arena).scale : street ? 0.65 : 1;
   const kinds = composed
     ? arena.environment!.props.map((p) => p.art)
     : street
@@ -152,8 +154,12 @@ export function createCourtyard(
         onFailure();
         return;
       }
-      if (composed) structures.push(...createComposedEnvironment(this, arena, project));
-      else if (street) createStreetGround(this, project);
+      if (composed) {
+        const visibleArena = model.structureOnly
+          ? { ...arena, environment: { ...arena.environment!, dressing: [] } }
+          : arena;
+        structures.push(...createComposedEnvironment(this, visibleArena, project));
+      } else if (street) createStreetGround(this, project);
       else this.add.image(550, 350, "source-ground").setDisplaySize(1200, 800).setDepth(-1000);
       // Baked lighting establishes the look. Small additive pools support it.
       this.add
@@ -267,7 +273,7 @@ export function createCourtyard(
       for (const prop of [...scenery, ...structures]) {
         if (prop.getData("destroyed")) continue;
         const obstructs = [...units.values()].some(({ container: unit }) =>
-          sceneryOccludes(prop, unit, composed ? 48 : street ? 58 : 88),
+          sceneryOccludes(prop, unit, composed ? composedUnitMetrics(arena).top : street ? 58 : 88),
         );
         prop.setAlpha(obstructs ? 0.4 : 1);
       }
@@ -445,6 +451,7 @@ export function createCourtyard(
   }
 
   function paintCover(current: CourtyardScene, damage: LiveEncounter["cover"]) {
+    if (model.structureOnly) return;
     if (renderedCover === damage) return;
     renderedCover = damage;
     for (const object of scenery) object.destroy();

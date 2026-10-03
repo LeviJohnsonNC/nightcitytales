@@ -1,3 +1,4 @@
+import { battlefieldCameraPreset } from "@/features/play/courtyard/courtyardPresentation";
 import { useCallback, useMemo, useState } from "react";
 import {
   composeScene,
@@ -29,6 +30,8 @@ export function SceneReview() {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [structureOnly, setStructureOnly] = useState(false);
+  const [framing, setFraming] = useState<"play" | "overview">("play");
   const generated = useMemo(
     () => (adventure ? adventureSceneProof(kind, seed) : composeScene(kind, seed)),
     [kind, seed, adventure],
@@ -172,6 +175,33 @@ export function SceneReview() {
             />
             Room/access plan
           </label>
+        )}
+        {!actors && (
+          <>
+            <label>
+              Composition
+              <select
+                value={structureOnly ? "structure" : "furnished"}
+                onChange={(e) => setStructureOnly(e.target.value === "structure")}
+              >
+                <option value="furnished">Furniture and detail</option>
+                <option value="structure">Structure only</option>
+              </select>
+            </label>
+            <label>
+              Framing
+              <select
+                value={framing}
+                onChange={(e) => {
+                  setFraming(e.target.value as typeof framing);
+                  setZoom(1);
+                }}
+              >
+                <option value="play">Play area</option>
+                <option value="overview">Overview</option>
+              </select>
+            </label>
+          </>
         )}
         {!actors && (
           <label>
@@ -331,9 +361,13 @@ export function SceneReview() {
       ) : (
         <div className="scene-review-canvas">
           <CourtyardLayer
-            key={scene.layout.arena.key}
+            key={`${scene.layout.arena.key}:${structureOnly}`}
             live={empty}
-            camera={{ x: 0, y: 0, zoom }}
+            structureOnly={structureOnly}
+            camera={{
+              ...battlefieldCameraPreset(scene.layout.arena, framing),
+              zoom: battlefieldCameraPreset(scene.layout.arena, framing).zoom * zoom,
+            }}
             onReady={onReady}
             onFailure={onFailure}
           />
