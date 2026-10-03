@@ -124,14 +124,15 @@ function intersectionPlan(variant: number) {
       zone("service-lane", "alley", rect(6, crossing + 20, 2, 28 - crossing)),
       zone("service-access", "aisle", rect(6, crossing + 10, 2, 38 - crossing)),
       zone("travel-lane", "aisle", rect(14, -8, 4, 48)),
-      { ...zone("shop-approach", "aisle", rect(8, 6, 4, 2), "x"), floorUse: "entry" as const },
+      zone("shop-approach", "aisle", rect(8, 6, 4, 2), "x"),
       { ...zone("housing-approach", "aisle", rect(20, 6, 4, 2), "x"), floorUse: "entry" as const },
       zone("workshop-approach", "aisle", rect(0, crossing + 6, 2, 4)),
       {
         ...zone("utility-approach", "aisle", rect(26, crossing + 6, 2, 6)),
         floorUse: "entry" as const,
       },
-      { ...zone("shop-customers", "aisle", rect(8, 4, 2, 2)), floorUse: "customer" as const },
+      // Customer forecourt stays on the facade side of the separate 2m through-walk.
+      { ...zone("shop-customers", "aisle", rect(8, 4, 2, 4)), floorUse: "forecourt" as const },
       {
         ...zone("workshop-handling", "aisle", rect(4, crossing + 10, 4, 6)),
         floorUse: "handling" as const,

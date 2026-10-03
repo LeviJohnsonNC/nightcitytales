@@ -113,9 +113,16 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
   },
   residential_entry: {
     zones: ["sidewalk", "frontage"],
-    reason: "Paired entrance planters frame a quiet residential approach",
+    reason: "Apartment mailboxes identify the residential entrance beside a quiet planted approach",
     members: [
-      { key: "planter", id: "north", x: 0, y: -4, art: ["planter"] },
+      {
+        key: "office_storage",
+        id: "mailboxes",
+        label: "apartment mailbox bank",
+        x: 0,
+        y: -4,
+        art: ["mailboxes"],
+      },
       { key: "planter", id: "south", x: 0, y: 2, art: ["planter"] },
     ],
     dressing: [{ kind: "lamp", x: 0.3, y: -1.5 }],
@@ -124,13 +131,20 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
   frontage_waiting: {
     zones: ["sidewalk", "frontage"],
     reason:
-      "A low commercial frontage offers a waiting bench beside its entrance, away from through traffic",
+      "A merchandise display identifies the low commercial frontage beside its entrance, away from through traffic",
     members: [
-      { key: "lounge_seat", id: "bench", x: 0, y: 0, art: ["seat-reverse"] },
+      {
+        key: "office_storage",
+        id: "display",
+        label: "shop merchandise display",
+        x: 0,
+        y: 0,
+        art: ["shop-display"],
+      },
       { key: "planter", id: "edge", x: 2, y: 0, art: ["planter"] },
     ],
     dressing: [],
-    access: [{ x: 1, y: 3, label: "Frontage waiting approach" }],
+    access: [{ x: 1, y: 3, label: "Merchandise browsing approach" }],
   },
   work_pod: {
     zones: ["workspace"],

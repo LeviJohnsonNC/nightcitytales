@@ -132,12 +132,22 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
   for (const z of env.zones.filter((z) => z.floorUse)) {
     const colors = {
       customer: ["#746b53", "#b7a67b"],
+      forecourt: ["#947b55", "#d3b986"],
       handling: ["#454845", "#c3a65c"],
       entry: ["#717970", "#a9b5a2"],
       staff: ["#3f5057", "#778e95"],
       visitor: ["#81745e", "#ac9c7e"],
     }[z.floorUse!]!;
     rect(z.rect, colors[0]!, colors[1]!);
+    if (z.floorUse === "forecourt") {
+      // A warm paved customer apron reads separately from the grey through-walk.
+      // Keep all marks flush with the ground: these are not physical barriers.
+      const r = z.rect;
+      for (let y = r.y + 0.5; y < r.y + r.height; y += 0.5)
+        line(project({ x: r.x, y }), project({ x: r.x + r.width, y }), "#ad936a", 0.7);
+      for (let x = r.x + 0.5; x < r.x + r.width; x += 0.5)
+        line(project({ x, y: r.y }), project({ x, y: r.y + r.height }), "#ad936a", 0.7);
+    }
     if (z.floorUse === "handling") {
       const r = z.rect;
       // Short safety marks define the working apron without filling the route.

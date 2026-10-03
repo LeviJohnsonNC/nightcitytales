@@ -23,6 +23,8 @@ export const INTERIOR_PROP_KINDS = [
   "partition",
   "workbench",
   "planter",
+  "mailboxes",
+  "shop-display",
 ] as const;
 export function isInteriorProp(kind: PropKind) {
   return (INTERIOR_PROP_KINDS as readonly string[]).includes(kind);
@@ -95,6 +97,41 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
         ctx.ellipse(p.x, p.y, 12, 7, i * 0.8, 0, Math.PI * 2);
         ctx.fill();
       }
+    } else if (kind === "mailboxes") {
+      slab(0.12, 0.4, 1.76, 0.9, 0, 76, metal);
+      for (const z of [8, 29, 50])
+        for (const x of [0.2, 0.75, 1.3]) {
+          slab(x, 0.35, 0.48, 0.05, z, z + 18, ["#8d9695", "#59686b", "#bbc3bd"]);
+          slab(x + 0.06, 0.31, 0.33, 0.04, z + 12, z + 14, ["#192c35", "#192c35", "#192c35"]);
+          slab(x + 0.32, 0.3, 0.07, 0.04, z + 4, z + 7, wood);
+        }
+    } else if (kind === "shop-display") {
+      // Tiered goods and a striped canopy identify retail without extra props.
+      for (const y of [0.25, 0.95]) {
+        const z = y < 0.5 ? 25 : 48;
+        slab(0.12, y, 1.76, 0.6, 0, z, wood);
+        for (let i = 0; i < 4; i++)
+          slab(
+            0.2 + i * 0.4,
+            y + 0.08,
+            0.3,
+            0.38,
+            z,
+            z + 13,
+            i % 2 ? ["#87603c", "#5b482e", "#d1a360"] : ["#697342", "#40513c", "#a6ad6b"],
+          );
+      }
+      for (const x of [0.12, 1.8]) slab(x, 1.65, 0.08, 0.12, 0, 94, metal);
+      for (let i = 0; i < 6; i++)
+        slab(
+          i / 3,
+          0.1,
+          1 / 3,
+          1.8,
+          92,
+          97,
+          i % 2 ? ["#a55a38", "#733b30", "#c5754d"] : ["#aaa080", "#776f59", "#d0c5a1"],
+        );
     } else if (kind === "speaker") {
       slab(0.25, 0.4, 1.5, 1.2, 0, 80, ["#20232d", "#141a23", "#414454"]);
       for (const z of [22, 58]) {

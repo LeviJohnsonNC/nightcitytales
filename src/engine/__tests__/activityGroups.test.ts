@@ -156,7 +156,7 @@ it.each(["office", "intersection"] as const)(
       }
       if (kind === "intersection") {
         expect(areas.filter((z) => z.floorUse === "handling")).toHaveLength(2);
-        expect(areas.some((z) => z.floorUse === "customer")).toBe(true);
+        expect(areas.some((z) => z.floorUse === "forecourt")).toBe(true);
         for (const id of ["housing_entry", "utility_waiting"])
           expect(arena.environment!.clusters.some((c) => c.id === id)).toBe(true);
       }
@@ -213,5 +213,26 @@ it("composes a complete staffed bar and distinct lounge groups in every nightclu
     const dance = env.zones.find((z) => z.kind === "dance")!;
     expect(arena.cover!.some((c) => rectsOverlap(c.rect, dance.rect))).toBe(false);
     expect(readBattlefieldSnapshot(JSON.parse(JSON.stringify(snapshot)))).toEqual(snapshot);
+  }
+});
+
+it("separates the shop forecourt from through walking and keeps quiet cues sparse", () => {
+  for (let seed = 0; seed < 32; seed++) {
+    const { arena } = composeScene("intersection", seed).layout;
+    const env = arena.environment!;
+    const forecourt = env.zones.find((z) => z.id === "shop-customers")!;
+    const through = env.zones.find((z) => z.id === "walk-west-north")!;
+    expect(forecourt.rect.width * forecourt.rect.height).toBe(8);
+    expect(rectsOverlap(forecourt.rect, through.rect)).toBe(false);
+    expect(arena.cover!.some((c) => rectsOverlap(c.rect, forecourt.rect))).toBe(false);
+    for (const [id, cue] of [
+      ["housing_entry", "mailboxes"],
+      ["utility_waiting", "shop-display"],
+    ]) {
+      const props = env.props.filter((p) => p.clusterId === id);
+      expect(props).toHaveLength(2);
+      expect(props.filter((p) => p.art === cue)).toHaveLength(1);
+      expect(props.filter((p) => p.art === "planter")).toHaveLength(1);
+    }
   }
 });
