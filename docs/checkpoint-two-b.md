@@ -1,7 +1,7 @@
 # Checkpoint 2B — functional areas
 
 2B is implemented and ready for visual acceptance. Checkpoint 1 remains approved;
-Checkpoint 2 remains open until 2C (nightclub groups and final acceptance review).
+[Checkpoint 2C](checkpoint-two-c.md) now supplies nightclub groups and the final review checklist. Checkpoint 2 remains open pending visual acceptance.
 
 ## What changed
 

@@ -82,6 +82,9 @@ it.each([
   ["office", "reception"],
   ["office", "seating"],
   ["office", "server"],
+  ["nightclub", "bar"],
+  ["nightclub", "seating"],
+  ["nightclub", "freight"],
   ["intersection", "vendor"],
   ["intersection", "freight"],
   ["intersection", "utilities"],
@@ -168,3 +171,47 @@ it.each(["office", "intersection"] as const)(
     }
   },
 );
+
+it("composes a complete staffed bar and distinct lounge groups in every nightclub topology", () => {
+  for (let seed = 0; seed < 32; seed++) {
+    const snapshot = composeScene("nightclub", seed).layout;
+    const arena = snapshot.arena;
+    const env = arena.environment!;
+    const bar = env.clusters.filter((c) => c.zoneId === "bar");
+    expect(bar.map((c) => c.kind)).toEqual(["bar_service"]);
+    const art = env.props.filter((p) => p.clusterId === bar[0]!.id);
+    expect(art.filter((p) => p.art === "bar")).toHaveLength(2);
+    expect(art.filter((p) => p.art === "backbar")).toHaveLength(2);
+    expect(art.every((p) => p.rotation === 0)).toBe(true);
+    const counter = art
+      .filter((p) => p.art === "bar")
+      .map((p) => arena.cover!.find((c) => c.id === p.coverId)!.rect);
+    expect(Math.abs(counter[0]!.x - counter[1]!.x)).toBe(2);
+    expect(counter[0]!.y).toBe(counter[1]!.y);
+    const backbar = art
+      .filter((p) => p.art === "backbar")
+      .map((p) => arena.cover!.find((c) => c.id === p.coverId)!.rect);
+    expect(backbar.every((r) => r.y === counter[0]!.y + 4)).toBe(true);
+    for (const id of ["bar_customers", "bar_staff", "bar_end_access"]) {
+      const area = env.zones.find((z) => z.id === id)!;
+      expect(area.kind).toBe("aisle");
+      expect(arena.cover!.some((c) => rectsOverlap(c.rect, area.rect))).toBe(false);
+    }
+    const lounges = env.clusters.filter((c) => c.zoneId === "seating");
+    expect(lounges.length).toBeGreaterThanOrEqual(2);
+    for (const group of lounges) {
+      expect(["lounge_bench", "lounge_conversation"]).toContain(group.kind);
+      const props = env.props.filter((p) => p.clusterId === group.id);
+      expect(props.filter((p) => p.art.startsWith("seat"))).toHaveLength(2);
+      expect(props.filter((p) => p.art === "lounge-table")).toHaveLength(
+        group.kind === "lounge_bench" ? 2 : 1,
+      );
+    }
+    expect(env.clusters.filter((c) => c.zoneId === "service").map((c) => c.kind)).toEqual([
+      "service_stock",
+    ]);
+    const dance = env.zones.find((z) => z.kind === "dance")!;
+    expect(arena.cover!.some((c) => rectsOverlap(c.rect, dance.rect))).toBe(false);
+    expect(readBattlefieldSnapshot(JSON.parse(JSON.stringify(snapshot)))).toEqual(snapshot);
+  }
+});

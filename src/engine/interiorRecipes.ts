@@ -260,6 +260,14 @@ export function composeInterior(
       { ...zone("reception_visitor", "aisle", 4, 2, 2, 4), floorUse: "visitor" },
     );
   }
+  if (kind === "nightclub") {
+    const r = rooms.find((room) => room.id === "bar")!.rect;
+    env.zones.push(
+      { ...zone("bar_customers", "aisle", r.x + 2, r.y + 2, 4, 2), floorUse: "customer" },
+      { ...zone("bar_staff", "aisle", r.x + 2, r.y + 6, 4, 2), floorUse: "staff" },
+      zone("bar_end_access", "aisle", r.x, r.y + 2, 2, 8),
+    );
+  }
   const reserved: Rect[] = [];
   for (const c of env.interior!.connections) {
     const door = env.zones.find((z) => z.id === c.zoneId)!;
@@ -339,6 +347,12 @@ export function composeInterior(
       else if (room.kind === "meeting" && room.rect.width * room.rect.height >= 60)
         cluster = "meeting_support";
     }
+    if (kind === "nightclub") {
+      if (room.id === "bar") cluster = "bar_service";
+      else if (room.id === "seating")
+        cluster = variant === 2 ? "lounge_conversation" : "lounge_bench";
+      else if (room.id === "service") cluster = "service_stock";
+    }
     const r = room.rect;
     // Bounded frontage candidates, ordered reproducibly; never free-cell scatter.
     const candidates: Point[] = [];
@@ -372,23 +386,34 @@ export function composeInterior(
     if (cluster === "workstation" && !candidates.length)
       for (let y = r.y; y < r.y + r.height; y += 2)
         for (let x = r.x; x < r.x + r.width; x += 2) candidates.push({ x, y });
-    const count = ["work_facing", "work_island"].includes(cluster)
-      ? 2
-      : ["racking", "vehicle_bay"].includes(cluster)
-        ? 12
-        : cluster === "freight"
-          ? 3
-          : cluster === "workbench"
-            ? 2
-            : cluster === "workstation"
-              ? 12
-              : cluster === "booth"
-                ? 4
-                : cluster === "seating"
-                  ? 3
-                  : cluster === "server"
-                    ? 2
-                    : 1;
+    if (cluster === "bar_service") {
+      candidates.length = 0;
+      candidates.push({ x: r.x + 2, y: r.y + 4 });
+    }
+    if (cluster.startsWith("lounge_")) {
+      candidates.length = 0;
+      for (let y = r.y + (cluster === "lounge_bench" ? 4 : 2); y < r.y + r.height - 2; y += 6)
+        for (let x = r.x; x < r.x + r.width - 2; x += 6) candidates.push({ x, y });
+    }
+    const count = cluster.startsWith("lounge_")
+      ? 3
+      : ["work_facing", "work_island"].includes(cluster)
+        ? 2
+        : ["racking", "vehicle_bay"].includes(cluster)
+          ? 12
+          : cluster === "freight"
+            ? 3
+            : cluster === "workbench"
+              ? 2
+              : cluster === "workstation"
+                ? 12
+                : cluster === "booth"
+                  ? 4
+                  : cluster === "seating"
+                    ? 3
+                    : cluster === "server"
+                      ? 2
+                      : 1;
     if (cluster.startsWith("reception_")) {
       candidates.length = 0;
       candidates.push({ x: r.x, y: r.y });
@@ -397,10 +422,17 @@ export function composeInterior(
       slots.push({
         id: `${room.id}_${i}`,
         kind: cluster,
-        // Keep opposing workstations aligned with their authored chair-side access.
-        axis: ["work_facing", "work_island", "reception_arrival", "meeting_support"].includes(
-          cluster,
-        )
+        // Keep directional arrangements aligned with their authored customer/staff access.
+        axis: [
+          "work_facing",
+          "work_island",
+          "reception_arrival",
+          "meeting_support",
+          "bar_service",
+          "lounge_bench",
+          "lounge_conversation",
+          "service_stock",
+        ].includes(cluster)
           ? "y"
           : room.axis,
         zone: room.id,
@@ -428,6 +460,7 @@ export function composeInterior(
     const secondary: Slot[] = [];
     for (const room of rooms) {
       if (kind === "office" && ["reception", "meeting", "service"].includes(room.kind)) continue;
+      if (kind === "nightclub" && ["bar", "seating", "service"].includes(room.id)) continue;
       const families =
         room.kind === "workspace"
           ? kind === "office" && room.id === "work"

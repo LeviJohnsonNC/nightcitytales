@@ -48,6 +48,8 @@ export const ENVIRONMENT_ART = [
   "conference-table",
   "seat",
   "bar",
+  "backbar",
+  "lounge-table",
   "server",
   "shelf",
   "dj",
