@@ -243,7 +243,6 @@ There are no new civilian movement decisions, drivable cars, explosions or inven
 retreat paths. The street is an approximation of the saved local scene, not an
 assertion about the canonical geography of Ulysses Street.
 
-
 ## Opening clarity and movement pacing
 
 Player feedback found that arriving wounded did not explain whether opponents

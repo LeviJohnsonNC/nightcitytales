@@ -52,7 +52,8 @@ export function feedbackCues(frame: PlaybackFrame): FeedbackCue[] {
     ];
   if (frame.kind === "move") {
     const cues: FeedbackCue[] = [];
-    for (let at = 120; at < frameDuration(frame) - 80; at += WALK_FRAME_MS * 2) cues.push({ at, sound: "step" });
+    for (let at = 120; at < frameDuration(frame) - 80; at += WALK_FRAME_MS * 2)
+      cues.push({ at, sound: "step" });
     return cues;
   }
   if (frame.kind !== "attack" && frame.kind !== "cover") return [];
