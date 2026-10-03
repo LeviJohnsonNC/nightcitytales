@@ -93,6 +93,36 @@ its ID to the damage map.
 - Desktop/mobile browser rendering, diagram switch, zoom, destroyed cover and
   WebGL-loss recovery through the shipping combat board.
 
+## Recovery verification — October 3, 2026
+
+Recovered the published `codex/scene-composition-phase1` branch at `7eff747`.
+That commit contains the 39-file composition proof described above; the recovered
+checkout was clean. The separate local `nightcitytales` checkout had unrelated
+README/art changes, which were left untouched. Any changes never pushed from the
+stalled Work workspace could not be inspected from this session.
+
+Follow-up fixes:
+
+- Saved v2 layouts now reject props occupying crosswalks or intersections, matching
+  the composer's placement constraint instead of accepting an obstructed crossing
+  on reload.
+- Optional service/loading clusters record the variant actually placed. Existing
+  saved geometry remains authoritative and is never regenerated.
+- Renamed the Life waiting-line model to `cityTurnModel.ts`: `cityTurns.ts` and
+  `CityTurns.tsx` caused case-insensitive Mac resolution to import the model as the
+  component, breaking both typecheck and production build.
+- The multi-seed regressions explicitly check every actor's route from the player,
+  in addition to unoccupied spawns; new regressions cover crossing corruption and
+  variant metadata.
+
+Fresh verification: 3,413 tests across 249 files, TypeScript and production build
+pass. Code lint has zero errors and 12 existing Fast Refresh warnings. The focused
+composition/sight/Life-model suite passes all 28 tests. No SQL changed during this
+recovery. SQL replay was not rerun here because PostgreSQL is unavailable; the
+SQL checks and rendered captures above are evidence recorded by the prior commit,
+not new authenticated end-to-end verification. The migration remains pending,
+and a deployed playthrough is still required before calling this rolled out.
+
 ## Remaining work
 
 This is a composition proof with procedural architectural art and reused prop

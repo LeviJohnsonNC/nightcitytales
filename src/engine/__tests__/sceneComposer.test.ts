@@ -5,6 +5,7 @@ import {
   readBattlefieldSnapshot,
   northHeywoodScene,
   blockedTiles,
+  reachableTiles,
   tileKey,
   tileOf,
   rectInside,
@@ -42,6 +43,14 @@ describe("composed places", () => {
           ).toBe(false);
         }
         const blocked = blockedTiles(arena, {});
+        const reachable = reachableTiles({
+          arena,
+          cover: {},
+          from: tileOf(arena, arena.playerStart),
+          allowance: 1000,
+        });
+        for (const actor of scene.actors)
+          expect(reachable.has(tileKey(tileOf(arena, actor.position)))).toBe(true);
         for (const p of [arena.playerStart, ...scene.actors.map((a) => a.position)])
           expect(blocked.has(tileKey(tileOf(arena, p)))).toBe(false);
         expect(JSON.stringify(scene.layout).length).toBeLessThan(65536);
@@ -68,6 +77,24 @@ describe("composed places", () => {
         width: 2,
         height: 2,
       });
+  });
+  it("records the actual service/loading variant in each saved cluster", () => {
+    const kinds = new Set<string>();
+    for (let seed = 0; seed < 32; seed++) {
+      const env = composeScene("intersection", seed).layout.arena.environment!;
+      const cluster = env.clusters.find((c) => c.id === "workshop_service")!;
+      kinds.add(cluster.kind);
+      const art = env.props.filter((p) => p.clusterId === cluster.id).map((p) => p.art);
+      expect(art).toEqual(
+        cluster.kind === "service" ? ["dumpster", "generator"] : ["cargo", "pallet"],
+      );
+    }
+    expect([...kinds].sort()).toEqual(["loading", "service"]);
+  });
+  it.each([12, 16])("refuses a saved vehicle blocking a crossing or junction at y=%s", (y) => {
+    const layout = composeScene("intersection").layout;
+    layout.arena.cover!.find((p) => p.id === "thorton_car_engine")!.rect.y = y;
+    expect(() => readBattlefieldSnapshot(layout)).toThrow("Invalid saved scene composition");
   });
   it("permanent buildings block movement and sight independently of cover damage", () => {
     const arena = composeScene("intersection").layout.arena;

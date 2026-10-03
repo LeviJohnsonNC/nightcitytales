@@ -157,7 +157,12 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
     const zone = zones.find((z) => z.id === clusters.find((c) => c.id === clusterId)!.zoneId)!;
     if (
       !rectInside(piece!.rect, zone.rect) ||
-      structures.some((s) => rectsOverlap(s.rect, piece!.rect))
+      structures.some((s) => rectsOverlap(s.rect, piece!.rect)) ||
+      zones.some(
+        (z) =>
+          (z.kind === "crosswalk" || z.kind === "intersection") &&
+          rectsOverlap(z.rect, piece!.rect),
+      )
     )
       fail();
     return {

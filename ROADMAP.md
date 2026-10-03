@@ -17,6 +17,10 @@ loading clusters, static buildings, frozen v2 snapshots and geometry-driven
 rendering replace independent prop scatter for these proofs. Existing encounters
 retain their original geometry. See [the implementation and playtest notes](docs/scene-composition.md).
 
+Recovery follow-up: saved crossings are validated on reload, cluster metadata
+matches the chosen contents, and the Mac filename-resolution build failure is fixed.
+Tests, typecheck and production build pass; deployed playtesting remains open.
+
 Next: playtest density/visibility, improve the procedural facade art, introduce
 more parcel/anchor variations, then prove office/club interiors before connecting
 structured adventure facts. Arbitrary prose-to-battlefield generation is still
