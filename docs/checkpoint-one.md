@@ -33,10 +33,10 @@ The workshop uses the existing delivery slot, without additional court infill. T
 intersection edge filler budget was reduced from three to two groups per zone.
 
 | Intersection variation | Previous cover sections | Current cover sections |
-| --- | ---: | ---: |
-| 1 | 28 | 23 |
-| 2 | 29 | 23 |
-| 3 | 23 | 21 |
+| ---------------------- | ----------------------: | ---------------------: |
+| 1                      |                      28 |                     23 |
+| 2                      |                      29 |                     23 |
+| 3                      |                      23 |                     21 |
 
 These are attackable sections, not individual assets. No new furnishing recipe was
 added. Existing delivery/dressing positions can change as their supporting zone moves.
@@ -53,17 +53,17 @@ improvements also apply to existing scene snapshots.
 
 ## Visual evidence
 
-| Variation | Office structure | Intersection structure |
-| --- | --- | --- |
-| 1 | ![Spine](checkpoint-one/office-1-structure.png) | ![Intersection 1](checkpoint-one/intersection-1-structure.png) |
-| 2 | ![Loop](checkpoint-one/office-2-structure.png) | ![Intersection 2](checkpoint-one/intersection-2-structure.png) |
-| 3 | ![Square core](checkpoint-one/office-3-structure.png) | ![Intersection 3](checkpoint-one/intersection-3-structure.png) |
+| Variation | Office structure                                      | Intersection structure                                         |
+| --------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| 1         | ![Spine](checkpoint-one/office-1-structure.png)       | ![Intersection 1](checkpoint-one/intersection-1-structure.png) |
+| 2         | ![Loop](checkpoint-one/office-2-structure.png)        | ![Intersection 2](checkpoint-one/intersection-2-structure.png) |
+| 3         | ![Square core](checkpoint-one/office-3-structure.png) | ![Intersection 3](checkpoint-one/intersection-3-structure.png) |
 
-| Variation | Office furnished | Intersection furnished |
-| --- | --- | --- |
-| 1 | ![Spine furnished](checkpoint-one/office-1-furnished.png) | ![Intersection 1 furnished](checkpoint-one/intersection-1-furnished.png) |
-| 2 | ![Loop furnished](checkpoint-one/office-2-furnished.png) | ![Intersection 2 furnished](checkpoint-one/intersection-2-furnished.png) |
-| 3 | ![Core furnished](checkpoint-one/office-3-furnished.png) | ![Intersection 3 furnished](checkpoint-one/intersection-3-furnished.png) |
+| Variation | Office furnished                                          | Intersection furnished                                                   |
+| --------- | --------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1         | ![Spine furnished](checkpoint-one/office-1-furnished.png) | ![Intersection 1 furnished](checkpoint-one/intersection-1-furnished.png) |
+| 2         | ![Loop furnished](checkpoint-one/office-2-furnished.png)  | ![Intersection 2 furnished](checkpoint-one/intersection-2-furnished.png) |
+| 3         | ![Core furnished](checkpoint-one/office-3-furnished.png)  | ![Intersection 3 furnished](checkpoint-one/intersection-3-furnished.png) |
 
 ## Review and limits
 
