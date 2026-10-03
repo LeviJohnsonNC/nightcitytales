@@ -109,6 +109,9 @@ once it has actually been run.
 - `20261002090000_scene_attack_intent.sql` — applied October 2, 2026,
   confirmed by Levi; deployed via Drizzle migration 0006.
 
+- `20261002100000_repair_encounter_status_constraint.sql` — applied October 2, 2026,
+  confirmed by Levi; deployed via Drizzle migration 0007.
+
 ## Pending
 
 Written and merged, but NOT yet run against the database. The code that reads
@@ -125,8 +128,3 @@ these tables must tolerate their absence until the line moves up to Applied.
   the application has ever written `won`, so until this runs the only difference
   is that the database would still accept a value the app cannot produce. No
   code depends on it having run.
-
-- `20261002100000_repair_encounter_status_constraint.sql` — **pending deployment**.
-  Reasserts the combat outcome constraint after live playtesting hit
-  `encounters_status_check` on a terminal save. The clean replay baseline already
-  had the intended constraint; the new regression also starts from the old one.

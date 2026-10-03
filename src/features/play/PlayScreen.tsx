@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { openingAttackIntentFrom } from "./attackPrompt";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { RollLine } from "./RollLine";
@@ -716,7 +717,13 @@ function InputBar({
   );
 }
 
-export function PlayScreen({ campaignId }: { campaignId: string }) {
+export function PlayScreen({
+  campaignId,
+  sceneControls,
+}: {
+  campaignId: string;
+  sceneControls?: ReactNode;
+}) {
   const play = usePlay(campaignId);
   const appearance = play.bundle?.character.character;
   const generatedPortrait = usePortraitUrl(appearance?.portrait_path);
@@ -1008,6 +1015,7 @@ export function PlayScreen({ campaignId }: { campaignId: string }) {
           */}
           <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             <NarrativeLog events={bundle.events} readAloud={bundle.beat?.readAloud} busy={false} />
+            {sceneControls}
             {play.actionError && (
               <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
                 <p className="text-sm text-destructive">{play.actionError.message}</p>

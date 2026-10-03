@@ -23,8 +23,8 @@ function render(status: "ready" | "resolved") {
 it("offers entry for a staged scene", () => {
   expect(render("ready")).toContain("Enter combat");
 });
-it("shows the saved aftermath without offering to respawn the fight", () => {
+it("leaves the aftermath to the main narrative without repeating it or offering a respawn", () => {
   const html = render("resolved");
-  expect(html).toContain("The lookout withdrew. The cruiser door is destroyed.");
+  expect(html).toBe("");
   expect(html).not.toContain("Enter combat");
 });

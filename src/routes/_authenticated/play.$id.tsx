@@ -62,12 +62,13 @@ function PlayPage() {
   // campaign phase (or its cold opening) resumes; combat never changes phase.
   const screen = campaignScreen(data);
   if (screen === "opening") return <OpeningScreen campaignId={id} />;
-  return (
-    <>
-      {!data.combat && data.status === "active" && (
-        <SceneContact campaignId={id} location={data.location} phase={data.phase} />
-      )}
-      {screen === "play" ? <PlayScreen campaignId={id} /> : <LifeScreen campaignId={id} />}
-    </>
+  const sceneControls =
+    !data.combat && data.status === "active" ? (
+      <SceneContact campaignId={id} location={data.location} phase={data.phase} />
+    ) : null;
+  return screen === "play" ? (
+    <PlayScreen campaignId={id} sceneControls={sceneControls} />
+  ) : (
+    <LifeScreen campaignId={id} sceneControls={sceneControls} />
   );
 }

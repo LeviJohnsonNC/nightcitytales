@@ -1,3 +1,5 @@
+import { LifeSceneContent } from "./LifeSceneContent";
+import type { ReactNode } from "react";
 import { readSceneCombatEnd } from "@/engine";
 /**
  * LIFE — the screen between jobs. One situation at a time, a free-text box, and
@@ -315,15 +317,17 @@ function LifeLog({
   events,
   suppressText,
   climber,
+  autoScroll = true,
 }: {
   events: CampaignEvent[];
+  autoScroll?: boolean;
   suppressText?: string;
   climber?: Climber;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [events.length]);
+    if (autoScroll) endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [events.length, autoScroll]);
   const shown = shownLifeEvents(events, suppressText);
   // Nothing has happened yet: the scene above is the screen, and an empty
   // bordered box under it reads as something that failed to load. The wait
@@ -728,7 +732,13 @@ function knownPlacesOf(campaign: { known_places: unknown }): string[] {
     : [];
 }
 
-export function LifeScreen({ campaignId }: { campaignId: string }) {
+export function LifeScreen({
+  campaignId,
+  sceneControls,
+}: {
+  campaignId: string;
+  sceneControls?: ReactNode;
+}) {
   const life = useLife(campaignId);
   const bundle = life.bundle;
   const [mobileReachOpen, setMobileReachOpen] = useState(false);
@@ -1029,16 +1039,7 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
             {/* Where you are, before anything has happened here. */}
             <SceneHero locationKey={locationKey} opening={!hasLog} />
 
-            <LifeLog
-              events={bundle.events}
-              climber={{
-                roleId: bundle.character.character.role ?? null,
-                homeDistrictKey: bundle.character.finance?.home_district_key ?? null,
-              }}
-              {...(life.narration ? { suppressText: life.narration.text } : {})}
-            />
-
-            {/* What the turn just cost, under the log where the eye already is. */}
+            {/* What the turn just cost, alongside the current scene. */}
             <ReceiptBar receipts={receipts} />
 
             {/* A week of life with no award is a session: judged here, on the
@@ -1072,15 +1073,33 @@ export function LifeScreen({ campaignId }: { campaignId: string }) {
               />
             )}
 
-            {life.narration && (
-              <section className="space-y-2 border-l-2 border-accent bg-accent/5 p-3">
-                <Label>{life.narration.title}</Label>
-                <p className="whitespace-pre-wrap text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
-                  <NpcText text={life.narration.text} />
-                </p>
-                <WalkOnStrip walkOns={life.narration.walkOns} defaultOpen />
-              </section>
-            )}
+            <LifeSceneContent
+              narration={
+                life.narration ? (
+                  <section className="space-y-2 border-l-2 border-accent bg-accent/5 p-3">
+                    <Label>{life.narration.title}</Label>
+                    <p className="whitespace-pre-wrap text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
+                      <NpcText text={life.narration.text} />
+                    </p>
+                    <WalkOnStrip walkOns={life.narration.walkOns} defaultOpen />
+                  </section>
+                ) : null
+              }
+              controls={sceneControls}
+              history={
+                hasLog ? (
+                  <LifeLog
+                    autoScroll={!life.narration}
+                    events={bundle.events}
+                    climber={{
+                      roleId: bundle.character.character.role ?? null,
+                      homeDistrictKey: bundle.character.finance?.home_district_key ?? null,
+                    }}
+                    {...(life.narration ? { suppressText: life.narration.text } : {})}
+                  />
+                ) : null
+              }
+            />
 
             {/* Options, and only when they were asked for. An ordinary turn
                 returns none, so these clear themselves the moment the player acts. */}

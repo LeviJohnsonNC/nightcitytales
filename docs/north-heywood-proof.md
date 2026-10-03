@@ -165,6 +165,32 @@ The previous screenshots showed an unchanged 8/8 magazine, so they do not prove
 that the reported first shot committed. The revised flow still needs player
 retesting in the deployed browser.
 
-The displaced scene controls, old home narration dominating the current scene,
-and diagram-only battlefield art remain known presentation work. These fixes do
-not claim to address those visual shortcomings.
+Those interaction fixes left displaced scene controls, old narration and
+diagram-only battlefield art for presentation work. The next section records
+the follow-up and remaining graphics work.
+
+## Scene and withdrawal presentation
+
+Levi's follow-up confirmed that targeted typed entry, ammo 8/8 → 7/8, movement,
+withdrawal outcomes and return to Life with 12/45 HP work. The generic out marker
+made both withdrawals look like deaths, and older narration dominated the return.
+
+The presentation now reads the same explicit disposition as the ending receipt:
+withdrawn actors have an arrow and “Withdrew”, confirmed deaths retain a cross,
+and legacy removals without a reason say “Out of fight”. Last-position markers
+are not a claim about where a withdrawn actor currently is. A departure list
+remains visible after playback/refresh; newly saved withdrawals also show whether
+morale broke or their objective was met. Old saves retain their known reason
+without inventing a cause. Illustrated withdrawn bodies disappear rather than
+remaining as corpse-like sprites. Neutral diagram actors no longer hold pistols.
+
+Life places its current narration/aftermath first, followed by scene controls and
+a collapsed Earlier adventure history. Prior events are still readable. The
+resolved scene does not repeat its summary in a second control card. Job scene
+controls also move inside the narrative column.
+
+No migration is needed for these changes; the cause is an optional addition to
+existing combatant JSON. This does not change initiative, AI morale/goal decisions,
+ROF, damage, or the model's context. Full scenic graphics for the intersection
+remain the next visual phase: the courtyard's prop mappings and baked ground
+cannot safely represent the saved cruiser, cart and street simply by enabling it.
