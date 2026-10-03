@@ -5,6 +5,7 @@ import {
   coverMaxHp,
   EMPTY_TURN_ECONOMY,
   type CapabilitySnapshot,
+  type SceneEnvironment,
 } from "@/engine";
 import { CombatBoard } from "@/features/play/CombatBoard";
 import { CourtyardLayer } from "@/features/play/courtyard/CourtyardLayer";
@@ -15,9 +16,10 @@ import "./sceneReview.css";
 const REVIEW_WEAPON = weaponProfile("very_heavy_pistol");
 const STORAGE = "nct-scene-review-v1";
 export function SceneReview() {
-  const [kind, setKind] = useState<"intersection" | "alley">("intersection");
+  const [kind, setKind] = useState<SceneEnvironment["recipe"]>("intersection");
   const [seed, setSeed] = useState(1);
   const [actors, setActors] = useState(false);
+  const [planVisible, setPlanVisible] = useState(false);
   const [entrances, setEntrances] = useState(false);
   const [damage, setDamage] = useState("intact");
   const [saved, setSaved] = useState<ReturnType<typeof readSceneReview> | null>(null);
@@ -78,7 +80,10 @@ export function SceneReview() {
       <header className="scene-review-controls">
         <div>
           <strong>Scene review</strong>
-          <p>Static fixtures · no campaign writes. Entrance markers lead to closed doors.</p>
+          <p>
+            Static fixtures · no campaign writes. Interior doorways are open; exterior facade doors
+            are closed.
+          </p>
         </div>
         <label>
           Place
@@ -91,6 +96,8 @@ export function SceneReview() {
           >
             <option value="intersection">Intersection</option>
             <option value="alley">Service alley</option>
+            <option value="office">Office</option>
+            <option value="nightclub">Nightclub</option>
           </select>
         </label>
         <label>
@@ -102,9 +109,9 @@ export function SceneReview() {
               setSeed(Number(e.target.value));
             }}
           >
-            <option value={1}>1 · Corner / service court</option>
-            <option value={2}>2 · Offset / narrow passage</option>
-            <option value={3}>3 · Cross-axis / wide passage</option>
+            <option value={1}>1 · First layout</option>
+            <option value={2}>2 · Second layout</option>
+            <option value={3}>3 · Third layout</option>
           </select>
         </label>
         <label>
@@ -134,8 +141,18 @@ export function SceneReview() {
               setEntrances(e.target.checked);
             }}
           />
-          Entrance positions
+          Access positions
         </label>
+        {scene.layout.arena.environment?.interior && (
+          <label>
+            <input
+              type="checkbox"
+              checked={planVisible}
+              onChange={(e) => setPlanVisible(e.target.checked)}
+            />
+            Room/access plan
+          </label>
+        )}
         {!actors && (
           <label>
             Zoom
@@ -187,10 +204,16 @@ export function SceneReview() {
                     : "intact",
               );
               setEntrances(
-                (environment.entrances ?? []).some((entry, i) => {
-                  const position = restored.live.data[restored.live.state.order[i]!]!.position;
-                  return position.x === entry.position.x && position.y === entry.position.y;
-                }),
+                (
+                  environment.interior?.access.filter((a) => a.id.endsWith("_approach")) ??
+                  environment.entrances ??
+                  []
+                )
+                  .slice(0, restored.live.state.order.length)
+                  .some((entry, i) => {
+                    const position = restored.live.data[restored.live.state.order[i]!]!.position;
+                    return position.x === entry.position.x && position.y === entry.position.y;
+                  }),
               );
               setSaved(restored);
               setMessage("Restored saved geometry, positions and damage.");
@@ -212,6 +235,40 @@ export function SceneReview() {
                   : "Loading scenery…")}
         </p>
       </header>
+      {planVisible && scene.layout.arena.environment?.interior && (
+        <figure className="scene-review-plan">
+          <figcaption>
+            Saved room plan · cyan openings · gold working-space anchors · dark walls remain solid
+          </figcaption>
+          <svg
+            viewBox="0 0 32 32"
+            role="img"
+            aria-label="Saved room connections and working spaces"
+          >
+            <rect width="32" height="32" fill="#12212c" />
+            {scene.layout.arena.environment.zones.map((z) => (
+              <g key={z.id}>
+                <rect
+                  {...z.rect}
+                  fill={
+                    z.kind === "doorway" ? "#56cbbb" : z.kind === "dance" ? "#674778" : "#415b68"
+                  }
+                  stroke="#12212c"
+                  strokeWidth=".15"
+                />
+                <text x={z.rect.x + 0.5} y={z.rect.y + 1.2} fontSize=".7" fill="#eef5f1">
+                  {z.kind === "doorway" ? "" : z.id}
+                </text>
+              </g>
+            ))}
+            {scene.layout.arena.environment.interior.access.map((a) => (
+              <circle key={a.id} cx={a.position.x} cy={a.position.y} r=".23" fill="#f6c777">
+                <title>{a.label}</title>
+              </circle>
+            ))}
+          </svg>
+        </figure>
+      )}
       {actors ? (
         <CombatBoard
           key={scene.layout.arena.key}

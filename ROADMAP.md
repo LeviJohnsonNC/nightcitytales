@@ -29,6 +29,17 @@ saved aftermath. Next content work is facade/prop art and recipe tuning, then
 interior proofs and structured adventure facts. Arbitrary prose-to-battlefield
 generation remains outside this milestone.
 
+## Interior composition — Phase 2
+
+Office and nightclub each have three authored spatial layouts, saved room
+connections, public/service openings, protected furniture working space and
+cutaway wall presentation. They reuse Phase 1 cluster placement, cover, movement,
+visibility and persistence. The review page includes a room/access plan.
+See [interior composition](docs/interior-composition.md) for evidence and limits.
+
+Next: residential streets, warehouse and garage recipes, reusing this foundation.
+Final painterly art, interactive doors and tactical height remain separate work.
+
 ## Now: character creation as act one
 
 Creation was faithful, reasonably stylish, and a form: step one asked how much

@@ -1,9 +1,11 @@
+import { isInteriorProp, createInteriorPropTextures } from "./interiorPropArt";
 import type Phaser from "phaser";
 import type { PropKind, PropCondition } from "./propPresentation";
 import { propTexture } from "./propPresentation";
 import { clearMatte } from "./characterTextures";
 
 export function propSource(kind: PropKind) {
+  if (isInteriorProp(kind)) return "procedural-interior";
   if (kind.startsWith("sedan-") || kind === "food-cart") return "street-props";
   return kind.startsWith("truck-") ? "vehicle-states" : `${kind}-states`;
 }
@@ -11,6 +13,10 @@ export function propSource(kind: PropKind) {
 /** Crop inspected atlas cells once; preserve supplied alpha and key opaque light mattes. */
 export function createPropTextures(scene: Phaser.Scene, kinds: PropKind[]) {
   for (const kind of kinds) {
+    if (isInteriorProp(kind)) {
+      createInteriorPropTextures(scene, kind);
+      continue;
+    }
     const source = scene.textures
       .get(`source-${propSource(kind)}`)
       .getSourceImage() as HTMLImageElement;
@@ -58,5 +64,6 @@ export function createPropTextures(scene: Phaser.Scene, kinds: PropKind[]) {
       texture.refresh();
     });
   }
-  for (const source of new Set(kinds.map(propSource))) scene.textures.remove(`source-${source}`);
+  for (const source of new Set(kinds.filter((k) => !isInteriorProp(k)).map(propSource)))
+    scene.textures.remove(`source-${source}`);
 }

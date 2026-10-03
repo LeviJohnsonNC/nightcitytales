@@ -94,7 +94,7 @@ export function createCourtyard(
     ...(street ? ["workers"] : ["ground"]),
     "mercenary-animation",
     "hostile-animation",
-    ...new Set(kinds.map(propSource)),
+    ...new Set(kinds.map(propSource).filter((source) => source !== "procedural-interior")),
   ];
   const { project } = battlefieldProjection(arena.extent.width, arena.extent.height);
   let started = 0;

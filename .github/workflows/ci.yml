@@ -105,3 +105,11 @@ jobs:
         env:
           PGURL: postgres://postgres:postgres@localhost:5432/postgres
         run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/composed-scenes.test.sql
+
+      - uses: oven-sh/setup-bun@v2
+      - name: Generated interior persistence regression
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/postgres
+        run: |
+          bun tools/scenes/interior-sql.ts > /tmp/interior-scenes.sql
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f /tmp/interior-scenes.sql

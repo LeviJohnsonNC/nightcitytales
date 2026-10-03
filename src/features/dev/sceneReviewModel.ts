@@ -19,7 +19,9 @@ export function sceneReviewEncounter(scene: AuthoredScene, atEntrances = false):
     },
     ...scene.actors,
   ];
-  const entrances = scene.layout.arena.environment?.entrances ?? [];
+  const env = scene.layout.arena.environment;
+  const entrances =
+    env?.interior?.access.filter((a) => a.id.endsWith("_approach")) ?? env?.entrances ?? [];
   return {
     id: "scene-review",
     arena: scene.layout.arena.key,

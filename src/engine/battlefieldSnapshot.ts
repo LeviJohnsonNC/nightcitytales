@@ -98,15 +98,28 @@ export function readBattlefieldSnapshot(value: unknown): BattlefieldSnapshot {
     )
       throw new Error("Battlefield spawn is inside an obstacle.");
   }
-  if (arena.environment?.entrances?.length) {
+  if (arena.environment?.entrances?.length || arena.environment?.interior) {
     const reachable = reachableTiles({
       arena,
       cover: {},
       from: tileOf(arena, arena.playerStart),
       allowance: 10000,
     });
-    if (arena.environment.entrances.some((e) => !reachable.has(tileKey(tileOf(arena, e.position)))))
-      throw new Error("Battlefield entrance is unreachable.");
+    if (
+      [...(arena.environment.entrances ?? []), ...(arena.environment.interior?.access ?? [])].some(
+        (e) => !reachable.has(tileKey(tileOf(arena, e.position))),
+      )
+    )
+      throw new Error("Battlefield entrance or working space is unreachable.");
+    if (arena.environment.interior) {
+      const blocked = blockedTiles(arena, {});
+      for (let x = 1; x < width; x += 2)
+        for (let y = 1; y < height; y += 2) {
+          const key = tileKey(tileOf(arena, { x, y }));
+          if (!blocked.has(key) && !reachable.has(key))
+            throw new Error("Disconnected interior floor.");
+        }
+    }
   }
   return { version: raw["version"], arena };
 }

@@ -1,12 +1,12 @@
 {
   "_note": {
-    "why": "Twenty-four things to put on a battlefield. Cover is what turns a position into a choice — engine/cover.ts says so and PRODUCT.md agrees — but the only authored furniture the game had was the eight pieces standing in the Night Shift courtyard. An arena built from those alone is the same fight in a different colour, and 'a car' was not available to put in one.",
+    "why": "Reusable objects to put on a battlefield. Cover is what turns a position into a choice — engine/cover.ts says so and PRODUCT.md agrees — but the only authored furniture the game had was the eight pieces standing in the Night Shift courtyard. An arena built from those alone is the same fight in a different colour, and 'a car' was not available to put in one.",
     "houseRule": true,
     "provenance": "The MATERIALS and their HP are the printed table (CP:R pg. 182, transcribed in data/rules/cover.json) and are not invented here. What IS a house judgement is which material each of these objects is made of, and how many 2m sections it covers — the book does not print a bus. Every entry carries a `why` saying which printed row it is being read against, so a disagreement is an argument about one line rather than a mystery.",
     "sections": "pg. 182 makes a 2m by 2m section the unit that 'can be attacked just like you can', so a prop is a LIST of sections, each with its own material, HP and id. A sedan is an engine block you can hide behind and a passenger door you cannot: two sections, never one shared pool. Offsets are metres from the prop's own origin and always land on the 2m lattice the battlemat is drawn on.",
     "notCover": "Three entries are scenery: thin plaster, foam, plastic and ordinary glass are printed as '0 HP (Not Cover)', and the golden rule says a thing that cannot stop a bullet is not cover at all. The engine treats those as absent from every sightline — which is exactly why they are worth having authored, because a chain-link fence and a cubicle wall stop a person walking and stop nothing else, and an arena that wants that effect should not have to fake it with something bulletproof.",
     "crossable": "`blocksMovement: false` is for things you can step over or through — a knee-high barrier, a planter. You can shelter behind them and still cross them, which is a different tactical object from a wall.",
-    "art": "`art` names the sprite this prop will draw as. Nothing renders it yet: the combat board's prop art is hand-drawn per object in three damage states, and these have none, so anything placed today falls back to the crate texture the way an unknown id already does. The name is chosen with the item so the two cannot drift apart later.",
+    "art": "Art names identify reusable presentation assets. Composed scenes freeze approved per-section art bindings alongside canonical cover geometry; the renderer never infers combat behavior from artwork.",
     "notModelledYet": "Fuel drums and vehicles do not explode: the explosives rule (pg. 174) is not implemented, so a drum is a steel barrel and nothing more. Nor does breaking a window open a route — scenery that blocks movement blocks it at full HP and at zero."
   },
   "props": [
@@ -517,6 +517,124 @@
         {
           "key": "body",
           "label": "stacked pallets",
+          "material": "wood",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "office_desk",
+      "label": "an office workstation",
+      "category": "interior",
+      "art": "desk",
+      "why": "House-authored footprint and construction: thin wood, using the printed material HP in cover.json. Furniture occupies whole 2m tactical sections; upholstery and electronics add no separate protection.",
+      "sections": [
+        {
+          "key": "section_0",
+          "label": "an office workstation",
+          "material": "wood",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "reception_counter",
+      "label": "a reception counter",
+      "category": "interior",
+      "art": "reception",
+      "why": "House-authored footprint and construction: thick wood, using the printed material HP in cover.json. Furniture occupies whole 2m tactical sections; upholstery and electronics add no separate protection.",
+      "sections": [
+        {
+          "key": "section_0",
+          "label": "a reception counter",
+          "material": "wood",
+          "thickness": "thick",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "section_1",
+          "label": "a reception counter",
+          "material": "wood",
+          "thickness": "thick",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "meeting_table",
+      "label": "a meeting table",
+      "category": "interior",
+      "art": "meeting-table",
+      "why": "House-authored footprint and construction: thin wood, using the printed material HP in cover.json. Furniture occupies whole 2m tactical sections; upholstery and electronics add no separate protection.",
+      "sections": [
+        {
+          "key": "section_0",
+          "label": "a meeting table",
+          "material": "wood",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "section_1",
+          "label": "a meeting table",
+          "material": "wood",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "lounge_seat",
+      "label": "an upholstered booth seat",
+      "category": "interior",
+      "art": "seat",
+      "why": "House-authored footprint and construction: thin wood, using the printed material HP in cover.json. Furniture occupies whole 2m tactical sections; upholstery and electronics add no separate protection.",
+      "sections": [
+        {
+          "key": "section_0",
+          "label": "an upholstered booth seat",
+          "material": "wood",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "dj_console",
+      "label": "a DJ console",
+      "category": "interior",
+      "art": "dj",
+      "why": "House-authored footprint and construction: thin steel, using the printed material HP in cover.json. Furniture occupies whole 2m tactical sections; upholstery and electronics add no separate protection.",
+      "sections": [
+        {
+          "key": "section_0",
+          "label": "a DJ console",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "cafe_table",
+      "label": "a low lounge table",
+      "category": "interior",
+      "art": "meeting-table",
+      "why": "House-authored thin wood furniture, using the printed wood material HP. Its table and base occupy one 2m tactical section; the finish adds no separate protection.",
+      "sections": [
+        {
+          "key": "table",
+          "label": "a low lounge table",
           "material": "wood",
           "thickness": "thin",
           "dx": 0,

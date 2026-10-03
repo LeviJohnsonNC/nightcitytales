@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { composeScene, coverMaxHp, readBattlefieldPositions } from "@/engine";
 import { readSceneReview, sceneReviewEncounter } from "../sceneReviewModel";
 
-it.each(["intersection", "alley"] as const)(
+it.each(["intersection", "alley", "office", "nightclub"] as const)(
   "preserves %s geometry, rotated damage and entrance positions through saved review",
   (kind) => {
     for (const seed of [1, 2, 3]) {

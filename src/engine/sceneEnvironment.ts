@@ -9,6 +9,16 @@ export const ZONE_KINDS = [
   "alley",
   "loading",
   "crosswalk",
+  "reception",
+  "workspace",
+  "meeting",
+  "seating",
+  "service",
+  "corridor",
+  "doorway",
+  "dance",
+  "performance",
+  "aisle",
 ] as const;
 export type ZoneKind = (typeof ZONE_KINDS)[number];
 export const ENVIRONMENT_ART = [
@@ -20,6 +30,15 @@ export const ENVIRONMENT_ART = [
   "dumpster",
   "generator",
   "barrier",
+  "desk",
+  "reception",
+  "meeting-table",
+  "seat",
+  "bar",
+  "server",
+  "shelf",
+  "dj",
+  "partition",
 ] as const;
 export type EnvironmentArt = (typeof ENVIRONMENT_ART)[number];
 export const DRESSING_KINDS = [
@@ -37,14 +56,19 @@ export type SceneStructure = {
   label: string;
   rect: Rect;
   height: number;
-  style: "shop" | "workshop" | "warehouse";
+  style: "shop" | "workshop" | "warehouse" | "interior-wall";
   blocksMovement: boolean;
   blocksShots: boolean;
 };
 export type SceneEnvironment = {
   version: 1;
-  recipe: "intersection" | "alley";
-  recipeVersion: 1 | 2;
+  recipe: "intersection" | "alley" | "office" | "nightclub";
+  recipeVersion: 1 | 2 | 3;
+  /** Room connections are openings, not interactive doors or a second navigation system. */
+  interior?: {
+    connections: { zoneId: string; from: string; to: string }[];
+    access: { id: string; zoneId: string; position: Point; label: string }[];
+  };
   /** Exterior approach tiles; doors remain closed, with no implied interior. */
   entrances?: { id: string; structureId: string; position: Point; label: string }[];
   seed: number;
@@ -108,7 +132,7 @@ function rectangle(v: unknown): Rect {
 /** Closed vocabulary, bounded geometry, referential integrity; no catalog regeneration. */
 export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnvironment {
   const r = obj(value);
-  if (r["version"] !== 1 || (r["recipeVersion"] !== 1 && r["recipeVersion"] !== 2)) fail();
+  if (r["version"] !== 1 || ![1, 2, 3].includes(r["recipeVersion"] as number)) fail();
   const ids = new Set<string>();
   const id = (v: unknown) => {
     const key = str(v);
@@ -125,14 +149,14 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       axis: choice(z["axis"], ["x", "y"] as const),
     };
   });
-  const structures = list(r["structures"], 32).map((v) => {
+  const structures = list(r["structures"], 128).map((v) => {
     const s = obj(v);
     return {
       id: id(s["id"]),
       label: str(s["label"]),
       rect: rectangle(s["rect"]),
       height: num(s["height"], 1, 12),
-      style: choice(s["style"], ["shop", "workshop", "warehouse"] as const),
+      style: choice(s["style"], ["shop", "workshop", "warehouse", "interior-wall"] as const),
       blocksMovement: bool(s["blocksMovement"]),
       blocksShots: bool(s["blocksShots"]),
     };
@@ -198,7 +222,7 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       structures.some((s) => rectsOverlap(s.rect, piece!.rect)) ||
       zones.some(
         (z) =>
-          (z.kind === "crosswalk" || z.kind === "intersection") &&
+          ["crosswalk", "intersection", "corridor", "doorway", "dance", "aisle"].includes(z.kind) &&
           rectsOverlap(z.rect, piece!.rect),
       )
     )
@@ -243,10 +267,14 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
     if (structures.slice(i + 1).some((s) => rectsOverlap(structures[i]!.rect, s.rect))) fail();
     if (arena.cover?.some((p) => p.id === structures[i]!.id)) fail();
   }
+  const interior = readInterior(r["interior"], zones, structures, arena);
+  const interiorRecipe = ["office", "nightclub"].includes(r["recipe"] as string);
+  if (interiorRecipe !== Boolean(interior) || (interiorRecipe && r["recipeVersion"] !== 3)) fail();
   return {
     version: 1,
-    recipe: choice(r["recipe"], ["intersection", "alley"] as const),
-    recipeVersion: r["recipeVersion"] as 1 | 2,
+    ...(interior ? { interior } : {}),
+    recipe: choice(r["recipe"], ["intersection", "alley", "office", "nightclub"] as const),
+    recipeVersion: r["recipeVersion"] as 1 | 2 | 3,
     ...(entrances ? { entrances } : {}),
     seed,
     zones,
@@ -255,4 +283,137 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
     props,
     dressing,
   };
+}
+
+/** Opening and both approach points, derived from the saved room boundaries. */
+export function doorwayApproaches(door: Rect, a: Rect, b: Rect): Point[] {
+  const horizontal =
+    (a.x + a.width === door.x && door.x + door.width === b.x) ||
+    (b.x + b.width === door.x && door.x + door.width === a.x);
+  const vertical =
+    (a.y + a.height === door.y && door.y + door.height === b.y) ||
+    (b.y + b.height === door.y && door.y + door.height === a.y);
+  if (
+    horizontal &&
+    door.width === 2 &&
+    [a, b].every((r) => door.y >= r.y && door.y + door.height <= r.y + r.height)
+  )
+    return Array.from({ length: door.height / 2 }, (_, i) => [
+      { x: door.x - 1, y: door.y + 1 + i * 2 },
+      { x: door.x + 1, y: door.y + 1 + i * 2 },
+      { x: door.x + 3, y: door.y + 1 + i * 2 },
+    ]).flat();
+  if (
+    vertical &&
+    door.height === 2 &&
+    [a, b].every((r) => door.x >= r.x && door.x + door.width <= r.x + r.width)
+  )
+    return Array.from({ length: door.width / 2 }, (_, i) => [
+      { x: door.x + 1 + i * 2, y: door.y - 1 },
+      { x: door.x + 1 + i * 2, y: door.y + 1 },
+      { x: door.x + 1 + i * 2, y: door.y + 3 },
+    ]).flat();
+  return fail();
+}
+/** Exterior openings reserve only the in-bounds approach; they add no travel action. */
+export function exteriorDoorwayApproaches(
+  door: Rect,
+  room: Rect,
+  extent: Arena["extent"],
+): Point[] {
+  let outside: Rect;
+  if (door.x === 0) outside = { x: -2, y: door.y, width: 2, height: door.height };
+  else if (door.x + door.width === extent.width)
+    outside = { x: extent.width, y: door.y, width: 2, height: door.height };
+  else if (door.y === 0) outside = { x: door.x, y: -2, width: door.width, height: 2 };
+  else if (door.y + door.height === extent.height)
+    outside = { x: door.x, y: extent.height, width: door.width, height: 2 };
+  else return fail();
+  return doorwayApproaches(door, room, outside).filter(
+    (p) => p.x > 0 && p.y > 0 && p.x < extent.width && p.y < extent.height,
+  );
+}
+function readInterior(
+  value: unknown,
+  zones: SceneZone[],
+  structures: SceneStructure[],
+  arena: Arena,
+): SceneEnvironment["interior"] {
+  if (value === undefined) return undefined;
+  const r = obj(value),
+    bounds = { x: 0, y: 0, ...arena.extent };
+  const spaces = zones.filter((z) => !["aisle", "doorway"].includes(z.kind));
+  const doors = zones.filter((z) => z.kind === "doorway");
+  if (!spaces.length || zones.some((z) => !rectInside(z.rect, bounds))) fail();
+  for (const [i, space] of spaces.entries()) {
+    if (
+      spaces.slice(i + 1).some((z) => rectsOverlap(space.rect, z.rect)) ||
+      structures.some((w) => rectsOverlap(w.rect, space.rect))
+    )
+      fail();
+  }
+  const used = new Set<string>();
+  const open = (p: Point) => {
+    const tile = { x: p.x - 1, y: p.y - 1, width: 2, height: 2 };
+    if (
+      !rectInside(tile, bounds) ||
+      p.x % 2 !== 1 ||
+      p.y % 2 !== 1 ||
+      structures.some((w) => rectsOverlap(w.rect, tile)) ||
+      arena.cover?.some((c) => rectsOverlap(c.rect, tile))
+    )
+      fail();
+  };
+  const connections = list(r["connections"], 32).map((v) => {
+    const c = obj(v),
+      zoneId = str(c["zoneId"]),
+      from = str(c["from"]),
+      to = str(c["to"]);
+    const door = doors.find((z) => z.id === zoneId),
+      a = spaces.find((z) => z.id === from),
+      b = spaces.find((z) => z.id === to);
+    if (!door || !a || (!b && to !== "outside") || a === b || used.has(zoneId)) fail();
+    used.add(zoneId);
+    (b
+      ? doorwayApproaches(door!.rect, a!.rect, b.rect)
+      : exteriorDoorwayApproaches(door!.rect, a!.rect, arena.extent)
+    ).forEach(open);
+    return { zoneId, from, to };
+  });
+  if (used.size !== doors.length) fail();
+  for (const [i, door] of doors.entries())
+    if ([...spaces, ...doors.slice(i + 1)].some((z) => rectsOverlap(z.rect, door.rect))) fail();
+  const accessIds = new Set<string>();
+  const access = list(r["access"], 64).map((v) => {
+    const a = obj(v),
+      p = obj(a["position"]),
+      zoneId = str(a["zoneId"]),
+      key = str(a["id"]);
+    const position = {
+      x: num(p["x"], 1, arena.extent.width - 1),
+      y: num(p["y"], 1, arena.extent.height - 1),
+    };
+    const zone = spaces.find((z) => z.id === zoneId);
+    if (
+      !zone ||
+      accessIds.has(key) ||
+      !rectInside({ x: position.x - 1, y: position.y - 1, width: 2, height: 2 }, zone.rect)
+    )
+      fail();
+    accessIds.add(key);
+    open(position);
+    return { id: key, zoneId, position, label: str(a["label"]) };
+  });
+  if (spaces.some((z) => !access.some((a) => a.zoneId === z.id))) fail();
+  // A saved interior cannot erase a wall or invent unseen solid space.
+  for (let x = 0; x < arena.extent.width; x += 2)
+    for (let y = 0; y < arena.extent.height; y += 2) {
+      const tile = { x, y, width: 2, height: 2 };
+      const floor = [...spaces, ...doors].some((z) => rectInside(tile, z.rect));
+      const wall = structures.some(
+        (w) => rectInside(tile, w.rect) && w.blocksMovement && w.blocksShots,
+      );
+      if (floor === wall) fail();
+    }
+  return { connections, access };
 }
