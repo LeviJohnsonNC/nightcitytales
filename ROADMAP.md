@@ -17,14 +17,17 @@ loading clusters, static buildings, frozen v2 snapshots and geometry-driven
 rendering replace independent prop scatter for these proofs. Existing encounters
 retain their original geometry. See [the implementation and playtest notes](docs/scene-composition.md).
 
-Recovery follow-up: saved crossings are validated on reload, cluster metadata
-matches the chosen contents, and the Mac filename-resolution build failure is fixed.
-Tests, typecheck and production build pass; deployed playtesting remains open.
+Phase 1 implementation now includes three spatial layouts per recipe, reserved
+and validated exterior entrances, a character-free `/scene-review`, silhouette
+occlusion and permanent-wall targeting feedback. Six rendered examples and the
+acceptance matrix are in the linked notes. Legacy snapshots retain their saved
+geometry. The SQL prerequisite was confirmed applied by Levi on October 3.
 
-Next: playtest density/visibility, improve the procedural facade art, introduce
-more parcel/anchor variations, then prove office/club interiors before connecting
-structured adventure facts. Arbitrary prose-to-battlefield generation is still
-not enabled. Deployment requires `20261003010000_composed_battlefield_snapshots.sql`.
+Automated and local browser checks pass. Final rollout acceptance is a deployed
+campaign playthrough: enter, move/damage cover, reload, finish, and verify the
+saved aftermath. Next content work is facade/prop art and recipe tuning, then
+interior proofs and structured adventure facts. Arbitrary prose-to-battlefield
+generation remains outside this milestone.
 
 ## Now: character creation as act one
 

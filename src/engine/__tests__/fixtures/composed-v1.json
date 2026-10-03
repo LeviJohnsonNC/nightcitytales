@@ -1,0 +1,902 @@
+{
+  "version": 1,
+  "scene": {
+    "locationKey": "north_heywood",
+    "template": "composed-intersection",
+    "templateVersion": 1,
+    "anchor": "composition-intersection-1",
+    "narration": "At a North Heywood intersection, parked cars line the curb outside shuttered workshops. A broth vendor has set up beside a corner shop, with stools and supplies tucked against the frontage. Across the crossing, a rifleman stands beside an olive-drab cruiser; his lookout watches farther along the curb. Two maintenance workers linger by the vendor.",
+    "layout": {
+      "version": 2,
+      "arena": {
+        "key": "scene:composed-intersection:v1:1",
+        "label": "North Heywood · commercial intersection",
+        "extent": {
+          "width": 32,
+          "height": 32
+        },
+        "playerStart": {
+          "x": 17,
+          "y": 23
+        },
+        "hostileSlots": [
+          {
+            "x": 23,
+            "y": 3
+          },
+          {
+            "x": 23,
+            "y": 9
+          }
+        ],
+        "cover": [
+          {
+            "id": "thorton_car_engine",
+            "label": "Olive-drab Thorton cruiser · the sedan's engine block",
+            "material": "steel",
+            "thickness": "thick",
+            "rect": {
+              "x": 20,
+              "y": 2,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 50
+          },
+          {
+            "id": "thorton_car_cabin",
+            "label": "Olive-drab Thorton cruiser · the sedan's cabin and doors",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 20,
+              "y": 4,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "curb_north_car_engine",
+            "label": "the sedan's engine block",
+            "material": "steel",
+            "thickness": "thick",
+            "rect": {
+              "x": 20,
+              "y": 8,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 50
+          },
+          {
+            "id": "curb_north_car_cabin",
+            "label": "the sedan's cabin and doors",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 20,
+              "y": 10,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "curb_west_car_engine",
+            "label": "the sedan's engine block",
+            "material": "steel",
+            "thickness": "thick",
+            "rect": {
+              "x": 12,
+              "y": 2,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 50
+          },
+          {
+            "id": "curb_west_car_cabin",
+            "label": "the sedan's cabin and doors",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 12,
+              "y": 4,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "curb_south_car_engine",
+            "label": "the sedan's engine block",
+            "material": "steel",
+            "thickness": "thick",
+            "rect": {
+              "x": 12,
+              "y": 26,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 50
+          },
+          {
+            "id": "curb_south_car_cabin",
+            "label": "the sedan's cabin and doors",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 12,
+              "y": 28,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "broth_cart_cart_cart",
+            "label": "Broth cart · a street food cart",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 8,
+              "y": 6,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "workshop_service_bin_body",
+            "label": "service dumpster",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 0,
+              "y": 10,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "workshop_service_power_body",
+            "label": "service generator",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 4,
+              "y": 10,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "evening_vendor_cart_cart",
+            "label": "a street food cart",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 8,
+              "y": 24,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "deliveries_crate_body",
+            "label": "freight crate",
+            "material": "steel",
+            "thickness": "thin",
+            "rect": {
+              "x": 2,
+              "y": 22,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 25
+          },
+          {
+            "id": "deliveries_pallet_body",
+            "label": "stacked pallets",
+            "material": "wood",
+            "thickness": "thin",
+            "rect": {
+              "x": 2,
+              "y": 26,
+              "width": 2,
+              "height": 2
+            },
+            "maxHp": 5
+          }
+        ],
+        "environment": {
+          "version": 1,
+          "recipe": "intersection",
+          "recipeVersion": 1,
+          "seed": 1,
+          "zones": [
+            {
+              "id": "street",
+              "kind": "road",
+              "rect": {
+                "x": 12,
+                "y": -8,
+                "width": 10,
+                "height": 48
+              },
+              "axis": "y"
+            },
+            {
+              "id": "cross-street",
+              "kind": "road",
+              "rect": {
+                "x": -8,
+                "y": 14,
+                "width": 48,
+                "height": 8
+              },
+              "axis": "x"
+            },
+            {
+              "id": "junction",
+              "kind": "intersection",
+              "rect": {
+                "x": 12,
+                "y": 14,
+                "width": 10,
+                "height": 8
+              },
+              "axis": "y"
+            },
+            {
+              "id": "west-walk",
+              "kind": "sidewalk",
+              "rect": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 14
+              },
+              "axis": "y"
+            },
+            {
+              "id": "east-walk",
+              "kind": "sidewalk",
+              "rect": {
+                "x": 22,
+                "y": 0,
+                "width": 4,
+                "height": 14
+              },
+              "axis": "y"
+            },
+            {
+              "id": "south-west-walk",
+              "kind": "sidewalk",
+              "rect": {
+                "x": 6,
+                "y": 22,
+                "width": 6,
+                "height": 10
+              },
+              "axis": "y"
+            },
+            {
+              "id": "south-east-walk",
+              "kind": "sidewalk",
+              "rect": {
+                "x": 22,
+                "y": 22,
+                "width": 4,
+                "height": 10
+              },
+              "axis": "y"
+            },
+            {
+              "id": "west-service",
+              "kind": "frontage",
+              "rect": {
+                "x": 0,
+                "y": 10,
+                "width": 6,
+                "height": 4
+              },
+              "axis": "x"
+            },
+            {
+              "id": "south-service",
+              "kind": "loading",
+              "rect": {
+                "x": 0,
+                "y": 22,
+                "width": 6,
+                "height": 8
+              },
+              "axis": "y"
+            },
+            {
+              "id": "north-crossing",
+              "kind": "crosswalk",
+              "rect": {
+                "x": 12,
+                "y": 12,
+                "width": 10,
+                "height": 2
+              },
+              "axis": "x"
+            },
+            {
+              "id": "south-crossing",
+              "kind": "crosswalk",
+              "rect": {
+                "x": 12,
+                "y": 22,
+                "width": 10,
+                "height": 2
+              },
+              "axis": "x"
+            }
+          ],
+          "structures": [
+            {
+              "id": "building_0",
+              "label": "Corner storefront",
+              "rect": {
+                "x": -8,
+                "y": -8,
+                "width": 14,
+                "height": 18
+              },
+              "height": 4,
+              "style": "shop",
+              "blocksMovement": true,
+              "blocksShots": true
+            },
+            {
+              "id": "building_1",
+              "label": "Corner storefront",
+              "rect": {
+                "x": 26,
+                "y": -8,
+                "width": 14,
+                "height": 18
+              },
+              "height": 5,
+              "style": "workshop",
+              "blocksMovement": true,
+              "blocksShots": true
+            },
+            {
+              "id": "building_2",
+              "label": "Corner storefront",
+              "rect": {
+                "x": -8,
+                "y": 30,
+                "width": 14,
+                "height": 12
+              },
+              "height": 3,
+              "style": "shop",
+              "blocksMovement": true,
+              "blocksShots": true
+            },
+            {
+              "id": "building_3",
+              "label": "Corner storefront",
+              "rect": {
+                "x": 26,
+                "y": 26,
+                "width": 14,
+                "height": 16
+              },
+              "height": 4,
+              "style": "workshop",
+              "blocksMovement": true,
+              "blocksShots": true
+            }
+          ],
+          "clusters": [
+            {
+              "id": "thorton",
+              "kind": "parking",
+              "zoneId": "street",
+              "reason": "Vehicles parked in the curb lane outside businesses"
+            },
+            {
+              "id": "curb_north",
+              "kind": "parking",
+              "zoneId": "street",
+              "reason": "Vehicles parked in the curb lane outside businesses"
+            },
+            {
+              "id": "curb_west",
+              "kind": "parking",
+              "zoneId": "street",
+              "reason": "Vehicles parked in the curb lane outside businesses"
+            },
+            {
+              "id": "curb_south",
+              "kind": "parking",
+              "zoneId": "street",
+              "reason": "Vehicles parked in the curb lane outside businesses"
+            },
+            {
+              "id": "broth_cart",
+              "kind": "vendor",
+              "zoneId": "west-walk",
+              "reason": "Food service beside a shop with supplies and waiting space"
+            },
+            {
+              "id": "shop_west",
+              "kind": "frontage",
+              "zoneId": "west-walk",
+              "reason": "Street furniture follows the building frontage, leaving the walking lane open"
+            },
+            {
+              "id": "shop_east",
+              "kind": "frontage",
+              "zoneId": "east-walk",
+              "reason": "Street furniture follows the building frontage, leaving the walking lane open"
+            },
+            {
+              "id": "shop_south",
+              "kind": "frontage",
+              "zoneId": "south-east-walk",
+              "reason": "Street furniture follows the building frontage, leaving the walking lane open"
+            },
+            {
+              "id": "workshop_service",
+              "kind": "service",
+              "zoneId": "west-service",
+              "reason": "Waste and utilities beside a building's service entrance"
+            },
+            {
+              "id": "evening_vendor",
+              "kind": "vendor",
+              "zoneId": "south-west-walk",
+              "reason": "Food service beside a shop with supplies and waiting space"
+            },
+            {
+              "id": "deliveries",
+              "kind": "loading",
+              "zoneId": "south-service",
+              "reason": "Delivered freight grouped beside a loading entrance"
+            }
+          ],
+          "props": [
+            {
+              "coverId": "thorton_car_engine",
+              "art": "sedan-engine",
+              "rotation": 90,
+              "clusterId": "thorton"
+            },
+            {
+              "coverId": "thorton_car_cabin",
+              "art": "sedan-cabin",
+              "rotation": 90,
+              "clusterId": "thorton"
+            },
+            {
+              "coverId": "curb_north_car_engine",
+              "art": "sedan-engine",
+              "rotation": 90,
+              "clusterId": "curb_north"
+            },
+            {
+              "coverId": "curb_north_car_cabin",
+              "art": "sedan-cabin",
+              "rotation": 90,
+              "clusterId": "curb_north"
+            },
+            {
+              "coverId": "curb_west_car_engine",
+              "art": "sedan-engine",
+              "rotation": 90,
+              "clusterId": "curb_west"
+            },
+            {
+              "coverId": "curb_west_car_cabin",
+              "art": "sedan-cabin",
+              "rotation": 90,
+              "clusterId": "curb_west"
+            },
+            {
+              "coverId": "curb_south_car_engine",
+              "art": "sedan-engine",
+              "rotation": 90,
+              "clusterId": "curb_south"
+            },
+            {
+              "coverId": "curb_south_car_cabin",
+              "art": "sedan-cabin",
+              "rotation": 90,
+              "clusterId": "curb_south"
+            },
+            {
+              "coverId": "broth_cart_cart_cart",
+              "art": "food-cart",
+              "rotation": 0,
+              "clusterId": "broth_cart"
+            },
+            {
+              "coverId": "workshop_service_bin_body",
+              "art": "dumpster",
+              "rotation": 90,
+              "clusterId": "workshop_service"
+            },
+            {
+              "coverId": "workshop_service_power_body",
+              "art": "generator",
+              "rotation": 90,
+              "clusterId": "workshop_service"
+            },
+            {
+              "coverId": "evening_vendor_cart_cart",
+              "art": "food-cart",
+              "rotation": 0,
+              "clusterId": "evening_vendor"
+            },
+            {
+              "coverId": "deliveries_crate_body",
+              "art": "cargo",
+              "rotation": 0,
+              "clusterId": "deliveries"
+            },
+            {
+              "coverId": "deliveries_pallet_body",
+              "art": "pallet",
+              "rotation": 0,
+              "clusterId": "deliveries"
+            }
+          ],
+          "dressing": [
+            {
+              "id": "thorton_detail_0",
+              "kind": "drain",
+              "position": {
+                "x": 21.8,
+                "y": 6.6
+              },
+              "clusterId": "thorton"
+            },
+            {
+              "id": "curb_north_detail_0",
+              "kind": "drain",
+              "position": {
+                "x": 21.8,
+                "y": 12.6
+              },
+              "clusterId": "curb_north"
+            },
+            {
+              "id": "curb_west_detail_0",
+              "kind": "drain",
+              "position": {
+                "x": 13.8,
+                "y": 6.6
+              },
+              "clusterId": "curb_west"
+            },
+            {
+              "id": "curb_south_detail_0",
+              "kind": "drain",
+              "position": {
+                "x": 13.8,
+                "y": 30.6
+              },
+              "clusterId": "curb_south"
+            },
+            {
+              "id": "broth_cart_detail_0",
+              "kind": "supplies",
+              "position": {
+                "x": 8.5,
+                "y": 5.4
+              },
+              "clusterId": "broth_cart"
+            },
+            {
+              "id": "broth_cart_detail_1",
+              "kind": "stools",
+              "position": {
+                "x": 10.8,
+                "y": 6.7
+              },
+              "clusterId": "broth_cart"
+            },
+            {
+              "id": "broth_cart_detail_2",
+              "kind": "sign",
+              "position": {
+                "x": 8.4,
+                "y": 8.7
+              },
+              "clusterId": "broth_cart"
+            },
+            {
+              "id": "broth_cart_detail_3",
+              "kind": "litter",
+              "position": {
+                "x": 8.6,
+                "y": 9.2
+              },
+              "clusterId": "broth_cart"
+            },
+            {
+              "id": "shop_west_detail_0",
+              "kind": "lamp",
+              "position": {
+                "x": 6.4,
+                "y": 0.4
+              },
+              "clusterId": "shop_west"
+            },
+            {
+              "id": "shop_west_detail_1",
+              "kind": "sign",
+              "position": {
+                "x": 6.4,
+                "y": 2
+              },
+              "clusterId": "shop_west"
+            },
+            {
+              "id": "shop_west_detail_2",
+              "kind": "litter",
+              "position": {
+                "x": 6.7,
+                "y": 3.2
+              },
+              "clusterId": "shop_west"
+            },
+            {
+              "id": "shop_west_detail_3",
+              "kind": "bollards",
+              "position": {
+                "x": 7.3,
+                "y": 5.2
+              },
+              "clusterId": "shop_west"
+            },
+            {
+              "id": "shop_east_detail_0",
+              "kind": "lamp",
+              "position": {
+                "x": 24.4,
+                "y": 0.4
+              },
+              "clusterId": "shop_east"
+            },
+            {
+              "id": "shop_east_detail_1",
+              "kind": "sign",
+              "position": {
+                "x": 24.4,
+                "y": 2
+              },
+              "clusterId": "shop_east"
+            },
+            {
+              "id": "shop_east_detail_2",
+              "kind": "litter",
+              "position": {
+                "x": 24.7,
+                "y": 3.2
+              },
+              "clusterId": "shop_east"
+            },
+            {
+              "id": "shop_east_detail_3",
+              "kind": "bollards",
+              "position": {
+                "x": 25.3,
+                "y": 5.2
+              },
+              "clusterId": "shop_east"
+            },
+            {
+              "id": "shop_south_detail_0",
+              "kind": "lamp",
+              "position": {
+                "x": 24.4,
+                "y": 24.4
+              },
+              "clusterId": "shop_south"
+            },
+            {
+              "id": "shop_south_detail_1",
+              "kind": "sign",
+              "position": {
+                "x": 24.4,
+                "y": 26
+              },
+              "clusterId": "shop_south"
+            },
+            {
+              "id": "shop_south_detail_2",
+              "kind": "litter",
+              "position": {
+                "x": 24.7,
+                "y": 27.2
+              },
+              "clusterId": "shop_south"
+            },
+            {
+              "id": "shop_south_detail_3",
+              "kind": "bollards",
+              "position": {
+                "x": 25.3,
+                "y": 29.2
+              },
+              "clusterId": "shop_south"
+            },
+            {
+              "id": "workshop_service_detail_0",
+              "kind": "litter",
+              "position": {
+                "x": 0.6,
+                "y": 12.7
+              },
+              "clusterId": "workshop_service"
+            },
+            {
+              "id": "workshop_service_detail_1",
+              "kind": "supplies",
+              "position": {
+                "x": 4.7,
+                "y": 12.6
+              },
+              "clusterId": "workshop_service"
+            },
+            {
+              "id": "workshop_service_detail_2",
+              "kind": "lamp",
+              "position": {
+                "x": 2.8,
+                "y": 10.3
+              },
+              "clusterId": "workshop_service"
+            },
+            {
+              "id": "evening_vendor_detail_0",
+              "kind": "supplies",
+              "position": {
+                "x": 8.5,
+                "y": 23.4
+              },
+              "clusterId": "evening_vendor"
+            },
+            {
+              "id": "evening_vendor_detail_1",
+              "kind": "stools",
+              "position": {
+                "x": 10.8,
+                "y": 24.7
+              },
+              "clusterId": "evening_vendor"
+            },
+            {
+              "id": "evening_vendor_detail_2",
+              "kind": "sign",
+              "position": {
+                "x": 8.4,
+                "y": 26.7
+              },
+              "clusterId": "evening_vendor"
+            },
+            {
+              "id": "evening_vendor_detail_3",
+              "kind": "litter",
+              "position": {
+                "x": 8.6,
+                "y": 27.2
+              },
+              "clusterId": "evening_vendor"
+            },
+            {
+              "id": "deliveries_detail_0",
+              "kind": "supplies",
+              "position": {
+                "x": 4.7,
+                "y": 23.2
+              },
+              "clusterId": "deliveries"
+            },
+            {
+              "id": "deliveries_detail_1",
+              "kind": "litter",
+              "position": {
+                "x": 4.5,
+                "y": 26.8
+              },
+              "clusterId": "deliveries"
+            },
+            {
+              "id": "deliveries_detail_2",
+              "kind": "sign",
+              "position": {
+                "x": 2.3,
+                "y": 24.6
+              },
+              "clusterId": "deliveries"
+            }
+          ]
+        }
+      }
+    },
+    "actors": [
+      {
+        "id": "rifle_ganger",
+        "name": "6th Street rifleman",
+        "side": "hostile",
+        "profile": {
+          "key": "enforcer",
+          "name": "Enforcer",
+          "role": "lieutenant",
+          "ref": 6,
+          "body": 6,
+          "hp": 35,
+          "sp": 11,
+          "attackSkill": 6,
+          "move": 6,
+          "weaponName": "Assault Rifle",
+          "rangeType": "assault_rifle",
+          "damageDice": 5,
+          "note": "The one giving orders. A rifle changes the shape of a fight: it is the only tier here that shoots comfortably across a street."
+        },
+        "position": {
+          "x": 23,
+          "y": 3
+        }
+      },
+      {
+        "id": "lookout",
+        "name": "6th Street lookout",
+        "side": "hostile",
+        "profile": {
+          "key": "ganger",
+          "name": "Ganger",
+          "role": "mook",
+          "ref": 6,
+          "body": 5,
+          "hp": 25,
+          "sp": 7,
+          "attackSkill": 4,
+          "move": 6,
+          "weaponName": "SMG",
+          "rangeType": "smg",
+          "damageDice": 2,
+          "note": "Colours, a cheap SMG, and something to prove. Combat 10, level with a beat cop."
+        },
+        "position": {
+          "x": 23,
+          "y": 9
+        }
+      },
+      {
+        "id": "worker_one",
+        "name": "Maintenance worker",
+        "side": "neutral",
+        "profile": null,
+        "position": {
+          "x": 9,
+          "y": 11
+        }
+      },
+      {
+        "id": "worker_two",
+        "name": "Worker with a tool bag",
+        "side": "neutral",
+        "profile": null,
+        "position": {
+          "x": 11,
+          "y": 11
+        }
+      }
+    ]
+  }
+}

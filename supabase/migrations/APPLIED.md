@@ -112,6 +112,10 @@ once it has actually been run.
 - `20261002100000_repair_encounter_status_constraint.sql` — applied October 2, 2026,
   confirmed by Levi; deployed via Drizzle migration 0007.
 
+- `20261003010000_composed_battlefield_snapshots.sql` — applied October 3, 2026,
+  confirmed by Levi. Equivalent composed-snapshot DDL is recorded in Drizzle 0008/0009.
+  No additional migration is needed for recipe v2 or the review page.
+
 ## Pending
 
 Written and merged, but NOT yet run against the database. The code that reads
@@ -128,8 +132,3 @@ these tables must tolerate their absence until the line moves up to Applied.
   the application has ever written `won`, so until this runs the only difference
   is that the database would still accept a value the app cannot produce. No
   code depends on it having run.
-
-- `20261003010000_composed_battlefield_snapshots.sql` — pending deployment;
-  replayed locally with legacy and v2 scene entry/save/receipt regressions.
-  Drizzle equivalent: 0008. Required before entering a new composed scene;
-  existing version-one scenes remain supported.

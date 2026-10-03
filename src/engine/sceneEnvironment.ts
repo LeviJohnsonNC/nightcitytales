@@ -44,7 +44,9 @@ export type SceneStructure = {
 export type SceneEnvironment = {
   version: 1;
   recipe: "intersection" | "alley";
-  recipeVersion: 1;
+  recipeVersion: 1 | 2;
+  /** Exterior approach tiles; doors remain closed, with no implied interior. */
+  entrances?: { id: string; structureId: string; position: Point; label: string }[];
   seed: number;
   zones: SceneZone[];
   structures: SceneStructure[];
@@ -106,7 +108,7 @@ function rectangle(v: unknown): Rect {
 /** Closed vocabulary, bounded geometry, referential integrity; no catalog regeneration. */
 export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnvironment {
   const r = obj(value);
-  if (r["version"] !== 1 || r["recipeVersion"] !== 1) fail();
+  if (r["version"] !== 1 || (r["recipeVersion"] !== 1 && r["recipeVersion"] !== 2)) fail();
   const ids = new Set<string>();
   const id = (v: unknown) => {
     const key = str(v);
@@ -135,6 +137,42 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       blocksShots: bool(s["blocksShots"]),
     };
   });
+  const entrances =
+    r["entrances"] === undefined && r["recipeVersion"] === 1
+      ? undefined
+      : list(r["entrances"], 32).map((v) => {
+          const e = obj(v),
+            p = obj(e["position"]);
+          const position = {
+            x: num(p["x"], 1, arena.extent.width - 1),
+            y: num(p["y"], 1, arena.extent.height - 1),
+          };
+          const structureId = str(e["structureId"]);
+          const structure = structures.find((s) => s.id === structureId);
+          if (!structure || position.x % 2 !== 1 || position.y % 2 !== 1) fail();
+          const b = structure!.rect;
+          const besideX =
+            (position.x === b.x - 1 || position.x === b.x + b.width + 1) &&
+            position.y > b.y &&
+            position.y < b.y + b.height;
+          const besideY =
+            (position.y === b.y - 1 || position.y === b.y + b.height + 1) &&
+            position.x > b.x &&
+            position.x < b.x + b.width;
+          const tile = { x: position.x - 1, y: position.y - 1, width: 2, height: 2 };
+          if (
+            (!besideX && !besideY) ||
+            structures.some((s) => rectsOverlap(s.rect, tile)) ||
+            arena.cover?.some((c) => rectsOverlap(c.rect, tile))
+          )
+            fail();
+          return { id: id(e["id"]), structureId, position, label: str(e["label"]) };
+        });
+  if (
+    entrances &&
+    new Set(entrances.map((e) => `${e.position.x},${e.position.y}`)).size !== entrances.length
+  )
+    fail();
   const clusters = list(r["clusters"], 64).map((v) => {
     const c = obj(v);
     const zoneId = str(c["zoneId"]);
@@ -208,7 +246,8 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
   return {
     version: 1,
     recipe: choice(r["recipe"], ["intersection", "alley"] as const),
-    recipeVersion: 1,
+    recipeVersion: r["recipeVersion"] as 1 | 2,
+    ...(entrances ? { entrances } : {}),
     seed,
     zones,
     structures,

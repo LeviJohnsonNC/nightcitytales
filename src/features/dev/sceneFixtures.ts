@@ -4,7 +4,7 @@ export function sceneFixtures() {
   return [
     northHeywoodScene(),
     ...(["intersection", "alley"] as const).flatMap((kind) =>
-      [1, 2].map((seed) => composeScene(kind, seed)),
+      [1, 2, 3].map((seed) => composeScene(kind, seed)),
     ),
   ];
 }

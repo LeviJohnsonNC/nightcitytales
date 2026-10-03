@@ -168,6 +168,9 @@ function CombatHarness() {
           Developer tool
         </p>
         <h1 className="text-2xl font-bold tracking-tight">Battlefield harness</h1>
+        <Link to="/scene-review" className="text-neon-cyan underline">
+          Review scenery without changing a campaign
+        </Link>
         <p className="text-sm text-muted-foreground">
           Drops a character straight into a fight so the board can be exercised without playing to
           one. It seeds a real encounter and hands you to the normal play screen — everything after

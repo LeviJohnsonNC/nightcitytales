@@ -1,0 +1,68 @@
+.scene-review {
+  background: #0a141c;
+  color: #c6d5d9;
+  min-height: 100dvh;
+}
+.scene-review-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 16px 22px;
+  font: 12px/1.5 monospace;
+  border-bottom: 1px solid #314a54;
+}
+.scene-review-controls strong {
+  font-size: 18px;
+  color: #7dd9cf;
+}
+.scene-review-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.scene-review-controls select,
+.scene-review-controls button {
+  border: 1px solid #4a6269;
+  background: #112630;
+  color: #daecea;
+  padding: 7px;
+  border-radius: 3px;
+}
+.scene-review-controls button:focus-visible,
+.scene-review-controls select:focus-visible {
+  outline: 2px solid #8ce5d7;
+}
+.scene-review-controls [role="status"] {
+  flex-basis: 100%;
+}
+.scene-review-canvas {
+  position: relative;
+  height: calc(100dvh - 180px);
+  min-height: 420px;
+  overflow: hidden;
+}
+.scene-review .combat-screen {
+  height: 100dvh;
+}
+@media (max-width: 600px) {
+  .scene-review-controls {
+    padding: 10px;
+    gap: 9px;
+  }
+  .scene-review-canvas {
+    height: 65dvh;
+    min-height: 360px;
+  }
+  .scene-review .combat-screen {
+    height: 100dvh;
+  }
+}
+.scene-review-controls label {
+  min-width: 0;
+  max-width: 100%;
+}
+.scene-review-controls select {
+  min-width: 0;
+  max-width: 100%;
+}
