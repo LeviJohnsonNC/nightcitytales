@@ -43,8 +43,15 @@ export function subscribeCombatFrames(
   };
 }
 
-export const frameDuration = (frame: CombatFrame) =>
-  frame.kind === "move" ? 650 : frame.kind === "turn" ? 450 : 850;
+export function frameDuration(frame: CombatFrame) {
+  if (frame.kind !== "move") return frame.kind === "turn" ? 450 : 850;
+  const path = frame.path ?? [];
+  const metres = path
+    .slice(1)
+    .reduce((sum, point, i) => sum + Math.hypot(point.x - path[i]!.x, point.y - path[i]!.y), 0);
+  // Short steps remain readable; long routes no longer zip across the whole map.
+  return Math.min(1800, Math.max(850, metres * 120));
+}
 export type PlaybackState = { frame: PlaybackFrame | null; playing: boolean };
 /** Keep a committed frame visible until the query catches up; never reuse it for another encounter. */
 export function playbackView(state: PlaybackState, canonical: LiveEncounter | null) {

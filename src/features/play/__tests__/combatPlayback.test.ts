@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createPlaybackQueue,
+  frameDuration,
   playbackView,
   publishCombatFrames,
   subscribeCombatFrames,
@@ -103,4 +104,34 @@ describe("playback and query handoff", () => {
       frame: null,
     });
   });
+});
+
+it("paces walking by the saved route and keeps the queue locked until it finishes", () => {
+  const short = {
+    ...frame(1),
+    kind: "move" as const,
+    path: [
+      { x: 1, y: 1 },
+      { x: 3, y: 1 },
+    ],
+  };
+  const long = {
+    ...short,
+    path: [
+      { x: 1, y: 1 },
+      { x: 7, y: 1 },
+      { x: 7, y: 7 },
+    ],
+  };
+  expect(frameDuration(short)).toBeGreaterThan(650);
+  expect(frameDuration(long)).toBeGreaterThan(frameDuration(short));
+  expect(frameDuration(long)).toBeLessThanOrEqual(1800);
+  const states: PlaybackState[] = [];
+  const queue = createPlaybackQueue((state) => states.push(state), false);
+  queue.enqueue([long]);
+  vi.advanceTimersByTime(frameDuration(long) - 1);
+  expect(states.at(-1)?.playing).toBe(true);
+  vi.advanceTimersByTime(1);
+  expect(states.at(-1)?.playing).toBe(false);
+  queue.dispose();
 });

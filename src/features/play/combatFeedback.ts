@@ -1,7 +1,7 @@
 import { battlefieldFor } from "@/engine";
 import { coverStatuses } from "@/engine";
-import type { PlaybackFrame } from "./combatPlayback";
-import { SHOT_TIMING } from "./courtyard/characterAnimation";
+import { frameDuration, type PlaybackFrame } from "./combatPlayback";
+import { SHOT_TIMING, WALK_FRAME_MS } from "./courtyard/characterAnimation";
 
 export type CombatSound =
   | "pistol"
@@ -50,7 +50,11 @@ export function feedbackCues(frame: PlaybackFrame): FeedbackCue[] {
       { at: 80, sound: "reload" },
       { at: 430, sound: "reload" },
     ];
-  if (frame.kind === "move") return [100, 320, 540].map((at) => ({ at, sound: "step" }));
+  if (frame.kind === "move") {
+    const cues: FeedbackCue[] = [];
+    for (let at = 120; at < frameDuration(frame) - 80; at += WALK_FRAME_MS * 2) cues.push({ at, sound: "step" });
+    return cues;
+  }
   if (frame.kind !== "attack" && frame.kind !== "cover") return [];
   const weapons: Record<string, CombatSound> = {
     pistol: "pistol",
@@ -113,4 +117,21 @@ export function playbackHeading(frame: PlaybackFrame) {
     status: "Status",
   };
   return `${actor?.name ?? "Combat"} · ${verbs[frame.kind]}${target ? ` → ${target.name}` : ""}`;
+}
+
+/** The main board shows the outcome; full resolution text remains available on demand. */
+export function compactCombatFeedback(frame: PlaybackFrame): string {
+  if (frame.kind !== "attack" && frame.kind !== "cover") return frame.text;
+  const actor = frame.actorId ? frame.live.state.combatants[frame.actorId] : null;
+  const target = frame.targetId ? frame.live.state.combatants[frame.targetId] : null;
+  const subject = `${actor?.isPlayer ? "You" : (actor?.name ?? "Combat")} → ${target?.name ?? "cover"}`;
+  if (frame.hit === false) return `${subject}: MISS`;
+  if (frame.hit === true) {
+    const hp =
+      target && frame.targetHpBefore !== undefined
+        ? ` · ${frame.targetHpBefore} → ${target.hp} HP`
+        : "";
+    return `${subject}: HIT${hp}`;
+  }
+  return frame.text;
 }

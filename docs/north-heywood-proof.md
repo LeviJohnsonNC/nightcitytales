@@ -242,3 +242,30 @@ mercenaries; their clothes and weapon silhouettes do not yet follow loadouts.
 There are no new civilian movement decisions, drivable cars, explosions or invented
 retreat paths. The street is an approximation of the saved local scene, not an
 assertion about the canonical geography of Ulysses Street.
+
+
+## Opening clarity and movement pacing
+
+Player feedback found that arriving wounded did not explain whether opponents
+had acted first. `beginEncounter` resolves opening NPC turns before returning;
+its ephemeral playback can be published before the combat screen subscribes.
+The first player turn now shows an initiative recap derived from the saved
+order and matching scene-entry attack receipts. Hits/misses and recorded HP/SP
+transitions survive refresh, and the recap leaves the main view on later rounds.
+It never subtracts HP from maximum to invent an opening wound. Without matching
+receipts it reports only initiative order. Legacy starts, which write their start
+row after the opening, are excluded from this reconstruction. This adds a durable
+explanation; it does not replay missed entry animations or change initiative.
+
+Attack feedback on the main board uses the saved result rather than the full roll
+formula. Roll details expand on demand, and the full journal remains unchanged.
+The expandable controls receive pointer events above the map; other hint text
+stays click-through. Walking takes 0.85–1.8 seconds based on saved path length,
+with a 150ms walk-frame cadence and matching footsteps. Skip and reduced-motion
+behavior remain unchanged. No SQL migration or narrator changes.
+
+Validation includes first-turn receipt isolation/refresh, absence of invented
+pre-existing damage, later-round dismissal, queue timing, compact feedback and
+footstep timing. Local Chromium verified desktop/mobile rendering, collapsed and
+clickable roll details, first-turn recap after reload, and continued movement
+animation at 800ms. These are isolated fixtures, not a replay of Levi's saved fight.

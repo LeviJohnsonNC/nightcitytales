@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   feedbackCues,
+  compactCombatFeedback,
   feedbackOffset,
   playbackHeading,
   scheduleCombatCues,
@@ -110,4 +111,24 @@ describe("saved combat feedback", () => {
       audio.unlock();
     }).not.toThrow();
   });
+});
+
+it("summarizes the saved result without repeating roll arithmetic or trusting prose", () => {
+  expect(compactCombatFeedback(frame)).toBe("Scav → Vela: HIT · 30 → 24 HP");
+  expect(compactCombatFeedback({ ...frame, hit: false })).toBe("Scav → Vela: MISS");
+  expect(compactCombatFeedback({ ...frame, kind: "status", text: "Scav withdrew" })).toBe(
+    "Scav withdrew",
+  );
+});
+it("spreads footsteps over a longer walk and suppresses skipped animation", () => {
+  const walk = {
+    ...frame,
+    kind: "move" as const,
+    path: [
+      { x: 1, y: 1 },
+      { x: 15, y: 1 },
+    ],
+  };
+  expect(feedbackCues(walk).at(-1)!.at).toBeGreaterThan(850);
+  expect(feedbackCues({ ...walk, animate: false })).toEqual([]);
 });

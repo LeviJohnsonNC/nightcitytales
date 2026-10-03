@@ -20,7 +20,7 @@ import { NpcDossier } from "@/features/cast/NpcName";
 import { findNpcNumbered } from "@/features/cast/npcDirectory";
 import { itemArt } from "@/features/chargen/art";
 import { useCombatFeedback } from "./useCombatFeedback";
-import { playbackHeading } from "./combatFeedback";
+import { playbackHeading, compactCombatFeedback } from "./combatFeedback";
 import { scenicTheme } from "./courtyard/scenicPresentation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -86,8 +86,10 @@ type Props = {
   journal?: ReactNode;
   improvisation?: ReactNode;
   openingRequest?: ReactNode;
+  openingRecap?: ReactNode;
   playback?: PlaybackFrame | null;
   feedback?: string | undefined;
+  feedbackDetail?: string | undefined;
   onSkipPlayback?: () => void;
 };
 const points = (path: Point[]) => path.map((p) => `${p.x},${p.y}`).join(" ");
@@ -123,8 +125,10 @@ export function CombatBoard({
   journal,
   improvisation,
   openingRequest,
+  openingRecap,
   playback,
   feedback,
+  feedbackDetail,
   onSkipPlayback,
 }: Props) {
   const effects = useCombatFeedback(playback);
@@ -1332,7 +1336,13 @@ export function CombatBoard({
           {playback && (
             <div className="combat-playback-report" role="status" key={playback.sequence}>
               <span>{playbackHeading(playback)}</span>
-              <p>{playback.text}</p>
+              <p>{compactCombatFeedback(playback)}</p>
+              {compactCombatFeedback(playback) !== playback.text && (
+                <details>
+                  <summary>Roll details</summary>
+                  <p>{playback.text}</p>
+                </details>
+              )}
             </div>
           )}
           {callout && (
@@ -1360,9 +1370,15 @@ export function CombatBoard({
           )}
           <div className={`combat-map-hint ${feedback ? "has-feedback" : ""}`}>
             {feedback && !playback && (
-              <p className="combat-feedback" role="status">
-                {feedback}
-              </p>
+              <div className="combat-feedback" role="status">
+                <p>{feedback}</p>
+                {feedbackDetail && feedbackDetail !== feedback && (
+                  <details>
+                    <summary>Roll details</summary>
+                    <p>{feedbackDetail}</p>
+                  </details>
+                )}
+              </div>
             )}
             {!playback && (
               <>
@@ -1373,6 +1389,7 @@ export function CombatBoard({
           </div>
         </div>
         <aside className="combat-intel" aria-label="Tactical readout">
+          {openingRecap}
           <CombatDepartures live={live} />
           {openingRequest && (
             <div className="p-3 text-sm" role="status">

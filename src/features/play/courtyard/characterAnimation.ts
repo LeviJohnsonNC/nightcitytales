@@ -5,6 +5,7 @@ import { routePosition } from "./courtyardPresentation";
 export type Facing = "ne" | "se" | "sw" | "nw";
 export type CharacterPose = "aim" | "walk" | "fire" | "hurt" | "fall" | "dead";
 export const SHOT_TIMING = { fire: 160, impact: 220, recover: 430, settle: 610 } as const;
+export const WALK_FRAME_MS = 150;
 export const CHARACTER_FRAME = { size: 128, foot: 112, height: 78 } as const;
 
 /** Direction is screen-facing presentation, never a rules-engine orientation. */
@@ -86,7 +87,7 @@ export function animationCell(
   const row = hostile ? (facing.startsWith("n") ? 3 : 2) : ["ne", "se", "sw", "nw"].indexOf(facing);
   const column =
     pose === "walk"
-      ? [1, 2, 4, 3][Math.floor(Math.max(0, elapsed) / 105) % 4]!
+      ? [1, 2, 4, 3][Math.floor(Math.max(0, elapsed) / WALK_FRAME_MS) % 4]!
       : pose === "fire"
         ? 5
         : pose === "hurt"

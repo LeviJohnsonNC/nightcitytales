@@ -2063,3 +2063,27 @@ button.combat-callout-act:hover {
   display: grid;
   gap: 6px;
 }
+
+/* Only the expandable receipt captures input; the rest of the hint stays click-through. */
+.combat-map-hint {
+  z-index: 4;
+}
+.combat-feedback {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.combat-feedback details,
+.combat-playback-report details {
+  pointer-events: auto;
+}
+.combat-feedback summary,
+.combat-playback-report summary {
+  cursor: pointer;
+  padding: 4px 0;
+  color: #a9c5cb;
+}
+.combat-feedback details p {
+  max-height: 8em;
+  overflow: auto;
+}
