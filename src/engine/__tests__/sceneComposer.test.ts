@@ -29,7 +29,8 @@ describe("composed places", () => {
         expect(readSceneManifest(JSON.parse(JSON.stringify({ version: 1, scene })))).toEqual(scene);
         expect(composeScene(kind, seed)).toEqual(scene);
         expect(env.structures.length).toBeGreaterThanOrEqual(4);
-        expect(env.dressing.length).toBeGreaterThan(10);
+        if (kind === "alley") expect(env.dressing.length).toBeGreaterThan(10);
+        else expect(new Set(env.dressing.map((d) => d.kind)).size).toBeGreaterThanOrEqual(3);
         for (const binding of env.props) {
           const piece = arena.cover!.find((c) => c.id === binding.coverId)!;
           const cluster = env.clusters.find((c) => c.id === binding.clusterId)!;

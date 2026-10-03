@@ -127,6 +127,37 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
         );
     }
   }
+  // Saved functional floor reservations use the same treatment in any recipe.
+  // Paint boundaries and material, not debug labels or another set of obstacles.
+  for (const z of env.zones.filter((z) => z.floorUse)) {
+    const colors = {
+      customer: ["#746b53", "#b7a67b"],
+      handling: ["#454845", "#c3a65c"],
+      entry: ["#717970", "#a9b5a2"],
+      staff: ["#3f5057", "#778e95"],
+      visitor: ["#81745e", "#ac9c7e"],
+    }[z.floorUse!]!;
+    rect(z.rect, colors[0]!, colors[1]!);
+    if (z.floorUse === "handling") {
+      const r = z.rect;
+      // Short safety marks define the working apron without filling the route.
+      for (let y = r.y + 0.2; y < r.y + r.height; y += 0.8)
+        line(
+          project({ x: r.x + 0.05, y }),
+          project({ x: r.x + 0.4, y: y + 0.25 }),
+          colors[1]!,
+          1.4,
+        );
+    }
+    if (z.floorUse === "entry") {
+      const r = z.rect;
+      rect(
+        { x: r.x + 0.2, y: r.y + 0.2, width: r.width - 0.4, height: r.height - 0.4 },
+        "#445150",
+        "#8d9e95",
+      );
+    }
+  }
   // Arrival landings are reserved floor geometry, visible before furniture.
   for (const z of env.zones.filter((z) => z.id === "entry_landing"))
     rect(z.rect, "#89785d", "#b5a17c");

@@ -62,7 +62,12 @@ describe("lived-in scene composition", () => {
           (sum, c) => sum + c.rect.width * c.rect.height,
           0,
         );
-        expect(furnishingArea / (arena.extent.width * arena.extent.height)).toBeGreaterThan(0.1);
+        // Furnish functional rooms; the deliberately empty circulation loop must
+        // not create an incentive to add filler to meet an arena-wide quota.
+        const usableArea = env.zones
+          .filter((z) => !["aisle", "corridor", "doorway", "dance"].includes(z.kind))
+          .reduce((sum, z) => sum + z.rect.width * z.rect.height, 0);
+        expect(furnishingArea / usableArea).toBeGreaterThan(0.1);
         expect(furnishingArea / (arena.extent.width * arena.extent.height)).toBeLessThan(0.4);
         expect(new Set(env.props.map((p) => p.art)).size).toBeGreaterThanOrEqual(6);
         expect(env.structures.every((s) => Math.min(s.rect.width, s.rect.height) === 0.5)).toBe(
@@ -125,7 +130,10 @@ describe("lived-in scene composition", () => {
         expect(
           new Set(env.structures.map((s) => `${s.rect.width}x${s.rect.height}`)).size,
         ).toBeGreaterThanOrEqual(4);
-        expect(arena.cover!.length).toBeGreaterThanOrEqual(kind === "intersection" ? 20 : 15);
+        if (kind === "alley") expect(arena.cover!.length).toBeGreaterThanOrEqual(15);
+        else
+          for (const id of ["broth_cart", "housing_entry", "deliveries", "utility_waiting"])
+            expect(env.clusters.some((c) => c.id === id)).toBe(true);
         expect(
           env.entrances!.every((e) => env.structures.some((s) => s.id === e.structureId)),
         ).toBe(true);

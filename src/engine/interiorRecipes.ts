@@ -255,6 +255,10 @@ export function composeInterior(
   if (kind === "office") {
     const primary = plan.doors.find((d) => d[0] === "reception" && d[1] === "outside")!;
     env.zones.push(zone("entry_landing", "aisle", 2, primary[3], 4, primary[5] ?? 2));
+    env.zones.push(
+      { ...zone("reception_staff", "aisle", 8, 2, 2, 4), floorUse: "staff" },
+      { ...zone("reception_visitor", "aisle", 4, 2, 2, 4), floorUse: "visitor" },
+    );
   }
   const reserved: Rect[] = [];
   for (const c of env.interior!.connections) {
@@ -271,6 +275,8 @@ export function composeInterior(
   // One authored room-access anchor, plus furniture-specific working space below.
   for (const z of rooms) {
     const position = { x: z.rect.x + 1, y: z.rect.y + 1 };
+    if (kind === "office" && z.id === "reception")
+      position.y = plan.doors.find((d) => d[0] === "reception" && d[1] === "outside")![3] + 1;
     env.interior!.access.push({
       id: `${z.id}_approach`,
       zoneId: z.id,
@@ -327,7 +333,9 @@ export function composeInterior(
                           ? "seating"
                           : "reception";
     if (kind === "office") {
-      if (room.id === "work") cluster = "work_pod";
+      if (room.id === "work") cluster = variant === 1 ? "work_island" : "work_facing";
+      else if (room.kind === "reception") cluster = "reception_arrival";
+      else if (room.kind === "service") cluster = "equipment_support";
       else if (room.kind === "meeting" && room.rect.width * room.rect.height >= 60)
         cluster = "meeting_support";
     }
@@ -343,7 +351,7 @@ export function composeInterior(
       for (let y = r.y + 2; y < r.y + r.height - 2; y += 6)
         for (let x = r.x + 2; x < r.x + r.width - 2; x += 4) candidates.push({ x, y });
     }
-    if (cluster === "work_pod") {
+    if (["work_facing", "work_island"].includes(cluster)) {
       candidates.length = 0;
       // Fit complete pods, including their shared aisle; no single-desk fallback.
       // Prefer an inset row, then try room-edge rows around protected approaches.
@@ -364,28 +372,37 @@ export function composeInterior(
     if (cluster === "workstation" && !candidates.length)
       for (let y = r.y; y < r.y + r.height; y += 2)
         for (let x = r.x; x < r.x + r.width; x += 2) candidates.push({ x, y });
-    const count =
-      cluster === "work_pod"
-        ? Math.floor((r.width * r.height) / 32)
-        : ["racking", "vehicle_bay"].includes(cluster)
-          ? 12
-          : cluster === "freight"
-            ? 3
-            : cluster === "workbench"
-              ? 2
-              : cluster === "workstation"
-                ? 12
-                : cluster === "booth"
-                  ? 4
-                  : cluster === "seating"
-                    ? 3
-                    : cluster === "server"
-                      ? 2
-                      : 1;
+    const count = ["work_facing", "work_island"].includes(cluster)
+      ? 2
+      : ["racking", "vehicle_bay"].includes(cluster)
+        ? 12
+        : cluster === "freight"
+          ? 3
+          : cluster === "workbench"
+            ? 2
+            : cluster === "workstation"
+              ? 12
+              : cluster === "booth"
+                ? 4
+                : cluster === "seating"
+                  ? 3
+                  : cluster === "server"
+                    ? 2
+                    : 1;
+    if (cluster.startsWith("reception_")) {
+      candidates.length = 0;
+      candidates.push({ x: r.x, y: r.y });
+    }
     for (let i = 0; i < count; i++)
       slots.push({
         id: `${room.id}_${i}`,
         kind: cluster,
+        // Keep opposing workstations aligned with their authored chair-side access.
+        axis: ["work_facing", "work_island", "reception_arrival", "meeting_support"].includes(
+          cluster,
+        )
+          ? "y"
+          : room.axis,
         zone: room.id,
         at: candidates[0]!,
         candidates,
@@ -393,21 +410,15 @@ export function composeInterior(
       });
   }
   if (kind === "office") {
-    const reception = rooms.find((r) => r.id === "reception")!;
-    const r = reception.rect;
-    const candidates = [
-      { x: r.x, y: r.y + r.height - 4 },
-      { x: r.x + r.width - 2, y: r.y + r.height - 4 },
-      { x: r.x, y: r.y + 4 },
-    ];
-    for (let i = 0; i < 3; i++)
-      slots.push({
-        id: `waiting_${i}`,
-        kind: "seating",
-        zone: reception.id,
-        at: candidates[0]!,
-        candidates,
-      });
+    const r = rooms.find((room) => room.id === "reception")!.rect;
+    slots.push({
+      id: "reception_waiting",
+      kind: variant === 0 ? "waiting_arrival" : "waiting_entry",
+      zone: "reception",
+      axis: "y",
+      at: { x: r.x, y: r.y + (variant === 0 ? 4 : 0) },
+      required: true,
+    });
   }
   placeSceneClusters(arena, slots, reserved, seed, false);
   // Complete each room's activity with secondary furniture along its perimeter.
@@ -416,6 +427,7 @@ export function composeInterior(
   if (kind === "office" || kind === "nightclub") {
     const secondary: Slot[] = [];
     for (const room of rooms) {
+      if (kind === "office" && ["reception", "meeting", "service"].includes(room.kind)) continue;
       const families =
         room.kind === "workspace"
           ? kind === "office" && room.id === "work"
@@ -443,7 +455,11 @@ export function composeInterior(
           if (x === r.x || x >= r.x + r.width - 4 || y === r.y || y >= r.y + r.height - 4)
             candidates.push({ x, y });
       const passes =
-        room.kind === "reception" ? Math.max(3, Math.ceil((r.width * r.height) / 48)) : 3;
+        kind === "office"
+          ? 1
+          : room.kind === "reception"
+            ? Math.max(3, Math.ceil((r.width * r.height) / 48))
+            : 3;
       for (let pass = 0; pass < passes; pass++)
         for (const family of families)
           secondary.push({
