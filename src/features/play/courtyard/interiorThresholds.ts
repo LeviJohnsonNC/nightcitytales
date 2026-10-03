@@ -19,14 +19,16 @@ export function interiorThresholds(arena: Arena) {
             ? "primary"
             : "service";
     const r = door.rect;
+    // Wall solids stop 0.75m outside the opening tile. Seat trim against
+    // those cut ends rather than leaving isolated poles inside the gap.
     const posts = horizontal
       ? [
-          { x: r.x + r.width / 2, y: r.y },
-          { x: r.x + r.width / 2, y: r.y + r.height },
+          { x: r.x + r.width / 2, y: r.y - 0.75 },
+          { x: r.x + r.width / 2, y: r.y + r.height + 0.75 },
         ]
       : [
-          { x: r.x, y: r.y + r.height / 2 },
-          { x: r.x + r.width, y: r.y + r.height / 2 },
+          { x: r.x - 0.75, y: r.y + r.height / 2 },
+          { x: r.x + r.width + 0.75, y: r.y + r.height / 2 },
         ];
     const mat: Rect = {
       x: r.x + 0.15,

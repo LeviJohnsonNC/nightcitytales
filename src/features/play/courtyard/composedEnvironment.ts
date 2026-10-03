@@ -49,10 +49,8 @@ function painter(ctx: CanvasRenderingContext2D, project: Project) {
 export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena, project: Project) {
   const env = arena.environment!;
   const { rect, line, glow } = painter(ctx, project);
-  ctx.fillStyle = "#080f17";
-  ctx.fillRect(0, 0, 1100, 700);
   if (env.interior) rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
-  if (!env.interior) rect({ x: -12, y: -12, width: 56, height: 56 }, "#293034");
+  if (!env.interior) rect({ x: -20, y: -20, width: 72, height: 72 }, "#293034");
   const floors: Record<string, string> = {
     reception: "#6c6257",
     workspace: "#34494e",
@@ -103,7 +101,7 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
               ? "#353b3c"
               : "#41494a",
     );
-    if (!road && z.kind !== "crosswalk" && z.kind !== "garden") {
+    if (!road && z.kind !== "crosswalk" && z.kind !== "garden" && z.kind !== "loading") {
       for (let x = z.rect.x; x < z.rect.x + z.rect.width; x += 1)
         for (let y = z.rect.y; y < z.rect.y + z.rect.height; y += 1)
           rect(
@@ -129,6 +127,9 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
         );
     }
   }
+  // Arrival landings are reserved floor geometry, visible before furniture.
+  for (const z of env.zones.filter((z) => z.id === "entry_landing"))
+    rect(z.rect, "#89785d", "#b5a17c");
   // Material changes and door sills make the saved openings readable without
   // debug markers. Main entries use a broad warm mat; service entries are metal.
   for (const threshold of interiorThresholds(arena)) {
@@ -288,18 +289,34 @@ function paintBuilding(
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t - z,
     });
-    for (let level = 4; level < h - 10; level += 18) {
+    // Storeys use world metres. Industrial sheds have a single clerestory,
+    // not the same stacked apartment windows regardless of physical height.
+    const industrial = structure.style === "workshop" || structure.style === "warehouse";
+    const levels = industrial
+      ? [Math.max(1.8, structure.height - 0.9)]
+      : Array.from(
+          { length: Math.max(1, Math.floor(structure.height / 3)) },
+          (_, i) => 0.8 + i * 3,
+        );
+    for (const floor of levels) {
+      const level = floor * pixelsPerMetre;
+      const windowHeight = (industrial ? 0.45 : 1.2) * pixelsPerMetre;
       line(at(0, level), at(1, level), "#515355", 1);
       for (let i = 0; i < length; i += structure.style === "residential" ? 4 : 2) {
         const x = (i + 0.2) / length,
           w = 1.4 / length;
         const lit = (i + Math.floor(level)) % 4 === 0;
         poly(
-          [at(x, level + 2), at(x + w, level + 2), at(x + w, level + 13), at(x, level + 13)],
+          [
+            at(x, level),
+            at(x + w, level),
+            at(x + w, level + windowHeight),
+            at(x, level + windowHeight),
+          ],
           lit ? "#988264" : "#14232c",
           "#616665",
         );
-        line(at(x + w * 0.5, level + 2), at(x + w * 0.5, level + 13), shade, 0.9);
+        line(at(x + w * 0.5, level), at(x + w * 0.5, level + windowHeight), shade, 0.9);
       }
     }
     // Shop/service doors at ground level, visually shut and mechanically solid.
@@ -391,10 +408,26 @@ export function createComposedEnvironment(
   arena: Arena,
   project: Project,
 ): Phaser.GameObjects.Image[] {
-  const ground = scene.textures.createCanvas("composed-ground", 1100, 700)!;
+  // Ground must extend with saved continuation geometry, not stop at the old
+  // 1100x700 art sheet while building sprites float beyond its edge.
+  const groundRect = arena.environment!.interior
+    ? { x: 0, y: 0, ...arena.extent }
+    : { x: -20, y: -20, width: 72, height: 72 };
+  const groundCorners = [
+    { x: groundRect.x, y: groundRect.y },
+    { x: groundRect.x + groundRect.width, y: groundRect.y },
+    { x: groundRect.x, y: groundRect.y + groundRect.height },
+    { x: groundRect.x + groundRect.width, y: groundRect.y + groundRect.height },
+  ].map(project);
+  const gx = Math.floor(Math.min(...groundCorners.map((p) => p.x))) - 2;
+  const gy = Math.floor(Math.min(...groundCorners.map((p) => p.y))) - 2;
+  const gw = Math.ceil(Math.max(...groundCorners.map((p) => p.x))) - gx + 2;
+  const gh = Math.ceil(Math.max(...groundCorners.map((p) => p.y))) - gy + 2;
+  const ground = scene.textures.createCanvas("composed-ground", gw, gh)!;
+  ground.context.translate(-gx, -gy);
   paintComposedGround(ground.context, arena, project);
   ground.refresh();
-  scene.add.image(550, 350, "composed-ground").setDepth(-1000);
+  scene.add.image(gx + gw / 2, gy + gh / 2, "composed-ground").setDepth(-1000);
   const objects: Phaser.GameObjects.Image[] = [];
   const add = (
     key: string,
@@ -449,9 +482,27 @@ export function createComposedEnvironment(
   );
   for (const threshold of interiorThresholds(arena)) {
     if (threshold.role === "passage") continue;
+    const frameHeight = (threshold.role === "primary" ? 2.6 : 2.2) * metre;
+    const ends = threshold.posts.map(project);
+    const cap = ends.map((p) => ({ x: p.x, y: p.y - frameHeight }));
+    add(
+      `threshold-${threshold.id}-lintel`,
+      (ctx) => {
+        const { line } = painter(ctx, project);
+        line(cap[0]!, cap[1]!, "#263439", 7);
+        line(cap[0]!, cap[1]!, threshold.role === "primary" ? "#c9b284" : "#a5b1ac", 3);
+      },
+      Math.max(...ends.map((p) => p.y)),
+      {
+        x: Math.min(...cap.map((p) => p.x)) - 5,
+        y: Math.min(...cap.map((p) => p.y)) - 5,
+        width: Math.abs(cap[0]!.x - cap[1]!.x) + 10,
+        height: Math.abs(cap[0]!.y - cap[1]!.y) + 10,
+      },
+    );
     for (const [i, post] of threshold.posts.entries()) {
       const p = project(post);
-      const height = (threshold.role === "primary" ? 1.8 : 1.4) * metre;
+      const height = frameHeight;
       add(
         `threshold-${threshold.id}-${i}`,
         (ctx) => {
@@ -488,13 +539,29 @@ export function createComposedEnvironment(
           });
     } else pieces.push(structure);
     for (const s of pieces) {
-      const depth = project({ x: s.rect.x + s.rect.width / 2, y: s.rect.y + s.rect.height / 2 }).y;
       const corners = [
         { x: s.rect.x, y: s.rect.y },
         { x: s.rect.x + s.rect.width, y: s.rect.y },
         { x: s.rect.x, y: s.rect.y + s.rect.height },
         { x: s.rect.x + s.rect.width, y: s.rect.y + s.rect.height },
       ].map(project);
+      // A mass occludes from its nearest ground corner. Its centre can move
+      // off-map as it grows, incorrectly painting ground props over its roof.
+      let depth =
+        s.style === "interior-wall"
+          ? project({ x: s.rect.x + s.rect.width / 2, y: s.rect.y + s.rect.height / 2 }).y
+          : Math.max(...corners.map((p) => p.y));
+      // Keep abutting foreground wings ahead of their parent mass: a long
+      // side wall must not paint across the roof of an attached return.
+      if (s.style !== "interior-wall") {
+        const r = s.rect;
+        for (const neighbour of arena.environment!.structures) {
+          const n = neighbour.rect;
+          const east = n.x === r.x + r.width && n.y < r.y + r.height && n.y + n.height > r.y;
+          const north = n.y + n.height === r.y && n.x < r.x + r.width && n.x + n.width > r.x;
+          if (east || north) depth = Math.min(depth, project({ x: n.x + n.width, y: n.y }).y - 0.1);
+        }
+      }
       const left = Math.floor(Math.min(...corners.map((p) => p.x))) - 8;
       const pixelsPerMetre = Math.hypot(
         project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,

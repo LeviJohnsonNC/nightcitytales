@@ -57,3 +57,14 @@ it("connects every entrance and crossing through pedestrian space over 32 seeds"
       expect(queue.some(boundary)).toBe(true);
   }
 });
+
+it("keeps the reviewed intersections within their previous furnishing budget", () => {
+  for (const [seed, previousCount] of [
+    [1, 28],
+    [2, 29],
+    [3, 23],
+  ]) {
+    const arena = composeScene("intersection", seed!).layout.arena;
+    expect(arena.cover!.length).toBeLessThanOrEqual(previousCount!);
+  }
+});
