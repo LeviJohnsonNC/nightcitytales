@@ -15,7 +15,7 @@ import {
   playerCombatant,
   turnDeathSaveOwed,
   EMPTY_TURN_ECONOMY,
-  coverBlocking,
+  shotObstacles,
   describeWeapon,
   getCyberware,
   itemName,
@@ -153,7 +153,7 @@ export function targetCapabilities(
     // Line of sight is MEASURED against the arena's cover, the same way the
     // range is measured against its positions. A piece already shot to bits
     // stops blocking, which is the whole point of it having HP.
-    const blocking = from && data ? coverBlocking(arena, from, data.position, live.cover) : [];
+    const blocking = from && data ? shotObstacles(arena, from, data.position, live.cover) : [];
     out.push({
       key: data?.key ?? combatant.id,
       id: combatant.id,

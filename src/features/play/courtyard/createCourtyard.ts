@@ -1,3 +1,4 @@
+import { createComposedEnvironment } from "./composedEnvironment";
 import { battlefieldFor } from "@/engine";
 import { scenicTheme, STREET_PROPS, civilianCell } from "./scenicPresentation";
 import { createStreetGround } from "./streetGround";
@@ -78,13 +79,16 @@ export function createCourtyard(
   const arena = battlefieldFor(initial.live);
   const theme = scenicTheme(arena);
   if (!theme) throw new Error("No scenic art for this layout");
-  const street = theme === "street";
-  const unitScale = street ? 0.65 : 1;
-  const kinds = street
-    ? Object.values(STREET_PROPS)
-    : hasYardProps(arena.key)
-      ? PROP_KINDS
-      : ["cargo" as const];
+  const composed = theme === "composed";
+  const street = theme === "street" || composed;
+  const unitScale = composed ? 0.52 : street ? 0.65 : 1;
+  const kinds = composed
+    ? arena.environment!.props.map((p) => p.art)
+    : street
+      ? Object.values(STREET_PROPS)
+      : hasYardProps(arena.key)
+        ? PROP_KINDS
+        : ["cargo" as const];
   const assets = [
     ...(street ? ["workers"] : ["ground"]),
     "mercenary-animation",
@@ -97,6 +101,7 @@ export function createCourtyard(
   let previousFrame: PlaybackFrame | null | undefined;
   const units = new Map<string, Unit>();
   const scenery: Phaser.GameObjects.Image[] = [];
+  const structures: Phaser.GameObjects.Image[] = [];
   // Phaser's polygon helpers want its own vectors, not plain points.
   const screen = (p: Point) => {
     const q = project(p);
@@ -138,7 +143,7 @@ export function createCourtyard(
         return;
       }
       try {
-        createPropTextures(this, kinds);
+        createPropTextures(this, [...new Set(kinds)]);
         createCharacterAtlas(this, "mercenary");
         createCharacterAtlas(this, "hostile");
         if (street) createCivilianAtlas(this);
@@ -146,7 +151,8 @@ export function createCourtyard(
         onFailure();
         return;
       }
-      if (street) createStreetGround(this, project);
+      if (composed) structures.push(...createComposedEnvironment(this, arena, project));
+      else if (street) createStreetGround(this, project);
       else this.add.image(550, 350, "source-ground").setDisplaySize(1200, 800).setDepth(-1000);
       // Baked lighting establishes the look. Small additive pools support it.
       this.add
@@ -257,14 +263,14 @@ export function createCourtyard(
           12 * unitScale,
         );
       }
-      for (const prop of scenery) {
+      for (const prop of [...scenery, ...structures]) {
         if (prop.getData("destroyed")) continue;
         const obstructs = [...units.values()].some(
           ({ container: unit }) =>
             unit.visible &&
             unit.y < prop.depth &&
-            unit.y > prop.y - prop.displayHeight * 0.75 &&
-            Math.abs(unit.x - prop.x) < prop.displayWidth * 0.4,
+            unit.y > prop.y - prop.displayHeight &&
+            Math.abs(unit.x - prop.x) < prop.displayWidth * 0.5,
         );
         prop.setAlpha(obstructs ? 0.4 : 1);
       }
@@ -448,7 +454,10 @@ export function createCourtyard(
     scenery.length = 0;
     for (const status of coverStatuses(arena, damage)) {
       const condition = propCondition(status);
-      const kind = street ? STREET_PROPS[status.piece.id]! : propKind(arena.key, status.piece.id);
+      const binding = arena.environment?.props.find((p) => p.coverId === status.piece.id);
+      const kind =
+        binding?.art ??
+        (street ? STREET_PROPS[status.piece.id]! : propKind(arena.key, status.piece.id));
       const placement = propPlacement(status, project);
       const texture = propTexture(kind, condition);
       const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
@@ -458,6 +467,7 @@ export function createCourtyard(
       const prop = current.add
         .image(placement.x, placement.y, texture)
         .setOrigin(0.5, 1)
+        .setFlipX(binding?.rotation === 90)
         .setDisplaySize(placement.width, height)
         .setDepth(placement.depth);
       prop.setData("destroyed", status.destroyed);

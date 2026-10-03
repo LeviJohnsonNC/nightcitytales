@@ -9,7 +9,8 @@ export const STREET_PROPS: Record<string, PropKind> = {
 const street = northHeywoodScene().layout.arena;
 
 /** Art is authored for this version's geometry. Unknown layouts keep the diagram. */
-export function scenicTheme(arena: Arena): "courtyard" | "street" | null {
+export function scenicTheme(arena: Arena): "courtyard" | "street" | "composed" | null {
+  if (arena.environment) return "composed";
   if (isCourtyard(arena.key)) return "courtyard";
   if (
     arena.key !== street.key ||

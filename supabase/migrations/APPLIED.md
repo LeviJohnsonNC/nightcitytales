@@ -128,3 +128,8 @@ these tables must tolerate their absence until the line moves up to Applied.
   the application has ever written `won`, so until this runs the only difference
   is that the database would still accept a value the app cannot produce. No
   code depends on it having run.
+
+- `20261003010000_composed_battlefield_snapshots.sql` — pending deployment;
+  replayed locally with legacy and v2 scene entry/save/receipt regressions.
+  Drizzle equivalent: 0008. Required before entering a new composed scene;
+  existing version-one scenes remain supported.

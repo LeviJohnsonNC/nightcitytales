@@ -6,7 +6,7 @@ import { battlefieldFor, readSceneAttackIntent } from "@/engine";
  * from the engine or the rules data; nothing here invents a DV or a damage die.
  */
 import {
-  coverBlocking,
+  shotObstacles,
   getSkill,
   previewAttack,
   type CapabilitySnapshot,
@@ -226,7 +226,7 @@ export function pendingAttackFrom(
     const targetData = live.data[target.id];
     const blocking =
       player && targetData
-        ? coverBlocking(battlefieldFor(live), player.position, targetData.position, live.cover)
+        ? shotObstacles(battlefieldFor(live), player.position, targetData.position, live.cover)
         : [];
 
     return {

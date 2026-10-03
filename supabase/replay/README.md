@@ -102,3 +102,7 @@ stale conflicts, atomic completion, ledger-failure rollback, and receipt ownersh
 
 `persistent-scenes.test.sql` checks staging without combat, template/revisit
 continuity, scene-bound entry, deferred completion enforcement and owner-only reads.
+
+`composed-scenes.test.sql` repeats persistent scene entry/save/receipt checks with
+battlefield v2 and asserts rejection of a writer still using layout protocol v1.
+The outer manifest/lifecycle version remains 1.

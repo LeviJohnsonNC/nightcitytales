@@ -43,6 +43,7 @@ import {
   blockedTiles,
   centreOf,
   coverBlocking,
+  shotObstacles,
   coverStatuses,
   currentCombatant,
   judgeAction,
@@ -215,7 +216,7 @@ export function CombatBoard({
     const safe = new Set<string>();
     for (const { tile } of moveField.values()) {
       const centre = centreOf(tile);
-      if (hostiles.every((at) => coverBlocking(ground, centre, at, live.cover).length > 0))
+      if (hostiles.every((at) => shotObstacles(ground, centre, at, live.cover).length > 0))
         safe.add(tileKey(tile));
     }
     return safe;
@@ -243,7 +244,7 @@ export function CombatBoard({
   const arena = battlefieldFor(live);
   const theme = scenicTheme(arena);
   const hasScenicArt = theme !== null;
-  const scenicUnitTop = theme === "street" ? 58 : 88;
+  const scenicUnitTop = theme === "composed" ? 48 : theme === "street" ? 58 : 88;
   const scenic = hasScenicArt && artEnabled && artReady;
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   const cover = coverStatuses(arena, live.cover);
@@ -1009,6 +1010,28 @@ export function CombatBoard({
                 />
               </g>
             )}
+            {!scenic &&
+              arena.environment?.structures.map((s) => {
+                const r = s.rect;
+                return (
+                  <g key={s.id} pointerEvents="none">
+                    <polygon
+                      points={points(
+                        [
+                          { x: r.x, y: r.y },
+                          { x: r.x + r.width, y: r.y },
+                          { x: r.x + r.width, y: r.y + r.height },
+                          { x: r.x, y: r.y + r.height },
+                        ].map(project),
+                      )}
+                      fill="#25323d"
+                      stroke="#7e8d8c"
+                      strokeWidth="2"
+                    />
+                    <title>{s.label} · permanent structure</title>
+                  </g>
+                );
+              })}
             {/* Painter's order lets near objects cover far ones while unit labels remain upright. */}
             {[
               ...cover.map((piece) => ({

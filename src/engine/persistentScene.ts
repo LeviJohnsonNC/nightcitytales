@@ -1,6 +1,6 @@
 /** Read a saved authored scene without resolving a newer version of its template. */
 import { readBattlefieldSnapshot, readBattlefieldPositions } from "./battlefieldSnapshot";
-import type { AuthoredScene } from "./northHeywoodScene";
+import type { AuthoredScene } from "./authoredScene";
 import type { ThreatProfile } from "./threats";
 
 export type PersistentScene = {

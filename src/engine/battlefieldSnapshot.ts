@@ -1,9 +1,10 @@
+import { readSceneEnvironment } from "./sceneEnvironment";
 /** Frozen geometry for a fight. Unknown versions fail closed; legacy rows use their arena key. */
-import { arenaFor, type Arena, type Point } from "./battlefield";
+import { arenaFor, rectContains, type Arena, type Point } from "./battlefield";
 import { blockedTiles, tileKey, tileOf } from "./grid";
 import { coverMaxHp, COVER_MATERIAL_KEYS, type CoverDamage } from "./cover";
 
-export type BattlefieldSnapshot = { version: 1; arena: Arena };
+export type BattlefieldSnapshot = { version: 1 | 2; arena: Arena };
 
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -24,7 +25,7 @@ function label(value: unknown): string {
 /** Validate and copy persisted geometry. Never repair an invalid snapshot by changing the map. */
 export function readBattlefieldSnapshot(value: unknown): BattlefieldSnapshot {
   const raw = object(value);
-  if (raw["version"] !== 1)
+  if (raw["version"] !== 1 && raw["version"] !== 2)
     throw new Error("Unsupported battlefield snapshot version. Refresh the game.");
   const source = object(raw["arena"]);
   const extent = object(source["extent"]);
@@ -81,19 +82,23 @@ export function readBattlefieldSnapshot(value: unknown): BattlefieldSnapshot {
       };
     }),
   };
+  if (raw["version"] === 2) arena.environment = readSceneEnvironment(source["environment"], arena);
+  else if (source["environment"] !== undefined)
+    throw new Error("Composition requires battlefield version 2.");
   const occupied = new Set<string>();
   for (const p of [arena.playerStart, ...arena.hostileSlots]) {
     const key = `${p.x},${p.y}`;
     if (occupied.has(key)) throw new Error("Overlapping battlefield spawns.");
     occupied.add(key);
     if (
+      arena.environment?.structures.some((s) => s.blocksMovement && rectContains(s.rect, p)) ||
       arena.cover!.some(
         (c) => c.blocksMovement !== false && c.rect.x === p.x - 1 && c.rect.y === p.y - 1,
       )
     )
       throw new Error("Battlefield spawn is inside an obstacle.");
   }
-  return { version: 1, arena };
+  return { version: raw["version"], arena };
 }
 
 /** Copy mechanical HP as well as geometry so catalog changes cannot alter an ongoing fight. */
@@ -101,7 +106,7 @@ export function snapshotBattlefield(arena: Arena): BattlefieldSnapshot {
   if ((arena.cover ?? []).some((piece) => !COVER_MATERIAL_KEYS.includes(piece.material)))
     throw new Error("Unsupported authored cover material.");
   return readBattlefieldSnapshot({
-    version: 1,
+    version: arena.environment ? 2 : 1,
     arena: {
       ...arena,
       cover: (arena.cover ?? []).map((p) => ({ ...p, maxHp: coverMaxHp(p) })),

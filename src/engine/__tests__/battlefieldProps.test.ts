@@ -20,9 +20,9 @@ import {
 } from "..";
 
 describe("the library itself", () => {
-  it("has twenty props, each with a unique key", () => {
-    expect(BATTLEFIELD_PROPS).toHaveLength(20);
-    expect(new Set(BATTLEFIELD_PROPS.map((p) => p.key)).size).toBe(20);
+  it("has twenty-four props, each with a unique key", () => {
+    expect(BATTLEFIELD_PROPS).toHaveLength(24);
+    expect(new Set(BATTLEFIELD_PROPS.map((p) => p.key)).size).toBe(24);
   });
 
   it("is built only from materials the printed table has", () => {

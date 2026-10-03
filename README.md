@@ -147,3 +147,8 @@ combat aftermath. At that saved scene, direct commands such as “shoot the rifl
 or “open fire” enter combat and retain the opening request through initiative.
 This is an explicit test fixture and a narrow command vocabulary; general scene
 generation and prose-to-combat interpretation are not enabled. See [the scene proof notes](docs/north-heywood-proof.md).
+
+The `/combat` harness also offers composed intersection and service-alley proofs,
+with semantic zones, reusable clusters, and permanent building geometry. They
+use saved battlefield v2 and require migration `20261003010000`. See
+[composition scope and playtest steps](docs/scene-composition.md).

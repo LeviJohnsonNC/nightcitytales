@@ -113,9 +113,12 @@ export function tilesFor(arena: Arena): Tile[] {
  * inside a crate.
  */
 export function blockedTiles(arena: Arena, damage: CoverDamage): Set<TileKey> {
-  const obstacles = (arena.cover ?? []).filter(
-    (piece) => piece.blocksMovement !== false && !coverDestroyed(piece, damage),
-  );
+  const obstacles = [
+    ...(arena.cover ?? []).filter(
+      (piece) => piece.blocksMovement !== false && !coverDestroyed(piece, damage),
+    ),
+    ...(arena.environment?.structures ?? []).filter((s) => s.blocksMovement),
+  ];
   const blocked = new Set<TileKey>();
   for (const tile of tilesFor(arena)) {
     const c = centreOf(tile);

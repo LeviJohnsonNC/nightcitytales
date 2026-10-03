@@ -100,3 +100,8 @@ jobs:
         env:
           PGURL: postgres://postgres:postgres@localhost:5432/postgres
         run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/persistent-scenes.test.sql
+
+      - name: Composed scene regression
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/postgres
+        run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/composed-scenes.test.sql

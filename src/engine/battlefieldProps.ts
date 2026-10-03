@@ -13,7 +13,7 @@
  * has a clear one, and would make the bonnet end of a car no safer than the
  * doors.
  *
- * Placement is a translation and nothing else. `placeProp` stamps a template at
+ * Placement supports translation and an explicit quarter turn. `placeProp` stamps a template at
  * a point and hands back ordinary `CoverPiece`s — so an arena keeps its cover
  * authored in its own file, with its own stable ids, and this library never
  * becomes a second source of truth about where anything stands.
@@ -42,7 +42,7 @@ export type BattlefieldProp = {
   key: string;
   label: string;
   category: "vehicle" | "street" | "industrial" | "interior";
-  /** The sprite this will draw as, once one is drawn. Nothing reads it yet. */
+  /** Catalog art hint. Saved composition binds each cover section to an approved asset. */
   art: string;
   /** Which printed row of the HP table this is being read against, and why. */
   why: string;
@@ -81,15 +81,20 @@ export function propFootprint(prop: BattlefieldProp): { width: number; height: n
  * are what persisted damage is keyed by, so an arena must not rename one after
  * a fight has stood on it.
  *
- * Rotation is deliberately absent. A prop that needs to lie the other way is
- * authored the other way, because a rotated footprint is a second geometry to
- * keep in step with the art and the ids for no rule the book cares about.
+ * Quarter-turn placement transforms sections once, preserving damage IDs.
+ * Scenic bindings must provide a compatible facing; never rotate a canvas sprite.
  */
-export function placeProp(prop: BattlefieldProp, at: Point, id: string): CoverPiece[] {
+export function placeProp(
+  prop: BattlefieldProp,
+  at: Point,
+  id: string,
+  rotation: 0 | 90 = 0,
+): CoverPiece[] {
+  const footprint = propFootprint(prop);
   return prop.sections.map((section) => {
     const rect: Rect = {
-      x: at.x + section.dx,
-      y: at.y + section.dy,
+      x: at.x + (rotation === 90 ? footprint.height - 2 - section.dy : section.dx),
+      y: at.y + (rotation === 90 ? section.dx : section.dy),
       width: COVER_SECTION_METRES,
       height: COVER_SECTION_METRES,
     };
