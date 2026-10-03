@@ -194,7 +194,6 @@ existing combatant JSON. This does not change initiative, AI morale/goal decisio
 ROF, damage, or the model's context. The scenic follow-up below adds a street-specific recipe rather than reusing
 the courtyard's baked ground or crate mappings.
 
-
 ## North Heywood scenic pass
 
 The saved `scene:north-heywood-intersection:v1` layout now defaults to scenic view.
