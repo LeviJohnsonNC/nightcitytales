@@ -151,4 +151,4 @@ generation and prose-to-combat interpretation are not enabled. See [the scene pr
 The `/combat` harness also offers composed intersection and service-alley proofs,
 with semantic zones, reusable clusters, and permanent building geometry. They
 use saved battlefield v2 and require migration `20261003010000`. See
-[composition scope and playtest steps](docs/scene-composition.md).
+[composition scope and playtest steps](docs/scene-composition.md). The [composition quality pass](docs/composition-quality.md) adds denser room furnishing, stepped exterior masses and thinner shared wall geometry.

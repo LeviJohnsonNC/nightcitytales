@@ -50,6 +50,7 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
   const { rect, line, glow } = painter(ctx, project);
   ctx.fillStyle = "#080f17";
   ctx.fillRect(0, 0, 1100, 700);
+  if (env.interior) rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
   if (!env.interior) rect({ x: -12, y: -12, width: 56, height: 56 }, "#293034");
   const floors: Record<string, string> = {
     reception: "#6c6257",
@@ -223,7 +224,7 @@ function paintBuilding(
   if (structure.style === "interior-wall") {
     poly([base[0]!, base[1]!, top[1]!, top[0]!], "#687875", "#24353b");
     poly([base[1]!, base[2]!, top[2]!, top[1]!], "#384951", "#24353b");
-    poly(top, "#94a19a", "#c2c5ac");
+    poly(top, "#94a19a");
     line(base[0]!, base[1]!, "#192f3a", 2);
     line(base[1]!, base[2]!, "#192f3a", 2);
     return;
@@ -309,8 +310,13 @@ function paintBuilding(
       1,
     );
   // Rooftop service equipment is dressing on an inaccessible building, not cover.
-  for (let i = 0; i < 2; i++) {
-    const equipment = { x: r.x + 2 + i * 3, y: r.y + 3, width: 2, height: 2 };
+  for (let i = 0; i < Math.min(3, Math.floor((r.width - 1) / 3)); i++) {
+    const equipment = {
+      x: r.x + 0.5 + i * 3,
+      y: r.y + Math.min(3, r.height - 2.5),
+      width: 2,
+      height: 2,
+    };
     const bottom = corners(equipment, h),
       lid = corners(equipment, h + 8);
     poly([bottom[0]!, bottom[1]!, lid[1]!, lid[0]!], "#303e45", "#171f26");
@@ -347,20 +353,26 @@ export function createComposedEnvironment(
   ground.refresh();
   scene.add.image(550, 350, "composed-ground").setDepth(-1000);
   const objects: Phaser.GameObjects.Image[] = [];
-  const add = (key: string, paint: (ctx: CanvasRenderingContext2D) => void, depth: number) => {
+  const add = (
+    key: string,
+    paint: (ctx: CanvasRenderingContext2D) => void,
+    depth: number,
+    bounds: Rect = { x: 0, y: 0, width: 1100, height: 700 },
+  ) => {
     const canvas = document.createElement("canvas");
-    canvas.width = 1100;
-    canvas.height = 700;
+    canvas.width = Math.ceil(bounds.width);
+    canvas.height = Math.ceil(bounds.height);
     const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    ctx.translate(-bounds.x, -bounds.y);
     paint(ctx);
-    const pixels = ctx.getImageData(0, 0, 1100, 700).data;
-    let left = 1100,
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let left = canvas.width,
       right = 0,
-      top = 700,
+      top = canvas.height,
       bottom = 0;
-    for (let y = 0; y < 700; y++)
-      for (let x = 0; x < 1100; x++)
-        if (pixels[(y * 1100 + x) * 4 + 3]! > 5) {
+    for (let y = 0; y < canvas.height; y++)
+      for (let x = 0; x < canvas.width; x++)
+        if (pixels[(y * canvas.width + x) * 4 + 3]! > 5) {
           left = Math.min(left, x);
           right = Math.max(right, x);
           top = Math.min(top, y);
@@ -381,18 +393,52 @@ export function createComposedEnvironment(
     );
     texture.refresh();
     const image = scene.add
-      .image((left + right) / 2, bottom, key)
+      .image(bounds.x + (left + right) / 2, bounds.y + bottom, key)
       .setOrigin(0.5, 1)
       .setDepth(depth);
     objects.push(image);
   };
-  for (const s of arena.environment!.structures) {
-    const depth = project({ x: s.rect.x + s.rect.width, y: s.rect.y }).y;
-    add(
-      `structure-${s.id}`,
-      (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances),
-      depth,
-    );
+  for (const structure of arena.environment!.structures) {
+    // Split wall painting, not collision, into grid-sized depth slices. A long
+    // strip must not sort every section at its nearest corner's depth.
+    const pieces: SceneStructure[] = [];
+    if (structure.style === "interior-wall") {
+      for (let y = structure.rect.y; y < structure.rect.y + structure.rect.height; y += 2)
+        for (let x = structure.rect.x; x < structure.rect.x + structure.rect.width; x += 2)
+          pieces.push({
+            ...structure,
+            id: `${structure.id}_${x}_${y}`,
+            rect: {
+              x,
+              y,
+              width: Math.min(2, structure.rect.x + structure.rect.width - x),
+              height: Math.min(2, structure.rect.y + structure.rect.height - y),
+            },
+          });
+    } else pieces.push(structure);
+    for (const s of pieces) {
+      const depth = project({ x: s.rect.x + s.rect.width / 2, y: s.rect.y + s.rect.height / 2 }).y;
+      const corners = [
+        { x: s.rect.x, y: s.rect.y },
+        { x: s.rect.x + s.rect.width, y: s.rect.y },
+        { x: s.rect.x, y: s.rect.y + s.rect.height },
+        { x: s.rect.x + s.rect.width, y: s.rect.y + s.rect.height },
+      ].map(project);
+      const left = Math.floor(Math.min(...corners.map((p) => p.x))) - 8;
+      const top = Math.floor(Math.min(...corners.map((p) => p.y)) - s.height * 15) - 16;
+      const bounds = {
+        x: left,
+        y: top,
+        width: Math.ceil(Math.max(...corners.map((p) => p.x))) - left + 8,
+        height: Math.ceil(Math.max(...corners.map((p) => p.y))) - top + 8,
+      };
+      add(
+        `structure-${s.id}`,
+        (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances),
+        depth,
+        bounds,
+      );
+    }
   }
   for (const d of arena.environment!.dressing) {
     if (d.kind === "litter" || d.kind === "drain") continue;

@@ -23,7 +23,7 @@ const zone = (id: string, kind: ZoneKind, r: Rect, axis: "x" | "y" = "y"): Scene
 });
 function recipe(kind: SceneEnvironment["recipe"], variant: number) {
   const crossing = [14, 10, 18][variant]!;
-  const left = [8, 10, 6][variant]!;
+  const left = [10, 10, 8][variant]!;
   const right = 32 - left;
   const pocket = [12, 16, 8][variant]!;
   if (kind === "intersection")
@@ -206,15 +206,56 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     })),
     seed,
     zones: plan.zones,
-    structures: plan.structures.map((r, i) => ({
-      id: `building_${i}`,
-      label: kind === "alley" ? "Service building" : "Corner storefront",
-      rect: r,
-      height: 3 + ((seed + i) % 3),
-      style: kind === "alley" ? "warehouse" : i % 2 ? "workshop" : "shop",
-      blocksMovement: true,
-      blocksShots: true,
-    })),
+    structures: plan.structures.flatMap((r, i) => {
+      // A narrow frontage wing, a rear block and a taller return retain the
+      // entrance frontage while varying its architectural mass.
+      const wing = 4 + 2 * ((seed + i) % 2);
+      const split = Math.max(4, Math.floor(r.height / 4) * 2);
+      const pieces = [
+        rect(r.x + r.width - wing, r.y, wing, r.height),
+        rect(r.x, r.y, r.width - wing, split),
+        rect(r.x, r.y + split, r.width - wing, r.height - split),
+      ];
+      const entrance = plan.entrances.find((e) => e.structureId === `building_${i}`)?.position;
+      const entryPart = entrance
+        ? pieces.findIndex(
+            (p) =>
+              ((entrance.x === p.x - 1 || entrance.x === p.x + p.width + 1) &&
+                entrance.y > p.y &&
+                entrance.y < p.y + p.height) ||
+              ((entrance.y === p.y - 1 || entrance.y === p.y + p.height + 1) &&
+                entrance.x > p.x &&
+                entrance.x < p.x + p.width),
+          )
+        : 0;
+      // Set back a non-entrance rear wing to make an actual stepped footprint.
+      const setback = entryPart === 2 ? 1 : 2;
+      pieces[setback] = {
+        ...pieces[setback]!,
+        x: pieces[setback]!.x + 2,
+        width: pieces[setback]!.width - 2,
+      };
+      return pieces.map((piece, j) => ({
+        id: j === entryPart ? `building_${i}` : `building_${i}_wing_${j}`,
+        label:
+          j === 0
+            ? "Street frontage wing"
+            : j === 1
+              ? "Rear workshop block"
+              : "Upper service block",
+        rect: piece,
+        height: [3 + (i % 2), 5 + ((seed + i) % 3), 8 + ((seed + i) % 4)][j]!,
+        style: (kind === "alley"
+          ? j === 0
+            ? "workshop"
+            : "warehouse"
+          : (i + j) % 2
+            ? "workshop"
+            : "shop") as "workshop" | "warehouse" | "shop",
+        blocksMovement: true,
+        blocksShots: true,
+      }));
+    }),
     clusters: [],
     props: [],
     dressing: [],
@@ -235,6 +276,29 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     (p) => rect(p.x - 1, p.y - 1, 2, 2),
   );
   placeSceneClusters(arena, plan.slots, reserved, seed);
+  const details: Slot[] = [];
+  for (const z of env.zones.filter((z) => ["sidewalk", "frontage", "loading"].includes(z.kind))) {
+    const candidates: Point[] = [];
+    for (let y = Math.max(0, z.rect.y); y < Math.min(32, z.rect.y + z.rect.height) - 2; y += 4)
+      for (let x = Math.max(0, z.rect.x); x < Math.min(32, z.rect.x + z.rect.width); x += 2)
+        candidates.push({ x, y });
+    if (!candidates.length) continue;
+    for (let i = 0; i < 3; i++)
+      details.push({
+        id: `${z.id}_infill_${i}`,
+        kind: z.kind === "sidewalk" ? "garden" : "supplies",
+        zone: z.id,
+        at: candidates[0]!,
+        candidates,
+      });
+  }
+  // Keep a continuous two-metre walking lane along each pavement.
+  const walkingLanes = env.zones
+    .filter((z) => z.kind === "sidewalk")
+    .map((z) =>
+      rect(z.rect.x + (z.rect.x < 12 ? z.rect.width - 2 : 0), z.rect.y, 2, z.rect.height),
+    );
+  placeSceneClusters(arena, details, [...reserved, ...walkingLanes], seed, false);
   // A third orientation uses the same saved geometry and renderer, including prop sections.
   if (variant === 2) {
     const swapPoint = (p: Point) => ({ x: p.y, y: p.x });
