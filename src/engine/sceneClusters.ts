@@ -24,6 +24,61 @@ export type ClusterDefinition = {
 };
 /** Offsets describe relationships inside a cluster, never arbitrary world positions. */
 export const CLUSTERS: Record<string, ClusterDefinition> = {
+  racking: {
+    zones: ["storage"],
+    reason: "Stocked shelving forms regular rack aisles with picking access",
+    members: [{ key: "steel_shelving", id: "rack", x: 0, y: 0, art: ["shelf", "shelf"] }],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Rack picking aisle" },
+      { x: 3, y: 3, label: "Rack picking aisle" },
+    ],
+  },
+  vehicle_bay: {
+    zones: ["workbay"],
+    reason: "Vehicles occupy service bays with front approach and side working space",
+    members: [{ key: "sedan", id: "vehicle", x: 0, y: 0, art: ["sedan-engine", "sedan-cabin"] }],
+    dressing: [],
+    access: [
+      { x: -1, y: 1, label: "Vehicle approach" },
+      { x: 1, y: 3, label: "Engine working space" },
+      { x: 3, y: 3, label: "Cabin working space" },
+    ],
+  },
+  freight: {
+    zones: ["staging"],
+    reason: "Receiving freight stays beside loading access with clear handling space",
+    members: [
+      { key: "freight_crate", id: "crate", x: 0, y: 0, art: ["cargo"] },
+      { key: "freight_pallet", id: "pallet", x: 2, y: 0, art: ["pallet"] },
+    ],
+    dressing: [],
+    access: [{ x: 1, y: 3, label: "Freight handling space" }],
+  },
+  workbench: {
+    zones: ["service"],
+    reason: "Workshop cabinets face a usable working aisle",
+    members: [{ key: "workbench", id: "bench", x: 0, y: 0, art: ["workbench", "workbench"] }],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Bench working aisle" },
+      { x: 3, y: 3, label: "Bench working aisle" },
+    ],
+  },
+  garden: {
+    zones: ["garden", "frontage"],
+    reason: "Low planters belong to a residential frontage, clear of the front door",
+    members: [{ key: "planter", id: "planter", x: 0, y: 0, art: ["planter"] }],
+    dressing: [],
+  },
+  driveway: {
+    zones: ["driveway"],
+    reason: "A resident's car follows the driveway with a clear approach",
+    members: [
+      { key: "sedan", id: "car", x: 0, y: 0, rotation: 90, art: ["sedan-engine", "sedan-cabin"] },
+    ],
+    dressing: [],
+  },
   workstation: {
     zones: ["workspace"],
     reason: "Desk faces accessible working space inside a work area",

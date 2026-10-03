@@ -641,6 +641,31 @@
           "dy": 0
         }
       ]
+    },
+    {
+      "key": "workbench",
+      "label": "a workshop bench",
+      "category": "industrial",
+      "art": "workbench",
+      "why": "House-authored steel workshop cabinets and benchtop, read as printed Thin Steel. Each 2m section has independent HP; tools do not grant extra protection.",
+      "sections": [
+        {
+          "key": "cabinet_0",
+          "label": "a workshop bench cabinet",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "key": "cabinet_1",
+          "label": "a workshop bench cabinet",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 2,
+          "dy": 0
+        }
+      ]
     }
   ]
 }

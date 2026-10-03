@@ -4,6 +4,7 @@ import { placeSceneClusters, type Slot } from "./sceneClusters";
 import { snapshotBattlefield } from "./battlefieldSnapshot";
 import { reachableTiles, tileKey, tileOf } from "./grid";
 import type { AuthoredScene, SceneActor } from "./authoredScene";
+import { composeResidential } from "./residentialRecipe";
 import { composeInterior } from "./interiorRecipes";
 import { threatFor } from "./threats";
 import { type SceneEnvironment, type SceneZone, type ZoneKind } from "./sceneEnvironment";
@@ -172,7 +173,9 @@ function recipe(kind: SceneEnvironment["recipe"], variant: number) {
 export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): AuthoredScene {
   if (!Number.isInteger(seed) || seed < 0 || seed > 4294967295)
     throw new Error("Invalid scene seed.");
-  if (kind === "office" || kind === "nightclub") return composeInterior(kind, seed);
+  if (kind === "residential") return composeResidential(seed);
+  if (kind === "office" || kind === "nightclub" || kind === "warehouse" || kind === "garage")
+    return composeInterior(kind, seed);
   const variant = (seed + 2) % 3;
   const plan = recipe(kind, variant);
   const cast = [

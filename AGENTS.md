@@ -78,7 +78,7 @@ and ammunition is consumable as a class. Both turn loops go through
 `features/campaign/itemUse.ts` rather than each deciding for itself.
 
 An arena is furnished from a library rather than from scratch.
-`battlefieldProps.ts` holds thirty named objects — a sedan, a bus, a bar
+`battlefieldProps.ts` holds thirty-one named objects — a sedan, a bus, a bar
 counter — and `placeProp` stamps one at a point as ordinary `CoverPiece`s, so
 the arena keeps its own ids and this never becomes a second source of truth
 about where anything stands. A prop is a LIST of 2m sections because pg. 182
@@ -119,9 +119,11 @@ returns only attackable cover. Static structures have no HP. The outer persisten
 scene manifest/lifecycle remain v1. Legacy layouts continue to load unchanged.
 Recipe v2 adds saved exterior entrances and three spatial variants per recipe.
 `/scene-review` uses the shipping renderer and engine readers with static fixtures;
-it must not become a separate combat loop. Recipe v3 adds office/nightclub
+it must not become a separate combat loop. Recipe v3 adds office/nightclub/warehouse/garage
 rooms and saved opening/access constraints. `interiorRecipes.ts` authors spaces;
-`sceneClusters.ts` is the placement machinery shared with outdoor recipes.
+`industrialRecipes.ts` supplies warehouse/garage plans; `residentialRecipe.ts`
+adds residential frontage and driveways. `sceneClusters.ts` is the placement
+machinery shared with outdoor recipes.
 `interiorPropArt.ts` supplies a reusable provisional furniture kit, not a location
 renderer. Interior walls remain permanent; openings are always open. There are no
 walkable upper floors or interactive doors. See `docs/scene-composition.md` for

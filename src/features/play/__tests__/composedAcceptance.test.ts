@@ -63,7 +63,7 @@ it.each([1, 3])(
     expect(wrecked.depth).toBeLessThan(intact.depth);
   },
 );
-it.each(["alley", "office", "nightclub"] as const)(
+it.each(["alley", "office", "nightclub", "residential", "warehouse", "garage"] as const)(
   "uses the shared renderer for %s with an unfamiliar location identifier",
   (kind) => {
     const arena = composeScene(kind).layout.arena;

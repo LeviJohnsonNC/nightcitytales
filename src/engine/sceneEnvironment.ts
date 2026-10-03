@@ -19,6 +19,11 @@ export const ZONE_KINDS = [
   "dance",
   "performance",
   "aisle",
+  "storage",
+  "workbay",
+  "staging",
+  "garden",
+  "driveway",
 ] as const;
 export type ZoneKind = (typeof ZONE_KINDS)[number];
 export const ENVIRONMENT_ART = [
@@ -39,6 +44,8 @@ export const ENVIRONMENT_ART = [
   "shelf",
   "dj",
   "partition",
+  "workbench",
+  "planter",
 ] as const;
 export type EnvironmentArt = (typeof ENVIRONMENT_ART)[number];
 export const DRESSING_KINDS = [
@@ -56,13 +63,14 @@ export type SceneStructure = {
   label: string;
   rect: Rect;
   height: number;
-  style: "shop" | "workshop" | "warehouse" | "interior-wall";
+  style: "shop" | "workshop" | "warehouse" | "interior-wall" | "residential";
   blocksMovement: boolean;
   blocksShots: boolean;
 };
 export type SceneEnvironment = {
   version: 1;
-  recipe: "intersection" | "alley" | "office" | "nightclub";
+  recipe:
+    "intersection" | "alley" | "office" | "nightclub" | "warehouse" | "garage" | "residential";
   recipeVersion: 1 | 2 | 3;
   /** Room connections are openings, not interactive doors or a second navigation system. */
   interior?: {
@@ -156,7 +164,13 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       label: str(s["label"]),
       rect: rectangle(s["rect"]),
       height: num(s["height"], 1, 12),
-      style: choice(s["style"], ["shop", "workshop", "warehouse", "interior-wall"] as const),
+      style: choice(s["style"], [
+        "shop",
+        "workshop",
+        "warehouse",
+        "interior-wall",
+        "residential",
+      ] as const),
       blocksMovement: bool(s["blocksMovement"]),
       blocksShots: bool(s["blocksShots"]),
     };
@@ -268,12 +282,22 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
     if (arena.cover?.some((p) => p.id === structures[i]!.id)) fail();
   }
   const interior = readInterior(r["interior"], zones, structures, arena);
-  const interiorRecipe = ["office", "nightclub"].includes(r["recipe"] as string);
+  const interiorRecipe = ["office", "nightclub", "warehouse", "garage"].includes(
+    r["recipe"] as string,
+  );
   if (interiorRecipe !== Boolean(interior) || (interiorRecipe && r["recipeVersion"] !== 3)) fail();
   return {
     version: 1,
     ...(interior ? { interior } : {}),
-    recipe: choice(r["recipe"], ["intersection", "alley", "office", "nightclub"] as const),
+    recipe: choice(r["recipe"], [
+      "intersection",
+      "alley",
+      "office",
+      "nightclub",
+      "warehouse",
+      "garage",
+      "residential",
+    ] as const),
     recipeVersion: r["recipeVersion"] as 1 | 2 | 3,
     ...(entrances ? { entrances } : {}),
     seed,
