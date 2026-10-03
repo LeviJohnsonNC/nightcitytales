@@ -55,6 +55,17 @@ Deploy the guarded staging/entry migration before this client, then accept throu
 a normal campaign encounter. Peaceful Life scene staging, richer object actions,
 artwork and tactical height remain separate work.
 
+## Composition quality — dense default pass
+
+The scene-review feedback exposed a gap between working placement infrastructure
+and convincing places. The shared recipes now add stepped exterior wings and
+setbacks, narrower alleys, mixed room furnishings, continuous bar runs and
+protected circulation. New interiors use connected half-metre wall solids with
+shared artwork/shot geometry; legacy full-width walls still load unchanged.
+See [composition quality review](docs/composition-quality.md) for screenshots,
+checks and remaining visual limitations. This is a blockout/composition upgrade;
+facade variety, final artwork, lighting and deployed playtest acceptance remain.
+
 ## Now: character creation as act one
 
 Creation was faithful, reasonably stylish, and a form: step one asked how much

@@ -141,25 +141,34 @@ function nightclub(variant: number): InteriorPlan {
 }
 function walls(spaces: SceneZone[], extent: Arena["extent"]): SceneEnvironment["structures"] {
   const result: SceneEnvironment["structures"] = [];
-  // Merge horizontal blocked runs; no overlapping wall solids at corners.
+  const solid = (x: number, y: number) =>
+    x >= 0 &&
+    y >= 0 &&
+    x < extent.width &&
+    y < extent.height &&
+    !spaces.some((z) => rectInside({ x, y, width: 2, height: 2 }, z.rect));
+  const add = (rect: Rect) =>
+    result.push({
+      id: `wall_${result.length}`,
+      label: "Permanent interior wall",
+      rect,
+      height: 1.4,
+      style: "interior-wall",
+      blocksMovement: true,
+      blocksShots: true,
+    });
+  // Half-metre walls join through blocked tile centres. Movement retains the
+  // 2m lattice; shooting and artwork share the actual, narrower wall solids.
   for (let y = 0; y < extent.height; y += 2) {
     let start: number | null = null;
     for (let x = 0; x <= extent.width; x += 2) {
-      const solid =
-        x < extent.width && !spaces.some((z) => rectInside({ x, y, width: 2, height: 2 }, z.rect));
-      if (solid && start === null) start = x;
-      if (!solid && start !== null) {
-        result.push({
-          id: `wall_${start}_${y}`,
-          label: "Permanent interior wall",
-          rect: { x: start, y, width: x - start, height: 2 },
-          height: 1.4,
-          style: "interior-wall",
-          blocksMovement: true,
-          blocksShots: true,
-        });
+      if (solid(x, y) && start === null) start = x;
+      if (!solid(x, y) && start !== null) {
+        add({ x: start + 0.75, y: y + 0.75, width: x - start - 1.5, height: 0.5 });
         start = null;
       }
+      if (solid(x, y) && solid(x, y + 2))
+        add({ x: x + 0.75, y: y + 1.25, width: 0.5, height: 1.5 });
     }
   }
   return result;
@@ -180,6 +189,12 @@ export function composeInterior(
     rooms.forEach((room) => {
       if (room.rect.width >= 6) room.axis = "x";
     });
+  // Long bar runs follow the service room, with staff and customers on opposite sides.
+  rooms
+    .filter((room) => room.id === "bar")
+    .forEach((room) => {
+      room.axis = room.rect.height >= room.rect.width ? "x" : "y";
+    });
   const publicRoom = rooms.find((z) => z.id === "reception")!.rect;
   const backRoom = rooms.find((z) => z.id === "service")!.rect;
   const boundaryDoor = (id: string, r: Rect): Connection =>
@@ -198,7 +213,7 @@ export function composeInterior(
   const env: SceneEnvironment = {
     version: 1,
     recipe: kind,
-    recipeVersion: 3,
+    recipeVersion: 4,
     seed,
     entrances: [],
     zones: [...rooms, ...doorZones],
@@ -267,7 +282,9 @@ export function composeInterior(
                   : room.kind === "service"
                     ? kind === "warehouse" || kind === "garage"
                       ? "workbench"
-                      : "server"
+                      : kind === "nightclub"
+                        ? "storage_cabinet"
+                        : "server"
                     : room.kind === "performance"
                       ? "performance"
                       : room.kind === "seating"
@@ -339,6 +356,50 @@ export function composeInterior(
       });
   }
   placeSceneClusters(arena, slots, reserved, seed, false);
+  // Complete each room's activity with secondary furniture along its perimeter.
+  // Candidate order is authored; shared placement protects doors, working space,
+  // and connectivity instead of treating unused floor as arbitrary clutter space.
+  if (kind === "office" || kind === "nightclub") {
+    const secondary: Slot[] = [];
+    for (const room of rooms) {
+      const families =
+        room.kind === "workspace"
+          ? ["storage_cabinet", "garden", "workstation"]
+          : room.kind === "meeting"
+            ? ["seating", "storage_cabinet", "garden"]
+            : room.kind === "reception"
+              ? ["booth", "garden"]
+              : room.kind === "seating"
+                ? ["booth", "garden"]
+                : room.id === "bar"
+                  ? ["bar", "supplies"]
+                  : room.kind === "service"
+                    ? kind === "nightclub"
+                      ? ["storage_cabinet", "supplies"]
+                      : ["workbench", "supplies", "server"]
+                    : room.kind === "performance"
+                      ? ["speakers"]
+                      : [];
+      const r = room.rect;
+      const candidates: Point[] = [];
+      for (let y = r.y; y <= r.y + r.height - 2; y += 2)
+        for (let x = r.x; x <= r.x + r.width - 2; x += 2)
+          if (x === r.x || x >= r.x + r.width - 4 || y === r.y || y >= r.y + r.height - 4)
+            candidates.push({ x, y });
+      const passes =
+        room.kind === "reception" ? Math.max(3, Math.ceil((r.width * r.height) / 48)) : 3;
+      for (let pass = 0; pass < passes; pass++)
+        for (const family of families)
+          secondary.push({
+            id: `${room.id}_detail_${family}_${pass}`,
+            kind: family,
+            zone: room.id,
+            at: candidates[0]!,
+            candidates,
+          });
+    }
+    placeSceneClusters(arena, secondary, reserved, seed, false);
+  }
   const castRooms =
     kind === "office"
       ? ["work", "service", "meeting"]

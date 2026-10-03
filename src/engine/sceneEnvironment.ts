@@ -36,6 +36,9 @@ export const ENVIRONMENT_ART = [
   "generator",
   "barrier",
   "desk",
+  "cabinet",
+  "stock",
+  "speaker",
   "reception",
   "meeting-table",
   "seat",
@@ -71,7 +74,7 @@ export type SceneEnvironment = {
   version: 1;
   recipe:
     "intersection" | "alley" | "office" | "nightclub" | "warehouse" | "garage" | "residential";
-  recipeVersion: 1 | 2 | 3;
+  recipeVersion: 1 | 2 | 3 | 4;
   /** Room connections are openings, not interactive doors or a second navigation system. */
   interior?: {
     connections: { zoneId: string; from: string; to: string }[];
@@ -126,21 +129,21 @@ function choice<T extends string>(v: unknown, values: readonly T[]): T {
 function bool(v: unknown): boolean {
   return typeof v === "boolean" ? v : fail();
 }
-function rectangle(v: unknown): Rect {
+function rectangle(v: unknown, thin = false): Rect {
   const r = obj(v);
   const out = {
     x: num(r["x"], -20, 120),
     y: num(r["y"], -20, 120),
-    width: num(r["width"], 2, 120),
-    height: num(r["height"], 2, 120),
+    width: num(r["width"], thin ? 0.5 : 2, 120),
+    height: num(r["height"], thin ? 0.5 : 2, 120),
   };
-  if (Object.values(out).some((n) => n % 2)) fail();
+  if (Object.values(out).some((n) => n % (thin ? 0.25 : 2))) fail();
   return out;
 }
 /** Closed vocabulary, bounded geometry, referential integrity; no catalog regeneration. */
 export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnvironment {
   const r = obj(value);
-  if (r["version"] !== 1 || ![1, 2, 3].includes(r["recipeVersion"] as number)) fail();
+  if (r["version"] !== 1 || ![1, 2, 3, 4].includes(r["recipeVersion"] as number)) fail();
   const ids = new Set<string>();
   const id = (v: unknown) => {
     const key = str(v);
@@ -162,7 +165,7 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
     return {
       id: id(s["id"]),
       label: str(s["label"]),
-      rect: rectangle(s["rect"]),
+      rect: rectangle(s["rect"], r["recipeVersion"] === 4 && s["style"] === "interior-wall"),
       height: num(s["height"], 1, 12),
       style: choice(s["style"], [
         "shop",
@@ -281,11 +284,15 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
     if (structures.slice(i + 1).some((s) => rectsOverlap(structures[i]!.rect, s.rect))) fail();
     if (arena.cover?.some((p) => p.id === structures[i]!.id)) fail();
   }
-  const interior = readInterior(r["interior"], zones, structures, arena);
+  const interior = readInterior(r["interior"], zones, structures, arena, r["recipeVersion"] === 4);
   const interiorRecipe = ["office", "nightclub", "warehouse", "garage"].includes(
     r["recipe"] as string,
   );
-  if (interiorRecipe !== Boolean(interior) || (interiorRecipe && r["recipeVersion"] !== 3)) fail();
+  if (
+    interiorRecipe !== Boolean(interior) ||
+    (interiorRecipe && ![3, 4].includes(r["recipeVersion"] as number))
+  )
+    fail();
   return {
     version: 1,
     ...(interior ? { interior } : {}),
@@ -298,7 +305,7 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       "garage",
       "residential",
     ] as const),
-    recipeVersion: r["recipeVersion"] as 1 | 2 | 3,
+    recipeVersion: r["recipeVersion"] as 1 | 2 | 3 | 4,
     ...(entrances ? { entrances } : {}),
     seed,
     zones,
@@ -362,6 +369,7 @@ function readInterior(
   zones: SceneZone[],
   structures: SceneStructure[],
   arena: Arena,
+  thin: boolean,
 ): SceneEnvironment["interior"] {
   if (value === undefined) return undefined;
   const r = obj(value),
@@ -435,9 +443,39 @@ function readInterior(
       const tile = { x, y, width: 2, height: 2 };
       const floor = [...spaces, ...doors].some((z) => rectInside(tile, z.rect));
       const wall = structures.some(
-        (w) => rectInside(tile, w.rect) && w.blocksMovement && w.blocksShots,
+        (w) =>
+          (thin
+            ? rectInside({ x: x + 0.875, y: y + 0.875, width: 0.25, height: 0.25 }, w.rect)
+            : rectInside(tile, w.rect)) &&
+          w.blocksMovement &&
+          w.blocksShots,
       );
       if (floor === wall) fail();
+      // Adjacent blocked cells must have continuous wall between their centres.
+      if (thin && wall)
+        for (const [dx, dy] of [
+          [2, 0],
+          [0, 2],
+        ]) {
+          const neighbor = { x: x + dx!, y: y + dy!, width: 2, height: 2 };
+          if (
+            rectInside(neighbor, bounds) &&
+            ![...spaces, ...doors].some((z) => rectInside(neighbor, z.rect))
+          ) {
+            const bridge = {
+              x: x + 0.875 + dx! / 2,
+              y: y + 0.875 + dy! / 2,
+              width: 0.25,
+              height: 0.25,
+            };
+            if (
+              !structures.some(
+                (w) => w.blocksMovement && w.blocksShots && rectInside(bridge, w.rect),
+              )
+            )
+              fail();
+          }
+        }
     }
   return { connections, access };
 }

@@ -666,6 +666,40 @@
           "dy": 0
         }
       ]
+    },
+    {
+      "key": "office_storage",
+      "label": "an office storage cabinet",
+      "category": "interior",
+      "art": "cabinet",
+      "why": "House-authored steel document and equipment storage, using printed Thin Steel HP. Cabinet contents do not grant additional protection.",
+      "sections": [
+        {
+          "key": "cabinet",
+          "label": "an office storage cabinet",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "audio_stack",
+      "label": "a reinforced speaker stack",
+      "category": "interior",
+      "art": "speaker",
+      "why": "House-authored reinforced audio equipment casing, using printed Thin Steel HP. Speaker electronics add no separate protection.",
+      "sections": [
+        {
+          "key": "speaker",
+          "label": "a reinforced speaker stack",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
     }
   ]
 }

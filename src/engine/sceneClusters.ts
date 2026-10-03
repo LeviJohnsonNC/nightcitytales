@@ -1,5 +1,6 @@
 /** Shared cluster placement for exterior and interior recipes. */
 import type { Arena, Point, Rect } from "./battlefield";
+import { blockedTiles, tileOf, tileKey } from "./grid";
 import { battlefieldProp, placeProp } from "./battlefieldProps";
 import {
   rectInside,
@@ -66,10 +67,24 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     ],
   },
   garden: {
-    zones: ["garden", "frontage"],
+    zones: ["garden", "frontage", "sidewalk", "reception", "workspace", "meeting", "seating"],
     reason: "Low planters belong to a residential frontage, clear of the front door",
     members: [{ key: "planter", id: "planter", x: 0, y: 0, art: ["planter"] }],
     dressing: [],
+  },
+  storage_cabinet: {
+    zones: ["workspace", "meeting", "service", "performance"],
+    reason: "Local equipment storage faces a clear working aisle",
+    members: [{ key: "office_storage", id: "cabinet", x: 0, y: 0, art: ["cabinet"] }],
+    dressing: [],
+    access: [{ x: 1, y: 3, label: "Cabinet access" }],
+  },
+  supplies: {
+    zones: ["service", "loading", "frontage"],
+    reason: "Stock is grouped beside service activity with handling space",
+    members: [{ key: "freight_crate", id: "stock", x: 0, y: 0, art: ["cargo"] }],
+    dressing: [{ kind: "supplies", x: 2.4, y: 0.5 }],
+    access: [{ x: 1, y: 3, label: "Stock access" }],
   },
   driveway: {
     zones: ["driveway"],
@@ -111,14 +126,14 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     ],
   },
   seating: {
-    zones: ["seating", "reception"],
+    zones: ["seating", "reception", "meeting"],
     reason: "Booth seating faces clear customer space",
     members: [{ key: "lounge_seat", id: "seat", x: 0, y: 0, art: ["seat"] }],
     dressing: [],
     access: [{ x: 1, y: 3, label: "Seat approach" }],
   },
   booth: {
-    zones: ["seating"],
+    zones: ["seating", "reception"],
     reason: "A lounge seat and low table share a clear customer approach",
     members: [
       { key: "lounge_seat", id: "seat", x: 0, y: 0, art: ["seat"] },
@@ -146,6 +161,13 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     members: [{ key: "server_rack", id: "cabinet", x: 0, y: 0, art: ["server"] }],
     dressing: [],
     access: [{ x: 1, y: 3, label: "Equipment service access" }],
+  },
+  speakers: {
+    zones: ["performance"],
+    reason: "Sound equipment flanks the floor-level performance area",
+    members: [{ key: "audio_stack", id: "speaker", x: 0, y: 0, art: ["speaker"] }],
+    dressing: [],
+    access: [{ x: 1, y: 3, label: "Audio equipment access" }],
   },
   performance: {
     zones: ["performance"],
@@ -257,56 +279,101 @@ export function placeSceneClusters(
         : slot.kind;
     const variant = CLUSTERS[variantKind]!;
     if (!variant.zones.includes(z.kind)) throw new Error(`Illegal variant zone: ${slot.id}`);
-    const placement = (slot.candidates ?? [slot.at])
-      .map((at) => {
-        const entries = variant.members.flatMap((m) => {
-          const prop = battlefieldProp(m.key);
-          if (!prop) throw new Error(`Missing composition prop ${m.key}`);
-          const rotation = z.axis === "x" ? (m.rotation === 90 ? 0 : 90) : (m.rotation ?? 0);
-          const memberAt = {
-            x: at.x + (z.axis === "x" ? m.y : m.x),
-            y: at.y + (z.axis === "x" ? m.x : m.y),
-          };
-          return placeProp(prop, memberAt, `${slot.id}_${m.id}`, rotation).map((piece, i) => ({
-            piece: slot.label ? { ...piece, label: `${slot.label} · ${piece.label}` } : piece,
-            art: m.art[i]!,
-            rotation,
-          }));
-        });
-        const access = (variant.access ?? []).map((a) => ({
-          position: {
-            x: at.x + (z.axis === "x" ? a.y : a.x),
-            y: at.y + (z.axis === "x" ? a.x : a.y),
-          },
-          label: a.label,
+    const tryPlacement = (at: Point) => {
+      const entries = variant.members.flatMap((m) => {
+        const prop = battlefieldProp(m.key);
+        if (!prop) throw new Error(`Missing composition prop ${m.key}`);
+        const rotation = z.axis === "x" ? (m.rotation === 90 ? 0 : 90) : (m.rotation ?? 0);
+        const memberAt = {
+          x: at.x + (z.axis === "x" ? m.y : m.x),
+          y: at.y + (z.axis === "x" ? m.x : m.y),
+        };
+        return placeProp(prop, memberAt, `${slot.id}_${m.id}`, rotation).map((piece, i) => ({
+          piece: slot.label ? { ...piece, label: `${slot.label} · ${piece.label}` } : piece,
+          art: env.interior && slot.kind === "supplies" ? ("stock" as const) : m.art[i]!,
+          rotation,
         }));
-        const legalAccess = access.every((a) => {
-          const tile = rect(a.position.x - 1, a.position.y - 1, 2, 2);
-          return (
-            rectInside(tile, z.rect) &&
+      });
+      const access = (variant.access ?? []).map((a) => ({
+        position: {
+          x: at.x + (z.axis === "x" ? a.y : a.x),
+          y: at.y + (z.axis === "x" ? a.x : a.y),
+        },
+        label: a.label,
+      }));
+      const legalAccess = access.every((a) => {
+        const tile = rect(a.position.x - 1, a.position.y - 1, 2, 2);
+        return (
+          rectInside(tile, z.rect) &&
+          ![
+            ...env.structures.map((s) => s.rect),
+            ...arena.cover!.map((c) => c.rect),
+            ...entries.map((e) => e.piece.rect),
+          ].some((r) => rectsOverlap(r, tile))
+        );
+      });
+      let legal =
+        legalAccess &&
+        entries.every(
+          ({ piece }) =>
+            rectInside(piece.rect, z.rect) &&
+            rectInside(piece.rect, rect(0, 0, arena.extent.width, arena.extent.height)) &&
             ![
+              ...reserved,
+              ...crossings,
               ...env.structures.map((s) => s.rect),
               ...arena.cover!.map((c) => c.rect),
-              ...entries.map((e) => e.piece.rect),
-            ].some((r) => rectsOverlap(r, tile))
-          );
-        });
-        const legal =
-          legalAccess &&
-          entries.every(
-            ({ piece }) =>
-              rectInside(piece.rect, z.rect) &&
-              rectInside(piece.rect, rect(0, 0, arena.extent.width, arena.extent.height)) &&
-              ![
-                ...reserved,
-                ...crossings,
-                ...env.structures.map((s) => s.rect),
-                ...arena.cover!.map((c) => c.rect),
-              ].some((r) => rectsOverlap(r, piece.rect)),
-          );
-        return { at, entries, access, legal };
-      })
-      .find((p) => p.legal);
+            ].some((r) => rectsOverlap(r, piece.rect)),
+        );
+      // Furniture may share working aisles, but must never seal a floor pocket.
+      // Reject a candidate before committing cover or access anchors.
+      if (legal && entries.length) {
+        const candidate = { ...arena, cover: [...arena.cover!, ...entries.map((e) => e.piece)] };
+        const blocked = blockedTiles(candidate, {});
+        const origin = tileOf(candidate, candidate.playerStart);
+        const seen = new Set([tileKey(origin)]);
+        const queue = [origin];
+        const cols = arena.extent.width / 2,
+          rows = arena.extent.height / 2;
+        for (let i = 0; i < queue.length; i++) {
+          const tile = queue[i]!;
+          for (const [dc, dr] of [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1],
+          ]) {
+            const next = { col: tile.col + dc!, row: tile.row + dr! };
+            const key = tileKey(next);
+            if (
+              next.col >= 0 &&
+              next.row >= 0 &&
+              next.col < cols &&
+              next.row < rows &&
+              !blocked.has(key) &&
+              !seen.has(key)
+            ) {
+              seen.add(key);
+              queue.push(next);
+            }
+          }
+        }
+        legal = env.interior
+          ? seen.size + blocked.size === cols * rows
+          : reserved.every((r) =>
+              seen.has(tileKey(tileOf(candidate, { x: r.x + r.width / 2, y: r.y + r.height / 2 }))),
+            );
+      }
+      return { at, entries, access, legal };
+    };
+    let placement: ReturnType<typeof tryPlacement> | undefined;
+    for (const at of slot.candidates ?? [slot.at]) {
+      const candidate = tryPlacement(at);
+      if (candidate.legal) {
+        placement = candidate;
+        break;
+      }
+    }
     if (!placement) {
       if (slot.required) throw new Error(`Required cluster cannot fit: ${slot.id}`);
       continue;
