@@ -30,7 +30,7 @@
  */
 import coverData from "@/data/rules/cover.json";
 import type { Arena, CoverPiece } from "./battlefield";
-import { coverBetween } from "./battlefield";
+import { coverBetween, structuresBetween } from "./battlefield";
 
 /** How much of a thing is in the way (pg. 182: the HP table is by thickness). */
 export type CoverThickness = "thick" | "thin";
@@ -220,4 +220,14 @@ export function coverDamageFrom(arena: Arena, raw: unknown): CoverDamage {
     out[id] = Math.min(Math.round(value), coverMaxHp(piece));
   }
   return out;
+}
+
+/** Shared visibility gate, without treating permanent walls as attackable HP pools. */
+export function shotObstacles(
+  arena: Arena,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  damage: CoverDamage,
+) {
+  return [...structuresBetween(arena, from, to), ...coverBlocking(arena, from, to, damage)];
 }

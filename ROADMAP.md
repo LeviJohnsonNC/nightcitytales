@@ -9,6 +9,19 @@ current state of the code.
 
 ---
 
+## Combat composition — Phase 1 proof
+
+The opt-in `/combat` fixtures now include a composed commercial intersection and
+service alley. Shared semantic parcels, curb-oriented vehicles, vendor/service/
+loading clusters, static buildings, frozen v2 snapshots and geometry-driven
+rendering replace independent prop scatter for these proofs. Existing encounters
+retain their original geometry. See [the implementation and playtest notes](docs/scene-composition.md).
+
+Next: playtest density/visibility, improve the procedural facade art, introduce
+more parcel/anchor variations, then prove office/club interiors before connecting
+structured adventure facts. Arbitrary prose-to-battlefield generation is still
+not enabled. Deployment requires `20261003010000_composed_battlefield_snapshots.sql`.
+
 ## Now: character creation as act one
 
 Creation was faithful, reasonably stylish, and a form: step one asked how much

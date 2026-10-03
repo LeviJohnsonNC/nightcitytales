@@ -16,6 +16,8 @@ import {
   applyCoverDamage,
   arenaFor,
   coverBlocking,
+  shotObstacles,
+  structuresBetween,
   nearestPointOn,
   rangeMetres,
   resolveAttack,
@@ -38,6 +40,7 @@ import {
   previewMovement,
   previewMovementToward,
   walkTowardTile,
+  walkToStructuralSight,
   placeHostiles,
   singleShotDV,
   startEncounter as rollInitiativeOrder,
@@ -452,7 +455,7 @@ export async function runNpcTurns(
       });
       // Hostiles walk the same 2m lattice the player does; the tactical step
       // says where they want to be, the grid says which square they get.
-      const walked = walkTowardTile({
+      const movement = {
         arena,
         cover,
         from: stats.position,
@@ -461,7 +464,10 @@ export async function runNpcTurns(
         occupied: Object.entries(data).flatMap(([id, d]) =>
           id === actor.id || live.state.combatants[id]?.defeated ? [] : [d.position],
         ),
-      });
+      };
+      const walked = structuresBetween(arena, stats.position, targetStats.position).length
+        ? walkToStructuralSight({ ...movement, target: targetStats.position })
+        : walkTowardTile(movement);
       if (walked.metres > 0) {
         stats = { ...stats, position: walked.position };
         data = { ...data, [actor.id]: stats };
@@ -487,6 +493,11 @@ export async function runNpcTurns(
     // the printed example rolls a Shoulder Arms Check against a DV read off the
     // weapon and the range. So this is a real attack that can MISS, taken at
     // the DV for the distance to the COVER rather than to the person behind it.
+    if (structuresBetween(arena, stats.position, targetStats.position).length) {
+      lines.push(`${actor.name} has no line of sight past the building.`);
+      capture("status", lines.at(-1)!, { actorId: actor.id });
+      continue;
+    }
     const blocking = coverBlocking(arena, stats.position, targetStats.position, cover);
     const shielding = blocking[0];
     if (shielding) {
@@ -897,7 +908,7 @@ export async function movePlayerTo(input: {
     if (other.isPlayer || other.defeated || other.side !== "hostile") continue;
     const theirs = live.data[other.id];
     if (!theirs) continue;
-    const between = coverBlocking(arena, position, theirs.position, live.cover);
+    const between = shotObstacles(arena, position, theirs.position, live.cover);
     if (between.length === 0) continue;
     blocked.push(other.name);
     shielding = shielding ?? between[0]!.label;

@@ -1,27 +1,10 @@
 /** Authored acceptance fixture; scene-local names are not new canonical atlas landmarks. */
 import { battlefieldProp, placeProp } from "./battlefieldProps";
-import { snapshotBattlefield, type BattlefieldSnapshot } from "./battlefieldSnapshot";
-import { threatFor, type ThreatProfile } from "./threats";
-import type { CombatSide } from "./encounter";
-import type { Point } from "./battlefield";
+import { snapshotBattlefield } from "./battlefieldSnapshot";
+import { threatFor } from "./threats";
 
-export type SceneActor = {
-  id: string;
-  name: string;
-  side: CombatSide;
-  position: Point;
-  /** Snapshot the mechanical profile rather than reinterpreting the weapon later. */
-  profile: ThreatProfile | null;
-};
-export type AuthoredScene = {
-  template: string;
-  templateVersion: number;
-  locationKey: string;
-  anchor: string;
-  narration: string;
-  layout: BattlefieldSnapshot;
-  actors: SceneActor[];
-};
+export type { AuthoredScene, SceneActor } from "./authoredScene";
+import type { AuthoredScene, SceneActor } from "./authoredScene";
 
 export function northHeywoodScene(): AuthoredScene {
   const props = [

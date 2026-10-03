@@ -1,5 +1,5 @@
 /** Shared, pure decisions for the board, intent parser and committed actions. */
-import { type Arena, type Point, metresBetween } from "./battlefield";
+import { type Arena, type Point, metresBetween, structuresBetween } from "./battlefield";
 import type { CoverDamage } from "./cover";
 import {
   centreOf,
@@ -173,4 +173,36 @@ export function previewMovementToward(input: {
     ...(input.occupied ? { occupied: input.occupied } : {}),
   });
   return previewMovement({ ...input, to: walked.position });
+}
+
+/** Walk around permanent geometry toward the nearest firing lane, following the
+ * actual route even when its first step leads away from the target. Destructible
+ * cover stays a valid shooting destination; this never gives structures HP. */
+export function walkToStructuralSight(input: {
+  arena: Arena;
+  cover: CoverDamage;
+  from: Point;
+  target: Point;
+  squares: number;
+  occupied?: Point[];
+}): { position: Point; path: Point[]; metres: number } {
+  const origin = tileOf(input.arena, input.from);
+  const field = reachableTiles({
+    arena: input.arena,
+    cover: input.cover,
+    from: origin,
+    allowance: 10000,
+    ...(input.occupied ? { occupied: input.occupied } : {}),
+  });
+  let goal: { tile: Tile; cost: number } | null = null;
+  for (const reached of field.values()) {
+    if (goal && reached.cost >= goal.cost) continue;
+    if (structuresBetween(input.arena, centreOf(reached.tile), input.target).length) continue;
+    goal = reached;
+  }
+  const route = goal ? (pathTo(field, goal.tile) ?? [origin]) : [origin];
+  const path = route
+    .filter((tile) => field.get(tileKey(tile))!.cost <= input.squares)
+    .map(centreOf);
+  return { position: path.at(-1) ?? input.from, path, metres: Math.round(routeMetres(path)) };
 }

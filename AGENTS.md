@@ -78,7 +78,7 @@ and ammunition is consumable as a class. Both turn loops go through
 `features/campaign/itemUse.ts` rather than each deciding for itself.
 
 An arena is furnished from a library rather than from scratch.
-`battlefieldProps.ts` holds twenty named objects — a sedan, a bus, a bar
+`battlefieldProps.ts` holds twenty-four named objects — a sedan, a bus, a bar
 counter — and `placeProp` stamps one at a point as ordinary `CoverPiece`s, so
 the arena keeps its own ids and this never becomes a second source of truth
 about where anything stands. A prop is a LIST of 2m sections because pg. 182
@@ -110,6 +110,14 @@ origin; attack previews recover it only while the first Action remains unspent.
 Do not bypass initiative or resolve a shot inside the entry parser.
 This is not yet a whole-command transaction or automatic
 scene generation from prose.
+
+Composed fixtures use `sceneComposer.ts` and battlefield snapshot v2. Semantic
+zones, clusters, static structures and art bindings are frozen inside the arena;
+render them from `arena.environment`, never infer them from a fixture key. Use
+`shotObstacles` for visibility that includes permanent structures; `coverBlocking`
+returns only attackable cover. Static structures have no HP. The outer persistent
+scene manifest/lifecycle remain v1. Legacy layouts continue to load unchanged.
+See `docs/scene-composition.md` for the opt-in harness and migration.
 
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says

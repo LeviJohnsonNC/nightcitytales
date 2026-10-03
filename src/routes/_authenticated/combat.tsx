@@ -1,3 +1,4 @@
+import { sceneFixtures } from "@/features/dev/sceneFixtures";
 import { stageScene } from "@/features/scenes/sceneOps";
 /**
  * /combat — the battlefield harness.
@@ -20,13 +21,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  SELECTABLE_ARENAS,
-  northHeywoodScene,
-  FORCES,
-  FORCE_SIZES,
-  type ForceSize,
-} from "@/engine";
+import { SELECTABLE_ARENAS, FORCES, FORCE_SIZES, type ForceSize } from "@/engine";
 import { getActiveCampaignForCharacter, getActiveEncounter, listCharacters } from "@/lib/backend";
 import {
   endEncounter,
@@ -45,8 +40,8 @@ export const Route = createFileRoute("/_authenticated/combat")({
   component: CombatHarness,
 });
 
-const NORTH_HEYWOOD = northHeywoodScene();
-const HARNESS_ARENAS = [...SELECTABLE_ARENAS, NORTH_HEYWOOD.layout.arena];
+const SCENE_FIXTURES = sceneFixtures();
+const HARNESS_ARENAS = [...SELECTABLE_ARENAS, ...SCENE_FIXTURES.map((s) => s.layout.arena)];
 
 const WOUNDS: { value: SeedWound; label: string; note: string }[] = [
   { value: "none", label: "Unhurt", note: "full HP" },
@@ -95,6 +90,7 @@ function CombatHarness() {
   const navigate = useNavigate();
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [arena, setArena] = useState(SELECTABLE_ARENAS[0]!.key);
+  const selectedScene = SCENE_FIXTURES.find((s) => s.layout.arena.key === arena);
   const [forceKey, setForceKey] = useState(FORCES[0]!.key);
   const [size, setSize] = useState<ForceSize>("standard");
   const [wound, setWound] = useState<SeedWound>("none");
@@ -139,7 +135,8 @@ function CombatHarness() {
   const stage = useMutation({
     mutationFn: async () => {
       if (!live.data?.campaign) throw new Error("Start a campaign before staging this scene.");
-      await stageScene(live.data.campaign.id, northHeywoodScene());
+      if (!selectedScene) throw new Error("Pick a scene first.");
+      await stageScene(live.data.campaign.id, selectedScene);
       return live.data.campaign.id;
     },
     onSuccess: async (id) => {
@@ -247,7 +244,10 @@ function CombatHarness() {
               onClick={() => setArena(a.key)}
               title={`${a.extent.width} × ${a.extent.height} m, ${(a.cover ?? []).length} pieces of cover`}
             >
-              <span className="block font-semibold">{a.label}</span>
+              <span className="block font-semibold">
+                {a.label}
+                {a.environment ? ` · variation ${a.environment.seed}` : ""}
+              </span>
               <span className="block font-mono text-[10px] text-muted-foreground">
                 {a.extent.width}×{a.extent.height} m · {(a.cover ?? []).length} cover
               </span>
@@ -256,9 +256,9 @@ function CombatHarness() {
         </div>
       </Field>
 
-      {arena === NORTH_HEYWOOD.layout.arena.key && (
+      {selectedScene && (
         <section className="space-y-2 border border-accent p-4 text-sm">
-          <p>{NORTH_HEYWOOD.narration}</p>
+          <p>{selectedScene.narration}</p>
           <p className="text-muted-foreground">
             This authored scene uses its own rifleman, lookout and two neutral workers. They want to
             drive you away. Stage it first, then choose Enter combat from the adventure screen. Your
@@ -266,7 +266,7 @@ function CombatHarness() {
           </p>
         </section>
       )}
-      {arena !== NORTH_HEYWOOD.layout.arena.key && (
+      {!selectedScene && (
         <Field label="Opposition">
           <div className="grid gap-2 sm:grid-cols-3">
             {FORCES.map((f) => (
@@ -289,7 +289,7 @@ function CombatHarness() {
         </Field>
       )}
 
-      {arena !== NORTH_HEYWOOD.layout.arena.key && (
+      {!selectedScene && (
         <Field label="Starting condition">
           <div className="grid gap-2 sm:grid-cols-2">
             {WOUNDS.map((w) => (
@@ -315,16 +315,16 @@ function CombatHarness() {
       {start.error && <p className="text-sm text-destructive">{(start.error as Error).message}</p>}
 
       <div className="flex items-center gap-3">
-        {arena === northHeywoodScene().layout.arena.key && (
+        {selectedScene && (
           <Button
             variant="outline"
             onClick={() => stage.mutate()}
             disabled={!live.data?.campaign || stage.isPending || start.isPending}
           >
-            {stage.isPending ? "Setting the scene…" : "Stage scene without combat"}
+            {stage.isPending ? "Setting the scene…" : "Enter scene · then choose your action"}
           </Button>
         )}
-        {arena !== NORTH_HEYWOOD.layout.arena.key && (
+        {!selectedScene && (
           <Button
             onClick={() => start.mutate()}
             disabled={!chosen || start.isPending || stage.isPending}

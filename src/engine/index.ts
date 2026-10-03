@@ -101,3 +101,6 @@ export * from "./battlefieldResult";
 
 export * from "./persistentScene";
 export * from "./sceneAttackIntent";
+
+export * from "./sceneEnvironment";
+export * from "./sceneComposer";

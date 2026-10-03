@@ -1,6 +1,6 @@
 {
   "_note": {
-    "why": "Twenty things to put on a battlefield. Cover is what turns a position into a choice — engine/cover.ts says so and PRODUCT.md agrees — but the only authored furniture the game had was the eight pieces standing in the Night Shift courtyard. An arena built from those alone is the same fight in a different colour, and 'a car' was not available to put in one.",
+    "why": "Twenty-four things to put on a battlefield. Cover is what turns a position into a choice — engine/cover.ts says so and PRODUCT.md agrees — but the only authored furniture the game had was the eight pieces standing in the Night Shift courtyard. An arena built from those alone is the same fight in a different colour, and 'a car' was not available to put in one.",
     "houseRule": true,
     "provenance": "The MATERIALS and their HP are the printed table (CP:R pg. 182, transcribed in data/rules/cover.json) and are not invented here. What IS a house judgement is which material each of these objects is made of, and how many 2m sections it covers — the book does not print a bus. Every entry carries a `why` saying which printed row it is being read against, so a disagreement is an argument about one line rather than a mystery.",
     "sections": "pg. 182 makes a 2m by 2m section the unit that 'can be attacked just like you can', so a prop is a LIST of sections, each with its own material, HP and id. A sedan is an engine block you can hide behind and a passenger door you cannot: two sections, never one shared pool. Offsets are metres from the prop's own origin and always land on the 2m lattice the battlemat is drawn on.",
@@ -450,6 +450,74 @@
           "key": "partition",
           "label": "an office cubicle wall",
           "material": "plaster",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "service_dumpster",
+      "label": "service dumpster",
+      "category": "industrial",
+      "art": "dumpster",
+      "why": "Thin steel (CP:R pg. 182), matching the existing courtyard object and its artwork. Its 2m footprint is a house judgement.",
+      "sections": [
+        {
+          "key": "body",
+          "label": "service dumpster",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "service_generator",
+      "label": "service generator",
+      "category": "industrial",
+      "art": "generator",
+      "why": "Thin steel (CP:R pg. 182), matching the existing courtyard object and its artwork. Its 2m footprint is a house judgement.",
+      "sections": [
+        {
+          "key": "body",
+          "label": "service generator",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "freight_crate",
+      "label": "freight crate",
+      "category": "industrial",
+      "art": "cargo",
+      "why": "Thin steel (CP:R pg. 182), matching the existing courtyard object and its artwork. Its 2m footprint is a house judgement.",
+      "sections": [
+        {
+          "key": "body",
+          "label": "freight crate",
+          "material": "steel",
+          "thickness": "thin",
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "key": "freight_pallet",
+      "label": "stacked pallets",
+      "category": "industrial",
+      "art": "pallet",
+      "why": "Thin wood (CP:R pg. 182), matching the existing courtyard object and its artwork. Its 2m footprint is a house judgement.",
+      "sections": [
+        {
+          "key": "body",
+          "label": "stacked pallets",
+          "material": "wood",
           "thickness": "thin",
           "dx": 0,
           "dy": 0

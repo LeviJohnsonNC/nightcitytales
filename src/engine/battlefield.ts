@@ -18,6 +18,7 @@
  *
  * Pure: no React, no backend, no randomness that is not handed in.
  */
+import type { SceneEnvironment } from "./sceneEnvironment";
 import { SINGLE_SHOT_DV, RANGE_BAND_MAX, singleShotDV, type WeaponRangeType } from "./combatTables";
 
 export type Point = { x: number; y: number };
@@ -111,6 +112,8 @@ export type Arena = {
    * cover-seeking AI. Choosing WHERE to go is a later feature.
    */
   cover?: CoverPiece[];
+  /** Frozen composition; static structures are independent of destructible cover. */
+  environment?: SceneEnvironment;
   /**
    * Superseded. Still resolvable, because a fight already in progress keeps the
    * ground it started on, but no longer offered to the GM as somewhere new to
@@ -867,5 +870,14 @@ export function hasLineOfSight(
   b: Point,
   isGone: (piece: CoverPiece) => boolean = () => false,
 ): boolean {
-  return coverBetween(arena, a, b, isGone).length === 0;
+  return (
+    structuresBetween(arena, a, b).length === 0 && coverBetween(arena, a, b, isGone).length === 0
+  );
+}
+
+/** Permanent geometry is never removed by a cover damage entry. */
+export function structuresBetween(arena: Arena, from: Point, to: Point) {
+  return (arena.environment?.structures ?? []).filter(
+    (s) => s.blocksShots && segmentIntersectsRect(from, to, s.rect),
+  );
 }

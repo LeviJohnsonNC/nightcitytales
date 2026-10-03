@@ -1,4 +1,4 @@
-import { northHeywoodScene } from "@/engine";
+import { sceneFixtures } from "./sceneFixtures";
 /**
  * Dropping straight into a fight, for testing the battlefield.
  *
@@ -112,8 +112,7 @@ export type SeedResult = { campaignId: string; encounterId: string };
  * only one at a time — and creates a scratch campaign otherwise.
  */
 export async function seedEncounter(options: SeedOptions): Promise<SeedResult> {
-  const fixture = northHeywoodScene();
-  const scene = options.arena === fixture.layout.arena.key ? fixture : null;
+  const scene = sceneFixtures().find((s) => s.layout.arena.key === options.arena) ?? null;
   const character: Pick<Character, "id" | "name" | "handle"> = {
     id: options.characterId,
     name: options.characterName,
