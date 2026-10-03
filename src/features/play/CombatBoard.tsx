@@ -21,7 +21,7 @@ import { findNpcNumbered } from "@/features/cast/npcDirectory";
 import { itemArt } from "@/features/chargen/art";
 import { useCombatFeedback } from "./useCombatFeedback";
 import { playbackHeading } from "./combatFeedback";
-import { isCourtyard } from "./courtyard/propPresentation";
+import { scenicTheme } from "./courtyard/scenicPresentation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Volume2,
@@ -165,7 +165,7 @@ export function CombatBoard({
   const [camera, setCamera] = useState({
     x: 0,
     y: 0,
-    zoom: isCourtyard(live?.arena) ? 1.25 : 1,
+    zoom: live && scenicTheme(battlefieldFor(live)) ? 1.25 : 1,
   });
   const drag = useRef<Point | null>(null);
   const patternId = useId().replaceAll(":", "");
@@ -237,8 +237,10 @@ export function CombatBoard({
   }, [live, capability, moveField, assessedId, weaponForField]);
   if (!live) return null;
   const arena = battlefieldFor(live);
-  const courtyard = isCourtyard(arena.key);
-  const scenic = courtyard && artEnabled && artReady;
+  const theme = scenicTheme(arena);
+  const hasScenicArt = theme !== null;
+  const scenicUnitTop = theme === "street" ? 58 : 88;
+  const scenic = hasScenicArt && artEnabled && artReady;
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   const cover = coverStatuses(arena, live.cover);
   const actors = live.state.order.flatMap((id) => {
@@ -642,7 +644,7 @@ export function CombatBoard({
       </div>
       <div className="combat-main">
         <div className={`combat-stage tool-${tool}`}>
-          {courtyard && artEnabled && (
+          {hasScenicArt && artEnabled && (
             <CourtyardLayer
               key={arena.key}
               live={live}
@@ -668,7 +670,7 @@ export function CombatBoard({
               while it does reads as the screen changing its mind, so hold a
               deliberate one until the feed is up — and drop it, uncovering the
               diagram for real, if the renderer never arrives. */}
-          {courtyard && artEnabled && (
+          {hasScenicArt && artEnabled && (
             <div
               className={`combat-boot ${artReady ? "is-live" : ""}`}
               role="status"
@@ -689,7 +691,7 @@ export function CombatBoard({
             </span>
           </div>
           <div className="combat-camera" aria-label="Camera controls">
-            {courtyard && (
+            {hasScenicArt && (
               <button
                 className="combat-view-toggle"
                 onClick={() => {
@@ -728,7 +730,7 @@ export function CombatBoard({
             <button
               className="combat-icon"
               aria-label="Reset camera"
-              onClick={() => setCamera({ x: 0, y: 0, zoom: courtyard ? 1.25 : 1 })}
+              onClick={() => setCamera({ x: 0, y: 0, zoom: hasScenicArt ? 1.25 : 1 })}
             >
               <Maximize size={17} />
             </button>
@@ -1193,9 +1195,9 @@ export function CombatBoard({
                         )}
                       <rect
                         x="-30"
-                        y={scenic ? -88 : -65}
+                        y={scenic ? -scenicUnitTop : -65}
                         width="60"
-                        height={scenic ? 100 : 77}
+                        height={scenic ? scenicUnitTop + 12 : 77}
                         fill="transparent"
                       />
                       <ellipse
@@ -1245,7 +1247,7 @@ export function CombatBoard({
                       </g>
                       <rect
                         x="-23"
-                        y={scenic ? -94 : -62}
+                        y={scenic ? -scenicUnitTop - 6 : -62}
                         width="46"
                         height="4"
                         rx="1"
@@ -1253,7 +1255,7 @@ export function CombatBoard({
                       />
                       <rect
                         x="-23"
-                        y={scenic ? -94 : -62}
+                        y={scenic ? -scenicUnitTop - 6 : -62}
                         width={46 * Math.max(0, Math.min(1, actor.hp / actor.hpMax))}
                         height="4"
                         rx="1"

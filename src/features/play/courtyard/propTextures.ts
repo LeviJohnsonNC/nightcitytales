@@ -4,6 +4,7 @@ import { propTexture } from "./propPresentation";
 import { clearMatte } from "./characterTextures";
 
 export function propSource(kind: PropKind) {
+  if (kind.startsWith("sedan-") || kind === "food-cart") return "street-props";
   return kind.startsWith("truck-") ? "vehicle-states" : `${kind}-states`;
 }
 
@@ -16,10 +17,17 @@ export function createPropTextures(scene: Phaser.Scene, kinds: PropKind[]) {
     const vehicle = kind.startsWith("truck-");
     const conditions: PropCondition[] = ["intact", "damaged", "wrecked"];
     conditions.forEach((condition, index) => {
+      const street = propSource(kind) === "street-props";
       const columns = vehicle ? 2 : 3,
-        rows = vehicle ? 3 : 1;
-      const col = vehicle ? (kind === "truck-cab" ? 1 : 0) : index;
-      const row = vehicle ? index : 0;
+        rows = vehicle || street ? 3 : 1;
+      const col = street
+        ? ["sedan-engine", "sedan-cabin", "food-cart"].indexOf(kind)
+        : vehicle
+          ? kind === "truck-cab"
+            ? 1
+            : 0
+          : index;
+      const row = vehicle || street ? index : 0;
       const sx = Math.round((source.width * col) / columns),
         sy = Math.round((source.height * row) / rows);
       const width = Math.round((source.width * (col + 1)) / columns) - sx;

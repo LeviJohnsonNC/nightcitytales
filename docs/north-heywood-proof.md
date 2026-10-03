@@ -191,6 +191,55 @@ controls also move inside the narrative column.
 
 No migration is needed for these changes; the cause is an optional addition to
 existing combatant JSON. This does not change initiative, AI morale/goal decisions,
-ROF, damage, or the model's context. Full scenic graphics for the intersection
-remain the next visual phase: the courtyard's prop mappings and baked ground
-cannot safely represent the saved cruiser, cart and street simply by enabling it.
+ROF, damage, or the model's context. The scenic follow-up below adds a street-specific recipe rather than reusing
+the courtyard's baked ground or crate mappings.
+
+
+## North Heywood scenic pass
+
+The saved `scene:north-heywood-intersection:v1` layout now defaults to scenic view.
+No migration, restaging or new encounter is required for an existing active v1 fight.
+Resolved fights remain resolved; stage a fresh scene/adventure to replay combat.
+
+- The existing Phaser layer renders a dry, worn street and crosswalk using the
+  exact same projection as movement, targeting and cover. Surface markings and
+  light pools are decorative; no new barriers, weather rules or obstacles exist.
+- The olive-drab cruiser is two adjacent sprite sections, with separate intact,
+  damaged and wrecked states following the engine/cabin HP pools. The broth cart
+  has its own three states. Wreckage retains its original footprint and sorts
+  below moving actors. Rendered objects read positions from the saved snapshot.
+- Both workers use unarmed crouched poses, matching their existing stays-down
+  behavior. A prone pose requires an explicit saved death. Withdrawn characters
+  leave the illustrated scene and retain the labelled departure marker.
+- Existing player/ganger movement, facing, shots and hit effects are reused at
+  a street-appropriate scale; SVG hit regions and muzzle offsets follow it.
+- Scenic selection checks the supported version, dimensions, object IDs and
+  footprints. A different layout uses the diagram, rather than drawing a street
+  or object appearance unsupported by that snapshot. The three legacy courtyard
+  keys retain their original art and scale.
+- Diagram view remains available. Missing assets or WebGL context loss restores
+  it, and Scenic view retries. Reduced motion retains the existing playback policy.
+
+Local Chromium/WebGL validation used the real CombatBoard and renderer with an
+isolated in-memory fixture, not a logged-in campaign: desktop 1440×1000 and phone
+390×844, keyboard move/zoom, toggle/reload of textures, independent engine damage,
+withdrawal marker/body removal, courtyard regression, missing-asset fallback and
+context-loss retry. No browser exceptions or horizontal phone-page overflow were
+observed. Phone overview labels are small; camera zoom and pan remain available.
+Unit tests cover layout rejection and per-section damage/footprint agreement.
+Authenticated deployment playtesting still needs to confirm the complete round trip.
+
+Assets: `public/images/combat/north-heywood/street-props.webp` (1254×1254) and
+`workers.webp` (1536×1024), generated for this game and losslessly encoded without
+resizing, about 1.9 MiB total. Runtime extraction releases the source GPU textures.
+Full prompts and the orientation correction are in `north-heywood-art-prompts.json`.
+The workers use inspected crop metadata to remove stray alpha specks and light
+halos while keeping the bag and pose scale. Ground is a deterministic canvas
+surface, not a generated background with accidentally baked-in cover.
+
+Limits: this is the authored North Heywood recipe, not scenery generation from
+arbitrary prose. Player and hostile sprites still depict representative armed
+mercenaries; their clothes and weapon silhouettes do not yet follow loadouts.
+There are no new civilian movement decisions, drivable cars, explosions or invented
+retreat paths. The street is an approximation of the saved local scene, not an
+assertion about the canonical geography of Ulysses Street.
