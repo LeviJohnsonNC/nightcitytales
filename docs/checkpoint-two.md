@@ -24,14 +24,14 @@ not completion of the whole second checkpoint.
 
 ## Preservation and validation
 
-| Fixture | Approved checkpoint 1 cover sections | Checkpoint 2A cover sections |
-| --- | ---: | ---: |
-| Office 1 | 28 | 26 |
-| Office 2 | 22 | 21 |
-| Office 3 | 28 | 28 |
-| Intersection 1 | 23 | 23 |
-| Intersection 2 | 23 | 23 |
-| Intersection 3 | 21 | 22 |
+| Fixture        | Approved checkpoint 1 cover sections | Checkpoint 2A cover sections |
+| -------------- | -----------------------------------: | ---------------------------: |
+| Office 1       |                                   28 |                           26 |
+| Office 2       |                                   22 |                           21 |
+| Office 3       |                                   28 |                           28 |
+| Intersection 1 |                                   23 |                           23 |
+| Intersection 2 |                                   23 |                           23 |
+| Intersection 3 |                                   21 |                           22 |
 
 Section counts are not a quality score: these groups replace or coordinate existing
 furnishings rather than pursuing density. Structures, primary entrances, room
@@ -54,11 +54,11 @@ detail. Check that desks and filing read as a work group; that customer/handling
 space is clear beside the vendor and workshop objects; and that the approved
 entrances and routes remain readable. Enable characters to check targeting.
 
-| Variation | Office | Intersection |
-| --- | --- | --- |
-| 1 | ![Office spine](checkpoint-two/office-1.png) | ![Delivery court](checkpoint-two/intersection-1.png) |
-| 2 | ![Office loop](checkpoint-two/office-2.png) | ![Maintenance court](checkpoint-two/intersection-2.png) |
-| 3 | ![Office core](checkpoint-two/office-3.png) | ![Rotated intersection](checkpoint-two/intersection-3.png) |
+| Variation | Office                                       | Intersection                                               |
+| --------- | -------------------------------------------- | ---------------------------------------------------------- |
+| 1         | ![Office spine](checkpoint-two/office-1.png) | ![Delivery court](checkpoint-two/intersection-1.png)       |
+| 2         | ![Office loop](checkpoint-two/office-2.png)  | ![Maintenance court](checkpoint-two/intersection-2.png)    |
+| 3         | ![Office core](checkpoint-two/office-3.png)  | ![Rotated intersection](checkpoint-two/intersection-3.png) |
 
 ![Office with actors](checkpoint-two/office-3-actors.png)
 
