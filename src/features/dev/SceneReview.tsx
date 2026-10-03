@@ -98,6 +98,9 @@ export function SceneReview() {
             <option value="alley">Service alley</option>
             <option value="office">Office</option>
             <option value="nightclub">Nightclub</option>
+            <option value="residential">Residential street</option>
+            <option value="warehouse">Warehouse</option>
+            <option value="garage">Garage</option>
           </select>
         </label>
         <label>

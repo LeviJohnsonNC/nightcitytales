@@ -17,7 +17,7 @@ import {
 } from "../index";
 
 describe("shared interior composition", () => {
-  it.each(["office", "nightclub"] as const)(
+  it.each(["office", "nightclub", "warehouse", "garage"] as const)(
     "keeps %s rooms, opening approaches and working spaces reachable over 32 seeds",
     (kind) => {
       const organizations = new Set<string>();
@@ -109,7 +109,7 @@ describe("shared interior composition", () => {
   });
 });
 
-it.each(["office", "nightclub"] as const)(
+it.each(["office", "nightclub", "warehouse", "garage"] as const)(
   "existing hostile movement finds firing lanes through %s openings",
   (kind) => {
     for (const seed of [1, 2, 3]) {

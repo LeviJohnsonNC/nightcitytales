@@ -76,4 +76,5 @@ small clutter, lighting polish and fine-scale footprint tuning remain art work.
 There is no fog-of-war/room discovery, interactive lock/door system, walkable
 balcony, second floor, destructible structural wall or automatic adventure hookup.
 Any future elevated structure is decorative until tactical height is designed.
-Residential streets, warehouses and garages are the next environment extension.
+Residential streets, warehouses and garages are implemented in the follow-up
+[environment extension](environment-extension.md).

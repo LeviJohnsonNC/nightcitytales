@@ -1,6 +1,7 @@
 /** Emit disposable SQL fixtures from the production composer, not a parallel map definition. */
 import { readFileSync } from "node:fs";
 import { composeScene } from "../../src/engine/sceneComposer";
+import { reachableTiles, centreOf, tileOf } from "../../src/engine/grid";
 import { coverMaxHp } from "../../src/engine/cover";
 const template = readFileSync(
   new URL("../../supabase/replay/interior-scenes.test.sql", import.meta.url),
@@ -8,7 +9,7 @@ const template = readFileSync(
 );
 const literal = (v: unknown) => "'" + JSON.stringify(v).replaceAll("'", "''") + "'::jsonb";
 const uuid = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;
-for (const kind of ["office", "nightclub"] as const)
+for (const kind of ["office", "nightclub", "residential", "warehouse", "garage"] as const)
   for (const seed of [1, 2, 3]) {
     const scene = composeScene(kind, seed),
       arena = scene.layout.arena;
@@ -35,9 +36,18 @@ for (const kind of ["office", "nightclub"] as const)
       data: { key: actor.id, position: actor.position },
     }));
     const occupied = cast.map((a) => JSON.stringify(a.position));
-    const move = arena.environment!.interior!.access.find(
-      (a) => !occupied.includes(JSON.stringify(a.position)),
-    )!.position;
+    const reachable = reachableTiles({
+      arena,
+      cover: {},
+      from: tileOf(arena, arena.playerStart),
+      allowance: 1000,
+    });
+    const move = [...reachable.keys()]
+      .map((key) => {
+        const [col, row] = key.split(",").map(Number);
+        return centreOf({ col: col!, row: row! });
+      })
+      .find((p) => !occupied.includes(JSON.stringify(p)))!;
     const piece = arena.cover![0]!;
     const payload = {
       campaign_id: uuid(3),

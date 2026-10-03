@@ -37,7 +37,10 @@ cutaway wall presentation. They reuse Phase 1 cluster placement, cover, movement
 visibility and persistence. The review page includes a room/access plan.
 See [interior composition](docs/interior-composition.md) for evidence and limits.
 
-Next: residential streets, warehouse and garage recipes, reusing this foundation.
+Residential streets, warehouses and garages now each add three layouts through
+the same foundation. See [environment extension](docs/environment-extension.md)
+for captures, constraints and rollout checks. Next: deployed playtesting, art and
+recipe tuning, then structured adventure integration.
 Final painterly art, interactive doors and tactical height remain separate work.
 
 ## Now: character creation as act one

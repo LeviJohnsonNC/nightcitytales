@@ -61,6 +61,9 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
     dance: "#232838",
     corridor: "#606366",
     doorway: "#748181",
+    storage: "#454b4d",
+    workbay: "#343e43",
+    staging: "#665f46",
   };
   for (const z of env.zones) {
     if (z.kind === "aisle") continue;
@@ -86,8 +89,19 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
       continue;
     }
     const road = ["road", "alley", "intersection"].includes(z.kind);
-    rect(z.rect, road ? "#20292e" : z.kind === "loading" ? "#353b3c" : "#41494a");
-    if (!road && z.kind !== "crosswalk") {
+    rect(
+      z.rect,
+      road
+        ? "#20292e"
+        : z.kind === "garden"
+          ? "#53604b"
+          : z.kind === "driveway"
+            ? "#4c4e4a"
+            : z.kind === "loading"
+              ? "#353b3c"
+              : "#41494a",
+    );
+    if (!road && z.kind !== "crosswalk" && z.kind !== "garden") {
       for (let x = z.rect.x; x < z.rect.x + z.rect.width; x += 1)
         for (let y = z.rect.y; y < z.rect.y + z.rect.height; y += 1)
           rect(
@@ -112,6 +126,21 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
           "#aaa99a",
         );
     }
+  }
+  for (const cluster of env.clusters.filter((c) => c.kind === "vehicle_bay")) {
+    const pieces = env.props
+      .filter((p) => p.clusterId === cluster.id)
+      .map((p) => arena.cover!.find((c) => c.id === p.coverId)!.rect);
+    const x = Math.min(...pieces.map((r) => r.x)),
+      y = Math.min(...pieces.map((r) => r.y));
+    const box = {
+      x: x - 0.2,
+      y: y - 0.2,
+      width: Math.max(...pieces.map((r) => r.x + r.width)) - x + 0.4,
+      height: Math.max(...pieces.map((r) => r.y + r.height)) - y + 0.4,
+    };
+    const corners = painter(ctx, project).corners(box);
+    for (let i = 0; i < 4; i++) line(corners[i]!, corners[(i + 1) % 4]!, "#bdaa63", 1.2);
   }
   // Lane paint belongs to the saved roads, interrupted at crossings and junctions.
   for (const z of env.zones.filter((z) => z.kind === "road")) {
@@ -200,11 +229,13 @@ function paintBuilding(
     return;
   }
   const palette =
-    structure.style === "shop"
-      ? ["#49474a", "#333941", "#646360"]
-      : structure.style === "workshop"
-        ? ["#4b4940", "#353b3b", "#686356"]
-        : ["#3e4a50", "#2c3942", "#56656b"];
+    structure.style === "residential"
+      ? ["#766957", "#554f49", "#675346"]
+      : structure.style === "shop"
+        ? ["#49474a", "#333941", "#646360"]
+        : structure.style === "workshop"
+          ? ["#4b4940", "#353b3b", "#686356"]
+          : ["#3e4a50", "#2c3942", "#56656b"];
   // Two camera-facing walls; windows, shutters, conduits, lintels share their planes.
   poly([base[0]!, base[1]!, top[1]!, top[0]!], palette[0]!, "#111c25");
   poly([base[1]!, base[2]!, top[2]!, top[1]!], palette[1]!, "#111c25");
@@ -215,7 +246,7 @@ function paintBuilding(
     });
     for (let level = 4; level < h - 10; level += 18) {
       line(at(0, level), at(1, level), "#515355", 1);
-      for (let i = 0; i < length; i += 2) {
+      for (let i = 0; i < length; i += structure.style === "residential" ? 4 : 2) {
         const x = (i + 0.2) / length,
           w = 1.4 / length;
         const lit = (i + Math.floor(level)) % 4 === 0;
@@ -242,8 +273,14 @@ function paintBuilding(
       const x = (centre - 0.8) / length,
         w = 1.6 / length;
       poly([at(x, 1), at(x + w, 1), at(x + w, 22), at(x, 22)], "#172329", "#626761");
-      for (let z = 3; z < 20; z += 3) line(at(x, z), at(x + w, z), "#39464a", 1);
-      const colour = structure.style === "shop" ? "#68b8ae" : "#bc925e";
+      for (let z = 3; structure.style !== "residential" && z < 20; z += 3)
+        line(at(x, z), at(x + w, z), "#39464a", 1);
+      const colour =
+        structure.style === "residential"
+          ? "#c6b38b"
+          : structure.style === "shop"
+            ? "#68b8ae"
+            : "#bc925e";
       poly(
         [at(x - 0.02, 24), at(x + w + 0.02, 24), at(x + w + 0.02, 29), at(x - 0.02, 29)],
         colour,

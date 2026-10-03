@@ -1,5 +1,6 @@
 /** Authored room organizations; all resolve through the shared cluster/grid machinery. */
 import { type Arena, type Rect, type Point } from "./battlefield";
+import { industrialPlan } from "./industrialRecipes";
 import { snapshotBattlefield } from "./battlefieldSnapshot";
 import type { AuthoredScene } from "./authoredScene";
 import { threatFor } from "./threats";
@@ -22,8 +23,8 @@ const zone = (
   height: number,
 ): SceneZone => ({ id, kind, rect: { x, y, width, height }, axis: "y" });
 type Connection = [from: string, to: string, x: number, y: number, width?: number, height?: number];
-type Plan = { rooms: SceneZone[]; doors: Connection[]; label: string };
-function office(variant: number): Plan {
+export type InteriorPlan = { rooms: SceneZone[]; doors: Connection[]; label: string };
+function office(variant: number): InteriorPlan {
   if (variant === 0)
     return {
       label: "Central corridor",
@@ -74,7 +75,7 @@ function office(variant: number): Plan {
     ],
   };
 }
-function nightclub(variant: number): Plan {
+function nightclub(variant: number): InteriorPlan {
   if (variant === 0)
     return {
       label: "Central dance floor",
@@ -163,9 +164,17 @@ function walls(spaces: SceneZone[], extent: Arena["extent"]): SceneEnvironment["
   }
   return result;
 }
-export function composeInterior(kind: "office" | "nightclub", seed: number): AuthoredScene {
+export function composeInterior(
+  kind: "office" | "nightclub" | "warehouse" | "garage",
+  seed: number,
+): AuthoredScene {
   const variant = (seed + 2) % 3;
-  const plan = kind === "office" ? office(variant) : nightclub(variant);
+  const plan =
+    kind === "office"
+      ? office(variant)
+      : kind === "nightclub"
+        ? nightclub(variant)
+        : industrialPlan(kind, variant);
   const rooms = plan.rooms;
   if (variant === 2)
     rooms.forEach((room) => {
@@ -173,13 +182,16 @@ export function composeInterior(kind: "office" | "nightclub", seed: number): Aut
     });
   const publicRoom = rooms.find((z) => z.id === "reception")!.rect;
   const backRoom = rooms.find((z) => z.id === "service")!.rect;
-  plan.doors.push(["reception", "outside", 0, publicRoom.y + 2]);
-  plan.doors.push([
-    "service",
-    "outside",
-    backRoom.x + backRoom.width === 30 ? 30 : 0,
-    backRoom.y + 2,
-  ]);
+  const boundaryDoor = (id: string, r: Rect): Connection =>
+    r.x === 2
+      ? [id, "outside", 0, r.y + 2]
+      : r.x + r.width === 30
+        ? [id, "outside", 30, r.y + 2]
+        : r.y === 2
+          ? [id, "outside", r.x + 2, 0]
+          : [id, "outside", r.x + 2, 30];
+  plan.doors.push(boundaryDoor("reception", publicRoom));
+  plan.doors.push(boundaryDoor("service", backRoom));
   const doorZones = plan.doors.map((d, i) =>
     zone(`door_${i}`, "doorway", d[2], d[3], d[4] ?? 2, d[5] ?? 2),
   );
@@ -240,21 +252,29 @@ export function composeInterior(kind: "office" | "nightclub", seed: number): Aut
   for (const room of rooms) {
     if (["corridor", "dance"].includes(room.kind)) continue;
     const cluster =
-      room.id === "bar"
-        ? "bar"
-        : room.kind === "workspace"
-          ? "workstation"
-          : room.kind === "meeting"
-            ? "meeting"
-            : room.kind === "service"
-              ? "server"
-              : room.kind === "performance"
-                ? "performance"
-                : room.kind === "seating"
-                  ? "booth"
-                  : kind === "office"
-                    ? "reception"
-                    : "seating";
+      room.kind === "storage"
+        ? "racking"
+        : room.kind === "workbay"
+          ? "vehicle_bay"
+          : room.kind === "staging"
+            ? "freight"
+            : room.id === "bar"
+              ? "bar"
+              : room.kind === "workspace"
+                ? "workstation"
+                : room.kind === "meeting"
+                  ? "meeting"
+                  : room.kind === "service"
+                    ? kind === "warehouse" || kind === "garage"
+                      ? "workbench"
+                      : "server"
+                    : room.kind === "performance"
+                      ? "performance"
+                      : room.kind === "seating"
+                        ? "booth"
+                        : kind === "nightclub"
+                          ? "seating"
+                          : "reception";
     const r = room.rect;
     // Bounded frontage candidates, ordered reproducibly; never free-cell scatter.
     const candidates: Point[] = [];
@@ -267,20 +287,30 @@ export function composeInterior(kind: "office" | "nightclub", seed: number): Aut
       for (let y = r.y + 2; y < r.y + r.height - 2; y += 6)
         for (let x = r.x + 2; x < r.x + r.width - 2; x += 4) candidates.push({ x, y });
     }
+    if (["racking", "vehicle_bay"].includes(cluster)) {
+      candidates.length = 0;
+      for (let y = r.y + 2; y < r.y + r.height - 4; y += 6)
+        for (let x = r.x + 2; x < r.x + r.width - 4; x += 6) candidates.push({ x, y });
+    }
     if (cluster === "booth") {
       candidates.length = 0;
       for (let y = r.y + 2; y < r.y + r.height - 2; y += 6) candidates.push({ x: r.x, y });
     }
-    const count =
-      cluster === "workstation"
-        ? 12
-        : cluster === "booth"
-          ? 4
-          : cluster === "seating"
-            ? 3
-            : cluster === "server"
-              ? 2
-              : 1;
+    const count = ["racking", "vehicle_bay"].includes(cluster)
+      ? 12
+      : cluster === "freight"
+        ? 3
+        : cluster === "workbench"
+          ? 2
+          : cluster === "workstation"
+            ? 12
+            : cluster === "booth"
+              ? 4
+              : cluster === "seating"
+                ? 3
+                : cluster === "server"
+                  ? 2
+                  : 1;
     for (let i = 0; i < count; i++)
       slots.push({
         id: `${room.id}_${i}`,
@@ -310,9 +340,15 @@ export function composeInterior(kind: "office" | "nightclub", seed: number): Aut
   }
   placeSceneClusters(arena, slots, reserved, seed, false);
   const castRooms =
-    kind === "office" ? ["work", "service", "meeting"] : ["bar", "performance", "seating"];
+    kind === "office"
+      ? ["work", "service", "meeting"]
+      : kind === "nightclub"
+        ? ["bar", "performance", "seating"]
+        : ["work", "service", "reception"];
   const actors = castRooms.map((id, i) => {
-    const position = env.interior!.access.find((a) => a.zoneId === id)!.position;
+    const position = env.interior!.access.find(
+      (a) => a.zoneId === id && (a.position.x !== playerStart.x || a.position.y !== playerStart.y),
+    )!.position;
     return {
       id: `occupant_${i}`,
       name:
@@ -322,7 +358,11 @@ export function composeInterior(kind: "office" | "nightclub", seed: number): Aut
             ? "Shift supervisor"
             : kind === "office"
               ? "Office worker"
-              : "Club patron",
+              : kind === "nightclub"
+                ? "Club patron"
+                : kind === "garage"
+                  ? "Mechanic"
+                  : "Warehouse worker",
       side: i < 2 ? ("hostile" as const) : ("neutral" as const),
       profile: i < 2 ? { ...threatFor("ganger") } : null,
       position,
@@ -336,9 +376,13 @@ export function composeInterior(kind: "office" | "nightclub", seed: number): Aut
     templateVersion: 1,
     anchor: `composition-${kind}-v1-${seed}`,
     narration:
-      kind === "office"
-        ? "Reception opens onto an office of workstations, meeting space and a service room. Open doorways connect the rooms; security watches the work floor."
-        : "Beyond the club entrance, an open dance floor separates booths, a staffed bar and a floor-level DJ console. Service rooms sit behind the public areas. Security watches the room.",
+      kind === "warehouse"
+        ? "A loading apron opens onto stocked rack aisles, with a small dispatch office and a maintenance room beside the freight hall."
+        : kind === "garage"
+          ? "Vehicle bays face a clear loading approach. Workbenches and parts storage sit beyond the customer reception, with working space beside each parked car."
+          : kind === "office"
+            ? "Reception opens onto an office of workstations, meeting space and a service room. Open doorways connect the rooms; security watches the work floor."
+            : "Beyond the club entrance, an open dance floor separates booths, a staffed bar and a floor-level DJ console. Service rooms sit behind the public areas. Security watches the room.",
     layout: snapshotBattlefield(arena),
     actors,
   };
