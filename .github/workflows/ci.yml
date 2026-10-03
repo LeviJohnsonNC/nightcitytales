@@ -113,3 +113,10 @@ jobs:
         run: |
           bun tools/scenes/interior-sql.ts > /tmp/interior-scenes.sql
           psql "$PGURL" -v ON_ERROR_STOP=1 -f /tmp/interior-scenes.sql
+
+      - name: Adventure context persistence regression
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/postgres
+        run: |
+          bun tools/scenes/interior-sql.ts --adventure > /tmp/adventure-scenes.sql
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f /tmp/adventure-scenes.sql

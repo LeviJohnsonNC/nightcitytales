@@ -487,3 +487,50 @@ describe("an action the model wrote as a JSON string", () => {
     expect(warnings.length).toBeGreaterThan(0);
   });
 });
+
+it("carries contextual facts into an encounter but discards model geometry and stats", () => {
+  const response = normalizeGmResponse(
+    wire([
+      {
+        kind: "start_encounter",
+        name: "Office",
+        arena: "open_ground",
+        enemies: [{ key: "guard", name: "Mara", profile: "street_thug" }],
+        scene: {
+          locationType: "office",
+          x: 200,
+          entities: [
+            { id: "kiro", name: "Kiro", role: "worker", hp: 900, position: { x: 1, y: 1 } },
+          ],
+        },
+      },
+    ]),
+    quiet,
+  );
+  const action = response.proposedActions[0]!;
+  expect(action.kind).toBe("start_encounter");
+  if (action.kind === "start_encounter")
+    expect(action.scene).toEqual({
+      locationType: "office",
+      crowd: "none",
+      entities: [{ id: "kiro", name: "Kiro", role: "worker" }],
+      objects: [],
+      entrances: [],
+      relationships: [],
+    });
+});
+it("refuses unsupported explicit scene facts instead of silently dropping them", () => {
+  expect(() =>
+    normalizeGmResponse(
+      wire([
+        {
+          kind: "start_encounter",
+          name: "Office",
+          enemies: [{ key: "guard", name: "Mara" }],
+          scene: { locationType: "walkable-balcony" },
+        },
+      ]),
+      quiet,
+    ),
+  ).toThrow("Unsupported scene ingredient");
+});

@@ -104,6 +104,7 @@ export type GmContextInput = {
    * job at a district rather than a named venue does not get.
    */
   sceneSet?: boolean;
+  savedScene?: { facts: import("@/engine").SceneFacts; status: string; summary: string | null };
   /** Where the job is happening, out of the Night City Atlas. */
   place?: {
     where: string;
@@ -195,6 +196,13 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   if (context.clock) parts.push(line("Time", context.clock));
   parts.push(line("GM brief", beat.gmBrief));
   if (context.sceneSet) parts.push(ALREADY_HERE_LINE);
+  if (context.savedScene)
+    parts.push(
+      line(
+        "SAVED SCENE (immutable; original cast, aftermath overrides it)",
+        JSON.stringify(context.savedScene),
+      ),
+    );
   if (context.discoveredBeatTruths?.length) {
     parts.push("", "-- WHAT THEY HAVE UNCOVERED IN THIS JOB --");
     for (const fact of context.discoveredBeatTruths) parts.push(`  - ${fact}`);
@@ -224,6 +232,10 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       ),
     );
   }
+  if (beat.scene)
+    parts.push(
+      line("ESTABLISHED SCENE FACTS (public; preserve these)", JSON.stringify(beat.scene)),
+    );
   if (beat.opposition?.length) parts.push(line("Opposition", beat.opposition.join("; ")));
 
   // WHO is waiting, settled from the job's own seed when the job was generated

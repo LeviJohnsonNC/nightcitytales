@@ -127,7 +127,12 @@ machinery shared with outdoor recipes.
 `interiorPropArt.ts` supplies a reusable provisional furniture kit, not a location
 renderer. Interior walls remain permanent; openings are always open. There are no
 walkable upper floors or interactive doors. See `docs/scene-composition.md` for
-the opt-in harness and acceptance evidence.
+the opt-in harness and acceptance evidence. `adventureScene.ts` binds coordinate-free
+`SceneFacts` to these recipes for normal Job encounter starts. Authored beat facts
+win over model suggestions; persisted scene facts win over both. Keep the normal
+route through `beginAdventureEncounter` and the guarded adventure RPCs: generic
+fixture staging permits travel and must not be used for a delayed GM response.
+See `docs/adventure-composition.md` for the deployment prerequisite and limits.
 
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says

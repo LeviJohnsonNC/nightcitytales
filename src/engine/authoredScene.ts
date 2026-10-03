@@ -12,6 +12,7 @@ export type SceneActor = {
   profile: ThreatProfile | null;
 };
 export type AuthoredScene = {
+  context?: import("./sceneFacts").SceneContext;
   template: string;
   templateVersion: number;
   locationKey: string;

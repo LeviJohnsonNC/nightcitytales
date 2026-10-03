@@ -43,6 +43,18 @@ for captures, constraints and rollout checks. Next: deployed playtesting, art an
 recipe tuning, then structured adventure integration.
 Final painterly art, interactive doors and tactical height remain separate work.
 
+## Adventure composition — Phase 3
+
+Normal Job encounter starts now translate public structured scene facts into the
+shared recipes. Named people, object/entrance bindings, crowd level and placement
+relationships persist with the scene. Saved snapshots win over later model output.
+The engine owns geometry and validation; impossible requirements fail explicitly.
+See [adventure composition](docs/adventure-composition.md) for contracts and checks.
+
+Deploy the guarded staging/entry migration before this client, then accept through
+a normal campaign encounter. Peaceful Life scene staging, richer object actions,
+artwork and tactical height remain separate work.
+
 ## Now: character creation as act one
 
 Creation was faithful, reasonably stylish, and a form: step one asked how much

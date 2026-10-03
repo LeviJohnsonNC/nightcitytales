@@ -20,6 +20,7 @@ const io = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/backend", async (importOriginal) => ({
   ...(await importOriginal<object>()),
+  readCampaignScene: vi.fn(async () => null),
   getCampaign: vi.fn(async () => ({
     vitals: { hp_current: 30, wound_state: "none" },
     inventory: io.inventory,

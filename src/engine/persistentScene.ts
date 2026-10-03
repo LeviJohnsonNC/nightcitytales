@@ -1,6 +1,7 @@
 /** Read a saved authored scene without resolving a newer version of its template. */
 import { readBattlefieldSnapshot, readBattlefieldPositions } from "./battlefieldSnapshot";
 import type { AuthoredScene } from "./authoredScene";
+import { readSceneContext } from "./sceneFacts";
 import type { ThreatProfile } from "./threats";
 
 export type PersistentScene = {
@@ -90,7 +91,7 @@ export function readSceneManifest(value: unknown): AuthoredScene {
       profile: p,
     };
   });
-  return {
+  const scene: AuthoredScene = {
     template: text(raw["template"]),
     templateVersion: integer(raw["templateVersion"], 1),
     locationKey: text(raw["locationKey"]),
@@ -99,6 +100,8 @@ export function readSceneManifest(value: unknown): AuthoredScene {
     layout,
     actors,
   };
+  if (raw["context"] !== undefined) scene.context = readSceneContext(raw["context"], scene);
+  return scene;
 }
 
 export function readPersistentScene(value: unknown): PersistentScene {

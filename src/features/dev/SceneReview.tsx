@@ -12,12 +12,14 @@ import { CourtyardLayer } from "@/features/play/courtyard/CourtyardLayer";
 import { targetCapabilities } from "@/features/play/capabilityModel";
 import { readSceneReview, sceneReviewEncounter } from "./sceneReviewModel";
 import "./sceneReview.css";
+import { adventureSceneProof } from "./adventureSceneProof";
 
 const REVIEW_WEAPON = weaponProfile("very_heavy_pistol");
 const STORAGE = "nct-scene-review-v1";
 export function SceneReview() {
   const [kind, setKind] = useState<SceneEnvironment["recipe"]>("intersection");
   const [seed, setSeed] = useState(1);
+  const [adventure, setAdventure] = useState(false);
   const [actors, setActors] = useState(false);
   const [planVisible, setPlanVisible] = useState(false);
   const [entrances, setEntrances] = useState(false);
@@ -27,7 +29,10 @@ export function SceneReview() {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const generated = useMemo(() => composeScene(kind, seed), [kind, seed]);
+  const generated = useMemo(
+    () => (adventure ? adventureSceneProof(kind, seed) : composeScene(kind, seed)),
+    [kind, seed, adventure],
+  );
   const scene = saved?.scene ?? generated;
   const live = useMemo(() => {
     if (saved) return saved.live;
@@ -118,6 +123,18 @@ export function SceneReview() {
           </select>
         </label>
         <label>
+          <input
+            type="checkbox"
+            checked={adventure}
+            onChange={(e) => {
+              reset();
+              setAdventure(e.target.checked);
+              setEntrances(false);
+            }}
+          />
+          Adventure context
+        </label>
+        <label>
           Cover
           <select
             value={damage}
@@ -197,7 +214,16 @@ export function SceneReview() {
               const restored = readSceneReview(JSON.parse(raw));
               const environment = restored.scene.layout.arena.environment!;
               setKind(environment.recipe);
-              setSeed(environment.seed);
+              setAdventure(Boolean(restored.scene.context));
+              setSeed(
+                restored.scene.context
+                  ? ([1, 2, 3].find(
+                      (i) =>
+                        adventureSceneProof(environment.recipe, i).layout.arena.environment!
+                          .seed === environment.seed,
+                    ) ?? 1)
+                  : environment.seed,
+              );
               const cover = restored.scene.layout.arena.cover ?? [];
               setDamage(
                 cover.every((c) => (restored.live.cover[c.id] ?? 0) >= coverMaxHp(c))
@@ -238,6 +264,26 @@ export function SceneReview() {
                   : "Loading scenery…")}
         </p>
       </header>
+      {scene.context && (
+        <details>
+          <summary>Established adventure facts</summary>
+          <p>
+            {scene.context.facts.entities.map((e) => e.name).join(", ")};{" "}
+            {scene.context.facts.objects.map((o) => o.label).join(", ")}.
+          </p>
+          <ul>
+            {scene.context.facts.relationships.map((r) => (
+              <li key={r.entity}>
+                {scene.context!.facts.entities.find((e) => e.id === r.entity)?.name}{" "}
+                {r.relation.replace("_", " ")}{" "}
+                {scene.context!.facts.objects.find((o) => o.id === r.target)?.label ??
+                  scene.context!.facts.entrances.find((e) => e.id === r.target)?.label ??
+                  r.target}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {planVisible && scene.layout.arena.environment?.interior && (
         <figure className="scene-review-plan">
           <figcaption>

@@ -20,3 +20,16 @@ export function readCampaignScene(campaignId: string, sceneId?: string): Promise
     ...(sceneId ? { scene_id: sceneId } : {}),
   });
 }
+
+/** Automatic composition must never move a campaign back to a stale narrator location. */
+export function stageAdventureScene(
+  campaignId: string,
+  scene: import("@/engine").AuthoredScene,
+  expected: { missionId: string; beatId: string | null; location: string },
+): Promise<unknown> {
+  return sceneRpc("stage_adventure_scene", {
+    campaign_id: campaignId,
+    manifest: { version: 1, scene },
+    expected,
+  } as unknown as Json);
+}
