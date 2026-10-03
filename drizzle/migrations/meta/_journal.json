@@ -64,6 +64,13 @@
       "when": 1790993970389,
       "tag": "0008_composed_battlefield_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791034995012,
+      "tag": "0009_composed_battlefield_snapshots",
+      "breakpoints": true
     }
   ]
 }
