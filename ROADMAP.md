@@ -1342,6 +1342,8 @@ Deferred on purpose, so that deferring them stays a decision:
 
 [Checkpoint 1](docs/spatial-organization.md) adds compact office programs, distinct intersection corner structures and closer shared framing. Next: complete activity groups, structural attachments, then transfer and seed variation across the remaining archetypes. This checkpoint does not claim reference-quality environments.
 
-[Office checkpoint 1A](docs/office-topologies.md) implements three distinct circulation topologies and clearer primary entrances. Await visual review of the office foundation; checkpoint 1B (intersection parcels and continuous pedestrian routes) remains next, before richer activity groups.
+[Office checkpoint 1A](docs/office-topologies.md) implements three distinct circulation topologies and clearer primary entrances. Checkpoint 1B subsequently connected intersection parcels and pedestrian routes; the final structural review is recorded below.
 
 [Intersection checkpoint 1B](docs/intersection-networks.md) implements a compact street profile, continuous frontage sidewalks and four protected crossings. Await the structural review before checkpoint 2 activity groups. Broader combinations of corner programs remain in the later variation checkpoint.
+
+[Checkpoint 1 closure](docs/checkpoint-one.md) makes the four corner forms more distinct, opens the workshop court toward the street, strengthens shared thresholds and reshapes the office core. Structure and furnished preservation checks are recorded for all six fixtures. Implementation stops here pending Levi's visual approval; checkpoint 2 has not started.

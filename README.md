@@ -158,3 +158,5 @@ The [spatial organization checkpoint](docs/spatial-organization.md) introduces c
 [Office checkpoint 1A](docs/office-topologies.md) adds spine, loop and open-core plans, protected arrival landings and shared interior thresholds.
 
 [Intersection checkpoint 1B](docs/intersection-networks.md) coordinates street proportions, frontage and a protected pedestrian network.
+
+[Checkpoint 1 closure](docs/checkpoint-one.md) strengthens corner silhouettes, office frames and the open-core plan, with structure/furnished review evidence.

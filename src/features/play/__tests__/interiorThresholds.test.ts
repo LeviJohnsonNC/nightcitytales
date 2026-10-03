@@ -13,8 +13,8 @@ it("derives distinct primary/service thresholds from saved room connections", ()
       const [a, b] = thresholds.find((t) => t.role === role)!.posts;
       return Math.hypot(a!.x - b!.x, a!.y - b!.y);
     };
-    expect(span("primary")).toBe(4);
-    expect(span("service")).toBe(2);
+    expect(span("primary")).toBe(5.5);
+    expect(span("service")).toBe(3.5);
     expect(thresholds).toHaveLength(arena.environment!.interior!.connections.length);
     expect(JSON.stringify(arena)).toBe(before);
   }

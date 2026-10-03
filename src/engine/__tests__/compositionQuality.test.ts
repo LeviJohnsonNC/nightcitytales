@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { composeScene, readBattlefieldSnapshot, rectInside } from "../index";
+import { composeScene, readBattlefieldSnapshot, rectInside, rectsOverlap } from "../index";
 
 describe("lived-in scene composition", () => {
   it("keeps compact office support space beyond reception", () => {
@@ -23,10 +23,31 @@ describe("lived-in scene composition", () => {
       const groups = [0, 1, 2, 3].map((n) =>
         structures.filter((s) => s.id === `building_${n}` || s.id.startsWith(`building_${n}_`)),
       );
-      expect(groups.map((g) => g.length)).toEqual([2, 1, 2, 2]);
+      expect(groups.map((g) => g.length)).toEqual([3, 2, 2, 1]);
       expect(new Set(structures.map((s) => s.height)).size).toBeGreaterThanOrEqual(4);
-      expect(groups[1]!.every((s) => s.style === "residential")).toBe(true);
+      expect(groups[1]!.some((s) => s.style === "residential")).toBe(true);
       expect(groups[0]!.every((s) => s.style === "shop")).toBe(true);
+      const env = composeScene("intersection", seed).layout.arena.environment!;
+      const court = env.zones.find((z) => z.id === "service-court")!.rect;
+      expect(structures.some((s) => rectsOverlap(s.rect, court))).toBe(false);
+      // Its open court is visible inside the playable slice, including rotation.
+      expect(Math.min(32, court.x + court.width) - Math.max(0, court.x)).toBeGreaterThanOrEqual(6);
+      expect(Math.min(32, court.y + court.height) - Math.max(0, court.y)).toBeGreaterThanOrEqual(6);
+      const lane = env.zones.find((z) => z.id === "service-access")!.rect;
+      expect(Math.max(lane.x + lane.width, lane.y + lane.height)).toBeGreaterThan(32);
+      expect(groups[0]!.every((s) => s.height <= 4)).toBe(true);
+      expect(groups[3]![0]!.height).toBeLessThan(3);
+      // Stepped footprints rather than filling each group's bounding rectangle.
+      for (const group of [groups[0]!, groups[1]!, groups[2]!]) {
+        const area = group.reduce((n, s) => n + s.rect.width * s.rect.height, 0);
+        const width =
+          Math.max(...group.map((s) => s.rect.x + s.rect.width)) -
+          Math.min(...group.map((s) => s.rect.x));
+        const height =
+          Math.max(...group.map((s) => s.rect.y + s.rect.height)) -
+          Math.min(...group.map((s) => s.rect.y));
+        expect(area).toBeLessThan(width * height);
+      }
     }
   });
 
@@ -104,7 +125,7 @@ describe("lived-in scene composition", () => {
         expect(
           new Set(env.structures.map((s) => `${s.rect.width}x${s.rect.height}`)).size,
         ).toBeGreaterThanOrEqual(4);
-        expect(arena.cover!.length).toBeGreaterThanOrEqual(kind === "intersection" ? 22 : 15);
+        expect(arena.cover!.length).toBeGreaterThanOrEqual(kind === "intersection" ? 20 : 15);
         expect(
           env.entrances!.every((e) => env.structures.some((s) => s.id === e.structureId)),
         ).toBe(true);

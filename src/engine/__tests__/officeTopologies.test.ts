@@ -19,6 +19,10 @@ describe("office programs", () => {
     expect(ring).toHaveLength(4);
     for (const id of corridors)
       expect(ring.filter((c) => c.from === id || c.to === id)).toHaveLength(2);
+    const coreWork = core.zones.find((z) => z.id === "work")!.rect;
+    expect(
+      Math.max(coreWork.width, coreWork.height) / Math.min(coreWork.width, coreWork.height),
+    ).toBeLessThanOrEqual(1.5);
     expect(core.zones.some((z) => z.kind === "corridor")).toBe(false);
     expect(edges(core).every((c) => c.from === "work" || c.to === "work")).toBe(true);
   });

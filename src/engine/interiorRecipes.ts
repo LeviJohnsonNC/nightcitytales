@@ -80,17 +80,17 @@ function office(variant: number): InteriorPlan {
     rooms: [
       zone("reception", "reception", 2, 2, 8, 6),
       zone("meeting", "meeting", 12, 2, 10, 6),
-      zone("work", "workspace", 2, 10, 20, 6),
-      zone("service", "service", 2, 18, 6, 4),
-      zone("private", "workspace", 10, 18, 12, 4),
+      zone("work", "workspace", 2, 10, 12, 12),
+      zone("service", "service", 16, 16, 6, 6),
+      zone("private", "workspace", 16, 10, 6, 4),
     ],
     doors: [
       ["reception", "work", 4, 8, 4, 2],
-      ["meeting", "work", 16, 8],
-      ["work", "service", 4, 16],
-      ["work", "private", 14, 16],
+      ["meeting", "work", 12, 8],
+      ["work", "service", 14, 18],
+      ["work", "private", 14, 12],
       ["reception", "outside", 0, 4, 2, 4],
-      ["service", "outside", 0, 20],
+      ["service", "outside", 22, 20],
     ],
   };
 }
