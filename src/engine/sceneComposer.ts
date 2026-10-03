@@ -124,10 +124,22 @@ function intersectionPlan(variant: number) {
       zone("service-lane", "alley", rect(6, crossing + 20, 2, 28 - crossing)),
       zone("service-access", "aisle", rect(6, crossing + 10, 2, 38 - crossing)),
       zone("travel-lane", "aisle", rect(14, -8, 4, 48)),
-      zone("shop-approach", "aisle", rect(8, 6, 4, 2), "x"),
-      zone("housing-approach", "aisle", rect(20, 6, 4, 2), "x"),
+      { ...zone("shop-approach", "aisle", rect(8, 6, 4, 2), "x"), floorUse: "entry" as const },
+      { ...zone("housing-approach", "aisle", rect(20, 6, 4, 2), "x"), floorUse: "entry" as const },
       zone("workshop-approach", "aisle", rect(0, crossing + 6, 2, 4)),
-      zone("utility-approach", "aisle", rect(26, crossing + 6, 2, 6)),
+      {
+        ...zone("utility-approach", "aisle", rect(26, crossing + 6, 2, 6)),
+        floorUse: "entry" as const,
+      },
+      { ...zone("shop-customers", "aisle", rect(8, 4, 2, 2)), floorUse: "customer" as const },
+      {
+        ...zone("workshop-handling", "aisle", rect(4, crossing + 10, 4, 6)),
+        floorUse: "handling" as const,
+      },
+      {
+        ...zone("workshop-unloading", "aisle", rect(0, crossing + 8, 8, 2), "x"),
+        floorUse: "handling" as const,
+      },
     ],
     structures: [
       rect(-16, -16, 24, crossing + 12),
@@ -161,7 +173,21 @@ function intersectionPlan(variant: number) {
         at: { x: 8, y: 2 },
         required: true,
       },
-      { id: "shop_east", kind: "frontage", zone: "east-walk", at: { x: 22, y: 0 } },
+      {
+        id: "housing_entry",
+        kind: "residential_entry",
+        zone: "east-walk",
+        at: { x: 22, y: 6 },
+        required: true,
+      },
+      {
+        id: "utility_waiting",
+        kind: "frontage_waiting",
+        zone: "south-east-front",
+        axis: "y",
+        at: { x: 28, y: crossing + 8 },
+        required: true,
+      },
       { id: "shop_south", kind: "frontage", zone: "south-east-walk", at: { x: 22, y: 26 } },
       {
         id: "deliveries",
@@ -368,7 +394,8 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
   for (const z of env.zones.filter((z) => ["sidewalk", "frontage", "loading"].includes(z.kind))) {
     // The intersection court is an open handling area, served by its existing
     // delivery slot. Moving it into view must not become another density pass.
-    if (kind === "intersection" && (z.kind === "loading" || z.id === "south-east-front")) continue;
+    if (kind === "intersection" && !["north-west-front", "south-west-walk"].includes(z.id))
+      continue;
     const candidates: Point[] = [];
     for (let y = Math.max(0, z.rect.y); y < Math.min(32, z.rect.y + z.rect.height) - 2; y += 4)
       for (let x = Math.max(0, z.rect.x); x < Math.min(32, z.rect.x + z.rect.width); x += 2)

@@ -3,6 +3,11 @@ import type Phaser from "phaser";
 import { propTexture, type PropKind, type PropCondition } from "./propPresentation";
 export const INTERIOR_PROP_KINDS = [
   "desk",
+  "desk-reverse",
+  "seat-reverse",
+  "waiting-seat",
+  "waiting-seat-reverse",
+  "conference-table",
   "cabinet",
   "stock",
   "speaker",
@@ -112,18 +117,39 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
           y = 0.15 + Math.floor(i / 2) * 0.85;
         slab(x, y, 0.75, 0.75, 0, 20 + (i % 3) * 10, wood);
       }
-    } else if (kind === "desk") {
+    } else if (kind === "desk" || kind === "desk-reverse") {
+      const deskSlab: typeof slab = (x, y, w, d, bottom, top, colors) =>
+        slab(
+          kind === "desk-reverse" ? 2 - x - w : x,
+          kind === "desk-reverse" ? 2 - y - d : y,
+          w,
+          d,
+          bottom,
+          top,
+          colors,
+        );
       // A complete workstation fits inside its canonical section: chair,
       // desk, terminal and small working clutter, rather than a lone table.
-      for (const x of [0.15, 1.75]) slab(x, 0.85, 0.1, 1, 0, 34, metal);
-      slab(0.05, 0.8, 1.9, 1.1, 32, 38, wood);
-      slab(0.65, 1.6, 0.75, 0.15, 38, 61, metal);
-      slab(0.65, 1.57, 0.7, 0.03, 42, 57, ["#62b4bd", "#62b4bd", "#62b4bd"]);
-      slab(0.65, 1.05, 0.7, 0.3, 38, 40, metal);
-      slab(0.15, 1.1, 0.3, 0.45, 38, 41, ["#b2b8ae", "#929c92", "#e2d8ba"]);
-      slab(0.65, 0.12, 0.7, 0.6, 0, 19, metal);
-      slab(0.6, 0.08, 0.8, 0.65, 19, 26, velvet);
-      slab(0.6, 0.05, 0.8, 0.12, 26, 48, velvet);
+      for (const x of [0.15, 1.75]) deskSlab(x, 0.85, 0.1, 1, 0, 34, metal);
+      deskSlab(0.05, 0.8, 1.9, 1.1, 32, 38, wood);
+      deskSlab(0.65, 1.6, 0.75, 0.15, 38, 61, metal);
+      deskSlab(0.65, 1.57, 0.7, 0.03, 42, 57, ["#62b4bd", "#62b4bd", "#62b4bd"]);
+      deskSlab(0.65, 1.05, 0.7, 0.3, 38, 40, metal);
+      deskSlab(0.15, 1.1, 0.3, 0.45, 38, 41, ["#b2b8ae", "#929c92", "#e2d8ba"]);
+      deskSlab(0.65, 0.12, 0.7, 0.6, 0, 19, metal);
+      deskSlab(0.6, 0.08, 0.8, 0.65, 19, 26, velvet);
+      deskSlab(0.6, 0.05, 0.8, 0.12, 26, 48, velvet);
+    } else if (kind === "conference-table") {
+      // Full-width modules meet at the canonical section boundary. Chairs fit
+      // inside each section; seating approaches outside remain actual clear floor.
+      for (const y of [0.05, 1.5]) {
+        slab(0.65, y, 0.7, 0.4, 0, 23, metal);
+        slab(0.62, y, 0.76, 0.4, 23, 27, velvet);
+        slab(0.62, y < 1 ? y : y + 0.32, 0.76, 0.08, 27, 47, velvet);
+      }
+      for (const x of [0.4, 1.5]) slab(x, 0.8, 0.12, 0.4, 0, 34, metal);
+      slab(0, 0.55, 2, 0.9, 34, 40, wood);
+      slab(0.7, 0.85, 0.45, 0.35, 40, 42, ["#adb8b9", "#73888d", "#d0d5ce"]);
     } else if (kind === "shelf") {
       for (const x of [0.1, 1.8]) for (const y of [0.2, 1.6]) slab(x, y, 0.1, 0.1, 0, 94, metal);
       for (const z of [12, 45, 78]) {
@@ -147,11 +173,20 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
         ctx.fillStyle = "#6de0c4";
         ctx.fillRect(p.x, p.y, 4, 3);
       }
-    } else if (kind === "seat") {
-      slab(0.1, 0.2, 1.8, 1.5, 0, 19, metal);
-      slab(0.12, 0.2, 1.76, 1.5, 19, 32, velvet);
-      slab(0.12, 1.55, 1.76, 0.24, 30, 62, velvet);
-      for (const x of [0.15, 1.65]) slab(x, 0.25, 0.2, 1.4, 24, 43, velvet);
+    } else if (["seat", "seat-reverse", "waiting-seat", "waiting-seat-reverse"].includes(kind)) {
+      const reverse = kind.endsWith("reverse"),
+        waiting = kind.startsWith("waiting-");
+      const seatSlab: typeof slab = (x, y, w, d, bottom, top, colors) =>
+        slab(reverse ? 2 - x - w : x, reverse ? 2 - y - d : y, w, d, bottom, top, colors);
+      const width = waiting ? 1.2 : 1.8;
+      seatSlab(0.1, 0.2, width, 1.5, 0, 19, metal);
+      seatSlab(0.12, 0.2, width - 0.04, 1.5, 19, 32, velvet);
+      seatSlab(0.12, 1.55, width - 0.04, 0.24, 30, 62, velvet);
+      for (const x of [0.15, width - 0.15]) seatSlab(x, 0.25, 0.2, 1.4, 24, 43, velvet);
+      if (waiting) {
+        seatSlab(1.48, 0.5, 0.4, 0.8, 0, 24, wood);
+        seatSlab(1.51, 0.62, 0.28, 0.45, 24, 27, ["#778e95", "#586e78", "#cad5ce"]);
+      }
     } else {
       const counter = kind === "bar" || kind === "reception" || kind === "workbench";
       if (counter) slab(0.05, 0.15, 1.9, 1.65, 0, 48, kind === "bar" ? velvet : metal);
@@ -161,6 +196,9 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
       const top = counter ? 54 : 38;
       slab(0.05, 0.15, 1.9, 1.65, top - 6, top, wood);
       if (kind === "reception") {
+        // A continuous raised visitor ledge reads as a reception counter;
+        // the terminal and keyboard occupy the staff side behind it.
+        slab(0, 0.12, 2, 0.28, top, top + 18, metal);
         slab(0.65, 1.15, 0.75, 0.18, top, top + 24, metal);
         poly(
           [
@@ -171,7 +209,7 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
           ],
           "#62b4bd",
         );
-        slab(0.7, 0.65, 0.65, 0.3, top, top + 2, metal);
+        slab(0.7, 1.5, 0.65, 0.3, top, top + 2, metal);
       }
       if (kind === "workbench") {
         slab(0.1, 1.55, 1.8, 0.12, top, top + 32, metal);

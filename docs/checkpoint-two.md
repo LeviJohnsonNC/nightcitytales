@@ -66,6 +66,8 @@ entrances and routes remain readable. Enable characters to check targeting.
 
 ## Remaining checkpoint 2 work
 
+Update: [Checkpoint 2B](checkpoint-two-b.md) addresses the office and intersection corrections below. This document records the original 2A delivery.
+
 Reception/waiting and support rooms still need more coherent activity groups;
 nightclub bar/seating/service groups follow. The current planter-heavy perimeter
 pass is still generic, and the small meeting room does not yet have a complete

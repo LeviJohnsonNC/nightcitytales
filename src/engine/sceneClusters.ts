@@ -25,6 +25,112 @@ export type ClusterDefinition = {
 };
 /** Offsets describe relationships inside a cluster, never arbitrary world positions. */
 export const CLUSTERS: Record<string, ClusterDefinition> = {
+  work_facing: {
+    zones: ["workspace"],
+    reason: "Opposed desks share a side filing cabinet, with access at both seating sides",
+    members: [
+      { key: "office_desk", id: "near", x: 0, y: 0, art: ["desk"] },
+      { key: "office_desk", id: "far", x: 0, y: 2, art: ["desk-reverse"] },
+      { key: "office_storage", id: "filing", x: 2, y: 2, art: ["cabinet"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: -1, label: "Pod seating approach" },
+      { x: 1, y: 5, label: "Pod seating approach" },
+      { x: 3, y: 1, label: "Shared filing access" },
+    ],
+  },
+  work_island: {
+    zones: ["workspace"],
+    reason: "Four opposed workstations form an island with shared filing at its end",
+    members: [
+      { key: "office_desk", id: "near_left", x: 0, y: 0, art: ["desk"] },
+      { key: "office_desk", id: "near_right", x: 2, y: 0, art: ["desk"] },
+      { key: "office_desk", id: "far_left", x: 0, y: 2, art: ["desk-reverse"] },
+      { key: "office_desk", id: "far_right", x: 2, y: 2, art: ["desk-reverse"] },
+      { key: "office_storage", id: "filing", x: 4, y: 2, art: ["cabinet"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: -1, label: "Pod seating approach" },
+      { x: 3, y: -1, label: "Pod seating approach" },
+      { x: 1, y: 5, label: "Pod seating approach" },
+      { x: 3, y: 5, label: "Pod seating approach" },
+      { x: 5, y: 1, label: "Shared filing access" },
+    ],
+  },
+  reception_arrival: {
+    zones: ["reception"],
+    reason:
+      "A staffed counter separates the visitor approach from staff access, beside a waiting group",
+    members: [
+      {
+        key: "reception_counter",
+        id: "counter",
+        x: 4,
+        y: 0,
+        rotation: 90,
+        art: ["reception", "reception"],
+      },
+    ],
+    dressing: [],
+    access: [
+      { x: 7, y: 1, label: "Reception staff aisle" },
+      { x: 7, y: 3, label: "Reception staff aisle" },
+      { x: 3, y: 1, label: "Visitor approach" },
+      { x: 3, y: 3, label: "Visitor approach" },
+      { x: 1, y: 3, label: "Waiting seat approach" },
+      { x: 5, y: 5, label: "Office transition" },
+    ],
+  },
+  waiting_arrival: {
+    zones: ["reception"],
+    reason: "Waiting seating and its side table face the arrival landing",
+    members: [{ key: "lounge_seat", id: "seat", x: 0, y: 0, art: ["waiting-seat"] }],
+    dressing: [],
+    access: [{ x: 1, y: -1, label: "Waiting seat approach" }],
+  },
+  waiting_entry: {
+    zones: ["reception"],
+    reason: "Waiting seating faces the entrance with a small side table",
+    members: [{ key: "lounge_seat", id: "seat", x: 0, y: 0, art: ["waiting-seat-reverse"] }],
+    dressing: [],
+    access: [{ x: 1, y: 3, label: "Waiting seat approach" }],
+  },
+  equipment_support: {
+    zones: ["service"],
+    reason: "Equipment and maintenance supplies face one clear service aisle",
+    members: [
+      { key: "server_rack", id: "server", x: 0, y: 0, art: ["server"] },
+      { key: "office_storage", id: "maintenance", x: 2, y: 0, art: ["cabinet"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Equipment maintenance" },
+      { x: 3, y: 3, label: "Maintenance supply access" },
+    ],
+  },
+  residential_entry: {
+    zones: ["sidewalk", "frontage"],
+    reason: "Paired entrance planters frame a quiet residential approach",
+    members: [
+      { key: "planter", id: "north", x: 0, y: -4, art: ["planter"] },
+      { key: "planter", id: "south", x: 0, y: 2, art: ["planter"] },
+    ],
+    dressing: [{ kind: "lamp", x: 0.3, y: -1.5 }],
+    access: [{ x: 1, y: 1, label: "Residential entrance" }],
+  },
+  frontage_waiting: {
+    zones: ["sidewalk", "frontage"],
+    reason:
+      "A low commercial frontage offers a waiting bench beside its entrance, away from through traffic",
+    members: [
+      { key: "lounge_seat", id: "bench", x: 0, y: 0, art: ["seat-reverse"] },
+      { key: "planter", id: "edge", x: 2, y: 0, art: ["planter"] },
+    ],
+    dressing: [],
+    access: [{ x: 1, y: 3, label: "Frontage waiting approach" }],
+  },
   work_pod: {
     zones: ["workspace"],
     reason: "Two workstations share local filing and a continuous working aisle",
@@ -44,13 +150,20 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     zones: ["meeting"],
     reason: "Conference table and adjacent meeting storage share clear seating approaches",
     members: [
-      { key: "meeting_table", id: "table", x: 0, y: 0, art: ["meeting-table", "meeting-table"] },
-      { key: "office_storage", id: "cabinet", x: 0, y: 2, art: ["cabinet"] },
+      {
+        key: "meeting_table",
+        id: "table",
+        x: 0,
+        y: 0,
+        art: ["conference-table", "conference-table"],
+      },
+      { key: "office_storage", id: "cabinet", x: 6, y: 0, rotation: 90, art: ["cabinet"] },
     ],
     dressing: [],
     access: [
       { x: 1, y: -1, label: "Meeting seating access" },
-      { x: 3, y: 3, label: "Meeting seating and storage access" },
+      { x: 3, y: 3, label: "Meeting seating access" },
+      { x: 5, y: 1, label: "Perimeter credenza access" },
     ],
   },
   vendor_stall: {
@@ -187,7 +300,13 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     zones: ["meeting"],
     reason: "Meeting table has usable circulation on both sides",
     members: [
-      { key: "meeting_table", id: "table", x: 0, y: 0, art: ["meeting-table", "meeting-table"] },
+      {
+        key: "meeting_table",
+        id: "table",
+        x: 0,
+        y: 0,
+        art: ["conference-table", "conference-table"],
+      },
     ],
     dressing: [],
     access: [
@@ -305,6 +424,7 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
 };
 export type Slot = {
   label?: string;
+  axis?: "x" | "y";
   id: string;
   kind: string;
   zone: string;
@@ -339,6 +459,7 @@ export function placeSceneClusters(
   for (const slot of slots) {
     const definition = CLUSTERS[slot.kind]!;
     const z = env.zones.find((z) => z.id === slot.zone)!;
+    const axis = slot.axis ?? z.axis;
     if (!definition.zones.includes(z.kind)) throw new Error(`Illegal cluster zone: ${slot.id}`);
     // Optional service clusters change contents; the required story facts always win.
     const variantKind =
@@ -353,10 +474,10 @@ export function placeSceneClusters(
       const entries = variant.members.flatMap((m) => {
         const prop = battlefieldProp(m.key);
         if (!prop) throw new Error(`Missing composition prop ${m.key}`);
-        const rotation = z.axis === "x" ? (m.rotation === 90 ? 0 : 90) : (m.rotation ?? 0);
+        const rotation = axis === "x" ? (m.rotation === 90 ? 0 : 90) : (m.rotation ?? 0);
         const memberAt = {
-          x: at.x + (z.axis === "x" ? m.y : m.x),
-          y: at.y + (z.axis === "x" ? m.x : m.y),
+          x: at.x + (axis === "x" ? m.y : m.x),
+          y: at.y + (axis === "x" ? m.x : m.y),
         };
         return placeProp(prop, memberAt, `${slot.id}_${m.id}`, rotation).map((piece, i) => ({
           piece: slot.label ? { ...piece, label: `${slot.label} · ${piece.label}` } : piece,
@@ -366,8 +487,8 @@ export function placeSceneClusters(
       });
       const access = (variant.access ?? []).map((a) => ({
         position: {
-          x: at.x + (z.axis === "x" ? a.y : a.x),
-          y: at.y + (z.axis === "x" ? a.x : a.y),
+          x: at.x + (axis === "x" ? a.y : a.x),
+          y: at.y + (axis === "x" ? a.x : a.y),
         },
         label: a.label,
       }));
@@ -460,7 +581,7 @@ export function placeSceneClusters(
           id: `${slot.id}_access_${i}`,
           kind: "aisle",
           rect: rect(a.position.x - 1, a.position.y - 1, 2, 2),
-          axis: z.axis,
+          axis,
         });
       }
     }
@@ -471,8 +592,8 @@ export function placeSceneClusters(
     }
     for (const [i, d] of variant.dressing.entries()) {
       const position = {
-        x: at.x + (z.axis === "x" ? d.y : d.x),
-        y: at.y + (z.axis === "x" ? d.x : d.y),
+        x: at.x + (axis === "x" ? d.y : d.x),
+        y: at.y + (axis === "x" ? d.x : d.y),
       };
       if (
         rectInside({ ...position, width: 0, height: 0 }, z.rect) &&

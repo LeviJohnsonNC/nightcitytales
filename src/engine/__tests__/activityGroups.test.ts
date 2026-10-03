@@ -15,15 +15,20 @@ it("keeps complete work pods and their shared working aisles in all office topol
     const env = arena.environment!;
     const work = env.clusters.filter((c) => c.zoneId === "work" && c.kind !== "garden");
     expect(work.length).toBeGreaterThanOrEqual(2);
-    expect(work.every((c) => c.kind === "work_pod")).toBe(true);
+    expect(work.every((c) => ["work_facing", "work_island"].includes(c.kind))).toBe(true);
     for (const pod of work) {
-      expect(env.props.filter((p) => p.clusterId === pod.id).map((p) => p.art)).toEqual([
-        "desk",
-        "desk",
-        "cabinet",
-      ]);
+      const bindings = env.props.filter((p) => p.clusterId === pod.id);
+      // Opposed chairs face the reserved outer aisles, including open-core rooms.
+      expect(bindings.filter((p) => p.art.startsWith("desk")).every((p) => p.rotation === 0)).toBe(
+        true,
+      );
+      const art = bindings.map((p) => p.art);
+      const desks = pod.kind === "work_island" ? 2 : 1;
+      expect(art.filter((a) => a === "desk")).toHaveLength(desks);
+      expect(art.filter((a) => a === "desk-reverse")).toHaveLength(desks);
+      expect(art.filter((a) => a === "cabinet")).toHaveLength(1);
       const access = env.interior!.access.filter((a) => a.id.startsWith(`${pod.id}_access_`));
-      expect(access).toHaveLength(3);
+      expect(access).toHaveLength(desks * 2 + 1);
       for (const a of access)
         expect(
           arena.cover!.some((c) =>
@@ -74,6 +79,9 @@ it("preserves outdoor customer/handling space through saving and later placement
 it.each([
   ["office", "workstation"],
   ["office", "meeting"],
+  ["office", "reception"],
+  ["office", "seating"],
+  ["office", "server"],
   ["intersection", "vendor"],
   ["intersection", "freight"],
   ["intersection", "utilities"],
@@ -96,3 +104,67 @@ it.each([
     expect(readSceneManifest(JSON.parse(JSON.stringify({ version: 1, scene })))).toEqual(scene);
   }
 });
+
+it("makes reception a complete visitor/staff arrangement and keeps support functional", () => {
+  for (let seed = 0; seed < 32; seed++) {
+    const arena = composeScene("office", seed).layout.arena;
+    const env = arena.environment!;
+    const reception = env.clusters.find((c) => c.zoneId === "reception")!;
+    const props = env.props.filter((p) => p.clusterId === reception.id);
+    expect(props.filter((p) => p.art === "reception")).toHaveLength(2);
+    expect(
+      env.props.some(
+        (p) => p.clusterId === "reception_waiting" && p.art.startsWith("waiting-seat"),
+      ),
+    ).toBe(true);
+    expect(env.clusters.find((c) => c.zoneId === "service")!.kind).toBe("equipment_support");
+    for (const use of ["staff", "visitor"])
+      expect(env.zones.some((z) => z.floorUse === use)).toBe(true);
+    const meeting = env.clusters.find((c) => c.zoneId === "meeting")!;
+    const table = env.props
+      .filter((p) => p.clusterId === meeting.id && p.art === "conference-table")
+      .map((p) => arena.cover!.find((c) => c.id === p.coverId)!.rect);
+    expect(table).toHaveLength(2);
+    expect(Math.abs(table[0]!.x - table[1]!.x) + Math.abs(table[0]!.y - table[1]!.y)).toBe(2);
+    if (meeting.kind === "meeting_support") {
+      const cabinet = env.props.find((p) => p.clusterId === meeting.id && p.art === "cabinet")!;
+      const bounds = arena.cover!.find((c) => c.id === cabinet.coverId)!.rect;
+      const room = env.zones.find((z) => z.id === meeting.zoneId)!.rect;
+      expect(bounds.x + bounds.width).toBe(room.x + room.width);
+    }
+  }
+});
+
+it.each(["office", "intersection"] as const)(
+  "saves clear, purposeful floor reservations in %s",
+  (kind) => {
+    for (let seed = 0; seed < 32; seed++) {
+      const snapshot = composeScene(kind, seed).layout;
+      const arena = readBattlefieldSnapshot(JSON.parse(JSON.stringify(snapshot))).arena;
+      const areas = arena.environment!.zones.filter((z) => z.floorUse);
+      expect(areas.length).toBeGreaterThan(0);
+      for (const area of areas) {
+        expect(area.kind).toBe("aisle");
+        expect(
+          [...arena.cover!, ...arena.environment!.structures].some((c) =>
+            rectsOverlap(c.rect, area.rect),
+          ),
+        ).toBe(false);
+      }
+      if (kind === "intersection") {
+        expect(areas.filter((z) => z.floorUse === "handling")).toHaveLength(2);
+        expect(areas.some((z) => z.floorUse === "customer")).toBe(true);
+        for (const id of ["housing_entry", "utility_waiting"])
+          expect(arena.environment!.clusters.some((c) => c.id === id)).toBe(true);
+      }
+      expect(readBattlefieldSnapshot(JSON.parse(JSON.stringify(snapshot)))).toEqual(snapshot);
+      const invalid = JSON.parse(JSON.stringify(snapshot));
+      invalid.arena.environment.zones.find((z: { floorUse?: string }) => z.floorUse).floorUse =
+        "invented";
+      expect(() => readBattlefieldSnapshot(invalid)).toThrow();
+      // Older snapshots without floor treatments remain valid and are not regenerated.
+      for (const z of snapshot.arena.environment!.zones) delete z.floorUse;
+      expect(readBattlefieldSnapshot(snapshot)).toEqual(snapshot);
+    }
+  },
+);

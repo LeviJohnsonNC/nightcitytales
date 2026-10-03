@@ -36,11 +36,16 @@ export const ENVIRONMENT_ART = [
   "generator",
   "barrier",
   "desk",
+  "desk-reverse",
+  "seat-reverse",
+  "waiting-seat",
+  "waiting-seat-reverse",
   "cabinet",
   "stock",
   "speaker",
   "reception",
   "meeting-table",
+  "conference-table",
   "seat",
   "bar",
   "server",
@@ -60,7 +65,14 @@ export const DRESSING_KINDS = [
   "drain",
   "bollards",
 ] as const;
-export type SceneZone = { id: string; kind: ZoneKind; rect: Rect; axis: "x" | "y" };
+export const FLOOR_USES = ["customer", "handling", "entry", "staff", "visitor"] as const;
+export type SceneZone = {
+  id: string;
+  kind: ZoneKind;
+  rect: Rect;
+  axis: "x" | "y";
+  floorUse?: (typeof FLOOR_USES)[number];
+};
 export type SceneStructure = {
   id: string;
   label: string;
@@ -153,9 +165,11 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
   };
   const zones = list(r["zones"], 64).map((v) => {
     const z = obj(v);
+    if (z["floorUse"] !== undefined && z["kind"] !== "aisle") fail();
     return {
       id: id(z["id"]),
       kind: choice(z["kind"], ZONE_KINDS),
+      ...(z["floorUse"] === undefined ? {} : { floorUse: choice(z["floorUse"], FLOOR_USES) }),
       rect: rectangle(z["rect"]),
       axis: choice(z["axis"], ["x", "y"] as const),
     };

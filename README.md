@@ -161,4 +161,4 @@ The [spatial organization checkpoint](docs/spatial-organization.md) introduces c
 
 [Checkpoint 1](docs/checkpoint-one.md) is approved and complete: corner silhouettes, office frames, three distinct office topologies and furnished preservation.
 
-[Checkpoint 2A](docs/checkpoint-two.md) begins coordinated activity groups, with shared work pods and protected vendor/workshop working space.
+[Checkpoint 2B](docs/checkpoint-two-b.md) develops coordinated office pods, reception/waiting, conference and support groups, plus readable commercial/customer and workshop handling areas. Nightclub groups and final Checkpoint 2 review follow in 2C.
