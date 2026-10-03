@@ -115,8 +115,9 @@ describe("composed places", () => {
   it("records the actual service/loading variant in each saved cluster", () => {
     const kinds = new Set<string>();
     for (let seed = 0; seed < 32; seed++) {
-      const env = composeScene("intersection", seed).layout.arena.environment!;
-      const cluster = env.clusters.find((c) => c.id === "workshop_service")!;
+      const env = composeScene("alley", seed).layout.arena.environment!;
+      const cluster = env.clusters.find((c) => c.id === "delivery_south");
+      if (!cluster) continue;
       kinds.add(cluster.kind);
       const art = env.props.filter((p) => p.clusterId === cluster.id).map((p) => p.art);
       expect(art).toEqual(

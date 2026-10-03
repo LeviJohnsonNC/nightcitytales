@@ -27,95 +27,10 @@ const zone = (id: string, kind: ZoneKind, r: Rect, axis: "x" | "y" = "y"): Scene
   axis,
 });
 function recipe(kind: SceneEnvironment["recipe"], variant: number) {
-  const crossing = [14, 10, 18][variant]!;
   const left = [10, 10, 8][variant]!;
   const right = 32 - left;
   const pocket = [12, 16, 8][variant]!;
-  if (kind === "intersection")
-    return {
-      zones: [
-        zone("street", "road", rect(12, -8, 10, 48)),
-        zone("cross-street", "road", rect(-8, crossing, 48, 8), "x"),
-        zone("junction", "intersection", rect(12, crossing, 10, 8)),
-        zone("west-walk", "sidewalk", rect(6, 0, 6, crossing)),
-        zone("east-walk", "sidewalk", rect(22, 0, 4, crossing)),
-        zone("south-west-walk", "sidewalk", rect(6, crossing + 8, 6, 24 - crossing)),
-        zone("south-east-walk", "sidewalk", rect(22, crossing + 8, 4, 24 - crossing)),
-        zone("west-service", "frontage", rect(0, crossing - 4, 6, 4), "x"),
-        zone("housing-entry", "garden", rect(26, crossing - 4, 6, 4), "x"),
-        zone("utility-court", "loading", rect(26, crossing + 8, 6, 4), "x"),
-        zone("south-service", "loading", rect(0, crossing + 8, 6, 8)),
-        zone("north-crossing", "crosswalk", rect(12, crossing - 2, 10, 2), "x"),
-        zone("south-crossing", "crosswalk", rect(12, crossing + 8, 10, 2), "x"),
-      ],
-      structures: [
-        rect(-8, -8, 14, crossing + 4),
-        rect(26, -8, 14, crossing + 4),
-        rect(-8, crossing + 16, 14, 12),
-        rect(26, crossing + 12, 14, 16),
-      ],
-      entrances: [
-        { structureId: "building_0", position: { x: 7, y: crossing - 5 } },
-        { structureId: "building_1", position: { x: 27, y: crossing - 3 } },
-        ...(crossing <= 14 ? [{ structureId: "building_2", position: { x: 7, y: 31 } }] : []),
-        { structureId: "building_3", position: { x: 25, y: crossing + 13 } },
-      ],
-      slots: [
-        {
-          id: "thorton",
-          label: "Olive-drab Thorton cruiser",
-          kind: "parking",
-          zone: "street",
-          at: { x: 20, y: 2 },
-          required: true,
-        },
-        {
-          id: "curb_north",
-          kind: "parking",
-          zone: "street",
-          at: { x: 20, y: crossing === 10 ? 24 : 8 },
-          required: true,
-        },
-        { id: "curb_west", kind: "parking", zone: "street", at: { x: 12, y: 2 } },
-        { id: "curb_south", kind: "parking", zone: "street", at: { x: 12, y: 28 }, required: true },
-        {
-          id: "broth_cart",
-          label: "Broth cart",
-          kind: "vendor",
-          zone: "west-walk",
-          at: { x: 8, y: crossing - 8 },
-          required: true,
-        },
-        { id: "shop_west", kind: "frontage", zone: "west-walk", at: { x: 6, y: 0 } },
-        { id: "shop_east", kind: "frontage", zone: "east-walk", at: { x: 24, y: 0 } },
-        {
-          id: "shop_south",
-          kind: "frontage",
-          zone: "south-east-walk",
-          at: { x: 24, y: crossing + 10 },
-        },
-        {
-          id: "workshop_service",
-          kind: "service",
-          zone: "west-service",
-          at: { x: 0, y: crossing - 4 },
-        },
-        {
-          id: "evening_vendor",
-          kind: "vendor",
-          zone: "south-west-walk",
-          at: { x: 8, y: crossing + 10 },
-        },
-        { id: "deliveries", kind: "loading", zone: "south-service", at: { x: 2, y: crossing + 8 } },
-      ] as Slot[],
-      player: { x: 17, y: crossing + 9 },
-      actors: [
-        { x: 23, y: 3 },
-        { x: 23, y: crossing === 10 ? 25 : 9 },
-        { x: 9, y: crossing - 3 },
-        { x: 11, y: crossing - 3 },
-      ],
-    };
+  if (kind === "intersection") return intersectionPlan(variant);
   return {
     zones: [
       zone("passage", "alley", rect(left, -8, right - left, 48)),
@@ -177,6 +92,87 @@ function recipe(kind: SceneEnvironment["recipe"], variant: number) {
   };
 }
 
+/** A compact local street section: 4m travel + two 2m curb lanes,
+ * crossing a 6m street. Frontage, through-walks and landings are sized together. */
+function intersectionPlan(variant: number) {
+  const crossing = [14, 12, 16][variant]!;
+  return {
+    zones: [
+      zone("street", "road", rect(12, -8, 8, 48)),
+      zone("cross-street", "road", rect(-8, crossing, 48, 6), "x"),
+      zone("junction", "intersection", rect(12, crossing, 8, 6)),
+      zone("west-walk", "sidewalk", rect(8, -8, 4, crossing + 8)),
+      zone("east-walk", "sidewalk", rect(20, -8, 4, crossing + 8)),
+      zone("south-west-walk", "sidewalk", rect(8, crossing + 6, 4, 34 - crossing)),
+      zone("south-east-walk", "sidewalk", rect(20, crossing + 6, 4, 34 - crossing)),
+      zone("north-west-front", "sidewalk", rect(-8, crossing - 4, 16, 4), "x"),
+      zone("north-east-front", "sidewalk", rect(24, crossing - 4, 16, 4), "x"),
+      zone("south-west-front", "sidewalk", rect(-8, crossing + 6, 16, 4), "x"),
+      zone("south-east-front", "sidewalk", rect(24, crossing + 6, 16, 4), "x"),
+      zone("service-court", "loading", rect(2, crossing + 14, 6, 26 - crossing)),
+      zone("north-crossing", "crosswalk", rect(12, crossing - 2, 8, 2), "x"),
+      zone("south-crossing", "crosswalk", rect(12, crossing + 6, 8, 2), "x"),
+      zone("west-crossing", "crosswalk", rect(10, crossing, 2, 6)),
+      zone("east-crossing", "crosswalk", rect(20, crossing, 2, 6)),
+      // Saved reservations protect the network during every furnishing pass.
+      zone("walk-west-north", "aisle", rect(10, -8, 2, crossing + 8)),
+      zone("walk-east-north", "aisle", rect(20, -8, 2, crossing + 8)),
+      zone("walk-west-south", "aisle", rect(10, crossing + 6, 2, 34 - crossing)),
+      zone("walk-east-south", "aisle", rect(20, crossing + 6, 2, 34 - crossing)),
+      zone("walk-north", "aisle", rect(-8, crossing - 2, 48, 2), "x"),
+      zone("walk-south", "aisle", rect(-8, crossing + 6, 48, 2), "x"),
+      zone("travel-lane", "aisle", rect(14, -8, 4, 48)),
+      zone("shop-approach", "aisle", rect(8, 6, 4, 2), "x"),
+      zone("housing-approach", "aisle", rect(20, 6, 4, 2), "x"),
+      zone("workshop-approach", "aisle", rect(6, crossing + 6, 2, 4)),
+      zone("utility-approach", "aisle", rect(24, crossing + 6, 2, 4)),
+    ],
+    structures: [
+      rect(-8, -8, 16, crossing + 4),
+      rect(24, -8, 16, crossing + 4),
+      rect(-8, crossing + 10, 16, 16),
+      rect(24, crossing + 10, 16, 16),
+    ],
+    entrances: [
+      { structureId: "building_0", position: { x: 9, y: 7 } },
+      { structureId: "building_1", position: { x: 23, y: 7 } },
+      { structureId: "building_2", position: { x: 7, y: crossing + 9 } },
+      { structureId: "building_3", position: { x: 25, y: crossing + 9 } },
+    ],
+    slots: [
+      {
+        id: "thorton",
+        label: "Olive-drab Thorton cruiser",
+        kind: "parking",
+        zone: "street",
+        at: { x: 18, y: 2 },
+        required: true,
+      },
+      { id: "curb_north", kind: "parking", zone: "street", at: { x: 18, y: 26 }, required: true },
+      { id: "curb_south", kind: "parking", zone: "street", at: { x: 12, y: 26 }, required: true },
+      { id: "curb_west", kind: "parking", zone: "street", at: { x: 12, y: 2 } },
+      {
+        id: "broth_cart",
+        label: "Broth cart",
+        kind: "vendor",
+        zone: "west-walk",
+        at: { x: 8, y: 2 },
+        required: true,
+      },
+      { id: "shop_east", kind: "frontage", zone: "east-walk", at: { x: 22, y: 0 } },
+      { id: "shop_south", kind: "frontage", zone: "south-east-walk", at: { x: 22, y: 26 } },
+      { id: "deliveries", kind: "loading", zone: "service-court", at: { x: 2, y: crossing + 14 } },
+    ] as Slot[],
+    player: { x: 17, y: crossing + 7 },
+    actors: [
+      { x: 21, y: 3 },
+      { x: 21, y: 27 },
+      { x: 9, y: crossing - 1 },
+      { x: 11, y: crossing - 1 },
+    ],
+  };
+}
+
 /** Distinct corner programmes: attached shops, housing, loading court and utility frontage. */
 function intersectionStructures(footprints: Rect[], seed: number): SceneStructure[] {
   const [shops, housing, loading, utility] = footprints as [Rect, Rect, Rect, Rect];
@@ -215,28 +211,28 @@ function intersectionStructures(footprints: Rect[], seed: number): SceneStructur
   add(
     "building_2_rear",
     "Workshop entrance beside loading court",
-    { ...loading, width: 6 },
+    { ...loading, width: 10 },
     4,
     "workshop",
   );
   add(
     "building_2",
     "Loading court workshop return",
-    { x: loading.x + 6, y: loading.y, width: loading.width - 6, height: 6 },
+    { x: loading.x + 10, y: loading.y, width: loading.width - 10, height: 4 },
     3,
     "warehouse",
   );
   add(
     "building_3",
     "Low utility service building",
-    { ...utility, width: 6, height: 6 },
+    { ...utility, width: 8, height: 8 },
     3,
     "workshop",
   );
   add(
     "building_3_back",
     "Neighbouring block beyond utility frontage",
-    { x: utility.x + 6, y: utility.y + 4, width: utility.width - 6, height: utility.height - 4 },
+    { x: utility.x + 8, y: utility.y + 4, width: utility.width - 8, height: utility.height - 4 },
     7,
     "warehouse",
   );
@@ -275,7 +271,12 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     entrances: plan.entrances.map((e, i) => ({
       ...e,
       id: `entrance_${i}`,
-      label: "Closed service entrance",
+      label:
+        kind === "intersection"
+          ? ["Corner shop entrance", "Apartment entrance", "Workshop entrance", "Utility entrance"][
+              i
+            ]!
+          : "Closed service entrance",
     })),
     seed,
     zones: plan.zones,
@@ -353,6 +354,7 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
   const reserved = [plan.player, ...plan.actors, ...plan.entrances.map((e) => e.position)].map(
     (p) => rect(p.x - 1, p.y - 1, 2, 2),
   );
+  reserved.push(...env.zones.filter((z) => z.kind === "aisle").map((z) => z.rect));
   placeSceneClusters(arena, plan.slots, reserved, seed);
   const details: Slot[] = [];
   for (const z of env.zones.filter((z) => ["sidewalk", "frontage", "loading"].includes(z.kind))) {

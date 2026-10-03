@@ -201,13 +201,20 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
   // Approaches are reserved geometry, not decorative doors placed behind crates.
   for (const e of env.entrances ?? []) {
     const p = e.position;
-    rect({ x: p.x - 0.8, y: p.y - 0.8, width: 1.6, height: 1.6 }, "#57625e", "#b5a779");
+    rect({ x: p.x - 0.8, y: p.y - 0.8, width: 1.6, height: 1.6 }, "#596360");
     const structure = env.structures.find((s) => s.id === e.structureId)!;
     const wall = {
       x: Math.max(structure.rect.x, Math.min(p.x, structure.rect.x + structure.rect.width)),
       y: Math.max(structure.rect.y, Math.min(p.y, structure.rect.y + structure.rect.height)),
     };
-    line(project(p), project(wall), "#d0ba7f", 2);
+    // A sill meets the actual facade rather than a floating debug-style box.
+    const alongY = wall.x !== p.x;
+    line(
+      project({ x: wall.x - (alongY ? 0 : 0.8), y: wall.y - (alongY ? 0.8 : 0) }),
+      project({ x: wall.x + (alongY ? 0 : 0.8), y: wall.y + (alongY ? 0.8 : 0) }),
+      "#b1afa0",
+      2,
+    );
   }
   let seed = env.seed + 417;
   const random = () => {
