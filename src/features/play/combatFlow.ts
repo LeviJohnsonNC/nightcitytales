@@ -395,8 +395,13 @@ export async function runNpcTurns(
       lines.push(describeMorale(actor.name, check));
       if (check.broke) {
         state = defeatCombatant(state, actor.id);
-        data = { ...data, [actor.id]: { ...data[actor.id]!, exitReason: "withdrawn" } };
-        capture("status", lines.at(-1)!, { actorId: actor.id });
+        data = {
+          ...data,
+          [actor.id]: { ...data[actor.id]!, exitReason: "withdrawn", exitCause: "morale" },
+        };
+        capture("status", `${actor.name} withdraws from combat. ${lines.at(-1)!}`, {
+          actorId: actor.id,
+        });
         continue;
       }
     }
@@ -419,9 +424,14 @@ export async function runNpcTurns(
     const goal = combatGoalFor(stats?.combatGoal);
     if (target.isPlayer && goalSatisfiedBy(goal, target)) {
       state = defeatCombatant(state, actor.id);
-      data = { ...data, [actor.id]: { ...data[actor.id]!, exitReason: "withdrawn" } };
+      data = {
+        ...data,
+        [actor.id]: { ...data[actor.id]!, exitReason: "withdrawn", exitCause: "goal_met" },
+      };
       lines.push(describeGoalMet(actor.name, goal));
-      capture("status", lines.at(-1)!, { actorId: actor.id });
+      capture("status", `${actor.name} withdraws from combat. ${lines.at(-1)!}`, {
+        actorId: actor.id,
+      });
       continue;
     }
 

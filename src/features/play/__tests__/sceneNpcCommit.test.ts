@@ -87,3 +87,33 @@ it("publishes neither ledger rows nor playback when the NPC save is refused", as
   expect(io.append).not.toHaveBeenCalled();
   expect(io.publish).not.toHaveBeenCalled();
 });
+
+it("preserves the withdrawal cause and explicitly announces goal-based exits", async () => {
+  vi.clearAllMocks();
+  const live = fixture();
+  live.state.combatants["p"]!.hp = 0;
+  live.state.combatants["p"]!.woundState = "mortal";
+  live.data["h"]!.combatGoal = "repel";
+  const result = await runNpcTurns("c", null, live, "current");
+  expect(result.live.data["h"]).toMatchObject({ exitReason: "withdrawn", exitCause: "goal_met" });
+  expect(io.publish.mock.calls[0]?.[1]).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        kind: "status",
+        text: expect.stringContaining("Ganger withdraws from combat"),
+      }),
+    ]),
+  );
+});
+
+it("does not announce a civilian staying down as a withdrawal", async () => {
+  vi.clearAllMocks();
+  const live = fixture();
+  live.state.combatants["h"]!.side = "neutral";
+  await runNpcTurns("c", null, live, "current");
+  expect(io.publish.mock.calls[0]?.[1]).not.toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ text: expect.stringContaining("withdraws") }),
+    ]),
+  );
+});

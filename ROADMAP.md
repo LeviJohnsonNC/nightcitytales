@@ -874,12 +874,19 @@ Phase 2d typed opening requests:
 - Player testing confirmed `open fire` enters the saved scene in Life. Follow-up
   fixes accept `shoot at`, keep pointer events during dice from permanently
   locking the board, and reassert the encounter outcome constraint through
-  `20261002100000_repair_encounter_status_constraint.sql` (pending deployment).
+  `20261002100000_repair_encounter_status_constraint.sql` (applied October 2, 2026).
   The regression suite now tests the historical narrow constraint as well as
-  the canonical replay baseline. Deployed browser retesting remains required.
-- Presentation debt observed in that test: scene controls float above the game,
-  old home narration dominates the current scene, and this fixture still uses
-  diagram art and placeholder actor portraits.
+  the canonical replay baseline. Levi's subsequent browser test confirmed typed
+  targeted entry, one-round ammunition consumption, movement, both enemies
+  withdrawing, and return to Life with HP and a factual aftermath.
+- Presentation follow-up: saved withdrawal/death/unknown-removal states have
+  distinct markers, initiative labels and a persistent departure list. New
+  withdrawals retain morale/objective cause in combatant JSON. Neutral diagram
+  figures no longer hold guns. Life prioritizes current narration/aftermath and
+  collapses earlier history; scene controls live beside the narrative.
+- Remaining visual work: the intersection still uses diagram art and placeholder
+  portraits. The Phaser renderer must be adapted with ground, sedan/cart and
+  civilian art matching this saved geometry; courtyard artwork is not a substitute.
 
 This remains an authored proof, **not the full Phase 2 exit gate**. Remaining:
 mission-runtime revision tracking, all action/resource costs in atomic commands,

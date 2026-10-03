@@ -3,6 +3,14 @@ import type { EncounterState } from "./encounter";
 import type { Arena, Point } from "./battlefield";
 import { coverStatuses, type CoverDamage } from "./cover";
 
+/** A combat removal is not a death unless its saved reason explicitly says so. */
+export function combatantDisposition(
+  defeated: boolean,
+  exitReason?: "dead" | "withdrawn",
+): "present" | "dead" | "withdrawn" | "out_of_fight" {
+  return defeated ? (exitReason ?? "out_of_fight") : "present";
+}
+
 export function battlefieldResult(input: {
   state: EncounterState;
   arena: Arena;
@@ -21,9 +29,7 @@ export function battlefieldResult(input: {
       hp: actor.hp,
       woundState: actor.woundState,
       position: input.data[actor.id]?.position ?? null,
-      disposition: actor.defeated
-        ? (input.data[actor.id]?.exitReason ?? "out_of_fight")
-        : "present",
+      disposition: combatantDisposition(actor.defeated, input.data[actor.id]?.exitReason),
     })),
     objects: coverStatuses(input.arena, input.cover).map((cover) => ({
       id: cover.piece.id,

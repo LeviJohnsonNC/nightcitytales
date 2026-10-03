@@ -37,23 +37,18 @@ export function SceneContact({
         Scene controls could not load. <button onClick={() => void scene.refetch()}>Retry</button>
       </div>
     );
-  if (!scene.data) return null;
+  if (!scene.data || scene.data.status === "resolved") return null;
   const saved = scene.data;
   return (
-    <section className="mx-auto my-3 flex max-w-3xl flex-wrap items-center justify-between gap-3 rounded border border-accent/40 bg-background p-3">
+    <section
+      aria-label="Scene actions"
+      className="flex flex-wrap items-center justify-between gap-3 rounded border border-accent/40 bg-background p-3"
+    >
       <div>
-        <p className="text-sm font-semibold">{saved.scene.layout.arena.label}</p>
-        {saved.status === "resolved" ? (
-          <details className="text-sm text-muted-foreground">
-            <summary>Scene aftermath</summary>
-            <p>{saved.summary}</p>
-          </details>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Name your target with “shoot …” below, or type “open fire” to choose on the battlefield.
-            Initiative determines who acts first.
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          Name your target with “shoot …”, or type “open fire” to choose on the battlefield.
+          Initiative determines who acts first.
+        </p>
       </div>
       {saved.status === "ready" && (
         <Button onClick={() => start.mutate()} disabled={start.isPending}>

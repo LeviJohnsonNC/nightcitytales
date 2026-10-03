@@ -2036,3 +2036,30 @@ button.combat-callout-act:hover {
   border-color: #ffd166;
   background: #ffd1662e;
 }
+
+/* Exiting combat is not necessarily dying. Keep the reason readable. */
+.combat-initiative .is-out {
+  text-decoration: none;
+  opacity: 0.75;
+}
+.combat-initiative .combat-exit-label {
+  font-size: 10px;
+  color: #c6d8dd;
+  opacity: 1;
+}
+.combat-unit.is-out[data-disposition="withdrawn"],
+.combat-unit.is-out[data-disposition="out_of_fight"] {
+  opacity: 0.7;
+}
+.combat-departures {
+  margin: 0 0 12px;
+  padding: 12px;
+  border-bottom: 1px solid #29404b;
+  font-size: 12px;
+  color: #c6d8dd;
+}
+.combat-departures ul {
+  margin-top: 6px;
+  display: grid;
+  gap: 6px;
+}

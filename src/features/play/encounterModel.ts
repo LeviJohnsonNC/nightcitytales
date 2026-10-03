@@ -111,6 +111,8 @@ export type CombatantData = {
   combatGoal?: CombatGoal;
   /** Presentation receipt of an engine-confirmed exit, not another defeat rule. */
   exitReason?: "dead" | "withdrawn";
+  /** Why an actor stopped fighting; absent on older saved encounters. */
+  exitCause?: "morale" | "goal_met";
   /**
    * The Round this combatant last landed a hit in, and last took damage in.
    *
@@ -222,6 +224,9 @@ export function combatantDataOf(row: EncounterCombatant): CombatantData {
         }
       : {}),
     ...(isCombatGoal(raw.combatGoal) ? { combatGoal: raw.combatGoal } : {}),
+    ...(raw.exitCause === "morale" || raw.exitCause === "goal_met"
+      ? { exitCause: raw.exitCause }
+      : {}),
     ...(raw.exitReason === "dead" || raw.exitReason === "withdrawn"
       ? { exitReason: raw.exitReason }
       : {}),

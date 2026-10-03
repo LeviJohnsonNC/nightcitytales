@@ -165,6 +165,9 @@ export function createCourtyard(
         const actor = model.live.state.combatants[id],
           data = model.live.data[id];
         if (!actor || !data) continue;
+        // Withdrawn actors leave the illustrated scene; the SVG retains a
+        // labelled departure marker at their last known combat position.
+        unit.container.setVisible(!(actor.defeated && data.exitReason === "withdrawn"));
         let position = data.position;
         const moving = frame?.kind === "move" && frame.actorId === id && frame.path;
         if (moving) {

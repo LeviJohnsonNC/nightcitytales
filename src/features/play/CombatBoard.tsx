@@ -1,3 +1,6 @@
+import { combatantDisposition } from "@/engine";
+import { CombatDepartures } from "./CombatDepartures";
+import { dispositionLabel } from "./combatDisposition";
 import { battlefieldFor } from "@/engine";
 import { CombatPortrait } from "./CombatPortrait";
 import { BattlefieldCallout } from "./BattlefieldCallout";
@@ -617,7 +620,7 @@ export function CombatBoard({
           </span>
         )}
         <ol className="combat-initiative" aria-label="Initiative order">
-          {actors.map(({ actor }) => (
+          {actors.map(({ actor, data }) => (
             <li
               key={actor.id}
               className={`${actor.id === acting?.id ? "is-active" : ""} ${actor.defeated ? "is-out" : ""}`}
@@ -628,6 +631,11 @@ export function CombatBoard({
                 hostile={actor.side === "hostile"}
               />
               {actor.isPlayer ? "YOU" : actor.name}
+              {actor.defeated && (
+                <span className="combat-exit-label">
+                  {dispositionLabel(combatantDisposition(true, data.exitReason))}
+                </span>
+              )}
             </li>
           ))}
         </ol>
@@ -1118,6 +1126,8 @@ export function CombatBoard({
                     : actor.side === "hostile"
                       ? "#ff7770"
                       : "#b3a2ff";
+                  const disposition = combatantDisposition(actor.defeated, data.exitReason);
+                  const exitLabel = dispositionLabel(disposition);
                   const takeable = !actor.isPlayer && !actor.defeated;
                   const locked = lockedId === actor.id;
                   const chosen = pointedId === actor.id;
@@ -1127,14 +1137,17 @@ export function CombatBoard({
                       className={`combat-unit ${actor.defeated ? "is-out" : ""} ${
                         locked ? "is-locked" : ""
                       }`}
-                      role="button"
-                      tabIndex={0}
+                      data-disposition={disposition}
+                      role={actor.defeated ? "img" : "button"}
+                      tabIndex={actor.defeated ? undefined : 0}
                       aria-label={
-                        actor.isPlayer
-                          ? `${actor.name}, ${actor.hp} of ${actor.hpMax} HP, your character`
-                          : `${actor.name}, ${actor.hp} of ${actor.hpMax} HP. ${
-                              locked ? "Selected; activate again to shoot" : "Activate to target"
-                            }`
+                        actor.defeated
+                          ? `${actor.name}: ${exitLabel}. Last position in combat.`
+                          : actor.isPlayer
+                            ? `${actor.name}, ${actor.hp} of ${actor.hpMax} HP, your character`
+                            : `${actor.name}, ${actor.hp} of ${actor.hpMax} HP. ${
+                                locked ? "Selected; activate again to shoot" : "Activate to target"
+                              }`
                       }
                       aria-pressed={takeable ? locked : undefined}
                       onClick={(e) => {
@@ -1192,16 +1205,41 @@ export function CombatBoard({
                         stroke={color}
                         strokeWidth={locked ? 2 : 1}
                       />
-                      <g visibility={scenic ? "hidden" : undefined}>
-                        {actor.defeated ? (
+                      <g
+                        visibility={
+                          scenic && (disposition === "present" || disposition === "dead")
+                            ? "hidden"
+                            : undefined
+                        }
+                      >
+                        {disposition === "dead" ? (
                           <path d="M-10 -3L10 3M-8 4L8 -4" stroke={color} strokeWidth="3" />
+                        ) : disposition === "withdrawn" ? (
+                          <path
+                            d="M-10 0H11M4 -7L12 0L4 7"
+                            fill="none"
+                            stroke={color}
+                            strokeWidth="3"
+                          />
+                        ) : disposition === "out_of_fight" ? (
+                          <circle r="6" fill="none" stroke={color} strokeWidth="2" />
                         ) : (
                           <g stroke="#091a23" strokeWidth="2">
                             <path d="M-6 -18L-8 -4M5 -18L8 -4" stroke={color} strokeWidth="5" />
                             <path d="M-7 -35L8 -35L10 -19L-8 -19Z" fill={color} />
                             <circle cy="-43" r="6" fill="#d8ded6" />
-                            <path d="M6 -30L17 -23L23 -32" stroke={color} strokeWidth="4" />
-                            <path d="M20 -35L30 -38" stroke="#e5e8dc" strokeWidth="4" />
+                            {actor.side === "neutral" ? (
+                              <path
+                                d="M-6 -31L-12 -19M7 -31L13 -19"
+                                stroke={color}
+                                strokeWidth="4"
+                              />
+                            ) : (
+                              <>
+                                <path d="M6 -30L17 -23L23 -32" stroke={color} strokeWidth="4" />
+                                <path d="M20 -35L30 -38" stroke="#e5e8dc" strokeWidth="4" />
+                              </>
+                            )}
                           </g>
                         )}
                       </g>
@@ -1224,6 +1262,11 @@ export function CombatBoard({
                       <text y="23" textAnchor="middle" fill={color} className="combat-unit-label">
                         {actor.isPlayer ? "YOU" : actor.name}
                       </text>
+                      {actor.defeated && (
+                        <text y="39" textAnchor="middle" fill={color} className="combat-unit-label">
+                          {exitLabel}
+                        </text>
+                      )}
                       {/* Brackets around the person, not a box around a
                           rectangle: they close in when the target is locked,
                           so hovering and choosing read differently. */}
@@ -1328,6 +1371,7 @@ export function CombatBoard({
           </div>
         </div>
         <aside className="combat-intel" aria-label="Tactical readout">
+          <CombatDepartures live={live} />
           {openingRequest && (
             <div className="p-3 text-sm" role="status">
               {openingRequest}

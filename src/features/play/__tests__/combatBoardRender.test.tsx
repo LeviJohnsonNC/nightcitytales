@@ -317,3 +317,31 @@ it("shows an untargeted opening request without opening the improvisation dialog
   expect(output).toContain("Choose a hostile target for your opening shot.");
   expect(output).toContain('role="status"');
 });
+
+it("distinguishes withdrawals, deaths, and unknown removals without requiring playback", () => {
+  const saved = structuredClone(live);
+  saved.state.combatants["h1"]!.defeated = true;
+  saved.data["h1"]!.exitReason = "withdrawn";
+  saved.state.combatants["h2"]!.defeated = true;
+  saved.data["h2"]!.exitReason = "dead";
+  const render = () =>
+    renderToStaticMarkup(
+      <CombatBoard
+        live={saved}
+        capability={capability}
+        weaponId="very_heavy_pistol"
+        onWeaponId={() => {}}
+      />,
+    );
+  let html = render();
+  expect(html).toContain('aria-label="Combat departures"');
+  expect(html).toContain('data-disposition="withdrawn"');
+  expect(html).toContain('data-disposition="dead"');
+  expect(html).toContain("Withdrew");
+  expect(html).toContain("Dead");
+  delete saved.data["h2"]!.exitReason;
+  html = render();
+  expect(html).toContain('data-disposition="out_of_fight"');
+  expect(html).toContain("Out of fight");
+  expect(html).not.toContain('data-disposition="dead"');
+});
