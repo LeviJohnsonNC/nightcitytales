@@ -890,6 +890,10 @@ Phase 2d typed opening requests:
   keep unfamiliar layouts in diagram mode. The original courtyard remains supported.
   Local WebGL checks covered movement/zoom, mobile sizing, damage, withdrawal,
   diagram toggling, missing assets and context-loss recovery. No migration.
+- Opening clarity follow-up: scene combat shows a first-turn initiative recap
+  from saved attack receipts, including HP/armor changes after refresh. Main shot
+  feedback is concise, with roll details expandable. Walking uses route-length
+  pacing (0.85–1.8 seconds) and slower, synchronized walk frames/footsteps.
 - Remaining visual work: player/ganger sprites remain representative mercenaries,
   rather than appearance/weapon-specific art; unknown NPC portraits remain neutral
   placeholders. More environment recipes and deployed-player validation remain.

@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { CombatOpeningRecap } from "./CombatOpeningRecap";
+import { compactCombatFeedback } from "./combatFeedback";
 import { openingAttackIntentFrom } from "./attackPrompt";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { RollLine } from "./RollLine";
@@ -836,9 +838,15 @@ export function PlayScreen({
         feedback={
           play.playback.lastFrame?.live.id === play.encounter.id &&
           (play.playback.playing || play.playback.lastFrame.kind !== "turn")
+            ? compactCombatFeedback(play.playback.lastFrame)
+            : undefined
+        }
+        feedbackDetail={
+          play.playback.lastFrame?.live.id === play.encounter.id
             ? play.playback.lastFrame.text
             : undefined
         }
+        openingRecap={<CombatOpeningRecap live={play.encounter} events={bundle.events} />}
         onSkipPlayback={play.playback.skip}
         statusText={
           play.actionError

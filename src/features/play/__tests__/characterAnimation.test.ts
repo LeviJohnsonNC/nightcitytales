@@ -103,7 +103,7 @@ describe("character animation follows resolved outcomes", () => {
     expect(animationCell("sw", "aim", 0, true)).toEqual({ frame: 16, flipX: false });
     expect(animationCell("se", "aim", 0, false)).toEqual({ frame: 8, flipX: false });
     expect(
-      new Set([0, 105, 210, 315].map((t) => animationCell("ne", "walk", t, false).frame)).size,
+      new Set([0, 150, 300, 450].map((t) => animationCell("ne", "walk", t, false).frame)).size,
     ).toBe(4);
     expect(muzzleOffset("ne").x).toBeGreaterThan(0);
     expect(muzzleOffset("sw").x).toBeLessThan(0);
