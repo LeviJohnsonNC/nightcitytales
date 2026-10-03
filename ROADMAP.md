@@ -884,9 +884,15 @@ Phase 2d typed opening requests:
   withdrawals retain morale/objective cause in combatant JSON. Neutral diagram
   figures no longer hold guns. Life prioritizes current narration/aftermath and
   collapses earlier history; scene controls live beside the narrative.
-- Remaining visual work: the intersection still uses diagram art and placeholder
-  portraits. The Phaser renderer must be adapted with ground, sedan/cart and
-  civilian art matching this saved geometry; courtyard artwork is not a substitute.
+- Scenic follow-up: the saved v1 intersection now uses the existing Phaser renderer
+  with a world-aligned dry street/crosswalk, independent sedan engine/cabin and
+  broth-cart damage sprites, and unarmed crouched workers. Geometry/version checks
+  keep unfamiliar layouts in diagram mode. The original courtyard remains supported.
+  Local WebGL checks covered movement/zoom, mobile sizing, damage, withdrawal,
+  diagram toggling, missing assets and context-loss recovery. No migration.
+- Remaining visual work: player/ganger sprites remain representative mercenaries,
+  rather than appearance/weapon-specific art; unknown NPC portraits remain neutral
+  placeholders. More environment recipes and deployed-player validation remain.
 
 This remains an authored proof, **not the full Phase 2 exit gate**. Remaining:
 mission-runtime revision tracking, all action/resource costs in atomic commands,

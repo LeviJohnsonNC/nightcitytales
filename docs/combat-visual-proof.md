@@ -4,7 +4,8 @@ The courtyard now includes the character animation and richer-prop passes.
 Open `/combat`, select **Night Shift courtyard**, choose a character/opposition,
 and launch. This uses the existing campaign encounter creation and `/play/:id`
 turn loop. The harness writes real campaign data, as it did before this change.
-Existing encounters on other maps retain the diagram renderer.
+The authored North Heywood intersection also has a scenic recipe; see
+[north-heywood-proof.md](north-heywood-proof.md). Other maps retain the diagram renderer.
 
 ## Included
 

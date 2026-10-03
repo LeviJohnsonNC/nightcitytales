@@ -1,4 +1,7 @@
 import { battlefieldFor } from "@/engine";
+import { scenicTheme, STREET_PROPS, civilianCell } from "./scenicPresentation";
+import { createStreetGround } from "./streetGround";
+import { createCivilianAtlas } from "./civilianTextures";
 import Phaser from "phaser";
 import { coverStatuses, tileKey, TILE_METRES, type Point, type Tile } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
@@ -73,9 +76,17 @@ export function createCourtyard(
   let disposed = false;
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const arena = battlefieldFor(initial.live);
-  const kinds = hasYardProps(arena.key) ? PROP_KINDS : ["cargo" as const];
+  const theme = scenicTheme(arena);
+  if (!theme) throw new Error("No scenic art for this layout");
+  const street = theme === "street";
+  const unitScale = street ? 0.65 : 1;
+  const kinds = street
+    ? Object.values(STREET_PROPS)
+    : hasYardProps(arena.key)
+      ? PROP_KINDS
+      : ["cargo" as const];
   const assets = [
-    "ground",
+    ...(street ? ["workers"] : ["ground"]),
     "mercenary-animation",
     "hostile-animation",
     ...new Set(kinds.map(propSource)),
@@ -112,7 +123,12 @@ export function createCourtyard(
         // WebP, encoded losslessly and unresized by tools/art/webp.mjs: these
         // are atlases Phaser slices into frames, so nothing may move and no
         // colour may bleed across a frame boundary.
-        this.load.image(`source-${key}`, `/images/combat/night-shift/${key}.webp`);
+        this.load.image(
+          `source-${key}`,
+          `/images/combat/${
+            key === "street-props" || key === "workers" ? "north-heywood" : "night-shift"
+          }/${key}.webp`,
+        );
       this.load.on("loaderror", onFailure);
     }
     create() {
@@ -125,11 +141,13 @@ export function createCourtyard(
         createPropTextures(this, kinds);
         createCharacterAtlas(this, "mercenary");
         createCharacterAtlas(this, "hostile");
+        if (street) createCivilianAtlas(this);
       } catch {
         onFailure();
         return;
       }
-      this.add.image(550, 350, "source-ground").setDisplaySize(1200, 800).setDepth(-1000);
+      if (street) createStreetGround(this, project);
+      else this.add.image(550, 350, "source-ground").setDisplaySize(1200, 800).setDepth(-1000);
       // Baked lighting establishes the look. Small additive pools support it.
       this.add
         .ellipse(295, 330, 300, 170, 0x17cced, 0.025)
@@ -194,7 +212,13 @@ export function createCourtyard(
           movementDuration: duration,
           reducedMotion: motion.matches,
         });
-        const cell = animationCell(unit.facing, pose, elapsed, !actor.isPlayer);
+        const civilian = street && actor.side === "neutral";
+        const cell = civilian
+          ? {
+              frame: civilianCell(pose === "dead" || pose === "fall", data.key === "worker_two"),
+              flipX: false,
+            }
+          : animationCell(unit.facing, pose, elapsed, !actor.isPlayer);
         unit.sprite.setFrame(cell.frame).setFlipX(cell.flipX);
         const animated = !motion.matches && frame?.animate !== false;
         // A small recoil/settle supports the authored pose; feet never drive position.
@@ -228,12 +252,16 @@ export function createCourtyard(
         unit.sprite.setAlpha(actor.defeated && data.exitReason !== "dead" ? 0.4 : 1);
         if (actor.defeated && data.exitReason !== "dead") unit.sprite.setTint(0x879aa5);
         else unit.sprite.clearTint();
-        unit.shadow.setSize(pose === "dead" || pose === "fall" ? 55 : 30, 12);
+        unit.shadow.setSize(
+          (pose === "dead" || pose === "fall" ? 55 : 30) * unitScale,
+          12 * unitScale,
+        );
       }
       for (const prop of scenery) {
         if (prop.getData("destroyed")) continue;
         const obstructs = [...units.values()].some(
           ({ container: unit }) =>
+            unit.visible &&
             unit.y < prop.depth &&
             unit.y > prop.y - prop.displayHeight * 0.75 &&
             Math.abs(unit.x - prop.x) < prop.displayWidth * 0.4,
@@ -241,7 +269,7 @@ export function createCourtyard(
         prop.setAlpha(obstructs ? 0.4 : 1);
       }
       this.weather.clear();
-      if (!motion.matches) {
+      if (!street && !motion.matches) {
         this.weather.lineStyle(0.65, 0xbad8eb, 0.12);
         const count = host.clientWidth < 600 ? 22 : 48;
         for (let i = 0; i < count; i++) {
@@ -270,15 +298,15 @@ export function createCourtyard(
               !model.live.state.combatants[frame.actorId]?.isPlayer,
             ),
             p = project(aim);
-          const x = unit.container.x + unit.sprite.x + muzzle.x,
-            y = unit.container.y + unit.sprite.y + muzzle.y;
+          const x = unit.container.x + unit.sprite.x + muzzle.x * unitScale,
+            y = unit.container.y + unit.sprite.y + muzzle.y * unitScale;
           this.flash
             .lineStyle(2, 0xffd599, 0.8)
             .lineBetween(
               x,
               y,
               p.x + (frame.hit === false ? 32 : 0),
-              p.y - (frame.kind === "cover" ? 16 : 42),
+              p.y - (frame.kind === "cover" ? 16 : 42 * unitScale),
             );
           this.flash.fillStyle(0xffd599, 0.24).fillCircle(x, y, 18);
           this.flash.fillStyle(0xfff4cb, 0.95).fillCircle(x, y, 4);
@@ -303,7 +331,7 @@ export function createCourtyard(
             this.flash.fillCircle(
               point.x + Math.cos(angle) * progress * 22,
               point.y -
-                (frame.kind === "cover" ? 16 : 42) +
+                (frame.kind === "cover" ? 16 : 42 * unitScale) +
                 Math.sin(angle) * progress * 15 +
                 progress * progress * 12,
               (1 - progress) * 2.3,
@@ -341,8 +369,18 @@ export function createCourtyard(
       const p = project(data.position);
       const shadow = current.add.ellipse(0, 0, 30, 12, 0x01050a, 0.6);
       const sprite = current.add
-        .image(0, 0, actor.isPlayer ? "mercenary" : "hostile", 0)
-        .setOrigin(0.5, CHARACTER_FRAME.foot / CHARACTER_FRAME.size);
+        .image(
+          0,
+          0,
+          street && actor.side === "neutral"
+            ? "civilian"
+            : actor.isPlayer
+              ? "mercenary"
+              : "hostile",
+          0,
+        )
+        .setOrigin(0.5, CHARACTER_FRAME.foot / CHARACTER_FRAME.size)
+        .setScale(unitScale);
       const container = current.add.container(p.x, p.y, [shadow, sprite]).setDepth(p.y);
       const other = model.live.state.order.find((otherId) => {
         const otherActor = model.live.state.combatants[otherId];
@@ -410,7 +448,7 @@ export function createCourtyard(
     scenery.length = 0;
     for (const status of coverStatuses(arena, damage)) {
       const condition = propCondition(status);
-      const kind = propKind(arena.key, status.piece.id);
+      const kind = street ? STREET_PROPS[status.piece.id]! : propKind(arena.key, status.piece.id);
       const placement = propPlacement(status, project);
       const texture = propTexture(kind, condition);
       const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;

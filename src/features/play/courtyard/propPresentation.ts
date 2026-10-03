@@ -1,7 +1,16 @@
 import type { CoverStatus, Point } from "@/engine";
 
 export type PropKind =
-  "cargo" | "generator" | "dumpster" | "barrier" | "pallet" | "truck-cargo" | "truck-cab";
+  | "cargo"
+  | "generator"
+  | "dumpster"
+  | "barrier"
+  | "pallet"
+  | "truck-cargo"
+  | "truck-cab"
+  | "sedan-engine"
+  | "sedan-cabin"
+  | "food-cart";
 export type PropCondition = "intact" | "damaged" | "wrecked";
 
 /** Every courtyard layout, including the retired ones a fight may still be on. */
