@@ -25,56 +25,72 @@ const zone = (
 type Connection = [from: string, to: string, x: number, y: number, width?: number, height?: number];
 export type InteriorPlan = { rooms: SceneZone[]; doors: Connection[]; label: string };
 function office(variant: number): InteriorPlan {
-  // Compact 24m shell: visitors reach reception/meeting before staff work and
-  // equipment rooms. The programme changes orientation, not physical scale.
+  // Function-first programs: visitor rooms at the primary entry, staff work
+  // beyond that threshold, smaller support rooms with an independent exit.
   if (variant === 0)
     return {
-      label: "Visitor front and staff work floor",
+      label: "Reception spine and staff suites",
       rooms: [
         zone("reception", "reception", 2, 2, 8, 6),
         zone("meeting", "meeting", 12, 2, 10, 6),
         zone("hall", "corridor", 2, 10, 20, 2),
-        zone("work", "workspace", 2, 14, 12, 8),
-        zone("service", "service", 16, 14, 6, 8),
+        zone("work", "workspace", 2, 14, 12, 10),
+        zone("private", "workspace", 16, 14, 6, 4),
+        zone("service", "service", 16, 20, 6, 4),
       ],
       doors: [
         ["reception", "hall", 6, 8],
         ["meeting", "hall", 16, 8],
         ["hall", "work", 6, 12],
-        ["work", "service", 14, 18],
+        ["hall", "private", 18, 12],
+        ["work", "service", 14, 20],
+        ["reception", "outside", 0, 2, 2, 4],
+        ["service", "outside", 22, 22],
       ],
     };
   if (variant === 1)
     return {
-      label: "Public wing and operations suite",
+      label: "Visitor front and circulation loop",
       rooms: [
-        zone("reception", "reception", 2, 2, 6, 8),
-        zone("meeting", "meeting", 2, 12, 6, 10),
-        zone("hall", "corridor", 10, 2, 2, 20),
-        zone("work", "workspace", 14, 2, 8, 12),
-        zone("service", "service", 14, 16, 8, 6),
+        zone("reception", "reception", 2, 2, 8, 6),
+        zone("meeting", "meeting", 12, 2, 6, 6),
+        zone("service", "service", 20, 2, 6, 6),
+        zone("hall", "corridor", 2, 10, 24, 2),
+        zone("west", "corridor", 2, 14, 2, 8),
+        zone("east", "corridor", 24, 14, 2, 8),
+        zone("rear", "corridor", 2, 24, 24, 2),
+        zone("work", "workspace", 6, 14, 16, 8),
       ],
       doors: [
-        ["reception", "hall", 8, 6],
-        ["meeting", "hall", 8, 16],
-        ["hall", "work", 12, 6],
-        ["work", "service", 18, 14],
+        ["reception", "hall", 6, 8],
+        ["meeting", "hall", 14, 8],
+        ["hall", "west", 2, 12],
+        ["hall", "east", 24, 12],
+        ["west", "rear", 2, 22],
+        ["east", "rear", 24, 22],
+        ["hall", "work", 12, 12],
+        ["work", "rear", 12, 22],
+        ["hall", "service", 22, 8],
+        ["reception", "outside", 0, 4, 2, 4],
+        ["service", "outside", 26, 4],
       ],
     };
   return {
-    label: "Reception gallery and private work suite",
+    label: "Open work core with perimeter rooms",
     rooms: [
-      zone("reception", "reception", 2, 2, 8, 8),
-      zone("meeting", "meeting", 12, 2, 10, 8),
-      zone("hall", "corridor", 2, 12, 20, 2),
-      zone("work", "workspace", 2, 16, 12, 6),
-      zone("service", "service", 16, 16, 6, 6),
+      zone("reception", "reception", 2, 2, 8, 6),
+      zone("meeting", "meeting", 12, 2, 10, 6),
+      zone("work", "workspace", 2, 10, 20, 6),
+      zone("service", "service", 2, 18, 6, 4),
+      zone("private", "workspace", 10, 18, 12, 4),
     ],
     doors: [
-      ["reception", "meeting", 10, 6],
-      ["reception", "hall", 6, 10],
-      ["hall", "work", 6, 14],
-      ["work", "service", 14, 18],
+      ["reception", "work", 4, 8, 4, 2],
+      ["meeting", "work", 16, 8],
+      ["work", "service", 4, 16],
+      ["work", "private", 14, 16],
+      ["reception", "outside", 0, 4, 2, 4],
+      ["service", "outside", 0, 20],
     ],
   };
 }
@@ -187,7 +203,8 @@ export function composeInterior(
       : kind === "nightclub"
         ? nightclub(variant)
         : industrialPlan(kind, variant);
-  const extent = kind === "office" ? { width: 24, height: 24 } : { width: 32, height: 32 };
+  const size = kind === "office" ? (variant === 1 ? 28 : 24) : 32;
+  const extent = { width: size, height: kind === "office" && variant === 0 ? 26 : size };
   const rooms = plan.rooms;
   if (variant === 2)
     rooms.forEach((room) => {
@@ -209,8 +226,10 @@ export function composeInterior(
         : r.y === 2
           ? [id, "outside", r.x + 2, 0]
           : [id, "outside", r.x + 2, extent.height - 2];
-  plan.doors.push(boundaryDoor("reception", publicRoom));
-  plan.doors.push(boundaryDoor("service", backRoom));
+  if (kind !== "office") {
+    plan.doors.push(boundaryDoor("reception", publicRoom));
+    plan.doors.push(boundaryDoor("service", backRoom));
+  }
   const doorZones = plan.doors.map((d, i) =>
     zone(`door_${i}`, "doorway", d[2], d[3], d[4] ?? 2, d[5] ?? 2),
   );
@@ -230,6 +249,13 @@ export function composeInterior(
       access: [],
     },
   };
+  // A four-metre entrance landing gives visitors room to arrive and turn.
+  // It is a saved aisle, so every placement pass protects it, including later
+  // adventure-context substitutions. Existing snapshots keep their own zones.
+  if (kind === "office") {
+    const primary = plan.doors.find((d) => d[0] === "reception" && d[1] === "outside")!;
+    env.zones.push(zone("entry_landing", "aisle", 2, primary[3], 4, primary[5] ?? 2));
+  }
   const reserved: Rect[] = [];
   for (const c of env.interior!.connections) {
     const door = env.zones.find((z) => z.id === c.zoneId)!;
@@ -254,7 +280,14 @@ export function composeInterior(
     reserved.push({ x: position.x - 1, y: position.y - 1, width: 2, height: 2 });
   }
   const entry = rooms.find((z) => z.id === "reception")!.rect;
-  const playerStart = { x: entry.x + 1, y: entry.y + 1 };
+  const primaryDoor =
+    doorZones[plan.doors.findIndex((d) => d[0] === "reception" && d[1] === "outside")]!;
+  const playerStart =
+    kind === "office"
+      ? exteriorDoorwayApproaches(primaryDoor.rect, entry, extent).find((p) =>
+          rectInside({ x: p.x - 1, y: p.y - 1, width: 2, height: 2 }, entry),
+        )!
+      : { x: entry.x + 1, y: entry.y + 1 };
   const arena: Arena = {
     key: `scene:composed-${kind}:v1:${seed}`,
     label: `North Heywood · ${kind} · ${plan.label}`,
@@ -314,6 +347,10 @@ export function composeInterior(
       candidates.length = 0;
       for (let y = r.y + 2; y < r.y + r.height - 2; y += 6) candidates.push({ x: r.x, y });
     }
+    // Small enclosed offices still need a legal workstation candidate.
+    if (cluster === "workstation" && !candidates.length)
+      for (let y = r.y; y < r.y + r.height; y += 2)
+        for (let x = r.x; x < r.x + r.width; x += 2) candidates.push({ x, y });
     const count = ["racking", "vehicle_bay"].includes(cluster)
       ? 12
       : cluster === "freight"
