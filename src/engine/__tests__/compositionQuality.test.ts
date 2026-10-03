@@ -2,19 +2,17 @@ import { describe, expect, it } from "vitest";
 import { composeScene, readBattlefieldSnapshot, rectInside } from "../index";
 
 describe("lived-in scene composition", () => {
-  it("keeps compact office support space behind the staff workspace", () => {
+  it("keeps compact office support space beyond reception", () => {
     for (let seed = 1; seed <= 3; seed++) {
       const arena = composeScene("office", seed).layout.arena;
-      expect(arena.extent).toEqual({ width: 24, height: 24 });
+      expect(arena.extent.width * arena.extent.height).toBeLessThanOrEqual(28 * 28);
       const connections = arena.environment!.interior!.connections;
+      expect(connections.some((c) => c.from === "service" && c.to === "outside")).toBe(true);
       expect(
-        connections
-          .filter((c) => c.to === "service" || c.from === "service")
-          .map((c) => [c.from, c.to]),
-      ).toEqual([
-        ["work", "service"],
-        ["service", "outside"],
-      ]);
+        connections.some(
+          (c) => [c.from, c.to].includes("service") && [c.from, c.to].includes("reception"),
+        ),
+      ).toBe(false);
       expect(connections.some((c) => c.from === "reception" && c.to === "outside")).toBe(true);
     }
   });

@@ -1341,3 +1341,5 @@ Deferred on purpose, so that deferring them stays a decision:
 ### Spatial composition follow-through
 
 [Checkpoint 1](docs/spatial-organization.md) adds compact office programs, distinct intersection corner structures and closer shared framing. Next: complete activity groups, structural attachments, then transfer and seed variation across the remaining archetypes. This checkpoint does not claim reference-quality environments.
+
+[Office checkpoint 1A](docs/office-topologies.md) implements three distinct circulation topologies and clearer primary entrances. Await visual review of the office foundation; checkpoint 1B (intersection parcels and continuous pedestrian routes) remains next, before richer activity groups.

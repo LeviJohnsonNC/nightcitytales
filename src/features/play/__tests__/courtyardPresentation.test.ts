@@ -83,7 +83,7 @@ describe("composed scene scale", () => {
     const street = composeScene("intersection", 1).layout.arena;
     const small = composedUnitMetrics(office),
       large = composedUnitMetrics(street);
-    expect(small.top / large.top).toBeCloseTo(32 / 24);
+    expect(small.top / large.top).toBeCloseTo(64 / (office.extent.width + office.extent.height));
     expect(small.scale / large.scale).toBeCloseTo(small.top / large.top);
     for (const arena of [office, street]) {
       expect(battlefieldCameraPreset(arena).zoom).toBeGreaterThan(

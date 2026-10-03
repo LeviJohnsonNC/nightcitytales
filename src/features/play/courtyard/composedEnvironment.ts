@@ -1,5 +1,6 @@
 /** World-building art from the same resolved parcels that constrain play. */
 import type Phaser from "phaser";
+import { interiorThresholds } from "./interiorThresholds";
 import type { Arena, Point, Rect, SceneStructure, SceneEnvironment } from "@/engine";
 
 type Project = (p: Point) => Point;
@@ -126,6 +127,37 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
           },
           "#aaa99a",
         );
+    }
+  }
+  // Material changes and door sills make the saved openings readable without
+  // debug markers. Main entries use a broad warm mat; service entries are metal.
+  for (const threshold of interiorThresholds(arena)) {
+    if (threshold.role === "passage") {
+      rect(threshold.mat, "#606366");
+      continue;
+    }
+    rect(
+      threshold.mat,
+      threshold.role === "primary"
+        ? "#ae9770"
+        : threshold.role === "service"
+          ? "#777d79"
+          : "#9aa5a0",
+      "#27343b",
+    );
+    if (threshold.role !== "primary") continue;
+    for (
+      let t = 0.2;
+      t < (threshold.horizontal ? threshold.mat.width : threshold.mat.height);
+      t += 0.25
+    ) {
+      const r = threshold.mat;
+      rect(
+        threshold.horizontal
+          ? { x: r.x + t, y: r.y, width: 0.035, height: r.height }
+          : { x: r.x, y: r.y + t, width: r.width, height: 0.035 },
+        "#26333855",
+      );
     }
   }
   for (const cluster of env.clusters.filter((c) => c.kind === "vehicle_bay")) {
@@ -402,6 +434,34 @@ export function createComposedEnvironment(
       .setDepth(depth);
     objects.push(image);
   };
+  // Narrow jambs sit at opening boundaries. Each has its own depth so actors
+  // remain correctly sorted; these are trim, not new collision objects.
+  const metre = Math.hypot(
+    project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
+    project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
+  );
+  for (const threshold of interiorThresholds(arena)) {
+    if (threshold.role === "passage") continue;
+    for (const [i, post] of threshold.posts.entries()) {
+      const p = project(post);
+      const height = (threshold.role === "primary" ? 1.8 : 1.4) * metre;
+      add(
+        `threshold-${threshold.id}-${i}`,
+        (ctx) => {
+          const { line } = painter(ctx, project);
+          line(p, { x: p.x, y: p.y - height }, "#263439", 6);
+          line(
+            { x: p.x + 1, y: p.y },
+            { x: p.x + 1, y: p.y - height },
+            threshold.role === "primary" ? "#c9b284" : "#a5b1ac",
+            2.5,
+          );
+        },
+        p.y,
+        { x: p.x - 5, y: p.y - height - 4, width: 10, height: height + 8 },
+      );
+    }
+  }
   for (const structure of arena.environment!.structures) {
     // Split wall painting, not collision, into grid-sized depth slices. A long
     // strip must not sort every section at its nearest corner's depth.
