@@ -33,7 +33,7 @@ export type DescentAudio = {
   type(): void;
   /** A neon sign catching: a door coming on. */
   sign(): void;
-  /** A door taken: the rain swells and the scene falls away. */
+  /** A door taken: a breath of rain, then all of it gone, and the music back. */
   door(): void;
   dispose(fadeMs?: number): void;
 };
@@ -42,6 +42,9 @@ export type DescentAudio = {
 const MASTER = 0.7;
 /** How long the rain stays under the prose before the context is let go. */
 const AMBIENT_MS = 40_000;
+/** After a door: how long the swell lasts before the rain goes, and how long the door's own note rings. */
+const DOOR_SWELL_S = 0.15;
+const DOOR_TAIL_MS = 1000;
 
 let current: DescentAudio | null = null;
 
@@ -292,8 +295,12 @@ export function createDescentAudio(): DescentAudio | null {
       if (disposed) return;
       const now = ctx.currentTime;
       rainGain.gain.cancelScheduledValues(now);
-      rainGain.gain.setTargetAtTime(0.15, now, 0.2);
-      rainLow.frequency.setTargetAtTime(7000, now, 0.3);
+      rainGain.gain.setTargetAtTime(0.13, now, 0.05);
+      rainLow.frequency.setTargetAtTime(7000, now, 0.08);
+      // The swell is the door; then the rain is gone inside half a second.
+      rainGain.gain.setTargetAtTime(0, now + DOOR_SWELL_S, 0.1);
+      if (ambientTimer !== null) window.clearTimeout(ambientTimer);
+      ambientTimer = window.setTimeout(() => audio.dispose(300), DOOR_TAIL_MS);
       burst({
         type: "bandpass",
         from: 5000,
@@ -311,6 +318,11 @@ export function createDescentAudio(): DescentAudio | null {
       disposed = true;
       if (ambientTimer !== null) window.clearTimeout(ambientTimer);
       if (current === audio) current = null;
+      // The descent's sound held the music down; going, it lets it back.
+      if (shared === audio) {
+        shared = null;
+        releaseDuck();
+      }
       const now = ctx.currentTime;
       master.gain.cancelScheduledValues(now);
       master.gain.setTargetAtTime(0, now, Math.max(0.05, fadeMs / 4000));
@@ -368,8 +380,14 @@ export function releaseDescentAudio(): void {
   if (releaseTimer !== null) window.clearTimeout(releaseTimer);
   releaseTimer = window.setTimeout(() => {
     releaseTimer = null;
-    shared?.dispose();
+    const going = shared;
     shared = null;
+    going?.dispose();
     releaseDuck();
   }, HANDOVER_GRACE_MS);
+}
+
+/** The screen under the prose is gone: whatever rain is left goes with it. */
+export function leaveDescentAudio(): void {
+  current?.dispose(400);
 }

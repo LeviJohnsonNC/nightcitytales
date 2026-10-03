@@ -97,6 +97,18 @@
 
 .open-backdrop {
   background: #06040f;
+  transition: opacity 600ms ease-in;
+}
+
+/* A door taken: the window goes dark a beat behind the rain stopping. */
+.open-backdrop[data-leaving] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .open-backdrop {
+    transition: none;
+  }
 }
 
 /* The same glass the descent held on, a little dimmer so the prose is readable. */

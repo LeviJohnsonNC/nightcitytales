@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { OpeningChoice } from "@/engine";
-import { liveDescentAudio } from "./descent/descentAudio";
+import { leaveDescentAudio, liveDescentAudio } from "./descent/descentAudio";
 import { Descent } from "./descent/Descent";
 import { prefersReducedMotion } from "./descent/descentDevice";
 import { buildDescentFacts } from "./descent/descentFacts";
@@ -179,10 +179,21 @@ export function OpeningStage({ open }: { open: ReturnType<typeof useOpening> }) 
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [lit, reduced, opening]);
 
-  // Taking a door: the rain swells and the scene falls away under it.
+  // Taking a door: a breath of rain, then the storm and the scene go together.
+  // Latched, so the storm cannot come back in the moment between the door being
+  // written and the next screen arriving; only a failed door brings it back.
+  const [leaving, setLeaving] = useState(false);
   useEffect(() => {
-    if (choosing) liveDescentAudio()?.door();
+    if (choosing) {
+      setLeaving(true);
+      liveDescentAudio()?.door();
+    }
   }, [choosing]);
+  useEffect(() => {
+    if (open.chooseError) setLeaving(false);
+  }, [open.chooseError]);
+  // Whatever comes next, the rain does not follow the player into it.
+  useEffect(() => () => leaveDescentAudio(), []);
 
   // Space, Enter and a click show the rest of the prose. 1-4 take a door, once
   // the signs are on — the screen has nothing else on it, so the digits are
@@ -283,7 +294,7 @@ export function OpeningStage({ open }: { open: ReturnType<typeof useOpening> }) 
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-[#06040f]">
-      <LandingBackdrop facts={facts} />
+      <LandingBackdrop facts={facts} leaving={leaving} />
       <div
         className={`open-arrive relative mx-auto flex max-w-3xl flex-col gap-8 px-5 py-12 sm:py-16 ${choosing ? "open-exit" : ""}`}
       >

@@ -172,4 +172,27 @@ describe("the sound of the descent", () => {
     expect(made.closed).toBe(1);
     expect(liveDescentAudio()).toBeNull();
   });
+
+  it("goes within a second or so of a door being taken, and lets the music back", async () => {
+    const { acquireDescentAudio, landDescentAudio, liveDescentAudio } =
+      await import("../descentAudio");
+    acquireDescentAudio();
+    landDescentAudio();
+    liveDescentAudio()!.door();
+    vi.advanceTimersByTime(1600);
+    expect(made.closed).toBe(1);
+    expect(liveDescentAudio()).toBeNull();
+    expect(music.releases).toBe(1);
+  });
+
+  it("lets go of what rain is left when the screen under the prose goes", async () => {
+    const { acquireDescentAudio, landDescentAudio, leaveDescentAudio, liveDescentAudio } =
+      await import("../descentAudio");
+    acquireDescentAudio();
+    landDescentAudio();
+    leaveDescentAudio();
+    expect(liveDescentAudio()).toBeNull();
+    vi.advanceTimersByTime(1000);
+    expect(made.closed).toBe(1);
+  });
 });
