@@ -50,8 +50,41 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
   const { rect, line, glow } = painter(ctx, project);
   ctx.fillStyle = "#080f17";
   ctx.fillRect(0, 0, 1100, 700);
-  rect({ x: -12, y: -12, width: 56, height: 56 }, "#293034");
+  if (!env.interior) rect({ x: -12, y: -12, width: 56, height: 56 }, "#293034");
+  const floors: Record<string, string> = {
+    reception: "#6c6257",
+    workspace: "#34494e",
+    meeting: "#4a5159",
+    service: "#41474c",
+    seating: "#442d49",
+    performance: "#322a45",
+    dance: "#232838",
+    corridor: "#606366",
+    doorway: "#748181",
+  };
   for (const z of env.zones) {
+    if (z.kind === "aisle") continue;
+    if (env.interior) {
+      const color = floors[z.kind] ?? "#3b464c";
+      rect(z.rect, color, "#19262f");
+      for (let x = z.rect.x; x < z.rect.x + z.rect.width; x += 2)
+        for (let y = z.rect.y; y < z.rect.y + z.rect.height; y += 2)
+          rect(
+            { x: x + 0.035, y: y + 0.035, width: 1.93, height: 1.93 },
+            color,
+            z.kind === "dance" ? "#745f85" : "#ffffff0b",
+          );
+      if (z.kind === "dance" || z.kind === "performance") {
+        const corners = painter(ctx, project).corners(z.rect);
+        for (let i = 0; i < 4; i++) line(corners[i]!, corners[(i + 1) % 4]!, "#ad699e", 2);
+        glow(
+          project({ x: z.rect.x + z.rect.width / 2, y: z.rect.y + z.rect.height / 2 }),
+          100,
+          "rgba(141,57,144,.13)",
+        );
+      }
+      continue;
+    }
     const road = ["road", "alley", "intersection"].includes(z.kind);
     rect(z.rect, road ? "#20292e" : z.kind === "loading" ? "#353b3c" : "#41494a");
     if (!road && z.kind !== "crosswalk") {
@@ -158,6 +191,14 @@ function paintBuilding(
   const h = structure.height * 15;
   const base = corners(r),
     top = corners(r, h);
+  if (structure.style === "interior-wall") {
+    poly([base[0]!, base[1]!, top[1]!, top[0]!], "#687875", "#24353b");
+    poly([base[1]!, base[2]!, top[2]!, top[1]!], "#384951", "#24353b");
+    poly(top, "#94a19a", "#c2c5ac");
+    line(base[0]!, base[1]!, "#192f3a", 2);
+    line(base[1]!, base[2]!, "#192f3a", 2);
+    return;
+  }
   const palette =
     structure.style === "shop"
       ? ["#49474a", "#333941", "#646360"]

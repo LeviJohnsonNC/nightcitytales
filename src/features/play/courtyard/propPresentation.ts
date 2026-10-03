@@ -1,6 +1,7 @@
-import type { CoverStatus, Point } from "@/engine";
+import type { CoverStatus, Point, EnvironmentArt } from "@/engine";
 
 export type PropKind =
+  | EnvironmentArt
   | "cargo"
   | "generator"
   | "dumpster"

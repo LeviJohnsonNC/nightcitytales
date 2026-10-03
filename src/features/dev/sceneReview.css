@@ -66,3 +66,14 @@
   min-width: 0;
   max-width: 100%;
 }
+
+.scene-review-plan {
+  margin: 16px;
+  font: 12px monospace;
+}
+.scene-review-plan svg {
+  display: block;
+  max-width: 480px;
+  width: 100%;
+  margin: 12px auto;
+}

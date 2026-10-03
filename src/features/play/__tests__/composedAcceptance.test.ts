@@ -63,11 +63,14 @@ it.each([1, 3])(
     expect(wrecked.depth).toBeLessThan(intact.depth);
   },
 );
-it("uses the same renderer for unfamiliar location identifiers", () => {
-  const arena = composeScene("alley").layout.arena;
-  arena.key = "another-location-without-a-renderer-branch";
-  expect(scenicTheme(arena)).toBe("composed");
-});
+it.each(["alley", "office", "nightclub"] as const)(
+  "uses the shared renderer for %s with an unfamiliar location identifier",
+  (kind) => {
+    const arena = composeScene(kind).layout.arena;
+    arena.key = "another-location-without-a-renderer-branch";
+    expect(scenicTheme(arena)).toBe("composed");
+  },
+);
 it("fades scenery for a partially overlapping silhouette but leaves foreground actors and absent units alone", () => {
   const prop = { x: 100, y: 200, depth: 220, displayWidth: 100, displayHeight: 100 };
   expect(sceneryOccludes(prop, { x: 155, y: 210, visible: true }, 48)).toBe(true);

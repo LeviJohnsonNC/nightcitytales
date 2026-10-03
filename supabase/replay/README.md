@@ -106,3 +106,9 @@ continuity, scene-bound entry, deferred completion enforcement and owner-only re
 `composed-scenes.test.sql` repeats persistent scene entry/save/receipt checks with
 battlefield v2 and asserts rejection of a writer still using layout protocol v1.
 The outer manifest/lifecycle version remains 1.
+
+`interior-scenes.test.sql` is a template populated by
+`bun tools/scenes/interior-sql.ts`. CI runs its output against the disposable
+database. All six production office/nightclub layouts stage, enter, save movement
+and damaged furniture, finish, and revisit without changing their frozen map.
+It requires no new deployed schema.
