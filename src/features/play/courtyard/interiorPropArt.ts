@@ -15,6 +15,8 @@ export const INTERIOR_PROP_KINDS = [
   "meeting-table",
   "seat",
   "bar",
+  "backbar",
+  "lounge-table",
   "server",
   "shelf",
   "dj",
@@ -111,6 +113,17 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
         slab(0.8, 0.25, 0.4, 0.08, z + 6, z + 8, wood);
       }
       slab(0.3, 0.7, 0.5, 0.7, 64, 67, wood);
+    } else if (kind === "backbar") {
+      slab(0, 0.2, 2, 1.6, 0, 46, metal);
+      for (const z of [48, 70]) {
+        slab(0, 0.4, 2, 1.4, z - 4, z, wood);
+        for (let i = 0; i < 5; i++)
+          slab(0.18 + i * 0.35, 0.55, 0.16, 0.2, z, z + 13, ["#43837c", "#275554", "#78aaa1"]);
+      }
+    } else if (kind === "lounge-table") {
+      slab(0.8, 0.8, 0.4, 0.4, 0, 24, metal);
+      slab(0.15, 0.15, 1.7, 1.7, 24, 29, wood);
+      for (const x of [0.5, 1.3]) slab(x, 0.8, 0.13, 0.15, 29, 36, metal);
     } else if (kind === "stock") {
       for (let i = 0; i < 4; i++) {
         const x = 0.15 + (i % 2) * 0.85,
@@ -194,7 +207,7 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
         for (const x of [0.2, 1.65])
           for (const y of [0.2, 1.65]) slab(x, y, 0.12, 0.12, 0, 32, metal);
       const top = counter ? 54 : 38;
-      slab(0.05, 0.15, 1.9, 1.65, top - 6, top, wood);
+      slab(kind === "bar" ? 0 : 0.05, 0.15, kind === "bar" ? 2 : 1.9, 1.65, top - 6, top, wood);
       if (kind === "reception") {
         // A continuous raised visitor ledge reads as a reception counter;
         // the terminal and keyboard occupy the staff side behind it.

@@ -19,6 +19,7 @@ export type ClusterDefinition = {
     x: number;
     y: number;
     rotation?: 0 | 90;
+    label?: string;
     art: EnvironmentArt[];
   }[];
   dressing: { kind: SceneEnvironment["dressing"][number]["kind"]; x: number; y: number }[];
@@ -334,6 +335,87 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
       { x: 3, y: 3, label: "Table approach" },
     ],
   },
+  bar_service: {
+    zones: ["service"],
+    reason: "Continuous customer counter faces a backbar across a protected staff aisle",
+    members: [
+      { key: "bar_counter", id: "counter", x: 0, y: 0, art: ["bar", "bar"] },
+      {
+        key: "office_storage",
+        id: "back_left",
+        label: "backbar bottle storage",
+        x: 0,
+        y: 4,
+        art: ["backbar"],
+      },
+      {
+        key: "office_storage",
+        id: "back_right",
+        label: "backbar bottle storage",
+        x: 2,
+        y: 4,
+        art: ["backbar"],
+      },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: -1, label: "Bar customer approach" },
+      { x: 3, y: -1, label: "Bar customer approach" },
+      { x: 1, y: 3, label: "Backbar staff aisle" },
+      { x: 3, y: 3, label: "Backbar staff aisle" },
+      { x: -1, y: 1, label: "Staff access around counter end" },
+    ],
+  },
+  lounge_bench: {
+    zones: ["seating"],
+    reason: "Joined lounge seating faces paired low tables beside a shared approach",
+    members: [
+      { key: "lounge_seat", id: "left", x: 0, y: 2, art: ["seat"] },
+      { key: "lounge_seat", id: "right", x: 2, y: 2, art: ["seat"] },
+      { key: "cafe_table", id: "table_left", x: 0, y: 0, art: ["lounge-table"] },
+      { key: "cafe_table", id: "table_right", x: 2, y: 0, art: ["lounge-table"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 5, y: 1, label: "Lounge table approach" },
+      { x: 5, y: 3, label: "Lounge seat approach" },
+    ],
+  },
+  lounge_conversation: {
+    zones: ["seating"],
+    reason: "Opposed lounge seats share a low table and a clear side aisle",
+    members: [
+      { key: "lounge_seat", id: "near", x: 0, y: 0, art: ["seat-reverse"] },
+      { key: "cafe_table", id: "table", x: 0, y: 2, art: ["lounge-table"] },
+      { key: "lounge_seat", id: "far", x: 0, y: 4, art: ["seat"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 3, y: 1, label: "Lounge seat approach" },
+      { x: 3, y: 3, label: "Shared table approach" },
+      { x: 3, y: 5, label: "Lounge seat approach" },
+    ],
+  },
+  service_stock: {
+    zones: ["service"],
+    reason: "Restocking shelf and supplies share an open handling aisle",
+    members: [
+      {
+        key: "office_storage",
+        id: "shelf",
+        label: "restocking shelf",
+        x: 0,
+        y: 0,
+        art: ["backbar"],
+      },
+      { key: "freight_crate", id: "stock", label: "beverage stock", x: 2, y: 0, art: ["stock"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: -1, label: "Restocking shelf approach" },
+      { x: 3, y: -1, label: "Stock handling approach" },
+    ],
+  },
   bar: {
     zones: ["service"],
     reason: "Bar separates customer approach and staff working aisle",
@@ -480,7 +562,12 @@ export function placeSceneClusters(
           y: at.y + (axis === "x" ? m.x : m.y),
         };
         return placeProp(prop, memberAt, `${slot.id}_${m.id}`, rotation).map((piece, i) => ({
-          piece: slot.label ? { ...piece, label: `${slot.label} · ${piece.label}` } : piece,
+          piece: {
+            ...piece,
+            label: slot.label
+              ? `${slot.label} · ${m.label ?? piece.label}`
+              : (m.label ?? piece.label),
+          },
           art: env.interior && slot.kind === "supplies" ? ("stock" as const) : m.art[i]!,
           rotation,
         }));
