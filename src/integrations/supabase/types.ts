@@ -1234,7 +1234,12 @@ export type Database = {
         }
         Returns: number
       }
+      stage_adventure_scene: { Args: { payload: Json }; Returns: Json }
       stage_authored_scene: { Args: { payload: Json }; Returns: Json }
+      start_adventure_scene_encounter: {
+        Args: { payload: Json }
+        Returns: string
+      }
       start_campaign: { Args: { payload: Json }; Returns: string }
       start_encounter: { Args: { payload: Json }; Returns: string }
       start_persisted_scene_encounter: {

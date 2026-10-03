@@ -71,6 +71,13 @@
       "when": 1791034995012,
       "tag": "0009_composed_battlefield_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791045085761,
+      "tag": "0010_adventure_scene_context",
+      "breakpoints": true
     }
   ]
 }
