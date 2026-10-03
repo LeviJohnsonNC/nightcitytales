@@ -53,6 +53,28 @@ describe("composed places", () => {
           expect(reachable.has(tileKey(tileOf(arena, actor.position)))).toBe(true);
         for (const p of [arena.playerStart, ...scene.actors.map((a) => a.position)])
           expect(blocked.has(tileKey(tileOf(arena, p)))).toBe(false);
+        for (const entrance of env.entrances!) {
+          expect(reachable.has(tileKey(tileOf(arena, entrance.position)))).toBe(true);
+          expect(blocked.has(tileKey(tileOf(arena, entrance.position)))).toBe(false);
+        }
+        for (const cluster of env.clusters) {
+          const zone = env.zones.find((z) => z.id === cluster.zoneId)!;
+          if (cluster.kind === "parking") {
+            expect(zone.kind).toBe("road");
+            const parts = env.props
+              .filter((p) => p.clusterId === cluster.id)
+              .map((p) => arena.cover!.find((c) => c.id === p.coverId)!);
+            const [engine, cabin] = parts;
+            expect(
+              zone.axis === "y"
+                ? cabin!.rect.x === engine!.rect.x
+                : cabin!.rect.y === engine!.rect.y,
+            ).toBe(true);
+          }
+          if (cluster.kind === "vendor") expect(zone.kind).toBe("sidewalk");
+          if (["service", "loading"].includes(cluster.kind))
+            expect(["frontage", "loading"]).toContain(zone.kind);
+        }
         expect(JSON.stringify(scene.layout).length).toBeLessThan(65536);
       }
     },
@@ -65,19 +87,31 @@ describe("composed places", () => {
     expect(cabin.rect.y - engine.rect.y).toBe(2);
     expect(arena.hostileSlots[0]).toEqual({ x: engine.rect.x + 3, y: engine.rect.y + 1 });
   });
-  it("varies optional contents without moving required story objects", () => {
-    const scenes = Array.from({ length: 8 }, (_, seed) => composeScene("intersection", seed));
-    expect(
-      new Set(scenes.map((s) => JSON.stringify(s.layout.arena.environment!.props))).size,
-    ).toBeGreaterThan(1);
-    for (const s of scenes)
-      expect(s.layout.arena.cover!.find((c) => c.id === "thorton_car_engine")!.rect).toEqual({
-        x: 20,
-        y: 2,
-        width: 2,
-        height: 2,
-      });
-  });
+  it.each(["intersection", "alley"] as const)(
+    "varies %s parcels and anchors, with stable story relationships",
+    (kind) => {
+      const scenes = [1, 2, 3].map((seed) => composeScene(kind, seed));
+      expect(
+        new Set(scenes.map((s) => JSON.stringify(s.layout.arena.environment!.zones))).size,
+      ).toBe(3);
+      expect(
+        new Set(
+          scenes.map((s) =>
+            JSON.stringify(s.layout.arena.environment!.structures.map((b) => b.rect)),
+          ),
+        ).size,
+      ).toBe(3);
+      for (const s of scenes) {
+        expect(s.templateVersion).toBe(2);
+        if (kind !== "intersection") continue;
+        const car = s.layout.arena.cover!.find((c) => c.id === "thorton_car_engine")!;
+        const actor = s.actors.find((a) => a.id === "rifle_ganger")!;
+        expect(
+          Math.hypot(actor.position.x - car.rect.x - 1, actor.position.y - car.rect.y - 1),
+        ).toBe(2);
+      }
+    },
+  );
   it("records the actual service/loading variant in each saved cluster", () => {
     const kinds = new Set<string>();
     for (let seed = 0; seed < 32; seed++) {
@@ -115,10 +149,26 @@ describe("composed places", () => {
     "spawn",
     "zone",
     "unversioned",
+    "entrance-reference",
+    "entrance-in-building",
+    "entrance-off-grid",
+    "entrance-blocked",
   ])("fails closed on invalid composition: %s", (fault) => {
     const scene = composeScene("intersection"),
       layout = scene.layout,
       env = layout.arena.environment!;
+    if (fault === "entrance-reference") env.entrances![0]!.structureId = "missing";
+    if (fault === "entrance-in-building") env.entrances![0]!.position = { x: 1, y: 1 };
+    if (fault === "entrance-off-grid") env.entrances![0]!.position.x = 6;
+    if (fault === "entrance-blocked") {
+      const e = env.entrances![0]!;
+      layout.arena.cover![0]!.rect = {
+        x: e.position.x - 1,
+        y: e.position.y - 1,
+        width: 2,
+        height: 2,
+      };
+    }
     if (fault === "version") (env as { version: number }).version = 2;
     if (fault === "missing-binding") env.props.pop();
     if (fault === "duplicate-binding") env.props.push(env.props[0]!);

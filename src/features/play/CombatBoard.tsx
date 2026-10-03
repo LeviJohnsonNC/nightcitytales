@@ -42,7 +42,6 @@ import {
 import {
   blockedTiles,
   centreOf,
-  coverBlocking,
   shotObstacles,
   coverStatuses,
   currentCombatant,
@@ -302,7 +301,7 @@ export function CombatBoard({
   /** The piece standing in the way, so the board can point at it. */
   const blocker =
     blockedByCover && player && target
-      ? (coverBlocking(arena, player.data.position, target.data.position, live.cover)[0] ?? null)
+      ? (shotObstacles(arena, player.data.position, target.data.position, live.cover)[0] ?? null)
       : null;
   const spotTile = readTile(interaction);
   const spot = spotTile ? centreOf(spotTile) : null;
@@ -1010,8 +1009,9 @@ export function CombatBoard({
                 />
               </g>
             )}
-            {!scenic &&
-              arena.environment?.structures.map((s) => {
+            {arena.environment?.structures
+              .filter((s) => !scenic || blocker?.id === s.id)
+              .map((s) => {
                 const r = s.rect;
                 return (
                   <g key={s.id} pointerEvents="none">
@@ -1024,9 +1024,9 @@ export function CombatBoard({
                           { x: r.x, y: r.y + r.height },
                         ].map(project),
                       )}
-                      fill="#25323d"
-                      stroke="#7e8d8c"
-                      strokeWidth="2"
+                      fill={scenic ? "transparent" : "#25323d"}
+                      stroke={blocker?.id === s.id ? "#ffbc70" : "#7e8d8c"}
+                      strokeWidth={blocker?.id === s.id ? "3" : "2"}
                     />
                     <title>{s.label} · permanent structure</title>
                   </g>

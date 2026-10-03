@@ -1,6 +1,6 @@
 /** World-building art from the same resolved parcels that constrain play. */
 import type Phaser from "phaser";
-import type { Arena, Point, Rect, SceneStructure } from "@/engine";
+import type { Arena, Point, Rect, SceneStructure, SceneEnvironment } from "@/engine";
 
 type Project = (p: Point) => Point;
 function painter(ctx: CanvasRenderingContext2D, project: Project) {
@@ -66,8 +66,18 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
       for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "#79817b", 1.5);
     }
     if (z.kind === "crosswalk") {
-      for (let x = z.rect.x + 0.3; x < z.rect.x + z.rect.width; x += 1)
-        rect({ x, y: z.rect.y + 0.2, width: 0.45, height: z.rect.height - 0.4 }, "#aaa99a");
+      const horizontal = z.axis === "x";
+      const length = horizontal ? z.rect.width : z.rect.height;
+      for (let t = 0.3; t < length; t += 1)
+        rect(
+          {
+            x: z.rect.x + (horizontal ? t : 0.2),
+            y: z.rect.y + (horizontal ? 0.2 : t),
+            width: horizontal ? 0.45 : z.rect.width - 0.4,
+            height: horizontal ? z.rect.height - 0.4 : 0.45,
+          },
+          "#aaa99a",
+        );
     }
   }
   // Lane paint belongs to the saved roads, interrupted at crossings and junctions.
@@ -92,6 +102,17 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
         continue;
       rect({ ...p, width: vertical ? 0.08 : 1.4, height: vertical ? 1.4 : 0.08 }, "#b2a270");
     }
+  }
+  // Approaches are reserved geometry, not decorative doors placed behind crates.
+  for (const e of env.entrances ?? []) {
+    const p = e.position;
+    rect({ x: p.x - 0.8, y: p.y - 0.8, width: 1.6, height: 1.6 }, "#57625e", "#b5a779");
+    const structure = env.structures.find((s) => s.id === e.structureId)!;
+    const wall = {
+      x: Math.max(structure.rect.x, Math.min(p.x, structure.rect.x + structure.rect.width)),
+      y: Math.max(structure.rect.y, Math.min(p.y, structure.rect.y + structure.rect.height)),
+    };
+    line(project(p), project(wall), "#d0ba7f", 2);
   }
   let seed = env.seed + 417;
   const random = () => {
@@ -126,16 +147,27 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
   }
 }
 
-function paintBuilding(ctx: CanvasRenderingContext2D, structure: SceneStructure, project: Project) {
+function paintBuilding(
+  ctx: CanvasRenderingContext2D,
+  structure: SceneStructure,
+  project: Project,
+  entrances: SceneEnvironment["entrances"],
+) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
   const h = structure.height * 15;
   const base = corners(r),
     top = corners(r, h);
+  const palette =
+    structure.style === "shop"
+      ? ["#49474a", "#333941", "#646360"]
+      : structure.style === "workshop"
+        ? ["#4b4940", "#353b3b", "#686356"]
+        : ["#3e4a50", "#2c3942", "#56656b"];
   // Two camera-facing walls; windows, shutters, conduits, lintels share their planes.
-  poly([base[0]!, base[1]!, top[1]!, top[0]!], "#343b42", "#111c25");
-  poly([base[1]!, base[2]!, top[2]!, top[1]!], "#252e38", "#111c25");
-  const face = (a: Point, b: Point, length: number, shade: string) => {
+  poly([base[0]!, base[1]!, top[1]!, top[0]!], palette[0]!, "#111c25");
+  poly([base[1]!, base[2]!, top[2]!, top[1]!], palette[1]!, "#111c25");
+  const face = (a: Point, b: Point, length: number, shade: string, edge: "north" | "east") => {
     const at = (t: number, z: number) => ({
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t - z,
@@ -155,9 +187,19 @@ function paintBuilding(ctx: CanvasRenderingContext2D, structure: SceneStructure,
       }
     }
     // Shop/service doors at ground level, visually shut and mechanically solid.
-    for (let i = 1; i < length - 1; i += 4) {
-      const x = i / length,
-        w = 2.3 / length;
+    const doors =
+      entrances === undefined
+        ? Array.from({ length: Math.max(0, Math.floor((length - 2) / 4)) }, (_, i) => 2 + i * 4)
+        : entrances
+            .filter(
+              (e) =>
+                e.structureId === structure.id &&
+                (edge === "north" ? e.position.y === r.y - 1 : e.position.x === r.x + r.width + 1),
+            )
+            .map((e) => (edge === "north" ? e.position.x - r.x : e.position.y - r.y));
+    for (const centre of doors) {
+      const x = (centre - 0.8) / length,
+        w = 1.6 / length;
       poly([at(x, 1), at(x + w, 1), at(x + w, 22), at(x, 22)], "#172329", "#626761");
       for (let z = 3; z < 20; z += 3) line(at(x, z), at(x + w, z), "#39464a", 1);
       const colour = structure.style === "shop" ? "#68b8ae" : "#bc925e";
@@ -176,9 +218,9 @@ function paintBuilding(ctx: CanvasRenderingContext2D, structure: SceneStructure,
       line(at(t + 0.007, 0), at(t + 0.007, h), "#66706c", 0.8);
     }
   };
-  face(base[0]!, base[1]!, r.width, "#515658");
-  face(base[1]!, base[2]!, r.height, "#353d42");
-  poly(top, "#495052", "#6c716b");
+  face(base[0]!, base[1]!, r.width, "#515658", "north");
+  face(base[1]!, base[2]!, r.height, "#353d42", "east");
+  poly(top, palette[2]!, "#6c716b");
   // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
   for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
   for (let t = 0.15; t < 1; t += 0.18)
@@ -268,7 +310,11 @@ export function createComposedEnvironment(
   };
   for (const s of arena.environment!.structures) {
     const depth = project({ x: s.rect.x + s.rect.width, y: s.rect.y }).y;
-    add(`structure-${s.id}`, (ctx) => paintBuilding(ctx, s, project), depth);
+    add(
+      `structure-${s.id}`,
+      (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances),
+      depth,
+    );
   }
   for (const d of arena.environment!.dressing) {
     if (d.kind === "litter" || d.kind === "drain") continue;

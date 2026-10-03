@@ -117,7 +117,10 @@ render them from `arena.environment`, never infer them from a fixture key. Use
 `shotObstacles` for visibility that includes permanent structures; `coverBlocking`
 returns only attackable cover. Static structures have no HP. The outer persistent
 scene manifest/lifecycle remain v1. Legacy layouts continue to load unchanged.
-See `docs/scene-composition.md` for the opt-in harness and migration.
+Recipe v2 adds saved exterior entrances and three spatial variants per recipe.
+`/scene-review` uses the shipping renderer and engine readers with static fixtures;
+it must not become a separate combat loop. See `docs/scene-composition.md` for
+the opt-in harness and acceptance evidence.
 
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says
@@ -364,6 +367,7 @@ Public routes:
 - `/`
 - `/login`
 - `/style`
+- `/scene-review` — static composition/targeting review; no auth data or campaign writes
 - `/api/generate-portrait` (server HTTP route)
 
 Routes under `src/routes/_authenticated/` require a Supabase user session:

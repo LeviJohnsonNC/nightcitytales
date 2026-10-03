@@ -1,3 +1,4 @@
+import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment } from "./composedEnvironment";
 import { battlefieldFor } from "@/engine";
 import { scenicTheme, STREET_PROPS, civilianCell } from "./scenicPresentation";
@@ -265,12 +266,8 @@ export function createCourtyard(
       }
       for (const prop of [...scenery, ...structures]) {
         if (prop.getData("destroyed")) continue;
-        const obstructs = [...units.values()].some(
-          ({ container: unit }) =>
-            unit.visible &&
-            unit.y < prop.depth &&
-            unit.y > prop.y - prop.displayHeight &&
-            Math.abs(unit.x - prop.x) < prop.displayWidth * 0.5,
+        const obstructs = [...units.values()].some(({ container: unit }) =>
+          sceneryOccludes(prop, unit, composed ? 48 : street ? 58 : 88),
         );
         prop.setAlpha(obstructs ? 0.4 : 1);
       }

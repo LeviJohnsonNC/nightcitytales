@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as SceneReviewRouteImport } from './routes/scene-review'
 import { Route as StyleRouteImport } from './routes/style'
 import { Route as AuthenticatedCombatRouteImport } from './routes/_authenticated/combat'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
@@ -32,6 +33,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SceneReviewRoute = SceneReviewRouteImport.update({
+  id: '/scene-review',
+  path: '/scene-review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StyleRoute = StyleRouteImport.update({
@@ -74,6 +80,7 @@ const AuthenticatedPlayIdRoute = AuthenticatedPlayIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/scene-review': typeof SceneReviewRoute
   '/style': typeof StyleRoute
   '/combat': typeof AuthenticatedCombatRoute
   '/create': typeof AuthenticatedCreateRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/scene-review': typeof SceneReviewRoute
   '/style': typeof StyleRoute
   '/combat': typeof AuthenticatedCombatRoute
   '/create': typeof AuthenticatedCreateRoute
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/scene-review': typeof SceneReviewRoute
   '/style': typeof StyleRoute
   '/_authenticated/combat': typeof AuthenticatedCombatRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/scene-review'
     | '/style'
     | '/combat'
     | '/create'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/scene-review'
     | '/style'
     | '/combat'
     | '/create'
@@ -134,6 +145,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/scene-review'
     | '/style'
     | '/_authenticated/combat'
     | '/_authenticated/create'
@@ -147,6 +159,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
+  SceneReviewRoute: typeof SceneReviewRoute
   StyleRoute: typeof StyleRoute
   ApiGeneratePortraitRoute: typeof ApiGeneratePortraitRoute
 }
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scene-review': {
+      id: '/scene-review'
+      path: '/scene-review'
+      fullPath: '/scene-review'
+      preLoaderRoute: typeof SceneReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/style': {
@@ -249,6 +269,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
+  SceneReviewRoute: SceneReviewRoute,
   StyleRoute: StyleRoute,
   ApiGeneratePortraitRoute: ApiGeneratePortraitRoute,
 }

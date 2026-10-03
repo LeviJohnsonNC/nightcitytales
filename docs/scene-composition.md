@@ -6,9 +6,16 @@ proofs. It does **not** yet generate a battlefield from arbitrary adventure pros
 
 ## Try it
 
-Apply **20261003010000_composed_battlefield_snapshots.sql**, or its Drizzle
-counterpart **0008_composed_battlefield_snapshots** (one deployment path, not both).
-Then deploy the application.
+The composed-snapshot SQL was confirmed applied by Levi on October 3, 2026.
+This follow-up requires **no additional SQL**. Deploy the application after merging.
+
+Open `/scene-review` first: it needs no login and writes no campaign state.
+Review both places and variations 1–3 without characters, then enable characters
+for targeting, entrance positions, diagram view, zoom and cover damage. Save
+review, refresh, and Load review restores the frozen layout, positions and damage
+in this browser. This is a visual review, not a separate combat simulator.
+
+For the deployed campaign smoke test:
 
 1. Start a campaign with a test character. Its current weapons, ammo and wounds
    carry into the fixture; this writes real campaign state.
@@ -18,7 +25,7 @@ Then deploy the application.
    in Life. Type **draw my pistol and shoot at the rifleman**, or use the combat
    entry action. Initiative still determines when that request can happen.
 4. Finish combat and confirm the return to the adventure and saved aftermath.
-5. Use variation 2 or a fresh campaign for another fight. Revisiting the same
+5. Use another variation or a fresh campaign for another fight. Revisiting the same
    location/anchor deliberately loads its existing state; it does not reset it.
 
 The old Ulysses Street fixture remains available for compatibility. Existing
@@ -30,20 +37,25 @@ The new layouts are opt-in harness fixtures, not a replacement for every encount
 These are captures of the shipping combat renderer with local fixture data,
 not concept art. Tactical commands and persistence are verified separately.
 
-![Composed intersection](scene-composition/intersection.webp)
+| Variation | Intersection                                             | Service alley                                             |
+| --------- | -------------------------------------------------------- | --------------------------------------------------------- |
+| 1         | ![Corner](scene-composition/intersection-1.jpg)          | ![Service court](scene-composition/alley-1.jpg)           |
+| 2         | ![Offset crossing](scene-composition/intersection-2.jpg) | ![Narrow passage](scene-composition/alley-2.jpg)          |
+| 3         | ![Cross-axis](scene-composition/intersection-3.jpg)      | ![Wide cross-axis passage](scene-composition/alley-3.jpg) |
 
-![Composed service alley](scene-composition/alley.webp)
+![Targeting at 390 CSS pixels wide](scene-composition/mobile-targeting.jpg)
 
 ## Architecture
 
 `sceneComposer.ts` composes recipe parcels and structural masses, reserves
-crossings and actor slots, then fits coherent clusters to legal zones. Required
+crossings, exterior entrances and actor slots, then fits coherent clusters to legal zones. Required
 story clusters fail explicitly if they cannot fit; optional clusters can be
 omitted. No free-cell scatter, model call, or runtime image generation is involved.
 
 - Recipes own spatial organization: a crossing and corner parcels versus an
-  enclosed service passage. Their topology is authored; seeds currently vary
-  optional service contents and building heights, not entire street networks.
+  enclosed service passage. Recipe v2 selects three authored
+  spatial variants: crossing offsets, passage widths, service-court recesses and
+  exchanged axes, plus optional contents and building heights.
 - Cluster definitions own relative arrangements and allowed zone kinds. Parking
   follows the curb axis; a vendor includes stools, supplies, a sign and litter;
   service and loading clusters follow building frontages. Horizontal frontages
@@ -120,8 +132,31 @@ pass. Code lint has zero errors and 12 existing Fast Refresh warnings. The focus
 composition/sight/Life-model suite passes all 28 tests. No SQL changed during this
 recovery. SQL replay was not rerun here because PostgreSQL is unavailable; the
 SQL checks and rendered captures above are evidence recorded by the prior commit,
-not new authenticated end-to-end verification. The migration remains pending,
-and a deployed playthrough is still required before calling this rolled out.
+not new authenticated end-to-end verification. The migration was subsequently
+confirmed applied by Levi; a deployed playthrough is still the rollout gate.
+
+## Completion acceptance — October 3, 2026
+
+| Requirement                                  | Evidence                                                                                                                                                                                                                     |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Believable places without characters         | Six browser captures above; `/scene-review` defaults to scenery only. Procedural facades remain an art-polish limit.                                                                                                         |
+| Contextual cars, vendors and service objects | 32 seeds per recipe check allowed zones, curb axes, crossing clearance and required actor/prop relationships.                                                                                                                |
+| Routes, entrances and art/blocking agreement | Reserved exterior approach tiles are validated for adjacency, occupancy and connectivity. Doors and approach paint read those same saved positions; art bindings read canonical cover.                                       |
+| Rotation and destruction                     | Regression tests destroy cabin and engine independently in both axes, preserving their material HP and art anchors. Browser check confirms destroyed cover changes the shot from blocked to clear.                           |
+| Readable actors and targeting                | Shared silhouette-aware fading, permanent-wall targeting outline, and diagram fallback. Desktop and 390px mobile review verifies target selection, readout and zoom.                                                         |
+| Identical save/reload                        | All six layouts and alternate entrance poses round-trip geometry, positions and damage through production readers. Browser Save → refresh → Load verified. A historical recipe-v1 snapshot from `7eff747` remains unchanged. |
+| No per-location renderer branch              | Composition renders from saved environment data; a regression changes the arena key and still selects the shared renderer.                                                                                                   |
+
+Fresh suite: **3,426 tests across 251 files**, TypeScript and production build pass;
+code lint has zero errors and 12 existing Fast Refresh warnings. The browser
+review uses local static data, not an authenticated database round trip. CI's SQL
+replay remains the database regression gate. The final deployed smoke test is:
+enter a composed scene with a test campaign, move and damage cover, refresh and
+compare positions/damage, finish combat, then verify its durable aftermath.
+
+The Phase 1 implementation and local acceptance proof are complete. Deployment
+acceptance remains open until that campaign smoke test passes. This does not
+claim final artwork parity, automatic prose interpretation, or city-wide rollout.
 
 ## Remaining work
 
@@ -131,8 +166,8 @@ painterly facade/material kit, broader prop facings, and more frontage clusters
 are the next visual pass. The reference image remains the density/style target,
 not a claim of visual parity.
 
-Before wider rollout: vary parcel topology and cluster candidate anchors, add
-interior recipes, accept structured adventure facts and actor relationships,
+After this bounded proof: expand candidate anchors, add interior recipes,
+accept structured adventure facts and actor relationships,
 and playtest cover density and starting ranges. No AI scene interpretation,
 automatic city-wide replacement, destructible buildings, multilevel combat,
 retreat animation, or civilian population simulation is included here.

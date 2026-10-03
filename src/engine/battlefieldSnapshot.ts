@@ -1,7 +1,7 @@
 import { readSceneEnvironment } from "./sceneEnvironment";
 /** Frozen geometry for a fight. Unknown versions fail closed; legacy rows use their arena key. */
 import { arenaFor, rectContains, type Arena, type Point } from "./battlefield";
-import { blockedTiles, tileKey, tileOf } from "./grid";
+import { blockedTiles, reachableTiles, tileKey, tileOf } from "./grid";
 import { coverMaxHp, COVER_MATERIAL_KEYS, type CoverDamage } from "./cover";
 
 export type BattlefieldSnapshot = { version: 1 | 2; arena: Arena };
@@ -97,6 +97,16 @@ export function readBattlefieldSnapshot(value: unknown): BattlefieldSnapshot {
       )
     )
       throw new Error("Battlefield spawn is inside an obstacle.");
+  }
+  if (arena.environment?.entrances?.length) {
+    const reachable = reachableTiles({
+      arena,
+      cover: {},
+      from: tileOf(arena, arena.playerStart),
+      allowance: 10000,
+    });
+    if (arena.environment.entrances.some((e) => !reachable.has(tileKey(tileOf(arena, e.position)))))
+      throw new Error("Battlefield entrance is unreachable.");
   }
   return { version: raw["version"], arena };
 }
