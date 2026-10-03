@@ -89,7 +89,7 @@ import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
 import { CityTurns } from "./CityTurns";
 import { SceneHero } from "./SceneHero";
-import type { TurnContext } from "./cityTurns";
+import type { TurnContext } from "./cityTurnModel";
 import { hauntPeople } from "./lifeModel";
 import { placeHistory } from "@/features/campaign/placeState";
 import { ShopSheet } from "./ShopSheet";

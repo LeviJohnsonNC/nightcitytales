@@ -1,7 +1,7 @@
 /**
  * The wait.
  *
- * Shown while a Life turn is with the model. The line comes from `cityTurns.ts`
+ * Shown while a Life turn is with the model. The line comes from `cityTurnModel.ts`
  * — picked per turn from where and when the character is — and the motion is in
  * `life.css`: a light sweep through the glyphs, a pulsing signal glyph, and a
  * hairline travelling under it. Nothing here spins, and nothing says "loading".
@@ -10,7 +10,7 @@
  * re-render mid-wait cannot swap the sentence out from under the player.
  */
 import "./life.css";
-import { turnLine, type TurnContext, type TurnHue } from "./cityTurns";
+import { turnLine, type TurnContext, type TurnHue } from "./cityTurnModel";
 
 /** The palette each hue draws from: the lit colour, and the same colour resting. */
 const HUES: Record<TurnHue, { hue: string; dim: string }> = {

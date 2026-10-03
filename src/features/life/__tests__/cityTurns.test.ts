@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TURN_LINE_POOL, turnLine, type TurnContext } from "../cityTurns";
+import { TURN_LINE_POOL, turnLine, type TurnContext } from "../cityTurnModel";
 
 const EVENING: TurnContext = {
   dayPart: "evening",

@@ -276,10 +276,13 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     const z = env.zones.find((z) => z.id === slot.zone)!;
     if (!definition.zones.includes(z.kind)) throw new Error(`Illegal cluster zone: ${slot.id}`);
     // Optional service clusters change contents; the required story facts always win.
-    const variant =
+    const variantKind =
       !slot.required && random() > 0.5 && ["service", "loading"].includes(slot.kind)
-        ? CLUSTERS[slot.kind === "service" ? "loading" : "service"]!
-        : definition;
+        ? slot.kind === "service"
+          ? "loading"
+          : "service"
+        : slot.kind;
+    const variant = CLUSTERS[variantKind]!;
     const entries = variant.members.flatMap((m) => {
       const prop = battlefieldProp(m.key);
       if (!prop) throw new Error(`Missing composition prop ${m.key}`);
@@ -309,7 +312,7 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
       if (slot.required) throw new Error(`Required cluster cannot fit: ${slot.id}`);
       continue;
     }
-    env.clusters.push({ id: slot.id, kind: slot.kind, zoneId: z.id, reason: variant.reason });
+    env.clusters.push({ id: slot.id, kind: variantKind, zoneId: z.id, reason: variant.reason });
     for (const { piece, art, rotation } of entries) {
       arena.cover!.push(piece);
       env.props.push({ coverId: piece.id, art, rotation, clusterId: slot.id });
