@@ -300,7 +300,7 @@ export function composeInterior(
   const slots: Slot[] = [];
   for (const room of rooms) {
     if (["corridor", "dance"].includes(room.kind)) continue;
-    const cluster =
+    let cluster =
       room.kind === "storage"
         ? "racking"
         : room.kind === "workbay"
@@ -326,6 +326,11 @@ export function composeInterior(
                         : kind === "nightclub"
                           ? "seating"
                           : "reception";
+    if (kind === "office") {
+      if (room.id === "work") cluster = "work_pod";
+      else if (room.kind === "meeting" && room.rect.width * room.rect.height >= 60)
+        cluster = "meeting_support";
+    }
     const r = room.rect;
     // Bounded frontage candidates, ordered reproducibly; never free-cell scatter.
     const candidates: Point[] = [];
@@ -337,6 +342,14 @@ export function composeInterior(
       candidates.length = 0;
       for (let y = r.y + 2; y < r.y + r.height - 2; y += 6)
         for (let x = r.x + 2; x < r.x + r.width - 2; x += 4) candidates.push({ x, y });
+    }
+    if (cluster === "work_pod") {
+      candidates.length = 0;
+      // Fit complete pods, including their shared aisle; no single-desk fallback.
+      // Prefer an inset row, then try room-edge rows around protected approaches.
+      for (const y of [r.y + 2, ...Array.from({ length: r.height / 2 }, (_, i) => r.y + i * 2)])
+        for (let x = r.x; x < r.x + r.width; x += 2)
+          if (!candidates.some((p) => p.x === x && p.y === y)) candidates.push({ x, y });
     }
     if (["racking", "vehicle_bay"].includes(cluster)) {
       candidates.length = 0;
@@ -351,21 +364,24 @@ export function composeInterior(
     if (cluster === "workstation" && !candidates.length)
       for (let y = r.y; y < r.y + r.height; y += 2)
         for (let x = r.x; x < r.x + r.width; x += 2) candidates.push({ x, y });
-    const count = ["racking", "vehicle_bay"].includes(cluster)
-      ? 12
-      : cluster === "freight"
-        ? 3
-        : cluster === "workbench"
-          ? 2
-          : cluster === "workstation"
-            ? 12
-            : cluster === "booth"
-              ? 4
-              : cluster === "seating"
-                ? 3
-                : cluster === "server"
-                  ? 2
-                  : 1;
+    const count =
+      cluster === "work_pod"
+        ? Math.floor((r.width * r.height) / 32)
+        : ["racking", "vehicle_bay"].includes(cluster)
+          ? 12
+          : cluster === "freight"
+            ? 3
+            : cluster === "workbench"
+              ? 2
+              : cluster === "workstation"
+                ? 12
+                : cluster === "booth"
+                  ? 4
+                  : cluster === "seating"
+                    ? 3
+                    : cluster === "server"
+                      ? 2
+                      : 1;
     for (let i = 0; i < count; i++)
       slots.push({
         id: `${room.id}_${i}`,
@@ -402,7 +418,9 @@ export function composeInterior(
     for (const room of rooms) {
       const families =
         room.kind === "workspace"
-          ? ["storage_cabinet", "garden", "workstation"]
+          ? kind === "office" && room.id === "work"
+            ? ["garden"]
+            : ["storage_cabinet", "garden", "workstation"]
           : room.kind === "meeting"
             ? ["seating", "storage_cabinet", "garden"]
             : room.kind === "reception"

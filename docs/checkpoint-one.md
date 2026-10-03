@@ -1,8 +1,12 @@
 # Checkpoint 1 closure: structure and circulation
 
 Scope: finish the Office/intersection foundation. No new prop types, activity recipes,
-art assets, combat systems, SQL or walkable upper floors. Await the owner's final visual
-approval; do not begin checkpoint 2 as part of this change.
+art assets, combat systems, SQL or walkable upper floors.
+
+**Complete — owner approved on 2026-10-03.** Scale, corner identity, office entrance
+hierarchy, thresholds, pedestrian routes, continuation and furnished preservation
+passed review. The final lineup includes the distinct square open-core Office 3
+shown below. Checkpoint 2 now proceeds from this approved baseline.
 
 ## Structural changes
 

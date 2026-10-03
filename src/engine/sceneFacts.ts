@@ -38,12 +38,12 @@ export type SceneFacts = {
 };
 export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string[]> = {
   vehicle: ["parking", "driveway", "vehicle_bay"],
-  vendor: ["vendor"],
-  freight: ["loading", "freight"],
-  utilities: ["service"],
-  workstation: ["workstation"],
+  vendor: ["vendor", "vendor_stall"],
+  freight: ["loading", "freight", "workshop_delivery"],
+  utilities: ["service", "workshop_service"],
+  workstation: ["workstation", "work_pod"],
   reception: ["reception"],
-  meeting: ["meeting"],
+  meeting: ["meeting", "meeting_support"],
   seating: ["booth", "seating"],
   bar: ["bar"],
   server: ["server"],

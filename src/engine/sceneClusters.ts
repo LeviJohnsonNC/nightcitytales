@@ -25,6 +25,76 @@ export type ClusterDefinition = {
 };
 /** Offsets describe relationships inside a cluster, never arbitrary world positions. */
 export const CLUSTERS: Record<string, ClusterDefinition> = {
+  work_pod: {
+    zones: ["workspace"],
+    reason: "Two workstations share local filing and a continuous working aisle",
+    members: [
+      { key: "office_desk", id: "desk_left", x: 0, y: 0, art: ["desk"] },
+      { key: "office_desk", id: "desk_right", x: 2, y: 0, art: ["desk"] },
+      { key: "office_storage", id: "filing", x: 4, y: 0, art: ["cabinet"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Work pod seating aisle" },
+      { x: 3, y: 3, label: "Work pod seating aisle" },
+      { x: 5, y: 3, label: "Shared filing access" },
+    ],
+  },
+  meeting_support: {
+    zones: ["meeting"],
+    reason: "Conference table and adjacent meeting storage share clear seating approaches",
+    members: [
+      { key: "meeting_table", id: "table", x: 0, y: 0, art: ["meeting-table", "meeting-table"] },
+      { key: "office_storage", id: "cabinet", x: 0, y: 2, art: ["cabinet"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: -1, label: "Meeting seating access" },
+      { x: 3, y: 3, label: "Meeting seating and storage access" },
+    ],
+  },
+  vendor_stall: {
+    zones: ["sidewalk"],
+    reason:
+      "A shopfront food cart keeps its stock behind it and customer space beside the public route",
+    members: [
+      { key: "food_cart", id: "cart", x: 0, y: 0, art: ["food-cart"] },
+      { key: "freight_crate", id: "stock", x: 0, y: -2, art: ["cargo"] },
+    ],
+    dressing: [
+      { kind: "sign", x: 0.4, y: 2.7 },
+      { kind: "litter", x: 0.6, y: 3.2 },
+    ],
+    access: [{ x: 1, y: 3, label: "Food stall customer space" }],
+  },
+  workshop_delivery: {
+    zones: ["loading"],
+    reason: "Delivered stock lines the workshop wall beside a reserved handling aisle",
+    members: [
+      { key: "freight_crate", id: "crate", x: 0, y: 0, art: ["cargo"] },
+      { key: "freight_pallet", id: "pallet", x: 0, y: 4, art: ["pallet"] },
+    ],
+    dressing: [{ kind: "sign", x: 0.3, y: 2.6 }],
+    access: [
+      { x: 3, y: 1, label: "Workshop freight handling" },
+      { x: 3, y: 3, label: "Workshop freight handling" },
+      { x: 3, y: 5, label: "Workshop freight handling" },
+    ],
+  },
+  workshop_service: {
+    zones: ["loading"],
+    reason: "Waste collection and power equipment share a workshop maintenance aisle",
+    members: [
+      { key: "service_dumpster", id: "bin", x: 0, y: 0, art: ["dumpster"] },
+      { key: "service_generator", id: "power", x: 0, y: 4, art: ["generator"] },
+    ],
+    dressing: [{ kind: "sign", x: 0.3, y: 2.6 }],
+    access: [
+      { x: 3, y: 1, label: "Workshop maintenance access" },
+      { x: 3, y: 3, label: "Workshop maintenance access" },
+      { x: 3, y: 5, label: "Workshop maintenance access" },
+    ],
+  },
   racking: {
     zones: ["storage"],
     reason: "Stocked shelving forms regular rack aisles with picking access",
@@ -381,7 +451,18 @@ export function placeSceneClusters(
     const { at, entries, access } = placement;
     for (const [i, a] of access.entries()) {
       reserved.push(rect(a.position.x - 1, a.position.y - 1, 2, 2));
-      env.interior?.access.push({ id: `${slot.id}_access_${i}`, zoneId: z.id, ...a });
+      if (env.interior) {
+        env.interior.access.push({ id: `${slot.id}_access_${i}`, zoneId: z.id, ...a });
+      } else {
+        // Outdoor working space must survive save/reload and later context
+        // substitutions, just as indoor access anchors do.
+        env.zones.push({
+          id: `${slot.id}_access_${i}`,
+          kind: "aisle",
+          rect: rect(a.position.x - 1, a.position.y - 1, 2, 2),
+          axis: z.axis,
+        });
+      }
     }
     env.clusters.push({ id: slot.id, kind: variantKind, zoneId: z.id, reason: variant.reason });
     for (const { piece, art, rotation } of entries) {
