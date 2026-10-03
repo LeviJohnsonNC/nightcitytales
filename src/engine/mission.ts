@@ -48,6 +48,8 @@ export type BeatExit = {
 export type BeatObjective = { key: string; text: string };
 
 export type Beat = {
+  /** Public, coordinate-free composition facts. Never put concealed truths here. */
+  scene?: import("./sceneFacts").SceneFacts;
   id: string;
   type: BeatType;
   title: string;

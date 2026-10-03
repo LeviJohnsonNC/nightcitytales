@@ -1,4 +1,4 @@
-import { trySceneAttack } from "@/features/scenes/sceneOps";
+import { loadCurrentScene, trySceneAttack } from "@/features/scenes/sceneOps";
 import {
   commitDeathSave as commitCombatDeathSave,
   finishCombatAction,
@@ -49,6 +49,7 @@ import { rollPendingCheck } from "./rollCheck";
  */
 import {
   DEDUCTION_SKILL,
+  composeAdventureScene,
   DEFAULT_START,
   FACEDOWN_CHECK_ID,
   LEDGER_EVENTS,
@@ -192,7 +193,8 @@ import {
   type CheckRoll,
   type PendingCheck,
 } from "./checkPrompt";
-import { beginEncounter, movePlayer } from "./combatFlow";
+import { movePlayer } from "./combatFlow";
+import { beginAdventureEncounter } from "@/features/scenes/adventureEncounter";
 import { type PendingDeathSave } from "./deathSavePrompt";
 import { spendTurn } from "./encounterModel";
 import {
@@ -422,7 +424,18 @@ export async function narrate(
 
   const jobPosition = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
   const jobDistrict = jobPosition ? getDistrict(jobPosition.districtKey) : undefined;
+  const savedScene = await loadCurrentScene(campaignId);
+  const sceneIdentity = JSON.stringify([campaignId, bundle.mission.id, beatId]);
   const context = buildGmContext({
+    ...(savedScene?.scene.anchor === `adventure-v1:${sceneIdentity}` && savedScene.scene.context
+      ? {
+          savedScene: {
+            facts: savedScene.scene.context.facts,
+            status: savedScene.status,
+            summary: savedScene.summary,
+          },
+        }
+      : {}),
     // Once this beat has been narrated, the scene was set on that turn, and
     // every turn after it is mid-scene.
     ...(needsOpeningScene(bundle) ? {} : { sceneSet: true }),
@@ -540,6 +553,23 @@ export async function narrate(
 
   const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
 
+  if (
+    !options.fixedResult &&
+    !bundle.encounter &&
+    savedScene?.scene.anchor !== `adventure-v1:${sceneIdentity}`
+  ) {
+    for (const action of gm.proposedActions)
+      if (action.kind === "start_encounter") {
+        composeAdventureScene({
+          identity: sceneIdentity,
+          locationKey: bundle.campaign.location_key ?? DEFAULT_START,
+          name: action.name,
+          arena: action.arena,
+          facts: bundle.beat.scene ?? action.scene,
+          enemies: action.enemies,
+        });
+      }
+  }
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "gm_narration",
@@ -822,11 +852,14 @@ export async function narrate(
           : undefined;
       // A Solo brings their Combat Awareness division into the fight with them.
       const roleEffects = combatRoleEffects(bundle.campaign, bundle.character);
-      const opened = await beginEncounter({
+      const opened = await beginAdventureEncounter({
         campaignId,
         characterId: bundle.campaign.character_id,
         beatId,
         name: action.name,
+        locationKey: bundle.campaign.location_key ?? DEFAULT_START,
+        missionId: bundle.mission.id,
+        sceneFacts: bundle.beat.scene ?? action.scene,
         character: bundle.character,
         vitals: bundle.vitals,
         inventory: kit,

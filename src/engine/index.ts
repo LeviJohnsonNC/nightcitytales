@@ -104,3 +104,6 @@ export * from "./sceneAttackIntent";
 
 export * from "./sceneEnvironment";
 export * from "./sceneComposer";
+
+export * from "./sceneFacts";
+export * from "./adventureScene";

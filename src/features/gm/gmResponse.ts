@@ -4,8 +4,11 @@
  * resolves proposedActions; nothing here changes state on its own.
  */
 import { z } from "zod";
+import { SCENE_FACTS_PROMPT } from "./sceneFactsPrompt";
 import {
   COMBAT_GOALS,
+  readSceneFacts,
+  type SceneFacts,
   clampDispositionDelta,
   DEFAULT_ARENA_KEY,
   combatGoalFor,
@@ -88,6 +91,17 @@ export const GmProposedActionSchema = z.discriminatedUnion("kind", [
   }),
   z.object({
     kind: z.literal("start_encounter"),
+    scene: z
+      .custom<SceneFacts>((v) => {
+        try {
+          readSceneFacts(v);
+          return true;
+        } catch {
+          return false;
+        }
+      })
+      .transform(readSceneFacts)
+      .optional(),
     name: z.string(),
     enemies: z.array(GmEnemySchema),
     /** WHERE the fight is, from the engine's closed list. Never a distance. */
@@ -198,7 +212,8 @@ export const GmWireResponseSchema = z.object({
   proposedActions: z
     .array(z.unknown())
     .describe(
-      'Mechanical actions for the engine to resolve. Each item is an object with a "kind" field ' +
+      SCENE_FACTS_PROMPT +
+        '\nMechanical actions for the engine to resolve. Each item is an object with a "kind" field ' +
         "and the fields that kind needs: " +
         '{"kind":"skill_check","skillId":"<id from the SKILLS list>","dv":<number>,"intent":"<what they are attempting>"}; ' +
         '{"kind":"opposed_check","skillId":"<id from the SKILLS list>","npcKey":"<stable key>","npcName":"<who resists>","opposingSkillId":"<printed skill id they resist with>","opposingSkillLevel":<0-10>,"opposingStatValue":<1-10>,"intent":"<what they are attempting>"}; ' +
@@ -519,6 +534,7 @@ export function normalizeGmResponse(
         proposedActions.push({
           kind: "start_encounter",
           name: str(a["name"]) ?? "Firefight",
+          ...(a["scene"] == null ? {} : { scene: readSceneFacts(a["scene"]) }),
           // An arena the engine does not know falls back to open ground rather
           // than letting an invented place through as a real one.
           arena: isArenaKey(named) ? named : DEFAULT_ARENA_KEY,

@@ -72,6 +72,9 @@ export async function trySceneAttack(campaignId: string, input: string): Promise
   if (!request) return false;
   const saved = await loadCurrentScene(campaignId);
   if (!saved) return false;
+  // Adventure scenes are scoped to their beat; the Job route resolves that identity.
+  // The latest completed fight at a location must not block a later beat there.
+  if (saved.scene.template === "adventure-composition") return false;
   if (saved.status === "resolved")
     throw new Error(
       "This scene’s fight is finished. Starting another fight here is not supported yet.",

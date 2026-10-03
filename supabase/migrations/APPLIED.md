@@ -132,3 +132,7 @@ these tables must tolerate their absence until the line moves up to Applied.
   the application has ever written `won`, so until this runs the only difference
   is that the database would still accept a value the app cannot produce. No
   code depends on it having run.
+
+- `20261003160000_adventure_scene_context.sql` — pending deployment. Adds guarded
+  Job-scene staging and entry RPCs. Apply before deploying Phase 3; old servers
+  refuse automatic composition rather than silently dropping its facts.

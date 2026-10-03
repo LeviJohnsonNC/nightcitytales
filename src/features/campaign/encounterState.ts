@@ -145,6 +145,12 @@ export async function createLiveEncounter(input: {
       missionId: full.campaign.current_mission_id,
     };
     if (input.sceneSource) payload.scene_source = input.sceneSource;
+    if (
+      input.sceneRef &&
+      input.beatId &&
+      (input.sceneSource as { template?: string } | undefined)?.template === "adventure-composition"
+    )
+      payload.adventure_beat = input.beatId;
     if (input.sceneRef) payload.scene_ref = input.sceneRef;
     if (input.initiatingIntent) payload.initiating_intent = input.initiatingIntent;
   }

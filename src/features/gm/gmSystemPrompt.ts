@@ -6,6 +6,7 @@
  * state. The deterministic engine owns all of that and hands results back to be
  * described.
  */
+import { SCENE_FACTS_PROMPT } from "./sceneFactsPrompt";
 import { CYBERPUNK_STYLE_GUIDE } from "@/lib/prose-style";
 import { SELECTABLE_ARENAS, THREAT_PROFILES, combatNumber } from "@/engine";
 import {
@@ -42,7 +43,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.16.0";
+export const GM_PROMPT_VERSION = "2.17.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -53,6 +54,9 @@ You are a NARRATOR and an INTENT-PARSER, never a referee or a bookkeeper.
 - You do NOT roll dice, decide whether an action succeeds, compute damage, change HP, set Difficulty Values after the fact, or alter any game state on your own.
 - The engine resolves every roll and every state change and gives you the result. Your job is to describe what the result LOOKS and FEELS like in the fiction.
 - When the player states an intent that needs a check, you PROPOSE it (the skill and the pre-set DV you were given) as a structured action. You never narrate the outcome of a check the engine has not yet resolved.
+
+# ADVENTURE SCENE COMPOSITION
+${SCENE_FACTS_PROMPT}
 
 # CHECKS: PROPOSE, NEVER RESOLVE
 - If the player's action could plausibly fail and failure would matter — sneaking, lying, shooting, climbing, spotting a tail, patching a wound, driving hard, reading a person, forcing a lock — propose a skill_check. Do not resolve risky actions with narration alone. Only skip the dice when the action is trivial, purely social colour, or the player is just moving and talking.
