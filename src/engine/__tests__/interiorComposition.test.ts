@@ -102,10 +102,10 @@ describe("shared interior composition", () => {
       ...env.structures.map((w) => [w.id, 999999]),
     ]);
     expect(blockedTiles(arena, damage).has(key)).toBe(false);
-    const from = { x: 11, y: 3 },
-      to = { x: 15, y: 3 };
+    const from = { x: 9, y: 3 },
+      to = { x: 13, y: 3 };
     expect(shotObstacles(arena, from, to, damage).some((o) => o.id.startsWith("wall_"))).toBe(true);
-    expect(blockedTiles(arena, damage).has(tileKey(tileOf(arena, { x: 13, y: 3 })))).toBe(true);
+    expect(blockedTiles(arena, damage).has(tileKey(tileOf(arena, { x: 11, y: 3 })))).toBe(true);
   });
 });
 

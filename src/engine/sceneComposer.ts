@@ -7,7 +7,12 @@ import type { AuthoredScene, SceneActor } from "./authoredScene";
 import { composeResidential } from "./residentialRecipe";
 import { composeInterior } from "./interiorRecipes";
 import { threatFor } from "./threats";
-import { type SceneEnvironment, type SceneZone, type ZoneKind } from "./sceneEnvironment";
+import {
+  type SceneEnvironment,
+  type SceneZone,
+  type ZoneKind,
+  type SceneStructure,
+} from "./sceneEnvironment";
 
 const rect = (x: number, y: number, width: number, height: number): Rect => ({
   x,
@@ -37,6 +42,8 @@ function recipe(kind: SceneEnvironment["recipe"], variant: number) {
         zone("south-west-walk", "sidewalk", rect(6, crossing + 8, 6, 24 - crossing)),
         zone("south-east-walk", "sidewalk", rect(22, crossing + 8, 4, 24 - crossing)),
         zone("west-service", "frontage", rect(0, crossing - 4, 6, 4), "x"),
+        zone("housing-entry", "garden", rect(26, crossing - 4, 6, 4), "x"),
+        zone("utility-court", "loading", rect(26, crossing + 8, 6, 4), "x"),
         zone("south-service", "loading", rect(0, crossing + 8, 6, 8)),
         zone("north-crossing", "crosswalk", rect(12, crossing - 2, 10, 2), "x"),
         zone("south-crossing", "crosswalk", rect(12, crossing + 8, 10, 2), "x"),
@@ -170,6 +177,72 @@ function recipe(kind: SceneEnvironment["recipe"], variant: number) {
   };
 }
 
+/** Distinct corner programmes: attached shops, housing, loading court and utility frontage. */
+function intersectionStructures(footprints: Rect[], seed: number): SceneStructure[] {
+  const [shops, housing, loading, utility] = footprints as [Rect, Rect, Rect, Rect];
+  const structures: SceneStructure[] = [];
+  const add = (
+    id: string,
+    label: string,
+    rect: Rect,
+    height: number,
+    style: SceneStructure["style"],
+  ) => structures.push({ id, label, rect, height, style, blocksMovement: true, blocksShots: true });
+  const shopDepth = Math.floor(shops.height / 4) * 2;
+  // Attached frontages share a street line, rather than repeating tower + wings.
+  add(
+    "building_0_rear",
+    "Attached retail frontage",
+    { ...shops, height: shopDepth },
+    6 + (seed % 3),
+    "shop",
+  );
+  add(
+    "building_0",
+    "Corner shop and vendor frontage",
+    { ...shops, y: shops.y + shopDepth, height: shops.height - shopDepth },
+    4,
+    "shop",
+  );
+  add(
+    "building_1",
+    "Apartment frontage above local services",
+    housing,
+    9 + (seed % 2),
+    "residential",
+  );
+  // A low workshop return encloses a handling court without repeating the shops.
+  add(
+    "building_2_rear",
+    "Workshop entrance beside loading court",
+    { ...loading, width: 6 },
+    4,
+    "workshop",
+  );
+  add(
+    "building_2",
+    "Loading court workshop return",
+    { x: loading.x + 6, y: loading.y, width: loading.width - 6, height: 6 },
+    3,
+    "warehouse",
+  );
+  add(
+    "building_3",
+    "Low utility service building",
+    { ...utility, width: 6, height: 6 },
+    3,
+    "workshop",
+  );
+  add(
+    "building_3_back",
+    "Neighbouring block beyond utility frontage",
+    { x: utility.x + 6, y: utility.y + 4, width: utility.width - 6, height: utility.height - 4 },
+    7,
+    "warehouse",
+  );
+  return structures;
+}
+
 export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): AuthoredScene {
   if (!Number.isInteger(seed) || seed < 0 || seed > 4294967295)
     throw new Error("Invalid scene seed.");
@@ -206,56 +279,61 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     })),
     seed,
     zones: plan.zones,
-    structures: plan.structures.flatMap((r, i) => {
-      // A narrow frontage wing, a rear block and a taller return retain the
-      // entrance frontage while varying its architectural mass.
-      const wing = 4 + 2 * ((seed + i) % 2);
-      const split = Math.max(4, Math.floor(r.height / 4) * 2);
-      const pieces = [
-        rect(r.x + r.width - wing, r.y, wing, r.height),
-        rect(r.x, r.y, r.width - wing, split),
-        rect(r.x, r.y + split, r.width - wing, r.height - split),
-      ];
-      const entrance = plan.entrances.find((e) => e.structureId === `building_${i}`)?.position;
-      const entryPart = entrance
-        ? pieces.findIndex(
-            (p) =>
-              ((entrance.x === p.x - 1 || entrance.x === p.x + p.width + 1) &&
-                entrance.y > p.y &&
-                entrance.y < p.y + p.height) ||
-              ((entrance.y === p.y - 1 || entrance.y === p.y + p.height + 1) &&
-                entrance.x > p.x &&
-                entrance.x < p.x + p.width),
-          )
-        : 0;
-      // Set back a non-entrance rear wing to make an actual stepped footprint.
-      const setback = entryPart === 2 ? 1 : 2;
-      pieces[setback] = {
-        ...pieces[setback]!,
-        x: pieces[setback]!.x + 2,
-        width: pieces[setback]!.width - 2,
-      };
-      return pieces.map((piece, j) => ({
-        id: j === entryPart ? `building_${i}` : `building_${i}_wing_${j}`,
-        label:
-          j === 0
-            ? "Street frontage wing"
-            : j === 1
-              ? "Rear workshop block"
-              : "Upper service block",
-        rect: piece,
-        height: [3 + (i % 2), 5 + ((seed + i) % 3), 8 + ((seed + i) % 4)][j]!,
-        style: (kind === "alley"
-          ? j === 0
-            ? "workshop"
-            : "warehouse"
-          : (i + j) % 2
-            ? "workshop"
-            : "shop") as "workshop" | "warehouse" | "shop",
-        blocksMovement: true,
-        blocksShots: true,
-      }));
-    }),
+    structures:
+      kind === "intersection"
+        ? intersectionStructures(plan.structures, seed)
+        : plan.structures.flatMap((r, i) => {
+            // A narrow frontage wing, a rear block and a taller return retain the
+            // entrance frontage while varying its architectural mass.
+            const wing = 4 + 2 * ((seed + i) % 2);
+            const split = Math.max(4, Math.floor(r.height / 4) * 2);
+            const pieces = [
+              rect(r.x + r.width - wing, r.y, wing, r.height),
+              rect(r.x, r.y, r.width - wing, split),
+              rect(r.x, r.y + split, r.width - wing, r.height - split),
+            ];
+            const entrance = plan.entrances.find(
+              (e) => e.structureId === `building_${i}`,
+            )?.position;
+            const entryPart = entrance
+              ? pieces.findIndex(
+                  (p) =>
+                    ((entrance.x === p.x - 1 || entrance.x === p.x + p.width + 1) &&
+                      entrance.y > p.y &&
+                      entrance.y < p.y + p.height) ||
+                    ((entrance.y === p.y - 1 || entrance.y === p.y + p.height + 1) &&
+                      entrance.x > p.x &&
+                      entrance.x < p.x + p.width),
+                )
+              : 0;
+            // Set back a non-entrance rear wing to make an actual stepped footprint.
+            const setback = entryPart === 2 ? 1 : 2;
+            pieces[setback] = {
+              ...pieces[setback]!,
+              x: pieces[setback]!.x + 2,
+              width: pieces[setback]!.width - 2,
+            };
+            return pieces.map((piece, j) => ({
+              id: j === entryPart ? `building_${i}` : `building_${i}_wing_${j}`,
+              label:
+                j === 0
+                  ? "Street frontage wing"
+                  : j === 1
+                    ? "Rear workshop block"
+                    : "Upper service block",
+              rect: piece,
+              height: [3 + (i % 2), 5 + ((seed + i) % 3), 8 + ((seed + i) % 4)][j]!,
+              style: (kind === "alley"
+                ? j === 0
+                  ? "workshop"
+                  : "warehouse"
+                : (i + j) % 2
+                  ? "workshop"
+                  : "shop") as "workshop" | "warehouse" | "shop",
+              blocksMovement: true,
+              blocksShots: true,
+            }));
+          }),
     clusters: [],
     props: [],
     dressing: [],

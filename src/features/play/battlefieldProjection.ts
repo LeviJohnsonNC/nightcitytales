@@ -10,6 +10,7 @@ export function battlefieldProjection(width: number, height: number) {
   const b = scale / 2;
   const origin = { x: 550 - ((width + height) * a) / 2, y: 340 - ((width - height) * b) / 2 };
   return {
+    pixelsPerMetre: scale,
     project: (p: Point): Point => ({
       x: origin.x + (p.x + p.y) * a,
       y: origin.y + (p.x - p.y) * b,

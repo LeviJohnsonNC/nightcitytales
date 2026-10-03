@@ -1,3 +1,4 @@
+import { battlefieldCameraPreset, composedUnitMetrics } from "./courtyard/courtyardPresentation";
 import { combatantDisposition } from "@/engine";
 import { CombatDepartures } from "./CombatDepartures";
 import { dispositionLabel } from "./combatDisposition";
@@ -169,7 +170,12 @@ export function CombatBoard({
   const [camera, setCamera] = useState({
     x: 0,
     y: 0,
-    zoom: live && scenicTheme(battlefieldFor(live)) ? 1.25 : 1,
+    zoom:
+      live && battlefieldFor(live).environment
+        ? battlefieldCameraPreset(battlefieldFor(live)).zoom
+        : live && scenicTheme(battlefieldFor(live))
+          ? 1.25
+          : 1,
   });
   const drag = useRef<Point | null>(null);
   const patternId = useId().replaceAll(":", "");
@@ -243,7 +249,8 @@ export function CombatBoard({
   const arena = battlefieldFor(live);
   const theme = scenicTheme(arena);
   const hasScenicArt = theme !== null;
-  const scenicUnitTop = theme === "composed" ? 48 : theme === "street" ? 58 : 88;
+  const scenicUnitTop =
+    theme === "composed" ? composedUnitMetrics(arena).top : theme === "street" ? 58 : 88;
   const scenic = hasScenicArt && artEnabled && artReady;
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   const cover = coverStatuses(arena, live.cover);
@@ -734,10 +741,26 @@ export function CombatBoard({
             <button
               className="combat-icon"
               aria-label="Reset camera"
-              onClick={() => setCamera({ x: 0, y: 0, zoom: hasScenicArt ? 1.25 : 1 })}
+              onClick={() =>
+                setCamera(
+                  arena.environment
+                    ? battlefieldCameraPreset(arena)
+                    : { x: 0, y: 0, zoom: hasScenicArt ? 1.25 : 1 },
+                )
+              }
             >
-              <Maximize size={17} />
+              <RotateCcw size={17} />
             </button>
+            {arena.environment && (
+              <button
+                className="combat-icon"
+                aria-label="Overview"
+                title="Overview"
+                onClick={() => setCamera(battlefieldCameraPreset(arena, "overview"))}
+              >
+                <Maximize size={17} />
+              </button>
+            )}
           </div>
           <span className="sr-only" id={`${patternId}-keyboard`}>
             Arrow keys preview a destination one square at a time. Enter or Space confirms the

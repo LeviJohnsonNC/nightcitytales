@@ -25,53 +25,56 @@ const zone = (
 type Connection = [from: string, to: string, x: number, y: number, width?: number, height?: number];
 export type InteriorPlan = { rooms: SceneZone[]; doors: Connection[]; label: string };
 function office(variant: number): InteriorPlan {
+  // Compact 24m shell: visitors reach reception/meeting before staff work and
+  // equipment rooms. The programme changes orientation, not physical scale.
   if (variant === 0)
     return {
-      label: "Central corridor",
+      label: "Visitor front and staff work floor",
       rooms: [
-        zone("hall", "corridor", 14, 2, 4, 28),
-        zone("reception", "reception", 2, 2, 10, 10),
-        zone("work", "workspace", 2, 14, 10, 16),
-        zone("meeting", "meeting", 20, 2, 10, 12),
-        zone("service", "service", 20, 16, 10, 14),
+        zone("reception", "reception", 2, 2, 8, 6),
+        zone("meeting", "meeting", 12, 2, 10, 6),
+        zone("hall", "corridor", 2, 10, 20, 2),
+        zone("work", "workspace", 2, 14, 12, 8),
+        zone("service", "service", 16, 14, 6, 8),
       ],
       doors: [
-        ["reception", "hall", 12, 6],
-        ["work", "hall", 12, 22],
-        ["hall", "meeting", 18, 6],
-        ["hall", "service", 18, 24],
+        ["reception", "hall", 6, 8],
+        ["meeting", "hall", 16, 8],
+        ["hall", "work", 6, 12],
+        ["work", "service", 14, 18],
       ],
     };
   if (variant === 1)
     return {
-      label: "Open work floor",
+      label: "Public wing and operations suite",
       rooms: [
-        zone("reception", "reception", 2, 2, 8, 28),
-        zone("work", "workspace", 12, 2, 18, 18),
-        zone("meeting", "meeting", 12, 22, 10, 8),
-        zone("service", "service", 24, 22, 6, 8),
+        zone("reception", "reception", 2, 2, 6, 8),
+        zone("meeting", "meeting", 2, 12, 6, 10),
+        zone("hall", "corridor", 10, 2, 2, 20),
+        zone("work", "workspace", 14, 2, 8, 12),
+        zone("service", "service", 14, 16, 8, 6),
       ],
       doors: [
-        ["reception", "work", 10, 8],
-        ["reception", "meeting", 10, 24],
-        ["work", "meeting", 18, 20],
-        ["work", "service", 26, 20],
+        ["reception", "hall", 8, 6],
+        ["meeting", "hall", 8, 16],
+        ["hall", "work", 12, 6],
+        ["work", "service", 18, 14],
       ],
     };
   return {
-    label: "Private room suite",
+    label: "Reception gallery and private work suite",
     rooms: [
-      zone("hall", "corridor", 2, 14, 28, 4),
-      zone("reception", "reception", 2, 2, 12, 10),
-      zone("work", "workspace", 16, 2, 14, 10),
-      zone("meeting", "meeting", 2, 20, 12, 10),
-      zone("service", "service", 16, 20, 14, 10),
+      zone("reception", "reception", 2, 2, 8, 8),
+      zone("meeting", "meeting", 12, 2, 10, 8),
+      zone("hall", "corridor", 2, 12, 20, 2),
+      zone("work", "workspace", 2, 16, 12, 6),
+      zone("service", "service", 16, 16, 6, 6),
     ],
     doors: [
-      ["reception", "hall", 6, 12],
-      ["work", "hall", 22, 12],
-      ["hall", "meeting", 6, 18],
-      ["hall", "service", 22, 18],
+      ["reception", "meeting", 10, 6],
+      ["reception", "hall", 6, 10],
+      ["hall", "work", 6, 14],
+      ["work", "service", 14, 18],
     ],
   };
 }
@@ -184,6 +187,7 @@ export function composeInterior(
       : kind === "nightclub"
         ? nightclub(variant)
         : industrialPlan(kind, variant);
+  const extent = kind === "office" ? { width: 24, height: 24 } : { width: 32, height: 32 };
   const rooms = plan.rooms;
   if (variant === 2)
     rooms.forEach((room) => {
@@ -200,11 +204,11 @@ export function composeInterior(
   const boundaryDoor = (id: string, r: Rect): Connection =>
     r.x === 2
       ? [id, "outside", 0, r.y + 2]
-      : r.x + r.width === 30
-        ? [id, "outside", 30, r.y + 2]
+      : r.x + r.width === extent.width - 2
+        ? [id, "outside", extent.width - 2, r.y + 2]
         : r.y === 2
           ? [id, "outside", r.x + 2, 0]
-          : [id, "outside", r.x + 2, 30];
+          : [id, "outside", r.x + 2, extent.height - 2];
   plan.doors.push(boundaryDoor("reception", publicRoom));
   plan.doors.push(boundaryDoor("service", backRoom));
   const doorZones = plan.doors.map((d, i) =>
@@ -217,7 +221,7 @@ export function composeInterior(
     seed,
     entrances: [],
     zones: [...rooms, ...doorZones],
-    structures: walls([...rooms, ...doorZones], { width: 32, height: 32 }),
+    structures: walls([...rooms, ...doorZones], extent),
     clusters: [],
     props: [],
     dressing: [],
@@ -230,10 +234,7 @@ export function composeInterior(
   for (const c of env.interior!.connections) {
     const door = env.zones.find((z) => z.id === c.zoneId)!;
     (c.to === "outside"
-      ? exteriorDoorwayApproaches(door.rect, rooms.find((z) => z.id === c.from)!.rect, {
-          width: 32,
-          height: 32,
-        })
+      ? exteriorDoorwayApproaches(door.rect, rooms.find((z) => z.id === c.from)!.rect, extent)
       : doorwayApproaches(
           door.rect,
           rooms.find((z) => z.id === c.from)!.rect,
@@ -257,7 +258,7 @@ export function composeInterior(
   const arena: Arena = {
     key: `scene:composed-${kind}:v1:${seed}`,
     label: `North Heywood · ${kind} · ${plan.label}`,
-    extent: { width: 32, height: 32 },
+    extent,
     playerStart,
     hostileSlots: [],
     cover: [],

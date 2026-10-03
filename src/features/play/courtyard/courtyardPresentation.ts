@@ -1,4 +1,26 @@
-import type { Point } from "@/engine";
+import { battlefieldProjection } from "../battlefieldProjection";
+import type { Point, Arena } from "@/engine";
+
+/** Shared scenic framing: focus on playable space, with an explicit overview. */
+export function battlefieldCameraPreset(arena: Arena, view: "play" | "overview" = "play") {
+  const zoom =
+    view === "overview"
+      ? arena.environment?.interior
+        ? 1
+        : 0.8
+      : arena.environment
+        ? arena.environment.interior
+          ? 1.15
+          : 1.35
+        : 1;
+  return { x: 0, y: 0, zoom };
+}
+
+/** Keep character art and its hit/occlusion height proportional to the metre grid. */
+export function composedUnitMetrics(arena: Arena) {
+  const ratio = battlefieldProjection(arena.extent.width, arena.extent.height).pixelsPerMetre / 15;
+  return { scale: 0.52 * ratio, top: 48 * ratio };
+}
 
 /** Match SVG's xMidYMid meet exactly, including letterboxing and camera offsets. */
 export function courtyardCamera(
