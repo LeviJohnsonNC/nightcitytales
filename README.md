@@ -156,3 +156,5 @@ use saved battlefield v2 and require migration `20261003010000`. See
 The [spatial organization checkpoint](docs/spatial-organization.md) introduces compact office programs, distinct intersection corners and structure-only scene review.
 
 [Office checkpoint 1A](docs/office-topologies.md) adds spine, loop and open-core plans, protected arrival landings and shared interior thresholds.
+
+[Intersection checkpoint 1B](docs/intersection-networks.md) coordinates street proportions, frontage and a protected pedestrian network.
