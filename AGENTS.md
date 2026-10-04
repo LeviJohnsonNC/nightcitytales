@@ -875,6 +875,16 @@ Before handing off a code change, run lint,
 typecheck, tests, and a production build in proportion to the change. Do not use
 formatting commands indiscriminately in a dirty worktree.
 
+`bun run test:browser` runs the pages anybody can open (`/`, `/login`, `/style`,
+`/scene-review`) in a real Chromium: no script error, nothing requested that is
+missing, no sideways scroll at desktop and phone width, and an axe scan against
+WCAG 2 A and AA (`e2e/`, `playwright.config.ts`). It needs `bunx playwright
+install chromium` once, is not part of `bun run test`, and runs in CI only by
+hand (`.github/workflows/browser.yml`) until it has been watched go green on the
+runner. A known accessibility finding goes in `KNOWN_A11Y` in the spec as a debt,
+never as a way to silence a new one. The signed-in game is not covered: it needs
+a Supabase session.
+
 The test suite is strongest around the pure engine. Changes to authentication,
 database functions/RLS, migration replay, draft synchronization, AI endpoints,
 or full user flows may require targeted integration or browser verification in

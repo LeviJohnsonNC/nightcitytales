@@ -278,6 +278,30 @@ in one district.
 
 ---
 
+## Also shipped: real-browser tests
+
+Everything before this ran in Node, so what a browser does with a page was only
+ever found by looking. `bun run test:browser` (Playwright, Chromium, `e2e/`) now
+looks for the four pages that need no account, at desktop and phone width: the
+page loads, throws nothing, requests nothing that is missing, does not scroll
+sideways, and passes an axe scan against WCAG 2 A and AA. Its first run found
+one real defect: the landing page's "One night in Night City" timeline was an
+`<ol>` whose children were `<div>` wrappers (the scroll-reveal), so the list had
+children it may not have and its nine items had no list. `Reveal` can now be the
+`<li>` itself (`as="li"`), and both the axe scan and a test that the timeline is a
+list of nine fail on the old markup.
+
+Not done, and why: the signed-in game (creator, Life, a job, combat) is where most
+of the product is and where the layout bugs have been found, and it needs a
+Supabase session the tests do not have — the next step is a fixture session or a
+`/preview`-style route that renders a Life screen from a canned bundle. The suite
+is not a CI gate: `.github/workflows/browser.yml` is manual (Actions tab) until it
+has been watched go green on a runner, because a check nobody has seen pass teaches
+people to ignore checks. Pixel snapshots are deliberately absent; they are the
+flakiest thing a browser test can do.
+
+---
+
 ## Also shipped: the career soak
 
 The owed pacing check, and a gate. `src/features/dev/careerSim.ts` plays whole

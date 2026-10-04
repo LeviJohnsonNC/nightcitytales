@@ -661,37 +661,40 @@ function Index() {
                 tone: "amber",
               },
             ].map((row, i) => (
-              <Reveal key={row.t} delay={i * 70}>
-                <li className="grid grid-cols-[5.5rem_auto_minmax(0,1fr)] items-start gap-4 py-3">
-                  <span className="num pt-0.5 text-right text-xs uppercase tracking-widest text-text-dim">
-                    {row.t}
-                  </span>
-                  <span aria-hidden className="relative flex h-full justify-center">
-                    <span className="absolute inset-y-0 w-px bg-hairline" />
-                    <span
-                      className={`relative mt-1.5 h-1.5 w-1.5 rounded-full ${
-                        row.tone === "ember"
-                          ? "bg-ember"
-                          : row.tone === "amber"
-                            ? "bg-amber"
-                            : row.tone === "cool"
-                              ? "bg-cool"
-                              : "bg-text-dim"
-                      }`}
-                    />
-                  </span>
+              <Reveal
+                key={row.t}
+                as="li"
+                delay={i * 70}
+                className="grid grid-cols-[5.5rem_auto_minmax(0,1fr)] items-start gap-4 py-3"
+              >
+                <span className="num pt-0.5 text-right text-xs uppercase tracking-widest text-text-dim">
+                  {row.t}
+                </span>
+                <span aria-hidden className="relative flex h-full justify-center">
+                  <span className="absolute inset-y-0 w-px bg-hairline" />
                   <span
-                    className={`text-sm leading-relaxed ${
-                      row.tone === "amber"
-                        ? "text-amber"
-                        : row.tone === "cool"
-                          ? "text-cool"
-                          : "text-text-muted"
+                    className={`relative mt-1.5 h-1.5 w-1.5 rounded-full ${
+                      row.tone === "ember"
+                        ? "bg-ember"
+                        : row.tone === "amber"
+                          ? "bg-amber"
+                          : row.tone === "cool"
+                            ? "bg-cool"
+                            : "bg-text-dim"
                     }`}
-                  >
-                    {row.b}
-                  </span>
-                </li>
+                  />
+                </span>
+                <span
+                  className={`text-sm leading-relaxed ${
+                    row.tone === "amber"
+                      ? "text-amber"
+                      : row.tone === "cool"
+                        ? "text-cool"
+                        : "text-text-muted"
+                  }`}
+                >
+                  {row.b}
+                </span>
               </Reveal>
             ))}
           </ol>

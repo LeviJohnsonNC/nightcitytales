@@ -19,7 +19,8 @@
     "eval:rescore": "bun evals/rescore.ts",
     "eval:replay": "bun evals/replay.ts",
     "eval:judge": "bun evals/judge.ts",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.31",
@@ -83,8 +84,10 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.23.1",
+    "@playwright/test": "1.56.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

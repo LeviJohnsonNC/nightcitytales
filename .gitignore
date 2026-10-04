@@ -42,3 +42,7 @@ __pycache__/
 
 # Eval runs: one JSON per run, compared with `bun run eval:compare`.
 evals/results/
+
+# Playwright
+e2e/.results/
+playwright-report/
