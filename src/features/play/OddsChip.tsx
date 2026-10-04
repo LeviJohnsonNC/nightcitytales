@@ -10,7 +10,7 @@
  * Presentation only. The percentage is the engine's, made from the modifiers
  * the roll will use; nothing here can change what the die does.
  */
-import type { OddsReadout, OddsTone } from "./oddsChip";
+import type { OddsReadout, OddsTone } from "./oddsPresentation";
 
 const TONE: Record<OddsTone, { text: string; bar: string }> = {
   bad: { text: "text-destructive", bar: "bg-destructive" },

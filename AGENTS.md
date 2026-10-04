@@ -888,3 +888,12 @@ open wide interior thresholds, and joined directional sedan sections; these neve
 change saved collision or damage semantics. New conference/packing groups retain
 meeting/workbench fact bindings. See `docs/checkpoint-four-d4.md` for the deployed
 visual acceptance gate and remaining limitations.
+
+### Shared presentation registration (4D.5)
+
+Procedural furniture and sedan sections use `interiorPropPoint` and real 0/90
+rotations against the battlefield's projection. Never horizontally reflect these
+textures or compress their whole canvas to depict destruction: both break saved
+footprint registration. Wrecks are painted low inside the normal canvas. Exterior
+cutaways and facade bays are presentation of existing solids; saved entrances own
+all door markers. See `docs/checkpoint-four-d5.md` for verification limits.

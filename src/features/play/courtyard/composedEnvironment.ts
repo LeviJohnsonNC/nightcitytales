@@ -231,6 +231,37 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
       "#a8aaa0",
     );
   }
+  // Mark exterior parked-car groups from their saved sections. Intersection
+  // curb lanes previously looked like travel lanes with arbitrary cars in them.
+  if (!env.interior)
+    for (const cluster of env.clusters.filter((c) => c.kind === "parking")) {
+      const pieces = env.props
+        .filter((p) => p.clusterId === cluster.id)
+        .map((p) => arena.cover!.find((c) => c.id === p.coverId)!.rect);
+      if (!pieces.length) continue;
+      const x = Math.min(...pieces.map((r) => r.x)),
+        y = Math.min(...pieces.map((r) => r.y));
+      const width = Math.max(...pieces.map((r) => r.x + r.width)) - x;
+      const height = Math.max(...pieces.map((r) => r.y + r.height)) - y;
+      if (
+        env.zones.some(
+          (z) =>
+            z.kind === "parking" &&
+            x >= z.rect.x &&
+            y >= z.rect.y &&
+            x + width <= z.rect.x + z.rect.width &&
+            y + height <= z.rect.y + z.rect.height,
+        )
+      )
+        continue;
+      const c = painter(ctx, project).corners({
+        x: x + 0.08,
+        y: y + 0.08,
+        width: width - 0.16,
+        height: height - 0.16,
+      });
+      for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "#858c82", 1);
+    }
   // Lane paint belongs to the saved roads, interrupted at crossings and junctions.
   for (const z of env.zones.filter((z) => z.kind === "road")) {
     const vertical = z.axis === "y",
@@ -305,18 +336,69 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
   }
 }
 
-/** Opaque cut mass: inaccessible footprint stays legible without a ghost roof. */
-function paintCutaway(ctx: CanvasRenderingContext2D, structure: SceneStructure, project: Project) {
-  const { poly, corners, line } = painter(ctx, project);
-  const base = corners(structure.rect);
-  const top = corners(structure.rect, 7);
-  poly([base[0]!, base[1]!, top[1]!, top[0]!], "#455354", "#17272d");
-  poly([base[1]!, base[2]!, top[2]!, top[1]!], "#2e3d44", "#17272d");
-  poly(top, "#19272d", "#74807b");
-  for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#74807b", 2);
+/** Closed building silhouette, with low perimeter walls and saved door locations.
+ * The hatched interior is inaccessible mass, not an invented walkable floorplan.
+ */
+export function paintCutaway(
+  ctx: CanvasRenderingContext2D,
+  structure: SceneStructure,
+  project: Project,
+  entrances: SceneEnvironment["entrances"] = [],
+) {
+  const { poly, corners, line, rect } = painter(ctx, project);
+  const r = structure.rect;
+  const metre = Math.hypot(
+    project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
+    project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
+  );
+  rect(r, "#182329");
+  // Subdued parallel section hatching prevents the solid footprint reading as a courtyard.
+  for (let x = r.x + 0.6; x < r.x + r.width; x += 1.2)
+    line(project({ x, y: r.y + 0.35 }), project({ x, y: r.y + r.height - 0.35 }), "#253238", 0.8);
+  const warm = structure.style === "residential" || structure.style === "shop";
+  const wall = (box: Rect, height: number) => {
+    const base = corners(box),
+      top = corners(box, height * metre);
+    poly([base[0]!, base[1]!, top[1]!, top[0]!], warm ? "#73675a" : "#59666a", "#17272d");
+    poly([base[1]!, base[2]!, top[2]!, top[1]!], "#35434a", "#17272d");
+    poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
+  };
+  const t = 0.24;
+  // Back edges first. Every wall and detail stays within the saved solid.
+  wall({ x: r.x, y: r.y + t, width: t, height: r.height - t }, 0.65);
+  wall({ x: r.x, y: r.y + r.height - t, width: r.width, height: t }, 0.65);
+  wall({ x: r.x, y: r.y, width: r.width, height: t }, 0.65);
+  wall({ x: r.x + r.width - t, y: r.y, width: t, height: r.height }, 0.65);
+  for (const e of entrances ?? []) {
+    if (e.structureId !== structure.id) continue;
+    const q = e.position;
+    const north = q.y < r.y,
+      south = q.y > r.y + r.height;
+    const east = q.x > r.x + r.width;
+    const door: Rect =
+      north || south
+        ? { x: q.x - 0.8, y: north ? r.y : r.y + r.height - 0.4, width: 1.6, height: 0.4 }
+        : { x: east ? r.x + r.width - 0.4 : r.x, y: q.y - 0.8, width: 0.4, height: 1.6 };
+    wall(door, 0.65);
+    for (const offset of [-0.9, 0.75])
+      wall(
+        north || south
+          ? { x: q.x + offset, y: door.y, width: 0.15, height: 0.4 }
+          : { x: door.x, y: q.y + offset, width: 0.4, height: 0.15 },
+        0.95,
+      );
+    // A solid door bar keeps closed-door semantics even in the low cutaway.
+    const center = project({ x: door.x + door.width / 2, y: door.y + door.height / 2 });
+    line(
+      { x: center.x - 3, y: center.y - 0.3 * metre },
+      { x: center.x + 3, y: center.y - 0.3 * metre },
+      warm ? "#d3b984" : "#92b5af",
+      2,
+    );
+  }
 }
 
-function paintBuilding(
+export function paintBuilding(
   ctx: CanvasRenderingContext2D,
   structure: SceneStructure,
   project: Project,
@@ -386,9 +468,11 @@ function paintBuilding(
       ? [Math.max(1.8, structure.height - 0.9)]
       : Array.from(
           { length: Math.max(1, Math.floor(structure.height / 3)) },
-          (_, i) => 0.8 + i * 3,
+          (_, i) => 3.8 + i * 3,
         );
-    for (const floor of levels) {
+    for (const floor of levels.filter(
+      (level) => level + (industrial ? 0.45 : 1.2) < structure.height,
+    )) {
       const level = floor * pixelsPerMetre;
       const windowHeight = (industrial ? 0.45 : 1.2) * pixelsPerMetre;
       line(at(0, level), at(1, level), "#515355", 1);
@@ -420,11 +504,51 @@ function paintBuilding(
                 (edge === "north" ? e.position.y === r.y - 1 : e.position.x === r.x + r.width + 1),
             )
             .map((e) => (edge === "north" ? e.position.x - r.x : e.position.y - r.y));
+    // Ground-floor bays give the street edge an occupied frontage, attached to
+    // the existing facade. Recesses never add sidewalk collision or false doors.
+    for (
+      let start = 0.5;
+      start + 2.2 < length;
+      start += structure.style === "residential" ? 4 : 3
+    ) {
+      if (doors.some((door) => door > start - 1.1 && door < start + 3.3)) continue;
+      const lo = start / length,
+        hi = (start + 2.2) / length;
+      const low = (industrial ? 1.25 : 0.65) * pixelsPerMetre,
+        high = Math.min(2.35, structure.height - 0.3) * pixelsPerMetre;
+      if (high <= low) continue;
+      const shop = structure.style === "shop";
+      poly(
+        [at(lo, low), at(hi, low), at(hi, high), at(lo, high)],
+        shop ? "#243f43" : industrial ? "#303d43" : "#263740",
+        "#818780",
+      );
+      line(at((lo + hi) / 2, low), at((lo + hi) / 2, high), "#747e78", 1.5);
+      if (industrial) {
+        for (let z = low + 3; z < high; z += 4) line(at(lo, z), at(hi, z), "#536066", 0.9);
+      } else {
+        line(at(lo, low + 4), at(hi, low + 4), "#b5a387", 2);
+        line(at(lo, high + 3), at(hi, high + 3), shop ? "#7b9a91" : "#95866f", 3);
+      }
+      // Flush facade piers and a continuous base articulate the mass without
+      // putting decorative obstacles into the clear pedestrian route.
+      line(at(lo - 0.01, 0), at(lo - 0.01, high + 5), "#242f35", 3);
+    }
+    line(at(0, 0.2 * pixelsPerMetre), at(1, 0.2 * pixelsPerMetre), "#73786f", 2);
     for (const centre of doors) {
       const x = (centre - 0.8) / length,
-        w = 1.6 / length;
-      poly([at(x, 1), at(x + w, 1), at(x + w, 22), at(x, 22)], "#172329", "#626761");
-      for (let z = 3; structure.style !== "residential" && z < 20; z += 3)
+        w = 1.6 / length,
+        doorHeight = Math.min(2.2, structure.height - 0.5) * pixelsPerMetre;
+      poly(
+        [at(x, 1), at(x + w, 1), at(x + w, doorHeight), at(x, doorHeight)],
+        "#172329",
+        "#626761",
+      );
+      for (
+        let z = 3;
+        structure.style !== "residential" && z < doorHeight;
+        z += 0.2 * pixelsPerMetre
+      )
         line(at(x, z), at(x + w, z), "#39464a", 1);
       const colour =
         structure.style === "residential"
@@ -433,11 +557,16 @@ function paintBuilding(
             ? "#68b8ae"
             : "#bc925e";
       poly(
-        [at(x - 0.02, 24), at(x + w + 0.02, 24), at(x + w + 0.02, 29), at(x - 0.02, 29)],
+        [
+          at(x - 0.02, doorHeight + 2),
+          at(x + w + 0.02, doorHeight + 2),
+          at(x + w + 0.02, doorHeight + 5),
+          at(x - 0.02, doorHeight + 5),
+        ],
         colour,
       );
       glow(
-        at(x + w / 2, 25),
+        at(x + w / 2, doorHeight + 3),
         20,
         structure.style === "shop" ? "rgba(58,199,188,.12)" : "rgba(230,157,66,.09)",
       );
@@ -747,7 +876,12 @@ export function createComposedEnvironment(
         bounds,
       )?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined);
       if (occluders.has(structure.id)) {
-        add(`cutaway-${s.id}`, (ctx) => paintCutaway(ctx, s, project), depth, bounds)
+        add(
+          `cutaway-${s.id}`,
+          (ctx) => paintCutaway(ctx, s, project, arena.environment!.entrances),
+          depth,
+          bounds,
+        )
           ?.setData("activityLayer", "cutaway")
           .setVisible(false);
       }

@@ -1,3 +1,4 @@
+import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment } from "./composedEnvironment";
 import { battlefieldFor } from "@/engine";
@@ -468,17 +469,18 @@ export function createCourtyard(
         binding?.art ??
         (street ? STREET_PROPS[status.piece.id]! : propKind(arena.key, status.piece.id));
       const placement = propPlacement(status, project);
-      const vehicle = kind === "sedan-engine" || kind === "sedan-cabin";
+      const procedural = isInteriorProp(kind);
       const texture =
-        propTexture(kind, condition) + (vehicle && binding?.rotation === 90 ? "-90" : "");
+        propTexture(kind, condition) + (procedural && binding?.rotation === 90 ? "-90" : "");
       const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
-      const height = status.destroyed
-        ? placement.groundDepth + 5
-        : (placement.width * image.height) / image.width;
+      const height =
+        status.destroyed && !procedural
+          ? placement.groundDepth + 5
+          : (placement.width * image.height) / image.width;
       const prop = current.add
         .image(placement.x, placement.y, texture)
         .setOrigin(0.5, 1)
-        .setFlipX(!vehicle && binding?.rotation === 90)
+        .setFlipX(!procedural && binding?.rotation === 90)
         .setDisplaySize(placement.width, height)
         .setDepth(placement.depth);
       prop.setData("destroyed", status.destroyed);

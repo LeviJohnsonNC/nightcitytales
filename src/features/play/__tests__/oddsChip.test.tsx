@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { checkPercent } from "@/engine";
 import type { PendingCheck } from "../checkPrompt";
 import { CheckCard } from "../CheckCard";
-import { oddsBand, oddsReadout } from "../oddsChip";
+import { oddsBand, oddsReadout } from "../oddsPresentation";
 import type { CheckPreview } from "../rollCheck";
 
 const preview = (percent: number, base = 10): CheckPreview => ({
