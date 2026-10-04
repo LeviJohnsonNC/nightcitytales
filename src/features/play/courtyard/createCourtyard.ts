@@ -1,3 +1,5 @@
+import { sceneryOrder } from "./sceneryOrder";
+import { atlasPropRegistration } from "./atlasPropRegistration";
 import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment } from "./composedEnvironment";
@@ -6,7 +8,7 @@ import { scenicTheme, STREET_PROPS, civilianCell } from "./scenicPresentation";
 import { createStreetGround } from "./streetGround";
 import { createCivilianAtlas } from "./civilianTextures";
 import Phaser from "phaser";
-import { coverStatuses, tileKey, TILE_METRES, type Point, type Tile } from "@/engine";
+import { coverStatuses, tileKey, TILE_METRES, type Point, type Tile, type Rect } from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { battlefieldProjection } from "../battlefieldProjection";
 import { frameDuration, type PlaybackFrame } from "../combatPlayback";
@@ -23,7 +25,7 @@ import {
 } from "./characterAnimation";
 import { createCharacterAtlas } from "./characterTextures";
 
-import { createPropTextures, propSource } from "./propTextures";
+import { createPropTextures, propSource, propInkBounds } from "./propTextures";
 import {
   GRID_DEPTH,
   PROP_KINDS,
@@ -101,13 +103,41 @@ export function createCourtyard(
     "hostile-animation",
     ...new Set(kinds.map(propSource).filter((source) => source !== "procedural-interior")),
   ];
-  const { project } = battlefieldProjection(arena.extent.width, arena.extent.height);
+  const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   let started = 0;
   let previousLive: LiveEncounter | null = null;
   let previousFrame: PlaybackFrame | null | undefined;
   const units = new Map<string, Unit>();
   const scenery: Phaser.GameObjects.Image[] = [];
   const structures: Phaser.GameObjects.Image[] = [];
+  let orderKey = "";
+  let coverRevision = 0;
+  const sortScenery = () => {
+    if (!composed) return;
+    const key = `${coverRevision}/${!!model.revealActivity}/${model.structureOnly}/${[...units.values()].map(({ container: u }) => `${u.x},${u.y},${u.visible}`).join(";")}`;
+    if (key === orderKey) return;
+    orderKey = key;
+    const objects = [
+      ...structures,
+      ...scenery,
+      ...[...units.values()].map((u) => u.container),
+    ].filter((o) => o.visible && o.depth > -500 && !o.getData("destroyed"));
+    const items = objects.map((o) => {
+      const p = unproject({ x: o.x, y: o.getData("groundY") ?? o.y });
+      const rect: Rect = o.getData("sortRect") ?? { x: p.x, y: p.y, width: 0, height: 0 };
+      return {
+        rect,
+        groundY: project({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }).y,
+      };
+    });
+    const { ordered } = sceneryOrder(items);
+    ordered.forEach((index, depth) => {
+      const object = objects[index]!;
+      object.setDepth(depth);
+      const ink = object.getData("inkBounds");
+      if (ink) ink.depth = depth;
+    });
+  };
   // Phaser's polygon helpers want its own vectors, not plain points.
   const screen = (p: Point) => {
     const q = project(p);
@@ -214,7 +244,8 @@ export function createCourtyard(
             unit.facing = facingFor(project(sample.from), project(sample.to), unit.facing);
         }
         const p = project(position);
-        unit.container.setPosition(p.x, p.y).setDepth(p.y);
+        unit.container.setPosition(p.x, p.y);
+        if (!composed) unit.container.setDepth(p.y);
         let aim =
           actor.isPlayer && model.aimTargetId ? model.live.data[model.aimTargetId]?.position : null;
         if (frame?.actorId === id && (frame.kind === "attack" || frame.kind === "cover"))
@@ -273,15 +304,25 @@ export function createCourtyard(
           12 * unitScale,
         );
       }
-      for (const prop of [...scenery, ...structures]) {
-        if (prop.getData("destroyed")) continue;
-        const obstructs = [...units.values()].some(({ container: unit }) =>
-          sceneryOccludes(prop, unit, composed ? composedUnitMetrics(arena).top : street ? 58 : 88),
-        );
+      for (const prop of structures) {
         const layer = prop.getData("activityLayer");
         const reveal = !model.structureOnly && !!model.revealActivity;
         prop.setVisible(layer === "cutaway" ? reveal : layer === "full" ? !reveal : true);
-        prop.setAlpha(layer === "cutaway" ? 1 : obstructs ? 0.4 : 1);
+      }
+      sortScenery();
+      for (const prop of [...scenery, ...structures]) {
+        if (prop.getData("destroyed")) continue;
+        const obstructs = [...units.values()].some(({ container: unit }) =>
+          sceneryOccludes(
+            prop.getData("inkBounds") ?? prop,
+            unit,
+            composed ? composedUnitMetrics(arena).top : street ? 58 : 88,
+          ),
+        );
+        const lowCutaway =
+          prop.getData("activityLayer") === "cutaway" &&
+          (prop.getData("cutawayHeight") ?? 0) <= 0.95;
+        prop.setAlpha(lowCutaway ? 1 : obstructs ? 0.4 : 1);
       }
       this.weather.clear();
       if (!street && !motion.matches) {
@@ -460,6 +501,7 @@ export function createCourtyard(
     if (model.structureOnly) return;
     if (renderedCover === damage) return;
     renderedCover = damage;
+    coverRevision++;
     for (const object of scenery) object.destroy();
     scenery.length = 0;
     for (const status of coverStatuses(arena, damage)) {
@@ -473,17 +515,35 @@ export function createCourtyard(
       const texture =
         propTexture(kind, condition) + (procedural && binding?.rotation === 90 ? "-90" : "");
       const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
-      const height =
-        status.destroyed && !procedural
-          ? placement.groundDepth + 5
-          : (placement.width * image.height) / image.width;
+      const registration = procedural
+        ? { originX: 0.5, originY: 1, groundWidth: 1 }
+        : atlasPropRegistration(kind, condition);
+      const width = placement.width / registration.groundWidth;
+      const height = (width * image.height) / image.width;
       const prop = current.add
         .image(placement.x, placement.y, texture)
-        .setOrigin(0.5, 1)
+        .setOrigin(
+          !procedural && binding?.rotation === 90 ? 1 - registration.originX : registration.originX,
+          registration.originY,
+        )
         .setFlipX(!procedural && binding?.rotation === 90)
-        .setDisplaySize(placement.width, height)
+        .setDisplaySize(width, height)
         .setDepth(placement.depth);
-      prop.setData("destroyed", status.destroyed);
+      prop.setData("destroyed", status.destroyed).setData("sortRect", status.piece.rect);
+      const cached = current.textures.get(texture).customData as {
+        inkBounds?: ReturnType<typeof propInkBounds>;
+      };
+      const ink = cached.inkBounds ?? (cached.inkBounds = propInkBounds(image));
+      const flip = !procedural && binding?.rotation === 90;
+      const left = flip ? 1 - ink.right : ink.left,
+        right = flip ? 1 - ink.left : ink.right;
+      prop.setData("inkBounds", {
+        x: prop.x + ((left + right) / 2 - prop.originX) * width,
+        y: prop.y + (ink.bottom - prop.originY) * height,
+        displayWidth: (right - left) * width,
+        displayHeight: (ink.bottom - ink.top) * height,
+        depth: prop.depth,
+      });
       scenery.push(prop);
     }
   }

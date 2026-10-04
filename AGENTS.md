@@ -936,3 +936,14 @@ textures or compress their whole canvas to depict destruction: both break saved
 footprint registration. Wrecks are painted low inside the normal canvas. Exterior
 cutaways and facade bays are presentation of existing solids; saved entrances own
 all door markers. See `docs/checkpoint-four-d5.md` for verification limits.
+
+### Shared presentation calibration (4D.6)
+
+Use `sceneArtMetrics` for physical actor/prop height. Atlas states retain their
+full cell and explicit `atlasPropRegistration` ground contact; do not independently
+crop/stretch damage states. Composed scenes order actors, props and segmented
+cutaway walls from saved footprints via `sceneryOrder`. Keep ground art below that
+ordering and use opaque ink bounds for actor fading. Overview must fit projected
+roof as well as ground extents. These are presentation rules, never a reason to
+rewrite frozen collision, entrances or activity groups. See
+`docs/checkpoint-four-d6.md` for live evidence and the remaining manual gate.

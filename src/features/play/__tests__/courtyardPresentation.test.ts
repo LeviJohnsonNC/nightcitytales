@@ -64,6 +64,7 @@ describe("courtyard presentation remains registered to the tactical input surfac
   it("keeps authored starts and cover on playable ground, with no spawn inside a crate", () => {
     const arena = arenaFor("night_shift");
     expect(arena.key).toBe("night_shift");
+    expect(battlefieldCameraPreset(arena, "overview")).toEqual({ x: 0, y: 0, zoom: 0.8 });
     for (const point of [arena.playerStart, ...placeHostiles(arena, 6)]) {
       for (const cover of arena.cover ?? []) expect(rectContains(cover.rect, point)).toBe(false);
     }

@@ -1,6 +1,7 @@
 /** Small reusable furniture kit. Geometry is registered to one canonical 2m section. */
 import type Phaser from "phaser";
 import { propTexture, type PropKind, type PropCondition } from "./propPresentation";
+import { PROP_CANVAS, PROP_PIXELS_PER_METRE, propHeightMetres } from "./sceneArtMetrics";
 export const INTERIOR_PROP_KINDS = [
   "sedan-engine",
   "sedan-cabin",
@@ -36,7 +37,7 @@ export function isInteriorProp(kind: PropKind) {
 export function interiorPropPoint(x: number, y: number, z = 0, rotation: 0 | 90 = 0) {
   if (rotation === 90) [x, y] = [2 - y, x];
   const rise = 64 / Math.sqrt(3);
-  return { x: (x + y) * 64, y: 240 - 2 * rise + (x - y) * rise - z };
+  return { x: (x + y) * 64, y: PROP_CANVAS.groundY - 2 * rise + (x - y) * rise - z };
 }
 
 export function createInteriorPropTextures(
@@ -45,14 +46,15 @@ export function createInteriorPropTextures(
   rotation: 0 | 90 = 0,
 ) {
   for (const condition of ["intact", "damaged", "wrecked"] as PropCondition[]) {
-    const height = 240;
+    const height = PROP_CANVAS.height;
     const texture = scene.textures.createCanvas(
       propTexture(kind, condition) + (rotation === 90 ? "-90" : ""),
       256,
       height,
     )!;
     const ctx = texture.context;
-    const point = (x: number, y: number, z = 0) => interiorPropPoint(x, y, z, rotation);
+    const point = (x: number, y: number, z = 0) =>
+      interiorPropPoint(x, y, propHeightMetres(kind, z) * PROP_PIXELS_PER_METRE, rotation);
     const poly = (points: ReturnType<typeof point>[], color: string, stroke = "#172027") => {
       ctx.beginPath();
       points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));

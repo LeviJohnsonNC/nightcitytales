@@ -18,16 +18,28 @@ export function buildingHidesGround(s: SceneStructure, p: Point): boolean {
 /** Reveal authored arrivals, work groups and their reserved walking ground,
  * even before an actor happens to stand there. Derived once from frozen data.
  */
-export function activityOccluders(arena: Arena): Set<string> {
+export function activityGroundPoints(arena: Arena): Point[] {
   const env = arena.environment;
-  if (!env || env.interior) return new Set();
+  if (!env || env.interior) return [];
   const points: Point[] = [
     ...(env.entrances ?? []).map((e) => e.position),
-    ...(arena.cover ?? []).map(({ rect: r }) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 })),
+    ...(arena.cover ?? []).flatMap(({ rect: r }) => [
+      { x: r.x + r.width / 2, y: r.y + r.height / 2 },
+      ...[r.x + 0.05, r.x + r.width - 0.05].flatMap((x) =>
+        [r.y + 0.05, r.y + r.height - 0.05].map((y) => ({ x, y })),
+      ),
+    ]),
   ];
   for (const z of env.zones.filter((z) => ["aisle", "sidewalk", "doorway"].includes(z.kind)))
     for (let x = z.rect.x + 1; x < z.rect.x + z.rect.width; x += 2)
       for (let y = z.rect.y + 1; y < z.rect.y + z.rect.height; y += 2) points.push({ x, y });
+  return points;
+}
+
+export function activityOccluders(arena: Arena): Set<string> {
+  const env = arena.environment;
+  if (!env || env.interior) return new Set();
+  const points = activityGroundPoints(arena);
   return new Set(
     env.structures.filter((s) => points.some((p) => buildingHidesGround(s, p))).map((s) => s.id),
   );

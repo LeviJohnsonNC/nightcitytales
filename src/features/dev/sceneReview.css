@@ -3,6 +3,14 @@
   color: #c6d5d9;
   min-height: 100dvh;
 }
+.scene-review:has(.scene-review-canvas) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+.scene-review:has(.scene-review-canvas) > :not(.scene-review-canvas) {
+  flex-shrink: 0;
+}
 .scene-review-controls {
   display: flex;
   flex-wrap: wrap;
@@ -38,8 +46,8 @@
 }
 .scene-review-canvas {
   position: relative;
-  height: calc(100dvh - 180px);
-  min-height: 420px;
+  flex: 1;
+  min-height: 280px;
   overflow: hidden;
 }
 .scene-review .combat-screen {
@@ -51,6 +59,7 @@
     gap: 9px;
   }
   .scene-review-canvas {
+    flex: none;
     height: 65dvh;
     min-height: 360px;
   }
