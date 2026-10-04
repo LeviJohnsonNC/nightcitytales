@@ -7,6 +7,8 @@ import { buildFromState } from "@/features/chargen/sheetModel";
 import { downloadCharacterJson } from "@/features/chargen/characterExport";
 import { getCharacter } from "@/lib/backend";
 import { startOrResumeAdventure } from "@/features/play/startAdventure";
+import { RapSheetButton } from "@/features/rapsheet/RapSheetButton";
+import { sourceFromCharacter } from "@/features/rapsheet/rapSheetModel";
 import { SpendIpCard } from "./SpendIpCard";
 import { stateFromCharacter } from "./characterState";
 import { useOpenAsDraft } from "./RosterList";
@@ -66,6 +68,7 @@ export function CharacterDetail({ id, userId }: { id: string; userId: string }) 
           <Button variant="outline" onClick={() => window.print()}>
             Print
           </Button>
+          <RapSheetButton source={sourceFromCharacter(data)} label="Rap sheet" />
           <Button variant="outline" onClick={() => downloadCharacterJson(state, build, sheet)}>
             Export JSON
           </Button>

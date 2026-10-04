@@ -112,8 +112,8 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-/** Where they were: the venue, then the landmark, then the district. */
-export function placeOfDeath(locationKey: string | null): string | null {
+/** Where a stored location is: the venue, then the landmark, then the district. */
+export function placeNameOf(locationKey: string | null): string | null {
   const position = resolvePosition(locationKey);
   if (!position) return null;
   const venue = position.placeKey ? getPlace(position.placeKey)?.name : undefined;
@@ -319,7 +319,7 @@ export function obituary(input: ObituaryInput): Obituary {
     name: input.name,
     role: roleName,
     when: `Day ${input.day} · ${weekdayFor(input.day)} · ${formatTimeOfDay(input.minute)}`,
-    where: placeOfDeath(input.locationKey),
+    where: placeNameOf(input.locationKey),
     epitaph: epitaphOf(input),
     record: recordOf(input),
     lastBlow: lastBlowOf(input.events, input.name),
