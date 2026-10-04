@@ -351,7 +351,34 @@ export function composeScene(
     return composeInterior(kind, seed);
   const selection = compositionSelection(kind, seed, requirements);
   const variant = selection?.family ?? (seed + 2) % 3;
+  const refined = !(seed >= 1 && seed <= 3);
+  const revision = refined ? 6 : 5;
   const plan = recipe(kind, variant);
+  if (refined && kind === "alley" && variant === 1) {
+    // Two opposed service courts turn a pocket shift into a cross-yard organization.
+    const right = plan.structures[2]!.x;
+    plan.structures[2] = rect(right, -8, 40 - right, 20);
+    plan.structures[3] = rect(right, 22, 40 - right, 18);
+    plan.zones.push(zone("east-court", "loading", rect(right, 12, 8, 10)));
+    plan.zones.push({
+      ...zone("east-court-handling", "aisle", rect(right, 12, 8, 2), "x"),
+      floorUse: "handling",
+    });
+    const group = plan.slots.find((s) => s.id === "service_east")!;
+    group.zone = "east-court";
+    group.at = { x: right + 2, y: 14 };
+  }
+  if (refined && kind === "intersection") {
+    // Bring parked cover toward the crossing while leaving its approaches open.
+    const cross = plan.zones.find((z) => z.id === "junction")!.rect.y;
+    plan.slots.find((s) => s.id === "curb_north")!.at.y = cross + 10;
+    plan.slots.find((s) => s.id === "curb_south")!.at.y = cross + 10;
+    plan.slots.find((s) => s.id === "curb_west")!.at.y = 6;
+    if (selection.program === "shop-west" && cross >= 14) {
+      plan.slots.find((s) => s.id === "broth_cart")!.at.y = cross - 4;
+      plan.zones.find((z) => z.id === "shop-customers")!.rect.y = cross - 2;
+    }
+  }
   if (selection.program === "east-delivery") {
     plan.slots.find((s) => s.id === "delivery_north")!.kind = "workshop_service";
     plan.slots.find((s) => s.id === "service_east")!.kind = "workshop_delivery";
@@ -376,7 +403,7 @@ export function composeScene(
   const env: SceneEnvironment = {
     version: 1,
     recipe: kind,
-    recipeVersion: selection ? 5 : 4,
+    recipeVersion: revision,
     ...(selection ? { composition: selection } : {}),
     entrances: plan.entrances.map((e, i) => ({
       ...e,
@@ -467,7 +494,7 @@ export function composeScene(
     addEntranceSurrounds(env, "service-surround");
   }
   const arena: Arena = {
-    key: `scene:composed-${kind}:v${selection ? 5 : 2}:${seed}`,
+    key: `scene:composed-${kind}:v${revision}:${seed}`,
     label:
       kind === "intersection"
         ? "North Heywood · commercial intersection"
@@ -558,8 +585,8 @@ export function composeScene(
   return {
     locationKey: "north_heywood",
     template: `composed-${kind}`,
-    templateVersion: selection ? 5 : 2,
-    anchor: `composition-${kind}-v${selection ? 5 : 2}-${seed}`,
+    templateVersion: revision,
+    anchor: `composition-${kind}-v${revision}-${seed}`,
     narration:
       kind === "intersection"
         ? "At a North Heywood intersection, parked cars line the curb outside shuttered workshops. A broth vendor has set up beside a corner shop, with stools and supplies tucked against the frontage. Across the crossing, a rifleman stands beside an olive-drab cruiser; his lookout watches farther along the curb. Two maintenance workers linger by the vendor."

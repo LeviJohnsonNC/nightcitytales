@@ -2,6 +2,8 @@
 import type Phaser from "phaser";
 import { propTexture, type PropKind, type PropCondition } from "./propPresentation";
 export const INTERIOR_PROP_KINDS = [
+  "sedan-engine",
+  "sedan-cabin",
   "desk",
   "desk-reverse",
   "seat-reverse",
@@ -30,15 +32,25 @@ export function isInteriorProp(kind: PropKind) {
   return (INTERIOR_PROP_KINDS as readonly string[]).includes(kind);
 }
 
-export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) {
+export function createInteriorPropTextures(
+  scene: Phaser.Scene,
+  kind: PropKind,
+  rotation: 0 | 90 = 0,
+) {
   for (const condition of ["intact", "damaged", "wrecked"] as PropCondition[]) {
     const height = 240;
-    const texture = scene.textures.createCanvas(propTexture(kind, condition), 256, height)!;
+    const texture = scene.textures.createCanvas(
+      propTexture(kind, condition) + (rotation === 90 ? "-90" : ""),
+      256,
+      height,
+    )!;
     const ctx = texture.context;
-    const point = (x: number, y: number, z = 0) => ({
-      x: (x + y) * 64,
-      y: height - 64 + (x - y) * 32 - z,
-    });
+    const vehicle = kind === "sedan-engine" || kind === "sedan-cabin";
+    const point = (x: number, y: number, z = 0) => {
+      if (rotation === 90) [x, y] = [2 - y, x];
+      const rise = vehicle ? 64 / Math.sqrt(3) : 32;
+      return { x: (x + y) * 64, y: height - 2 * rise + (x - y) * rise - z };
+    };
     const poly = (points: ReturnType<typeof point>[], color: string, stroke = "#172027") => {
       ctx.beginPath();
       points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -58,16 +70,25 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
       top: number,
       colors: string[],
     ) => {
-      const a = point(x, y, bottom),
-        b = point(x + w, y, bottom),
-        c = point(x + w, y + d, bottom);
-      const A = point(x, y, top),
-        B = point(x + w, y, top),
-        C = point(x + w, y + d, top),
-        D = point(x, y + d, top);
-      poly([a, b, B, A], colors[0]!);
-      poly([b, c, C, B], colors[1]!);
-      poly([A, B, C, D], colors[2]!);
+      const footprint =
+        rotation === 90
+          ? [
+              [x, y + d],
+              [x, y],
+              [x + w, y],
+              [x + w, y + d],
+            ]
+          : [
+              [x, y],
+              [x + w, y],
+              [x + w, y + d],
+              [x, y + d],
+            ];
+      const [a, b, c] = footprint.map(([u, v]) => point(u!, v!, bottom));
+      const [A, B, C, D] = footprint.map(([u, v]) => point(u!, v!, top));
+      poly([a!, b!, B!, A!], colors[0]!);
+      poly([b!, c!, C!, B!], colors[1]!);
+      poly([A!, B!, C!, D!], colors[2]!);
     };
     poly(
       [point(0.1, 0.1), point(1.9, 0.1), point(1.9, 1.9), point(0.1, 1.9)],
@@ -87,7 +108,63 @@ export function createInteriorPropTextures(scene: Phaser.Scene, kind: PropKind) 
     const metal = ["#4f626a", "#283c48", "#73878a"],
       wood = ["#766656", "#493f39", "#ac9270"],
       velvet = ["#624052", "#38293e", "#a56883"];
-    if (kind === "planter") {
+    if (kind === "sedan-engine" || kind === "sedan-cabin") {
+      const engine = kind === "sedan-engine";
+      const body = ["#74644b", "#493f32", "#a38c62"];
+      // Canonical car runs along x: engine occupies x=0..2, cabin x=2..4.
+      // Both modules reach the shared boundary at identical sill/hood heights.
+      for (const y of [0.08, 1.7])
+        slab(engine ? 0.42 : 1.1, y, 0.55, 0.22, 0, 25, ["#171f25", "#10191f", "#303a40"]);
+      slab(engine ? 0.12 : 0, 0.2, engine ? 1.88 : 1.86, 1.6, 16, 46, body);
+      if (!engine) {
+        slab(0.05, 0.32, 1.25, 1.36, 46, 83, body);
+        if (rotation === 0) {
+          poly(
+            [
+              point(0.13, 0.31, 52),
+              point(1.2, 0.31, 52),
+              point(1.2, 0.31, 76),
+              point(0.13, 0.31, 76),
+            ],
+            "#28434b",
+          );
+          poly(
+            [
+              point(1.31, 0.42, 52),
+              point(1.31, 1.58, 52),
+              point(1.31, 1.58, 76),
+              point(1.31, 0.42, 76),
+            ],
+            "#28434b",
+          );
+        } else {
+          poly(
+            [
+              point(0.04, 0.42, 52),
+              point(0.04, 1.58, 52),
+              point(0.04, 1.58, 76),
+              point(0.04, 0.42, 76),
+            ],
+            "#28434b",
+          );
+          poly(
+            [
+              point(0.13, 0.31, 52),
+              point(1.2, 0.31, 52),
+              point(1.2, 0.31, 76),
+              point(0.13, 0.31, 76),
+            ],
+            "#28434b",
+          );
+        }
+        slab(1.79, 0.3, 0.09, 1.4, 28, 36, ["#883e39", "#542721", "#a95644"]);
+      } else {
+        slab(0.08, 0.18, 0.12, 1.64, 17, 27, metal);
+        for (const y of [0.28, 1.3])
+          slab(0.06, y, 0.09, 0.36, 30, 40, ["#d6c797", "#958761", "#efe0ac"]);
+        slab(0.55, 0.95, 1.35, 0.12, 46, 47, metal);
+      }
+    } else if (kind === "planter") {
       slab(0.12, 0.12, 1.76, 1.76, 0, 32, ["#77736a", "#514f4a", "#a7a38f"]);
       slab(0.28, 0.28, 1.44, 1.44, 32, 35, ["#393c32", "#30362c", "#4c5340"]);
       for (let i = 0; i < 12; i++) {

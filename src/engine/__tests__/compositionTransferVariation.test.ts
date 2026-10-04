@@ -143,7 +143,8 @@ it.each(kinds)(
     }
     expect(programs.size).toBe(6);
     // Residential family 2 is the rotated family 0: four genuine arrangements, not six.
-    expect(signatures.size).toBe(kind === "residential" ? 4 : 6);
+    // The retained v5 south-pocket reference adds one layout beside the new opposed courts.
+    expect(signatures.size).toBe(kind === "residential" ? 4 : kind === "alley" ? 7 : 6);
   },
 );
 

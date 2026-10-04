@@ -847,3 +847,13 @@ whether that has been done. Its reports live in `evals/results/judged/` so
   still be handled cautiously.
 - Keep commits on the Lovable-connected branch working and follow the history
   warning at the top of this file.
+
+### Composition refinement (4D.4)
+
+New non-reference interior/intersection/alley compositions use recipe v6. Seeds
+1–3 keep the accepted v5 geometry; residential geometry stays v5. Frozen v1–v5
+snapshots remain authoritative. Shared rendering uses opaque exterior cutaways,
+open wide interior thresholds, and joined directional sedan sections; these never
+change saved collision or damage semantics. New conference/packing groups retain
+meeting/workbench fact bindings. See `docs/checkpoint-four-d4.md` for the deployed
+visual acceptance gate and remaining limitations.

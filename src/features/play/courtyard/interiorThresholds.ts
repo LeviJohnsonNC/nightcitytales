@@ -11,7 +11,8 @@ export function interiorThresholds(arena: Arena) {
       door.rect.x + door.rect.width === room.rect.x;
     const other = env!.zones.find((z) => z.id === connection.to);
     const role =
-      room.kind === "corridor" && other?.kind === "corridor"
+      (room.kind === "corridor" && other?.kind === "corridor") ||
+      (connection.to !== "outside" && Math.max(door.rect.width, door.rect.height) >= 6)
         ? "passage"
         : connection.to !== "outside"
           ? "room"

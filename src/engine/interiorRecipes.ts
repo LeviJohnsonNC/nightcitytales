@@ -217,6 +217,8 @@ function composeInteriorCandidate(
   seed: number,
   selection?: CompositionSelection,
 ): AuthoredScene {
+  const refined = !(seed >= 1 && seed <= 3);
+  const revision = refined ? 6 : 5;
   const variant = selection?.family ?? (seed + 2) % 3;
   const plan =
     kind === "office"
@@ -257,7 +259,7 @@ function composeInteriorCandidate(
   const env: SceneEnvironment = {
     version: 1,
     recipe: kind,
-    recipeVersion: selection ? 5 : 4,
+    recipeVersion: revision,
     ...(selection ? { composition: selection } : {}),
     seed,
     entrances: [],
@@ -332,7 +334,7 @@ function composeInteriorCandidate(
         )!
       : { x: entry.x + 1, y: entry.y + 1 };
   const arena: Arena = {
-    key: `scene:composed-${kind}:v${selection ? 5 : 1}:${seed}`,
+    key: `scene:composed-${kind}:v${revision}:${seed}`,
     label: `North Heywood · ${kind} · ${plan.label}`,
     extent,
     playerStart,
@@ -384,7 +386,7 @@ function composeInteriorCandidate(
       else if (room.kind === "reception") cluster = "reception_arrival";
       else if (room.kind === "service") cluster = "equipment_support";
       else if (room.kind === "meeting" && room.rect.width * room.rect.height >= 60)
-        cluster = "meeting_support";
+        cluster = refined ? "conference_suite" : "meeting_support";
     }
     if (kind === "nightclub") {
       if (room.id === "bar") cluster = "bar_service";
@@ -418,6 +420,16 @@ function composeInteriorCandidate(
       for (const y of [r.y + 2, ...Array.from({ length: r.height / 2 }, (_, i) => r.y + i * 2)])
         for (let x = r.x; x < r.x + r.width; x += 2)
           if (!candidates.some((p) => p.x === x && p.y === y)) candidates.push({ x, y });
+    }
+    if (refined && kind === "office" && room.id === "work") {
+      // Balance whole work groups across the room, retaining their seating aisles.
+      const width = ["work_parallel", "work_island"].includes(cluster) ? 8 : 6;
+      const x = r.x + Math.max(0, Math.floor((r.width - width) / 4) * 2);
+      const preferred = [
+        { x, y: r.y + 2 },
+        { x, y: r.y + r.height - 4 },
+      ];
+      candidates.unshift(...preferred);
     }
     if (["racking", "vehicle_bay"].includes(cluster)) {
       candidates.length = 0;
@@ -480,6 +492,7 @@ function composeInteriorCandidate(
           "work_island",
           "reception_arrival",
           "meeting_support",
+          "conference_suite",
           "bar_service",
           "lounge_bench",
           "lounge_conversation",
@@ -507,6 +520,18 @@ function composeInteriorCandidate(
       at: { x: r.x, y: r.y + (variant === 0 ? 4 : 0) },
       required: true,
     });
+  }
+  if (refined && kind === "warehouse") {
+    const r = rooms.find((z) => z.id === "service")!.rect;
+    if (r.height >= 16)
+      slots.push({
+        id: "packing_dispatch",
+        kind: "packing_station",
+        zone: "service",
+        axis: "y",
+        at: { x: r.x + 2, y: r.y + r.height - 6 },
+        required: true,
+      });
   }
   placeSceneClusters(arena, slots, reserved, seed, false);
   // Complete each room's activity with secondary furniture along its perimeter.
@@ -599,8 +624,8 @@ function composeInteriorCandidate(
   return {
     locationKey: "north_heywood",
     template: `composed-${kind}`,
-    templateVersion: selection ? 5 : 1,
-    anchor: `composition-${kind}-v${selection ? 5 : 1}-${seed}`,
+    templateVersion: revision,
+    anchor: `composition-${kind}-v${revision}-${seed}`,
     narration:
       kind === "warehouse"
         ? "A loading apron opens onto stocked rack aisles, with a small dispatch office and a maintenance room beside the freight hall."

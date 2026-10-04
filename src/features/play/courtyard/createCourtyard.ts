@@ -277,9 +277,10 @@ export function createCourtyard(
         const obstructs = [...units.values()].some(({ container: unit }) =>
           sceneryOccludes(prop, unit, composed ? composedUnitMetrics(arena).top : street ? 58 : 88),
         );
-        const reveal =
-          !model.structureOnly && model.revealActivity && prop.getData("hidesActivity");
-        prop.setAlpha(reveal ? 0.18 : obstructs ? 0.4 : 1);
+        const layer = prop.getData("activityLayer");
+        const reveal = !model.structureOnly && !!model.revealActivity;
+        prop.setVisible(layer === "cutaway" ? reveal : layer === "full" ? !reveal : true);
+        prop.setAlpha(layer === "cutaway" ? 1 : obstructs ? 0.4 : 1);
       }
       this.weather.clear();
       if (!street && !motion.matches) {
@@ -467,7 +468,9 @@ export function createCourtyard(
         binding?.art ??
         (street ? STREET_PROPS[status.piece.id]! : propKind(arena.key, status.piece.id));
       const placement = propPlacement(status, project);
-      const texture = propTexture(kind, condition);
+      const vehicle = kind === "sedan-engine" || kind === "sedan-cabin";
+      const texture =
+        propTexture(kind, condition) + (vehicle && binding?.rotation === 90 ? "-90" : "");
       const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
       const height = status.destroyed
         ? placement.groundDepth + 5
@@ -475,7 +478,7 @@ export function createCourtyard(
       const prop = current.add
         .image(placement.x, placement.y, texture)
         .setOrigin(0.5, 1)
-        .setFlipX(binding?.rotation === 90)
+        .setFlipX(!vehicle && binding?.rotation === 90)
         .setDisplaySize(placement.width, height)
         .setDepth(placement.depth);
       prop.setData("destroyed", status.destroyed);
