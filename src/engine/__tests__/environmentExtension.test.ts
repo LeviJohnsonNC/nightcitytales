@@ -48,7 +48,7 @@ it("keeps residential front doors reachable and vehicles aligned with their curb
       }
     }
   }
-  expect(variants.size).toBe(3);
+  expect(variants.size).toBe(6);
 });
 it.each(["warehouse", "garage"] as const)(
   "keeps %s loading openings clear and working clusters in their context",

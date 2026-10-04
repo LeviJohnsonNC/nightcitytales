@@ -1,4 +1,5 @@
 /** Residential frontage organizes doors, setbacks, driveways and parallel curb parking. */
+import { compositionSelection } from "./sceneComposition";
 import type { Arena, Point, Rect } from "./battlefield";
 import type { AuthoredScene } from "./authoredScene";
 import { snapshotBattlefield } from "./battlefieldSnapshot";
@@ -24,18 +25,20 @@ const zone = (id: string, kind: ZoneKind, r: Rect, axis: "x" | "y" = "y"): Scene
   axis,
 });
 export function composeResidential(seed: number): AuthoredScene {
-  const variant = (seed + 2) % 3,
-    gap = variant === 1 ? 10 : 8;
+  const selection = compositionSelection("residential", seed);
+  const variant = selection.family,
+    gap = variant === 1 ? 10 : 8,
+    eastGap = gap + (selection.program === "offset-arrivals" ? 6 : 2);
   const zones = [
     zone("street", "road", rect(12, -8, 8, 48)),
     zone("west-walk", "sidewalk", rect(8, -8, 4, 48)),
     zone("east-walk", "sidewalk", rect(20, -8, 4, 48)),
     zone("west-drive", "driveway", rect(0, gap, 8, 6), "x"),
-    zone("east-drive", "driveway", rect(24, gap + 2, 8, 6), "x"),
+    zone("east-drive", "driveway", rect(24, eastGap, 8, 6), "x"),
     zone("west-garden", "garden", rect(6, 0, 2, gap)),
-    zone("east-garden", "garden", rect(24, 0, 2, gap + 2)),
+    zone("east-garden", "garden", rect(24, 0, 2, eastGap)),
     zone("west-south", "garden", rect(6, gap + 6, 2, 26 - gap)),
-    zone("east-south", "garden", rect(24, gap + 8, 2, 24 - gap)),
+    zone("east-south", "garden", rect(24, eastGap + 6, 2, 26 - eastGap)),
   ];
   zones.push(
     zone("west-front", "frontage", rect(6, 0, 2, 32)),
@@ -49,19 +52,20 @@ export function composeResidential(seed: number): AuthoredScene {
   const masses = [
     rect(-8, -8, 14, gap + 8),
     rect(-8, gap + 6, 14, 34 - gap),
-    rect(26, -8, 14, gap + 10),
-    rect(26, gap + 8, 14, 32 - gap),
+    rect(26, -8, 14, eastGap + 8),
+    rect(26, eastGap + 6, 14, 34 - eastGap),
   ];
   const entrances = [
     { x: 7, y: 3 },
     { x: 7, y: gap + 9 },
     { x: 25, y: 5 },
-    { x: 25, y: gap + 11 },
+    { x: 25, y: eastGap + (selection.program === "offset-arrivals" ? 7 : 9) },
   ];
   const env: SceneEnvironment = {
     version: 1,
     recipe: "residential",
-    recipeVersion: 4,
+    recipeVersion: 5,
+    composition: selection,
     seed,
     zones,
     structures: masses.map((r, i) => ({
@@ -104,16 +108,21 @@ export function composeResidential(seed: number): AuthoredScene {
     ...apartment,
     id: "house_2_upper",
     label: "Apartment block behind low entrance wing",
-    rect: rect(30, -8, 10, gap + 10),
+    rect: rect(30, -8, 10, eastGap + 8),
     height: 8,
   });
-  apartment.rect = rect(26, -8, 4, gap + 10);
+  apartment.rect = rect(26, -8, 4, eastGap + 8);
   // Repeated independent arrivals make the low rows legible as households
   // before furniture is present. Preserve the apartment's single shared entry.
   for (const [house, ys] of [
     [0, [7]],
     [1, [gap + 15, gap + 21]],
-    [3, [gap + 17, gap + 21]],
+    [
+      3,
+      selection.program === "offset-arrivals"
+        ? [eastGap + 11, eastGap + 15]
+        : [eastGap + 15, eastGap + 19],
+    ],
   ] as const) {
     for (const [unit, y] of ys.entries()) {
       env.entrances!.push({
@@ -135,10 +144,10 @@ export function composeResidential(seed: number): AuthoredScene {
     { x: 21, y: 3 },
     { x: 11, y: 25 },
     { x: 9, y: gap + 3 },
-    { x: 23, y: gap + 5 },
+    { x: 23, y: eastGap + 3 },
   ];
   const arena: Arena = {
-    key: `scene:composed-residential:v1:${seed}`,
+    key: `scene:composed-residential:v5:${seed}`,
     label: `North Heywood · residential street · ${["Setback homes", "Offset driveways", "Cross-axis frontage"][variant]}`,
     extent: { width: 32, height: 32 },
     playerStart: { x: 17, y: 29 },
@@ -178,7 +187,7 @@ export function composeResidential(seed: number): AuthoredScene {
       id: "visitor_car",
       kind: "driveway",
       zone: "east-drive",
-      at: { x: 28, y: gap + 2 },
+      at: { x: 28, y: eastGap },
       required: true,
     },
     {
@@ -249,8 +258,8 @@ export function composeResidential(seed: number): AuthoredScene {
   return {
     locationKey: "north_heywood",
     template: "composed-residential",
-    templateVersion: 1,
-    anchor: `composition-residential-v1-${seed}`,
+    templateVersion: 5,
+    anchor: `composition-residential-v5-${seed}`,
     narration:
       "Setback homes line a residential street. Front-door paths meet the sidewalks; cars sit in driveways and parallel to the curbs. A resident and courier linger near the houses while a patrol watches the street.",
     layout: snapshotBattlefield(arena),

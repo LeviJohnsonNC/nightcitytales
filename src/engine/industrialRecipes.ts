@@ -1,4 +1,5 @@
 /** Distinct industrial organizations expressed in the same room/connection vocabulary. */
+import type { CompositionSelection } from "./sceneComposition";
 import type { Slot } from "./sceneClusters";
 import type { InteriorPlan } from "./interiorRecipes";
 import type { SceneZone, ZoneKind } from "./sceneEnvironment";
@@ -117,7 +118,11 @@ export function industrialPlan(kind: "warehouse" | "garage", variant: number): I
 
 /** Functional arrangements are authored beside the floorplan, before any props.
  * Saved aisles protect freight/vehicle movement from every later placement pass. */
-export function industrialArrangements(kind: "warehouse" | "garage", variant: number) {
+export function industrialArrangements(
+  kind: "warehouse" | "garage",
+  variant: number,
+  program?: CompositionSelection["program"],
+) {
   const zones: SceneZone[] = [];
   const slots: Slot[] = [];
   const route = (
@@ -132,8 +137,20 @@ export function industrialArrangements(kind: "warehouse" | "garage", variant: nu
     slots.push({ id, kind: family, zone: room, at: { x, y }, axis: "y", required: true });
   const racks = (room: string, positions: [number, number][]) =>
     positions.forEach(([x, y], i) => {
+      const lengthwise = program === "lengthwise-racks";
+      // The right bank in the large hall has six metres between spine and wall.
+      if (lengthwise && variant === 0 && x === 26) x = 24;
+      if (lengthwise && variant === 1 && x === 14 && y === 4) y = 8;
       group(`${room}_rack_${i}`, "rack_aisle", room, x, y);
-      route(`${room}_picking_${i}`, x, y + 2, 4, 2, "staff");
+      if (lengthwise) slots[slots.length - 1]!.axis = "x";
+      route(
+        `${room}_picking_${i}`,
+        x + (lengthwise ? 2 : 0),
+        y + (lengthwise ? 0 : 2),
+        lengthwise ? 2 : 4,
+        lengthwise ? 4 : 2,
+        "staff",
+      );
     });
   const bay = (id: string, room: string, x: number, y: number) => {
     group(id, "service_bay", room, x, y);
@@ -141,6 +158,31 @@ export function industrialArrangements(kind: "warehouse" | "garage", variant: nu
     route(`${id}_left`, x, y + 4, 2, 4, "staff");
     route(`${id}_right`, x + 4, y + 4, 2, 4, "staff");
   };
+  if (kind === "garage" && program === "staggered-bays") {
+    // Change complete bay positions and their approaches together. The vehicle
+    // route stays four metres wide; side/engine working space travels with each bay.
+    if (variant === 0) {
+      route("vehicle_spine", 20, 12, 4, 18);
+      route("east_bay_approach", 24, 12, 6, 4);
+      route("west_bay_approach", 12, 20, 12, 6);
+      route("vehicle_apron", 18, 26, 8, 4);
+      bay("west_bay", "work", 12, 12);
+      bay("east_bay", "work", 24, 4);
+    } else if (variant === 1) {
+      route("vehicle_spine", 10, 4, 4, 20);
+      route("vehicle_apron", 2, 20, 12, 8);
+      route("bay_approach", 16, 14, 14, 4);
+      bay("main_bay", "work", 4, 10);
+      bay("side_bay", "secondary", 20, 6);
+    } else {
+      route("vehicle_spine", 14, 12, 4, 18);
+      route("west_bay_approach", 2, 22, 12, 8);
+      route("east_bay_approach", 18, 26, 12, 4);
+      bay("west_bay", "work", 4, 14);
+      bay("east_bay", "work", 22, 18);
+    }
+    return { zones, slots };
+  }
   if (kind === "warehouse") {
     if (variant === 0) {
       route("freight_spine", 20, 2, 4, 28);

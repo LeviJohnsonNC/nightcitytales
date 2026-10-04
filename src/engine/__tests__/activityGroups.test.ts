@@ -218,7 +218,7 @@ it("composes a complete staffed bar and distinct lounge groups in every nightclu
       );
     }
     expect(env.clusters.filter((c) => c.zoneId === "service").map((c) => c.kind)).toEqual(
-      (seed + 2) % 3 === 1 ? ["club_prep", "service_stock"] : ["service_stock"],
+      env.composition!.family === 1 ? ["club_prep", "service_stock"] : ["service_stock"],
     );
     const dance = env.zones.find((z) => z.kind === "dance")!;
     expect(arena.cover!.some((c) => rectsOverlap(c.rect, dance.rect))).toBe(false);
