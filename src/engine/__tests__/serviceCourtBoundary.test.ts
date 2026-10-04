@@ -67,3 +67,38 @@ it("rejects a fence that implies cover, misses tile centres or blocks a reserved
     expect(() => readBattlefieldSnapshot(layout)).toThrow();
   }
 });
+
+it("keeps architectural boundaries and access stable as nearby cover is damaged or destroyed", () => {
+  for (let seed = 1; seed <= 12; seed++) {
+    const layout = composeScene("intersection", seed).layout;
+    const arena = layout.arena;
+    const before = JSON.stringify(arena.environment);
+    const fence = arena.environment!.structures.find((s) => s.style === "mesh-fence")!;
+    const fencePoint = { x: fence.rect.x + fence.rect.width / 2, y: fence.rect.y + 1 };
+    if (fence.rect.width > fence.rect.height) {
+      fencePoint.x = fence.rect.x + 1;
+      fencePoint.y = fence.rect.y + fence.rect.height / 2;
+    }
+    for (const fraction of [0, 0.5, 1]) {
+      const damage = Object.fromEntries(
+        arena.cover!.map((c) => [c.id, Math.floor(c.maxHp! * fraction)]),
+      );
+      const blocked = blockedTiles(arena, damage);
+      expect(blocked.has(tileKey(tileOf(arena, fencePoint)))).toBe(true);
+      const reached = reachableTiles({
+        arena,
+        cover: damage,
+        from: tileOf(arena, arena.playerStart),
+        allowance: 1000,
+      });
+      for (const entry of arena.environment!.entrances!)
+        expect(reached.has(tileKey(tileOf(arena, entry.position)))).toBe(true);
+      for (const cover of arena.cover!.filter((c) => c.maxHp! > 0 && c.blocksMovement !== false)) {
+        const p = { x: cover.rect.x + 1, y: cover.rect.y + 1 };
+        expect(blocked.has(tileKey(tileOf(arena, p)))).toBe(fraction < 1);
+      }
+      expect(JSON.stringify(arena.environment)).toBe(before);
+      expect(readBattlefieldSnapshot(JSON.parse(JSON.stringify(layout)))).toEqual(layout);
+    }
+  }
+});
