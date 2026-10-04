@@ -1,6 +1,6 @@
 # Checkpoint 4A — service alley and residential street
 
-Alley accepted; residential corrections ready for review. Checkpoint 3 is accepted. This release transfers the established composition machinery to two more environments; broader seed topology variation remains 4D.
+Accepted: both alley and residential passed user visual review. Checkpoint 3 is accepted. This release transfers the established composition machinery to two more environments; broader seed topology variation remains 4D.
 
 ## Service alley
 
@@ -54,3 +54,7 @@ The alley passed user review. Residential needed stronger household rhythm in St
 Validation: 3,521 tests across 264 files pass, including 32-seed entrance spacing, bay adjacency and lane-clearance checks. Typecheck and production build pass; lint has zero errors and 12 existing warnings. Exact comparison of 128 alley/Intersection/Office/Nightclub scenes confirms they are unchanged. No SQL migration.
 
 The earlier screenshots above document the original 4A release, not this correction. The cloud browser could not reach the local preview, so this correction has no fresh visual signoff. Review Residential street 1–3: with Structure view, look for multiple household entrances along each low row; furnished, confirm cars sit in the marked curb bays or driveway, leaving the centre lane and sidewalks clear. Repeat Access positions and Save/Load preservation checks before accepting residential.
+
+## Acceptance
+
+Levi accepted the corrected residential street on 2026-10-03: repeated household entries, explicit parked-car placement, clear sidewalks and off-map continuation pass. With the earlier alley acceptance, Checkpoint 4A is complete. Remaining facade variation is future polish.

@@ -85,6 +85,8 @@ it.each([
   ["nightclub", "bar"],
   ["nightclub", "seating"],
   ["nightclub", "freight"],
+  ["nightclub", "reception"],
+  ["nightclub", "performance"],
   ["intersection", "vendor"],
   ["intersection", "freight"],
   ["intersection", "utilities"],
@@ -207,9 +209,9 @@ it("composes a complete staffed bar and distinct lounge groups in every nightclu
         group.kind === "lounge_bench" ? 2 : 1,
       );
     }
-    expect(env.clusters.filter((c) => c.zoneId === "service").map((c) => c.kind)).toEqual([
-      "service_stock",
-    ]);
+    expect(env.clusters.filter((c) => c.zoneId === "service").map((c) => c.kind)).toEqual(
+      (seed + 2) % 3 === 1 ? ["club_prep", "service_stock"] : ["service_stock"],
+    );
     const dance = env.zones.find((z) => z.kind === "dance")!;
     expect(arena.cover!.some((c) => rectsOverlap(c.rect, dance.rect))).toBe(false);
     expect(readBattlefieldSnapshot(JSON.parse(JSON.stringify(snapshot)))).toEqual(snapshot);
