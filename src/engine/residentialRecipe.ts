@@ -3,7 +3,12 @@ import type { Arena, Point, Rect } from "./battlefield";
 import type { AuthoredScene } from "./authoredScene";
 import { snapshotBattlefield } from "./battlefieldSnapshot";
 import { placeSceneClusters, type Slot } from "./sceneClusters";
-import type { SceneEnvironment, SceneZone, ZoneKind } from "./sceneEnvironment";
+import {
+  addEntranceSurrounds,
+  type SceneEnvironment,
+  type SceneZone,
+  type ZoneKind,
+} from "./sceneEnvironment";
 import { reachableTiles, tileKey, tileOf } from "./grid";
 import { threatFor } from "./threats";
 const rect = (x: number, y: number, width: number, height: number): Rect => ({
@@ -23,8 +28,8 @@ export function composeResidential(seed: number): AuthoredScene {
     gap = variant === 1 ? 10 : 8;
   const zones = [
     zone("street", "road", rect(12, -8, 8, 48)),
-    zone("west-walk", "sidewalk", rect(8, 0, 4, 32)),
-    zone("east-walk", "sidewalk", rect(20, 0, 4, 32)),
+    zone("west-walk", "sidewalk", rect(8, -8, 4, 48)),
+    zone("east-walk", "sidewalk", rect(20, -8, 4, 48)),
     zone("west-drive", "driveway", rect(0, gap, 8, 6), "x"),
     zone("east-drive", "driveway", rect(24, gap + 2, 8, 6), "x"),
     zone("west-garden", "garden", rect(6, 0, 2, gap)),
@@ -32,6 +37,12 @@ export function composeResidential(seed: number): AuthoredScene {
     zone("west-south", "garden", rect(6, gap + 6, 2, 26 - gap)),
     zone("east-south", "garden", rect(24, gap + 8, 2, 24 - gap)),
   ];
+  zones.push(
+    zone("west-front", "frontage", rect(6, 0, 2, 32)),
+    zone("east-front", "frontage", rect(24, 0, 2, 32)),
+    zone("west-through", "aisle", rect(10, 0, 2, 32)),
+    zone("east-through", "aisle", rect(20, 0, 2, 32)),
+  );
   const masses = [
     rect(-8, -8, 14, gap + 8),
     rect(-8, gap + 6, 14, 34 - gap),
@@ -47,14 +58,19 @@ export function composeResidential(seed: number): AuthoredScene {
   const env: SceneEnvironment = {
     version: 1,
     recipe: "residential",
-    recipeVersion: 3,
+    recipeVersion: 4,
     seed,
     zones,
     structures: masses.map((r, i) => ({
       id: `house_${i}`,
-      label: "Residential building",
+      label: [
+        "Attached homes",
+        "Setback residential frontage",
+        "Apartment entrance wing",
+        "Residential block continuing off-map",
+      ][i]!,
       rect: r,
-      height: 2 + (i % 2),
+      height: [3, 4, 3, 5][i]!,
       style: "residential",
       blocksMovement: true,
       blocksShots: true,
@@ -69,6 +85,33 @@ export function composeResidential(seed: number): AuthoredScene {
     props: [],
     dressing: [],
   };
+  // A low attached row and a taller apartment block with an entrance annex
+  // share the street without becoming four interchangeable corner buildings.
+  const row = env.structures[0]!;
+  env.structures.push({
+    ...row,
+    id: "house_0_neighbor",
+    label: "Attached neighbor continuing off-map",
+    rect: rect(-8, -8, 14, 8),
+    height: 4,
+  });
+  row.rect = rect(-8, 0, 14, gap);
+  const apartment = env.structures[2]!;
+  env.structures.push({
+    ...apartment,
+    id: "house_2_upper",
+    label: "Apartment block behind low entrance wing",
+    rect: rect(30, -8, 10, gap + 10),
+    height: 8,
+  });
+  apartment.rect = rect(26, -8, 4, gap + 10);
+  entrances.forEach((p, i) =>
+    zones.push({
+      ...zone(`entry-path-${i}`, "aisle", rect(p.x - 1, p.y - 1, 2, 2), "x"),
+      floorUse: "entry",
+    }),
+  );
+  addEntranceSurrounds(env, "entry-surround");
   const actorPoints = [
     { x: 21, y: 3 },
     { x: 11, y: 25 },
@@ -87,6 +130,7 @@ export function composeResidential(seed: number): AuthoredScene {
   const reserved = [arena.playerStart, ...actorPoints, ...entrances].map((p) =>
     rect(p.x - 1, p.y - 1, 2, 2),
   );
+  reserved.push(...zones.filter((z) => z.kind === "aisle").map((z) => z.rect));
   const slots: Slot[] = [
     { id: "parked_north", kind: "parking", zone: "street", at: { x: 18, y: 2 }, required: true },
     { id: "parked_south", kind: "parking", zone: "street", at: { x: 12, y: 24 }, required: true },
@@ -105,8 +149,20 @@ export function composeResidential(seed: number): AuthoredScene {
       at: { x: 28, y: gap + 2 },
       required: true,
     },
-    { id: "plant_nw", kind: "garden", zone: "west-garden", at: { x: 6, y: 6 } },
-    { id: "plant_ne", kind: "garden", zone: "east-garden", at: { x: 24, y: 0 } },
+    {
+      id: "home_entry",
+      kind: "residential_entry",
+      zone: "west-front",
+      at: { x: 6, y: 4 },
+      required: true,
+    },
+    {
+      id: "apartment_entry",
+      kind: "residential_entry",
+      zone: "east-front",
+      at: { x: 24, y: 6 },
+      required: true,
+    },
     { id: "plant_sw", kind: "garden", zone: "west-south", at: { x: 6, y: 26 } },
     { id: "plant_se", kind: "garden", zone: "east-south", at: { x: 24, y: 28 } },
     { id: "street_lights", kind: "frontage", zone: "west-walk", at: { x: 10, y: 0 } },
@@ -137,6 +193,8 @@ export function composeResidential(seed: number): AuthoredScene {
     });
     env.structures.forEach((s) => {
       s.rect = swap(s.rect);
+      for (const a of s.attachments ?? [])
+        a.edge = ({ north: "west", west: "north", east: "south", south: "east" } as const)[a.edge];
     });
     env.entrances!.forEach((e) => {
       e.position = point(e.position);

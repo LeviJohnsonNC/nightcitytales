@@ -590,3 +590,36 @@ function readInterior(
     }
   return { connections, access };
 }
+
+/** Add facade-bound thresholds at saved exterior approaches before orientation transforms. */
+export function addEntranceSurrounds(
+  environment: SceneEnvironment,
+  kind: "entry-surround" | "service-surround",
+): void {
+  for (const entrance of environment.entrances ?? []) {
+    const host = environment.structures.find((s) => s.id === entrance.structureId)!;
+    const r = host.rect,
+      p = entrance.position;
+    const edge =
+      p.x === r.x - 1
+        ? "west"
+        : p.x === r.x + r.width + 1
+          ? "east"
+          : p.y === r.y - 1
+            ? "north"
+            : "south";
+    const offset = edge === "west" || edge === "east" ? p.y - r.y - 1 : p.x - r.x - 1;
+    host.attachments = [
+      ...(host.attachments ?? []),
+      {
+        id: `${entrance.id}_surround`,
+        kind,
+        edge,
+        offset,
+        span: 2,
+        projection: 0.2,
+        height: 2.5,
+      },
+    ];
+  }
+}

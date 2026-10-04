@@ -1355,3 +1355,7 @@ Deferred on purpose, so that deferring them stays a decision:
 **Checkpoint 3A is accepted:** Levi approved attachments and visual preservation on 2026-10-03. [Checkpoint 3B](docs/checkpoint-three-b.md) defines the service court with a movement-blocking, shot-permeable mesh edge and saved loading-mouth reservation; two edge planters are removed. Ready for review. Checkpoint 3C combined tactical/small-screen acceptance remains.
 
 **Checkpoint 3B is accepted (2026-10-04).** [Checkpoint 3C](docs/checkpoint-three-c.md) completes engineering preservation verification: 3,518 tests pass, destruction/access regression coverage, browser snapshot restoration, desktop occlusion and 390px targeting checks. No composition or runtime changes were needed. Checkpoint 3 is ready for final user acceptance; final artwork remains future work.
+
+**Checkpoint 3 is complete:** Levi accepted the final architectural identity, circulation, actor/targeting and damage preservation review on 2026-10-03 (Regina time).
+
+[Checkpoint 4A](docs/checkpoint-four-a.md) transfers functional service groups and facade thresholds to the alley, and adds domestic entry groups, protected walks and attached-home/apartment forms to residential streets. Ready for visual review. Next: 4B warehouse/garage organization, 4C nightclub gap closure, 4D broader recipe combinations and seed preservation. No new rendering or combat branch.
