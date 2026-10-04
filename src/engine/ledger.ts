@@ -282,6 +282,55 @@ export function readSkillCheckEventData(raw: unknown): SkillCheckEventData | nul
   return { skillId, success: typeof d["success"] === "boolean" ? d["success"] : null };
 }
 
+/**
+ * What a resolved check says about itself, for the one telling of the job.
+ *
+ * `readSkillCheckEventData` above is the half settlement prices and is left as
+ * it was. This is the rest: how it came out, whether a natural 10 or 1 was in
+ * it, how hard the table had set it, and what Luck was burned on it. The DV is
+ * not in the event's data but in its roll (`roll.dv`), which is where the engine
+ * put it, so the reader takes both. An opposed check carries no DV, and says who
+ * it was against instead.
+ */
+export type CheckHighlightEventData = {
+  skillId: string | null;
+  skillName: string | null;
+  success: boolean | null;
+  margin: number | null;
+  critical: "success" | "failure" | null;
+  luckSpent: number;
+  dv: number | null;
+  opposedTo: string | null;
+};
+
+export function readCheckHighlightEventData(
+  raw: unknown,
+  roll?: unknown,
+): CheckHighlightEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const skillId = str(d["skill_id"]) ?? str(d["skillId"]);
+  // A check with neither a Skill nor an outcome is a prompt, not a roll.
+  if (skillId === null && typeof d["success"] !== "boolean") return null;
+  const rolled =
+    roll && typeof roll === "object" && !Array.isArray(roll) ? (roll as RawPayload) : {};
+  const opposed = d["opposed"];
+  const critical = d["critical"];
+  return {
+    skillId,
+    skillName: str(d["skill_name"]),
+    success: typeof d["success"] === "boolean" ? d["success"] : null,
+    margin: num(d["margin"]),
+    critical: critical === "success" || critical === "failure" ? critical : null,
+    luckSpent: Math.max(0, num(d["luck_spent"]) ?? 0),
+    dv: num(rolled["dv"]),
+    opposedTo:
+      opposed && typeof opposed === "object" && !Array.isArray(opposed)
+        ? str((opposed as RawPayload)["npc_name"])
+        : null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // backup_called
 // ---------------------------------------------------------------------------
@@ -474,6 +523,67 @@ export function readJobSettledEventData(raw: unknown): JobSettledEventData | nul
   const agreed =
     payment && typeof payment === "object" ? (num((payment as RawPayload)["agreed"]) ?? 0) : 0;
   return { noticed, agreed };
+}
+
+// ---------------------------------------------------------------------------
+// the closing frame — carried inside the `job_settled` receipt as `frame`.
+//
+// Computed once, when the job settles, from the whole job ledger; read back by
+// Aftermath and by the "Previously" the next Life screen opens with. Storing it
+// beside the receipt means neither has to find the job's rows again, which a
+// 200-row window cannot promise.
+// ---------------------------------------------------------------------------
+
+export type PeakKind = "death_save" | "close_call" | "critical" | "hardest_check" | "big_hit";
+export type ThreadKind = "survivor" | "clock" | "cold";
+
+export type ClosingFrame = {
+  /** The job it closes, as the offer called it. Null when the registry cannot say. */
+  title: string | null;
+  /** The moment of the job that mattered most, or null on a quiet one. */
+  peak: { kind: PeakKind; headline: string; trace: string | null } | null;
+  /** One thing the world is still holding, or null when it is holding nothing. */
+  thread: { kind: ThreadKind; text: string } | null;
+};
+
+const PEAK_KINDS: readonly string[] = [
+  "death_save",
+  "close_call",
+  "critical",
+  "hardest_check",
+  "big_hit",
+];
+const THREAD_KINDS: readonly string[] = ["survivor", "clock", "cold"];
+
+/** The frame stored in a settlement receipt, or null when there is none to read. */
+export function readClosingFrameEventData(raw: unknown): ClosingFrame | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const frameRaw = (raw as RawPayload)["frame"];
+  if (!frameRaw || typeof frameRaw !== "object" || Array.isArray(frameRaw)) return null;
+  const f = frameRaw as RawPayload;
+
+  const peakRaw = f["peak"];
+  let peak: ClosingFrame["peak"] = null;
+  if (peakRaw && typeof peakRaw === "object" && !Array.isArray(peakRaw)) {
+    const p = peakRaw as RawPayload;
+    const kind = str(p["kind"]);
+    const headline = str(p["headline"]);
+    if (kind !== null && PEAK_KINDS.includes(kind) && headline) {
+      peak = { kind: kind as PeakKind, headline, trace: str(p["trace"]) };
+    }
+  }
+  const threadRaw = f["thread"];
+  let thread: ClosingFrame["thread"] = null;
+  if (threadRaw && typeof threadRaw === "object" && !Array.isArray(threadRaw)) {
+    const t = threadRaw as RawPayload;
+    const kind = str(t["kind"]);
+    const text = str(t["text"]);
+    if (kind !== null && THREAD_KINDS.includes(kind) && text) {
+      thread = { kind: kind as ThreadKind, text };
+    }
+  }
+  if (peak === null && thread === null) return null;
+  return { title: str(f["title"]), peak, thread };
 }
 
 // ---------------------------------------------------------------------------

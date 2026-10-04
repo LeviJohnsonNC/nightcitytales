@@ -23,6 +23,8 @@ import { CheckCard } from "./CheckCard";
 import { CombatBoard } from "./CombatBoard";
 import { CombatCard } from "./CombatCard";
 import { ObituaryCard } from "./ObituaryCard";
+import { ClosingFrameCard } from "./ClosingFrameCard";
+import { frameOfCurrentJob } from "@/features/campaign/previously";
 import { DeathSaveCard } from "./DeathSaveCard";
 
 import { JobCard } from "./JobCard";
@@ -615,9 +617,12 @@ function WrapUpCard({
     .reverse()
     .find((e) => e.type === "mission_completed" || e.type === "campaign_ended");
   const objectives = bundle.runtime?.objectives ?? [];
+  // How THIS job ended, read back from the receipt the settlement wrote.
+  const frame = frameOfCurrentJob({ events: bundle.events, settled: bundle.climbEvents });
   return (
     <section className="space-y-3 border border-accent bg-accent/5 p-4">
       <Label>Job complete</Label>
+      {frame && <ClosingFrameCard frame={frame} />}
       {summary && <p className="text-sm">{summary.summary}</p>}
       {objectives.length > 0 && (
         <ul className="space-y-1 text-sm text-muted-foreground">

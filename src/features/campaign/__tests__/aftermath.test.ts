@@ -160,6 +160,43 @@ describe("atomic settlement preparation", () => {
     );
   });
 
+  it("stores the job's closing frame in the receipt it hands the transaction", async () => {
+    liveEvents = [
+      ev("mission_started", { brokerKey: "wakako" }),
+      ev("attack", {
+        attacker: PLAYER,
+        target: "Vex",
+        hit: true,
+        damage: 15,
+        weapon: "Sniper Rifle",
+        through_armor: 9,
+        hp_before: 30,
+        hp_after: 21,
+      }),
+    ];
+
+    const report = await settleAftermath(input());
+
+    // The peak is the biggest hit landed, the thread is Vex still being out there.
+    expect(report?.frame).toMatchObject({
+      peak: { kind: "big_hit", headline: "Your Sniper Rifle did 15 to Vex." },
+      thread: { kind: "survivor", text: "Vex walked away from it, and is still out there." },
+    });
+    // And it is in what is stored, through the same reader Aftermath and Life use.
+    const sent = settleJob.mock.calls[0]![0] as { receipt: unknown };
+    const { readClosingFrameEventData } = await import("@/engine");
+    expect(readClosingFrameEventData(sent.receipt)).toEqual(report?.frame);
+  });
+
+  it("stores no frame for a job with nothing to keep", async () => {
+    liveEvents = [ev("mission_started")];
+    const report = await settleAftermath(input());
+    expect(report?.frame).toBeNull();
+    const sent = settleJob.mock.calls[0]![0] as { receipt: unknown };
+    const { readClosingFrameEventData } = await import("@/engine");
+    expect(readClosingFrameEventData(sent.receipt)).toBeNull();
+  });
+
   it("uses fresh campaign people and day", async () => {
     npcs = [
       {

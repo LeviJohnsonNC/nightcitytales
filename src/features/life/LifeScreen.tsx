@@ -59,6 +59,8 @@ import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
 import { JOB_TIERS, readWalkOnsEventData } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
+import { PreviouslyCard } from "@/features/play/ClosingFrameCard";
+import { previouslyFor, readDismissed, writeDismissed } from "@/features/campaign/previously";
 import { MapButton } from "@/features/atlas/MapButton";
 import { CampaignHeader } from "@/features/play/CampaignHeader";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
@@ -742,6 +744,12 @@ export function LifeScreen({
   const life = useLife(campaignId);
   const bundle = life.bundle;
   const [mobileReachOpen, setMobileReachOpen] = useState(false);
+  // Which job's "Previously" this browser has put away. Read after mount: it is
+  // a per-viewer convenience held in storage that may be absent or blocked.
+  const [dismissedFrame, setDismissedFrame] = useState<string | null>(null);
+  useEffect(() => {
+    setDismissedFrame(readDismissed(campaignId));
+  }, [campaignId]);
 
   /**
    * What the last turn cost.
@@ -855,6 +863,12 @@ export function LifeScreen({
   // early returns, and the card should vanish the moment they act anyway —
   // their own turn makes the newest event recent.
   const returning = welcomeBack(bundle.events.at(-1)?.created_at, Date.now(), status.commitments);
+  // How the last job closed, until the player does anything or puts it away.
+  const previously = previouslyFor({
+    latest: bundle.lastFrame,
+    events: bundle.events,
+    dismissedId: dismissedFrame,
+  });
 
   /**
    * The live context every number on this screen is read through: worn armor,
@@ -1032,6 +1046,17 @@ export function LifeScreen({
                 </>
               }
             />
+
+            {/* What happened on the job they just finished: the peak, and what it left open. */}
+            {previously && bundle.lastFrame && (
+              <PreviouslyCard
+                frame={previously}
+                onDismiss={() => {
+                  writeDismissed(campaignId, bundle.lastFrame!.settledId);
+                  setDismissedFrame(bundle.lastFrame!.settledId);
+                }}
+              />
+            )}
 
             {/* Coming back after a while: the threads they left open, by name. */}
             {returning && (

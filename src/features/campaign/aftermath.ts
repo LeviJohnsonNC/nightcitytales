@@ -9,6 +9,7 @@
  */
 import {
   applyObservations,
+  closingFrame,
   findMission,
   clampDisposition,
   clampStanding,
@@ -21,7 +22,9 @@ import {
   rollPayment,
   survivorsFrom,
   tickClock,
+  type ClosingFrame,
   type FactionId,
+  type ThreadInput,
   type JobMechanicalCost,
   type PaymentOutcome,
   type SettlementFinding,
@@ -78,6 +81,12 @@ export type AftermathReport = {
   brokerKey: string | null;
   pressure: PressureReceipt[];
   people: NpcReceipt[];
+  /**
+   * The one moment of the job worth keeping and the one thing still open, picked
+   * from the job's own ledger. Null on a quiet job, and absent on a receipt
+   * written before this existed — both read as "nothing to tell".
+   */
+  frame: ClosingFrame | null;
 };
 
 /** A stable key for somebody the ledger only knows by name. */
@@ -196,6 +205,7 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
   }
 
   const pressure: PressureReceipt[] = [];
+  const frameClocks: ThreadInput["clocks"] = [];
   const clocks: SettleJobPayload["clocks"] = [];
   const factions: SettleJobPayload["factions"] = [];
   const pressureChange = applyObservations(reportsFrom(findings, input.factionId));
@@ -230,6 +240,13 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
       before,
       after: after.filled,
     });
+    frameClocks.push({
+      label: change.definition.label,
+      before,
+      filled: after.filled,
+      segments: after.segments,
+      hidden: after.hidden === true,
+    });
   }
   for (const change of pressureChange.standings) {
     const row = factionRows.find((faction) => faction.faction_id === change.factionId);
@@ -260,6 +277,15 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
     brokerKey,
     pressure,
     people,
+    // Computed here, from the whole job ledger, and stored with the receipt: the
+    // Aftermath screen and the next Life screen both read it back rather than
+    // go looking for the job's rows in a window that may no longer hold them.
+    frame: closingFrame({
+      title: findMission(input.missionId)?.title ?? null,
+      events: live,
+      playerName: input.playerName,
+      thread: { survivors, clocks: frameClocks, people, brokerKey },
+    }),
   };
 
   const result = await settleJob({

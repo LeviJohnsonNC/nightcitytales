@@ -100,6 +100,7 @@ import {
   type FullCharacter,
   type Json,
 } from "@/lib/backend";
+import { latestClosingFrame, type LatestFrame } from "@/features/campaign/previously";
 import { planItemUse } from "@/features/campaign/itemUse";
 import { saveMissionRuntime } from "@/features/campaign/missionState";
 import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
@@ -322,6 +323,8 @@ export type LifeBundle = {
   pinnedGoals: Goal[];
   /** Who has heard of the character, and the work that brings them. */
   climb: { reputation: ReputationStanding; tier: TierStanding };
+  /** How the last job closed: its peak and what it left open. Null on a quiet one. */
+  lastFrame: LatestFrame | null;
 };
 
 export async function loadLife(campaignId: string): Promise<LifeBundle> {
@@ -456,6 +459,7 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     },
     pinnedGoals: pinsEvent ? readGoalsPinnedEventData(pinsEvent.data) : [],
     climb,
+    lastFrame: latestClosingFrame(settledJobs),
   };
 }
 
