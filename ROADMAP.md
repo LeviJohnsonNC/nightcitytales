@@ -278,6 +278,66 @@ in one district.
 
 ---
 
+## Also shipped: the career soak
+
+The owed pacing check, and a gate. `src/features/dev/careerSim.ts` plays whole
+careers without a table: the game's money and its climb, through the engine's
+own functions (`rollPayment`, `pickJobSeed`, `reputationFrom`, `jobTierFor`,
+`billsDue`, the I.P. prices), under stated playstyles and job cadences. Two uses:
+
+- **A gate.** `careerSim.test.ts` plays a few hundred short careers in CI and
+  fails if any breaks a rule the rest of the game leans on: money that is not a
+  number, Reputation that goes down, work that gets worse, I.P. below zero, a
+  payment above the fee. Proved to bite (a sign flip in the marked-money fraction
+  trips it at once). It asserts no balance, because the playstyles are
+  assumptions.
+- **A report.** `bun run tools/pacing/soak.ts` (about two minutes at 100 careers a
+  row; `--careers`, `--horizon`, `--start`) prints the table below.
+
+What it plays: rent and Lifestyle, jobs at the crew's tier, the printed
+Reputation deeds, I.P. awards (job tiers 20–50, life tiers 10–30 every seventh
+day), and spending on the Role Rank or on Skills. What it does NOT: combat, so
+nothing about how often anybody dies; ammunition, armor repair, doctors or
+chrome, so every surplus below is an upper bound; how often work turns up,
+which is the cadence column and a week at a table. The playstyles (ghost, pro,
+brawler) are three guesses at how loud a crew is.
+
+What it found, 100 careers a row, 180 days, 500eb to start, every Role evenly:
+
+| Crew    | Jobs every | Steady work         | Serious work | First Rank | Rank at day 180 | Behind on rent |
+| ------- | ---------- | ------------------- | ------------ | ---------- | --------------- | -------------- |
+| ghost   | 7 days     | d84 (37% got there) | never        | d63        | 6               | never          |
+| pro     | 7 days     | d21                 | d91 (57%)    | d63        | 6               | never          |
+| brawler | 7 days     | d21                 | d42          | d63        | 6               | never          |
+| pro     | 14 days    | d42                 | d126 (26%)   | d84        | 5               | never          |
+
+- **Money is not a constraint, anywhere.** No career in any of the nine
+  cadence-and-style rows was ever behind on rent, and at day 180 the median
+  character holds 5,000–73,000eb. One job a month at steady pay covers a month's
+  bills (1,100eb for every Role but the Exec, who pays 100). Even street work
+  leaves about 570eb a job for kit and chrome at a job a week and 310 a
+  fortnight. The simulator charges no kit, so these are ceilings — but they are
+  the number the real costs have to beat. If a night's ammunition, armor and
+  doctor do not cost roughly that, "eurobucks that only go up" (`PRODUCT.md`) is
+  live. The next thing to build is a combat-cost model, so this stops being an
+  upper bound.
+- **A crew that works clean never leaves street work.** A clean job earns no
+  Reputation (`reputation-deeds.json`), and the better tiers need Reputation 3
+  and 5. That is the stated trade between heat and fame, and a test now pins it
+  so it stays a decision; but it means the quietest play has no climb in work at
+  all. Whether that is wanted is the owner's.
+- **The climb has a flat second half.** A loud crew reaches the Reputation cap
+  (6) and serious work by about day 40, and from there nothing new arrives in
+  work or name; Reputation 7+ is unreachable (the open question above). What is
+  left to climb is the Role Rank (a Rank every 10–20 awards at 300–600 I.P.) and
+  Skills.
+- **The first Role Rank takes about nine weeks of weekly jobs** (day 63 at a job
+  every 7 days, 84 at 14), and a Skill Level about three jobs (day 21). Saving
+  for the Rank means no Skill raises at all in that time; buying Skills means no
+  Rank (4 at day 180). Both are choices a player makes, and now they have a price
+  in days.
+- **No invariant was broken** over the nine rows and the gate's careers.
+
 ## Also shipped: the ripperdoc
 
 Chrome was the one thing the shop deliberately would not sell. It now has its

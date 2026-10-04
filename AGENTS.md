@@ -377,6 +377,14 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   (`SHOW_HERO_DEMO` in `routes/index.tsx`) while its look is reworked.
 - `src/features/campaign/` maps pure engine campaign state to persisted rows and
   append-only ledger events.
+- `src/features/dev/careerSim.ts` plays whole careers through the engine's own
+  functions (payment, Reputation, work tiers, bills, I.P. prices) under stated
+  playstyles, and is both a CI gate (`careerSim.test.ts` fails if a rule the game
+  leans on breaks over a few hundred careers) and, through
+  `bun run tools/pacing/soak.ts`, the pacing report. Its playstyles and cadences
+  are assumptions it states out loud; it plays no combat and charges no kit, so
+  its surpluses are upper bounds. It restates no rule — keep it that way, or it
+  verifies a game that is not the one shipped.
 - `src/features/dev/` holds developer tooling, currently the `/combat`
   battlefield harness. It contains no game logic: it seeds a fixture through the
   same calls the play loop makes and hands off to `/play/:id`, so what it
