@@ -1,4 +1,5 @@
 /** Distinct industrial organizations expressed in the same room/connection vocabulary. */
+import type { Slot } from "./sceneClusters";
 import type { InteriorPlan } from "./interiorRecipes";
 import type { SceneZone, ZoneKind } from "./sceneEnvironment";
 const zone = (
@@ -112,4 +113,86 @@ export function industrialPlan(kind: "warehouse" | "garage", variant: number): I
       ["work", "outside", 12, 30, 8, 2],
     ],
   };
+}
+
+/** Functional arrangements are authored beside the floorplan, before any props.
+ * Saved aisles protect freight/vehicle movement from every later placement pass. */
+export function industrialArrangements(kind: "warehouse" | "garage", variant: number) {
+  const zones: SceneZone[] = [];
+  const slots: Slot[] = [];
+  const route = (
+    id: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    use: "handling" | "staff" = "handling",
+  ) => zones.push({ ...zone(id, "aisle", x, y, w, h), floorUse: use });
+  const group = (id: string, family: string, room: string, x: number, y: number) =>
+    slots.push({ id, kind: family, zone: room, at: { x, y }, axis: "y", required: true });
+  const racks = (room: string, positions: [number, number][]) =>
+    positions.forEach(([x, y], i) => {
+      group(`${room}_rack_${i}`, "rack_aisle", room, x, y);
+      route(`${room}_picking_${i}`, x, y + 2, 4, 2, "staff");
+    });
+  const bay = (id: string, room: string, x: number, y: number) => {
+    group(id, "service_bay", room, x, y);
+    route(`${id}_tools`, x, y + 2, 6, 2, "staff");
+    route(`${id}_left`, x, y + 4, 2, 4, "staff");
+    route(`${id}_right`, x + 4, y + 4, 2, 4, "staff");
+  };
+  if (kind === "warehouse") {
+    if (variant === 0) {
+      route("freight_spine", 20, 2, 4, 28);
+      route("receiving_apron", 18, 26, 8, 4);
+      racks("work", [
+        [14, 4],
+        [26, 4],
+        [14, 12],
+        [26, 12],
+      ]);
+      group("receiving_stock", "freight", "staging", 14, 24);
+      group("outbound_stock", "freight", "staging", 26, 24);
+    } else if (variant === 1) {
+      route("freight_spine", 8, 2, 4, 28);
+      route("receiving_apron", 6, 28, 8, 2);
+      racks("work", [
+        [2, 4],
+        [14, 4],
+        [2, 14],
+        [14, 14],
+      ]);
+      group("receiving_stock", "freight", "staging", 2, 26);
+      group("outbound_stock", "freight", "staging", 16, 26);
+    } else {
+      route("freight_spine", 6, 20, 4, 10);
+      route("receiving_apron", 4, 28, 8, 2);
+      racks("work", [[4, 4]]);
+      racks("stock", [
+        [18, 4],
+        [24, 4],
+      ]);
+      group("receiving_stock", "freight", "staging", 2, 22);
+    }
+  } else if (variant === 0) {
+    route("vehicle_spine", 20, 12, 4, 18);
+    route("bay_approach", 12, 12, 18, 4);
+    route("vehicle_apron", 18, 26, 8, 4);
+    bay("west_bay", "work", 12, 4);
+    bay("east_bay", "work", 24, 4);
+    // A clear manoeuvring/inspection area remains at the rear of the hall.
+    route("inspection_space", 14, 18, 4, 4, "staff");
+  } else if (variant === 1) {
+    route("vehicle_spine", 10, 4, 4, 20);
+    route("vehicle_apron", 2, 20, 12, 8);
+    route("bay_approach", 16, 12, 14, 4);
+    bay("main_bay", "work", 4, 6);
+    bay("side_bay", "secondary", 20, 4);
+  } else {
+    route("vehicle_spine", 14, 12, 4, 18);
+    route("bay_approach", 2, 26, 28, 4);
+    bay("west_bay", "work", 4, 18);
+    bay("east_bay", "work", 22, 18);
+  }
+  return { zones, slots };
 }

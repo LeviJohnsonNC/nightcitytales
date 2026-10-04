@@ -57,16 +57,16 @@ it.each(["warehouse", "garage"] as const)(
       const arena = composeScene(kind, seed).layout.arena,
         env = arena.environment!;
       expect(
-        env.clusters.some((c) => c.kind === (kind === "warehouse" ? "racking" : "vehicle_bay")),
+        env.clusters.some((c) => c.kind === (kind === "warehouse" ? "rack_aisle" : "service_bay")),
       ).toBe(true);
       expect(
         env.zones.some((z) => z.kind === "doorway" && (z.rect.width >= 8 || z.rect.height >= 8)),
       ).toBe(true);
       for (const cluster of env.clusters) {
         const zone = env.zones.find((z) => z.id === cluster.zoneId)!;
-        if (cluster.kind === "racking") expect(zone.kind).toBe("storage");
-        if (cluster.kind === "vehicle_bay") expect(zone.kind).toBe("workbay");
-        if (cluster.kind === "workbench") expect(zone.kind).toBe("service");
+        if (cluster.kind === "rack_aisle") expect(zone.kind).toBe("storage");
+        if (cluster.kind === "service_bay") expect(zone.kind).toBe("workbay");
+        if (cluster.kind === "repair_support") expect(zone.kind).toBe("service");
       }
       for (const door of env.zones.filter((z) => z.kind === "doorway"))
         expect(arena.cover!.some((c) => rectsOverlap(c.rect, door.rect))).toBe(false);
