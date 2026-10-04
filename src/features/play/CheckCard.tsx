@@ -15,8 +15,43 @@ import { DiceRoll, type DieTone } from "@/features/chargen/DiceRoll";
 import { playClash } from "@/features/dice/fx";
 import { RollMath } from "@/features/dice/RollMath";
 import { LuckStepper } from "./LuckStepper";
+import { OddsChip } from "./OddsChip";
+import { oddsReadout } from "./oddsChip";
 import { describeOutlook } from "./outlook";
 import type { CheckRoll, PendingCheck, PendingOpposition } from "./checkPrompt";
+import type { CheckPreview } from "./rollCheck";
+
+/** The chance of this check with a given Luck spend, by the engine's own numbers. */
+type OddsFn = (luckSpend: number) => CheckPreview | null;
+
+/**
+ * The chip for the Luck dedicated so far: where the check stands, and what one
+ * more point of Luck would be worth. Null when the card carries no target.
+ */
+function OddsLine({
+  odds,
+  luck,
+  luckRemaining,
+  versus,
+  explain,
+}: {
+  odds: OddsFn;
+  luck: number;
+  luckRemaining: number;
+  versus: string;
+  explain: (preview: CheckPreview) => string;
+}) {
+  const now = odds(luck);
+  const withoutLuck = odds(0);
+  if (!now || !withoutLuck) return null;
+  const withOneMore = luck < luckRemaining ? odds(luck + 1) : null;
+  return (
+    <OddsChip
+      readout={oddsReadout({ now, withOneMore, withoutLuck, luckSpent: luck, versus })}
+      explain={explain(now)}
+    />
+  );
+}
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -71,6 +106,7 @@ function OpposedBody({
   onSettled,
   busy,
   luckRemaining,
+  odds,
 }: {
   pending: PendingCheck;
   opposition: PendingOpposition;
@@ -78,6 +114,7 @@ function OpposedBody({
   onSettled: (roll: CheckRoll) => void;
   busy: boolean;
   luckRemaining: number;
+  odds: OddsFn;
 }) {
   const [luck, setLuck] = useState(0);
   // Both sides are rolled together on the first click; `revealed` is only how
@@ -126,6 +163,18 @@ function OpposedBody({
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
           Their numbers are what this campaign already knows about them
         </p>
+      )}
+
+      {rolled === null && (
+        <OddsLine
+          odds={odds}
+          luck={luck}
+          luckRemaining={luckRemaining}
+          versus={`to beat ${opposition.npcName}`}
+          explain={(p) =>
+            `You roll 1d10 at +${p.base}; ${opposition.npcName} rolls at +${p.against}. You have to beat their total — a tie goes to them — and each side takes its own critical.`
+          }
+        />
       )}
 
       <LuckStepper
@@ -256,6 +305,7 @@ function DvBody({
   onSettled,
   busy,
   luckRemaining,
+  odds,
 }: {
   pending: PendingCheck;
   dv: number;
@@ -263,6 +313,7 @@ function DvBody({
   onSettled: (roll: CheckRoll) => void;
   busy: boolean;
   luckRemaining: number;
+  odds: OddsFn;
 }) {
   const [rolled, setRolled] = useState<Extract<CheckRoll, { kind: "dv" }> | null>(null);
   const [luck, setLuck] = useState(0);
@@ -282,6 +333,13 @@ function DvBody({
 
       {result === null ? (
         <div className="space-y-3">
+          <OddsLine
+            odds={odds}
+            luck={luck}
+            luckRemaining={luckRemaining}
+            versus={`to clear DV ${dv}`}
+            explain={(p) => describeOutlook(p.base, dv)}
+          />
           <LuckStepper value={luck} remaining={luckRemaining} onChange={setLuck} disabled={busy} />
           <div className="flex items-center gap-3">
             <DiceRoll
@@ -305,9 +363,6 @@ function DvBody({
             />
             <div>
               <p className="text-sm font-semibold">Roll 1d10</p>
-              <p className="text-xs text-muted-foreground">
-                {describeOutlook(pending.base + luck - pending.woundPenalty, dv)}
-              </p>
             </div>
           </div>
         </div>
@@ -347,6 +402,7 @@ export function CheckCard({
   onSettled,
   busy,
   luckRemaining,
+  odds,
 }: {
   pending: PendingCheck;
   roll: (luckSpend: number) => CheckRoll;
@@ -354,6 +410,11 @@ export function CheckCard({
   busy: boolean;
   /** Luck Points the character has left this session. */
   luckRemaining: number;
+  /**
+   * The chance of this check at a given Luck spend. Built by the caller from the
+   * same inputs as `roll`, so the chip is made of what the die is rolled with.
+   */
+  odds: OddsFn;
 }) {
   const opposition = pending.opposition;
 
@@ -403,6 +464,7 @@ export function CheckCard({
           onSettled={onSettled}
           busy={busy}
           luckRemaining={luckRemaining}
+          odds={odds}
         />
       ) : (
         <DvBody
@@ -412,6 +474,7 @@ export function CheckCard({
           onSettled={onSettled}
           busy={busy}
           luckRemaining={luckRemaining}
+          odds={odds}
         />
       )}
     </section>

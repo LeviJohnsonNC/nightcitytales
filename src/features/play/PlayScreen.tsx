@@ -22,6 +22,9 @@ import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { CheckCard } from "./CheckCard";
 import { CombatBoard } from "./CombatBoard";
 import { CombatCard } from "./CombatCard";
+import { ObituaryCard } from "./ObituaryCard";
+import { ClosingFrameCard } from "./ClosingFrameCard";
+import { frameOfCurrentJob } from "@/features/campaign/previously";
 import { DeathSaveCard } from "./DeathSaveCard";
 
 import { JobCard } from "./JobCard";
@@ -598,15 +601,28 @@ function WrapUpCard({
   play: ReturnType<typeof usePlay>;
 }) {
   const died = status === "died";
+  if (died) {
+    // A death is the end of the run, so it gets the page the run deserves
+    // rather than the box a finished job gets. The Improvement Points and the
+    // settlement stay: they are the same bookkeeping, and not this card's to drop.
+    return (
+      <div className="space-y-4">
+        <ObituaryCard bundle={bundle} />
+        <SettlementReport events={bundle.events} />
+        <IpPanel play={play} />
+      </div>
+    );
+  }
   const summary = [...bundle.events]
     .reverse()
     .find((e) => e.type === "mission_completed" || e.type === "campaign_ended");
   const objectives = bundle.runtime?.objectives ?? [];
+  // How THIS job ended, read back from the receipt the settlement wrote.
+  const frame = frameOfCurrentJob({ events: bundle.events, settled: bundle.climbEvents });
   return (
-    <section
-      className={`space-y-3 border p-4 ${died ? "border-destructive bg-destructive/10" : "border-accent bg-accent/5"}`}
-    >
-      <Label>{died ? "You died in Night City" : "Job complete"}</Label>
+    <section className="space-y-3 border border-accent bg-accent/5 p-4">
+      <Label>Job complete</Label>
+      {frame && <ClosingFrameCard frame={frame} />}
       {summary && <p className="text-sm">{summary.summary}</p>}
       {objectives.length > 0 && (
         <ul className="space-y-1 text-sm text-muted-foreground">
@@ -622,41 +638,35 @@ function WrapUpCard({
         {bundle.vitals.hp_current}/{bundle.vitals.hp_max}
       </p>
       <SettlementReport events={bundle.events} />
-      {!died && <NameReport bundle={bundle} />}
+      <NameReport bundle={bundle} />
       <IpPanel play={play} />
-      {died ? (
-        <Button asChild variant="outline" size="sm">
-          <Link to="/roster">Back to the roster</Link>
-        </Button>
-      ) : (
-        <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            The run continues — your eurobucks, wounds and gear carry over. Take the downtime here
-            if you want it, then go back to the street. The next job has to find you.
-          </p>
-          <DowntimePanel campaignId={bundle.campaign.id} character={bundle.character} />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              onClick={() => play.backToLife()}
-              disabled={play.backToLifeBusy || play.ipAwarded === null}
-              title={
-                play.ipAwarded === null
-                  ? "Tally this session's Improvement Points first"
-                  : "Return to life between jobs"
-              }
-            >
-              {play.backToLifeBusy ? "Heading out…" : "Back to the street"}
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/roster">Back to the roster</Link>
-            </Button>
-          </div>
-          {play.backToLifeError && (
-            <p className="text-sm text-destructive">{play.backToLifeError.message}</p>
-          )}
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          The run continues — your eurobucks, wounds and gear carry over. Take the downtime here if
+          you want it, then go back to the street. The next job has to find you.
+        </p>
+        <DowntimePanel campaignId={bundle.campaign.id} character={bundle.character} />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            onClick={() => play.backToLife()}
+            disabled={play.backToLifeBusy || play.ipAwarded === null}
+            title={
+              play.ipAwarded === null
+                ? "Tally this session's Improvement Points first"
+                : "Return to life between jobs"
+            }
+          >
+            {play.backToLifeBusy ? "Heading out…" : "Back to the street"}
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/roster">Back to the roster</Link>
+          </Button>
         </div>
-      )}
+        {play.backToLifeError && (
+          <p className="text-sm text-destructive">{play.backToLifeError.message}</p>
+        )}
+      </div>
     </section>
   );
 }
@@ -949,6 +959,7 @@ export function PlayScreen({
                   key={play.pendingCheck.eventId}
                   pending={play.pendingCheck}
                   roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
+                  odds={(luckSpend) => play.checkOdds(play.pendingCheck!, luckSpend)}
                   onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
                   busy={play.checkBusy}
                   luckRemaining={play.luck.remaining}
@@ -1040,6 +1051,7 @@ export function PlayScreen({
                   key={play.pendingCheck.eventId}
                   pending={play.pendingCheck}
                   roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
+                  odds={(luckSpend) => play.checkOdds(play.pendingCheck!, luckSpend)}
                   onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
                   busy={play.checkBusy}
                   luckRemaining={play.luck.remaining}

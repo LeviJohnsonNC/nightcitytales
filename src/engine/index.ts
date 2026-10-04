@@ -75,6 +75,7 @@ export * from "./inventorySlot";
 export * from "./reload";
 export * from "./ledger";
 export * from "./settlement";
+export * from "./closingFrame";
 export * from "./payment";
 export * from "./worldTick";
 export * from "./arcs";
