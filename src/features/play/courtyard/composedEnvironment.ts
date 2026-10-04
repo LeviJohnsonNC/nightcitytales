@@ -2,7 +2,8 @@
 import type Phaser from "phaser";
 import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
-import { activityOccluders } from "./activityReveal";
+import { activityGroundPoints, activityOccluders } from "./activityReveal";
+import { cutawayWalls, type CutawayWall } from "./cutawayGeometry";
 import type { Arena, Point, Rect, SceneStructure, SceneEnvironment } from "@/engine";
 
 type Project = (p: Point) => Point;
@@ -336,66 +337,52 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
   }
 }
 
-/** Closed building silhouette, with low perimeter walls and saved door locations.
- * The hatched interior is inaccessible mass, not an invented walkable floorplan.
- */
+/** Inaccessible mass is ground art; perimeter pieces sort independently. */
+export function paintCutawayFloor(
+  ctx: CanvasRenderingContext2D,
+  structure: SceneStructure,
+  project: Project,
+) {
+  const { rect, line } = painter(ctx, project);
+  const r = structure.rect;
+  rect(r, "#182329");
+  for (let x = r.x + 0.6; x < r.x + r.width; x += 1.2)
+    line(project({ x, y: r.y + 0.35 }), project({ x, y: r.y + r.height - 0.35 }), "#253238", 0.8);
+}
+
+function paintCutawayWall(
+  ctx: CanvasRenderingContext2D,
+  structure: SceneStructure,
+  part: CutawayWall,
+  project: Project,
+) {
+  const { poly, corners } = painter(ctx, project);
+  const metre = Math.hypot(
+    project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
+    project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
+  );
+  const warm = structure.style === "residential" || structure.style === "shop";
+  const base = corners(part.rect),
+    top = corners(part.rect, part.height * metre);
+  poly([base[0]!, base[1]!, top[1]!, top[0]!], warm ? "#73675a" : "#59666a", "#17272d");
+  poly([base[1]!, base[2]!, top[2]!, top[1]!], "#35434a", "#17272d");
+  poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
+}
+
 export function paintCutaway(
   ctx: CanvasRenderingContext2D,
   structure: SceneStructure,
   project: Project,
   entrances: SceneEnvironment["entrances"] = [],
 ) {
-  const { poly, corners, line, rect } = painter(ctx, project);
-  const r = structure.rect;
-  const metre = Math.hypot(
-    project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
-    project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
+  paintCutawayFloor(ctx, structure, project);
+  const parts = cutawayWalls(structure, entrances);
+  parts.sort(
+    (a, b) =>
+      project({ x: a.rect.x + a.rect.width / 2, y: a.rect.y + a.rect.height / 2 }).y -
+      project({ x: b.rect.x + b.rect.width / 2, y: b.rect.y + b.rect.height / 2 }).y,
   );
-  rect(r, "#182329");
-  // Subdued parallel section hatching prevents the solid footprint reading as a courtyard.
-  for (let x = r.x + 0.6; x < r.x + r.width; x += 1.2)
-    line(project({ x, y: r.y + 0.35 }), project({ x, y: r.y + r.height - 0.35 }), "#253238", 0.8);
-  const warm = structure.style === "residential" || structure.style === "shop";
-  const wall = (box: Rect, height: number) => {
-    const base = corners(box),
-      top = corners(box, height * metre);
-    poly([base[0]!, base[1]!, top[1]!, top[0]!], warm ? "#73675a" : "#59666a", "#17272d");
-    poly([base[1]!, base[2]!, top[2]!, top[1]!], "#35434a", "#17272d");
-    poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
-  };
-  const t = 0.24;
-  // Back edges first. Every wall and detail stays within the saved solid.
-  wall({ x: r.x, y: r.y + t, width: t, height: r.height - t }, 0.65);
-  wall({ x: r.x, y: r.y + r.height - t, width: r.width, height: t }, 0.65);
-  wall({ x: r.x, y: r.y, width: r.width, height: t }, 0.65);
-  wall({ x: r.x + r.width - t, y: r.y, width: t, height: r.height }, 0.65);
-  for (const e of entrances ?? []) {
-    if (e.structureId !== structure.id) continue;
-    const q = e.position;
-    const north = q.y < r.y,
-      south = q.y > r.y + r.height;
-    const east = q.x > r.x + r.width;
-    const door: Rect =
-      north || south
-        ? { x: q.x - 0.8, y: north ? r.y : r.y + r.height - 0.4, width: 1.6, height: 0.4 }
-        : { x: east ? r.x + r.width - 0.4 : r.x, y: q.y - 0.8, width: 0.4, height: 1.6 };
-    wall(door, 0.65);
-    for (const offset of [-0.9, 0.75])
-      wall(
-        north || south
-          ? { x: q.x + offset, y: door.y, width: 0.15, height: 0.4 }
-          : { x: door.x, y: q.y + offset, width: 0.4, height: 0.15 },
-        0.95,
-      );
-    // A solid door bar keeps closed-door semantics even in the low cutaway.
-    const center = project({ x: door.x + door.width / 2, y: door.y + door.height / 2 });
-    line(
-      { x: center.x - 3, y: center.y - 0.3 * metre },
-      { x: center.x + 3, y: center.y - 0.3 * metre },
-      warm ? "#d3b984" : "#92b5af",
-      2,
-    );
-  }
+  for (const part of parts) paintCutawayWall(ctx, structure, part, project);
 }
 
 export function paintBuilding(
@@ -717,6 +704,7 @@ export function createComposedEnvironment(
   scene.add.image(gx + gw / 2, gy + gh / 2, "composed-ground").setDepth(-1000);
   const objects: Phaser.GameObjects.Image[] = [];
   const occluders = activityOccluders(arena);
+  const activity = activityGroundPoints(arena);
   const add = (
     key: string,
     paint: (ctx: CanvasRenderingContext2D) => void,
@@ -788,7 +776,7 @@ export function createComposedEnvironment(
         width: Math.abs(cap[0]!.x - cap[1]!.x) + 10,
         height: Math.abs(cap[0]!.y - cap[1]!.y) + 10,
       },
-    );
+    )?.setData("groundY", Math.max(...ends.map((p) => p.y)));
     for (const [i, post] of threshold.posts.entries()) {
       const p = project(post);
       const height = frameHeight;
@@ -874,16 +862,30 @@ export function createComposedEnvironment(
         (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances),
         depth,
         bounds,
-      )?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined);
+      )
+        ?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined)
+        .setData("sortRect", s.rect);
       if (occluders.has(structure.id)) {
-        add(
-          `cutaway-${s.id}`,
-          (ctx) => paintCutaway(ctx, s, project, arena.environment!.entrances),
-          depth,
-          bounds,
-        )
+        add(`cutaway-${s.id}-ground`, (ctx) => paintCutawayFloor(ctx, s, project), -950, bounds)
           ?.setData("activityLayer", "cutaway")
           .setVisible(false);
+        for (const [index, part] of cutawayWalls(
+          s,
+          arena.environment!.entrances,
+          activity,
+        ).entries()) {
+          const r = part.rect;
+          add(
+            `cutaway-${s.id}-wall-${index}`,
+            (ctx) => paintCutawayWall(ctx, s, part, project),
+            project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
+            bounds,
+          )
+            ?.setData("activityLayer", "cutaway")
+            .setData("sortRect", r)
+            .setData("cutawayHeight", part.height)
+            .setVisible(false);
+        }
       }
     }
   }
@@ -947,7 +949,7 @@ export function createComposedEnvironment(
         }
       },
       p.y,
-    );
+    )?.setData("sortRect", { ...d.position, width: 0, height: 0 });
   }
   return objects;
 }

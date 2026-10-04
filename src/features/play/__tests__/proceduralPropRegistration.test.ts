@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { composeScene, coverStatuses, applyCoverDamage, readSceneManifest } from "@/engine";
 import { battlefieldProjection } from "../battlefieldProjection";
 import { interiorPropPoint } from "../courtyard/interiorPropArt";
+import { PROP_CANVAS } from "../courtyard/sceneArtMetrics";
 import { propCondition, propPlacement } from "../courtyard/propPresentation";
 
 describe("procedural art and the saved battlefield share one projection", () => {
@@ -22,7 +23,10 @@ describe("procedural art and the saved battlefield share one projection", () => 
         const center = project({ x: r.x + 1, y: r.y + 1 });
         const scale = (project({ x: r.x + 2, y: r.y + 2 }).x - project(r).x) / 256;
         const pixel = interiorPropPoint(x, y, 40, rotation);
-        return { x: center.x + (pixel.x - 128) * scale, y: front.y + (pixel.y - 240) * scale };
+        return {
+          x: center.x + (pixel.x - 128) * scale,
+          y: front.y + (pixel.y - PROP_CANVAS.groundY) * scale,
+        };
       };
       for (const y of [0.55, 1.45]) {
         const left = screenPoint(0, 2, y),
@@ -36,7 +40,7 @@ describe("procedural art and the saved battlefield share one projection", () => 
           const scale = (project({ x: 2, y: 2 }).x - project({ x: 0, y: 0 }).x) / 256;
           const actual = {
             x: project({ x: 1, y: 1 }).x + (pixel.x - 128) * scale,
-            y: project({ x: 2, y: 0 }).y + (pixel.y - 240) * scale,
+            y: project({ x: 2, y: 0 }).y + (pixel.y - PROP_CANVAS.groundY) * scale,
           };
           const expected = project(rotation ? { x: 2 - y, y: x } : { x, y });
           expect(actual.x).toBeCloseTo(expected.x, 8);

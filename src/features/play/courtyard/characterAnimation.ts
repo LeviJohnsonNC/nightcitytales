@@ -6,7 +6,7 @@ export type Facing = "ne" | "se" | "sw" | "nw";
 export type CharacterPose = "aim" | "walk" | "fire" | "hurt" | "fall" | "dead";
 export const SHOT_TIMING = { fire: 160, impact: 220, recover: 430, settle: 610 } as const;
 export const WALK_FRAME_MS = 150;
-export const CHARACTER_FRAME = { size: 128, foot: 112, height: 78 } as const;
+export { CHARACTER_FRAME } from "./sceneArtMetrics";
 
 /** Direction is screen-facing presentation, never a rules-engine orientation. */
 export function facingFor(from: Point, to: Point, fallback: Facing): Facing {

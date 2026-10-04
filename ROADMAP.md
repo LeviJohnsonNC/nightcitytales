@@ -1462,3 +1462,12 @@ typecheck, lint and build pass.** Levi confirmed stable switching on 4D.4; this
 revision still requires deployed visual and campaign acceptance. Offline drawing
 inspection across all seven environments supports retaining the approved spatial
 foundation for the facade/detail asset pass; it is not browser acceptance.
+
+[Checkpoint 4D.6](docs/checkpoint-four-d6.md) corrects physical height calibration,
+atlas damage registration, footprint-based depth ordering and segmented facade
+cutaways. Overview fits roofs and ground; narrow review controls remain usable.
+All 42 curated compositions received live browser inspection, with actor/targeting
+checks and review save/load across all seven environments. **3,817 tests, typecheck,
+lint and build pass.** Accepted geometry and recipes are preserved. The audit
+supports moving to artwork/detail/lighting; Levi's final visual approval and real
+campaign movement, firing and save/load acceptance remain open.

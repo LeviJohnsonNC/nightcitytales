@@ -76,4 +76,11 @@ it("fades scenery for a partially overlapping silhouette but leaves foreground a
   expect(sceneryOccludes(prop, { x: 155, y: 210, visible: true }, 48)).toBe(true);
   expect(sceneryOccludes(prop, { x: 100, y: 230, visible: true }, 48)).toBe(false);
   expect(sceneryOccludes(prop, { x: 100, y: 190, visible: false }, 48)).toBe(false);
+  // Composed scenes use spatial ranks, not screen pixels, for painter order.
+  expect(
+    sceneryOccludes({ ...prop, depth: 5 }, { x: 100, y: 190, visible: true, depth: 4 }, 48),
+  ).toBe(true);
+  expect(
+    sceneryOccludes({ ...prop, depth: 5 }, { x: 100, y: 190, visible: true, depth: 6 }, 48),
+  ).toBe(false);
 });
