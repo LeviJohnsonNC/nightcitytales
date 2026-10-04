@@ -52,6 +52,7 @@ export const LEDGER_EVENTS = {
   jobSettled: "job_settled",
   movedHouse: "moved_house",
   milestone: "milestone",
+  placeChanged: "place_changed",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -584,6 +585,67 @@ export function readClosingFrameEventData(raw: unknown): ClosingFrame | null {
   }
   if (peak === null && thread === null) return null;
   return { title: str(f["title"]), peak, thread };
+}
+
+// ---------------------------------------------------------------------------
+// place_changed — a flag a place has gained or lost. The ledger line that makes
+// "the law came through the market" something the campaign can look back on,
+// and the one the Screamsheet is made from. `day` is the in-world day it
+// happened on: an event row only carries real time, and a newspaper has to say
+// which morning it is about. Rows written before it was kept have no day.
+// ---------------------------------------------------------------------------
+
+export type PlaceChangedEventData = {
+  placeKey: string;
+  flag: string;
+  /** True when the place gained the flag, false when it lost it. */
+  set: boolean;
+  day: number | null;
+};
+
+type PlaceChangedWire = { placeKey: string; flag: string; set: boolean; day?: number };
+
+/** Build the payload for a flag a place has gained or lost. */
+export function placeChangedEventData(input: {
+  placeKey: string;
+  flag: string;
+  set: boolean;
+  day?: number | undefined;
+}): PlaceChangedWire {
+  const wire: PlaceChangedWire = { placeKey: input.placeKey, flag: input.flag, set: input.set };
+  if (input.day !== undefined) wire.day = Math.max(0, Math.trunc(input.day));
+  return wire;
+}
+
+export function readPlaceChangedEventData(raw: unknown): PlaceChangedEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const placeKey = str(d["placeKey"]);
+  const flag = str(d["flag"]);
+  // A change with no place, flag or direction is not a change anybody can report.
+  if (placeKey === null || flag === null || typeof d["set"] !== "boolean") return null;
+  return { placeKey, flag, set: d["set"], day: num(d["day"]) };
+}
+
+/**
+ * Where and when a settled job was, off its receipt. `readJobSettledEventData`
+ * above is the half Reputation prices; this is the rest, so the Screamsheet can
+ * say which morning and which address without going looking for the job's
+ * `mission_started` row. A receipt written before these were kept returns nulls,
+ * and the caller falls back to that row.
+ */
+export type JobSettledMeta = {
+  day: number | null;
+  missionId: string | null;
+  placeKey: string | null;
+};
+
+export function readJobSettledMeta(raw: unknown): JobSettledMeta {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { day: null, missionId: null, placeKey: null };
+  }
+  const d = raw as RawPayload;
+  return { day: num(d["day"]), missionId: str(d["missionId"]), placeKey: str(d["placeKey"]) };
 }
 
 // ---------------------------------------------------------------------------

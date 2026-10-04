@@ -7,7 +7,9 @@
  * actually happens.
  */
 import {
+  LEDGER_EVENTS,
   applyToPlace,
+  placeChangedEventData,
   recordVisit,
   startingState,
   type Observation,
@@ -72,6 +74,8 @@ export async function applyPlaceObservations(args: {
   placeKey: string;
   observations: Observation[];
   known?: Record<string, PlaceState> | undefined;
+  /** The in-world day, so the line the ledger keeps can say which morning it was. */
+  day?: number | undefined;
 }): Promise<PlaceState | null> {
   if (!args.observations.length) return null;
   const before = args.known?.[args.placeKey] ?? startingState(args.placeKey);
@@ -83,9 +87,15 @@ export async function applyPlaceObservations(args: {
   for (const flag of change.flagged) {
     await appendCampaignEvent({
       campaign_id: args.campaignId,
-      type: "place_changed",
+      type: LEDGER_EVENTS.placeChanged,
       summary: flag.note,
-      data: { placeKey: args.placeKey, flag: flag.flag, set: flag.set } as unknown as Json,
+      // Built through ledger.ts, which the Screamsheet reads back through.
+      data: placeChangedEventData({
+        placeKey: args.placeKey,
+        flag: flag.flag,
+        set: flag.set,
+        day: args.day,
+      }) as unknown as Json,
     });
   }
   return change.state;

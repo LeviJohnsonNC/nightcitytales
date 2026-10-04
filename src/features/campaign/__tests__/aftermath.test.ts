@@ -188,6 +188,20 @@ describe("atomic settlement preparation", () => {
     expect(readClosingFrameEventData(sent.receipt)).toEqual(report?.frame);
   });
 
+  it("stamps the receipt with when and where, for the Screamsheet to read back", async () => {
+    liveEvents = [ev("mission_started", { brokerKey: "wakako" }), hit("Vex")];
+    await settleAftermath(input());
+    const sent = settleJob.mock.calls[0]![0] as { receipt: unknown };
+    const { readJobSettledMeta } = await import("@/engine");
+    // The mission is not in the registry in this test, so it names no venue; the
+    // day and the mission id are always there.
+    expect(readJobSettledMeta(sent.receipt)).toEqual({
+      day: 10,
+      missionId: "mission-1",
+      placeKey: null,
+    });
+  });
+
   it("stores no frame for a job with nothing to keep", async () => {
     liveEvents = [ev("mission_started")];
     const report = await settleAftermath(input());

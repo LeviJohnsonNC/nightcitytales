@@ -226,3 +226,61 @@ describe("being heard of, as receipts", () => {
     expect(receiptsBetween(at(3, 1, "Steady work"), at(3, 0, "Street work"))).toEqual([]);
   });
 });
+
+describe("what the city printed, as receipts", () => {
+  const item = (key: string, headline: string, tone: "good" | "bad" | "neutral" = "bad") => ({
+    key,
+    headline,
+    tone,
+  });
+
+  it("answers a turn with the headline it set off, and only that one", () => {
+    const before = snap({ sheet: [item("place:e1", "Law comes through Camden Court")] });
+    const after = snap({
+      sheet: [
+        item("place:e2", "Inspectors at The Verge"),
+        item("place:e1", "Law comes through Camden Court"),
+      ],
+    });
+    expect(receiptsBetween(before, after)).toEqual([
+      { key: "sheet:place:e2", text: "The Sheet · Inspectors at The Verge", tone: "bad" },
+    ]);
+  });
+
+  it("shows nothing when the sheet did not move, and nothing for the first load", () => {
+    const same = snap({ sheet: [item("place:e1", "Law comes through Camden Court")] });
+    expect(receiptsBetween(same, same)).toEqual([]);
+    // A screen that has no sheet yet is a baseline, not a change.
+    expect(receiptsBetween(snap(), same)).toEqual([]);
+  });
+
+  it("carries a good headline as good news", () => {
+    const after = snap({ sheet: [item("place:e9", "Good word out of The Verge", "good")] });
+    expect(receiptsBetween(snap({ sheet: [] }), after)[0]?.tone).toBe("good");
+  });
+
+  it("is two headlines at most: the sheet itself holds the rest", () => {
+    const after = snap({ sheet: [item("a", "A"), item("b", "B"), item("c", "C")] });
+    expect(receiptsBetween(snap({ sheet: [] }), after)).toHaveLength(2);
+  });
+
+  it("is carried through snapshotOf, slimmed to what the diff reads", () => {
+    const snapshot = snapOf({
+      sheet: [{ key: "k", headline: "H", tone: "bad", extra: "dropped" } as never],
+    });
+    expect(snapshot.sheet).toEqual([{ key: "k", headline: "H", tone: "bad" }]);
+    expect(snapOf({}).sheet).toBeUndefined();
+  });
+});
+
+function snapOf(extra: {
+  sheet?: { key: string; headline: string; tone: "good" | "bad" | "neutral" }[];
+}) {
+  return snapshotOf({
+    clock: { day: 1, minute: 0 },
+    vitals: { eurobucks: 0, hp_current: 1, humanity_current: 1 },
+    npcs: [],
+    pressure: [],
+    ...extra,
+  });
+}
