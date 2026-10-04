@@ -2,16 +2,24 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * Gentle scroll reveal. Elements fade and rise once, then stay put.
+ *
+ * It wraps its child in a block of its own — a `div`, or an `li` when the thing
+ * revealed is a list item. A `div` between an `ol` and its `li`s leaves the list
+ * with children it is not allowed to have and the items with no list, which a
+ * screen reader reads as neither (found by the browser tests' axe scan).
  */
 export function Reveal({
   children,
   delay = 0,
   className,
+  as = "div",
 }: {
   children: ReactNode;
   delay?: number;
   className?: string;
+  as?: "div" | "li";
 }) {
+  const Tag = as as "div";
   const ref = useRef<HTMLDivElement | null>(null);
   const [shown, setShown] = useState(false);
 
@@ -38,12 +46,12 @@ export function Reveal({
   }, []);
 
   return (
-    <div
+    <Tag
       ref={ref}
       className={`lp-reveal ${shown ? "is-in" : ""} ${className ?? ""}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
-    </div>
+    </Tag>
   );
 }

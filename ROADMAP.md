@@ -240,6 +240,128 @@ the combat hit-chance rings, the music duck, and the successor from before.
 
 ---
 
+## Also shipped: favours — goodwill you can spend
+
+The goodwill dial moved and set `welcome` at the top of it, and that was the
+whole of it. `welcome` fed one findable fact and a headline; nothing could be
+bought with it. A place that has taken to you will now, once a day, go out on a
+limb (`engine/favours.ts`, `src/data/atlas/favours.json`, house rule).
+
+- **Two favours, both from things the engine already moves.** _Get patched up_
+  (clinic, church, home, flophouse): a day of rest's healing, in two hours, by
+  `planRest`. _Lie low_ (housing, hotel, flophouse, church, nomad camp): two
+  reports of working clean through `applyPressure`, so the NCPD heat clock eases
+  by the same arithmetic as anything else that eases it, scaled to how closely
+  the district is policed (and not offered in one nobody polices, or when nobody
+  is looking). Neither touches a die, a DV, a price or an outcome.
+- **It costs what it is worth.** Goodwill is spent in dial segments (2 and 3),
+  and a favour is only asked when it would leave one, so spending goodwill never
+  turns a place against you. It does not regrow; a `favour` observation does.
+  One a day from any one place (read back from the `favour_called` ledger event
+  through `favourCalledOn`, so a reload cannot reset it), and only where the
+  character is standing.
+- **It is shown in words.** The dial stays hidden. The Life dock grows a
+  Favours tile only where a place is welcoming and has something its ground can
+  offer; the sheet says what each would do, what it takes out of the day, and
+  why not today when it cannot.
+- **Written so a failure is fair.** Benefit, then goodwill, then time, then the
+  receipt: a failure partway costs a place a little less than it should have,
+  never the player something for nothing.
+
+Not done, and why: an _introduction_ (a dossier rung for somebody who drinks
+here) and a _ride_ (free travel) are the obvious next favours, and each needs a
+write this slice did not want to invent (a rung on `campaign_npcs`, a priced mode
+of zero). A place asking something of YOU back, and a "Regular at" line on the
+Rap Sheet, are the other halves of the idea. None of it has been played: the
+costs and the once-a-day rule are guesses, in a data file, to tune from a week
+in one district.
+
+---
+
+## Also shipped: real-browser tests
+
+Everything before this ran in Node, so what a browser does with a page was only
+ever found by looking. `bun run test:browser` (Playwright, Chromium, `e2e/`) now
+looks for the four pages that need no account, at desktop and phone width: the
+page loads, throws nothing, requests nothing that is missing, does not scroll
+sideways, and passes an axe scan against WCAG 2 A and AA. Its first run found
+one real defect: the landing page's "One night in Night City" timeline was an
+`<ol>` whose children were `<div>` wrappers (the scroll-reveal), so the list had
+children it may not have and its nine items had no list. `Reveal` can now be the
+`<li>` itself (`as="li"`), and both the axe scan and a test that the timeline is a
+list of nine fail on the old markup.
+
+Not done, and why: the signed-in game (creator, Life, a job, combat) is where most
+of the product is and where the layout bugs have been found, and it needs a
+Supabase session the tests do not have — the next step is a fixture session or a
+`/preview`-style route that renders a Life screen from a canned bundle. The suite
+is not a CI gate: `.github/workflows/browser.yml` is manual (Actions tab) until it
+has been watched go green on a runner, because a check nobody has seen pass teaches
+people to ignore checks. Pixel snapshots are deliberately absent; they are the
+flakiest thing a browser test can do.
+
+---
+
+## Also shipped: the career soak
+
+The owed pacing check, and a gate. `src/features/dev/careerSim.ts` plays whole
+careers without a table: the game's money and its climb, through the engine's
+own functions (`rollPayment`, `pickJobSeed`, `reputationFrom`, `jobTierFor`,
+`billsDue`, the I.P. prices), under stated playstyles and job cadences. Two uses:
+
+- **A gate.** `careerSim.test.ts` plays a few hundred short careers in CI and
+  fails if any breaks a rule the rest of the game leans on: money that is not a
+  number, Reputation that goes down, work that gets worse, I.P. below zero, a
+  payment above the fee. Proved to bite (a sign flip in the marked-money fraction
+  trips it at once). It asserts no balance, because the playstyles are
+  assumptions.
+- **A report.** `bun run tools/pacing/soak.ts` (about two minutes at 100 careers a
+  row; `--careers`, `--horizon`, `--start`) prints the table below.
+
+What it plays: rent and Lifestyle, jobs at the crew's tier, the printed
+Reputation deeds, I.P. awards (job tiers 20–50, life tiers 10–30 every seventh
+day), and spending on the Role Rank or on Skills. What it does NOT: combat, so
+nothing about how often anybody dies; ammunition, armor repair, doctors or
+chrome, so every surplus below is an upper bound; how often work turns up,
+which is the cadence column and a week at a table. The playstyles (ghost, pro,
+brawler) are three guesses at how loud a crew is.
+
+What it found, 100 careers a row, 180 days, 500eb to start, every Role evenly:
+
+| Crew    | Jobs every | Steady work         | Serious work | First Rank | Rank at day 180 | Behind on rent |
+| ------- | ---------- | ------------------- | ------------ | ---------- | --------------- | -------------- |
+| ghost   | 7 days     | d84 (37% got there) | never        | d63        | 6               | never          |
+| pro     | 7 days     | d21                 | d91 (57%)    | d63        | 6               | never          |
+| brawler | 7 days     | d21                 | d42          | d63        | 6               | never          |
+| pro     | 14 days    | d42                 | d126 (26%)   | d84        | 5               | never          |
+
+- **Money is not a constraint, anywhere.** No career in any of the nine
+  cadence-and-style rows was ever behind on rent, and at day 180 the median
+  character holds 5,000–73,000eb. One job a month at steady pay covers a month's
+  bills (1,100eb for every Role but the Exec, who pays 100). Even street work
+  leaves about 570eb a job for kit and chrome at a job a week and 310 a
+  fortnight. The simulator charges no kit, so these are ceilings — but they are
+  the number the real costs have to beat. If a night's ammunition, armor and
+  doctor do not cost roughly that, "eurobucks that only go up" (`PRODUCT.md`) is
+  live. The next thing to build is a combat-cost model, so this stops being an
+  upper bound.
+- **A crew that works clean never leaves street work.** A clean job earns no
+  Reputation (`reputation-deeds.json`), and the better tiers need Reputation 3
+  and 5. That is the stated trade between heat and fame, and a test now pins it
+  so it stays a decision; but it means the quietest play has no climb in work at
+  all. Whether that is wanted is the owner's.
+- **The climb has a flat second half.** A loud crew reaches the Reputation cap
+  (6) and serious work by about day 40, and from there nothing new arrives in
+  work or name; Reputation 7+ is unreachable (the open question above). What is
+  left to climb is the Role Rank (a Rank every 10–20 awards at 300–600 I.P.) and
+  Skills.
+- **The first Role Rank takes about nine weeks of weekly jobs** (day 63 at a job
+  every 7 days, 84 at 14), and a Skill Level about three jobs (day 21). Saving
+  for the Rank means no Skill raises at all in that time; buying Skills means no
+  Rank (4 at day 180). Both are choices a player makes, and now they have a price
+  in days.
+- **No invariant was broken** over the nine rows and the gate's careers.
+
 ## Also shipped: the ripperdoc
 
 Chrome was the one thing the shop deliberately would not sell. It now has its
@@ -1378,7 +1500,7 @@ Severity is what happens if it is ignored, not how hard it is to fix:
 | 11  | Incomplete   | Non-combat structured world-state deltas the GM proposes are only partially wired into persistence.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 12  | Incomplete   | Encounters created before the atomic-closeout migration do not record which inventory rows supplied head and body armor, so their remaining SP cannot be written back. Legacy rows only.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 13  | Incomplete   | Immediate in-job pressure reports and engine-derived settlement pricing are not causally deduplicated. Engine-derived settlement is the authoritative pass; the two are counted on different events, so this is a known overlap rather than a double charge.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 14  | Unsettled    | The `goodwill` dial moves and no threshold reads it — and it is not alone. `raided`, `locked_down`, `power_out` and `rebuilt` were set by the engine and read by nothing, so four of the eight place flags were decoration. The Screamsheet now reads every flag the engine SETS in play (`raided`, `shut`, `locked_down`, `under_audit`, `gang_extortion`, `welcome`, `unwelcome`); `power_out` and `rebuilt` are authored starting conditions that nothing sets, so they are still decoration. A dial or flag that changes nothing the player meets is the failure `PRODUCT.md` names. Giving `goodwill` a threshold is only half a fix: a flag needs a consumer, and what goodwill BUYS is a design decision.                                                                                                                                                                                                                            |
+| 14  | Unsettled    | The `goodwill` dial moved and nothing could spend it; its thresholds set `welcome`/`unwelcome`, which fed one findable fact and a headline. Favours (`engine/favours.ts`) now spend it, so `welcome` has a use at the till of the place itself. It was not alone. `raided`, `locked_down`, `power_out` and `rebuilt` were set by the engine and read by nothing, so four of the eight place flags were decoration. The Screamsheet now reads every flag the engine SETS in play (`raided`, `shut`, `locked_down`, `under_audit`, `gang_extortion`, `welcome`, `unwelcome`); `power_out` and `rebuilt` are authored starting conditions that nothing sets, so they are still decoration. A dial or flag that changes nothing the player meets is the failure `PRODUCT.md` names. Giving `goodwill` a threshold is only half a fix: a flag needs a consumer, and what goodwill BUYS is a design decision.                                     |
 | 16  | Unsettled    | `bun run eval` now measures the mechanically checkable half of a prompt change: eleven detectors over five scenarios, each tracing to a line in `PRODUCT.md` or to a rule a prompt states. It calls a real model, so it is not a CI gate; the detectors themselves are pure and are tested in CI. What it cannot see is prose QUALITY — whether a turn is any good, as against merely legal — and that still has no measure but reading it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 15  | Unsettled    | The location layer's pacing numbers — `PLACE_OBSERVATION_EFFECTS`, the beat periods, the `place-state.json` thresholds — have never been playtested. Tune them from a week in one district rather than from argument.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 18  | Unsettled    | Sex and age reach only the narrator. They are recorded at creation (`engine/identity.ts`, house rule) and the narrators are told to let a stranger's first assumption differ by them, but nothing deterministic reads them: no DV, price, disposition start or place action moves. Whether any should (a starting disposition by age band and Role, say) needs a week of play first.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |

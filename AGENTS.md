@@ -220,6 +220,24 @@ the person's row (`campaign_npcs.data.arc`), a beat takes the world tick's one
 move for its day, and a stage's `reveal` is never sent to the model — it
 reaches the player only through involvement, beside their dossier facts.
 
+Goodwill can be spent. `engine/favours.ts` (data `src/data/atlas/favours.json`,
+`houseRule: true`) lets a place that has set `welcome` do one favour a day for
+whoever is standing in it: a day of rest's healing in two hours, or two segments
+off the NCPD heat clock. Three rules hold it. It buys time, access and a hand and
+NEVER a die, a DV, a price or an outcome. It moves only what the engine already
+moves, through the function that already moves it (`planRest`,
+`applyObservations`). And it never turns a place against you: a favour is asked
+only when it would leave a segment of goodwill. `favourOffers`
+(`features/campaign/favours.ts`) is the one question — what is on offer where the
+character stands — asked by `life/FavoursSheet.tsx` (a dock tile that renders
+nothing unless a place has taken to you) and again, on fresh rows, by
+`callInFavour`, which writes benefit, then goodwill, then time, then the
+`favour_called` receipt, in that order so a failure is fair to the player. The
+once-a-day rule is read back from that receipt (`favourCalledOn`, in
+`ledger.ts`), never kept on the page. The dial stays hidden: the sheet speaks in
+words. A new favour is a row in the data file and, if it needs a new kind of
+effect, a case in both `favoursAt` and `callInFavour`.
+
 The city is a system in the engine, not a setting in the prose. `geography.ts`
 is the atlas as the publisher printed it and invents nothing; beside it,
 `places.ts` (tags, district profiles, arenas), `placeBeats.ts` (what a location
@@ -359,6 +377,14 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   (`SHOW_HERO_DEMO` in `routes/index.tsx`) while its look is reworked.
 - `src/features/campaign/` maps pure engine campaign state to persisted rows and
   append-only ledger events.
+- `src/features/dev/careerSim.ts` plays whole careers through the engine's own
+  functions (payment, Reputation, work tiers, bills, I.P. prices) under stated
+  playstyles, and is both a CI gate (`careerSim.test.ts` fails if a rule the game
+  leans on breaks over a few hundred careers) and, through
+  `bun run tools/pacing/soak.ts`, the pacing report. Its playstyles and cadences
+  are assumptions it states out loud; it plays no combat and charges no kit, so
+  its surpluses are upper bounds. It restates no rule — keep it that way, or it
+  verifies a game that is not the one shipped.
 - `src/features/dev/` holds developer tooling, currently the `/combat`
   battlefield harness. It contains no game logic: it seeds a fixture through the
   same calls the play loop makes and hands off to `/play/:id`, so what it
@@ -848,6 +874,16 @@ bun run eval    # the narrator eval; costs money, never runs in CI
 Before handing off a code change, run lint,
 typecheck, tests, and a production build in proportion to the change. Do not use
 formatting commands indiscriminately in a dirty worktree.
+
+`bun run test:browser` runs the pages anybody can open (`/`, `/login`, `/style`,
+`/scene-review`) in a real Chromium: no script error, nothing requested that is
+missing, no sideways scroll at desktop and phone width, and an axe scan against
+WCAG 2 A and AA (`e2e/`, `playwright.config.ts`). It needs `bunx playwright
+install chromium` once, is not part of `bun run test`, and runs in CI only by
+hand (`.github/workflows/browser.yml`) until it has been watched go green on the
+runner. A known accessibility finding goes in `KNOWN_A11Y` in the spec as a debt,
+never as a way to silence a new one. The signed-in game is not covered: it needs
+a Supabase session.
 
 The test suite is strongest around the pure engine. Changes to authentication,
 database functions/RLS, migration replay, draft synchronization, AI endpoints,

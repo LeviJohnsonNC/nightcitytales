@@ -8,10 +8,12 @@
  */
 import {
   LEDGER_EVENTS,
+  afterFavour,
   applyToPlace,
   placeChangedEventData,
   recordVisit,
   startingState,
+  type FavourOffer,
   type Observation,
   type PlaceState,
 } from "@/engine";
@@ -99,6 +101,23 @@ export async function applyPlaceObservations(args: {
     });
   }
   return change.state;
+}
+
+/**
+ * Pay for a favour out of the place that did it: goodwill spent, nothing else
+ * moved. No threshold fires and no ledger line is written here — the favour's
+ * own receipt (`favour_called`) is the line, written by whoever called it in.
+ */
+export async function spendFavourGoodwill(args: {
+  campaignId: string;
+  placeKey: string;
+  offer: Pick<FavourOffer, "cost">;
+  known?: Record<string, PlaceState> | undefined;
+}): Promise<PlaceState> {
+  const before = args.known?.[args.placeKey] ?? startingState(args.placeKey);
+  const after = afterFavour(before, args.offer);
+  await save(args.campaignId, after);
+  return after;
 }
 
 /** Note that the character was here, once per day at most. */

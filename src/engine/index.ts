@@ -88,6 +88,7 @@ export * from "./places";
 export * from "./placeBeats";
 export * from "./placeSignals";
 export * from "./placeActions";
+export * from "./favours";
 export * from "./haunts";
 export * from "./placeState";
 export * from "./placeIntel";

@@ -99,6 +99,7 @@ import { RipperdocSheet } from "./RipperdocSheet";
 import { WorkshopSheet } from "./WorkshopSheet";
 import { ScreamsheetSheet } from "./ScreamsheetSheet";
 import { RecordSheet } from "./RecordSheet";
+import { FavoursSheet } from "./FavoursSheet";
 import { HomeSheet } from "./HomeSheet";
 import { ClimbIntro } from "./ClimbIntro";
 import { climbLogLine } from "@/features/campaign/climbNews";
@@ -196,6 +197,7 @@ function LifeEvent({ event, climber }: { event: CampaignEvent; climber?: Climber
     case "reload":
     case "cyberware_installed":
     case "moved_house":
+    case "favour_called":
       return (
         <p className="font-mono text-xs text-muted-foreground">
           <span className="text-accent">◆</span> {text}
@@ -271,6 +273,8 @@ const LIFE_EVENT_TYPES = new Set([
   "cyberware_installed",
   // A new home, or a new Lifestyle: the deposit and the new monthly bill.
   "moved_house",
+  // A place that was glad to see them did something about it.
+  "favour_called",
   // The climb: what went up, and what paid for it.
   "milestone",
   "skill_raised",
@@ -713,6 +717,8 @@ function LifeRail({
         <RecordSheet bundle={bundle} />
         <ScreamsheetSheet bundle={bundle} />
         <HomeSheet life={life} />
+        {/* Renders nothing unless the place you are standing in has taken to you. */}
+        <FavoursSheet bundle={bundle} />
         <ShopSheet bundle={bundle} />
         <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
         {/* Renders nothing at all for a character without Maker. */}

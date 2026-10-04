@@ -63,6 +63,11 @@ LIFE → HOOK → JOB → AFTERMATH → LIFE
   character; nothing is uploaded and nothing about the account is on it. Reach it
   from a saved character, the Life Record sheet, or the obituary (a FLATLINED
   card).
+- **Goodwill can be spent.** A place that has taken to you will, once a day, go
+  out on a limb: get patched up (a day of rest's healing in two hours) or lie low
+  (the NCPD heat eases). It buys time and a hand, never a die; it costs goodwill
+  the dial keeps hidden, so the Favours tile on Life speaks in words and only
+  turns up where you are welcome.
 - **A death** ends in an obituary, not a box: the hit that did it and the Death
   Save that failed, set down like receipts, what the player last had the
   character do, who is left and how they felt, and what the run amounted to.

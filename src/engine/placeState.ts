@@ -278,6 +278,23 @@ export function applyToPlace(state: PlaceState, observations: Observation[]): Pl
   };
 }
 
+/**
+ * Spend part of a dial: goodwill given back for a favour.
+ *
+ * Moves nothing else and fires no threshold — a threshold is something that
+ * happens TO a place, and spending is something the character chooses — so the
+ * caller is the one who keeps a dial above the floor. Returns the state
+ * unchanged when this place has no such dial.
+ */
+export function spendDial(state: PlaceState, dial: string, amount: number): PlaceState {
+  const have = state.dials[dial];
+  if (have === undefined) return state;
+  return {
+    ...state,
+    dials: { ...state.dials, [dial]: clampDial(dial, have - Math.max(0, Math.trunc(amount))) },
+  };
+}
+
 /** Somebody was here. */
 export function recordVisit(state: PlaceState, day: number): PlaceState {
   return {
