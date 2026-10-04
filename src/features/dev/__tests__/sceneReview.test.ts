@@ -33,3 +33,16 @@ it("rejects corrupted review positions without replacing the saved scene", () =>
   const scene = composeScene("intersection");
   expect(() => readSceneReview({ scene, positions: [] })).toThrow("Invalid review positions");
 });
+
+it("saves the review input seed even when adventure context hashes it into a scene seed", () => {
+  const scene = composeScene("office", 123456);
+  const live = sceneReviewEncounter(scene);
+  const restored = readSceneReview({
+    scene,
+    cover: {},
+    positions: live.state.order.map((id) => live.data[id]!.position),
+    reviewSeed: 42,
+  });
+  expect(restored.reviewSeed).toBe(42);
+  expect(restored.scene.layout.arena.environment!.seed).toBe(123456);
+});

@@ -103,7 +103,7 @@ describe("composed places", () => {
         ).size,
       ).toBe(3);
       for (const s of scenes) {
-        expect(s.templateVersion).toBe(2);
+        expect(s.templateVersion).toBe(kind === "intersection" ? 5 : 2);
         if (kind !== "intersection") continue;
         const car = s.layout.arena.cover!.find((c) => c.id === "thorton_car_engine")!;
         const actor = s.actors.find((a) => a.id === "rifle_ganger")!;

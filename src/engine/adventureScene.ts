@@ -66,10 +66,23 @@ export function composeAdventureScene(input: AdventureSceneInput): AuthoredScene
   // Revalidate combined IDs, counts and references; enemies cannot steal an object's identity.
   const combined = readSceneFacts(facts);
   const seed = seedFor(input.identity);
+  // Facts constrain the program before placement. Independent random streams no
+  // longer guarantee that three adjacent seeds alternate delivery/maintenance.
+  const freight = kind === "intersection" && combined.objects.some((o) => o.kind === "freight");
+  const utilities = kind === "intersection" && combined.objects.some((o) => o.kind === "utilities");
+  if (freight && utilities)
+    throw new Error(
+      "This scene cannot fit the established facts: the service court supports one complete activity.",
+    );
+  const requirements = freight
+    ? { serviceActivity: "delivery" as const }
+    : utilities
+      ? { serviceActivity: "maintenance" as const }
+      : {};
   const failures: string[] = [];
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      return bind(composeScene(kind, (seed + attempt) >>> 0), input, combined);
+      return bind(composeScene(kind, (seed + attempt) >>> 0, requirements), input, combined);
     } catch (e) {
       failures.push(e instanceof Error ? e.message : String(e));
     }

@@ -1,3 +1,4 @@
+import { compositionSelection, type CompositionSelection } from "./sceneComposition";
 /** Authored room organizations; all resolve through the shared cluster/grid machinery. */
 import { type Arena, type Rect, type Point } from "./battlefield";
 import { industrialPlan, industrialArrangements } from "./industrialRecipes";
@@ -13,7 +14,7 @@ import {
   type SceneEnvironment,
   type ZoneKind,
 } from "./sceneEnvironment";
-import { placeSceneClusters, type Slot } from "./sceneClusters";
+import { CompositionFitError, placeSceneClusters, type Slot } from "./sceneClusters";
 
 const zone = (
   id: string,
@@ -196,7 +197,28 @@ export function composeInterior(
   kind: "office" | "nightclub" | "warehouse" | "garage",
   seed: number,
 ): AuthoredScene {
-  const variant = (seed + 2) % 3;
+  if (kind !== "office") return composeInteriorCandidate(kind, seed);
+  const selection = compositionSelection(kind, seed);
+  try {
+    return composeInteriorCandidate(kind, seed, selection);
+  } catch (error) {
+    // Only a known spatial-fit failure permits fallback; programming/snapshot errors surface.
+    if (!(error instanceof CompositionFitError) || selection.program !== "parallel-pods")
+      throw error;
+    return composeInteriorCandidate(kind, seed, {
+      ...selection,
+      program: "opposed-pods",
+      rejected: [error.message],
+    });
+  }
+}
+
+function composeInteriorCandidate(
+  kind: "office" | "nightclub" | "warehouse" | "garage",
+  seed: number,
+  selection?: CompositionSelection,
+): AuthoredScene {
+  const variant = selection?.family ?? (seed + 2) % 3;
   const plan =
     kind === "office"
       ? office(variant)
@@ -236,7 +258,8 @@ export function composeInterior(
   const env: SceneEnvironment = {
     version: 1,
     recipe: kind,
-    recipeVersion: 4,
+    recipeVersion: selection ? 5 : 4,
+    ...(selection ? { composition: selection } : {}),
     seed,
     entrances: [],
     zones: [...rooms, ...doorZones],
@@ -308,7 +331,7 @@ export function composeInterior(
         )!
       : { x: entry.x + 1, y: entry.y + 1 };
   const arena: Arena = {
-    key: `scene:composed-${kind}:v1:${seed}`,
+    key: `scene:composed-${kind}:v${selection ? 5 : 1}:${seed}`,
     label: `North Heywood · ${kind} · ${plan.label}`,
     extent,
     playerStart,
@@ -348,7 +371,15 @@ export function composeInterior(
                           ? "seating"
                           : "reception";
     if (kind === "office") {
-      if (room.id === "work") cluster = variant === 1 ? "work_island" : "work_facing";
+      if (room.id === "work")
+        cluster =
+          selection?.program === "parallel-pods"
+            ? variant === 1
+              ? "work_parallel"
+              : "work_pod"
+            : variant === 1
+              ? "work_island"
+              : "work_facing";
       else if (room.kind === "reception") cluster = "reception_arrival";
       else if (room.kind === "service") cluster = "equipment_support";
       else if (room.kind === "meeting" && room.rect.width * room.rect.height >= 60)
@@ -378,7 +409,7 @@ export function composeInterior(
       for (let y = r.y + 2; y < r.y + r.height - 2; y += 6)
         for (let x = r.x + 2; x < r.x + r.width - 2; x += 4) candidates.push({ x, y });
     }
-    if (["work_facing", "work_island"].includes(cluster)) {
+    if (["work_facing", "work_island", "work_pod", "work_parallel"].includes(cluster)) {
       candidates.length = 0;
       // Fit complete pods, including their shared aisle; no single-desk fallback.
       // Prefer an inset row, then try room-edge rows around protected approaches.
@@ -410,7 +441,7 @@ export function composeInterior(
     }
     const count = cluster.startsWith("lounge_")
       ? 3
-      : ["work_facing", "work_island"].includes(cluster)
+      : ["work_facing", "work_island", "work_pod", "work_parallel"].includes(cluster)
         ? 2
         : ["racking", "vehicle_bay"].includes(cluster)
           ? 12
@@ -437,6 +468,8 @@ export function composeInterior(
         kind: cluster,
         // Keep directional arrangements aligned with their authored customer/staff access.
         axis: [
+          "work_parallel",
+          "work_pod",
           "work_facing",
           "work_island",
           "reception_arrival",
@@ -452,7 +485,7 @@ export function composeInterior(
         zone: room.id,
         at: candidates[0]!,
         candidates,
-        required: i === 0,
+        required: i === 0 || (kind === "office" && room.id === "work"),
       });
   }
   if (kind === "office") {
@@ -557,8 +590,8 @@ export function composeInterior(
   return {
     locationKey: "north_heywood",
     template: `composed-${kind}`,
-    templateVersion: 1,
-    anchor: `composition-${kind}-v1-${seed}`,
+    templateVersion: selection ? 5 : 1,
+    anchor: `composition-${kind}-v${selection ? 5 : 1}-${seed}`,
     narration:
       kind === "warehouse"
         ? "A loading apron opens onto stocked rack aisles, with a small dispatch office and a maintenance room beside the freight hall."

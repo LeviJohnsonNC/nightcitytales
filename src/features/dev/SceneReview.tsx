@@ -1,5 +1,12 @@
+import { compositionDescription } from "@/engine/sceneComposition";
+import {
+  readReviewQuery,
+  reviewQuery,
+  reviewSeed,
+  COMPOSITION_REVIEW_SEEDS,
+} from "./sceneReviewQuery";
 import { battlefieldCameraPreset } from "@/features/play/courtyard/courtyardPresentation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   composeScene,
   weaponProfile,
@@ -18,25 +25,45 @@ import { adventureSceneProof } from "./adventureSceneProof";
 const REVIEW_WEAPON = weaponProfile("very_heavy_pistol");
 const STORAGE = "nct-scene-review-v1";
 export function SceneReview() {
-  const [kind, setKind] = useState<SceneEnvironment["recipe"]>("intersection");
-  const [seed, setSeed] = useState(1);
-  const [adventure, setAdventure] = useState(false);
-  const [actors, setActors] = useState(false);
+  const [initial] = useState(() =>
+    readReviewQuery(typeof window === "undefined" ? "" : window.location.search),
+  );
+  const [kind, setKind] = useState<SceneEnvironment["recipe"]>(initial.kind);
+  const [seed, setSeed] = useState(initial.seed);
+  const [adventure, setAdventure] = useState(initial.adventure);
+  const [actors, setActors] = useState(initial.actors);
   const [planVisible, setPlanVisible] = useState(false);
-  const [entrances, setEntrances] = useState(false);
-  const [damage, setDamage] = useState("intact");
+  const [entrances, setEntrances] = useState(initial.entrances);
+  const [damage, setDamage] = useState(initial.damage);
   const [saved, setSaved] = useState<ReturnType<typeof readSceneReview> | null>(null);
   const [message, setMessage] = useState("");
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [structureOnly, setStructureOnly] = useState(false);
-  const [framing, setFraming] = useState<"play" | "overview">("play");
+  const [structureOnly, setStructureOnly] = useState(initial.structureOnly);
+  const [framing, setFraming] = useState<"play" | "overview">(initial.framing);
   const generated = useMemo(
-    () => (adventure ? adventureSceneProof(kind, seed) : composeScene(kind, seed)),
-    [kind, seed, adventure],
+    () => saved?.scene ?? (adventure ? adventureSceneProof(kind, seed) : composeScene(kind, seed)),
+    [kind, seed, adventure, saved],
   );
   const scene = saved?.scene ?? generated;
+  const query = reviewQuery({
+    kind,
+    seed,
+    adventure,
+    actors,
+    entrances,
+    damage,
+    structureOnly,
+    framing,
+  });
+  useEffect(() => {
+    if (!saved)
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}?${query}`);
+  }, [query, saved]);
+  const selection = scene.layout.arena.environment?.composition;
+  const reviewSeeds =
+    kind === "intersection" || kind === "office" ? COMPOSITION_REVIEW_SEEDS[kind] : [1, 2, 3];
   const live = useMemo(() => {
     if (saved) return saved.live;
     const fixture = sceneReviewEncounter(scene, entrances);
@@ -114,17 +141,46 @@ export function SceneReview() {
         <label>
           Variation
           <select
-            value={seed}
+            value={reviewSeeds.includes(seed) ? seed : "custom"}
             onChange={(e) => {
               reset();
               setSeed(Number(e.target.value));
             }}
           >
-            <option value={1}>1 · First layout</option>
-            <option value={2}>2 · Second layout</option>
-            <option value={3}>3 · Third layout</option>
+            {reviewSeeds.map((s, i) => (
+              <option key={s} value={s}>
+                {i + 1} · Seed {s}
+                {s >= 1 && s <= 3 ? " · reference" : " · alternative"}
+              </option>
+            ))}
+            {!reviewSeeds.includes(seed) && <option value="custom">Custom · Seed {seed}</option>}
           </select>
         </label>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const next = reviewSeed(String(new FormData(e.currentTarget).get("seed") ?? ""));
+            if (next === null) {
+              setMessage("Enter a whole seed from 0 to 4294967295.");
+              return;
+            }
+            reset();
+            setSeed(next);
+          }}
+        >
+          <label>
+            Seed{" "}
+            <input
+              key={seed}
+              name="seed"
+              aria-label="Scene seed"
+              inputMode="numeric"
+              defaultValue={seed}
+              size={10}
+            />
+          </label>
+          <button type="submit">Generate seed</button>
+        </form>
         <label>
           <input
             type="checkbox"
@@ -224,6 +280,7 @@ export function SceneReview() {
                 STORAGE,
                 JSON.stringify({
                   scene,
+                  reviewSeed: seed,
                   cover: live.cover,
                   positions: live.state.order.map((id) => live.data[id]!.position),
                 }),
@@ -246,13 +303,14 @@ export function SceneReview() {
               setKind(environment.recipe);
               setAdventure(Boolean(restored.scene.context));
               setSeed(
-                restored.scene.context
-                  ? ([1, 2, 3].find(
-                      (i) =>
-                        adventureSceneProof(environment.recipe, i).layout.arena.environment!
-                          .seed === environment.seed,
-                    ) ?? 1)
-                  : environment.seed,
+                restored.reviewSeed ??
+                  (restored.scene.context
+                    ? ([1, 2, 3].find(
+                        (i) =>
+                          adventureSceneProof(environment.recipe, i).layout.arena.environment!
+                            .seed === environment.seed,
+                      ) ?? 1)
+                    : environment.seed),
               );
               const cover = restored.scene.layout.arena.cover ?? [];
               setDamage(
@@ -294,6 +352,24 @@ export function SceneReview() {
                   : "Loading scenery…")}
         </p>
       </header>
+      <p className="scene-review-summary">
+        {selection ? compositionDescription(kind, selection) : scene.layout.arena.label}
+        {" · Recipe v"}
+        {scene.layout.arena.environment?.recipeVersion}
+        {" · Scene seed "}
+        {scene.layout.arena.environment?.seed}
+        {saved ? (
+          " · Frozen saved scene (not regenerated)"
+        ) : (
+          <>
+            {" "}
+            · <a href={`?${query}`}>Link to this seed and view</a>
+          </>
+        )}
+        {selection?.rejected.map((reason, i) => (
+          <span key={i}> · {reason}</span>
+        ))}
+      </p>
       {scene.context && (
         <details>
           <summary>Established adventure facts</summary>

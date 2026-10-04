@@ -77,3 +77,26 @@
   width: 100%;
   margin: 12px auto;
 }
+
+.scene-review-controls form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.scene-review-controls input[name="seed"] {
+  background: #112630;
+  color: #daecea;
+  border: 1px solid #4a6269;
+  padding: 7px;
+  width: 115px;
+}
+.scene-review-summary {
+  padding: 10px 22px;
+  margin: 0;
+  font: 12px/1.5 monospace;
+}
+.scene-review-summary a {
+  color: #7dd9cf;
+  text-decoration: underline;
+}

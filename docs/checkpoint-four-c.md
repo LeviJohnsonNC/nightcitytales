@@ -1,5 +1,7 @@
 # Checkpoint 4C — nightclub arrival, performance and staff use
 
+Accepted by Levi on 2026-10-04.
+
 Ready for visual review. 4A is accepted; 4B remains under user review. This release closes the nightclub gaps left after the accepted bar and lounge work.
 
 ## Changes

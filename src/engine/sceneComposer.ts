@@ -1,3 +1,9 @@
+import {
+  compositionSelection,
+  compositionChoice,
+  type CompositionRequirements,
+} from "./sceneComposition";
+import { exchangeNorthFrontages } from "./intersectionPrograms";
 /** Bounded cluster placement over semantic parcels. No model calls, free-cell scattering or retries. */
 import type { Arena, Point, Rect } from "./battlefield";
 import { placeSceneClusters, type Slot } from "./sceneClusters";
@@ -333,13 +339,19 @@ function intersectionStructures(footprints: Rect[], seed: number): SceneStructur
   return structures;
 }
 
-export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): AuthoredScene {
+export function composeScene(
+  kind: SceneEnvironment["recipe"],
+  seed = 1,
+  requirements: CompositionRequirements = {},
+): AuthoredScene {
   if (!Number.isInteger(seed) || seed < 0 || seed > 4294967295)
     throw new Error("Invalid scene seed.");
   if (kind === "residential") return composeResidential(seed);
   if (kind === "office" || kind === "nightclub" || kind === "warehouse" || kind === "garage")
     return composeInterior(kind, seed);
-  const variant = (seed + 2) % 3;
+  const selection =
+    kind === "intersection" ? compositionSelection(kind, seed, requirements) : undefined;
+  const variant = selection?.family ?? (seed + 2) % 3;
   const plan = recipe(kind, variant);
   const cast = [
     {
@@ -361,7 +373,8 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
   const env: SceneEnvironment = {
     version: 1,
     recipe: kind,
-    recipeVersion: kind === "alley" ? 4 : 2,
+    recipeVersion: selection ? 5 : 4,
+    ...(selection ? { composition: selection } : {}),
     entrances: plan.entrances.map((e, i) => ({
       ...e,
       id: `entrance_${i}`,
@@ -376,7 +389,10 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     zones: plan.zones,
     structures:
       kind === "intersection"
-        ? intersectionStructures(plan.structures, seed)
+        ? intersectionStructures(
+            plan.structures,
+            seed >= 1 && seed <= 3 ? seed : compositionChoice(seed, "intersection/massing", 2),
+          )
         : plan.structures.flatMap((r, i) => {
             // A narrow frontage wing, a rear block and a taller return retain the
             // entrance frontage while varying its architectural mass.
@@ -448,7 +464,7 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     addEntranceSurrounds(env, "service-surround");
   }
   const arena: Arena = {
-    key: `scene:composed-${kind}:v2:${seed}`,
+    key: `scene:composed-${kind}:v${selection ? 5 : 2}:${seed}`,
     label:
       kind === "intersection"
         ? "North Heywood · commercial intersection"
@@ -465,7 +481,7 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
   reserved.push(...env.zones.filter((z) => z.kind === "aisle").map((z) => z.rect));
   // Keep delivery and maintenance as complete alternatives, preserving both
   // contextual ingredients without varying individual members independently.
-  if (kind === "intersection" && seed % 2 === 0)
+  if (selection?.activity === "maintenance")
     plan.slots.find((s) => s.id === "deliveries")!.kind = "workshop_service";
   placeSceneClusters(arena, plan.slots, reserved, seed);
   const details: Slot[] = [];
@@ -494,8 +510,9 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
       rect(z.rect.x + (z.rect.x < 12 ? z.rect.width - 2 : 0), z.rect.y, 2, z.rect.height),
     );
   placeSceneClusters(arena, details, [...reserved, ...walkingLanes], seed, false);
+  if (selection?.program === "shop-east") exchangeNorthFrontages(arena, actors);
   // A third orientation uses the same saved geometry and renderer, including prop sections.
-  if (variant === 2) {
+  if (variant === 2 && selection?.program !== "shop-east") {
     const swapPoint = (p: Point) => ({ x: p.y, y: p.x });
     const swapRect = (r: Rect) => ({ x: r.y, y: r.x, width: r.height, height: r.width });
     arena.playerStart = swapPoint(arena.playerStart);
@@ -538,8 +555,8 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
   return {
     locationKey: "north_heywood",
     template: `composed-${kind}`,
-    templateVersion: 2,
-    anchor: `composition-${kind}-v2-${seed}`,
+    templateVersion: selection ? 5 : 2,
+    anchor: `composition-${kind}-v${selection ? 5 : 2}-${seed}`,
     narration:
       kind === "intersection"
         ? "At a North Heywood intersection, parked cars line the curb outside shuttered workshops. A broth vendor has set up beside a corner shop, with stools and supplies tucked against the frontage. Across the crossing, a rifleman stands beside an olive-drab cruiser; his lookout watches farther along the curb. Two maintenance workers linger by the vendor."

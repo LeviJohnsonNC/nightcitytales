@@ -41,7 +41,7 @@ export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string
   vendor: ["vendor", "vendor_stall"],
   freight: ["loading", "freight", "workshop_delivery", "service_stock"],
   utilities: ["service", "workshop_service"],
-  workstation: ["workstation", "work_pod", "work_facing", "work_island"],
+  workstation: ["workstation", "work_pod", "work_facing", "work_island", "work_parallel"],
   reception: ["reception", "reception_arrival", "club_checkin"],
   meeting: ["meeting", "meeting_support"],
   seating: [
