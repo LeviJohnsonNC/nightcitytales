@@ -51,7 +51,6 @@ export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string
     "seating",
     "waiting_arrival",
     "waiting_entry",
-    "frontage_waiting",
   ],
   bar: ["bar_service", "bar"],
   server: ["server", "equipment_support"],

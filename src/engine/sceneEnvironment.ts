@@ -56,6 +56,8 @@ export const ENVIRONMENT_ART = [
   "partition",
   "workbench",
   "planter",
+  "mailboxes",
+  "shop-display",
 ] as const;
 export type EnvironmentArt = (typeof ENVIRONMENT_ART)[number];
 export const DRESSING_KINDS = [
@@ -67,7 +69,14 @@ export const DRESSING_KINDS = [
   "drain",
   "bollards",
 ] as const;
-export const FLOOR_USES = ["customer", "handling", "entry", "staff", "visitor"] as const;
+export const FLOOR_USES = [
+  "customer",
+  "forecourt",
+  "handling",
+  "entry",
+  "staff",
+  "visitor",
+] as const;
 export type SceneZone = {
   id: string;
   kind: ZoneKind;
