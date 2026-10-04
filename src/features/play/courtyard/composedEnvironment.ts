@@ -307,6 +307,30 @@ function paintBuilding(
   const h = structure.height * pixelsPerMetre;
   const base = corners(r),
     top = corners(r, h);
+  if (structure.style === "mesh-fence") {
+    const vertical = r.width < r.height;
+    const length = vertical ? r.height : r.width;
+    const at = (t: number, z: number) => {
+      const p = project(
+        vertical ? { x: r.x + r.width / 2, y: r.y + t } : { x: r.x + t, y: r.y + r.height / 2 },
+      );
+      return { x: p.x, y: p.y - z * pixelsPerMetre };
+    };
+    // Open mesh, with no opaque panel that might imply bulletproof cover.
+    for (const z of [0.12, 1.9]) line(at(0, z), at(length, z), "#8b9790", 1.5);
+    for (let t = 0; t <= length; t += 2) {
+      line(at(t, 0), at(t, 2), "#253c42", 4);
+      line(at(t, 0), at(t, 2), "#a3aaa0", 1.5);
+    }
+    for (let t = -2; t < length + 2; t += 0.3)
+      for (const slope of [-1, 1]) {
+        const lo = Math.max(0, slope === 1 ? -t : t - length),
+          hi = Math.min(1.8, slope === 1 ? length - t : t);
+        if (hi > lo)
+          line(at(t + slope * lo, lo + 0.1), at(t + slope * hi, hi + 0.1), "#81958f88", 0.7);
+      }
+    return;
+  }
   if (structure.style === "interior-wall") {
     poly([base[0]!, base[1]!, top[1]!, top[0]!], "#687875", "#24353b");
     poly([base[1]!, base[2]!, top[2]!, top[1]!], "#384951", "#24353b");
@@ -634,7 +658,7 @@ export function createComposedEnvironment(
     // Split wall painting, not collision, into grid-sized depth slices. A long
     // strip must not sort every section at its nearest corner's depth.
     const pieces: SceneStructure[] = [];
-    if (structure.style === "interior-wall") {
+    if (structure.style === "interior-wall" || structure.style === "mesh-fence") {
       for (let y = structure.rect.y; y < structure.rect.y + structure.rect.height; y += 2)
         for (let x = structure.rect.x; x < structure.rect.x + structure.rect.width; x += 2)
           pieces.push({
@@ -658,12 +682,12 @@ export function createComposedEnvironment(
       // A mass occludes from its nearest ground corner. Its centre can move
       // off-map as it grows, incorrectly painting ground props over its roof.
       let depth =
-        s.style === "interior-wall"
+        s.style === "interior-wall" || s.style === "mesh-fence"
           ? project({ x: s.rect.x + s.rect.width / 2, y: s.rect.y + s.rect.height / 2 }).y
           : Math.max(...corners.map((p) => p.y));
       // Keep abutting foreground wings ahead of their parent mass: a long
       // side wall must not paint across the roof of an attached return.
-      if (s.style !== "interior-wall") {
+      if (s.style !== "interior-wall" && s.style !== "mesh-fence") {
         const r = s.rect;
         for (const neighbour of arena.environment!.structures) {
           const n = neighbour.rect;
