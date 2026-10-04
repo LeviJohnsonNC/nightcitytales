@@ -1,0 +1,36 @@
+{
+  "houseRule": true,
+  "note": "What the people of a place will do for somebody they have taken to. NOT IN THE BOOK: Cyberpunk RED has no goodwill and no neighbourhood that goes to bat for you, which is the point of a house rule — the goodwill dial already existed and moved, and set `welcome` at the top of it, and there was nothing to spend it on. A favour is bought with that dial, in segments, and what it buys is time, access and a hand with a wound: never a die. It cannot raise a roll, lower a DV, set a price or change an outcome, which is the line the whole city layer is kept behind. Everything it moves is something the engine already moves (a day's rest of healing, the NCPD heat clock), through the functions that already move it.",
+  "requires": {
+    "flag": "welcome",
+    "dial": "goodwill",
+    "note": "They must be glad to see you (the flag), and they must have something left to give (the dial): a favour is asked only when it would leave at least one segment, so spending goodwill is never what turns a place against you. It does not regrow by itself. Doing somebody an actual service (`favour`) is what puts it back."
+  },
+  "perDay": 1,
+  "perDayNote": "One favour a day from any one place. They are doing you a kindness, not running an account.",
+  "effects": {
+    "patch": "Heals what a day of rest would, in minutes rather than a day: HP equal to the character's BODY (plus a Medtech's standing self-care), never more than they are missing.",
+    "lay_low": "Takes two segments off the NCPD heat clock, as working clean does, scaled by how closely this district is policed. In a district nobody polices there is nothing to ease, so it is not offered there."
+  },
+  "layLowSegments": 2,
+  "favours": [
+    {
+      "key": "patch_up",
+      "effect": "patch",
+      "tags": ["clinic", "religious", "housing", "flophouse"],
+      "label": "Get patched up",
+      "description": "Somebody who has seen you come in with worse sits you down and does what they can with what they have.",
+      "cost": 2,
+      "minutes": 120
+    },
+    {
+      "key": "lay_low",
+      "effect": "lay_low",
+      "tags": ["housing", "container_housing", "hotel", "flophouse", "religious", "nomad"],
+      "label": "Lie low here",
+      "description": "A back room, a locked door and the people downstairs saying they have not seen you. Somebody has to have been looking for the law to lose you.",
+      "cost": 3,
+      "minutes": 480
+    }
+  ]
+}

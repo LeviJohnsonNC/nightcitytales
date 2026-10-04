@@ -240,6 +240,44 @@ the combat hit-chance rings, the music duck, and the successor from before.
 
 ---
 
+## Also shipped: favours — goodwill you can spend
+
+The goodwill dial moved and set `welcome` at the top of it, and that was the
+whole of it. `welcome` fed one findable fact and a headline; nothing could be
+bought with it. A place that has taken to you will now, once a day, go out on a
+limb (`engine/favours.ts`, `src/data/atlas/favours.json`, house rule).
+
+- **Two favours, both from things the engine already moves.** _Get patched up_
+  (clinic, church, home, flophouse): a day of rest's healing, in two hours, by
+  `planRest`. _Lie low_ (housing, hotel, flophouse, church, nomad camp): two
+  reports of working clean through `applyPressure`, so the NCPD heat clock eases
+  by the same arithmetic as anything else that eases it, scaled to how closely
+  the district is policed (and not offered in one nobody polices, or when nobody
+  is looking). Neither touches a die, a DV, a price or an outcome.
+- **It costs what it is worth.** Goodwill is spent in dial segments (2 and 3),
+  and a favour is only asked when it would leave one, so spending goodwill never
+  turns a place against you. It does not regrow; a `favour` observation does.
+  One a day from any one place (read back from the `favour_called` ledger event
+  through `favourCalledOn`, so a reload cannot reset it), and only where the
+  character is standing.
+- **It is shown in words.** The dial stays hidden. The Life dock grows a
+  Favours tile only where a place is welcoming and has something its ground can
+  offer; the sheet says what each would do, what it takes out of the day, and
+  why not today when it cannot.
+- **Written so a failure is fair.** Benefit, then goodwill, then time, then the
+  receipt: a failure partway costs a place a little less than it should have,
+  never the player something for nothing.
+
+Not done, and why: an _introduction_ (a dossier rung for somebody who drinks
+here) and a _ride_ (free travel) are the obvious next favours, and each needs a
+write this slice did not want to invent (a rung on `campaign_npcs`, a priced mode
+of zero). A place asking something of YOU back, and a "Regular at" line on the
+Rap Sheet, are the other halves of the idea. None of it has been played: the
+costs and the once-a-day rule are guesses, in a data file, to tune from a week
+in one district.
+
+---
+
 ## Also shipped: the ripperdoc
 
 Chrome was the one thing the shop deliberately would not sell. It now has its
@@ -1378,7 +1416,7 @@ Severity is what happens if it is ignored, not how hard it is to fix:
 | 11  | Incomplete   | Non-combat structured world-state deltas the GM proposes are only partially wired into persistence.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 12  | Incomplete   | Encounters created before the atomic-closeout migration do not record which inventory rows supplied head and body armor, so their remaining SP cannot be written back. Legacy rows only.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 13  | Incomplete   | Immediate in-job pressure reports and engine-derived settlement pricing are not causally deduplicated. Engine-derived settlement is the authoritative pass; the two are counted on different events, so this is a known overlap rather than a double charge.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 14  | Unsettled    | The `goodwill` dial moves and no threshold reads it — and it is not alone. `raided`, `locked_down`, `power_out` and `rebuilt` were set by the engine and read by nothing, so four of the eight place flags were decoration. The Screamsheet now reads every flag the engine SETS in play (`raided`, `shut`, `locked_down`, `under_audit`, `gang_extortion`, `welcome`, `unwelcome`); `power_out` and `rebuilt` are authored starting conditions that nothing sets, so they are still decoration. A dial or flag that changes nothing the player meets is the failure `PRODUCT.md` names. Giving `goodwill` a threshold is only half a fix: a flag needs a consumer, and what goodwill BUYS is a design decision.                                                                                                                                                                                                                            |
+| 14  | Unsettled    | The `goodwill` dial moved and nothing could spend it; its thresholds set `welcome`/`unwelcome`, which fed one findable fact and a headline. Favours (`engine/favours.ts`) now spend it, so `welcome` has a use at the till of the place itself. It was not alone. `raided`, `locked_down`, `power_out` and `rebuilt` were set by the engine and read by nothing, so four of the eight place flags were decoration. The Screamsheet now reads every flag the engine SETS in play (`raided`, `shut`, `locked_down`, `under_audit`, `gang_extortion`, `welcome`, `unwelcome`); `power_out` and `rebuilt` are authored starting conditions that nothing sets, so they are still decoration. A dial or flag that changes nothing the player meets is the failure `PRODUCT.md` names. Giving `goodwill` a threshold is only half a fix: a flag needs a consumer, and what goodwill BUYS is a design decision.                                     |
 | 16  | Unsettled    | `bun run eval` now measures the mechanically checkable half of a prompt change: eleven detectors over five scenarios, each tracing to a line in `PRODUCT.md` or to a rule a prompt states. It calls a real model, so it is not a CI gate; the detectors themselves are pure and are tested in CI. What it cannot see is prose QUALITY — whether a turn is any good, as against merely legal — and that still has no measure but reading it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 15  | Unsettled    | The location layer's pacing numbers — `PLACE_OBSERVATION_EFFECTS`, the beat periods, the `place-state.json` thresholds — have never been playtested. Tune them from a week in one district rather than from argument.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 18  | Unsettled    | Sex and age reach only the narrator. They are recorded at creation (`engine/identity.ts`, house rule) and the narrators are told to let a stranger's first assumption differ by them, but nothing deterministic reads them: no DV, price, disposition start or place action moves. Whether any should (a starting disposition by age band and Role, say) needs a week of play first.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |

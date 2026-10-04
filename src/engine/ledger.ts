@@ -53,6 +53,7 @@ export const LEDGER_EVENTS = {
   movedHouse: "moved_house",
   milestone: "milestone",
   placeChanged: "place_changed",
+  favourCalled: "favour_called",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -625,6 +626,85 @@ export function readPlaceChangedEventData(raw: unknown): PlaceChangedEventData |
   // A change with no place, flag or direction is not a change anybody can report.
   if (placeKey === null || flag === null || typeof d["set"] !== "boolean") return null;
   return { placeKey, flag, set: d["set"], day: num(d["day"]) };
+}
+
+// ---------------------------------------------------------------------------
+// favour_called — a place did something for the character because it was glad
+// to see them (`engine/favours.ts`). Written by `features/campaign/favours.ts`.
+// Read back for one rule — one favour a day from any one place — and so that
+// whatever tells the story of a campaign can say who went out on a limb.
+// ---------------------------------------------------------------------------
+
+export type FavourCalledEventData = {
+  placeKey: string;
+  favour: string;
+  effect: string;
+  /** Goodwill segments the place gave. */
+  spent: number;
+  hpHealed: number;
+  heatEased: number;
+  minutes: number;
+  day: number | null;
+};
+
+export function favourCalledEventData(input: {
+  placeKey: string;
+  favour: string;
+  effect: string;
+  spent: number;
+  hpHealed: number;
+  heatEased: number;
+  minutes: number;
+  day?: number | undefined;
+}): FavourCalledEventData {
+  const whole = (n: number) => Math.max(0, Math.trunc(n));
+  return {
+    placeKey: input.placeKey,
+    favour: input.favour,
+    effect: input.effect,
+    spent: whole(input.spent),
+    hpHealed: whole(input.hpHealed),
+    heatEased: whole(input.heatEased),
+    minutes: whole(input.minutes),
+    day: input.day === undefined ? null : whole(input.day),
+  };
+}
+
+export function readFavourCalledEventData(raw: unknown): FavourCalledEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const placeKey = str(d["placeKey"]);
+  const favour = str(d["favour"]);
+  const effect = str(d["effect"]);
+  // A favour with no place, name or kind is not one anybody can have called.
+  if (placeKey === null || favour === null || effect === null) return null;
+  return {
+    placeKey,
+    favour,
+    effect,
+    spent: num(d["spent"]) ?? 0,
+    hpHealed: num(d["hpHealed"]) ?? 0,
+    heatEased: num(d["heatEased"]) ?? 0,
+    minutes: num(d["minutes"]) ?? 0,
+    day: num(d["day"]),
+  };
+}
+
+/**
+ * Whether `placeKey` has already done a favour on `day`. Reads the ledger the
+ * ops module writes, so the one-a-day rule cannot be satisfied by a page
+ * reload.
+ */
+export function favourCalledOn(
+  events: readonly { type: string; data?: unknown }[],
+  placeKey: string,
+  day: number,
+): boolean {
+  return events.some((event) => {
+    if (event.type !== LEDGER_EVENTS.favourCalled) return false;
+    const data = readFavourCalledEventData(event.data);
+    return data !== null && data.placeKey === placeKey && data.day === day;
+  });
 }
 
 /**

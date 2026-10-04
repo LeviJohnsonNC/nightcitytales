@@ -220,6 +220,24 @@ the person's row (`campaign_npcs.data.arc`), a beat takes the world tick's one
 move for its day, and a stage's `reveal` is never sent to the model — it
 reaches the player only through involvement, beside their dossier facts.
 
+Goodwill can be spent. `engine/favours.ts` (data `src/data/atlas/favours.json`,
+`houseRule: true`) lets a place that has set `welcome` do one favour a day for
+whoever is standing in it: a day of rest's healing in two hours, or two segments
+off the NCPD heat clock. Three rules hold it. It buys time, access and a hand and
+NEVER a die, a DV, a price or an outcome. It moves only what the engine already
+moves, through the function that already moves it (`planRest`,
+`applyObservations`). And it never turns a place against you: a favour is asked
+only when it would leave a segment of goodwill. `favourOffers`
+(`features/campaign/favours.ts`) is the one question — what is on offer where the
+character stands — asked by `life/FavoursSheet.tsx` (a dock tile that renders
+nothing unless a place has taken to you) and again, on fresh rows, by
+`callInFavour`, which writes benefit, then goodwill, then time, then the
+`favour_called` receipt, in that order so a failure is fair to the player. The
+once-a-day rule is read back from that receipt (`favourCalledOn`, in
+`ledger.ts`), never kept on the page. The dial stays hidden: the sheet speaks in
+words. A new favour is a row in the data file and, if it needs a new kind of
+effect, a case in both `favoursAt` and `callInFavour`.
+
 The city is a system in the engine, not a setting in the prose. `geography.ts`
 is the atlas as the publisher printed it and invents nothing; beside it,
 `places.ts` (tags, district profiles, arenas), `placeBeats.ts` (what a location
