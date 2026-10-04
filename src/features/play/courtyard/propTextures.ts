@@ -15,7 +15,7 @@ export function createPropTextures(scene: Phaser.Scene, kinds: PropKind[]) {
   for (const kind of kinds) {
     if (isInteriorProp(kind)) {
       createInteriorPropTextures(scene, kind);
-      if (kind.startsWith("sedan-")) createInteriorPropTextures(scene, kind, 90);
+      createInteriorPropTextures(scene, kind, 90);
       continue;
     }
     const source = scene.textures

@@ -1408,3 +1408,12 @@ selective intersection spacing. New recipes use v6 while accepted seeds and old
 snapshots keep their geometry. **3,556 tests pass; deployed visual/campaign review
 remains open.** The screenshot evidence supersedes 4D.3's optimistic artwork-only
 assessment; reference readiness is not yet claimed.
+
+[Checkpoint 4D.5](docs/checkpoint-four-d5.md) resolves shared furniture projection
+and rotation, retains entrance/wall identity in exterior cutaways, articulates
+existing frontage, marks saved parking groups, and preserves footprint scale in
+recognizable damage states. No recipes or saved geometry change. **3,639 tests,
+typecheck, lint and build pass.** Levi confirmed stable switching on 4D.4; this
+revision still requires deployed visual and campaign acceptance. Offline drawing
+inspection across all seven environments supports retaining the approved spatial
+foundation for the facade/detail asset pass; it is not browser acceptance.

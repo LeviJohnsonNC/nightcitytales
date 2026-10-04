@@ -32,6 +32,13 @@ export function isInteriorProp(kind: PropKind) {
   return (INTERIOR_PROP_KINDS as readonly string[]).includes(kind);
 }
 
+/** The canonical 2m tile must use the same 30-degree projection as the board. */
+export function interiorPropPoint(x: number, y: number, z = 0, rotation: 0 | 90 = 0) {
+  if (rotation === 90) [x, y] = [2 - y, x];
+  const rise = 64 / Math.sqrt(3);
+  return { x: (x + y) * 64, y: 240 - 2 * rise + (x - y) * rise - z };
+}
+
 export function createInteriorPropTextures(
   scene: Phaser.Scene,
   kind: PropKind,
@@ -45,12 +52,7 @@ export function createInteriorPropTextures(
       height,
     )!;
     const ctx = texture.context;
-    const vehicle = kind === "sedan-engine" || kind === "sedan-cabin";
-    const point = (x: number, y: number, z = 0) => {
-      if (rotation === 90) [x, y] = [2 - y, x];
-      const rise = vehicle ? 64 / Math.sqrt(3) : 32;
-      return { x: (x + y) * 64, y: height - 2 * rise + (x - y) * rise - z };
-    };
+    const point = (x: number, y: number, z = 0) => interiorPropPoint(x, y, z, rotation);
     const poly = (points: ReturnType<typeof point>[], color: string, stroke = "#172027") => {
       ctx.beginPath();
       points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -96,12 +98,59 @@ export function createInteriorPropTextures(
       "transparent",
     );
     if (condition === "wrecked") {
-      for (let i = 0; i < 7; i++)
-        slab(0.15 + (i % 3) * 0.53, 0.15 + Math.floor(i / 3) * 0.55, 0.4, 0.35, 0, 4 + (i % 3), [
-          "#4d4440",
-          "#323a41",
-          "#74665b",
-        ]);
+      // Walkable remains retain the object's footprint and material identity.
+      // They are drawn low here, never by squashing the entire texture at display time.
+      const car = kind.startsWith("sedan-");
+      const timber = [
+        "desk",
+        "desk-reverse",
+        "conference-table",
+        "meeting-table",
+        "lounge-table",
+        "stock",
+      ].includes(kind);
+      const upholstery = kind.includes("seat");
+      const remains = car
+        ? ["#514b40", "#30363a", "#837457"]
+        : timber
+          ? ["#68513c", "#40382f", "#967958"]
+          : upholstery
+            ? ["#543444", "#332936", "#88566b"]
+            : ["#48565a", "#2a353b", "#708080"];
+      if (car) {
+        slab(
+          kind === "sedan-engine" ? 0.12 : 0,
+          0.2,
+          kind === "sedan-engine" ? 1.88 : 1.86,
+          1.6,
+          0,
+          9,
+          remains,
+        );
+        slab(0.35, 0.45, 1.15, 0.95, 9, 13, ["#282e32", "#19252d", "#454d50"]);
+        for (const y of [0.08, 1.7])
+          slab(0.55, y, 0.5, 0.2, 0, 10, ["#181e23", "#10191f", "#303a40"]);
+      } else if (timber || upholstery) {
+        slab(0.12, 0.25, 1.65, 1.35, 0, 6, remains);
+        slab(0.25, 0.35, 0.65, 0.9, 6, 11, remains);
+        slab(1.02, 0.55, 0.55, 1.15, 6, 9, remains);
+      } else if (kind === "planter") {
+        slab(0.12, 0.12, 1.76, 1.76, 0, 5, ["#665f51", "#393b32", "#4b5140"]);
+        for (const x of [0.18, 1.3]) slab(x, 0.28, 0.45, 1.4, 5, 10, remains);
+      } else {
+        slab(0.18, 0.25, 1.6, 1.4, 0, 7, remains);
+        slab(0.32, 0.4, 1.1, 0.8, 7, 12, remains);
+        for (const x of [0.3, 0.85, 1.4]) slab(x, 0.4, 0.18, 1.2, 12, 14, remains);
+      }
+      for (let i = 0; i < 5; i++) {
+        const x = 0.15 + (i % 3) * 0.52,
+          y = 0.15 + Math.floor(i / 3) * 1.1;
+        poly(
+          [point(x, y, 15), point(x + 0.3, y + 0.05, 15), point(x + 0.16, y + 0.3, 15)],
+          "#171f24",
+          "#333b3c",
+        );
+      }
       texture.refresh();
       continue;
     }
@@ -162,7 +211,14 @@ export function createInteriorPropTextures(
         slab(0.08, 0.18, 0.12, 1.64, 17, 27, metal);
         for (const y of [0.28, 1.3])
           slab(0.06, y, 0.09, 0.36, 30, 40, ["#d6c797", "#958761", "#efe0ac"]);
-        slab(0.55, 0.95, 1.35, 0.12, 46, 47, metal);
+        poly(
+          [point(1.45, 0.32, 46), point(2, 0.32, 83), point(2, 1.68, 83), point(1.45, 1.68, 46)],
+          "#28434b",
+          "#a38c62",
+        );
+        poly([point(1.45, 0.2, 46), point(2, 0.2, 46), point(2, 0.32, 83)], body[0]!);
+        if (rotation === 90)
+          poly([point(1.45, 1.68, 46), point(2, 1.68, 83), point(2, 1.8, 46)], body[1]!);
       }
     } else if (kind === "planter") {
       slab(0.12, 0.12, 1.76, 1.76, 0, 32, ["#77736a", "#514f4a", "#a7a38f"]);
@@ -376,15 +432,46 @@ export function createInteriorPropTextures(
       }
     }
     if (condition === "damaged") {
-      ctx.strokeStyle = "#211f28";
-      ctx.lineWidth = 4;
+      const car = kind.startsWith("sedan-");
+      const surface = car
+        ? kind === "sedan-cabin"
+          ? 84
+          : 47
+        : kind === "conference-table"
+          ? 41
+          : kind.includes("seat")
+            ? 33
+            : 40;
+      poly(
+        [
+          point(0.25, 0.55, surface),
+          point(0.85, 0.65, surface),
+          point(1.25, 1.2, surface),
+          point(0.6, 1.35, surface),
+        ],
+        "#25292b",
+        "#786b56",
+      );
+      ctx.strokeStyle = "#c0a987";
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(65, 150);
-      ctx.lineTo(112, 163);
-      ctx.lineTo(109, 190);
+      for (const [i, p] of [
+        point(0.25, 0.55, surface + 1),
+        point(0.75, 0.8, surface + 1),
+        point(0.65, 1.15, surface + 1),
+        point(1.2, 1.35, surface + 1),
+      ].entries()) {
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
       ctx.stroke();
-      ctx.fillStyle = "#b5a27b";
-      ctx.fillRect(165, 165, 5, 3);
+      if (car && kind === "sedan-cabin") {
+        poly(
+          [point(0.1, 0.3, 54), point(0.55, 0.3, 76), point(0.95, 0.3, 55)],
+          "#121f27",
+          "#819393",
+        );
+      }
     }
     texture.refresh();
   }

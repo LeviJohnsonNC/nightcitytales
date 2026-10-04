@@ -16,7 +16,7 @@ import { playClash } from "@/features/dice/fx";
 import { RollMath } from "@/features/dice/RollMath";
 import { LuckStepper } from "./LuckStepper";
 import { OddsChip } from "./OddsChip";
-import { oddsReadout } from "./oddsChip";
+import { oddsReadout } from "./oddsPresentation";
 import { describeOutlook } from "./outlook";
 import type { CheckRoll, PendingCheck, PendingOpposition } from "./checkPrompt";
 import type { CheckPreview } from "./rollCheck";
