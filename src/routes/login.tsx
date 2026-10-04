@@ -4,24 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/lib/backend";
+import { pageMeta } from "@/lib/siteMeta";
 import loginArt from "@/assets/login-skyline-v2.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [
-      { title: "Sign In · Night City Tales" },
-      {
-        name: "description",
-        content:
-          "Sign in with your Google account or email and password to reach your character roster.",
-      },
-      { property: "og:title", content: "Sign In · Night City Tales" },
-      {
-        property: "og:description",
-        content:
-          "Sign in with your Google account or email and password to reach your character roster.",
-      },
-    ],
+    meta: pageMeta({
+      title: "Sign In · Night City Tales",
+      description:
+        "Sign in with your Google account or email and password to reach your character roster.",
+      path: "/login",
+    }),
   }),
   component: LoginPage,
 });

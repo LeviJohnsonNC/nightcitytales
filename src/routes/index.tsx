@@ -8,6 +8,7 @@ import { HeroDemoCard } from "@/features/landing/HeroDemoCard";
 import { HeroParallax } from "@/features/landing/HeroParallax";
 import { HeroRain } from "@/features/landing/HeroRain";
 import { Reveal } from "@/features/landing/Reveal";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, pageMeta } from "@/lib/siteMeta";
 import { LandingNav } from "@/features/landing/LandingNav";
 import heroArt from "@/assets/hero-one.jpg.asset.json";
 import lifeArt from "@/assets/hero-two.jpg.asset.json";
@@ -19,22 +20,7 @@ import dawnArt from "@/assets/hero-seven.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
-    meta: [
-      { title: "Night City Tales · Live Your Life in Night City" },
-      {
-        name: "description",
-        content:
-          "A solo Cyberpunk RED campaign run by an AI Game Master. Take dangerous jobs, build relationships, make enemies, and live with everything that follows.",
-      },
-      { property: "og:title", content: "Night City Tales · Live Your Life in Night City" },
-      {
-        property: "og:description",
-        content:
-          "A solo Cyberpunk RED campaign run by an AI Game Master. Take dangerous jobs, build relationships, make enemies, and live with everything that follows.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+    meta: pageMeta({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: "/" }),
   }),
   component: Index,
 });
