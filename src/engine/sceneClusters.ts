@@ -416,6 +416,66 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
       { x: 3, y: 3, label: "Table approach" },
     ],
   },
+  club_checkin: {
+    zones: ["reception"],
+    reason:
+      "An admissions desk separates the guest approach from the door staff position beside the through route",
+    members: [
+      {
+        key: "office_desk",
+        id: "admissions",
+        label: "Club admissions desk",
+        x: 2,
+        y: 0,
+        art: ["reception"],
+      },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: 1, label: "Admission guest approach" },
+      { x: 5, y: 1, label: "Door staff position" },
+    ],
+  },
+  dj_control: {
+    zones: ["performance"],
+    reason:
+      "A floor-level DJ console and flanking speakers face the dance floor, with a protected operator position",
+    members: [
+      { key: "audio_stack", id: "left", x: 0, y: 2, art: ["speaker"] },
+      { key: "dj_console", id: "console", x: 2, y: 2, art: ["dj"] },
+      { key: "audio_stack", id: "right", x: 4, y: 2, art: ["speaker"] },
+    ],
+    dressing: [],
+    access: [{ x: 3, y: 1, label: "DJ operator position" }],
+  },
+  club_prep: {
+    zones: ["service"],
+    reason: "A preparation counter and restocking cabinet share a staff working aisle",
+    members: [
+      {
+        key: "bar_counter",
+        id: "prep",
+        label: "Service preparation counter",
+        x: 0,
+        y: 0,
+        art: ["bar", "bar"],
+      },
+      {
+        key: "office_storage",
+        id: "supplies",
+        label: "Preparation supplies",
+        x: 0,
+        y: 4,
+        art: ["backbar"],
+      },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Preparation counter working space" },
+      { x: 3, y: 3, label: "Preparation counter working space" },
+      { x: 3, y: 5, label: "Preparation supply access" },
+    ],
+  },
   bar_service: {
     zones: ["service"],
     reason: "Continuous customer counter faces a backbar across a protected staff aisle",

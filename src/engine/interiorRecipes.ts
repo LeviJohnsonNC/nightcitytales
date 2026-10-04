@@ -1,6 +1,7 @@
 /** Authored room organizations; all resolve through the shared cluster/grid machinery. */
 import { type Arena, type Rect, type Point } from "./battlefield";
 import { industrialPlan, industrialArrangements } from "./industrialRecipes";
+import { nightclubArrangements } from "./nightclubRecipes";
 import { snapshotBattlefield } from "./battlefieldSnapshot";
 import type { AuthoredScene } from "./authoredScene";
 import { threatFor } from "./threats";
@@ -107,7 +108,6 @@ function nightclub(variant: number): InteriorPlan {
         zone("service", "service", 24, 24, 6, 6),
       ],
       doors: [
-        ["reception", "performance", 14, 6],
         ["reception", "seating", 4, 6],
         ["reception", "bar", 26, 6],
         ["performance", "dance", 10, 14, 12, 2],
@@ -130,7 +130,7 @@ function nightclub(variant: number): InteriorPlan {
       doors: [
         ["reception", "service", 6, 12],
         ["service", "dance", 10, 24],
-        ["reception", "performance", 10, 4],
+        ["reception", "dance", 10, 10],
         ["performance", "dance", 12, 8, 10, 2],
         ["performance", "seating", 22, 4],
         ["dance", "bar", 22, 22, 2, 6],
@@ -271,6 +271,8 @@ export function composeInterior(
   const industrial =
     kind === "warehouse" || kind === "garage" ? industrialArrangements(kind, variant) : undefined;
   if (industrial) env.zones.push(...industrial.zones);
+  const club = kind === "nightclub" ? nightclubArrangements(variant) : undefined;
+  if (club) env.zones.push(...club.zones);
   const reserved: Rect[] = [];
   for (const c of env.interior!.connections) {
     const door = env.zones.find((z) => z.id === c.zoneId)!;
@@ -300,7 +302,7 @@ export function composeInterior(
   const primaryDoor =
     doorZones[plan.doors.findIndex((d) => d[0] === "reception" && d[1] === "outside")]!;
   const playerStart =
-    kind === "office"
+    kind === "office" || kind === "nightclub"
       ? exteriorDoorwayApproaches(primaryDoor.rect, entry, extent).find((p) =>
           rectInside({ x: p.x - 1, y: p.y - 1, width: 2, height: 2 }, entry),
         )!
@@ -314,9 +316,10 @@ export function composeInterior(
     cover: [],
     environment: env,
   };
-  const slots: Slot[] = [...(industrial?.slots ?? [])];
+  const slots: Slot[] = [...(industrial?.slots ?? []), ...(club?.slots ?? [])];
   for (const room of rooms) {
     if (["corridor", "dance"].includes(room.kind)) continue;
+    if (club && ["reception", "performance"].includes(room.id)) continue;
     if (industrial && ["storage", "workbay", "staging"].includes(room.kind)) continue;
     let cluster =
       room.kind === "storage"
@@ -471,7 +474,11 @@ export function composeInterior(
     const secondary: Slot[] = [];
     for (const room of rooms) {
       if (kind === "office" && ["reception", "meeting", "service"].includes(room.kind)) continue;
-      if (kind === "nightclub" && ["bar", "seating", "service"].includes(room.id)) continue;
+      if (
+        kind === "nightclub" &&
+        ["bar", "seating", "service", "reception", "performance"].includes(room.id)
+      )
+        continue;
       const families =
         room.kind === "workspace"
           ? kind === "office" && room.id === "work"

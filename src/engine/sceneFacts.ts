@@ -42,7 +42,7 @@ export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string
   freight: ["loading", "freight", "workshop_delivery", "service_stock"],
   utilities: ["service", "workshop_service"],
   workstation: ["workstation", "work_pod", "work_facing", "work_island"],
-  reception: ["reception", "reception_arrival"],
+  reception: ["reception", "reception_arrival", "club_checkin"],
   meeting: ["meeting", "meeting_support"],
   seating: [
     "lounge_bench",
@@ -54,7 +54,7 @@ export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string
   ],
   bar: ["bar_service", "bar"],
   server: ["server", "equipment_support"],
-  performance: ["performance"],
+  performance: ["performance", "dj_control"],
   racking: ["racking", "rack_aisle"],
   workbench: ["workbench", "repair_support"],
   garden: ["garden"],
