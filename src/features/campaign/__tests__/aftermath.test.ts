@@ -16,7 +16,11 @@ vi.mock("@/lib/backend", () => ({
     flags,
     missions: [],
   })),
-  listCampaignEvents: vi.fn(async () => liveEvents),
+  // The adapter's exact read: from the newest mission_started to the end.
+  listCurrentJobEvents: vi.fn(async () => {
+    const at = liveEvents.map((e) => e.type).lastIndexOf("mission_started");
+    return at === -1 ? [] : liveEvents.slice(at);
+  }),
   listClocks: vi.fn(async () => []),
   listCampaignFactions: vi.fn(async () => []),
   settleJob,
@@ -24,7 +28,6 @@ vi.mock("@/lib/backend", () => ({
 
 const {
   GRUDGE_DUE_DAYS,
-  JOB_LEDGER_LIMIT,
   SETTLEMENT_EVENT,
   SURVIVOR_DISPOSITION,
   alreadySettled,
@@ -242,11 +245,20 @@ describe("atomic settlement preparation", () => {
     expect(await settleAftermath(input())).toBeNull();
   });
 
-  it("reads a job-sized bounded ledger window", async () => {
-    const { listCampaignEvents } = await import("@/lib/backend");
-    liveEvents = [ev("mission_started")];
-    await settleAftermath(input());
-    expect(JOB_LEDGER_LIMIT).toBeGreaterThan(200);
-    expect(listCampaignEvents).toHaveBeenCalledWith("c", JOB_LEDGER_LIMIT);
+  it("settles a job longer than any window, because it reads the job and not a slice of the ledger", async () => {
+    liveEvents = [
+      ev("mission_started", { brokerKey: "wakako" }),
+      ...Array.from({ length: 5000 }, () => ev("narration")),
+      hit("Vex"),
+    ];
+    const report = await settleAftermath(input());
+    expect(report).not.toBeNull();
+    expect(settleJob).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses to settle when no job ever started, rather than guessing one", async () => {
+    liveEvents = [ev("narration")];
+    await expect(settleAftermath(input())).rejects.toThrow("mission_started");
+    expect(settleJob).not.toHaveBeenCalled();
   });
 });

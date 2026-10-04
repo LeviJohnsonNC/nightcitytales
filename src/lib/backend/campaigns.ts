@@ -412,6 +412,42 @@ export async function lastCampaignEventOfType(
   return unwrap(res) ?? null;
 }
 
+/** Rows asked for per request when reading a whole job; the API may return fewer. */
+const JOB_PAGE = 1000;
+/** A backstop on a runaway read, far above any job a person could play. */
+const JOB_EVENT_CEILING = 100_000;
+
+/**
+ * Every event of the current job, oldest first: from the newest `mission_started`
+ * to the end of the ledger, however many rows that is. Empty when no job has
+ * started.
+ *
+ * Settlement reads a job whole, and it used to read "the newest 2000 events"
+ * instead. A job longer than that had lost its own `mission_started` out of the
+ * window, so closing it threw — a job that could never be settled. This reads
+ * the exact range, a page at a time, and keeps going until the API runs dry
+ * rather than until a page comes back short, because the API is free to cap a
+ * page below the size asked for.
+ */
+export async function listCurrentJobEvents(campaignId: string): Promise<CampaignEvent[]> {
+  const start = await lastCampaignEventOfType(campaignId, "mission_started");
+  if (!start) return [];
+  const events: CampaignEvent[] = [];
+  while (events.length < JOB_EVENT_CEILING) {
+    const res = await backendClient
+      .from("campaign_events")
+      .select("*")
+      .eq("campaign_id", campaignId)
+      .gte("seq", start.seq)
+      .order("seq", { ascending: true })
+      .range(events.length, events.length + JOB_PAGE - 1);
+    const page = unwrap(res) ?? [];
+    if (page.length === 0) break;
+    events.push(...page);
+  }
+  return events;
+}
+
 /**
  * Every event of the given types, oldest first, up to `limit`. For the few
  * readers that need a whole campaign of one kind of thing — every Level bought,
