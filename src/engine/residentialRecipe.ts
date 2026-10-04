@@ -40,6 +40,9 @@ export function composeResidential(seed: number): AuthoredScene {
   zones.push(
     zone("west-front", "frontage", rect(6, 0, 2, 32)),
     zone("east-front", "frontage", rect(24, 0, 2, 32)),
+    zone("west-parking", "parking", rect(12, 22, 2, 8)),
+    zone("east-parking", "parking", rect(18, 0, 2, 8)),
+    zone("travel-lane", "aisle", rect(14, 0, 4, 32)),
     zone("west-through", "aisle", rect(10, 0, 2, 32)),
     zone("east-through", "aisle", rect(20, 0, 2, 32)),
   );
@@ -105,7 +108,23 @@ export function composeResidential(seed: number): AuthoredScene {
     height: 8,
   });
   apartment.rect = rect(26, -8, 4, gap + 10);
-  entrances.forEach((p, i) =>
+  // Repeated independent arrivals make the low rows legible as households
+  // before furniture is present. Preserve the apartment's single shared entry.
+  for (const [house, ys] of [
+    [0, [7]],
+    [1, [gap + 15, gap + 21]],
+    [3, [gap + 17, gap + 21]],
+  ] as const) {
+    for (const [unit, y] of ys.entries()) {
+      env.entrances!.push({
+        id: `front_door_${house}_unit_${unit + 2}`,
+        structureId: `house_${house}`,
+        position: { x: house === 3 ? 25 : 7, y },
+        label: "Closed residential unit entrance",
+      });
+    }
+  }
+  env.entrances!.forEach(({ position: p }, i) =>
     zones.push({
       ...zone(`entry-path-${i}`, "aisle", rect(p.x - 1, p.y - 1, 2, 2), "x"),
       floorUse: "entry",
@@ -127,14 +146,27 @@ export function composeResidential(seed: number): AuthoredScene {
     cover: [],
     environment: env,
   };
-  const reserved = [arena.playerStart, ...actorPoints, ...entrances].map((p) =>
-    rect(p.x - 1, p.y - 1, 2, 2),
-  );
+  const reserved = [
+    arena.playerStart,
+    ...actorPoints,
+    ...env.entrances!.map((e) => e.position),
+  ].map((p) => rect(p.x - 1, p.y - 1, 2, 2));
   reserved.push(...zones.filter((z) => z.kind === "aisle").map((z) => z.rect));
   const slots: Slot[] = [
-    { id: "parked_north", kind: "parking", zone: "street", at: { x: 18, y: 2 }, required: true },
-    { id: "parked_south", kind: "parking", zone: "street", at: { x: 12, y: 24 }, required: true },
-    { id: "parked_mid", kind: "parking", zone: "street", at: { x: 18, y: 20 } },
+    {
+      id: "parked_north",
+      kind: "parking",
+      zone: "east-parking",
+      at: { x: 18, y: 2 },
+      required: true,
+    },
+    {
+      id: "parked_south",
+      kind: "parking",
+      zone: "west-parking",
+      at: { x: 12, y: 24 },
+      required: true,
+    },
     {
       id: "resident_car",
       kind: "driveway",
@@ -153,7 +185,7 @@ export function composeResidential(seed: number): AuthoredScene {
       id: "home_entry",
       kind: "residential_entry",
       zone: "west-front",
-      at: { x: 6, y: 4 },
+      at: { x: 6, y: gap + 14 },
       required: true,
     },
     {

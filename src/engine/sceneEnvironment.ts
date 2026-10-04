@@ -3,6 +3,7 @@ import type { Arena, Point, Rect } from "./battlefield";
 
 export const ZONE_KINDS = [
   "road",
+  "parking",
   "intersection",
   "sidewalk",
   "frontage",
