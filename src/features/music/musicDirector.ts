@@ -33,12 +33,19 @@
  */
 import { uploadedAsset } from "@/features/chargen/art";
 import { EQ_BANDS, dbToGain, normalizeEq, type EqSettings } from "./equalizer";
-import { playlist as rotation, shuffleRound } from "./soundtrack";
+import {
+  DEFAULT_PLAYLIST,
+  allTracks,
+  isPlaylistId,
+  playlistTracks,
+  shuffleRound,
+  type PlaylistId,
+} from "./soundtrack";
 import { inTitleOrder } from "./trackTitles";
 
-/** Every track, in the order the playlist window lists them. */
+/** The tracks of the playlist now selected, in the order its window lists them. */
 function playlist(): string[] {
-  return inTitleOrder(rotation());
+  return inTitleOrder(playlistTracks(prefs.list));
 }
 
 const ENABLED_KEY = "nct.music";
@@ -63,7 +70,9 @@ export type PlayerState = {
   blocked: boolean;
   /** What is scoring the moment in its place (a fight), or null. */
   held: string | null;
-  /** Every track in the rotation, in playlist order. */
+  /** The playlist selected: the one the controls play and the window lists. */
+  list: PlaylistId;
+  /** Every track in the selected playlist, in playlist order. */
   tracks: string[];
   /** Lengths, in seconds, as they become known. */
   durations: Record<string, number>;
@@ -80,7 +89,7 @@ export type PlayerState = {
   analysable: boolean;
 };
 
-type Prefs = Pick<PlayerState, "shuffle" | "repeat" | "volume" | "balance" | "eq">;
+type Prefs = Pick<PlayerState, "list" | "shuffle" | "repeat" | "volume" | "balance" | "eq">;
 type Voice = { track: string; el: HTMLAudioElement };
 
 type Graph = {
@@ -160,6 +169,7 @@ function writeEnabled(on: boolean): void {
 
 function readPrefs(): Prefs {
   const fallback: Prefs = {
+    list: DEFAULT_PLAYLIST,
     shuffle: true,
     repeat: true,
     volume: DEFAULT_VOLUME,
@@ -171,6 +181,7 @@ function readPrefs(): Prefs {
     const raw = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "null") as Partial<Prefs> | null;
     if (!raw) return fallback;
     return {
+      list: isPlaylistId(raw.list) ? raw.list : DEFAULT_PLAYLIST,
       shuffle: raw.shuffle !== false,
       repeat: raw.repeat !== false,
       volume: clamp01(Number(raw.volume ?? DEFAULT_VOLUME)),
@@ -260,7 +271,9 @@ function ensureGraph(): Graph | null {
       ? AudioContext
       : (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctor) return null;
-  const urls = playlist().map((track) => uploadedAsset(track));
+  // Every track of both playlists: the chain is built once, and the player may
+  // switch lists at any time.
+  const urls = allTracks().map((track) => uploadedAsset(track));
   if (urls.length === 0 || urls.some((url) => !url || !sameOrigin(url))) return null;
   try {
     const ctx = new Ctor();
@@ -748,6 +761,30 @@ export function setBalance(balance: number): void {
   updatePrefs({ balance: Math.abs(b) < 0.08 ? 0 : b });
 }
 
+/**
+ * Switch playlist. What is playing crossfades into the new list's next track;
+ * a paused or stopped player is cleared, so Play opens the new list rather than
+ * resuming a song from the old one. A fight's hold is left alone.
+ */
+export function setPlaylist(id: PlaylistId): void {
+  if (!isPlaylistId(id) || id === prefs.list) return;
+  const wasPlaying = status() === "playing" && held === null;
+  const outgoing = current;
+  queue = [];
+  rounds = 0;
+  history = [];
+  updatePrefs({ list: id });
+  if (wasPlaying) {
+    const track = pickNext();
+    if (track) return begin(track, 1200);
+  }
+  current = null;
+  paused = false;
+  lastPlayed = null;
+  release(outgoing, 250);
+  emit();
+}
+
 export function setShuffle(on: boolean): void {
   queue = [];
   rounds = 0;
@@ -770,7 +807,7 @@ let surveyed = false;
 export function surveyTracks(): void {
   if (surveyed || !browser()) return;
   surveyed = true;
-  for (const track of playlist()) {
+  for (const track of allTracks()) {
     const url = uploadedAsset(track);
     if (!url) continue;
     const probe = new Audio();

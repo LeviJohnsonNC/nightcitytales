@@ -22,11 +22,19 @@ import {
   seek,
   setBalance,
   setEq,
+  setPlaylist,
   setShuffle,
   setVolume,
   stop,
 } from "../musicDirector";
-import { playlist, songOf } from "../soundtrack";
+import {
+  DEFAULT_PLAYLIST,
+  PLAYLISTS,
+  allTracks,
+  playlistOf,
+  playlistTracks,
+  songOf,
+} from "../soundtrack";
 import { SONG_TITLES, formatTime, inTitleOrder, takeOf, trackTitle } from "../trackTitles";
 
 describe("the equalizer", () => {
@@ -70,7 +78,13 @@ describe("the equalizer", () => {
 
 describe("what the playlist calls a track", () => {
   it("has a title for every song in the rotation", () => {
-    for (const track of playlist()) expect(SONG_TITLES[songOf(track)], track).toBeTruthy();
+    for (const track of allTracks()) expect(SONG_TITLES[songOf(track)], track).toBeTruthy();
+  });
+
+  it("tidies a radio file's name as it does a score's", () => {
+    expect(trackTitle("radio-glass-and-rain")).toBe("Glass And Rain");
+    expect(trackTitle("radio-nice-try-v2")).toBe("Nice Try (take 2)");
+    expect(trackTitle("radio-tell-me-im-good")).toBe("Tell Me I'm Good");
   });
 
   it("names takes, and tidies a file it has never heard of", () => {
@@ -96,6 +110,34 @@ describe("what the playlist calls a track", () => {
     expect(formatTime(59.9)).toBe("0:59");
     expect(formatTime(Number.NaN)).toBe("--:--");
     expect(formatTime(null)).toBe("--:--");
+  });
+});
+
+describe("the two playlists", () => {
+  it("open on the original, instrumental one", () => {
+    expect(DEFAULT_PLAYLIST).toBe("night-shift");
+    expect(PLAYLISTS[0]!.id).toBe(DEFAULT_PLAYLIST);
+    expect(getPlayerState().list).toBe("night-shift");
+  });
+
+  it("are named, and split by file name with no track in both", () => {
+    expect(PLAYLISTS.map((p) => p.name)).toEqual(["Night Shift", "Radio Free Night City"]);
+    const night = playlistTracks("night-shift");
+    const radio = playlistTracks("radio-free");
+    expect(night.length).toBeGreaterThan(0);
+    expect(radio.length).toBeGreaterThanOrEqual(9);
+    expect(night.filter((t) => radio.includes(t))).toEqual([]);
+    for (const t of night) expect(playlistOf(t)).toBe("night-shift");
+    for (const t of radio) expect(playlistOf(t)).toBe("radio-free");
+    expect(allTracks()).toHaveLength(night.length + radio.length);
+  });
+
+  it("switch, clearing whatever the old list had loaded", () => {
+    setPlaylist("radio-free");
+    expect(getPlayerState().list).toBe("radio-free");
+    expect(getPlayerState().track).toBeNull();
+    setPlaylist("night-shift");
+    expect(getPlayerState().list).toBe("night-shift");
   });
 });
 

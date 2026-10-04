@@ -329,9 +329,12 @@ not in the JSON, or the next run will drop them. Re-running it should leave
   and their trails) and `rain.ts` draws it, including beads on the glass that
   refract the bokeh canvas. `LandingBackdrop` runs the same storm under the prose.
 - `src/features/music/` owns the soundtrack: the director (one shuffled playlist,
-  a module that outlives any screen), `soundtrack.ts`/`trackTitles.ts` (any
-  uploaded `music-…` file is in the rotation, and needs a title and a prompt in
-  `docs/soundtrack.md`), and NCAmp, the player that views it. It is shared by the
+  a module that outlives any screen), `soundtrack.ts`/`trackTitles.ts` (two
+  playlists told apart by file name — `music-…` is NIGHT SHIFT, the instrumental
+  score and the default; `radio-…` is RADIO FREE NIGHT CITY, the songs with
+  vocals — and every uploaded file needs a title and an entry in
+  `docs/soundtrack.md`; the selection is a persisted pref, `setPlaylist`), and
+  NCAmp, the player that views it. It is shared by the
   creator and the game and must stay free of anything only one of them knows.
   The game starts it ONCE, in `useGameMusic` on the `/play/:id` route, so moving
   between Life, a job and the cold open never restarts it; the player is mounted

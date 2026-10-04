@@ -8,7 +8,9 @@ changing, and a slot with no file keeps its plain look or stays silent.
 - Images: `.png`, `.jpg` or `.webp`. The extension does not matter, and neither
   does the case: `Scene-Meet.PNG` fills `scene-meet`.
 - Music: `.mp3` (or `.m4a`, `.ogg`, `.wav`). `music-meet.wav` fills
-  `music-meet.mp3`.
+  `music-meet.mp3`. The prefix picks the playlist: `music-…` is the instrumental
+  score (NIGHT SHIFT, the default), `radio-…` is a song with vocals (RADIO FREE
+  NIGHT CITY). Use kebab-case file names — no spaces or apostrophes.
 
 Vite bundles whatever is here, so keep files a reasonable size: a track as an
 mp3 or m4a rather than a wav, and an image as a webp. The first set came in as

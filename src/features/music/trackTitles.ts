@@ -8,7 +8,7 @@
  *
  * Pure.
  */
-import { songOf } from "./soundtrack";
+import { PLAYLISTS, songOf } from "./soundtrack";
 
 /** Who the playlist says made it. */
 export const TRACK_ARTIST = "Night City Tales";
@@ -29,7 +29,23 @@ export const SONG_TITLES: Record<string, string> = {
   "music-drowned-arcade": "Drowned Arcade",
   "music-black-ice": "Black ICE",
   "music-first-light": "First Light",
+  // Radio Free Night City: the songs with vocals.
+  "radio-bad-for-business": "Bad for Business",
+  "radio-dead-man-dancing": "Dead Man Dancing",
+  "radio-heavens-got-a-back-door": "Heaven's Got a Back Door",
+  "radio-hotwire-me": "Hotwire Me",
+  "radio-like-you-stole-me": "Like You Stole Me",
+  "radio-nice-try": "Nice Try",
+  "radio-one-more-first-time": "One More First Time",
+  "radio-take-me-nowhere": "Take Me Nowhere",
+  "radio-tell-me-im-good": "Tell Me I'm Good",
 };
+
+/** A file name without the prefix that says which playlist it is in. */
+function withoutPrefix(song: string): string {
+  const prefix = PLAYLISTS.map((p) => p.prefix).find((p) => song.startsWith(p));
+  return prefix ? song.slice(prefix.length) : song;
+}
 
 /** The take number of a `-v2`/`-v3` track, or null for the first take. */
 export function takeOf(track: string): number | null {
@@ -42,8 +58,7 @@ export function trackTitle(track: string): string {
   const song = songOf(track);
   const title =
     SONG_TITLES[song] ??
-    song
-      .replace(/^music-/, "")
+    withoutPrefix(song)
       .split("-")
       .filter(Boolean)
       .map((word) => word[0]!.toUpperCase() + word.slice(1))

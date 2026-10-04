@@ -1,5 +1,5 @@
 /**
- * The character creator's soundtrack: every track there is, shuffled.
+ * The soundtrack: two playlists, each one shuffled.
  *
  * It used to give each part of the creator its own cue — a track for the
  * meet, one for the interview, one for the build — and it did not survive
@@ -8,20 +8,80 @@
  * thin. Now the creator is simply scored: the tracks play one after another in
  * a shuffled order, each fading into the next.
  *
- * The playlist is every uploaded file named `music-…`, so a new track joins
- * the rotation by being uploaded; nothing here lists them. A `-v2`, `-v3` on
+ * There are two of them, told apart by file name, so a new track joins one by
+ * being uploaded; nothing here lists them. `music-…` is NIGHT SHIFT, the
+ * original score, all of it instrumental, and the one NCAmp opens on.
+ * `radio-…` is RADIO FREE NIGHT CITY, the songs with vocals. A `-v2`, `-v3` on
  * the end is another take of the same song (`songOf`).
  *
  * Pure apart from reading which files exist. What plays it is `musicDirector.ts`.
  */
 import { uploadedAssetNames } from "@/features/chargen/art";
 
-/** The file-name prefix that puts a track in the creator's rotation. */
+/** The file-name prefix that puts a track in the original, instrumental playlist. */
 export const TRACK_PREFIX = "music-";
 
-/** Every track in the rotation, by name. Empty until something is uploaded. */
+export type PlaylistId = "night-shift" | "radio-free";
+
+export type PlaylistDef = {
+  id: PlaylistId;
+  /** What NCAmp calls it. */
+  name: string;
+  /** The button's label, where there is room for little. */
+  short: string;
+  /** What is in it, in a line. */
+  blurb: string;
+  /** The file-name prefix that puts a track in it. */
+  prefix: string;
+};
+
+/** Both playlists, the default first. */
+export const PLAYLISTS: readonly PlaylistDef[] = [
+  {
+    id: "night-shift",
+    name: "Night Shift",
+    short: "NIGHT SHIFT",
+    blurb: "The score. No vocals.",
+    prefix: TRACK_PREFIX,
+  },
+  {
+    id: "radio-free",
+    name: "Radio Free Night City",
+    short: "RADIO FREE",
+    blurb: "Songs with vocals.",
+    prefix: "radio-",
+  },
+];
+
+/** The one everybody starts on: the original, instrumental score. */
+export const DEFAULT_PLAYLIST: PlaylistId = "night-shift";
+
+export function isPlaylistId(value: unknown): value is PlaylistId {
+  return PLAYLISTS.some((p) => p.id === value);
+}
+
+export function playlistDef(id: PlaylistId): PlaylistDef {
+  return PLAYLISTS.find((p) => p.id === id)!;
+}
+
+/** Every track in one playlist, by name. Empty until something is uploaded. */
+export function playlistTracks(id: PlaylistId): string[] {
+  return uploadedAssetNames(playlistDef(id).prefix);
+}
+
+/** The original, instrumental rotation. Empty until something is uploaded. */
 export function playlist(): string[] {
-  return uploadedAssetNames(TRACK_PREFIX);
+  return playlistTracks(DEFAULT_PLAYLIST);
+}
+
+/** Every track in either playlist. */
+export function allTracks(): string[] {
+  return PLAYLISTS.flatMap((p) => playlistTracks(p.id));
+}
+
+/** Which playlist a track belongs to, by its file name. */
+export function playlistOf(track: string): PlaylistId | null {
+  return PLAYLISTS.find((p) => track.startsWith(p.prefix))?.id ?? null;
 }
 
 /**
