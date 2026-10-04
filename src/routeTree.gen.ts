@@ -14,7 +14,6 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SceneReviewRouteImport } from './routes/scene-review'
 import { Route as StyleRouteImport } from './routes/style'
-import { Route as ZzPreviewRouteImport } from './routes/zz-preview'
 import { Route as AuthenticatedCombatRouteImport } from './routes/_authenticated/combat'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedRosterRouteImport } from './routes/_authenticated/roster'
@@ -44,11 +43,6 @@ const SceneReviewRoute = SceneReviewRouteImport.update({
 const StyleRoute = StyleRouteImport.update({
   id: '/style',
   path: '/style',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ZzPreviewRoute = ZzPreviewRouteImport.update({
-  id: '/zz-preview',
-  path: '/zz-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCombatRoute = AuthenticatedCombatRouteImport.update({
@@ -88,7 +82,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/scene-review': typeof SceneReviewRoute
   '/style': typeof StyleRoute
-  '/zz-preview': typeof ZzPreviewRoute
   '/combat': typeof AuthenticatedCombatRoute
   '/create': typeof AuthenticatedCreateRoute
   '/roster': typeof AuthenticatedRosterRoute
@@ -101,7 +94,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/scene-review': typeof SceneReviewRoute
   '/style': typeof StyleRoute
-  '/zz-preview': typeof ZzPreviewRoute
   '/combat': typeof AuthenticatedCombatRoute
   '/create': typeof AuthenticatedCreateRoute
   '/roster': typeof AuthenticatedRosterRoute
@@ -116,7 +108,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/scene-review': typeof SceneReviewRoute
   '/style': typeof StyleRoute
-  '/zz-preview': typeof ZzPreviewRoute
   '/_authenticated/combat': typeof AuthenticatedCombatRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/roster': typeof AuthenticatedRosterRoute
@@ -131,7 +122,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/scene-review'
     | '/style'
-    | '/zz-preview'
     | '/combat'
     | '/create'
     | '/roster'
@@ -144,7 +134,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/scene-review'
     | '/style'
-    | '/zz-preview'
     | '/combat'
     | '/create'
     | '/roster'
@@ -158,7 +147,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/scene-review'
     | '/style'
-    | '/zz-preview'
     | '/_authenticated/combat'
     | '/_authenticated/create'
     | '/_authenticated/roster'
@@ -173,7 +161,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SceneReviewRoute: typeof SceneReviewRoute
   StyleRoute: typeof StyleRoute
-  ZzPreviewRoute: typeof ZzPreviewRoute
   ApiGeneratePortraitRoute: typeof ApiGeneratePortraitRoute
 }
 
@@ -212,13 +199,6 @@ declare module '@tanstack/react-router' {
       path: '/style'
       fullPath: '/style'
       preLoaderRoute: typeof StyleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/zz-preview': {
-      id: '/zz-preview'
-      path: '/zz-preview'
-      fullPath: '/zz-preview'
-      preLoaderRoute: typeof ZzPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/combat': {
@@ -291,7 +271,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SceneReviewRoute: SceneReviewRoute,
   StyleRoute: StyleRoute,
-  ZzPreviewRoute: ZzPreviewRoute,
   ApiGeneratePortraitRoute: ApiGeneratePortraitRoute,
 }
 export const routeTree = rootRouteImport
