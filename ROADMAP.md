@@ -132,8 +132,8 @@ The plan, in phases:
    spot in a line each. The Identity step asks the fixer for five handles (a
    `handle_suggestions` job on the closed list). Still open: one-click
    loadouts for Complete Package, which need a legality-checked shopping list
-   per preset against both budgets, and a shareable character card, which
-   needs an image-rendering dependency the project does not carry yet.
+   per preset against both budgets. (The shareable character card shipped as the
+   Rap Sheet — see "Also shipped: the Screamsheet and the Rap Sheet".)
 
 ---
 
@@ -196,10 +196,47 @@ Four small things that each close a gap a player meets.
 - **Link previews.** The root route still said "Lovable App". Shared links now
   carry a title, a description and a picture (`lib/siteMeta.ts`).
 
-Held back on purpose: a shareable "rap sheet" card (still needs an image-rendering
-dependency), a news feed for the place flags nothing reads (debt 14), and a
-music duck for the obituary — `useCombatFeedback` holds and releases the
+Held back on purpose: a music duck for the obituary — `useCombatFeedback` holds and releases the
 soundtrack, and a second holder has to be ordered against it first.
+
+---
+
+## Also shipped: the Screamsheet and the Rap Sheet
+
+- **The Screamsheet.** Night City now says what it saw. The book's own word for
+  where the news is written (Reputation 8, p.193), and the missing piece
+  `reputation-deeds.json` named: "nothing in the game writes the news yet". It is
+  derived from the ledger, never stored, and stays inside four rules (says only
+  what the engine recorded; names the character only when the engine says they
+  were named; shows no dial; is empty when nothing happened). It pays part of
+  standing debt 14: `raided`, `shut`, `locked_down`, `under_audit`,
+  `gang_extortion`, `welcome` and `unwelcome` now have a consumer when they are
+  SET. `power_out` and `rebuilt` are still only authored starting conditions that
+  nothing sets in play, so there is no event for the sheet to print, and they
+  remain decoration. Fame is printed from Reputation 3 and quotes the printed
+  ladder.
+- **The Rap Sheet.** The shareable character card this file said needed an
+  image-rendering dependency. It did not: the card is hand-drawn on a canvas, no
+  package added. Two shapes, themed by Role, with the stats, the six people, and
+  for a campaign its record; a FLATLINED variant for the obituary.
+
+Two things left open on purpose, for the owner:
+
+- **Should the Sheet be able to EARN Reputation 7+?** The ladder says levels 7 to
+  10 are news ("a news story or two has been written about your exploits"), and
+  `reputation-deeds.json` caps jobs at Level 6 because nothing wrote the news.
+  Something now does, so a story the Sheet runs could be what lifts a name past 6.
+  That is a rule change, and so not made here.
+- **Dials stay hidden, but flags are now told.** `PRODUCT.md` leaves open whether
+  a place's hidden dials read as depth or as nothing happening. The Sheet reports
+  the flag a place gained (something that happened) and never how close anything
+  is to happening, but it does mean the player is now told a place has changed. If
+  that is more legibility than wanted, removing the dock tile removes it.
+
+Held back: an NPC referring to the Sheet in narration (it touches the model's
+packet and needs `bun run eval`), the Rap Sheet at the end of creation from the
+unsaved draft (Save to roster already lands on the page that has the button), and
+the combat hit-chance rings, the music duck, and the successor from before.
 
 ---
 
@@ -1333,7 +1370,7 @@ Severity is what happens if it is ignored, not how hard it is to fix:
 | 11  | Incomplete   | Non-combat structured world-state deltas the GM proposes are only partially wired into persistence.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 12  | Incomplete   | Encounters created before the atomic-closeout migration do not record which inventory rows supplied head and body armor, so their remaining SP cannot be written back. Legacy rows only.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 13  | Incomplete   | Immediate in-job pressure reports and engine-derived settlement pricing are not causally deduplicated. Engine-derived settlement is the authoritative pass; the two are counted on different events, so this is a known overlap rather than a double charge.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 14  | Unsettled    | The `goodwill` dial moves and no threshold reads it — and it is not alone. `raided`, `locked_down`, `power_out` and `rebuilt` are set by the engine and read by nothing, so four of the eight place flags are decoration. A dial or flag that changes nothing the player meets is the failure `PRODUCT.md` names. Giving `goodwill` a threshold is only half a fix: a flag needs a consumer, and what goodwill BUYS is a design decision.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 14  | Unsettled    | The `goodwill` dial moves and no threshold reads it — and it is not alone. `raided`, `locked_down`, `power_out` and `rebuilt` were set by the engine and read by nothing, so four of the eight place flags were decoration. The Screamsheet now reads every flag the engine SETS in play (`raided`, `shut`, `locked_down`, `under_audit`, `gang_extortion`, `welcome`, `unwelcome`); `power_out` and `rebuilt` are authored starting conditions that nothing sets, so they are still decoration. A dial or flag that changes nothing the player meets is the failure `PRODUCT.md` names. Giving `goodwill` a threshold is only half a fix: a flag needs a consumer, and what goodwill BUYS is a design decision.                                                                                                                                                                                                                            |
 | 16  | Unsettled    | `bun run eval` now measures the mechanically checkable half of a prompt change: eleven detectors over five scenarios, each tracing to a line in `PRODUCT.md` or to a rule a prompt states. It calls a real model, so it is not a CI gate; the detectors themselves are pure and are tested in CI. What it cannot see is prose QUALITY — whether a turn is any good, as against merely legal — and that still has no measure but reading it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 15  | Unsettled    | The location layer's pacing numbers — `PLACE_OBSERVATION_EFFECTS`, the beat periods, the `place-state.json` thresholds — have never been playtested. Tune them from a week in one district rather than from argument.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 18  | Unsettled    | Sex and age reach only the narrator. They are recorded at creation (`engine/identity.ts`, house rule) and the narrators are told to let a stranger's first assumption differ by them, but nothing deterministic reads them: no DV, price, disposition start or place action moves. Whether any should (a starting disposition by age band and Role, say) needs a week of play first.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |

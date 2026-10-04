@@ -4,9 +4,10 @@
  * The one rule that matters here is that the canvas must never be TAINTED: a
  * canvas that has drawn a cross-origin image without permission refuses to
  * become a file. The cast's faces are same-origin, so a plain image does. The
- * character's portrait lives behind a signed storage URL, so it is fetched as
- * bytes and decoded from those — which either works, or fails cleanly into a
- * card with no picture, and never into a card that cannot be saved.
+ * character's portrait lives in private storage, so it arrives as BYTES (the
+ * caller fetches them through the backend adapter) and is decoded from those —
+ * which either works, or fails cleanly into a card with no picture, and never
+ * into a card that cannot be saved.
  *
  * Browser-only, and every call degrades: a face that will not load is a
  * placeholder, a font that will not load is a fallback, and neither stops the
@@ -60,12 +61,9 @@ async function loadImage(url: string): Promise<HTMLImageElement | null> {
   }
 }
 
-/** The portrait, fetched as bytes so the canvas is never tainted; or null. */
-async function loadPortrait(url: string): Promise<CanvasImageSource | null> {
+/** A portrait's bytes, decoded; or null. */
+async function decodePortrait(blob: Blob): Promise<CanvasImageSource | null> {
   try {
-    const response = await fetch(url, { mode: "cors" });
-    if (!response.ok) return null;
-    const blob = await response.blob();
     if (typeof createImageBitmap === "function") return await createImageBitmap(blob);
     const local = URL.createObjectURL(blob);
     try {
@@ -79,13 +77,13 @@ async function loadPortrait(url: string): Promise<CanvasImageSource | null> {
 }
 
 export async function loadRapAssets(input: {
-  /** A signed URL for the portrait, or null when there is none. */
-  portraitUrl: string | null;
+  /** The portrait's bytes, or null when there is none. Decoded here, never fetched here. */
+  portrait: Blob | null;
   /** The cast faces the card will draw. */
   faceUrls: string[];
 }): Promise<RapAssets> {
-  const portrait = input.portraitUrl
-    ? within(loadPortrait(input.portraitUrl), IMAGE_WAIT_MS, null)
+  const portrait = input.portrait
+    ? within(decodePortrait(input.portrait), IMAGE_WAIT_MS, null)
     : Promise.resolve(null);
   const unique = [...new Set(input.faceUrls)];
   const faces = await Promise.all(

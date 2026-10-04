@@ -17,6 +17,9 @@ import { weekdayFor } from "@/engine";
 import type { LifeBundle } from "./lifeOps";
 import { DockTile } from "./hud/DockTile";
 
+/** More than this and the count is a wall, not news. */
+const MAX_BADGE = 9;
+
 function dayLabel(day: number | null): string {
   return day === null ? "Earlier" : `Day ${day} · ${weekdayFor(day)}`;
 }
@@ -27,7 +30,8 @@ export function ScreamsheetSheet({ bundle }: { bundle: LifeBundle }) {
   const [open, setOpen] = useState(false);
   // Where the reader had got to when the sheet was opened, kept for the whole
   // visit so the headlines that were new still say so while they are looked at.
-  // -1 means nothing has been read: every row is newer than that.
+  // A reader who has never opened the sheet has nothing to compare against, so
+  // nothing is marked: forty headlines that are all "new" are not news.
   const [baseline, setBaseline] = useState<number | null>(null);
   const [seen, setSeen] = useState<number | null>(() => readSheetSeen(campaignId));
 
@@ -36,7 +40,7 @@ export function ScreamsheetSheet({ bundle }: { bundle: LifeBundle }) {
 
   const onOpenChange = (next: boolean) => {
     if (next) {
-      setBaseline(seen ?? -1);
+      setBaseline(seen);
     } else {
       const newest = newestSeq(items);
       if (newest !== null) {
@@ -53,7 +57,7 @@ export function ScreamsheetSheet({ bundle }: { bundle: LifeBundle }) {
         <DockTile
           icon={<Newspaper className="size-6" />}
           label="The Sheet"
-          badge={unseen > 0 ? `${unseen} new` : null}
+          badge={unseen > 0 ? `${unseen > MAX_BADGE ? `${MAX_BADGE}+` : unseen} new` : null}
         />
       </SheetTrigger>
       <SheetContent

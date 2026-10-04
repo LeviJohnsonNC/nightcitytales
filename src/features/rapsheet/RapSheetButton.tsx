@@ -22,12 +22,31 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { portraitUrl } from "@/lib/backend";
+import { downloadPortrait, portraitUrl } from "@/lib/backend";
 import { loadRapAssets, renderRapSheetBlob } from "./rapSheetAssets";
 import type { RapAssets } from "./rapSheetCanvas";
 import { RAP_FORMATS, rapSheet, type RapFormat, type RapSheetSource } from "./rapSheetModel";
 
 type Made = { format: RapFormat; blob: Blob; url: string };
+
+/**
+ * The portrait's bytes. The authenticated storage client first, since it goes
+ * through the same API path as every other call the app makes; the signed URL
+ * as a second try, which needs the storage host to allow this origin. Null when
+ * neither works, and the card is made without a picture rather than not at all.
+ */
+async function portraitBytes(path: string): Promise<Blob | null> {
+  try {
+    return await downloadPortrait(path);
+  } catch {
+    try {
+      const response = await fetch(await portraitUrl(path), { mode: "cors" });
+      return response.ok ? await response.blob() : null;
+    } catch {
+      return null;
+    }
+  }
+}
 
 function canShareFiles(blob: Blob, filename: string): boolean {
   try {
@@ -80,9 +99,8 @@ export function RapSheetButton({
     (async () => {
       try {
         if (!assets.current) {
-          const url = portraitPath ? await portraitUrl(portraitPath).catch(() => null) : null;
           assets.current = await loadRapAssets({
-            portraitUrl: url,
+            portrait: portraitPath ? await portraitBytes(portraitPath) : null,
             faceUrls: sheet.associates.flatMap((a) => (a.image ? [a.image] : [])),
           });
         }

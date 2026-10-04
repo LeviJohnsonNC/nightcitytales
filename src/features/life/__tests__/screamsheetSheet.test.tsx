@@ -38,6 +38,22 @@ describe("the dock tile", () => {
   });
 });
 
+describe("the count", () => {
+  it("is a count, not a wall: past nine it says so", () => {
+    const many = Array.from({ length: 12 }, (_, i) =>
+      row(
+        "place_changed",
+        placeChangedEventData({ placeKey: "a1", flag: "raided", set: true, day: i + 1 }),
+      ),
+    );
+    const html = renderToStaticMarkup(
+      <ScreamsheetSheet bundle={bundle(screamsheet({ handle: "V", events: many }), "c3")} />,
+    );
+    expect(html).toContain("9+ new");
+    expect(html).not.toContain("12 new");
+  });
+});
+
 describe("one headline", () => {
   const item = items[0]!;
 
