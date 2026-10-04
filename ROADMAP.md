@@ -173,6 +173,36 @@ settlement.
 
 ---
 
+## Also shipped: the ending, the odds, and the way out
+
+Four small things that each close a gap a player meets.
+
+- **Odds on every check.** One chip before the die — a word, a percentage, a
+  gauge, and what one more point of Luck would add. It is made of the same
+  modifiers the roll uses (`rollCheck.ts` `checkSetup`), held to the dice by a
+  test. It also fixed a bug: the card's outlook text added a wound penalty back
+  instead of taking it off, and never saw a Role bonus. Still open: the same
+  chance on the battlefield (range rings tinted by hit chance), which needs an
+  `attackBase` shared by the preview and the roll first.
+- **The obituary.** A death used to be a bordered box. It is now the hit and the
+  Death Save as receipts, the last thing the player had the character do, who is
+  left, and what the run amounted to. It decides nothing about what follows a
+  death; that is still below under "Explicitly not scheduled", and a successor
+  ("the next runner inherits the city") is the natural follow-up once that is
+  decided — it needs a migration and a ruling on permadeath.
+- **The closing frame and "Previously".** Every settled job stores its peak and
+  its one open thread in the receipt; Aftermath opens on it and the next Life
+  screen opens on it until the player acts. Quiet jobs have none.
+- **Link previews.** The root route still said "Lovable App". Shared links now
+  carry a title, a description and a picture (`lib/siteMeta.ts`).
+
+Held back on purpose: a shareable "rap sheet" card (still needs an image-rendering
+dependency), a news feed for the place flags nothing reads (debt 14), and a
+music duck for the obituary — `useCombatFeedback` holds and releases the
+soundtrack, and a second holder has to be ordered against it first.
+
+---
+
 ## Also shipped: the ripperdoc
 
 Chrome was the one thing the shop deliberately would not sell. It now has its
@@ -1335,7 +1365,8 @@ Deferred on purpose, so that deferring them stays a decision:
   the rules file and Life raises a `humanity_low` situation, but crossing it
   carries no mechanical consequence of its own yet.
 - Netrunning as a first-class mode.
-- What happens after a character death.
+- What happens after a character death. (How a run ends is now told — see the
+  obituary above — but what follows it is still undecided.)
 - General inventory consumption beyond ammunition.
 
 ### Spatial composition follow-through

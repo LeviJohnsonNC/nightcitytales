@@ -744,9 +744,13 @@ export function LifeScreen({
   const life = useLife(campaignId);
   const bundle = life.bundle;
   const [mobileReachOpen, setMobileReachOpen] = useState(false);
-  // Which job's "Previously" this browser has put away. Read after mount: it is
-  // a per-viewer convenience held in storage that may be absent or blocked.
-  const [dismissedFrame, setDismissedFrame] = useState<string | null>(null);
+  // Which job's "Previously" this browser has put away. Read when the screen
+  // first draws, so a card already put away never flashes back for a frame; it
+  // is a per-viewer convenience held in storage that may be absent or blocked
+  // (`readDismissed` answers null then, and the card simply shows again).
+  const [dismissedFrame, setDismissedFrame] = useState<string | null>(() =>
+    readDismissed(campaignId),
+  );
   useEffect(() => {
     setDismissedFrame(readDismissed(campaignId));
   }, [campaignId]);

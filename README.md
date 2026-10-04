@@ -44,7 +44,18 @@ LIFE → HOOK → JOB → AFTERMATH → LIFE
   skippable movement and shot feedback; routine exchanges use engine-written
   reports without waiting for generated narration.
 - **Aftermath** is the receipt: what the job paid, what it cost, who noticed,
-  and what is still bleeding.
+  and what is still bleeding — and it opens on one frame: the moment of the job
+  that mattered most (the closest the character came to the end, or the loudest
+  die) and the one thing still open (somebody who walked away, a clock pushed
+  past halfway). The next Life screen opens on the same frame, as "Previously",
+  until you act or put it away. Both are read from the ledger, never written by
+  the model, and a quiet job gets neither.
+- **A death** ends in an obituary, not a box: the hit that did it and the Death
+  Save that failed, set down like receipts, what the player last had the
+  character do, who is left and how they felt, and what the run amounted to.
+- Every check shows its chance before the die — a word, a percentage and a gauge,
+  and what one more point of Luck is worth — made of the modifiers the roll will
+  use.
 
 Life and Job run from separate system prompts, and the Life response schema
 cannot express a job transition. The narrator is not asked to stay in its lane;

@@ -134,6 +134,37 @@ route through `beginAdventureEncounter` and the guarded adventure RPCs: generic
 fixture staging permits travel and must not be used for a delayed GM response.
 See `docs/adventure-composition.md` for the deployment prerequisite and limits.
 
+A check shows its chance before the die, and the chance is made of what the die
+is rolled with. `features/play/rollCheck.ts` assembles Luck, the wound tax and
+what the Role brings once (`checkSetup`) for BOTH `rollPendingCheck` and
+`previewPendingCheck`, and the preview reads STAT and Skill from the same actor
+the roll uses. `checkOdds` and `opposedOdds` (`engine/checkOdds.ts`) count the
+d10 and its critical die exactly, ties as `OPPOSED_CHECK_TIE_GOES_TO` says, and
+`checkPreview.test.ts` rolls for real and holds the preview to `result.modifier`.
+Do not compute a chance beside the roll: the card's outlook text once did, and
+subtracted a wound penalty that is already negative.
+
+A run ends, and a job ends, on things read back from the ledger. A death is
+`features/campaign/obituary.ts` (pure; the receipts come through
+`readAttackEventData` / `readDeathSaveEventData`) laid out by
+`play/ObituaryCard.tsx`; it says what happened and nothing about what comes
+next, which PRODUCT.md leaves open. A job's ending is `engine/closingFrame.ts`:
+the PEAK (a Death Save survived, then a hit that left almost nothing, then a
+natural 10 or 1, then the hardest call set, then the biggest hit) and one open
+THREAD (a survivor, a clock pushed past half, a broker who came away colder).
+`settleAftermath` computes it from the whole job ledger and stores it in the
+`job_settled` receipt as `frame` — `settle_job` stores the receipt whole, so
+there is no migration — and `readClosingFrameEventData` (in `ledger.ts`) reads
+it back for the wrap-up card and for `features/campaign/previously.ts`, which
+decides when Life opens on it ("Previously": the newest job only, until the
+player acts or puts it away). A quiet job has no frame; a hidden clock is never
+named; nothing in it counts down or asks the player to come back.
+
+What a shared link looks like is `lib/siteMeta.ts`: one `pageMeta` builds the
+Open Graph and Twitter tags, with an absolute image URL because a crawler cannot
+resolve a relative one. `SITE_URL` is the published origin; a route that wants
+its own title uses `pageMeta` too.
+
 The people are a system too. `cast.ts` holds who the standing six are and what
 each is carrying, releasing a dossier one rung at a time; `socialRead.ts` says
 which Skill can reach which rung and what having asked costs, so the nine
