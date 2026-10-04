@@ -1,6 +1,6 @@
 # Checkpoint 2C — nightclub functional areas
 
-Implemented for review. Checkpoint 2 is awaiting visual acceptance, not marked passed.
+Checkpoint 2 passed: Levi approved the visual review on 2026-10-03 after the focused Intersection frontage corrections.
 No additional implementation subphase is planned within Checkpoint 2 unless review
 finds a concrete gap.
 
