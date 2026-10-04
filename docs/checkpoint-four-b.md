@@ -13,14 +13,14 @@ Implemented and verified; awaiting visual acceptance. Builds on merged 4A correc
 
 Use `/scene-review`, Warehouse and Garage, variations 1–3.
 
-| Check | Pass means |
-| --- | --- |
-| Warehouse organization | Rack pairs, picking aisles and receiving stock read as related working areas. |
-| Freight access | Trace the wide loading opening through its handling apron to the stock aisles without cargo blocking it. |
-| Garage organization | Each car belongs to a service bay with its own tools, parts and mechanic space; it does not read as parked in a travel lane. |
-| Separate uses | Customer arrival, maintenance and freight/vehicle movement remain understandable and distinct. |
-| Structure view | Loading openings, main routes and working-floor reservations still make sense with furniture hidden. |
-| Preservation | Characters and targets remain readable; intact/damaged/destroyed states preserve permanent geometry; Save/Load restores placement. |
+| Check                  | Pass means                                                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Warehouse organization | Rack pairs, picking aisles and receiving stock read as related working areas.                                                      |
+| Freight access         | Trace the wide loading opening through its handling apron to the stock aisles without cargo blocking it.                           |
+| Garage organization    | Each car belongs to a service bay with its own tools, parts and mechanic space; it does not read as parked in a travel lane.       |
+| Separate uses          | Customer arrival, maintenance and freight/vehicle movement remain understandable and distinct.                                     |
+| Structure view         | Loading openings, main routes and working-floor reservations still make sense with furniture hidden.                               |
+| Preservation           | Characters and targets remain readable; intact/damaged/destroyed states preserve permanent geometry; Save/Load restores placement. |
 
 ## Evidence and limits
 
