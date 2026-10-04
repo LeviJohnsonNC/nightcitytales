@@ -31,8 +31,8 @@ import {
 } from "@/engine";
 import {
   getCampaign,
-  listCampaignEvents,
   listCampaignFactions,
+  listCurrentJobEvents,
   listClocks,
   settleJob,
   type CampaignEvent,
@@ -43,7 +43,6 @@ import { applyPlaceObservations } from "./placeState";
 import { tallyFrom, type CampaignTally } from "./tally";
 
 export const SETTLEMENT_EVENT = "job_settled";
-export const JOB_LEDGER_LIMIT = 2000;
 export const GRUDGE_DUE_DAYS = 6;
 export const SURVIVOR_DISPOSITION = -3;
 
@@ -153,7 +152,8 @@ export function alreadySettled(events: CampaignEvent[]): boolean {
 export async function settleAftermath(input: AftermathInput): Promise<AftermathReport | null> {
   const [full, live, clockRows, factionRows] = await Promise.all([
     getCampaign(input.campaignId),
-    listCampaignEvents(input.campaignId, JOB_LEDGER_LIMIT),
+    // The whole job, exactly — not a window that a long job can outgrow.
+    listCurrentJobEvents(input.campaignId),
     listClocks(input.campaignId),
     listCampaignFactions(input.campaignId),
   ]);
