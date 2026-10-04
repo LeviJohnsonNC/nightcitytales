@@ -37,6 +37,7 @@ import {
   Plus,
   Maximize,
   Hand,
+  Eye,
   Shield,
   ChevronRight,
 } from "lucide-react";
@@ -92,6 +93,8 @@ type Props = {
   feedback?: string | undefined;
   feedbackDetail?: string | undefined;
   onSkipPlayback?: () => void;
+  revealActivity?: boolean;
+  onRevealActivityChange?: (reveal: boolean) => void;
 };
 const points = (path: Point[]) => path.map((p) => `${p.x},${p.y}`).join(" ");
 /** The four ground corners of one battlemat square, in metres. */
@@ -131,6 +134,8 @@ export function CombatBoard({
   feedback,
   feedbackDetail,
   onSkipPlayback,
+  revealActivity: controlledRevealActivity,
+  onRevealActivityChange,
 }: Props) {
   const effects = useCombatFeedback(playback);
   const [failedWeaponArt, setFailedWeaponArt] = useState<string | null>(null);
@@ -146,6 +151,9 @@ export function CombatBoard({
    * tool rather than an interaction state.
    */
   const [tool, setTool] = useState<"select" | "pan">("select");
+  const [localRevealActivity, setLocalRevealActivity] = useState(true);
+  const revealActivity = controlledRevealActivity ?? localRevealActivity;
+  const setRevealActivity = onRevealActivityChange ?? setLocalRevealActivity;
   const [intent, setIntent] = useState<Interaction>(IDLE);
   const [inspected, setInspected] = useState<string | null>(null);
   /**
@@ -659,6 +667,7 @@ export function CombatBoard({
             <CourtyardLayer
               key={arena.key}
               live={live}
+              revealActivity={revealActivity}
               playback={playback}
               camera={displayCamera}
               aimTargetId={aimed?.actor.id ?? null}
@@ -702,6 +711,17 @@ export function CombatBoard({
             </span>
           </div>
           <div className="combat-camera" aria-label="Camera controls">
+            {hasScenicArt && artEnabled && arena.environment && !arena.environment.interior && (
+              <button
+                className="combat-icon"
+                aria-label="Reveal activity behind buildings"
+                title="Reveal activity behind buildings (walls still block movement and shots)"
+                aria-pressed={revealActivity}
+                onClick={() => setRevealActivity(!revealActivity)}
+              >
+                <Eye size={17} />
+              </button>
+            )}
             {hasScenicArt && (
               <button
                 className="combat-view-toggle"

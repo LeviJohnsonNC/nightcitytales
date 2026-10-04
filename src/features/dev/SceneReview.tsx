@@ -39,6 +39,8 @@ export function SceneReview() {
   const [message, setMessage] = useState("");
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [rendererAttempt, setRendererAttempt] = useState(0);
+  const [revealActivity, setRevealActivity] = useState(initial.revealActivity);
   const [zoom, setZoom] = useState(1);
   const [structureOnly, setStructureOnly] = useState(initial.structureOnly);
   const [framing, setFraming] = useState<"play" | "overview">(initial.framing);
@@ -55,6 +57,7 @@ export function SceneReview() {
     entrances,
     damage,
     structureOnly,
+    revealActivity,
     framing,
   });
   useEffect(() => {
@@ -233,6 +236,17 @@ export function SceneReview() {
         )}
         {!actors && (
           <>
+            {!scene.layout.arena.environment?.interior && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={revealActivity}
+                  disabled={structureOnly}
+                  onChange={(e) => setRevealActivity(e.target.checked)}
+                />
+                Reveal activity behind buildings
+              </label>
+            )}
             <label>
               Composition
               <select
@@ -350,6 +364,18 @@ export function SceneReview() {
                   ? "Scenery only · shared shipping renderer"
                   : "Loading scenery…")}
         </p>
+        {!actors && failed && (
+          <button
+            onClick={() => {
+              setFailed(false);
+              setReady(false);
+              setMessage("");
+              setRendererAttempt((n) => n + 1);
+            }}
+          >
+            Retry scenery
+          </button>
+        )}
       </header>
       <p className="scene-review-summary">
         {selection ? compositionDescription(kind, selection) : scene.layout.arena.label}
@@ -430,15 +456,18 @@ export function SceneReview() {
           capability={capability}
           weaponId={REVIEW_WEAPON.itemId}
           onWeaponId={() => {}}
+          revealActivity={revealActivity}
+          onRevealActivityChange={setRevealActivity}
           title="Scene readability review"
           objective="Inspect only · no campaign writes"
         />
       ) : (
         <div className="scene-review-canvas">
           <CourtyardLayer
-            key={`${scene.layout.arena.key}:${structureOnly}`}
+            key={`${scene.layout.arena.key}:${structureOnly}:${rendererAttempt}`}
             live={empty}
             structureOnly={structureOnly}
+            revealActivity={revealActivity}
             camera={{
               ...battlefieldCameraPreset(scene.layout.arena, framing),
               zoom: battlefieldCameraPreset(scene.layout.arena, framing).zoom * zoom,

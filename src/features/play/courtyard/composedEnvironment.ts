@@ -2,6 +2,7 @@
 import type Phaser from "phaser";
 import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
+import { activityOccluders } from "./activityReveal";
 import type { Arena, Point, Rect, SceneStructure, SceneEnvironment } from "@/engine";
 
 type Project = (p: Point) => Point;
@@ -573,6 +574,7 @@ export function createComposedEnvironment(
   ground.refresh();
   scene.add.image(gx + gw / 2, gy + gh / 2, "composed-ground").setDepth(-1000);
   const objects: Phaser.GameObjects.Image[] = [];
+  const occluders = activityOccluders(arena);
   const add = (
     key: string,
     paint: (ctx: CanvasRenderingContext2D) => void,
@@ -617,6 +619,7 @@ export function createComposedEnvironment(
       .setOrigin(0.5, 1)
       .setDepth(depth);
     objects.push(image);
+    return image;
   };
   // Narrow jambs sit at opening boundaries. Each has its own depth so actors
   // remain correctly sorted; these are trim, not new collision objects.
@@ -729,7 +732,7 @@ export function createComposedEnvironment(
         (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances),
         depth,
         bounds,
-      );
+      )?.setData("hidesActivity", occluders.has(structure.id));
     }
   }
   for (const d of arena.environment!.dressing) {
