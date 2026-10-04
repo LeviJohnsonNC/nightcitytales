@@ -8,6 +8,7 @@ import { composeResidential } from "./residentialRecipe";
 import { composeInterior } from "./interiorRecipes";
 import { threatFor } from "./threats";
 import {
+  addEntranceSurrounds,
   type SceneEnvironment,
   type SceneZone,
   type ZoneKind,
@@ -34,9 +35,14 @@ function recipe(kind: SceneEnvironment["recipe"], variant: number) {
   return {
     zones: [
       zone("passage", "alley", rect(left, -8, right - left, 48)),
-      zone("west-service", "loading", rect(left, 0, 6, 32)),
+      zone("west-service", "loading", rect(left, 0, 4, 32)),
       zone("east-service", "loading", rect(right - 4, 0, 4, 32)),
-      zone("service-court", "frontage", rect(0, pocket, left, 6), "x"),
+      zone("service-court", "loading", rect(0, pocket, left, 6), "x"),
+      zone("through-passage", "aisle", rect(14, 0, 4, 32)),
+      {
+        ...zone("court-handling", "aisle", rect(0, pocket, left, 2), "x"),
+        floorUse: "handling" as const,
+      },
     ],
     structures: [
       rect(-8, -8, left + 8, pocket + 8),
@@ -53,28 +59,28 @@ function recipe(kind: SceneEnvironment["recipe"], variant: number) {
     slots: [
       {
         id: "court_delivery",
-        kind: "loading",
+        kind: "workshop_delivery",
         zone: "service-court",
         at: { x: 0, y: pocket + 2 },
         required: true,
       },
       {
         id: "delivery_north",
-        kind: "loading",
+        kind: "workshop_delivery",
         zone: "west-service",
         at: { x: left, y: 2 },
         required: true,
       },
       {
         id: "waste_south",
-        kind: "service",
+        kind: "workshop_service",
         zone: "west-service",
         at: { x: left, y: 24 },
         required: true,
       },
       {
         id: "service_east",
-        kind: "service",
+        kind: "workshop_service",
         zone: "east-service",
         at: { x: right - 4, y: 12 },
         required: true,
@@ -355,7 +361,7 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
   const env: SceneEnvironment = {
     version: 1,
     recipe: kind,
-    recipeVersion: 2,
+    recipeVersion: kind === "alley" ? 4 : 2,
     entrances: plan.entrances.map((e, i) => ({
       ...e,
       id: `entrance_${i}`,
@@ -427,6 +433,20 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     props: [],
     dressing: [],
   };
+  if (kind === "alley") {
+    const court = env.zones.find((z) => z.id === "service-court")!.rect;
+    const host = env.structures.find(
+      (s) => s.rect.y + s.rect.height === court.y && s.rect.x < 3 && s.rect.x + s.rect.width > 3,
+    )!;
+    const entry = {
+      id: "court_receiving",
+      structureId: host.id,
+      position: { x: 3, y: court.y + 1 },
+      label: "Closed court receiving entrance",
+    };
+    env.entrances!.push(entry);
+    addEntranceSurrounds(env, "service-surround");
+  }
   const arena: Arena = {
     key: `scene:composed-${kind}:v2:${seed}`,
     label:
@@ -452,7 +472,7 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
   for (const z of env.zones.filter((z) => ["sidewalk", "frontage", "loading"].includes(z.kind))) {
     // The intersection court is an open handling area, served by its existing
     // delivery slot. Moving it into view must not become another density pass.
-    if (kind === "intersection" && !["north-west-front"].includes(z.id)) continue;
+    if (kind === "alley" || !["north-west-front"].includes(z.id)) continue;
     const candidates: Point[] = [];
     for (let y = Math.max(0, z.rect.y); y < Math.min(32, z.rect.y + z.rect.height) - 2; y += 4)
       for (let x = Math.max(0, z.rect.x); x < Math.min(32, z.rect.x + z.rect.width); x += 2)

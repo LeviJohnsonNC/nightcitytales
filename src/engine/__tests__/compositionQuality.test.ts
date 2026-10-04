@@ -121,7 +121,7 @@ describe("lived-in scene composition", () => {
   });
 
   it.each(["intersection", "alley"] as const)(
-    "gives %s distinct building wings and dense edges",
+    "gives %s distinct building wings and functional edges",
     (kind) => {
       for (let seed = 1; seed <= 3; seed++) {
         const { arena } = composeScene(kind, seed).layout;
@@ -130,7 +130,9 @@ describe("lived-in scene composition", () => {
         expect(
           new Set(env.structures.map((s) => `${s.rect.width}x${s.rect.height}`)).size,
         ).toBeGreaterThanOrEqual(4);
-        if (kind === "alley") expect(arena.cover!.length).toBeGreaterThanOrEqual(15);
+        if (kind === "alley")
+          for (const id of ["court_delivery", "delivery_north", "waste_south", "service_east"])
+            expect(env.clusters.some((c) => c.id === id)).toBe(true);
         else
           for (const id of ["broth_cart", "housing_entry", "deliveries", "utility_waiting"])
             expect(env.clusters.some((c) => c.id === id)).toBe(true);
