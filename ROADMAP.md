@@ -1359,3 +1359,12 @@ Deferred on purpose, so that deferring them stays a decision:
 **Checkpoint 3 is complete:** Levi accepted the final architectural identity, circulation, actor/targeting and damage preservation review on 2026-10-03 (Regina time).
 
 [Checkpoint 4A](docs/checkpoint-four-a.md) transfers functional service groups and facade thresholds to the alley, and adds domestic entry groups, protected walks and attached-home/apartment forms to residential streets. 4A accepted: alley and residential both passed user review, including repeated unit entrances and explicit curb bays. [Checkpoint 4B](docs/checkpoint-four-b.md) now supplies paired rack aisles, reserved freight/vehicle routes and complete garage service bays with tools and parts; accepted by Levi on 2026-10-04. [Checkpoint 4C](docs/checkpoint-four-c.md) adds nightclub admissions, complete DJ groups, direct public circulation and a preparation station for the larger back room; accepted by Levi on 2026-10-04. [Checkpoint 4D.1](docs/checkpoint-four-d1.md) introduces independent seeded Intersection frontage/service choices and Office work-pod choices, recipe-v5 provenance, reproducible seed review, and legacy-save preservation. Awaiting visual review. [Checkpoint 4D.2](docs/checkpoint-four-d2.md) now transfers independent choices to the remaining five environments, preserves accepted seeds and legacy snapshots, and provides curated comparison pairs. Automated verification is complete; browser access was denied, so visual acceptance remains open. Six functional compositions per transferred environment except Residential (four excluding rotation). Next: 4D.3 audits diversity, preservation and reference-image readiness across all seven; resolve composition/framing gaps before claiming only artwork and lighting remain. No new rendering or combat branch.
+
+[Checkpoint 4D.3](docs/checkpoint-four-d3.md) audits all 42 curated examples across
+seven environments and records their actual functional diversity, circulation,
+targeting and review-save preservation. Foreground building occlusion is addressed
+with a shared activity-reveal control; renderer teardown and scenery retry improve
+review recovery. No accepted geometry or saved snapshot changes. **Deployed visual
+verification of these rendering changes, real 390px checks and Levi's manual
+campaign/visual acceptance remain open.** The audit supports moving to artwork,
+facade/detail assets and lighting after that gate, not closing 4D on tests alone.

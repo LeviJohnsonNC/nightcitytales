@@ -9,7 +9,7 @@ import {
 } from "../sceneReviewQuery";
 it("reproduces seed, environment and gameplay/structure review settings through a URL", () => {
   const query =
-    "?place=office&seed=4294967295&view=structure&actors=1&access=1&adventure=1&damage=destroyed&framing=overview";
+    "?place=office&seed=4294967295&view=structure&actors=1&access=1&adventure=1&damage=destroyed&framing=overview&reveal=0";
   const value = readReviewQuery(query);
   expect(value).toMatchObject({
     kind: "office",
@@ -19,6 +19,7 @@ it("reproduces seed, environment and gameplay/structure review settings through 
     adventure: true,
     damage: "destroyed",
     structureOnly: true,
+    revealActivity: false,
     framing: "overview",
   });
   expect(readReviewQuery(reviewQuery(value))).toEqual(value);

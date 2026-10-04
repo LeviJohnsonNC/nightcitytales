@@ -55,6 +55,8 @@ export type CourtyardModel = {
   live: LiveEncounter;
   /** Inspection only; callers remount when switching the composition layer. */
   structureOnly?: boolean;
+  /** Presentation only; solid geometry and targeting remain authoritative. */
+  revealActivity?: boolean;
   playback?: PlaybackFrame | null | undefined;
   aimTargetId?: string | null;
   camera: { x: number; y: number; zoom: number };
@@ -275,7 +277,9 @@ export function createCourtyard(
         const obstructs = [...units.values()].some(({ container: unit }) =>
           sceneryOccludes(prop, unit, composed ? composedUnitMetrics(arena).top : street ? 58 : 88),
         );
-        prop.setAlpha(obstructs ? 0.4 : 1);
+        const reveal =
+          !model.structureOnly && model.revealActivity && prop.getData("hidesActivity");
+        prop.setAlpha(reveal ? 0.18 : obstructs ? 0.4 : 1);
       }
       this.weather.clear();
       if (!street && !motion.matches) {
@@ -513,9 +517,17 @@ export function createCourtyard(
       resize();
     },
     destroy() {
+      if (disposed) return;
       disposed = true;
       observer.disconnect();
       game.canvas.removeEventListener("webglcontextlost", lost);
+      // Removing a canvas does not release its WebGL context. Repeated scene
+      // reviews otherwise depend on GC and can evict a live renderer. Phaser
+      // destroys on its next frame; release only after its GL cleanup finishes.
+      const gl = (game.renderer as Phaser.Renderer.WebGL.WebGLRenderer | null)?.gl;
+      game.events.once(Phaser.Core.Events.DESTROY, () => {
+        queueMicrotask(() => gl?.getExtension("WEBGL_lose_context")?.loseContext());
+      });
       game.destroy(true);
     },
   };
