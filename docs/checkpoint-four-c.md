@@ -12,13 +12,13 @@ Ready for visual review. 4A is accepted; 4B remains under user review. This rele
 
 ## Review Nightclub 1–3
 
-| Check | Pass means |
-| --- | --- |
-| Arrival | Find the primary entrance, admissions desk, guest approach and staff side immediately. |
-| Public routes | Trace entrance to dance floor, bar and lounge without needing to walk through the DJ setup or stock room. |
-| Performance | Console and speakers form a deliberate group facing the floor; the operator has usable space, including the narrow third variant. |
-| Service | Layout 2's prep counter and supplies belong to back-of-house use with working space. Compact service rooms remain uncluttered. |
-| Preservation | Bars, lounges and dance floor retain their identities; characters, targeting, destruction and Save/Load remain usable. |
+| Check         | Pass means                                                                                                                        |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Arrival       | Find the primary entrance, admissions desk, guest approach and staff side immediately.                                            |
+| Public routes | Trace entrance to dance floor, bar and lounge without needing to walk through the DJ setup or stock room.                         |
+| Performance   | Console and speakers form a deliberate group facing the floor; the operator has usable space, including the narrow third variant. |
+| Service       | Layout 2's prep counter and supplies belong to back-of-house use with working space. Compact service rooms remain uncluttered.    |
+| Preservation  | Bars, lounges and dance floor retain their identities; characters, targeting, destruction and Save/Load remain usable.            |
 
 ## Verification
 
