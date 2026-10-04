@@ -61,7 +61,7 @@ it("preserves complete nightclub arrivals, performance and working space through
       "club_checkin",
     ]);
     expect(env.clusters.filter((c) => c.kind === "club_prep")).toHaveLength(
-      (seed + 2) % 3 === 1 ? 1 : 0,
+      env.composition!.family === 1 ? 1 : 0,
     );
     expect(env.clusters.some((c) => c.id.includes("detail"))).toBe(false);
     const areas = env.zones.filter((z) => z.kind === "aisle" || z.kind === "dance");

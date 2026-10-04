@@ -197,7 +197,6 @@ export function composeInterior(
   kind: "office" | "nightclub" | "warehouse" | "garage",
   seed: number,
 ): AuthoredScene {
-  if (kind !== "office") return composeInteriorCandidate(kind, seed);
   const selection = compositionSelection(kind, seed);
   try {
     return composeInteriorCandidate(kind, seed, selection);
@@ -292,7 +291,9 @@ function composeInteriorCandidate(
     );
   }
   const industrial =
-    kind === "warehouse" || kind === "garage" ? industrialArrangements(kind, variant) : undefined;
+    kind === "warehouse" || kind === "garage"
+      ? industrialArrangements(kind, variant, selection?.program)
+      : undefined;
   if (industrial) env.zones.push(...industrial.zones);
   const club = kind === "nightclub" ? nightclubArrangements(variant) : undefined;
   if (club) env.zones.push(...club.zones);
@@ -388,7 +389,8 @@ function composeInteriorCandidate(
     if (kind === "nightclub") {
       if (room.id === "bar") cluster = "bar_service";
       else if (room.id === "seating")
-        cluster = variant === 2 ? "lounge_conversation" : "lounge_bench";
+        cluster =
+          selection?.program === "conversation-lounge" ? "lounge_conversation" : "lounge_bench";
       else if (room.id === "service") cluster = "service_stock";
     }
     if (industrial && room.kind === "service") cluster = "repair_support";
@@ -436,6 +438,10 @@ function composeInteriorCandidate(
     }
     if (cluster.startsWith("lounge_")) {
       candidates.length = 0;
+      if (cluster === "lounge_conversation" && variant === 1)
+        candidates.push({ x: r.x + 2, y: r.y }, { x: r.x + 2, y: r.y + 8 });
+      if (cluster === "lounge_bench" && variant === 2)
+        candidates.push({ x: r.x + 2, y: r.y }, { x: r.x, y: r.y + 6 });
       for (let y = r.y + (cluster === "lounge_bench" ? 4 : 2); y < r.y + r.height - 2; y += 6)
         for (let x = r.x; x < r.x + r.width - 2; x += 6) candidates.push({ x, y });
     }
@@ -485,7 +491,10 @@ function composeInteriorCandidate(
         zone: room.id,
         at: candidates[0]!,
         candidates,
-        required: i === 0 || (kind === "office" && room.id === "work"),
+        required:
+          i === 0 ||
+          (kind === "office" && room.id === "work") ||
+          (cluster.startsWith("lounge_") && i < 2),
       });
   }
   if (kind === "office") {

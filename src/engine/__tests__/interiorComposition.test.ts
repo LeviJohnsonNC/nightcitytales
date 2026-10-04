@@ -28,7 +28,8 @@ describe("shared interior composition", () => {
         expect(composeScene(kind, seed)).toEqual(scene);
         expect(readSceneManifest(JSON.parse(JSON.stringify({ version: 1, scene })))).toEqual(scene);
         expect(JSON.stringify(scene.layout).length).toBeLessThan(65536);
-        organizations.add(JSON.stringify(env.zones));
+        // Count floorplans independently of the chosen furniture working aisles.
+        organizations.add(JSON.stringify(env.zones.filter((z) => z.kind !== "aisle")));
         const reachable = reachableTiles({
           arena,
           cover: {},

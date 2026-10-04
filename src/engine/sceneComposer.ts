@@ -349,10 +349,13 @@ export function composeScene(
   if (kind === "residential") return composeResidential(seed);
   if (kind === "office" || kind === "nightclub" || kind === "warehouse" || kind === "garage")
     return composeInterior(kind, seed);
-  const selection =
-    kind === "intersection" ? compositionSelection(kind, seed, requirements) : undefined;
+  const selection = compositionSelection(kind, seed, requirements);
   const variant = selection?.family ?? (seed + 2) % 3;
   const plan = recipe(kind, variant);
+  if (selection.program === "east-delivery") {
+    plan.slots.find((s) => s.id === "delivery_north")!.kind = "workshop_service";
+    plan.slots.find((s) => s.id === "service_east")!.kind = "workshop_delivery";
+  }
   const cast = [
     {
       id: "rifle_ganger",

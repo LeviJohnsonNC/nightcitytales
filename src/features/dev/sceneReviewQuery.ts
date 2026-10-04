@@ -43,4 +43,9 @@ export function reviewQuery(value: ReturnType<typeof readReviewQuery>): string {
 export const COMPOSITION_REVIEW_SEEDS = {
   intersection: [1, 4, 2, 12, 3, 13],
   office: [1, 4, 2, 8, 3, 0],
+  alley: [1, 4, 2, 11, 3, 5],
+  residential: [1, 0, 2, 19, 3, 4],
+  warehouse: [1, 4, 2, 5, 3, 7],
+  garage: [1, 0, 2, 33, 3, 14],
+  nightclub: [1, 7, 2, 8, 3, 0],
 };

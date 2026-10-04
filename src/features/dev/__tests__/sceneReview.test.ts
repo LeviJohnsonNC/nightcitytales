@@ -1,3 +1,4 @@
+import { COMPOSITION_REVIEW_SEEDS } from "../sceneReviewQuery";
 import { expect, it } from "vitest";
 import { composeScene, coverMaxHp, readBattlefieldPositions } from "@/engine";
 import { readSceneReview, sceneReviewEncounter } from "../sceneReviewModel";
@@ -13,7 +14,7 @@ it.each([
 ] as const)(
   "preserves %s geometry, rotated damage and entrance positions through saved review",
   (kind) => {
-    for (const seed of [1, 2, 3]) {
+    for (const seed of COMPOSITION_REVIEW_SEEDS[kind]) {
       const scene = composeScene(kind, seed);
       for (const entrancePose of [false, true]) {
         const live = sceneReviewEncounter(scene, entrancePose);

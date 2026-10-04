@@ -62,8 +62,7 @@ export function SceneReview() {
       window.history.replaceState(window.history.state, "", `${window.location.pathname}?${query}`);
   }, [query, saved]);
   const selection = scene.layout.arena.environment?.composition;
-  const reviewSeeds =
-    kind === "intersection" || kind === "office" ? COMPOSITION_REVIEW_SEEDS[kind] : [1, 2, 3];
+  const reviewSeeds = COMPOSITION_REVIEW_SEEDS[kind];
   const live = useMemo(() => {
     if (saved) return saved.live;
     const fixture = sceneReviewEncounter(scene, entrances);
