@@ -1,6 +1,6 @@
 # Checkpoint 3B — service court boundary
 
-Implemented for review; 3A is accepted. Checkpoint 3C remains the combined tactical and small-screen review.
+Accepted by Levi on 2026-10-04, including character readability and preservation. See [3C](checkpoint-three-c.md) for combined tactical and small-screen verification.
 
 ## Composition
 
