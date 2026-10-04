@@ -757,6 +757,17 @@
   border-top: 1px solid var(--frame-lo);
   padding-bottom: 4px;
 }
+.ncamp-pl-tabs {
+  display: flex;
+  gap: 3px;
+  margin: 4px 10px 0;
+}
+.ncamp-pl-tab {
+  flex: 1;
+  height: 13px;
+  font-size: 6px;
+  white-space: nowrap;
+}
 .ncamp-pl-list {
   height: 150px;
   margin: 4px 10px 0;

@@ -34,10 +34,21 @@ playlist up without a break: the player sits under the campaign header on a
 desktop and in the status bar on a phone, and a player who pressed Stop stays
 silent. The cold open ducks it for the descent and swells it back at the cut.
 
-**Any file named `music-…` is in the rotation.** Adding a song is an upload,
-never a code change; `src/features/music/soundtrack.ts` finds them by
-name. A test checks that every track in the rotation has its prompt here, so
-write the prompt down when you add one.
+**Two playlists, told apart by file name.** NCAmp's playlist window has a
+switch at the top. **NIGHT SHIFT** is the original score — every file named
+`music-…`, all instrumental — and it is the one the player opens on, for
+everybody, until they choose otherwise (the choice is remembered in their
+browser). **RADIO FREE NIGHT CITY** is the songs with vocals — every file named
+`radio-…`. Each plays on its own shuffle; switching crossfades into the new
+list, or clears a paused player so Play opens it. Which names belong to which
+list is `PLAYLISTS` in `src/features/music/soundtrack.ts`.
+
+**Any file named `music-…` or `radio-…` is in a rotation.** Adding a song is an
+upload, never a code change; `soundtrack.ts` finds them by name. A test checks
+that every track has its prompt here, so write the prompt down when you add one.
+A finished song with vocals that did not come from a Suno prompt we kept
+(Radio Free's first nine) gets a short entry saying so rather than an invented
+one.
 
 **Give it a title.** NCAmp, the player in the creator's top bar, lists each
 song by the title it has here. Add the new song's title to `SONG_TITLES` in
@@ -471,6 +482,34 @@ instrumental, nostalgic dreamy synthwave, warm lush analog pads, chorused clean 
 ```
 
 Exclude: `vocals, big drop, aggressive, trap, dubstep, acoustic guitar, metal`
+
+## Radio Free Night City
+
+The songs with vocals, in a playlist of their own so the score can stay what it
+is: something that sits under the reading. These are the opposite — songs to be
+listened to — which is why they are not mixed into the rotation above. They
+were added as finished `.m4a` files; the Suno prompts and lyrics were not kept
+here, so each entry below records the title only. Add the prompt when one turns
+up. Files are `radio-<title-in-kebab-case>.m4a`; the player's titles are in
+`SONG_TITLES` (`trackTitles.ts`).
+
+### `radio-bad-for-business.m4a` — "Bad for Business"
+
+### `radio-dead-man-dancing.m4a` — "Dead Man Dancing"
+
+### `radio-heavens-got-a-back-door.m4a` — "Heaven's Got a Back Door"
+
+### `radio-hotwire-me.m4a` — "Hotwire Me"
+
+### `radio-like-you-stole-me.m4a` — "Like You Stole Me"
+
+### `radio-nice-try.m4a` — "Nice Try"
+
+### `radio-one-more-first-time.m4a` — "One More First Time"
+
+### `radio-take-me-nowhere.m4a` — "Take Me Nowhere"
+
+### `radio-tell-me-im-good.m4a` — "Tell Me I'm Good"
 
 ## Elsewhere in the game
 

@@ -42,6 +42,7 @@ import {
   seek,
   setBalance,
   setEq,
+  setPlaylist,
   setRepeat,
   setShuffle,
   setVolume,
@@ -50,6 +51,7 @@ import {
   surveyTracks,
   type PlayerState,
 } from "../musicDirector";
+import { PLAYLISTS, playlistDef } from "../soundtrack";
 import { TRACK_ARTIST, formatTime, trackTitle } from "../trackTitles";
 import {
   Btn,
@@ -704,10 +706,26 @@ function PlaylistWindow({ state, onClose }: { state: PlayerState; onClose: () =>
   return (
     <section className="ncamp-window ncamp-pl" aria-label="NCAmp playlist">
       <TitleBar title="NCAMP PLAYLIST" onClose={onClose} />
+      <div className="ncamp-pl-tabs" role="group" aria-label="Playlist">
+        {PLAYLISTS.map((list) => (
+          <Btn
+            key={list.id}
+            label={`${list.name}: ${list.blurb}`}
+            pressed={state.list === list.id}
+            onClick={() => {
+              setSelected(null);
+              setPlaylist(list.id);
+            }}
+            className="ncamp-toggle ncamp-pl-tab"
+          >
+            {list.short}
+          </Btn>
+        ))}
+      </div>
       <ol
         className="ncamp-lcd ncamp-pl-list"
         tabIndex={0}
-        aria-label="Tracks. Double-click or press Enter to play."
+        aria-label={`${playlistDef(state.list).name}. Double-click or press Enter to play a track.`}
         onKeyDown={(e) => {
           if (e.key === "ArrowDown") move(1);
           else if (e.key === "ArrowUp") move(-1);
@@ -735,7 +753,9 @@ function PlaylistWindow({ state, onClose }: { state: PlayerState; onClose: () =>
             <span className="ncamp-pl-time">{formatTime(state.durations[track])}</span>
           </li>
         ))}
-        {state.tracks.length === 0 && <li className="ncamp-pl-row">No tracks uploaded yet.</li>}
+        {state.tracks.length === 0 && (
+          <li className="ncamp-pl-row">No tracks in this playlist yet.</li>
+        )}
       </ol>
       <div className="ncamp-pl-bottom">
         <div className="ncamp-row">
