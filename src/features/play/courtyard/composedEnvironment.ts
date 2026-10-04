@@ -1,5 +1,6 @@
 /** World-building art from the same resolved parcels that constrain play. */
 import type Phaser from "phaser";
+import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
 import type { Arena, Point, Rect, SceneStructure, SceneEnvironment } from "@/engine";
 
@@ -441,6 +442,74 @@ function paintBuilding(
       0.6,
     );
   }
+  // Paint with the parent mass: attachments inherit its sorting and actor fading.
+  // The fixed isometric camera sees north/east facades, never the rear faces.
+  for (const a of structure.attachments ?? []) {
+    if (a.edge !== "north" && a.edge !== "east") continue;
+    const at = (t: number, out: number, z: number) => {
+      const p = project(attachmentPoint(structure, a, t, out));
+      return { x: p.x, y: p.y - z * pixelsPerMetre };
+    };
+    if (a.kind === "awning") {
+      const count = Math.ceil(a.span / 0.4);
+      for (let i = 0; i < count; i++) {
+        const lo = (a.span * i) / count,
+          hi = (a.span * (i + 1)) / count;
+        poly(
+          [
+            at(lo, 0, a.height),
+            at(hi, 0, a.height),
+            at(hi, a.projection, a.height - 0.25),
+            at(lo, a.projection, a.height - 0.25),
+          ],
+          i % 2 ? "#c6b999" : "#527b76",
+          "#364a4c",
+        );
+        poly(
+          [
+            at(lo, a.projection, a.height - 0.25),
+            at(hi, a.projection, a.height - 0.25),
+            at(hi, a.projection, a.height - 0.4),
+            at(lo, a.projection, a.height - 0.4),
+          ],
+          i % 2 ? "#a89c7f" : "#3d5f5c",
+        );
+      }
+      for (const t of [0, a.span])
+        line(at(t, 0, a.height - 0.7), at(t, a.projection, a.height - 0.25), "#303f42", 2);
+    } else {
+      const commercial = a.kind === "retail-fascia",
+        service = a.kind === "service-surround";
+      const color = commercial ? "#467c76" : service ? "#a39469" : "#c0af91";
+      poly(
+        [
+          at(0, a.projection, a.height - 0.3),
+          at(a.span, a.projection, a.height - 0.3),
+          at(a.span, 0, a.height),
+          at(0, 0, a.height),
+        ],
+        color,
+        "#26373d",
+      );
+      if (!commercial) {
+        for (const t of [0, a.span]) {
+          line(at(t, 0.05, 0), at(t, 0.05, a.height), "#243238", 7);
+          line(at(t, 0.06, 0), at(t, 0.06, a.height), color, 3);
+          if (service)
+            for (let z = 0.2; z < 1; z += 0.2)
+              line(at(t, 0.07, z), at(t, 0.07, z + 0.08), "#2e3638", 4);
+        }
+      } else {
+        // One long display header belongs to the shop, rather than another stall.
+        line(
+          at(0.2, a.projection, a.height - 0.18),
+          at(a.span - 0.2, a.projection, a.height - 0.18),
+          "#b9c7b3",
+          2,
+        );
+      }
+    }
+  }
 }
 
 /** Each large mass is a separate sprite so actors can reveal it by occlusion fading. */
@@ -603,7 +672,13 @@ export function createComposedEnvironment(
           if (east || north) depth = Math.min(depth, project({ x: n.x + n.width, y: n.y }).y - 0.1);
         }
       }
-      const left = Math.floor(Math.min(...corners.map((p) => p.x))) - 8;
+      const artCorners = [
+        ...corners,
+        ...(s.attachments ?? []).flatMap((a) =>
+          [0, a.span].map((t) => project(attachmentPoint(s, a, t, a.projection))),
+        ),
+      ];
+      const left = Math.floor(Math.min(...artCorners.map((p) => p.x))) - 8;
       const pixelsPerMetre = Math.hypot(
         project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
         project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
@@ -612,8 +687,8 @@ export function createComposedEnvironment(
       const bounds = {
         x: left,
         y: top,
-        width: Math.ceil(Math.max(...corners.map((p) => p.x))) - left + 8,
-        height: Math.ceil(Math.max(...corners.map((p) => p.y))) - top + 8,
+        width: Math.ceil(Math.max(...artCorners.map((p) => p.x))) - left + 8,
+        height: Math.ceil(Math.max(...artCorners.map((p) => p.y))) - top + 8,
       };
       add(
         `structure-${s.id}`,

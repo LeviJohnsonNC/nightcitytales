@@ -267,6 +267,51 @@ function intersectionStructures(footprints: Rect[], seed: number): SceneStructur
     2.5,
     "workshop",
   );
+  // Architectural cues are owned by their facade and remain above the walking plane.
+  structures.find((s) => s.id === "building_0")!.attachments = [
+    {
+      id: "shop-canopy",
+      kind: "awning",
+      edge: "east",
+      offset: 0,
+      span: 4,
+      projection: 1.5,
+      height: 2.7,
+    },
+  ];
+  structures.find((s) => s.id === "building_1")!.attachments = [
+    {
+      id: "housing-portal",
+      kind: "entry-surround",
+      edge: "west",
+      offset: 4,
+      span: 2,
+      projection: 0.2,
+      height: 2.5,
+    },
+  ];
+  structures.find((s) => s.id === "building_3")!.attachments = [
+    {
+      id: "retail-header",
+      kind: "retail-fascia",
+      edge: "north",
+      offset: 0,
+      span: 6,
+      projection: 0.25,
+      height: 2.2,
+    },
+  ];
+  structures.find((s) => s.id === "building_2")!.attachments = [
+    {
+      id: "workshop-portal",
+      kind: "service-surround",
+      edge: "north",
+      offset: 16,
+      span: 2,
+      projection: 0.2,
+      height: 2.5,
+    },
+  ];
   return structures;
 }
 
@@ -436,6 +481,8 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
     });
     env.structures.forEach((s) => {
       s.rect = swapRect(s.rect);
+      for (const a of s.attachments ?? [])
+        a.edge = ({ north: "west", west: "north", east: "south", south: "east" } as const)[a.edge];
     });
     env.props.forEach((p) => {
       p.rotation = p.rotation === 0 ? 90 : 0;

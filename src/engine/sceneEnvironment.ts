@@ -84,6 +84,29 @@ export type SceneZone = {
   axis: "x" | "y";
   floorUse?: (typeof FLOOR_USES)[number];
 };
+/** Facade-relative, nonblocking architecture; never an independent ground prop. */
+export type SceneAttachment = {
+  id: string;
+  kind: "awning" | "entry-surround" | "retail-fascia" | "service-surround";
+  edge: "north" | "east" | "south" | "west";
+  offset: number;
+  span: number;
+  projection: number;
+  height: number;
+};
+export function attachmentPoint(
+  s: SceneStructure,
+  a: SceneAttachment,
+  along: number,
+  out = 0,
+): Point {
+  const r = s.rect,
+    t = a.offset + along;
+  if (a.edge === "north") return { x: r.x + t, y: r.y - out };
+  if (a.edge === "south") return { x: r.x + t, y: r.y + r.height + out };
+  if (a.edge === "west") return { x: r.x - out, y: r.y + t };
+  return { x: r.x + r.width + out, y: r.y + t };
+}
 export type SceneStructure = {
   id: string;
   label: string;
@@ -92,6 +115,7 @@ export type SceneStructure = {
   style: "shop" | "workshop" | "warehouse" | "interior-wall" | "residential";
   blocksMovement: boolean;
   blocksShots: boolean;
+  attachments?: SceneAttachment[];
 };
 export type SceneEnvironment = {
   version: 1;
@@ -199,10 +223,47 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
         "interior-wall",
         "residential",
       ] as const),
+      ...(s["attachments"] === undefined
+        ? {}
+        : {
+            attachments: list(s["attachments"], 8).map((v): SceneAttachment => {
+              const a = obj(v);
+              return {
+                id: id(a["id"]),
+                kind: choice(a["kind"], [
+                  "awning",
+                  "entry-surround",
+                  "retail-fascia",
+                  "service-surround",
+                ] as const),
+                edge: choice(a["edge"], ["north", "east", "south", "west"] as const),
+                offset: num(a["offset"], 0, 120),
+                span: num(a["span"], 1, 8),
+                projection: num(a["projection"], 0.1, 2),
+                height: num(a["height"], 2.2, 6),
+              };
+            }),
+          }),
       blocksMovement: bool(s["blocksMovement"]),
       blocksShots: bool(s["blocksShots"]),
     };
   });
+  for (const s of structures)
+    for (const a of s.attachments ?? []) {
+      const length = ["north", "south"].includes(a.edge) ? s.rect.width : s.rect.height;
+      if (s.style === "interior-wall" || a.offset + a.span > length || a.height + 0.25 > s.height)
+        fail();
+      const start = attachmentPoint(s, a, 0),
+        end = attachmentPoint(s, a, a.span, a.projection);
+      const footprint = {
+        x: Math.min(start.x, end.x),
+        y: Math.min(start.y, end.y),
+        width: Math.abs(start.x - end.x),
+        height: Math.abs(start.y - end.y),
+      };
+      if (structures.some((other) => other.id !== s.id && rectsOverlap(footprint, other.rect)))
+        fail();
+    }
   const entrances =
     r["entrances"] === undefined && r["recipeVersion"] === 1
       ? undefined
