@@ -15,7 +15,11 @@ it("keeps complete work pods and their shared working aisles in all office topol
     const env = arena.environment!;
     const work = env.clusters.filter((c) => c.zoneId === "work" && c.kind !== "garden");
     expect(work.length).toBeGreaterThanOrEqual(2);
-    expect(work.every((c) => ["work_facing", "work_island"].includes(c.kind))).toBe(true);
+    expect(
+      work.every((c) =>
+        ["work_facing", "work_island", "work_pod", "work_parallel"].includes(c.kind),
+      ),
+    ).toBe(true);
     for (const pod of work) {
       const bindings = env.props.filter((p) => p.clusterId === pod.id);
       // Opposed chairs face the reserved outer aisles, including open-core rooms.
@@ -23,9 +27,13 @@ it("keeps complete work pods and their shared working aisles in all office topol
         true,
       );
       const art = bindings.map((p) => p.art);
-      const desks = pod.kind === "work_island" ? 2 : 1;
-      expect(art.filter((a) => a === "desk")).toHaveLength(desks);
-      expect(art.filter((a) => a === "desk-reverse")).toHaveLength(desks);
+      const desks = ["work_island", "work_parallel"].includes(pod.kind) ? 2 : 1;
+      expect(art.filter((a) => a === "desk")).toHaveLength(
+        pod.kind === "work_parallel" ? 4 : pod.kind === "work_pod" ? 2 : desks,
+      );
+      expect(art.filter((a) => a === "desk-reverse")).toHaveLength(
+        ["work_pod", "work_parallel"].includes(pod.kind) ? 0 : desks,
+      );
       expect(art.filter((a) => a === "cabinet")).toHaveLength(1);
       const access = env.interior!.access.filter((a) => a.id.startsWith(`${pod.id}_access_`));
       expect(access).toHaveLength(desks * 2 + 1);

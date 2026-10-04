@@ -60,6 +60,25 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
       { x: 5, y: 1, label: "Shared filing access" },
     ],
   },
+  work_parallel: {
+    zones: ["workspace"],
+    reason: "Two parallel desk pairs share a filing spine and separate seating aisles",
+    members: [
+      { key: "office_desk", id: "front_left", x: 0, y: 0, art: ["desk"] },
+      { key: "office_desk", id: "front_right", x: 2, y: 0, art: ["desk"] },
+      { key: "office_desk", id: "rear_left", x: 0, y: 4, art: ["desk"] },
+      { key: "office_desk", id: "rear_right", x: 2, y: 4, art: ["desk"] },
+      { key: "office_storage", id: "filing", x: 4, y: 4, art: ["cabinet"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Front pair seating aisle" },
+      { x: 3, y: 3, label: "Front pair seating aisle" },
+      { x: 1, y: 7, label: "Rear pair seating aisle" },
+      { x: 3, y: 7, label: "Rear pair seating aisle" },
+      { x: 5, y: 3, label: "Shared filing access" },
+    ],
+  },
   reception_arrival: {
     zones: ["reception"],
     reason:
@@ -645,6 +664,8 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     ],
   },
 };
+export class CompositionFitError extends Error {}
+
 export type Slot = {
   label?: string;
   axis?: "x" | "y";
@@ -794,7 +815,7 @@ export function placeSceneClusters(
       }
     }
     if (!placement) {
-      if (slot.required) throw new Error(`Required cluster cannot fit: ${slot.id}`);
+      if (slot.required) throw new CompositionFitError(`Required cluster cannot fit: ${slot.id}`);
       continue;
     }
     const { at, entries, access } = placement;

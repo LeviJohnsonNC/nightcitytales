@@ -1,3 +1,4 @@
+import { readCompositionSelection, type CompositionSelection } from "./sceneComposition";
 /** Resolved, saved composition. Rendering and mechanics read these same footprints. */
 import type { Arena, Point, Rect } from "./battlefield";
 
@@ -122,7 +123,8 @@ export type SceneEnvironment = {
   version: 1;
   recipe:
     "intersection" | "alley" | "office" | "nightclub" | "warehouse" | "garage" | "residential";
-  recipeVersion: 1 | 2 | 3 | 4;
+  recipeVersion: 1 | 2 | 3 | 4 | 5;
+  composition?: CompositionSelection;
   /** Room connections are openings, not interactive doors or a second navigation system. */
   interior?: {
     connections: { zoneId: string; from: string; to: string }[];
@@ -191,7 +193,7 @@ function rectangle(v: unknown, thin = false): Rect {
 /** Closed vocabulary, bounded geometry, referential integrity; no catalog regeneration. */
 export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnvironment {
   const r = obj(value);
-  if (r["version"] !== 1 || ![1, 2, 3, 4].includes(r["recipeVersion"] as number)) fail();
+  if (r["version"] !== 1 || ![1, 2, 3, 4, 5].includes(r["recipeVersion"] as number)) fail();
   const ids = new Set<string>();
   const id = (v: unknown) => {
     const key = str(v);
@@ -217,7 +219,8 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       label: str(s["label"]),
       rect: rectangle(
         s["rect"],
-        s["style"] === "mesh-fence" || (r["recipeVersion"] === 4 && s["style"] === "interior-wall"),
+        s["style"] === "mesh-fence" ||
+          ((r["recipeVersion"] as number) >= 4 && s["style"] === "interior-wall"),
       ),
       height: num(s["height"], 1, 12),
       style: choice(s["style"], [
@@ -396,13 +399,19 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
     if (structures.slice(i + 1).some((s) => rectsOverlap(structures[i]!.rect, s.rect))) fail();
     if (arena.cover?.some((p) => p.id === structures[i]!.id)) fail();
   }
-  const interior = readInterior(r["interior"], zones, structures, arena, r["recipeVersion"] === 4);
+  const interior = readInterior(
+    r["interior"],
+    zones,
+    structures,
+    arena,
+    (r["recipeVersion"] as number) >= 4,
+  );
   const interiorRecipe = ["office", "nightclub", "warehouse", "garage"].includes(
     r["recipe"] as string,
   );
   if (
     interiorRecipe !== Boolean(interior) ||
-    (interiorRecipe && ![3, 4].includes(r["recipeVersion"] as number))
+    (interiorRecipe && ![3, 4, 5].includes(r["recipeVersion"] as number))
   )
     fail();
   return {
@@ -417,7 +426,10 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       "garage",
       "residential",
     ] as const),
-    recipeVersion: r["recipeVersion"] as 1 | 2 | 3 | 4,
+    recipeVersion: r["recipeVersion"] as 1 | 2 | 3 | 4 | 5,
+    ...(r["recipeVersion"] === 5
+      ? { composition: readCompositionSelection(r["composition"], r["recipe"]) }
+      : {}),
     ...(entrances ? { entrances } : {}),
     seed,
     zones,

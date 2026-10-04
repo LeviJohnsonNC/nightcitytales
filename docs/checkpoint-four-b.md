@@ -1,5 +1,7 @@
 # Checkpoint 4B — warehouse and garage working arrangements
 
+Accepted by Levi on 2026-10-04.
+
 Implemented and verified; awaiting visual acceptance. Builds on merged 4A corrections. This transfer uses the existing floorplans, shared cluster solver, saved reservations and renderer.
 
 ## What changed

@@ -95,6 +95,7 @@ describe("lived-in scene composition", () => {
     const snapshot = composeScene("office", 1).layout;
     const env = snapshot.arena.environment!;
     env.recipeVersion = 3;
+    delete env.composition;
     env.structures = [];
     for (let y = 0; y < snapshot.arena.extent.height; y += 2) {
       let start: number | null = null;

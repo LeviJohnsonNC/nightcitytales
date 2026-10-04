@@ -1,3 +1,4 @@
+import { reviewSeed } from "./sceneReviewQuery";
 /** Static review fixtures only. No simulated turn loop or campaign writes. */
 import {
   coverDamageFrom,
@@ -73,9 +74,18 @@ export function sceneReviewEncounter(scene: AuthoredScene, atEntrances = false):
   };
 }
 
-export function readSceneReview(value: unknown): { scene: AuthoredScene; live: LiveEncounter } {
+export function readSceneReview(value: unknown): {
+  scene: AuthoredScene;
+  live: LiveEncounter;
+  reviewSeed?: number;
+} {
   if (!value || typeof value !== "object") throw new Error("Invalid review snapshot");
-  const raw = value as { scene?: unknown; cover?: unknown; positions?: unknown };
+  const raw = value as {
+    scene?: unknown;
+    cover?: unknown;
+    positions?: unknown;
+    reviewSeed?: unknown;
+  };
   const scene = readSceneManifest({ version: 1, scene: raw.scene });
   const live = sceneReviewEncounter(scene);
   live.cover = coverDamageFrom(scene.layout.arena, raw.cover);
@@ -86,5 +96,14 @@ export function readSceneReview(value: unknown): { scene: AuthoredScene; live: L
   ids.forEach((id, i) => {
     live.data[id]!.position = positions[i]!;
   });
-  return { scene, live };
+  if (
+    raw.reviewSeed !== undefined &&
+    (typeof raw.reviewSeed !== "number" || reviewSeed(String(raw.reviewSeed)) === null)
+  )
+    throw new Error("Invalid review seed");
+  return {
+    scene,
+    live,
+    ...(raw.reviewSeed === undefined ? {} : { reviewSeed: raw.reviewSeed as number }),
+  };
 }
