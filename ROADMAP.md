@@ -666,8 +666,8 @@ Graded on what a player experiences, not on what the engine models somewhere.
   count, and a fee worth talking about, capped at 6
   (`reputation-deeds.json`, house rule). A clean job earns nothing: that is the
   trade between heat and fame. Reputation is the best deed so far; it is
-  derived on every Life load and never stored. Levels 7 and up are headlines,
-  and nothing writes the news yet.
+  derived on every Life load and never stored. Levels 7 and up are headlines;
+  the Screamsheet prints them, but no deed earns them yet.
 - Job tiers (`job-tiers.json`, house rule): street, steady and serious work,
   each a pair of fees and force sizes, so better pay is a harder fight. The
   tier is the highest that both Reputation and jobs finished reach, one lower

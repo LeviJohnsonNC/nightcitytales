@@ -730,8 +730,10 @@ Honest ambiguity, recorded so that it gets decided rather than defaulted into.
 - **How much state to show.** Disposition, standings and clocks are all
   legible-in-principle. Which of them the player should see as numbers is a live
   question, and the default is fewer. A place's dials are currently hidden
-  outright — you learn the market has gone quiet by finding it gone quiet — and
-  whether that reads as depth or as nothing happening is unsettled.
+  outright, though the Screamsheet now announces the moment a flag (shut,
+  raided, unwelcome) is set, so you learn a market has closed from the news and
+  not only by finding it closed — and whether that reads as depth or as
+  nothing happening is unsettled.
 - **How fast a place should change.** Four loud nights closes a market
   (`place-state.json`). Those numbers are pacing guesses that have not been
   played, and the honest way to settle them is a week in one district rather

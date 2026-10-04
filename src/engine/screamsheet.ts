@@ -249,9 +249,10 @@ function fameItem(
   if (!band || !ladder) return null;
   const key = `fame:${event.id}`;
   const template = pick(band.items, key);
-  // The printed ladder says from Level 4 that the NAME is out; before that,
-  // it is only what happened, and the name goes in print only if it was said.
-  const who = named || level >= 4 ? handle : "a runner";
+  // The printed ladder first says the NAME is out at Level 5 ("recognize your
+  // name"); before that it is only what happened, stories and word going round,
+  // and the name goes in print only if it was said.
+  const who = named || level >= 5 ? handle : "a runner";
   const tokens = { who, ladder };
   return {
     key,

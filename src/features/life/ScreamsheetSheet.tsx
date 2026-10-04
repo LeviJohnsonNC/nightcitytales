@@ -7,11 +7,11 @@
  * sheet opens on them, newest morning first. When the city has said nothing, the
  * sheet says so, and does not fill the space.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Newspaper } from "lucide-react";
 import { groupByDay, newestSeq, unseenCount } from "@/engine";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { readSheetSeen, writeSheetSeen } from "@/features/status/sheetSeen";
+import { firstVisitBaseline, readSheetSeen, writeSheetSeen } from "@/features/status/sheetSeen";
 import { ScreamsheetItem } from "@/features/status/ScreamsheetItem";
 import { weekdayFor } from "@/engine";
 import type { LifeBundle } from "./lifeOps";
@@ -34,6 +34,17 @@ export function ScreamsheetSheet({ bundle }: { bundle: LifeBundle }) {
   // nothing is marked: forty headlines that are all "new" are not news.
   const [baseline, setBaseline] = useState<number | null>(null);
   const [seen, setSeen] = useState<number | null>(() => readSheetSeen(campaignId));
+
+  // The first load of a campaign that already has headlines adopts them as read:
+  // the dock counts what arrives from here on, not the whole back catalogue.
+  useEffect(() => {
+    const adopted = firstVisitBaseline(items, readSheetSeen(campaignId));
+    if (adopted === null) return;
+    writeSheetSeen(campaignId, adopted);
+    setSeen(adopted);
+    // Once per campaign on arrival, not on every headline that follows.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId]);
 
   const unseen = unseenCount(items, seen);
   const groups = groupByDay(items);

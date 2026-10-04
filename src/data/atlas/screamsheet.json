@@ -1,6 +1,6 @@
 {
   "houseRule": true,
-  "note": "What the Screamsheet says, and in whose voice. The facts are the engine's — a flag a place gained, what a settled job left behind — and every line here is a template over one of them. NOTHING IN THIS FILE MAY ADD A FACT: atmosphere may colour what happened (\"they know the address now\"), but it may not say what nobody recorded (a name, a sum, who said what, what police announced). A line that names the character does so only when the engine says somebody said their name (`named`) or, for fame, when the printed Reputation ladder says the name is out. Tokens: {place} the venue, {handle} the character's handle, {count} how many, {who} the character's handle or 'a runner', {ladder} the Reputation line printed on p.193. A template is picked from its list by a hash of the event, so it reads the same every time the sheet is opened. Fame is printed from Reputation 3: at 1 and 2 only the people who were there, and their friends, know, and that is not news.",
+  "note": "What the Screamsheet says, and in whose voice. The facts are the engine's — a flag a place gained, what a settled job left behind — and every line here is a template over one of them. NOTHING IN THIS FILE MAY ADD A FACT: atmosphere may colour what happened (\"they know the address now\"), but it may not say what nobody recorded (a name, a sum, who said what, what police announced). A line that names the character does so only when the engine says somebody said their name (`named`) or, for fame, from Reputation 5, where the printed ladder first says the name is out (Level 4 is only stories, so it reads \"a runner\"). Tokens: {place} the venue, {handle} the character's handle, {count} how many, {who} the character's handle or 'a runner', {ladder} the Reputation line printed on p.193. A template is picked from its list by a hash of the event, so it reads the same every time the sheet is opened. Fame is printed from Reputation 3: at 1 and 2 only the people who were there, and their friends, know, and that is not news.",
   "places": {
     "raided": {
       "tone": "bad",
@@ -242,7 +242,7 @@
   "fame": [
     {
       "from": 3,
-      "to": 3,
+      "to": 4,
       "kicker": "STREET TALK",
       "items": [
         {
@@ -256,7 +256,7 @@
       ]
     },
     {
-      "from": 4,
+      "from": 5,
       "to": 6,
       "kicker": "NAME ABOUT TOWN",
       "items": [
