@@ -54,8 +54,20 @@ it("offers paired programs in the same family without losing seating or service 
               ? ["shelf"]
               : [];
       if (important.length)
-        expect(b.props.filter((p) => important.includes(p.art))).toHaveLength(
-          a.props.filter((p) => important.includes(p.art)).length,
+        expect(
+          b.props.filter(
+            (p) =>
+              important.includes(p.art) &&
+              (kind !== "warehouse" ||
+                b.clusters.find((c) => c.id === p.clusterId)?.kind === "rack_aisle"),
+          ),
+        ).toHaveLength(
+          a.props.filter(
+            (p) =>
+              important.includes(p.art) &&
+              (kind !== "warehouse" ||
+                a.clusters.find((c) => c.id === p.clusterId)?.kind === "rack_aisle"),
+          ).length,
         );
     }
   }

@@ -43,7 +43,7 @@ export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string
   utilities: ["service", "workshop_service"],
   workstation: ["workstation", "work_pod", "work_facing", "work_island", "work_parallel"],
   reception: ["reception", "reception_arrival", "club_checkin"],
-  meeting: ["meeting", "meeting_support"],
+  meeting: ["meeting", "meeting_support", "conference_suite"],
   seating: [
     "lounge_bench",
     "lounge_conversation",
@@ -56,7 +56,7 @@ export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string
   server: ["server", "equipment_support"],
   performance: ["performance", "dj_control"],
   racking: ["racking", "rack_aisle"],
-  workbench: ["workbench", "repair_support"],
+  workbench: ["workbench", "repair_support", "packing_station"],
   garden: ["garden"],
 };
 export type SceneContext = {

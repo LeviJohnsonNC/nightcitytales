@@ -1368,3 +1368,12 @@ review recovery. No accepted geometry or saved snapshot changes. **Deployed visu
 verification of these rendering changes, real 390px checks and Levi's manual
 campaign/visual acceptance remain open.** The audit supports moving to artwork,
 facade/detail assets and lighting after that gate, not closing 4D on tests alone.
+
+[Checkpoint 4D.4](docs/checkpoint-four-d4.md) responds to Levi's screenshots after
+4D.3: opaque building cutaways, joined directional vehicle sections, balanced
+work pods and larger conference groups, warehouse packing/dispatch, complete
+service-bay markings, open wide interior thresholds, opposed alley courts and
+selective intersection spacing. New recipes use v6 while accepted seeds and old
+snapshots keep their geometry. **3,556 tests pass; deployed visual/campaign review
+remains open.** The screenshot evidence supersedes 4D.3's optimistic artwork-only
+assessment; reference readiness is not yet claimed.

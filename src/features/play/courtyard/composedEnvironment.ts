@@ -204,7 +204,9 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
       );
     }
   }
-  for (const cluster of env.clusters.filter((c) => c.kind === "vehicle_bay")) {
+  for (const cluster of env.clusters.filter((c) =>
+    ["vehicle_bay", "service_bay"].includes(c.kind),
+  )) {
     const pieces = env.props
       .filter((p) => p.clusterId === cluster.id)
       .map((p) => arena.cover!.find((c) => c.id === p.coverId)!.rect);
@@ -301,6 +303,17 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
         ctx.fillRect(q.x, q.y, 2 + random() * 2, 1.4);
       }
   }
+}
+
+/** Opaque cut mass: inaccessible footprint stays legible without a ghost roof. */
+function paintCutaway(ctx: CanvasRenderingContext2D, structure: SceneStructure, project: Project) {
+  const { poly, corners, line } = painter(ctx, project);
+  const base = corners(structure.rect);
+  const top = corners(structure.rect, 7);
+  poly([base[0]!, base[1]!, top[1]!, top[0]!], "#455354", "#17272d");
+  poly([base[1]!, base[2]!, top[2]!, top[1]!], "#2e3d44", "#17272d");
+  poly(top, "#19272d", "#74807b");
+  for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#74807b", 2);
 }
 
 function paintBuilding(
@@ -732,7 +745,12 @@ export function createComposedEnvironment(
         (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances),
         depth,
         bounds,
-      )?.setData("hidesActivity", occluders.has(structure.id));
+      )?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined);
+      if (occluders.has(structure.id)) {
+        add(`cutaway-${s.id}`, (ctx) => paintCutaway(ctx, s, project), depth, bounds)
+          ?.setData("activityLayer", "cutaway")
+          .setVisible(false);
+      }
     }
   }
   for (const d of arena.environment!.dressing) {

@@ -180,6 +180,36 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
       { x: 5, y: 3, label: "Shared filing access" },
     ],
   },
+  conference_suite: {
+    zones: ["meeting"],
+    reason:
+      "A six-seat conference run and end storage occupy a meeting suite with two clear seating aisles",
+    members: [
+      {
+        key: "meeting_table",
+        id: "table",
+        x: 0,
+        y: 0,
+        art: ["conference-table", "conference-table"],
+      },
+      {
+        key: "cafe_table",
+        id: "extension",
+        label: "Conference table extension",
+        x: 4,
+        y: 0,
+        art: ["conference-table"],
+      },
+      { key: "office_storage", id: "cabinet", x: 8, y: 0, art: ["cabinet"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: -1, label: "Conference seating" },
+      { x: 3, y: 3, label: "Conference seating" },
+      { x: 5, y: 3, label: "Conference seating" },
+      { x: 7, y: 1, label: "Conference storage access" },
+    ],
+  },
   meeting_support: {
     zones: ["meeting"],
     reason: "Conference table and adjacent meeting storage share clear seating approaches",
@@ -286,6 +316,35 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
       { x: 1, y: 7, label: "Vehicle side working space" },
       { x: 5, y: 5, label: "Vehicle side working space" },
       { x: 5, y: 7, label: "Vehicle side working space" },
+    ],
+  },
+  packing_station: {
+    zones: ["service"],
+    reason:
+      "Dispatch packing bench joins input stock and finished parcels around a shared handling aisle",
+    members: [
+      {
+        key: "workbench",
+        id: "packing",
+        label: "Dispatch packing bench",
+        x: 0,
+        y: 0,
+        art: ["workbench", "workbench"],
+      },
+      { key: "freight_crate", id: "input", label: "Packing supplies", x: 0, y: 4, art: ["stock"] },
+      {
+        key: "office_storage",
+        id: "dispatch",
+        label: "Finished parcel shelf",
+        x: 2,
+        y: 4,
+        art: ["shelf"],
+      },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Packing work position" },
+      { x: 3, y: 3, label: "Dispatch handling position" },
     ],
   },
   repair_support: {

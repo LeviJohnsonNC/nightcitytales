@@ -137,9 +137,9 @@ it("makes reception a complete visitor/staff arrangement and keeps support funct
     const table = env.props
       .filter((p) => p.clusterId === meeting.id && p.art === "conference-table")
       .map((p) => arena.cover!.find((c) => c.id === p.coverId)!.rect);
-    expect(table).toHaveLength(2);
+    expect(table).toHaveLength(meeting.kind === "conference_suite" ? 3 : 2);
     expect(Math.abs(table[0]!.x - table[1]!.x) + Math.abs(table[0]!.y - table[1]!.y)).toBe(2);
-    if (meeting.kind === "meeting_support") {
+    if (["meeting_support", "conference_suite"].includes(meeting.kind)) {
       const cabinet = env.props.find((p) => p.clusterId === meeting.id && p.art === "cabinet")!;
       const bounds = arena.cover!.find((c) => c.id === cabinet.coverId)!.rect;
       const room = env.zones.find((z) => z.id === meeting.zoneId)!.rect;
