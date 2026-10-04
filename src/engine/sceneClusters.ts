@@ -223,6 +223,73 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
       { x: 3, y: 5, label: "Workshop maintenance access" },
     ],
   },
+  rack_aisle: {
+    zones: ["storage"],
+    reason: "Opposed stocked racks share a continuous picking aisle opening onto the freight route",
+    members: [
+      { key: "steel_shelving", id: "near", x: 0, y: 0, art: ["shelf", "shelf"] },
+      { key: "steel_shelving", id: "far", x: 0, y: 4, art: ["shelf", "shelf"] },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Shared rack picking aisle" },
+      { x: 3, y: 3, label: "Shared rack picking aisle" },
+    ],
+  },
+  service_bay: {
+    zones: ["workbay"],
+    reason: "A vehicle faces its tool bench and parts cabinet across mechanic working space",
+    members: [
+      {
+        key: "sedan",
+        id: "vehicle",
+        x: 2,
+        y: 4,
+        rotation: 90,
+        art: ["sedan-engine", "sedan-cabin"],
+      },
+      { key: "workbench", id: "tools", x: 0, y: 0, art: ["workbench", "workbench"] },
+      {
+        key: "office_storage",
+        id: "parts",
+        label: "Bay parts cabinet",
+        x: 4,
+        y: 0,
+        art: ["cabinet"],
+      },
+    ],
+    dressing: [],
+    access: [
+      { x: 1, y: 3, label: "Tool bench working space" },
+      { x: 3, y: 3, label: "Engine service approach" },
+      { x: 5, y: 3, label: "Bay parts access" },
+      { x: 1, y: 5, label: "Vehicle side working space" },
+      { x: 1, y: 7, label: "Vehicle side working space" },
+      { x: 5, y: 5, label: "Vehicle side working space" },
+      { x: 5, y: 7, label: "Vehicle side working space" },
+    ],
+  },
+  repair_support: {
+    zones: ["service"],
+    reason: "A wall-side repair bench and parts cabinet share a continuous working aisle",
+    members: [
+      { key: "workbench", id: "bench", x: 0, y: 0, rotation: 90, art: ["workbench", "workbench"] },
+      {
+        key: "office_storage",
+        id: "parts",
+        label: "Maintenance parts storage",
+        x: 0,
+        y: 4,
+        art: ["cabinet"],
+      },
+    ],
+    dressing: [],
+    access: [
+      { x: 3, y: 1, label: "Repair bench access" },
+      { x: 3, y: 3, label: "Repair bench access" },
+      { x: 3, y: 5, label: "Parts storage access" },
+    ],
+  },
   racking: {
     zones: ["storage"],
     reason: "Stocked shelving forms regular rack aisles with picking access",

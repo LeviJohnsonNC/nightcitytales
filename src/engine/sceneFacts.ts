@@ -37,7 +37,7 @@ export type SceneFacts = {
   relationships: { entity: string; relation: "near" | "guards" | "works_at"; target: string }[];
 };
 export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string[]> = {
-  vehicle: ["parking", "driveway", "vehicle_bay"],
+  vehicle: ["parking", "driveway", "vehicle_bay", "service_bay"],
   vendor: ["vendor", "vendor_stall"],
   freight: ["loading", "freight", "workshop_delivery", "service_stock"],
   utilities: ["service", "workshop_service"],
@@ -55,8 +55,8 @@ export const CLUSTER_KINDS: Record<SceneFacts["objects"][number]["kind"], string
   bar: ["bar_service", "bar"],
   server: ["server", "equipment_support"],
   performance: ["performance"],
-  racking: ["racking"],
-  workbench: ["workbench"],
+  racking: ["racking", "rack_aisle"],
+  workbench: ["workbench", "repair_support"],
   garden: ["garden"],
 };
 export type SceneContext = {

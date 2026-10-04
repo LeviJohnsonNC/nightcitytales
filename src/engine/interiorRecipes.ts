@@ -1,6 +1,6 @@
 /** Authored room organizations; all resolve through the shared cluster/grid machinery. */
 import { type Arena, type Rect, type Point } from "./battlefield";
-import { industrialPlan } from "./industrialRecipes";
+import { industrialPlan, industrialArrangements } from "./industrialRecipes";
 import { snapshotBattlefield } from "./battlefieldSnapshot";
 import type { AuthoredScene } from "./authoredScene";
 import { threatFor } from "./threats";
@@ -268,6 +268,9 @@ export function composeInterior(
       zone("bar_end_access", "aisle", r.x, r.y + 2, 2, 8),
     );
   }
+  const industrial =
+    kind === "warehouse" || kind === "garage" ? industrialArrangements(kind, variant) : undefined;
+  if (industrial) env.zones.push(...industrial.zones);
   const reserved: Rect[] = [];
   for (const c of env.interior!.connections) {
     const door = env.zones.find((z) => z.id === c.zoneId)!;
@@ -311,9 +314,10 @@ export function composeInterior(
     cover: [],
     environment: env,
   };
-  const slots: Slot[] = [];
+  const slots: Slot[] = [...(industrial?.slots ?? [])];
   for (const room of rooms) {
     if (["corridor", "dance"].includes(room.kind)) continue;
+    if (industrial && ["storage", "workbay", "staging"].includes(room.kind)) continue;
     let cluster =
       room.kind === "storage"
         ? "racking"
@@ -353,6 +357,7 @@ export function composeInterior(
         cluster = variant === 2 ? "lounge_conversation" : "lounge_bench";
       else if (room.id === "service") cluster = "service_stock";
     }
+    if (industrial && room.kind === "service") cluster = "repair_support";
     const r = room.rect;
     // Bounded frontage candidates, ordered reproducibly; never free-cell scatter.
     const candidates: Point[] = [];
@@ -360,6 +365,11 @@ export function composeInterior(
       for (const x of [r.x + 2, r.x + r.width - 4, r.x, r.x + r.width - 2])
         if (x >= r.x && y >= r.y && !candidates.some((p) => p.x === x && p.y === y))
           candidates.push({ x, y });
+    if (cluster === "repair_support") {
+      candidates.length = 0;
+      for (let y = r.y + 2; y <= r.y + r.height - 6; y += 2)
+        for (let x = r.x; x <= r.x + r.width - 4; x += 2) candidates.push({ x, y });
+    }
     if (cluster === "workstation") {
       candidates.length = 0;
       for (let y = r.y + 2; y < r.y + r.height - 2; y += 6)
@@ -432,6 +442,7 @@ export function composeInterior(
           "lounge_bench",
           "lounge_conversation",
           "service_stock",
+          "repair_support",
         ].includes(cluster)
           ? "y"
           : room.axis,
