@@ -1,0 +1,289 @@
+{
+  "houseRule": true,
+  "note": "What the Screamsheet says, and in whose voice. The facts are the engine's — a flag a place gained, what a settled job left behind — and every line here is a template over one of them. NOTHING IN THIS FILE MAY ADD A FACT: atmosphere may colour what happened (\"they know the address now\"), but it may not say what nobody recorded (a name, a sum, who said what, what police announced). A line that names the character does so only when the engine says somebody said their name (`named`) or, for fame, when the printed Reputation ladder says the name is out. Tokens: {place} the venue, {handle} the character's handle, {count} how many, {who} the character's handle or 'a runner', {ladder} the Reputation line printed on p.193. A template is picked from its list by a hash of the event, so it reads the same every time the sheet is opened. Fame is printed from Reputation 3: at 1 and 2 only the people who were there, and their friends, know, and that is not news.",
+  "places": {
+    "raided": {
+      "tone": "bad",
+      "kicker": "RAID",
+      "items": [
+        {
+          "h": "Law comes through {place}",
+          "d": "They know the address now."
+        },
+        {
+          "h": "{place} raided",
+          "d": "Whatever was going on there, nobody is calling it routine."
+        },
+        {
+          "h": "Badges at the door of {place}",
+          "d": "The attention drops back. It does not drop to nothing."
+        }
+      ]
+    },
+    "shut": {
+      "tone": "bad",
+      "kicker": "SHUTTERED",
+      "items": [
+        {
+          "h": "{place} is shut",
+          "d": "Not for a day. As far as anyone there knows, not for good reason either."
+        },
+        {
+          "h": "Shutters down at {place}",
+          "d": "The people who worked that ground are not working it any more."
+        }
+      ]
+    },
+    "locked_down": {
+      "tone": "bad",
+      "kicker": "LOCKDOWN",
+      "items": [
+        {
+          "h": "{place} locks down",
+          "d": "New access rules. The badge you used last week is not the badge you need now."
+        },
+        {
+          "h": "Somebody signed off on {place}",
+          "d": "Access is restricted, and somebody is checking who comes through."
+        }
+      ]
+    },
+    "under_audit": {
+      "tone": "bad",
+      "kicker": "AUDIT",
+      "items": [
+        {
+          "h": "Inspectors at {place}",
+          "d": "Nothing is refusing to work. It is only taking four times as long."
+        },
+        {
+          "h": "{place} opens its books",
+          "d": "Somebody official is going through the records, and taking their time."
+        }
+      ]
+    },
+    "gang_extortion": {
+      "tone": "bad",
+      "kicker": "PROTECTION",
+      "items": [
+        {
+          "h": "Somebody is taking a cut at {place}",
+          "d": "Of everything that moves through."
+        },
+        {
+          "h": "New management at {place}",
+          "d": "Nobody signed anything. Everybody knows."
+        },
+        {
+          "h": "{place} pays up",
+          "d": "To whom is not the sort of thing people say out loud."
+        }
+      ]
+    },
+    "welcome": {
+      "tone": "good",
+      "kicker": "GOOD WORD",
+      "items": [
+        {
+          "h": "{place} has a friend",
+          "d": "The people there are glad to see them, and it shows in what they will say out loud."
+        },
+        {
+          "h": "Good word out of {place}",
+          "d": "It buys nothing at the till. It buys what people will say in front of you."
+        }
+      ]
+    },
+    "unwelcome": {
+      "tone": "bad",
+      "kicker": "COLD SHOULDER",
+      "items": [
+        {
+          "h": "{place} goes quiet",
+          "d": "Nobody refuses service. They simply stop talking when you come in."
+        },
+        {
+          "h": "Cold shoulder at {place}",
+          "d": "It is a place you can climb back from. That is all it is."
+        }
+      ]
+    }
+  },
+  "unprinted": {
+    "market_open": "A starting condition, and a flag a raid clears: the raid is the news, not the closing.",
+    "power_out": "Authored at a place's start. Nothing sets it in play yet, so there is no event for the sheet to report.",
+    "rebuilt": "Authored at a place's start. Nothing sets it in play yet, so there is no event for the sheet to report."
+  },
+  "jobs": {
+    "killed": {
+      "tone": "bad",
+      "kicker": "BODIES",
+      "items": [
+        {
+          "h": "{count} dead at {place}",
+          "d": ""
+        },
+        {
+          "h": "{place}: {count} dead",
+          "d": ""
+        },
+        {
+          "h": "Bodies at {place}",
+          "d": "{count} of them."
+        }
+      ]
+    },
+    "burned": {
+      "tone": "bad",
+      "kicker": "BAD DEAL",
+      "items": [
+        {
+          "h": "Deal goes bad at {place}",
+          "d": "Somebody was counting on somebody."
+        },
+        {
+          "h": "{place}: a promise broken",
+          "d": "Somebody was counting on it."
+        }
+      ]
+    },
+    "property": {
+      "tone": "bad",
+      "kicker": "DAMAGE",
+      "items": [
+        {
+          "h": "Damage at {place}",
+          "d": "Something expensive that belonged to somebody is not going to be the same."
+        },
+        {
+          "h": "{place} wrecked",
+          "d": "The owners are assessing."
+        }
+      ]
+    },
+    "loud": {
+      "tone": "bad",
+      "kicker": "NOISE",
+      "items": [
+        {
+          "h": "Noise at {place}",
+          "d": "Loud enough that the street noticed."
+        },
+        {
+          "h": "{place} wakes the block",
+          "d": "It happened in public."
+        }
+      ]
+    },
+    "wounded": {
+      "tone": "bad",
+      "kicker": "CASUALTIES",
+      "items": [
+        {
+          "h": "Ambulance to {place}",
+          "d": "Somebody is in a hospital bed."
+        },
+        {
+          "h": "Casualties out of {place}",
+          "d": "Put in a hospital, not a morgue."
+        }
+      ]
+    },
+    "witness": {
+      "tone": "neutral",
+      "kicker": "WITNESS",
+      "items": [
+        {
+          "h": "Somebody saw something at {place}",
+          "d": "And walked away from it."
+        },
+        {
+          "h": "{place}: a witness, unnamed",
+          "d": "They saw it, and kept moving."
+        }
+      ]
+    },
+    "seen": {
+      "tone": "neutral",
+      "kicker": "SIGHTING",
+      "items": [
+        {
+          "h": "A face at {place}",
+          "d": "Somebody got a clear look at it."
+        },
+        {
+          "h": "{place}: seen",
+          "d": "A clear look, at somebody's face."
+        }
+      ]
+    },
+    "favour": {
+      "tone": "good",
+      "kicker": "FAVOUR",
+      "items": [
+        {
+          "h": "A favour done at {place}",
+          "d": "An actual service. The people there noticed."
+        },
+        {
+          "h": "Quiet help at {place}",
+          "d": "Nobody asked for a thank-you, and nobody forgot."
+        }
+      ]
+    }
+  },
+  "decks": {
+    "named": "Heard on the street: {handle}.",
+    "unnamed": "Nobody has put a name to it yet.",
+    "witness": "Somebody who saw it walked away.",
+    "seen": "Somebody got a clear look at a face."
+  },
+  "counts": ["No one", "One", "Two", "Three", "At least four"],
+  "fame": [
+    {
+      "from": 3,
+      "to": 3,
+      "kicker": "STREET TALK",
+      "items": [
+        {
+          "h": "Word gets round about {who}",
+          "d": "{ladder}"
+        },
+        {
+          "h": "People are talking about {who}",
+          "d": "{ladder}"
+        }
+      ]
+    },
+    {
+      "from": 4,
+      "to": 6,
+      "kicker": "NAME ABOUT TOWN",
+      "items": [
+        {
+          "h": "The name {who} goes round",
+          "d": "{ladder}"
+        },
+        {
+          "h": "Everyone has a version of {who}",
+          "d": "{ladder}"
+        }
+      ]
+    },
+    {
+      "from": 7,
+      "to": 10,
+      "kicker": "IN PRINT",
+      "items": [
+        {
+          "h": "{who}, in print",
+          "d": "{ladder}"
+        },
+        {
+          "h": "{who} makes the sheets",
+          "d": "{ladder}"
+        }
+      ]
+    }
+  ]
+}

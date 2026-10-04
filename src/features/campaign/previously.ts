@@ -17,7 +17,13 @@
  *
  * Pure: rows in, a frame (or nothing) out.
  */
-import { LEDGER_EVENTS, readClosingFrameEventData, type ClosingFrame } from "@/engine";
+import {
+  LEDGER_EVENTS,
+  readClosingFrameEventData,
+  screamsheet,
+  type ClosingFrame,
+  type SheetItem,
+} from "@/engine";
 import type { CampaignEvent } from "@/lib/backend";
 
 export type LatestFrame = {
@@ -43,26 +49,39 @@ export function latestClosingFrame(settled: CampaignEvent[]): LatestFrame | null
 }
 
 /**
- * How the job in progress ended, once it has settled. Aftermath reads this while
- * the settlement may still be in flight, so it must not hand back the frame of
- * the PREVIOUS job in the meantime: the settled receipt has to come after this
- * job began, and when the window no longer reaches back to the start it has to
- * be inside the window itself.
+ * The receipt of the job in progress, once it has settled. Aftermath reads this
+ * while the settlement may still be in flight, so it must not hand back the
+ * PREVIOUS job's receipt in the meantime: the settled receipt has to come after
+ * this job began, and when the window no longer reaches back to the start it has
+ * to be inside the window itself.
  */
-export function frameOfCurrentJob(input: {
+function settledOfCurrentJob(input: {
   /** The recent ledger, newest last. */
   events: CampaignEvent[];
   /** Every settled-job receipt, whole. */
   settled: CampaignEvent[];
-}): ClosingFrame | null {
+}): CampaignEvent | null {
   let startedSeq = -1;
   for (const event of input.events) {
     if (event.type === "mission_started" && event.seq > startedSeq) startedSeq = event.seq;
   }
-  const latest = latestClosingFrame(input.settled);
-  if (!latest || latest.settledSeq < startedSeq) return null;
-  if (startedSeq === -1 && !input.events.some((e) => e.id === latest.settledId)) return null;
-  return latest.frame;
+  let newest: CampaignEvent | null = null;
+  for (const event of input.settled) {
+    if (event.type !== LEDGER_EVENTS.jobSettled) continue;
+    if (newest === null || event.seq > newest.seq) newest = event;
+  }
+  if (!newest || newest.seq < startedSeq) return null;
+  if (startedSeq === -1 && !input.events.some((e) => e.id === newest.id)) return null;
+  return newest;
+}
+
+/** How the job in progress ended, once it has settled. */
+export function frameOfCurrentJob(input: {
+  events: CampaignEvent[];
+  settled: CampaignEvent[];
+}): ClosingFrame | null {
+  const receipt = settledOfCurrentJob(input);
+  return receipt ? readClosingFrameEventData(receipt.data) : null;
 }
 
 /**
@@ -99,4 +118,26 @@ export function writeDismissed(campaignId: string, settledId: string): void {
   } catch {
     // A convenience, not state: if it cannot be kept it simply shows again.
   }
+}
+
+/**
+ * What the Screamsheet will print about the job that just settled: its headline,
+ * and the Reputation it earned if it earned any. Read from the settled receipts
+ * alone — a receipt now carries its own day and venue — so Aftermath can show
+ * the cutting without loading the rest of the ledger. A clean or quiet job has
+ * none, and the wrap-up says nothing rather than something. Like the closing
+ * frame, it is only ever THIS job's: while the settlement is still in flight the
+ * previous job's cutting is not shown in its place.
+ */
+export function clippingsFor(input: {
+  events: CampaignEvent[];
+  settled: CampaignEvent[];
+  handle: string;
+}): SheetItem[] {
+  const receipt = settledOfCurrentJob(input);
+  if (!receipt) return [];
+  const seq = receipt.seq;
+  return screamsheet({ events: input.settled, handle: input.handle }).filter(
+    (item) => item.seq === seq,
+  );
 }

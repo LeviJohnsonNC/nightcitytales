@@ -50,6 +50,19 @@ LIFE → HOOK → JOB → AFTERMATH → LIFE
   past halfway). The next Life screen opens on the same frame, as "Previously",
   until you act or put it away. Both are read from the ledger, never written by
   the model, and a quiet job gets neither.
+- **The Screamsheet** is what the city prints about what you did: a market the
+  law has been through, a building that changed its badges, a job that left
+  bodies, a Reputation Level earned. It is derived from the ledger and never
+  stored, says nothing the engine did not record, and names the character only
+  when the engine says somebody said their name. A dock tile on Life carries
+  what you have not read, a turn that sets a headline off says so in its
+  receipts, and Aftermath shows the cutting for the job just finished.
+- **The Rap Sheet** is your file as a card you can post — hand-drawn on a canvas
+  in two shapes (4:5 and 9:16), coloured by Role, with the stats, the people in
+  your life, and for a campaign its record. Made on the device from your own
+  character; nothing is uploaded and nothing about the account is on it. Reach it
+  from a saved character, the Life Record sheet, or the obituary (a FLATLINED
+  card).
 - **A death** ends in an obituary, not a box: the hit that did it and the Death
   Save that failed, set down like receipts, what the player last had the
   character do, who is left and how they felt, and what the run amounted to.

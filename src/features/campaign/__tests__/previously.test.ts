@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 import type { ClosingFrame } from "@/engine";
 import type { CampaignEvent } from "@/lib/backend";
-import { frameOfCurrentJob, latestClosingFrame, previouslyFor } from "../previously";
+import { clippingsFor, frameOfCurrentJob, latestClosingFrame, previouslyFor } from "../previously";
 
 let seq = 0;
 const ev = (type: string, data: unknown = {}, at?: number): CampaignEvent =>
@@ -115,5 +115,69 @@ describe("frameOfCurrentJob", () => {
         settled: [settled(30)],
       }),
     ).toEqual(FRAME);
+  });
+});
+
+describe("clippingsFor", () => {
+  const receipt = (at: number, noticed: Record<string, number>) =>
+    ev(
+      "job_settled",
+      {
+        findings: Object.entries(noticed).map(([observation, count]) => ({
+          observation,
+          count,
+          because: "x",
+        })),
+        payment: { agreed: 500, paid: 500 },
+        day: 6,
+        placeKey: "a1",
+      },
+      at,
+    );
+
+  it("is the headline this job earned, and the fame it brought, from its own receipt", () => {
+    const loud = receipt(30, { loud: 1, seen: 1 });
+    const cuttings = clippingsFor({
+      events: [ev("mission_started", {}, 20), loud],
+      settled: [loud],
+      handle: "Velvet",
+    });
+    expect(cuttings.map((c) => c.kind)).toEqual(["job", "fame"]);
+    expect(cuttings.every((c) => c.seq === 30)).toBe(true);
+    expect(cuttings[0]?.day).toBe(6);
+  });
+
+  it("is nothing for a job nobody could place the character at", () => {
+    const clean = receipt(30, { clean: 1 });
+    expect(
+      clippingsFor({
+        events: [ev("mission_started", {}, 20), clean],
+        settled: [clean],
+        handle: "V",
+      }),
+    ).toEqual([]);
+  });
+
+  it("is not the PREVIOUS job's cutting while this one is still settling", () => {
+    const old = receipt(30, { killed: 2 });
+    expect(
+      clippingsFor({
+        events: [ev("mission_started", {}, 50), ev("mission_completed", {}, 60)],
+        settled: [old],
+        handle: "V",
+      }),
+    ).toEqual([]);
+  });
+
+  it("only ever carries the newest job, however many came before", () => {
+    const first = receipt(10, { killed: 2, seen: 1, loud: 1 });
+    const second = receipt(30, { favour: 1 });
+    const cuttings = clippingsFor({
+      events: [ev("mission_started", {}, 20), second],
+      settled: [first, second],
+      handle: "V",
+    });
+    expect(cuttings.every((c) => c.seq === 30)).toBe(true);
+    expect(cuttings[0]?.tone).toBe("good");
   });
 });

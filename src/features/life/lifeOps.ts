@@ -211,6 +211,8 @@ import {
   LEDGER_EVENTS,
   MAX_PINNED_GOALS,
   readGoalsPinnedEventData,
+  screamsheet,
+  type SheetItem,
   type Goal,
 } from "@/engine";
 import { addToTally, tallyFrom, type CampaignTally } from "@/features/campaign/tally";
@@ -325,6 +327,8 @@ export type LifeBundle = {
   climb: { reputation: ReputationStanding; tier: TierStanding };
   /** How the last job closed: its peak and what it left open. Null on a quiet one. */
   lastFrame: LatestFrame | null;
+  /** What the city has printed about the character, newest first. Empty on a quiet life. */
+  sheet: SheetItem[];
 };
 
 export async function loadLife(campaignId: string): Promise<LifeBundle> {
@@ -345,6 +349,7 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     lastAward,
     pinsEvent,
     settledJobs,
+    newsRows,
   ] = await Promise.all([
     listCampaignEvents(campaignId),
     listSituations(campaignId),
@@ -355,6 +360,9 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     readLastAward(campaignId),
     lastCampaignEventOfType(campaignId, LEDGER_EVENTS.goalsPinned),
     listCampaignEventsOfTypes(campaignId, [LEDGER_EVENTS.jobSettled]),
+    // What the Screamsheet is made from besides the receipts: a flag a place
+    // gained, and which job each receipt belongs to.
+    listCampaignEventsOfTypes(campaignId, [LEDGER_EVENTS.placeChanged, "mission_started"]),
   ]);
 
   // The six the campaign lives among. Seeded once, from the character's own
@@ -460,6 +468,10 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     pinnedGoals: pinsEvent ? readGoalsPinnedEventData(pinsEvent.data) : [],
     climb,
     lastFrame: latestClosingFrame(settledJobs),
+    sheet: screamsheet({
+      events: [...newsRows, ...settledJobs],
+      handle: character.character.handle?.trim() || character.character.name,
+    }),
   };
 }
 
@@ -1448,6 +1460,7 @@ async function applyResponse(
           placeKey: where.placeKey,
           observations: reports.map((r) => r.observation),
           known: bundle.places,
+          day: bundle.clock.day,
         });
       }
       const { pressure } = await applyPressure(campaignId, reports, {

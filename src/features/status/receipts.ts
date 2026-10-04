@@ -41,6 +41,8 @@ export type TurnSnapshot = {
   goals?: Record<string, { label: string; status: GoalStatus }>;
   /** Reputation Level and the tier of work it brings, when the screen knows them. */
   climb?: { reputation: number; tierIndex: number; tierName: string };
+  /** What the Screamsheet is carrying, when the screen has it: a key, a headline, a tone. */
+  sheet?: { key: string; headline: string; tone: ReceiptTone }[];
 };
 
 export function snapshotOf(input: {
@@ -50,6 +52,7 @@ export function snapshotOf(input: {
   pressure: { clock: LifeClock }[];
   goals?: GoalProgress[];
   climb?: { reputation: number; tierIndex: number; tierName: string };
+  sheet?: { key: string; headline: string; tone: ReceiptTone }[];
 }): TurnSnapshot {
   const people: TurnSnapshot["people"] = {};
   for (const npc of input.npcs) {
@@ -67,6 +70,9 @@ export function snapshotOf(input: {
     people,
     clocks,
     ...(input.climb ? { climb: input.climb } : {}),
+    ...(input.sheet
+      ? { sheet: input.sheet.map((i) => ({ key: i.key, headline: i.headline, tone: i.tone })) }
+      : {}),
     ...(input.goals
       ? {
           goals: Object.fromEntries(
@@ -149,6 +155,17 @@ export function receiptsBetween(before: TurnSnapshot, after: TurnSnapshot): Rece
       text: `${now.name} ${up ? "↑" : "↓"}`,
       tone: up ? "good" : "bad",
     });
+  }
+
+  // What the city printed about it. A headline the sheet did not carry a moment
+  // ago is the world answering what the turn just did, and the one place that
+  // answer is stated rather than found. Two at most: a turn that sets off three
+  // headlines is a bad turn, and the sheet itself holds the rest.
+  if (before.sheet && after.sheet) {
+    const known = new Set(before.sheet.map((i) => i.key));
+    for (const item of after.sheet.filter((i) => !known.has(i.key)).slice(0, 2)) {
+      out.push({ key: `sheet:${item.key}`, text: `The Sheet · ${item.headline}`, tone: item.tone });
+    }
   }
 
   for (const [key, now] of Object.entries(after.clocks)) {

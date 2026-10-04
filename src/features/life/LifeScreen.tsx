@@ -97,6 +97,7 @@ import { placeHistory } from "@/features/campaign/placeState";
 import { ShopSheet } from "./ShopSheet";
 import { RipperdocSheet } from "./RipperdocSheet";
 import { WorkshopSheet } from "./WorkshopSheet";
+import { ScreamsheetSheet } from "./ScreamsheetSheet";
 import { RecordSheet } from "./RecordSheet";
 import { HomeSheet } from "./HomeSheet";
 import { ClimbIntro } from "./ClimbIntro";
@@ -710,6 +711,7 @@ function LifeRail({
       <div className="grid grid-cols-2 gap-2">
         <WithinReachSheet life={life} open={reachOpen} onOpenChange={setReachOpen} />
         <RecordSheet bundle={bundle} />
+        <ScreamsheetSheet bundle={bundle} />
         <HomeSheet life={life} />
         <ShopSheet bundle={bundle} />
         <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
@@ -776,6 +778,7 @@ export function LifeScreen({
             tierIndex: JOB_TIERS.findIndex((t) => t.id === bundle.climb.tier.tier.id),
             tierName: bundle.climb.tier.tier.name,
           },
+          sheet: bundle.sheet,
         })
       : null,
   );

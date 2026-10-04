@@ -19,6 +19,8 @@ import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { pressureLines } from "@/features/campaign/pressure";
 import type { LifeBundle } from "./lifeOps";
 import { ClimbPanel } from "./ClimbPanel";
+import { RapSheetButton } from "@/features/rapsheet/RapSheetButton";
+import { sourceFromCampaign } from "@/features/rapsheet/rapSheetModel";
 
 function Row({
   label,
@@ -144,6 +146,24 @@ export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
         <SheetHeader>
           <SheetTitle>The record · day {bundle.clock.day}</SheetTitle>
         </SheetHeader>
+
+        {/* Your file as a card: made here, from this campaign, posted only if you choose. */}
+        <div className="mt-3">
+          <RapSheetButton
+            size="sm"
+            label="Your rap sheet"
+            source={sourceFromCampaign({
+              character: bundle.character,
+              campaign: bundle.campaign,
+              chrome: bundle.cyberware,
+              npcs: bundle.npcs,
+              standings: bundle.standings,
+              tally: bundle.tally,
+              reputation: bundle.climb.reputation,
+              dead: false,
+            })}
+          />
+        </div>
 
         {lines.length > 0 && (
           <div className="mt-4 border-l-2 border-accent bg-accent/5 py-2 pl-3">

@@ -82,6 +82,14 @@ export type AftermathReport = {
   pressure: PressureReceipt[];
   people: NpcReceipt[];
   /**
+   * When and where the job was, kept on the receipt so the Screamsheet can say
+   * which morning and which address without looking the job up again
+   * (`readJobSettledMeta`). Absent on a receipt written before they were kept.
+   */
+  day: number;
+  missionId: string;
+  placeKey: string | null;
+  /**
    * The one moment of the job worth keeping and the one thing still open, picked
    * from the job's own ledger. Null on a quiet job, and absent on a receipt
    * written before this existed — both read as "nothing to tell".
@@ -277,6 +285,9 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
     brokerKey,
     pressure,
     people,
+    day: full.campaign.day,
+    missionId: input.missionId,
+    placeKey: findMission(input.missionId)?.offer?.placeKey ?? null,
     // Computed here, from the whole job ledger, and stored with the receipt: the
     // Aftermath screen and the next Life screen both read it back rather than
     // go looking for the job's rows in a window that may no longer hold them.
@@ -320,6 +331,7 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
       campaignId: input.campaignId,
       placeKey: jobPlace,
       observations: findings.map((finding) => finding.observation),
+      day: full.campaign.day,
     });
   }
   return receipt;

@@ -160,6 +160,42 @@ decides when Life opens on it ("Previously": the newest job only, until the
 player acts or puts it away). A quiet job has no frame; a hidden clock is never
 named; nothing in it counts down or asks the player to come back.
 
+The Screamsheet is what the city prints about what the character did, and it is
+DERIVED, never stored, the way Reputation is. `engine/screamsheet.ts` turns
+`place_changed` rows (a flag a place GAINED) and `job_settled` receipts (what a job
+left behind, and a Reputation Level earned from Level 3) into headlines, picking
+a wording from `src/data/atlas/screamsheet.json` (`houseRule: true`) by a hash of
+the row so it reads the same every time. Four rules hold it, and tests hold the
+rules: it says nothing the engine did not record (atmosphere may colour a fact,
+never add one — no digit, quotation or money in any template); the character is
+named only when the engine says somebody said the name (`named`) or from
+Reputation 4, and a `clean` job prints nothing; no dial is ever shown, only a flag
+that was set; an empty sheet says so. Every flag the engine can set must have a
+headline or an explained reason it has none. Reading it back needed two ledger
+changes and no migration: `place_changed` rows carry the in-world `day`
+(`placeChangedEventData`) and the `job_settled` receipt carries `day`, `missionId`
+and `placeKey` (`readJobSettledMeta`); a row written before them reads as undated,
+or falls back to the job's `mission_started`. It surfaces as the Life dock tile
+(`life/ScreamsheetSheet.tsx`, with a per-browser unread count in
+`status/sheetSeen.ts`), as a receipt when a turn sets a headline off
+(`status/receipts.ts`), and as Aftermath's cutting (`previously.ts`
+`clippingsFor`, guarded like the closing frame so it is never the previous job's).
+It reaches the model NOT AT ALL: no packet line, no prompt. Letting an NPC say
+"saw the Sheet?" is the obvious next step and needs `bun run eval`.
+
+The Rap Sheet is `features/rapsheet/`: `rapSheetModel.ts` is the card's content
+(pure; every field read off the saved sheet, the Lifepath, the cast, and when
+there is a campaign its record), `rapSheetCanvas.ts` draws it by hand on a canvas
+(no image-rendering dependency — every string is fitted to its box with the font
+actually in use, so nothing can leave the card), `rapSheetAssets.ts` loads the
+pictures, and `RapSheetButton.tsx` is the dialog. Two rules matter. The canvas must
+never be tainted: the portrait arrives as BYTES (`downloadPortrait`, through the
+backend adapter) and the cast's faces are same-origin. And a card is made to be
+posted, so the sheet carries no id of the character or the account: the portrait's
+storage path (which holds the account id) stays on the `RapSheetSource` and goes
+only to the one place that fetches the picture, and a test refuses an id anywhere
+in the sheet. The file number is a hash dressed as a case number and means nothing.
+
 What a shared link looks like is `lib/siteMeta.ts`: one `pageMeta` builds the
 Open Graph and Twitter tags, with an absolute image URL because a crawler cannot
 resolve a relative one. `SITE_URL` is the published origin; a route that wants

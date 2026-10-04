@@ -23,6 +23,8 @@ import {
 } from "@/features/campaign/obituary";
 import { THEN_AND_NOW_EVENTS, thenAndNow } from "@/features/campaign/thenAndNow";
 import { listCampaignEventsOfTypes } from "@/lib/backend";
+import { RapSheetButton } from "@/features/rapsheet/RapSheetButton";
+import { sourceFromCampaign } from "@/features/rapsheet/rapSheetModel";
 import type { PlayBundle } from "./playOps";
 import "./obituary.css";
 
@@ -272,6 +274,21 @@ export function ObituaryCard({ bundle }: { bundle: PlayBundle }) {
         <Button asChild variant="outline" size="sm">
           <Link to="/roster">Back to the roster</Link>
         </Button>
+        <RapSheetButton
+          variant="ghost"
+          size="sm"
+          label="Save the card"
+          source={sourceFromCampaign({
+            character,
+            campaign,
+            chrome: bundle.cyberware,
+            npcs: bundle.npcs,
+            standings: bundle.factionStandings,
+            tally: bundle.tally,
+            reputation: bundle.reputation,
+            dead: true,
+          })}
+        />
         <Button asChild variant="ghost" size="sm">
           <Link to="/create">Start a new file</Link>
         </Button>

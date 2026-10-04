@@ -24,6 +24,8 @@ import { CombatBoard } from "./CombatBoard";
 import { CombatCard } from "./CombatCard";
 import { ObituaryCard } from "./ObituaryCard";
 import { ClosingFrameCard } from "./ClosingFrameCard";
+import { ScreamsheetItem } from "@/features/status/ScreamsheetItem";
+import { clippingsFor } from "@/features/campaign/previously";
 import { frameOfCurrentJob } from "@/features/campaign/previously";
 import { DeathSaveCard } from "./DeathSaveCard";
 
@@ -619,10 +621,26 @@ function WrapUpCard({
   const objectives = bundle.runtime?.objectives ?? [];
   // How THIS job ended, read back from the receipt the settlement wrote.
   const frame = frameOfCurrentJob({ events: bundle.events, settled: bundle.climbEvents });
+  // What the city is going to print about it: the cutting, from the same receipt.
+  const clippings = clippingsFor({
+    events: bundle.events,
+    settled: bundle.climbEvents,
+    handle: bundle.character.character.handle?.trim() || bundle.character.character.name,
+  });
   return (
     <section className="space-y-3 border border-accent bg-accent/5 p-4">
       <Label>Job complete</Label>
       {frame && <ClosingFrameCard frame={frame} />}
+      {clippings.length > 0 && (
+        <section className="space-y-2" aria-label="What the Screamsheet will say">
+          <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+            The Screamsheet
+          </p>
+          {clippings.map((item) => (
+            <ScreamsheetItem key={item.key} item={item} clipping />
+          ))}
+        </section>
+      )}
       {summary && <p className="text-sm">{summary.summary}</p>}
       {objectives.length > 0 && (
         <ul className="space-y-1 text-sm text-muted-foreground">

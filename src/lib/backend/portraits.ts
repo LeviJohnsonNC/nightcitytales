@@ -39,3 +39,18 @@ export async function portraitUrl(path: string): Promise<string> {
   });
   return data.signedUrl;
 }
+
+/**
+ * The portrait's bytes, through the authenticated storage client.
+ *
+ * For the one reader that needs the PICTURE rather than a URL to show it: the
+ * Rap Sheet draws it onto a canvas, and a canvas will only be saved if what it
+ * drew was fetched with permission. This goes through the same API path as
+ * every upload and every other call the app makes, rather than a bare `fetch`
+ * of a signed URL, which depends on the storage host sending CORS headers.
+ */
+export async function downloadPortrait(path: string): Promise<Blob> {
+  const { data, error } = await backendClient.storage.from(BUCKET).download(path);
+  if (error || !data) throw new Error(error?.message ?? "Could not load that portrait.");
+  return data;
+}
