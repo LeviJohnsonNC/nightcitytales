@@ -83,7 +83,7 @@ import {
   type CurrentStatsContext,
 } from "@/features/play/playModel";
 import { type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
-import { rollPendingCheck } from "@/features/play/rollCheck";
+import { previewPendingCheck, rollPendingCheck } from "@/features/play/rollCheck";
 import { RollLine } from "@/features/play/RollLine";
 import type { CampaignEvent } from "@/lib/backend";
 import { useLife } from "./useLife";
@@ -906,6 +906,17 @@ export function LifeScreen({
       luckSpend,
     });
 
+  /** The chance of the same check, built from the same inputs as the roll. */
+  const checkOdds = (pending: PendingCheck, luckSpend: number) =>
+    previewPendingCheck({
+      campaign: bundle.campaign,
+      character: bundle.character,
+      vitals: bundle.vitals,
+      inventory: bundle.inventory,
+      pending,
+      luckSpend,
+    });
+
   const knownPlaces = knownPlacesOf(bundle.campaign);
 
   /**
@@ -1067,6 +1078,7 @@ export function LifeScreen({
                 key={life.pendingCheck.eventId}
                 pending={life.pendingCheck}
                 roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
+                odds={(luckSpend) => checkOdds(life.pendingCheck!, luckSpend)}
                 onSettled={(rolled) => life.commitCheck(life.pendingCheck!, rolled)}
                 busy={life.checkBusy}
                 luckRemaining={luckLeft}

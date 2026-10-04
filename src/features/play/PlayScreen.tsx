@@ -949,6 +949,7 @@ export function PlayScreen({
                   key={play.pendingCheck.eventId}
                   pending={play.pendingCheck}
                   roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
+                  odds={(luckSpend) => play.checkOdds(play.pendingCheck!, luckSpend)}
                   onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
                   busy={play.checkBusy}
                   luckRemaining={play.luck.remaining}
@@ -1040,6 +1041,7 @@ export function PlayScreen({
                   key={play.pendingCheck.eventId}
                   pending={play.pendingCheck}
                   roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
+                  odds={(luckSpend) => play.checkOdds(play.pendingCheck!, luckSpend)}
                   onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
                   busy={play.checkBusy}
                   luckRemaining={play.luck.remaining}

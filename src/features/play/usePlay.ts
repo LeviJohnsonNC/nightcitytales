@@ -31,7 +31,7 @@ import {
 } from "./checkPrompt";
 import { type PendingDeathSave, pendingDeathSaveFrom } from "./deathSavePrompt";
 import { actorFor, jobOutcome, statsRecord } from "./playModel";
-import { rollPendingCheck } from "./rollCheck";
+import { previewPendingCheck, rollPendingCheck, type CheckPreview } from "./rollCheck";
 import {
   combatAwarenessAllocation,
   combatAwarenessFor,
@@ -473,6 +473,22 @@ export function usePlay(campaignId: string) {
     rollCheck: (pending: PendingCheck, luckSpend = 0): CheckRoll => {
       if (!bundle) throw new Error("Still loading.");
       return rollPendingCheck({
+        campaign: bundle.campaign,
+        character: bundle.character,
+        vitals: bundle.vitals,
+        inventory: bundle.inventory,
+        pending,
+        luckSpend,
+      });
+    },
+    /**
+     * The chance of a pending check at a given Luck spend. Assembled from the
+     * same inputs as `rollCheck`, so the chip on the card is made of what the
+     * die is rolled with.
+     */
+    checkOdds: (pending: PendingCheck, luckSpend = 0): CheckPreview | null => {
+      if (!bundle) return null;
+      return previewPendingCheck({
         campaign: bundle.campaign,
         character: bundle.character,
         vitals: bundle.vitals,
