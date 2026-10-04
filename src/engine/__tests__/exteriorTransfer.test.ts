@@ -48,7 +48,7 @@ it.each(["alley", "residential"] as const)(
         expect(env.clusters.some((c) => c.id.includes("infill"))).toBe(false);
       } else {
         expect(env.clusters.filter((c) => c.kind === "residential_entry")).toHaveLength(2);
-        expect(env.zones.filter((z) => z.floorUse === "entry")).toHaveLength(4);
+        expect(env.zones.filter((z) => z.floorUse === "entry")).toHaveLength(9);
         expect(
           env.zones.filter((z) => z.kind === "sidewalk").every((z) => z.rect.x < 0 || z.rect.y < 0),
         ).toBe(true);

@@ -38,7 +38,7 @@ it("keeps residential front doors reachable and vehicles aligned with their curb
         .map((p) => arena.cover!.find((c) => c.id === p.coverId)!);
       expect(parts.every((p) => rectInside(p.rect, zone.rect))).toBe(true);
       if (["parking", "driveway"].includes(cluster.kind)) {
-        expect(zone.kind).toBe(cluster.kind === "parking" ? "road" : "driveway");
+        expect(zone.kind).toBe(cluster.kind === "parking" ? "parking" : "driveway");
         expect(parts).toHaveLength(2);
         expect(
           zone.axis === "x"
@@ -87,3 +87,41 @@ it.each([1, 3])(
     expect(blockedTiles(arena, damage).has(key(engine.rect))).toBe(true);
   },
 );
+
+it("gives low residential rows repeated arrivals and separates curb bays from travel", () => {
+  for (let seed = 0; seed < 32; seed++) {
+    const arena = composeScene("residential", seed).layout.arena;
+    const env = arena.environment!;
+    for (const id of ["house_0", "house_1", "house_3"]) {
+      const entries = env.entrances!.filter((e) => e.structureId === id);
+      expect(entries.length).toBeGreaterThanOrEqual(2);
+      for (let i = 0; i < entries.length; i++)
+        for (let j = i + 1; j < entries.length; j++)
+          expect(
+            Math.hypot(
+              entries[i]!.position.x - entries[j]!.position.x,
+              entries[i]!.position.y - entries[j]!.position.y,
+            ),
+          ).toBeGreaterThanOrEqual(4);
+    }
+    expect(env.entrances!.filter((e) => e.structureId === "house_2")).toHaveLength(1);
+    const travel = env.zones.find((z) => z.id === "travel-lane")!;
+    const bays = env.zones.filter((z) => z.kind === "parking");
+    expect(bays).toHaveLength(2);
+    expect(env.clusters.filter((c) => c.kind === "parking")).toHaveLength(2);
+    for (const bay of bays) {
+      expect(rectsOverlap(bay.rect, travel.rect)).toBe(false);
+      for (const z of env.zones.filter((z) => ["sidewalk", "driveway"].includes(z.kind)))
+        expect(rectsOverlap(bay.rect, z.rect)).toBe(false);
+      const walk = env.zones.find(
+        (z) =>
+          z.kind === "sidewalk" &&
+          (bay.axis === "y"
+            ? z.rect.x === bay.rect.x + bay.rect.width || z.rect.x + z.rect.width === bay.rect.x
+            : z.rect.y === bay.rect.y + bay.rect.height || z.rect.y + z.rect.height === bay.rect.y),
+      );
+      expect(walk).toBeDefined();
+    }
+    expect(arena.cover!.some((c) => rectsOverlap(c.rect, travel.rect))).toBe(false);
+  }
+});

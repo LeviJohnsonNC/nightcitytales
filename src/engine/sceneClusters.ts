@@ -462,7 +462,7 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     access: [{ x: 1, y: 3, label: "DJ working space" }],
   },
   parking: {
-    zones: ["road"],
+    zones: ["road", "parking"],
     reason: "Vehicles parked in the curb lane outside businesses",
     members: [
       { key: "sedan", id: "car", x: 0, y: 0, rotation: 90, art: ["sedan-engine", "sedan-cabin"] },

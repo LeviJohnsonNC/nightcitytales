@@ -89,7 +89,7 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
       }
       continue;
     }
-    const road = ["road", "alley", "intersection"].includes(z.kind);
+    const road = ["road", "parking", "alley", "intersection"].includes(z.kind);
     rect(
       z.rect,
       road
@@ -217,6 +217,16 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
     };
     const corners = painter(ctx, project).corners(box);
     for (let i = 0; i < 4; i++) line(corners[i]!, corners[(i + 1) % 4]!, "#bdaa63", 1.2);
+  }
+  // Explicit curb bays are saved ground geometry, shared by any exterior recipe.
+  // Their edge/end lines distinguish stationary vehicles from the through lane.
+  for (const z of env.zones.filter((z) => z.kind === "parking")) {
+    const r = z.rect;
+    rect(
+      { x: r.x + 0.1, y: r.y + 0.1, width: r.width - 0.2, height: r.height - 0.2 },
+      "#30383b",
+      "#a8aaa0",
+    );
   }
   // Lane paint belongs to the saved roads, interrupted at crossings and junctions.
   for (const z of env.zones.filter((z) => z.kind === "road")) {

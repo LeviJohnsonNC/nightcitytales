@@ -1,6 +1,6 @@
 # Checkpoint 4A — service alley and residential street
 
-Implemented for review. Checkpoint 3 is accepted. This release transfers the established composition machinery to two more environments; broader seed topology variation remains 4D.
+Alley accepted; residential corrections ready for review. Checkpoint 3 is accepted. This release transfers the established composition machinery to two more environments; broader seed topology variation remains 4D.
 
 ## Service alley
 
@@ -13,9 +13,9 @@ Implemented for review. Checkpoint 3 is accepted. This release transfers the est
 ## Residential street
 
 - Low attached homes contrast with a taller apartment block behind a low entrance wing, alongside the existing setback blocks and driveways.
-- Four framed doorways connect to saved entry pads. Two mailbox/planting groups identify domestic arrivals without filling the through sidewalk.
+- Nine framed doorways connect to saved entry pads: repeated unit arrivals on the three low residential groups and one shared apartment entrance. Two mailbox/planting groups identify domestic arrivals without filling the through sidewalk.
 - Both sidewalks continue beyond the playable slice; their two-metre through routes are protected from furnishings.
-- Parallel curb parking and perpendicular driveway parking reuse existing placement constraints.
+- Two marked curbside bays hold parallel parked vehicles, with a protected four-metre centre travel lane. The optional third curbside car is removed; driveway parking remains.
 
 The shared entrance-surround helper binds thresholds to saved facade approaches before rotation. The same snapshot reader, attachment renderer, cluster placer, pathfinding and combat engine serve both environments. Exterior doors remain closed; no walkable upper floors, new asset pack or SQL migration. Existing saved scenes retain their geometry; freshly composed scenes use recipe version 4.
 
@@ -46,3 +46,11 @@ The provisional facade artwork still repeats strongly. Tall foreground alley mas
 ![Residential actor readability](checkpoint-four-a/residential-3-actors.png)
 
 ![Alley targeting after destruction and reload](checkpoint-four-a/alley-3-destroyed.png)
+
+## Residential review correction
+
+The alley passed user review. Residential needed stronger household rhythm in Structure view and parking that reads as parked rather than stopped traffic. This correction repeats existing framed thresholds and pads along the low rows, relocates the existing domestic entry group to avoid a new threshold, and marks two saved curbside parking zones through the shared ground renderer. Road width, sidewalks, apartment massing and building footprints are unchanged; no new clutter is added.
+
+Validation: 3,521 tests across 264 files pass, including 32-seed entrance spacing, bay adjacency and lane-clearance checks. Typecheck and production build pass; lint has zero errors and 12 existing warnings. Exact comparison of 128 alley/Intersection/Office/Nightclub scenes confirms they are unchanged. No SQL migration.
+
+The earlier screenshots above document the original 4A release, not this correction. The cloud browser could not reach the local preview, so this correction has no fresh visual signoff. Review Residential street 1–3: with Structure view, look for multiple household entrances along each low row; furnished, confirm cars sit in the marked curb bays or driveway, leaving the centre lane and sidewalks clear. Repeat Access positions and Save/Load preservation checks before accepting residential.
