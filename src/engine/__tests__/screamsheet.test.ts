@@ -270,12 +270,22 @@ describe("fame", () => {
     expect(new Set(levels).size).toBe(2);
   });
 
-  it("keeps the name out of print below Level 4 unless it was said", () => {
+  it("keeps the name out of print below Level 5, where the ladder first says it, unless it was said", () => {
     const quiet = sheet([settled({ loud: 1, seen: 1 })]).find((i) => i.kind === "fame")!;
     expect(quiet.headline).toContain("a runner");
     expect(quiet.headline).not.toContain(HANDLE);
     const said = sheet([settled({ loud: 1, named: 1 })]).find((i) => i.kind === "fame")!;
     expect(said.headline).toContain(HANDLE);
+  });
+
+  it("never has to put a name into a headline that is about a runner nobody has named", () => {
+    // A band that can print "a runner" must read as a sentence with it: no band
+    // that starts before the name is out (Level 5) may use a "The name {who}" line.
+    const bands = screamsheetData.fame as { from: number; to: number; items: { h: string }[] }[];
+    for (const band of bands.filter((b) => b.from < 5)) {
+      expect(band.to).toBeLessThan(5);
+      for (const item of band.items) expect(item.h).not.toMatch(/^The name \{who\}/);
+    }
   });
 
   it("is not printed for the first small jobs, which only the people who were there know", () => {

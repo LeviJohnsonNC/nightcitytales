@@ -128,7 +128,11 @@ function character(over: { handle?: string; name?: string; wants?: string } = {}
   } as unknown as FullCharacter;
 }
 
-const campaignSheet = (dead = false, c = character()) =>
+const campaignSheet = (
+  dead = false,
+  c = character(),
+  whoKnows = "Stories are all over the local area.",
+) =>
   rapSheet(
     sourceFromCampaign({
       character: c,
@@ -151,7 +155,7 @@ const campaignSheet = (dead = false, c = character()) =>
       ] as never,
       standings: [{ factionId: "militech", standing: -5 }] as never,
       tally: { jobsFinished: 6, bodies: 4 },
-      reputation: { level: 4, whoKnows: "Stories are all over the local area." },
+      reputation: { level: 4, whoKnows },
       dead,
     }),
   );
@@ -254,6 +258,39 @@ describe("nothing leaves the card", () => {
       within(draw(sheet, format).texts, format);
     });
   }
+
+  it("never drops the end of a line without saying so", () => {
+    // The printed Reputation lines are 48–50 characters; the Post's column holds
+    // fewer, in one line. What does not fit is ellipsised, never silently lost.
+    const printed = [
+      "All your co-workers and casual acquaintances know.",
+      "Others beyond your local area recognize your name.",
+      "Others beyond your local area know you on sight.",
+    ];
+    for (const line of printed) {
+      for (const format of FORMATS) {
+        const drawn = draw(campaignSheet(false, character(), line), format).texts.map(
+          (t) => t.text,
+        );
+        const stem = (t: string) => t.replace(/…$/, "");
+        const parts = drawn.filter((t) => t.length > 8 && line.includes(stem(t).trimEnd()));
+        expect(parts.length, `${format}: ${line}`).toBeGreaterThan(0);
+        const whole = parts.map(stem).join(" ").replace(/\s+/g, " ").trim();
+        // Either every word is there, or the last line carries the mark.
+        expect(whole === line || parts.some((t) => t.endsWith("…")), `${format}: ${line}`).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  it("cuts through whole characters, so an emoji is never left in half", () => {
+    const sheet = campaignSheet(false, character({ handle: "😀".repeat(80) }));
+    for (const t of draw(sheet, "post").texts) {
+      expect(t.text, t.text).not.toMatch(/[\ud800-\udbff](?![\udc00-\udfff])/);
+      expect(t.text, t.text).not.toMatch(/(?<![\ud800-\udbff])[\udc00-\udfff]/);
+    }
+  });
 
   it("never cuts a word down to nothing", () => {
     const sheet = campaignSheet(false, character({ handle: "X".repeat(200) }));

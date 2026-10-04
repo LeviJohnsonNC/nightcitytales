@@ -1460,7 +1460,7 @@ async function applyResponse(
           placeKey: where.placeKey,
           observations: reports.map((r) => r.observation),
           known: bundle.places,
-          day: bundle.clock.day,
+          day: clock.day,
         });
       }
       const { pressure } = await applyPressure(campaignId, reports, {

@@ -169,7 +169,7 @@ the row so it reads the same every time. Four rules hold it, and tests hold the
 rules: it says nothing the engine did not record (atmosphere may colour a fact,
 never add one — no digit, quotation or money in any template); the character is
 named only when the engine says somebody said the name (`named`) or from
-Reputation 4, and a `clean` job prints nothing; no dial is ever shown, only a flag
+Reputation 5 (the first rung of the printed ladder that says "your name"), and a `clean` job prints nothing; no dial is ever shown, only a flag
 that was set; an empty sheet says so. Every flag the engine can set must have a
 headline or an explained reason it has none. Reading it back needed two ledger
 changes and no migration: `place_changed` rows carry the in-world `day`

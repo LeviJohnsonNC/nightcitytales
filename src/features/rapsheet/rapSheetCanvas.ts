@@ -127,11 +127,12 @@ function fitted(
   for (let size = max; size >= min; size -= 2) {
     if (widthOf(ctx, text, size, face, spacing) <= maxWidth) return { text, size };
   }
-  let cut = text;
-  while (cut.length > 1 && widthOf(ctx, `${cut}…`, min, face, spacing) > maxWidth) {
-    cut = cut.slice(0, -1);
+  // By character, not UTF-16 unit: a cut through an emoji leaves half of it.
+  const chars = Array.from(text);
+  while (chars.length > 1 && widthOf(ctx, `${chars.join("")}…`, min, face, spacing) > maxWidth) {
+    chars.pop();
   }
-  return { text: `${cut.trimEnd()}…`, size: min };
+  return { text: `${chars.join("").trimEnd()}…`, size: min };
 }
 
 /** Text fitted to a box, then set. Returns the size it settled on. */
@@ -160,18 +161,22 @@ function wrap(
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let line = "";
+  let start = 0;
   for (let i = 0; i < words.length; i += 1) {
     const next = line ? `${line} ${words[i]}` : words[i]!;
     if (widthOf(ctx, next, size, face) <= maxWidth || !line) {
       line = next;
       continue;
     }
-    lines.push(line);
-    line = words[i]!;
+    // This is the last line there is room for: keep everything that is left on
+    // it, and let `fitted` ellipsise it, rather than dropping words unmarked.
     if (lines.length === maxLines - 1) {
-      line = words.slice(i).join(" ");
+      line = words.slice(start).join(" ");
       break;
     }
+    lines.push(line);
+    line = words[i]!;
+    start = i;
   }
   if (line) lines.push(line);
   return lines.slice(0, maxLines).map((l, i, all) => {
@@ -441,7 +446,7 @@ function polaroid(
     g.addColorStop(1, "#0c0818");
     ctx.fillStyle = g;
     ctx.fillRect(px, py, pw, ph);
-    put(ctx, (sheet.handle[0] ?? "?").toUpperCase(), px + pw / 2, py + ph * 0.62, {
+    put(ctx, (Array.from(sheet.handle)[0] ?? "?").toUpperCase(), px + pw / 2, py + ph * 0.62, {
       size: ph * 0.5,
       face: { family: DISPLAY, weight: 800 },
       fill: "rgba(255,255,255,0.12)",
@@ -834,7 +839,7 @@ function drawFace(
   } else {
     ctx.fillStyle = "#1a1433";
     ctx.fillRect(x, y, size, size);
-    put(ctx, (who.name[0] ?? "?").toUpperCase(), x + size / 2, y + size * 0.68, {
+    put(ctx, (Array.from(who.name)[0] ?? "?").toUpperCase(), x + size / 2, y + size * 0.68, {
       size: size * 0.5,
       face: { family: DISPLAY, weight: 800 },
       fill: "rgba(255,255,255,0.2)",
