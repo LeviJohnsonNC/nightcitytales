@@ -112,7 +112,7 @@ export type SceneStructure = {
   label: string;
   rect: Rect;
   height: number;
-  style: "shop" | "workshop" | "warehouse" | "interior-wall" | "residential";
+  style: "shop" | "workshop" | "warehouse" | "interior-wall" | "residential" | "mesh-fence";
   blocksMovement: boolean;
   blocksShots: boolean;
   attachments?: SceneAttachment[];
@@ -214,13 +214,17 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
     return {
       id: id(s["id"]),
       label: str(s["label"]),
-      rect: rectangle(s["rect"], r["recipeVersion"] === 4 && s["style"] === "interior-wall"),
+      rect: rectangle(
+        s["rect"],
+        s["style"] === "mesh-fence" || (r["recipeVersion"] === 4 && s["style"] === "interior-wall"),
+      ),
       height: num(s["height"], 1, 12),
       style: choice(s["style"], [
         "shop",
         "workshop",
         "warehouse",
         "interior-wall",
+        "mesh-fence",
         "residential",
       ] as const),
       ...(s["attachments"] === undefined
@@ -248,6 +252,27 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       blocksShots: bool(s["blocksShots"]),
     };
   });
+  for (const s of structures)
+    if (s.style === "mesh-fence") {
+      // Fence collision must cross tile centres; a thin strip between them would be walk-through.
+      const r = s.rect,
+        vertical = r.width === 0.5;
+      if (
+        !s.blocksMovement ||
+        s.blocksShots ||
+        s.attachments?.length ||
+        s.height !== 2 ||
+        (vertical
+          ? r.height < 2 || r.height % 2 || r.y % 2 || (r.x + 0.25) % 2 !== 1
+          : r.height !== 0.5 || r.width < 2 || r.width % 2 || r.x % 2 || (r.y + 0.25) % 2 !== 1) ||
+        zones.some(
+          (z) =>
+            ["aisle", "crosswalk", "doorway", "corridor"].includes(z.kind) &&
+            rectsOverlap(z.rect, r),
+        )
+      )
+        fail();
+    }
   for (const s of structures)
     for (const a of s.attachments ?? []) {
       const length = ["north", "south"].includes(a.edge) ? s.rect.width : s.rect.height;

@@ -1,6 +1,6 @@
 # Checkpoint 3A — attached frontages
 
-First release of Checkpoint 3, ready for visual review. Checkpoint 2 is accepted.
+Checkpoint 3A passed: Levi approved the visual and preservation review on 2026-10-03. Checkpoint 2 is accepted.
 
 ## Scope
 

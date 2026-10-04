@@ -126,6 +126,7 @@ function intersectionPlan(variant: number) {
       zone("travel-lane", "aisle", rect(14, -8, 4, 48)),
       zone("shop-approach", "aisle", rect(8, 6, 4, 2), "x"),
       { ...zone("housing-approach", "aisle", rect(20, 6, 4, 2), "x"), floorUse: "entry" as const },
+      zone("loading-mouth", "aisle", rect(2, crossing + 8, 6, 2), "x"),
       zone("workshop-approach", "aisle", rect(0, crossing + 6, 2, 4)),
       {
         ...zone("utility-approach", "aisle", rect(26, crossing + 6, 2, 6)),
@@ -267,6 +268,17 @@ function intersectionStructures(footprints: Rect[], seed: number): SceneStructur
     2.5,
     "workshop",
   );
+  // A permeable side boundary frames the six-metre front loading mouth.
+  // The protected rear service lane remains inside it, with an open rear end.
+  structures.push({
+    id: "service-court-fence",
+    label: "Service court mesh fence · movement only, no cover",
+    rect: rect(8.75, loading.y, 0.5, 10),
+    height: 2,
+    style: "mesh-fence",
+    blocksMovement: true,
+    blocksShots: false,
+  });
   // Architectural cues are owned by their facade and remain above the walking plane.
   structures.find((s) => s.id === "building_0")!.attachments = [
     {
@@ -440,8 +452,7 @@ export function composeScene(kind: SceneEnvironment["recipe"], seed = 1): Author
   for (const z of env.zones.filter((z) => ["sidewalk", "frontage", "loading"].includes(z.kind))) {
     // The intersection court is an open handling area, served by its existing
     // delivery slot. Moving it into view must not become another density pass.
-    if (kind === "intersection" && !["north-west-front", "south-west-walk"].includes(z.id))
-      continue;
+    if (kind === "intersection" && !["north-west-front"].includes(z.id)) continue;
     const candidates: Point[] = [];
     for (let y = Math.max(0, z.rect.y); y < Math.min(32, z.rect.y + z.rect.height) - 2; y += 4)
       for (let x = Math.max(0, z.rect.x); x < Math.min(32, z.rect.x + z.rect.width); x += 2)
