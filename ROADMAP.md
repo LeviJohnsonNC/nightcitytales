@@ -1611,3 +1611,11 @@ revision 7's saved lamp: window recesses, a shutter door with housing and rails,
 sprite, rooftop units, contact shadows, and the four lighting steps (with a lights-off view). **Awaiting Levi's
 visual review**; no reference-level quality is claimed, and real campaign movement, firing and save/load are
 unchecked. Spec and guides: [`checkpoint-storefront-pack.md`](docs/checkpoint-storefront-pack.md).
+
+[The corner at night](docs/checkpoint-storefront-night.md): the intersection now has a night. A cool ambient
+tints the scene's sprites, and local light is drawn as additive sprites attached to their surfaces, with
+lights-off and neutral views. The seed-7 corner gets a rebuilt streetlight, lit windows and an entrance light,
+a valance sign that survives the cutaway, and stronger contact shading. Captures use a reproducible gameplay
+framing (`cam=`, `player=`) and sit beside the reference. **Awaiting Levi's review.** Open items: the lamp still
+sits over the parked car (a recipe position change), and the cutaway floors still dominate with reveal on (a
+separate treatment is proposed, not built).

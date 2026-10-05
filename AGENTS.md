@@ -1016,11 +1016,25 @@ drawn in code, never generated. See `docs/checkpoint-storefront-pack.md`.
 The corner shop's detail is painted by one routine over the saved structure, entrance, awning and lamp:
 `paintStorefrontFace` is used for the whole building AND, clipped to each piece's height, for every cutaway
 wall piece on that face, so revealing the street never changes the wall; the awning is its own sprite
-(`activityLayer: "awning"`, shown in the cutaway only while the wall it hangs from is kept). Light is painted
-where it falls from world positions, ground light clipped around building footprints, and `lights=false`
-(the review harness's Lights checkbox) shows the art unlit. Returned art is validated and made by
-`tools/art/storefront-assets.ts`, judged by the numbers in `storefrontPack.ts`. See
+(`activityLayer: "awning"`, shown in the cutaway only while the wall it hangs from is kept). Returned art is
+validated and made by `tools/art/storefront-assets.ts`, judged by the numbers in `storefrontPack.ts`. See
 `docs/checkpoint-storefront-corner.md` for the limits.
+
+### Intersection night (courtyard/nightLighting.ts)
+
+The intersection is lit as night; every other scene is unchanged (`nightFor`). Night is never a dark layer
+over the frame: the ambient is a Phaser tint on the scene's own sprites (ground, buildings, props, people),
+so grid, shot lines and labels keep their colour. Every storefront painter takes a `Pass`: `albedo` (the art),
+`light` (light that falls on a surface; the renderer multiplies it by that surface's albedo, clips it to the
+surface's pixels and applies `gain`) and `glow` (light a surface gives, added as is). `createComposedEnvironment`
+turns the two light passes into an additive companion sprite stored as `getData("light")`, and the renderer
+copies its parent's visibility, alpha and depth (+0.5) every frame. Never paint light into the albedo, and never
+give a companion its own visibility or sort: that is how a light comes loose from its surface. People and props
+take `tintFor(ambient, lightAt(...))` from the same `GroundLight` list the ground sprite is painted from, so a
+person in a pool is lit by that pool; `lightAt` is zero inside a building footprint. Windows that face a
+neighbouring building (`litBays` excludes them) stay dark. `/scene-review` takes `night=0` (neutral inspection
+of the materials), `lights=0` (same night, local lights off), `cam=x,y,zoom` and `player=x,y` for repeatable
+captures; `tools/scenes/storefront-night.mjs` takes them. See `docs/checkpoint-storefront-night.md`.
 
 ## Collaborator names
 

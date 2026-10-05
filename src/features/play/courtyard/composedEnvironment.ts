@@ -26,9 +26,20 @@ import {
   paintStorefrontFace,
   paintStorefrontGround,
   storefrontFor,
+  storefrontLights,
+  streetLamp,
+  type Pass,
   type Storefront,
   type StorefrontArt,
 } from "./storefront";
+import {
+  INTERSECTION_NIGHT,
+  blocksLight,
+  nightFor,
+  paintGroundLight,
+  type GroundLight,
+  type NightLighting,
+} from "./nightLighting";
 
 type Project = (p: Point) => Point;
 function painter(ctx: CanvasRenderingContext2D, project: Project) {
@@ -81,6 +92,8 @@ export function paintComposedGround(
   arena: Arena,
   project: Project,
   materials?: MaterialSet,
+  /** At night the lamps' and signs' light is its own layer, not baked into the ground. */
+  night?: NightLighting,
 ) {
   const env = arena.environment!;
   const { rect, line, glow, corners: zoneCorners } = painter(ctx, project);
@@ -370,7 +383,7 @@ export function paintComposedGround(
   }
   for (const d of env.dressing) {
     const p = project(d.position);
-    if (d.kind === "lamp" || d.kind === "sign")
+    if (!night && (d.kind === "lamp" || d.kind === "sign"))
       glow(p, 55, d.kind === "lamp" ? "rgba(243,185,104,.14)" : "rgba(77,196,195,.13)");
     if (d.kind === "drain") {
       rect({ x: d.position.x - 0.2, y: d.position.y - 0.2, width: 0.45, height: 0.7 }, "#141f25");
@@ -389,6 +402,50 @@ export function paintComposedGround(
         ctx.fillRect(q.x, q.y, 2 + random() * 2, 1.4);
       }
   }
+}
+
+/**
+ * The light of the scene's saved lamps and signs, on the ground, at night. The shop's
+ * own streetlight is left to the storefront, which places its pool under its head.
+ */
+export function dressingLights(
+  env: SceneEnvironment,
+  night: NightLighting,
+  skip: ReadonlySet<string>,
+): GroundLight[] {
+  return env.dressing.flatMap((d): GroundLight[] => {
+    if (skip.has(d.id) || (d.kind !== "lamp" && d.kind !== "sign")) return [];
+    const light = d.kind === "lamp" ? night.streetLamp : night.sign;
+    return [{ kind: "pool", centre: d.position, ...light }];
+  });
+}
+
+/** Paint ground lights onto the open ground only: none falls inside a building. */
+export function paintGroundLights(
+  ctx: CanvasRenderingContext2D,
+  project: Project,
+  structures: readonly SceneStructure[],
+  lights: readonly GroundLight[],
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(-4000, -4000, 8000, 8000);
+  for (const s of structures) {
+    if (!blocksLight(s)) continue;
+    const r = s.rect;
+    [
+      { x: r.x, y: r.y },
+      { x: r.x + r.width, y: r.y },
+      { x: r.x + r.width, y: r.y + r.height },
+      { x: r.x, y: r.y + r.height },
+    ]
+      .map(project)
+      .forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+  }
+  ctx.clip("evenodd");
+  for (const light of lights) paintGroundLight(ctx, project, light);
+  ctx.restore();
 }
 
 /** Inaccessible mass is ground art; perimeter pieces sort independently. */
@@ -410,13 +467,14 @@ function paintCutawayWall(
   part: CutawayWall,
   project: Project,
   materials?: MaterialSet,
-  storefront?: { sf: Storefront; art: StorefrontArt; lights: boolean },
+  storefront?: { sf: Storefront; art: StorefrontArt; pass: Pass },
 ) {
   const { poly, corners } = painter(ctx, project);
   const metre = Math.hypot(
     project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
     project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
   );
+  const lightPass = storefront && storefront.pass !== "albedo";
   const warm = structure.style === "residential" || structure.style === "shop";
   const base = corners(part.rect),
     top = corners(part.rect, part.height * metre);
@@ -432,9 +490,11 @@ function paintCutawayWall(
       poly(points, null, "#17272d");
     } else poly(points, flat, "#17272d");
   };
-  side(north, warm ? "#73675a" : "#59666a", wallBasis(project, "x", r.y, concrete, metre));
-  side(east, "#35434a", wallBasis(project, "y", r.x + r.width, concrete, metre));
-  poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
+  if (!lightPass) {
+    side(north, warm ? "#73675a" : "#59666a", wallBasis(project, "x", r.y, concrete, metre));
+    side(east, "#35434a", wallBasis(project, "y", r.x + r.width, concrete, metre));
+    poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
+  }
   // A piece of the storefront's own face carries that face's detail up to its height,
   // so revealing the street does not change what the wall is.
   if (storefront) {
@@ -451,7 +511,7 @@ function paintCutawayWall(
         ppm: metre,
         art: storefront.art,
         materials: clad,
-        lights: storefront.lights,
+        pass: storefront.pass,
         clip: { s0, s1, zMax: part.height },
       });
     }
@@ -482,7 +542,7 @@ export function paintBuilding(
   entrances: SceneEnvironment["entrances"],
   materials?: MaterialSet,
   /** The finished storefront, for the one shop that has its art. */
-  storefront?: { sf: Storefront; art: StorefrontArt; lights: boolean },
+  storefront?: { sf: Storefront; art: StorefrontArt; pass: Pass },
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -493,6 +553,34 @@ export function paintBuilding(
   const h = structure.height * pixelsPerMetre;
   const base = corners(r),
     top = corners(r, h);
+  if (storefront && storefront.pass !== "albedo") {
+    paintStorefrontFace({
+      ctx,
+      sf: storefront.sf,
+      project,
+      ppm: pixelsPerMetre,
+      art: storefront.art,
+      materials,
+      pass: storefront.pass,
+    });
+    // the streetlight reaches the roof's near edge, and the units standing on it
+    const lamp = streetLamp(storefront.sf);
+    if (lamp && storefront.pass === "light") {
+      ctx.save();
+      ctx.beginPath();
+      top.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      ctx.closePath();
+      ctx.clip();
+      paintGroundLight(
+        ctx,
+        project,
+        { kind: "pool", centre: lamp.head, radius: 3, color: [1, 0.8, 0.56], intensity: 0.4 },
+        h,
+      );
+      ctx.restore();
+    }
+    return;
+  }
   if (structure.style === "mesh-fence") {
     const vertical = r.width < r.height;
     const length = vertical ? r.height : r.width;
@@ -707,7 +795,7 @@ export function paintBuilding(
       ppm: pixelsPerMetre,
       art: storefront.art,
       materials: clad,
-      lights: storefront.lights,
+      pass: "albedo",
     });
   surface(top, palette[2]!, "#6c716b", "roof-membrane", groundBasis(project, h));
   // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
@@ -754,7 +842,7 @@ export function paintBuilding(
     );
     surface(lid, "#65706b", "#7e8279", "painted-metal", groundBasis(project, h + 8));
     if (storefront) {
-      paintRooftopUnit(ctx, project, pixelsPerMetre, equipment, h, 8, i, storefront.lights);
+      paintRooftopUnit(ctx, project, pixelsPerMetre, equipment, h, 8, i);
       continue;
     }
     const center = project({ x: equipment.x + 1, y: equipment.y + 1 });
@@ -847,6 +935,20 @@ export function paintBuilding(
   }
 }
 
+/**
+ * What the scene was built from. `objects` sort and fade with the actors; `lit` is
+ * every image the night's ambient tints (the ground among them). An image whose
+ * surface catches or gives light carries its light as `getData("light")`: an
+ * additive sprite of the same size at the same place, which the renderer keeps at
+ * its parent's visibility, alpha and depth, so a light can never come loose.
+ */
+export interface ComposedEnvironment {
+  objects: Phaser.GameObjects.Image[];
+  lit: Phaser.GameObjects.Image[];
+  /** The night, if this scene has one, and what lights stand in it. */
+  night?: { config: NightLighting; lights: GroundLight[] };
+}
+
 /** Each large mass is a separate sprite so actors can reveal it by occlusion fading. */
 /** A material-bearing scene is drawn at twice the pixels, so a tile that covers a
  * few metres has the grain it was made with. The ceiling is the smallest GPU
@@ -862,9 +964,7 @@ export function createComposedEnvironment(
   tiles?: Partial<Record<MaterialKey, TileSource>>,
   /** The storefront's returned art. Without it the shop keeps its material-pass look. */
   storefrontArt?: StorefrontArt,
-  /** Light and its emissive surfaces. Off gives the unlit art, for judging it alone. */
-  lights = true,
-): Phaser.GameObjects.Image[] {
+): ComposedEnvironment {
   // Ground must extend with saved continuation geometry, not stop at the old
   // 1100x700 art sheet while building sprites float beyond its edge.
   const groundRect = arena.environment!.interior
@@ -897,18 +997,81 @@ export function createComposedEnvironment(
           return sf ? [sf] : [];
         })
       : [];
-  const storefrontOf = (s: SceneStructure) => {
+  const storefrontOf = (s: SceneStructure, pass: Pass = "albedo") => {
     const sf = storefronts.find((f) => f.structure.id === s.id);
-    return sf && storefrontArt ? { sf, art: storefrontArt, lights } : undefined;
+    return sf && storefrontArt ? { sf, art: storefrontArt, pass } : undefined;
+  };
+  const night = nightFor(env);
+  const lights = night
+    ? [
+        ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
+        ...dressingLights(
+          env,
+          night,
+          new Set(storefronts.some((sf) => sf.lamp) ? ["shop_lamp_detail_0"] : []),
+        ),
+      ]
+    : [];
+  const lit: Phaser.GameObjects.Image[] = [];
+  /**
+   * A surface's light: what falls on it (multiplied by its own painted colour, so
+   * light shows the material rather than covering it) and what it gives (added as
+   * it is). Clipped to the surface's own pixels before the glow, so light never
+   * lands where the surface is not.
+   */
+  const lightCanvas = (
+    base: HTMLCanvasElement,
+    prepare: (ctx: CanvasRenderingContext2D) => void,
+    light: (ctx: CanvasRenderingContext2D, pass: "light" | "glow") => void,
+  ) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = base.width;
+    canvas.height = base.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    prepare(ctx);
+    ctx.globalCompositeOperation = "lighter";
+    light(ctx, "light");
+    ctx.restore();
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(base, 0, 0);
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.drawImage(base, 0, 0);
+    // A canvas holds light up to 1; real light on a dark surface goes past it. The
+    // night's `gain` adds the lit surface to itself until a pool reads at play zoom.
+    if (night && night.gain > 1) {
+      const copy = document.createElement("canvas");
+      copy.width = canvas.width;
+      copy.height = canvas.height;
+      copy.getContext("2d")!.drawImage(canvas, 0, 0);
+      ctx.globalCompositeOperation = "lighter";
+      for (let g = night.gain - 1; g > 0; g--) {
+        ctx.globalAlpha = Math.min(1, g);
+        ctx.drawImage(copy, 0, 0);
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.save();
+    prepare(ctx);
+    ctx.globalCompositeOperation = "lighter";
+    light(ctx, "glow");
+    ctx.restore();
+    return canvas;
   };
   const ground = scene.textures.createCanvas(
     "composed-ground",
     Math.ceil(gw * resolution),
     Math.ceil(gh * resolution),
   )!;
-  ground.context.scale(resolution, resolution);
-  ground.context.translate(-gx, -gy);
-  paintComposedGround(ground.context, arena, project, materials);
+  const groundFrame = (ctx: CanvasRenderingContext2D) => {
+    ctx.scale(resolution, resolution);
+    ctx.translate(-gx, -gy);
+  };
+  ground.context.save();
+  groundFrame(ground.context);
+  paintComposedGround(ground.context, arena, project, materials, night);
   for (const sf of storefronts)
     paintStorefrontGround({
       ctx: ground.context,
@@ -916,13 +1079,31 @@ export function createComposedEnvironment(
       project,
       ppm: metre,
       structures: env.structures,
-      lights,
+      pass: "albedo",
     });
+  ground.context.restore();
   ground.refresh();
-  scene.add
+  const groundImage = scene.add
     .image(gx + gw / 2, gy + gh / 2, "composed-ground")
     .setDisplaySize(gw, gh)
     .setDepth(-1000);
+  lit.push(groundImage);
+  if (night && lights.length) {
+    const canvas = lightCanvas(ground.canvas, groundFrame, (ctx, pass) => {
+      if (pass === "light") paintGroundLights(ctx, project, env.structures, lights);
+    });
+    const texture = scene.textures.addCanvas("composed-ground-light", canvas)!;
+    texture.refresh();
+    groundImage.setData(
+      "light",
+      scene.add
+        .image(gx + gw / 2, gy + gh / 2, "composed-ground-light")
+        .setDisplaySize(gw, gh)
+        .setBlendMode("ADD")
+        .setDepth(-999.5)
+        .setVisible(false),
+    );
+  }
   const objects: Phaser.GameObjects.Image[] = [];
   const occluders = activityOccluders(arena);
   const activity = activityGroundPoints(arena);
@@ -933,47 +1114,80 @@ export function createComposedEnvironment(
     bounds: Rect = { x: 0, y: 0, width: 1100, height: 700 },
     /** Drawn at this many pixels per scene pixel, shown at scene size. */
     scale = 1,
+    /** At night: the light this surface catches and gives, as its own sprite. */
+    light?: (ctx: CanvasRenderingContext2D, pass: "light" | "glow") => void,
   ) => {
     const canvas = document.createElement("canvas");
     canvas.width = Math.ceil(bounds.width * scale);
     canvas.height = Math.ceil(bounds.height * scale);
+    const frame = (c: CanvasRenderingContext2D) => {
+      c.scale(scale, scale);
+      c.translate(-bounds.x, -bounds.y);
+    };
     const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-    ctx.scale(scale, scale);
-    ctx.translate(-bounds.x, -bounds.y);
+    ctx.save();
+    frame(ctx);
     paint(ctx);
-    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    ctx.restore();
+    const glow = night && light ? lightCanvas(canvas, frame, light) : undefined;
     let left = canvas.width,
       right = 0,
       top = canvas.height,
       bottom = 0;
+    const include = (x: number, y: number) => {
+      left = Math.min(left, x);
+      right = Math.max(right, x);
+      top = Math.min(top, y);
+      bottom = Math.max(bottom, y);
+    };
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
     for (let y = 0; y < canvas.height; y++)
       for (let x = 0; x < canvas.width; x++)
-        if (pixels[(y * canvas.width + x) * 4 + 3]! > 5) {
-          left = Math.min(left, x);
-          right = Math.max(right, x);
-          top = Math.min(top, y);
-          bottom = Math.max(bottom, y);
+        if (pixels[(y * canvas.width + x) * 4 + 3]! > 5) include(x, y);
+    // The light sprite shares the albedo's frame; a halo past its edge widens both.
+    let lightPixels = 0;
+    if (glow) {
+      const g = glow.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+      for (let y = 0; y < canvas.height; y++)
+        for (let x = 0; x < canvas.width; x++) {
+          const i = (y * canvas.width + x) * 4;
+          if (g[i + 3]! > 5 && g[i]! + g[i + 1]! + g[i + 2]! > 6) {
+            include(x, y);
+            lightPixels++;
+          }
         }
+    }
     if (right <= left || bottom <= top) return;
-    const texture = scene.textures.createCanvas(key, right - left + 1, bottom - top + 1)!;
-    texture.context.drawImage(
-      canvas,
-      left,
-      top,
-      right - left + 1,
-      bottom - top + 1,
-      0,
-      0,
-      right - left + 1,
-      bottom - top + 1,
-    );
-    texture.refresh();
-    const image = scene.add
-      .image(bounds.x + (left + right) / 2 / scale, bounds.y + bottom / scale, key)
-      .setOrigin(0.5, 1)
-      .setScale(1 / scale)
-      .setDepth(depth);
+    const crop = (source: HTMLCanvasElement, name: string) => {
+      const texture = scene.textures.createCanvas(name, right - left + 1, bottom - top + 1)!;
+      texture.context.drawImage(
+        source,
+        left,
+        top,
+        right - left + 1,
+        bottom - top + 1,
+        0,
+        0,
+        right - left + 1,
+        bottom - top + 1,
+      );
+      texture.refresh();
+      return scene.add
+        .image(bounds.x + (left + right) / 2 / scale, bounds.y + bottom / scale, name)
+        .setOrigin(0.5, 1)
+        .setScale(1 / scale);
+    };
+    const image = crop(canvas, key).setDepth(depth);
+    if (glow && lightPixels)
+      image.setData(
+        "light",
+        crop(glow, `${key}-light`)
+          .setBlendMode("ADD")
+          .setDepth(depth + 0.5)
+          .setVisible(false),
+      );
     objects.push(image);
+    lit.push(image);
     return image;
   };
   // Narrow jambs sit at opening boundaries. Each has its own depth so actors
@@ -1078,8 +1292,10 @@ export function createComposedEnvironment(
         width: Math.ceil(Math.max(...artCorners.map((p) => p.x))) - left + 8,
         height: Math.ceil(Math.max(...artCorners.map((p) => p.y))) - top + 8,
       };
-      // Only a building that takes a material is worth drawing at double size.
-      const clad = materials && s.style === "shop" ? resolution : 1;
+      // Only a building that takes a material is worth drawing at double size; the
+      // finished storefront, whose sign and windows are read up close, at more.
+      const clad = materials && s.style === "shop" ? resolution * (storefrontOf(s) ? 1.5 : 1) : 1;
+      const front = storefrontOf(s);
       add(
         `structure-${s.id}`,
         (ctx) =>
@@ -1087,6 +1303,17 @@ export function createComposedEnvironment(
         depth,
         bounds,
         clad,
+        front
+          ? (ctx, pass) =>
+              paintBuilding(
+                ctx,
+                s,
+                project,
+                arena.environment!.entrances,
+                materials,
+                storefrontOf(s, pass),
+              )
+          : undefined,
       )
         ?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined)
         .setData("sortRect", s.rect);
@@ -1106,6 +1333,10 @@ export function createComposedEnvironment(
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,
             clad,
+            front
+              ? (ctx, pass) =>
+                  paintCutawayWall(ctx, s, part, project, materials, storefrontOf(s, pass))
+              : undefined,
           )
             ?.setData("activityLayer", "cutaway")
             .setData("sortRect", r)
@@ -1115,7 +1346,6 @@ export function createComposedEnvironment(
       }
       // The canopy is its own sprite: it sorts by its footprint, fades for actors
       // under it, and in the cutaway shows only while the wall it hangs from is kept.
-      const front = storefrontOf(s);
       if (front) {
         const sf = front.sf;
         const at = facePoint(sf, project, metre);
@@ -1124,8 +1354,8 @@ export function createComposedEnvironment(
         const edges = [
           at(offset, 0, L.awningWall - 0.7),
           at(offset + span, 0, L.awningWall - 0.7),
-          at(offset + span, projection, L.awningOuter - 0.3),
-          at(offset, projection, L.awningOuter - 0.3),
+          at(offset + span, projection, L.awningOuter - 0.4),
+          at(offset, projection, L.awningOuter - 0.4),
           at(offset, 0, L.awningWall),
           at(offset + span, 0, L.awningWall),
         ];
@@ -1152,18 +1382,11 @@ export function createComposedEnvironment(
               )
               .every((p) => p.height >= STOREFRONT_LEVELS.housingTop - 1e-9);
         const footprint = awningFootprint(sf);
+        const awning = (ctx: CanvasRenderingContext2D, pass: Pass) =>
+          paintAwning({ ctx, sf, project, ppm: metre, art: front.art, materials, pass });
         add(
           `awning-${s.id}`,
-          (ctx) =>
-            paintAwning({
-              ctx,
-              sf,
-              project,
-              ppm: metre,
-              art: front.art,
-              materials,
-              lights: front.lights,
-            }),
+          (ctx) => awning(ctx, "albedo"),
           Math.max(
             ...[
               { x: footprint.x, y: footprint.y },
@@ -1171,7 +1394,9 @@ export function createComposedEnvironment(
             ].map((p) => project(p).y),
           ),
           awningBounds,
-          resolution,
+          // small, and carrying the valance sign: drawn at four pixels per scene pixel
+          4,
+          awning,
         )
           ?.setData("activityLayer", "awning")
           .setData("revealOk", kept)
@@ -1182,24 +1407,34 @@ export function createComposedEnvironment(
   for (const d of arena.environment!.dressing) {
     if (d.kind === "litter" || d.kind === "drain") continue;
     const p = project(d.position);
+    const shopLamp =
+      d.id === "shop_lamp_detail_0" ? storefronts.find((f) => f.lamp !== undefined) : undefined;
+    // At night a lamp's lens and glow are its light sprite; by day they are baked in.
+    const lampGlow = (ctx: CanvasRenderingContext2D) => {
+      painter(ctx, project).glow({ x: p.x + 12, y: p.y - 43 }, 13, "rgba(255,199,115,.35)");
+      ctx.fillStyle = "#e1c294";
+      ctx.fillRect(p.x + 8, p.y - 44, 7, 2);
+    };
     add(
       `dressing-${d.id}`,
       (ctx) => {
-        const { line, glow, poly } = painter(ctx, project);
+        const { line, poly } = painter(ctx, project);
+        if (shopLamp) {
+          paintStreetLamp(ctx, project, metre, shopLamp, "albedo");
+          return;
+        }
         ctx.fillStyle = "rgba(0,0,0,.24)";
         ctx.beginPath();
         ctx.ellipse(p.x + 3, p.y, 8, 3, 0, 0, Math.PI * 2);
         ctx.fill();
-        const shopLamp =
-          d.id === "shop_lamp_detail_0" ? storefronts.find((f) => f.lamp !== undefined) : undefined;
-        if (shopLamp) paintStreetLamp(ctx, project, metre, shopLamp, lights);
-        else if (d.kind === "lamp") {
+        if (d.kind === "lamp") {
           line(p, { x: p.x, y: p.y - 48 }, "#18232b", 3);
           line({ x: p.x + 1, y: p.y }, { x: p.x + 1, y: p.y - 48 }, "#7e8274", 0.8);
           line({ x: p.x, y: p.y - 48 }, { x: p.x + 12, y: p.y - 43 }, "#7e8274", 2);
-          glow({ x: p.x + 12, y: p.y - 43 }, 13, "rgba(255,199,115,.35)");
-          ctx.fillStyle = "#e1c294";
-          ctx.fillRect(p.x + 8, p.y - 44, 7, 2);
+          if (night) {
+            ctx.fillStyle = "#7f8574";
+            ctx.fillRect(p.x + 8, p.y - 44, 7, 2);
+          } else lampGlow(ctx);
         } else if (d.kind === "sign") {
           line(p, { x: p.x, y: p.y - 19 }, "#6f7976", 1.5);
           ctx.fillStyle = "#263d44";
@@ -1242,7 +1477,24 @@ export function createComposedEnvironment(
         }
       },
       p.y,
+      // the finished streetlight is tall and fine: its own bounds, at three times
+      shopLamp
+        ? {
+            x: p.x - 70,
+            y: p.y - (INTERSECTION_NIGHT.lamp.poleHeight + 1.5) * metre,
+            width: 140,
+            height: (INTERSECTION_NIGHT.lamp.poleHeight + 1.5) * metre + 20,
+          }
+        : undefined,
+      shopLamp ? 3 : 1,
+      shopLamp
+        ? (ctx, pass) => paintStreetLamp(ctx, project, metre, shopLamp, pass)
+        : d.kind === "lamp"
+          ? (ctx, pass) => {
+              if (pass === "glow") lampGlow(ctx);
+            }
+          : undefined,
     )?.setData("sortRect", { ...d.position, width: 0, height: 0 });
   }
-  return objects;
+  return { objects, lit, ...(night ? { night: { config: night, lights } } : {}) };
 }

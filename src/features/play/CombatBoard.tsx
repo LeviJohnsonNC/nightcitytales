@@ -96,6 +96,10 @@ type Props = {
   revealActivity?: boolean;
   /** Scenic light and emissive surfaces; the review harness turns it off to judge the art. */
   lights?: boolean;
+  /** The night's ambient; the review harness turns it off to inspect the materials. */
+  night?: boolean;
+  /** Where the camera starts, instead of the scene's preset: a repeatable framing. */
+  initialCamera?: { x: number; y: number; zoom: number };
   onRevealActivityChange?: (reveal: boolean) => void;
 };
 const points = (path: Point[]) => path.map((p) => `${p.x},${p.y}`).join(" ");
@@ -138,6 +142,8 @@ export function CombatBoard({
   onSkipPlayback,
   revealActivity: controlledRevealActivity,
   lights,
+  night,
+  initialCamera,
   onRevealActivityChange,
 }: Props) {
   const effects = useCombatFeedback(playback);
@@ -178,16 +184,19 @@ export function CombatBoard({
   const [panel, setPanel] = useState<"journal" | "improvise" | null>(null);
   /** The combatant whose dossier is open. Their art is on file; the fight is not. */
   const [dossier, setDossier] = useState<string | null>(null);
-  const [camera, setCamera] = useState({
-    x: 0,
-    y: 0,
-    zoom:
-      live && battlefieldFor(live).environment
-        ? battlefieldCameraPreset(battlefieldFor(live)).zoom
-        : live && scenicTheme(battlefieldFor(live))
-          ? 1.25
-          : 1,
-  });
+  const [camera, setCamera] = useState(
+    () =>
+      initialCamera ?? {
+        x: 0,
+        y: 0,
+        zoom:
+          live && battlefieldFor(live).environment
+            ? battlefieldCameraPreset(battlefieldFor(live)).zoom
+            : live && scenicTheme(battlefieldFor(live))
+              ? 1.25
+              : 1,
+      },
+  );
   const drag = useRef<Point | null>(null);
   const patternId = useId().replaceAll(":", "");
   useEffect(() => {
@@ -668,10 +677,11 @@ export function CombatBoard({
         <div className={`combat-stage tool-${tool}`}>
           {hasScenicArt && artEnabled && (
             <CourtyardLayer
-              key={`${arena.key}:${lights !== false}`}
+              key={arena.key}
               live={live}
               revealActivity={revealActivity}
               lights={lights !== false}
+              night={night !== false}
               playback={playback}
               camera={displayCamera}
               aimTargetId={aimed?.actor.id ?? null}

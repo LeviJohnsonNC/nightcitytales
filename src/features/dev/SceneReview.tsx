@@ -42,6 +42,7 @@ export function SceneReview() {
   const [rendererAttempt, setRendererAttempt] = useState(0);
   const [revealActivity, setRevealActivity] = useState(initial.revealActivity);
   const [lights, setLights] = useState(initial.lights);
+  const [night, setNight] = useState(initial.night);
   const [zoom, setZoom] = useState(1);
   const [structureOnly, setStructureOnly] = useState(initial.structureOnly);
   const [framing, setFraming] = useState<"play" | "overview">(initial.framing);
@@ -60,6 +61,9 @@ export function SceneReview() {
     structureOnly,
     revealActivity,
     lights,
+    night,
+    camera: initial.camera,
+    player: initial.player,
     framing,
   });
   useEffect(() => {
@@ -71,6 +75,9 @@ export function SceneReview() {
   const live = useMemo(() => {
     if (saved) return saved.live;
     const fixture = sceneReviewEncounter(scene, entrances);
+    // A capture can stand the review character anywhere open, e.g. under the shop's awning.
+    const player = fixture.data["player"];
+    if (initial.player && player) fixture.data["player"] = { ...player, position: initial.player };
     fixture.cover = Object.fromEntries(
       scene.layout.arena.cover!.map((c) => [
         c.id,
@@ -78,7 +85,7 @@ export function SceneReview() {
       ]),
     );
     return fixture;
-  }, [scene, entrances, damage, saved]);
+  }, [scene, entrances, damage, saved, initial.player]);
   const empty = useMemo(
     () => ({ ...live, state: { ...live.state, order: [], combatants: {} }, data: {} }),
     [live],
@@ -236,6 +243,28 @@ export function SceneReview() {
             Room/access plan
           </label>
         )}
+        {scene.layout.arena.environment?.recipe === "intersection" && (
+          <>
+            <label>
+              <input
+                type="checkbox"
+                checked={night}
+                disabled={structureOnly}
+                onChange={(e) => setNight(e.target.checked)}
+              />
+              Night
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={lights}
+                disabled={structureOnly || !night}
+                onChange={(e) => setLights(e.target.checked)}
+              />
+              Lights
+            </label>
+          </>
+        )}
         {!actors && (
           <>
             {!scene.layout.arena.environment?.interior && (
@@ -247,17 +276,6 @@ export function SceneReview() {
                   onChange={(e) => setRevealActivity(e.target.checked)}
                 />
                 Reveal activity behind buildings
-              </label>
-            )}
-            {scene.layout.arena.environment?.recipe === "intersection" && (
-              <label>
-                <input
-                  type="checkbox"
-                  checked={lights}
-                  disabled={structureOnly}
-                  onChange={(e) => setLights(e.target.checked)}
-                />
-                Lights
               </label>
             )}
             <label>
@@ -472,21 +490,26 @@ export function SceneReview() {
           revealActivity={revealActivity}
           onRevealActivityChange={setRevealActivity}
           lights={lights}
+          night={night}
+          {...(initial.camera ? { initialCamera: initial.camera } : {})}
           title="Scene readability review"
           objective="Inspect only · no campaign writes"
         />
       ) : (
         <div className="scene-review-canvas">
           <CourtyardLayer
-            key={`${scene.layout.arena.key}:${structureOnly}:${lights}:${rendererAttempt}`}
+            key={`${scene.layout.arena.key}:${structureOnly}:${rendererAttempt}`}
             live={empty}
             structureOnly={structureOnly}
             revealActivity={revealActivity}
             lights={lights}
-            camera={{
-              ...battlefieldCameraPreset(scene.layout.arena, framing),
-              zoom: battlefieldCameraPreset(scene.layout.arena, framing).zoom * zoom,
-            }}
+            night={night}
+            camera={
+              initial.camera ?? {
+                ...battlefieldCameraPreset(scene.layout.arena, framing),
+                zoom: battlefieldCameraPreset(scene.layout.arena, framing).zoom * zoom,
+              }
+            }
             onReady={onReady}
             onFailure={onFailure}
           />
