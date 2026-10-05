@@ -503,6 +503,8 @@ function paintCutawayWall(
   project: Project,
   materials?: MaterialSet,
   storefront?: { sf: Storefront; art: StorefrontArt; pass: Pass },
+  /** The wall's material, as the full building lays it (`paintBuilding`). */
+  wallMaterial: MaterialKey = "facade-concrete",
 ) {
   const { poly, corners } = painter(ctx, project);
   const metre = Math.hypot(
@@ -519,9 +521,9 @@ function paintCutawayWall(
   // The same facade material, anchored to the same world metres, as the full
   // building it replaces: revealing the street must not change what the wall is.
   const clad = materials && structure.style === "shop" ? materials : undefined;
-  const concrete = SURFACE_MATERIALS["facade-concrete"].metres;
+  const concrete = SURFACE_MATERIALS[wallMaterial].metres;
   const side = (points: Point[], flat: string, basis: ReturnType<typeof wallBasis>) => {
-    if (fillMaterial(ctx, clad, points, { key: "facade-concrete", basis, target: flat })) {
+    if (fillMaterial(ctx, clad, points, { key: wallMaterial, basis, target: flat })) {
       poly(points, null, "#17272d");
     } else poly(points, flat, "#17272d");
   };
@@ -754,19 +756,21 @@ export function paintBuilding(
       stroke,
     );
   // Two camera-facing walls; windows, shutters, conduits, lintels share their planes.
+  // The shop's neighbours are a different building: painted render, not its concrete.
+  const wall: MaterialKey = frontage?.role === "neighbour" ? "painted-render" : "facade-concrete";
   surface(
     [base[0]!, base[1]!, top[1]!, top[0]!],
     palette[0]!,
     "#111c25",
-    "facade-concrete",
-    wallBasis(project, "x", r.y, metres("facade-concrete"), pixelsPerMetre),
+    wall,
+    wallBasis(project, "x", r.y, metres(wall), pixelsPerMetre),
   );
   surface(
     [base[1]!, base[2]!, top[2]!, top[1]!],
     palette[1]!,
     "#111c25",
-    "facade-concrete",
-    wallBasis(project, "y", r.x + r.width, metres("facade-concrete"), pixelsPerMetre),
+    wall,
+    wallBasis(project, "y", r.x + r.width, metres(wall), pixelsPerMetre),
   );
   const face = (a: Point, b: Point, length: number, shade: string, edge: "north" | "east") => {
     // The storefront's face is painted whole by its own routine, over the concrete.
@@ -938,7 +942,13 @@ export function paintBuilding(
       pass: "albedo",
       ...(frontage ? { frontage: frontageOnFace(frontage, structure, storefront.sf.edge) } : {}),
     });
-  surface(top, palette[2]!, "#6c716b", "roof-membrane", groundBasis(project, h));
+  surface(
+    top,
+    palette[2]!,
+    "#6c716b",
+    frontage?.role === "neighbour" ? "roof-ballast" : "roof-membrane",
+    groundBasis(project, h),
+  );
   // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
   for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
   // a neighbour's roof is ballasted, not a seamed membrane
@@ -1561,7 +1571,16 @@ export function createComposedEnvironment(
           const r = part.rect;
           add(
             `cutaway-${s.id}-wall-${index}`,
-            (ctx) => paintCutawayWall(ctx, s, part, project, materials, storefrontOf(s)),
+            (ctx) =>
+              paintCutawayWall(
+                ctx,
+                s,
+                part,
+                project,
+                materials,
+                storefrontOf(s),
+                detailOf(structure)?.role === "neighbour" ? "painted-render" : undefined,
+              ),
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,
             clad,

@@ -1,6 +1,6 @@
 # Architecture pack: the shop's neighbours
 
-Status: **specified, nothing commissioned.** This is the smallest pack the architectural
+Status: **imported.** Both tiles are in the game (`checkpoint-wrecks-and-tiles.md`). This is the smallest pack the architectural
 pilot ([`checkpoint-architecture-pilot.md`](checkpoint-architecture-pilot.md)) still needs.
 
 ## Why only two images

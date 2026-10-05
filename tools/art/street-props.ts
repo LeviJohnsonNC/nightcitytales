@@ -37,6 +37,7 @@
  *   whole; the board reads where the frame sits from `propArtRegistration`.
  * No sharpening, no contrast or colour change: light and shadow are the renderer's.
  */
+import { readdirSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 import type { Point } from "@/engine";
@@ -55,6 +56,7 @@ import {
   sedanPoint,
   toGuide,
   wreckVolume,
+  WRECK_APRON,
   type PackGuide,
   type PropState,
 } from "@/features/play/courtyard/streetPropPack";
@@ -77,7 +79,7 @@ const WRECK_TOLERANCE = 0.01;
  * commissioned (docs/street-props-pack.md, "Lower wrecks"). They still import, with
  * the excess reported; take an id off as soon as its redraw passes.
  */
-const TALL_WRECKS_PENDING = new Set<string>(["planter", "cabinet"]);
+const TALL_WRECKS_PENDING = new Set<string>([]);
 const failures: string[] = [];
 const fail = (id: string, msg: string) => failures.push(`${id}: ${msg}`);
 const log = (id: string, msg: string) => console.log(`${id.padEnd(22)} ${msg}`);
@@ -85,12 +87,25 @@ const log = (id: string, msg: string) => console.log(`${id.padEnd(22)} ${msg}`);
 type Rgba = { data: Buffer; width: number; height: number };
 type Box = { left: number; right: number; top: number; bottom: number };
 
+/**
+ * A redraw is saved beside the image it replaces, as `<name>-v2.png` (then `-v3`...),
+ * so the history stays in the folder; the newest version is the one imported.
+ */
+function latest(name: string) {
+  const versions = readdirSync(SOURCE)
+    .map((f) => f.match(new RegExp(`^${name}(?:-v(\\d+))?\\.png$`)))
+    .filter((m): m is RegExpMatchArray => m !== null)
+    .map((m) => ({ v: Number(m[1] ?? 1), file: m[0].slice(0, -4) }))
+    .sort((a, b) => b.v - a.v);
+  return versions[0]?.file ?? name;
+}
+
 const keyness = (r: number, g: number, b: number) =>
   Math.max(0, Math.min(1, (Math.min(r, b) - g) / 255));
 
 /** Load, key out the magenta with de-spill, and measure. */
 async function load(id: string, state: PropState) {
-  const name = `street-${id}-${state}`;
+  const name = latest(`street-${id}-${state}`);
   const { data, info } = await sharp(`${SOURCE}/${name}.png`)
     .removeAlpha()
     .raw()
@@ -334,6 +349,81 @@ function fileFor(g: PackGuide, art: string, state: PropState) {
   return `${art}-${state}${suffix}.webp`;
 }
 
+/** How far a wreck may be moved onto its footprint, in metres along the ground. */
+const WRECK_SHIFT_LIMIT = 0.5;
+
+/**
+ * Place a wreck on its footprint by translation alone: the shift (within
+ * WRECK_SHIFT_LIMIT) that leaves the least of it outside its volume. A redraw keeps the
+ * object's scale, so its fit is the intact one's; only where it stands may differ.
+ */
+async function registerWreck(
+  g: PackGuide,
+  fit: Fit,
+  shot: Awaited<ReturnType<typeof load>>,
+): Promise<Fit> {
+  const step = 4;
+  const { width: W, height: H } = shot.img;
+  const w = Math.ceil(W / step);
+  const h = Math.ceil(H / step);
+  const pad = Math.ceil((WRECK_SHIFT_LIMIT * 64 * g.scale * fit.s) / step);
+  // the volume at the intact fit, coarse, on a canvas padded for the search
+  const poly = wreckVolume(g)
+    .map(
+      (b) =>
+        `<polygon points="${b.hull
+          .map(
+            (p) =>
+              `${((fit.s * p.x + fit.tx) / step + pad).toFixed(2)},${((fit.s * p.y + fit.ty) / step + pad).toFixed(2)}`,
+          )
+          .join(" ")}" fill="#fff"/>`,
+    )
+    .join("");
+  const MW = w + 2 * pad;
+  const MH = h + 2 * pad;
+  const mask = await sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${MW}" height="${MH}"><rect width="${MW}" height="${MH}" fill="#000"/>${poly}</svg>`,
+    ),
+  )
+    .extractChannel(0)
+    .raw()
+    .toBuffer();
+  // the wreck's solid pixels, coarse
+  const solid: number[] = [];
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++)
+      if (shot.img.data[(y * step * W + x * step) * 4 + 3]! >= 128) solid.push(x, y);
+  const outside = (dx: number, dy: number) => {
+    let n = 0;
+    for (let i = 0; i < solid.length; i += 2) {
+      const x = solid[i]! + pad - dx;
+      const y = solid[i + 1]! + pad - dy;
+      if (mask[y * MW + x]! < 128) n++;
+    }
+    return n;
+  };
+  let best = { dx: 0, dy: 0, n: outside(0, 0) };
+  const centre = best.n;
+  for (let dy = -pad; dy <= pad; dy++)
+    for (let dx = -pad; dx <= pad; dx++) {
+      if (dx * dx + dy * dy > pad * pad) continue;
+      const n = outside(dx, dy);
+      // prefer the smaller move when two are as good
+      if (n < best.n || (n === best.n && dx * dx + dy * dy < best.dx ** 2 + best.dy ** 2))
+        best = { dx, dy, n };
+    }
+  // a wreck that already lies inside its volume where it stands is left there
+  if (centre / Math.max(1, solid.length / 2) <= WRECK_TOLERANCE || best.n >= centre) return fit;
+  const metres = (Math.hypot(best.dx, best.dy) * step) / (64 * g.scale * fit.s);
+  log(
+    shot.name,
+    `placed on its footprint: moved ${metres.toFixed(2)} m (limit ${WRECK_SHIFT_LIMIT} m)`,
+  );
+  // the volume moves by (dx, dy) to meet the art: the same as the art meeting the volume
+  return { s: fit.s, tx: fit.tx + best.dx * step, ty: fit.ty + best.dy * step };
+}
+
 /**
  * The WRECKED image against its volume (`wreckVolume`): how much of the remains stands
  * above what a walkable wreck may, and the guide and the check sheet for a redraw.
@@ -345,20 +435,41 @@ async function wreckCheck(
   fit: Fit,
   shot: Awaited<ReturnType<typeof load>>,
   canvas: number,
+  /** Where the intact object stands: the layout for a redraw is drawn there. */
+  layoutFit: Fit = fit,
 ) {
-  const toImage = (poly: Point[]) =>
-    poly.map((p) => ({ x: fit.s * p.x + fit.tx, y: fit.s * p.y + fit.ty }));
-  const blocks = wreckVolume(g).map((b) => ({ hull: toImage(b.hull), top: toImage(b.top) }));
-  const volume = blocks.map((b) => b.hull);
-  const ceiling = `<polygon points="${blocks[0]!.top.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}" fill="#8f989d" stroke="#1d2327" stroke-width="3" stroke-linejoin="round"/>`;
+  const blocksAt = (f: Fit) => {
+    const toImage = (poly: Point[]) =>
+      poly.map((p) => ({ x: f.s * p.x + f.tx, y: f.s * p.y + f.ty }));
+    return wreckVolume(g).map((b) => ({ hull: toImage(b.hull), top: toImage(b.top) }));
+  };
+  const layout = blocksAt(layoutFit);
+  const volume = blocksAt(fit).map((b) => b.hull);
+  const ceiling = `<polygon points="${layout[0]!.top.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}" fill="#8f989d" stroke="#1d2327" stroke-width="3" stroke-linejoin="round"/>`;
   // the debris layers first and lighter, the body's block over them and darker
-  const polys = (fill: string, extra = "", debrisFill = fill) =>
-    [...volume.slice(1).map((poly) => ({ poly, fill: debrisFill })), { poly: volume[0]!, fill }]
-      .map(
-        ({ poly, fill }) =>
-          `<polygon points="${poly.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}" fill="${fill}" ${extra}/>`,
-      )
-      .join("");
+  const polysOf =
+    (v: Point[][]) =>
+    (fill: string, extra = "", debrisFill = fill) =>
+      [...v.slice(1).map((poly) => ({ poly, fill: debrisFill })), { poly: v[0]!, fill }]
+        .map(
+          ({ poly, fill }) =>
+            `<polygon points="${poly.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}" fill="${fill}" ${extra}/>`,
+        )
+        .join("");
+  const polys = polysOf(volume);
+  // the gate: the same volume with an apron of flat ground around it (`WRECK_APRON`)
+  const gate = wreckVolume(g, WRECK_APRON).map((b) =>
+    b.hull.map((p) => ({ x: fit.s * p.x + fit.tx, y: fit.s * p.y + fit.ty })),
+  );
+  const gateMask = await sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${shot.img.width}" height="${shot.img.height}"><rect width="${shot.img.width}" height="${shot.img.height}" fill="#000"/>${polysOf(gate)("#fff")}</svg>`,
+    ),
+  )
+    .extractChannel(0)
+    .raw()
+    .toBuffer();
+  const layoutPolys = polysOf(layout.map((b) => b.hull));
   const { width: W, height: H } = shot.img;
   const mask = await sharp(
     Buffer.from(
@@ -368,25 +479,33 @@ async function wreckCheck(
     .extractChannel(0)
     .raw()
     .toBuffer();
+  // red: too tall, the gate; amber: flat debris past the prop's own ground, reported
   let solid = 0;
   let over = 0;
+  let spill = 0;
   const marked = Buffer.from(shot.img.data);
+  const paint = (i: number, r: number, g: number, b: number) => {
+    marked[i * 4] = r;
+    marked[i * 4 + 1] = g;
+    marked[i * 4 + 2] = b;
+    marked[i * 4 + 3] = 255;
+  };
   for (let i = 0; i < W * H; i++) {
     if (shot.img.data[i * 4 + 3]! < 128) continue;
     solid++;
-    if (mask[i]! < 128) {
+    if (gateMask[i]! < 128) {
       over++;
-      marked[i * 4] = 255;
-      marked[i * 4 + 1] = 40;
-      marked[i * 4 + 2] = 40;
-      marked[i * 4 + 3] = 255;
+      paint(i, 255, 40, 40);
+    } else if (mask[i]! < 128) {
+      spill++;
+      paint(i, 255, 176, 32);
     }
   }
   const share = over / solid;
   const pending = TALL_WRECKS_PENDING.has(g.id);
   log(
     shot.name,
-    `wreck ${(share * 100).toFixed(1)}% of the remains above the volume (limit ${WRECK_TOLERANCE * 100}%)${pending && share > WRECK_TOLERANCE ? " WAIVED: redraw commissioned" : ""}`,
+    `wreck ${(share * 100).toFixed(1)}% above its volume (limit ${WRECK_TOLERANCE * 100}%), ${((spill / solid) * 100).toFixed(1)}% lying flat past its ground (within ${WRECK_APRON} m)${pending && share > WRECK_TOLERANCE ? " WAIVED: redraw commissioned" : ""}`,
   );
   if (share > WRECK_TOLERANCE && !pending)
     fail(shot.name, `${(share * 100).toFixed(1)}% of the remains stand above the wreck volume`);
@@ -397,7 +516,7 @@ async function wreckCheck(
   // the layout to attach: the key, the 2 m ground, the volume in grey with its ceiling
   await sharp(
     Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}"><rect width="${canvas}" height="${canvas}" fill="#ff00ff"/>${polys(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}"><rect width="${canvas}" height="${canvas}" fill="#ff00ff"/>${layoutPolys(
         "#6f787d",
         'stroke="#1d2327" stroke-width="3" stroke-linejoin="round"',
         "#b3babe",
@@ -422,7 +541,7 @@ async function wreckCheck(
       { input: marked, raw: { width: W, height: H, channels: 4 } },
       {
         input: Buffer.from(
-          `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="60"><text x="20" y="42" font-family="DejaVu Sans" font-size="30" fill="#ffffff">${shot.name}: ${(share * 100).toFixed(1)}% above the volume (red)</text></svg>`,
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="60"><text x="20" y="42" font-family="DejaVu Sans" font-size="30" fill="#ffffff">${shot.name}: ${(share * 100).toFixed(1)}% too tall (red), ${((spill / solid) * 100).toFixed(1)}% flat past its ground (amber)</text></svg>`,
         ),
         top: 0,
         left: 0,
@@ -460,10 +579,13 @@ for (const g of STREET_PROP_PACK) {
       Math.abs(shot.box.right - intact.box.right),
       state === "wrecked" ? 0 : Math.abs(shot.box.bottom - intact.box.bottom),
     );
+    // a wreck is placed on its own footprint: the redraw may sit a little off where the
+    // intact object stood, so it is moved (never scaled) to lie inside its volume
+    const at = state === "wrecked" ? await registerWreck(g, fit, shot) : fit;
     const frames: { buf: Buffer; offset: Point; g: PackGuide; art: string }[] = [];
     let kept = 0;
     for (let i = 0; i < g.sections.length; i++) {
-      const buf = await sectionFrame(g, i, shot.img, fit);
+      const buf = await sectionFrame(g, i, shot.img, at);
       kept += alphaSum(buf);
       frames.push({ buf, offset: g.sections[i]!.offset, g, art: g.sections[i]!.art });
       if (!check)
@@ -483,7 +605,7 @@ for (const g of STREET_PROP_PACK) {
     );
     if (state !== "wrecked" && drift / w > 0.03)
       fail(shot.name, `moved ${((drift / w) * 100).toFixed(1)}% against the intact image`);
-    if (state === "wrecked") await wreckCheck(g, fit, shot, intact.img.width);
+    if (state === "wrecked") await wreckCheck(g, at, shot, intact.img.width, fit);
     sheet.push({ label: shot.name, frames });
     if (g.id.startsWith("sedan")) sedanFrames.set(`${g.id}-${state}`, frames);
     // The seam check: the two intact halves, laid over each other exactly as the board

@@ -36,6 +36,22 @@ const SHOTS = [
   ["seed-8", `place=intersection&seed=8&actors=0&reveal=0`, { scenic: true }],
   ["seed-8-neutral", `place=intersection&seed=8&actors=0&reveal=0&night=0`, { scenic: true }],
   ["r0-sedans-seed-0", `place=intersection&seed=0&actors=0&reveal=0&night=0&cam=-215,-95,4`],
+  // the planter and cabinet wrecks, alone and with a character beside, behind and on them
+  ["wrecks-kerb", `${S7}&cam=-205,-10,5&actors=0&reveal=0&night=0&damage=destroyed`],
+  ["wrecks-kerb-night", `${S7}&cam=-205,-10,5&actors=0&reveal=0&damage=destroyed`],
+  [
+    "wrecks-behind",
+    `${S7}&cam=-205,-10,5&actors=1&player=7.4,10.6&reveal=0&night=0&damage=destroyed`,
+  ],
+  [
+    "wrecks-beside",
+    `${S7}&cam=-205,-10,5&actors=1&player=10.6,8.6&reveal=0&night=0&damage=destroyed`,
+  ],
+  ["wrecks-on", `${S7}&cam=-205,-10,5&actors=1&player=9,9&reveal=0&night=0&damage=destroyed`],
+  [
+    "wrecks-cabinet-behind",
+    `${S7}&cam=-205,-10,5&actors=1&player=8.6,1.4&reveal=0&night=0&damage=destroyed`,
+  ],
 ];
 const ONLY = process.env.ONLY?.split(",");
 

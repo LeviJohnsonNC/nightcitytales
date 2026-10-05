@@ -22,6 +22,8 @@ export const MATERIAL_KEYS = [
   "roof-membrane",
   "shutter",
   "painted-metal",
+  "roof-ballast",
+  "painted-render",
 ] as const;
 export type MaterialKey = (typeof MATERIAL_KEYS)[number];
 
@@ -38,6 +40,9 @@ type Rgb = readonly [number, number, number];
  *             and on the edge of every sidewalk zone, which are whole metres.
  *   shutter   3.6 m: eighteen slats, at the 0.2 m pitch the old drawn lines used.
  *   metal     2 m: the size of the rooftop units it covers.
+ *   ballast   2 m: stones of 20-40 mm, which read as grain at play zoom only this
+ *             big; already contrasty, so no lift.
+ *   render    4 m: trowel marks 0.2-0.5 m; lifted like the concrete it sits beside.
  *   the rest  4 m: grain that is only ever read as tone at play zoom.
  */
 export const SURFACE_MATERIALS: Record<MaterialKey, { metres: number; mean: Rgb; gain: number }> = {
@@ -47,6 +52,8 @@ export const SURFACE_MATERIALS: Record<MaterialKey, { metres: number; mean: Rgb;
   "roof-membrane": { metres: 4, mean: [63, 63, 61], gain: 1.6 },
   shutter: { metres: 3.6, mean: [91, 90, 88], gain: 1 },
   "painted-metal": { metres: 2, mean: [84, 94, 101], gain: 3 },
+  "roof-ballast": { metres: 2, mean: [104, 100, 93], gain: 1 },
+  "painted-render": { metres: 4, mean: [134, 124, 111], gain: 2 },
 };
 
 export const materialUrl = (key: MaterialKey) => `/images/materials/${key}.webp`;
