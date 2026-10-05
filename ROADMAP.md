@@ -1619,3 +1619,16 @@ a valance sign that survives the cutaway, and stronger contact shading. Captures
 framing (`cam=`, `player=`) and sit beside the reference. **Awaiting Levi's review.** Open items: the lamp still
 sits over the parked car (a recipe position change), and the cutaway floors still dominate with reveal on (a
 separate treatment is proposed, not built).
+
+[Finishing the corner](docs/checkpoint-storefront-finish.md) is done.
+
+- The streetlight's arm is now chosen from saved geometry, so the lantern hangs clear of the parked car.
+  All 68 lamps in seeds 0–80 clear, and the base never moves.
+- Contrast is refined selectively: deeper contacts and recesses, a material grade that separates asphalt
+  from paving, lamp-lit edges, readable windows, and a feathered cone and spill.
+- A blade sign stands off the fascia. It fades and leaves with its wall.
+
+A quieter cutaway was compared and **not adopted**. **Awaiting Levi's review.**
+
+Next: the [street-prop pack](docs/street-props-pack.md), meaning the sedan, planter and cabinet guides and
+prompts. Commission only `street-sedan-r90-intact.png` first and validate it in game.
