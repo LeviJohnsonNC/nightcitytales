@@ -1,6 +1,7 @@
 # Street props — art pack for the seed-7 corner
 
-Status: **specification and guides ready; nothing commissioned yet.** The next visual step
+Status: **imported.** All twelve images are in game; see
+[`checkpoint-street-props.md`](checkpoint-street-props.md) for the evidence. The next visual step
 after the storefront corner ([`checkpoint-storefront-finish.md`](checkpoint-storefront-finish.md))
 is replacing the placeholder props beside it:
 
@@ -95,23 +96,33 @@ importer).
 
 ## 4. How a returned image becomes game art
 
-To be written when the first image arrives (the importer, like `tools/art/storefront-assets.ts`):
+`bun run tools/art/street-props.ts` (add `--check` to validate without writing) does it, from
+`src/assets/creator/street-<id>-<state>.png` to `public/images/street-props/<art>-<state>[-90].webp`.
 
-1. **Validate:**
-   - exact size;
-   - at least 45% pure key;
-   - no magenta fringe after spill subtraction;
-   - no opaque pixel outside the guide's volume (2% tolerance);
-   - no pixel below the footprint's front corner;
-   - for wrecked, nothing taller than the state's limit (`SEDAN.wreckedMax` 0.55 m, `PLANTER.wreckedMax` 0.35 m, `CABINET.wreckedMax` 0.5 m).
-2. **Key out** with the shutter-wear routine (spill subtraction).
-3. **Cut the sedan** by `sedanCut`:
-   - the nearer section keeps its whole volume;
-   - the farther keeps its volume minus the nearer one's silhouette (`guides/sedan-r90-cut.png` shows it).
-4. **Crop each section's frame** (`sectionFrameOnGuide`) and scale it to 512 × 640.
-5. **Load as `prop-<art>-<state>[-90]`** in place of the procedural texture, keeping the procedural kit as the fallback when a file is missing. Registration is the frame's, so `propPlacement` is unchanged.
+1. **Key out** the magenta (spill subtraction, as the shutter wear) and validate: at least 45% pure key,
+   magenta fringe at most 0.15% after spill subtraction.
+2. **Fit, not assume.** Picasso returns 1254 × 1254 whatever canvas is asked for, so the image is fitted to
+   its guide: one uniform scale from the silhouette's width against the guide volume's projected width,
+   aligned on its left extreme and lowest point. The height that falls out is checked against the guide's
+   (±25%). Damaged and wrecked reuse the intact fit, so the object never jumps between states; their
+   silhouette must not drift more than 3% from the intact one, wrecked excepted.
+3. **Cut the sedan** by `sedanCut`. The engine half is the bonnet and front body up to the join; the cabin half
+   is the rear body **and the whole glasshouse**, windscreen included, so no mix of states leaves a roof stub.
+   The nearer section keeps its half, clipped to its own frame; the farther keeps everything else, so the
+   halves always add up to the whole car.
+4. **Crop each section's frame** (`sectionFrameOnGuide`) and scale to 512 × 640 (lanczos3).
+5. **In game**, `streetPropArt.ts` loads the files and replaces `prop-<kind>-<condition>[-90]` with them, with
+   the procedural kit's own contact shadow drawn underneath. A missing file leaves the procedural texture.
+   The sedan has its own files for each rotation; the planter's one file serves both; the cabinet has art at
+   rotation 0 only, so a rotated cabinet keeps the procedural kit.
+
+`imported-frames.jpg` is the proof sheet of every runtime frame; `mixed-sections.jpg` composes the sedan's
+sections in mixed states exactly as the board offsets them.
 
 ## 5. Order: validate one orientation in-game first
+
+In the event, all twelve arrived together and were validated together; the order below stays the advice
+for the next pack.
 
 1. **Commission `street-sedan-r90-intact.png` only.** Import it and check it in
    `/scene-review` at the corner framing
@@ -140,6 +151,10 @@ and one subject per image.
 
 - `src/features/play/courtyard/streetPropPack.ts`, `__tests__/streetPropPack.test.ts`
 - `tools/scenes/street-prop-guides.ts`
+- `tools/art/street-props.ts` (importer), `src/features/play/courtyard/streetPropArt.ts` (renderer),
+  `__tests__/streetPropArt.test.ts`
+- `public/images/street-props/` (runtime frames)
+- `docs/street-props-pack/imported-frames.jpg`, `mixed-sections.jpg`
 - `docs/street-props-pack/guides/`:
   - `<id>-layout.png` (attach)
   - `<id>-annotated.png` (check by eye)

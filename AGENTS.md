@@ -1043,7 +1043,10 @@ sprite on that building's activity layer, sorted by its own footprint, and carri
 more solid than the wall it hangs from, and it leaves with that wall in the cutaway. The night's material grade
 (`paintNightGrade`) is a multiply layer over the ground that is visible only at night. Replacement prop art is
 specified in `courtyard/streetPropPack.ts`, never mirrored, and cut at the sedan's section join by `sedanCut`;
-see `docs/street-props-pack.md`.
+see `docs/street-props-pack.md`. `tools/art/street-props.ts` validates and imports Picasso's images into
+`public/images/street-props/` (one 512 x 640 frame per saved section), and `courtyard/streetPropArt.ts` swaps
+them in under the procedural texture's own key, on intersection scenes only (gated like the materials), keeping
+the procedural kit wherever a file is missing. Registration, sorting, fading and damage are the board's, unchanged.
 
 ## Collaborator names
 

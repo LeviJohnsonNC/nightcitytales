@@ -222,29 +222,94 @@ function hull(points: Point[]): Point[] {
 /**
  * How a whole-car image is cut into its two attackable sections, in guide pixels.
  *
- * Each section owns the screen area of its own 2 m volume. Where the two volumes
- * overlap on screen, the pixel shows whichever is nearer the camera (the board sorts
- * that section in front), so the nearer section keeps the overlap and the farther
- * one is cut along the nearer one's silhouette. Rotation 0: the cabin is nearer.
- * Rotation 90: the engine is. Returned as the polygon each section keeps and the
- * polygon (if any) the farther one must exclude.
+ * The board draws the section nearer the camera in front (rotation 0: the cabin;
+ * rotation 90: the engine). So the nearer section keeps exactly the pixels of its own
+ * half of the CAR, padded a little for bumpers and mirrors, and the farther section
+ * keeps everything else in its frame. The halves split the body at the x = 2 join,
+ * but the glasshouse (windscreen and roof) goes whole to the cabin: it reads as one
+ * piece, and split it would leave a roof stub over a wrecked rear. Together they rebuild the whole car with no pixel in
+ * both. Cutting by the car, not by the 2 m boxes, matters: a box's hull would hand
+ * the front section the windscreen and roof behind it, which shows the moment one
+ * section is wrecked and the other is not.
  */
 export function sedanCut(g: PackGuide) {
-  const height = 1.8;
-  const box = (offset: Point) =>
-    hull(sectionBox(offset, g.rotation, height).map((p) => toGuide(g, p)));
-  const engine = box(g.sections[0]!.offset);
-  const cabin = box(g.sections[1]!.offset);
   const nearer = g.rotation === 0 ? "sedan-cabin" : "sedan-engine";
+  const farther = nearer === "sedan-cabin" ? "sedan-engine" : "sedan-cabin";
+  const pad = 0.12;
+  const y0 = SEDAN.body.y0 - pad;
+  const y1 = SEDAN.body.y1 + pad;
+  // The halves: the engine is the bonnet and front body, to the join; the cabin is
+  // the rear body from the join and the whole glasshouse, windscreen included, from
+  // where it meets the bonnet. The windscreen and roof read as one piece, so they
+  // never split between a wrecked half and an intact one.
+  const body = (xa: number, xb: number) =>
+    [xa, xb].flatMap((x) =>
+      [y0, y1].flatMap((y) => [
+        [x, y, 0],
+        [x, y, SEDAN.hood + 0.05],
+      ]),
+    );
+  const glass = [
+    ...[SEDAN.cabin.y0 - 0.05, SEDAN.cabin.y1 + 0.05].flatMap((y) => [
+      [SEDAN.windscreenFoot, y, SEDAN.hood],
+      [SEDAN.cabin.x0, y, SEDAN.roof + 0.08],
+      [SEDAN.cabin.x1 + 0.05, y, SEDAN.roof + 0.08],
+      [SEDAN.cabin.x1 + 0.05, y, SEDAN.hood],
+    ]),
+  ];
+  const half =
+    nearer === "sedan-engine"
+      ? body(SEDAN.body.x0 - pad, SEDAN.join)
+      : [...body(SEDAN.join, SEDAN.body.x1 + pad), ...glass];
+  // The nearer section can only keep what lies inside its own frame; anything of its
+  // half beyond that stays with the farther section, or the car would show a hole.
+  const own = sectionFrameOnGuide(
+    g,
+    g.sections.findIndex((s) => s.art === nearer),
+  );
+  const shape = clipToRect(
+    hull(half.map(([x, y, z]) => toGuide(g, sedanPoint(x!, y!, z!, g.rotation)))),
+    own,
+  );
   return {
     nearer,
-    keep: { "sedan-engine": engine, "sedan-cabin": cabin } as Record<string, Point[]>,
-    exclude: {
-      "sedan-engine": nearer === "sedan-cabin" ? cabin : null,
-      "sedan-cabin": nearer === "sedan-engine" ? engine : null,
-    } as Record<string, Point[] | null>,
+    farther,
+    /** The nearer section keeps exactly this; the farther keeps all but this. */
+    nearerShape: shape,
+    keep: { [nearer]: shape, [farther]: null } as Record<string, Point[] | null>,
+    exclude: { [nearer]: null, [farther]: shape } as Record<string, Point[] | null>,
   };
 }
+
+/** A convex polygon clipped to a rectangle (Sutherland-Hodgman). */
+function clipToRect(
+  poly: Point[],
+  r: { x: number; y: number; width: number; height: number },
+): Point[] {
+  const edges: [(p: Point) => number, (a: Point, b: Point) => Point][] = [
+    [(p) => p.x - r.x, (a, b) => lerpAt(a, b, (r.x - a.x) / (b.x - a.x))],
+    [(p) => r.x + r.width - p.x, (a, b) => lerpAt(a, b, (r.x + r.width - a.x) / (b.x - a.x))],
+    [(p) => p.y - r.y, (a, b) => lerpAt(a, b, (r.y - a.y) / (b.y - a.y))],
+    [(p) => r.y + r.height - p.y, (a, b) => lerpAt(a, b, (r.y + r.height - a.y) / (b.y - a.y))],
+  ];
+  let out = poly;
+  for (const [inside, cross] of edges) {
+    const input = out;
+    out = [];
+    input.forEach((b, i) => {
+      const a = input[(i + input.length - 1) % input.length]!;
+      if (inside(b) >= 0) {
+        if (inside(a) < 0) out.push(cross(a, b));
+        out.push(b);
+      } else if (inside(a) >= 0) out.push(cross(a, b));
+    });
+  }
+  return out;
+}
+const lerpAt = (a: Point, b: Point, t: number): Point => ({
+  x: a.x + (b.x - a.x) * t,
+  y: a.y + (b.y - a.y) * t,
+});
 
 /** Where a section's frame sits on the guide: crop this rectangle, scaled, to get it. */
 export function sectionFrameOnGuide(g: PackGuide, section: number) {
