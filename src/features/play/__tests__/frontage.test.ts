@@ -10,9 +10,10 @@ import {
   neighbourFace,
   solidSpans,
 } from "../courtyard/frontage";
-import { frontagePilot } from "../courtyard/composedEnvironment";
+import { frontagePilot, paintBuilding } from "../courtyard/composedEnvironment";
 import { meterBox, METER_BOX, storefrontFor, storefrontOpenings } from "../courtyard/storefront";
 
+const project = (p: { x: number; y: number }) => ({ x: (p.x - p.y) * 32, y: (p.x + p.y) * 16 });
 const scene = (seed: number) => composeScene("intersection", seed).layout.arena;
 const pilotOf = (seed: number) => {
   const arena = scene(seed);
@@ -171,5 +172,51 @@ describe("the architectural pilot: kerbs", () => {
     const dropped = kerbRuns(env.zones).filter((r) => r.dropped);
     // four crossings, each met by pavement at both of its ends
     expect(dropped.length).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe("the architectural pilot: the neighbours' own materials", () => {
+  const tiles = Object.fromEntries(
+    [
+      "facade-concrete",
+      "roof-membrane",
+      "painted-metal",
+      "roof-ballast",
+      "painted-render",
+      "shutter",
+    ].map((k) => [k, { width: 512, height: 512, key: k }]),
+  );
+  const keysLaid = (structureId: string) => {
+    const { env, pilot } = pilotOf(7)!;
+    const used = new Set<string>();
+    const ctx = new Proxy(
+      {},
+      {
+        get: (_t, name: string) => {
+          if (name === "createPattern")
+            return (tile: { key: string }) => {
+              used.add(tile.key);
+              return { setTransform: () => undefined };
+            };
+          if (name === "createRadialGradient" || name === "createLinearGradient")
+            return () => ({ addColorStop: () => undefined });
+          return () => undefined;
+        },
+        set: () => true,
+      },
+    ) as unknown as CanvasRenderingContext2D;
+    const s = env.structures.find((x) => x.id === structureId)!;
+    paintBuilding(ctx, s, project, env.entrances, tiles as never, undefined, pilot.detail(s));
+    return used;
+  };
+
+  it("lays ballast and render on a neighbour, and never on the shop", () => {
+    const neighbour = keysLaid("building_0_middle");
+    expect(neighbour.has("roof-ballast")).toBe(true);
+    expect(neighbour.has("painted-render")).toBe(true);
+    expect(neighbour.has("roof-membrane")).toBe(false);
+    const shop = keysLaid("building_0");
+    expect(shop.has("roof-ballast")).toBe(false);
+    expect(shop.has("painted-render")).toBe(false);
   });
 });

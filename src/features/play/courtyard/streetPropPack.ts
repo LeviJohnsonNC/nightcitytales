@@ -381,6 +381,13 @@ export function propArtRegistration(art: string) {
 export const WRECK_DEBRIS = 0.12;
 
 /**
+ * How far flat debris may lie past a wreck's own ground before the import fails. It is
+ * drawn under every person and clipped at its frame, so a panel lying a little past the
+ * footprint hides nothing; what the gate exists for is height.
+ */
+export const WRECK_APRON = 0.5;
+
+/**
  * The volume a WRECKED image must stay inside, in guide pixels: the object's body,
  * splayed a little, up to its state's limit (`wreckedMax`), plus a thin layer of debris
  * over its 2 m ground. Wrecked remains are walkable and drawn under every person
@@ -388,7 +395,11 @@ export const WRECK_DEBRIS = 0.12;
  * under the person standing behind it. Each entry is a block: its outline seen from
  * the camera (`hull`, a convex polygon) and its ceiling (`top`); the volume is their union.
  */
-export function wreckVolume(g: PackGuide): { hull: Point[]; top: Point[] }[] {
+export function wreckVolume(
+  g: PackGuide,
+  /** How far flat debris may lie past the prop's own ground, in metres. */
+  apron = 0,
+): { hull: Point[]; top: Point[] }[] {
   const box = (
     at: (x: number, y: number, z: number) => Point,
     b: { x0: number; x1: number; y0: number; y1: number },
@@ -399,7 +410,7 @@ export function wreckVolume(g: PackGuide): { hull: Point[]; top: Point[] }[] {
     ),
     top: [at(b.x0, b.y0, z), at(b.x1, b.y0, z), at(b.x1, b.y1, z), at(b.x0, b.y1, z)],
   });
-  const ground = { x0: 0.05, x1: 1.95, y0: 0.05, y1: 1.95 };
+  const ground = { x0: 0.05 - apron, x1: 1.95 + apron, y0: 0.05 - apron, y1: 1.95 + apron };
   if (g.id.startsWith("sedan")) {
     const at = (x: number, y: number, z: number) => toGuide(g, sedanPoint(x, y, z, g.rotation));
     const splay = 0.08;
@@ -412,7 +423,7 @@ export function wreckVolume(g: PackGuide): { hull: Point[]; top: Point[] }[] {
     return [
       box(at, body, SEDAN.wreckedMax),
       box(at, ground, WRECK_DEBRIS),
-      box(at, { ...ground, x0: 2.05, x1: 3.95 }, WRECK_DEBRIS),
+      box(at, { ...ground, x0: 2.05 - apron, x1: 3.95 + apron }, WRECK_DEBRIS),
     ];
   }
   const at = (x: number, y: number, z: number) => toGuide(g, framePoint(x, y, z, g.rotation));

@@ -1650,6 +1650,12 @@ block.
   where use puts it.
 - **Unchanged:** geometry, routes and every other environment.
 
-Next: two tiles (`roof-ballast`, `painted-render`, see [`architecture-pack.md`](docs/architecture-pack.md)), and the
-planter and cabinet wreck edits (see [`street-props-pack.md`](docs/street-props-pack.md#7-lower-wrecks)).
+[The lower wrecks and the neighbours' tiles](docs/checkpoint-wrecks-and-tiles.md) are in.
+
+- **The wrecks.** The planter and cabinet v2 wrecks pass the height gate. A redraw that sits off
+  its footprint is placed on it by translation, and flat spill is reported, not failed. The gate is
+  live, so a wreck that stands too tall fails the import.
+- **The tiles.** `roof-ballast` and `painted-render` give the shop's neighbours their own roof and
+  walls.
+
 **Awaiting Levi's review.**

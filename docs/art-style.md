@@ -440,8 +440,9 @@ Single game prop for an isometric tactical game, painted digitally with fine vis
 
 ### Lower wrecks (edits)
 
-The planter's and the cabinet's wrecks stand too tall for walkable remains: the
-importer measures 27.5% and 32.5% of each heap above its volume (limit 1%; see
+Delivered as `street-planter-wrecked-v2.png` and `street-cabinet-wrecked-v2.png`; both pass.
+The originals stood too tall for walkable remains: the importer measured 27.5% and 32.5% of
+each heap above its volume (limit 1%; see
 [`street-props-pack.md`](street-props-pack.md#7-lower-wrecks)). These are EDITS of the
 images already in the game, so the object, its materials and its place on the canvas
 stay; only the heap comes down. The sedan wrecks pass and are not being redrawn.

@@ -1049,7 +1049,8 @@ them in under the procedural texture's own key, on intersection scenes only (gat
 the procedural kit wherever a file is missing. Registration, sorting, fading and damage are the board's, unchanged.
 A sedan's art is padded past its 2 m frame (`SEDAN_ART_PAD`), and the texture carries where the frame sits
 (`propArtRegistration`, read by `paintCover`): never resize a frame to fit art. The importer refuses a seam between
-the halves and a wreck taller than its `wreckVolume`; see `docs/street-props-pack.md` §4 and §7.
+the halves and a wreck taller than its `wreckVolume` (flat spill within `WRECK_APRON` is reported, not failed); a redraw is
+saved as `<name>-v2.png` beside the original and the importer takes the newest; see `docs/street-props-pack.md` §4 and §7.
 
 ### The architectural pilot (courtyard/frontage.ts)
 
@@ -1063,6 +1064,8 @@ detailed as built things, on intersection scenes with materials only. The rules:
   of an open face (`downpipes`, clear of every opening).
 - **Kerbs.** Every pavement edge meeting a carriageway is a run of kerb stones (`kerbRuns`). Its face shows only where
   the road lies toward the camera, and it drops flush with tactile paving at crossings.
+- **Materials.** A neighbour lays `roof-ballast` on its roof and `painted-render` on its walls, cutaway pieces included;
+  the shop never does.
 - **Wear.** Grime and wear go where use puts it: wall feet, pipe shoes, the shop door, the vendor's stall. Never as an
   all-over noise layer.
 - **Presentation only.** Nothing here adds collision, moves a wall, entrance or route, or changes sorting.

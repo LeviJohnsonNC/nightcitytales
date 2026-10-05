@@ -61,6 +61,13 @@ const MATERIALS = [
   // joint's whole depth, which the plain ratio reads as a step. Judged by eye on
   // a 2x2 tiling instead (the joints run through unbroken), with a looser limit.
   { name: "sidewalk", crop: [3, 3, 1248], seamLimit: 1.8 },
+  // the architectural pilot's neighbours (docs/architecture-pack.md)
+  // Coarse grain: each 8x8 cell of the lighting probe holds only a few stones, so the
+  // probe reads the stones (cells 92..110, no trend), not light. Its quadrant means
+  // differ by 1.8/255: there is no gradient across it. Judged with that, and by eye
+  // on a 2x2 tiling.
+  { name: "roof-ballast", lightingLimit: 20 },
+  { name: "painted-render" },
 ];
 
 /** Mean |difference| across the wrap boundary vs. between ordinary neighbours. */
@@ -132,7 +139,7 @@ async function main() {
     const sourceSeam = seamRatio(sourceRaw, meta.width);
     const flags = [];
     if (after.seam > (material.seamLimit ?? SEAM_LIMIT)) flags.push("SEAM");
-    if (after.lighting > LIGHTING_LIMIT) flags.push("BAKED LIGHT");
+    if (after.lighting > (material.lightingLimit ?? LIGHTING_LIMIT)) flags.push("BAKED LIGHT");
     if (flags.length) failed = true;
     console.log(
       `${material.name.padEnd(16)} ${meta.width}px → ${SIZE}px  ` +

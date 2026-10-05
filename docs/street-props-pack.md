@@ -175,34 +175,44 @@ Wrecked remains are walkable and drawn under every person, so anything taller re
 that is not there, and is drawn under a person standing behind it. A single image can only be
 judged by its silhouette: the remains must sit inside the screen shape of that volume.
 
-| Wreck     | Above its volume | Verdict                                             |
-| --------- | ---------------- | --------------------------------------------------- |
-| sedan r90 | 0.0%             | passes                                              |
-| sedan r0  | 0.0%             | passes                                              |
-| planter   | 27.5%            | redraw: the rubble rises and spills past its ground |
-| cabinet   | 32.5%            | redraw: the torn housing stands far too tall        |
+**The gate is height.** A wreck fails when more than 1% of it stands above its volume. Flat
+debris lying up to 0.5 m past the prop's own ground (`WRECK_APRON`) is allowed and reported as
+"spill": it is drawn under every person and clipped at its frame, so it hides nothing.
 
-**The redraws are edits.** The planter and cabinet wrecks are redrawn as edits of today's images, so the object, its
-materials and its place on the canvas stay. The guides are written by the importer to
-`wreck-guides/<id>-wreck-layout.png`, on the returned images' own 1254 × 1254 canvas, at the
-place the intact object stands:
+**Placement.** A redraw may sit a little off where the intact object stood. The importer moves a
+wreck that fails where it stands onto its footprint by translation alone, never scaling it, by at
+most 0.5 m, and reports the move. A wreck that already passes is left where it is.
+
+**Versions.** A redraw is saved beside the image it replaces as `<name>-v2.png`, then `-v3` and so
+on. The importer takes the newest, and the older files stay in the folder as history.
+
+| Wreck     | Before the edit | After (v2)        | Placed       | Spill past its ground    |
+| --------- | --------------- | ----------------- | ------------ | ------------------------ |
+| sedan r90 | 0.0%            | n/a (not redrawn) | as drawn     | 0.0%                     |
+| sedan r0  | 0.0%            | n/a (not redrawn) | as drawn     | 0.0%                     |
+| planter   | 27.5%           | **0.0%**          | moved 0.03 m | 2.7%                     |
+| cabinet   | 32.5%           | **0.0%**          | moved 0.39 m | 11.3% (doors flung flat) |
+
+All four pass, and `TALL_WRECKS_PENDING` is empty: a wreck that stands too tall now fails the
+import.
+
+**The redraws were edits** of the earlier images, so the object and its materials stayed the same.
+The guides are written by the importer to `wreck-guides/<id>-wreck-layout.png`, on the returned
+images' own 1254 × 1254 canvas, at the place the intact object stands:
 
 - the dark block is the most the remains may occupy, and its top face is the ceiling;
 - the pale slab is the ground, where only flat debris may lie.
 
-`<id>-wreck-check.png` shows today's wreck with its excess in red (never attach). The prompts
-are in [`art-style.md`](art-style.md#lower-wrecks-edits). The sedans pass and are not redrawn.
+`<id>-wreck-check.png` shows the current wreck in place, too tall in red and spill in amber (never
+attach). The prompts are in [`art-style.md`](art-style.md#lower-wrecks-edits).
 
-**Until the redraws arrive**, those two ids are on the importer's `TALL_WRECKS_PENDING` list.
-They import with their excess reported. When a redraw passes, the importer says so; take it off
-the list, and a tall wreck fails the import from then on.
-
-**Characters and the remains** (browser, today's art):
+**Characters and the remains** (browser, `docs/evidence/wrecks-and-tiles/`):
 
 - A character standing on rubble or a shell is drawn over it and reads as standing in the remains.
 - In front of a wreck, nothing changes.
-- Behind the planter's or cabinet's heap, a character is drawn over rubble that should hide their
-  feet. That is the case the lower redraw removes.
+- Behind the old planter's and cabinet's heaps, a character was drawn over rubble that should
+  have hidden their feet. The v2 remains are low enough that a character behind them reads as
+  standing beyond flat rubble.
 
 ## Files
 
