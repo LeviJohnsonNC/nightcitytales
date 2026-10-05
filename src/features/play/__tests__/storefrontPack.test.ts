@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { composeScene } from "@/engine";
 import {
@@ -5,6 +6,7 @@ import {
   STOREFRONT_FACE,
   STOREFRONT_LEVELS,
   STOREFRONT_PACK,
+  STOREFRONT_SIGN,
   packPixelsPerMetre,
 } from "../courtyard/storefrontPack";
 
@@ -27,6 +29,15 @@ describe("storefront art pack", () => {
     expect(shop.height).toBe(STOREFRONT_LEVELS.parapetTop);
   });
 
+  it("draws the sign in code: four square glyph cells that fit the panel", () => {
+    expect(STOREFRONT_PACK.some((a) => (a.id as string) === "sign-panel")).toBe(false);
+    expect([...STOREFRONT_SIGN.text]).toHaveLength(4);
+    const margin = (STOREFRONT_SIGN.width - 4 * STOREFRONT_SIGN.cell) / 2;
+    expect(margin).toBeGreaterThan(0.05);
+    expect(STOREFRONT_SIGN.cell).toBeLessThan(STOREFRONT_SIGN.height);
+    expect(existsSync(`public${STOREFRONT_SIGN.mask}`)).toBe(true);
+  });
+
   it("keeps every element clear of the others on the face", () => {
     const L = STOREFRONT_LEVELS;
     expect(L.glazingTop).toBeLessThan(L.awningWall);
@@ -34,13 +45,18 @@ describe("storefront art pack", () => {
     expect(L.doorHeight).toBeLessThan(L.housingTop);
     expect(L.housingTop).toBeLessThan(L.awningWall);
     expect(L.fasciaTop).toBeLessThan(L.parapetTop);
-    // The sign sits wholly on the building, over the entrance.
-    const half = STOREFRONT_FACE.signWidth / 2;
-    expect(STOREFRONT_FACE.doorCentre - half).toBeGreaterThan(0);
+    // The sign sits wholly on the fascia and the building's face, over the entrance.
+    expect(STOREFRONT_SIGN.s0).toBeGreaterThan(0);
+    expect(STOREFRONT_SIGN.s0 + STOREFRONT_SIGN.width).toBeLessThan(STOREFRONT_FACE.bayStarts[0]!);
+    expect(STOREFRONT_SIGN.z0).toBeGreaterThanOrEqual(L.fasciaBottom);
+    expect(STOREFRONT_SIGN.z0 + STOREFRONT_SIGN.height).toBeLessThanOrEqual(L.fasciaTop);
+    const doorCentre = STOREFRONT_FACE.doorCentre;
+    expect(STOREFRONT_SIGN.s0).toBeLessThan(doorCentre);
+    expect(STOREFRONT_SIGN.s0 + STOREFRONT_SIGN.width).toBeGreaterThan(doorCentre);
     // Bays do not run into the door or each other.
     const door = STOREFRONT_FACE.doorCentre + STOREFRONT_FACE.doorWidth / 2;
     const [first, second] = STOREFRONT_FACE.bayStarts;
-    expect(first).toBeGreaterThan(door);
+    expect(first).toBeGreaterThan(doorCentre);
     expect(second).toBeGreaterThanOrEqual(first! + STOREFRONT_FACE.bayWidth);
   });
 
@@ -70,10 +86,6 @@ describe("storefront art pack", () => {
     expect(byId["window-interior"]!.metres.w).toBe(STOREFRONT_FACE.bayWidth);
     expect(byId["window-interior"]!.metres.h).toBeCloseTo(
       STOREFRONT_LEVELS.glazingTop - STOREFRONT_LEVELS.riser,
-    );
-    expect(byId["sign-panel"]!.metres.w).toBe(STOREFRONT_FACE.signWidth);
-    expect(byId["sign-panel"]!.metres.h).toBeCloseTo(
-      STOREFRONT_LEVELS.fasciaTop - STOREFRONT_LEVELS.fasciaBottom,
     );
     const shutter = byId["shutter-wear"]!;
     expect(shutter.metres.w).toBe(STOREFRONT_FACE.doorWidth);

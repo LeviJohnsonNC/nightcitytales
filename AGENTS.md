@@ -999,3 +999,14 @@ paints exactly as before. The sources stay in `src/assets/creator/` and
 `chargen/art.ts` excludes the originals from the bundle. See
 `docs/checkpoint-material-pass-1.md` for the scope, limits and next-asset
 inventory.
+
+### Intersection revision 7 and the storefront pack
+
+Non-reference intersections compose as recipe **v7**: v6 plus one saved `lamp`
+(cluster `shop_lamp`) beside the corner shop, placed by `addShopLamp` from the
+final geometry so light has a world position to come from. Seeds 1–3 stay v5 and
+snapshots already saved stay v6; `shopLamp.test.ts` holds that nothing else in a
+scene moved. The storefront's art is specified in `courtyard/storefrontPack.ts`
+(one set of numbers for the guides, the renderer and the validation of returned
+images); the kanji sign is a mask rasterised by `tools/art/kanji-sign.mjs` and
+drawn in code, never generated. See `docs/checkpoint-storefront-pack.md`.

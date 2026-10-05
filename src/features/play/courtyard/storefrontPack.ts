@@ -50,7 +50,27 @@ export const STOREFRONT_FACE = {
   bayWidth: 2.2,
   /** The renderer starts a bay every 3 m from 0.5; the one the door sits in is skipped. */
   bayStarts: [3.5, 6.5],
-  signWidth: 1.35,
+} as const;
+
+/**
+ * The kanji sign, drawn in code: 深夜市場 ("Night Market"), the sign in the
+ * reference frame. Not a generated asset: the glyphs are a mask rasterised from a
+ * real font by `tools/art/kanji-sign.mjs`, so the renderer can light and glow them,
+ * and nothing depends on the player having a CJK font. It is a flush light-box on
+ * the fascia over the saved entrance, four square cells in a row. At normal zoom a
+ * cell is about 15 screen pixels: legible as kanji only when zoomed in.
+ */
+export const STOREFRONT_SIGN = {
+  text: "深夜市場",
+  mask: "/images/signs/shenye-ichiba.webp",
+  /** Distance along the face from the building's west corner, in metres. */
+  s0: 0.05,
+  width: 1.9,
+  /** Height above the pavement of the panel's foot. */
+  z0: 2.85,
+  height: 0.7,
+  /** Each glyph cell is square: 4 x 0.43 m inside a 0.09 m margin. */
+  cell: 0.43,
 } as const;
 
 export type PackRect = { x: number; y: number; w: number; h: number };
@@ -58,7 +78,7 @@ export type PackZone = { id: string; label: string; rect: PackRect };
 export type PackPoint = { id: string; label: string; x: number; y: number };
 
 export interface PackAsset {
-  id: "window-interior" | "sign-panel" | "awning-fabric" | "shutter-wear";
+  id: "window-interior" | "awning-fabric" | "shutter-wear";
   /** File name Picaso saves it as, and the one the pack will be validated under. */
   file: string;
   canvas: { w: number; h: number };
@@ -148,38 +168,6 @@ const windowInterior = build(
   },
 );
 
-/** The one sign: a flush light-box on the fascia above the saved entrance. */
-const signPanel = build(
-  {
-    id: "sign-panel",
-    file: "storefront-sign-panel.png",
-    canvas: CANVAS_3_2,
-    metres: { w: 1.35, h: 0.9 },
-    plane: "wall",
-    placement: `on the fascia above the door, s ${(STOREFRONT_FACE.doorCentre - 0.675).toFixed(3)}-${(STOREFRONT_FACE.doorCentre + 0.675).toFixed(3)} m, z ${STOREFRONT_LEVELS.fasciaBottom}-${STOREFRONT_LEVELS.fasciaTop} m`,
-    key: null,
-    tilesAcross: false,
-  },
-  (a) => {
-    const w = a.metres.w;
-    const h = a.metres.h;
-    return {
-      zones: [
-        zone(a, "rim-top", "light-box rim", { x: 0, y: 0, w, h: 0.04 }),
-        zone(a, "rim-bottom", "light-box rim", { x: 0, y: h - 0.04, w, h: 0.04 }),
-        zone(a, "rim-left", "light-box rim", { x: 0, y: 0, w: 0.04, h }),
-        zone(a, "rim-right", "light-box rim", { x: w - 0.04, y: 0, w: 0.04, h }),
-      ],
-      points: [
-        point(a, "bolt-tl", "mounting bolt", 0.1, 0.1),
-        point(a, "bolt-tr", "mounting bolt", w - 0.1, 0.1),
-        point(a, "bolt-bl", "mounting bolt", 0.1, h - 0.1),
-        point(a, "bolt-br", "mounting bolt", w - 0.1, h - 0.1),
-      ],
-    };
-  },
-);
-
 /** Four 0.4 m stripes, joined left to right; stripes run down the slope. */
 const awningFabric = build(
   {
@@ -249,9 +237,4 @@ const shutterWear = build(
   },
 );
 
-export const STOREFRONT_PACK: readonly PackAsset[] = [
-  windowInterior,
-  signPanel,
-  awningFabric,
-  shutterWear,
-];
+export const STOREFRONT_PACK: readonly PackAsset[] = [windowInterior, awningFabric, shutterWear];

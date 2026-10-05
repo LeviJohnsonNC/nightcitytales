@@ -78,3 +78,98 @@ export function exchangeNorthFrontages(arena: Arena, actors: SceneActor[]) {
     detail.position = { x: 24 + old.y - 2, y: 24 - old.x };
   }
 }
+
+const LAMP_REASON =
+  "A streetlight stands at the shop's corner, lighting its frontage and the pavement beside it";
+
+/** A point `s` metres along a structure's face from its first corner and `out`
+ * metres away from the wall (negative: alongside the wall, behind the face line). */
+function facePoint(r: Rect, edge: "north" | "east" | "south" | "west", s: number, out: number) {
+  switch (edge) {
+    case "north":
+      return { x: r.x + s, y: r.y - out };
+    case "south":
+      return { x: r.x + s, y: r.y + r.height + out };
+    case "west":
+      return { x: r.x - out, y: r.y + s };
+    case "east":
+      return { x: r.x + r.width + out, y: r.y + s };
+  }
+}
+
+/**
+ * Recipe revision 7: one saved lamp at the shop's corner, so the storefront has a
+ * light source in the scene rather than one invented by the renderer.
+ *
+ * Lamps were only ever saved where a frontage cluster put one, and none of them
+ * stood near the corner shop. This reads the FINAL geometry (after the program
+ * exchange and any quarter turn), finds the shop by its awning, and tries the
+ * pavement at either end of the awning and past either corner of the facade, in
+ * that order, taking the first point that is on a sidewalk, clear of every
+ * reservation, structure, prop, entrance and actor. It is dressing: nonblocking,
+ * saved, and a lamp's light comes from where it stands.
+ *
+ * Returns whether a lamp was placed; a scene with no legal point simply has none.
+ */
+export function addShopLamp(arena: Arena, actors: readonly SceneActor[]): boolean {
+  const env = arena.environment!;
+  const shop = env.structures.find((s) => s.attachments?.some((a) => a.id === "shop-canopy"));
+  if (!shop) return false;
+  const awning = shop.attachments!.find((a) => a.id === "shop-canopy")!;
+  const length =
+    awning.edge === "north" || awning.edge === "south" ? shop.rect.width : shop.rect.height;
+  const along = [
+    // beside the awning's two ends, then past the facade's two ends
+    [awning.offset + awning.span + 0.6, 0.5],
+    [awning.offset - 0.6, 0.5],
+    [-0.6, -0.5],
+    [length + 0.6, -0.5],
+    [awning.offset + awning.span + 0.6, 1.2],
+    [awning.offset - 0.6, 1.2],
+  ] as const;
+  const inside = (p: Point, r: Rect, margin = 0) =>
+    p.x > r.x - margin &&
+    p.x < r.x + r.width + margin &&
+    p.y > r.y - margin &&
+    p.y < r.y + r.height + margin;
+  const keepClear: Point[] = [
+    ...env.entrances!.map((e) => e.position),
+    ...actors.map((a) => a.position),
+    arena.playerStart,
+  ];
+  const walkways = env.zones.filter((z) =>
+    ["aisle", "crosswalk", "intersection", "road", "parking", "alley"].includes(z.kind),
+  );
+  for (const [s, out] of along) {
+    const p = facePoint(shop.rect, awning.edge, s, out);
+    const zone = env.zones.find(
+      (z) => (z.kind === "sidewalk" || z.kind === "frontage") && inside(p, z.rect),
+    );
+    if (
+      !zone ||
+      p.x < 0 ||
+      p.y < 0 ||
+      p.x > arena.extent.width ||
+      p.y > arena.extent.height ||
+      walkways.some((z) => inside(p, z.rect)) ||
+      env.structures.some((st) => inside(p, st.rect, 0.3)) ||
+      arena.cover!.some((c) => inside(p, c.rect, 0.5)) ||
+      keepClear.some((k) => Math.hypot(k.x - p.x, k.y - p.y) < 1.4)
+    )
+      continue;
+    env.clusters.push({
+      id: "shop_lamp",
+      kind: "street_lamp",
+      zoneId: zone.id,
+      reason: LAMP_REASON,
+    });
+    env.dressing.push({
+      id: "shop_lamp_detail_0",
+      kind: "lamp",
+      position: { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 },
+      clusterId: "shop_lamp",
+    });
+    return true;
+  }
+  return false;
+}

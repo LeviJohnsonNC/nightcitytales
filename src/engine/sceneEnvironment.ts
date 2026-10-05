@@ -123,7 +123,7 @@ export type SceneEnvironment = {
   version: 1;
   recipe:
     "intersection" | "alley" | "office" | "nightclub" | "warehouse" | "garage" | "residential";
-  recipeVersion: 1 | 2 | 3 | 4 | 5 | 6;
+  recipeVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   composition?: CompositionSelection;
   /** Room connections are openings, not interactive doors or a second navigation system. */
   interior?: {
@@ -193,7 +193,7 @@ function rectangle(v: unknown, thin = false): Rect {
 /** Closed vocabulary, bounded geometry, referential integrity; no catalog regeneration. */
 export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnvironment {
   const r = obj(value);
-  if (r["version"] !== 1 || ![1, 2, 3, 4, 5, 6].includes(r["recipeVersion"] as number)) fail();
+  if (r["version"] !== 1 || ![1, 2, 3, 4, 5, 6, 7].includes(r["recipeVersion"] as number)) fail();
   const ids = new Set<string>();
   const id = (v: unknown) => {
     const key = str(v);
@@ -426,7 +426,7 @@ export function readSceneEnvironment(value: unknown, arena: Arena): SceneEnviron
       "garage",
       "residential",
     ] as const),
-    recipeVersion: r["recipeVersion"] as 1 | 2 | 3 | 4 | 5 | 6,
+    recipeVersion: r["recipeVersion"] as 1 | 2 | 3 | 4 | 5 | 6 | 7,
     ...((r["recipeVersion"] as number) >= 5
       ? { composition: readCompositionSelection(r["composition"], r["recipe"]) }
       : {}),
