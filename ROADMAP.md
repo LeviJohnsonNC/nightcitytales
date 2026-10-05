@@ -1604,3 +1604,9 @@ other environments render pixel-identically. Before/after browser captures are i
 available to compare against, and real campaign movement, firing and save/load are still
 unchecked. Next: facade and prop art that needs silhouette and ground-anchor guides
 (shopfront bay, shutter door with housing, awning, rooftop units, standing props).
+
+[Storefront corner](docs/checkpoint-storefront-pack.md) is the next step on intersection seed 7:
+a three-image art pack (window interior, awning fabric, shutter wear) with exact guides and
+prompts, a code-drawn kanji sign (深夜市場), and recipe revision 7, which adds one saved shop
+lamp without moving anything else. Waiting on the three images; then frames, shutter housing,
+awning, rooftop units, contact shadows and the four lighting steps, in the order the brief sets.

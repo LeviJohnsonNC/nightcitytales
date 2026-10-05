@@ -29,6 +29,7 @@ import {
   STOREFRONT_FACE,
   STOREFRONT_LEVELS,
   STOREFRONT_PACK,
+  STOREFRONT_SIGN,
   packPixelsPerMetre,
   type PackAsset,
 } from "@/features/play/courtyard/storefrontPack";
@@ -160,17 +161,25 @@ function elevationSvg() {
     ),
   );
   b.push(label(X(7.4), Y(L.fasciaTop - 0.42), "fascia band (code)", 20));
-  const sx0 = F.doorCentre - F.signWidth / 2;
   b.push(
     r(
-      sx0,
-      L.fasciaBottom,
-      sx0 + F.signWidth,
-      L.fasciaTop,
+      STOREFRONT_SIGN.s0,
+      STOREFRONT_SIGN.z0,
+      STOREFRONT_SIGN.s0 + STOREFRONT_SIGN.width,
+      STOREFRONT_SIGN.z0 + STOREFRONT_SIGN.height,
       `fill="#f2c14e" fill-opacity=".75" stroke="#7a4b00" stroke-width="4"`,
     ),
   );
-  b.push(label(X(F.doorCentre), Y(3.2) + 7, "B sign", 24, "middle", "#4a2a00"));
+  b.push(
+    label(
+      X(STOREFRONT_SIGN.s0 + STOREFRONT_SIGN.width / 2),
+      Y(3.2) + 7,
+      "深夜市場 sign (code)",
+      22,
+      "middle",
+      "#4a2a00",
+    ),
+  );
   // door, shutter housing and rails
   b.push(
     r(
@@ -348,13 +357,13 @@ async function contextPlacement(port: string) {
   parts.push(
     quad(
       wall(
-        F.doorCentre - F.signWidth / 2,
-        L.fasciaBottom,
-        F.doorCentre + F.signWidth / 2,
-        L.fasciaTop,
+        STOREFRONT_SIGN.s0,
+        STOREFRONT_SIGN.z0,
+        STOREFRONT_SIGN.s0 + STOREFRONT_SIGN.width,
+        STOREFRONT_SIGN.z0 + STOREFRONT_SIGN.height,
       ),
       "#ffd23f",
-      "B",
+      "sign",
     ),
   );
   parts.push(

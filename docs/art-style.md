@@ -319,7 +319,7 @@ Painterly cyberpunk illustration for a game UI card, rendered as a digital oil p
 
 A fourth look, for surfaces the combat renderer projects onto saved geometry:
 flat, straight-on, unlit pictures of one surface, never a scene. The game adds
-all light and shadow, so none may be painted in. The four requested for the
+all light and shadow, so none may be painted in. The three requested for the
 seed-7 corner shop are sized, zoned and mapped in
 [`checkpoint-storefront-pack.md`](checkpoint-storefront-pack.md). **Attach, with
 each prompt, the reference frame you are matching and that asset's
@@ -343,13 +343,6 @@ and `window-interior-layout.png`. `{surface}` = `the interior of a shop seen str
 
 ```text
 (Facade wrapper with W=1536, H=1024) Subject: the inside of a small late-night noodle and convenience shop, seen straight through its window glass at eye level (about 1.5 m up), with no glass, no reflections and no frame painted: just the room. A dim back wall of shelving stacked with boxes, tins and bottles in shallow depth; a worn counter edge crossing the lower left third; two unlit pendant lamp fixtures hanging from a dark ceiling; a menu board on the back wall with illegible abstract marks only. Mid-dark values with warm brown, olive and muted teal, nothing brighter than a soft off-white, so the game can light it. Every lamp and screen is OFF in the picture. Keep the narrow vertical strip at the horizontal centre plain wall, with no object crossing it. Keep a 7 cm border all round plain and dark.
-```
-
-**`storefront-sign-panel.png`** — 1536 × 1024, landscape. Attach the reference and
-`sign-panel-layout.png`. `{surface}` = `a flush light-box shop sign`.
-
-```text
-(Facade wrapper with W=1536, H=1024) Subject: one small, restrained shop sign, 1.35 m x 0.9 m: a dark weathered enamel panel in a chunky painted-steel rim, with four bolts, and a single bold pictogram of a steaming noodle bowl made of simple neon-tube strokes in saturated cyan and amber, with a hand-painted amber border line inside the rim. NO letters, numerals, kanji, symbols that read as writing, or logos anywhere. The tubes are flat, fully saturated strokes with crisp edges and NO glow or halo around them (the game will make them emit light). Chipped paint, dirt along the bottom edge, one hairline crack. The pictogram stays inside the central three quarters; the rim is plain painted metal.
 ```
 
 **`storefront-awning-fabric.png`** — 1024 × 1024, square. Attach the reference and

@@ -3,7 +3,7 @@ import {
   compositionChoice,
   type CompositionRequirements,
 } from "./sceneComposition";
-import { exchangeNorthFrontages } from "./intersectionPrograms";
+import { addShopLamp, exchangeNorthFrontages } from "./intersectionPrograms";
 /** Bounded cluster placement over semantic parcels. No model calls, free-cell scattering or retries. */
 import type { Arena, Point, Rect } from "./battlefield";
 import { placeSceneClusters, type Slot } from "./sceneClusters";
@@ -352,7 +352,9 @@ export function composeScene(
   const selection = compositionSelection(kind, seed, requirements);
   const variant = selection?.family ?? (seed + 2) % 3;
   const refined = !(seed >= 1 && seed <= 3);
-  const revision = refined ? 6 : 5;
+  // Revision 7 adds the saved shop lamp. Seeds 1-3 keep their accepted v5 geometry,
+  // and every v6 snapshot already saved keeps loading as it was.
+  const revision = refined ? (kind === "intersection" ? 7 : 6) : 5;
   const plan = recipe(kind, variant);
   if (refined && kind === "alley" && variant === 1) {
     // Two opposed service courts turn a pocket shift into a cross-yard organization.
@@ -572,6 +574,7 @@ export function composeScene(
       e.position = swapPoint(e.position);
     });
   }
+  if (revision === 7) addShopLamp(arena, actors);
   const reachable = reachableTiles({
     arena,
     cover: {},
