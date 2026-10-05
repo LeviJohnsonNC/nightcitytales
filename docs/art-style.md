@@ -314,3 +314,54 @@ Painterly cyberpunk illustration for a game UI card, rendered as a digital oil p
 ```text
 Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human, lived-in and a little playful. Portrait orientation, 2:3. This image sits behind text on a card: put the whole idea, the subject and its action, in the TOP 45% of the frame, and let the bottom half fall away into dark, simple, low-detail ground (wet pavement, deep shadow, a dark tabletop) so text laid over it stays readable. One clear idea, readable at a glance at small size. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but not muddy. No text, no letters, no numbers, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A runner in a dim studio stands at a huge analog mixing desk, one hand pushing a fader up, the other resting on a knob. Instead of a song, the monitor wall above the desk shows a glowing wireframe of a human body, and each fader lights a different part of it: the arms, the eyes, the heart. The runner's face is lit from below by the desk's rows of coloured LEDs. Camera behind and to one side of the runner, the monitor wall filling the top of the frame. The desk's front edge falls away into black.
 ```
+
+## Storefront facade assets (combat scenes)
+
+A fourth look, for surfaces the combat renderer projects onto saved geometry:
+flat, straight-on, unlit pictures of one surface, never a scene. The game adds
+all light and shadow, so none may be painted in. The four requested for the
+seed-7 corner shop are sized, zoned and mapped in
+[`checkpoint-storefront-pack.md`](checkpoint-storefront-pack.md). **Attach, with
+each prompt, the reference frame you are matching and that asset's
+`docs/storefront-pack/guides/<asset>-layout.png`** (exact canvas size; the layout
+is a measured guide, not something to copy). Save under the file name above each
+prompt. The image tool offers 3:2, 2:3 and 1:1, which is why every canvas is one
+of those.
+
+### Facade wrapper
+
+Replace `{W}`, `{H}`, `{surface}` and `{subject}`.
+
+```text
+Flat, straight-on game texture for an isometric tactical game, painted digitally with fine visible brush texture, in the grounded, lived-in late-1980s and 1990s neon-noir cyberpunk look of a matte painting. This is ONE surface seen exactly face-on ({surface}): an orthographic elevation with no camera tilt, no perspective across the surface, no horizon, and no surroundings. Evenly and softly lit, as on an overcast day. Do NOT paint any lighting into it: no glow, bloom, lens flare, light spill, light cones, cast shadows from outside the image, wet reflections, rain streaks, haze or vignette. The game adds all of that. Fill the canvas edge to edge at exactly {W} x {H} px. The attached layout image is a measured guide to where things go: follow its proportions and zones but do NOT reproduce its lines, tints, hatching, crosses, grid or any text. Zones hatched red in the guide are covered by game geometry: keep them plain, low-detail and the same material as their neighbours. Crisp, readable shapes with moderate contrast, because it will be shown at about 70 pixels wide. No text, no readable signage, no logos, no watermarks, no people, no collage. DO NOT let previous images influence this one. Subject: {subject}
+```
+
+### Requested images
+
+**`storefront-window-interior.png`** — 1536 × 1024, landscape. Attach the reference
+and `window-interior-layout.png`. `{surface}` = `the interior of a shop seen straight through a shop window`.
+
+```text
+(Facade wrapper with W=1536, H=1024) Subject: the inside of a small late-night noodle and convenience shop, seen straight through its window glass at eye level (about 1.5 m up), with no glass, no reflections and no frame painted: just the room. A dim back wall of shelving stacked with boxes, tins and bottles in shallow depth; a worn counter edge crossing the lower left third; two unlit pendant lamp fixtures hanging from a dark ceiling; a menu board on the back wall with illegible abstract marks only. Mid-dark values with warm brown, olive and muted teal, nothing brighter than a soft off-white, so the game can light it. Every lamp and screen is OFF in the picture. Keep the narrow vertical strip at the horizontal centre plain wall, with no object crossing it. Keep a 7 cm border all round plain and dark.
+```
+
+**`storefront-sign-panel.png`** — 1536 × 1024, landscape. Attach the reference and
+`sign-panel-layout.png`. `{surface}` = `a flush light-box shop sign`.
+
+```text
+(Facade wrapper with W=1536, H=1024) Subject: one small, restrained shop sign, 1.35 m x 0.9 m: a dark weathered enamel panel in a chunky painted-steel rim, with four bolts, and a single bold pictogram of a steaming noodle bowl made of simple neon-tube strokes in saturated cyan and amber, with a hand-painted amber border line inside the rim. NO letters, numerals, kanji, symbols that read as writing, or logos anywhere. The tubes are flat, fully saturated strokes with crisp edges and NO glow or halo around them (the game will make them emit light). Chipped paint, dirt along the bottom edge, one hairline crack. The pictogram stays inside the central three quarters; the rim is plain painted metal.
+```
+
+**`storefront-awning-fabric.png`** — 1024 × 1024, square. Attach the reference and
+`awning-fabric-layout.png`. `{surface}` = `a shop awning's canvas, laid flat`.
+
+```text
+(Facade wrapper with W=1024, H=1024) Subject: weathered shop-awning canvas, laid flat and seen face-on. Exactly four vertical stripes, each exactly 256 px wide and running the full height: teal (#527b76), cream (#c6b999), teal, cream, from left to right, with the first teal stripe flush with the left edge and the last cream stripe flush with the right edge, so the picture repeats seamlessly side to side. Visible woven-canvas texture, sun-fade streaks, grime and old rain stains running down the stripes, two stitched patch repairs. No folds, creases, sagging, scalloped edge, valance, trim, rope, bracket or perspective: it is a flat piece of cloth, and the bottom 5% is plain stripes. Stripe edges are straight and vertical. Left and right edges must match when the image is repeated.
+```
+
+**`storefront-shutter-wear.png`** — 1024 × 1536, portrait. Attach the reference and
+`shutter-wear-layout.png`. `{surface}` = `a roller-shutter door, as a wear overlay`.
+
+```text
+(Facade wrapper with W=1024, H=1536) Subject: a WEAR OVERLAY for a steel roller shutter, not the shutter itself. The whole background is one flat, solid #FF00FF magenta, and only the marks of wear are painted on it: long vertical grime and rain-drip streaks that run down from the top, a bloom of orange rust and flaking paint across the bottom 40%, two or three shallow dents drawn as soft shading, a small spray-paint tag as an abstract, illegible scribble in muted green and grey (never magenta or pink), and torn-tape and sticker residue. NO slats, ribs, lines, door frame, handle, lock or housing: the game supplies those. At least 60% of the canvas stays pure #FF00FF. Marks have hard, clean edges with no feathering, glow or anti-aliased halo into the magenta. Keep the top 8%, the left and right 5%, and the bottom 2% pure #FF00FF.
+```
