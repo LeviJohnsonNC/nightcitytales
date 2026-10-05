@@ -1,8 +1,8 @@
 # Storefront corner — art pack and plan
 
-Status: **waiting on three images** (A, C, D below). The lamp (recipe revision 7)
-and the kanji sign's mask are done; the renderer does not draw the storefront
-yet. Builds on the merged material pass
+Status: **the three images are in and built**; see
+[`checkpoint-storefront-corner.md`](checkpoint-storefront-corner.md). This file stays as the
+specification the art was made to. Builds on the merged material pass
 ([#279](https://github.com/LeviJohnsonNC/nightcitytales/pull/279),
 [`checkpoint-material-pass-1.md`](checkpoint-material-pass-1.md)). Nothing here
 touches saved geometry, entrances, footprints, circulation, cover, targeting,

@@ -9,7 +9,7 @@ import {
 } from "../sceneReviewQuery";
 it("reproduces seed, environment and gameplay/structure review settings through a URL", () => {
   const query =
-    "?place=office&seed=4294967295&view=structure&actors=1&access=1&adventure=1&damage=destroyed&framing=overview&reveal=0";
+    "?place=office&seed=4294967295&view=structure&actors=1&access=1&adventure=1&damage=destroyed&framing=overview&reveal=0&lights=0";
   const value = readReviewQuery(query);
   expect(value).toMatchObject({
     kind: "office",
@@ -20,9 +20,14 @@ it("reproduces seed, environment and gameplay/structure review settings through 
     damage: "destroyed",
     structureOnly: true,
     revealActivity: false,
+    lights: false,
     framing: "overview",
   });
   expect(readReviewQuery(reviewQuery(value))).toEqual(value);
+});
+it("lights are on unless the URL turns them off", () => {
+  expect(readReviewQuery("?place=intersection&seed=7").lights).toBe(true);
+  expect(readReviewQuery("?lights=0").lights).toBe(false);
 });
 it("keeps malformed URL/input seeds out of generation", () => {
   for (const input of ["", "-1", "1.5", "NaN", "1e3", "4294967296"])

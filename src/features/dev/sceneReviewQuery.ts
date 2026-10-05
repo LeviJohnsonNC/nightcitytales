@@ -24,6 +24,7 @@ export function readReviewQuery(search: string) {
     entrances: p.get("access") === "1",
     structureOnly: p.get("view") === "structure",
     revealActivity: p.get("reveal") !== "0",
+    lights: p.get("lights") !== "0",
     framing: p.get("framing") === "overview" ? ("overview" as const) : ("play" as const),
     damage: ["intact", "damaged", "destroyed"].find((d) => d === p.get("damage")) ?? "intact",
   };
@@ -37,6 +38,7 @@ export function reviewQuery(value: ReturnType<typeof readReviewQuery>): string {
     access: value.entrances ? "1" : "0",
     view: value.structureOnly ? "structure" : "furnished",
     reveal: value.revealActivity ? "1" : "0",
+    lights: value.lights ? "1" : "0",
     framing: value.framing,
     damage: value.damage,
   }).toString();

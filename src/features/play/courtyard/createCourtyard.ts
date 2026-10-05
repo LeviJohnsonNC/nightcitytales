@@ -4,6 +4,12 @@ import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment } from "./composedEnvironment";
 import {
+  STOREFRONT_ART_FILES,
+  storefrontAssetKey,
+  type StorefrontArt,
+  type StorefrontArtKey,
+} from "./storefront";
+import {
   MATERIAL_KEYS,
   materialAssetKey,
   materialUrl,
@@ -67,6 +73,9 @@ export type CourtyardModel = {
   structureOnly?: boolean;
   /** Presentation only; solid geometry and targeting remain authoritative. */
   revealActivity?: boolean;
+  /** Light, shade-casting glows and emissive surfaces. Callers remount to change it;
+   * `false` shows the unlit art, for judging it alone. Defaults to on. */
+  lights?: boolean;
   playback?: PlaybackFrame | null | undefined;
   aimTargetId?: string | null;
   camera: { x: number; y: number; zoom: number };
@@ -113,6 +122,8 @@ export function createCourtyard(
   // Only the intersection recipe takes materials so far.
   const materialKeys: readonly MaterialKey[] =
     composed && arena.environment?.recipe === "intersection" ? MATERIAL_KEYS : [];
+  const storefrontKeys = Object.keys(STOREFRONT_ART_FILES) as StorefrontArtKey[];
+  const withStorefront = materialKeys.length > 0;
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   let started = 0;
   let previousLive: LiveEncounter | null = null;
@@ -184,8 +195,12 @@ export function createCourtyard(
       // surface flat, and never fails the scene the way a missing atlas does.
       if (materialKeys.length)
         for (const key of materialKeys) this.load.image(materialAssetKey(key), materialUrl(key));
+      // The storefront's art is the same kind of thing: missing, the shop keeps its look.
+      if (withStorefront)
+        for (const key of storefrontKeys)
+          this.load.image(storefrontAssetKey(key), STOREFRONT_ART_FILES[key]);
       this.load.on("loaderror", (file: { key?: string }) => {
-        if (!file.key?.startsWith("material-")) onFailure();
+        if (!file.key?.startsWith("material-") && !file.key?.startsWith("storefront-")) onFailure();
       });
     }
     create() {
@@ -211,12 +226,20 @@ export function createCourtyard(
         for (const key of materialKeys)
           if (this.textures.exists(materialAssetKey(key)))
             tiles[key] = this.textures.get(materialAssetKey(key)).getSourceImage() as TileSource;
+        const storefrontArt: StorefrontArt = {};
+        for (const key of storefrontKeys)
+          if (this.textures.exists(storefrontAssetKey(key)))
+            storefrontArt[key] = this.textures
+              .get(storefrontAssetKey(key))
+              .getSourceImage() as TileSource;
         structures.push(
           ...createComposedEnvironment(
             this,
             visibleArena,
             project,
             materialKeys.length && Object.keys(tiles).length ? tiles : undefined,
+            withStorefront && Object.keys(storefrontArt).length ? storefrontArt : undefined,
+            initial.lights !== false,
           ),
         );
       } else if (street) createStreetGround(this, project);
@@ -334,7 +357,16 @@ export function createCourtyard(
       for (const prop of structures) {
         const layer = prop.getData("activityLayer");
         const reveal = !model.structureOnly && !!model.revealActivity;
-        prop.setVisible(layer === "cutaway" ? reveal : layer === "full" ? !reveal : true);
+        // A canopy hangs from a wall: in the cutaway it shows only where that wall is kept.
+        prop.setVisible(
+          layer === "cutaway"
+            ? reveal
+            : layer === "full"
+              ? !reveal
+              : layer === "awning"
+                ? !reveal || !!prop.getData("revealOk")
+                : true,
+        );
       }
       sortScenery();
       for (const prop of [...scenery, ...structures]) {
