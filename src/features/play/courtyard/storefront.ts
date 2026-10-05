@@ -23,6 +23,21 @@ import {
   type TileSource,
 } from "./surfaceMaterials";
 import { STOREFRONT_FACE, STOREFRONT_LEVELS as L, STOREFRONT_SIGN as SIGN } from "./storefrontPack";
+import {
+  INTERSECTION_NIGHT,
+  lightColor,
+  paintGroundLight,
+  type GroundLight,
+  type NightLighting,
+} from "./nightLighting";
+
+/**
+ * What a painter is drawing. `albedo` is the art as it is under no light at all
+ * but the ambient; `light` is the light that FALLS on a surface, which the renderer
+ * multiplies by that surface's albedo; `glow` is light a surface GIVES (a lit lens,
+ * a window's glass, neon), added as it is.
+ */
+export type Pass = "albedo" | "light" | "glow";
 
 export const STOREFRONT_ART_FILES = {
   window: "/images/storefront/window-interior.webp",
@@ -47,6 +62,9 @@ export interface Storefront {
   door: number;
   /** Metres along the face to the start of each window bay. */
   bays: number[];
+  /** The bays that face the street. A bay behind a neighbouring building faces its
+   * wall: it is painted, but its room is dark and it throws no light. */
+  litBays: number[];
   /** The saved streetlight beside the shop, if the recipe has one. */
   lamp?: Point;
 }
@@ -58,7 +76,8 @@ export interface Storefront {
  */
 export function storefrontFor(
   structure: SceneStructure,
-  env: Pick<SceneEnvironment, "entrances" | "dressing">,
+  env: Pick<SceneEnvironment, "entrances" | "dressing"> &
+    Partial<Pick<SceneEnvironment, "structures">>,
 ): Storefront | undefined {
   if (structure.style !== "shop") return undefined;
   const awning = structure.attachments?.find((a) => a.id === "shop-canopy" && a.kind === "awning");
@@ -73,7 +92,21 @@ export function storefrontFor(
   const bays: number[] = [];
   for (let s = 0.5; s + 2.2 < length; s += 3) if (!(door > s - 1.1 && door < s + 3.3)) bays.push(s);
   const lamp = env.dressing.find((d) => d.id === "shop_lamp_detail_0")?.position;
-  return { structure, awning, edge, length, door, bays, ...(lamp ? { lamp } : {}) };
+  const front = (s: number): Point =>
+    edge === "north" ? { x: r.x + s, y: r.y - 0.5 } : { x: r.x + r.width + 0.5, y: r.y + s };
+  const covered = (p: Point) =>
+    (env.structures ?? []).some(
+      (o) =>
+        o !== structure &&
+        o.style !== "mesh-fence" &&
+        o.style !== "interior-wall" &&
+        p.x > o.rect.x &&
+        p.x < o.rect.x + o.rect.width &&
+        p.y > o.rect.y &&
+        p.y < o.rect.y + o.rect.height,
+    );
+  const litBays = bays.filter((s) => !covered(front(s + 1.1)));
+  return { structure, awning, edge, length, door, bays, litBays, ...(lamp ? { lamp } : {}) };
 }
 
 /** Screen point for `s` along the face, `out` from the wall, `z` up. */
@@ -166,7 +199,7 @@ export interface FaceOptions {
   ppm: number;
   art: StorefrontArt;
   materials?: MaterialSet | undefined;
-  lights: boolean;
+  pass: Pass;
   /** Paint only this part of the face: a cutaway piece, at its height. */
   clip?: { s0: number; s1: number; zMax: number };
 }
@@ -246,6 +279,13 @@ export function paintStorefrontFace(o: FaceOptions) {
     path(ctx, hull(corners));
     ctx.clip();
   }
+  const reaches = (a: number, b: number) => !o.clip || (b > o.clip.s0 && a < o.clip.s1);
+  const signed = !o.clip || o.clip.zMax > L.fasciaBottom - 0.2;
+  if (o.pass !== "albedo") {
+    paintFaceLight(o, quad, reaches, signed);
+    ctx.restore();
+    return;
+  }
 
   // --- the wall's own trim: base shade, pier lines at both corners ------------
   gradientFill(ctx, quad(0, sf.length, 0, 0.5), at(0, 0, 0), at(0, 0, 0.5), [
@@ -260,7 +300,6 @@ export function paintStorefrontFace(o: FaceOptions) {
   // --- window bays ---------------------------------------------------------
   const depth = 0.12;
   const frame = 0.07;
-  const reaches = (a: number, b: number) => !o.clip || (b > o.clip.s0 && a < o.clip.s1);
   o.sf.bays.forEach((s0, index) => {
     const s1 = s0 + STOREFRONT_FACE.bayWidth;
     // A cutaway piece paints only the bays it actually carries.
@@ -301,16 +340,6 @@ export function paintStorefrontFace(o: FaceOptions) {
       [0.35, "rgba(180,220,230,0)"],
       [1, "rgba(180,220,230,0)"],
     ]);
-    if (o.lights) {
-      // The shop's own light: warm, strongest low where the counter is.
-      ctx.globalCompositeOperation = "lighter";
-      gradientFill(ctx, opening, at(s0, 0, bottom), at(s0, 0, top), [
-        [0, "rgba(255,160,70,.22)"],
-        [0.55, "rgba(255,150,60,.10)"],
-        [1, "rgba(255,150,60,.04)"],
-      ]);
-      ctx.globalCompositeOperation = "source-over";
-    }
     // recess: the wall's thickness shows down the near jamb and across the sill
     fillPoly(
       ctx,
@@ -443,7 +472,7 @@ export function paintStorefrontFace(o: FaceOptions) {
   }
 
   // --- fascia, sign, parapet ---------------------------------------------------
-  if (!o.clip || o.clip.zMax > L.fasciaBottom - 0.2) {
+  if (signed) {
     const fascia = quad(0, sf.length, L.fasciaBottom, L.fasciaTop);
     const done =
       o.materials &&
@@ -515,25 +544,9 @@ export function paintStorefrontFace(o: FaceOptions) {
       ctx.fill();
     }
     if (o.art.kanji) {
-      const margin = (SIGN.width - 4 * SIGN.cell) / 2;
-      const gx = sx0 + margin;
-      const gz = sz1 - (SIGN.height - SIGN.cell) / 2;
-      // unlit tubes are dull coral glass; lit, they are the brightest thing on the street
-      const dull = tintedMask(o.art.kanji, "#8a3a4a");
-      drawOnFace(o, dull, gx, gz, 4 * SIGN.cell, SIGN.cell, 0.06);
-      if (o.lights) {
-        ctx.save();
-        ctx.globalCompositeOperation = "lighter";
-        const halo = tintedMask(o.art.kanji, "#ff5d7c");
-        ctx.shadowColor = "rgba(255,70,110,.9)";
-        ctx.shadowBlur = 5 * Math.max(1, ppm / 12);
-        drawOnFace(o, halo, gx, gz, 4 * SIGN.cell, SIGN.cell, 0.06);
-        ctx.shadowBlur = 0;
-        const core = tintedMask(o.art.kanji, "#ffd7df");
-        ctx.globalAlpha = 0.55;
-        drawOnFace(o, core, gx, gz, 4 * SIGN.cell, SIGN.cell, 0.06);
-        ctx.restore();
-      }
+      // unlit tubes are dull coral glass; the glow pass lights them
+      const g = signGlyphs();
+      drawOnFace(o, tintedMask(o.art.kanji, "#8a3a4a"), g.s, g.zTop, g.width, g.height, 0.06);
     }
     // parapet coping
     fillPoly(ctx, quad(0, sf.length, L.fasciaTop, L.parapetTop), "#3a464b");
@@ -541,26 +554,132 @@ export function paintStorefrontFace(o: FaceOptions) {
     strokeLine(ctx, at(0, 0, L.fasciaTop), at(sf.length, 0, L.fasciaTop), "#0f171c", 1.4);
   }
 
-  // --- the streetlight's wash on the wall nearest it --------------------------
-  if (o.lights && sf.lamp) {
-    const r = sf.structure.rect;
-    const along = sf.edge === "north" ? sf.lamp.x - r.x : sf.lamp.y - r.y;
-    const lampZ = 3.6;
-    const centre = at(along, 0, lampZ);
-    const radius = 4.2 * ppm * 1.0;
-    ctx.save();
-    path(ctx, quad(0, sf.length, 0, L.parapetTop));
-    ctx.clip();
-    ctx.globalCompositeOperation = "lighter";
-    const g = ctx.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, radius);
-    g.addColorStop(0, "rgba(255,196,120,.20)");
-    g.addColorStop(0.5, "rgba(255,176,96,.08)");
-    g.addColorStop(1, "rgba(255,176,96,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(centre.x - radius, centre.y - radius, radius * 2, radius * 2);
-    ctx.restore();
-  }
   ctx.restore();
+}
+
+/** Where the kanji cells of the fascia sign sit on the face. */
+const signGlyphs = () => {
+  const margin = (SIGN.width - 4 * SIGN.cell) / 2;
+  return {
+    s: SIGN.s0 + margin,
+    zTop: SIGN.z0 + SIGN.height - (SIGN.height - SIGN.cell) / 2,
+    width: 4 * SIGN.cell,
+    height: SIGN.cell,
+  };
+};
+
+/** Neon tubes, lit: a coloured halo and a pale core, both added. */
+function lightKanji(
+  o: FaceOptions,
+  mask: TileSource,
+  g: { s: number; zTop: number; width: number; height: number },
+  out: number,
+  blur: number,
+  /** Metres to thicken the tubes by, for a sign too small to hold thin strokes. */
+  bold = 0,
+) {
+  const { ctx } = o;
+  const offsets = bold ? [-bold, 0, bold] : [0];
+  ctx.save();
+  ctx.shadowColor = "rgba(255,70,110,.9)";
+  ctx.shadowBlur = blur;
+  const halo = tintedMask(mask, "#ff5d7c");
+  for (const d of offsets)
+    drawOnFace(o, halo, g.s + d, g.zTop + (bold ? d : 0), g.width, g.height, out);
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 0.6;
+  const core = tintedMask(mask, "#ffd7df");
+  for (const d of offsets) drawOnFace(o, core, g.s + d, g.zTop, g.width, g.height, out);
+  ctx.restore();
+}
+
+/**
+ * The light on the face (`light`) and the light the face gives (`glow`), for the
+ * same part of it the albedo paints. The caller has already clipped to a cutaway
+ * piece; the renderer clips again to the albedo, so nothing here can light a wall
+ * that is not there.
+ */
+function paintFaceLight(
+  o: FaceOptions,
+  quad: (s0: number, s1: number, z0: number, z1: number, out?: number) => Point[],
+  reaches: (a: number, b: number) => boolean,
+  signed: boolean,
+) {
+  const { ctx, sf, ppm } = o;
+  const at = facePoint(sf, o.project, ppm);
+  const night = INTERSECTION_NIGHT;
+  const warm = night.window.color;
+  const bottom = L.riser;
+  const top = L.glazingTop;
+  const door0 = sf.door - STOREFRONT_FACE.doorWidth / 2;
+  const door1 = sf.door + STOREFRONT_FACE.doorWidth / 2;
+  const housing = { s0: door0 - 0.12, s1: door1 + 0.12, z: L.doorHeight, proud: 0.15 };
+  if (o.pass === "light") {
+    // the room behind each window is lit: its interior art shows warm, brightest low
+    for (const s0 of sf.litBays) {
+      const s1 = s0 + STOREFRONT_FACE.bayWidth;
+      if (!reaches(s0, s1)) continue;
+      gradientFill(ctx, quad(s0, s1, bottom, top), at(s0, 0, bottom), at(s0, 0, top), [
+        [0, lightColor(warm, 0.95)],
+        [0.6, lightColor(warm, 0.7)],
+        [1, lightColor(warm, 0.45)],
+      ]);
+    }
+    // the downlight under the housing washes the shutter's head and the wall beside it
+    if (reaches(housing.s0 - 0.6, housing.s1 + 0.6)) {
+      const c = at(sf.door, 0, housing.z);
+      const r = 1.5 * ppm;
+      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
+      g.addColorStop(0, lightColor(night.entrance.color, 0.45));
+      g.addColorStop(1, lightColor(night.entrance.color, 0));
+      path(ctx, quad(housing.s0 - 0.6, housing.s1 + 0.6, 0, L.housingTop + 0.05, 0));
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+    // the streetlight's wash on the end of the wall nearest it
+    const lamp = streetLamp(sf);
+    if (lamp) {
+      const c = at(lamp.s, 0, lamp.headZ - 0.8);
+      const r = 4.6 * ppm;
+      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
+      g.addColorStop(0, lightColor(night.lamp.color, 0.6));
+      g.addColorStop(0.45, lightColor(night.lamp.color, 0.22));
+      g.addColorStop(1, lightColor(night.lamp.color, 0));
+      path(ctx, quad(0, sf.length, 0, L.parapetTop + 0.1, 0));
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+    return;
+  }
+  // glow: what gives light. The glass of each lit window, faintly, over its room.
+  for (const s0 of sf.litBays) {
+    const s1 = s0 + STOREFRONT_FACE.bayWidth;
+    if (!reaches(s0, s1)) continue;
+    gradientFill(ctx, quad(s0, s1, bottom, top), at(s0, 0, bottom), at(s0, 0, top), [
+      [0, lightColor(warm, 0.26)],
+      [0.55, lightColor(warm, 0.11)],
+      [1, lightColor(warm, 0.05)],
+    ]);
+  }
+  // the downlight itself: a bright strip on the housing's underside, front edge
+  if (reaches(housing.s0, housing.s1)) {
+    strokeLine(
+      ctx,
+      at(housing.s0 + 0.25, housing.proud, housing.z + 0.02),
+      at(housing.s1 - 0.25, housing.proud, housing.z + 0.02),
+      lightColor(night.entrance.color, 0.95),
+      1.6,
+    );
+    strokeLine(
+      ctx,
+      at(housing.s0 + 0.3, housing.proud, housing.z + 0.02),
+      at(housing.s1 - 0.3, housing.proud, housing.z + 0.02),
+      "rgba(255,246,224,.9)",
+      0.7,
+    );
+  }
+  if (signed && o.art.kanji)
+    lightKanji(o, o.art.kanji, signGlyphs(), 0.06, 5 * Math.max(1, ppm / 12));
 }
 
 /**
@@ -575,7 +694,7 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
   const { offset, span, projection } = sf.awning;
   const wall = L.awningWall;
   const outer = L.awningOuter;
-  const hem = 0.16;
+  const hem = AWNING_HEM;
   const top = [
     at(offset, 0, wall),
     at(offset + span, 0, wall),
@@ -588,6 +707,10 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
     at(offset + span, projection, outer - hem),
     at(offset, projection, outer - hem),
   ];
+  if (o.pass !== "albedo") {
+    paintAwningLight(o, [...top.slice(0, 3), valance[2]!, valance[3]!]);
+    return;
+  }
   const slope = Math.hypot(projection, wall - outer);
   const canvasM = 1.6;
   // fabric pattern: u along the span, v down the slope, anchored at the wall edge
@@ -640,15 +763,68 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
     strokeLine(ctx, at(s, 0, wall), at(s, projection, outer), "#1b2428", 1.1);
     strokeLine(ctx, at(s, projection, outer), at(s, projection, outer - hem), "#1b2428", 1.1);
   }
-  if (o.lights) {
-    // the shop light reaches up under the canvas: a warm edge along the hem
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    gradientFill(ctx, valance, at(offset, projection, outer), at(offset, projection, outer - hem), [
-      [0, "rgba(255,170,90,.0)"],
-      [1, "rgba(255,170,90,.22)"],
-    ]);
-    ctx.restore();
+  // the shop's name, small, in neon tubes on the valance: the one sign the cutaway keeps
+  if (o.art.kanji) {
+    // a dark lightbox strip on the valance, and the tubes on it, unlit
+    const g = valanceGlyphs(sf);
+    fillPoly(
+      ctx,
+      [
+        at(g.s - 0.08, g.out, g.zTop + 0.025),
+        at(g.s + g.width + 0.08, g.out, g.zTop + 0.025),
+        at(g.s + g.width + 0.08, g.out, g.zTop - g.height - 0.025),
+        at(g.s - 0.08, g.out, g.zTop - g.height - 0.025),
+      ],
+      "#12161c",
+    );
+    drawOnFace(o, tintedMask(o.art.kanji, "#7a3443"), g.s, g.zTop, g.width, g.height, g.out);
+  }
+}
+
+/**
+ * The awning's valance is 0.32 m deep, to carry four 0.25 m glyphs. A vertical
+ * surface this shallow is a few pixels tall from this camera, so the sign is a
+ * glowing band that reads as lettering only up close; it is the one sign the
+ * cutaway keeps.
+ */
+const AWNING_HEM = 0.32;
+const VALANCE_CELL = 0.25;
+
+/** The valance sign, centred on the canopy. */
+function valanceGlyphs(sf: Storefront) {
+  const { offset, span, projection } = sf.awning;
+  const width = 4 * VALANCE_CELL;
+  const centre = offset + span / 2;
+  return {
+    s: centre - width / 2,
+    zTop: L.awningOuter - (AWNING_HEM - VALANCE_CELL) / 2,
+    width,
+    height: VALANCE_CELL,
+    out: projection + 0.005,
+  };
+}
+
+function paintAwningLight(o: Omit<FaceOptions, "clip">, outline: Point[]) {
+  const { ctx, sf, ppm } = o;
+  const at = facePoint(sf, o.project, ppm);
+  if (o.pass === "light") {
+    const lamp = streetLamp(sf);
+    if (!lamp) return;
+    // the streetlight on the canvas, strongest at the end nearest it
+    const c = at(lamp.s, Math.min(sf.awning.projection, Math.max(0, lamp.outM)), L.awningWall);
+    const r = 3.6 * ppm;
+    const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
+    g.addColorStop(0, lightColor(INTERSECTION_NIGHT.lamp.color, 0.7));
+    g.addColorStop(0.5, lightColor(INTERSECTION_NIGHT.lamp.color, 0.22));
+    g.addColorStop(1, lightColor(INTERSECTION_NIGHT.lamp.color, 0));
+    path(ctx, outline);
+    ctx.fillStyle = g;
+    ctx.fill();
+    return;
+  }
+  if (o.art.kanji) {
+    const g = valanceGlyphs(sf);
+    lightKanji(o, o.art.kanji, g, g.out, 3 * Math.max(1, ppm / 12), 0.012);
   }
 }
 
@@ -658,7 +834,7 @@ export interface GroundOptions {
   project: Project;
   ppm: number;
   structures: readonly SceneStructure[];
-  lights: boolean;
+  pass: Pass;
 }
 
 /** A ground-plane polygon from world points. */
@@ -689,33 +865,76 @@ function clipToOpenGround(
 }
 
 /**
- * Painted into the ground canvas, in this order: the contact shadow along the
- * building's base, the awning's shadow on the pavement, then, when lit, the shop's
- * spill in front of its windows and the streetlight's pool.
+ * The shop's lights on the ground, in world metres: a warm fan out of each window,
+ * a pool under the entrance's downlight, and the streetlight's pool under its head.
+ * The ground's light sprite and the tint of everyone standing in them both read this.
+ */
+export function storefrontLights(sf: Storefront, night: NightLighting): GroundLight[] {
+  const o = faceWorld(sf, 0, 0);
+  const a = faceWorld(sf, 1, 0);
+  const b = faceWorld(sf, 0, 1);
+  const along = { x: a.x - o.x, y: a.y - o.y };
+  const out = { x: b.x - o.x, y: b.y - o.y };
+  const lights: GroundLight[] = sf.litBays.map((s0) => ({
+    kind: "spill",
+    origin: o,
+    along,
+    out,
+    s0,
+    s1: s0 + STOREFRONT_FACE.bayWidth,
+    reach: night.window.reach,
+    spread: night.window.spread,
+    color: night.window.color,
+    intensity: night.window.intensity,
+  }));
+  lights.push({
+    kind: "pool",
+    centre: faceWorld(sf, sf.door, night.entrance.out),
+    radius: night.entrance.radius,
+    color: night.entrance.color,
+    intensity: night.entrance.intensity,
+  });
+  const lamp = streetLamp(sf);
+  if (lamp)
+    lights.push({
+      kind: "pool",
+      centre: lamp.head,
+      radius: night.lamp.radius,
+      color: night.lamp.color,
+      intensity: night.lamp.intensity,
+    });
+  return lights;
+}
+
+/**
+ * Painted into the ground canvas: in the albedo, the contact shadow along the
+ * building's base and the awning's shadow on the pavement; in the light pass, the
+ * shop's lights. All of it falls on open pavement only, never into a footprint.
  */
 export function paintStorefrontGround(o: GroundOptions) {
-  const { ctx, sf, project, ppm } = o;
+  const { ctx, sf, project } = o;
+  if (o.pass === "glow") return;
   const across = (s: number, out: number) => project(faceWorld(sf, s, out));
-  const edgeVec = (out: number) => {
-    const a = across(0, 0);
-    const b = across(0, out);
-    return { a, b };
-  };
   ctx.save();
   clipToOpenGround(ctx, project, o.structures);
+  if (o.pass === "light") {
+    for (const light of storefrontLights(sf, INTERSECTION_NIGHT))
+      paintGroundLight(ctx, project, light);
+    ctx.restore();
+    return;
+  }
 
-  // contact shadow along the wall's foot, 0.7 m deep, darkest at the wall
+  // contact shadow along the wall's foot, 0.8 m deep, darkest at the wall
   {
     const strip = groundPoly(project, [
       faceWorld(sf, 0, 0),
       faceWorld(sf, sf.length, 0),
-      faceWorld(sf, sf.length, 0.7),
-      faceWorld(sf, 0, 0.7),
+      faceWorld(sf, sf.length, 0.8),
+      faceWorld(sf, 0, 0.8),
     ]);
-    const { a, b } = edgeVec(0.7);
-    gradientFill(ctx, strip, a, b, [
-      [0, "rgba(2,6,9,.46)"],
-      [0.5, "rgba(2,6,9,.16)"],
+    gradientFill(ctx, strip, across(0, 0), across(0, 0.8), [
+      [0, "rgba(2,6,9,.62)"],
+      [0.35, "rgba(2,6,9,.26)"],
       [1, "rgba(2,6,9,0)"],
     ]);
   }
@@ -729,58 +948,11 @@ export function paintStorefrontGround(o: GroundOptions) {
       faceWorld(sf, offset + span + 0.5, reach),
       faceWorld(sf, offset + 0.5, reach),
     ]);
-    const a = across(offset, 0);
-    const b = across(offset + 0.5, reach);
-    gradientFill(ctx, shade, a, b, [
-      [0, "rgba(2,6,9,.40)"],
-      [0.7, "rgba(2,6,9,.22)"],
+    gradientFill(ctx, shade, across(offset, 0), across(offset + 0.5, reach), [
+      [0, "rgba(2,6,9,.52)"],
+      [0.7, "rgba(2,6,9,.28)"],
       [1, "rgba(2,6,9,0)"],
     ]);
-  }
-
-  if (o.lights) {
-    ctx.globalCompositeOperation = "lighter";
-    // shop spill: a warm fan in front of each window, fading over 3 m
-    for (const s0 of sf.bays) {
-      const s1 = s0 + STOREFRONT_FACE.bayWidth;
-      const fan = groundPoly(project, [
-        faceWorld(sf, s0, 0),
-        faceWorld(sf, s1, 0),
-        faceWorld(sf, s1 + 0.9, 3),
-        faceWorld(sf, s0 - 0.9, 3),
-      ]);
-      gradientFill(ctx, fan, across((s0 + s1) / 2, 0), across((s0 + s1) / 2, 3), [
-        [0, "rgba(255,160,70,.20)"],
-        [0.5, "rgba(255,150,60,.08)"],
-        [1, "rgba(255,150,60,0)"],
-      ]);
-    }
-    // the sign's pink wash on the pavement under the awning is mostly shaded; keep a trace
-    // streetlight pool: a 4.6 m circle on the ground, which projects to an ellipse
-    if (sf.lamp) {
-      const radiusM = 4.6;
-      const c = project(sf.lamp);
-      const ex = {
-        x: project({ x: sf.lamp.x + 1, y: sf.lamp.y }).x - c.x,
-        y: project({ x: sf.lamp.x + 1, y: sf.lamp.y }).y - c.y,
-      };
-      const ey = {
-        x: project({ x: sf.lamp.x, y: sf.lamp.y + 1 }).x - c.x,
-        y: project({ x: sf.lamp.x, y: sf.lamp.y + 1 }).y - c.y,
-      };
-      ctx.save();
-      // world circle -> screen ellipse, through the same affine map as everything else
-      ctx.transform(ex.x, ex.y, ey.x, ey.y, c.x, c.y);
-      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, radiusM);
-      g.addColorStop(0, "rgba(255,206,130,.42)");
-      g.addColorStop(0.35, "rgba(255,190,110,.20)");
-      g.addColorStop(1, "rgba(255,180,100,0)");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, radiusM, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
   }
   ctx.restore();
 }
@@ -797,7 +969,7 @@ export function paintRoofShade(
     const p = project({ x, y });
     return { x: p.x, y: p.y - roofH };
   };
-  const reach = 0.55;
+  const reach = 0.7;
   const north = [
     roof(eq.x, eq.y),
     roof(eq.x + eq.width, eq.y),
@@ -811,11 +983,11 @@ export function paintRoofShade(
     roof(eq.x + eq.width + reach, eq.y),
   ];
   gradientFill(ctx, north, roof(eq.x, eq.y), roof(eq.x, eq.y - reach), [
-    [0, "rgba(4,8,10,.42)"],
+    [0, "rgba(4,8,10,.6)"],
     [1, "rgba(4,8,10,0)"],
   ]);
   gradientFill(ctx, east, roof(eq.x + eq.width, eq.y), roof(eq.x + eq.width + reach, eq.y), [
-    [0, "rgba(4,8,10,.36)"],
+    [0, "rgba(4,8,10,.5)"],
     [1, "rgba(4,8,10,0)"],
   ]);
 }
@@ -834,7 +1006,6 @@ export function paintRooftopUnit(
   roofH: number,
   lidLift: number,
   index: number,
-  lights: boolean,
 ) {
   const lidH = roofH + lidLift;
   const at = (x: number, y: number, lift: number): Point => {
@@ -930,77 +1101,196 @@ export function paintRooftopUnit(
     ctx.lineWidth = 0.8;
     ctx.stroke();
   }
-  if (lights) {
-    // the street's warm light on the lid's near edge: restrained, never a glow
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    strokeLine(ctx, rim[0]!, rim[1]!, "rgba(255,190,120,.12)", 1.2);
-    ctx.restore();
-  }
 }
 
 /**
- * The saved streetlight beside the shop: a pole with a base plate, an arm that
- * reaches out over the pavement in front of the shop, and a lantern. Lit, its lens
- * is the brightest point on the corner and has a small halo; unlit, a dull glass.
- * The light it throws is painted where it falls (the ground, the wall), not here.
+ * The saved streetlight's shape, from its saved ground position: a pole, and an arm
+ * out from the facade over the pavement to a head. The pool it throws is centred
+ * under the head, so the light and its source are one thing. `s` and `out` place the
+ * head in the storefront's own face coordinates.
+ */
+export function streetLamp(sf: Storefront, night: NightLighting = INTERSECTION_NIGHT) {
+  if (!sf.lamp) return undefined;
+  const o = faceWorld(sf, 0, 0);
+  const b = faceWorld(sf, 0, 1);
+  const out = { x: b.x - o.x, y: b.y - o.y };
+  const head = { x: sf.lamp.x + out.x * night.lamp.arm, y: sf.lamp.y + out.y * night.lamp.arm };
+  const r = sf.structure.rect;
+  const s = sf.edge === "north" ? head.x - r.x : head.y - r.y;
+  const outM = sf.edge === "north" ? r.y - head.y : head.x - (r.x + r.width);
+  return {
+    base: sf.lamp,
+    head,
+    /** World unit vector from the pole toward the head. */
+    out,
+    poleZ: night.lamp.poleHeight,
+    headZ: night.lamp.poleHeight - 0.15,
+    /** The head in face coordinates: metres along the face, and out from it. */
+    s,
+    outM,
+  };
+}
+
+/**
+ * The saved streetlight: a footing, a tapered pole, a curved arm and a flat
+ * cobra head over the pavement. In the glow pass its lens is the one small bright
+ * point, with a tight halo; the light it throws is painted where it falls (the
+ * ground, the wall, the awning), never here.
  */
 export function paintStreetLamp(
   ctx: CanvasRenderingContext2D,
   project: Project,
   ppm: number,
   sf: Storefront,
-  lights: boolean,
+  pass: Pass,
 ) {
-  const lamp = sf.lamp;
-  if (!lamp) return;
-  const base = project(lamp);
-  // out from the wall, in screen pixels per metre
-  const o = faceWorld(sf, 0, 0);
-  const o1 = faceWorld(sf, 0, 1);
-  const a = project(o);
-  const b = project(o1);
-  const outward = { x: b.x - a.x, y: b.y - a.y };
-  const top = { x: base.x, y: base.y - 4.1 * ppm };
-  const reach = 0.95;
-  const head = { x: top.x + outward.x * reach, y: top.y + outward.y * reach - 0.12 * ppm };
-  // contact shadow and plate
+  const lamp = streetLamp(sf);
+  if (!lamp || pass === "light") return;
+  const at = (p: Point, z: number) => {
+    const q = project(p);
+    return { x: q.x, y: q.y - z * ppm };
+  };
+  const along = (t: number): Point => ({
+    x: lamp.base.x + lamp.out.x * t,
+    y: lamp.base.y + lamp.out.y * t,
+  });
+  // the head: 0.9 m long along the arm, 0.32 m wide, 0.16 m deep
+  const side = { x: -lamp.out.y, y: lamp.out.x };
+  const corner = (t: number, w: number, z: number) =>
+    at({ x: along(t).x + side.x * w, y: along(t).y + side.y * w }, z);
+  const reach = INTERSECTION_NIGHT.lamp.arm;
+  const h0 = reach - 0.55;
+  const h1 = reach + 0.35;
+  const zTop = lamp.headZ + 0.12;
+  const zBot = lamp.headZ - 0.04;
+  if (pass === "glow") {
+    // a faint cone from the lens to the pavement ties the fixture to its pool
+    const lensMid = at(along((h0 + h1) / 2 + 0.05), zBot);
+    const pool = INTERSECTION_NIGHT.lamp.radius * 0.38;
+    const footL = at({ x: lamp.head.x - side.x * pool, y: lamp.head.y - side.y * pool }, 0);
+    const footR = at({ x: lamp.head.x + side.x * pool, y: lamp.head.y + side.y * pool }, 0);
+    const cone = ctx.createLinearGradient(lensMid.x, lensMid.y, lensMid.x, (footL.y + footR.y) / 2);
+    cone.addColorStop(0, "rgba(255,214,150,.16)");
+    cone.addColorStop(0.5, "rgba(255,204,140,.05)");
+    cone.addColorStop(1, "rgba(255,200,130,0)");
+    path(ctx, [
+      { x: lensMid.x - 3, y: lensMid.y },
+      { x: lensMid.x + 3, y: lensMid.y },
+      footR,
+      footL,
+    ]);
+    ctx.fillStyle = cone;
+    ctx.fill();
+    // the lens: one small, bright point under the head, with a tight halo
+    const r = 0.7 * ppm;
+    const g = ctx.createRadialGradient(lensMid.x, lensMid.y, 0, lensMid.x, lensMid.y, r);
+    g.addColorStop(0, "rgba(255,222,166,.7)");
+    g.addColorStop(0.3, "rgba(255,200,130,.2)");
+    g.addColorStop(1, "rgba(255,190,120,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(lensMid.x - r, lensMid.y - r, r * 2, r * 2);
+    strokeLine(
+      ctx,
+      corner(h0 + 0.3, 0, zBot),
+      corner(h1 - 0.2, 0, zBot),
+      "rgba(255,236,196,.95)",
+      1.3,
+    );
+    return;
+  }
+  const base = at(lamp.base, 0);
+  // contact shadow, footing and base plate
   ctx.beginPath();
-  ctx.ellipse(base.x, base.y, 5.5, 2.4, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(2,6,9,.4)";
+  ctx.ellipse(base.x, base.y, 6.5, 2.8, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(2,6,9,.5)";
   ctx.fill();
+  const foot = (z: number, w: number) => [
+    at({ x: lamp.base.x - w, y: lamp.base.y - w }, z),
+    at({ x: lamp.base.x + w, y: lamp.base.y - w }, z),
+    at({ x: lamp.base.x + w, y: lamp.base.y + w }, z),
+    at({ x: lamp.base.x - w, y: lamp.base.y + w }, z),
+  ];
+  const f0 = foot(0, 0.16);
+  const f1 = foot(0.35, 0.16);
+  fillPoly(ctx, [f0[0]!, f0[1]!, f1[1]!, f1[0]!], "#2a3539");
+  fillPoly(ctx, [f0[1]!, f0[2]!, f1[2]!, f1[1]!], "#1a2327");
+  fillPoly(ctx, f1, "#56646a");
+  // a tapered pole, its edge caught by the light above it
+  const top = at(lamp.base, lamp.poleZ);
+  const low = at(lamp.base, 0.35);
+  fillPoly(
+    ctx,
+    [
+      { x: low.x - 2.2, y: low.y },
+      { x: low.x + 2.2, y: low.y },
+      { x: top.x + 1.3, y: top.y },
+      { x: top.x - 1.3, y: top.y },
+    ],
+    "#141c20",
+  );
+  strokeLine(ctx, { x: low.x - 1.2, y: low.y }, { x: top.x - 0.6, y: top.y }, "#8c9a9c", 0.9);
+  // the arm: a curve rising off the pole and settling onto the head
+  const a0 = at(lamp.base, lamp.poleZ - 0.1);
+  const a1 = at(along(reach * 0.35), lamp.poleZ + 0.18);
+  const a2 = at(along(h0 + 0.05), lamp.headZ + 0.08);
   ctx.beginPath();
-  ctx.ellipse(base.x, base.y - 0.5, 3.4, 1.5, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "#222d32";
-  ctx.fill();
-  // pole, with a bright edge on the side the light is on
-  strokeLine(ctx, base, top, "#161f24", 3.6);
-  strokeLine(ctx, { x: base.x - 0.9, y: base.y }, { x: top.x - 0.9, y: top.y }, "#7d8b8c", 0.9);
-  // arm
-  strokeLine(ctx, top, head, "#161f24", 2.6);
-  strokeLine(ctx, { x: top.x, y: top.y - 0.8 }, { x: head.x, y: head.y - 0.8 }, "#6b7a7c", 0.8);
-  // lantern housing and lens
-  ctx.beginPath();
-  ctx.ellipse(head.x, head.y - 1, 6.2, 2.6, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "#2a363b";
-  ctx.fill();
-  ctx.strokeStyle = "#0f171b";
-  ctx.lineWidth = 0.8;
+  ctx.moveTo(a0.x, a0.y);
+  ctx.quadraticCurveTo(a1.x, a1.y, a2.x, a2.y);
+  ctx.strokeStyle = "#141c20";
+  ctx.lineWidth = 2.6;
+  ctx.lineCap = "round";
   ctx.stroke();
   ctx.beginPath();
-  ctx.ellipse(head.x, head.y + 0.6, 4.6, 1.7, 0, 0, Math.PI * 2);
-  ctx.fillStyle = lights ? "#ffe3ad" : "#7f8574";
-  ctx.fill();
-  if (lights) {
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    const r = 2.6 * ppm;
-    const g = ctx.createRadialGradient(head.x, head.y + 1, 0, head.x, head.y + 1, r);
-    g.addColorStop(0, "rgba(255,214,150,.55)");
-    g.addColorStop(0.4, "rgba(255,190,110,.20)");
-    g.addColorStop(1, "rgba(255,180,100,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(head.x - r, head.y + 1 - r, r * 2, r * 2);
-    ctx.restore();
-  }
+  ctx.moveTo(a0.x, a0.y - 0.9);
+  ctx.quadraticCurveTo(a1.x, a1.y - 0.9, a2.x, a2.y - 0.9);
+  ctx.strokeStyle = "#7f8d90";
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  ctx.lineCap = "butt";
+  // the cobra head: a low box, tapered toward its nose
+  const topFace = [
+    corner(h0, -0.13, zTop),
+    corner(h1, -0.1, zTop - 0.04),
+    corner(h1, 0.1, zTop - 0.04),
+    corner(h0, 0.13, zTop),
+  ];
+  const sideA = [
+    corner(h0, -0.16, zBot),
+    corner(h1, -0.12, zBot),
+    corner(h1, -0.1, zTop - 0.04),
+    corner(h0, -0.13, zTop),
+  ];
+  const sideB = [
+    corner(h0, 0.16, zBot),
+    corner(h1, 0.12, zBot),
+    corner(h1, 0.1, zTop - 0.04),
+    corner(h0, 0.13, zTop),
+  ];
+  const nose = [
+    corner(h1, -0.12, zBot),
+    corner(h1, 0.12, zBot),
+    corner(h1, 0.1, zTop - 0.04),
+    corner(h1, -0.1, zTop - 0.04),
+  ];
+  const back = [
+    corner(h0, -0.16, zBot),
+    corner(h0, 0.16, zBot),
+    corner(h0, 0.13, zTop),
+    corner(h0, -0.13, zTop),
+  ];
+  for (const face of [back, sideA, sideB, nose]) fillPoly(ctx, face, "#1b2529");
+  fillPoly(ctx, topFace, "#4b5a60");
+  path(ctx, hull([...topFace, ...sideA, ...sideB]));
+  ctx.strokeStyle = "#0a1013";
+  ctx.lineWidth = 0.9;
+  ctx.stroke();
+  strokeLine(ctx, topFace[0]!, topFace[1]!, "#8d9b9e", 0.7);
+  // unlit, the lens is a dull sliver of glass
+  const lens = [
+    corner(h0 + 0.1, -0.12, zBot),
+    corner(h1 - 0.06, -0.12, zBot),
+    corner(h1 - 0.06, 0.12, zBot),
+    corner(h0 + 0.1, 0.12, zBot),
+  ];
+  strokeLine(ctx, lens[0]!, lens[1]!, "#80857a", 1);
 }

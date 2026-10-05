@@ -2,7 +2,8 @@ import { sceneryOrder } from "./sceneryOrder";
 import { atlasPropRegistration } from "./atlasPropRegistration";
 import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
-import { createComposedEnvironment } from "./composedEnvironment";
+import { createComposedEnvironment, type ComposedEnvironment } from "./composedEnvironment";
+import { lightAt, tintFor } from "./nightLighting";
 import {
   STOREFRONT_ART_FILES,
   storefrontAssetKey,
@@ -73,9 +74,13 @@ export type CourtyardModel = {
   structureOnly?: boolean;
   /** Presentation only; solid geometry and targeting remain authoritative. */
   revealActivity?: boolean;
-  /** Light, shade-casting glows and emissive surfaces. Callers remount to change it;
-   * `false` shows the unlit art, for judging it alone. Defaults to on. */
+  /** The local lights (the shop, the streetlight, lamps and signs). `false` leaves
+   * the night's ambient as it is and turns only the lights off. Defaults to on. */
   lights?: boolean;
+  /** The night's ambient. `false` is a neutral inspection mode: the materials under
+   * plain light, as painted, with no local lights. Defaults to on where a scene has
+   * a night (the intersection); other scenes have none either way. */
+  night?: boolean;
   playback?: PlaybackFrame | null | undefined;
   aimTargetId?: string | null;
   camera: { x: number; y: number; zoom: number };
@@ -131,6 +136,10 @@ export function createCourtyard(
   const units = new Map<string, Unit>();
   const scenery: Phaser.GameObjects.Image[] = [];
   const structures: Phaser.GameObjects.Image[] = [];
+  /** Everything the night tints, and the scene's night if it has one. */
+  let lit: Phaser.GameObjects.Image[] = [];
+  let night: ComposedEnvironment["night"];
+  let tinted: boolean | null = null;
   let orderKey = "";
   let coverRevision = 0;
   const sortScenery = () => {
@@ -232,16 +241,16 @@ export function createCourtyard(
             storefrontArt[key] = this.textures
               .get(storefrontAssetKey(key))
               .getSourceImage() as TileSource;
-        structures.push(
-          ...createComposedEnvironment(
-            this,
-            visibleArena,
-            project,
-            materialKeys.length && Object.keys(tiles).length ? tiles : undefined,
-            withStorefront && Object.keys(storefrontArt).length ? storefrontArt : undefined,
-            initial.lights !== false,
-          ),
+        const built = createComposedEnvironment(
+          this,
+          visibleArena,
+          project,
+          materialKeys.length && Object.keys(tiles).length ? tiles : undefined,
+          withStorefront && Object.keys(storefrontArt).length ? storefrontArt : undefined,
         );
+        structures.push(...built.objects);
+        lit = built.lit;
+        night = built.night;
       } else if (street) createStreetGround(this, project);
       else this.add.image(550, 350, "source-ground").setDisplaySize(1200, 800).setDepth(-1000);
       // Baked lighting establishes the look. Small additive pools support it.
@@ -347,7 +356,11 @@ export function createCourtyard(
           )
           .setAngle(pose === "hurt" && animated ? -side * 4 : 0);
         unit.sprite.setAlpha(actor.defeated && data.exitReason !== "dead" ? 0.4 : 1);
-        if (actor.defeated && data.exitReason !== "dead") unit.sprite.setTint(0x879aa5);
+        const under = actor.defeated && data.exitReason !== "dead" ? 0x879aa5 : 0xffffff;
+        // People stand in the same light as the pavement under their feet.
+        const shade = nightTint(position, under);
+        if (shade !== null) unit.sprite.setTint(shade);
+        else if (under !== 0xffffff) unit.sprite.setTint(under);
         else unit.sprite.clearTint();
         unit.shadow.setSize(
           (pose === "dead" || pose === "fall" ? 55 : 30) * unitScale,
@@ -383,6 +396,7 @@ export function createCourtyard(
           (prop.getData("cutawayHeight") ?? 0) <= 0.95;
         prop.setAlpha(lowCutaway ? 1 : obstructs ? 0.4 : 1);
       }
+      applyNight();
       this.weather.clear();
       if (!street && !motion.matches) {
         this.weather.lineStyle(0.65, 0xbad8eb, 0.12);
@@ -454,6 +468,48 @@ export function createCourtyard(
           }
         }
       }
+    }
+  }
+  const dark = () => !!night && model.night !== false;
+  const lightsOn = () => dark() && model.lights !== false;
+  /** The tint for something standing at `p`: the ambient plus the lights reaching it. */
+  function nightTint(p: Point, under = 0xffffff): number | null {
+    if (!night || !dark()) return null;
+    // The same light the pavement shows, at the same gain; the tint caps it at the art.
+    const light = lightsOn()
+      ? lightAt(night.lights, arena.environment!.structures, p).map((v) => v * night!.config.gain)
+      : undefined;
+    return tintFor(night.config.ambient, light, under);
+  }
+  /**
+   * The night, each frame, after visibility, sorting and fading are settled: every
+   * light sprite takes its parent's visibility, alpha and depth, so a light shows
+   * only while its surface does, fades with it, and sorts directly above it.
+   */
+  function applyNight() {
+    if (!night) return;
+    const on = dark();
+    if (tinted !== on) {
+      tinted = on;
+      const ambient = tintFor(night.config.ambient);
+      for (const image of lit) {
+        if (on) image.setTint(ambient);
+        else image.clearTint();
+      }
+    }
+    const lights = lightsOn();
+    for (const image of lit) {
+      const light = image.getData("light") as Phaser.GameObjects.Image | undefined;
+      light
+        ?.setVisible(lights && image.visible)
+        .setAlpha(image.alpha)
+        .setDepth(image.depth + 0.5);
+    }
+    for (const prop of scenery) {
+      const r: Rect = prop.getData("sortRect");
+      const shade = nightTint({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
+      if (shade === null) prop.clearTint();
+      else prop.setTint(shade);
     }
   }
   const scene = new CourtyardScene({ key: "courtyard" });

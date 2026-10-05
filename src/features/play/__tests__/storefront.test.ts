@@ -10,10 +10,13 @@ import {
   paintStorefrontFace,
   paintStorefrontGround,
   storefrontFor,
+  storefrontLights,
+  streetLamp,
   STOREFRONT_ART_FILES,
   type StorefrontArt,
 } from "../courtyard/storefront";
 import { STOREFRONT_LEVELS, STOREFRONT_PACK } from "../courtyard/storefrontPack";
+import { INTERSECTION_NIGHT, lightAt } from "../courtyard/nightLighting";
 
 const arena = composeScene("intersection", 7).layout.arena;
 const env = arena.environment!;
@@ -64,6 +67,8 @@ describe("storefront: read from the saved scene", () => {
     expect(sf.length).toBe(20);
     expect(sf.door).toBe(1);
     expect(sf.bays).toEqual([3.5, 6.5, 9.5, 12.5, 15.5]);
+    // building_0_middle stands against the face from x 32: those bays face its wall
+    expect(sf.litBays).toEqual([3.5, 6.5]);
     expect(sf.lamp).toEqual(env.dressing.find((d) => d.id === "shop_lamp_detail_0")!.position);
   });
 
@@ -117,15 +122,16 @@ describe("storefront: painting", () => {
       createElement: () => ({ width: 0, height: 0, getContext: () => recorder().ctx }),
     });
   });
-  const base = { sf, project, ppm: pixelsPerMetre, art, lights: true };
+  const base = { sf, project, ppm: pixelsPerMetre, art, pass: "albedo" as const };
+  const lit = (log: string[]) => log.some((l) => l === "set:globalCompositeOperation=lighter");
 
   it("paints the whole face, with its sign, only when asked for the whole face", () => {
     const whole = recorder();
     paintStorefrontFace({ ctx: whole.ctx, ...base });
     expect(whole.images.filter((i) => i === art.window)).toHaveLength(sf.bays.length);
     expect(whole.images.filter((i) => i === art.wear)).toHaveLength(1);
-    // the kanji mask is drawn tinted, so the sign is: dull, glow and core when lit
-    expect(whole.images.length).toBeGreaterThan(sf.bays.length + 2);
+    // the kanji mask is drawn tinted, as dull glass, in the albedo
+    expect(whole.images.length).toBe(sf.bays.length + 2);
   });
 
   it("paints a cutaway piece only with what that piece carries, up to its height", () => {
@@ -142,10 +148,42 @@ describe("storefront: painting", () => {
     expect(bay.images.filter((i) => i === art.wear)).toHaveLength(0);
   });
 
-  it("adds light only when lit", () => {
-    for (const lights of [false, true]) {
-      const r = recorder();
-      paintStorefrontFace({ ctx: r.ctx, ...base, lights });
+  it("keeps light out of the albedo: every pass draws only its own part", () => {
+    for (const pass of ["albedo", "light", "glow"] as const) {
+      const face = recorder();
+      paintStorefrontFace({ ctx: face.ctx, ...base, pass });
+      const ground = recorder();
+      paintStorefrontGround({
+        ctx: ground.ctx,
+        sf,
+        project,
+        ppm: pixelsPerMetre,
+        structures: env.structures,
+        pass,
+      });
+      // the renderer composites the passes; no painter sets its own blend
+      expect(lit(face.log)).toBe(false);
+      expect(lit(ground.log)).toBe(false);
+      // the window art and shutter wear belong to the albedo alone
+      expect(face.images.includes(art.window)).toBe(pass === "albedo");
+      expect(face.images.includes(art.wear)).toBe(pass === "albedo");
+    }
+    // the sign's tubes are lit only in the glow pass, and only where the fascia is painted
+    const glow = recorder();
+    paintStorefrontFace({ ctx: glow.ctx, ...base, pass: "glow" });
+    expect(glow.log.some((l) => l.startsWith("set:shadowBlur"))).toBe(true);
+    const piece = recorder();
+    paintStorefrontFace({
+      ctx: piece.ctx,
+      ...base,
+      pass: "glow",
+      clip: { s0: 0.2, s1: 1.8, zMax: 2.4 },
+    });
+    expect(piece.log.some((l) => l.startsWith("set:shadowBlur"))).toBe(false);
+  });
+
+  it("keeps light and shade off the buildings: the ground is clipped around every footprint", () => {
+    for (const pass of ["albedo", "light"] as const) {
       const g = recorder();
       paintStorefrontGround({
         ctx: g.ctx,
@@ -153,32 +191,50 @@ describe("storefront: painting", () => {
         project,
         ppm: pixelsPerMetre,
         structures: env.structures,
-        lights,
+        pass,
       });
-      const lit = (log: string[]) => log.some((l) => l === "set:globalCompositeOperation=lighter");
-      expect(lit(r.log)).toBe(lights);
-      expect(lit(g.log)).toBe(lights);
+      expect(g.log).toContain("clip(evenodd)");
     }
   });
 
-  it("keeps light and shade off the buildings: the ground is clipped around every footprint", () => {
-    const g = recorder();
-    paintStorefrontGround({
-      ctx: g.ctx,
-      sf,
-      project,
-      ppm: pixelsPerMetre,
-      structures: env.structures,
-      lights: true,
-    });
-    expect(g.log).toContain("clip(evenodd)");
-  });
-
-  it("paints the canopy as a sloped plane from the saved heights", () => {
+  it("paints the canopy as a sloped plane from the saved heights, its sign on the valance", () => {
     const r = recorder();
     paintAwning({ ctx: r.ctx, ...base });
     expect(r.log).toContain("fill");
     expect(STOREFRONT_LEVELS.awningWall).toBe(sf.awning.height);
+    expect(r.images.length).toBeGreaterThan(0);
+  });
+});
+
+describe("storefront: its lights", () => {
+  const lamp = streetLamp(sf)!;
+  const lights = storefrontLights(sf, INTERSECTION_NIGHT);
+
+  it("keeps the streetlight on its saved position and hangs the head over the pavement", () => {
+    expect(lamp.base).toEqual(sf.lamp);
+    // out from the north face is -y; the head is the arm's length out
+    expect(lamp.head.x).toBeCloseTo(sf.lamp!.x);
+    expect(lamp.head.y).toBeCloseTo(sf.lamp!.y - INTERSECTION_NIGHT.lamp.arm);
+    expect(lamp.headZ).toBeLessThan(lamp.poleZ);
+  });
+
+  it("centres the lamp's pool under its head, never independently of it", () => {
+    const pool = lights.find(
+      (l) => l.kind === "pool" && l.radius === INTERSECTION_NIGHT.lamp.radius,
+    );
+    expect(pool).toBeDefined();
+    expect(pool!.kind === "pool" && pool!.centre).toEqual(lamp.head);
+  });
+
+  it("throws one spill per lit window, and none from a window against a neighbour", () => {
+    expect(lights.filter((l) => l.kind === "spill")).toHaveLength(sf.litBays.length);
+  });
+
+  it("lights the pavement in front of the shop and nothing inside a building", () => {
+    const front = { x: shop.rect.x + 4.6, y: shop.rect.y - 1 };
+    const inside = { x: shop.rect.x + 4.6, y: shop.rect.y + 1 };
+    expect(Math.max(...lightAt(lights, env.structures, front))).toBeGreaterThan(0.2);
+    expect(lightAt(lights, env.structures, inside)).toEqual([0, 0, 0]);
   });
 });
 

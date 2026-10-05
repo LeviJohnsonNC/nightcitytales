@@ -13,6 +13,12 @@ export function reviewSeed(value: string): number | null {
   const n = Number(value);
   return Number.isSafeInteger(n) && n >= 0 && n <= 0xffffffff ? n : null;
 }
+/** "x,y" or "x,y,zoom": finite numbers only, or nothing. */
+function numbers(value: string | null, count: number): number[] | null {
+  if (!value) return null;
+  const parts = value.split(",").map(Number);
+  return parts.length === count && parts.every(Number.isFinite) ? parts : null;
+}
 export function readReviewQuery(search: string) {
   const p = new URLSearchParams(search);
   return {
@@ -25,12 +31,17 @@ export function readReviewQuery(search: string) {
     structureOnly: p.get("view") === "structure",
     revealActivity: p.get("reveal") !== "0",
     lights: p.get("lights") !== "0",
+    night: p.get("night") !== "0",
+    /** A fixed camera (scene offset x, y and zoom), so a capture can be repeated exactly. */
+    camera: ((c) => (c ? { x: c[0]!, y: c[1]!, zoom: c[2]! } : null))(numbers(p.get("cam"), 3)),
+    /** Where the review character stands, in metres: a fixture choice, not a rule. */
+    player: ((c) => (c ? { x: c[0]!, y: c[1]! } : null))(numbers(p.get("player"), 2)),
     framing: p.get("framing") === "overview" ? ("overview" as const) : ("play" as const),
     damage: ["intact", "damaged", "destroyed"].find((d) => d === p.get("damage")) ?? "intact",
   };
 }
 export function reviewQuery(value: ReturnType<typeof readReviewQuery>): string {
-  return new URLSearchParams({
+  const query = new URLSearchParams({
     place: value.kind,
     seed: String(value.seed),
     adventure: value.adventure ? "1" : "0",
@@ -39,9 +50,13 @@ export function reviewQuery(value: ReturnType<typeof readReviewQuery>): string {
     view: value.structureOnly ? "structure" : "furnished",
     reveal: value.revealActivity ? "1" : "0",
     lights: value.lights ? "1" : "0",
+    night: value.night ? "1" : "0",
     framing: value.framing,
     damage: value.damage,
-  }).toString();
+  });
+  if (value.camera) query.set("cam", [value.camera.x, value.camera.y, value.camera.zoom].join(","));
+  if (value.player) query.set("player", [value.player.x, value.player.y].join(","));
+  return query.toString();
 }
 /** Six demonstrated combinations, grouped by topology for side-by-side review. */
 export const COMPOSITION_REVIEW_SEEDS = {
