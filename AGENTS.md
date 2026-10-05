@@ -983,3 +983,19 @@ ordering and use opaque ink bounds for actor fading. Overview must fit projected
 roof as well as ground extents. These are presentation rules, never a reason to
 rewrite frozen collision, entrances or activity groups. See
 `docs/checkpoint-four-d6.md` for live evidence and the remaining manual gate.
+
+### Surface materials (first material pass)
+
+Intersection-recipe scenes lay real tiling materials under the existing painting:
+asphalt, sidewalk, and — on shop-style masses only — facade concrete, roof
+membrane, rooftop painted metal and shutters on doors that were already drawn as
+shutters. `surfaceMaterials.ts` projects a tile through the scene's own affine
+transform, so one tile is a stated number of metres; add a surface by giving it a
+key there, never by sizing a texture to a building. A material is laid first and
+every edge, marking, trim and overlay paints over it; with no material a surface
+paints exactly as before. The sources stay in `src/assets/creator/` and
+`tools/art/materials.mjs` makes the 512px derivatives in `public/images/materials/`
+— it fails on a bad seam or baked lighting, and the creator glob in
+`chargen/art.ts` excludes the originals from the bundle. See
+`docs/checkpoint-material-pass-1.md` for the scope, limits and next-asset
+inventory.
