@@ -1021,3 +1021,17 @@ where it falls from world positions, ground light clipped around building footpr
 (the review harness's Lights checkbox) shows the art unlit. Returned art is validated and made by
 `tools/art/storefront-assets.ts`, judged by the numbers in `storefrontPack.ts`. See
 `docs/checkpoint-storefront-corner.md` for the limits.
+
+## Collaborator names
+
+Levi uses these names across sessions:
+
+- **Brutus**: the cheaper coding LLM/agent. Handles implementation, asset guides,
+  image processing, integration, tests, browser verification and pull requests.
+- **Picasso** (also spelled **Picaso**): the image-generation LLM. Creates textures
+  and game-art assets from supplied prompts, geometric guides and style references.
+
+These are workflow nicknames, not fixed model versions or repository features.
+Levi passes guides/prompts from Brutus to Picasso and returns generated assets to
+Brutus for integration; higher-cost model time is reserved mainly for planning,
+visual critique and difficult technical decisions.
