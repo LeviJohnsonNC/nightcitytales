@@ -629,6 +629,7 @@ export function createCourtyard(
     }
   }
 
+  type PropRegistration = { originX: number; originY: number; groundWidth: number };
   function paintCover(current: CourtyardScene, damage: LiveEncounter["cover"]) {
     if (model.structureOnly) return;
     if (renderedCover === damage) return;
@@ -648,7 +649,8 @@ export function createCourtyard(
         propTexture(kind, condition) + (procedural && binding?.rotation === 90 ? "-90" : "");
       const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
       const registration = procedural
-        ? { originX: 0.5, originY: 1, groundWidth: 1 }
+        ? ((current.textures.get(texture).customData as { registration?: PropRegistration })
+            .registration ?? { originX: 0.5, originY: 1, groundWidth: 1 })
         : atlasPropRegistration(kind, condition);
       const width = placement.width / registration.groundWidth;
       const height = (width * image.height) / image.width;

@@ -13,6 +13,7 @@
  * Coordinates: `s` is metres along the face from the building's first corner, `out`
  * is metres away from the wall (negative: into the building), `z` is height.
  */
+import { paintDownpipe, paintPlinth, solidSpans, type Downpipe } from "./frontage";
 import type { Point, Rect, SceneAttachment, SceneEnvironment, SceneStructure } from "@/engine";
 import {
   SURFACE_MATERIALS,
@@ -315,6 +316,28 @@ export interface FaceOptions {
   pass: Pass;
   /** Paint only this part of the face: a cutaway piece, at its height. */
   clip?: { s0: number; s1: number; zMax: number };
+  /** The architectural pilot's fittings on this face (`frontage.ts`). */
+  frontage?: { pipe?: Downpipe };
+}
+
+/** The shop's electricity meter: a steel box on the solid wall between door and first bay. */
+export const METER_BOX = { width: 0.42, z0: 0.95, z1: 1.6, proud: 0.12 } as const;
+
+/** Where the meter box sits along the face, or nothing if the wall has no room for it. */
+export function meterBox(sf: Storefront): number | undefined {
+  const doorEnd = sf.door + STOREFRONT_FACE.doorWidth / 2 + 0.2;
+  const firstBay = sf.bays.find((b) => b > doorEnd) ?? sf.length;
+  const room = firstBay - doorEnd;
+  return room >= METER_BOX.width + 0.6 ? doorEnd + (room - METER_BOX.width) * 0.55 : undefined;
+}
+
+/** The stretches of the face that are wall, not door or glass. */
+export function storefrontOpenings(sf: Storefront): [number, number][] {
+  const half = STOREFRONT_FACE.doorWidth / 2;
+  return [
+    [sf.door - half - 0.12, sf.door + half + 0.12],
+    ...sf.bays.map((b) => [b, b + STOREFRONT_FACE.bayWidth] as [number, number]),
+  ];
 }
 
 /** Draw `image` straight-on on the face plane, `out` metres from the wall. */
@@ -405,6 +428,19 @@ export function paintStorefrontFace(o: FaceOptions) {
     [0, "rgba(6,12,16,.34)"],
     [1, "rgba(6,12,16,0)"],
   ]);
+  if (o.frontage) {
+    // a rendered plinth on the solid wall only: the door and the bays' risers meet
+    // the pavement themselves
+    paintPlinth(
+      ctx,
+      o.project,
+      ppm,
+      sf.structure,
+      sf.edge,
+      solidSpans([0, sf.length], storefrontOpenings(sf)),
+      "shop",
+    );
+  }
   for (const s of [0.02, sf.length - 0.02]) {
     strokeLine(ctx, at(s, 0, 0), at(s, 0, L.parapetTop), "#10191f", 3);
     strokeLine(ctx, at(s, 0, 0), at(s, 0, L.parapetTop), "#6c7571", 0.8);
@@ -492,7 +528,94 @@ export function paintStorefrontFace(o: FaceOptions) {
     fillPoly(ctx, quad(mid - 0.025, mid + 0.025, bottom, top), bar);
     strokeLine(ctx, at(s0, 0, top), at(s1, 0, top), "#5a676c", 0.8);
     strokeLine(ctx, at(s0, 0, bottom), at(s0, 0, top), "#5a676c", 0.8);
+    if (o.frontage) {
+      // the cill: pre-cast, 6 cm proud and past both jambs, with its drip shadow on
+      // the riser below; the ledge inside the recess is the glass's own
+      const c0 = s0 - 0.06;
+      const c1 = s1 + 0.06;
+      const cz = bottom - 0.07;
+      gradientFill(ctx, quad(c0, c1, cz - 0.28, cz), at(c0, 0, cz), at(c0, 0, cz - 0.28), [
+        [0, "rgba(0,0,0,.42)"],
+        [1, "rgba(0,0,0,0)"],
+      ]);
+      fillPoly(ctx, quad(c0, c1, cz, bottom, 0.06), "#5f6866");
+      fillPoly(
+        ctx,
+        [at(c0, 0, bottom), at(c1, 0, bottom), at(c1, 0.06, bottom), at(c0, 0.06, bottom)],
+        "#a3aca6",
+      );
+      fillPoly(
+        ctx,
+        [at(c1, 0, cz), at(c1, 0.06, cz), at(c1, 0.06, bottom), at(c1, 0, bottom)],
+        "#3c4443",
+      );
+      strokeLine(ctx, at(c0, 0.06, cz), at(c1, 0.06, cz), "#1d2425", 1);
+    }
   });
+
+  // --- the meter box and its conduit -------------------------------------------
+  const meter = o.frontage ? meterBox(sf) : undefined;
+  if (meter !== undefined && reaches(meter - 0.1, meter + METER_BOX.width + 0.1)) {
+    const M = METER_BOX;
+    const m0 = meter;
+    const m1 = meter + M.width;
+    // conduit up from the box to under the fascia, clipped to the wall
+    fillPoly(ctx, quad(m0 + 0.17, m0 + 0.23, M.z1, L.fasciaBottom - 0.02, 0.03), "#2a3236");
+    strokeLine(
+      ctx,
+      at(m0 + 0.21, 0.03, M.z1),
+      at(m0 + 0.21, 0.03, L.fasciaBottom - 0.02),
+      "#6b777c",
+      0.6,
+    );
+    // shadow on the wall to its far side and under it
+    gradientFill(ctx, quad(m1, m1 + 0.16, M.z0, M.z1), at(m1, 0, M.z0), at(m1 + 0.16, 0, M.z0), [
+      [0, "rgba(0,0,0,.4)"],
+      [1, "rgba(0,0,0,0)"],
+    ]);
+    gradientFill(
+      ctx,
+      quad(m0, m1 + 0.1, M.z0 - 0.2, M.z0),
+      at(m0, 0, M.z0),
+      at(m0, 0, M.z0 - 0.2),
+      [
+        [0, "rgba(0,0,0,.35)"],
+        [1, "rgba(0,0,0,0)"],
+      ],
+    );
+    // the box: front, side, top, a hinge line, a vision window, a padlock hasp
+    fillPoly(ctx, quad(m0, m1, M.z0, M.z1, M.proud), "#56605f");
+    fillPoly(
+      ctx,
+      [at(m1, 0, M.z0), at(m1, M.proud, M.z0), at(m1, M.proud, M.z1), at(m1, 0, M.z1)],
+      "#323a3b",
+    );
+    fillPoly(
+      ctx,
+      [at(m0, 0, M.z1), at(m1, 0, M.z1), at(m1, M.proud, M.z1), at(m0, M.proud, M.z1)],
+      "#8a9491",
+    );
+    strokeLine(
+      ctx,
+      at(m0 + 0.03, M.proud, M.z0 + 0.03),
+      at(m0 + 0.03, M.proud, M.z1 - 0.03),
+      "#2b3233",
+      0.8,
+    );
+    fillPoly(ctx, quad(m0 + 0.12, m1 - 0.12, M.z1 - 0.24, M.z1 - 0.1, M.proud), "#1d2628");
+    fillPoly(ctx, quad(m1 - 0.08, m1 - 0.04, M.z0 + 0.25, M.z0 + 0.33, M.proud), "#b49a5c");
+    // rust weeping from its foot
+    gradientFill(
+      ctx,
+      quad(m0 + 0.1, m1 - 0.1, M.z0 - 0.5, M.z0),
+      at(m0, 0, M.z0),
+      at(m0, 0, M.z0 - 0.5),
+      [
+        [0, "rgba(90,52,24,.3)"],
+        [1, "rgba(90,52,24,0)"],
+      ],
+    );
+  }
 
   // --- shutter door ----------------------------------------------------------
   if (
@@ -666,6 +789,10 @@ export function paintStorefrontFace(o: FaceOptions) {
     strokeLine(ctx, at(0, 0, L.parapetTop), at(sf.length, 0, L.parapetTop), "#97a3a1", 1.6);
     strokeLine(ctx, at(0, 0, L.fasciaTop), at(sf.length, 0, L.fasciaTop), "#0f171c", 1.4);
   }
+
+  // --- the downpipe: last, so it runs over the fascia it is fixed to ------------
+  const pipe = o.frontage?.pipe;
+  if (pipe && reaches(pipe.s - 0.5, pipe.s + 0.5)) paintDownpipe(ctx, o.project, ppm, pipe, "shop");
 
   ctx.restore();
 }

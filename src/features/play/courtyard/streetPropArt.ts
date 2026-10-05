@@ -2,15 +2,18 @@
  * The street-prop art (`docs/street-props-pack.md`) in the renderer: painted
  * replacements for the procedural sedan, planter and mailbox cabinet.
  *
- * Each file is one 512 x 640 frame per saved 2 m section, made by
- * `tools/art/street-props.ts` to exactly the procedural frame's registration (twice its
- * 256 x 320), so it replaces the procedural texture under the SAME key and the board
- * places, sorts, fades and damages it exactly as before. A file that is missing or
+ * Each file is one frame per saved 2 m section, made by `tools/art/street-props.ts` at
+ * twice the procedural frame's 256 x 320. A sedan's art is padded past its frame
+ * (`SEDAN_ART_PAD`) so each half of the car fits whole; the texture carries where its
+ * frame sits (`customData.registration`), and the board places, sorts, fades and
+ * damages it by its 2 m footprint exactly as before. It replaces the procedural
+ * texture under the SAME key. A file that is missing or
  * fails to load leaves the procedural kit in place. Presentation only.
  */
 import type Phaser from "phaser";
 import { propTexture, type PropCondition, type PropKind } from "./propPresentation";
 import { interiorPropPoint } from "./interiorPropArt";
+import { artPad, propArtRegistration } from "./streetPropPack";
 
 const CONDITIONS: readonly PropCondition[] = ["intact", "damaged", "wrecked"];
 
@@ -31,6 +34,8 @@ export interface StreetPropFile {
   /** Loader key, and the file under /images/street-props/. */
   key: string;
   url: string;
+  /** The prop kind, which says how far its art is padded past its 2 m frame. */
+  kind: PropKind;
   /** The texture keys this file replaces. */
   textures: string[];
 }
@@ -50,6 +55,7 @@ export function streetPropFiles(kinds: readonly PropKind[]): StreetPropFile[] {
         const textures = [propTexture(kind, condition) + (rotation === 90 ? "-90" : "")];
         if (!own90 && rotations.includes(90)) textures.push(propTexture(kind, condition) + "-90");
         files.push({
+          kind,
           key: `streetprop-${name}`,
           url: `/images/street-props/${name}.webp`,
           textures,
@@ -76,11 +82,12 @@ export function applyStreetPropArt(scene: Phaser.Scene, files: readonly StreetPr
       if (scene.textures.exists(key)) scene.textures.remove(key);
       const texture = scene.textures.createCanvas(key, image.width, image.height)!;
       const ctx = texture.context;
-      const k = image.width / 256;
+      const pad = artPad(file.kind);
+      const k = image.width / (256 + 2 * pad.side);
       // the procedural kit's contact shadow: the footprint inset 0.1 m, at the same alpha
       const corner = (x: number, y: number) => {
         const p = interiorPropPoint(x, y);
-        return { x: p.x * k, y: p.y * k };
+        return { x: (p.x + pad.side) * k, y: (p.y + pad.top) * k };
       };
       ctx.beginPath();
       [corner(0.1, 0.1), corner(1.9, 0.1), corner(1.9, 1.9), corner(0.1, 1.9)].forEach((p, i) =>
@@ -91,6 +98,8 @@ export function applyStreetPropArt(scene: Phaser.Scene, files: readonly StreetPr
       ctx.fill();
       ctx.drawImage(image, 0, 0);
       texture.refresh();
+      // where the 2 m frame sits in padded art: the board reads this to place it
+      texture.customData = { ...texture.customData, registration: propArtRegistration(file.kind) };
     }
     scene.textures.remove(file.key);
   }

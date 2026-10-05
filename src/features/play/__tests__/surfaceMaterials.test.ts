@@ -117,7 +117,8 @@ describe("surface materials: painting", () => {
       {
         get: (_t, name: string) => {
           if (name === "createPattern") return () => pattern;
-          if (name === "createRadialGradient") return () => ({ addColorStop: () => undefined });
+          if (name === "createRadialGradient" || name === "createLinearGradient")
+            return () => ({ addColorStop: () => undefined });
           return (...args: unknown[]) => {
             calls.push(`${name}(${args.length})`);
           };
