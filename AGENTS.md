@@ -1010,3 +1010,14 @@ scene moved. The storefront's art is specified in `courtyard/storefrontPack.ts`
 (one set of numbers for the guides, the renderer and the validation of returned
 images); the kanji sign is a mask rasterised by `tools/art/kanji-sign.mjs` and
 drawn in code, never generated. See `docs/checkpoint-storefront-pack.md`.
+
+### The storefront (courtyard/storefront.ts)
+
+The corner shop's detail is painted by one routine over the saved structure, entrance, awning and lamp:
+`paintStorefrontFace` is used for the whole building AND, clipped to each piece's height, for every cutaway
+wall piece on that face, so revealing the street never changes the wall; the awning is its own sprite
+(`activityLayer: "awning"`, shown in the cutaway only while the wall it hangs from is kept). Light is painted
+where it falls from world positions, ground light clipped around building footprints, and `lights=false`
+(the review harness's Lights checkbox) shows the art unlit. Returned art is validated and made by
+`tools/art/storefront-assets.ts`, judged by the numbers in `storefrontPack.ts`. See
+`docs/checkpoint-storefront-corner.md` for the limits.

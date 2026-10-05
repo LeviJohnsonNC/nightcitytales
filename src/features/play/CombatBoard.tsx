@@ -94,6 +94,8 @@ type Props = {
   feedbackDetail?: string | undefined;
   onSkipPlayback?: () => void;
   revealActivity?: boolean;
+  /** Scenic light and emissive surfaces; the review harness turns it off to judge the art. */
+  lights?: boolean;
   onRevealActivityChange?: (reveal: boolean) => void;
 };
 const points = (path: Point[]) => path.map((p) => `${p.x},${p.y}`).join(" ");
@@ -135,6 +137,7 @@ export function CombatBoard({
   feedbackDetail,
   onSkipPlayback,
   revealActivity: controlledRevealActivity,
+  lights,
   onRevealActivityChange,
 }: Props) {
   const effects = useCombatFeedback(playback);
@@ -665,9 +668,10 @@ export function CombatBoard({
         <div className={`combat-stage tool-${tool}`}>
           {hasScenicArt && artEnabled && (
             <CourtyardLayer
-              key={arena.key}
+              key={`${arena.key}:${lights !== false}`}
               live={live}
               revealActivity={revealActivity}
+              lights={lights !== false}
               playback={playback}
               camera={displayCamera}
               aimTargetId={aimed?.actor.id ?? null}

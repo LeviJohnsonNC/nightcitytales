@@ -41,6 +41,7 @@ export function SceneReview() {
   const [failed, setFailed] = useState(false);
   const [rendererAttempt, setRendererAttempt] = useState(0);
   const [revealActivity, setRevealActivity] = useState(initial.revealActivity);
+  const [lights, setLights] = useState(initial.lights);
   const [zoom, setZoom] = useState(1);
   const [structureOnly, setStructureOnly] = useState(initial.structureOnly);
   const [framing, setFraming] = useState<"play" | "overview">(initial.framing);
@@ -58,6 +59,7 @@ export function SceneReview() {
     damage,
     structureOnly,
     revealActivity,
+    lights,
     framing,
   });
   useEffect(() => {
@@ -245,6 +247,17 @@ export function SceneReview() {
                   onChange={(e) => setRevealActivity(e.target.checked)}
                 />
                 Reveal activity behind buildings
+              </label>
+            )}
+            {scene.layout.arena.environment?.recipe === "intersection" && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={lights}
+                  disabled={structureOnly}
+                  onChange={(e) => setLights(e.target.checked)}
+                />
+                Lights
               </label>
             )}
             <label>
@@ -458,16 +471,18 @@ export function SceneReview() {
           onWeaponId={() => {}}
           revealActivity={revealActivity}
           onRevealActivityChange={setRevealActivity}
+          lights={lights}
           title="Scene readability review"
           objective="Inspect only · no campaign writes"
         />
       ) : (
         <div className="scene-review-canvas">
           <CourtyardLayer
-            key={`${scene.layout.arena.key}:${structureOnly}:${rendererAttempt}`}
+            key={`${scene.layout.arena.key}:${structureOnly}:${lights}:${rendererAttempt}`}
             live={empty}
             structureOnly={structureOnly}
             revealActivity={revealActivity}
+            lights={lights}
             camera={{
               ...battlefieldCameraPreset(scene.layout.arena, framing),
               zoom: battlefieldCameraPreset(scene.layout.arena, framing).zoom * zoom,

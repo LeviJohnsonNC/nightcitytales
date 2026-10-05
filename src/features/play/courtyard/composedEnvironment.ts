@@ -4,6 +4,7 @@ import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
 import { activityGroundPoints, activityOccluders } from "./activityReveal";
 import { cutawayWalls, type CutawayWall } from "./cutawayGeometry";
+import { STOREFRONT_LEVELS } from "./storefrontPack";
 import {
   SURFACE_MATERIALS,
   fillMaterial,
@@ -15,6 +16,19 @@ import {
   type TileSource,
 } from "./surfaceMaterials";
 import type { Arena, Point, Rect, SceneStructure, SceneEnvironment } from "@/engine";
+import {
+  awningFootprint,
+  facePoint,
+  paintAwning,
+  paintRooftopUnit,
+  paintRoofShade,
+  paintStreetLamp,
+  paintStorefrontFace,
+  paintStorefrontGround,
+  storefrontFor,
+  type Storefront,
+  type StorefrontArt,
+} from "./storefront";
 
 type Project = (p: Point) => Point;
 function painter(ctx: CanvasRenderingContext2D, project: Project) {
@@ -396,6 +410,7 @@ function paintCutawayWall(
   part: CutawayWall,
   project: Project,
   materials?: MaterialSet,
+  storefront?: { sf: Storefront; art: StorefrontArt; lights: boolean },
 ) {
   const { poly, corners } = painter(ctx, project);
   const metre = Math.hypot(
@@ -420,6 +435,27 @@ function paintCutawayWall(
   side(north, warm ? "#73675a" : "#59666a", wallBasis(project, "x", r.y, concrete, metre));
   side(east, "#35434a", wallBasis(project, "y", r.x + r.width, concrete, metre));
   poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
+  // A piece of the storefront's own face carries that face's detail up to its height,
+  // so revealing the street does not change what the wall is.
+  if (storefront) {
+    const sf = storefront.sf;
+    const wall = sf.structure.rect;
+    const onFace = sf.edge === "north" ? r.y === wall.y : r.x + r.width === wall.x + wall.width;
+    if (onFace) {
+      const s0 = sf.edge === "north" ? r.x - wall.x : r.y - wall.y;
+      const s1 = s0 + (sf.edge === "north" ? r.width : r.height);
+      paintStorefrontFace({
+        ctx,
+        sf,
+        project,
+        ppm: metre,
+        art: storefront.art,
+        materials: clad,
+        lights: storefront.lights,
+        clip: { s0, s1, zMax: part.height },
+      });
+    }
+  }
 }
 
 export function paintCutaway(
@@ -445,6 +481,8 @@ export function paintBuilding(
   project: Project,
   entrances: SceneEnvironment["entrances"],
   materials?: MaterialSet,
+  /** The finished storefront, for the one shop that has its art. */
+  storefront?: { sf: Storefront; art: StorefrontArt; lights: boolean },
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -528,6 +566,8 @@ export function paintBuilding(
     wallBasis(project, "y", r.x + r.width, metres("facade-concrete"), pixelsPerMetre),
   );
   const face = (a: Point, b: Point, length: number, shade: string, edge: "north" | "east") => {
+    // The storefront's face is painted whole by its own routine, over the concrete.
+    if (storefront && storefront.sf.edge === edge) return;
     const at = (t: number, z: number) => ({
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t - z,
@@ -659,6 +699,16 @@ export function paintBuilding(
   };
   face(base[0]!, base[1]!, r.width, "#515658", "north");
   face(base[1]!, base[2]!, r.height, "#353d42", "east");
+  if (storefront)
+    paintStorefrontFace({
+      ctx,
+      sf: storefront.sf,
+      project,
+      ppm: pixelsPerMetre,
+      art: storefront.art,
+      materials: clad,
+      lights: storefront.lights,
+    });
   surface(top, palette[2]!, "#6c716b", "roof-membrane", groundBasis(project, h));
   // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
   for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
@@ -679,6 +729,7 @@ export function paintBuilding(
     };
     const bottom = corners(equipment, h),
       lid = corners(equipment, h + 8);
+    if (storefront) paintRoofShade(ctx, project, pixelsPerMetre, equipment, h);
     // Painted sheet metal: a unit sits on the roof, so its tile stands on it.
     surface(
       [bottom[0]!, bottom[1]!, lid[1]!, lid[0]!],
@@ -702,6 +753,10 @@ export function paintBuilding(
       ),
     );
     surface(lid, "#65706b", "#7e8279", "painted-metal", groundBasis(project, h + 8));
+    if (storefront) {
+      paintRooftopUnit(ctx, project, pixelsPerMetre, equipment, h, 8, i, storefront.lights);
+      continue;
+    }
     const center = project({ x: equipment.x + 1, y: equipment.y + 1 });
     ctx.beginPath();
     ctx.ellipse(center.x, center.y - h - 8, 6, 3, 0, 0, Math.PI * 2);
@@ -724,6 +779,8 @@ export function paintBuilding(
   // The fixed isometric camera sees north/east facades, never the rear faces.
   for (const a of structure.attachments ?? []) {
     if (a.edge !== "north" && a.edge !== "east") continue;
+    // The storefront's canopy is its own sprite, so it can sort and fade by itself.
+    if (storefront && a.id === storefront.sf.awning.id) continue;
     const at = (t: number, out: number, z: number) => {
       const p = project(attachmentPoint(structure, a, t, out));
       return { x: p.x, y: p.y - z * pixelsPerMetre };
@@ -803,6 +860,10 @@ export function createComposedEnvironment(
   project: Project,
   /** Decoded tiles for the surfaces the recipe takes; absent means flat fills. */
   tiles?: Partial<Record<MaterialKey, TileSource>>,
+  /** The storefront's returned art. Without it the shop keeps its material-pass look. */
+  storefrontArt?: StorefrontArt,
+  /** Light and its emissive surfaces. Off gives the unlit art, for judging it alone. */
+  lights = true,
 ): Phaser.GameObjects.Image[] {
   // Ground must extend with saved continuation geometry, not stop at the old
   // 1100x700 art sheet while building sprites float beyond its edge.
@@ -828,6 +889,18 @@ export function createComposedEnvironment(
     ? Math.max(1, Math.min(MATERIAL_SUPERSAMPLE, MAX_TEXTURE_PIXELS / Math.max(gw, gh)))
     : 1;
   const materials = materialised ? prepareMaterials(tiles, metre * resolution) : undefined;
+  const env = arena.environment!;
+  const storefronts =
+    materials && storefrontArt
+      ? env.structures.flatMap((s) => {
+          const sf = storefrontFor(s, env);
+          return sf ? [sf] : [];
+        })
+      : [];
+  const storefrontOf = (s: SceneStructure) => {
+    const sf = storefronts.find((f) => f.structure.id === s.id);
+    return sf && storefrontArt ? { sf, art: storefrontArt, lights } : undefined;
+  };
   const ground = scene.textures.createCanvas(
     "composed-ground",
     Math.ceil(gw * resolution),
@@ -836,6 +909,15 @@ export function createComposedEnvironment(
   ground.context.scale(resolution, resolution);
   ground.context.translate(-gx, -gy);
   paintComposedGround(ground.context, arena, project, materials);
+  for (const sf of storefronts)
+    paintStorefrontGround({
+      ctx: ground.context,
+      sf,
+      project,
+      ppm: metre,
+      structures: env.structures,
+      lights,
+    });
   ground.refresh();
   scene.add
     .image(gx + gw / 2, gy + gh / 2, "composed-ground")
@@ -1000,7 +1082,8 @@ export function createComposedEnvironment(
       const clad = materials && s.style === "shop" ? resolution : 1;
       add(
         `structure-${s.id}`,
-        (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances, materials),
+        (ctx) =>
+          paintBuilding(ctx, s, project, arena.environment!.entrances, materials, storefrontOf(s)),
         depth,
         bounds,
         clad,
@@ -1019,7 +1102,7 @@ export function createComposedEnvironment(
           const r = part.rect;
           add(
             `cutaway-${s.id}-wall-${index}`,
-            (ctx) => paintCutawayWall(ctx, s, part, project, materials),
+            (ctx) => paintCutawayWall(ctx, s, part, project, materials, storefrontOf(s)),
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,
             clad,
@@ -1029,6 +1112,70 @@ export function createComposedEnvironment(
             .setData("cutawayHeight", part.height)
             .setVisible(false);
         }
+      }
+      // The canopy is its own sprite: it sorts by its footprint, fades for actors
+      // under it, and in the cutaway shows only while the wall it hangs from is kept.
+      const front = storefrontOf(s);
+      if (front) {
+        const sf = front.sf;
+        const at = facePoint(sf, project, metre);
+        const { offset, span, projection } = sf.awning;
+        const L = STOREFRONT_LEVELS;
+        const edges = [
+          at(offset, 0, L.awningWall - 0.7),
+          at(offset + span, 0, L.awningWall - 0.7),
+          at(offset + span, projection, L.awningOuter - 0.3),
+          at(offset, projection, L.awningOuter - 0.3),
+          at(offset, 0, L.awningWall),
+          at(offset + span, 0, L.awningWall),
+        ];
+        const awningBounds = {
+          x: Math.floor(Math.min(...edges.map((p) => p.x))) - 10,
+          y: Math.floor(Math.min(...edges.map((p) => p.y))) - 10,
+          width:
+            Math.ceil(Math.max(...edges.map((p) => p.x)) - Math.min(...edges.map((p) => p.x))) + 20,
+          height:
+            Math.ceil(Math.max(...edges.map((p) => p.y)) - Math.min(...edges.map((p) => p.y))) + 20,
+        };
+        const wall = s.rect;
+        const kept = !occluders.has(s.id)
+          ? true
+          : cutawayWalls(s, arena.environment!.entrances, activity)
+              .filter((p) =>
+                sf.edge === "north"
+                  ? p.rect.y === wall.y &&
+                    p.rect.x < wall.x + offset + span &&
+                    p.rect.x + p.rect.width > wall.x + offset
+                  : p.rect.x + p.rect.width === wall.x + wall.width &&
+                    p.rect.y < wall.y + offset + span &&
+                    p.rect.y + p.rect.height > wall.y + offset,
+              )
+              .every((p) => p.height >= STOREFRONT_LEVELS.housingTop - 1e-9);
+        const footprint = awningFootprint(sf);
+        add(
+          `awning-${s.id}`,
+          (ctx) =>
+            paintAwning({
+              ctx,
+              sf,
+              project,
+              ppm: metre,
+              art: front.art,
+              materials,
+              lights: front.lights,
+            }),
+          Math.max(
+            ...[
+              { x: footprint.x, y: footprint.y },
+              { x: footprint.x + footprint.width, y: footprint.y + footprint.height },
+            ].map((p) => project(p).y),
+          ),
+          awningBounds,
+          resolution,
+        )
+          ?.setData("activityLayer", "awning")
+          .setData("revealOk", kept)
+          .setData("sortRect", footprint);
       }
     }
   }
@@ -1043,7 +1190,10 @@ export function createComposedEnvironment(
         ctx.beginPath();
         ctx.ellipse(p.x + 3, p.y, 8, 3, 0, 0, Math.PI * 2);
         ctx.fill();
-        if (d.kind === "lamp") {
+        const shopLamp =
+          d.id === "shop_lamp_detail_0" ? storefronts.find((f) => f.lamp !== undefined) : undefined;
+        if (shopLamp) paintStreetLamp(ctx, project, metre, shopLamp, lights);
+        else if (d.kind === "lamp") {
           line(p, { x: p.x, y: p.y - 48 }, "#18232b", 3);
           line({ x: p.x + 1, y: p.y }, { x: p.x + 1, y: p.y - 48 }, "#7e8274", 0.8);
           line({ x: p.x, y: p.y - 48 }, { x: p.x + 12, y: p.y - 43 }, "#7e8274", 2);

@@ -1605,8 +1605,9 @@ available to compare against, and real campaign movement, firing and save/load a
 unchecked. Next: facade and prop art that needs silhouette and ground-anchor guides
 (shopfront bay, shutter door with housing, awning, rooftop units, standing props).
 
-[Storefront corner](docs/checkpoint-storefront-pack.md) is the next step on intersection seed 7:
-a three-image art pack (window interior, awning fabric, shutter wear) with exact guides and
-prompts, a code-drawn kanji sign (深夜市場), and recipe revision 7, which adds one saved shop
-lamp without moving anything else. Waiting on the three images; then frames, shutter housing,
-awning, rooftop units, contact shadows and the four lighting steps, in the order the brief sets.
+[Storefront corner](docs/checkpoint-storefront-corner.md) is built for intersection seed 7, from the
+three returned images (window interior, awning fabric, shutter wear), a code-drawn kanji sign, and recipe
+revision 7's saved lamp: window recesses, a shutter door with housing and rails, fascia, awning as its own
+sprite, rooftop units, contact shadows, and the four lighting steps (with a lights-off view). **Awaiting Levi's
+visual review**; no reference-level quality is claimed, and real campaign movement, firing and save/load are
+unchecked. Spec and guides: [`checkpoint-storefront-pack.md`](docs/checkpoint-storefront-pack.md).
