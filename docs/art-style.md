@@ -358,3 +358,82 @@ and `window-interior-layout.png`. `{surface}` = `the interior of a shop seen str
 ```text
 (Facade wrapper with W=1024, H=1536) Subject: a WEAR OVERLAY for a steel roller shutter, not the shutter itself. The whole background is one flat, solid #FF00FF magenta, and only the marks of wear are painted on it: long vertical grime and rain-drip streaks that run down from the top, a bloom of orange rust and flaking paint across the bottom 40%, two or three shallow dents drawn as soft shading, a small spray-paint tag as an abstract, illegible scribble in muted green and grey (never magenta or pink), and torn-tape and sticker residue. NO slats, ribs, lines, door frame, handle, lock or housing: the game supplies those. At least 60% of the canvas stays pure #FF00FF. Marks have hard, clean edges with no feathering, glow or anti-aliased halo into the magenta. Keep the top 8%, the left and right 5%, and the bottom 2% pure #FF00FF.
 ```
+
+## Street props (combat scenes)
+
+A fifth look, for free-standing objects the combat renderer places on saved 2 m cover
+pieces: **one object, true isometric, on a flat key, unlit by the scene.** The game
+tints it for night and lights it from the lamps it stands near, and draws its contact
+shadow, so none of that may be painted in. Sizes, volumes and the order they are made
+in are in [`street-props-pack.md`](street-props-pack.md). **Attach, with each prompt,
+`docs/street-props-pack/guides/<id>-layout.png` and the reference frame you are
+matching**; for a sedan's damaged or wrecked state, attach its accepted intact image
+too. Save under the file name above each prompt. Commission
+`street-sedan-r90-intact.png` alone first and wait until it has been checked in game.
+
+### Street prop wrapper
+
+Replace `{N}` and `{subject}`.
+
+```text
+Single game prop for an isometric tactical game, painted digitally with fine visible brush texture, in the grounded, lived-in late-1980s and 1990s neon-noir cyberpunk look of a matte painting. TRUE ISOMETRIC, orthographic, with no perspective: vertical edges stay exactly vertical, and every horizontal edge runs at exactly 30 degrees up to the left or up to the right, as in the attached layout. The attached layout is a measured guide, exactly {N} x {N} px: the grey blocks are the space the object fills, and its outline must match their outline and size. The pink diamonds show where it stands on the ground and the dashed red line marks a seam the game cuts along. Do NOT reproduce the guide's flat grey, pink diamonds, red line, outlines or any text. Paint ONLY the object. Everything else is one flat, solid #FF00FF magenta with no gradient, texture or noise: no ground, kerb, pavement, puddle, cast shadow, contact shadow or reflection under or around it. Light the object softly and evenly from above, like an overcast day, with gentle form shading only. No glow, bloom, lit lamps, lit headlights, light spill, rim light, rain or haze: the game lights it at night. Hard, clean silhouette edges with no anti-aliased halo or fringe into the magenta, and nothing magenta or pink on the object. Mid values with moderate contrast, readable when it is about 90 pixels wide. No text, readable signage, logos, number plates with characters, people or watermarks. DO NOT let previous images influence this one. Subject: {subject}
+```
+
+### Requested images
+
+**`street-sedan-r90-intact.png`** — 1536 × 1536. Commission this one first. Attach
+`sedan-r90-layout.png` and the reference.
+
+```text
+(Street prop wrapper with N=1536) Subject: a worn, boxy late-1980s four-door sedan in faded tan paint, parked, seen from above, from in front and to one side, filling the grey blocks exactly: the long low body, the bonnet in front, a raked windscreen rising to a flat roof over the cabin, and a short boot at the back. The car's FRONT is at the lower left of the image (the end marked by the lowest pink diamond). Four black tyres with dull steel hubs sit exactly on the pink diamonds' edges where the guide shows them. Chrome-less bumpers in dark grey plastic, small square headlamps and amber indicators (all OFF, unlit glass), dark tinted side windows showing a hint of seat headrests, a dented front wing, a scuffed lower door sill, sun-faded roof paint, a little rust along the wheel arches, a short broken radio aerial. One plain body with no stripes, decals or lettering. The seam at the dashed red line is just painted body, door shut-lines or glass: put no feature exactly on it.
+```
+
+**`street-sedan-r90-damaged.png`** — 1536 × 1536. Attach `sedan-r90-layout.png`, the reference and the accepted `street-sedan-r90-intact.png`.
+
+```text
+(Street prop wrapper with N=1536) Subject: exactly the same car as the attached intact sedan, same paint, same position and the same outline, now shot up: a crazed, partly missing windscreen, the near side windows shattered to dark holes, bullet holes stitched along the doors and the bonnet, a crumpled front wing, a hanging bumper corner, one flat tyre. The roof line and body outline do not change. No fire, smoke, sparks or glow.
+```
+
+**`street-sedan-r90-wrecked.png`** — 1536 × 1536. Attach `sedan-r90-layout.png`, the reference and the accepted intact image.
+
+```text
+(Street prop wrapper with N=1536) Subject: the burnt-out remains of the same car, low and flattened: the roof and pillars gone or crushed down, the body shell scorched black and rust-orange, no glass left, tyres burnt away to bare steel rims resting on the ground. Nothing rises higher than the lower body (the guide's lower grey block, about the height of the bonnet). Cold: no fire, smoke, embers or glow.
+```
+
+**`street-sedan-r0-intact.png`**, **`-damaged.png`**, **`-wrecked.png`** — 1536 × 1536. Attach `sedan-r0-layout.png`, the reference and, for damaged and wrecked, the accepted r0 intact image. Use the three r90 subjects with one change: "The car's FRONT is at the upper left of the image, facing away; we see its rear and the long side toward the lower left."
+
+**`street-planter-intact.png`** — 1024 × 1024. Attach `planter-layout.png` and the reference.
+
+```text
+(Street prop wrapper with N=1024) Subject: a heavy square street planter of cast concrete, waist-high, with chamfered top edges, filling the grey box exactly: weathered grey concrete with water staining, a chipped corner, a faded sticker scrap and a little graffiti scribble (illegible, never pink or magenta) on one side. A ring of dark soil inside the rim, planted with a dense, rounded clump of dusty dark-green shrubs and one taller ornamental grass that stay inside the green block in the guide. Square and symmetric, so it reads the same from any side.
+```
+
+**`street-planter-damaged.png`** — 1024 × 1024. Attach `planter-layout.png`, the reference and the accepted intact planter.
+
+```text
+(Street prop wrapper with N=1024) Subject: the same planter, same outline, shot up: chunks bitten out of the concrete rim showing grey aggregate, cracks running down two faces, the shrubs torn and leaning, soil spilled over one edge. No smoke or glow.
+```
+
+**`street-planter-wrecked.png`** — 1024 × 1024. Attach `planter-layout.png`, the reference and the accepted intact planter.
+
+```text
+(Street prop wrapper with N=1024) Subject: the planter broken apart into a low heap of concrete slabs, rubble and spilled soil with crushed shrub branches, covering the pink diamond but rising no higher than a third of the original box.
+```
+
+**`street-cabinet-intact.png`** — 1024 × 1024. Attach `cabinet-layout.png` and the reference.
+
+```text
+(Street prop wrapper with N=1024) Subject: a free-standing steel street cabinet, chest-high, filling the grey box exactly, with its DOORS on the face toward the lower left: a bank of nine small lockable steel doors in three rows, each with a slot, a recessed handle and a small blank label plate, framed in a heavier painted-steel housing with a drip cap on top. Battleship-grey paint worn through to bare metal at the edges and handles, rust weeping from the hinges, a layer of old torn flyers and tape residue on the side, one door slightly ajar and dented. Bolted to the ground on a short plinth.
+```
+
+**`street-cabinet-damaged.png`** — 1024 × 1024. Attach `cabinet-layout.png`, the reference and the accepted intact cabinet.
+
+```text
+(Street prop wrapper with N=1024) Subject: the same cabinet, same outline, shot up: bullet holes punched through the doors and side, three doors blown open and hanging, the top crumpled at one corner, paint scorched around the holes. No sparks, smoke or glow.
+```
+
+**`street-cabinet-wrecked.png`** — 1024 × 1024. Attach `cabinet-layout.png`, the reference and the accepted intact cabinet.
+
+```text
+(Street prop wrapper with N=1024) Subject: the cabinet torn down to a low wreck: its plinth and the bottom of the housing still bolted down, the rest folded over and split open, doors scattered flat around it, rising no higher than a third of the original box.
+```

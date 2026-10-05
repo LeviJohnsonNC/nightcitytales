@@ -20,7 +20,14 @@ await mkdir(out, { recursive: true });
 export const CORNER = "place=intersection&seed=7&actors=1&player=30.3,1.6&cam=-10,115,2.2";
 /** The entrance, the awning and the streetlight, closer than play: detail, not framing. */
 const CLOSE = "place=intersection&seed=7&actors=1&player=30.3,1.6&cam=-30,140,4.5";
+/** The blade sign with the review character standing just in front of it. */
+const BLADE = "place=intersection&seed=7&actors=1&player=28.6,2.6&cam=10,135,3.6";
+/** The same camera with no characters: nothing fades, the scenery alone. */
+const SCENERY = "place=intersection&seed=7&actors=0&cam=-10,115,2.2";
 const SHOTS = [
+  ["scenery-solid", `${SCENERY}&reveal=0`],
+  ["scenery-reveal", `${SCENERY}&reveal=1`],
+  ["scenery-solid-lights-off", `${SCENERY}&reveal=0&lights=0`],
   ["corner-solid", `${CORNER}&reveal=0`],
   ["corner-reveal", `${CORNER}&reveal=1`],
   ["corner-solid-lights-off", `${CORNER}&reveal=0&lights=0`],
@@ -30,6 +37,8 @@ const SHOTS = [
   ["corner-solid-no-overlays", `${CORNER}&reveal=0`, { overlays: false }],
   ["corner-reveal-no-overlays", `${CORNER}&reveal=1`, { overlays: false }],
   ["corner-reveal-damaged", `${CORNER}&reveal=1&damage=destroyed`],
+  ["blade-actor-solid", `${BLADE}&reveal=0`],
+  ["blade-actor-reveal", `${BLADE}&reveal=1`],
   ["closeup-reveal", `${CLOSE}&reveal=1`],
   ["closeup-solid", `${CLOSE}&reveal=0`],
   ["closeup-reveal-lights-off", `${CLOSE}&reveal=1&lights=0`],

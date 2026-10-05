@@ -1036,6 +1036,15 @@ neighbouring building (`litBays` excludes them) stay dark. `/scene-review` takes
 of the materials), `lights=0` (same night, local lights off), `cam=x,y,zoom` and `player=x,y` for repeatable
 captures; `tools/scenes/storefront-night.mjs` takes them. See `docs/checkpoint-storefront-night.md`.
 
+The streetlight's base is saved and never moves; which way its arm reaches is `lampArm`, judged from saved
+geometry (the head over open ground, the lantern clear of every cover piece's screen silhouette), so a lantern
+is never drawn on a parked car's bonnet. Every fixture that hangs on a building (the blade sign) is its own
+sprite on that building's activity layer, sorted by its own footprint, and carries `fadeWith`: it can never be
+more solid than the wall it hangs from, and it leaves with that wall in the cutaway. The night's material grade
+(`paintNightGrade`) is a multiply layer over the ground that is visible only at night. Replacement prop art is
+specified in `courtyard/streetPropPack.ts`, never mirrored, and cut at the sedan's section join by `sedanCut`;
+see `docs/street-props-pack.md`.
+
 ## Collaborator names
 
 Levi uses these names across sessions:

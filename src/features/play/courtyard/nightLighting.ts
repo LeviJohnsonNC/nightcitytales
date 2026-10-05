@@ -22,7 +22,16 @@ export type Rgb = readonly [number, number, number];
  * surface under the lamp's centre shows `ambient + intensity` of its painted colour.
  */
 export const INTERSECTION_NIGHT = {
-  ambient: [0.5, 0.56, 0.74] as Rgb,
+  ambient: [0.55, 0.6, 0.74] as Rgb,
+  /**
+   * Per-material multipliers over the ground, on top of the ambient: asphalt goes a
+   * little deeper and cooler, paving a little warmer, so the two stop reading alike.
+   * Net of the slightly lighter ambient above, neither is darker than it was.
+   */
+  grade: {
+    asphalt: [0.84, 0.87, 0.97] as Rgb,
+    paving: [1, 0.98, 0.93] as Rgb,
+  },
   /**
    * How far past the art's own colour a lit surface may go. A canvas stores light up
    * to 1, and painted asphalt is dark: at 1 a streetlight barely shows. The light
@@ -171,6 +180,8 @@ export function paintGroundLight(
     ctx.arc(x, y, light.radius, 0, Math.PI * 2);
     ctx.fill();
   } else {
+    // a window's fan has no hard side: its edges are feathered by the blur
+    ctx.filter = `blur(${Math.max(1, Math.hypot(ex.x - o.x, ex.y - o.y) * 0.4)}px)`;
     const at = (s: number, out: number) => ({
       x: light.origin.x + light.along.x * s + light.out.x * out,
       y: light.origin.y + light.along.y * s + light.out.y * out,

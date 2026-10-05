@@ -12,11 +12,15 @@ import {
   storefrontFor,
   storefrontLights,
   streetLamp,
+  bladeSign,
+  paintBladeSign,
+  BLADE,
   STOREFRONT_ART_FILES,
   type StorefrontArt,
 } from "../courtyard/storefront";
 import { STOREFRONT_LEVELS, STOREFRONT_PACK } from "../courtyard/storefrontPack";
 import { INTERSECTION_NIGHT, lightAt } from "../courtyard/nightLighting";
+import { paintNightGrade } from "../courtyard/composedEnvironment";
 
 const arena = composeScene("intersection", 7).layout.arena;
 const env = arena.environment!;
@@ -257,5 +261,132 @@ describe("storefront: the returned art", () => {
       expect(meta.hasAlpha).toBe(guide.key !== null);
     }
     expect(existsSync(`public${STOREFRONT_ART_FILES.kanji}`)).toBe(true);
+  });
+});
+
+describe("storefront: the streetlight's arm", () => {
+  /** Screen position in metres for this camera, as the arm chooser judges it. */
+  const screen = (x: number, y: number, z: number) => ({
+    x: (x + y) * Math.cos(Math.PI / 6),
+    y: (x - y) * 0.5 - z,
+  });
+  const inside = (
+    p: { x: number; y: number },
+    r: { x: number; y: number; width: number; height: number },
+  ) => p.x > r.x && p.x < r.x + r.width && p.y > r.y && p.y < r.y + r.height;
+
+  it("never moves the saved base, and over seeds 0-80 always finds a clear arm", () => {
+    let lamps = 0;
+    for (let seed = 0; seed <= 80; seed++) {
+      const a = composeScene("intersection", seed).layout.arena;
+      for (const s of a.environment!.structures) {
+        const f = storefrontFor(s, a.environment!, a.cover ?? []);
+        if (!f?.lamp) continue;
+        lamps++;
+        const saved = a.environment!.dressing.find((d) => d.id === "shop_lamp_detail_0")!;
+        const lamp = streetLamp(f)!;
+        expect(lamp.base).toEqual(saved.position);
+        expect(f.arm!.clear, `seed ${seed}`).toBe(true);
+        expect(f.arm!.length).toBeGreaterThanOrEqual(1.2);
+        expect(f.arm!.length).toBeLessThanOrEqual(3);
+        // the head hangs over open ground: no building, no cover piece under it
+        for (const st of a.environment!.structures)
+          if (st.style !== "mesh-fence" && st.style !== "interior-wall")
+            expect(inside(lamp.head, st.rect), `seed ${seed} ${st.id}`).toBe(false);
+        for (const c of a.cover ?? []) expect(inside(lamp.head, c.rect)).toBe(false);
+      }
+    }
+    expect(lamps).toBeGreaterThan(20);
+  });
+
+  it("moves seed 7's lantern off the parked car's bonnet and keeps its pool under it", () => {
+    const a = composeScene("intersection", 7).layout.arena;
+    const f = storefrontFor(shop, a.environment!, a.cover ?? [])!;
+    const lamp = streetLamp(f)!;
+    const lens = screen(lamp.head.x, lamp.head.y, lamp.headZ);
+    const car = a.cover!.filter((c) => c.id.startsWith("curb_west_car"));
+    for (const c of car) {
+      const r = c.rect;
+      const pts = [0, 1.7].flatMap((z) =>
+        [
+          [r.x, r.y],
+          [r.x + r.width, r.y + r.height],
+          [r.x, r.y + r.height],
+          [r.x + r.width, r.y],
+        ].map(([x, y]) => screen(x!, y!, z)),
+      );
+      // outside the car's silhouette (its convex hull from this camera)
+      const hull = [...pts].sort((p, q) => p.x - q.x || p.y - q.y);
+      const cross = (
+        o: { x: number; y: number },
+        a: { x: number; y: number },
+        b: { x: number; y: number },
+      ) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+      const half = (list: { x: number; y: number }[]) => {
+        const out: { x: number; y: number }[] = [];
+        for (const q of list) {
+          while (out.length >= 2 && cross(out[out.length - 2]!, out[out.length - 1]!, q) <= 0)
+            out.pop();
+          out.push(q);
+        }
+        out.pop();
+        return out;
+      };
+      const poly = [...half(hull), ...half([...hull].reverse())];
+      const insideHull = poly.every((a, k) => cross(a, poly[(k + 1) % poly.length]!, lens) >= 0);
+      expect(insideHull).toBe(false);
+    }
+    const pool = storefrontLights(f, INTERSECTION_NIGHT).find(
+      (l) => l.kind === "pool" && l.radius === INTERSECTION_NIGHT.lamp.radius,
+    );
+    expect(pool!.kind === "pool" && pool!.centre).toEqual(lamp.head);
+  });
+});
+
+describe("storefront: the blade sign", () => {
+  const blade = bladeSign(sf)!;
+
+  it("stands off the fascia just past the awning, clear of the awning and the walk", () => {
+    expect(blade.s).toBeCloseTo(sf.awning.offset + sf.awning.span + 0.5);
+    const foot = blade.footprint;
+    const awning = awningFootprint(sf);
+    // beside the canopy, not over it
+    expect(foot.x).toBeGreaterThanOrEqual(awning.x + awning.width);
+    // outside the building, within a metre of its wall
+    expect(foot.y + foot.height).toBeLessThanOrEqual(shop.rect.y);
+    expect(shop.rect.y - foot.y).toBeLessThanOrEqual(1);
+    // high enough to walk under
+    expect(BLADE.z0).toBeGreaterThan(2.4);
+  });
+
+  it("paints its lettering only as light, and nothing in the light pass", () => {
+    const glow = recorder();
+    paintBladeSign(glow.ctx, project, pixelsPerMetre, sf, art, "glow");
+    expect(glow.log.some((l) => l.startsWith("set:shadowBlur"))).toBe(true);
+    const light = recorder();
+    paintBladeSign(light.ctx, project, pixelsPerMetre, sf, art, "light");
+    expect(light.log).toHaveLength(0);
+    const albedo = recorder();
+    paintBladeSign(albedo.ctx, project, pixelsPerMetre, sf, art, "albedo");
+    expect(albedo.log).toContain("fill");
+  });
+});
+
+describe("night grade", () => {
+  it("grades asphalt and paving and leaves everything else as painted", () => {
+    const fills: string[] = [];
+    const r = recorder();
+    const ctx = new Proxy(r.ctx as unknown as Record<string, unknown>, {
+      set: (_t, name: string, value: unknown) => {
+        if (name === "fillStyle") fills.push(String(value));
+        return true;
+      },
+      get: (t, name: string) => t[name],
+    }) as unknown as CanvasRenderingContext2D;
+    paintNightGrade(ctx, arena, project, INTERSECTION_NIGHT);
+    const css = (c: readonly number[]) => `rgb(${c.map((v) => Math.round(v * 255)).join(",")})`;
+    expect(fills[0]).toBe("#ffffff");
+    expect(fills).toContain(css(INTERSECTION_NIGHT.grade.asphalt));
+    expect(fills).toContain(css(INTERSECTION_NIGHT.grade.paving));
   });
 });

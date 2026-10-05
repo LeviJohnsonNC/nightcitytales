@@ -396,6 +396,11 @@ export function createCourtyard(
           (prop.getData("cutawayHeight") ?? 0) <= 0.95;
         prop.setAlpha(lowCutaway ? 1 : obstructs ? 0.4 : 1);
       }
+      // A fixture fades with what it hangs from: a sign on a ghosted wall is ghosted too.
+      for (const prop of structures) {
+        const parent = prop.getData("fadeWith") as Phaser.GameObjects.Image | undefined;
+        if (parent) prop.setAlpha(Math.min(prop.alpha, parent.alpha));
+      }
       applyNight();
       this.weather.clear();
       if (!street && !motion.matches) {
@@ -491,6 +496,7 @@ export function createCourtyard(
     const on = dark();
     if (tinted !== on) {
       tinted = on;
+      night.grade?.setVisible(on);
       const ambient = tintFor(night.config.ambient);
       for (const image of lit) {
         if (on) image.setTint(ambient);

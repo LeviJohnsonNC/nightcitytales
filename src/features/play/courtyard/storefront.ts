@@ -67,6 +67,103 @@ export interface Storefront {
   litBays: number[];
   /** The saved streetlight beside the shop, if the recipe has one. */
   lamp?: Point;
+  /** Which way its arm reaches from that saved base, and how far (`lampArm`). */
+  arm?: LampArm;
+}
+
+/** A streetlight arm: a world unit vector from the pole, and its length in metres. */
+export interface LampArm {
+  dir: Point;
+  length: number;
+  /** False when no candidate cleared everything and the arm fell back to the facade normal. */
+  clear: boolean;
+}
+
+/** Screen position in units of the scene's pixels-per-metre, for this camera. Linear in
+ * metres, so clearance can be judged without a projection or a zoom. */
+const unitScreen = (x: number, y: number, z: number) => ({
+  x: (x + y) * Math.cos(Math.PI / 6),
+  y: (x - y) * 0.5 - z,
+});
+
+/**
+ * Which way the saved streetlight's arm reaches, judged from saved geometry only.
+ *
+ * The base never moves. Candidate arms (every 15°, 1.2–2.4 m, the range of real
+ * cobra-head mast arms) are kept only if the head hangs over open ground, clear of
+ * every building footprint and every cover piece, and only if the lantern, seen from
+ * this camera, clears the silhouette of every cover piece: a lantern drawn over a
+ * parked car's bonnet reads as its headlight. Of those, the one closest to pointing
+ * straight out from the facade, and then nearest the usual 1.5 m, wins. When none clears, the arm
+ * falls back to straight out at 1.5 m and says so (`clear: false`).
+ */
+export function lampArm(
+  base: Point,
+  outward: Point,
+  structures: readonly SceneStructure[],
+  cover: readonly { rect: Rect }[],
+  poleHeight: number,
+): LampArm {
+  const pad = (r: Rect, m: number) => ({
+    x: r.x - m,
+    y: r.y - m,
+    width: r.width + 2 * m,
+    height: r.height + 2 * m,
+  });
+  const inside = (p: Point, r: Rect) =>
+    p.x > r.x && p.x < r.x + r.width && p.y > r.y && p.y < r.y + r.height;
+  const solids = structures.filter((s) => s.style !== "mesh-fence" && s.style !== "interior-wall");
+  // Each cover piece's silhouette from this camera: its footprint lifted to car height.
+  const silhouettes = cover.map(({ rect: r }) =>
+    [0, 1.7].flatMap((z) =>
+      [
+        [r.x, r.y],
+        [r.x + r.width, r.y],
+        [r.x + r.width, r.y + r.height],
+        [r.x, r.y + r.height],
+      ].map(([x, y]) => unitScreen(x!, y!, z)),
+    ),
+  );
+  const hulls = silhouettes.map(hull);
+  /** Distance from a point to a convex polygon: zero inside it. */
+  const distance = (p: Point, poly: Point[]) => {
+    let inside = true;
+    let best = Infinity;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i]!;
+      const b = poly[(i + 1) % poly.length]!;
+      const ex = b.x - a.x;
+      const ey = b.y - a.y;
+      if (ex * (p.y - a.y) - ey * (p.x - a.x) < 0) inside = false;
+      const t = Math.max(
+        0,
+        Math.min(1, ((p.x - a.x) * ex + (p.y - a.y) * ey) / (ex * ex + ey * ey)),
+      );
+      best = Math.min(best, Math.hypot(p.x - a.x - ex * t, p.y - a.y - ey * t));
+    }
+    return inside ? 0 : best;
+  };
+  const headZ = poleHeight - 0.15;
+  /** Screen clearance kept around the lantern and its halo, in metres. */
+  const margin = 0.5;
+  let best: (LampArm & { cost: number }) | undefined;
+  for (let deg = 0; deg < 360; deg += 15) {
+    const a = (deg * Math.PI) / 180;
+    const dir = { x: Math.cos(a), y: Math.sin(a) };
+    const turn = Math.acos(Math.max(-1, Math.min(1, dir.x * outward.x + dir.y * outward.y)));
+    for (const length of [1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3]) {
+      const head = { x: base.x + dir.x * length, y: base.y + dir.y * length };
+      const mid = { x: base.x + dir.x * length * 0.5, y: base.y + dir.y * length * 0.5 };
+      if (solids.some((s) => inside(head, pad(s.rect, 0.3)) || inside(mid, s.rect))) continue;
+      if (cover.some((c) => inside(head, pad(c.rect, 0.3)))) continue;
+      const lens = unitScreen(head.x, head.y, headZ);
+      if (hulls.some((h) => distance(lens, h) < margin)) continue;
+      const cost = turn * 2 + Math.abs(length - 1.5) * 0.5;
+      if (!best || cost < best.cost - 1e-9) best = { dir, length, clear: true, cost };
+    }
+  }
+  if (!best) return { dir: outward, length: 1.5, clear: false };
+  return { dir: best.dir, length: best.length, clear: true };
 }
 
 /**
@@ -78,6 +175,9 @@ export function storefrontFor(
   structure: SceneStructure,
   env: Pick<SceneEnvironment, "entrances" | "dressing"> &
     Partial<Pick<SceneEnvironment, "structures">>,
+  /** The arena's cover pieces: the streetlight's arm is chosen to clear them. */
+  cover: readonly { rect: Rect }[] = [],
+  poleHeight = INTERSECTION_NIGHT.lamp.poleHeight,
 ): Storefront | undefined {
   if (structure.style !== "shop") return undefined;
   const awning = structure.attachments?.find((a) => a.id === "shop-canopy" && a.kind === "awning");
@@ -106,7 +206,20 @@ export function storefrontFor(
         p.y < o.rect.y + o.rect.height,
     );
   const litBays = bays.filter((s) => !covered(front(s + 1.1)));
-  return { structure, awning, edge, length, door, bays, litBays, ...(lamp ? { lamp } : {}) };
+  const outward = edge === "north" ? { x: 0, y: -1 } : { x: 1, y: 0 };
+
+  return {
+    structure,
+    awning,
+    edge,
+    length,
+    door,
+    bays,
+    litBays,
+    ...(lamp
+      ? { lamp, arm: lampArm(lamp, outward, env.structures ?? [structure], cover, poleHeight) }
+      : {}),
+  };
 }
 
 /** Screen point for `s` along the face, `out` from the wall, `z` up. */
@@ -344,7 +457,7 @@ export function paintStorefrontFace(o: FaceOptions) {
     fillPoly(
       ctx,
       [at(s0, 0, bottom), at(s0, -depth, bottom), at(s0, -depth, top), at(s0, 0, top)],
-      "#10191d",
+      "#0a1114",
     );
     gradientFill(
       ctx,
@@ -352,13 +465,13 @@ export function paintStorefrontFace(o: FaceOptions) {
       at(s0, -depth, bottom),
       at(s0, -depth, bottom + 0.5),
       [
-        [0, "rgba(0,0,0,.0)"],
+        [0, "rgba(0,0,0,.38)"],
         [1, "rgba(0,0,0,0)"],
       ],
     );
     // inner shadow under the head
     gradientFill(ctx, quad(s0, s1, top - 0.45, top, 0), at(s0, 0, top), at(s0, 0, top - 0.45), [
-      [0, "rgba(0,0,0,.42)"],
+      [0, "rgba(0,0,0,.56)"],
       [1, "rgba(0,0,0,0)"],
     ]);
     ctx.restore();
@@ -418,11 +531,11 @@ export function paintStorefrontFace(o: FaceOptions) {
     }
     // shade under the housing, and at the foot where the shutter meets the pavement
     gradientFill(ctx, opening, at(sf.door, 0, L.doorHeight), at(sf.door, 0, L.doorHeight - 0.5), [
-      [0, "rgba(0,0,0,.5)"],
+      [0, "rgba(0,0,0,.62)"],
       [1, "rgba(0,0,0,0)"],
     ]);
     gradientFill(ctx, opening, at(sf.door, 0, 0), at(sf.door, 0, 0.3), [
-      [0, "rgba(0,0,0,.35)"],
+      [0, "rgba(0,0,0,.48)"],
       [1, "rgba(0,0,0,0)"],
     ]);
     ctx.restore();
@@ -503,7 +616,7 @@ export function paintStorefrontFace(o: FaceOptions) {
       at(0, 0, L.awningWall),
       at(0, 0, L.awningWall - 0.6),
       [
-        [0, "rgba(0,0,0,.42)"],
+        [0, "rgba(0,0,0,.56)"],
         [1, "rgba(0,0,0,0)"],
       ],
     );
@@ -619,10 +732,12 @@ function paintFaceLight(
     for (const s0 of sf.litBays) {
       const s1 = s0 + STOREFRONT_FACE.bayWidth;
       if (!reaches(s0, s1)) continue;
+      // modest: multiplied by the art and the night's gain, this lifts the room to
+      // about its painted brightness, warm, instead of washing it out
       gradientFill(ctx, quad(s0, s1, bottom, top), at(s0, 0, bottom), at(s0, 0, top), [
-        [0, lightColor(warm, 0.95)],
-        [0.6, lightColor(warm, 0.7)],
-        [1, lightColor(warm, 0.45)],
+        [0, lightColor(warm, 0.62)],
+        [0.6, lightColor(warm, 0.48)],
+        [1, lightColor(warm, 0.34)],
       ]);
     }
     // the downlight under the housing washes the shutter's head and the wall beside it
@@ -648,6 +763,19 @@ function paintFaceLight(
       path(ctx, quad(0, sf.length, 0, L.parapetTop + 0.1, 0));
       ctx.fillStyle = g;
       ctx.fill();
+      // Edges that face the lamp catch it: the parapet's top lip and the corner pier
+      // nearest it, fading with distance. Nothing else on the building is outlined.
+      const reach = 6 * ppm;
+      const e = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, reach);
+      e.addColorStop(0, lightColor(night.lamp.color, 1));
+      e.addColorStop(0.5, lightColor(night.lamp.color, 0.35));
+      e.addColorStop(1, lightColor(night.lamp.color, 0));
+      ctx.fillStyle = e;
+      path(ctx, quad(0, sf.length, L.parapetTop - 0.06, L.parapetTop, 0));
+      ctx.fill();
+      const corner = lamp.s < sf.length / 2 ? 0 : sf.length - 0.1;
+      path(ctx, quad(corner, corner + 0.1, 0, L.parapetTop, 0));
+      ctx.fill();
     }
     return;
   }
@@ -656,9 +784,9 @@ function paintFaceLight(
     const s1 = s0 + STOREFRONT_FACE.bayWidth;
     if (!reaches(s0, s1)) continue;
     gradientFill(ctx, quad(s0, s1, bottom, top), at(s0, 0, bottom), at(s0, 0, top), [
-      [0, lightColor(warm, 0.26)],
-      [0.55, lightColor(warm, 0.11)],
-      [1, lightColor(warm, 0.05)],
+      [0, lightColor(warm, 0.15)],
+      [0.55, lightColor(warm, 0.06)],
+      [1, lightColor(warm, 0.02)],
     ]);
   }
   // the downlight itself: a bright strip on the housing's underside, front edge
@@ -680,6 +808,179 @@ function paintFaceLight(
   }
   if (signed && o.art.kanji)
     lightKanji(o, o.art.kanji, signGlyphs(), 0.06, 5 * Math.max(1, ppm / 12));
+}
+
+/**
+ * The blade sign: a thin lightbox standing out from the fascia on two brackets, just
+ * past the awning's far end, with the shop's name running down it in neon. It is a
+ * fixture of the full building, so the renderer shows it only while that wall stands
+ * (the cutaway takes the fascia away, and the blade with it) and fades it with its
+ * building. Presentation only: it stands 3 m up and blocks nothing.
+ */
+export const BLADE = {
+  /** Metres out from the wall: the brackets bridge the first 0.18 m. */
+  out0: 0.18,
+  out1: 0.62,
+  z0: 2.95,
+  z1: 4.15,
+  thickness: 0.07,
+  cell: 0.24,
+} as const;
+
+/** Where the blade stands along the face, or nothing if the face has no room. */
+export function bladeSign(sf: Storefront) {
+  const { offset, span } = sf.awning;
+  const after = offset + span + 0.5;
+  const before = offset - 0.5;
+  const s = after < sf.length - 0.6 ? after : before > 0.6 ? before : undefined;
+  if (s === undefined) return undefined;
+  const r = sf.structure.rect;
+  const t = BLADE.thickness / 2;
+  const footprint: Rect =
+    sf.edge === "north"
+      ? { x: r.x + s - t, y: r.y - BLADE.out1, width: 2 * t, height: BLADE.out1 - BLADE.out0 }
+      : {
+          x: r.x + r.width + BLADE.out0,
+          y: r.y + s - t,
+          width: BLADE.out1 - BLADE.out0,
+          height: 2 * t,
+        };
+  return { s, footprint };
+}
+
+/** Draw `image` on the blade's camera-facing side: across from its outer edge to the
+ * wall (screen-right, so the glyphs are not mirrored), and down. */
+function drawOnBlade(
+  ctx: CanvasRenderingContext2D,
+  at: (s: number, out: number, z: number) => Point,
+  image: TileSource,
+  s: number,
+  outA: number,
+  zTop: number,
+  widthM: number,
+  heightM: number,
+) {
+  const o = at(s, outA, zTop);
+  const u = at(s, outA - 1, zTop);
+  const v = at(s, outA, zTop - 1);
+  const kx = widthM / image.width;
+  const ky = heightM / image.height;
+  ctx.save();
+  ctx.transform((u.x - o.x) * kx, (u.y - o.y) * kx, (v.x - o.x) * ky, (v.y - o.y) * ky, o.x, o.y);
+  ctx.drawImage(image, 0, 0);
+  ctx.restore();
+}
+
+/** One glyph of a horizontal four-glyph mask, as its own image (cached). */
+const glyphCells = new WeakMap<object, HTMLCanvasElement[]>();
+function cellsOf(mask: TileSource): HTMLCanvasElement[] {
+  const hit = glyphCells.get(mask);
+  if (hit) return hit;
+  const w = Math.floor(mask.width / 4);
+  const cells = [0, 1, 2, 3].map((i) => {
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = mask.height;
+    c.getContext("2d")!.drawImage(mask, i * w, 0, w, mask.height, 0, 0, w, mask.height);
+    return c;
+  });
+  glyphCells.set(mask, cells);
+  return cells;
+}
+
+export function paintBladeSign(
+  ctx: CanvasRenderingContext2D,
+  project: Project,
+  ppm: number,
+  sf: Storefront,
+  art: StorefrontArt,
+  pass: Pass,
+) {
+  const blade = bladeSign(sf);
+  if (!blade || pass === "light") return;
+  const at = facePoint(sf, project, ppm);
+  const { s } = blade;
+  const t = BLADE.thickness / 2;
+  const { out0, out1, z0, z1, cell } = BLADE;
+  // the side the camera sees is the +s side of the blade
+  const side = s + t;
+  const panel = [at(side, out1, z1), at(side, out0, z1), at(side, out0, z0), at(side, out1, z0)];
+  const inset = 0.04;
+  const tube = [
+    at(side, out1 - inset, z1 - inset),
+    at(side, out0 + inset, z1 - inset),
+    at(side, out0 + inset, z0 + inset),
+    at(side, out1 - inset, z0 + inset),
+  ];
+  const glyphZ = (i: number) => z1 - 0.1 - i * (cell + 0.03);
+  const glyphOut = (out0 + out1) / 2 + cell / 2;
+  if (pass === "glow") {
+    // a neon border tube and the four glyphs, the colour that reads at play zoom
+    ctx.save();
+    ctx.shadowColor = "rgba(255,70,110,.85)";
+    ctx.shadowBlur = Math.max(3, ppm * 0.35);
+    path(ctx, tube);
+    ctx.strokeStyle = "rgba(255,93,124,.95)";
+    ctx.lineWidth = Math.max(1, ppm * 0.07);
+    ctx.stroke();
+    if (art.kanji) {
+      const cells = cellsOf(art.kanji);
+      // thickened by a centimetre each way: thin strokes do not survive this size
+      const bold = [-0.012, 0, 0.012];
+      cells.forEach((c, i) => {
+        for (const d of bold)
+          drawOnBlade(
+            ctx,
+            at,
+            tintedMask(c, "#ff5d7c"),
+            side,
+            glyphOut + d,
+            glyphZ(i) + d,
+            cell,
+            cell,
+          );
+      });
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 0.6;
+      cells.forEach((c, i) => {
+        for (const d of bold)
+          drawOnBlade(ctx, at, tintedMask(c, "#ffd7df"), side, glyphOut + d, glyphZ(i), cell, cell);
+      });
+    }
+    ctx.restore();
+    return;
+  }
+  // brackets: two steel arms from the fascia to the panel's inner edge, and a brace
+  for (const z of [z1 - 0.12, z0 + 0.12]) {
+    strokeLine(ctx, at(s, 0, z), at(s, out0 + 0.02, z), "#11181c", 2.2);
+    strokeLine(ctx, at(s, 0, z + 0.02), at(s, out0 + 0.02, z + 0.02), "#6f7d81", 0.7);
+  }
+  strokeLine(ctx, at(s, 0, z0 - 0.15), at(s, out0, z0 + 0.12), "#11181c", 1.4);
+  // the box: its outer edge, its top, then the face the camera sees
+  fillPoly(
+    ctx,
+    [at(s - t, out1, z1), at(side, out1, z1), at(side, out1, z0), at(s - t, out1, z0)],
+    "#0b0f13",
+  );
+  fillPoly(
+    ctx,
+    [at(s - t, out1, z1), at(s - t, out0, z1), at(side, out0, z1), at(side, out1, z1)],
+    "#4a585e",
+  );
+  fillPoly(ctx, panel, "#14181e");
+  path(ctx, panel);
+  ctx.strokeStyle = "#3e4b51";
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  // unlit, the tubes are dull coral glass
+  path(ctx, tube);
+  ctx.strokeStyle = "#6e3040";
+  ctx.lineWidth = Math.max(0.8, ppm * 0.05);
+  ctx.stroke();
+  if (art.kanji)
+    cellsOf(art.kanji).forEach((c, i) =>
+      drawOnBlade(ctx, at, tintedMask(c, "#7a3443"), side, glyphOut, glyphZ(i), cell, cell),
+    );
 }
 
 /**
@@ -933,8 +1234,8 @@ export function paintStorefrontGround(o: GroundOptions) {
       faceWorld(sf, 0, 0.8),
     ]);
     gradientFill(ctx, strip, across(0, 0), across(0, 0.8), [
-      [0, "rgba(2,6,9,.62)"],
-      [0.35, "rgba(2,6,9,.26)"],
+      [0, "rgba(2,6,9,.72)"],
+      [0.3, "rgba(2,6,9,.3)"],
       [1, "rgba(2,6,9,0)"],
     ]);
   }
@@ -1113,8 +1414,13 @@ export function streetLamp(sf: Storefront, night: NightLighting = INTERSECTION_N
   if (!sf.lamp) return undefined;
   const o = faceWorld(sf, 0, 0);
   const b = faceWorld(sf, 0, 1);
-  const out = { x: b.x - o.x, y: b.y - o.y };
-  const head = { x: sf.lamp.x + out.x * night.lamp.arm, y: sf.lamp.y + out.y * night.lamp.arm };
+  const arm = sf.arm ?? {
+    dir: { x: b.x - o.x, y: b.y - o.y },
+    length: night.lamp.arm,
+    clear: false,
+  };
+  const out = arm.dir;
+  const head = { x: sf.lamp.x + out.x * arm.length, y: sf.lamp.y + out.y * arm.length };
   const r = sf.structure.rect;
   const s = sf.edge === "north" ? head.x - r.x : head.y - r.y;
   const outM = sf.edge === "north" ? r.y - head.y : head.x - (r.x + r.width);
@@ -1123,6 +1429,7 @@ export function streetLamp(sf: Storefront, night: NightLighting = INTERSECTION_N
     head,
     /** World unit vector from the pole toward the head. */
     out,
+    reach: arm.length,
     poleZ: night.lamp.poleHeight,
     headZ: night.lamp.poleHeight - 0.15,
     /** The head in face coordinates: metres along the face, and out from it. */
@@ -1158,7 +1465,7 @@ export function paintStreetLamp(
   const side = { x: -lamp.out.y, y: lamp.out.x };
   const corner = (t: number, w: number, z: number) =>
     at({ x: along(t).x + side.x * w, y: along(t).y + side.y * w }, z);
-  const reach = INTERSECTION_NIGHT.lamp.arm;
+  const reach = lamp.reach;
   const h0 = reach - 0.55;
   const h1 = reach + 0.35;
   const zTop = lamp.headZ + 0.12;
@@ -1170,9 +1477,12 @@ export function paintStreetLamp(
     const footL = at({ x: lamp.head.x - side.x * pool, y: lamp.head.y - side.y * pool }, 0);
     const footR = at({ x: lamp.head.x + side.x * pool, y: lamp.head.y + side.y * pool }, 0);
     const cone = ctx.createLinearGradient(lensMid.x, lensMid.y, lensMid.x, (footL.y + footR.y) / 2);
-    cone.addColorStop(0, "rgba(255,214,150,.16)");
-    cone.addColorStop(0.5, "rgba(255,204,140,.05)");
+    cone.addColorStop(0, "rgba(255,214,150,.09)");
+    cone.addColorStop(0.5, "rgba(255,204,140,.03)");
     cone.addColorStop(1, "rgba(255,200,130,0)");
+    // a haze, not a solid: no hard boundary for the eye to find
+    ctx.save();
+    ctx.filter = `blur(${Math.max(2, ppm * 0.35)}px)`;
     path(ctx, [
       { x: lensMid.x - 3, y: lensMid.y },
       { x: lensMid.x + 3, y: lensMid.y },
@@ -1181,6 +1491,7 @@ export function paintStreetLamp(
     ]);
     ctx.fillStyle = cone;
     ctx.fill();
+    ctx.restore();
     // the lens: one small, bright point under the head, with a tight halo
     const r = 0.7 * ppm;
     const g = ctx.createRadialGradient(lensMid.x, lensMid.y, 0, lensMid.x, lensMid.y, r);

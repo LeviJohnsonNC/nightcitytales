@@ -28,6 +28,9 @@ import {
   storefrontFor,
   storefrontLights,
   streetLamp,
+  bladeSign,
+  paintBladeSign,
+  BLADE,
   type Pass,
   type Storefront,
   type StorefrontArt,
@@ -945,8 +948,37 @@ export function paintBuilding(
 export interface ComposedEnvironment {
   objects: Phaser.GameObjects.Image[];
   lit: Phaser.GameObjects.Image[];
-  /** The night, if this scene has one, and what lights stand in it. */
-  night?: { config: NightLighting; lights: GroundLight[] };
+  /** The night, if this scene has one, and what lights stand in it. `grade` is a
+   * multiply layer over the ground that tells its materials apart at night. */
+  night?: { config: NightLighting; lights: GroundLight[]; grade?: Phaser.GameObjects.Image };
+}
+
+/**
+ * The night's material grade: one multiplier per kind of ground, so asphalt, paving
+ * and everything else do not all settle into the same blue-grey under one ambient.
+ * Drawn per saved zone, at scene resolution; a smooth layer needs no more.
+ */
+export function paintNightGrade(
+  ctx: CanvasRenderingContext2D,
+  arena: Arena,
+  project: Project,
+  night: NightLighting,
+) {
+  const { rect } = painter(ctx, project);
+  const css = (c: readonly number[]) => `rgb(${c.map((v) => Math.round(v * 255)).join(",")})`;
+  rect({ x: -20, y: -20, width: 72, height: 72 }, "#ffffff");
+  for (const z of arena.environment!.zones) {
+    const grade =
+      z.kind === "road" ||
+      z.kind === "intersection" ||
+      z.kind === "crosswalk" ||
+      z.kind === "parking"
+        ? night.grade.asphalt
+        : z.kind === "sidewalk"
+          ? night.grade.paving
+          : undefined;
+    if (grade) rect(z.rect, css(grade));
+  }
 }
 
 /** Each large mass is a separate sprite so actors can reveal it by occlusion fading. */
@@ -993,7 +1025,7 @@ export function createComposedEnvironment(
   const storefronts =
     materials && storefrontArt
       ? env.structures.flatMap((s) => {
-          const sf = storefrontFor(s, env);
+          const sf = storefrontFor(s, env, arena.cover ?? []);
           return sf ? [sf] : [];
         })
       : [];
@@ -1103,6 +1135,19 @@ export function createComposedEnvironment(
         .setDepth(-999.5)
         .setVisible(false),
     );
+  }
+  let grade: Phaser.GameObjects.Image | undefined;
+  if (night) {
+    const g = scene.textures.createCanvas("composed-night-grade", gw, gh)!;
+    g.context.translate(-gx, -gy);
+    paintNightGrade(g.context, arena, project, night);
+    g.refresh();
+    grade = scene.add
+      .image(gx + gw / 2, gy + gh / 2, "composed-night-grade")
+      .setDisplaySize(gw, gh)
+      .setBlendMode("MULTIPLY")
+      .setDepth(-999.8)
+      .setVisible(false);
   }
   const objects: Phaser.GameObjects.Image[] = [];
   const occluders = activityOccluders(arena);
@@ -1296,7 +1341,7 @@ export function createComposedEnvironment(
       // finished storefront, whose sign and windows are read up close, at more.
       const clad = materials && s.style === "shop" ? resolution * (storefrontOf(s) ? 1.5 : 1) : 1;
       const front = storefrontOf(s);
-      add(
+      const building = add(
         `structure-${s.id}`,
         (ctx) =>
           paintBuilding(ctx, s, project, arena.environment!.entrances, materials, storefrontOf(s)),
@@ -1401,6 +1446,41 @@ export function createComposedEnvironment(
           ?.setData("activityLayer", "awning")
           .setData("revealOk", kept)
           .setData("sortRect", footprint);
+        // The blade sign hangs on the fascia: it shows only while the full building
+        // does, and never stays brighter or more solid than the wall it hangs from.
+        const blade = bladeSign(sf);
+        if (blade && building) {
+          const t = BLADE.thickness;
+          const ends = [BLADE.out0, BLADE.out1].flatMap((out) =>
+            [BLADE.z0 - 0.3, BLADE.z1 + 0.1].flatMap((z) => [
+              at(blade.s - t, out, z),
+              at(blade.s + t, out, z),
+              at(blade.s, 0, z),
+            ]),
+          );
+          const pad = 0.6 * metre;
+          const x0 = Math.min(...ends.map((p) => p.x)) - pad;
+          const y0 = Math.min(...ends.map((p) => p.y)) - pad;
+          const sign = (ctx: CanvasRenderingContext2D, pass: Pass) =>
+            paintBladeSign(ctx, project, metre, sf, front.art, pass);
+          const f = blade.footprint;
+          add(
+            `blade-${s.id}`,
+            (ctx) => sign(ctx, "albedo"),
+            project({ x: f.x + f.width / 2, y: f.y + f.height / 2 }).y,
+            {
+              x: Math.floor(x0),
+              y: Math.floor(y0),
+              width: Math.ceil(Math.max(...ends.map((p) => p.x)) + pad - x0),
+              height: Math.ceil(Math.max(...ends.map((p) => p.y)) + pad - y0),
+            },
+            4,
+            sign,
+          )
+            ?.setData("activityLayer", building.getData("activityLayer"))
+            .setData("sortRect", f)
+            .setData("fadeWith", building);
+        }
       }
     }
   }
@@ -1496,5 +1576,9 @@ export function createComposedEnvironment(
           : undefined,
     )?.setData("sortRect", { ...d.position, width: 0, height: 0 });
   }
-  return { objects, lit, ...(night ? { night: { config: night, lights } } : {}) };
+  return {
+    objects,
+    lit,
+    ...(night ? { night: { config: night, lights, ...(grade ? { grade } : {}) } } : {}),
+  };
 }
