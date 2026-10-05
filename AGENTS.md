@@ -1044,9 +1044,31 @@ more solid than the wall it hangs from, and it leaves with that wall in the cuta
 (`paintNightGrade`) is a multiply layer over the ground that is visible only at night. Replacement prop art is
 specified in `courtyard/streetPropPack.ts`, never mirrored, and cut at the sedan's section join by `sedanCut`;
 see `docs/street-props-pack.md`. `tools/art/street-props.ts` validates and imports Picasso's images into
-`public/images/street-props/` (one 512 x 640 frame per saved section), and `courtyard/streetPropArt.ts` swaps
+`public/images/street-props/` (one frame per saved section, at twice the board's frame), and `courtyard/streetPropArt.ts` swaps
 them in under the procedural texture's own key, on intersection scenes only (gated like the materials), keeping
 the procedural kit wherever a file is missing. Registration, sorting, fading and damage are the board's, unchanged.
+A sedan's art is padded past its 2 m frame (`SEDAN_ART_PAD`), and the texture carries where the frame sits
+(`propArtRegistration`, read by `paintCover`): never resize a frame to fit art. The importer refuses a seam between
+the halves and a wreck taller than its `wreckVolume`; see `docs/street-props-pack.md` §4 and §7.
+
+### The architectural pilot (courtyard/frontage.ts)
+
+The storefront's block (`frontageBlock`: the shop and the `shop` masses flush against it) and the street are
+detailed as built things, on intersection scenes with materials only. The rules:
+
+- **The shop and its neighbours.** The shop keeps the warm, lit focal face. Its neighbours get a restrained identity:
+  dark render, a metal-capped parapet, high barred windows and a louvre. No door is ever painted where no entrance is
+  saved.
+- **Roofs and drainage.** Every block roof is a parapet with a coping. Each roof drains by one downpipe on a solid pier
+  of an open face (`downpipes`, clear of every opening).
+- **Kerbs.** Every pavement edge meeting a carriageway is a run of kerb stones (`kerbRuns`). Its face shows only where
+  the road lies toward the camera, and it drops flush with tactile paving at crossings.
+- **Wear.** Grime and wear go where use puts it: wall feet, pipe shoes, the shop door, the vendor's stall. Never as an
+  all-over noise layer.
+- **Presentation only.** Nothing here adds collision, moves a wall, entrance or route, or changes sorting.
+- **The handover.** `frontagePilot` (`composedEnvironment.ts`) is the one place the walls, roofs and ground learn the
+  block. `tools/scenes/corner-plan.ts` draws the saved plan over a capture. See
+  `docs/checkpoint-architecture-pilot.md` and `docs/architecture-pack.md`.
 
 ## Collaborator names
 

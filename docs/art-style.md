@@ -437,3 +437,71 @@ Single game prop for an isometric tactical game, painted digitally with fine vis
 ```text
 (Street prop wrapper with N=1024) Subject: the cabinet torn down to a low wreck: its plinth and the bottom of the housing still bolted down, the rest folded over and split open, doors scattered flat around it, rising no higher than a third of the original box.
 ```
+
+### Lower wrecks (edits)
+
+The planter's and the cabinet's wrecks stand too tall for walkable remains: the
+importer measures 27.5% and 32.5% of each heap above its volume (limit 1%; see
+[`street-props-pack.md`](street-props-pack.md#7-lower-wrecks)). These are EDITS of the
+images already in the game, so the object, its materials and its place on the canvas
+stay; only the heap comes down. The sedan wrecks pass and are not being redrawn.
+
+**Attach, in this order:** the wrecked image being edited (from `src/assets/creator/`),
+`docs/street-props-pack/wreck-guides/<id>-wreck-layout.png`, and the intact image of the
+same object. The layout is drawn on the returned images' own 1254 × 1254 canvas, at the
+place the intact object stands. Never attach `-wreck-check.png`. Save under the same file
+name, replacing the old wreck.
+
+#### Wreck edit wrapper
+
+Replace `{max}`, `{ceiling}` and `{subject}`.
+
+```text
+EDIT the first attached image, a wrecked game prop for an isometric tactical game. Keep EVERYTHING that defines it: the canvas exactly 1254 x 1254 px, the true-isometric orthographic viewpoint, the scale, the flat solid #FF00FF background, the soft even overcast light, and the same materials and colours, so it is still the same object as the third attached image, its intact state. Change ONE thing: make the remains LOWER. The second attached image is a measured layout on the same canvas, in the same place: the dark grey block is the most the remains may occupy, and its flat top face is the ceiling, {ceiling} ({max} m); the pale grey slab around it is the object's own ground, where only flat debris may lie, no thicker than a hand. Every opaque pixel of the result must sit inside the grey shapes. Bring it down by breaking it down further, NOT by squashing: do not stretch, compress, rescale or move the existing pieces; pieces that stood up now lie flat, tip over or snap off low. Nothing flung beyond the pale slab. Do not reproduce the layout's flat grey, its outlines or anything from it. Hard, clean silhouette edges with no halo or fringe into the magenta; nothing magenta or pink on the object. No smoke, dust cloud, fire, embers or glow. Subject: {subject}
+```
+
+**`street-planter-wrecked.png`** (edit) — attach the current `street-planter-wrecked.png`,
+`planter-wreck-layout.png` and `street-planter-intact.png`.
+
+```text
+(Wreck edit wrapper with max=0.35, ceiling=about knee height) Subject: the same broken concrete planter, knocked down further. The four concrete walls are snapped off near the ground: low jagged stumps of the walls still stand on the original square, inside the dark block, and the slabs that broke off lie flat or tipped onto their sides just around them, on the pale slab. The soil is spread in a low mound between the stumps, and the shrubs are crushed and lying flat in it, with no branch standing up. Nothing rises above the dark block's top face and nothing spills past the pale slab.
+```
+
+**`street-cabinet-wrecked.png`** (edit) — attach the current `street-cabinet-wrecked.png`,
+`cabinet-wreck-layout.png` and `street-cabinet-intact.png`.
+
+```text
+(Wreck edit wrapper with max=0.5, ceiling=just over knee height) Subject: the same steel street cabinet, torn down further. Only its plinth and the bottom of the housing are still bolted to the ground, inside the dark block, ripped off ragged at about knee height. The rest of the housing has folded down flat and split open onto the ground beside it, and the small doors lie flat around it on the pale slab, a few face down. No wall, door or panel stands up above the dark block's top face, and nothing spills past the pale slab.
+```
+
+## Surface tiles (combat scenes)
+
+Seamless world-scaled tiles the renderer lays on walls and roofs
+(`surfaceMaterials.ts`): **one square tile, flat-on, evenly lit, that repeats with no
+seam.** The game decides how bright it is at night and draws every edge, joint and
+fitting over it. The pack and its reasons are in
+[`architecture-pack.md`](architecture-pack.md). **Attach, with each prompt,
+`docs/architecture-pack/guides/<key>-scale.png`.** It fixes the grain's size. Save
+under the file name above each prompt.
+
+### Surface tile wrapper
+
+Replace `{N}` and `{subject}`.
+
+```text
+Seamless tiling surface texture for an isometric tactical game, painted digitally with fine visible brush texture, in the grounded, lived-in late-1980s and 1990s neon-noir cyberpunk look of a matte painting. Seen exactly straight-on: flat and orthographic, with no perspective, horizon, edge or corner. The image is ONE square tile, {N} x {N} px, that repeats: its left edge continues into its right edge and its top edge into its bottom edge with no visible seam, and nothing large or distinctive appears that would show the repeat. Lit softly and perfectly evenly: no cast shadows, vignette, light gradient, sheen, wet reflections, lamps or glow, because the game lights it. Mid values with low-to-moderate contrast. The attached scale card shows how much of the world one tile covers and draws the grain to scale in its top-left metre: match that grain size, and do NOT reproduce the card's grid, shapes, colours or text. No text, logos, people or watermarks. DO NOT let previous images influence this one. Subject: {subject}
+```
+
+### Requested images
+
+**`roof-ballast.png`** — 1024 × 1024. One tile covers 2 × 2 m. Attach `roof-ballast-scale.png`.
+
+```text
+(Surface tile wrapper with N=1024) Subject: the flat roof of a small commercial building, covered edge to edge in loose rounded gravel ballast: river stones 20 to 40 mm across in mixed cool greys and a few warmer buff ones, packed closely with dark gaps between them. A little windblown grit and dust settled in the hollows, and a few faintly darker patches where it stays damp. Nothing else: no drains, seams, membrane, edges, pipes, leaves or litter.
+```
+
+**`painted-render.png`** — 1024 × 1024. One tile covers 4 × 4 m. Attach `painted-render-scale.png`.
+
+```text
+(Surface tile wrapper with N=1024) Subject: a building wall of smooth cement render, painted long ago in a dull warm grey-brown and left to weather: faint curved trowel marks 0.2 to 0.5 m across, two or three fine hairline cracks wandering across it, slightly patchy areas where it was repainted in a not-quite-matching shade, and a very light, even film of city grime. Nothing else: no windows, doors, pipes, joints, edges, stains running from features, graffiti or text.
+```

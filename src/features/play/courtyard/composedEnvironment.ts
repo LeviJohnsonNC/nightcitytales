@@ -25,8 +25,11 @@ import {
   paintStreetLamp,
   paintStorefrontFace,
   paintStorefrontGround,
+  meterBox,
+  METER_BOX,
   storefrontFor,
   storefrontLights,
+  storefrontOpenings,
   streetLamp,
   bladeSign,
   paintBladeSign,
@@ -35,6 +38,23 @@ import {
   type Storefront,
   type StorefrontArt,
 } from "./storefront";
+import {
+  downpipes,
+  exposedSpans,
+  frontageBlock,
+  neighbourFace,
+  paintDownpipe,
+  paintFrontageGround,
+  paintNeighbourFace,
+  paintParapet,
+  paintPlinth,
+  paintRoofOutlet,
+  paintStreetscape,
+  solidSpans,
+  type Downpipe,
+  type Edge,
+  type FrontageRole,
+} from "./frontage";
 import {
   INTERSECTION_NIGHT,
   blocksLight,
@@ -384,11 +404,23 @@ export function paintComposedGround(
     ctx.fillStyle = i % 3 ? "rgba(187,197,185,.045)" : "rgba(0,0,0,.12)";
     ctx.fillRect(p.x, p.y, random() * 3 + 0.3, 0.7);
   }
+  // The architectural pilot's street: kerbs, channel, crossings and gullies.
+  if (textured)
+    paintStreetscape(
+      ctx,
+      env,
+      project,
+      Math.hypot(
+        project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
+        project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
+      ),
+      textured,
+    );
   for (const d of env.dressing) {
     const p = project(d.position);
     if (!night && (d.kind === "lamp" || d.kind === "sign"))
       glow(p, 55, d.kind === "lamp" ? "rgba(243,185,104,.14)" : "rgba(77,196,195,.13)");
-    if (d.kind === "drain") {
+    if (d.kind === "drain" && !textured) {
       rect({ x: d.position.x - 0.2, y: d.position.y - 0.2, width: 0.45, height: 0.7 }, "#141f25");
       for (let i = 0; i < 5; i++)
         line(
@@ -538,6 +570,81 @@ export function paintCutaway(
   for (const part of parts) paintCutawayWall(ctx, structure, part, project, materials);
 }
 
+/** A mass's part in the architectural pilot, and what the block shares. */
+export interface BlockDetail {
+  role: FrontageRole;
+  pipes: readonly Downpipe[];
+  structures: readonly SceneStructure[];
+}
+
+/** The generic face's openings: the bays and doors `paintBuilding` draws on it. */
+function genericOpenings(
+  structure: SceneStructure,
+  entrances: SceneEnvironment["entrances"],
+  edge: Edge,
+): [number, number][] {
+  const r = structure.rect;
+  const length = edge === "north" ? r.width : r.height;
+  const doors = (entrances ?? [])
+    .filter(
+      (e) =>
+        e.structureId === structure.id &&
+        (edge === "north" ? e.position.y === r.y - 1 : e.position.x === r.x + r.width + 1),
+    )
+    .map((e) => (edge === "north" ? e.position.x - r.x : e.position.y - r.y));
+  const out: [number, number][] = doors.map((d) => [d - 0.9, d + 0.9]);
+  const step = structure.style === "residential" ? 4 : 3;
+  for (let start = 0.5; start + 2.2 < length; start += step)
+    if (!doors.some((door) => door > start - 1.1 && door < start + 3.3))
+      out.push([start, start + 2.2]);
+  return out;
+}
+
+/** What the storefront's own face carries from the pilot. */
+function frontageOnFace(detail: BlockDetail, structure: SceneStructure, edge: Edge) {
+  const pipe = detail.pipes.find((p) => p.structure === structure && p.edge === edge);
+  return pipe ? { pipe } : {};
+}
+
+/**
+ * The architectural pilot for one storefront: its block, what each mass is, and where
+ * each roof drains — computed once, so the walls, the roofs and the ground agree.
+ */
+export function frontagePilot(
+  sf: Storefront,
+  structures: readonly SceneStructure[],
+  entrances: SceneEnvironment["entrances"],
+) {
+  const neighbours = frontageBlock(structures, sf.structure);
+  const masses = [sf.structure, ...neighbours];
+  const busy = (s: SceneStructure, edge: Edge): [number, number][] => {
+    if (s === sf.structure && edge === sf.edge) {
+      const meter = meterBox(sf);
+      return [
+        ...storefrontOpenings(sf),
+        ...(meter !== undefined ? [[meter, meter + METER_BOX.width] as [number, number]] : []),
+      ];
+    }
+    if (neighbours.includes(s))
+      return exposedSpans(s, edge, structures).flatMap((span) => {
+        const f = neighbourFace(edge, span);
+        return [
+          ...f.windows.map((w) => [w, w + 1.6] as [number, number]),
+          ...(f.louvre !== undefined ? [[f.louvre, f.louvre + 0.9] as [number, number]] : []),
+        ];
+      });
+    return genericOpenings(s, entrances, edge);
+  };
+  const pipes = downpipes(masses, structures, busy);
+  const detail = (s: SceneStructure): BlockDetail | undefined =>
+    s === sf.structure
+      ? { role: "shop", pipes, structures }
+      : neighbours.includes(s)
+        ? { role: "neighbour", pipes, structures }
+        : undefined;
+  return { masses, neighbours, pipes, detail };
+}
+
 export function paintBuilding(
   ctx: CanvasRenderingContext2D,
   structure: SceneStructure,
@@ -546,6 +653,8 @@ export function paintBuilding(
   materials?: MaterialSet,
   /** The finished storefront, for the one shop that has its art. */
   storefront?: { sf: Storefront; art: StorefrontArt; pass: Pass },
+  /** The architectural pilot (`frontage.ts`): what this mass is in the shop's block. */
+  frontage?: BlockDetail,
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -619,11 +728,14 @@ export function paintBuilding(
   const palette =
     structure.style === "residential"
       ? ["#766957", "#554f49", "#675346"]
-      : structure.style === "shop"
-        ? ["#49474a", "#333941", "#646360"]
-        : structure.style === "workshop"
-          ? ["#4b4940", "#353b3b", "#686356"]
-          : ["#3e4a50", "#2c3942", "#56656b"];
+      : frontage?.role === "neighbour"
+        ? // the shop's neighbours: dark painted render and a paler, cooler roof
+          ["#3e3a36", "#2c2b2a", "#4d5352"]
+        : structure.style === "shop"
+          ? ["#49474a", "#333941", "#646360"]
+          : structure.style === "workshop"
+            ? ["#4b4940", "#353b3b", "#686356"]
+            : ["#3e4a50", "#2c3942", "#56656b"];
   // Commercial frontage takes concrete, a membrane roof, painted rooftop units and
   // shuttered doors; every other building keeps its flat fills for now. Materials
   // are laid first, so windows, bays, doors and trim below paint over them.
@@ -659,6 +771,31 @@ export function paintBuilding(
   const face = (a: Point, b: Point, length: number, shade: string, edge: "north" | "east") => {
     // The storefront's face is painted whole by its own routine, over the concrete.
     if (storefront && storefront.sf.edge === edge) return;
+    if (frontage) {
+      const pipe = frontage.pipes.find((p) => p.structure === structure && p.edge === edge);
+      if (frontage.role === "neighbour") {
+        // restrained: render, high barred windows, a louvre, a plinth; no door where
+        // no entrance is saved, no light, no sign
+        for (const span of exposedSpans(structure, edge, frontage.structures)) {
+          const f = neighbourFace(edge, span);
+          paintPlinth(ctx, project, pixelsPerMetre, structure, edge, [span], "neighbour");
+          paintNeighbourFace(ctx, project, pixelsPerMetre, structure, f);
+        }
+        if (pipe) paintDownpipe(ctx, project, pixelsPerMetre, pipe, "neighbour");
+        return;
+      }
+      // the shop's other face keeps its bays and gains a plinth between them
+      paintPlinth(
+        ctx,
+        project,
+        pixelsPerMetre,
+        structure,
+        edge,
+        solidSpans([0, length], genericOpenings(structure, entrances, edge)),
+        "shop",
+      );
+      if (pipe) paintDownpipe(ctx, project, pixelsPerMetre, pipe, "shop");
+    }
     const at = (t: number, z: number) => ({
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t - z,
@@ -799,17 +936,24 @@ export function paintBuilding(
       art: storefront.art,
       materials: clad,
       pass: "albedo",
+      ...(frontage ? { frontage: frontageOnFace(frontage, structure, storefront.sf.edge) } : {}),
     });
   surface(top, palette[2]!, "#6c716b", "roof-membrane", groundBasis(project, h));
   // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
   for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
-  for (let t = 0.15; t < 1; t += 0.18)
+  // a neighbour's roof is ballasted, not a seamed membrane
+  for (let t = 0.15; frontage?.role !== "neighbour" && t < 1; t += 0.18)
     line(
       { x: top[0]!.x + (top[1]!.x - top[0]!.x) * t, y: top[0]!.y + (top[1]!.y - top[0]!.y) * t },
       { x: top[3]!.x + (top[2]!.x - top[3]!.x) * t, y: top[3]!.y + (top[2]!.y - top[3]!.y) * t },
       "#323f43",
       1,
     );
+  if (frontage) {
+    paintParapet(ctx, project, pixelsPerMetre, structure, frontage.role, clad);
+    for (const pipe of frontage.pipes.filter((p) => p.structure === structure))
+      paintRoofOutlet(ctx, project, pixelsPerMetre, pipe);
+  }
   // Rooftop service equipment is dressing on an inaccessible building, not cover.
   for (let i = 0; i < Math.min(3, Math.floor((r.width - 1) / 3)); i++) {
     const equipment = {
@@ -1029,6 +1173,10 @@ export function createComposedEnvironment(
           return sf ? [sf] : [];
         })
       : [];
+  // the architectural pilot: each storefront's block, detailed as built
+  const pilots = storefronts.map((sf) => frontagePilot(sf, env.structures, env.entrances));
+  const detailOf = (s: SceneStructure) =>
+    pilots.map((p) => p.detail(s)).find((d) => d !== undefined);
   const storefrontOf = (s: SceneStructure, pass: Pass = "albedo") => {
     const sf = storefronts.find((f) => f.structure.id === s.id);
     return sf && storefrontArt ? { sf, art: storefrontArt, pass } : undefined;
@@ -1113,6 +1261,36 @@ export function createComposedEnvironment(
       structures: env.structures,
       pass: "albedo",
     });
+  for (const [k, sf] of storefronts.entries()) {
+    const pilot = pilots[k]!;
+    const entrance = (env.entrances ?? []).find((e) => e.structureId === sf.structure.id);
+    paintFrontageGround({
+      ctx: ground.context,
+      project,
+      ppm: metre,
+      block: pilot.masses,
+      structures: env.structures,
+      pipes: pilot.pipes,
+      ...(entrance
+        ? {
+            door: {
+              at:
+                sf.edge === "north"
+                  ? { x: entrance.position.x, y: sf.structure.rect.y }
+                  : { x: sf.structure.rect.x + sf.structure.rect.width, y: entrance.position.y },
+              edge: sf.edge,
+            },
+          }
+        : {}),
+      // a vendor's stall cooks where it stands: its cover pieces
+      stalls: env.props
+        .filter((p) => p.art === "food-cart")
+        .flatMap((p) => {
+          const c = arena.cover?.find((q) => q.id === p.coverId);
+          return c ? [c.rect] : [];
+        }),
+    });
+  }
   ground.context.restore();
   ground.refresh();
   const groundImage = scene.add
@@ -1344,7 +1522,15 @@ export function createComposedEnvironment(
       const building = add(
         `structure-${s.id}`,
         (ctx) =>
-          paintBuilding(ctx, s, project, arena.environment!.entrances, materials, storefrontOf(s)),
+          paintBuilding(
+            ctx,
+            s,
+            project,
+            arena.environment!.entrances,
+            materials,
+            storefrontOf(s),
+            detailOf(structure),
+          ),
         depth,
         bounds,
         clad,
@@ -1357,6 +1543,7 @@ export function createComposedEnvironment(
                 arena.environment!.entrances,
                 materials,
                 storefrontOf(s, pass),
+                detailOf(structure),
               )
           : undefined,
       )

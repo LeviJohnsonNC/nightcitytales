@@ -67,6 +67,8 @@ export const SEDAN = {
   cabin: { x0: 2.05, x1: 3.3, y0: 0.32, y1: 1.68 },
   /** Where the windscreen meets the bonnet: it slopes up from here to the roof's front. */
   windscreenFoot: 1.45,
+  /** How far the radio aerial may stand above the roof, at the rear. */
+  aerial: 0.7,
   wheel: { radius: 0.32, centres: [0.7, 3.38], y: [0.18, 1.82] },
   /** Height the wrecked remains stay under: walkable wreckage is drawn low. */
   wreckedMax: 0.55,
@@ -256,26 +258,37 @@ export function sedanCut(g: PackGuide) {
       [SEDAN.cabin.x1 + 0.05, y, SEDAN.roof + 0.08],
       [SEDAN.cabin.x1 + 0.05, y, SEDAN.hood],
     ]),
+    // the radio aerial stands up off the rear wing, behind the roof: it is the cabin's
+    ...[y0, y1].flatMap((y) => [
+      [SEDAN.cabin.x1 + 0.05, y, SEDAN.roof + SEDAN.aerial],
+      [SEDAN.body.x1 + pad, y, SEDAN.roof + SEDAN.aerial],
+    ]),
   ];
   const half =
     nearer === "sedan-engine"
       ? body(SEDAN.body.x0 - pad, SEDAN.join)
       : [...body(SEDAN.join, SEDAN.body.x1 + pad), ...glass];
-  // The nearer section can only keep what lies inside its own frame; anything of its
+  // The nearer section can only keep what lies inside its own art; anything of its
   // half beyond that stays with the farther section, or the car would show a hole.
-  const own = sectionFrameOnGuide(
+  // The art is padded past the 2 m frame (`SEDAN_ART_PAD`) so that, in practice,
+  // nothing of either half is beyond it.
+  const own = sectionArtOnGuide(
     g,
     g.sections.findIndex((s) => s.art === nearer),
   );
-  const shape = clipToRect(
-    hull(half.map(([x, y, z]) => toGuide(g, sedanPoint(x!, y!, z!, g.rotation)))),
-    own,
-  );
+  const onGuide = (pts: number[][]) =>
+    clipToRect(hull(pts.map(([x, y, z]) => toGuide(g, sedanPoint(x!, y!, z!, g.rotation)))), own);
+  const shape = onGuide(half);
+  // Seen from the camera, the engine's box overlaps the foot of the windscreen when
+  // the engine is the nearer section (rotation 90). The glass is the cabin's, so it is
+  // cut out of the engine's shape: a wrecked cabin must not leave a windscreen standing.
+  const hole = nearer === "sedan-engine" ? onGuide(glass) : null;
   return {
     nearer,
     farther,
-    /** The nearer section keeps exactly this; the farther keeps all but this. */
+    /** The nearer section keeps exactly this, less `nearerHole`; the farther keeps the rest. */
     nearerShape: shape,
+    nearerHole: hole,
     keep: { [nearer]: shape, [farther]: null } as Record<string, Point[] | null>,
     exclude: { [nearer]: null, [farther]: shape } as Record<string, Point[] | null>,
   };
@@ -320,6 +333,92 @@ export function sectionFrameOnGuide(g: PackGuide, section: number) {
     width: FRAME.width * g.scale,
     height: FRAME.height * g.scale,
   };
+}
+
+/**
+ * How far a section's ART reaches past its 2 m frame, in frame pixels. A car is not cut
+ * by its 2 m boxes: at rotation 0 the cabin's windscreen reaches 18 px left of the
+ * cabin's frame, and its aerial stands above it, so a cabin drawn inside its frame
+ * alone left that piece behind on the engine, where a wrecked engine showed an intact
+ * windscreen fragment and an intact engine kept the cabin's aerial. Padding is
+ * presentation only: the board still places, sorts and damages the section by its
+ * own 2 m footprint, and reads where the frame sits in the art from `propArtRegistration`.
+ */
+export const SEDAN_ART_PAD = { side: 32, top: 32 } as const;
+
+/** The art's padding for a section kind (frame pixels): sedans only. */
+export function artPad(art: string) {
+  return art.startsWith("sedan-") ? SEDAN_ART_PAD : { side: 0, top: 0 };
+}
+
+/** Where a section's ART sits on the guide: its frame plus `artPad`. */
+export function sectionArtOnGuide(g: PackGuide, section: number) {
+  const f = sectionFrameOnGuide(g, section);
+  const pad = artPad(g.sections[section]!.art);
+  return {
+    x: f.x - pad.side * g.scale,
+    y: f.y - pad.top * g.scale,
+    width: f.width + 2 * pad.side * g.scale,
+    height: f.height + pad.top * g.scale,
+  };
+}
+
+/**
+ * How the board registers padded art: the 2 m frame's front corner is still the
+ * origin, and the frame's width is still the footprint's projected width.
+ */
+export function propArtRegistration(art: string) {
+  const pad = artPad(art);
+  const width = FRAME.width + 2 * pad.side;
+  return {
+    originX: (pad.side + FRAME.width / 2) / width,
+    originY: 1,
+    groundWidth: FRAME.width / width,
+  };
+}
+
+/** Loose debris (glass, panels, rubble) may lie anywhere on a wreck's 2 m ground, this low. */
+export const WRECK_DEBRIS = 0.12;
+
+/**
+ * The volume a WRECKED image must stay inside, in guide pixels: the object's body,
+ * splayed a little, up to its state's limit (`wreckedMax`), plus a thin layer of debris
+ * over its 2 m ground. Wrecked remains are walkable and drawn under every person
+ * (`propPlacement`), so anything taller reads as cover that is not there and is drawn
+ * under the person standing behind it. Each entry is a block: its outline seen from
+ * the camera (`hull`, a convex polygon) and its ceiling (`top`); the volume is their union.
+ */
+export function wreckVolume(g: PackGuide): { hull: Point[]; top: Point[] }[] {
+  const box = (
+    at: (x: number, y: number, z: number) => Point,
+    b: { x0: number; x1: number; y0: number; y1: number },
+    z: number,
+  ) => ({
+    hull: hull(
+      [b.x0, b.x1].flatMap((x) => [b.y0, b.y1].flatMap((y) => [at(x, y, 0), at(x, y, z)])),
+    ),
+    top: [at(b.x0, b.y0, z), at(b.x1, b.y0, z), at(b.x1, b.y1, z), at(b.x0, b.y1, z)],
+  });
+  const ground = { x0: 0.05, x1: 1.95, y0: 0.05, y1: 1.95 };
+  if (g.id.startsWith("sedan")) {
+    const at = (x: number, y: number, z: number) => toGuide(g, sedanPoint(x, y, z, g.rotation));
+    const splay = 0.08;
+    const body = {
+      x0: SEDAN.body.x0 - splay,
+      x1: SEDAN.body.x1 + splay,
+      y0: SEDAN.body.y0 - splay,
+      y1: SEDAN.body.y1 + splay,
+    };
+    return [
+      box(at, body, SEDAN.wreckedMax),
+      box(at, ground, WRECK_DEBRIS),
+      box(at, { ...ground, x0: 2.05, x1: 3.95 }, WRECK_DEBRIS),
+    ];
+  }
+  const at = (x: number, y: number, z: number) => toGuide(g, framePoint(x, y, z, g.rotation));
+  const b = g.id === "planter" ? PLANTER.body : CABINET.body;
+  const max = g.id === "planter" ? PLANTER.wreckedMax : CABINET.wreckedMax;
+  return [box(at, b, max), box(at, ground, WRECK_DEBRIS)];
 }
 
 export const PROP_STATES: readonly PropState[] = ["intact", "damaged", "wrecked"];

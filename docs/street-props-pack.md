@@ -74,7 +74,7 @@ sections, so the halves always match at the join (§4).
 | `planter`   | `street-planter-{state}.png`   | 1024 × 1024 | 237 px/m     | 1.76 m square concrete box, rim 0.64 m, foliage ≤ 1.25 m |
 | `cabinet`   | `street-cabinet-{state}.png`   | 1024 × 1024 | 218 px/m     | 1.76 × 0.9 × 1.52 m steel, doors toward −y (the street)  |
 
-`{state}` is `intact`, `damaged` or `wrecked`. Runtime frames will be 512 × 640, twice
+`{state}` is `intact`, `damaged` or `wrecked`. Runtime frames are 512 × 640 (sedans 640 × 704, padded; §4), twice
 the old 256 × 320, because the corner is now read at up to 6× zoom.
 
 **Attach, for each image:**
@@ -106,11 +106,28 @@ importer).
    aligned on its left extreme and lowest point. The height that falls out is checked against the guide's
    (±25%). Damaged and wrecked reuse the intact fit, so the object never jumps between states; their
    silhouette must not drift more than 3% from the intact one, wrecked excepted.
-3. **Cut the sedan** by `sedanCut`. The engine half is the bonnet and front body up to the join; the cabin half
-   is the rear body **and the whole glasshouse**, windscreen included, so no mix of states leaves a roof stub.
-   The nearer section keeps its half, clipped to its own frame; the farther keeps everything else, so the
-   halves always add up to the whole car.
-4. **Crop each section's frame** (`sectionFrameOnGuide`) and scale to 512 × 640 (lanczos3).
+3. **Cut the sedan** by `sedanCut`.
+   - **The halves.** The engine half is the bonnet and front body up to the join. The cabin half is the rear
+     body, **the whole glasshouse** (windscreen included) and the aerial on the rear wing. So no mix of
+     states leaves a roof stub, a standing windscreen or a stray aerial.
+   - **Overlap at r90.** At rotation 90 the engine's 2 m box overlaps the windscreen's foot on screen, so the
+     glass is cut out of the engine's shape (`nearerHole`).
+   - **Soft edge.** The nearer section keeps its half with a soft edge. The farther gives up only what lies
+     wholly inside that half, so it stays solid under the nearer one's soft edge. Complementary soft masks
+     never add up to solid when one is drawn over the other: they left a faint line of whatever was behind
+     the car along the cut, which was the r0 seam visible even with both halves intact.
+4. **Resample each section's art** (`sectionArtOnGuide`) at sub-pixel precision.
+   - **Why sub-pixel.** The board places the two sections 147.8 frame pixels apart at rotation 0, a
+     fraction. Cropping at rounded pixel bounds put the halves up to half a source pixel out of register.
+   - **The sampler.** Separable Lanczos-3, on premultiplied colour.
+   - **Padding.** A sedan's art is padded past its 2 m frame (`SEDAN_ART_PAD`: 32 px each side and on top),
+     so each half fits whole: at r0 the cabin's windscreen reaches 18 px left of its frame. Files are
+     640 × 704 for sedans and 512 × 640 for the rest.
+   - **Registration.** The board reads the frame's place in the art from the texture's registration
+     (`propArtRegistration`), so the footprint, sorting and damage are unchanged.
+   - **The seam check.** The importer lays the two intact halves over each other exactly as the board does.
+     It fails if anything inside the car is left see-through. The old mask fails it (175 and 388 px); the
+     cut passes (0).
 5. **In game**, `streetPropArt.ts` loads the files and replaces `prop-<kind>-<condition>[-90]` with them, with
    the procedural kit's own contact shadow drawn underneath. A missing file leaves the procedural texture.
    The sedan has its own files for each rotation; the planter's one file serves both; the cabinet has art at
@@ -147,6 +164,46 @@ for the next pack.
 They are in [`art-style.md`](art-style.md#street-props-combat-scenes), with a wrapper
 and one subject per image.
 
+## 7. Lower wrecks
+
+The importer checks every wrecked image against its volume (`wreckVolume`):
+
+- the body, splayed 8 cm, up to its state's limit: sedan 0.55 m, planter 0.35 m, cabinet 0.5 m;
+- plus a debris layer 12 cm thick over its own 2 m ground.
+
+Wrecked remains are walkable and drawn under every person, so anything taller reads as cover
+that is not there, and is drawn under a person standing behind it. A single image can only be
+judged by its silhouette: the remains must sit inside the screen shape of that volume.
+
+| Wreck     | Above its volume | Verdict                                             |
+| --------- | ---------------- | --------------------------------------------------- |
+| sedan r90 | 0.0%             | passes                                              |
+| sedan r0  | 0.0%             | passes                                              |
+| planter   | 27.5%            | redraw: the rubble rises and spills past its ground |
+| cabinet   | 32.5%            | redraw: the torn housing stands far too tall        |
+
+**The redraws are edits.** The planter and cabinet wrecks are redrawn as edits of today's images, so the object, its
+materials and its place on the canvas stay. The guides are written by the importer to
+`wreck-guides/<id>-wreck-layout.png`, on the returned images' own 1254 × 1254 canvas, at the
+place the intact object stands:
+
+- the dark block is the most the remains may occupy, and its top face is the ceiling;
+- the pale slab is the ground, where only flat debris may lie.
+
+`<id>-wreck-check.png` shows today's wreck with its excess in red (never attach). The prompts
+are in [`art-style.md`](art-style.md#lower-wrecks-edits). The sedans pass and are not redrawn.
+
+**Until the redraws arrive**, those two ids are on the importer's `TALL_WRECKS_PENDING` list.
+They import with their excess reported. When a redraw passes, the importer says so; take it off
+the list, and a tall wreck fails the import from then on.
+
+**Characters and the remains** (browser, today's art):
+
+- A character standing on rubble or a shell is drawn over it and reads as standing in the remains.
+- In front of a wreck, nothing changes.
+- Behind the planter's or cabinet's heap, a character is drawn over rubble that should hide their
+  feet. That is the case the lower redraw removes.
+
 ## Files
 
 - `src/features/play/courtyard/streetPropPack.ts`, `__tests__/streetPropPack.test.ts`
@@ -155,6 +212,7 @@ and one subject per image.
   `__tests__/streetPropArt.test.ts`
 - `public/images/street-props/` (runtime frames)
 - `docs/street-props-pack/imported-frames.jpg`, `mixed-sections.jpg`
+- `docs/street-props-pack/wreck-guides/` (wreck layouts to attach, check sheets)
 - `docs/street-props-pack/guides/`:
   - `<id>-layout.png` (attach)
   - `<id>-annotated.png` (check by eye)

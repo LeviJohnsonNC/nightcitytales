@@ -3,12 +3,21 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { streetPropFiles } from "../courtyard/streetPropArt";
 import {
+  FRAME,
   SEDAN,
+  SEDAN_ART_PAD,
   STREET_PROP_PACK,
+  propArtRegistration,
+  sectionArtOnGuide,
   sectionFrameOnGuide,
   sedanCut,
   sedanPoint,
   toGuide,
+  wreckVolume,
+  WRECK_DEBRIS,
+  PLANTER,
+  CABINET,
+  framePoint,
 } from "../courtyard/streetPropPack";
 
 type Point = { x: number; y: number };
@@ -59,12 +68,31 @@ describe("street prop art: the files the board loads", () => {
     expect(streetPropFiles(["crates", "barrier"] as never)).toEqual([]);
   });
 
-  it("ships every file it names, at twice the procedural frame, with alpha", () => {
+  it("ships every file it names, at twice the procedural frame plus its padding, with alpha", () => {
     const files = streetPropFiles(["sedan-engine", "sedan-cabin", "planter", "mailboxes"]);
     const names = files.map((f) => f.url.split("/").pop()!);
     expect(readdirSync(DIR).sort()).toEqual([...names].sort());
-    for (const name of names)
-      expect(webpHeader(join(DIR, name)), name).toEqual({ width: 512, height: 640, alpha: true });
+    for (const file of files) {
+      const name = file.url.split("/").pop()!;
+      const sedan = file.kind.startsWith("sedan-");
+      expect(webpHeader(join(DIR, name)), name).toEqual({
+        width: 2 * (FRAME.width + (sedan ? 2 * SEDAN_ART_PAD.side : 0)),
+        height: 2 * (FRAME.height + (sedan ? SEDAN_ART_PAD.top : 0)),
+        alpha: true,
+      });
+    }
+  });
+
+  it("registers padded art by its 2 m frame, so the footprint never moves", () => {
+    // unpadded art is the procedural registration exactly
+    expect(propArtRegistration("planter")).toEqual({ originX: 0.5, originY: 1, groundWidth: 1 });
+    const r = propArtRegistration("sedan-cabin");
+    const width = FRAME.width + 2 * SEDAN_ART_PAD.side;
+    // the frame's front corner (its bottom centre) is still the origin
+    expect(r.originX * width).toBe(SEDAN_ART_PAD.side + FRAME.width / 2);
+    expect(r.originY).toBe(1);
+    // and the frame, not the padded art, spans the footprint's projected width
+    expect(r.groundWidth * width).toBe(FRAME.width);
   });
 });
 
@@ -80,23 +108,41 @@ describe("street prop art: the sedan's cut", () => {
       ),
     );
 
+  /** What the nearer section keeps: inside its shape and outside its hole. */
+  const keeps = (cut: ReturnType<typeof sedanCut>, p: Point) =>
+    inside(cut.nearerShape, p) && !(cut.nearerHole && inside(cut.nearerHole, p));
+
   it("gives the whole glasshouse to the cabin, so no half carries a roof stub", () => {
     const g = STREET_PROP_PACK.find((p) => p.id === "sedan-r90")!;
     const cut = sedanCut(g);
     expect(cut.nearer).toBe("sedan-engine");
-    // the engine (nearer here) keeps no roof and no windscreen top
-    expect(inside(cut.nearerShape, roof(g))).toBe(false);
-    const screenTop = toGuide(g, sedanPoint(SEDAN.cabin.x0, 1, SEDAN.roof, g.rotation));
-    expect(inside(cut.nearerShape, screenTop)).toBe(false);
+    // the engine (nearer here) keeps no roof and no windscreen, top or foot, though
+    // its 2 m box overlaps the windscreen's foot on screen
+    expect(keeps(cut, roof(g))).toBe(false);
+    for (const z of [SEDAN.roof, (SEDAN.hood + SEDAN.roof) / 2, SEDAN.hood + 0.1]) {
+      const x = SEDAN.windscreenFoot + ((z - SEDAN.hood) / (SEDAN.roof - SEDAN.hood)) * 0.6;
+      for (const y of [0.5, 1, 1.5])
+        expect(keeps(cut, toGuide(g, sedanPoint(x, y, z, g.rotation))), `${x},${y},${z}`).toBe(
+          false,
+        );
+    }
     // but it keeps its bonnet
     const bonnet = toGuide(g, sedanPoint(1, 1, SEDAN.hood, g.rotation));
-    expect(inside(cut.nearerShape, bonnet)).toBe(true);
+    expect(keeps(cut, bonnet)).toBe(true);
   });
 
-  it("never asks the nearer section to keep what lies outside its own frame", () => {
+  it("gives the cabin its aerial, which stands off the rear wing", () => {
+    const g = STREET_PROP_PACK.find((p) => p.id === "sedan-r0")!;
+    const cut = sedanCut(g);
+    expect(cut.nearer).toBe("sedan-cabin");
+    for (const y of [SEDAN.body.y0, SEDAN.body.y1])
+      expect(keeps(cut, toGuide(g, sedanPoint(3.5, y, SEDAN.roof + 0.5, 0)))).toBe(true);
+  });
+
+  it("never asks the nearer section to keep what lies outside its own art", () => {
     for (const g of STREET_PROP_PACK.filter((p) => p.id.startsWith("sedan"))) {
       const cut = sedanCut(g);
-      const f = sectionFrameOnGuide(
+      const f = sectionArtOnGuide(
         g,
         g.sections.findIndex((s) => s.art === cut.nearer),
       );
@@ -106,7 +152,35 @@ describe("street prop art: the sedan's cut", () => {
         expect(p.y).toBeGreaterThanOrEqual(f.y - 1e-6);
         expect(p.y).toBeLessThanOrEqual(f.y + f.height + 1e-6);
       }
-      if (g.rotation === 0) expect(inside(cut.nearerShape, roof(g))).toBe(true);
+      if (g.rotation === 0) expect(keeps(cut, roof(g))).toBe(true);
+      // the art is the frame padded, never smaller
+      const frame = sectionFrameOnGuide(g, 0);
+      expect(f.width).toBeGreaterThan(frame.width);
+    }
+  });
+});
+
+describe("street prop art: the wreck volume", () => {
+  it("caps each wreck at its state's limit, over its own ground and no further", () => {
+    for (const g of STREET_PROP_PACK) {
+      const [body, ...debris] = wreckVolume(g);
+      const sedan = g.id.startsWith("sedan");
+      const max = sedan
+        ? SEDAN.wreckedMax
+        : g.id === "planter"
+          ? PLANTER.wreckedMax
+          : CABINET.wreckedMax;
+      const at = (x: number, y: number, z: number) =>
+        toGuide(g, sedan ? sedanPoint(x, y, z, g.rotation) : framePoint(x, y, z, g.rotation));
+      // the body's ceiling is the limit: a point just under it is in, just over it is out
+      const mid = sedan ? { x: 2, y: 1 } : { x: 1, y: g.id === "cabinet" ? 0.85 : 1 };
+      expect(inside(body!.hull, at(mid.x, mid.y, max - 0.05))).toBe(true);
+      const far = sedan ? { x: 0.2, y: 1.85 } : { x: 0.15, y: g.id === "cabinet" ? 1.28 : 1.85 };
+      expect(inside(body!.hull, at(far.x, far.y, max + 0.15))).toBe(false);
+      // debris lies on the prop's own 2 m ground, as thin as `WRECK_DEBRIS`
+      expect(debris.length).toBe(sedan ? 2 : 1);
+      expect(inside(debris[0]!.hull, at(1, 1, WRECK_DEBRIS - 0.02))).toBe(true);
+      expect(inside(debris[0]!.hull, at(-0.2, 1, 0))).toBe(false);
     }
   });
 });

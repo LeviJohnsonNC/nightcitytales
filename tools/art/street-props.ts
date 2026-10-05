@@ -19,6 +19,10 @@
  *
  * WHAT IS CHECKED
  *   key      at least 45% pure #FF00FF; after keying, almost no pink fringe
+ *   seam     the two intact sedan halves, laid over each other exactly as the board
+ *            places them, leave nothing see-through inside the car
+ *   wreck    a wrecked image stays inside its volume (`wreckVolume`); the guide and
+ *            check sheet for a redraw are written to docs/street-props-pack/wreck-guides/
  *   fit      height after the width fit, against the guide's (reported; a car
  *            Picasso drew longer and lower reads as a lower roof, not a failure,
  *            unless it is off by more than 25%)
@@ -26,9 +30,11 @@
  *   frames   how much of each object fell outside its section frames (clipped)
  *
  * WHAT IS DONE
- *   key out with de-spill (the shutter-wear routine), cut each section's frame from
- *   the fitted image, cut the sedan at its join (`sedanCut`), and write 512 x 640
- *   WebP with alpha: twice the board's 256 x 320 frame, registered identically.
+ *   key out with de-spill (the shutter-wear routine), resample each section's art from
+ *   the fitted image at sub-pixel precision, cut the sedan at its join (`sedanCut`),
+ *   and write WebP with alpha at twice the board's 256 x 320 frame. A sedan's art is
+ *   padded past its frame (`SEDAN_ART_PAD`, 640 x 704) so each half of the car fits
+ *   whole; the board reads where the frame sits from `propArtRegistration`.
  * No sharpening, no contrast or colour change: light and shadow are the renderer's.
  */
 import { mkdir, writeFile } from "node:fs/promises";
@@ -36,6 +42,9 @@ import sharp from "sharp";
 import type { Point } from "@/engine";
 import {
   CABINET,
+  FRAME,
+  artPad,
+  sectionArtOnGuide,
   PLANTER,
   PROP_STATES,
   SEDAN,
@@ -45,14 +54,30 @@ import {
   sedanCut,
   sedanPoint,
   toGuide,
+  wreckVolume,
   type PackGuide,
   type PropState,
 } from "@/features/play/courtyard/streetPropPack";
 
 const SOURCE = "src/assets/creator";
 const OUT = "public/images/street-props";
-const RUNTIME = { width: 512, height: 640 } as const;
+/** Runtime pixels per frame pixel: the files are twice the board's 256 x 320 frame. */
+const K = 2;
+/** A section's runtime art size: its 2 m frame plus its padding (`artPad`), at K. */
+const size = (art: string) => {
+  const pad = artPad(art);
+  return { width: (FRAME.width + 2 * pad.side) * K, height: (FRAME.height + pad.top) * K };
+};
 const check = process.argv.includes("--check");
+const WRECK_GUIDES = "docs/street-props-pack/wreck-guides";
+/** Share of a wreck's opaque pixels allowed outside its volume: antialiasing and a stray splinter. */
+const WRECK_TOLERANCE = 0.01;
+/**
+ * Wrecks that stand taller than their volume and whose lower redraw has been
+ * commissioned (docs/street-props-pack.md, "Lower wrecks"). They still import, with
+ * the excess reported; take an id off as soon as its redraw passes.
+ */
+const TALL_WRECKS_PENDING = new Set<string>(["planter", "cabinet"]);
 const failures: string[] = [];
 const fail = (id: string, msg: string) => failures.push(`${id}: ${msg}`);
 const log = (id: string, msg: string) => console.log(`${id.padEnd(22)} ${msg}`);
@@ -144,54 +169,152 @@ function fitTo(g: PackGuide, box: Box): Fit {
   return { s, tx: box.left - s * e.left, ty: box.bottom - s * e.bottom };
 }
 
-/** One section's runtime frame, cut from the fitted image. */
+/**
+ * Resample a rectangle of the image, at sub-pixel precision, to the runtime frame.
+ * The two sedan sections are placed by the board at a fractional offset from each
+ * other (2 m along the car is 147.8 frame pixels down at rotation 0), so cutting
+ * each frame at rounded pixel bounds put the halves up to half a source pixel out
+ * of register. Separable Lanczos-3, widened by the scale when shrinking, on
+ * premultiplied colour so no keyed-out colour bleeds into an edge.
+ */
+function resample(src: Rgba, x0: number, y0: number, w: number, h: number, W: number, H: number) {
+  const lanczos = (t: number) => {
+    if (t === 0) return 1;
+    if (Math.abs(t) >= 3) return 0;
+    const a = Math.PI * t;
+    return (3 * Math.sin(a) * Math.sin(a / 3)) / (a * a);
+  };
+  // weights for one axis: output i samples source around x0 + (i + 0.5) * step - 0.5
+  const weights = (n: number, origin: number, step: number, size: number) => {
+    const scale = Math.max(1, step);
+    const support = 3 * scale;
+    return Array.from({ length: n }, (_, i) => {
+      const centre = origin + (i + 0.5) * step - 0.5;
+      const first = Math.ceil(centre - support);
+      const last = Math.floor(centre + support);
+      const idx: number[] = [];
+      const wt: number[] = [];
+      let sum = 0;
+      for (let k = first; k <= last; k++) {
+        const v = lanczos((k - centre) / scale);
+        if (v === 0) continue;
+        idx.push(k);
+        wt.push(v);
+        sum += v;
+      }
+      return { idx, wt: wt.map((v) => v / sum), size };
+    });
+  };
+  const wx = weights(W, x0, w / W, src.width);
+  const wy = weights(H, y0, h / H, src.height);
+  const px = (x: number, y: number, c: number) => {
+    if (x < 0 || y < 0 || x >= src.width || y >= src.height) return 0;
+    const i = (y * src.width + x) * 4;
+    const a = src.data[i + 3]! / 255;
+    return c === 3 ? a : (src.data[i + c]! / 255) * a;
+  };
+  // horizontal pass over the rows the vertical pass needs
+  const rows = new Map<number, Float32Array>();
+  const row = (y: number) => {
+    let r = rows.get(y);
+    if (r) return r;
+    r = new Float32Array(W * 4);
+    for (let i = 0; i < W; i++) {
+      const { idx, wt } = wx[i]!;
+      for (let c = 0; c < 4; c++) {
+        let v = 0;
+        for (let k = 0; k < idx.length; k++) v += wt[k]! * px(idx[k]!, y, c);
+        r[i * 4 + c] = v;
+      }
+    }
+    rows.set(y, r);
+    return r;
+  };
+  const out = Buffer.alloc(W * H * 4);
+  for (let j = 0; j < H; j++) {
+    const { idx, wt } = wy[j]!;
+    for (let i = 0; i < W; i++) {
+      const v = [0, 0, 0, 0];
+      for (let k = 0; k < idx.length; k++) {
+        const r = row(idx[k]!);
+        for (let c = 0; c < 4; c++) v[c]! += wt[k]! * r[i * 4 + c]!;
+      }
+      const a = Math.max(0, Math.min(1, v[3]!));
+      const o = (j * W + i) * 4;
+      for (let c = 0; c < 3; c++)
+        out[o + c] = a > 1e-4 ? Math.round(Math.max(0, Math.min(1, v[c]! / a)) * 255) : 0;
+      out[o + 3] = Math.round(a * 255);
+    }
+  }
+  return out;
+}
+
+/** A coverage mask is solid only where it is solid `radius` pixels all round. */
+function erode(mask: Buffer, radius: number, W: number, H: number) {
+  const out = Buffer.alloc(W * H);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      let solid = 1;
+      for (let dy = -radius; dy <= radius && solid; dy++)
+        for (let dx = -radius; dx <= radius; dx++) {
+          const xx = x + dx;
+          const yy = y + dy;
+          // past the frame's edge is not an edge of the shape: only the cut is eroded
+          if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+          if (mask[yy * W + xx]! < 255) {
+            solid = 0;
+            break;
+          }
+        }
+      out[y * W + x] = solid;
+    }
+  return out;
+}
+
+/** One section's runtime art, cut from the fitted image. */
 async function sectionFrame(g: PackGuide, index: number, src: Rgba, fit: Fit) {
-  const f = sectionFrameOnGuide(g, index);
-  // the frame's rectangle in image pixels (it may run past the image's edges)
-  const x0 = fit.s * f.x + fit.tx;
-  const y0 = fit.s * f.y + fit.ty;
-  const w = fit.s * f.width;
-  const h = fit.s * f.height;
-  const pad = Math.ceil(Math.max(w, h));
-  const padded = await sharp(src.data, {
-    raw: { width: src.width, height: src.height, channels: 4 },
-  })
-    .extend({
-      top: pad,
-      bottom: pad,
-      left: pad,
-      right: pad,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .raw()
-    .toBuffer();
-  const left = Math.round(x0 + pad);
-  const top = Math.round(y0 + pad);
-  const out = await sharp(padded, {
-    raw: { width: src.width + 2 * pad, height: src.height + 2 * pad, channels: 4 },
-  })
-    .extract({ left, top, width: Math.round(w), height: Math.round(h) })
-    .resize(RUNTIME.width, RUNTIME.height, { kernel: "lanczos3" })
-    .raw()
-    .toBuffer();
-  // the sedan's cut, in this frame's runtime pixels
+  const art = g.sections[index]!.art;
+  const { width: W, height: H } = size(art);
+  const f = sectionArtOnGuide(g, index);
+  // the art's rectangle in image pixels, exactly (it may run past the image's edges)
+  const out = resample(
+    src,
+    fit.s * f.x + fit.tx,
+    fit.s * f.y + fit.ty,
+    fit.s * f.width,
+    fit.s * f.height,
+    W,
+    H,
+  );
+  // the sedan's cut, in this art's runtime pixels
   if (g.id.startsWith("sedan")) {
     const cut = sedanCut(g);
     const toFrame = (p: Point) => ({
-      x: ((p.x - f.x) / f.width) * RUNTIME.width,
-      y: ((p.y - f.y) / f.height) * RUNTIME.height,
+      x: ((p.x - f.x) / f.width) * W,
+      y: ((p.y - f.y) / f.height) * H,
     });
-    const shape = cut.nearerShape.map(toFrame);
-    const svgMask = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${RUNTIME.width}" height="${RUNTIME.height}"><polygon points="${shape
+    const points = (poly: Point[]) =>
+      poly
+        .map(toFrame)
         .map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`)
-        .join(" ")}" fill="#fff"/></svg>`,
+        .join(" ");
+    // drawn on black so the hole's soft edge is a real fade to nothing
+    const svgMask = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#000"/><polygon points="${points(cut.nearerShape)}" fill="#fff"/>${
+        cut.nearerHole ? `<polygon points="${points(cut.nearerHole)}" fill="#000"/>` : ""
+      }</svg>`,
     );
-    const mask = await sharp(svgMask).ensureAlpha().extractChannel(3).raw().toBuffer();
-    const nearer = g.sections[index]!.art === cut.nearer;
-    for (let i = 0; i < RUNTIME.width * RUNTIME.height; i++) {
-      const m = mask[i]! / 255;
-      out[i * 4 + 3] = Math.round(out[i * 4 + 3]! * (nearer ? m : 1 - m));
+    const mask = await sharp(svgMask).extractChannel(0).raw().toBuffer();
+    const nearer = art === cut.nearer;
+    // The nearer section is drawn over the farther. It keeps its half with a soft
+    // edge; the farther gives up only what lies wholly inside that half, so it stays
+    // solid under the nearer one's soft edge. Complementary soft masks never add up
+    // to solid when one is drawn over the other: they leave a faint line of
+    // whatever is behind the car along the cut.
+    const inner = nearer ? null : erode(mask, 2, W, H);
+    for (let i = 0; i < W * H; i++) {
+      const keep = nearer ? mask[i]! / 255 : 1 - inner![i]!;
+      out[i * 4 + 3] = Math.round(out[i * 4 + 3]! * keep);
     }
   }
   return out;
@@ -211,8 +334,110 @@ function fileFor(g: PackGuide, art: string, state: PropState) {
   return `${art}-${state}${suffix}.webp`;
 }
 
+/**
+ * The WRECKED image against its volume (`wreckVolume`): how much of the remains stands
+ * above what a walkable wreck may, and the guide and the check sheet for a redraw.
+ * The guide is drawn on the canvas Picasso actually returns, in the intact image's
+ * fit, so a corrected wreck lands where the intact object stood.
+ */
+async function wreckCheck(
+  g: PackGuide,
+  fit: Fit,
+  shot: Awaited<ReturnType<typeof load>>,
+  canvas: number,
+) {
+  const toImage = (poly: Point[]) =>
+    poly.map((p) => ({ x: fit.s * p.x + fit.tx, y: fit.s * p.y + fit.ty }));
+  const blocks = wreckVolume(g).map((b) => ({ hull: toImage(b.hull), top: toImage(b.top) }));
+  const volume = blocks.map((b) => b.hull);
+  const ceiling = `<polygon points="${blocks[0]!.top.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}" fill="#8f989d" stroke="#1d2327" stroke-width="3" stroke-linejoin="round"/>`;
+  // the debris layers first and lighter, the body's block over them and darker
+  const polys = (fill: string, extra = "", debrisFill = fill) =>
+    [...volume.slice(1).map((poly) => ({ poly, fill: debrisFill })), { poly: volume[0]!, fill }]
+      .map(
+        ({ poly, fill }) =>
+          `<polygon points="${poly.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}" fill="${fill}" ${extra}/>`,
+      )
+      .join("");
+  const { width: W, height: H } = shot.img;
+  const mask = await sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#000"/>${polys("#fff")}</svg>`,
+    ),
+  )
+    .extractChannel(0)
+    .raw()
+    .toBuffer();
+  let solid = 0;
+  let over = 0;
+  const marked = Buffer.from(shot.img.data);
+  for (let i = 0; i < W * H; i++) {
+    if (shot.img.data[i * 4 + 3]! < 128) continue;
+    solid++;
+    if (mask[i]! < 128) {
+      over++;
+      marked[i * 4] = 255;
+      marked[i * 4 + 1] = 40;
+      marked[i * 4 + 2] = 40;
+      marked[i * 4 + 3] = 255;
+    }
+  }
+  const share = over / solid;
+  const pending = TALL_WRECKS_PENDING.has(g.id);
+  log(
+    shot.name,
+    `wreck ${(share * 100).toFixed(1)}% of the remains above the volume (limit ${WRECK_TOLERANCE * 100}%)${pending && share > WRECK_TOLERANCE ? " WAIVED: redraw commissioned" : ""}`,
+  );
+  if (share > WRECK_TOLERANCE && !pending)
+    fail(shot.name, `${(share * 100).toFixed(1)}% of the remains stand above the wreck volume`);
+  if (pending && share <= WRECK_TOLERANCE)
+    log(shot.name, "now within its volume: take it off TALL_WRECKS_PENDING");
+  if (check) return;
+  await mkdir(WRECK_GUIDES, { recursive: true });
+  // the layout to attach: the key, the 2 m ground, the volume in grey with its ceiling
+  await sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}"><rect width="${canvas}" height="${canvas}" fill="#ff00ff"/>${polys(
+        "#6f787d",
+        'stroke="#1d2327" stroke-width="3" stroke-linejoin="round"',
+        "#b3babe",
+      )}${ceiling}</svg>`,
+    ),
+  )
+    .png()
+    .toFile(`${WRECK_GUIDES}/${g.id}-wreck-layout.png`);
+  // the check sheet (never attach): today's wreck, red where it stands too tall
+  await sharp({
+    create: { width: W, height: H, channels: 4, background: { r: 58, g: 66, b: 71, alpha: 1 } },
+  })
+    .composite([
+      {
+        input: Buffer.from(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${polys(
+            "#9aa3a8",
+            'fill-opacity="0.35" stroke="#e8f4ff" stroke-width="3" stroke-dasharray="12 8"',
+          )}</svg>`,
+        ),
+      },
+      { input: marked, raw: { width: W, height: H, channels: 4 } },
+      {
+        input: Buffer.from(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="60"><text x="20" y="42" font-family="DejaVu Sans" font-size="30" fill="#ffffff">${shot.name}: ${(share * 100).toFixed(1)}% above the volume (red)</text></svg>`,
+        ),
+        top: 0,
+        left: 0,
+      },
+    ])
+    .png()
+    .toFile(`${WRECK_GUIDES}/${g.id}-wreck-check.png`);
+}
+
 if (!check) await mkdir(OUT, { recursive: true });
-const sheet: { label: string; frames: { buf: Buffer; offset: Point; g: PackGuide }[] }[] = [];
+const sheet: {
+  label: string;
+  frames: { buf: Buffer; offset: Point; g: PackGuide; art: string }[];
+}[] = [];
+const sedanFrames = new Map<string, { buf: Buffer; offset: Point; g: PackGuide; art: string }[]>();
 for (const g of STREET_PROP_PACK) {
   const intact = await load(g.id, "intact");
   const fit = fitTo(g, intact.box);
@@ -235,22 +460,22 @@ for (const g of STREET_PROP_PACK) {
       Math.abs(shot.box.right - intact.box.right),
       state === "wrecked" ? 0 : Math.abs(shot.box.bottom - intact.box.bottom),
     );
-    const frames: { buf: Buffer; offset: Point; g: PackGuide }[] = [];
+    const frames: { buf: Buffer; offset: Point; g: PackGuide; art: string }[] = [];
     let kept = 0;
     for (let i = 0; i < g.sections.length; i++) {
       const buf = await sectionFrame(g, i, shot.img, fit);
       kept += alphaSum(buf);
-      frames.push({ buf, offset: g.sections[i]!.offset, g });
+      frames.push({ buf, offset: g.sections[i]!.offset, g, art: g.sections[i]!.art });
       if (!check)
         await writeFile(
           `${OUT}/${fileFor(g, g.sections[i]!.art, state)}`,
-          await sharp(buf, { raw: { width: RUNTIME.width, height: RUNTIME.height, channels: 4 } })
+          await sharp(buf, { raw: { ...size(g.sections[i]!.art), channels: 4 } })
             .webp({ quality: 86, alphaQuality: 100, effort: 6 })
             .toBuffer(),
         );
     }
     // how much of the object made it into the frames (runtime px scale back to image px)
-    const scaleBack = (fit.s * sectionFrameOnGuide(g, 0).width) / RUNTIME.width;
+    const scaleBack = (fit.s * sectionFrameOnGuide(g, 0).width) / (FRAME.width * K);
     const clipped = 1 - (kept * scaleBack * scaleBack) / alphaSum(shot.img.data);
     log(
       shot.name,
@@ -258,55 +483,203 @@ for (const g of STREET_PROP_PACK) {
     );
     if (state !== "wrecked" && drift / w > 0.03)
       fail(shot.name, `moved ${((drift / w) * 100).toFixed(1)}% against the intact image`);
+    if (state === "wrecked") await wreckCheck(g, fit, shot, intact.img.width);
     sheet.push({ label: shot.name, frames });
+    if (g.id.startsWith("sedan")) sedanFrames.set(`${g.id}-${state}`, frames);
+    // The seam check: the two intact halves, laid over each other exactly as the board
+    // places them, must cover the car as solidly as the image did.
+    if (g.id.startsWith("sedan") && state === "intact") {
+      const placed = placeFrames(drawOrder(frames), 1);
+      const f0 = sectionFrameOnGuide(g, 0);
+      const k = K;
+      const whole = resample(
+        shot.img,
+        fit.s * (f0.x + (placed.minX / k) * g.scale) + fit.tx,
+        fit.s * (f0.y + (placed.minY / k) * g.scale) + fit.ty,
+        (fit.s * f0.width * placed.width) / (FRAME.width * K),
+        (fit.s * f0.height * placed.height) / (FRAME.height * K),
+        placed.width,
+        placed.height,
+      );
+      // inside the car only: the outline itself differs by resampling, not by the cut
+      const W = placed.width;
+      const solid = (x: number, y: number) =>
+        x >= 0 && y >= 0 && x < W && y < placed.height && whole[(y * W + x) * 4 + 3]! >= 250;
+      const inside = (i: number) => {
+        const x = i % W;
+        const y = Math.floor(i / W);
+        for (let d = -3; d <= 3; d++)
+          if (!solid(x + d, y) || !solid(x, y + d) || !solid(x + d, y + d) || !solid(x + d, y - d))
+            return false;
+        return true;
+      };
+      let seam = 0;
+      for (let i = 0; i < W * placed.height; i++)
+        if (placed.data[i * 4 + 3]! < 0.97 && inside(i)) seam++;
+      log(shot.name, `seam: ${seam} px inside the car that the two halves leave see-through`);
+      if (process.env.SEAM_DEBUG) {
+        const map = Buffer.alloc(placed.width * placed.height * 3);
+        for (let i = 0; i < placed.width * placed.height; i++) {
+          const d = whole[i * 4 + 3]! / 255 - placed.data[i * 4 + 3]!;
+          map[i * 3] = d > 0.03 && inside(i) ? 255 : 0;
+          map[i * 3 + 1] = Math.round(placed.data[i * 4 + 3]! * 120);
+          map[i * 3 + 2] = d < -0.03 ? 255 : 0;
+        }
+        await sharp(map, { raw: { width: placed.width, height: placed.height, channels: 3 } })
+          .png()
+          .toFile(`${process.env.SEAM_DEBUG}/${shot.name}.png`);
+      }
+      if (seam > 25) fail(shot.name, `${seam} px of seam between the sections (limit 25)`);
+    }
   }
 }
 
-/* A proof sheet: every state rebuilt from its runtime frames alone, in place. */
-{
-  const cell = 520;
-  const cols = 3;
-  const rows = Math.ceil(sheet.length / cols);
-  const composites: sharp.OverlayOptions[] = [];
-  for (const [n, entry] of sheet.entries()) {
-    const g = entry.frames[0]!.g;
-    // runtime px per frame px
-    const k = RUNTIME.width / 256;
-    const xs = entry.frames.map((f) => f.offset.x * k);
-    const ys = entry.frames.map((f) => f.offset.y * k);
-    const minX = Math.min(...xs);
-    const minY = Math.min(...ys);
-    const spanW = Math.max(...xs) - minX + RUNTIME.width;
-    const spanH = Math.max(...ys) - minY + RUNTIME.height;
-    const scale = Math.min((cell - 20) / spanW, (cell - 40) / spanH);
-    for (const f of entry.frames) {
-      const img = await sharp(f.buf, {
-        raw: { width: RUNTIME.width, height: RUNTIME.height, channels: 4 },
-      })
-        .resize(Math.round(RUNTIME.width * scale), Math.round(RUNTIME.height * scale))
-        .png()
-        .toBuffer();
-      composites.push({
-        input: img,
-        left: Math.round((n % cols) * cell + 10 + (f.offset.x * k - minX) * scale),
-        top: Math.round(Math.floor(n / cols) * cell + 30 + (f.offset.y * k - minY) * scale),
-      });
+/** The board draws the nearer sedan section over the farther one. */
+function drawOrder<T extends { art: string; g: PackGuide }>(frames: T[]) {
+  if (!frames[0]!.g.id.startsWith("sedan")) return frames;
+  const near = sedanCut(frames[0]!.g).nearer;
+  return [...frames.filter((f) => f.art !== near), ...frames.filter((f) => f.art === near)];
+}
+
+/**
+ * Lay frames over each other at their exact (fractional) offsets, as the board does,
+ * scaled by `scale`; later frames are drawn over earlier ones. Premultiplied float RGBA.
+ */
+function placeFrames(frames: { buf: Buffer; offset: Point; art: string }[], scale: number) {
+  // where each frame's art starts, in runtime px relative to section 0's 2 m frame
+  const at = frames.map((f) => {
+    const pad = artPad(f.art);
+    return { x: (f.offset.x - pad.side) * K, y: (f.offset.y - pad.top) * K, ...size(f.art) };
+  });
+  const minX = Math.min(...at.map((a) => a.x));
+  const minY = Math.min(...at.map((a) => a.y));
+  const width = Math.ceil((Math.max(...at.map((a) => a.x + a.width)) - minX) * scale) + 2;
+  const height = Math.ceil((Math.max(...at.map((a) => a.y + a.height)) - minY) * scale) + 2;
+  const data = new Float32Array(width * height * 4);
+  // the board draws the nearer section last; callers pass frames in drawing order
+  for (const [n, f] of frames.entries()) {
+    const { width: FW, height: FH } = at[n]!;
+    const layer = new Float32Array(width * height * 4);
+    const ox = (at[n]!.x - minX) * scale;
+    const oy = (at[n]!.y - minY) * scale;
+    const w = Math.ceil(FW * scale);
+    const h = Math.ceil(FH * scale);
+    const step = 1 / scale;
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        // sample the frame at this pixel's centre (bilinear), into layer at (x+ox, y+oy)
+        const sx = (x + 0.5) * step - 0.5;
+        const sy = (y + 0.5) * step - 0.5;
+        const v = [0, 0, 0, 0];
+        const x0 = Math.floor(sx);
+        const y0 = Math.floor(sy);
+        for (const [dx, dy] of [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+          [1, 1],
+        ] as const) {
+          const px = x0 + dx;
+          const py = y0 + dy;
+          if (px < 0 || py < 0 || px >= FW || py >= FH) continue;
+          const wgt = (dx ? sx - x0 : 1 - (sx - x0)) * (dy ? sy - y0 : 1 - (sy - y0));
+          const i = (py * FW + px) * 4;
+          const a = f.buf[i + 3]! / 255;
+          v[0]! += wgt * (f.buf[i]! / 255) * a;
+          v[1]! += wgt * (f.buf[i + 1]! / 255) * a;
+          v[2]! += wgt * (f.buf[i + 2]! / 255) * a;
+          v[3]! += wgt * a;
+        }
+        // the layer's own pixel grid is offset by a fraction: split it bilinearly
+        const fx = ox - Math.floor(ox);
+        const fy = oy - Math.floor(oy);
+        for (const [dx, dy] of [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+          [1, 1],
+        ] as const) {
+          const tx = x + Math.floor(ox) + dx;
+          const ty = y + Math.floor(oy) + dy;
+          if (tx >= width || ty >= height) continue;
+          const wgt = (dx ? fx : 1 - fx) * (dy ? fy : 1 - fy);
+          const o = (ty * width + tx) * 4;
+          for (let c = 0; c < 4; c++) layer[o + c]! += wgt * v[c]!;
+        }
+      }
+    for (let i = 0; i < width * height; i++) {
+      const a = layer[i * 4 + 3]!;
+      for (let c = 0; c < 4; c++) data[i * 4 + c] = layer[i * 4 + c]! + data[i * 4 + c]! * (1 - a);
     }
+  }
+  return { data, width, height, minX, minY };
+}
+
+/** A placed composite as an opaque image over a flat background colour. */
+function flatten(p: ReturnType<typeof placeFrames>, bg: [number, number, number]) {
+  const out = Buffer.alloc(p.width * p.height * 3);
+  for (let i = 0; i < p.width * p.height; i++) {
+    const a = p.data[i * 4 + 3]!;
+    for (let c = 0; c < 3; c++)
+      out[i * 3 + c] = Math.round(
+        Math.max(0, Math.min(1, p.data[i * 4 + c]! + (bg[c]! / 255) * (1 - a))) * 255,
+      );
+  }
+  return out;
+}
+
+/** Lay out labelled cells of placed composites into one JPEG. */
+async function proofSheet(
+  cells: { label: string; frames: { buf: Buffer; offset: Point; g: PackGuide; art: string }[] }[],
+  cols: number,
+  cell: { w: number; h: number },
+  file: string,
+) {
+  const rows = Math.ceil(cells.length / cols);
+  const composites: sharp.OverlayOptions[] = [];
+  for (const [n, entry] of cells.entries()) {
+    const probe = placeFrames(entry.frames, 1);
+    const scale = Math.min((cell.w - 20) / probe.width, (cell.h - 40) / probe.height);
+    const placed = placeFrames(drawOrder(entry.frames), scale);
+    composites.push({
+      input: flatten(placed, [58, 66, 71]),
+      raw: { width: placed.width, height: placed.height, channels: 3 },
+      left: (n % cols) * cell.w + 10,
+      top: Math.floor(n / cols) * cell.h + 30,
+    });
     composites.push({
       input: Buffer.from(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${cell}" height="28"><text x="8" y="20" font-family="DejaVu Sans" font-size="18" fill="#e6edf0">${entry.label} (${g.sections.length} frame${g.sections.length > 1 ? "s" : ""})</text></svg>`,
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${cell.w}" height="28"><text x="8" y="20" font-family="DejaVu Sans" font-size="18" fill="#e6edf0">${entry.label}</text></svg>`,
       ),
-      left: (n % cols) * cell,
-      top: Math.floor(n / cols) * cell,
+      left: (n % cols) * cell.w,
+      top: Math.floor(n / cols) * cell.h,
     });
   }
-  if (!check)
-    await sharp({
-      create: { width: cols * cell, height: rows * cell, channels: 3, background: "#3a4247" },
-    })
-      .composite(composites)
-      .jpeg({ quality: 84 })
-      .toFile("docs/street-props-pack/imported-frames.jpg");
+  await sharp({
+    create: { width: cols * cell.w, height: rows * cell.h, channels: 3, background: "#3a4247" },
+  })
+    .composite(composites)
+    .jpeg({ quality: 86 })
+    .toFile(file);
+}
+
+if (!check) {
+  /* Every state rebuilt from its runtime frames alone, placed exactly as the board does. */
+  await proofSheet(sheet, 3, { w: 520, h: 520 }, "docs/street-props-pack/imported-frames.jpg");
+  /* The sedan's two sections in mixed states: what a fight can leave. */
+  const mixed: (typeof sheet)[number][] = [];
+  for (const id of ["sedan-r90", "sedan-r0"])
+    for (const [engine, cabin] of [
+      ["intact", "intact"],
+      ["wrecked", "intact"],
+      ["intact", "wrecked"],
+      ["damaged", "wrecked"],
+    ] as const) {
+      const e = sedanFrames.get(`${id}-${engine}`)!.find((f) => f.art === "sedan-engine")!;
+      const c = sedanFrames.get(`${id}-${cabin}`)!.find((f) => f.art === "sedan-cabin")!;
+      mixed.push({ label: `${id.slice(6)}: engine ${engine} / cabin ${cabin}`, frames: [e, c] });
+    }
+  await proofSheet(mixed, 4, { w: 420, h: 420 }, "docs/street-props-pack/mixed-sections.jpg");
 }
 
 if (failures.length) {

@@ -1636,3 +1636,20 @@ intersection scenes. Geometry, cover, targeting and damage are unchanged, and ot
 pixel-identical. Open items: the wrecked images stand taller than the brief asked (they draw under units, as
 walkable remains), and the r0 sedan shows a hard edge where an intact cabin meets a wrecked engine. **Awaiting
 Levi's review.**
+
+[The architectural pilot](docs/checkpoint-architecture-pilot.md) finishes the prop integration and the shop's
+block.
+
+- **The r0 sedan seam is fixed at its cause.** Complementary soft cut masks left a faint line, and rounded crops a
+  half-pixel misregistration. The importer now samples at sub-pixel precision, pads the sedan's art so each half
+  fits whole, and fails on any see-through seam.
+- **The shop's block reads as built.** Parapets and copings, a downpipe on a pier with its scupper and shoe, a meter
+  box, a cill and a plinth. Its neighbours get a restrained identity: dark render, barred high windows, a louvre and a
+  metal cap.
+- **The street.** Segmented kerbs with faces, a drainage channel, gullies, dropped kerbs with tactile paving, and wear
+  where use puts it.
+- **Unchanged:** geometry, routes and every other environment.
+
+Next: two tiles (`roof-ballast`, `painted-render`, see [`architecture-pack.md`](docs/architecture-pack.md)), and the
+planter and cabinet wreck edits (see [`street-props-pack.md`](docs/street-props-pack.md#7-lower-wrecks)).
+**Awaiting Levi's review.**
