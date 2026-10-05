@@ -1593,3 +1593,14 @@ checks and review save/load across all seven environments. **3,817 tests, typech
 lint and build pass.** Accepted geometry and recipes are preserved. The audit
 supports moving to artwork/detail/lighting; Levi's final visual approval and real
 campaign movement, firing and save/load acceptance remain open.
+
+[First material pass](docs/checkpoint-material-pass-1.md) puts the six supplied surface
+textures into the shared renderer for the Intersection recipe only: asphalt and
+sidewalk across the street, and concrete walls, roof membrane, rooftop metal and door
+shutters on shop-style masses. Physical scale is stated per tile and projected with the
+scene's own transform; geometry, collision, targeting and damage are untouched, and six
+other environments render pixel-identically. Before/after browser captures are in
+`docs/evidence/materials-1/`. **Awaiting Levi's visual review**; no reference image was
+available to compare against, and real campaign movement, firing and save/load are still
+unchecked. Next: facade and prop art that needs silhouette and ground-anchor guides
+(shopfront bay, shutter door with housing, awning, rooftop units, standing props).

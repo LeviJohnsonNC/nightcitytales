@@ -43,11 +43,21 @@ for (const [path, pointer] of Object.entries(POINTER_MODULES)) {
  * "Scene-Meet.PNG" still fills the "scene-meet" slot. A Lovable pointer of
  * the same name wins, because it is the one somebody uploaded on purpose.
  */
-const COMMITTED_FILES = import.meta.glob<string>(["../../assets/creator/*", "!**/*.md"], {
-  eager: true,
-  query: "?url",
-  import: "default",
-});
+// The surface-material sources live here too but are not creator art: the game
+// serves their 512px derivatives from public/images/materials (tools/art/materials.mjs),
+// and bundling six 3MB originals would only copy them into every build.
+const COMMITTED_FILES = import.meta.glob<string>(
+  [
+    "../../assets/creator/*",
+    "!**/*.md",
+    "!**/{asphalt,facade-concrete,painted-metal,roof-membrane,shutter,sidewalk}.png",
+  ],
+  {
+    eager: true,
+    query: "?url",
+    import: "default",
+  },
+);
 const MEDIA = /\.(png|jpe?g|webp|mp3|m4a|ogg|wav)$/;
 
 const COMMITTED = new Map<string, string>();

@@ -3,6 +3,13 @@ import { atlasPropRegistration } from "./atlasPropRegistration";
 import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment } from "./composedEnvironment";
+import {
+  MATERIAL_KEYS,
+  materialAssetKey,
+  materialUrl,
+  type MaterialKey,
+  type TileSource,
+} from "./surfaceMaterials";
 import { battlefieldFor } from "@/engine";
 import { scenicTheme, STREET_PROPS, civilianCell } from "./scenicPresentation";
 import { createStreetGround } from "./streetGround";
@@ -103,6 +110,9 @@ export function createCourtyard(
     "hostile-animation",
     ...new Set(kinds.map(propSource).filter((source) => source !== "procedural-interior")),
   ];
+  // Only the intersection recipe takes materials so far.
+  const materialKeys: readonly MaterialKey[] =
+    composed && arena.environment?.recipe === "intersection" ? MATERIAL_KEYS : [];
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   let started = 0;
   let previousLive: LiveEncounter | null = null;
@@ -170,7 +180,13 @@ export function createCourtyard(
             key === "street-props" || key === "workers" ? "north-heywood" : "night-shift"
           }/${key}.webp`,
         );
-      this.load.on("loaderror", onFailure);
+      // Surface materials are presentation: a tile that fails to load leaves its
+      // surface flat, and never fails the scene the way a missing atlas does.
+      if (materialKeys.length)
+        for (const key of materialKeys) this.load.image(materialAssetKey(key), materialUrl(key));
+      this.load.on("loaderror", (file: { key?: string }) => {
+        if (!file.key?.startsWith("material-")) onFailure();
+      });
     }
     create() {
       if (disposed) return;
@@ -191,7 +207,18 @@ export function createCourtyard(
         const visibleArena = model.structureOnly
           ? { ...arena, environment: { ...arena.environment!, dressing: [] } }
           : arena;
-        structures.push(...createComposedEnvironment(this, visibleArena, project));
+        const tiles: Partial<Record<MaterialKey, TileSource>> = {};
+        for (const key of materialKeys)
+          if (this.textures.exists(materialAssetKey(key)))
+            tiles[key] = this.textures.get(materialAssetKey(key)).getSourceImage() as TileSource;
+        structures.push(
+          ...createComposedEnvironment(
+            this,
+            visibleArena,
+            project,
+            materialKeys.length && Object.keys(tiles).length ? tiles : undefined,
+          ),
+        );
       } else if (street) createStreetGround(this, project);
       else this.add.image(550, 350, "source-ground").setDisplaySize(1200, 800).setDepth(-1000);
       // Baked lighting establishes the look. Small additive pools support it.

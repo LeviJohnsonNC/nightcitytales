@@ -4,16 +4,29 @@ import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
 import { activityGroundPoints, activityOccluders } from "./activityReveal";
 import { cutawayWalls, type CutawayWall } from "./cutawayGeometry";
+import {
+  SURFACE_MATERIALS,
+  fillMaterial,
+  groundBasis,
+  prepareMaterials,
+  wallBasis,
+  type MaterialKey,
+  type MaterialSet,
+  type TileSource,
+} from "./surfaceMaterials";
 import type { Arena, Point, Rect, SceneStructure, SceneEnvironment } from "@/engine";
 
 type Project = (p: Point) => Point;
 function painter(ctx: CanvasRenderingContext2D, project: Project) {
-  const poly = (points: Point[], color: string, stroke?: string) => {
+  /** A null colour strokes the outline only: its fill was laid as a material. */
+  const poly = (points: Point[], color: string | null, stroke?: string) => {
     ctx.beginPath();
     points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
     ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
+    if (color) {
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
     if (stroke) {
       ctx.strokeStyle = stroke;
       ctx.lineWidth = 0.7;
@@ -49,9 +62,18 @@ function painter(ctx: CanvasRenderingContext2D, project: Project) {
   return { poly, corners, rect, line, glow };
 }
 
-export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena, project: Project) {
+export function paintComposedGround(
+  ctx: CanvasRenderingContext2D,
+  arena: Arena,
+  project: Project,
+  materials?: MaterialSet,
+) {
   const env = arena.environment!;
-  const { rect, line, glow } = painter(ctx, project);
+  const { rect, line, glow, corners: zoneCorners } = painter(ctx, project);
+  // Roads and walks of an intersection take real materials; everything else
+  // keeps its flat fill until its own pass.
+  const textured = !env.interior && env.recipe === "intersection" ? materials : undefined;
+  const ground = groundBasis(project);
   if (env.interior) rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
   if (!env.interior) rect({ x: -20, y: -20, width: 72, height: 72 }, "#293034");
   const floors: Record<string, string> = {
@@ -92,26 +114,44 @@ export function paintComposedGround(ctx: CanvasRenderingContext2D, arena: Arena,
       continue;
     }
     const road = ["road", "parking", "alley", "intersection"].includes(z.kind);
-    rect(
-      z.rect,
-      road
-        ? "#20292e"
-        : z.kind === "garden"
-          ? "#53604b"
-          : z.kind === "driveway"
-            ? "#4c4e4a"
-            : z.kind === "loading"
-              ? "#353b3c"
-              : "#41494a",
-    );
+    const flat = road
+      ? "#20292e"
+      : z.kind === "garden"
+        ? "#53604b"
+        : z.kind === "driveway"
+          ? "#4c4e4a"
+          : z.kind === "loading"
+            ? "#353b3c"
+            : "#41494a";
+    // The old fill is the fallback and the colour the material is graded to.
+    // A crosswalk is laid across the carriageway, so it sits on asphalt.
+    const surface: MaterialKey | undefined =
+      z.kind === "road" || z.kind === "intersection" || z.kind === "crosswalk"
+        ? "asphalt"
+        : z.kind === "sidewalk"
+          ? "sidewalk"
+          : undefined;
+    const target = z.kind === "crosswalk" ? "#20292e" : flat;
+    const laid =
+      surface !== undefined &&
+      fillMaterial(ctx, textured, zoneCorners(z.rect), {
+        key: surface,
+        basis: ground,
+        target,
+        strength: surface === "asphalt" ? 0.75 : 0.8,
+      });
+    if (!laid) rect(z.rect, flat);
     if (!road && z.kind !== "crosswalk" && z.kind !== "garden" && z.kind !== "loading") {
-      for (let x = z.rect.x; x < z.rect.x + z.rect.width; x += 1)
-        for (let y = z.rect.y; y < z.rect.y + z.rect.height; y += 1)
-          rect(
-            { x: x + 0.025, y: y + 0.025, width: 0.95, height: 0.95 },
-            (x + y) % 3 === 0 ? "#3c4547" : "#454d4e",
-            "#333d40",
-          );
+      // A laid sidewalk has its own slab joints; the drawn metre grid is for
+      // the flat fallback. The kerb line stays either way.
+      if (!(laid && z.kind === "sidewalk"))
+        for (let x = z.rect.x; x < z.rect.x + z.rect.width; x += 1)
+          for (let y = z.rect.y; y < z.rect.y + z.rect.height; y += 1)
+            rect(
+              { x: x + 0.025, y: y + 0.025, width: 0.95, height: 0.95 },
+              (x + y) % 3 === 0 ? "#3c4547" : "#454d4e",
+              "#333d40",
+            );
       const c = painter(ctx, project).corners(z.rect);
       for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "#79817b", 1.5);
     }
@@ -355,6 +395,7 @@ function paintCutawayWall(
   structure: SceneStructure,
   part: CutawayWall,
   project: Project,
+  materials?: MaterialSet,
 ) {
   const { poly, corners } = painter(ctx, project);
   const metre = Math.hypot(
@@ -364,8 +405,20 @@ function paintCutawayWall(
   const warm = structure.style === "residential" || structure.style === "shop";
   const base = corners(part.rect),
     top = corners(part.rect, part.height * metre);
-  poly([base[0]!, base[1]!, top[1]!, top[0]!], warm ? "#73675a" : "#59666a", "#17272d");
-  poly([base[1]!, base[2]!, top[2]!, top[1]!], "#35434a", "#17272d");
+  const north = [base[0]!, base[1]!, top[1]!, top[0]!],
+    east = [base[1]!, base[2]!, top[2]!, top[1]!];
+  const r = part.rect;
+  // The same facade material, anchored to the same world metres, as the full
+  // building it replaces: revealing the street must not change what the wall is.
+  const clad = materials && structure.style === "shop" ? materials : undefined;
+  const concrete = SURFACE_MATERIALS["facade-concrete"].metres;
+  const side = (points: Point[], flat: string, basis: ReturnType<typeof wallBasis>) => {
+    if (fillMaterial(ctx, clad, points, { key: "facade-concrete", basis, target: flat })) {
+      poly(points, null, "#17272d");
+    } else poly(points, flat, "#17272d");
+  };
+  side(north, warm ? "#73675a" : "#59666a", wallBasis(project, "x", r.y, concrete, metre));
+  side(east, "#35434a", wallBasis(project, "y", r.x + r.width, concrete, metre));
   poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
 }
 
@@ -374,6 +427,7 @@ export function paintCutaway(
   structure: SceneStructure,
   project: Project,
   entrances: SceneEnvironment["entrances"] = [],
+  materials?: MaterialSet,
 ) {
   paintCutawayFloor(ctx, structure, project);
   const parts = cutawayWalls(structure, entrances);
@@ -382,7 +436,7 @@ export function paintCutaway(
       project({ x: a.rect.x + a.rect.width / 2, y: a.rect.y + a.rect.height / 2 }).y -
       project({ x: b.rect.x + b.rect.width / 2, y: b.rect.y + b.rect.height / 2 }).y,
   );
-  for (const part of parts) paintCutawayWall(ctx, structure, part, project);
+  for (const part of parts) paintCutawayWall(ctx, structure, part, project, materials);
 }
 
 export function paintBuilding(
@@ -390,6 +444,7 @@ export function paintBuilding(
   structure: SceneStructure,
   project: Project,
   entrances: SceneEnvironment["entrances"],
+  materials?: MaterialSet,
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -440,9 +495,38 @@ export function paintBuilding(
         : structure.style === "workshop"
           ? ["#4b4940", "#353b3b", "#686356"]
           : ["#3e4a50", "#2c3942", "#56656b"];
+  // Commercial frontage takes concrete, a membrane roof, painted rooftop units and
+  // shuttered doors; every other building keeps its flat fills for now. Materials
+  // are laid first, so windows, bays, doors and trim below paint over them.
+  const clad = structure.style === "shop" ? materials : undefined;
+  const metres = (key: MaterialKey) => SURFACE_MATERIALS[key].metres;
+  const surface = (
+    points: Point[],
+    flat: string,
+    stroke: string,
+    key: MaterialKey,
+    basis: ReturnType<typeof wallBasis>,
+  ) =>
+    poly(
+      points,
+      fillMaterial(ctx, clad, points, { key, basis, target: flat }) ? null : flat,
+      stroke,
+    );
   // Two camera-facing walls; windows, shutters, conduits, lintels share their planes.
-  poly([base[0]!, base[1]!, top[1]!, top[0]!], palette[0]!, "#111c25");
-  poly([base[1]!, base[2]!, top[2]!, top[1]!], palette[1]!, "#111c25");
+  surface(
+    [base[0]!, base[1]!, top[1]!, top[0]!],
+    palette[0]!,
+    "#111c25",
+    "facade-concrete",
+    wallBasis(project, "x", r.y, metres("facade-concrete"), pixelsPerMetre),
+  );
+  surface(
+    [base[1]!, base[2]!, top[2]!, top[1]!],
+    palette[1]!,
+    "#111c25",
+    "facade-concrete",
+    wallBasis(project, "y", r.x + r.width, metres("facade-concrete"), pixelsPerMetre),
+  );
   const face = (a: Point, b: Point, length: number, shade: string, edge: "north" | "east") => {
     const at = (t: number, z: number) => ({
       x: a.x + (b.x - a.x) * t,
@@ -526,14 +610,24 @@ export function paintBuilding(
       const x = (centre - 0.8) / length,
         w = 1.6 / length,
         doorHeight = Math.min(2.2, structure.height - 0.5) * pixelsPerMetre;
-      poly(
-        [at(x, 1), at(x + w, 1), at(x + w, doorHeight), at(x, doorHeight)],
-        "#172329",
-        "#626761",
-      );
+      const doorPlane = [at(x, 1), at(x + w, 1), at(x + w, doorHeight), at(x, doorHeight)];
+      // The drawn slat lines mark a shop door as a roller shutter, so a shutter
+      // texture belongs on exactly this plane and nowhere else.
+      const shutter =
+        clad !== undefined &&
+        fillMaterial(ctx, clad, doorPlane, {
+          key: "shutter",
+          basis:
+            edge === "north"
+              ? wallBasis(project, "x", r.y, metres("shutter"), pixelsPerMetre)
+              : wallBasis(project, "y", r.x + r.width, metres("shutter"), pixelsPerMetre),
+          target: "#2b373c",
+          strength: 0.9,
+        });
+      poly(doorPlane, shutter ? null : "#172329", "#626761");
       for (
         let z = 3;
-        structure.style !== "residential" && z < doorHeight;
+        !shutter && structure.style !== "residential" && z < doorHeight;
         z += 0.2 * pixelsPerMetre
       )
         line(at(x, z), at(x + w, z), "#39464a", 1);
@@ -565,7 +659,7 @@ export function paintBuilding(
   };
   face(base[0]!, base[1]!, r.width, "#515658", "north");
   face(base[1]!, base[2]!, r.height, "#353d42", "east");
-  poly(top, palette[2]!, "#6c716b");
+  surface(top, palette[2]!, "#6c716b", "roof-membrane", groundBasis(project, h));
   // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
   for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
   for (let t = 0.15; t < 1; t += 0.18)
@@ -585,9 +679,29 @@ export function paintBuilding(
     };
     const bottom = corners(equipment, h),
       lid = corners(equipment, h + 8);
-    poly([bottom[0]!, bottom[1]!, lid[1]!, lid[0]!], "#303e45", "#171f26");
-    poly([bottom[1]!, bottom[2]!, lid[2]!, lid[1]!], "#26333b", "#171f26");
-    poly(lid, "#65706b", "#7e8279");
+    // Painted sheet metal: a unit sits on the roof, so its tile stands on it.
+    surface(
+      [bottom[0]!, bottom[1]!, lid[1]!, lid[0]!],
+      "#303e45",
+      "#171f26",
+      "painted-metal",
+      wallBasis(project, "x", equipment.y, metres("painted-metal"), pixelsPerMetre, h),
+    );
+    surface(
+      [bottom[1]!, bottom[2]!, lid[2]!, lid[1]!],
+      "#26333b",
+      "#171f26",
+      "painted-metal",
+      wallBasis(
+        project,
+        "y",
+        equipment.x + equipment.width,
+        metres("painted-metal"),
+        pixelsPerMetre,
+        h,
+      ),
+    );
+    surface(lid, "#65706b", "#7e8279", "painted-metal", groundBasis(project, h + 8));
     const center = project({ x: equipment.x + 1, y: equipment.y + 1 });
     ctx.beginPath();
     ctx.ellipse(center.x, center.y - h - 8, 6, 3, 0, 0, Math.PI * 2);
@@ -677,10 +791,18 @@ export function paintBuilding(
 }
 
 /** Each large mass is a separate sprite so actors can reveal it by occlusion fading. */
+/** A material-bearing scene is drawn at twice the pixels, so a tile that covers a
+ * few metres has the grain it was made with. The ceiling is the smallest GPU
+ * texture limit worth supporting; past it the scene falls back toward 1x. */
+const MATERIAL_SUPERSAMPLE = 2;
+const MAX_TEXTURE_PIXELS = 4096;
+
 export function createComposedEnvironment(
   scene: Phaser.Scene,
   arena: Arena,
   project: Project,
+  /** Decoded tiles for the surfaces the recipe takes; absent means flat fills. */
+  tiles?: Partial<Record<MaterialKey, TileSource>>,
 ): Phaser.GameObjects.Image[] {
   // Ground must extend with saved continuation geometry, not stop at the old
   // 1100x700 art sheet while building sprites float beyond its edge.
@@ -697,11 +819,28 @@ export function createComposedEnvironment(
   const gy = Math.floor(Math.min(...groundCorners.map((p) => p.y))) - 2;
   const gw = Math.ceil(Math.max(...groundCorners.map((p) => p.x))) - gx + 2;
   const gh = Math.ceil(Math.max(...groundCorners.map((p) => p.y))) - gy + 2;
-  const ground = scene.textures.createCanvas("composed-ground", gw, gh)!;
+  const metre = Math.hypot(
+    project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
+    project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
+  );
+  const materialised = arena.environment!.recipe === "intersection" && tiles !== undefined;
+  const resolution = materialised
+    ? Math.max(1, Math.min(MATERIAL_SUPERSAMPLE, MAX_TEXTURE_PIXELS / Math.max(gw, gh)))
+    : 1;
+  const materials = materialised ? prepareMaterials(tiles, metre * resolution) : undefined;
+  const ground = scene.textures.createCanvas(
+    "composed-ground",
+    Math.ceil(gw * resolution),
+    Math.ceil(gh * resolution),
+  )!;
+  ground.context.scale(resolution, resolution);
   ground.context.translate(-gx, -gy);
-  paintComposedGround(ground.context, arena, project);
+  paintComposedGround(ground.context, arena, project, materials);
   ground.refresh();
-  scene.add.image(gx + gw / 2, gy + gh / 2, "composed-ground").setDepth(-1000);
+  scene.add
+    .image(gx + gw / 2, gy + gh / 2, "composed-ground")
+    .setDisplaySize(gw, gh)
+    .setDepth(-1000);
   const objects: Phaser.GameObjects.Image[] = [];
   const occluders = activityOccluders(arena);
   const activity = activityGroundPoints(arena);
@@ -710,11 +849,14 @@ export function createComposedEnvironment(
     paint: (ctx: CanvasRenderingContext2D) => void,
     depth: number,
     bounds: Rect = { x: 0, y: 0, width: 1100, height: 700 },
+    /** Drawn at this many pixels per scene pixel, shown at scene size. */
+    scale = 1,
   ) => {
     const canvas = document.createElement("canvas");
-    canvas.width = Math.ceil(bounds.width);
-    canvas.height = Math.ceil(bounds.height);
+    canvas.width = Math.ceil(bounds.width * scale);
+    canvas.height = Math.ceil(bounds.height * scale);
     const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    ctx.scale(scale, scale);
     ctx.translate(-bounds.x, -bounds.y);
     paint(ctx);
     const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -745,18 +887,15 @@ export function createComposedEnvironment(
     );
     texture.refresh();
     const image = scene.add
-      .image(bounds.x + (left + right) / 2, bounds.y + bottom, key)
+      .image(bounds.x + (left + right) / 2 / scale, bounds.y + bottom / scale, key)
       .setOrigin(0.5, 1)
+      .setScale(1 / scale)
       .setDepth(depth);
     objects.push(image);
     return image;
   };
   // Narrow jambs sit at opening boundaries. Each has its own depth so actors
   // remain correctly sorted; these are trim, not new collision objects.
-  const metre = Math.hypot(
-    project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
-    project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
-  );
   for (const threshold of interiorThresholds(arena)) {
     if (threshold.role === "passage") continue;
     const frameHeight = (threshold.role === "primary" ? 2.6 : 2.2) * metre;
@@ -857,11 +996,14 @@ export function createComposedEnvironment(
         width: Math.ceil(Math.max(...artCorners.map((p) => p.x))) - left + 8,
         height: Math.ceil(Math.max(...artCorners.map((p) => p.y))) - top + 8,
       };
+      // Only a building that takes a material is worth drawing at double size.
+      const clad = materials && s.style === "shop" ? resolution : 1;
       add(
         `structure-${s.id}`,
-        (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances),
+        (ctx) => paintBuilding(ctx, s, project, arena.environment!.entrances, materials),
         depth,
         bounds,
+        clad,
       )
         ?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined)
         .setData("sortRect", s.rect);
@@ -877,9 +1019,10 @@ export function createComposedEnvironment(
           const r = part.rect;
           add(
             `cutaway-${s.id}-wall-${index}`,
-            (ctx) => paintCutawayWall(ctx, s, part, project),
+            (ctx) => paintCutawayWall(ctx, s, part, project, materials),
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,
+            clad,
           )
             ?.setData("activityLayer", "cutaway")
             .setData("sortRect", r)
