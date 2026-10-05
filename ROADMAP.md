@@ -1630,5 +1630,9 @@ separate treatment is proposed, not built).
 
 A quieter cutaway was compared and **not adopted**. **Awaiting Levi's review.**
 
-Next: the [street-prop pack](docs/street-props-pack.md), meaning the sedan, planter and cabinet guides and
-prompts. Commission only `street-sedan-r90-intact.png` first and validate it in game.
+[The street props](docs/checkpoint-street-props.md) are in: all twelve images (sedan in both rotations,
+planter, cabinet, each intact, damaged and wrecked) are imported and replace the placeholder kit on
+intersection scenes. Geometry, cover, targeting and damage are unchanged, and other environments are
+pixel-identical. Open items: the wrecked images stand taller than the brief asked (they draw under units, as
+walkable remains), and the r0 sedan shows a hard edge where an intact cabin meets a wrecked engine. **Awaiting
+Levi's review.**

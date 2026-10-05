@@ -327,10 +327,16 @@ function singleGuideSvg(g: PackGuide, annotated: boolean) {
 function cutSvg(g: PackGuide) {
   const cut = sedanCut(g);
   const parts: string[] = [`<rect width="${g.canvas}" height="${g.canvas}" fill="#20262a"/>`];
-  parts.push(poly(cut.keep["sedan-engine"]!, "#3aa0ff", "#3aa0ff", 4, 0.25));
-  parts.push(poly(cut.keep["sedan-cabin"]!, "#ffb13a", "#ffb13a", 4, 0.25));
   const near = cut.nearer;
-  parts.push(poly(cut.keep[near]!, "none", "#ffffff", 5, 0));
+  // the farther section's frame is filled; the nearer section's shape is cut from it
+  const farIndex = g.sections.findIndex((s) => s.art === cut.farther);
+  const ff = sectionFrameOnGuide(g, farIndex);
+  parts.push(
+    `<rect x="${ff.x}" y="${ff.y}" width="${ff.width}" height="${ff.height}" fill="${farIndex ? "#ffb13a" : "#3aa0ff"}" fill-opacity=".18"/>`,
+  );
+  parts.push(
+    poly(cut.nearerShape, near === "sedan-engine" ? "#3aa0ff" : "#ffb13a", "#ffffff", 4, 0.55),
+  );
   for (const [i] of g.sections.entries()) {
     const f = sectionFrameOnGuide(g, i);
     parts.push(
@@ -340,14 +346,14 @@ function cutSvg(g: PackGuide) {
   parts.push(
     label(
       { x: g.canvas / 2, y: 46 },
-      `${g.id}: ${near} is nearer the camera and keeps the overlap`,
+      `${g.id}: ${near} is nearer the camera: it keeps its half of the car (solid), the other section keeps the rest`,
       26,
     ),
   );
   parts.push(
     label(
       { x: g.canvas / 2, y: 84 },
-      "blue: engine volume · orange: cabin volume · dashed: each section's 256×320 frame",
+      "blue: engine · orange: cabin · dashed: each section's 256×320 frame",
       22,
     ),
   );

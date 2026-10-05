@@ -3,6 +3,7 @@ import { atlasPropRegistration } from "./atlasPropRegistration";
 import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment, type ComposedEnvironment } from "./composedEnvironment";
+import { applyStreetPropArt, streetPropFiles } from "./streetPropArt";
 import { lightAt, tintFor } from "./nightLighting";
 import {
   STOREFRONT_ART_FILES,
@@ -129,6 +130,8 @@ export function createCourtyard(
     composed && arena.environment?.recipe === "intersection" ? MATERIAL_KEYS : [];
   const storefrontKeys = Object.keys(STOREFRONT_ART_FILES) as StorefrontArtKey[];
   const withStorefront = materialKeys.length > 0;
+  // The painted street props, like the materials, belong to the intersection so far.
+  const streetProps = materialKeys.length > 0 ? streetPropFiles(kinds) : [];
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   let started = 0;
   let previousLive: LiveEncounter | null = null;
@@ -208,8 +211,15 @@ export function createCourtyard(
       if (withStorefront)
         for (const key of storefrontKeys)
           this.load.image(storefrontAssetKey(key), STOREFRONT_ART_FILES[key]);
+      // A painted prop that fails to load leaves the procedural one: never a failure.
+      for (const file of streetProps) this.load.image(file.key, file.url);
       this.load.on("loaderror", (file: { key?: string }) => {
-        if (!file.key?.startsWith("material-") && !file.key?.startsWith("storefront-")) onFailure();
+        if (
+          !file.key?.startsWith("material-") &&
+          !file.key?.startsWith("storefront-") &&
+          !file.key?.startsWith("streetprop-")
+        )
+          onFailure();
       });
     }
     create() {
@@ -220,6 +230,7 @@ export function createCourtyard(
       }
       try {
         createPropTextures(this, [...new Set(kinds)]);
+        applyStreetPropArt(this, streetProps);
         createCharacterAtlas(this, "mercenary");
         createCharacterAtlas(this, "hostile");
         if (street) createCivilianAtlas(this);
