@@ -1073,6 +1073,31 @@ detailed as built things, on intersection scenes with materials only. The rules:
   block. `tools/scenes/corner-plan.ts` draws the saved plan over a capture. See
   `docs/checkpoint-architecture-pilot.md` and `docs/architecture-pack.md`.
 
+### The architectural art pilot (courtyard/architectureArt.ts)
+
+Three painted assets, imported by `tools/art/architecture-pilot.ts` against the numbers in
+`courtyard/architecturePack.ts`, on intersection scenes only:
+
+- **The rooftop unit** replaces every plain rooftop box; the storefront keeps its procedural units.
+- **The window and the roller shutter** go on the annex only (`isAnnex`: the shop whose saved entrance has
+  an entry surround).
+
+The rules:
+
+- **A sprite is placed by registration.** The unit is drawn into its roof's sprite by `roofUnitTransform`,
+  which maps the frame's 2 m footprint onto the saved one.
+- **An elevation is mapped onto its wall plane.** The window and the shutter are mapped by the projection;
+  code owns the recess, the sill, the housing's depth and every shadow.
+- **The shutter is drawn as the surround.** Where the shutter is painted, the saved entry surround over that
+  door is drawn as the shutter; the attachment is not changed.
+- **Cutaway pieces carry their face's openings,** clipped to the piece (`paintFacadeArt` with `clip`).
+- **A missing file is the old drawing,** never a failure.
+- **Returned art that is off its guide is corrected in the importer, by registration, never by loosening a
+  check.** Say so in its report. The window was registered by its frame bands and its room cropped, not
+  squeezed.
+
+See `docs/checkpoint-architecture-art-pilot.md`.
+
 ## Collaborator names
 
 Levi uses these names across sessions:

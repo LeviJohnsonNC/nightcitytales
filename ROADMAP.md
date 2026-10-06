@@ -1659,3 +1659,17 @@ block.
   walls.
 
 **Awaiting Levi's review.**
+
+[The architectural art pilot](docs/checkpoint-architecture-art-pilot.md) is in: a painted rooftop unit on
+every plain roof box, and a painted window and roller shutter on the annex, on intersection scenes.
+
+- **Corrected, not passed.** The window came back with its frame across the cut strips. The importer
+  registers it by its frame bands and crops the room behind the glass, and holds the result to the guide
+  again.
+- **The shutter is the annex door's surround.** The saved surround is drawn as the shutter; the attachment is
+  unchanged.
+- **Unchanged:** geometry, cover, sorting, the cutaway and every other environment (pixel-identical).
+- **Still placeholder:** the walls around the new openings, the storefront's own procedural rooftop units, and
+  the units' value against a dark roof.
+
+**Awaiting Levi's review** before any wider rollout.

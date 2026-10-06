@@ -16,7 +16,8 @@
  *     supplies only what code cannot: glass, frame, room, slats, rails, wear.
  * Nothing here flattens a facade into one picture.
  */
-import { PROP_PIXELS_PER_METRE } from "./sceneArtMetrics";
+import { PROP_CANVAS, PROP_PIXELS_PER_METRE } from "./sceneArtMetrics";
+import { framePoint } from "./streetPropPack";
 
 /** Scene pixels per metre; the plain rooftop box is drawn 8 of them tall. */
 export const SCENE_PPM = 15;
@@ -43,6 +44,8 @@ export const ROOF_UNIT_FRAME = {
   width: 256,
   /** diamond (147.8) + 0.53 m of unit (39.4) + room for nothing taller: 200 */
   height: 200,
+  /** The frame is the bottom of a street prop's: its top is this row of `framePoint`'s. */
+  top: PROP_CANVAS.groundY - 200,
   pxPerMetreUp: PROP_PIXELS_PER_METRE,
 } as const;
 
@@ -119,4 +122,55 @@ export function centredRegion(canvas: { width: number; height: number }, aspect:
     width,
     height,
   };
+}
+
+/** The runtime files' sizes: the roof unit's frame at twice its size; each elevation its used region. */
+export const ARCHITECTURE_ART_SIZE = {
+  roofUnit: { width: ROOF_UNIT_FRAME.width * 2, height: ROOF_UNIT_FRAME.height * 2 },
+  window: { width: 1024, height: Math.round(1024 / ARCHITECTURE_PILOT.window.region.aspect) },
+  shutter: { width: 696, height: Math.round(696 / ARCHITECTURE_PILOT.shutter.region.aspect) },
+} as const;
+
+/** Where the importer (`tools/art/architecture-pilot.ts`) writes them. */
+export const ARCHITECTURE_ART_FILES = {
+  roofUnit: "/images/architecture/roof-unit.webp",
+  window: "/images/architecture/annex-window.webp",
+  shutter: "/images/architecture/annex-shutter.webp",
+} as const;
+export type ArchitectureArtKey = keyof typeof ARCHITECTURE_ART_FILES;
+/** Decoded art; a key that failed to load is absent and its surface keeps its drawing. */
+export type ArchitectureArt = Partial<Record<ArchitectureArtKey, CanvasImageSource>>;
+export const architectureAssetKey = (key: ArchitectureArtKey) => `architecture-${key}`;
+
+/**
+ * The roof unit's guide: its block on the 1536 x 1024 canvas, the frame scaled to fill
+ * 80% of it. `at` is a point of the unit (metres, the frame's axes) in guide pixels.
+ */
+export function roofUnitGuide() {
+  const { width: W, height: H } = ARCHITECTURE_PILOT.roofUnit.canvas;
+  const h = ROOF_UNIT.height;
+  const corners = [0, h].flatMap((z) =>
+    (
+      [
+        [0, 0],
+        [2, 0],
+        [2, 2],
+        [0, 2],
+      ] as const
+    ).map(([x, y]) => framePoint(x, y, z)),
+  );
+  const x0 = Math.min(...corners.map((p) => p.x));
+  const x1 = Math.max(...corners.map((p) => p.x));
+  const y0 = Math.min(...corners.map((p) => p.y));
+  const y1 = Math.max(...corners.map((p) => p.y));
+  const scale = Math.min((W * 0.8) / (x1 - x0), (H * 0.8) / (y1 - y0));
+  const origin = {
+    x: (W - (x1 - x0) * scale) / 2 - x0 * scale,
+    y: (H - (y1 - y0) * scale) / 2 - y0 * scale,
+  };
+  const at = (x: number, y: number, z: number) => {
+    const p = framePoint(x, y, z);
+    return { x: origin.x + p.x * scale, y: origin.y + p.y * scale };
+  };
+  return { at, scale, origin, W, H };
 }

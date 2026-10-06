@@ -4,6 +4,14 @@ import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
 import { activityGroundPoints, activityOccluders } from "./activityReveal";
 import { cutawayWalls, type CutawayWall } from "./cutawayGeometry";
+import type { ArchitectureArt } from "./architecturePack";
+import {
+  facadeArtCovers,
+  facadeOpenings,
+  isAnnex,
+  paintFacadeArt,
+  paintRoofUnitArt,
+} from "./architectureArt";
 import { STOREFRONT_LEVELS } from "./storefrontPack";
 import {
   SURFACE_MATERIALS,
@@ -496,7 +504,7 @@ export function paintCutawayFloor(
     line(project({ x, y: r.y + 0.35 }), project({ x, y: r.y + r.height - 0.35 }), "#253238", 0.8);
 }
 
-function paintCutawayWall(
+export function paintCutawayWall(
   ctx: CanvasRenderingContext2D,
   structure: SceneStructure,
   part: CutawayWall,
@@ -505,6 +513,8 @@ function paintCutawayWall(
   storefront?: { sf: Storefront; art: StorefrontArt; pass: Pass },
   /** The wall's material, as the full building lays it (`paintBuilding`). */
   wallMaterial: MaterialKey = "facade-concrete",
+  /** The architectural pilot's painted openings, where the full building has them. */
+  annex?: { art: ArchitectureArt; entrances: SceneEnvironment["entrances"] },
 ) {
   const { poly, corners } = painter(ctx, project);
   const metre = Math.hypot(
@@ -531,6 +541,27 @@ function paintCutawayWall(
     side(north, warm ? "#73675a" : "#59666a", wallBasis(project, "x", r.y, concrete, metre));
     side(east, "#35434a", wallBasis(project, "y", r.x + r.width, concrete, metre));
     poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
+  }
+  // A piece of a face with painted openings carries them up to its height, as the
+  // storefront's face does below.
+  if (annex && !lightPass) {
+    const wall = structure.rect;
+    for (const edge of ["north", "east"] as const) {
+      const onFace = edge === "north" ? r.y === wall.y : r.x + r.width === wall.x + wall.width;
+      if (!onFace) continue;
+      const s0 = edge === "north" ? r.x - wall.x : r.y - wall.y;
+      const s1 = s0 + (edge === "north" ? r.width : r.height);
+      paintFacadeArt({
+        ctx,
+        structure,
+        edge,
+        project,
+        ppm: metre,
+        art: annex.art,
+        entrances: annex.entrances,
+        clip: { s0, s1, zMax: part.height },
+      });
+    }
   }
   // A piece of the storefront's own face carries that face's detail up to its height,
   // so revealing the street does not change what the wall is.
@@ -657,6 +688,8 @@ export function paintBuilding(
   storefront?: { sf: Storefront; art: StorefrontArt; pass: Pass },
   /** The architectural pilot (`frontage.ts`): what this mass is in the shop's block. */
   frontage?: BlockDetail,
+  /** The architectural art pilot's painted roof unit, window and shutter. */
+  architecture?: ArchitectureArt,
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -742,6 +775,12 @@ export function paintBuilding(
   // shuttered doors; every other building keeps its flat fills for now. Materials
   // are laid first, so windows, bays, doors and trim below paint over them.
   const clad = structure.style === "shop" ? materials : undefined;
+  // The pilot's window and shutter go on the annex: the generic shop outside the
+  // storefront's block that has a saved entrance (in seed 7, across the street). The
+  // art is one representative; the rest of the street waits for review.
+  const annexArt =
+    clad && !storefront && !frontage && isAnnex(structure, entrances) ? architecture : undefined;
+  const covers = facadeArtCovers(structure, annexArt);
   const metres = (key: MaterialKey) => SURFACE_MATERIALS[key].metres;
   const surface = (
     points: Point[],
@@ -861,6 +900,11 @@ export function paintBuilding(
         high = Math.min(2.35, structure.height - 0.3) * pixelsPerMetre;
       if (high <= low) continue;
       const shop = structure.style === "shop";
+      // painted, below, by the art; the pier stays
+      if (covers.bays) {
+        line(at(lo - 0.01, 0), at(lo - 0.01, high + 5), "#242f35", 3);
+        continue;
+      }
       poly(
         [at(lo, low), at(hi, low), at(hi, high), at(lo, high)],
         shop ? "#243f43" : industrial ? "#303d43" : "#263740",
@@ -879,6 +923,7 @@ export function paintBuilding(
     }
     line(at(0, 0.2 * pixelsPerMetre), at(1, 0.2 * pixelsPerMetre), "#73786f", 2);
     for (const centre of doors) {
+      if (covers.doors) continue;
       const x = (centre - 0.8) / length,
         w = 1.6 / length,
         doorHeight = Math.min(2.2, structure.height - 0.5) * pixelsPerMetre;
@@ -924,6 +969,16 @@ export function paintBuilding(
         structure.style === "shop" ? "rgba(58,199,188,.12)" : "rgba(230,157,66,.09)",
       );
     }
+    if (annexArt)
+      paintFacadeArt({
+        ctx,
+        structure,
+        edge,
+        project,
+        ppm: pixelsPerMetre,
+        art: annexArt,
+        entrances,
+      });
     for (const t of [0.04, 0.94]) {
       line(at(t, 0), at(t, h), "#151f28", 3);
       line(at(t + 0.007, 0), at(t + 0.007, h), "#66706c", 0.8);
@@ -972,6 +1027,13 @@ export function paintBuilding(
       width: 2,
       height: 2,
     };
+    // the painted unit, in place of the drawn box, on every roof but the storefront's
+    const unit = !storefront && materials ? architecture?.roofUnit : undefined;
+    if (unit) {
+      paintRoofShade(ctx, project, pixelsPerMetre, equipment, h);
+      paintRoofUnitArt(ctx, project, equipment, h, unit);
+      continue;
+    }
     const bottom = corners(equipment, h),
       lid = corners(equipment, h + 8);
     if (storefront) paintRoofShade(ctx, project, pixelsPerMetre, equipment, h);
@@ -1026,6 +1088,14 @@ export function paintBuilding(
     if (a.edge !== "north" && a.edge !== "east") continue;
     // The storefront's canopy is its own sprite, so it can sort and fade by itself.
     if (storefront && a.id === storefront.sf.awning.id) continue;
+    // A painted roller shutter's guide rails and housing ARE its door's surround: where
+    // one is painted, the saved surround over that door is drawn as it (the attachment
+    // is unchanged; only its cream drawing gives way).
+    if (covers.doors && a.kind === "entry-surround") {
+      const centre = a.offset + a.span / 2;
+      const { doors } = facadeOpenings(structure, entrances, a.edge);
+      if (doors.some((d) => Math.abs(d - centre) < 0.5)) continue;
+    }
     const at = (t: number, out: number, z: number) => {
       const p = project(attachmentPoint(structure, a, t, out));
       return { x: p.x, y: p.y - z * pixelsPerMetre };
@@ -1150,6 +1220,8 @@ export function createComposedEnvironment(
   tiles?: Partial<Record<MaterialKey, TileSource>>,
   /** The storefront's returned art. Without it the shop keeps its material-pass look. */
   storefrontArt?: StorefrontArt,
+  /** The architectural pilot's art (`architecturePack.ts`). Without it, the drawn boxes and bays. */
+  architectureArt?: ArchitectureArt,
 ): ComposedEnvironment {
   // Ground must extend with saved continuation geometry, not stop at the old
   // 1100x700 art sheet while building sprites float beyond its edge.
@@ -1191,6 +1263,16 @@ export function createComposedEnvironment(
     const sf = storefronts.find((f) => f.structure.id === s.id);
     return sf && storefrontArt ? { sf, art: storefrontArt, pass } : undefined;
   };
+  // the architectural art pilot, on the scenes that take materials only
+  const architecture = materials ? architectureArt : undefined;
+  const annexOf = (s: SceneStructure) =>
+    architecture &&
+    s.style === "shop" &&
+    !storefrontOf(s) &&
+    !detailOf(s) &&
+    isAnnex(s, env.entrances)
+      ? { art: architecture, entrances: env.entrances }
+      : undefined;
   const night = nightFor(env);
   const lights = night
     ? [
@@ -1540,6 +1622,7 @@ export function createComposedEnvironment(
             materials,
             storefrontOf(s),
             detailOf(structure),
+            architecture,
           ),
         depth,
         bounds,
@@ -1554,6 +1637,7 @@ export function createComposedEnvironment(
                 materials,
                 storefrontOf(s, pass),
                 detailOf(structure),
+                architecture,
               )
           : undefined,
       )
@@ -1580,6 +1664,7 @@ export function createComposedEnvironment(
                 materials,
                 storefrontOf(s),
                 detailOf(structure)?.role === "neighbour" ? "painted-render" : undefined,
+                annexOf(s),
               ),
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,

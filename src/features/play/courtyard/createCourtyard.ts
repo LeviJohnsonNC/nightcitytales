@@ -4,6 +4,12 @@ import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment, type ComposedEnvironment } from "./composedEnvironment";
 import { applyStreetPropArt, streetPropFiles } from "./streetPropArt";
+import {
+  ARCHITECTURE_ART_FILES,
+  architectureAssetKey,
+  type ArchitectureArt,
+  type ArchitectureArtKey,
+} from "./architecturePack";
 import { lightAt, tintFor } from "./nightLighting";
 import {
   STOREFRONT_ART_FILES,
@@ -130,6 +136,7 @@ export function createCourtyard(
     composed && arena.environment?.recipe === "intersection" ? MATERIAL_KEYS : [];
   const storefrontKeys = Object.keys(STOREFRONT_ART_FILES) as StorefrontArtKey[];
   const withStorefront = materialKeys.length > 0;
+  const architectureKeys = Object.keys(ARCHITECTURE_ART_FILES) as ArchitectureArtKey[];
   // The painted street props, like the materials, belong to the intersection so far.
   const streetProps = materialKeys.length > 0 ? streetPropFiles(kinds) : [];
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
@@ -211,12 +218,17 @@ export function createCourtyard(
       if (withStorefront)
         for (const key of storefrontKeys)
           this.load.image(storefrontAssetKey(key), STOREFRONT_ART_FILES[key]);
+      // So is the architectural pilot's: missing, the drawn boxes and bays stay.
+      if (withStorefront)
+        for (const key of architectureKeys)
+          this.load.image(architectureAssetKey(key), ARCHITECTURE_ART_FILES[key]);
       // A painted prop that fails to load leaves the procedural one: never a failure.
       for (const file of streetProps) this.load.image(file.key, file.url);
       this.load.on("loaderror", (file: { key?: string }) => {
         if (
           !file.key?.startsWith("material-") &&
           !file.key?.startsWith("storefront-") &&
+          !file.key?.startsWith("architecture-") &&
           !file.key?.startsWith("streetprop-")
         )
           onFailure();
@@ -252,12 +264,19 @@ export function createCourtyard(
             storefrontArt[key] = this.textures
               .get(storefrontAssetKey(key))
               .getSourceImage() as TileSource;
+        const architectureArt: ArchitectureArt = {};
+        for (const key of architectureKeys)
+          if (this.textures.exists(architectureAssetKey(key)))
+            architectureArt[key] = this.textures
+              .get(architectureAssetKey(key))
+              .getSourceImage() as CanvasImageSource;
         const built = createComposedEnvironment(
           this,
           visibleArena,
           project,
           materialKeys.length && Object.keys(tiles).length ? tiles : undefined,
           withStorefront && Object.keys(storefrontArt).length ? storefrontArt : undefined,
+          withStorefront && Object.keys(architectureArt).length ? architectureArt : undefined,
         );
         structures.push(...built.objects);
         lit = built.lit;

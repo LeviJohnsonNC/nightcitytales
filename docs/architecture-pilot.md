@@ -1,6 +1,7 @@
 # Architectural art pilot: one rooftop unit, one window, one shutter
 
-Status: **guides and prompts ready; nothing generated yet.** The goal is architectural art that sits
+Status: **imported and placed; awaiting review.** The results, the one correction made to a returned image
+and the critique are in [`checkpoint-architecture-art-pilot.md`](checkpoint-architecture-art-pilot.md). The goal is architectural art that sits
 beside the painted cars and food cart (see the reference frame) without moving anything the scene
 has saved. This pilot is three images. It stops for visual review before any wider rollout.
 
@@ -18,9 +19,9 @@ Not verified by this work, before or after: a real campaign fight in `/play`, an
 each is the existing opening, so no new opening is invented. The adjoining block's own high barred
 windows are left as they are.
 
-**Gating.** The new art goes on shop-style masses outside the storefront's block (in seed 7, the
-annex). The roof unit goes on every plain rooftop box. Each one is the pilot's single
-representative. Wider use waits for review.
+**Gating.** The window and the shutter go on the annex only: the generic shop whose saved entrance
+carries an entry surround (`isAnnex`, `building_1` on every intersection seed). The roof unit goes on
+every plain rooftop box. Each one is the pilot's single representative. Wider use waits for review.
 
 ## 2. How each is drawn, and why
 
@@ -151,9 +152,12 @@ pass: an exception is explained, with what it costs on screen.
    - The window's frame and mullion lie on the guide's bands (±2%).
    - The shutter's opening edges and ground line lie on the guide's (±1.5%).
 2. **Key and light.**
-   - At least 40% pure key where one is required.
+   - At least 40% pure key on the roof unit. The shutter is held to its own guide (which is only 12%
+     magenta): what the guide leaves magenta stays key, and what it paints grey is painted.
    - No magenta fringe after spill subtraction.
-   - No baked gradient across a straight-on image: its quadrant means differ by under 6/255.
+   - No baked gradient across a straight-on image: its uniform material agrees within 6/255 (the
+     window's frame bars, the shutter's curtain halves and housing ends; a blind or rust asked for at
+     the foot is content, not light).
 3. **Play zoom.** The unit must read as equipment rather than a decorated cube. The frontage must
    gain depth without competing with the warm shop.
 4. **Browser:**
