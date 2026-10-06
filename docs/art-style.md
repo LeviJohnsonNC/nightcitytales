@@ -475,6 +475,65 @@ EDIT the first attached image, a wrecked game prop for an isometric tactical gam
 (Wreck edit wrapper with max=0.5, ceiling=just over knee height) Subject: the same steel street cabinet, torn down further. Only its plinth and the bottom of the housing are still bolted to the ground, inside the dark block, ripped off ragged at about knee height. The rest of the housing has folded down flat and split open onto the ground beside it, and the small doors lie flat around it on the pale slab, a few face down. No wall, door or panel stands up above the dark block's top face, and nothing spills past the pale slab.
 ```
 
+### Street props, round two
+
+The merchandise stand in both rotations and the cabinet turned
+([`street-props-pack/round-2.md`](street-props-pack/round-2.md)). Use the **street prop wrapper** above with
+N = 1024. Attach the files the table in that document lists for each image: the layout from
+`docs/street-props-pack/round-2/guides/`, the references in `docs/street-props-pack/round-2/`, and for a
+damaged or wrecked state the accepted intact image. Commission `street-kiosk-r0-intact.png` alone first and
+wait until it has been checked in game. The other rotation is always a new painting of the same object
+turned. It is never a mirror of the first.
+
+**`street-kiosk-r0-intact.png`** — 1024 × 1024. Attach `kiosk-r0-layout.png`, `reference-food-cart.png` (the
+material quality to match) and `current-kiosk-r0-seed7.png` (what it replaces).
+
+```text
+(Street prop wrapper with N=1024) Subject: a small street vendor's merchandise stand, the same family of worn, hand-built street furniture as the attached food cart and painted to the same finish: grimy galvanised steel and old varnished plywood, scuffed edges, rust at the joints, tape and cable ties. It fills the grey blocks exactly and stays inside them. Two stepped display tiers built of plywood boxes on a steel frame: a low front tier and a higher back tier behind it, both stacked with small open cardboard trays and plastic crates of goods (bundled produce, packs of noodles, canned drinks, cigarette cartons, cheap electronics in blister packs), the goods in muted colours, nothing glossy or glowing, every label blank. Behind the back tier, two thin steel posts hold a flat, slightly sagging sunshade of faded striped canvas in rust-orange and dirty cream, its edge frayed, stretched level over the whole stand at the height the guide shows, no higher. The stand is OPEN toward the lower left of the image (the side marked "open side" in the guide): the goods face that way, and the posts and the sunshade's supports are at the back, toward the upper right. No price boards with writing, no lamps, no screens, no people, no ground or shadow under it.
+```
+
+**`street-kiosk-r0-damaged.png`** — 1024 × 1024. Attach `kiosk-r0-layout.png`, `reference-food-cart.png` and
+the accepted `street-kiosk-r0-intact.png`.
+
+```text
+(Street prop wrapper with N=1024) Subject: exactly the same merchandise stand as the attached intact image, same materials, same position and the same outline, now shot up: the plywood tiers splintered with bullet holes, crates knocked askew and goods spilled across the tiers, the canvas sunshade torn through and hanging loose at one corner but still on its posts and inside its block, one post bent. The outline does not grow. No fire, smoke, sparks or glow.
+```
+
+**`street-kiosk-r0-wrecked.png`** — 1024 × 1024. Attach `kiosk-r0-layout.png`, `reference-food-cart.png` and
+the accepted `street-kiosk-r0-intact.png`.
+
+```text
+(Street prop wrapper with N=1024) Subject: the same merchandise stand collapsed into a low heap of walkable wreckage on its own footprint: the tiers broken flat, the posts down, the torn striped canvas lying over smashed crates, plywood and spilled goods. Nothing rises above knee height (the lowest tier's top in the guide); a little flat debris may lie just past the pink diamond, no more. Cold: no fire, smoke or glow.
+```
+
+**`street-kiosk-r90-intact.png`**, **`-damaged.png`**, **`-wrecked.png`** — 1024 × 1024. Attach
+`kiosk-r90-layout.png`, `reference-food-cart.png` and the accepted `street-kiosk-r0-intact.png` (for damaged
+and wrecked, the accepted r90 intact too). Use the three r0 subjects with one change: "It is the SAME stand as
+the attached r0 image, turned a quarter: it is now OPEN toward the lower RIGHT of the image (the side marked
+"open side" in the guide), with the posts and the sunshade's supports at the back, toward the upper left. Paint
+it turned, as the same object seen from its other side. Do not mirror the attached image."
+
+**`street-cabinet-r90-intact.png`** — 1024 × 1024. Attach `cabinet-r90-layout.png` and round one's accepted
+`street-cabinet-intact.png`.
+
+```text
+(Street prop wrapper with N=1024) Subject: exactly the same free-standing steel street cabinet as the attached image, with the same materials, paint, wear, rust, flyers and bank of nine small doors, but turned a quarter: its DOORS are now on the face toward the lower RIGHT of the image (marked in the guide), and the plain side we now see toward the lower left carries the old torn flyers and tape. It fills the grey box exactly: chest-high, on its short plinth, bolted to the ground. Paint it turned, as the same object seen from its other side. Do not mirror the attached image.
+```
+
+**`street-cabinet-r90-damaged.png`** — 1024 × 1024. Attach `cabinet-r90-layout.png`, the accepted
+`street-cabinet-r90-intact.png` and round one's `street-cabinet-damaged.png`.
+
+```text
+(Street prop wrapper with N=1024) Subject: the same turned cabinet as the attached r90 intact image, same outline, shot up exactly as the attached round-one damaged cabinet is: bullet holes through the doors and side, three doors blown open and hanging, the top crumpled at one corner, paint scorched around the holes. The doors stay on the face toward the lower right. No sparks, smoke or glow.
+```
+
+**`street-cabinet-r90-wrecked.png`** — 1024 × 1024. Attach `cabinet-r90-layout.png`, the accepted
+`street-cabinet-r90-intact.png` and round one's `street-cabinet-wrecked-v2.png`.
+
+```text
+(Street prop wrapper with N=1024) Subject: the same cabinet torn down exactly as the attached round-one wreck is, seen turned a quarter: only its plinth and the bottom of the housing still bolted down, ripped off ragged at about knee height, the rest of the housing folded flat and split open on the ground beside it, the small doors lying flat around it. No wall, door or panel stands above knee height, and nothing lies more than half a metre past the pink diamond.
+```
+
 ## Surface tiles (combat scenes)
 
 Seamless world-scaled tiles the renderer lays on walls and roofs

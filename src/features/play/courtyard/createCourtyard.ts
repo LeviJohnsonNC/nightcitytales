@@ -49,6 +49,7 @@ import { createCharacterAtlas } from "./characterTextures";
 
 import { createPropTextures, propSource, propInkBounds } from "./propTextures";
 import { CONTACT, contactCanvas, contactPad } from "./contactShade";
+import { paintedTexture, parkedAt, sedanPaints } from "./sedanPaint";
 /** Contact shade lies on the ground: over its light and grade, under the cutaway
  * floors, the grid and everything standing. */
 const CONTACT_DEPTH = -960;
@@ -126,6 +127,14 @@ export function createCourtyard(
   if (!theme) throw new Error("No scenic art for this layout");
   const composed = theme === "composed";
   const street = theme === "street" || composed;
+  // each street car's paint, from the saved layout (`sedanPaint.ts`)
+  const parked = (arena.environment?.props ?? []).filter(
+    (p) => p.art.startsWith("sedan-") && p.clusterId,
+  );
+  const carPaints = sedanPaints(
+    parked.map((p) => p.clusterId!),
+    parkedAt(parked.flatMap((p) => arena.cover?.find((c) => c.id === p.coverId)?.rect ?? [])),
+  );
   const unitScale = composed ? composedUnitMetrics(arena).scale : street ? 0.65 : 1;
   const kinds = composed
     ? arena.environment!.props.map((p) => p.art)
@@ -692,8 +701,12 @@ export function createCourtyard(
         (street ? STREET_PROPS[status.piece.id]! : propKind(arena.key, status.piece.id));
       const placement = propPlacement(status, project);
       const procedural = isInteriorProp(kind);
-      const texture =
+      const own =
         propTexture(kind, condition) + (procedural && binding?.rotation === 90 ? "-90" : "");
+      // a sedan's paint is its car's (`sedanPaint.ts`): both sections, any damage
+      const paint = binding?.clusterId ? carPaints.get(binding.clusterId) : undefined;
+      const painted = paint ? paintedTexture(own, paint) : own;
+      const texture = current.textures.exists(painted) ? painted : own;
       const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
       const registration = procedural
         ? ((current.textures.get(texture).customData as { registration?: PropRegistration })

@@ -1241,3 +1241,19 @@ saved geometry. The rules:
 - **A piece's light and glow are clipped to that piece** (`paintReturnLight`'s `clip`). The renderer masks only the
   light pass to the albedo; the glow is added after it, so an unclipped glow lights glass the reveal removed. See
   `docs/checkpoint-cutaway-light.md`.
+
+### Sedan paint and the props still to paint (courtyard/sedanPaint.ts)
+
+- **The street sedan comes in three paints** made from its own art: beige (the art), burgundy and a gunmetal
+  charcoal.
+  - `bodyPaintMask` takes the beige by hue, and by chroma for its lightness.
+  - `repaint` recolours inside it at each pixel's own luminance.
+  - `tools/art/sedan-paint.ts` bakes `<file>-<paint>.webp`.
+- **Wrecks keep their art.** They are burned bare.
+- **The texture key is `paintedTexture(key, paint)`** (`key~paint`), and a missing file falls back to the art.
+- **The paint is chosen by `sedanPaints`** from the saved layout (cluster ids plus `parkedAt`), never at
+  random. Both sections of a car share it.
+- **Never tint a whole sprite** to make a variant.
+- **Still procedural: the merchandise stand (`shop-display`) and the cabinet at r90.** Their Picasso pack is
+  `docs/street-props-pack/round-2.md` (`STREET_PROP_PACK_2`, `KIOSK`); `street-prop-guides.ts --round 2`
+  draws it. They are not finished until those images are imported.

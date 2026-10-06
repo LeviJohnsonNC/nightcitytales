@@ -90,7 +90,7 @@ export function sedanPoint(x: number, y: number, z: number, rotation: Rotation):
 }
 
 export interface PackGuide {
-  id: "sedan-r90" | "sedan-r0" | "planter" | "cabinet";
+  id: "sedan-r90" | "sedan-r0" | "planter" | "cabinet" | "cabinet-r90" | "kiosk-r0" | "kiosk-r90";
   /** File name Picasso saves each state as; `{state}` is intact, damaged or wrecked. */
   file: string;
   /** Square, because the image tool offers 1:1, 3:2 and 2:3, and these fit 1:1. */
@@ -159,7 +159,12 @@ function sedanGuide(rotation: Rotation): PackGuide {
   };
 }
 
-function singleGuide(id: "planter" | "cabinet", art: string, rotation: Rotation, top: number) {
+function singleGuide(
+  id: "planter" | "cabinet" | "cabinet-r90" | "kiosk-r0" | "kiosk-r90",
+  art: string,
+  rotation: Rotation,
+  top: number,
+) {
   const pts = sectionBox({ x: 0, y: 0 }, rotation, top);
   const { scale, origin } = fit(pts, SMALL, 10);
   return {
@@ -190,6 +195,47 @@ export const CABINET = {
   front: "y0",
   wreckedMax: 0.5,
 } as const;
+
+/**
+ * The shop's merchandise stand (`shop-display`): two stepped tiers of goods under a
+ * striped sunshade on two rear posts, open on its browsing side. Every number is the
+ * procedural stand's (`interiorPropArt.ts`, 73.9 frame px a metre of height), so the
+ * painted stand keeps the silhouette the board fades and sorts by. Local y = 0.1 is
+ * the open side: toward -y (north) at rotation 0, toward +x (east) at rotation 90,
+ * which are both faces the camera sees.
+ */
+export const KIOSK = {
+  body: { x0: 0.12, x1: 1.88, y0: 0.1, y1: 1.9 },
+  tiers: [
+    { y0: 0.25, y1: 0.85, top: 0.34, goods: 0.51 },
+    { y0: 0.95, y1: 1.55, top: 0.65, goods: 0.83 },
+  ],
+  posts: { xs: [0.12, 1.8], y0: 1.65, y1: 1.77, width: 0.08, top: 1.27 },
+  canopy: { x0: 0, x1: 2, y0: 0.1, y1: 1.9, z0: 1.245, z1: 1.31 },
+  height: 1.31,
+  front: "y0",
+  wreckedMax: 0.45,
+} as const;
+
+/**
+ * Round two (`docs/street-props-pack/round-2.md`): the bindings the intersection
+ * variants still draw procedurally. The cabinet at rotation 90 (seed 0 puts it so; its
+ * art exists for rotation 0 only, and art is never mirrored), and the merchandise
+ * stand in both rotations (no art at all). Guides only, until the images return; the
+ * importer takes them then.
+ */
+export const STREET_PROP_PACK_2: readonly PackGuide[] = [
+  singleGuide("cabinet-r90", "mailboxes", 90, 1.8),
+  singleGuide("kiosk-r0", "shop-display", 0, 1.45),
+  singleGuide("kiosk-r90", "shop-display", 90, 1.45),
+];
+
+/** Where each round-two guide is seen in the saved variants, for its placement proof. */
+export const STREET_PROP_PACK_2_PLACEMENT = [
+  { guide: "cabinet-r90", seed: 0, cover: "housing_entry_mailboxes_cabinet" },
+  { guide: "kiosk-r90", seed: 0, cover: "utility_waiting_display_cabinet" },
+  { guide: "kiosk-r0", seed: 7, cover: "utility_waiting_display_cabinet" },
+] as const;
 
 export const STREET_PROP_PACK: readonly PackGuide[] = [
   sedanGuide(90),

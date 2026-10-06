@@ -60,7 +60,16 @@ describe("street prop art: the files the board loads", () => {
     // the cabinet has art at rotation 0 only; rotated, it keeps the procedural kit
     expect(map["mailboxes-wrecked.webp"]).toEqual(["prop-mailboxes-wrecked"]);
     expect(files.flatMap((f) => f.textures)).not.toContain("prop-mailboxes-intact-90");
-    expect(files).toHaveLength(12 + 3 + 3);
+    // the sedan's other paints (`sedanPaint.ts`): intact and damaged, each rotation;
+    // a wreck is burned to bare metal and keeps the one picture
+    expect(map["sedan-cabin-damaged-90-burgundy.webp"]).toEqual([
+      "prop-sedan-cabin-damaged-90~burgundy",
+    ]);
+    expect(map["sedan-engine-intact-charcoal.webp"]).toEqual(["prop-sedan-engine-intact~charcoal"]);
+    expect(
+      Object.keys(map).filter((n) => n.includes("wrecked-") && /burgundy|charcoal/.test(n)),
+    ).toEqual([]);
+    expect(files).toHaveLength(12 + 3 + 3 + 2 * 2 * 2 * 2);
     expect(new Set(files.map((f) => f.key)).size).toBe(files.length);
   });
 

@@ -15,6 +15,10 @@
  *                              scene's own projection and camera: the registration proof
  *   context-renderer-only.jpg  the same frame without the overlay
  *
+ * `--round 2` draws round two (`STREET_PROP_PACK_2`: the cabinet at rotation 90 and the
+ * merchandise stand in both rotations) into docs/street-props-pack/round-2/, with a
+ * placement proof per guide on the variant that shows it.
+ *
  * Nothing here is a second renderer: the placement preview is a screenshot of the
  * shipping one plus a wireframe computed from the same projection and camera.
  */
@@ -27,10 +31,13 @@ import { courtyardCamera } from "@/features/play/courtyard/courtyardPresentation
 import {
   CABINET,
   FRAME,
+  KIOSK,
   PLANTER,
   SEDAN,
   STREET_PROP_BENCHMARK,
   STREET_PROP_PACK,
+  STREET_PROP_PACK_2,
+  STREET_PROP_PACK_2_PLACEMENT,
   framePoint,
   sectionFrameOnGuide,
   sedanCut,
@@ -247,6 +254,54 @@ function sedanGuideSvg(g: PackGuide, annotated: boolean) {
   return svg(g.canvas, g.canvas, parts.join(""));
 }
 
+/** The merchandise stand's volume: two tiers, their goods, the rear posts, the sunshade. */
+function kioskVolume(
+  at: (x: number, y: number, z: number) => Point,
+  shades: [string, string, string] = BODY,
+  stroke?: string,
+) {
+  const K = KIOSK;
+  const goods: [string, string, string] = ["#7d7360", "#665d4d", "#968a72"];
+  const out: string[] = [];
+  // far to near: the open side (local y = 0.1) is nearer the camera in both rotations
+  for (const x of K.posts.xs)
+    out.push(
+      boxFaces(
+        at,
+        { x0: x, x1: x + K.posts.width, y0: K.posts.y0, y1: K.posts.y1 },
+        0,
+        K.posts.top,
+        shades,
+        stroke,
+      ),
+    );
+  for (const t of [...K.tiers].reverse()) {
+    const b = { x0: K.body.x0, x1: K.body.x1, y0: t.y0, y1: t.y1 };
+    out.push(boxFaces(at, b, 0, t.top, shades, stroke));
+    out.push(
+      boxFaces(
+        at,
+        { ...b, x0: b.x0 + 0.08, x1: b.x1 - 0.08 },
+        t.top,
+        t.goods,
+        stroke ? shades : goods,
+        stroke,
+      ),
+    );
+  }
+  out.push(
+    boxFaces(
+      at,
+      K.canopy,
+      K.canopy.z0,
+      K.canopy.z1,
+      stroke ? shades : ["#9a6a52", "#7e5642", "#b58468"],
+      stroke,
+    ),
+  );
+  return out;
+}
+
 function singleGuideSvg(g: PackGuide, annotated: boolean) {
   const at = (x: number, y: number, z: number) =>
     toGuide(g, framePoint(x, y, z, g.rotation as Rotation));
@@ -275,10 +330,49 @@ function singleGuideSvg(g: PackGuide, annotated: boolean) {
         "#2c3626",
       ),
     );
+  } else if (g.id.startsWith("kiosk")) {
+    kioskVolume(at).forEach((v) => parts.push(v));
   } else {
     parts.push(boxFaces(at, CABINET.body, 0, CABINET.height, BODY));
   }
-  if (annotated) {
+  if (annotated && g.id.startsWith("kiosk")) {
+    parts.push(
+      label(
+        at(1, KIOSK.body.y0 - 0.3, 0.2),
+        "OPEN SIDE: GOODS FACE THIS WAY",
+        22,
+        "middle",
+        "#ffe08a",
+      ),
+    );
+    parts.push(
+      label(
+        { x: g.canvas / 2, y: 40 },
+        `sunshade ${KIOSK.canopy.z0}–${KIOSK.height} m on two rear posts · tiers ${KIOSK.tiers.map((t) => t.top).join(" / ")} m`,
+        20,
+        "middle",
+        "#d8f3ff",
+      ),
+    );
+    parts.push(
+      label(
+        { x: g.canvas / 2, y: g.canvas - 20 },
+        `${g.id}: merchandise stand 1.76 × 1.8 m, ≤ ${KIOSK.height} m, rotation ${g.rotation}`,
+        20,
+      ),
+    );
+  } else if (annotated && g.id === "cabinet-r90") {
+    parts.push(
+      label(at(1, CABINET.body.y0 - 0.25, 0.3), "DOORS FACE THIS WAY", 22, "middle", "#ffe08a"),
+    );
+    parts.push(
+      label(
+        { x: g.canvas / 2, y: g.canvas - 20 },
+        "cabinet-r90: the same 1.76 × 0.9 × 1.52 m steel cabinet, turned: doors face the other street",
+        18,
+      ),
+    );
+  } else if (annotated) {
     if (g.id === "planter") {
       parts.push(
         label(at(1.95, 0.12, PLANTER.rim), `rim ${PLANTER.rim} m`, 22, "start", "#d8f3ff"),
@@ -452,7 +546,80 @@ async function contextPlacement(port: string) {
   await sharp(shot).jpeg({ quality: 90 }).toFile(`${OUT}/context-renderer-only.jpg`);
 }
 
+/* ------------------------------------------------------------------ round 2 */
+
+/** Each round-two guide's volume over the variant that shows it: the registration proof. */
+async function roundTwoPlacement(port: string, out: string) {
+  // one browser for every proof: a second launch under Bun can stall
+  const browser = await chromium.launch({
+    executablePath: process.env["CHROMIUM_PATH"],
+    args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--no-sandbox"],
+  });
+  for (const p of STREET_PROP_PACK_2_PLACEMENT) {
+    const g = STREET_PROP_PACK_2.find((x) => x.id === p.guide)!;
+    const arena = composeScene("intersection", p.seed).layout.arena;
+    const r = arena.cover!.find((c) => c.id === p.cover)!.rect;
+    const { project, pixelsPerMetre } = battlefieldProjection(
+      arena.extent.width,
+      arena.extent.height,
+    );
+    const centre = project({ x: r.x + 1, y: r.y + 1 });
+    const camera = {
+      x: Math.round(centre.x - 550),
+      y: Math.round(centre.y - pixelsPerMetre - 340),
+      zoom: 3.5,
+    };
+    const page = await (
+      await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+    ).newPage();
+    await page.goto(
+      `http://127.0.0.1:${port}/scene-review?place=intersection&seed=${p.seed}&actors=0&reveal=0&night=0&cam=${camera.x},${camera.y},${camera.zoom}`,
+      { waitUntil: "load" },
+    );
+    await page.waitForTimeout(7000);
+    const box = (await (await page.$("canvas"))!.boundingBox())!;
+    const shot = await page.screenshot({ clip: box });
+    await page.close();
+    const cam = courtyardCamera(box.width, box.height, camera);
+    const screen = (w: Point, z: number) => {
+      const q = project(w);
+      return {
+        x: (q.x - cam.x) * cam.zoom + box.width / 2,
+        y: (q.y - z * pixelsPerMetre - cam.y) * cam.zoom + box.height / 2,
+      };
+    };
+    // the section's own metres, turned as the board turns them (`interiorPropPoint`)
+    const world = (x: number, y: number): Point =>
+      g.rotation === 90 ? { x: r.x + 2 - y, y: r.y + x } : { x: r.x + x, y: r.y + y };
+    const at = (x: number, y: number, z: number) => screen(world(x, y), z);
+    const none: [string, string, string] = ["none", "none", "none"];
+    const parts = g.id.startsWith("kiosk")
+      ? kioskVolume(at, none, "#ffe14a")
+      : [boxFaces(at, CABINET.body, 0, CABINET.height, none, "#5ad7ff")];
+    parts.push(label(at(1, -0.5, 1.9), `${g.id} on seed ${p.seed}`, 26, "middle", "#ffffff"));
+    const overlay = svg(Math.round(box.width), Math.round(box.height), parts.join(""));
+    await sharp(shot)
+      .composite([{ input: overlay, left: 0, top: 0 }])
+      .jpeg({ quality: 90 })
+      .toFile(`${out}/${g.id}-placement-seed${p.seed}.jpg`);
+    await sharp(shot).jpeg({ quality: 90 }).toFile(`${out}/${g.id}-renderer-seed${p.seed}.jpg`);
+  }
+  await browser.close();
+}
+
 /* -------------------------------------------------------------------- main */
+
+if (arg("round", "1") === "2") {
+  const out = `${OUT}/round-2`;
+  await mkdir(`${out}/guides`, { recursive: true });
+  for (const g of STREET_PROP_PACK_2) {
+    await sharp(singleGuideSvg(g, false)).png().toFile(`${out}/guides/${g.id}-layout.png`);
+    await sharp(singleGuideSvg(g, true)).png().toFile(`${out}/guides/${g.id}-annotated.png`);
+  }
+  if (!process.argv.includes("--no-browser")) await roundTwoPlacement(arg("port", "5180"), out);
+  console.log("round 2 guides written to", out);
+  process.exit(0);
+}
 
 await mkdir(`${OUT}/guides`, { recursive: true });
 for (const g of STREET_PROP_PACK) {
