@@ -4,6 +4,7 @@ import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment, type ComposedEnvironment } from "./composedEnvironment";
 import { applyStreetPropArt, streetPropFiles } from "./streetPropArt";
+import { OVERLAY, type OverlayMode } from "../overlayModel";
 import {
   ARCHITECTURE_ART_FILES,
   architectureAssetKey,
@@ -73,6 +74,10 @@ export type GridOverlay = {
   chosen: Tile | null;
   /** The walked route, in metres. */
   route: Point[] | null;
+  /** How loud to be (`overlayModel.ts`): at rest only the edge of reach is drawn. */
+  mode?: OverlayMode;
+  /** The edge of reachable ground, in metres (`squaresOutline`). */
+  edge?: [Point, Point][];
 };
 
 export type CourtyardModel = {
@@ -624,26 +629,39 @@ export function createCourtyard(
       g.lineStyle(w, colour, alpha).strokePoints(corners, true);
     const CYAN = 0x65eee0,
       AMBER = 0xf9bd72,
-      GOLD = 0xffd166;
+      GOLD = 0xffd166,
+      INK = 0x061118;
+    // Lines keep one width on screen at every zoom: a world-unit width scales.
+    const px = 1 / Math.max(0.01, current.cameras.main.zoom);
+    const mode = overlay.mode ?? "plan";
+    const level = OVERLAY[mode];
     const chosen = overlay.chosen ? tileKey(overlay.chosen) : null;
     for (const { tile, sheltered, firing, faded } of overlay.squares) {
       const corners = squareCorners(tile);
-      const colour = firing ? GOLD : sheltered ? AMBER : CYAN;
+      const colour = firing ? GOLD : mode === "plan" && sheltered ? AMBER : CYAN;
       const here = chosen === tileKey(tile);
       // Ground that cannot see the target stays visible as reach, but stops
       // competing with the ground that can.
-      const strength = faded ? 0.3 : 1;
-      fill(corners, colour, (here ? 0.3 : firing ? 0.18 : 0.1) * strength);
-      outline(
-        corners,
-        here ? 0xa9fff5 : colour,
-        (here ? 0.9 : firing ? 0.55 : 0.3) * strength,
-        here ? 1.8 : 0.8,
-      );
+      const strength = faded ? 0.35 : 1;
+      const fillAlpha = here ? 0.26 : firing ? 0.16 : level.fill;
+      if (fillAlpha > 0) fill(corners, colour, fillAlpha * strength);
+      const lineAlpha = here ? 0.9 : firing ? 0.5 : level.square;
+      if (lineAlpha > 0)
+        outline(corners, here ? 0xa9fff5 : colour, lineAlpha * strength, (here ? 1.6 : 0.8) * px);
+    }
+    // The edge of reach: the Move Action's real boundary, dark under light so it
+    // reads on asphalt and on pavement alike.
+    for (const [a, b] of overlay.edge ?? []) {
+      const p = screen(a),
+        q = screen(b);
+      g.lineStyle(3 * px, INK, 0.35 * level.edge).lineBetween(p.x, p.y, q.x, q.y);
+      g.lineStyle(1.3 * px, CYAN, level.edge).lineBetween(p.x, p.y, q.x, q.y);
     }
     if (overlay.route?.length) {
       const path = overlay.route.map(screen);
-      g.lineStyle(3, CYAN, 0.95);
+      g.lineStyle(4.5 * px, INK, 0.45);
+      g.strokePoints(path, false);
+      g.lineStyle(2.4 * px, CYAN, 0.95);
       g.strokePoints(path, false);
     }
   }

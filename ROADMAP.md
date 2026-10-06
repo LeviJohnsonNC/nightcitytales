@@ -1689,3 +1689,16 @@ every plain roof box, and a painted window and roller shutter on the annex, on i
   (labels, bars, the cutaway's weight).
 
 **Awaiting Levi's review.**
+
+[A clear, restrained tactical presentation](docs/checkpoint-presentation.md) is in, as a shared change to the
+one combat board.
+
+- **The cause of the oversized labels.** The board's SVG is in scene units, so names, bars and lines grew with
+  the camera (and shrank to unreadable on a phone). Markers are now drawn in screen pixels with a role
+  hierarchy: target, pointed, you, threats, allies, bystanders.
+- **The movement overlay is quiet at rest.** It is an edge of reach, with squares and a route only while
+  planning.
+- **The cutaway reads as a building mass,** not an empty room.
+- **Unchanged:** rules, hit areas and geometry. A real `/play` fight and save/load are not verified.
+
+**Awaiting Levi's review.**

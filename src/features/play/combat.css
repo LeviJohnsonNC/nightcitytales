@@ -264,6 +264,22 @@
 .combat-unit {
   cursor: pointer;
 }
+/* An actor's name and HP over the board, in screen pixels (`ActorMarker`). */
+.combat-marker-label {
+  font:
+    600 11px "IBM Plex Mono",
+    monospace;
+  paint-order: stroke;
+  stroke: #061118;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  letter-spacing: 0.02em;
+}
+.combat-marker-label.is-status {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .combat-unit-label {
   font:
     600 10px "IBM Plex Mono",
@@ -1884,6 +1900,12 @@
   position: absolute;
   z-index: 4;
   transform: translate(-50%, -100%);
+}
+/* No room above the anchor: hang below it, clear of the person it points at. */
+.combat-callout.is-below {
+  transform: translate(-50%, 56px);
+}
+.combat-callout {
   pointer-events: auto;
   filter: drop-shadow(0 6px 16px #040a0fbb);
 }
@@ -1990,7 +2012,7 @@ button.combat-callout-act:hover {
 }
 .combat-blocker text {
   font:
-    700 9px "IBM Plex Mono",
+    700 10px "IBM Plex Mono",
     monospace;
   letter-spacing: 0.14em;
   fill: #ff9a93;
@@ -2086,4 +2108,68 @@ button.combat-callout-act:hover {
 .combat-feedback details p {
   max-height: 8em;
   overflow: auto;
+}
+
+/*
+ * The board's lines keep one weight on screen at every camera zoom: the overlay is
+ * drawn in scene units, so a 2-unit stroke was a 7 px band at play zoom. Text and
+ * markers are counter-scaled by `ActorMarker`; strokes use a non-scaling width.
+ */
+.combat-unit ellipse,
+.combat-brackets,
+.combat-los,
+.combat-route,
+.combat-destination,
+.combat-blocker polygon {
+  vector-effect: non-scaling-stroke;
+}
+.combat-unit ellipse {
+  stroke-width: 1.4px;
+}
+.combat-unit.is-locked ellipse {
+  stroke-width: 2.2px;
+}
+.combat-brackets {
+  stroke-width: 1.6px;
+}
+.combat-brackets.is-locked {
+  stroke-width: 2.2px;
+}
+.combat-los {
+  stroke-width: 1.6px;
+}
+.combat-los.is-blocked {
+  stroke-width: 2px;
+}
+.combat-route {
+  stroke-width: 2.5px;
+}
+.combat-blocker polygon {
+  stroke-width: 1.6px;
+}
+
+/* The diagram view's squares follow the same modes as the art's (`overlayModel.ts`). */
+.combat-move-edge {
+  stroke: #65eee0;
+  stroke-width: 1.3px;
+  vector-effect: non-scaling-stroke;
+}
+.combat-squares.is-rest .combat-square:not(.is-chosen) {
+  fill-opacity: 0.35;
+  stroke-opacity: 0;
+}
+.combat-squares.is-target .combat-square:not(.is-chosen) {
+  fill-opacity: 0;
+  stroke-opacity: 0;
+}
+.combat-squares.is-target .combat-move-edge,
+.combat-squares.is-aim .combat-move-edge {
+  stroke-opacity: 0.45;
+}
+
+/* A unit's keyboard focus is shown by the board itself (its brackets and its full
+   name over it), not by a browser box around its hit area. */
+.combat-arena .combat-unit:focus,
+.combat-arena .combat-unit:focus-visible {
+  outline: none;
 }

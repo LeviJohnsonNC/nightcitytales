@@ -24,6 +24,9 @@ import { useCombatFeedback } from "./useCombatFeedback";
 import { playbackHeading, compactCombatFeedback } from "./combatFeedback";
 import { scenicTheme } from "./courtyard/scenicPresentation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { ActorMarker } from "./ActorMarker";
+import { actorColor, layoutMarkers, markerFor } from "./actorMarkers";
+import { overlayMode, squaresOutline } from "./overlayModel";
 import {
   Volume2,
   VolumeX,
@@ -199,6 +202,23 @@ export function CombatBoard({
   );
   const drag = useRef<Point | null>(null);
   const patternId = useId().replaceAll(":", "");
+  /** The board's size on screen: actor markers are drawn in screen pixels from it. */
+  const [boardSize, setBoardSize] = useState({ width: 1100, height: 680 });
+  /** Who is under the pointer, and who holds keyboard focus: both reveal detail. */
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
+  const boardMounted = !!live;
+  useEffect(() => {
+    const el = boardRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      if (width && height) setBoardSize({ width, height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [boardMounted]);
   useEffect(() => {
     if (dice) setPanel((current) => (current === "improvise" ? null : current));
   }, [dice]);
@@ -371,6 +391,25 @@ export function CombatBoard({
     y: camera.y + effects.offset.y,
   };
   const viewBox = `${550 - cameraWidth / 2 + displayCamera.x} ${340 - cameraHeight / 2 + displayCamera.y} ${cameraWidth} ${cameraHeight}`;
+  /**
+   * Screen pixels per scene unit, as the SVG is drawn (it fits the viewBox into the
+   * board, centred). Text and bars drawn at `scale(ui)` are one size on screen at
+   * every camera zoom; everything else stays in the scene.
+   */
+  const pxPerUnit = Math.min(boardSize.width / cameraWidth, boardSize.height / cameraHeight);
+  const ui = 1 / pxPerUnit;
+  const viewOrigin = {
+    x: 550 - cameraWidth / 2 + displayCamera.x,
+    y: 340 - cameraHeight / 2 + displayCamera.y,
+  };
+  const viewPad = {
+    x: (boardSize.width - cameraWidth * pxPerUnit) / 2,
+    y: (boardSize.height - cameraHeight * pxPerUnit) / 2,
+  };
+  const toScreen = (p: Point) => ({
+    x: (p.x - viewOrigin.x) * pxPerUnit + viewPad.x,
+    y: (p.y - viewOrigin.y) * pxPerUnit + viewPad.y,
+  });
   const svgPoint = (svg: SVGSVGElement, e: { clientX: number; clientY: number }) => {
     const matrix = svg.getScreenCTM();
     return matrix ? new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse()) : null;
@@ -486,6 +525,8 @@ export function CombatBoard({
   const scouting = interaction.type === "find-firing-position";
   /** Squares nobody can stand on — the engine's answer, not the art's outline. */
   const blockedSquares = blockedTiles(arena, live.cover);
+  /** The edge of everything this Move Action reaches, the player's own square included. */
+  const reachEdge = showSquares ? squaresOutline([...moveField!.values()].map((m) => m.tile)) : [];
   const litSquares = showSquares
     ? [...moveField!.values()].flatMap(({ tile, cost }) => {
         if (cost === 0) return [];
@@ -509,9 +550,13 @@ export function CombatBoard({
    */
   calloutPoint.current =
     (interaction.type === "move-preview" || scouting) && spot
-      ? { x: project(spot).x, y: project(spot).y - 14 }
+      ? { x: project(spot).x, y: project(spot).y - 18 * ui }
       : aimed
-        ? { x: project(aimed.data.position).x, y: project(aimed.data.position).y - 64 }
+        ? {
+            x: project(aimed.data.position).x,
+            // above the head and the name marker over it, in screen pixels
+            y: project(aimed.data.position).y - (scenic ? scenicUnitTop + 4 : 68) - 44 * ui,
+          }
         : null;
   /**
    * What the contextual control says and whether it commits anything.
@@ -693,6 +738,8 @@ export function CombatBoard({
                       squares: litSquares,
                       chosen: route?.ok ? spotTile : null,
                       route: route?.ok ? route.path : null,
+                      mode: overlayMode(interaction.type),
+                      edge: reachEdge,
                     }
                   : null
               }
@@ -1025,7 +1072,10 @@ export function CombatBoard({
               />
             )}
             {showSquares && !scenic && (
-              <g className="combat-squares" pointerEvents="none">
+              <g
+                className={`combat-squares is-${overlayMode(interaction.type)}`}
+                pointerEvents="none"
+              >
                 {litSquares.map(({ tile, key, sheltered: safe, firing, faded }) => (
                   <polygon
                     key={key}
@@ -1037,6 +1087,20 @@ export function CombatBoard({
                     points={points(squareCorners(tile).map(project))}
                   />
                 ))}
+                {reachEdge.map(([a, b], i) => {
+                  const p = project(a),
+                    q = project(b);
+                  return (
+                    <line
+                      key={i}
+                      className="combat-move-edge"
+                      x1={p.x}
+                      y1={p.y}
+                      x2={q.x}
+                      y2={q.y}
+                    />
+                  );
+                })}
               </g>
             )}
             {/* The line of the shot. Amber and solid when it exists, red and
@@ -1147,9 +1211,11 @@ export function CombatBoard({
                         // label, so it does not rely on the colour alone.
                         <g className="combat-blocker" pointerEvents="none">
                           <polygon points={points(top)} />
+                          {/* Said at the obstacle, in screen pixels, above it. */}
                           <text
-                            x={(corners[0]!.x + corners[2]!.x) / 2}
-                            y={corners[0]!.y - lift - 10}
+                            transform={`translate(${(corners[0]!.x + corners[2]!.x) / 2},${
+                              Math.min(...top.map((c) => c.y)) - 4 * ui
+                            }) scale(${ui})`}
                             textAnchor="middle"
                           >
                             IN THE WAY
@@ -1207,11 +1273,7 @@ export function CombatBoard({
                 depth: project(data.position).y,
                 render: () => {
                   const p = project(data.position);
-                  const color = actor.isPlayer
-                    ? "#65eee0"
-                    : actor.side === "hostile"
-                      ? "#ff7770"
-                      : "#b3a2ff";
+                  const color = actorColor(actor);
                   const disposition = combatantDisposition(actor.defeated, data.exitReason);
                   const exitLabel = dispositionLabel(disposition);
                   const takeable = !actor.isPlayer && !actor.defeated;
@@ -1244,12 +1306,18 @@ export function CombatBoard({
                       }}
                       onPointerMove={(e) => e.stopPropagation()}
                       onPointerEnter={() => {
+                        setHovered(actor.id);
                         if (takeable) dispatch({ kind: "hover-unit", targetId: actor.id });
                       }}
                       onPointerLeave={(e) => {
                         e.stopPropagation();
+                        setHovered((current) => (current === actor.id ? null : current));
                         if (takeable) dispatch({ kind: "leave-unit" });
                       }}
+                      onFocus={() => setFocused(actor.id)}
+                      onBlur={() =>
+                        setFocused((current) => (current === actor.id ? null : current))
+                      }
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
@@ -1284,12 +1352,15 @@ export function CombatBoard({
                         height={scenic ? scenicUnitTop + 12 : 77}
                         fill="transparent"
                       />
+                      {/* The ground ring: a bystander's is quiet, the player's and a
+                          locked target's are the strongest on the board. */}
                       <ellipse
                         rx={locked ? 18 : 15}
                         ry={locked ? 9 : 8}
-                        fill={`${color}20`}
+                        fill={actor.side === "neutral" && !locked ? "none" : `${color}20`}
                         stroke={color}
-                        strokeWidth={locked ? 2 : 1}
+                        strokeOpacity={actor.side === "neutral" && !locked && !chosen ? 0.45 : 1}
+                        strokeWidth={locked || actor.isPlayer ? 2 : 1}
                       />
                       <g
                         visibility={
@@ -1329,34 +1400,10 @@ export function CombatBoard({
                           </g>
                         )}
                       </g>
-                      <rect
-                        x="-23"
-                        y={scenic ? -scenicUnitTop - 6 : -62}
-                        width="46"
-                        height="4"
-                        rx="1"
-                        fill="#08131b"
-                      />
-                      <rect
-                        x="-23"
-                        y={scenic ? -scenicUnitTop - 6 : -62}
-                        width={46 * Math.max(0, Math.min(1, actor.hp / actor.hpMax))}
-                        height="4"
-                        rx="1"
-                        fill={color}
-                      />
-                      <text y="23" textAnchor="middle" fill={color} className="combat-unit-label">
-                        {actor.isPlayer ? "YOU" : actor.name}
-                      </text>
-                      {actor.defeated && (
-                        <text y="39" textAnchor="middle" fill={color} className="combat-unit-label">
-                          {exitLabel}
-                        </text>
-                      )}
                       {/* Brackets around the person, not a box around a
                           rectangle: they close in when the target is locked,
                           so hovering and choosing read differently. */}
-                      {(chosen || locked) && (
+                      {(chosen || locked || focused === actor.id) && (
                         <path
                           className={`combat-brackets ${locked ? "is-locked" : ""}`}
                           d={
@@ -1378,6 +1425,74 @@ export function CombatBoard({
               .map((item) => (
                 <g key={item.key}>{item.render()}</g>
               ))}
+            {/* Who everybody is, in screen pixels and above everything standing:
+                one readable size at every zoom, kept on screen and apart, and saying
+                as much as each person's part in the fight calls for. */}
+            {(() => {
+              const attention = { locked: lockedId, pointed: pointedId, hovered, focused };
+              const items = actors.map(({ actor, data }) => {
+                const p = project(data.position);
+                const head = { x: p.x, y: p.y - (scenic ? scenicUnitTop + 4 : 68) };
+                const marker = markerFor(
+                  actor,
+                  attention,
+                  dispositionLabel(combatantDisposition(actor.defeated, data.exitReason)),
+                );
+                const ground = toScreen(p);
+                const inView =
+                  ground.x >= 0 &&
+                  ground.x <= boardSize.width &&
+                  ground.y >= 0 &&
+                  ground.y <= boardSize.height;
+                return {
+                  id: actor.id,
+                  marker,
+                  head,
+                  inView,
+                  color: actorColor(actor),
+                  ...toScreen(head),
+                };
+              });
+              // the "IN THE WAY" label over the obstacle is fixed; names move clear of it
+              const blockerPiece = blocker
+                ? cover.find((c) => c.piece.id === blocker.id && !c.destroyed)
+                : undefined;
+              const obstacles = blockerPiece
+                ? (() => {
+                    const r = blockerPiece.piece.rect;
+                    const top = Math.min(
+                      ...[
+                        { x: r.x, y: r.y },
+                        { x: r.x + r.width, y: r.y },
+                        { x: r.x + r.width, y: r.y + r.height },
+                        { x: r.x, y: r.y + r.height },
+                      ].map((c) => project(c).y - 22),
+                    );
+                    const c = toScreen({
+                      x: project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).x,
+                      y: top,
+                    });
+                    return [{ left: c.x - 40, right: c.x + 40, top: c.y - 18, bottom: c.y }];
+                  })()
+                : [];
+              const placed = layoutMarkers(items, boardSize, obstacles);
+              return (
+                <g className="combat-markers" pointerEvents="none">
+                  {items.map((item) =>
+                    !placed.has(item.id) ? null : (
+                      <ActorMarker
+                        key={item.id}
+                        marker={item.marker}
+                        color={item.color}
+                        at={item.head}
+                        shift={placed.get(item.id)!}
+                        ui={ui}
+                      />
+                    ),
+                  )}
+                </g>
+              );
+            })()}
             {playback && impactPoint && playbackActor && (
               <g
                 key={playback.sequence}
@@ -1398,8 +1513,9 @@ export function CombatBoard({
                   className="combat-tracer"
                 />
                 <text
-                  x={project(impactPoint).x}
-                  y={project(impactPoint).y - 78}
+                  transform={`translate(${project(impactPoint).x},${
+                    project(impactPoint).y - (scenic ? scenicUnitTop + 4 : 68)
+                  }) scale(${ui}) translate(0,-30)`}
                   textAnchor="middle"
                   className="combat-impact"
                 >
