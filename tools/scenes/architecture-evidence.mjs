@@ -22,6 +22,12 @@ const CROSSING = `${S7}&cam=-150,-60,4`;
 /** The annex across the street: its bays and its roller shutter (the window and shutter art). */
 const ANNEX = `${S7}&cam=-170,40,3.2`;
 const ANNEX_CLOSE = `${S7}&cam=-218,-36,6`;
+/** The storefront's own three rooftop units, close (painted since the corner finish). */
+const SF_ROOF = `${S7}&cam=54,59,5`;
+/** The storefront's other (east) face and its neighbour, at play zoom. */
+const SHOP_EAST = `${S7}&cam=150,200,2.2`;
+/** The annex and the street in front of it, at play zoom. */
+const ANNEX_PLAY = `${S7}&cam=-150,20,2.2`;
 /** The neighbouring block's three rooftop units (the roof-unit art), close. */
 const ROOFS = `${S7}&cam=79,159,5`;
 const SHOTS = [
@@ -44,11 +50,20 @@ const SHOTS = [
   ["annex-reveal-behind", `${ANNEX}&actors=1&player=6,9&reveal=1&night=0`],
   ["annex-reveal-door", `${ANNEX}&actors=1&player=9.6,6.4&reveal=1&night=0`],
   ["annex-actor-front", `${ANNEX}&actors=1&player=9.6,4.2&reveal=0`],
+  ["sf-roof-night", `${SF_ROOF}&actors=0&reveal=0`],
+  ["sf-roof-neutral", `${SF_ROOF}&actors=0&reveal=0&night=0`],
+  ["sf-roof-lights-off", `${SF_ROOF}&actors=0&reveal=0&lights=0`],
+  ["shop-east-night", `${SHOP_EAST}&actors=0&reveal=0`],
+  ["shop-east-neutral", `${SHOP_EAST}&actors=0&reveal=0&night=0`],
+  ["annex-play-night", `${ANNEX_PLAY}&actors=0&reveal=0`],
+  ["annex-play-neutral", `${ANNEX_PLAY}&actors=0&reveal=0&night=0`],
+  ["annex-play-reveal", `${ANNEX_PLAY}&actors=1&player=6,9&reveal=1`],
   ["roofs-neutral", `${ROOFS}&actors=0&reveal=0&night=0`],
   ["roofs-night", `${ROOFS}&actors=0&reveal=0`],
   ["seed-0", `place=intersection&seed=0&actors=0&reveal=0`, { scenic: true }],
   ["seed-0-neutral", `place=intersection&seed=0&actors=0&reveal=0&night=0`, { scenic: true }],
   ["seed-1", `place=intersection&seed=1&actors=0&reveal=0`, { scenic: true }],
+  ["seed-0-lights-off", `place=intersection&seed=0&actors=0&reveal=0&lights=0`, { scenic: true }],
   ["seed-4", `place=intersection&seed=4&actors=0&reveal=0`, { scenic: true }],
   ["seed-8", `place=intersection&seed=8&actors=0&reveal=0`, { scenic: true }],
   ["seed-8-neutral", `place=intersection&seed=8&actors=0&reveal=0&night=0`, { scenic: true }],

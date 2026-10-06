@@ -1673,3 +1673,19 @@ every plain roof box, and a painted window and roller shutter on the annex, on i
   the units' value against a dark roof.
 
 **Awaiting Levi's review** before any wider rollout.
+
+[The finished corner](docs/checkpoint-corner-finish.md) is in, with existing assets only.
+
+- **One language on the roofs.** The storefront's units are the painted unit too. The streetlight's pool is laid
+  on each at its own lid, masked by the art.
+- **The annex's surfaces.** A concrete coping, a plinth, piers, readable sills and reveals, and the shutter
+  housing's top and end in its own painted steel.
+- **The shutter's ripple** was downsampling baked into the building's texture, not the art. All painted art is
+  now prefiltered before it is drawn small.
+- **Windows extended.** The painted window replaces the flat teal bays on commercial faces outside the
+  storefront's face and its barred neighbours, varied per bay without mirroring.
+- **Next, by what stands out at play zoom:** the residential block's openings (they need their own treatment,
+  probably one residential window image), a weathered render for the shop walls, then the presentation review
+  (labels, bars, the cutaway's weight).
+
+**Awaiting Levi's review.**
