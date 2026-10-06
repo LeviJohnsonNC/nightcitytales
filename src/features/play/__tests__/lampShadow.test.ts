@@ -3,6 +3,8 @@ import { composeScene } from "@/engine";
 import {
   boxShadow,
   CASTER_HEIGHT,
+  castersAsStanding,
+  shadowRegions,
   hull,
   LAMP_SHADOW,
   shadowCasters,
@@ -115,4 +117,39 @@ describe("lamp shadows: the intersection's casters", () => {
       }
     });
   }
+});
+
+describe("lamp shadows: regions of the ground that depend on their own casters", () => {
+  const box = (x: number, y: number, w = 10, h = 10) => ({ x, y, width: w, height: h });
+
+  it("puts casters whose shadow boxes touch in one region, and leaves the rest apart", () => {
+    const regions = shadowRegions([
+      { id: "A", box: box(0, 0) },
+      { id: "B", box: box(8, 8) },
+      { id: "C", box: box(40, 40) },
+    ]);
+    expect(regions.map((r) => r.ids)).toEqual([["A", "B"], ["C"]]);
+    expect(regions[0]!.box).toEqual(box(0, 0, 18, 18));
+  });
+
+  it("merges until no two regions touch, through a caster that bridges them", () => {
+    // A and C are apart, B overlaps both, and the merged box then reaches D
+    const regions = shadowRegions([
+      { id: "A", box: box(0, 0) },
+      { id: "C", box: box(20, 0) },
+      { id: "B", box: box(9, 0, 12, 4) },
+      { id: "D", box: box(25, 9) },
+    ]);
+    expect(regions.map((r) => r.ids)).toEqual([["A", "B", "C", "D"]]);
+  });
+
+  it("stands each destroyed caster as its wreck and leaves the others intact", () => {
+    const casters: ShadowCaster[] = [
+      caster(0, 0, 1.5, 0.4),
+      { ...caster(3, 0, 1.2, 0.3), coverId: "d" },
+    ];
+    const standing = castersAsStanding(casters, new Set(["d"]));
+    expect(standing.map((c) => c.height)).toEqual([1.5, 0.3]);
+    expect(casters[1]!.height).toBe(1.2);
+  });
 });

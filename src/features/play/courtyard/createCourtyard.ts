@@ -301,6 +301,8 @@ export function createCourtyard(
             architectureArt[key] = this.textures
               .get(architectureAssetKey(key))
               .getSourceImage() as CanvasImageSource;
+        // timed for `tools/scenes/scene-perf.mjs`: the composed scene's build, apart from loading
+        performance.mark("courtyard-environment-start");
         const built = createComposedEnvironment(
           this,
           visibleArena,
@@ -309,6 +311,7 @@ export function createCourtyard(
           withStorefront && Object.keys(storefrontArt).length ? storefrontArt : undefined,
           withStorefront && Object.keys(architectureArt).length ? architectureArt : undefined,
         );
+        performance.measure("courtyard-environment", "courtyard-environment-start");
         structures.push(...built.objects);
         lit = built.lit;
         night = built.night;
@@ -329,6 +332,7 @@ export function createCourtyard(
       reconcile(this);
       paintGrid(this);
       resize();
+      performance.mark("courtyard-ready");
       onReady();
     }
     override update(time: number) {
@@ -572,11 +576,15 @@ export function createCourtyard(
         .setAlpha(image.alpha)
         .setDepth(image.depth + 0.5);
     }
-    // a destroyed prop's lamp shadow is its wreck's (`lampShadow.ts`): never tied to
-    // the prop's fading, only to whether it still stands
-    for (const { coverId, image } of night.restores) {
-      const piece = arena.cover?.find((c) => c.id === coverId);
-      image.setVisible(lights && !!piece && coverDestroyed(piece, model.live.cover));
+    // the ground's lamp shadows follow the street's complete destruction state
+    // (`groundShadows.ts`): never a prop's fading, only what still stands
+    if (night.shadows) {
+      const destroyed = new Set(
+        (arena.cover ?? [])
+          .filter((piece) => coverDestroyed(piece, model.live.cover))
+          .map((piece) => piece.id),
+      );
+      night.shadows.sync(destroyed, lights);
     }
     for (const prop of scenery) {
       const r: Rect = prop.getData("sortRect");

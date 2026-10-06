@@ -89,12 +89,11 @@ Each prop near a light now takes that light's share off the ground behind it.
 
 - **Ambient and contact shade are separate.** The contact shade (`contactShade.ts`) is unchanged. A lamp shadow
   lives in the ground's light pass, so with the lights off it is gone with the light.
-- **A destroyed prop casts its wreck's shadow, never its intact one.** Each prop that shades anything has a small
-  restore sprite: exactly the light the ground gains when that prop is a wreck. It is computed per pixel by
-  rendering that box of the light pass twice, once as shipped and once with the wreck's low shadow. The pass's
-  gain saturates, so the two halves do not simply add; a first version that added them over-restored the lamp's
-  brightest pixels. The board shows the sprite while the cover piece is destroyed (`coverDestroyed`).
-- **Fading never touches a shadow.** The restore sprite follows damage and the lights switch only. A prop faded so
+- **A destroyed prop casts its wreck's shadow, never its intact one.** As shipped in #299, each prop had a restore
+  sprite computed as if every other prop still stood. That was wrong where two destroyed props' shadows overlapped.
+  It is replaced by shadow regions rendered from the complete destruction state: see
+  [`checkpoint-shadow-state.md`](checkpoint-shadow-state.md).
+- **Fading never touches a shadow.** The ground's light follows damage and the lights switch only. A prop faded so
   a person behind it can be seen keeps its shadow.
 
 ### Cost
@@ -233,8 +232,7 @@ Same machine, same commands, the three stages run one after another, twice each
 - **A box, not the picture.** The stand's open front and the cart's canopy shadow as solid boxes. At these
   heights and sizes it reads correctly at play zoom; a silhouette from the art would be the next step if it ever
   does not.
-- **Two destroyed props whose shadows overlap** each restore only the light their own wreck gives back, assuming
-  the other stands. Where both shadows overlap, that patch stays shaded until neither stands. It needs two adjacent
-  props under one light, both destroyed, to show.
+- **Two destroyed props whose shadows overlap** were left too dark where the shadows met. Fixed by shadow regions
+  (`checkpoint-shadow-state.md`); the combined-state check passes.
 - **A lit prop's own tint** (`lightAt`) does not know it stands in another prop's shadow.
 - **Not exercised:** a real `/play` fight and save/load.
