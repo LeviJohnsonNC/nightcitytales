@@ -1197,3 +1197,20 @@ These are workflow nicknames, not fixed model versions or repository features.
 Levi passes guides/prompts from Brutus to Picasso and returns generated assets to
 Brutus for integration; higher-cost model time is reserved mainly for planning,
 visual critique and difficult technical decisions.
+
+### Light on surfaces (courtyard/wallLight.ts)
+
+At night on the intersection, every light that pools on the ground also reaches the walls in front of it. The rules:
+
+- **A light is a point at its fixture's height** (`pointLights`). The point comes from the same saved fixtures as
+  the ground's pools. Never add a light without a visible source.
+- **A wall is lit only from in front,** within reach, and only when no building stands between the light and the
+  wall (`lightOnFace`). Roofs are never lit this way.
+- **Washes go into a surface's light pass,** so they are multiplied by its albedo. Cutaway pieces take the same
+  wash, clipped to their own stretch and height (`paintWallLights` with `clip`).
+- **A lit window lights its sill and the wall round it** (`paintWindowSurround`).
+- **The secondary source is a few occupied homes** (`litHomeWindows`, `LIT_HOMES`): at most three upper windows per
+  block, chosen from the window alone. They light no pavement. The shop stays the focal point.
+- **A light sprite is cropped to its own lit pixels,** not its surface's frame. A full-size additive sprite per lit
+  block cost about 4% of frames under software GL.
+- **Wetness was tried and omitted.** Read `docs/checkpoint-atmosphere.md` §4 before trying it again.

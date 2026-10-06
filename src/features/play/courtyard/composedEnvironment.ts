@@ -5,9 +5,17 @@ import { interiorThresholds } from "./interiorThresholds";
 import { activityGroundPoints, activityOccluders } from "./activityReveal";
 import { paintGroundFinish } from "./groundFinish";
 import {
+  lightOnFace,
+  paintWallLights,
+  paintWindowSurround,
+  pointLights,
+  storefrontWindows,
+} from "./wallLight";
+import {
   USE_WALL,
   buildingUse,
   faceBasis,
+  litHomeWindows,
   faceOpenings,
   facePainter,
   paintHomeWall,
@@ -84,6 +92,7 @@ import {
 import {
   INTERSECTION_NIGHT,
   blocksLight,
+  lightColor,
   nightFor,
   paintGroundLight,
   type GroundLight,
@@ -1471,6 +1480,38 @@ export function createComposedEnvironment(
         ),
       ]
     : [];
+  // The same lights at their fixtures' heights, for the walls they reach (`wallLight.ts`).
+  const wallLights = night ? pointLights(env, storefronts, night) : [];
+  const reachesWall = (s: SceneStructure) =>
+    wallLights.some((l) =>
+      (["north", "east"] as const).some((e) => lightOnFace(s, e, l, env.structures)),
+    );
+  /** A lit home window: the room and the glass give light, the sill and wall catch it. */
+  const paintLitHomes = (
+    ctx: CanvasRenderingContext2D,
+    pass: "light" | "glow",
+    homes: {
+      opening: { s0: number; s1: number; z0: number; z1: number };
+      face: ReturnType<typeof facePainter>;
+    }[],
+  ) => {
+    if (!night) return;
+    const warm = night.home.color;
+    for (const { opening: w, face } of homes) {
+      const room = face.quad(w.s0 + 0.05, w.s1 - 0.05, w.z0 + 0.05, w.z1 - 0.05, -0.12);
+      ctx.beginPath();
+      room.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      ctx.closePath();
+      if (pass === "light") {
+        ctx.fillStyle = lightColor(warm, night.home.room);
+        ctx.fill();
+        paintWindowSurround(ctx, face.at, w, warm, night.home.surround);
+      } else {
+        ctx.fillStyle = lightColor(warm, night.home.glass);
+        ctx.fill();
+      }
+    }
+  };
   const lit: Phaser.GameObjects.Image[] = [];
   /**
    * A surface's light: what falls on it (multiplied by its own painted colour, so
@@ -1655,8 +1696,11 @@ export function createComposedEnvironment(
     for (let y = 0; y < canvas.height; y++)
       for (let x = 0; x < canvas.width; x++)
         if (pixels[(y * canvas.width + x) * 4 + 3]! > 5) include(x, y);
-    // The light sprite shares the albedo's frame; a halo past its edge widens both.
+    // A halo past the albedo's edge widens its frame (kept as it was); the light
+    // sprite is cropped to its own lit pixels, so a few lit windows on a big block
+    // do not add a whole building's worth of additive fill every frame.
     let lightPixels = 0;
+    const glowBox = { left: canvas.width, right: 0, top: canvas.height, bottom: 0 };
     if (glow) {
       const g = glow.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
       for (let y = 0; y < canvas.height; y++)
@@ -1665,11 +1709,20 @@ export function createComposedEnvironment(
           if (g[i + 3]! > 5 && g[i]! + g[i + 1]! + g[i + 2]! > 6) {
             include(x, y);
             lightPixels++;
+            glowBox.left = Math.min(glowBox.left, x);
+            glowBox.right = Math.max(glowBox.right, x);
+            glowBox.top = Math.min(glowBox.top, y);
+            glowBox.bottom = Math.max(glowBox.bottom, y);
           }
         }
     }
     if (right <= left || bottom <= top) return;
-    const crop = (source: HTMLCanvasElement, name: string) => {
+    const [cropL, cropR, cropT, cropB] = [left, right, top, bottom];
+    const crop = (
+      source: HTMLCanvasElement,
+      name: string,
+      { left, right, top, bottom } = { left: cropL, right: cropR, top: cropT, bottom: cropB },
+    ) => {
       const texture = scene.textures.createCanvas(name, right - left + 1, bottom - top + 1)!;
       texture.context.drawImage(
         source,
@@ -1692,7 +1745,7 @@ export function createComposedEnvironment(
     if (glow && lightPixels)
       image.setData(
         "light",
-        crop(glow, `${key}-light`)
+        crop(glow, `${key}-light`, glowBox)
           .setBlendMode("ADD")
           .setDepth(depth + 0.5)
           .setVisible(false),
@@ -1810,6 +1863,14 @@ export function createComposedEnvironment(
           ? resolution * (storefrontOf(s) ? 1.5 : 1)
           : 1;
       const front = storefrontOf(s);
+      // the secondary light: a few occupied homes (`litHomeWindows`), each a visible
+      // source with its own room, glass, sill and the wall round it
+      const homes = night
+        ? litHomeWindows(s, arena.environment!.entrances, env.structures).map((h) => ({
+            ...h,
+            face: facePainter(s, h.edge, project, metre),
+          }))
+        : [];
       const building = add(
         `structure-${s.id}`,
         (ctx) =>
@@ -1827,7 +1888,7 @@ export function createComposedEnvironment(
         bounds,
         clad,
         front
-          ? (ctx, pass) =>
+          ? (ctx, pass) => {
               paintBuilding(
                 ctx,
                 s,
@@ -1837,8 +1898,21 @@ export function createComposedEnvironment(
                 storefrontOf(s, pass),
                 detailOf(structure),
                 architecture,
-              )
-          : undefined,
+              );
+              if (pass !== "light") return;
+              paintWallLights(ctx, s, project, metre, wallLights, env.structures);
+              // the lit rooms reach their sills, reveals and the wall round them
+              const at = facePoint(front.sf, project, metre);
+              for (const w of storefrontWindows(front.sf))
+                paintWindowSurround(ctx, at, w, night!.window.color, 0.32);
+            }
+          : night && (reachesWall(s) || homes.length)
+            ? (ctx, pass) => {
+                if (pass === "light")
+                  paintWallLights(ctx, s, project, metre, wallLights, env.structures);
+                paintLitHomes(ctx, pass, homes);
+              }
+            : undefined,
       )
         ?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined)
         .setData("sortRect", s.rect);
@@ -1872,9 +1946,26 @@ export function createComposedEnvironment(
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,
             clad,
-            front
-              ? (ctx, pass) =>
-                  paintCutawayWall(ctx, s, part, project, materials, storefrontOf(s, pass))
+            front || (night && reachesWall(s))
+              ? (ctx, pass) => {
+                  if (front)
+                    paintCutawayWall(ctx, s, part, project, materials, storefrontOf(s, pass));
+                  // a piece of a lit face keeps that face's light, up to its own height
+                  const edge =
+                    r.y === s.rect.y
+                      ? ("north" as const)
+                      : r.x + r.width === s.rect.x + s.rect.width
+                        ? ("east" as const)
+                        : undefined;
+                  if (pass !== "light" || !edge) return;
+                  const s0 = edge === "north" ? r.x - s.rect.x : r.y - s.rect.y;
+                  paintWallLights(ctx, s, project, metre, wallLights, env.structures, {
+                    edge,
+                    s0,
+                    s1: s0 + (edge === "north" ? r.width : r.height),
+                    zMax: part.height,
+                  });
+                }
               : undefined,
           )
             ?.setData("activityLayer", "cutaway")
@@ -1921,8 +2012,37 @@ export function createComposedEnvironment(
               )
               .every((p) => p.height >= STOREFRONT_LEVELS.housingTop - 1e-9);
         const footprint = awningFootprint(sf);
-        const awning = (ctx: CanvasRenderingContext2D, pass: Pass) =>
+        const lamp = streetLamp(sf);
+        const awning = (ctx: CanvasRenderingContext2D, pass: Pass) => {
           paintAwning({ ctx, sf, project, ppm: metre, art: front.art, materials, pass });
+          // the streetlight's pool lands on the canvas before the pavement under it:
+          // the same pool, laid on the awning's top at its height, clipped to it
+          if (pass !== "light" || !lamp || !night) return;
+          const L = STOREFRONT_LEVELS;
+          ctx.save();
+          ctx.beginPath();
+          [
+            at(offset, 0, L.awningWall),
+            at(offset + span, 0, L.awningWall),
+            at(offset + span, projection, L.awningOuter),
+            at(offset, projection, L.awningOuter),
+          ].forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+          ctx.closePath();
+          ctx.clip();
+          paintGroundLight(
+            ctx,
+            project,
+            {
+              kind: "pool",
+              centre: lamp.head,
+              radius: night.lamp.radius,
+              color: night.lamp.color,
+              intensity: night.lamp.intensity,
+            },
+            ((L.awningWall + L.awningOuter) / 2) * metre,
+          );
+          ctx.restore();
+        };
         add(
           `awning-${s.id}`,
           (ctx) => awning(ctx, "albedo"),

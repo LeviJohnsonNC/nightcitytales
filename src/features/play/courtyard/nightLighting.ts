@@ -51,6 +51,12 @@ export const INTERSECTION_NIGHT = {
   window: { color: [1, 0.66, 0.36] as Rgb, intensity: 0.85, reach: 3.4, spread: 1 },
   /** The downlight under the shutter housing. */
   entrance: { color: [1, 0.74, 0.46] as Rgb, intensity: 0.75, radius: 2.4, out: 0.9 },
+  /**
+   * The secondary source: a few occupied homes (`litHomeWindows`). Dimmer and warmer
+   * than the shop, so the shop stays the focal point: the room as lit through its
+   * curtains, the glass's own faint glow, and the light on the sill and wall round it.
+   */
+  home: { color: [1, 0.7, 0.42] as Rgb, room: 0.42, glass: 0.07, surround: 0.22 },
   /** The scene's other saved lamps and signs, which keep their small drawings. */
   streetLamp: { color: [1, 0.78, 0.5] as Rgb, intensity: 0.5, radius: 3.4 },
   sign: { color: [0.32, 0.8, 0.78] as Rgb, intensity: 0.28, radius: 2.6 },

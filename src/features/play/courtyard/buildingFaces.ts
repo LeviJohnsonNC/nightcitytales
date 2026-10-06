@@ -556,3 +556,51 @@ export function faceBasis(
     ? wallBasis(project, "x", r.y, SURFACE_MATERIALS[key].metres, ppm)
     : wallBasis(project, "y", r.x + r.width, SURFACE_MATERIALS[key].metres, ppm);
 }
+
+/** How many of a home's windows are lit at night: about one in six, at least one, at most three. */
+export const LIT_HOMES = { share: 1 / 6, min: 1, max: 3 } as const;
+
+/**
+ * The homes lit at night, on faces that look onto open ground (a window against a
+ * neighbour's wall gives nothing anyone sees). Only an upper-storey window with
+ * somebody behind it (a lamp, curtains or a blind) can be lit; a lamp is lit first,
+ * then the rest in an order taken from the window alone, so the same few are lit
+ * every night and most of the block stays dark.
+ */
+export function litHomeWindows(
+  structure: SceneStructure,
+  entrances: SceneEnvironment["entrances"],
+  structures: readonly SceneStructure[],
+): { edge: Edge; opening: Opening }[] {
+  if (buildingUse(structure) !== "residential") return [];
+  const seen: { edge: Edge; opening: Opening }[] = [];
+  for (const edge of ["north", "east"] as const) {
+    const f = edgeFrame(structure.rect, edge);
+    for (const o of faceOpenings(structure, edge, entrances)) {
+      if (o.kind !== "window") continue;
+      const front = f.world((o.s0 + o.s1) / 2, 1);
+      const blocked = structures.some(
+        (x) =>
+          x !== structure &&
+          x.style !== "mesh-fence" &&
+          x.style !== "interior-wall" &&
+          front.x > x.rect.x &&
+          front.x < x.rect.x + x.rect.width &&
+          front.y > x.rect.y &&
+          front.y < x.rect.y + x.rect.height,
+      );
+      if (!blocked) seen.push({ edge, opening: o });
+    }
+  }
+  const occupied = seen.filter(({ opening: o }) =>
+    ["lamp", "curtains", "blind"].includes(o.occupancy ?? "dark"),
+  );
+  const rank = (o: Opening) => (o.occupancy === "lamp" ? -1 : (o.seed * 7919) % 1);
+  occupied.sort((a, b) => rank(a.opening) - rank(b.opening));
+  const count = Math.min(
+    LIT_HOMES.max,
+    occupied.length,
+    Math.max(LIT_HOMES.min, Math.round(seen.length * LIT_HOMES.share)),
+  );
+  return occupied.slice(0, count);
+}

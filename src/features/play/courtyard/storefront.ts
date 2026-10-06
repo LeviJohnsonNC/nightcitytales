@@ -878,18 +878,11 @@ function paintFaceLight(
       ctx.fillStyle = g;
       ctx.fill();
     }
-    // the streetlight's wash on the end of the wall nearest it
+    // The streetlight's wash on the wall itself is `wallLight.ts`'s, from the lamp's
+    // true position, as on every other face it reaches.
     const lamp = streetLamp(sf);
     if (lamp) {
       const c = at(lamp.s, 0, lamp.headZ - 0.8);
-      const r = 4.6 * ppm;
-      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
-      g.addColorStop(0, lightColor(night.lamp.color, 0.6));
-      g.addColorStop(0.45, lightColor(night.lamp.color, 0.22));
-      g.addColorStop(1, lightColor(night.lamp.color, 0));
-      path(ctx, quad(0, sf.length, 0, L.parapetTop + 0.1, 0));
-      ctx.fillStyle = g;
-      ctx.fill();
       // Edges that face the lamp catch it: the parapet's top lip and the corner pier
       // nearest it, fading with distance. Nothing else on the building is outlined.
       const reach = 6 * ppm;
