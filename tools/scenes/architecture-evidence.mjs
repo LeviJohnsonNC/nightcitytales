@@ -19,6 +19,11 @@ const PLAY = `${S7}&cam=-10,115,2.2`;
 const SHOP = `${S7}&cam=40,150,5`;
 const BLOCK = `${S7}&cam=150,230,2.2`;
 const CROSSING = `${S7}&cam=-150,-60,4`;
+/** The annex across the street: its bays and its roller shutter (the window and shutter art). */
+const ANNEX = `${S7}&cam=-170,40,3.2`;
+const ANNEX_CLOSE = `${S7}&cam=-218,-36,6`;
+/** The neighbouring block's three rooftop units (the roof-unit art), close. */
+const ROOFS = `${S7}&cam=79,159,5`;
 const SHOTS = [
   ["play-night", `${PLAY}&actors=0&reveal=0`],
   ["play-night-reveal", `${PLAY}&actors=1&player=21,4.5&reveal=1`],
@@ -31,6 +36,18 @@ const SHOTS = [
   ["block-neutral", `${BLOCK}&actors=0&reveal=0&night=0`],
   ["block-night", `${BLOCK}&actors=0&reveal=0`],
   ["crossing-neutral", `${CROSSING}&actors=0&reveal=0&night=0`],
+  ["annex-neutral", `${ANNEX}&actors=0&reveal=0&night=0`],
+  ["annex-night", `${ANNEX}&actors=0&reveal=0`],
+  ["annex-lights-off", `${ANNEX}&actors=0&reveal=0&lights=0`],
+  ["annex-close-neutral", `${ANNEX_CLOSE}&actors=0&reveal=0&night=0`],
+  ["annex-close-night", `${ANNEX_CLOSE}&actors=0&reveal=0`],
+  ["annex-reveal-behind", `${ANNEX}&actors=1&player=6,9&reveal=1&night=0`],
+  ["annex-reveal-door", `${ANNEX}&actors=1&player=9.6,6.4&reveal=1&night=0`],
+  ["annex-actor-front", `${ANNEX}&actors=1&player=9.6,4.2&reveal=0`],
+  ["roofs-neutral", `${ROOFS}&actors=0&reveal=0&night=0`],
+  ["roofs-night", `${ROOFS}&actors=0&reveal=0`],
+  ["seed-0", `place=intersection&seed=0&actors=0&reveal=0`, { scenic: true }],
+  ["seed-0-neutral", `place=intersection&seed=0&actors=0&reveal=0&night=0`, { scenic: true }],
   ["seed-1", `place=intersection&seed=1&actors=0&reveal=0`, { scenic: true }],
   ["seed-4", `place=intersection&seed=4&actors=0&reveal=0`, { scenic: true }],
   ["seed-8", `place=intersection&seed=8&actors=0&reveal=0`, { scenic: true }],

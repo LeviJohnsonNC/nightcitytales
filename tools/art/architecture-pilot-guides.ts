@@ -22,6 +22,7 @@ import {
   BAY,
   ROOF_UNIT,
   SHUTTER,
+  roofUnitGuide,
   SHUTTER_ASSEMBLY,
   centredRegion,
 } from "@/features/play/courtyard/architecturePack";
@@ -54,35 +55,6 @@ const label = (p: Point, text: string, size = 26, anchor = "middle", color = "#f
 /* ------------------------------------------------------------- the roof unit */
 
 /** The unit's geometry on its canvas: frame pixels fitted into the 3:2 square. */
-export function roofUnitGuide() {
-  const { width: W, height: H } = P.roofUnit.canvas;
-  const h = ROOF_UNIT.height;
-  const corners = [0, h].flatMap((z) =>
-    (
-      [
-        [0, 0],
-        [2, 0],
-        [2, 2],
-        [0, 2],
-      ] as const
-    ).map(([x, y]) => framePoint(x, y, z)),
-  );
-  const x0 = Math.min(...corners.map((p) => p.x));
-  const x1 = Math.max(...corners.map((p) => p.x));
-  const y0 = Math.min(...corners.map((p) => p.y));
-  const y1 = Math.max(...corners.map((p) => p.y));
-  const scale = Math.min((W * 0.8) / (x1 - x0), (H * 0.8) / (y1 - y0));
-  const origin = {
-    x: (W - (x1 - x0) * scale) / 2 - x0 * scale,
-    y: (H - (y1 - y0) * scale) / 2 - y0 * scale,
-  };
-  const at = (x: number, y: number, z: number) => {
-    const p = framePoint(x, y, z);
-    return { x: origin.x + p.x * scale, y: origin.y + p.y * scale };
-  };
-  return { at, scale, origin, W, H };
-}
-
 function roofUnitSvg(annotated: boolean) {
   const { at, W, H, scale } = roofUnitGuide();
   const h = ROOF_UNIT.height;
