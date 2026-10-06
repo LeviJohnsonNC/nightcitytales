@@ -8,7 +8,11 @@ import type { ArchitectureArt } from "./architecturePack";
 import {
   facadeArtCovers,
   facadeOpenings,
-  isAnnex,
+  paintShopWall,
+  shopFace,
+  type ShopFace,
+  paintRoofUnitLight,
+  rooftopUnits,
   paintFacadeArt,
   paintRoofUnitArt,
 } from "./architectureArt";
@@ -513,8 +517,8 @@ export function paintCutawayWall(
   storefront?: { sf: Storefront; art: StorefrontArt; pass: Pass },
   /** The wall's material, as the full building lays it (`paintBuilding`). */
   wallMaterial: MaterialKey = "facade-concrete",
-  /** The architectural pilot's painted openings, where the full building has them. */
-  annex?: { art: ArchitectureArt; entrances: SceneEnvironment["entrances"] },
+  /** The painted openings and wall finish, where the full building has them. */
+  annex?: ShopFace & { entrances: SceneEnvironment["entrances"] },
 ) {
   const { poly, corners } = painter(ctx, project);
   const metre = Math.hypot(
@@ -546,11 +550,23 @@ export function paintCutawayWall(
   // storefront's face does below.
   if (annex && !lightPass) {
     const wall = structure.rect;
-    for (const edge of ["north", "east"] as const) {
+    for (const edge of annex.edges) {
       const onFace = edge === "north" ? r.y === wall.y : r.x + r.width === wall.x + wall.width;
       if (!onFace) continue;
       const s0 = edge === "north" ? r.x - wall.x : r.y - wall.y;
       const s1 = s0 + (edge === "north" ? r.width : r.height);
+      const clip = { s0, s1, zMax: part.height };
+      if (annex.finish)
+        paintShopWall({
+          ctx,
+          structure,
+          edge,
+          project,
+          ppm: metre,
+          entrances: annex.entrances,
+          doors: annex.doors,
+          clip,
+        });
       paintFacadeArt({
         ctx,
         structure,
@@ -559,7 +575,8 @@ export function paintCutawayWall(
         ppm: metre,
         art: annex.art,
         entrances: annex.entrances,
-        clip: { s0, s1, zMax: part.height },
+        doors: annex.doors,
+        clip,
       });
     }
   }
@@ -712,7 +729,20 @@ export function paintBuilding(
     });
     // the streetlight reaches the roof's near edge, and the units standing on it
     const lamp = streetLamp(storefront.sf);
-    if (lamp && storefront.pass === "light") {
+    const unit = materials ? architecture?.roofUnit : undefined;
+    if (lamp && storefront.pass === "light" && unit) {
+      // painted units: the pool on each at its own lid, inside its own silhouette
+      const pool: GroundLight = {
+        kind: "pool",
+        centre: lamp.head,
+        radius: 3,
+        color: [1, 0.8, 0.56],
+        intensity: 0.4,
+      };
+      paintRoofUnitLight(ctx, project, top, rooftopUnits(structure), h, unit, (c, lift) =>
+        paintGroundLight(c, project, pool, lift),
+      );
+    } else if (lamp && storefront.pass === "light") {
       ctx.save();
       ctx.beginPath();
       top.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -775,12 +805,13 @@ export function paintBuilding(
   // shuttered doors; every other building keeps its flat fills for now. Materials
   // are laid first, so windows, bays, doors and trim below paint over them.
   const clad = structure.style === "shop" ? materials : undefined;
-  // The pilot's window and shutter go on the annex: the generic shop outside the
-  // storefront's block that has a saved entrance (in seed 7, across the street). The
-  // art is one representative; the rest of the street waits for review.
-  const annexArt =
-    clad && !storefront && !frontage && isAnnex(structure, entrances) ? architecture : undefined;
-  const covers = facadeArtCovers(structure, annexArt);
+  // The painted window goes on every commercial face but the storefront's own (which
+  // has its lit interior) and its neighbours' (barred and quiet); the shutter on the
+  // annex's door; the finished wall on shops outside the storefront's block.
+  const shopArt = clad
+    ? shopFace(structure, entrances, architecture, !!storefront, frontage?.role)
+    : undefined;
+  const covers = facadeArtCovers(structure, shopArt?.art, shopArt?.doors);
   const metres = (key: MaterialKey) => SURFACE_MATERIALS[key].metres;
   const surface = (
     points: Point[],
@@ -900,11 +931,8 @@ export function paintBuilding(
         high = Math.min(2.35, structure.height - 0.3) * pixelsPerMetre;
       if (high <= low) continue;
       const shop = structure.style === "shop";
-      // painted, below, by the art; the pier stays
-      if (covers.bays) {
-        line(at(lo - 0.01, 0), at(lo - 0.01, high + 5), "#242f35", 3);
-        continue;
-      }
+      // painted, below, by the art, in its own recess
+      if (covers.bays) continue;
       poly(
         [at(lo, low), at(hi, low), at(hi, high), at(lo, high)],
         shop ? "#243f43" : industrial ? "#303d43" : "#263740",
@@ -921,7 +949,8 @@ export function paintBuilding(
       // putting decorative obstacles into the clear pedestrian route.
       line(at(lo - 0.01, 0), at(lo - 0.01, high + 5), "#242f35", 3);
     }
-    line(at(0, 0.2 * pixelsPerMetre), at(1, 0.2 * pixelsPerMetre), "#73786f", 2);
+    if (!shopArt?.finish)
+      line(at(0, 0.2 * pixelsPerMetre), at(1, 0.2 * pixelsPerMetre), "#73786f", 2);
     for (const centre of doors) {
       if (covers.doors) continue;
       const x = (centre - 0.8) / length,
@@ -969,17 +998,28 @@ export function paintBuilding(
         structure.style === "shop" ? "rgba(58,199,188,.12)" : "rgba(230,157,66,.09)",
       );
     }
-    if (annexArt)
+    if (shopArt?.finish)
+      paintShopWall({
+        ctx,
+        structure,
+        edge,
+        project,
+        ppm: pixelsPerMetre,
+        entrances,
+        doors: shopArt.doors,
+      });
+    if (shopArt)
       paintFacadeArt({
         ctx,
         structure,
         edge,
         project,
         ppm: pixelsPerMetre,
-        art: annexArt,
+        art: shopArt.art,
         entrances,
+        doors: shopArt.doors,
       });
-    for (const t of [0.04, 0.94]) {
+    for (const t of shopArt?.finish ? [] : [0.04, 0.94]) {
       line(at(t, 0), at(t, h), "#151f28", 3);
       line(at(t + 0.007, 0), at(t + 0.007, h), "#66706c", 0.8);
     }
@@ -1014,21 +1054,18 @@ export function paintBuilding(
       "#323f43",
       1,
     );
+  // a finished shop outside the block takes the same precast coping as the shop
+  if (!frontage && shopArt?.finish)
+    paintParapet(ctx, project, pixelsPerMetre, structure, "shop", clad);
   if (frontage) {
     paintParapet(ctx, project, pixelsPerMetre, structure, frontage.role, clad);
     for (const pipe of frontage.pipes.filter((p) => p.structure === structure))
       paintRoofOutlet(ctx, project, pixelsPerMetre, pipe);
   }
   // Rooftop service equipment is dressing on an inaccessible building, not cover.
-  for (let i = 0; i < Math.min(3, Math.floor((r.width - 1) / 3)); i++) {
-    const equipment = {
-      x: r.x + 0.5 + i * 3,
-      y: r.y + Math.min(3, r.height - 2.5),
-      width: 2,
-      height: 2,
-    };
-    // the painted unit, in place of the drawn box, on every roof but the storefront's
-    const unit = !storefront && materials ? architecture?.roofUnit : undefined;
+  for (const [i, equipment] of rooftopUnits(structure).entries()) {
+    // the painted unit, in place of the drawn box, on every roof that takes materials
+    const unit = materials ? architecture?.roofUnit : undefined;
     if (unit) {
       paintRoofShade(ctx, project, pixelsPerMetre, equipment, h);
       paintRoofUnitArt(ctx, project, equipment, h, unit);
@@ -1265,14 +1302,19 @@ export function createComposedEnvironment(
   };
   // the architectural art pilot, on the scenes that take materials only
   const architecture = materials ? architectureArt : undefined;
-  const annexOf = (s: SceneStructure) =>
-    architecture &&
-    s.style === "shop" &&
-    !storefrontOf(s) &&
-    !detailOf(s) &&
-    isAnnex(s, env.entrances)
-      ? { art: architecture, entrances: env.entrances }
+  const annexOf = (s: SceneStructure) => {
+    const face = materials
+      ? shopFace(s, env.entrances, architecture, !!storefrontOf(s), detailOf(s)?.role)
       : undefined;
+    if (!face) return undefined;
+    // the storefront's own face is its own routine's, on its pieces as on the wall
+    const sf = storefrontOf(s)?.sf;
+    return {
+      ...face,
+      edges: face.edges.filter((e) => e !== sf?.edge),
+      entrances: env.entrances,
+    };
+  };
   const night = nightFor(env);
   const lights = night
     ? [

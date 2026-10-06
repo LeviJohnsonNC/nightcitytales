@@ -1078,9 +1078,16 @@ detailed as built things, on intersection scenes with materials only. The rules:
 Three painted assets, imported by `tools/art/architecture-pilot.ts` against the numbers in
 `courtyard/architecturePack.ts`, on intersection scenes only:
 
-- **The rooftop unit** replaces every plain rooftop box; the storefront keeps its procedural units.
-- **The window and the roller shutter** go on the annex only (`isAnnex`: the shop whose saved entrance has
-  an entry surround).
+- **The rooftop unit** replaces every rooftop box, the storefront's included. On the storefront the
+  streetlight's pool is laid by `paintRoofUnitLight`: on the roof less the units, and on each unit at its lid,
+  masked by the painted art itself.
+- **The window** goes on every `shop` face but the storefront's own (its lit interior) and its neighbours'
+  (barred), where the bay is the 2.2 × 1.7 m it was painted for (`shopFace`, `annexArtFits`). Residential and
+  industrial openings never take it. A row is varied by `windowVariant` (panes swapped, the painted blind let
+  down further), chosen by `variantOf` from the bay alone; nothing is mirrored.
+- **The roller shutter** goes on the annex only (`isAnnex`: the shop whose saved entrance has an entry
+  surround). Shops outside the storefront's block get the finished wall (`paintShopWall`: plinth, piers,
+  grime) and the shop's coping.
 
 The rules:
 
@@ -1092,11 +1099,14 @@ The rules:
   door is drawn as the shutter; the attachment is not changed.
 - **Cutaway pieces carry their face's openings,** clipped to the piece (`paintFacadeArt` with `clip`).
 - **A missing file is the old drawing,** never a failure.
+- **Painted art is prefiltered before it is drawn small** (`sourceFor`: repeated halvings, cached). One
+  `drawImage` at 8-13x reduction bakes aliasing into the building's texture (the shutter's ripple was this).
+  Draw art through `drawOnto` or `sourceFor`, never with a bare `drawImage` from the full file.
 - **Returned art that is off its guide is corrected in the importer, by registration, never by loosening a
   check.** Say so in its report. The window was registered by its frame bands and its room cropped, not
   squeezed.
 
-See `docs/checkpoint-architecture-art-pilot.md`.
+See `docs/checkpoint-architecture-art-pilot.md` and `docs/checkpoint-corner-finish.md`.
 
 ## Collaborator names
 
