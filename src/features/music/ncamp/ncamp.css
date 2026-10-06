@@ -410,6 +410,19 @@
 
 /* ── the stack of windows under the bar ────────────────────────────────── */
 
+/*
+ * The windows' layer: on the body, fixed at the strip's bottom right corner
+ * (`NCAmp.tsx` measures it), above every layer of the page (sticky bars are
+ * z-20 and z-30) and below dialogs and sheets (z-50). It is zero-sized; the
+ * stack hangs from it as it hung from the strip.
+ */
+.ncamp-layer {
+  position: fixed;
+  z-index: 45;
+  width: 0;
+  height: 0;
+}
+
 .ncamp-stack {
   position: absolute;
   right: 0;

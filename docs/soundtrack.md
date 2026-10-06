@@ -511,6 +511,27 @@ up. Files are `radio-<title-in-kebab-case>.m4a`; the player's titles are in
 
 ### `radio-tell-me-im-good.m4a` — "Tell Me I'm Good"
 
+## No Quiet Hours
+
+An album: ten songs with vocals, in a playlist of their own, and the one playlist
+with a running order. NCAmp lists it in that order and plays it front to back
+whenever shuffle is off; with shuffle on it shuffles like the others. The order
+is `order` on the playlist in `soundtrack.ts`, by file name. Files are
+`quiet-<title-in-kebab-case>.m4a`; the titles are in `SONG_TITLES`
+(`trackTitles.ts`). They were added as finished files, so each entry records the
+title only.
+
+1. `quiet-the-night-wants-us.m4a` — "The Night Wants Us"
+2. `quiet-looks-like-trouble.m4a` — "Looks Like Trouble"
+3. `quiet-touch-without-a-trace.m4a` — "Touch Without a Trace"
+4. `quiet-a-little-more.m4a` — "A Little More"
+5. `quiet-make-it-feel-real.m4a` — "Make It Feel Real"
+6. `quiet-in-the-blackout.m4a` — "In the Blackout"
+7. `quiet-not-yours-to-keep.m4a` — "Not Yours to Keep"
+8. `quiet-call-me-back.m4a` — "Call Me Back"
+9. `quiet-ours-until-morning.m4a` — "Ours Until Morning"
+10. `quiet-the-city-can-wait.m4a` — "The City Can Wait"
+
 ## Elsewhere in the game
 
 - `neon-storm-front.mp3`: the combat track, played under the battlefield by

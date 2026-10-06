@@ -31,11 +31,19 @@ import {
   DEFAULT_PLAYLIST,
   PLAYLISTS,
   allTracks,
+  playlistDef,
   playlistOf,
   playlistTracks,
   songOf,
 } from "../soundtrack";
-import { SONG_TITLES, formatTime, inTitleOrder, takeOf, trackTitle } from "../trackTitles";
+import {
+  SONG_TITLES,
+  formatTime,
+  inPlaylistOrder,
+  inTitleOrder,
+  takeOf,
+  trackTitle,
+} from "../trackTitles";
 
 describe("the equalizer", () => {
   it("has the ten classic bands, and every preset sets all ten within range", () => {
@@ -113,7 +121,7 @@ describe("what the playlist calls a track", () => {
   });
 });
 
-describe("the two playlists", () => {
+describe("the playlists", () => {
   it("open on the original, instrumental one", () => {
     expect(DEFAULT_PLAYLIST).toBe("night-shift");
     expect(PLAYLISTS[0]!.id).toBe(DEFAULT_PLAYLIST);
@@ -121,21 +129,61 @@ describe("the two playlists", () => {
   });
 
   it("are named, and split by file name with no track in both", () => {
-    expect(PLAYLISTS.map((p) => p.name)).toEqual(["Night Shift", "Radio Free Night City"]);
+    expect(PLAYLISTS.map((p) => p.name)).toEqual([
+      "Night Shift",
+      "Radio Free Night City",
+      "No Quiet Hours",
+    ]);
     const night = playlistTracks("night-shift");
     const radio = playlistTracks("radio-free");
+    const quiet = playlistTracks("no-quiet-hours");
     expect(night.length).toBeGreaterThan(0);
     expect(radio.length).toBeGreaterThanOrEqual(9);
     expect(night.filter((t) => radio.includes(t))).toEqual([]);
     for (const t of night) expect(playlistOf(t)).toBe("night-shift");
     for (const t of radio) expect(playlistOf(t)).toBe("radio-free");
-    expect(allTracks()).toHaveLength(night.length + radio.length);
+    for (const t of quiet) expect(playlistOf(t)).toBe("no-quiet-hours");
+    expect(allTracks()).toHaveLength(night.length + radio.length + quiet.length);
+  });
+
+  it("list No Quiet Hours in its running order, and the others by title", () => {
+    const order = playlistDef("no-quiet-hours").order!;
+    expect(order.map((song) => SONG_TITLES[song])).toEqual([
+      "The Night Wants Us",
+      "Looks Like Trouble",
+      "Touch Without a Trace",
+      "A Little More",
+      "Make It Feel Real",
+      "In the Blackout",
+      "Not Yours to Keep",
+      "Call Me Back",
+      "Ours Until Morning",
+      "The City Can Wait",
+    ]);
+    // uploaded in any order, a second take and a stray among them
+    const uploaded = [
+      "quiet-the-city-can-wait",
+      "quiet-zz-bonus",
+      "quiet-the-night-wants-us-v2",
+      ...order.slice(1, -1).reverse(),
+      "quiet-the-night-wants-us",
+    ];
+    expect(inPlaylistOrder("no-quiet-hours", uploaded)).toEqual([
+      "quiet-the-night-wants-us",
+      "quiet-the-night-wants-us-v2",
+      ...order.slice(1),
+      "quiet-zz-bonus",
+    ]);
+    const radio = playlistTracks("radio-free");
+    expect(inPlaylistOrder("radio-free", radio)).toEqual(inTitleOrder(radio));
   });
 
   it("switch, clearing whatever the old list had loaded", () => {
     setPlaylist("radio-free");
     expect(getPlayerState().list).toBe("radio-free");
     expect(getPlayerState().track).toBeNull();
+    setPlaylist("no-quiet-hours");
+    expect(getPlayerState().list).toBe("no-quiet-hours");
     setPlaylist("night-shift");
     expect(getPlayerState().list).toBe("night-shift");
   });

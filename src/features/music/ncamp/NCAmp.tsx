@@ -22,7 +22,16 @@
  * The dice button in the strip is the creator's one switch for dice sound:
  * the music and the rolls answer to the same player.
  */
-import { useCallback, useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from "react";
+import { createPortal } from "react-dom";
 import {
   isDiceSoundEnabled,
   onDiceSoundChange,
@@ -189,12 +198,39 @@ export function NCAmp() {
     return () => window.removeEventListener("keydown", onKey);
   }, [ui.open, setUi]);
 
+  // The windows open over the page, not inside the bar that holds the strip. The bar
+  // sits in its own stacking context (a sticky, blurred header), which capped them
+  // at its z-index: the game's later controls painted through them. So they are
+  // rendered on the body, fixed under the strip and kept there as the page scrolls.
+  const anchor = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState<{ top: number; right: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!ui.open) return;
+    let frame = 0;
+    const place = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const r = anchor.current?.getBoundingClientRect();
+        if (r) setAt({ top: r.bottom, right: document.documentElement.clientWidth - r.right });
+      });
+    };
+    const r = anchor.current?.getBoundingClientRect();
+    if (r) setAt({ top: r.bottom, right: document.documentElement.clientWidth - r.right });
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [ui.open]);
+
   const nextVis = (): VisMode =>
     ui.vis === "spectrum" ? "scope" : ui.vis === "scope" ? "off" : "spectrum";
   const text = state.blocked ? BLOCKED_TEXT : lineFor(state, state.track);
 
   return (
-    <div className="ncamp" data-skin={ui.skin}>
+    <div className="ncamp" data-skin={ui.skin} ref={anchor}>
       <Shade
         state={state}
         ui={ui}
@@ -202,25 +238,34 @@ export function NCAmp() {
         onToggle={() => setUi({ open: !ui.open })}
         onVis={() => setUi({ vis: nextVis() })}
       />
-      {ui.open && (
-        <div
-          className="ncamp-stack"
-          role="dialog"
-          aria-label="NCAmp"
-          style={{ zoom: ui.double ? 2 : 1.5 }}
-        >
-          <SkinRow skin={ui.skin} onChange={(skin) => setUi({ skin })} />
-          <MainWindow
-            state={state}
-            ui={ui}
-            text={text}
-            setUi={setUi}
-            onVis={() => setUi({ vis: nextVis() })}
-          />
-          {ui.eq && <EqWindow state={state} onClose={() => setUi({ eq: false })} />}
-          {ui.pl && <PlaylistWindow state={state} onClose={() => setUi({ pl: false })} />}
-        </div>
-      )}
+      {ui.open &&
+        at &&
+        createPortal(
+          <div
+            className="ncamp ncamp-layer"
+            data-skin={ui.skin}
+            style={{ top: at.top, right: at.right }}
+          >
+            <div
+              className="ncamp-stack"
+              role="dialog"
+              aria-label="NCAmp"
+              style={{ zoom: ui.double ? 2 : 1.5 }}
+            >
+              <SkinRow skin={ui.skin} onChange={(skin) => setUi({ skin })} />
+              <MainWindow
+                state={state}
+                ui={ui}
+                text={text}
+                setUi={setUi}
+                onVis={() => setUi({ vis: nextVis() })}
+              />
+              {ui.eq && <EqWindow state={state} onClose={() => setUi({ eq: false })} />}
+              {ui.pl && <PlaylistWindow state={state} onClose={() => setUi({ pl: false })} />}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
