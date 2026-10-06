@@ -3,6 +3,8 @@
  *
  *     bun run tools/art/street-props.ts            validate, then write public/images/street-props/*.webp
  *     bun run tools/art/street-props.ts --check    validate and report, write nothing
+ *     bun run tools/art/street-props.ts --round 2  round two only (the merchandise stand
+ *                                                  and the cabinet at rotation 90)
  *
  * Sources are src/assets/creator/street-<guide>-<state>.png, exactly as returned. The
  * numbers they are judged and cut by are `streetPropPack.ts`, the same ones the guides
@@ -43,6 +45,7 @@ import sharp from "sharp";
 import type { Point } from "@/engine";
 import {
   CABINET,
+  KIOSK,
   FRAME,
   artPad,
   sectionArtOnGuide,
@@ -50,6 +53,7 @@ import {
   PROP_STATES,
   SEDAN,
   STREET_PROP_PACK,
+  STREET_PROP_PACK_2,
   framePoint,
   sectionFrameOnGuide,
   sedanCut,
@@ -71,15 +75,19 @@ const size = (art: string) => {
   return { width: (FRAME.width + 2 * pad.side) * K, height: (FRAME.height + pad.top) * K };
 };
 const check = process.argv.includes("--check");
+/** `--round 2`: only round two's guides, so round one's files are not rewritten. */
+const roundTwo = process.argv.includes("--round") && process.argv.includes("2");
+const PACK = roundTwo ? STREET_PROP_PACK_2 : STREET_PROP_PACK;
 const WRECK_GUIDES = "docs/street-props-pack/wreck-guides";
 /** Share of a wreck's opaque pixels allowed outside its volume: antialiasing and a stray splinter. */
 const WRECK_TOLERANCE = 0.01;
 /**
  * Wrecks that stand taller than their volume and whose lower redraw has been
- * commissioned (docs/street-props-pack.md, "Lower wrecks"). They still import, with
+ * commissioned (docs/street-props-pack.md, "Lower wrecks"; round two:
+ * docs/street-props-pack/round-2.md §7). They still import, with
  * the excess reported; take an id off as soon as its redraw passes.
  */
-const TALL_WRECKS_PENDING = new Set<string>([]);
+const TALL_WRECKS_PENDING = new Set<string>(["kiosk-r0"]);
 const failures: string[] = [];
 const fail = (id: string, msg: string) => failures.push(`${id}: ${msg}`);
 const log = (id: string, msg: string) => console.log(`${id.padEnd(22)} ${msg}`);
@@ -162,8 +170,14 @@ function expected(g: PackGuide): Box {
     // the lowest point is a tyre on the ground
     for (const x of SEDAN.wheel.centres) for (const y of SEDAN.wheel.y) pts.push(at(x, y, 0));
   } else {
-    const b = g.id === "planter" ? PLANTER.body : CABINET.body;
-    const top = g.id === "planter" ? PLANTER.foliageMax : CABINET.height;
+    const b =
+      g.id === "planter" ? PLANTER.body : g.id.startsWith("kiosk") ? KIOSK.body : CABINET.body;
+    const top =
+      g.id === "planter"
+        ? PLANTER.foliageMax
+        : g.id.startsWith("kiosk")
+          ? KIOSK.height
+          : CABINET.height;
     const at = (x: number, y: number, z: number) => toGuide(g, framePoint(x, y, z, g.rotation));
     for (const x of [b.x0, b.x1])
       for (const y of [b.y0, b.y1]) for (const z of [0, top]) pts.push(at(x, y, z));
@@ -345,7 +359,8 @@ const alphaSum = (b: Buffer) => {
 function fileFor(g: PackGuide, art: string, state: PropState) {
   // the board's texture keys: rotation 90 of a procedural kind carries "-90"; the
   // planter is square and symmetric, so one file serves both rotations
-  const suffix = g.rotation === 90 && g.id.startsWith("sedan") ? "-90" : "";
+  // every other kind at rotation 90 has art of its own
+  const suffix = g.rotation === 90 && g.id !== "planter" ? "-90" : "";
   return `${art}-${state}${suffix}.webp`;
 }
 
@@ -557,7 +572,7 @@ const sheet: {
   frames: { buf: Buffer; offset: Point; g: PackGuide; art: string }[];
 }[] = [];
 const sedanFrames = new Map<string, { buf: Buffer; offset: Point; g: PackGuide; art: string }[]>();
-for (const g of STREET_PROP_PACK) {
+for (const g of PACK) {
   const intact = await load(g.id, "intact");
   const fit = fitTo(g, intact.box);
   const e = expected(g);
@@ -787,10 +802,17 @@ async function proofSheet(
 
 if (!check) {
   /* Every state rebuilt from its runtime frames alone, placed exactly as the board does. */
-  await proofSheet(sheet, 3, { w: 520, h: 520 }, "docs/street-props-pack/imported-frames.jpg");
+  await proofSheet(
+    sheet,
+    3,
+    { w: 520, h: 520 },
+    roundTwo
+      ? "docs/street-props-pack/round-2/imported-frames.jpg"
+      : "docs/street-props-pack/imported-frames.jpg",
+  );
   /* The sedan's two sections in mixed states: what a fight can leave. */
   const mixed: (typeof sheet)[number][] = [];
-  for (const id of ["sedan-r90", "sedan-r0"])
+  for (const id of roundTwo ? [] : ["sedan-r90", "sedan-r0"])
     for (const [engine, cabin] of [
       ["intact", "intact"],
       ["wrecked", "intact"],
@@ -801,7 +823,8 @@ if (!check) {
       const c = sedanFrames.get(`${id}-${cabin}`)!.find((f) => f.art === "sedan-cabin")!;
       mixed.push({ label: `${id.slice(6)}: engine ${engine} / cabin ${cabin}`, frames: [e, c] });
     }
-  await proofSheet(mixed, 4, { w: 420, h: 420 }, "docs/street-props-pack/mixed-sections.jpg");
+  if (mixed.length)
+    await proofSheet(mixed, 4, { w: 420, h: 420 }, "docs/street-props-pack/mixed-sections.jpg");
 }
 
 if (failures.length) {

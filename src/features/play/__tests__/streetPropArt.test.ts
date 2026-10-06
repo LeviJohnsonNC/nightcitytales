@@ -7,6 +7,8 @@ import {
   SEDAN,
   SEDAN_ART_PAD,
   STREET_PROP_PACK,
+  STREET_PROP_PACK_2,
+  KIOSK,
   propArtRegistration,
   sectionArtOnGuide,
   sectionFrameOnGuide,
@@ -22,6 +24,7 @@ import {
 
 type Point = { x: number; y: number };
 const DIR = join(process.cwd(), "public/images/street-props");
+const KINDS = ["sedan-engine", "sedan-cabin", "planter", "mailboxes", "shop-display"] as const;
 
 /** Width, height and alpha flag of an extended (VP8X) WebP. */
 function webpHeader(file: string) {
@@ -46,7 +49,7 @@ function inside(poly: readonly Point[], p: Point) {
 
 describe("street prop art: the files the board loads", () => {
   it("replaces each procedural texture under its own key, never mirrored", () => {
-    const files = streetPropFiles(["sedan-engine", "sedan-cabin", "planter", "mailboxes"]);
+    const files = streetPropFiles(KINDS);
     const map = Object.fromEntries(files.map((f) => [f.url.split("/").pop(), f.textures]));
     // the sedan has its own art per rotation
     expect(map["sedan-engine-intact.webp"]).toEqual(["prop-sedan-engine-intact"]);
@@ -57,9 +60,11 @@ describe("street prop art: the files the board loads", () => {
       "prop-planter-damaged",
       "prop-planter-damaged-90",
     ]);
-    // the cabinet has art at rotation 0 only; rotated, it keeps the procedural kit
+    // the cabinet and the merchandise stand have their own art per rotation (round two)
     expect(map["mailboxes-wrecked.webp"]).toEqual(["prop-mailboxes-wrecked"]);
-    expect(files.flatMap((f) => f.textures)).not.toContain("prop-mailboxes-intact-90");
+    expect(map["mailboxes-intact-90.webp"]).toEqual(["prop-mailboxes-intact-90"]);
+    expect(map["shop-display-damaged.webp"]).toEqual(["prop-shop-display-damaged"]);
+    expect(map["shop-display-wrecked-90.webp"]).toEqual(["prop-shop-display-wrecked-90"]);
     // the sedan's other paints (`sedanPaint.ts`): intact and damaged, each rotation;
     // a wreck is burned to bare metal and keeps the one picture
     expect(map["sedan-cabin-damaged-90-burgundy.webp"]).toEqual([
@@ -69,7 +74,7 @@ describe("street prop art: the files the board loads", () => {
     expect(
       Object.keys(map).filter((n) => n.includes("wrecked-") && /burgundy|charcoal/.test(n)),
     ).toEqual([]);
-    expect(files).toHaveLength(12 + 3 + 3 + 2 * 2 * 2 * 2);
+    expect(files).toHaveLength(12 + 3 + 6 + 6 + 2 * 2 * 2 * 2);
     expect(new Set(files.map((f) => f.key)).size).toBe(files.length);
   });
 
@@ -78,7 +83,7 @@ describe("street prop art: the files the board loads", () => {
   });
 
   it("ships every file it names, at twice the procedural frame plus its padding, with alpha", () => {
-    const files = streetPropFiles(["sedan-engine", "sedan-cabin", "planter", "mailboxes"]);
+    const files = streetPropFiles(KINDS);
     const names = files.map((f) => f.url.split("/").pop()!);
     expect(readdirSync(DIR).sort()).toEqual([...names].sort());
     for (const file of files) {
@@ -171,20 +176,23 @@ describe("street prop art: the sedan's cut", () => {
 
 describe("street prop art: the wreck volume", () => {
   it("caps each wreck at its state's limit, over its own ground and no further", () => {
-    for (const g of STREET_PROP_PACK) {
+    for (const g of [...STREET_PROP_PACK, ...STREET_PROP_PACK_2]) {
       const [body, ...debris] = wreckVolume(g);
       const sedan = g.id.startsWith("sedan");
+      const cabinet = g.id.startsWith("cabinet");
       const max = sedan
         ? SEDAN.wreckedMax
         : g.id === "planter"
           ? PLANTER.wreckedMax
-          : CABINET.wreckedMax;
+          : g.id.startsWith("kiosk")
+            ? KIOSK.wreckedMax
+            : CABINET.wreckedMax;
       const at = (x: number, y: number, z: number) =>
         toGuide(g, sedan ? sedanPoint(x, y, z, g.rotation) : framePoint(x, y, z, g.rotation));
       // the body's ceiling is the limit: a point just under it is in, just over it is out
-      const mid = sedan ? { x: 2, y: 1 } : { x: 1, y: g.id === "cabinet" ? 0.85 : 1 };
+      const mid = sedan ? { x: 2, y: 1 } : { x: 1, y: cabinet ? 0.85 : 1 };
       expect(inside(body!.hull, at(mid.x, mid.y, max - 0.05))).toBe(true);
-      const far = sedan ? { x: 0.2, y: 1.85 } : { x: 0.15, y: g.id === "cabinet" ? 1.28 : 1.85 };
+      const far = sedan ? { x: 0.2, y: 1.85 } : { x: 0.15, y: cabinet ? 1.28 : 1.85 };
       expect(inside(body!.hull, at(far.x, far.y, max + 0.15))).toBe(false);
       // debris lies on the prop's own 2 m ground, as thin as `WRECK_DEBRIS`
       expect(debris.length).toBe(sedan ? 2 : 1);

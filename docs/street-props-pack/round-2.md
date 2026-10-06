@@ -1,8 +1,8 @@
 # Street props, round two: the bindings the variants still draw procedurally
 
-Status: **guides and prompts ready; images not yet commissioned.** The importer takes them when they return
-(§5). Until then the merchandise stand and the rotated cabinet keep the procedural kit. They are **not**
-finished art, and nothing here pretends otherwise.
+Status: **imported** (`docs/checkpoint-prop-round-two.md`). All nine images pass the importer. The exception is
+`street-kiosk-r0-wrecked`, 1.1% above its volume against a 1% limit; it imports under `TALL_WRECKS_PENDING`
+while its redraw is out (§7). The merchandise stand and the rotated cabinet now draw this art.
 
 The contract is round one's ([`../street-props-pack.md`](../street-props-pack.md)), unchanged: one 256 × 320
 frame per saved 2 m section, true isometric, never mirrored, three states, no baked light or shadow. The
@@ -132,6 +132,25 @@ attaches round one's.
    - Seed 0 (cabinet r90, kiosk r90) and seed 7 (kiosk r0) at play zoom and close up.
    - `damage=mixed`, lights off, reveal on and off, and an actor behind each.
    - The placement proof again over the art.
+
+## 7. Import results
+
+`bun run tools/art/street-props.ts --round 2` (frames and proof sheet: `round-2/imported-frames.jpg`; wreck
+checks: `wreck-guides/<id>-wreck-check.png`):
+
+| Guide       | Fit for the 1024 guide | Height after the width fit | Intact/damaged drift | Wreck: moved, above volume, flat spill |
+| ----------- | ---------------------- | -------------------------- | -------------------- | -------------------------------------- |
+| cabinet-r90 | 1380 px                | 110%                       | 0.0%, 0.1%           | 0.37 m, 0.0%, 9.0%                     |
+| kiosk-r0    | 1326 px                | 100%                       | 0.0%, 0.1%           | 0.29 m, **1.1%**, 12.1%                |
+| kiosk-r90   | 1263 px                | 107%                       | 0.0%, 0.2%           | 0.50 m, 0.0%, 12.7%                    |
+
+Every key passes, with fringe 0.000%.
+
+**The r0 stand's wreck redraw.** The excess is the sunshade's far, upper-left edge, lifted off the heap. The
+check is not loosened. `kiosk-r0` is on `TALL_WRECKS_PENDING`, so the wreck imports with its excess reported.
+The edit prompt is in [`../art-style.md`](../art-style.md#street-props-round-two). Save the result as
+`street-kiosk-r0-wrecked-v2.png`: the importer takes the newest version. Once it passes, take `kiosk-r0` off
+the list.
 
 ## Files
 

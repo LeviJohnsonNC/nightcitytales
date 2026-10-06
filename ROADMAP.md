@@ -1768,9 +1768,11 @@ as a street of businesses.
   through a paint mask. Each car is chosen from the saved layout.
 - **The audit.** Every visible art binding on seeds 7, 0 and 8 is accounted for. The pale cabinet in seed 0 is
   the painted cabinet's binding at rotation 90, which has no art.
-- **Still procedural.** The striped merchandise stand and the rotated cabinet wait for the Picasso pack in
-  `docs/street-props-pack/round-2.md` (guides, prompts and import steps are ready).
+- **Round two** ([import](docs/checkpoint-prop-round-two.md)). The striped merchandise stand (r0 and r90) and the
+  rotated cabinet are painted art now, three states each, through the same importer and checks as round one.
+  The r0 stand's wreck stands 1.1% above its volume and imports under a waiver until its redraw
+  (`street-kiosk-r0-wrecked-v2.png`) returns.
 - **Debt.** The atlas props (cart, crates, dumpster, generator, pallet) are mirrored at rotation 90.
 - **Not verified:** a real `/play` fight and save/load.
 
-**Awaiting Levi's review, and round two's images.**
+**Awaiting Levi's review, and the r0 stand's wreck redraw.**

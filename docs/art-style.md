@@ -534,6 +534,15 @@ it turned, as the same object seen from its other side. Do not mirror the attach
 (Street prop wrapper with N=1024) Subject: the same cabinet torn down exactly as the attached round-one wreck is, seen turned a quarter: only its plinth and the bottom of the housing still bolted down, ripped off ragged at about knee height, the rest of the housing folded flat and split open on the ground beside it, the small doors lying flat around it. No wall, door or panel stands above knee height, and nothing lies more than half a metre past the pink diamond.
 ```
 
+**`street-kiosk-r0-wrecked-v2.png`** (edit) — the r0 stand's wreck came back 1.1% above its volume (limit 1%):
+the far, upper-left edge of the collapsed sunshade overhangs the heap and stands too high. It imports under a waiver until this redraw passes.
+Attach the current `street-kiosk-r0-wrecked.png`,
+`docs/street-props-pack/wreck-guides/kiosk-r0-wreck-layout.png` and `street-kiosk-r0-intact.png`.
+
+```text
+(Wreck edit wrapper with max=0.45, ceiling=about knee height) Subject: the same collapsed merchandise stand, with one change: the torn striped canvas sunshade's far edge, toward the UPPER LEFT of the image, which now overhangs the heap like a lifted flap and reaches past the dark block, comes down. Let that edge drop onto the crates and fold under, so the canvas lies draped low over the smashed crates and plywood and ends inside the pale slab, and no part of the canvas, the posts or the frame stands above the dark block's top face. Everything else, the spilled goods, the broken tiers and their position, stays exactly as it is, and nothing spills past the pale slab.
+```
+
 ## Surface tiles (combat scenes)
 
 Seamless world-scaled tiles the renderer lays on walls and roofs
