@@ -1702,3 +1702,19 @@ one combat board.
 - **Unchanged:** rules, hit areas and geometry. A real `/play` fight and save/load are not verified.
 
 **Awaiting Levi's review.**
+
+[Presentation fixes and a completion pilot for the homes and sheds](docs/checkpoint-building-pilot.md) are in.
+
+- **The dashes across the cutaway** were the board's own outline, an overlay printed over buildings. It is now
+  left out wherever it would cross a building or run behind one.
+- **On a phone,** the information card no longer covers the person it is about or the camera buttons. It has a
+  dismiss button for touch.
+- **The residential block and the industrial sheds** now use the existing render and painted-metal materials.
+  - Homes have framed windows with sills and somebody behind them.
+  - Sheds have steel-framed wired glass, a fascia and a proper loading door.
+
+  No new artwork; every opening is where it was.
+
+- **Unchanged:** rules, hit areas, geometry and saved state. A real `/play` fight and save/load are not verified.
+
+**Awaiting Levi's review.**

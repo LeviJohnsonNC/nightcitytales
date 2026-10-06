@@ -1,0 +1,128 @@
+[
+  {
+    "step": "0-rest",
+    "card": null,
+    "title": null,
+    "coversPerson": false,
+    "coversYou": false,
+    "coversControls": [],
+    "insideBoard": null,
+    "textClipped": false,
+    "cardWidth": null,
+    "errors": 0
+  },
+  {
+    "step": "1-target",
+    "card": {
+      "left": 7.5,
+      "top": 197.34375,
+      "right": 262.5,
+      "bottom": 282.34375
+    },
+    "title": "No shot",
+    "coversPerson": false,
+    "coversYou": false,
+    "coversControls": [
+      "North Heywood · commercial intersection32 × 32 m"
+    ],
+    "insideBoard": true,
+    "textClipped": false,
+    "cardWidth": 255,
+    "errors": 0
+  },
+  {
+    "step": "2-switch",
+    "card": {
+      "left": 235.46875,
+      "top": 292.359375,
+      "right": 353.46875,
+      "bottom": 359.359375
+    },
+    "title": "Shoot",
+    "coversPerson": true,
+    "coversYou": false,
+    "coversControls": [],
+    "insideBoard": true,
+    "textClipped": false,
+    "cardWidth": 118,
+    "errors": 0
+  },
+  {
+    "step": "2b-beside-card",
+    "x": 367.46875,
+    "y": 325.859375,
+    "reaches": "board"
+  },
+  {
+    "step": "3-dismissed",
+    "note": "no dismiss control on the card"
+  },
+  {
+    "step": "4-move-preview",
+    "card": {
+      "left": 7.5,
+      "top": 272.90625,
+      "right": 262.5,
+      "bottom": 351.90625
+    },
+    "title": "Move here",
+    "coversPerson": false,
+    "coversYou": null,
+    "coversControls": [],
+    "insideBoard": true,
+    "textClipped": false,
+    "cardWidth": 255,
+    "errors": 0
+  },
+  {
+    "step": "5-zoom-in",
+    "card": {
+      "left": 7.5,
+      "top": 283.546875,
+      "right": 262.5,
+      "bottom": 362.546875
+    },
+    "title": "Move here",
+    "coversPerson": false,
+    "coversYou": false,
+    "coversControls": [],
+    "insideBoard": true,
+    "textClipped": false,
+    "cardWidth": 255,
+    "errors": 0
+  },
+  {
+    "step": "6-zoom-out",
+    "card": {
+      "left": 7.5,
+      "top": 262.265625,
+      "right": 262.5,
+      "bottom": 341.265625
+    },
+    "title": "Move here",
+    "coversPerson": false,
+    "coversYou": false,
+    "coversControls": [],
+    "insideBoard": true,
+    "textClipped": false,
+    "cardWidth": 255,
+    "errors": 0
+  },
+  {
+    "step": "7-reset",
+    "card": {
+      "left": 7.5,
+      "top": 272.90625,
+      "right": 262.5,
+      "bottom": 351.90625
+    },
+    "title": "Move here",
+    "coversPerson": false,
+    "coversYou": false,
+    "coversControls": [],
+    "insideBoard": true,
+    "textClipped": false,
+    "cardWidth": 255,
+    "errors": 0
+  }
+]

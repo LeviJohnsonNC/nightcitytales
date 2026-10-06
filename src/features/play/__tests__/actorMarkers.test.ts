@@ -8,7 +8,8 @@ import {
   type MarkerActor,
   type MarkerAttention,
 } from "../actorMarkers";
-import { OVERLAY, overlayMode, squaresOutline } from "../overlayModel";
+import { OVERLAY, boardOutline, overlayMode, squaresOutline } from "../overlayModel";
+import type { SceneStructure } from "@/engine";
 
 const person = (over: Partial<MarkerActor>): MarkerActor => ({
   id: "a",
@@ -175,5 +176,41 @@ describe("the movement overlay at rest and at work", () => {
     expect(squaresOutline(block)).toHaveLength(8);
     // one square alone is four sides
     expect(squaresOutline([{ col: 3, row: 3 }])).toHaveLength(4);
+  });
+});
+
+describe("the board's edge over a street", () => {
+  const building = (over: Partial<SceneStructure> = {}) =>
+    ({
+      id: "b",
+      style: "shop",
+      height: 6,
+      rect: { x: 20, y: 28, width: 10, height: 10 },
+      ...over,
+    }) as SceneStructure;
+  const length = (runs: ReturnType<typeof boardOutline>) =>
+    runs.reduce((sum, [a, b]) => sum + Math.hypot(b.x - a.x, b.y - a.y), 0);
+
+  it("is the whole perimeter on open ground", () => {
+    expect(length(boardOutline({ width: 32, height: 32 }, []))).toBeCloseTo(128, 0);
+  });
+
+  it("is never printed inside a building, nor behind one, unless it is cut away", () => {
+    const runs = boardOutline({ width: 32, height: 32 }, [building()]);
+    const inside = (p: { x: number; y: number }) => p.x > 20 && p.x < 30 && p.y > 28 && p.y < 38;
+    for (const [a, b] of runs) {
+      expect(inside({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })).toBe(false);
+    }
+    const full = length(runs);
+    expect(full).toBeLessThan(128 - 9);
+    // cut away for the reveal, the building hides only its own footprint
+    const cut = length(boardOutline({ width: 32, height: 32 }, [building()], new Set(["b"])));
+    expect(cut).toBeGreaterThanOrEqual(full);
+    expect(cut).toBeLessThan(128 - 9);
+  });
+
+  it("is not interrupted by a fence", () => {
+    const fence = building({ style: "mesh-fence" });
+    expect(length(boardOutline({ width: 32, height: 32 }, [fence]))).toBeCloseTo(128, 0);
   });
 });

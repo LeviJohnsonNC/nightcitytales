@@ -1127,7 +1127,40 @@ with the zoom. The rules:
   `squaresOutline` of the engine's move field, never a drawn shape.
 - **The cutaway footprint** is a cut solid (`paintCutawayFloor`), never a dark floor that reads as a room.
 
-See `docs/checkpoint-presentation.md`.
+- **The board's outline** (`boardOutline`) is left out wherever it would cross a building or run behind one. A
+  building cut away for the reveal hides only its own footprint. An overlay line is never printed across a
+  building.
+- **The information card** (`calloutPlacement.ts`) is placed in this order:
+  - above the person or square;
+  - else under the feet;
+  - else beside them.
+
+  It never covers the camera buttons. It covers a person, a name or the caption only when every place would.
+  On touch it carries a dismiss button (one level back, like Escape).
+
+See `docs/checkpoint-presentation.md` and `docs/checkpoint-building-pilot.md`.
+
+### Homes and sheds (courtyard/buildingFaces.ts)
+
+On intersection scenes with materials, the `residential` block and the `workshop`/`warehouse` sheds are finished
+in code with the existing pack. The rules:
+
+- **Materials.** Homes take `painted-render`, sheds `painted-metal`; their cutaway pieces take the same.
+- **Openings.** Every opening is the one the generic face drew, at the same place and size (`faceOpenings`).
+  - A shed's clerestory pane is dropped only where it ran into a ground-floor light or a loading door. Those
+    always overlapped.
+- **Homes.**
+  - A window has a reveal, a frame, a stone sill and somebody behind it: a blind, curtains, nets, a lamp or
+    nothing.
+  - Who is behind it is chosen from the window alone.
+  - Never the shop's stocked interior. A ground-floor bay is never dark.
+- **Sheds.**
+  - Glazing is steel-framed wired glass in divided lights.
+  - The walls are sheets with a plinth and a fascia.
+  - A loading door is a roller shutter in steel guides. The saved `service-surround` is drawn as those guides
+    and the coil box, with no new geometry.
+- **Presentation only.** Nothing here adds collision, moves a wall, entrance or route, or changes sorting.
+  Without a material tile it is the old drawing.
 
 ## Collaborator names
 
