@@ -1108,6 +1108,27 @@ The rules:
 
 See `docs/checkpoint-architecture-art-pilot.md` and `docs/checkpoint-corner-finish.md`.
 
+### The tactical overlay (play/actorMarkers.ts, play/overlayModel.ts)
+
+The combat board's SVG is in scene units (its `viewBox` follows the camera), so anything drawn in it scales
+with the zoom. The rules:
+
+- **Words, bars and markers are drawn in screen pixels.** `ActorMarker` uses `scale(ui)`, where `ui` is one
+  screen pixel measured from the board's real size. Lines use `vector-effect: non-scaling-stroke`. Never put a
+  label in scene units: it was 36 px at play zoom and 5 px on a phone.
+- **A marker says as much as the person's part calls for.**
+  - `markerFor` decides it: the locked target and anyone hovered, focused or aimed at get the name and HP.
+  - You get a caret, threats a diamond, allies a disc. Bystanders get nothing at rest.
+  - Faction is carried by shape as well as colour.
+- **`layoutMarkers`** keeps markers on screen, off the controls, off each other and off fixed labels such as
+  "IN THE WAY".
+- **The movement overlay follows the interaction** (`overlayMode`): an edge at rest, squares and a route while
+  planning, firing squares while aiming, only the edge while a target is the point. The edge is
+  `squaresOutline` of the engine's move field, never a drawn shape.
+- **The cutaway footprint** is a cut solid (`paintCutawayFloor`), never a dark floor that reads as a room.
+
+See `docs/checkpoint-presentation.md`.
+
 ## Collaborator names
 
 Levi uses these names across sessions:

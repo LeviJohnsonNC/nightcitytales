@@ -495,17 +495,48 @@ export function paintGroundLights(
   ctx.restore();
 }
 
-/** Inaccessible mass is ground art; perimeter pieces sort independently. */
+/**
+ * Inaccessible mass is ground art; perimeter pieces sort independently.
+ *
+ * Drawn as a CUT SOLID, the way a section drawing shows mass: an opaque neutral a
+ * shade lighter than the street (so it reads as something there, not a dark hole),
+ * a fine level hatch, and the line where the walls stand. It used to be a dark
+ * floor with stripes, the value of the asphalt, which read as an empty room someone
+ * could walk into. Nothing here is furniture, and nothing of the street shows
+ * through it.
+ */
 export function paintCutawayFloor(
   ctx: CanvasRenderingContext2D,
   structure: SceneStructure,
   project: Project,
 ) {
-  const { rect, line } = painter(ctx, project);
+  const { rect, line, corners } = painter(ctx, project);
   const r = structure.rect;
-  rect(r, "#182329");
-  for (let x = r.x + 0.6; x < r.x + r.width; x += 1.2)
-    line(project({ x, y: r.y + 0.35 }), project({ x, y: r.y + r.height - 0.35 }), "#253238", 0.8);
+  rect(r, "#3b3d3e");
+  // the hatch: lines of constant x - y, level on screen, every 0.4 m, clipped to the mass
+  const outline = corners(r);
+  ctx.save();
+  ctx.beginPath();
+  outline.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  ctx.closePath();
+  ctx.clip();
+  for (let c = r.x - (r.y + r.height); c <= r.x + r.width - r.y; c += 0.4) {
+    // the line x - y = c, from where it enters the footprint's bounding range to where it leaves
+    const a = { x: c + r.y - 2, y: r.y - 2 };
+    const b = { x: c + r.y + r.height + 2, y: r.y + r.height + 2 };
+    line(project(a), project(b), "rgba(196,190,178,.2)", 0.8);
+  }
+  ctx.restore();
+  // where the walls stand: the edge of the solid, cut at its thickness
+  const t = 0.24;
+  const inner = corners({
+    x: r.x + t,
+    y: r.y + t,
+    width: r.width - 2 * t,
+    height: r.height - 2 * t,
+  });
+  for (let i = 0; i < 4; i++) line(inner[i]!, inner[(i + 1) % 4]!, "rgba(206,200,186,.34)", 1);
+  for (let i = 0; i < 4; i++) line(outline[i]!, outline[(i + 1) % 4]!, "rgba(8,12,14,.5)", 1);
 }
 
 export function paintCutawayWall(

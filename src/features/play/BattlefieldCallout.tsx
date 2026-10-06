@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * The action, where the action is.
@@ -36,6 +36,23 @@ export function BattlefieldCallout({
   /** Anything extra — the Find Firing Position offer, for instance. */
   children?: ReactNode;
 }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  // Kept inside the board: nudged along when it would run off a side, and hung
+  // below its anchor when there is no room above (the board's controls sit there).
+  const [fit, setFit] = useState({ x: 0, below: false });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- measures every render, settles in one pass
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const host = el?.offsetParent as HTMLElement | null;
+    if (!el || !host || !anchor) return;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    const W = host.clientWidth;
+    const left = anchor.left - w / 2;
+    const x = left < 8 ? 8 - left : left + w > W - 8 ? W - 8 - (left + w) : 0;
+    const below = anchor.top - h < 56;
+    if (Math.abs(x - fit.x) > 0.5 || below !== fit.below) setFit({ x, below });
+  });
   if (!anchor) return null;
   const body = (
     <>
@@ -49,8 +66,9 @@ export function BattlefieldCallout({
   );
   return (
     <div
-      className={`combat-callout is-${tone}`}
-      style={{ left: `${anchor.left}px`, top: `${anchor.top}px` }}
+      ref={ref}
+      className={`combat-callout is-${tone} ${fit.below ? "is-below" : ""}`}
+      style={{ left: `${anchor.left + fit.x}px`, top: `${anchor.top}px` }}
       // The callout hangs off a world position; clicks on it are its own.
       onPointerDown={(e) => e.stopPropagation()}
       onPointerMove={(e) => e.stopPropagation()}
