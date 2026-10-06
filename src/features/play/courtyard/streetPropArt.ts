@@ -13,6 +13,7 @@
 import type Phaser from "phaser";
 import { propTexture, type PropCondition, type PropKind } from "./propPresentation";
 import { propArtRegistration } from "./streetPropPack";
+import { paintedTexture, SEDAN_PAINT_ORDER } from "./sedanPaint";
 
 const CONDITIONS: readonly PropCondition[] = ["intact", "damaged", "wrecked"];
 
@@ -59,6 +60,16 @@ export function streetPropFiles(kinds: readonly PropKind[]): StreetPropFile[] {
           url: `/images/street-props/${name}.webp`,
           textures,
         });
+        // the sedan's other paints (`sedanPaint.ts`), baked from this file; a wreck is
+        // burned to bare metal and keeps the one picture
+        if (kind.startsWith("sedan-") && condition !== "wrecked")
+          for (const paint of SEDAN_PAINT_ORDER.filter((p) => p !== "beige"))
+            files.push({
+              kind,
+              key: `streetprop-${name}-${paint}`,
+              url: `/images/street-props/${name}-${paint}.webp`,
+              textures: textures.map((t) => paintedTexture(t, paint)),
+            });
       }
     }
   }

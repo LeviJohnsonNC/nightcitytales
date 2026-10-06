@@ -5,6 +5,9 @@ import {
   SEDAN,
   STREET_PROP_BENCHMARK,
   STREET_PROP_PACK,
+  STREET_PROP_PACK_2,
+  STREET_PROP_PACK_2_PLACEMENT,
+  KIOSK,
   cabinFrameOffset,
   framePoint,
   sectionFrameOnGuide,
@@ -105,6 +108,48 @@ describe("street prop pack: the renderer's own geometry", () => {
         const f = sectionFrameOnGuide(g, i);
         expect(f.width / f.height).toBeCloseTo(FRAME.width / FRAME.height);
       }
+    }
+  });
+});
+
+describe("street prop pack, round two", () => {
+  it("is bound to props the variants save, with the art and rotation they saved", () => {
+    for (const p of STREET_PROP_PACK_2_PLACEMENT) {
+      const g = STREET_PROP_PACK_2.find((x) => x.id === p.guide)!;
+      const env = composeScene("intersection", p.seed).layout.arena.environment!;
+      const prop = env.props.find((x) => x.coverId === p.cover)!;
+      expect(prop.art).toBe(g.sections[0]!.art);
+      expect(prop.rotation ?? 0).toBe(g.rotation);
+    }
+  });
+
+  it("draws the stand at the procedural stand's own heights", () => {
+    // `interiorPropArt.ts` draws the stand in frame units, PROP_PIXELS_PER_METRE a metre
+    const m = (units: number) => units / PROP_PIXELS_PER_METRE;
+    expect(KIOSK.tiers.map((t) => t.top)).toEqual([25, 48].map((u) => +m(u).toFixed(2)));
+    expect(KIOSK.tiers.map((t) => t.goods)).toEqual([38, 61].map((u) => +m(u).toFixed(2)));
+    expect(KIOSK.posts.top).toBeCloseTo(m(94), 2);
+    expect(KIOSK.canopy.z0).toBeCloseTo(m(92), 2);
+    expect(KIOSK.canopy.z1).toBeCloseTo(m(97), 2);
+  });
+
+  it("fits every guide's volume on its square canvas", () => {
+    for (const g of STREET_PROP_PACK_2) {
+      expect(g.canvas).toBe(1024);
+      for (const [x, y] of [
+        [0, 0],
+        [2, 0],
+        [2, 2],
+        [0, 2],
+      ] as const)
+        // up to the object's own top: the stand's sunshade, the cabinet's lid
+        for (const z of [0, g.id.startsWith("kiosk") ? KIOSK.height : 1.52]) {
+          const q = toGuide(g, framePoint(x, y, z, g.rotation));
+          expect(q.x).toBeGreaterThanOrEqual(0);
+          expect(q.x).toBeLessThanOrEqual(g.canvas);
+          expect(q.y).toBeGreaterThanOrEqual(0);
+          expect(q.y).toBeLessThanOrEqual(g.canvas);
+        }
     }
   });
 });
