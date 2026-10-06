@@ -64,6 +64,7 @@ export function SceneReview() {
     night,
     camera: initial.camera,
     player: initial.player,
+    foe: initial.foe,
     framing,
   });
   useEffect(() => {
@@ -78,6 +79,9 @@ export function SceneReview() {
     // A capture can stand the review character anywhere open, e.g. under the shop's awning.
     const player = fixture.data["player"];
     if (initial.player && player) fixture.data["player"] = { ...player, position: initial.player };
+    // and the first hostile, e.g. behind a stall, to check how a target reads there
+    const foe = fixture.state.order.find((id) => fixture.state.combatants[id]?.side === "hostile");
+    if (initial.foe && foe) fixture.data[foe] = { ...fixture.data[foe]!, position: initial.foe };
     fixture.cover = Object.fromEntries(
       scene.layout.arena.cover!.map((c, i) => [
         c.id,
@@ -91,7 +95,7 @@ export function SceneReview() {
       ]),
     );
     return fixture;
-  }, [scene, entrances, damage, saved, initial.player]);
+  }, [scene, entrances, damage, saved, initial.player, initial.foe]);
   const empty = useMemo(
     () => ({ ...live, state: { ...live.state, order: [], combatants: {} }, data: {} }),
     [live],
