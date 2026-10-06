@@ -72,9 +72,47 @@ side by side.
   Each in these states: `intact`, `damaged`, `destroyed`, `mixed`, `neutral` (no night), `lights-off` and
   `reveal`.
 
-OBSERVATIONS
+## 4. Browser-tested behaviour
 
-## 6. Limitations
+- **`prop-evidence.mjs`.** 0 page errors on all 40 shots, before and after.
+- **Interaction runs.** `architecture-interaction.mjs` on seeds 7, 0 and 8 (scratch output) gave 0 page errors
+  and 0 unexpected failed requests, live and in the missing-art fallback, on each seed. It covers reveal, zoom, pan, night, lights, reset and overview.
+
+## 5. Screenshot observations (not tested behaviour)
+
+- **The stand reads as the cart's kin.** It is plywood tiers stacked with goods under a faded striped canvas.
+  Before, it was flat grey slabs under a candy-striped lid. At r0 (seed 7) it opens toward the pavement, and at
+  r90 (seed 0) it is painted turned, not mirrored (`compare/close-seed7-kiosk-intact`,
+  `close-seed0-kiosk-intact`).
+- **The pale cabinet is gone.** Seed 0's cabinet is the same rusted, flyer-covered steel cabinet as seed 7's,
+  with its doors toward the lower right (`compare/close-seed0-cabinet-intact`, beside `close-seed7-cabinet-*`).
+  At play zoom it no longer reads as a pale placeholder (`compare/seed0-play`).
+- **Footprints held.** Every state stands on the same 2 m square and the same contact shade as before. Movement
+  edges, the planter beside the stand and the lamp post beside the cabinet are where they were.
+- **Damage.**
+  - `damaged` keeps each outline.
+  - `destroyed` is a low heap on its own ground: the stand's canvas lies over the smashed crates.
+  - `mixed` sets a whole stand beside a wrecked planter.
+- **Lights off.** Both props keep their value against the pavement; neither carries baked light.
+- **Reveal and actors.** The cutaway and the actor beside the cabinet are unchanged. No capture puts a person
+  directly behind the stand, so its fading over an actor is the board's unchanged behaviour, not observed here.
+- **The r0 stand's wreck.** Its waived excess, the sunshade's upper-left edge, is not visible as anything wrong
+  at play zoom.
+
+## 6. Checks
+
+- `bun run lint`: no errors; the 12 warnings were already there.
+- `typecheck`.
+- `test`: 4020.
+- `build`.
+- `test:browser`: 28.
+- The importer's `--check` passes on both rounds.
+- **`streetPropArt.test.ts`** now covers:
+  - the stand's and the r90 cabinet's files and keys, each rotation its own;
+  - their frame sizes, against the shipped directory;
+  - round two's wreck volumes (`KIOSK.wreckedMax`).
+
+## 7. Limitations
 
 - **The r0 stand's wreck** imports under a waiver until its redraw passes.
 - **The atlas props are mirrored at r90.** The cart, crates, dumpster, generator and pallet remain a recorded
