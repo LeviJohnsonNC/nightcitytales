@@ -1788,3 +1788,17 @@ as a street of businesses.
 - **Not verified:** a real `/play` fight and save/load.
 
 **Awaiting Levi's review.**
+
+[Shadow state](docs/checkpoint-shadow-state.md) (#299 accepted; the sheen stays omitted):
+
+- **Overlapping shadows after destruction, fixed.** Props whose shadows touch form a region, rendered from its
+  complete state when it changes and cached by state. #299's per-prop restores left the overlap dark when both
+  were destroyed.
+- **Checked against fresh renders** (`tools/scenes/shadow-state-check.mjs`): two overlapping casters and a second
+  light, every state in both orders and loaded directly, seeds 7, 0 and 8, and the live board against direct
+  loads. No unexplained pixel differs.
+- **Performance,** apart from the benchmark's waits (`tools/scenes/scene-perf.mjs`, runnable on a Mac with
+  `--chrome`): frame times unchanged, scene ready slightly sooner.
+- **Not verified:** a real `/play` fight and save/load. The steps for Levi are in the checkpoint, §5.
+
+**Awaiting Levi's review and the manual check.**

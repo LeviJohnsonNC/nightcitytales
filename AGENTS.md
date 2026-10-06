@@ -1269,11 +1269,18 @@ it. The rules:
   presentation height (`CASTER_HEIGHT`). Its wreck is a lower box. Add a prop kind there, or it casts nothing.
 - **A shadow belongs to its light.** It removes that light only, never the ambient or another light, and never
   replaces the contact shade (`contactShade.ts`). Lights off, it is gone.
-- **A destroyed prop casts its wreck's shadow.** Its restore sprite is the exact per-pixel difference between the
-  light pass with the prop standing and as a wreck. The pass's gain saturates, so never add halves. Its visibility
-  follows `coverDestroyed` and the lights switch only, never a prop's fading.
-- **Shadow work is confined to small canvases.** Use the box round a light's shadows, and a restore sprite's own
-  box. A full ground-sized canvas per light or prop cost about 6.5 s of load under software GL.
+- **A destroyed prop casts its wreck's shadow, from the complete state** (`groundShadows.ts`).
+  - Props whose shadows touch form a region (`shadowRegions`).
+  - When a region's props change, its patch is rendered: the light pass in that state, less the light pass with
+    all of them standing. Patches are cached by state.
+  - Never compute a prop's light alone, as if the others stood: overlapping wrecks were left dark that way.
+  - The pass's gain saturates, so never add halves.
+  - Visibility follows `coverDestroyed` and the lights switch only, never a prop's fading.
+- **Every light is painted on its own canvas,** over its own reach plus `BLUR_MARGIN`, starting on the `ALIGN`
+  grid. A crop then paints exactly what the whole ground paints; Chrome's gradient dither is fixed to the pixel
+  grid. `tools/scenes/shadow-state-check.mjs` holds the board to a fresh render of every state.
+- **Shadow work is confined to small canvases.** A full ground-sized canvas per light or prop cost about 6.5 s of
+  load under software GL.
 - **A damp sheen was tried and omitted** (`docs/checkpoint-ground-light.md` §4). Do not retry it without more
   street-level sources.
 

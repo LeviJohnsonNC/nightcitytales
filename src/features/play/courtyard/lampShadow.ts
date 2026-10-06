@@ -215,7 +215,7 @@ const tracePolygon = (ctx: CanvasRenderingContext2D, project: Project, poly: rea
 };
 
 /** A device-pixel box in `ctx` round world points, padded and kept on the canvas. */
-function deviceBox(
+export function deviceBox(
   ctx: CanvasRenderingContext2D,
   project: Project,
   pts: readonly Point[],
@@ -268,6 +268,13 @@ function fillShadows(
   ctx.restore();
 }
 
+/**
+ * Device pixels past a box that a blur can reach into it: a window fan's feather and a
+ * shadow's penumbra are at most about 16 px of standard deviation on the ground canvas.
+ * Anything drawn on a canvas of its own is drawn this far past the part that is kept.
+ */
+export const BLUR_MARGIN = 48;
+
 /** Pixels per metre in a canvas drawn through `project` with the transform set. */
 function pixelsPerMetre(ctx: CanvasRenderingContext2D, project: Project) {
   const m = ctx.getTransform();
@@ -278,10 +285,41 @@ function pixelsPerMetre(ctx: CanvasRenderingContext2D, project: Project) {
   return Math.hypot(dx, dy);
 }
 
+/** The ground a light can reach, in world metres: a pool's square, a window's fan. */
+export function lightExtent(light: GroundLight): Point[] {
+  if (light.kind === "pool") {
+    const { x, y } = light.centre;
+    const r = light.radius;
+    return [
+      { x: x - r, y: y - r },
+      { x: x + r, y: y - r },
+      { x: x + r, y: y + r },
+      { x: x - r, y: y + r },
+    ];
+  }
+  const at = (s: number, out: number) => ({
+    x: light.origin.x + light.along.x * s + light.out.x * out,
+    y: light.origin.y + light.along.y * s + light.out.y * out,
+  });
+  return [
+    at(light.s0 - light.spread, 0),
+    at(light.s1 + light.spread, 0),
+    at(light.s1 + light.spread, light.reach),
+    at(light.s0 - light.spread, light.reach),
+  ];
+}
+
+/** Pixel grid every light's own canvas starts on (see `paintShadowedLights`). */
+export const ALIGN = 16;
+
 /**
- * Paint each light as `paint` would, less its shadows from the casters as they stand
- * intact, then add it to `ctx`. Each light on its own canvas, so one light's shadow
- * never takes away another's light.
+ * Paint each light, less its shadows from the casters as given, and add it to `ctx`.
+ *
+ * Each light is painted on a canvas of its own (so one light's shadow never takes away
+ * another's light), covering its whole reach plus `BLUR_MARGIN`, and starting on the
+ * `ALIGN` grid of the canvas `ctx` stands for. A crop of the ground (`ctx` translated by
+ * a multiple of `ALIGN`) therefore paints every pixel exactly as the whole ground does:
+ * the same canvas, at the same dither phase, added the same way.
  */
 export function paintShadowedLights(
   ctx: CanvasRenderingContext2D,
@@ -292,33 +330,34 @@ export function paintShadowedLights(
   paint: (ctx: CanvasRenderingContext2D, light: GroundLight) => void,
 ) {
   const scale = pixelsPerMetre(ctx, project);
-  const pad = 3 * LAMP_SHADOW.softness * scale + 2;
+  const m = ctx.getTransform();
   for (const light of lights) {
+    const xs: number[] = [];
+    const ys: number[] = [];
+    for (const p of lightExtent(light)) {
+      const q = m.transformPoint(project(p));
+      xs.push(q.x);
+      ys.push(q.y);
+    }
+    // the box on the grid, in this canvas's pixels; e is its offset from the grid
+    const e = { x: ((m.e % ALIGN) + ALIGN) % ALIGN, y: ((m.f % ALIGN) + ALIGN) % ALIGN };
+    const align = (v: number, off: number) => Math.floor((v - off) / ALIGN) * ALIGN + off;
+    const x0 = align(Math.min(...xs) - BLUR_MARGIN, e.x);
+    const y0 = align(Math.min(...ys) - BLUR_MARGIN, e.y);
+    const x1 = Math.ceil(Math.max(...xs) + BLUR_MARGIN);
+    const y1 = Math.ceil(Math.max(...ys) + BLUR_MARGIN);
+    if (x1 <= 0 || y1 <= 0 || x0 >= ctx.canvas.width || y0 >= ctx.canvas.height) continue;
+    const box = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+    const layer = scratch(ctx, box);
+    paint(layer, light);
     const shadows = casters.flatMap((c) => {
       const s = sourceFor(light, c, zOf(light));
       return s ? [boxShadow(c.body, c.height, s)] : [];
     });
-    const box = shadows.length ? deviceBox(ctx, project, shadows.flat(), pad) : null;
-    // the light everywhere but round its shadows, straight onto the ground's light...
-    ctx.save();
-    if (box) {
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.beginPath();
-      ctx.rect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      ctx.rect(box.x, box.y, box.width, box.height);
-      ctx.restore();
-      ctx.clip("evenodd");
+    if (shadows.length) {
+      layer.globalCompositeOperation = "destination-out";
+      fillShadows(layer, project, shadows, LAMP_SHADOW.strength, scale);
     }
-    ctx.globalCompositeOperation = "lighter";
-    paint(ctx, light);
-    ctx.restore();
-    if (!box) continue;
-    // ...and round them on a small canvas of its own, less the shadows
-    const layer = scratch(ctx, box);
-    paint(layer, light);
-    layer.globalCompositeOperation = "destination-out";
-    fillShadows(layer, project, shadows, LAMP_SHADOW.strength, scale);
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "lighter";
@@ -342,3 +381,54 @@ export function shadowArea(
   });
   return pts.length ? pts : null;
 }
+
+/** A box in device pixels. */
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+const union = (a: Box, b: Box): Box => {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return {
+    x,
+    y,
+    width: Math.max(a.x + a.width, b.x + b.width) - x,
+    height: Math.max(a.y + a.height, b.y + b.height) - y,
+  };
+};
+
+/**
+ * Group casters whose shadow boxes touch into regions, until no two regions touch. Inside
+ * a region's box, only its own casters' shadows reach the ground, so the region's light is
+ * a function of their states alone, whatever the rest of the street is doing.
+ */
+export function shadowRegions(items: readonly { id: string; box: Box }[]) {
+  let regions = items.map((i) => ({ ids: [i.id], box: i.box }));
+  for (let merged = true; merged;) {
+    merged = false;
+    outer: for (let i = 0; i < regions.length; i++)
+      for (let j = i + 1; j < regions.length; j++)
+        if (overlaps(regions[i]!.box, regions[j]!.box)) {
+          regions[i] = {
+            ids: [...regions[i]!.ids, ...regions[j]!.ids],
+            box: union(regions[i]!.box, regions[j]!.box),
+          };
+          regions = regions.filter((_, k) => k !== j);
+          merged = true;
+          break outer;
+        }
+  }
+  return regions.map((r) => ({ ids: [...r.ids].sort(), box: r.box }));
+}
+
+/** The casters as they stand: a destroyed one is its wreck's lower box. */
+export const castersAsStanding = (
+  casters: readonly ShadowCaster[],
+  destroyed: ReadonlySet<string>,
+): ShadowCaster[] => casters.map((c) => (destroyed.has(c.coverId) ? { ...c, height: c.wreck } : c));
