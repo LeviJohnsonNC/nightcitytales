@@ -27,6 +27,7 @@ import { lightColor, type GroundLight, type NightLighting } from "./nightLightin
 import { STOREFRONT_SIGN } from "./storefrontPack";
 import { fillMaterial, SURFACE_MATERIALS, wallBasis, type MaterialSet } from "./surfaceMaterials";
 import type { TileSource } from "./surfaceMaterials";
+import { paintWindowSurround } from "./wallLight";
 
 type Project = (p: Point) => Point;
 type Img = TileSource | HTMLCanvasElement;
@@ -598,8 +599,14 @@ function paintFittings(
 }
 
 /**
- * The composed face's light: the shop lit behind its display (`light`, multiplied by
- * the art) and its glass and neon (`glow`, added). The storeroom stays dark.
+ * The composed face's light: the shop lit behind its display, the light on each
+ * display's sill and surround and the neon's on the render (`light`, multiplied by the
+ * art), and its glass and neon (`glow`, added). The storeroom stays dark.
+ *
+ * With `clip` (a cutaway piece: `s0`-`s1` along the face, up to `zMax`) both passes
+ * are clipped to that piece. The renderer masks the light pass to the piece's albedo,
+ * but the glow is added after that mask, so an unclipped glow would light glass the
+ * reveal has taken away, above a low piece, and again in the piece beside it.
  */
 export function paintReturnLight(
   ctx: CanvasRenderingContext2D,
@@ -618,54 +625,71 @@ export function paintReturnLight(
     hi = BAY.head;
   const reaches = (a: number, b: number) => !clip || (b > clip.s0 && a < clip.s1);
   const signed = !clip || clip.zMax > RETURN.sign.z0 + RETURN.sign.height;
+  ctx.save();
+  if (clip) {
+    path(ctx, quad(clip.s0, clip.s1, 0, clip.zMax));
+    ctx.clip();
+  }
   for (const s0 of face.display) {
     const s1 = s0 + BAY.width;
-    if (!reaches(s0, s1)) continue;
+    // a piece below the sill keeps none of the window, and gives none of its light
+    if (!reaches(s0, s1) || (clip && clip.zMax <= lo)) continue;
     ramp(ctx, quad(s0, s1, lo, hi), at(s0, 0, lo), at(s0, 0, hi), [
       [0, lightColor(warm, pass === "light" ? 0.58 : 0.13)],
       [0.6, lightColor(warm, pass === "light" ? 0.44 : 0.05)],
       [1, lightColor(warm, pass === "light" ? 0.3 : 0.02)],
     ]);
+    // the lit room reaches its sill, its reveal and the wall round it
+    if (pass === "light")
+      paintWindowSurround(ctx, at, { s0, s1, z0: lo, z1: hi }, warm, RETURN_SURROUND);
   }
-  if (!face.sign || !signed || !reaches(face.sign.s0, face.sign.s1)) return;
-  const S = RETURN.sign;
-  if (pass === "light") {
-    // the light-box's neon falls on the render round it, a little, and on the course
-    const c = at((face.sign.s0 + face.sign.s1) / 2, 0, S.z0 + S.height / 2);
-    const r = 1.4 * ppm;
-    const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
-    g.addColorStop(0, lightColor(night.neon, 0.34));
-    g.addColorStop(1, lightColor(night.neon, 0));
-    path(ctx, quad(face.sign.s0 - 1.2, face.sign.s1 + 1.2, RETURN.course, face.structure.height));
-    ctx.fillStyle = g;
-    ctx.fill();
-    return;
-  }
-  if (!art.kanji) return;
-  const g = glyphs(face);
-  ctx.save();
-  ctx.shadowColor = "rgba(255,70,110,.9)";
-  ctx.shadowBlur = 5 * Math.max(1, ppm / 12);
-  // thickened by a few millimetres of offset copies: one-pixel tubes vanish at play zoom
-  const tube = (colour: string) => {
-    for (const d of [-S.bold, 0, S.bold])
-      drawCrop(
-        ctx,
-        at,
-        tint(art.kanji!, colour),
-        g.s + d,
-        g.s + g.width + d,
-        g.zTop - g.cell + d,
-        g.zTop + d,
-        S.proud + 0.01,
-      );
-  };
-  tube("#ff5d7c");
-  ctx.shadowBlur = 0;
-  ctx.globalAlpha = 0.6;
-  tube("#ffd7df");
+  if (face.sign && signed && reaches(face.sign.s0, face.sign.s1)) paintSignLight();
   ctx.restore();
+
+  function paintSignLight() {
+    const S = RETURN.sign;
+    const sign = face.sign!;
+    if (pass === "light") {
+      // the light-box's neon falls on the render round it, a little, and on the course
+      const c = at((sign.s0 + sign.s1) / 2, 0, S.z0 + S.height / 2);
+      const r = 1.4 * ppm;
+      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
+      g.addColorStop(0, lightColor(night.neon, 0.34));
+      g.addColorStop(1, lightColor(night.neon, 0));
+      path(ctx, quad(sign.s0 - 1.2, sign.s1 + 1.2, RETURN.course, face.structure.height));
+      ctx.fillStyle = g;
+      ctx.fill();
+      return;
+    }
+    if (!art.kanji) return;
+    const g = glyphs(face);
+    ctx.save();
+    ctx.shadowColor = "rgba(255,70,110,.9)";
+    ctx.shadowBlur = 5 * Math.max(1, ppm / 12);
+    // thickened by a few millimetres of offset copies: one-pixel tubes vanish at play zoom
+    const tube = (colour: string) => {
+      for (const d of [-S.bold, 0, S.bold])
+        drawCrop(
+          ctx,
+          at,
+          tint(art.kanji!, colour),
+          g.s + d,
+          g.s + g.width + d,
+          g.zTop - g.cell + d,
+          g.zTop + d,
+          S.proud + 0.01,
+        );
+    };
+    tube("#ff5d7c");
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.6;
+    tube("#ffd7df");
+    ctx.restore();
+  }
 }
+
+/** The strength of the light on a display's sill and the wall round it (`paintWindowSurround`). */
+export const RETURN_SURROUND = 0.26;
 
 /** The display's spill onto the pavement: the shop's own window light, a little less. */
 export function returnLights(faces: readonly ReturnFace[], night: NightLighting): GroundLight[] {

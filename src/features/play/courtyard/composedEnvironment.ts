@@ -1940,19 +1940,8 @@ export function createComposedEnvironment(
       const boards = (returns?.neighbours ?? []).filter((n) => n.structure === s && n.board);
       // the shop's display round the corner, lit like its shopfront, a little less
       const paintComposedLight = (ctx: CanvasRenderingContext2D, pass: "light" | "glow") => {
-        for (const f of composed) {
+        for (const f of composed)
           paintReturnLight(ctx, f, project, metre, returns!.art, night!, pass);
-          if (pass !== "light") continue;
-          const at = facePainter(s, f.edge, project, metre).at;
-          for (const b of f.display)
-            paintWindowSurround(
-              ctx,
-              at,
-              { s0: b, s1: b + 2.2, z0: 0.65, z1: 2.35 },
-              night!.window.color,
-              0.26,
-            );
-        }
       };
       // the secondary light: a few occupied homes (`litHomeWindows`), each a visible
       // source with its own room, glass, sill and the wall round it
