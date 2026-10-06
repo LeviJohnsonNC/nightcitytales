@@ -1238,3 +1238,6 @@ saved geometry. The rules:
   A mask is prefiltered (halved twice) before it is drawn small.
 - **Every opening is a saved bay at its saved size.** Nothing here adds a door, collision, route or entrance.
 - **Cutaway pieces carry the composition,** clipped to their height. See `docs/checkpoint-streetfront.md`.
+- **A piece's light and glow are clipped to that piece** (`paintReturnLight`'s `clip`). The renderer masks only the
+  light pass to the albedo; the glow is added after it, so an unclipped glow lights glass the reveal removed. See
+  `docs/checkpoint-cutaway-light.md`.
