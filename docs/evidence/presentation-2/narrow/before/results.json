@@ -22,9 +22,7 @@
     "title": "No shot",
     "coversPerson": false,
     "coversYou": false,
-    "coversControls": [
-      "North Heywood · commercial intersection32 × 32 m"
-    ],
+    "coversControls": ["North Heywood · commercial intersection32 × 32 m"],
     "insideBoard": true,
     "textClipped": false,
     "cardWidth": 255,

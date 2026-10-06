@@ -22,9 +22,7 @@
     "title": "No shot",
     "coversPerson": false,
     "coversYou": false,
-    "coversControls": [
-      "North Heywood · commercial intersection32 × 32 m"
-    ],
+    "coversControls": ["North Heywood · commercial intersection32 × 32 m"],
     "insideBoard": true,
     "textClipped": false,
     "cardWidth": 220,
@@ -76,9 +74,7 @@
     "title": "Move here",
     "coversPerson": false,
     "coversYou": null,
-    "coversControls": [
-      "MovementClick the square again, or press Enter, to go"
-    ],
+    "coversControls": ["MovementClick the square again, or press Enter, to go"],
     "insideBoard": true,
     "textClipped": false,
     "cardWidth": 220,
@@ -95,9 +91,7 @@
     "title": "Move here",
     "coversPerson": false,
     "coversYou": false,
-    "coversControls": [
-      "MovementClick the square again, or press Enter, to go"
-    ],
+    "coversControls": ["MovementClick the square again, or press Enter, to go"],
     "insideBoard": true,
     "textClipped": false,
     "cardWidth": 220,
@@ -131,9 +125,7 @@
     "title": "Move here",
     "coversPerson": false,
     "coversYou": false,
-    "coversControls": [
-      "MovementClick the square again, or press Enter, to go"
-    ],
+    "coversControls": ["MovementClick the square again, or press Enter, to go"],
     "insideBoard": true,
     "textClipped": false,
     "cardWidth": 220,
