@@ -7,6 +7,8 @@
  *     node tools/scenes/stand-actors.mjs 5180 docs/evidence/ground-light/stand-actors
  *
  * A scene-review demonstration: it submits no combat action and writes no campaign.
+ * A unit is clicked at its torso, the part a person behind the stand still shows: their
+ * feet are drawn behind the stand, where a click is the stand's own square.
  * It records, for each case, what the board says (the unit's label, the target card)
  * and where the unit's marker sits, beside an unedited canvas capture.
  */
@@ -131,10 +133,10 @@ for (const c of CASES) {
         `${base}&player=${c.front.join(",")}&foe=${c[where].join(",")}`,
       );
       const foe = await at(c[where]);
-      await page.mouse.move(foe.x, foe.y - 20);
+      await page.mouse.move(foe.x, foe.y - 55);
       await shot(`${name}-hover`);
       const hovered = await card();
-      await page.mouse.click(foe.x, foe.y - 20);
+      await page.mouse.click(foe.x, foe.y - 55);
       await page.mouse.move(40, 40);
       await shot(`${name}-target`);
       report.push({

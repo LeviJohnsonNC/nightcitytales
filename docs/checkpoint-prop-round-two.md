@@ -32,16 +32,15 @@ Every check is round one's, unchanged:
 | Guide       | Height after the width fit | Intact/damaged drift | Wreck: moved, above volume, flat spill |
 | ----------- | -------------------------- | -------------------- | -------------------------------------- |
 | cabinet-r90 | 110%                       | 0.0%, 0.1%           | 0.37 m, 0.0%, 9.0%                     |
-| kiosk-r0    | 100%                       | 0.0%, 0.1%           | 0.29 m, **1.1%**, 12.1%                |
+| kiosk-r0    | 100%                       | 0.0%, 0.1%           | 0.29 m, **1.1%**, 12.1% (v2: 0.1%)     |
 | kiosk-r90   | 107%                       | 0.0%, 0.2%           | 0.50 m, 0.0%, 12.7%                    |
 
 Every key passes, with fringe 0.000%. `round-2/imported-frames.jpg` is the proof sheet.
 
-**One waiver.** The r0 stand's wreck has 1.1% of its pixels above its volume, against a 1% limit. The excess is
-the sunshade's far, upper-left edge, lifted off the heap (`wreck-guides/kiosk-r0-wreck-check.png`). The check is
-not loosened. The id is on `TALL_WRECKS_PENDING`, so the wreck imports with the excess reported. The edit prompt
-for `street-kiosk-r0-wrecked-v2.png` is in `art-style.md`. At play zoom the excess is a few pixels of canvas
-edge at knee height.
+**One waiver, since lifted.** The r0 stand's first wreck had 1.1% of its pixels above its volume, against a 1%
+limit: the sunshade's far, upper-left edge, lifted off the heap. It imported under `TALL_WRECKS_PENDING` while its
+redraw was out. The redraw, `street-kiosk-r0-wrecked-v2.png`, passes at 0.1% with the limit unchanged, and the
+waiver is gone (`checkpoint-ground-light.md` §1).
 
 ## 2. Renderer (`courtyard/streetPropArt.ts`)
 
@@ -114,7 +113,6 @@ side by side.
 
 ## 7. Limitations
 
-- **The r0 stand's wreck** imports under a waiver until its redraw passes.
 - **The atlas props are mirrored at r90.** The cart, crates, dumpster, generator and pallet remain a recorded
   debt.
 - **Not exercised:** a real `/play` fight and save/load. This is presentation only, but nothing here was run in

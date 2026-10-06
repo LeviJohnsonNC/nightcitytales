@@ -535,7 +535,8 @@ it turned, as the same object seen from its other side. Do not mirror the attach
 ```
 
 **`street-kiosk-r0-wrecked-v2.png`** (edit) — the r0 stand's wreck came back 1.1% above its volume (limit 1%):
-the far, upper-left edge of the collapsed sunshade overhangs the heap and stands too high. It imports under a waiver until this redraw passes.
+the far, upper-left edge of the collapsed sunshade overhangs the heap and stands too high. The redraw came back
+and passes at 0.1% (accepted).
 Attach the current `street-kiosk-r0-wrecked.png`,
 `docs/street-props-pack/wreck-guides/kiosk-r0-wreck-layout.png` and `street-kiosk-r0-intact.png`.
 
