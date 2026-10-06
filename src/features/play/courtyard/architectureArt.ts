@@ -579,6 +579,7 @@ export function paintFacadeArt({
   entrances,
   doors = true,
   clip,
+  skip,
 }: {
   ctx: CanvasRenderingContext2D;
   structure: SceneStructure;
@@ -589,6 +590,8 @@ export function paintFacadeArt({
   entrances: SceneEnvironment["entrances"];
   doors?: boolean;
   clip?: { s0: number; s1: number; zMax: number };
+  /** Bays painted by another routine (the shop's composed return, `streetfront.ts`). */
+  skip?: readonly number[];
 }) {
   const fits = annexArtFits(structure);
   const windowArt = fits.window ? (art.window as Img | undefined) : undefined;
@@ -609,7 +612,7 @@ export function paintFacadeArt({
     ctx.clip();
   }
   if (windowArt)
-    for (const start of bays)
+    for (const start of bays.filter((b) => !skip?.includes(b)))
       paintBay(ctx, at, start, windowVariant(windowArt, variantOf(structure.id, edge, start)));
   if (shutterArt) for (const centre of centres) paintShutter(ctx, at, edge, centre, shutterArt);
   ctx.restore();

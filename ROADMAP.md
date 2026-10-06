@@ -1747,3 +1747,17 @@ one combat board.
 - **Not verified:** a real `/play` fight and save/load.
 
 **Awaiting Levi's review.**
+
+[Commercial streetfront identity](docs/checkpoint-streetfront.md): the commercial faces seen at play zoom now read
+as a street of businesses.
+
+- **Seed 0.** The shopfront faces away from the camera there, so its long side now shows the night market: two
+  lit display windows at the corner under its neon name, a concrete storey under a rendered band, one shuttered bay
+  and a kitchen extract.
+- **Seed 7.** The same composition turns the shop's corner.
+- **Seed 8.** The neighbours' frontage gains a clad fascia zone and one painted, gooseneck-lit sign board.
+- **Unchanged:** geometry, openings, rules, camera, overlays and the awning. No new artwork: the sign lettering is
+  a font mask from the existing tool.
+- **Not verified:** a real `/play` fight and save/load.
+
+**Awaiting Levi's review.**

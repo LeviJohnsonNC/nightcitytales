@@ -1214,3 +1214,27 @@ At night on the intersection, every light that pools on the ground also reaches 
 - **A light sprite is cropped to its own lit pixels,** not its surface's frame. A full-size additive sprite per lit
   block cost about 4% of frames under software GL.
 - **Wetness was tried and omitted.** Read `docs/checkpoint-atmosphere.md` §4 before trying it again.
+
+### Commercial streetfront (courtyard/streetfront.ts)
+
+On intersection scenes with materials, the shop's other elevations and its neighbours' frontage are composed from
+saved geometry. The rules:
+
+- **The shop's other faces** (`shopReturns`).
+  - A camera-facing face of the canopy's building, other than the canopy's own, that meets the shopfront at a
+    corner, with no door and at least two visible bays.
+  - It is drawn as a concrete ground storey, a string course and a rendered fascia band.
+  - The bays nearest the corner are display windows with the shopfront's interior, under the shop's name.
+  - The rest stay storeroom windows; on a long face, the one furthest from the shop has its grille down.
+  - One kitchen extract stands on a pier, clear of every bay and downpipe.
+  - It paints in two layers: `wall` first, `fittings` after the storeroom art. `paintFacadeArt`'s `skip` leaves out
+    the composed bays.
+- **The neighbours** (`neighbourFronts`).
+  - The barred windows and louvre stay.
+  - Every exposed face gains a course and metal cladding above the window heads.
+  - One painted board per block, on the shopfront's street line, at the end nearest the shop, lit by two goosenecks
+    whose light stays on the board.
+- **Lettering is a font mask** from `tools/art/kanji-sign.mjs` (`--text`, `--out`, `--stroke`), never generated.
+  A mask is prefiltered (halved twice) before it is drawn small.
+- **Every opening is a saved bay at its saved size.** Nothing here adds a door, collision, route or entrance.
+- **Cutaway pieces carry the composition,** clipped to their height. See `docs/checkpoint-streetfront.md`.
