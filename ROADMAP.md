@@ -1770,9 +1770,21 @@ as a street of businesses.
   the painted cabinet's binding at rotation 90, which has no art.
 - **Round two** ([import](docs/checkpoint-prop-round-two.md)). The striped merchandise stand (r0 and r90) and the
   rotated cabinet are painted art now, three states each, through the same importer and checks as round one.
-  The r0 stand's wreck stands 1.1% above its volume and imports under a waiver until its redraw
-  (`street-kiosk-r0-wrecked-v2.png`) returns.
+  The r0 stand's redrawn wreck passes its volume, so no waiver remains.
 - **Debt.** The atlas props (cart, crates, dumpster, generator, pallet) are mirrored at rotation 90.
 - **Not verified:** a real `/play` fight and save/load.
 
-**Awaiting Levi's review, and the r0 stand's wreck redraw.**
+**Accepted through #298.**
+
+[Ground light](docs/checkpoint-ground-light.md) (Levi accepted the architectural and prop work through #298):
+
+- **Prop checks closed.** The r0 stand's redrawn wreck passes its unchanged volume limit, so no waiver remains.
+  People behind and beside the stand, in both rotations, were selected and targeted in scene review, and a
+  route crosses a destroyed stand's footprint.
+- **Lamp shadows.** Each prop near a light shades that light, from its fixture height. A destroyed prop casts
+  only its wreck's shadow, and fading never touches one.
+- **Damp sheen.** Tried as a separate experiment and omitted: at play zoom it read as haze.
+- **No measurable frame or load cost.**
+- **Not verified:** a real `/play` fight and save/load.
+
+**Awaiting Levi's review.**

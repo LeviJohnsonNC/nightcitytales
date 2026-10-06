@@ -1,0 +1,178 @@
+[
+  {
+    "name": "seed7-r0-you-behind-reveal0",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-you-beside-reveal0",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-foe-behind-reveal0",
+    "foe": {
+      "label": "6th Street rifleman, 40 of 40 HP. Selected; activate again to shoot",
+      "onBoard": true
+    },
+    "hoverCard": "No shotBlocked by shop merchandise displayFind firing position× | No shotBlocked by shop merchandise displayFind firing position | Find firing position | ×",
+    "targetCard": "No shotBlocked by shop merchandise displayFind firing position× | No shotBlocked by shop merchandise displayFind firing position | Find firing position | ×",
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-foe-beside-reveal0",
+    "foe": {
+      "label": "6th Street rifleman, 40 of 40 HP. Selected; activate again to shoot",
+      "onBoard": true
+    },
+    "hoverCard": "ShootVery Heavy PistolDV 13 · 4 mClick to lock the target× | ShootVery Heavy PistolDV 13 · 4 mClick to lock the target | ×",
+    "targetCard": "ShootVery Heavy PistolDV 13 · 4 m× | ShootVery Heavy PistolDV 13 · 4 m | ×",
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-you-behind-reveal1",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-you-beside-reveal1",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-foe-behind-reveal1",
+    "foe": {
+      "label": "6th Street rifleman, 40 of 40 HP. Selected; activate again to shoot",
+      "onBoard": true
+    },
+    "hoverCard": "No shotBlocked by shop merchandise displayFind firing position× | No shotBlocked by shop merchandise displayFind firing position | Find firing position | ×",
+    "targetCard": "No shotBlocked by shop merchandise displayFind firing position× | No shotBlocked by shop merchandise displayFind firing position | Find firing position | ×",
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-foe-beside-reveal1",
+    "foe": {
+      "label": "6th Street rifleman, 40 of 40 HP. Selected; activate again to shoot",
+      "onBoard": true
+    },
+    "hoverCard": "ShootVery Heavy PistolDV 13 · 4 mClick to lock the target× | ShootVery Heavy PistolDV 13 · 4 mClick to lock the target | ×",
+    "targetCard": "ShootVery Heavy PistolDV 13 · 4 m× | ShootVery Heavy PistolDV 13 · 4 m | ×",
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-route-intact",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed7-r0-route-destroyed",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-you-behind-reveal0",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-you-beside-reveal0",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-foe-behind-reveal0",
+    "foe": {
+      "label": "6th Street rifleman, 40 of 40 HP. Selected; activate again to shoot",
+      "onBoard": true
+    },
+    "hoverCard": "No shotBlocked by shop merchandise displayFind firing position× | No shotBlocked by shop merchandise displayFind firing position | Find firing position | ×",
+    "targetCard": "No shotBlocked by shop merchandise displayFind firing position× | No shotBlocked by shop merchandise displayFind firing position | Find firing position | ×",
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-foe-beside-reveal0",
+    "foe": {
+      "label": "6th Street rifleman, 40 of 40 HP. Selected; activate again to shoot",
+      "onBoard": true
+    },
+    "hoverCard": "ShootVery Heavy PistolDV 13 · 4 mClick to lock the target× | ShootVery Heavy PistolDV 13 · 4 mClick to lock the target | ×",
+    "targetCard": "ShootVery Heavy PistolDV 13 · 4 m× | ShootVery Heavy PistolDV 13 · 4 m | ×",
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-you-behind-reveal1",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-you-beside-reveal1",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-foe-behind-reveal1",
+    "foe": {
+      "label": "6th Street rifleman, 40 of 40 HP. Selected; activate again to shoot",
+      "onBoard": true
+    },
+    "hoverCard": "No shotBlocked by shop merchandise displayFind firing position× | No shotBlocked by shop merchandise displayFind firing position | Find firing position | ×",
+    "targetCard": "No shotBlocked by shop merchandise displayFind firing position× | No shotBlocked by shop merchandise displayFind firing position | Find firing position | ×",
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-foe-beside-reveal1",
+    "foe": {
+      "label": "6th Street rifleman, 40 of 40 HP. Selected; activate again to shoot",
+      "onBoard": true
+    },
+    "hoverCard": "ShootVery Heavy PistolDV 13 · 4 mClick to lock the target× | ShootVery Heavy PistolDV 13 · 4 mClick to lock the target | ×",
+    "targetCard": "ShootVery Heavy PistolDV 13 · 4 m× | ShootVery Heavy PistolDV 13 · 4 m | ×",
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-route-intact",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  },
+  {
+    "name": "seed0-r90-route-destroyed",
+    "you": {
+      "label": "Review character, 40 of 40 HP, your character",
+      "onBoard": true
+    },
+    "errors": []
+  }
+]

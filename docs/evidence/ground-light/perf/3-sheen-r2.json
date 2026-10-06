@@ -1,0 +1,35 @@
+{
+  "seed7-play": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "loadMs": 31558,
+    "frames": 123,
+    "meanMs": 150.5,
+    "p10Ms": 133.3,
+    "p50Ms": 150,
+    "p90Ms": 166.7,
+    "p99Ms": 216.6,
+    "maxMs": 233.4
+  },
+  "seed0-play": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "loadMs": 31993,
+    "frames": 116,
+    "meanMs": 154.6,
+    "p10Ms": 133.3,
+    "p50Ms": 150,
+    "p90Ms": 166.7,
+    "p99Ms": 216.7,
+    "maxMs": 233.3
+  },
+  "seed8-play": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "loadMs": 29941,
+    "frames": 122,
+    "meanMs": 151.9,
+    "p10Ms": 133.3,
+    "p50Ms": 150,
+    "p90Ms": 166.7,
+    "p99Ms": 216.7,
+    "maxMs": 216.7
+  }
+}

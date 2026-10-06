@@ -30,7 +30,15 @@ import { scenicTheme, STREET_PROPS, civilianCell } from "./scenicPresentation";
 import { createStreetGround } from "./streetGround";
 import { createCivilianAtlas } from "./civilianTextures";
 import Phaser from "phaser";
-import { coverStatuses, tileKey, TILE_METRES, type Point, type Tile, type Rect } from "@/engine";
+import {
+  coverDestroyed,
+  coverStatuses,
+  tileKey,
+  TILE_METRES,
+  type Point,
+  type Tile,
+  type Rect,
+} from "@/engine";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import { battlefieldProjection } from "../battlefieldProjection";
 import { frameDuration, type PlaybackFrame } from "../combatPlayback";
@@ -563,6 +571,12 @@ export function createCourtyard(
         ?.setVisible(lights && image.visible)
         .setAlpha(image.alpha)
         .setDepth(image.depth + 0.5);
+    }
+    // a destroyed prop's lamp shadow is its wreck's (`lampShadow.ts`): never tied to
+    // the prop's fading, only to whether it still stands
+    for (const { coverId, image } of night.restores) {
+      const piece = arena.cover?.find((c) => c.id === coverId);
+      image.setVisible(lights && !!piece && coverDestroyed(piece, model.live.cover));
     }
     for (const prop of scenery) {
       const r: Rect = prop.getData("sortRect");

@@ -1256,5 +1256,25 @@ saved geometry. The rules:
 - **Never tint a whole sprite** to make a variant.
 - **The merchandise stand (`shop-display`) and the cabinet at r90 are round two** (`STREET_PROP_PACK_2`,
   `KIOSK`; `docs/street-props-pack/round-2.md`). `tools/art/street-props.ts --round 2` imports them, and every
-  kind but the planter has its own file per rotation (`own90`). The r0 stand's wreck is on
-  `TALL_WRECKS_PENDING` until its `-v2` redraw passes; take it off then. See `docs/checkpoint-prop-round-two.md`.
+  kind but the planter has its own file per rotation (`own90`). No wreck is waived: the r0 stand's `-v2` redraw
+  passes its volume. See `docs/checkpoint-prop-round-two.md`.
+
+### Lamp shadows (courtyard/lampShadow.ts)
+
+At night on the intersection with materials, each prop near a light takes that light's share off the ground behind
+it. The rules:
+
+- **A light is a point at its fixture's height** (the same heights `wallLight.ts` uses). A window is its bay at
+  mid-height, from the point nearest the prop. A prop is its saved piece inset to its body, at a stated
+  presentation height (`CASTER_HEIGHT`). Its wreck is a lower box. Add a prop kind there, or it casts nothing.
+- **A shadow belongs to its light.** It removes that light only, never the ambient or another light, and never
+  replaces the contact shade (`contactShade.ts`). Lights off, it is gone.
+- **A destroyed prop casts its wreck's shadow.** Its restore sprite is the exact per-pixel difference between the
+  light pass with the prop standing and as a wreck. The pass's gain saturates, so never add halves. Its visibility
+  follows `coverDestroyed` and the lights switch only, never a prop's fading.
+- **Shadow work is confined to small canvases.** Use the box round a light's shadows, and a restore sprite's own
+  box. A full ground-sized canvas per light or prop cost about 6.5 s of load under software GL.
+- **A damp sheen was tried and omitted** (`docs/checkpoint-ground-light.md` §4). Do not retry it without more
+  street-level sources.
+
+See `docs/checkpoint-ground-light.md`.

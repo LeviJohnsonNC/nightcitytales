@@ -87,7 +87,7 @@ const WRECK_TOLERANCE = 0.01;
  * docs/street-props-pack/round-2.md §7). They still import, with
  * the excess reported; take an id off as soon as its redraw passes.
  */
-const TALL_WRECKS_PENDING = new Set<string>(["kiosk-r0"]);
+const TALL_WRECKS_PENDING = new Set<string>([]);
 const failures: string[] = [];
 const fail = (id: string, msg: string) => failures.push(`${id}: ${msg}`);
 const log = (id: string, msg: string) => console.log(`${id.padEnd(22)} ${msg}`);

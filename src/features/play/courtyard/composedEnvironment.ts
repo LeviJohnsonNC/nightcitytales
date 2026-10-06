@@ -111,8 +111,16 @@ import {
   type GroundLight,
   type NightLighting,
 } from "./nightLighting";
+import {
+  paintShadowedLights,
+  shadowArea,
+  shadowCasters,
+  LAMP_SHADOW,
+  type ShadowCaster,
+} from "./lampShadow";
 
 type Project = (p: Point) => Point;
+
 function painter(ctx: CanvasRenderingContext2D, project: Project) {
   /** A null colour strokes the outline only: its fill was laid as a material. */
   const poly = (points: Point[], color: string | null, stroke?: string) => {
@@ -1416,7 +1424,13 @@ export interface ComposedEnvironment {
   lit: Phaser.GameObjects.Image[];
   /** The night, if this scene has one, and what lights stand in it. `grade` is a
    * multiply layer over the ground that tells its materials apart at night. */
-  night?: { config: NightLighting; lights: GroundLight[]; grade?: Phaser.GameObjects.Image };
+  night?: {
+    config: NightLighting;
+    lights: GroundLight[];
+    grade?: Phaser.GameObjects.Image;
+    /** Light a destroyed prop's shadow no longer takes (`lampShadow.ts`), by cover piece. */
+    restores: { coverId: string; image: Phaser.GameObjects.Image }[];
+  };
 }
 
 /**
@@ -1596,22 +1610,29 @@ export function createComposedEnvironment(
     base: HTMLCanvasElement,
     prepare: (ctx: CanvasRenderingContext2D) => void,
     light: (ctx: CanvasRenderingContext2D, pass: "light" | "glow") => void,
+    /** Only this box of `base`, in its pixels: a small sprite's light. */
+    crop?: { x: number; y: number; width: number; height: number },
   ) => {
+    const c = crop ?? { x: 0, y: 0, width: base.width, height: base.height };
     const canvas = document.createElement("canvas");
-    canvas.width = base.width;
-    canvas.height = base.height;
+    canvas.width = c.width;
+    canvas.height = c.height;
     const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    const framed = (x: CanvasRenderingContext2D) => {
+      x.translate(-c.x, -c.y);
+      prepare(x);
+    };
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.save();
-    prepare(ctx);
+    framed(ctx);
     ctx.globalCompositeOperation = "lighter";
     light(ctx, "light");
     ctx.restore();
     ctx.globalCompositeOperation = "multiply";
-    ctx.drawImage(base, 0, 0);
+    ctx.drawImage(base, -c.x, -c.y);
     ctx.globalCompositeOperation = "destination-in";
-    ctx.drawImage(base, 0, 0);
+    ctx.drawImage(base, -c.x, -c.y);
     // A canvas holds light up to 1; real light on a dark surface goes past it. The
     // night's `gain` adds the lit surface to itself until a pool reads at play zoom.
     if (night && night.gain > 1) {
@@ -1627,7 +1648,7 @@ export function createComposedEnvironment(
       ctx.globalAlpha = 1;
     }
     ctx.save();
-    prepare(ctx);
+    framed(ctx);
     ctx.globalCompositeOperation = "lighter";
     light(ctx, "glow");
     ctx.restore();
@@ -1700,9 +1721,20 @@ export function createComposedEnvironment(
     .setDisplaySize(gw, gh)
     .setDepth(-1000);
   lit.push(groundImage);
+  // Lamp shadows (`lampShadow.ts`): each prop near a light takes that light's share
+  // off the ground behind it, on the intersection with materials.
+  const casters = night && materialised ? shadowCasters(arena) : [];
+  const zOf = (light: GroundLight) =>
+    light.kind === "pool"
+      ? (wallLights.find((l) => Math.hypot(l.at.x - light.centre.x, l.at.y - light.centre.y) < 0.3)
+          ?.z ?? LAMP_SHADOW.poolZ)
+      : LAMP_SHADOW.windowZ;
+  const paintOne = (c: CanvasRenderingContext2D, light: GroundLight) =>
+    paintGroundLights(c, project, env.structures, [light]);
+  const restores: { coverId: string; image: Phaser.GameObjects.Image }[] = [];
   if (night && lights.length) {
     const canvas = lightCanvas(ground.canvas, groundFrame, (ctx, pass) => {
-      if (pass === "light") paintGroundLights(ctx, project, env.structures, lights);
+      if (pass === "light") paintShadowedLights(ctx, project, lights, casters, zOf, paintOne);
     });
     const texture = scene.textures.addCanvas("composed-ground-light", canvas)!;
     texture.refresh();
@@ -1715,6 +1747,57 @@ export function createComposedEnvironment(
         .setDepth(-999.5)
         .setVisible(false),
     );
+    // A destroyed prop gives back the light its intact shadow took: its own sprite,
+    // cropped to that light, shown by the board while the prop is destroyed.
+    for (const caster of casters) {
+      const area = shadowArea(lights, caster, zOf);
+      if (!area) continue;
+      // the restore sprite covers only where this caster's shadows can lie
+      const pad = 3 * LAMP_SHADOW.softness * metre + 2;
+      const xs = area.map((p) => (project(p).x - gx) * resolution);
+      const ys = area.map((p) => (project(p).y - gy) * resolution);
+      const x0 = Math.max(0, Math.floor(Math.min(...xs) - pad * resolution));
+      const y0 = Math.max(0, Math.floor(Math.min(...ys) - pad * resolution));
+      const x1 = Math.min(ground.canvas.width, Math.ceil(Math.max(...xs) + pad * resolution));
+      const y1 = Math.min(ground.canvas.height, Math.ceil(Math.max(...ys) + pad * resolution));
+      if (x1 <= x0 || y1 <= y0) continue;
+      const crop = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+      // exactly what the ground's light gains here when this caster is a wreck: the
+      // light pass as shipped, and as it would be with the wreck's low shadow, compared
+      // pixel by pixel (the pass's gain saturates, so the halves do not simply add)
+      const pass = (set: readonly ShadowCaster[]) =>
+        lightCanvas(
+          ground.canvas,
+          groundFrame,
+          (ctx, p) => {
+            if (p === "light") paintShadowedLights(ctx, project, lights, set, zOf, paintOne);
+          },
+          crop,
+        );
+      const canvas = pass(casters.map((c) => (c === caster ? { ...c, height: c.wreck } : c)));
+      const shipped = pass(casters).getContext("2d")!.getImageData(0, 0, crop.width, crop.height);
+      const restoredCtx = canvas.getContext("2d")!;
+      const restored = restoredCtx.getImageData(0, 0, crop.width, crop.height);
+      for (let i = 0; i < restored.data.length; i += 4)
+        for (let c = 0; c < 3; c++)
+          restored.data[i + c] = Math.max(0, restored.data[i + c]! - shipped.data[i + c]!);
+      restoredCtx.putImageData(restored, 0, 0);
+      const key = `composed-ground-restore-${caster.coverId}`;
+      scene.textures.addCanvas(key, canvas)!.refresh();
+      restores.push({
+        coverId: caster.coverId,
+        image: scene.add
+          .image(
+            gx + (crop.x + crop.width / 2) / resolution,
+            gy + (crop.y + crop.height / 2) / resolution,
+            key,
+          )
+          .setDisplaySize(crop.width / resolution, crop.height / resolution)
+          .setBlendMode("ADD")
+          .setDepth(-999.45)
+          .setVisible(false),
+      });
+    }
   }
   let grade: Phaser.GameObjects.Image | undefined;
   if (night) {
@@ -2286,6 +2369,6 @@ export function createComposedEnvironment(
   return {
     objects,
     lit,
-    ...(night ? { night: { config: night, lights, ...(grade ? { grade } : {}) } } : {}),
+    ...(night ? { night: { config: night, lights, restores, ...(grade ? { grade } : {}) } } : {}),
   };
 }

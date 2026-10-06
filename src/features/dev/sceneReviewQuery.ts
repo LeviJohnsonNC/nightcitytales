@@ -36,6 +36,8 @@ export function readReviewQuery(search: string) {
     camera: ((c) => (c ? { x: c[0]!, y: c[1]!, zoom: c[2]! } : null))(numbers(p.get("cam"), 3)),
     /** Where the review character stands, in metres: a fixture choice, not a rule. */
     player: ((c) => (c ? { x: c[0]!, y: c[1]! } : null))(numbers(p.get("player"), 2)),
+    /** Where the scene's first hostile stands, in metres: the same kind of fixture choice. */
+    foe: ((c) => (c ? { x: c[0]!, y: c[1]! } : null))(numbers(p.get("foe"), 2)),
     framing: p.get("framing") === "overview" ? ("overview" as const) : ("play" as const),
     damage:
       ["intact", "damaged", "destroyed", "mixed"].find((d) => d === p.get("damage")) ?? "intact",
@@ -57,6 +59,7 @@ export function reviewQuery(value: ReturnType<typeof readReviewQuery>): string {
   });
   if (value.camera) query.set("cam", [value.camera.x, value.camera.y, value.camera.zoom].join(","));
   if (value.player) query.set("player", [value.player.x, value.player.y].join(","));
+  if (value.foe) query.set("foe", [value.foe.x, value.foe.y].join(","));
   return query.toString();
 }
 /** Six demonstrated combinations, grouped by topology for side-by-side review. */
