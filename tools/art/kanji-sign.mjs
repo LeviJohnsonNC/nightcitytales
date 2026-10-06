@@ -5,6 +5,12 @@
  *     node tools/art/kanji-sign.mjs            write public/images/signs/shenye-ichiba.webp
  *     node tools/art/kanji-sign.mjs --check    render and report, write nothing
  *
+ * Other signs take the same route: `--text`, `--out`, and `--stroke` (0 for painted
+ * letters at full weight; the default thins them to neon tube). The neighbour's
+ * painted fascia is
+ *
+ *     node tools/art/kanji-sign.mjs --text 電器修理 --stroke 0 --out public/images/signs/denki-shuri.webp
+ *
  * WHY A MASK AND NOT RUNTIME TEXT
  * Canvas text needs a CJK font on the player's machine, and many have none, so
  * the sign would draw empty boxes. Generated lettering is unreliable, and the art
@@ -24,10 +30,14 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
-const TEXT = "深夜市場";
+const arg = (name, fallback) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? process.argv[i + 1] : fallback;
+};
+const TEXT = arg("text", "深夜市場");
 const CELL = 256;
-const STROKE = 9;
-const OUT = "public/images/signs/shenye-ichiba.webp";
+const STROKE = Number(arg("stroke", "9"));
+const OUT = arg("out", "public/images/signs/shenye-ichiba.webp");
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${CELL * TEXT.length}" height="${CELL}">
   <rect width="100%" height="100%" fill="#000"/>
@@ -57,7 +67,7 @@ for (let i = 0; i < width * height; i++) {
 }
 const coverage = lit / (width * height);
 console.log(`${TEXT}: ${width}x${height}, ${(coverage * 100).toFixed(1)}% lit`);
-if (coverage < 0.04 || coverage > 0.3) {
+if (coverage < 0.04 || coverage > (STROKE ? 0.3 : 0.45)) {
   console.error("The glyphs did not render (missing font?) or are not thin: check the font.");
   process.exit(1);
 }

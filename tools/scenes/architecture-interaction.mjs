@@ -15,7 +15,9 @@ import { chromium } from "playwright";
 const [port = "5180", out = "docs/evidence/architecture-art-pilot/interaction"] =
   process.argv.slice(2);
 await mkdir(out, { recursive: true });
-const URL = `http://127.0.0.1:${port}/scene-review?place=intersection&seed=7&actors=1&framing=play&player=9.6,6.4&reveal=0`;
+// `SEED=0` (or 8) drives another variation through the same steps, with its own player
+const SEED = process.env.SEED ?? "7";
+const URL = `http://127.0.0.1:${port}/scene-review?place=intersection&seed=${SEED}&actors=1&framing=play${SEED === "7" ? "&player=9.6,6.4" : ""}&reveal=0`;
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH,

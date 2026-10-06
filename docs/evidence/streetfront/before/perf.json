@@ -1,0 +1,14 @@
+{
+  "seed7-play": {
+    "loadMs": 10331,
+    "frames": 91,
+    "medianMs": 150.1,
+    "p95Ms": 233.3
+  },
+  "seed0-play": {
+    "loadMs": 9923,
+    "frames": 91,
+    "medianMs": 150,
+    "p95Ms": 216.7
+  }
+}

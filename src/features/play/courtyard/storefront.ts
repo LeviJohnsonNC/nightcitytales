@@ -45,6 +45,8 @@ export const STOREFRONT_ART_FILES = {
   awning: "/images/storefront/awning-fabric.webp",
   wear: "/images/storefront/shutter-wear.webp",
   kanji: "/images/signs/shenye-ichiba.webp",
+  /** The neighbour's painted fascia, 電器修理 ("electrical repairs"): `streetfront.ts`. */
+  service: "/images/signs/denki-shuri.webp",
 } as const;
 export type StorefrontArtKey = keyof typeof STOREFRONT_ART_FILES;
 export type StorefrontArt = Partial<Record<StorefrontArtKey, TileSource>>;

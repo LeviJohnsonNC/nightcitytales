@@ -26,6 +26,19 @@ import {
   paintShedWall,
 } from "./buildingFaces";
 import { cutawayWalls, type CutawayWall } from "./cutawayGeometry";
+import {
+  composedBays,
+  neighbourFronts,
+  paintNeighbourFront,
+  paintNeighbourLight,
+  paintReturnFace,
+  paintReturnLight,
+  returnLights,
+  shopReturns,
+  type NeighbourFront,
+  type ReturnArt,
+  type ReturnFace,
+} from "./streetfront";
 import type { ArchitectureArt } from "./architecturePack";
 import {
   facadeArtCovers,
@@ -633,6 +646,8 @@ export function paintCutawayWall(
   wallMaterial: MaterialKey = "facade-concrete",
   /** The painted openings and wall finish, where the full building has them. */
   annex?: ShopFace & { entrances: SceneEnvironment["entrances"] },
+  /** The shop's composed return faces (`streetfront.ts`), carried up the piece. */
+  returns?: Returns,
 ) {
   const { poly, corners } = painter(ctx, project);
   const metre = Math.hypot(
@@ -671,6 +686,9 @@ export function paintCutawayWall(
       const s0 = edge === "north" ? r.x - wall.x : r.y - wall.y;
       const s1 = s0 + (edge === "north" ? r.width : r.height);
       const clip = { s0, s1, zMax: part.height };
+      const composed = returns?.faces.find((f) => f.structure === structure && f.edge === edge);
+      if (composed)
+        paintReturnFace(ctx, composed, project, metre, returns!.art, materials, "wall", clip);
       if (annex.finish)
         paintShopWall({
           ctx,
@@ -692,7 +710,10 @@ export function paintCutawayWall(
         entrances: annex.entrances,
         doors: annex.doors,
         clip,
+        ...(composed ? { skip: composedBays(composed) } : {}),
       });
+      if (composed)
+        paintReturnFace(ctx, composed, project, metre, returns!.art, materials, "fittings", clip);
     }
   }
   // A piece of the storefront's own face carries that face's detail up to its height,
@@ -733,6 +754,14 @@ export function paintCutaway(
       project({ x: b.rect.x + b.rect.width / 2, y: b.rect.y + b.rect.height / 2 }).y,
   );
   for (const part of parts) paintCutawayWall(ctx, structure, part, project, materials);
+}
+
+/** The shop's composed return faces and the art they show (`streetfront.ts`). */
+export interface Returns {
+  faces: readonly ReturnFace[];
+  art: ReturnArt & { service?: TileSource };
+  /** The neighbours' faces, and the one fascia board among them. */
+  neighbours: readonly NeighbourFront[];
 }
 
 /** A mass's part in the architectural pilot, and what the block shares. */
@@ -822,6 +851,8 @@ export function paintBuilding(
   frontage?: BlockDetail,
   /** The architectural art pilot's painted roof unit, window and shutter. */
   architecture?: ArchitectureArt,
+  /** The shop's composed return faces (`streetfront.ts`). */
+  returns?: Returns,
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -966,6 +997,11 @@ export function paintBuilding(
   const face = (a: Point, b: Point, length: number, shade: string, edge: "north" | "east") => {
     // The storefront's face is painted whole by its own routine, over the concrete.
     if (storefront && storefront.sf.edge === edge) return;
+    // The shop's other face, composed (`streetfront.ts`): its band and course first,
+    // its display, grille, sign and extract last, over everything else here.
+    const composed = returns?.faces.find((f) => f.structure === structure && f.edge === edge);
+    if (composed)
+      paintReturnFace(ctx, composed, project, pixelsPerMetre, returns!.art, materials, "wall");
     if (frontage) {
       const pipe = frontage.pipes.find((p) => p.structure === structure && p.edge === edge);
       if (frontage.role === "neighbour") {
@@ -975,6 +1011,18 @@ export function paintBuilding(
           const f = neighbourFace(edge, span);
           paintPlinth(ctx, project, pixelsPerMetre, structure, edge, [span], "neighbour");
           paintNeighbourFace(ctx, project, pixelsPerMetre, structure, f);
+          const front = returns?.neighbours.find(
+            (n) => n.structure === structure && n.edge === edge && n.span[0] === span[0],
+          );
+          if (front)
+            paintNeighbourFront(
+              ctx,
+              front,
+              project,
+              pixelsPerMetre,
+              returns!.art.service,
+              materials,
+            );
         }
         if (pipe) paintDownpipe(ctx, project, pixelsPerMetre, pipe, "neighbour");
         return;
@@ -1168,7 +1216,10 @@ export function paintBuilding(
         art: shopArt.art,
         entrances,
         doors: shopArt.doors,
+        ...(composed ? { skip: composedBays(composed) } : {}),
       });
+    if (composed)
+      paintReturnFace(ctx, composed, project, pixelsPerMetre, returns!.art, materials, "fittings");
     for (const t of shopArt?.finish || finished ? [] : [0.04, 0.94]) {
       line(at(t, 0), at(t, h), "#151f28", 3);
       line(at(t + 0.007, 0), at(t + 0.007, h), "#66706c", 0.8);
@@ -1450,6 +1501,27 @@ export function createComposedEnvironment(
   const pilots = storefronts.map((sf) => frontagePilot(sf, env.structures, env.entrances));
   const detailOf = (s: SceneStructure) =>
     pilots.map((p) => p.detail(s)).find((d) => d !== undefined);
+  // the shop's other faces, composed, where it has the art (`streetfront.ts`)
+  const pipeAt = (s: SceneStructure, e: Edge) =>
+    pilots.flatMap((p) => p.pipes).find((p) => p.structure === s && p.edge === e)?.s;
+  const returns: Returns | undefined =
+    materials && storefrontArt
+      ? {
+          faces: shopReturns(env, pipeAt),
+          art: {
+            ...(storefrontArt.window ? { interior: storefrontArt.window } : {}),
+            ...(storefrontArt.kanji ? { kanji: storefrontArt.kanji } : {}),
+            ...(storefrontArt.service ? { service: storefrontArt.service } : {}),
+          },
+          neighbours: pilots.flatMap((p, i) =>
+            neighbourFronts(p.neighbours, env.structures, pipeAt, {
+              structure: storefronts[i]!.structure,
+              edge: storefronts[i]!.edge,
+            }),
+          ),
+        }
+      : undefined;
+  const returnsOf = (s: SceneStructure) => returns?.faces.filter((f) => f.structure === s) ?? [];
   const storefrontOf = (s: SceneStructure, pass: Pass = "albedo") => {
     const sf = storefronts.find((f) => f.structure.id === s.id);
     return sf && storefrontArt ? { sf, art: storefrontArt, pass } : undefined;
@@ -1473,6 +1545,7 @@ export function createComposedEnvironment(
   const lights = night
     ? [
         ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
+        ...returnLights(returns?.faces ?? [], night),
         ...dressingLights(
           env,
           night,
@@ -1860,9 +1933,27 @@ export function createComposedEnvironment(
       // finished storefront, whose sign and windows are read up close, at more.
       const clad =
         materials && (s.style === "shop" || buildingUse(s))
-          ? resolution * (storefrontOf(s) ? 1.5 : 1)
+          ? resolution * (storefrontOf(s) || returnsOf(s).length ? 1.5 : 1)
           : 1;
       const front = storefrontOf(s);
+      const composed = returnsOf(s);
+      const boards = (returns?.neighbours ?? []).filter((n) => n.structure === s && n.board);
+      // the shop's display round the corner, lit like its shopfront, a little less
+      const paintComposedLight = (ctx: CanvasRenderingContext2D, pass: "light" | "glow") => {
+        for (const f of composed) {
+          paintReturnLight(ctx, f, project, metre, returns!.art, night!, pass);
+          if (pass !== "light") continue;
+          const at = facePainter(s, f.edge, project, metre).at;
+          for (const b of f.display)
+            paintWindowSurround(
+              ctx,
+              at,
+              { s0: b, s1: b + 2.2, z0: 0.65, z1: 2.35 },
+              night!.window.color,
+              0.26,
+            );
+        }
+      };
       // the secondary light: a few occupied homes (`litHomeWindows`), each a visible
       // source with its own room, glass, sill and the wall round it
       const homes = night
@@ -1883,6 +1974,7 @@ export function createComposedEnvironment(
             storefrontOf(s),
             detailOf(structure),
             architecture,
+            returns,
           ),
         depth,
         bounds,
@@ -1899,6 +1991,7 @@ export function createComposedEnvironment(
                 detailOf(structure),
                 architecture,
               );
+              paintComposedLight(ctx, pass);
               if (pass !== "light") return;
               paintWallLights(ctx, s, project, metre, wallLights, env.structures);
               // the lit rooms reach their sills, reveals and the wall round them
@@ -1906,11 +1999,13 @@ export function createComposedEnvironment(
               for (const w of storefrontWindows(front.sf))
                 paintWindowSurround(ctx, at, w, night!.window.color, 0.32);
             }
-          : night && (reachesWall(s) || homes.length)
+          : night && (reachesWall(s) || homes.length || composed.length || boards.length)
             ? (ctx, pass) => {
                 if (pass === "light")
                   paintWallLights(ctx, s, project, metre, wallLights, env.structures);
                 paintLitHomes(ctx, pass, homes);
+                paintComposedLight(ctx, pass);
+                for (const b of boards) paintNeighbourLight(ctx, b, project, metre, night!, pass);
               }
             : undefined,
       )
@@ -1942,11 +2037,12 @@ export function createComposedEnvironment(
                     ? "painted-render"
                     : undefined,
                 annexOf(s),
+                returns,
               ),
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,
             clad,
-            front || (night && reachesWall(s))
+            front || (night && (reachesWall(s) || composed.length))
               ? (ctx, pass) => {
                   if (front)
                     paintCutawayWall(ctx, s, part, project, materials, storefrontOf(s, pass));
@@ -1957,8 +2053,16 @@ export function createComposedEnvironment(
                       : r.x + r.width === s.rect.x + s.rect.width
                         ? ("east" as const)
                         : undefined;
-                  if (pass !== "light" || !edge) return;
+                  if (!edge) return;
                   const s0 = edge === "north" ? r.x - s.rect.x : r.y - s.rect.y;
+                  const piece = {
+                    s0,
+                    s1: s0 + (edge === "north" ? r.width : r.height),
+                    zMax: part.height,
+                  };
+                  for (const f of composed.filter((c) => c.edge === edge))
+                    paintReturnLight(ctx, f, project, metre, returns!.art, night!, pass, piece);
+                  if (pass !== "light") return;
                   paintWallLights(ctx, s, project, metre, wallLights, env.structures, {
                     edge,
                     s0,
