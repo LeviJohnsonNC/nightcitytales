@@ -48,6 +48,10 @@ import {
 import { createCharacterAtlas } from "./characterTextures";
 
 import { createPropTextures, propSource, propInkBounds } from "./propTextures";
+import { CONTACT, contactCanvas, contactPad } from "./contactShade";
+/** Contact shade lies on the ground: over its light and grade, under the cutaway
+ * floors, the grid and everything standing. */
+const CONTACT_DEPTH = -960;
 import {
   GRID_DEPTH,
   PROP_KINDS,
@@ -144,12 +148,16 @@ export function createCourtyard(
   const architectureKeys = Object.keys(ARCHITECTURE_ART_FILES) as ArchitectureArtKey[];
   // The painted street props, like the materials, belong to the intersection so far.
   const streetProps = materialKeys.length > 0 ? streetPropFiles(kinds) : [];
+  // Contact shade from each prop's own picture (`contactShade.ts`), on the intersection.
+  const contactShading = materialKeys.length > 0;
   const { project, unproject } = battlefieldProjection(arena.extent.width, arena.extent.height);
   let started = 0;
   let previousLive: LiveEncounter | null = null;
   let previousFrame: PlaybackFrame | null | undefined;
   const units = new Map<string, Unit>();
   const scenery: Phaser.GameObjects.Image[] = [];
+  /** Each prop's contact shade: on the ground, never sorted, faded or tinted with it. */
+  const contacts: Phaser.GameObjects.Image[] = [];
   const structures: Phaser.GameObjects.Image[] = [];
   /** Everything the night tints, and the scene's night if it has one. */
   let lit: Phaser.GameObjects.Image[] = [];
@@ -246,7 +254,8 @@ export function createCourtyard(
         return;
       }
       try {
-        createPropTextures(this, [...new Set(kinds)]);
+        // where the board draws contact shade, the kit bakes no flat shadow of its own
+        createPropTextures(this, [...new Set(kinds)], !contactShading);
         applyStreetPropArt(this, streetProps);
         createCharacterAtlas(this, "mercenary");
         createCharacterAtlas(this, "hostile");
@@ -672,8 +681,9 @@ export function createCourtyard(
     if (renderedCover === damage) return;
     renderedCover = damage;
     coverRevision++;
-    for (const object of scenery) object.destroy();
+    for (const object of [...scenery, ...contacts]) object.destroy();
     scenery.length = 0;
+    contacts.length = 0;
     for (const status of coverStatuses(arena, damage)) {
       const condition = propCondition(status);
       const binding = arena.environment?.props.find((p) => p.coverId === status.piece.id);
@@ -716,6 +726,38 @@ export function createCourtyard(
         depth: prop.depth,
       });
       scenery.push(prop);
+      if (contactShading) {
+        // the prop's contact with the ground, from this condition's own picture: a
+        // wreck's is the wreck's. Registered, flipped and sized exactly as the prop.
+        const key = `${texture}:contact`;
+        if (!current.textures.exists(key))
+          current.textures
+            .addCanvas(
+              key,
+              contactCanvas(
+                image,
+                {
+                  originX: registration.originX,
+                  originY: registration.originY,
+                  groundWidth: registration.groundWidth,
+                },
+                CONTACT[condition],
+              ),
+            )
+            // a canvas texture reaches the GPU when it is refreshed
+            ?.refresh();
+        // the shade's canvas runs `pad` rows below the texture's: same top, same scale
+        const pad = contactPad(image.width, registration);
+        const grow = (image.height + pad) / image.height;
+        contacts.push(
+          current.add
+            .image(placement.x, placement.y, key)
+            .setOrigin(prop.originX, prop.originY / grow)
+            .setFlipX(prop.flipX)
+            .setDisplaySize(width, height * grow)
+            .setDepth(CONTACT_DEPTH),
+        );
+      }
     }
   }
   function resize() {

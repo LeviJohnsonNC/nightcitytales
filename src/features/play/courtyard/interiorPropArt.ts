@@ -44,6 +44,8 @@ export function createInteriorPropTextures(
   scene: Phaser.Scene,
   kind: PropKind,
   rotation: 0 | 90 = 0,
+  /** The flat footprint shadow under the prop; off where the board draws contact shade. */
+  bakedShadow = true,
 ) {
   for (const condition of ["intact", "damaged", "wrecked"] as PropCondition[]) {
     const height = PROP_CANVAS.height;
@@ -94,11 +96,12 @@ export function createInteriorPropTextures(
       poly([b!, c!, C!, B!], colors[1]!);
       poly([A!, B!, C!, D!], colors[2]!);
     };
-    poly(
-      [point(0.1, 0.1), point(1.9, 0.1), point(1.9, 1.9), point(0.1, 1.9)],
-      "rgba(0,0,0,.23)",
-      "transparent",
-    );
+    if (bakedShadow)
+      poly(
+        [point(0.1, 0.1), point(1.9, 0.1), point(1.9, 1.9), point(0.1, 1.9)],
+        "rgba(0,0,0,.23)",
+        "transparent",
+      );
     if (condition === "wrecked") {
       // Walkable remains retain the object's footprint and material identity.
       // They are drawn low here, never by squashing the entire texture at display time.

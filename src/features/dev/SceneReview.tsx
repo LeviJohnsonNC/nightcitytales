@@ -79,9 +79,15 @@ export function SceneReview() {
     const player = fixture.data["player"];
     if (initial.player && player) fixture.data["player"] = { ...player, position: initial.player };
     fixture.cover = Object.fromEntries(
-      scene.layout.arena.cover!.map((c) => [
+      scene.layout.arena.cover!.map((c, i) => [
         c.id,
-        damage === "destroyed" ? coverMaxHp(c) : damage === "damaged" ? 1 : 0,
+        // mixed: every other piece destroyed, so one prop can show an intact section
+        // beside a destroyed one, and intact and destroyed props share a frame
+        damage === "destroyed" || (damage === "mixed" && i % 2 === 1)
+          ? coverMaxHp(c)
+          : damage === "damaged"
+            ? 1
+            : 0,
       ]),
     );
     return fixture;
@@ -216,6 +222,7 @@ export function SceneReview() {
             <option value="intact">Intact</option>
             <option value="damaged">Damaged</option>
             <option value="destroyed">Destroyed</option>
+            <option value="mixed">Every other destroyed</option>
           </select>
         </label>
         <label>

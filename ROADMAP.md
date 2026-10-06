@@ -1718,3 +1718,17 @@ one combat board.
 - **Unchanged:** rules, hit areas, geometry and saved state. A real `/play` fight and save/load are not verified.
 
 **Awaiting Levi's review.**
+
+[The intersection's ground](docs/checkpoint-ground-pass.md) is finished, from existing materials only.
+
+- **Surfaces.**
+  - Unclaimed ground is concrete hard standing.
+  - Entrance pads are threshold slabs, and the entry is paving.
+  - The loading court is asphalt.
+- **Wear goes where use puts it:** slabs, gully silt, worn crossings, oil drips, wall feet and thresholds.
+- **Props are grounded by contact shade made from their own picture.** A wreck's is its own. The flat footprint
+  rectangle is gone on the intersection.
+- **Unchanged:** rules, geometry and overlays.
+- **Not verified:** a real `/play` fight and save/load. The checkpoint carries the manual checklist for it.
+
+**Awaiting Levi's review and the manual check.**
