@@ -118,6 +118,7 @@ import {
   LAMP_SHADOW,
   type ShadowCaster,
 } from "./lampShadow";
+import { GROUND_SHEEN, paintSheen, sheenSources } from "./groundSheen";
 
 type Project = (p: Point) => Point;
 
@@ -1732,9 +1733,45 @@ export function createComposedEnvironment(
   const paintOne = (c: CanvasRenderingContext2D, light: GroundLight) =>
     paintGroundLights(c, project, env.structures, [light]);
   const restores: { coverId: string; image: Phaser.GameObjects.Image }[] = [];
+  // The damp sheen (`groundSheen.ts`): each light's rough highlight where the ground is
+  // damp, added after the albedo like a glow, at a third of scene resolution.
+  let sheen: HTMLCanvasElement | undefined;
+  if (night && materialised && GROUND_SHEEN.enabled && lights.length) {
+    const step = 3;
+    const w = Math.ceil(gw / step);
+    const h = Math.ceil(gh / step);
+    const small = document.createElement("canvas");
+    small.width = w;
+    small.height = h;
+    const sctx = small.getContext("2d", { willReadFrequently: true })!;
+    sctx.drawImage(ground.canvas, 0, 0, w, h);
+    const base = sctx.getImageData(0, 0, w, h).data;
+    const albedo = new Float32Array(w * h);
+    for (let i = 0; i < albedo.length; i++)
+      albedo[i] =
+        (0.2126 * base[i * 4]! + 0.7152 * base[i * 4 + 1]! + 0.0722 * base[i * 4 + 2]!) / 255;
+    const out = sctx.createImageData(w, h);
+    paintSheen(
+      out.data,
+      w,
+      h,
+      { x0: gx, y0: gy, step },
+      albedo,
+      arena,
+      project,
+      sheenSources(lights, zOf),
+    );
+    sctx.putImageData(out, 0, 0);
+    sheen = small;
+  }
   if (night && lights.length) {
     const canvas = lightCanvas(ground.canvas, groundFrame, (ctx, pass) => {
       if (pass === "light") paintShadowedLights(ctx, project, lights, casters, zOf, paintOne);
+      if (pass === "light" && sheen) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(sheen, gx, gy, sheen.width * 3, sheen.height * 3);
+      }
     });
     const texture = scene.textures.addCanvas("composed-ground-light", canvas)!;
     texture.refresh();
