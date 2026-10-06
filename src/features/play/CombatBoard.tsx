@@ -26,7 +26,8 @@ import { scenicTheme } from "./courtyard/scenicPresentation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActorMarker } from "./ActorMarker";
 import { actorColor, layoutMarkers, markerFor } from "./actorMarkers";
-import { overlayMode, squaresOutline } from "./overlayModel";
+import { boardOutline, overlayMode, squaresOutline } from "./overlayModel";
+import { activityOccluders } from "./courtyard/activityReveal";
 import {
   Volume2,
   VolumeX,
@@ -184,6 +185,9 @@ export function CombatBoard({
   const boardRef = useRef<SVGSVGElement | null>(null);
   const calloutPoint = useRef<Point | null>(null);
   const calloutAnchor = useBoardAnchor(boardRef, calloutPoint);
+  // under the feet (or the square): where the card goes when there is no room above
+  const calloutFoot = useRef<Point | null>(null);
+  const calloutUnder = useBoardAnchor(boardRef, calloutFoot);
   const [panel, setPanel] = useState<"journal" | "improvise" | null>(null);
   /** The combatant whose dossier is open. Their art is on file; the fight is not. */
   const [dossier, setDossier] = useState<string | null>(null);
@@ -383,6 +387,14 @@ export function CombatBoard({
     { x: arena.extent.width, y: arena.extent.height },
     { x: 0, y: arena.extent.height },
   ].map(project);
+  // The board's edge, less where it would be printed across a building (overlayModel).
+  const edgeRuns = scenic
+    ? boardOutline(
+        arena.extent,
+        arena.environment?.structures ?? [],
+        revealActivity ? activityOccluders(arena) : undefined,
+      )
+    : [];
   const cameraWidth = 1100 / camera.zoom,
     cameraHeight = 680 / camera.zoom;
   const displayCamera = {
@@ -555,8 +567,14 @@ export function CombatBoard({
         ? {
             x: project(aimed.data.position).x,
             // above the head and the name marker over it, in screen pixels
-            y: project(aimed.data.position).y - (scenic ? scenicUnitTop + 4 : 68) - 44 * ui,
+            y: project(aimed.data.position).y - (scenic ? scenicUnitTop + 4 : 68) - 50 * ui,
           }
+        : null;
+  calloutFoot.current =
+    (interaction.type === "move-preview" || scouting) && spot
+      ? { x: project(spot).x, y: project(spot).y + 18 * ui }
+      : aimed
+        ? { x: project(aimed.data.position).x, y: project(aimed.data.position).y + 10 * ui }
         : null;
   /**
    * What the contextual control says and whether it commits anything.
@@ -1061,15 +1079,12 @@ export function CombatBoard({
               )}
             </g>
             {scenic && (
-              <polygon
-                points={points(boardCorners)}
-                fill="none"
-                stroke="#9ac7cc"
-                strokeOpacity=".22"
-                strokeWidth="1"
-                strokeDasharray="4 8"
-                pointerEvents="none"
-              />
+              <g className="combat-board-edge" pointerEvents="none">
+                {edgeRuns.map(([a, b], i) => {
+                  const [p, q] = [project(a), project(b)];
+                  return <line key={i} x1={p.x} y1={p.y} x2={q.x} y2={q.y} />;
+                })}
+              </g>
             )}
             {showSquares && !scenic && (
               <g
@@ -1544,6 +1559,8 @@ export function CombatBoard({
           {callout && (
             <BattlefieldCallout
               anchor={calloutAnchor}
+              under={calloutUnder}
+              onDismiss={() => dispatch({ kind: "cancel" })}
               tone={callout.tone}
               title={callout.title}
               lines={callout.lines}

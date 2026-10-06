@@ -13,7 +13,8 @@
  * The edge is drawn wherever a reachable square meets one that is not, so it is the
  * Move Action's real cost boundary, never a decoration.
  */
-import { TILE_METRES, tileKey, type Point, type Tile } from "@/engine";
+import { TILE_METRES, tileKey, type Point, type SceneStructure, type Tile } from "@/engine";
+import { buildingHidesGround } from "./courtyard/activityReveal";
 
 export type OverlayMode = "rest" | "plan" | "aim" | "target";
 
@@ -74,4 +75,68 @@ export function squaresOutline(tiles: readonly Tile[]): [Point, Point][] {
       ]);
   }
   return edges;
+}
+
+/**
+ * The edge of the board as drawn over a scenic street: its four sides, less every
+ * stretch that stands inside a building or behind one as the camera sees it.
+ *
+ * The outline is an overlay, drawn above the art. Where the board's edge crossed a
+ * building it was printed across the footprint and the roof as a dashed line, which
+ * read as a road marking inside the building. Nobody stands there, so nothing is lost.
+ * A building cut away for the reveal hides nothing behind it, but still its footprint.
+ * Fences and interior walls hide nothing.
+ */
+export function boardOutline(
+  extent: { width: number; height: number },
+  structures: readonly SceneStructure[],
+  cutAway: ReadonlySet<string> = new Set(),
+  step = 0.1,
+): [Point, Point][] {
+  const solid = structures.filter((s) => s.style !== "interior-wall" && s.style !== "mesh-fence");
+  const hidden = (p: Point) =>
+    solid.some((s) => {
+      const r = s.rect;
+      const inside = p.x > r.x && p.x < r.x + r.width && p.y > r.y && p.y < r.y + r.height;
+      return inside || (!cutAway.has(s.id) && buildingHidesGround(s, p));
+    });
+  const { width: w, height: h } = extent;
+  const sides: [Point, Point][] = [
+    [
+      { x: 0, y: 0 },
+      { x: w, y: 0 },
+    ],
+    [
+      { x: w, y: 0 },
+      { x: w, y: h },
+    ],
+    [
+      { x: w, y: h },
+      { x: 0, y: h },
+    ],
+    [
+      { x: 0, y: h },
+      { x: 0, y: 0 },
+    ],
+  ];
+  const runs: [Point, Point][] = [];
+  for (const [a, b] of sides) {
+    const length = Math.hypot(b.x - a.x, b.y - a.y);
+    const n = Math.max(1, Math.ceil(length / step));
+    const at = (i: number) => ({
+      x: a.x + ((b.x - a.x) * i) / n,
+      y: a.y + ((b.y - a.y) * i) / n,
+    });
+    let start: number | null = null;
+    for (let i = 0; i <= n; i++) {
+      const shown = !hidden(at(i));
+      if (shown && start === null) start = i;
+      if ((!shown || i === n) && start !== null) {
+        const end = shown ? i : i - 1;
+        if (end > start) runs.push([at(start), at(end)]);
+        start = null;
+      }
+    }
+  }
+  return runs;
 }

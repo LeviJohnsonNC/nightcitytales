@@ -140,7 +140,7 @@ describe("surface materials: painting", () => {
     expect(calls).toEqual([]);
   });
 
-  it("paints only the intersection, and only shop frontage, with materials", () => {
+  it("paints only the intersection with materials: its shops, homes and sheds", () => {
     const set = prepareMaterials({ asphalt: tile, sidewalk: tile }, 30, fakeCanvas);
     expect(Object.keys(set)).toHaveLength(2);
 
@@ -164,11 +164,21 @@ describe("surface materials: painting", () => {
         "roof-membrane": tile,
         shutter: tile,
         "painted-metal": tile,
+        "painted-render": tile,
       });
       return pattern.setTransform.mock.calls.length;
     };
     expect(painted("shop")).toBeGreaterThan(0);
-    expect(painted("workshop")).toBe(0);
-    expect(painted("residential")).toBe(0);
+    // the completion pilot (buildingFaces.ts): render for homes, sheet metal for sheds
+    expect(painted("workshop")).toBeGreaterThan(0);
+    expect(painted("residential")).toBeGreaterThan(0);
+    // and with no tiles, every one of them is its old flat drawing
+    const flat = (style: string) => {
+      const { ctx, pattern } = recorder();
+      const s = structures.find((x) => x.style === style)!;
+      paintBuilding(ctx, s, project, intersection.environment!.entrances);
+      return pattern.setTransform.mock.calls.length;
+    };
+    for (const style of ["shop", "workshop", "residential"]) expect(flat(style)).toBe(0);
   });
 });

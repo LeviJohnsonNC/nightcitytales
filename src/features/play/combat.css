@@ -1900,10 +1900,21 @@
   position: absolute;
   z-index: 4;
   transform: translate(-50%, -100%);
+  /* never wider than a phone's board allows; long reasons wrap inside it */
+  max-width: min(300px, calc(100% - 16px));
 }
-/* No room above the anchor: hang below it, clear of the person it points at. */
+/* On a phone a narrower card wraps its reasons and finds room beside people. */
+@media (max-width: 520px) {
+  .combat-callout {
+    max-width: min(220px, calc(100% - 16px));
+  }
+}
+/* No room above: under the feet, or beside the person (calloutPlacement.ts). */
 .combat-callout.is-below {
-  transform: translate(-50%, 56px);
+  transform: translate(-50%, 0);
+}
+.combat-callout.is-beside {
+  transform: translate(-50%, -50%);
 }
 .combat-callout {
   pointer-events: auto;
@@ -1963,6 +1974,35 @@ button.combat-callout-act:hover {
   width: 1px;
   height: 6px;
   background: var(--callout-edge, #65eee0);
+}
+.combat-callout.is-below::after {
+  bottom: auto;
+  top: -5px;
+}
+.combat-callout.is-beside::after {
+  display: none;
+}
+/* One level back without hover or Escape. Touch only: a desktop has both. */
+.combat-callout-dismiss {
+  display: none;
+}
+@media (hover: none), (pointer: coarse) {
+  .combat-callout-dismiss {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--callout-edge, #65eee0);
+    border-radius: 50%;
+    background: #071119f2;
+    color: var(--callout-edge, #65eee0);
+    font:
+      600 18px/1 "IBM Plex Mono",
+      monospace;
+  }
 }
 .combat-callout.is-move {
   --callout-edge: #65eee0;
@@ -2172,4 +2212,12 @@ button.combat-callout-act:hover {
 .combat-arena .combat-unit:focus,
 .combat-arena .combat-unit:focus-visible {
   outline: none;
+}
+/* The board's edge over a scenic street: one screen pixel, never across a building. */
+.combat-board-edge line {
+  stroke: #9ac7cc;
+  stroke-opacity: 0.22;
+  stroke-width: 1px;
+  stroke-dasharray: 4 8;
+  vector-effect: non-scaling-stroke;
 }

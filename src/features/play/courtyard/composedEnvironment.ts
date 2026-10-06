@@ -3,6 +3,19 @@ import type Phaser from "phaser";
 import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
 import { activityGroundPoints, activityOccluders } from "./activityReveal";
+import {
+  USE_WALL,
+  buildingUse,
+  faceBasis,
+  faceOpenings,
+  facePainter,
+  paintHomeWall,
+  paintHomeWindow,
+  paintLoadingDoor,
+  paintServiceSurround,
+  paintShedGlazing,
+  paintShedWall,
+} from "./buildingFaces";
 import { cutawayWalls, type CutawayWall } from "./cutawayGeometry";
 import type { ArchitectureArt } from "./architecturePack";
 import {
@@ -565,7 +578,8 @@ export function paintCutawayWall(
   const r = part.rect;
   // The same facade material, anchored to the same world metres, as the full
   // building it replaces: revealing the street must not change what the wall is.
-  const clad = materials && structure.style === "shop" ? materials : undefined;
+  const clad =
+    materials && (structure.style === "shop" || buildingUse(structure)) ? materials : undefined;
   const concrete = SURFACE_MATERIALS[wallMaterial].metres;
   const side = (points: Point[], flat: string, basis: ReturnType<typeof wallBasis>) => {
     if (fillMaterial(ctx, clad, points, { key: wallMaterial, basis, target: flat })) {
@@ -835,7 +849,9 @@ export function paintBuilding(
   // Commercial frontage takes concrete, a membrane roof, painted rooftop units and
   // shuttered doors; every other building keeps its flat fills for now. Materials
   // are laid first, so windows, bays, doors and trim below paint over them.
-  const clad = structure.style === "shop" ? materials : undefined;
+  // The pilot's homes and sheds (`buildingFaces.ts`) take their own walls and openings.
+  const use = materials ? buildingUse(structure) : undefined;
+  const clad = structure.style === "shop" || use ? materials : undefined;
   // The painted window goes on every commercial face but the storefront's own (which
   // has its lit interior) and its neighbours' (barred and quiet); the shutter on the
   // annex's door; the finished wall on shops outside the storefront's block.
@@ -858,7 +874,11 @@ export function paintBuilding(
     );
   // Two camera-facing walls; windows, shutters, conduits, lintels share their planes.
   // The shop's neighbours are a different building: painted render, not its concrete.
-  const wall: MaterialKey = frontage?.role === "neighbour" ? "painted-render" : "facade-concrete";
+  const wall: MaterialKey = use
+    ? USE_WALL[use]
+    : frontage?.role === "neighbour"
+      ? "painted-render"
+      : "facade-concrete";
   surface(
     [base[0]!, base[1]!, top[1]!, top[0]!],
     palette[0]!,
@@ -905,6 +925,23 @@ export function paintBuilding(
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t - z,
     });
+    // A home or a shed in the pilot: its own wall, and the same openings, finished.
+    const finished = use ? facePainter(structure, edge, project, pixelsPerMetre) : undefined;
+    if (finished && use === "industrial")
+      paintShedWall(
+        ctx,
+        finished,
+        pixelsPerMetre,
+        structure.height,
+        clad,
+        faceBasis(structure, edge, project, pixelsPerMetre, "facade-concrete"),
+      );
+    if (finished && use === "residential")
+      paintHomeWall(ctx, finished, pixelsPerMetre, structure.height);
+    for (const o of finished ? faceOpenings(structure, edge, entrances) : [])
+      if (o.kind === "window" || o.kind === "bay")
+        paintHomeWindow(ctx, finished!, pixelsPerMetre, o);
+      else paintShedGlazing(ctx, finished!, pixelsPerMetre, o);
     // Storeys use world metres. Industrial sheds have a single clerestory,
     // not the same stacked apartment windows regardless of physical height.
     const industrial = structure.style === "workshop" || structure.style === "warehouse";
@@ -915,7 +952,7 @@ export function paintBuilding(
           (_, i) => 3.8 + i * 3,
         );
     for (const floor of levels.filter(
-      (level) => level + (industrial ? 0.45 : 1.2) < structure.height,
+      (level) => !finished && level + (industrial ? 0.45 : 1.2) < structure.height,
     )) {
       const level = floor * pixelsPerMetre;
       const windowHeight = (industrial ? 0.45 : 1.2) * pixelsPerMetre;
@@ -952,7 +989,7 @@ export function paintBuilding(
     // the existing facade. Recesses never add sidewalk collision or false doors.
     for (
       let start = 0.5;
-      start + 2.2 < length;
+      !finished && start + 2.2 < length;
       start += structure.style === "residential" ? 4 : 3
     ) {
       if (doors.some((door) => door > start - 1.1 && door < start + 3.3)) continue;
@@ -980,10 +1017,22 @@ export function paintBuilding(
       // putting decorative obstacles into the clear pedestrian route.
       line(at(lo - 0.01, 0), at(lo - 0.01, high + 5), "#242f35", 3);
     }
-    if (!shopArt?.finish)
+    if (!shopArt?.finish && !finished)
       line(at(0, 0.2 * pixelsPerMetre), at(1, 0.2 * pixelsPerMetre), "#73786f", 2);
     for (const centre of doors) {
       if (covers.doors) continue;
+      if (finished && use === "industrial") {
+        paintLoadingDoor(
+          ctx,
+          finished,
+          pixelsPerMetre,
+          centre,
+          Math.min(2.2, structure.height - 0.5),
+          clad,
+          faceBasis(structure, edge, project, pixelsPerMetre, "shutter"),
+        );
+        continue;
+      }
       const x = (centre - 0.8) / length,
         w = 1.6 / length,
         doorHeight = Math.min(2.2, structure.height - 0.5) * pixelsPerMetre;
@@ -1050,7 +1099,7 @@ export function paintBuilding(
         entrances,
         doors: shopArt.doors,
       });
-    for (const t of shopArt?.finish ? [] : [0.04, 0.94]) {
+    for (const t of shopArt?.finish || finished ? [] : [0.04, 0.94]) {
       line(at(t, 0), at(t, h), "#151f28", 3);
       line(at(t + 0.007, 0), at(t + 0.007, h), "#66706c", 0.8);
     }
@@ -1168,6 +1217,10 @@ export function paintBuilding(
       const p = project(attachmentPoint(structure, a, t, out));
       return { x: p.x, y: p.y - z * pixelsPerMetre };
     };
+    if (a.kind === "service-surround" && use === "industrial") {
+      paintServiceSurround(ctx, at, pixelsPerMetre, a.span, a.height, a.projection);
+      continue;
+    }
     if (a.kind === "awning") {
       const count = Math.ceil(a.span / 0.4);
       for (let i = 0; i < count; i++) {
@@ -1682,7 +1735,10 @@ export function createComposedEnvironment(
       };
       // Only a building that takes a material is worth drawing at double size; the
       // finished storefront, whose sign and windows are read up close, at more.
-      const clad = materials && s.style === "shop" ? resolution * (storefrontOf(s) ? 1.5 : 1) : 1;
+      const clad =
+        materials && (s.style === "shop" || buildingUse(s))
+          ? resolution * (storefrontOf(s) ? 1.5 : 1)
+          : 1;
       const front = storefrontOf(s);
       const building = add(
         `structure-${s.id}`,
@@ -1736,7 +1792,11 @@ export function createComposedEnvironment(
                 project,
                 materials,
                 storefrontOf(s),
-                detailOf(structure)?.role === "neighbour" ? "painted-render" : undefined,
+                buildingUse(s)
+                  ? USE_WALL[buildingUse(s)!]
+                  : detailOf(structure)?.role === "neighbour"
+                    ? "painted-render"
+                    : undefined,
                 annexOf(s),
               ),
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
