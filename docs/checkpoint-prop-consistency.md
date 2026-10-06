@@ -144,7 +144,8 @@ side by side.
 
 ## 8. Limitations
 
-- **The stand and the rotated cabinet** stay procedural until round two is painted and imported.
+- **The stand and the rotated cabinet** stayed procedural here. Round two has since been painted and imported:
+  see `checkpoint-prop-round-two.md`.
 - **The atlas props are mirrored at r90.** The cart, crates, dumpster, generator and pallet are recorded as a
   debt, not addressed.
 - **Two of the three variants share a palette assignment.** That is a one-in-three chance with three paints,

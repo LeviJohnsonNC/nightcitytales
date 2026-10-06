@@ -1,6 +1,6 @@
 /**
  * The street-prop art (`docs/street-props-pack.md`) in the renderer: painted
- * replacements for the procedural sedan, planter and mailbox cabinet.
+ * replacements for the procedural sedan, planter, mailbox cabinet and merchandise stand.
  *
  * Each file is one frame per saved 2 m section, made by `tools/art/street-props.ts` at
  * twice the procedural frame's 256 x 320. A sedan's art is padded past its frame
@@ -18,16 +18,17 @@ import { paintedTexture, SEDAN_PAINT_ORDER } from "./sedanPaint";
 const CONDITIONS: readonly PropCondition[] = ["intact", "damaged", "wrecked"];
 
 /**
- * What exists, and which texture keys each file serves. The sedan has its own art per
- * rotation (never mirrored); the planter is square and symmetric, so one image serves
- * both; the mailbox cabinet has art for rotation 0 only, and a rotated one keeps the
- * procedural kit until its own image exists.
+ * What exists, and which texture keys each file serves. Every kind has its own art per
+ * rotation (never mirrored), except the planter: it is square and symmetric, so one
+ * image serves both. The cabinet's and the stand's r90 are round two
+ * (`docs/street-props-pack/round-2.md`).
  */
 const COVERAGE: Record<string, readonly (0 | 90)[]> = {
   "sedan-engine": [0, 90],
   "sedan-cabin": [0, 90],
   planter: [0, 90],
-  mailboxes: [0],
+  mailboxes: [0, 90],
+  "shop-display": [0, 90],
 };
 
 export interface StreetPropFile {
@@ -47,7 +48,7 @@ export function streetPropFiles(kinds: readonly PropKind[]): StreetPropFile[] {
     const rotations = COVERAGE[kind];
     if (!rotations) continue;
     for (const condition of CONDITIONS) {
-      const own90 = kind.startsWith("sedan-");
+      const own90 = kind !== "planter";
       for (const rotation of rotations) {
         // the planter's single file serves rotation 90 too
         if (rotation === 90 && !own90) continue;

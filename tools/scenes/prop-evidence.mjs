@@ -1,7 +1,8 @@
 /**
  * The prop-consistency pass's matched captures: seeds 7, 0 and 8 at play zoom with
  * characters (as saved, lights off, revealed, and with every other cover piece
- * destroyed), and close-ups of the painted cars, intact and in mixed damage.
+ * destroyed), close-ups of the painted cars, intact and in mixed damage, and close-ups
+ * of round two's merchandise stand and rotated cabinet in every state.
  *
  *     node tools/scenes/prop-evidence.mjs 5180 docs/evidence/prop-consistency/after
  *
@@ -21,6 +22,14 @@ const CARS = [
   ["seed0-car-thorton", 0, "-117,-124"],
   ["seed8-car-thorton", 8, "-117,101"],
 ];
+// round two (docs/street-props-pack/round-2.md): the stand at r0 (seed 7) and r90 and the
+// cabinet at r90 (seed 0), with seed 7's r0 cabinet beside them for comparison
+const PROPS = [
+  ["seed7-kiosk", 7, "286,15"],
+  ["seed0-kiosk", 0, "286,-45"],
+  ["seed0-cabinet", 0, "-78,-165"],
+  ["seed7-cabinet", 7, "-260,30"],
+];
 const SHOTS = [
   ...[7, 0, 8].flatMap((seed) => [
     [`seed${seed}-play`, `${at(seed)}&actors=1&reveal=0`],
@@ -33,6 +42,15 @@ const SHOTS = [
     [`close-${name}-mixed`, `${at(seed)}&actors=1&reveal=0&damage=mixed&cam=${cam},4`],
     [`close-${name}-damaged`, `${at(seed)}&actors=1&reveal=0&damage=damaged&cam=${cam},4`],
     [`close-${name}-neutral`, `${at(seed)}&actors=1&reveal=0&night=0&cam=${cam},4`],
+  ]),
+  ...PROPS.flatMap(([name, seed, cam]) => [
+    ...["intact", "damaged", "destroyed", "mixed"].map((damage) => [
+      `close-${name}-${damage}`,
+      `${at(seed)}&actors=1&reveal=0&damage=${damage}&cam=${cam},4`,
+    ]),
+    [`close-${name}-neutral`, `${at(seed)}&actors=1&reveal=0&night=0&cam=${cam},4`],
+    [`close-${name}-lights-off`, `${at(seed)}&actors=1&reveal=0&lights=0&cam=${cam},4`],
+    [`close-${name}-reveal`, `${at(seed)}&actors=1&reveal=1&cam=${cam},4`],
   ]),
 ];
 const browser = await chromium.launch({

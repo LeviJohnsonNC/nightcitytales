@@ -473,8 +473,14 @@ export function wreckVolume(
     ];
   }
   const at = (x: number, y: number, z: number) => toGuide(g, framePoint(x, y, z, g.rotation));
-  const b = g.id === "planter" ? PLANTER.body : CABINET.body;
-  const max = g.id === "planter" ? PLANTER.wreckedMax : CABINET.wreckedMax;
+  const b =
+    g.id === "planter" ? PLANTER.body : g.id.startsWith("kiosk") ? KIOSK.body : CABINET.body;
+  const max =
+    g.id === "planter"
+      ? PLANTER.wreckedMax
+      : g.id.startsWith("kiosk")
+        ? KIOSK.wreckedMax
+        : CABINET.wreckedMax;
   return [box(at, b, max), box(at, ground, WRECK_DEBRIS)];
 }
 

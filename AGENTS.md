@@ -1242,7 +1242,7 @@ saved geometry. The rules:
   light pass to the albedo; the glow is added after it, so an unclipped glow lights glass the reveal removed. See
   `docs/checkpoint-cutaway-light.md`.
 
-### Sedan paint and the props still to paint (courtyard/sedanPaint.ts)
+### Sedan paint and round two's props (courtyard/sedanPaint.ts, streetPropArt.ts)
 
 - **The street sedan comes in three paints** made from its own art: beige (the art), burgundy and a gunmetal
   charcoal.
@@ -1254,6 +1254,7 @@ saved geometry. The rules:
 - **The paint is chosen by `sedanPaints`** from the saved layout (cluster ids plus `parkedAt`), never at
   random. Both sections of a car share it.
 - **Never tint a whole sprite** to make a variant.
-- **Still procedural: the merchandise stand (`shop-display`) and the cabinet at r90.** Their Picasso pack is
-  `docs/street-props-pack/round-2.md` (`STREET_PROP_PACK_2`, `KIOSK`); `street-prop-guides.ts --round 2`
-  draws it. They are not finished until those images are imported.
+- **The merchandise stand (`shop-display`) and the cabinet at r90 are round two** (`STREET_PROP_PACK_2`,
+  `KIOSK`; `docs/street-props-pack/round-2.md`). `tools/art/street-props.ts --round 2` imports them, and every
+  kind but the planter has its own file per rotation (`own90`). The r0 stand's wreck is on
+  `TALL_WRECKS_PENDING` until its `-v2` redraw passes; take it off then. See `docs/checkpoint-prop-round-two.md`.
