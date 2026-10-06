@@ -3,6 +3,7 @@ import type Phaser from "phaser";
 import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
 import { activityGroundPoints, activityOccluders } from "./activityReveal";
+import { paintGroundFinish } from "./groundFinish";
 import {
   USE_WALL,
   buildingUse,
@@ -150,7 +151,25 @@ export function paintComposedGround(
   const textured = !env.interior && env.recipe === "intersection" ? materials : undefined;
   const ground = groundBasis(project);
   if (env.interior) rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
-  if (!env.interior) rect({ x: -20, y: -20, width: 72, height: 72 }, "#293034");
+  if (!env.interior) {
+    const all = { x: -20, y: -20, width: 72, height: 72 };
+    // Ground no zone claims (between a building and the walk) is old concrete hard
+    // standing on a finished street, in large slabs; otherwise the flat dark fill.
+    if (
+      textured &&
+      fillMaterial(ctx, textured, zoneCorners(all), {
+        key: "facade-concrete",
+        basis: ground,
+        target: "#363c3d",
+        strength: 0.7,
+      })
+    ) {
+      for (let t = -20; t <= 52; t += 2) {
+        line(project({ x: t, y: -20 }), project({ x: t, y: 52 }), "rgba(14,18,20,.35)", 0.8);
+        line(project({ x: -20, y: t }), project({ x: 52, y: t }), "rgba(14,18,20,.35)", 0.8);
+      }
+    } else rect(all, "#293034");
+  }
   const floors: Record<string, string> = {
     reception: "#6c6257",
     workspace: "#34494e",
@@ -200,8 +219,12 @@ export function paintComposedGround(
             : "#41494a";
     // The old fill is the fallback and the colour the material is graded to.
     // A crosswalk is laid across the carriageway, so it sits on asphalt.
+    // A loading court is surfaced like the road it opens on.
     const surface: MaterialKey | undefined =
-      z.kind === "road" || z.kind === "intersection" || z.kind === "crosswalk"
+      z.kind === "road" ||
+      z.kind === "intersection" ||
+      z.kind === "crosswalk" ||
+      z.kind === "loading"
         ? "asphalt"
         : z.kind === "sidewalk"
           ? "sidewalk"
@@ -227,8 +250,10 @@ export function paintComposedGround(
               (x + y) % 3 === 0 ? "#3c4547" : "#454d4e",
               "#333d40",
             );
+      // A laid walk meets the road at its kerb (`paintStreetscape`) and its
+      // neighbours flush: the drawn outline is for the flat fallback.
       const c = painter(ctx, project).corners(z.rect);
-      for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "#79817b", 1.5);
+      if (!laid) for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "#79817b", 1.5);
     }
     if (z.kind === "crosswalk") {
       const horizontal = z.axis === "x";
@@ -256,7 +281,29 @@ export function paintComposedGround(
       staff: ["#3f5057", "#778e95"],
       visitor: ["#81745e", "#ac9c7e"],
     }[z.floorUse!]!;
-    rect(z.rect, colors[0]!, colors[1]!);
+    // On a finished street a working apron is asphalt and an entry is paved, both
+    // laid at world scale under their marks; the flat fill is the fallback.
+    const apron: MaterialKey | undefined =
+      textured && z.floorUse === "handling"
+        ? "asphalt"
+        : textured && z.floorUse === "entry"
+          ? "sidewalk"
+          : undefined;
+    if (
+      apron &&
+      fillMaterial(ctx, textured, zoneCorners(z.rect), {
+        key: apron,
+        basis: ground,
+        target: apron === "asphalt" ? "#3d4243" : "#5d605b",
+        strength: 0.8,
+      })
+    ) {
+      const c = zoneCorners(z.rect);
+      // an entry's edge is a granite strip, not a painted outline
+      if (z.floorUse === "entry")
+        for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "rgba(170,168,156,.35)", 1.2);
+      else for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, colors[1]!, 1.2);
+    } else rect(z.rect, colors[0]!, colors[1]!);
     if (z.floorUse === "forecourt") {
       // A warm paved customer apron reads separately from the grey through-walk.
       // Keep all marks flush with the ground: these are not physical barriers.
@@ -277,7 +324,7 @@ export function paintComposedGround(
           1.4,
         );
     }
-    if (z.floorUse === "entry") {
+    if (z.floorUse === "entry" && !apron) {
       const r = z.rect;
       rect(
         { x: r.x + 0.2, y: r.y + 0.2, width: r.width - 0.4, height: r.height - 0.4 },
@@ -404,7 +451,21 @@ export function paintComposedGround(
   // Approaches are reserved geometry, not decorative doors placed behind crates.
   for (const e of env.entrances ?? []) {
     const p = e.position;
-    rect({ x: p.x - 0.8, y: p.y - 0.8, width: 1.6, height: 1.6 }, "#596360");
+    const pad = { x: p.x - 0.8, y: p.y - 0.8, width: 1.6, height: 1.6 };
+    // A threshold slab: one piece of paler concrete in front of the door, so the way
+    // in is found by its material, not by a flat tinted square.
+    if (
+      textured &&
+      fillMaterial(ctx, textured, zoneCorners(pad), {
+        key: "facade-concrete",
+        basis: ground,
+        target: "#64665f",
+        strength: 0.75,
+      })
+    ) {
+      const c = zoneCorners(pad);
+      for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "rgba(16,20,20,.5)", 0.9);
+    } else rect(pad, "#596360");
     const structure = env.structures.find((s) => s.id === e.structureId)!;
     const wall = {
       x: Math.max(structure.rect.x, Math.min(p.x, structure.rect.x + structure.rect.width)),
@@ -1470,6 +1531,15 @@ export function createComposedEnvironment(
   ground.context.save();
   groundFrame(ground.context);
   paintComposedGround(ground.context, arena, project, materials, night);
+  // the street's wear, where its use puts it (`groundFinish.ts`); the shop's block
+  // has its own wall feet and door wear, painted next
+  if (materials)
+    paintGroundFinish(
+      ground.context,
+      arena,
+      project,
+      new Set(pilots.flatMap((p) => p.masses.map((m) => m.id))),
+    );
   for (const sf of storefronts)
     paintStorefrontGround({
       ctx: ground.context,

@@ -37,7 +37,8 @@ export function readReviewQuery(search: string) {
     /** Where the review character stands, in metres: a fixture choice, not a rule. */
     player: ((c) => (c ? { x: c[0]!, y: c[1]! } : null))(numbers(p.get("player"), 2)),
     framing: p.get("framing") === "overview" ? ("overview" as const) : ("play" as const),
-    damage: ["intact", "damaged", "destroyed"].find((d) => d === p.get("damage")) ?? "intact",
+    damage:
+      ["intact", "damaged", "destroyed", "mixed"].find((d) => d === p.get("damage")) ?? "intact",
   };
 }
 export function reviewQuery(value: ReturnType<typeof readReviewQuery>): string {

@@ -1162,6 +1162,28 @@ in code with the existing pack. The rules:
 - **Presentation only.** Nothing here adds collision, moves a wall, entrance or route, or changes sorting.
   Without a material tile it is the old drawing.
 
+### The ground (courtyard/groundFinish.ts, courtyard/contactShade.ts)
+
+On intersection scenes with materials, the street's surfaces are finished and objects are grounded. The rules:
+
+- **Surfaces are the existing materials at world scale.**
+  - Unclaimed ground is concrete hard standing.
+  - Entrance pads are threshold slabs.
+  - The `entry` floor is paving and a loading court is asphalt.
+  - Laid paving draws no zone outlines: the kerbs bound the road.
+- **Wear goes where use puts it, by `hash` of a world position.** Slabs, gully silt, wheel-track paint wear, oil
+  under engines, wall feet and threshold scuffs. Never an even layer. Never on a tactical overlay.
+- **Contact shade is made from each prop's own picture** (`contactAlpha`), per condition.
+  - A wreck's is the wreck's, and nothing high above the ground casts one.
+  - It is its own sprite at ground depth (`CONTACT_DEPTH`), registered as the prop, never sorted, faded or
+    tinted with it.
+  - On the intersection the kit bakes no footprint shadow (`createPropTextures(..., false)`). Other
+    environments keep theirs.
+- **A canvas texture must be refreshed** (`addCanvas(...).refresh()`) or it never reaches the GPU.
+- **Presentation only.** Nothing here moves a prop, a wall, an entrance or a route.
+
+See `docs/checkpoint-ground-pass.md`, including the manual `/play` checklist.
+
 ## Collaborator names
 
 Levi uses these names across sessions:

@@ -12,8 +12,7 @@
  */
 import type Phaser from "phaser";
 import { propTexture, type PropCondition, type PropKind } from "./propPresentation";
-import { interiorPropPoint } from "./interiorPropArt";
-import { artPad, propArtRegistration } from "./streetPropPack";
+import { propArtRegistration } from "./streetPropPack";
 
 const CONDITIONS: readonly PropCondition[] = ["intact", "damaged", "wrecked"];
 
@@ -68,8 +67,9 @@ export function streetPropFiles(kinds: readonly PropKind[]): StreetPropFile[] {
 
 /**
  * Swap each loaded file in for the procedural texture it replaces. The frame is drawn
- * at twice the procedural size with the procedural kit's own soft contact shadow under
- * it: the shadow is the renderer's, never the artwork's.
+ * at twice the procedural size. Its contact with the ground is the board's contact
+ * shade (`contactShade.ts`), made from the art itself: never a shadow in the artwork,
+ * and no longer a flat footprint under it.
  */
 export function applyStreetPropArt(scene: Phaser.Scene, files: readonly StreetPropFile[]) {
   for (const file of files) {
@@ -82,20 +82,6 @@ export function applyStreetPropArt(scene: Phaser.Scene, files: readonly StreetPr
       if (scene.textures.exists(key)) scene.textures.remove(key);
       const texture = scene.textures.createCanvas(key, image.width, image.height)!;
       const ctx = texture.context;
-      const pad = artPad(file.kind);
-      const k = image.width / (256 + 2 * pad.side);
-      // the procedural kit's contact shadow: the footprint inset 0.1 m, at the same alpha
-      const corner = (x: number, y: number) => {
-        const p = interiorPropPoint(x, y);
-        return { x: (p.x + pad.side) * k, y: (p.y + pad.top) * k };
-      };
-      ctx.beginPath();
-      [corner(0.1, 0.1), corner(1.9, 0.1), corner(1.9, 1.9), corner(0.1, 1.9)].forEach((p, i) =>
-        i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y),
-      );
-      ctx.closePath();
-      ctx.fillStyle = "rgba(0,0,0,.23)";
-      ctx.fill();
       ctx.drawImage(image, 0, 0);
       texture.refresh();
       // where the 2 m frame sits in padded art: the board reads this to place it

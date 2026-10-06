@@ -35,11 +35,16 @@ export function propSource(kind: PropKind) {
 }
 
 /** Crop inspected atlas cells once; preserve supplied alpha and key opaque light mattes. */
-export function createPropTextures(scene: Phaser.Scene, kinds: PropKind[]) {
+export function createPropTextures(
+  scene: Phaser.Scene,
+  kinds: PropKind[],
+  /** False where the board draws each prop's contact shade (`contactShade.ts`). */
+  bakedShadow = true,
+) {
   for (const kind of kinds) {
     if (isInteriorProp(kind)) {
-      createInteriorPropTextures(scene, kind);
-      createInteriorPropTextures(scene, kind, 90);
+      createInteriorPropTextures(scene, kind, 0, bakedShadow);
+      createInteriorPropTextures(scene, kind, 90, bakedShadow);
       continue;
     }
     const source = scene.textures
