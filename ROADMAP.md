@@ -1732,3 +1732,18 @@ one combat board.
 - **Not verified:** a real `/play` fight and save/load. The checkpoint carries the manual checklist for it.
 
 **Awaiting Levi's review and the manual check.**
+
+[The atmosphere pilot](docs/checkpoint-atmosphere.md): the existing lights now fall on the walls round them.
+
+- **Light on walls.** Each lamp and sign lights the camera-facing walls in front of it, with no leaks through
+  buildings and nothing on unrelated roofs.
+- **Lit windows** light their sill and the wall round them.
+- **The secondary source.** A few occupied homes, three windows per block, are lit; most of the block stays dark.
+  The shop stays the focal point.
+- **The damp experiment was built and omitted.** With this camera, reflections land away from any plausible
+  puddle, and are too thin to read at play zoom. The checkpoint gives the evidence and what would work instead.
+- **Rendering is slightly faster than baseline,** because each light sprite is now cropped to its lit pixels.
+- **Unchanged:** rules, geometry, overlays and the camera.
+- **Not verified:** a real `/play` fight and save/load.
+
+**Awaiting Levi's review.**

@@ -1,0 +1,8 @@
+{
+  "play-solid": {
+    "loadMs": 10119,
+    "frames": 88,
+    "medianMs": 166.6,
+    "p95Ms": 216.6
+  }
+}
