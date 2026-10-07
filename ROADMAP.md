@@ -1840,3 +1840,12 @@ Chrome review covers seeds 7/0/8, lights off, reveal, targeting and frozen revie
 restore. See `docs/checkpoint-residential-finish.md` and its actual-browser evidence.
 Shop remains primary; broad roof surfaces remain a visual debt. Await Levi's
 visual acceptance rather than equating automated validation with acceptance.
+
+### Residential roof construction (2026-10-07)
+
+Follow-up to accepted PR #307: recessed membrane, substantial coping, quiet lap
+seams/repairs, internal drains and equipment curbs inside the original home/annex
+roof envelope. Reuses existing materials. Normal-play, lights-off and reveal
+review completed in connected Chrome; visual acceptance remains pending. See
+`docs/checkpoint-residential-roofs.md`. Coping and roof rhythm now read at play
+scale; drain/repair detail remains secondary and the broad roof fields stay quiet.

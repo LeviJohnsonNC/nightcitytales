@@ -1332,3 +1332,13 @@ cutaway clip, at `SHOP_FINISH`'s world dimensions. Missing art keeps the drawn r
 is decorative and stays within the face clip apron. No saved dimensions or collisions are changed.
 Storefront face/blade art and return-face crops must use `sourceFor` at their drawing size; direct
 full-resolution mask reduction broke the sign into dots. See `docs/checkpoint-finished-corner.md`.
+
+### Residential roofs
+
+`courtyard/residentialRoof.ts` paints residential and recognised annex roofs inside
+their original projected envelope, using existing membrane/concrete materials.
+The deck is visually recessed; equipment remains at its original height on curbs.
+Keep contact shadows on that deck and clipped to the roof. This finish belongs to
+the building sprite and disappears with its roof on reveal; never add it to retained
+wall pieces. Internal drains avoid existing equipment. No recipe or saved geometry
+changes are involved. See `docs/checkpoint-residential-roofs.md`.

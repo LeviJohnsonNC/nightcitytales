@@ -1,4 +1,5 @@
 /** World-building art from the same resolved parcels that constrain play. */
+import { paintResidentialRoof, RESIDENTIAL_ROOF_RECESS } from "./residentialRoof";
 import type Phaser from "phaser";
 import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
@@ -1282,30 +1283,48 @@ export function paintBuilding(
     frontage?.role === "neighbour" ? "roof-ballast" : "roof-membrane",
     groundBasis(project, h),
   );
-  // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
-  for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
-  // a neighbour's roof is ballasted, not a seamed membrane
-  for (let t = 0.15; frontage?.role !== "neighbour" && t < 1; t += 0.18)
-    line(
-      { x: top[0]!.x + (top[1]!.x - top[0]!.x) * t, y: top[0]!.y + (top[1]!.y - top[0]!.y) * t },
-      { x: top[3]!.x + (top[2]!.x - top[3]!.x) * t, y: top[3]!.y + (top[2]!.y - top[3]!.y) * t },
-      "#323f43",
-      1,
-    );
-  // a finished shop outside the block takes the same precast coping as the shop
-  if (!frontage && shopArt?.finish)
-    paintParapet(ctx, project, pixelsPerMetre, structure, "shop", clad);
-  if (frontage) {
-    paintParapet(ctx, project, pixelsPerMetre, structure, frontage.role, clad);
-    for (const pipe of frontage.pipes.filter((p) => p.structure === structure))
-      paintRoofOutlet(ctx, project, pixelsPerMetre, pipe);
+  const homeRoof = clad && (use === "residential" || isAnnex(structure, entrances));
+  if (homeRoof) paintResidentialRoof(ctx, project, pixelsPerMetre, structure, clad!);
+  else {
+    // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
+    for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
+    // a neighbour's roof is ballasted, not a seamed membrane
+    for (let t = 0.15; frontage?.role !== "neighbour" && t < 1; t += 0.18)
+      line(
+        { x: top[0]!.x + (top[1]!.x - top[0]!.x) * t, y: top[0]!.y + (top[1]!.y - top[0]!.y) * t },
+        { x: top[3]!.x + (top[2]!.x - top[3]!.x) * t, y: top[3]!.y + (top[2]!.y - top[3]!.y) * t },
+        "#323f43",
+        1,
+      );
+    // a finished shop outside the block takes the same precast coping as the shop
+    if (!frontage && shopArt?.finish)
+      paintParapet(ctx, project, pixelsPerMetre, structure, "shop", clad);
+    if (frontage) {
+      paintParapet(ctx, project, pixelsPerMetre, structure, frontage.role, clad);
+      for (const pipe of frontage.pipes.filter((p) => p.structure === structure))
+        paintRoofOutlet(ctx, project, pixelsPerMetre, pipe);
+    }
   }
   // Rooftop service equipment is dressing on an inaccessible building, not cover.
   for (const [i, equipment] of rooftopUnits(structure).entries()) {
     // the painted unit, in place of the drawn box, on every roof that takes materials
     const unit = materials ? architecture?.roofUnit : undefined;
     if (unit) {
-      paintRoofShade(ctx, project, pixelsPerMetre, equipment, h);
+      if (homeRoof) {
+        ctx.save();
+        ctx.beginPath();
+        top.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.closePath();
+        ctx.clip();
+      }
+      paintRoofShade(
+        ctx,
+        project,
+        pixelsPerMetre,
+        equipment,
+        h - (homeRoof ? RESIDENTIAL_ROOF_RECESS * pixelsPerMetre : 0),
+      );
+      if (homeRoof) ctx.restore();
       paintRoofUnitArt(ctx, project, equipment, h, unit);
       continue;
     }
