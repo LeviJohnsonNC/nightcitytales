@@ -8,11 +8,13 @@
  * thin. Now the creator is simply scored: the tracks play one after another in
  * a shuffled order, each fading into the next.
  *
- * There are two of them, told apart by file name, so a new track joins one by
- * being uploaded; nothing here lists them. `music-…` is NIGHT SHIFT, the
- * original score, all of it instrumental, and the one NCAmp opens on.
- * `radio-…` is RADIO FREE NIGHT CITY, the songs with vocals. A `-v2`, `-v3` on
- * the end is another take of the same song (`songOf`).
+ * They are told apart by file name, so a new track joins one by being
+ * uploaded. `music-…` is NIGHT SHIFT, the original score, all of it
+ * instrumental, and the one NCAmp opens on. `radio-…` is RADIO FREE NIGHT CITY,
+ * the songs with vocals. `quiet-…` is NO QUIET HOURS, an album: it is the one
+ * playlist with a running order (`order`), which its window lists and which
+ * plays front to back whenever shuffle is off. A `-v2`, `-v3` on the end is
+ * another take of the same song (`songOf`).
  *
  * Pure apart from reading which files exist. What plays it is `musicDirector.ts`.
  */
@@ -21,7 +23,7 @@ import { uploadedAssetNames } from "@/features/chargen/art";
 /** The file-name prefix that puts a track in the original, instrumental playlist. */
 export const TRACK_PREFIX = "music-";
 
-export type PlaylistId = "night-shift" | "radio-free";
+export type PlaylistId = "night-shift" | "radio-free" | "no-quiet-hours";
 
 export type PlaylistDef = {
   id: PlaylistId;
@@ -33,9 +35,15 @@ export type PlaylistDef = {
   blurb: string;
   /** The file-name prefix that puts a track in it. */
   prefix: string;
+  /**
+   * An album's running order, by song (file name without extension or take). A
+   * playlist without one is listed by title. A track missing from it plays after
+   * the ones in it, by title.
+   */
+  order?: readonly string[];
 };
 
-/** Both playlists, the default first. */
+/** Every playlist, the default first. */
 export const PLAYLISTS: readonly PlaylistDef[] = [
   {
     id: "night-shift",
@@ -50,6 +58,25 @@ export const PLAYLISTS: readonly PlaylistDef[] = [
     short: "RADIO FREE",
     blurb: "Songs with vocals.",
     prefix: "radio-",
+  },
+  {
+    id: "no-quiet-hours",
+    name: "No Quiet Hours",
+    short: "NO QUIET",
+    blurb: "An album, in order.",
+    prefix: "quiet-",
+    order: [
+      "quiet-the-night-wants-us",
+      "quiet-looks-like-trouble",
+      "quiet-touch-without-a-trace",
+      "quiet-a-little-more",
+      "quiet-make-it-feel-real",
+      "quiet-in-the-blackout",
+      "quiet-not-yours-to-keep",
+      "quiet-call-me-back",
+      "quiet-ours-until-morning",
+      "quiet-the-city-can-wait",
+    ],
   },
 ];
 

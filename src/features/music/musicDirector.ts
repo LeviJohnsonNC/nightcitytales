@@ -1,7 +1,7 @@
 /**
  * The soundtrack, played: the engine behind NCAmp.
  *
- * A shuffled playlist (`soundtrack.ts`): one track after another, each fading
+ * A playlist (`soundtrack.ts`): one track after another, each fading
  * into the next a few seconds before it ends, reshuffling when the round is
  * done, never two takes of one song back to back. On top of that sit the
  * controls a player has — play, pause, stop, previous, next, seek, pick a
@@ -41,11 +41,11 @@ import {
   shuffleRound,
   type PlaylistId,
 } from "./soundtrack";
-import { inTitleOrder } from "./trackTitles";
+import { inPlaylistOrder } from "./trackTitles";
 
 /** The tracks of the playlist now selected, in the order its window lists them. */
 function playlist(): string[] {
-  return inTitleOrder(playlistTracks(prefs.list));
+  return inPlaylistOrder(prefs.list, playlistTracks(prefs.list));
 }
 
 const ENABLED_KEY = "nct.music";
