@@ -20,7 +20,7 @@
  * wide). Presentation only: no collision, door, entrance or route is added.
  */
 import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
-import { paintShopFinish, paintShopCornice } from "./shopFinish";
+import { paintShopFinish, paintShopCornice, paintRetailFrames } from "./shopFinish";
 import { BAY } from "./architecturePack";
 import { facadeOpenings, sourceFor } from "./architectureArt";
 import { edgeFrame, exposedSpans, type Edge } from "./frontage";
@@ -46,7 +46,7 @@ export const RETURN = {
   /** The kitchen extract: a louvred box on the pier, its duct up and over the coping. */
   duct: { width: 0.36, proud: 0.24, box: [1.7, 2.25] as const, over: 0.35 },
   /** How far from the shopfront's corner a bay may be and still be shop. */
-  displayReach: 7,
+  displayReach: 11,
 } as const;
 
 /** One composed face of the shop's own building. */
@@ -105,7 +105,7 @@ export function shopReturns(
       if (seen.length < 2) continue;
       const distance = (b: number) => (corner === 0 ? b : Math.max(0, corner - (b + BAY.width)));
       const near = [...seen].sort((a, b) => distance(a) - distance(b));
-      const count = Math.min(seen.length >= 5 ? 2 : 1, seen.length - 1);
+      const count = Math.min(seen.length >= 5 ? 3 : 2, seen.length);
       const display = near
         .slice(0, count)
         .filter((b) => distance(b) < RETURN.displayReach)
@@ -114,7 +114,7 @@ export function shopReturns(
       const store = seen.filter((b) => !display.includes(b));
       // the grille: the storeroom bay furthest from the shop, on a long enough face
       const far = [...store].sort((a, b) => distance(b) - distance(a));
-      const grille = store.length >= 3 ? far[0] : undefined;
+      const grille = store.length >= 2 ? far[0] : undefined;
       // the extract: on the pier between the display and the first storeroom bay
       const inner = corner === 0 ? display[display.length - 1]! + BAY.width : display[0]!;
       const next =
@@ -356,6 +356,7 @@ export function paintReturnFace(
     return;
   }
   paintShopFinish(ctx, at, length, art.wall);
+  if (art.wall) paintRetailFrames(ctx, at, length, [...face.display, ...face.store], []);
   // --- the fascia band: render above the string course, to the coping ----------
   const band = quad(0, length, R.courseTop, h);
   if (
@@ -843,6 +844,17 @@ export function paintNeighbourFront(
     SURFACE_MATERIALS["painted-metal"].metres,
     ppm,
   );
+  // Workshop enamel dado: a distinct, closed business below the high windows.
+  // Broad material bands survive play zoom; the upper rooms stay on their own painter.
+  fill(ctx, quad(a, b, 0.12, 1.72), "#304b4d");
+  for (let s = a + 0.2; s < b - 0.2; s += 3.2) {
+    const end = Math.min(b - 0.16, s + 2.88);
+    fill(ctx, quad(s, end, 0.27, 1.52), "#263d40");
+    line(ctx, at(s, 0.02, 1.52), at(end, 0.02, 1.52), "#697c76", 0.75);
+    line(ctx, at(end, 0.02, 0.27), at(end, 0.02, 1.52), "#15272a", 1);
+  }
+  fill(ctx, quad(a, b, 1.72, 1.84, 0.08), "#7d8272");
+  fill(ctx, [at(a, 0, 1.84), at(b, 0, 1.84), at(b, 0.1, 1.84), at(a, 0.1, 1.84)], "#a1a48e");
   // cladding: profiled metal sheet from the course to the coping
   const clad = quad(a, b, N.courseTop, h);
   if (

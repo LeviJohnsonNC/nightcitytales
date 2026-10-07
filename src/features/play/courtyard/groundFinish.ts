@@ -439,6 +439,34 @@ function paintThresholdWear(
   }
 }
 
+/** Flat threshold inserts, centred on saved exterior entrances, never new steps. */
+export function entryAprons(env: SceneEnvironment): Rect[] {
+  return (env.entrances ?? []).flatMap((e) => {
+    const s = env.structures.find((s) => s.id === e.structureId);
+    if (!s || s.style !== "shop") return [];
+    const r = s.rect,
+      p = e.position;
+    if (p.y < r.y) return [{ x: p.x - 1, y: r.y - 1.1, width: 2, height: 1 }];
+    if (p.y > r.y + r.height) return [{ x: p.x - 1, y: r.y + r.height + 0.1, width: 2, height: 1 }];
+    if (p.x < r.x) return [{ x: r.x - 1.1, y: p.y - 1, width: 1, height: 2 }];
+    if (p.x > r.x + r.width) return [{ x: r.x + r.width + 0.1, y: p.y - 1, width: 1, height: 2 }];
+    return [];
+  });
+}
+function paintEntryAprons(ctx: CanvasRenderingContext2D, project: Project, env: SceneEnvironment) {
+  for (const r of entryAprons(env)) {
+    poly(ctx, quad(project, r), "rgba(158,148,122,.6)");
+    const inset = { x: r.x + 0.12, y: r.y + 0.12, width: r.width - 0.24, height: r.height - 0.24 };
+    poly(ctx, quad(project, inset), "#303c37");
+    const longX = r.width > r.height;
+    for (let t = 0.08; t < (longX ? inset.width : inset.height); t += 0.1) {
+      const a = { x: inset.x + (longX ? t : 0), y: inset.y + (longX ? 0 : t) };
+      const b = { x: a.x + (longX ? 0 : inset.width), y: a.y + (longX ? inset.height : 0) };
+      stroke(ctx, project(a), project(b), "rgba(151,151,127,.38)", 0.65);
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ gutters */
 
 function paintGutterSilt(ctx: CanvasRenderingContext2D, project: Project, env: SceneEnvironment) {
@@ -490,4 +518,5 @@ export function paintGroundFinish(
     stain(ctx, project, o.at, o.r, o.r * 0.8, `rgba(8,8,10,${o.strength.toFixed(3)})`);
   paintWallFeet(ctx, project, env.structures, skip);
   paintThresholdWear(ctx, project, env, skip);
+  if (enhancedPaving) paintEntryAprons(ctx, project, env);
 }

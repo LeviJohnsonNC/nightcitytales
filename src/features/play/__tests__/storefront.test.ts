@@ -428,3 +428,17 @@ describe("night grade", () => {
     expect(fills).toContain(css(INTERSECTION_NIGHT.grade.paving));
   });
 });
+
+it("scales the sign to tall saved facades while preserving low-building fixtures", () => {
+  const before = JSON.stringify(sf);
+  const tall = bladeSign(sf)!;
+  expect(tall.z1).toBeLessThan(sf.structure.height);
+  expect(tall.z1 - tall.z0).toBeGreaterThan(2.5);
+  expect(tall.out1).toBeLessThanOrEqual(1);
+  expect(tall.cell + 0.08).toBeLessThan(tall.out1 - tall.out0);
+  const legacy = bladeSign({ ...sf, structure: { ...sf.structure, height: 4 } })!;
+  expect(legacy.z1).toBe(BLADE.z1);
+  expect(legacy.cell).toBe(BLADE.cell);
+  expect(legacy.out1).toBe(BLADE.out1);
+  expect(JSON.stringify(sf)).toBe(before);
+});

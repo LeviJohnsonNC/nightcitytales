@@ -772,6 +772,24 @@ export function paintCutawayWall(
         paintReturnFace(ctx, composed, project, metre, returns!.art, materials, "fittings", clip);
     }
   }
+  // The repair base belongs to the surviving wall, including low automatic sections.
+  if (!lightPass && returns)
+    for (const front of returns.neighbours.filter((f) => f.structure === structure)) {
+      const wall = structure.rect;
+      const north = front.edge === "north";
+      if (!(north ? r.y === wall.y : r.x + r.width === wall.x + wall.width)) continue;
+      const s0 = north ? r.x - wall.x : r.y - wall.y;
+      const s1 = s0 + (north ? r.width : r.height);
+      if (s1 <= front.span[0] || s0 >= front.span[1]) continue;
+      const q = facePainter(structure, front.edge, project, metre).quad(s0, s1, 0, part.height);
+      ctx.save();
+      ctx.beginPath();
+      q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      ctx.closePath();
+      ctx.clip();
+      paintNeighbourFront(ctx, front, project, metre, returns.art.service, materials);
+      ctx.restore();
+    }
   // A piece of the storefront's own face carries that face's detail up to its height,
   // so revealing the street does not change what the wall is.
   if (storefront) {
@@ -2676,8 +2694,8 @@ export function createComposedEnvironment(
         const blade = bladeSign(sf);
         if (blade && building) {
           const t = BLADE.thickness;
-          const ends = [BLADE.out0, BLADE.out1].flatMap((out) =>
-            [BLADE.z0 - 0.3, BLADE.z1 + 0.1].flatMap((z) => [
+          const ends = [blade.out0, blade.out1].flatMap((out) =>
+            [blade.z0 - 0.3, blade.z1 + 0.1].flatMap((z) => [
               at(blade.s - t, out, z),
               at(blade.s + t, out, z),
               at(blade.s, 0, z),
@@ -2705,8 +2723,8 @@ export function createComposedEnvironment(
             reflects
               ? [
                   bladeMirror(
-                    at(blade.s, BLADE.out0, 0),
-                    at(blade.s, BLADE.out1, 0),
+                    at(blade.s, blade.out0, 0),
+                    at(blade.s, blade.out1, 0),
                     x0,
                     y0,
                     ends,
@@ -2715,8 +2733,21 @@ export function createComposedEnvironment(
                 ]
               : undefined,
           )
-            ?.setData("activityLayer", building.getData("activityLayer"))
+            ?.setData("activityLayer", "fixture")
+            .setData("revealHide", occluders.has(s.id))
             .setData("foregroundStructure", materialised ? s : undefined)
+            .setData(
+              "sectionRect",
+              cutawayWalls(s, arena.environment!.entrances).find(({ rect: r }) =>
+                sf.edge === "north"
+                  ? r.y === s.rect.y &&
+                    s.rect.x + blade.s >= r.x &&
+                    s.rect.x + blade.s < r.x + r.width
+                  : r.x + r.width === s.rect.x + s.rect.width &&
+                    s.rect.y + blade.s >= r.y &&
+                    s.rect.y + blade.s < r.y + r.height,
+              )?.rect ?? s.rect,
+            )
             .setData("sortRect", f)
             .setData("fadeWith", building);
         }

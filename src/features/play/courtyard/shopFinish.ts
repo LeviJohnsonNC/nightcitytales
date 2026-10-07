@@ -72,3 +72,58 @@ export function paintShopCornice(ctx: CanvasRenderingContext2D, at: At, length: 
   );
   poly([at(0, 0, top), at(length, 0, top), at(length, proud, top), at(0, proud, top)], "#aaa18a");
 }
+
+/** Substantial shop joinery around existing openings; no invented doorway or bay. */
+export function paintRetailFrames(
+  ctx: CanvasRenderingContext2D,
+  at: At,
+  length: number,
+  bays: readonly number[],
+  doors: readonly number[],
+  sill = 0.65,
+) {
+  const poly = (pts: Point[], color: string) => {
+    ctx.beginPath();
+    pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  };
+  const face = (a: number, b: number, lo: number, hi: number, color: string, out = 0.08) =>
+    poly([at(a, out, lo), at(b, out, lo), at(b, out, hi), at(a, out, hi)], color);
+  const cap = (a: number, b: number, z: number) =>
+    poly([at(a, 0, z), at(b, 0, z), at(b, 0.12, z), at(a, 0.12, z)], "#afa68e");
+  ctx.save();
+  // Enamel stall risers read as a continuous shop base, with recessed panels.
+  for (const s of bays) {
+    const end = s + 2.2;
+    face(s, end, 0.06, sill - 0.04, "#263e39", 0.025);
+    face(s + 0.14, end - 0.14, 0.16, sill - 0.16, "#172b29", 0.03);
+    face(s + 0.15, end - 0.15, sill - 0.2, sill - 0.17, "#687566", 0.04);
+    // Jambs frame the opening without changing its aperture.
+    for (const [a, b] of [
+      [Math.max(0, s - 0.18), s - 0.03],
+      [end + 0.03, Math.min(length, end + 0.18)],
+    ] as const) {
+      if (b <= a) continue;
+      face(a, b, 0.08, 2.57, "#8b8270");
+      face(b - 0.035, b, 0.08, 2.57, "#3a4039", 0.12);
+      face(a, a + 0.025, 0.12, 2.57, "#b0a58b", 0.12);
+      face(a, b, 0.1, 0.4, "#56594e", 0.12);
+    }
+    face(Math.max(0, s - 0.18), Math.min(length, end + 0.18), 2.4, 2.58, "#807662", 0.12);
+    cap(Math.max(0, s - 0.18), Math.min(length, end + 0.18), 2.58);
+    // The small transom sits above the original glass, under the masonry lintel.
+    face(s, end, 2.36, 2.42, "#1e2b28", 0.04);
+  }
+  for (const centre of doors) {
+    const a = Math.max(0, centre - 0.96),
+      b = Math.min(length, centre + 0.96);
+    // Deep dark returns distinguish the saved entrance from display glazing.
+    face(a, a + 0.13, 0, 2.55, "#40463b", 0.11);
+    face(b - 0.13, b, 0, 2.55, "#252e28", 0.11);
+    face(a, b, 2.43, 2.62, "#8d8068", 0.14);
+    cap(a, b, 2.62);
+  }
+  ctx.restore();
+}

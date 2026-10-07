@@ -14,7 +14,7 @@
  * is metres away from the wall (negative: into the building), `z` is height.
  */
 import { sourceFor } from "./architectureArt";
-import { paintShopFinish, paintShopCornice } from "./shopFinish";
+import { paintShopFinish, paintShopCornice, paintRetailFrames } from "./shopFinish";
 import { paintDownpipe, paintPlinth, solidSpans, type Downpipe } from "./frontage";
 import type { Point, Rect, SceneAttachment, SceneEnvironment, SceneStructure } from "@/engine";
 import {
@@ -436,6 +436,7 @@ export function paintStorefrontFace(o: FaceOptions) {
   }
 
   paintShopFinish(ctx, at, sf.length, o.art.wall);
+  if (o.art.wall) paintRetailFrames(ctx, at, sf.length, sf.bays, [sf.door], L.riser);
 
   // --- the wall's own trim: base shade, pier lines at both corners ------------
   gradientFill(ctx, quad(0, sf.length, 0, 0.5), at(0, 0, 0), at(0, 0, 0.5), [
@@ -981,17 +982,36 @@ export function bladeSign(sf: Storefront) {
   const s = after < sf.length - 0.6 ? after : before > 0.6 ? before : undefined;
   if (s === undefined) return undefined;
   const r = sf.structure.rect;
+  // A taller saved shop carries a readable vertical identity above its canopy.
+  // Old low buildings keep the original fixture dimensions.
+  const scale =
+    sf.structure.height >= 6
+      ? Math.min(2.4, (sf.structure.height - BLADE.z0 - 0.4) / (BLADE.z1 - BLADE.z0))
+      : 1;
+  const dimensions = {
+    out0: BLADE.out0,
+    out1: Math.min(1, BLADE.out0 + (BLADE.out1 - BLADE.out0) * scale),
+    z0: BLADE.z0,
+    z1: BLADE.z0 + (BLADE.z1 - BLADE.z0) * scale,
+    cell: BLADE.cell * scale,
+    gap: 0.03 * scale,
+  };
   const t = BLADE.thickness / 2;
   const footprint: Rect =
     sf.edge === "north"
-      ? { x: r.x + s - t, y: r.y - BLADE.out1, width: 2 * t, height: BLADE.out1 - BLADE.out0 }
+      ? {
+          x: r.x + s - t,
+          y: r.y - dimensions.out1,
+          width: 2 * t,
+          height: dimensions.out1 - dimensions.out0,
+        }
       : {
-          x: r.x + r.width + BLADE.out0,
+          x: r.x + r.width + dimensions.out0,
           y: r.y + s - t,
-          width: BLADE.out1 - BLADE.out0,
+          width: dimensions.out1 - dimensions.out0,
           height: 2 * t,
         };
-  return { s, footprint };
+  return { s, footprint, ...dimensions };
 }
 
 /** Draw `image` on the blade's camera-facing side: across from its outer edge to the
@@ -1054,7 +1074,7 @@ export function paintBladeSign(
   const at = facePoint(sf, project, ppm);
   const { s } = blade;
   const t = BLADE.thickness / 2;
-  const { out0, out1, z0, z1, cell } = BLADE;
+  const { out0, out1, z0, z1, cell, gap } = blade;
   // the side the camera sees is the +s side of the blade
   const side = s + t;
   const panel = [at(side, out1, z1), at(side, out0, z1), at(side, out0, z0), at(side, out1, z0)];
@@ -1065,7 +1085,7 @@ export function paintBladeSign(
     at(side, out0 + inset, z0 + inset),
     at(side, out1 - inset, z0 + inset),
   ];
-  const glyphZ = (i: number) => z1 - 0.1 - i * (cell + 0.03);
+  const glyphZ = (i: number) => z1 - 0.1 - i * (cell + gap);
   const glyphOut = (out0 + out1) / 2 + cell / 2;
   if (pass === "glow") {
     // a neon border tube and the four glyphs, the colour that reads at play zoom

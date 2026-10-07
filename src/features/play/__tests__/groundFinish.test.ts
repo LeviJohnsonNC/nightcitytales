@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { composeScene } from "@/engine";
-import { oilDrips, roadRepairs, slabFinish } from "../courtyard/groundFinish";
+import { entryAprons, oilDrips, roadRepairs, slabFinish } from "../courtyard/groundFinish";
 import { CONTACT, contactAlpha, contactPad } from "../courtyard/contactShade";
 import { interiorPropPoint } from "../courtyard/interiorPropArt";
 
@@ -117,4 +117,34 @@ describe("contact shade", () => {
     expect(p.x / W).toBeCloseTo(reg.originX);
     expect(p.y / H).toBeCloseTo(reg.originY);
   });
+});
+
+it("keeps threshold inserts outside saved buildings and anchored to shop entrances", () => {
+  for (const seed of [0, 1, 7, 8, 19]) {
+    const env = composeScene("intersection", seed).layout.arena.environment!;
+    const before = JSON.stringify(env);
+    const aprons = entryAprons(env);
+    expect(aprons.length).toBeGreaterThan(0);
+    for (const r of aprons) {
+      expect(
+        env.entrances!.some(
+          (e) =>
+            e.position.x >= r.x &&
+            e.position.x <= r.x + r.width &&
+            e.position.y >= r.y &&
+            e.position.y <= r.y + r.height,
+        ),
+      ).toBe(true);
+      for (const s of env.structures.filter((s) => s.style !== "mesh-fence")) {
+        const q = s.rect;
+        expect(
+          r.x + r.width <= q.x ||
+            r.x >= q.x + q.width ||
+            r.y + r.height <= q.y ||
+            r.y >= q.y + q.height,
+        ).toBe(true);
+      }
+    }
+    expect(JSON.stringify(env)).toBe(before);
+  }
 });
