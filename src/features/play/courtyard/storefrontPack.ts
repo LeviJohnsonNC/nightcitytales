@@ -57,20 +57,20 @@ export const STOREFRONT_FACE = {
  * reference frame. Not a generated asset: the glyphs are a mask rasterised from a
  * real font by `tools/art/kanji-sign.mjs`, so the renderer can light and glow them,
  * and nothing depends on the player having a CJK font. It is a flush light-box on
- * the fascia over the saved entrance, four square cells in a row. At normal zoom a
- * cell is about 15 screen pixels: legible as kanji only when zoomed in.
+ * the fascia over the saved entrance, four square cells in a row. The larger cells
+ * are prefiltered for the normal play view.
  */
 export const STOREFRONT_SIGN = {
   text: "深夜市場",
   mask: "/images/signs/shenye-ichiba.webp",
   /** Distance along the face from the building's west corner, in metres. */
   s0: 0.05,
-  width: 1.9,
+  width: 2.9,
   /** Height above the pavement of the panel's foot. */
   z0: 2.85,
-  height: 0.7,
-  /** Each glyph cell is square: 4 x 0.43 m inside a 0.09 m margin. */
-  cell: 0.43,
+  height: 0.75,
+  /** Each glyph cell is square: 4 x 0.62 m inside a 0.21 m margin. */
+  cell: 0.62,
 } as const;
 
 export type PackRect = { x: number; y: number; w: number; h: number };

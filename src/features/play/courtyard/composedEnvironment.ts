@@ -956,9 +956,9 @@ export function paintBuilding(
       ? ["#766957", "#554f49", "#675346"]
       : frontage?.role === "neighbour"
         ? // the shop's neighbours: dark painted render and a paler, cooler roof
-          ["#3e3a36", "#2c2b2a", "#4d5352"]
+          ["#3e3a36", "#2c2b2a", materials ? "#353b3c" : "#4d5352"]
         : structure.style === "shop"
-          ? ["#49474a", "#333941", "#646360"]
+          ? ["#49474a", "#333941", materials ? "#454947" : "#646360"]
           : structure.style === "workshop"
             ? ["#4b4940", "#353b3b", "#686356"]
             : ["#3e4a50", "#2c3942", "#56656b"];
@@ -1648,6 +1648,7 @@ export function createComposedEnvironment(
           faces: shopReturns(env, pipeAt),
           art: {
             ...(storefrontArt.window ? { interior: storefrontArt.window } : {}),
+            ...(storefrontArt.wall ? { wall: storefrontArt.wall } : {}),
             ...(storefrontArt.kanji ? { kanji: storefrontArt.kanji } : {}),
             ...(storefrontArt.service ? { service: storefrontArt.service } : {}),
           },

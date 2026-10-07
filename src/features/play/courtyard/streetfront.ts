@@ -20,8 +20,9 @@
  * wide). Presentation only: no collision, door, entrance or route is added.
  */
 import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
+import { paintShopFinish, paintShopCornice } from "./shopFinish";
 import { BAY } from "./architecturePack";
-import { facadeOpenings } from "./architectureArt";
+import { facadeOpenings, sourceFor } from "./architectureArt";
 import { edgeFrame, exposedSpans, type Edge } from "./frontage";
 import { lightColor, type GroundLight, type NightLighting } from "./nightLighting";
 import { STOREFRONT_SIGN } from "./storefrontPack";
@@ -217,6 +218,14 @@ function drawCrop(
 ) {
   // cover: the image's aspect kept, centred, its sides cropped
   const aspect = (s1 - s0) / (z1 - z0);
+  const p = at(s0, out, z1),
+    right = at(s1, out, z1),
+    foot = at(s0, out, z0);
+  const t = ctx.getTransform();
+  const device = (q: Point) =>
+    Math.hypot(t.a * (q.x - p.x) + t.c * (q.y - p.y), t.b * (q.x - p.x) + t.d * (q.y - p.y));
+  const fraction = Math.min(1, (img.height * aspect) / img.width);
+  img = sourceFor(img, device(right) / fraction, device(foot));
   const sh = img.height;
   const sw = Math.min(img.width, sh * aspect);
   const sx = (img.width - sw) / 2;
@@ -283,6 +292,8 @@ function glyphs(face: ReturnFace) {
 }
 
 export interface ReturnArt {
+  /** Neutral plaster and ceramic field, shared with the shopfront. */
+  wall?: Img;
   /** The storefront's lit interior (`window-interior`). */
   interior?: Img;
   /** The shop's name, as a mask (`shenye-ichiba`). */
@@ -344,22 +355,28 @@ export function paintReturnFace(
     ctx.restore();
     return;
   }
+  paintShopFinish(ctx, at, length, art.wall);
   // --- the fascia band: render above the string course, to the coping ----------
   const band = quad(0, length, R.courseTop, h);
   if (
     !fillMaterial(ctx, materials, band, {
       key: "painted-render",
       basis: basis("painted-render"),
-      target: "#5a5049",
+      target: "#493133",
     })
   )
-    fill(ctx, band, "#5a5049");
+    fill(ctx, band, "#493133");
   // weathering washed down from the coping: soft, never a pattern
   ramp(ctx, quad(0, length, h - 0.5, h - 0.06), at(0, 0, h - 0.06), at(0, 0, h - 0.5), [
     [0, "rgba(24,20,14,.28)"],
     [1, "rgba(24,20,14,0)"],
   ]);
 
+  if (art.wall) {
+    paintShopCornice(ctx, at, length);
+    ctx.restore();
+    return;
+  }
   // --- the string course: precast, proud, its top catching the sky --------------
   const P = R.courseProud;
   ramp(
@@ -405,15 +422,17 @@ function paintFittings(
   for (const s0 of face.display) {
     const s1 = s0 + BAY.width;
     // stall riser: painted steel under the glass, a kick plate at the foot
-    fill(ctx, quad(s0, s1, 0, lo), "#26343a");
-    fill(ctx, quad(s0 + R.riserInset, s1 - R.riserInset, 0.1, lo - 0.08), "#30424a");
-    line(
-      ctx,
-      at(s0 + R.riserInset, 0, lo - 0.08),
-      at(s1 - R.riserInset, 0, lo - 0.08),
-      "#5b6c72",
-      1,
-    );
+    if (!art.wall) {
+      fill(ctx, quad(s0, s1, 0, lo), "#172f2c");
+      fill(ctx, quad(s0 + R.riserInset, s1 - R.riserInset, 0.1, lo - 0.08), "#264a40");
+      line(
+        ctx,
+        at(s0 + R.riserInset, 0, lo - 0.08),
+        at(s1 - R.riserInset, 0, lo - 0.08),
+        "#5b6c72",
+        1,
+      );
+    }
     fill(ctx, quad(s0, s1, 0, 0.07), "#161f23");
     // the opening, and the shop behind it, set back from the wall
     const opening = quad(s0, s1, lo, hi);
@@ -887,7 +906,13 @@ export function paintNeighbourFront(
     const pitch = Math.min(cell + B.gap, (s1 - s0 - 0.3) / cells);
     const start = (s0 + s1) / 2 - (pitch * (cells - 1) + cell) / 2;
     const zTop = (z0 + z1) / 2 + cell / 2;
-    const letters = tint(sign, "#d9cfb2");
+    const t = ctx.getTransform();
+    const p = at(start, B.proud, zTop),
+      q = at(start + cell, B.proud, zTop),
+      v = at(start, B.proud, zTop - cell);
+    const device = (a: Point) =>
+      Math.hypot(t.a * (a.x - p.x) + t.c * (a.y - p.y), t.b * (a.x - p.x) + t.d * (a.y - p.y));
+    const letters = sourceFor(tint(sign, "#d9cfb2"), device(q) * cells, device(v));
     for (let i = 0; i < cells; i++) {
       const sx = start + i * pitch;
       // one cell of the mask: crop its quarter

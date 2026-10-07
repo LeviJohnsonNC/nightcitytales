@@ -1821,3 +1821,12 @@ as a street of businesses.
 - **Not verified:** a real `/play` fight and save/load.
 
 **Stopped; reflections opt-in.**
+
+### Finished shop material pass (after 304)
+
+A coherent plaster/green-tile shop, burgundy fascia, built lintel, quieter commercial roof fields
+and larger, correctly filtered signage replace another effects-only iteration. Existing geometry,
+lighting settings and reflection default stay unchanged. Real-browser comparisons and gameplay
+fixture checks: `docs/checkpoint-finished-corner.md`. The whole intersection is **not** declared at
+reference quality; the next art target is a second complete, contrasting frontage, judged alongside
+the shop at normal play scale.
