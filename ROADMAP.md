@@ -1805,20 +1805,19 @@ as a street of businesses.
 
 [Material pilot](docs/checkpoint-material-pilot.md) (the shop corner's ground response):
 
-- **The check's rounding limit is enforced** at 3/255, with a failing case in the unit tests.
-- **Reflections as pictures, not lobes.**
-  - The shop's windows, neon, blade sign and lamp lens are reflected in their own shape and colour, stretched
-    by a rough surface.
-  - The street responds per pixel from its own texture: asphalt glints on its aggregate, slabs take a sheen with
-    dark joints, markings and the doorstep are smooth.
-  - Each shop light glints where it falls.
-- **Spatial truth.**
-  - The pilot goes with the lights and with its fixture in the reveal.
-  - Props in front cut it, standing or wrecked, and the live board matches direct loads.
-  - `reflect=0` compares it with the ground as it was.
-- **Results.** Seed 8 reads as a different surface at normal zoom. Seed 7 is subtler, because its lamp's
-  reflection lands behind a crate. Seed 0 has no storefront corner.
-- **Cost (software GL).** About 0.7 s at load on seed 7, and 0.13 s for each new damage state.
+- **PR 302 (merged): the approach is possible.** The check's 3/255 rounding limit is enforced. Reflections are
+  pictures of their fixtures, cut by props, and they go with their lights.
+- **Revision: not visually accepted, so off by default** (`skip`: not built, no cost in `/play`).
+  - Sources are extracted to their emitters before any stretch. This fixes PR 302's summed-dim-wall bug, and a
+    browser pixel check holds it.
+  - A deterministic wet mask replaced the glitter with patches.
+  - At play zoom the lit wet patches read as pale stains and the pictures as isolated marks, so tuning stopped
+    there.
+- **Measured (software GL).**
+  - Construction: 0.16–0.44 s.
+  - A first damage change: 19–76 ms of rendering. A repeated one: none.
+  - `reflection-perf.mjs --chrome` measures real hardware.
+- **Untested hypotheses:** wet ground darkened where it does not reflect, and more street-level sources.
 - **Not verified:** a real `/play` fight and save/load.
 
-**Awaiting Levi's review.**
+**Stopped; reflections opt-in.**

@@ -1217,7 +1217,7 @@ At night on the intersection, every light that pools on the ground also reaches 
   block cost about 4% of frames under software GL.
 - **Puddles were tried and omitted** (`docs/checkpoint-atmosphere.md` §4). Placed where water collects, they were
   nowhere near where the lights' reflections land, and a 5 px reflection read as a dotted line. The shop corner's
-  reflections are now `groundReflection.ts` (below).
+  reflection pilot is `groundReflection.ts` (below), off by default.
 
 ### Commercial streetfront (courtyard/streetfront.ts)
 
@@ -1287,46 +1287,37 @@ it. The rules:
   load under software GL.
 - **A damp sheen was tried and omitted** (`docs/checkpoint-ground-light.md` §4). It was a blurred lobe of each
   light's colour at its mirror point, multiplied by the ground. It had no shape and no surface, and read as haze.
-  What replaced it, at the shop corner only, is below.
+  The pilot that followed, at the shop corner only, is below and off by default.
 
 See `docs/checkpoint-ground-light.md`.
 
 ### Ground reflections (courtyard/groundReflection.ts)
 
-At night on the intersection with materials, the finished shop corner's ground gives back its lights: the
-shopfront's lit windows and neon, the blade sign and the streetlight's lens. It applies only where `storefrontFor`
-finds a storefront (seed 0 has none, and is unchanged). The rules:
+A pilot at the finished shop corner, **not visually accepted and off by default**: `REFLECTION_MODE_DEFAULT` is
+`skip`, so nothing is built and `/play` pays nothing. `/scene-review?reflect=` takes `on`, `pictures`, `glints`,
+`hidden` (built, not shown) and `skip`. See `docs/checkpoint-material-pilot.md` before touching it. The rules it
+keeps:
 
-- **A reflection is the fixture's own picture,** not a lobe of its colour.
-  - It is the sprite as the street sees it at night (albedo under the ambient, plus its light sprite), flipped
-    about the ground line under it (`mirrorMatrix`).
-  - Only what is brighter than `REFLECTION.floor` is reflected: lit walls give nothing, emitters do.
-  - The lamp reflects its lens alone, never the cone of light in the air under it.
-- **A rough surface stretches it.** The picture is drawn at a range of flip depths (`REFLECTION.stretch`): from
-  near the fixture's foot to past its mirror point.
-- **The surface decides the response, per pixel, from its own texture.** Surfaces are asphalt, paving, hard
-  standing, markings, joints and thresholds (`paintSurfaceClasses`).
-  - A rough share shows the streak dimly, and brightly on proud grains: per surface, the texture's own top 2%.
-  - A grain must stand proud in every direction, and none glints near a joint. Taken as grains, an edge or a
-    slab's chipped rim reads as a dotted line.
-  - Joints and building footprints give nothing. Markings and polished thresholds are smooth. A world-space
-    noise makes a few patches smoother.
-- **Glints are the light that falls there.** Each shop light's incident light (`incidentLight`, with its shadows)
-  shows on the grains it reaches. Outside the lights the street stays dark.
-- **It is added, never multiplied by the albedo,** and eases toward white by its brightest channel (`knee`), so
-  a warm window stays warm.
-- **What stands in front cuts it.** A prop nearer the camera than a fixture hides its reflection by its body
-  flipped below its foot (`flippedBody`), standing or as its wreck.
-- **It follows its source.**
-  - Each fixture's reflection is its own sprite, shown and faded with that fixture's sprite: the shopfront's
-    leaves with its wall in the reveal.
+- **A source is what a fixture emits, extracted once, before anything is stretched or summed.**
+  - Paint only emitters: glow passes, a light pass clipped to the lit bays, the lamp's lens.
+  - Never paint art under the ambient or a wash on a wall.
+  - `emissive()` floors each source's own picture.
+  - Never apply a floor after summing copies. Dim copies add up; that was PR 302's ghost-column bug.
+  - `tools/scenes/reflection-source-check.mjs` holds a dim wall to zero at any stretch sample count.
+- **Where it is wet is a deterministic mask** (`REFLECTION.wet`: world noise, wetter in the gutter), never the
+  albedo's brightness.
+  - Dry ground gives back almost nothing.
+  - Highlights are a surface's proudest few grains, and only where wet.
+- **Each layer has its own bounds and its own sprite.**
+  - A fixture's layer shows and fades with that fixture's sprite.
   - The glints follow only the lights switch.
-  - `reflect=0` in `/scene-review` shows the ground without any of it.
-- **Rendered at load and when a prop that touches a layer is wrecked; never per frame.**
-  - Each layer is cached by the state of the props that touch it, and a source's flipped picture is drawn
-    once.
-  - A cached state is never rendered again, and its texture is uploaded once.
+  - Layers are cached by the state of the props that touch them, and never rendered per frame.
+- **The verdict so far.** At play zoom, wet patches lit by a shop light read as pale stains, and the pictures as
+  isolated marks. Untested next steps: darkening wet ground where it does not reflect, and more street-level
+  sources.
+- **Measure before changing it.**
+  - `tools/scenes/reflection-perf.mjs` measures construction, first render, first and repeated damage changes and
+    retained memory, per mode (`--chrome` for real hardware).
+  - `tools/scenes/material-pilot-evidence.mjs` takes the matched captures.
+  - `REFLECT=on tools/scenes/shadow-state-check.mjs` checks damage switches with it shown.
 - **Presentation only.** Nothing here moves a light, a prop, a wall, an entrance or a route.
-
-See `docs/checkpoint-material-pilot.md`; `tools/scenes/material-pilot-evidence.mjs` takes the matched captures
-and `PERF=1` the cost.

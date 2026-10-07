@@ -1,0 +1,10 @@
+floor 0.3 of full scale, applied to each source's own picture
+samples   2: wall tight 0, wall streak 0; window tight max 488, window streak mean 149.1, sign streak max 173 ok
+samples   8: wall tight 0, wall streak 0; window tight max 488, window streak mean 149.1, sign streak max 86 ok
+samples  24: wall tight 0, wall streak 0; window tight max 488, window streak mean 149.2, sign streak max 86 ok
+samples  96: wall tight 0, wall streak 0; window tight max 488, window streak mean 149.0, sign streak max 83 ok
+samples 400: wall tight 0, wall streak 0; window tight max 488, window streak mean 149.1, sign streak max 84 ok
+PR 302's rule, 8 copies over the wall: 56.1 of 255 kept per channel
+PR 302's rule, 22 copies over the wall: 66.2 of 255 kept per channel
+PR 302's rule, 64 copies over the wall: 70 of 255 kept per channel
+PASS

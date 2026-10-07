@@ -1,0 +1,1632 @@
+{
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "kind": "software",
+  "results": [
+    {
+      "sceneReadyMs": 8839,
+      "environmentMs": 4464,
+      "seed": 8,
+      "mode": "skip",
+      "run": 1,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 467
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 417
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 8705,
+      "environmentMs": 4431,
+      "seed": 8,
+      "mode": "skip",
+      "run": 2,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 467
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 433
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 8650,
+      "environmentMs": 4343,
+      "seed": 8,
+      "mode": "skip",
+      "run": 3,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 467
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 650
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 350
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 200
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 8754,
+      "environmentMs": 4578,
+      "seed": 8,
+      "mode": "hidden",
+      "run": 1,
+      "constructionMs": 158.4,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 467
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 450
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 521,
+          "height": 421
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layers": [],
+        "layerBytes": 0,
+        "flipBytes": 0,
+        "surfaceBytes": 3728797
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9126,
+      "environmentMs": 4705,
+      "seed": 8,
+      "mode": "hidden",
+      "run": 2,
+      "constructionMs": 179.9,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 467
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 450
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 521,
+          "height": 421
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layers": [],
+        "layerBytes": 0,
+        "flipBytes": 0,
+        "surfaceBytes": 3728797
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 8853,
+      "environmentMs": 4515,
+      "seed": 8,
+      "mode": "hidden",
+      "run": 3,
+      "constructionMs": 163.8,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 450
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 433
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 521,
+          "height": 421
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layers": [],
+        "layerBytes": 0,
+        "flipBytes": 0,
+        "surfaceBytes": 3728797
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 8747,
+      "environmentMs": 4478,
+      "seed": 8,
+      "mode": "on",
+      "run": 1,
+      "constructionMs": 159.7,
+      "firstRenderMs": 153.9,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [
+            80.2
+          ],
+          "longestFrameMs": 533
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [
+            18.9
+          ],
+          "longestFrameMs": 467
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 217
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 521,
+          "height": 421
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layers": [
+          {
+            "key": "structure-building_0#",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0#",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints#",
+            "width": 521,
+            "height": 300
+          },
+          {
+            "key": "structure-building_0#broth_cart_stock_body",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "glints#broth_cart_stock_body",
+            "width": 521,
+            "height": 300
+          },
+          {
+            "key": "glints#curb_west_car_engine|broth_cart_stock_body",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layerBytes": 2601384,
+        "flipBytes": 1706808,
+        "surfaceBytes": 3728797
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9051,
+      "environmentMs": 4543,
+      "seed": 8,
+      "mode": "on",
+      "run": 2,
+      "constructionMs": 180.4,
+      "firstRenderMs": 160.2,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [
+            75.1
+          ],
+          "longestFrameMs": 517
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [
+            21.3
+          ],
+          "longestFrameMs": 500
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 200
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 200
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 521,
+          "height": 421
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layers": [
+          {
+            "key": "structure-building_0#",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0#",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints#",
+            "width": 521,
+            "height": 300
+          },
+          {
+            "key": "structure-building_0#broth_cart_stock_body",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "glints#broth_cart_stock_body",
+            "width": 521,
+            "height": 300
+          },
+          {
+            "key": "glints#curb_west_car_engine|broth_cart_stock_body",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layerBytes": 2601384,
+        "flipBytes": 1706808,
+        "surfaceBytes": 3728797
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 8851,
+      "environmentMs": 4484,
+      "seed": 8,
+      "mode": "on",
+      "run": 3,
+      "constructionMs": 164.6,
+      "firstRenderMs": 162.7,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [
+            75.8
+          ],
+          "longestFrameMs": 550
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [
+            15.8
+          ],
+          "longestFrameMs": 450
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 521,
+          "height": 421
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layers": [
+          {
+            "key": "structure-building_0#",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "blade-building_0#",
+            "width": 83,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#",
+            "width": 74,
+            "height": 246
+          },
+          {
+            "key": "glints#",
+            "width": 521,
+            "height": 300
+          },
+          {
+            "key": "structure-building_0#broth_cart_stock_body",
+            "width": 185,
+            "height": 373
+          },
+          {
+            "key": "glints#broth_cart_stock_body",
+            "width": 521,
+            "height": 300
+          },
+          {
+            "key": "glints#curb_west_car_engine|broth_cart_stock_body",
+            "width": 521,
+            "height": 300
+          }
+        ],
+        "layerBytes": 2601384,
+        "flipBytes": 1706808,
+        "surfaceBytes": 3728797
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9414,
+      "environmentMs": 4954,
+      "seed": 7,
+      "mode": "skip",
+      "run": 1,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 500
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9203,
+      "environmentMs": 4881,
+      "seed": 7,
+      "mode": "skip",
+      "run": 2,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 533
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 417
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 133
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9397,
+      "environmentMs": 4949,
+      "seed": 7,
+      "mode": "skip",
+      "run": 3,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 517
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9876,
+      "environmentMs": 5515,
+      "seed": 7,
+      "mode": "hidden",
+      "run": 1,
+      "constructionMs": 455.3,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 567
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 1101,
+          "height": 735
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layers": [],
+        "layerBytes": 0,
+        "flipBytes": 0,
+        "surfaceBytes": 13756995
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9797,
+      "environmentMs": 5419,
+      "seed": 7,
+      "mode": "hidden",
+      "run": 2,
+      "constructionMs": 435,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 550
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 417
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 1101,
+          "height": 735
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layers": [],
+        "layerBytes": 0,
+        "flipBytes": 0,
+        "surfaceBytes": 13756995
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10122,
+      "environmentMs": 5639,
+      "seed": 7,
+      "mode": "hidden",
+      "run": 3,
+      "constructionMs": 442.1,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 533
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 1101,
+          "height": 735
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layers": [],
+        "layerBytes": 0,
+        "flipBytes": 0,
+        "surfaceBytes": 13756995
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9977,
+      "environmentMs": 5502,
+      "seed": 7,
+      "mode": "on",
+      "run": 1,
+      "constructionMs": 412.8,
+      "firstRenderMs": 498,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [
+            78.7
+          ],
+          "longestFrameMs": 683
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [
+            69.9
+          ],
+          "longestFrameMs": 600
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 1101,
+          "height": 735
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layers": [
+          {
+            "key": "structure-building_0#",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0#",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#",
+            "width": 1050,
+            "height": 533
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#broth_cart_stock_body",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#broth_cart_stock_body",
+            "width": 1050,
+            "height": 533
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#broth_cart_cart_cart|broth_cart_stock_body",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#curb_west_car_engine|broth_cart_cart_cart|broth_cart_stock_body",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layerBytes": 8793124,
+        "flipBytes": 8767992,
+        "surfaceBytes": 13756995
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9735,
+      "environmentMs": 5390,
+      "seed": 7,
+      "mode": "on",
+      "run": 2,
+      "constructionMs": 406.3,
+      "firstRenderMs": 477.4,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [
+            68.9
+          ],
+          "longestFrameMs": 600
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [
+            59.6
+          ],
+          "longestFrameMs": 500
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 200
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 1101,
+          "height": 735
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layers": [
+          {
+            "key": "structure-building_0#",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0#",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#",
+            "width": 1050,
+            "height": 533
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#broth_cart_stock_body",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#broth_cart_stock_body",
+            "width": 1050,
+            "height": 533
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#broth_cart_cart_cart|broth_cart_stock_body",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#curb_west_car_engine|broth_cart_cart_cart|broth_cart_stock_body",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layerBytes": 8793124,
+        "flipBytes": 8767992,
+        "surfaceBytes": 13756995
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 9996,
+      "environmentMs": 5547,
+      "seed": 7,
+      "mode": "on",
+      "run": 3,
+      "constructionMs": 440.2,
+      "firstRenderMs": 517.9,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [
+            66.8
+          ],
+          "longestFrameMs": 600
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [
+            64.6
+          ],
+          "longestFrameMs": 550
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        }
+      ],
+      "retained": {
+        "main": {
+          "width": 1101,
+          "height": 735
+        },
+        "boxes": [
+          {
+            "key": "structure-building_0",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layers": [
+          {
+            "key": "structure-building_0#",
+            "width": 756,
+            "height": 583
+          },
+          {
+            "key": "blade-building_0#",
+            "width": 82,
+            "height": 304
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#",
+            "width": 1050,
+            "height": 533
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#broth_cart_stock_body",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#broth_cart_stock_body",
+            "width": 1050,
+            "height": 533
+          },
+          {
+            "key": "dressing-shop_lamp_detail_0#broth_cart_cart_cart|broth_cart_stock_body",
+            "width": 73,
+            "height": 245
+          },
+          {
+            "key": "glints#curb_west_car_engine|broth_cart_cart_cart|broth_cart_stock_body",
+            "width": 1050,
+            "height": 533
+          }
+        ],
+        "layerBytes": 8793124,
+        "flipBytes": 8767992,
+        "surfaceBytes": 13756995
+      },
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10253,
+      "environmentMs": 5890,
+      "seed": 0,
+      "mode": "skip",
+      "run": 1,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 517
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10776,
+      "environmentMs": 6201,
+      "seed": 0,
+      "mode": "skip",
+      "run": 2,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 500
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 233
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10805,
+      "environmentMs": 5935,
+      "seed": 0,
+      "mode": "skip",
+      "run": 3,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 500
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 417
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10625,
+      "environmentMs": 6260,
+      "seed": 0,
+      "mode": "hidden",
+      "run": 1,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 533
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10455,
+      "environmentMs": 5958,
+      "seed": 0,
+      "mode": "hidden",
+      "run": 2,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 483
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 383
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 217
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10312,
+      "environmentMs": 5904,
+      "seed": 0,
+      "mode": "hidden",
+      "run": 3,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 533
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 433
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10475,
+      "environmentMs": 5884,
+      "seed": 0,
+      "mode": "on",
+      "run": 1,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 517
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10522,
+      "environmentMs": 6108,
+      "seed": 0,
+      "mode": "on",
+      "run": 2,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 483
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 400
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 150
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 233
+        }
+      ],
+      "retained": null,
+      "errors": []
+    },
+    {
+      "sceneReadyMs": 10500,
+      "environmentMs": 6111,
+      "seed": 0,
+      "mode": "on",
+      "run": 3,
+      "constructionMs": null,
+      "firstRenderMs": null,
+      "switches": [
+        {
+          "damage": "mixed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 550
+        },
+        {
+          "damage": "destroyed",
+          "kind": "first",
+          "renderMs": [],
+          "longestFrameMs": 433
+        },
+        {
+          "damage": "intact",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 167
+        },
+        {
+          "damage": "mixed",
+          "kind": "repeat",
+          "renderMs": [],
+          "longestFrameMs": 183
+        }
+      ],
+      "retained": null,
+      "errors": []
+    }
+  ]
+}

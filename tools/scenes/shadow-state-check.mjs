@@ -16,7 +16,8 @@
  *    other one destroyed, and each region's casters destroyed together.
  *
  * 3. The board itself on seed 7: switched live through damage states against a board
- *    loaded directly into each one.
+ *    loaded directly into each one. `REFLECT=on` runs it with the shop corner's
+ *    reflections shown (`groundReflection.ts`), which are not built by default.
  *
  * Every channel where the board differs from the fresh render is classified
  * (`comparePixels`). The only allowed difference is a channel where rounding leaves the
@@ -297,7 +298,7 @@ for (const seed of (process.env.SEEDS ?? "7,0,8").split(",").map(Number)) {
   const open = async (damage) => {
     const p = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     await p.goto(
-      `http://127.0.0.1:${port}/scene-review?place=intersection&seed=7&actors=0&reveal=0&damage=${damage}&cam=${cam}`,
+      `http://127.0.0.1:${port}/scene-review?place=intersection&seed=7&actors=0&reveal=0&damage=${damage}&cam=${cam}${process.env.REFLECT ? `&reflect=${process.env.REFLECT}` : ""}`,
     );
     await p.waitForFunction(
       () => performance.getEntriesByName("courtyard-ready").length > 0,

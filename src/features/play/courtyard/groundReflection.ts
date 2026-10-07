@@ -132,8 +132,12 @@ export const REFLECTION_MODES: readonly ReflectionMode[] = [
   "hidden",
   "skip",
 ];
-/** What a board does when nobody asks. */
-export const REFLECTION_MODE_DEFAULT: ReflectionMode = "on";
+/**
+ * What a board does when nobody asks: nothing is built. The pilot was not accepted
+ * visually (`docs/checkpoint-material-pilot.md`): at play zoom its wet patches read as
+ * pale stains and its pictures as isolated marks. `/scene-review?reflect=on` shows it.
+ */
+export const REFLECTION_MODE_DEFAULT: ReflectionMode = "skip";
 
 /** What a mode shows, or nothing. */
 export const reflectionView = (mode: ReflectionMode): false | ReflectionView =>
