@@ -43,6 +43,7 @@ export function SceneReview() {
   const [revealActivity, setRevealActivity] = useState(initial.revealActivity);
   const [lights, setLights] = useState(initial.lights);
   const [night, setNight] = useState(initial.night);
+  const [reflections, setReflections] = useState(initial.reflections);
   const [zoom, setZoom] = useState(1);
   const [structureOnly, setStructureOnly] = useState(initial.structureOnly);
   const [framing, setFraming] = useState<"play" | "overview">(initial.framing);
@@ -62,6 +63,7 @@ export function SceneReview() {
     revealActivity,
     lights,
     night,
+    reflections,
     camera: initial.camera,
     player: initial.player,
     foe: initial.foe,
@@ -273,6 +275,15 @@ export function SceneReview() {
                 onChange={(e) => setLights(e.target.checked)}
               />
               Lights
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={reflections}
+                disabled={structureOnly || !night || !lights}
+                onChange={(e) => setReflections(e.target.checked)}
+              />
+              Reflections
             </label>
           </>
         )}
@@ -502,6 +513,7 @@ export function SceneReview() {
           onRevealActivityChange={setRevealActivity}
           lights={lights}
           night={night}
+          reflections={reflections}
           {...(initial.camera ? { initialCamera: initial.camera } : {})}
           title="Scene readability review"
           objective="Inspect only · no campaign writes"
@@ -515,6 +527,7 @@ export function SceneReview() {
             revealActivity={revealActivity}
             lights={lights}
             night={night}
+            reflections={reflections}
             camera={
               initial.camera ?? {
                 ...battlefieldCameraPreset(scene.layout.arena, framing),

@@ -129,6 +129,39 @@ export function renderGroundLight(
   );
 }
 
+/**
+ * The light that reaches the ground for one destruction state, before any surface takes
+ * it: every given light less its shadows, in `crop` of the ground canvas. The surface's
+ * own response is the caller's (`groundReflection.ts`).
+ */
+export function incidentLight(
+  setup: GroundLightSetup,
+  destroyed: ReadonlySet<string>,
+  crop: Box,
+  lights: readonly GroundLight[] = setup.lights,
+): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = crop.width;
+  canvas.height = crop.height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(-crop.x, -crop.y);
+  setup.prepare(ctx);
+  ctx.globalCompositeOperation = "lighter";
+  paintShadowedLights(
+    ctx,
+    setup.project,
+    lights,
+    castersAsStanding(setup.casters, destroyed),
+    setup.zOf,
+    setup.paintLight,
+  );
+  ctx.restore();
+  return canvas;
+}
+
 /** A destruction state's key within a region: its destroyed ids, in order. */
 const stateKey = (ids: readonly string[], destroyed: ReadonlySet<string>) =>
   ids.filter((id) => destroyed.has(id)).join("|");

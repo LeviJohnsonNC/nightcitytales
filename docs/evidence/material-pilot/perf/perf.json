@@ -1,0 +1,98 @@
+{
+  "seed7": {
+    "sceneReadyMs": 10063,
+    "environmentMs": 5292,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "buildMs": 341,
+    "firstRenderMs": 399,
+    "switches": [
+      {
+        "damage": "mixed",
+        "renderMs": [
+          136
+        ],
+        "longestFrameMs": 883
+      },
+      {
+        "damage": "destroyed",
+        "renderMs": [
+          131
+        ],
+        "longestFrameMs": 800
+      },
+      {
+        "damage": "intact",
+        "renderMs": [],
+        "longestFrameMs": 417
+      },
+      {
+        "damage": "mixed",
+        "renderMs": [],
+        "longestFrameMs": 383
+      }
+    ],
+    "errors": []
+  },
+  "seed0": {
+    "sceneReadyMs": 10487,
+    "environmentMs": 5923,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "switches": [
+      {
+        "damage": "mixed",
+        "renderMs": [],
+        "longestFrameMs": 583
+      },
+      {
+        "damage": "destroyed",
+        "renderMs": [],
+        "longestFrameMs": 483
+      },
+      {
+        "damage": "intact",
+        "renderMs": [],
+        "longestFrameMs": 233
+      },
+      {
+        "damage": "mixed",
+        "renderMs": [],
+        "longestFrameMs": 233
+      }
+    ],
+    "errors": []
+  },
+  "seed8": {
+    "sceneReadyMs": 9179,
+    "environmentMs": 4543,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "buildMs": 122,
+    "firstRenderMs": 149,
+    "switches": [
+      {
+        "damage": "mixed",
+        "renderMs": [
+          58
+        ],
+        "longestFrameMs": 683
+      },
+      {
+        "damage": "destroyed",
+        "renderMs": [
+          15
+        ],
+        "longestFrameMs": 633
+      },
+      {
+        "damage": "intact",
+        "renderMs": [],
+        "longestFrameMs": 450
+      },
+      {
+        "damage": "mixed",
+        "renderMs": [],
+        "longestFrameMs": 417
+      }
+    ],
+    "errors": []
+  }
+}

@@ -106,6 +106,9 @@ export type CourtyardModel = {
    * plain light, as painted, with no local lights. Defaults to on where a scene has
    * a night (the intersection); other scenes have none either way. */
   night?: boolean;
+  /** The shop corner's reflections and glints (`groundReflection.ts`). `false` shows the
+   * ground as it was before them, for comparison. Defaults to on. */
+  reflections?: boolean;
   playback?: PlaybackFrame | null | undefined;
   aimTargetId?: string | null;
   camera: { x: number; y: number; zoom: number };
@@ -585,6 +588,15 @@ export function createCourtyard(
           .map((piece) => piece.id),
       );
       night.shadows.sync(destroyed, lights);
+    }
+    // so do the shop corner's reflections (`groundReflection.ts`), and they go with the lights
+    if (night.reflection) {
+      const destroyed = new Set(
+        (arena.cover ?? [])
+          .filter((piece) => coverDestroyed(piece, model.live.cover))
+          .map((piece) => piece.id),
+      );
+      night.reflection.sync(destroyed, lights && model.reflections !== false);
     }
     for (const prop of scenery) {
       const r: Rect = prop.getData("sortRect");
