@@ -4,7 +4,7 @@ import type Phaser from "phaser";
 import { attachmentPoint } from "@/engine";
 import { interiorThresholds } from "./interiorThresholds";
 import { activityGroundPoints, activityOccluders } from "./activityReveal";
-import { paintGroundFinish } from "./groundFinish";
+import { paintGroundFinish, paintRoadSurface } from "./groundFinish";
 import {
   lightOnFace,
   paintWallLights,
@@ -227,6 +227,22 @@ export function paintComposedGround(
     workbay: "#343e43",
     staging: "#665f46",
   };
+  const paintCrossing = (z: SceneEnvironment["zones"][number]) => {
+    if (z.kind === "crosswalk") {
+      const horizontal = z.axis === "x";
+      const length = horizontal ? z.rect.width : z.rect.height;
+      for (let t = 0.3; t < length; t += 1)
+        rect(
+          {
+            x: z.rect.x + (horizontal ? t : 0.2),
+            y: z.rect.y + (horizontal ? 0.2 : t),
+            width: horizontal ? 0.45 : z.rect.width - 0.4,
+            height: horizontal ? z.rect.height - 0.4 : 0.45,
+          },
+          "#aaa99a",
+        );
+    }
+  };
   for (const z of env.zones) {
     if (z.kind === "aisle") continue;
     if (env.interior) {
@@ -260,7 +276,7 @@ export function paintComposedGround(
           : z.kind === "loading"
             ? "#353b3c"
             : "#41494a";
-    // The old fill is the fallback and the colour the material is graded to.
+    // The old fill remains the fallback; loaded street materials retain more midtone detail.
     // A crosswalk is laid across the carriageway, so it sits on asphalt.
     // A loading court is surfaced like the road it opens on.
     const surface: MaterialKey | undefined =
@@ -272,7 +288,7 @@ export function paintComposedGround(
         : z.kind === "sidewalk"
           ? "sidewalk"
           : undefined;
-    const target = z.kind === "crosswalk" ? "#20292e" : flat;
+    const target = surface === "asphalt" ? "#343b3d" : surface === "sidewalk" ? "#53574f" : flat;
     const laid =
       surface !== undefined &&
       fillMaterial(ctx, textured, zoneCorners(z.rect), {
@@ -298,21 +314,10 @@ export function paintComposedGround(
       const c = painter(ctx, project).corners(z.rect);
       if (!laid) for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "#79817b", 1.5);
     }
-    if (z.kind === "crosswalk") {
-      const horizontal = z.axis === "x";
-      const length = horizontal ? z.rect.width : z.rect.height;
-      for (let t = 0.3; t < length; t += 1)
-        rect(
-          {
-            x: z.rect.x + (horizontal ? t : 0.2),
-            y: z.rect.y + (horizontal ? 0.2 : t),
-            width: horizontal ? 0.45 : z.rect.width - 0.4,
-            height: horizontal ? z.rect.height - 0.4 : 0.45,
-          },
-          "#aaa99a",
-        );
-    }
+    if (!textured?.asphalt) paintCrossing(z);
   }
+  if (textured?.asphalt) paintRoadSurface(ctx, project, env);
+  if (textured?.asphalt) for (const z of env.zones) paintCrossing(z);
   // Saved functional floor reservations use the same treatment in any recipe.
   // Paint boundaries and material, not debug labels or another set of obstacles.
   for (const z of env.zones.filter((z) => z.floorUse)) {
@@ -1866,6 +1871,7 @@ export function createComposedEnvironment(
       arena,
       project,
       new Set(pilots.flatMap((p) => p.masses.map((m) => m.id))),
+      !!materials.sidewalk,
     );
   for (const sf of storefronts)
     paintStorefrontGround({

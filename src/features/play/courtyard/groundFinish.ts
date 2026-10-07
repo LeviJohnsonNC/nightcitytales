@@ -79,6 +79,127 @@ const quad = (project: Project, r: Rect) =>
 const inside = (p: Point, r: Rect) =>
   p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height;
 
+/* ------------------------------------------------------------------ asphalt */
+
+/** Utility cuts follow each saved carriageway, independent of camera and lighting. */
+export function roadRepairs(env: SceneEnvironment): Rect[] {
+  const out: Rect[] = [];
+  for (const z of env.zones.filter((z) => z.kind === "road")) {
+    const vertical = z.axis === "y";
+    const length = vertical ? z.rect.height : z.rect.width;
+    const span = vertical ? z.rect.width : z.rect.height;
+    if (span < 3) continue;
+    for (let t = 2; t < length - 6; t += 11) {
+      const h = hash(z.rect.x, z.rect.y, t, 71);
+      const across = span * (h < 0.5 ? 0.16 : 0.61);
+      const along = t + hash(t, z.rect.x, 72) * 2;
+      const width = Math.min(1.15 + h * 0.65, span - across - 0.3);
+      const run = Math.min(2.6 + hash(t, z.rect.y, 73) * 1.8, length - along - 0.3);
+      out.push({
+        x: z.rect.x + (vertical ? across : along),
+        y: z.rect.y + (vertical ? along : across),
+        width: vertical ? width : run,
+        height: vertical ? run : width,
+      });
+    }
+  }
+  return out;
+}
+
+/** A narrow, branching fracture; width is in metres, like the paving it belongs to. */
+function fracture(ctx: CanvasRenderingContext2D, project: Project, points: Point[], width = 0.045) {
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]!,
+      b = points[i]!;
+    const dx = b.x - a.x,
+      dy = b.y - a.y;
+    const length = Math.hypot(dx, dy);
+    if (!length) continue;
+    const ox = ((-dy / length) * width) / 2,
+      oy = ((dx / length) * width) / 2;
+    poly(
+      ctx,
+      [
+        { x: a.x + ox, y: a.y + oy },
+        { x: b.x + ox, y: b.y + oy },
+        { x: b.x - ox, y: b.y - oy },
+        { x: a.x - ox, y: a.y - oy },
+      ].map(project),
+      "rgba(6,10,12,.65)",
+    );
+  }
+}
+
+/** Cached albedo only: laid after zone surfaces, before crossings and lane paint. */
+export function paintRoadSurface(
+  ctx: CanvasRenderingContext2D,
+  project: Project,
+  env: SceneEnvironment,
+) {
+  const roads = env.zones.filter((z) => ["road", "intersection", "crosswalk"].includes(z.kind));
+  if (!roads.length) return;
+  ctx.save();
+  ctx.beginPath();
+  for (const z of roads) {
+    quad(project, z.rect).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+  }
+  ctx.clip();
+  for (const r of roadRepairs(env)) {
+    // Ragged saw-cut corners, with the existing asphalt grain showing through.
+    const points = [
+      { x: r.x + 0.13, y: r.y },
+      { x: r.x + r.width - 0.09, y: r.y + 0.04 },
+      { x: r.x + r.width, y: r.y + 0.18 },
+      { x: r.x + r.width - 0.03, y: r.y + r.height - 0.15 },
+      { x: r.x + r.width - 0.19, y: r.y + r.height },
+      { x: r.x + 0.08, y: r.y + r.height - 0.05 },
+      { x: r.x, y: r.y + r.height - 0.24 },
+      { x: r.x + 0.02, y: r.y + 0.16 },
+    ];
+    poly(
+      ctx,
+      points.map(project),
+      hash(r.x, r.y, 74) < 0.6 ? "rgba(113,112,99,.18)" : "rgba(4,11,14,.32)",
+    );
+    fracture(ctx, project, [...points, points[0]!], 0.055);
+    fracture(
+      ctx,
+      project,
+      [
+        points[4]!,
+        { x: r.x + r.width + 0.3, y: r.y + r.height + 0.35 },
+        { x: r.x + r.width + 0.22, y: r.y + r.height + 0.65 },
+      ],
+      0.035,
+    );
+  }
+  // A few connected cracks, not a repeated noise layer over the whole street.
+  const left = Math.min(...roads.map((z) => z.rect.x));
+  const top = Math.min(...roads.map((z) => z.rect.y));
+  const right = Math.max(...roads.map((z) => z.rect.x + z.rect.width));
+  const bottom = Math.max(...roads.map((z) => z.rect.y + z.rect.height));
+  for (let x = Math.floor(left / 6) * 6; x < right; x += 6)
+    for (let y = Math.floor(top / 6) * 6; y < bottom; y += 6) {
+      if (hash(x, y, 75) > 0.38) continue;
+      const start = { x: x + hash(x, y, 76) * 3, y: y + hash(x, y, 77) * 3 };
+      if (!roads.some((z) => inside(start, z.rect))) continue;
+      const points = Array.from({ length: 7 }, (_, i) => ({
+        x: start.x + i * 0.43,
+        y: start.y + i * 0.24 + (hash(x, y, i, 78) - 0.5) * 0.48,
+      }));
+      fracture(ctx, project, points);
+      const p = points[3]!;
+      fracture(
+        ctx,
+        project,
+        [p, { x: p.x + 0.15, y: p.y - 0.44 }, { x: p.x + 0.48, y: p.y - 0.7 }],
+        0.03,
+      );
+    }
+  ctx.restore();
+}
+
 /* ------------------------------------------------------------------ paving */
 
 /** Which 1 m slabs of the pavement are off-tone or repaired: by the slab alone. */
@@ -90,20 +211,48 @@ export function slabFinish(x: number, y: number): "dark" | "light" | "repair" | 
   return undefined;
 }
 
-function paintSlabs(ctx: CanvasRenderingContext2D, project: Project, env: SceneEnvironment) {
+function paintSlabs(
+  ctx: CanvasRenderingContext2D,
+  project: Project,
+  env: SceneEnvironment,
+  enhanced: boolean,
+) {
   for (const z of env.zones.filter((z) => z.kind === "sidewalk"))
     for (let x = Math.ceil(z.rect.x); x < z.rect.x + z.rect.width - 0.5; x++)
       for (let y = Math.ceil(z.rect.y); y < z.rect.y + z.rect.height - 0.5; y++) {
         const finish = slabFinish(x, y);
-        if (!finish) continue;
         const slab = quad(project, { x: x + 0.02, y: y + 0.02, width: 0.96, height: 0.96 });
-        if (finish === "dark") poly(ctx, slab, "rgba(6,10,12,.09)");
+        if (finish === "dark")
+          poly(ctx, slab, enhanced ? "rgba(6,10,12,.13)" : "rgba(6,10,12,.09)");
         if (finish === "light") poly(ctx, slab, "rgba(220,220,210,.045)");
         if (finish === "repair") {
           // a newer, paler slab with a crisp edge where it was cut in
-          poly(ctx, slab, "rgba(160,158,146,.15)");
+          poly(ctx, slab, enhanced ? "rgba(160,158,146,.20)" : "rgba(160,158,146,.15)");
           for (let i = 0; i < 4; i++)
             stroke(ctx, slab[i]!, slab[(i + 1) % 4]!, "rgba(18,22,22,.38)", 0.7);
+        }
+        if (enhanced && finish !== "repair" && hash(x, y, 81) < 0.065) {
+          const offset = 0.25 + hash(x, y, 82) * 0.4;
+          fracture(
+            ctx,
+            project,
+            [
+              { x: x + 0.02, y: y + offset },
+              { x: x + 0.35, y: y + offset + 0.12 },
+              { x: x + 0.57, y: y + offset + 0.06 },
+              { x: x + 0.85, y: y + 0.98 },
+            ],
+            0.035,
+          );
+          poly(
+            ctx,
+            [
+              { x: x + 0.78, y: y + 0.98 },
+              { x: x + 0.98, y: y + 0.79 },
+              { x: x + 0.98, y: y + 0.98 },
+            ].map(project),
+            "rgba(16,21,20,.38)",
+          );
         }
       }
 }
@@ -331,9 +480,10 @@ export function paintGroundFinish(
   project: Project,
   /** Masses whose ground the shop's block already finishes (`paintFrontageGround`). */
   skip: ReadonlySet<string> = new Set(),
+  enhancedPaving = false,
 ) {
   const env = arena.environment!;
-  paintSlabs(ctx, project, env);
+  paintSlabs(ctx, project, env, enhancedPaving);
   paintGutterSilt(ctx, project, env);
   wearRoadPaint(ctx, project, env);
   for (const o of oilDrips(arena))

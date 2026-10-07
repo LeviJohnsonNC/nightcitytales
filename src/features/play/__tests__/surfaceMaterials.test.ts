@@ -123,7 +123,10 @@ describe("surface materials: painting", () => {
             calls.push(`${name}(${args.length})`);
           };
         },
-        set: () => true,
+        set: (_t, name, value) => {
+          if (name === "fillStyle") calls.push(`fillStyle:${value}`);
+          return true;
+        },
       },
     ) as unknown as CanvasRenderingContext2D;
     return { ctx, calls, pattern };
@@ -138,6 +141,29 @@ describe("surface materials: painting", () => {
     });
     expect(drawn).toBe(false);
     expect(calls).toEqual([]);
+  });
+
+  it("lays road repairs beneath crossings and leaves missing-asphalt and other recipes alone", () => {
+    const intersection = composeScene("intersection", 7).layout.arena;
+    const record = (
+      arena: typeof intersection,
+      materials?: Parameters<typeof paintComposedGround>[3],
+    ) => {
+      const { ctx, calls } = recorder();
+      paintComposedGround(ctx, arena, project, materials);
+      return calls;
+    };
+    const repair = (s: string) =>
+      s === "fillStyle:rgba(113,112,99,.18)" || s === "fillStyle:rgba(4,11,14,.32)";
+    const finished = record(intersection, { asphalt: tile });
+    const lastRepair = finished.reduce((last, call, i) => (repair(call) ? i : last), -1);
+    expect(lastRepair).toBeGreaterThan(-1);
+    expect(finished.indexOf("fillStyle:#aaa99a")).toBeGreaterThan(lastRepair);
+    expect(record(intersection).some(repair)).toBe(false);
+    expect(record(intersection, { sidewalk: tile }).some(repair)).toBe(false);
+    expect(record(composeScene("alley", 5).layout.arena, { asphalt: tile }).some(repair)).toBe(
+      false,
+    );
   });
 
   it("paints only the intersection with materials: its shops, homes and sheds", () => {
