@@ -29,6 +29,12 @@ it("lights are on unless the URL turns them off", () => {
   expect(readReviewQuery("?place=intersection&seed=7").lights).toBe(true);
   expect(readReviewQuery("?lights=0").lights).toBe(false);
 });
+it("reflections are on unless the URL turns them off, and survive a round trip", () => {
+  expect(readReviewQuery("?place=intersection&seed=7").reflections).toBe(true);
+  const off = readReviewQuery("?place=intersection&seed=7&reflect=0");
+  expect(off.reflections).toBe(false);
+  expect(readReviewQuery(reviewQuery(off)).reflections).toBe(false);
+});
 it("keeps malformed URL/input seeds out of generation", () => {
   for (const input of ["", "-1", "1.5", "NaN", "1e3", "4294967296"])
     expect(reviewSeed(input)).toBeNull();

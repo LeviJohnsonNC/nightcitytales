@@ -102,6 +102,8 @@ type Props = {
   lights?: boolean;
   /** The night's ambient; the review harness turns it off to inspect the materials. */
   night?: boolean;
+  /** The shop corner's reflections; the review harness turns them off to compare. */
+  reflections?: boolean;
   /** Where the camera starts, instead of the scene's preset: a repeatable framing. */
   initialCamera?: { x: number; y: number; zoom: number };
   onRevealActivityChange?: (reveal: boolean) => void;
@@ -147,6 +149,7 @@ export function CombatBoard({
   revealActivity: controlledRevealActivity,
   lights,
   night,
+  reflections,
   initialCamera,
   onRevealActivityChange,
 }: Props) {
@@ -745,6 +748,7 @@ export function CombatBoard({
               revealActivity={revealActivity}
               lights={lights !== false}
               night={night !== false}
+              reflections={reflections !== false}
               playback={playback}
               camera={displayCamera}
               aimTargetId={aimed?.actor.id ?? null}

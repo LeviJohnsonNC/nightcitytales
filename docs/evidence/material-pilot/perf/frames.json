@@ -1,0 +1,98 @@
+{
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "kind": "software",
+  "results": [
+    {
+      "seed": 7,
+      "run": 1,
+      "sceneReadyMs": 9959,
+      "environmentMs": 5398,
+      "idle": {
+        "frames": 45,
+        "meanMs": 107.4,
+        "p50Ms": 100.1,
+        "p90Ms": 116.7,
+        "p99Ms": 133.3,
+        "maxMs": 133.3
+      },
+      "zooming": {
+        "frames": 105,
+        "meanMs": 112.7,
+        "p50Ms": 116.6,
+        "p90Ms": 133.3,
+        "p99Ms": 183.4,
+        "maxMs": 216.7
+      },
+      "errors": []
+    },
+    {
+      "seed": 7,
+      "run": 2,
+      "sceneReadyMs": 9971,
+      "environmentMs": 5499,
+      "idle": {
+        "frames": 47,
+        "meanMs": 103.9,
+        "p50Ms": 100,
+        "p90Ms": 116.7,
+        "p99Ms": 116.7,
+        "maxMs": 116.7
+      },
+      "zooming": {
+        "frames": 106,
+        "meanMs": 110.2,
+        "p50Ms": 100.1,
+        "p90Ms": 116.7,
+        "p99Ms": 183.3,
+        "maxMs": 183.3
+      },
+      "errors": []
+    },
+    {
+      "seed": 8,
+      "run": 1,
+      "sceneReadyMs": 8898,
+      "environmentMs": 4588,
+      "idle": {
+        "frames": 47,
+        "meanMs": 101.8,
+        "p50Ms": 100,
+        "p90Ms": 116.7,
+        "p99Ms": 133.3,
+        "maxMs": 133.3
+      },
+      "zooming": {
+        "frames": 108,
+        "meanMs": 108.2,
+        "p50Ms": 100,
+        "p90Ms": 116.8,
+        "p99Ms": 183.3,
+        "maxMs": 183.3
+      },
+      "errors": []
+    },
+    {
+      "seed": 8,
+      "run": 2,
+      "sceneReadyMs": 8711,
+      "environmentMs": 4496,
+      "idle": {
+        "frames": 47,
+        "meanMs": 103.2,
+        "p50Ms": 100,
+        "p90Ms": 116.7,
+        "p99Ms": 116.8,
+        "maxMs": 116.8
+      },
+      "zooming": {
+        "frames": 109,
+        "meanMs": 107.5,
+        "p50Ms": 100,
+        "p90Ms": 116.8,
+        "p99Ms": 183.3,
+        "maxMs": 216.7
+      },
+      "errors": []
+    }
+  ]
+}

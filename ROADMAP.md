@@ -1801,4 +1801,24 @@ as a street of businesses.
   `--chrome`): frame times unchanged, scene ready slightly sooner.
 - **Not verified:** a real `/play` fight and save/load. The steps for Levi are in the checkpoint, §5.
 
-**Awaiting Levi's review and the manual check.**
+**Accepted (#300).**
+
+[Material pilot](docs/checkpoint-material-pilot.md) (the shop corner's ground response):
+
+- **The check's rounding limit is enforced** at 3/255, with a failing case in the unit tests.
+- **Reflections as pictures, not lobes.**
+  - The shop's windows, neon, blade sign and lamp lens are reflected in their own shape and colour, stretched
+    by a rough surface.
+  - The street responds per pixel from its own texture: asphalt glints on its aggregate, slabs take a sheen with
+    dark joints, markings and the doorstep are smooth.
+  - Each shop light glints where it falls.
+- **Spatial truth.**
+  - The pilot goes with the lights and with its fixture in the reveal.
+  - Props in front cut it, standing or wrecked, and the live board matches direct loads.
+  - `reflect=0` compares it with the ground as it was.
+- **Results.** Seed 8 reads as a different surface at normal zoom. Seed 7 is subtler, because its lamp's
+  reflection lands behind a crate. Seed 0 has no storefront corner.
+- **Cost (software GL).** About 0.7 s at load on seed 7, and 0.13 s for each new damage state.
+- **Not verified:** a real `/play` fight and save/load.
+
+**Awaiting Levi's review.**

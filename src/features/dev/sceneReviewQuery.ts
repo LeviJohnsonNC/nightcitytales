@@ -32,6 +32,8 @@ export function readReviewQuery(search: string) {
     revealActivity: p.get("reveal") !== "0",
     lights: p.get("lights") !== "0",
     night: p.get("night") !== "0",
+    /** The shop corner's reflections and glints; `reflect=0` shows the ground without them. */
+    reflections: p.get("reflect") !== "0",
     /** A fixed camera (scene offset x, y and zoom), so a capture can be repeated exactly. */
     camera: ((c) => (c ? { x: c[0]!, y: c[1]!, zoom: c[2]! } : null))(numbers(p.get("cam"), 3)),
     /** Where the review character stands, in metres: a fixture choice, not a rule. */
@@ -54,6 +56,7 @@ export function reviewQuery(value: ReturnType<typeof readReviewQuery>): string {
     reveal: value.revealActivity ? "1" : "0",
     lights: value.lights ? "1" : "0",
     night: value.night ? "1" : "0",
+    reflect: value.reflections ? "1" : "0",
     framing: value.framing,
     damage: value.damage,
   });

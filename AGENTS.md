@@ -1215,7 +1215,9 @@ At night on the intersection, every light that pools on the ground also reaches 
   block, chosen from the window alone. They light no pavement. The shop stays the focal point.
 - **A light sprite is cropped to its own lit pixels,** not its surface's frame. A full-size additive sprite per lit
   block cost about 4% of frames under software GL.
-- **Wetness was tried and omitted.** Read `docs/checkpoint-atmosphere.md` §4 before trying it again.
+- **Puddles were tried and omitted** (`docs/checkpoint-atmosphere.md` §4). Placed where water collects, they were
+  nowhere near where the lights' reflections land, and a 5 px reflection read as a dotted line. The shop corner's
+  reflections are now `groundReflection.ts` (below).
 
 ### Commercial streetfront (courtyard/streetfront.ts)
 
@@ -1283,7 +1285,48 @@ it. The rules:
   grid. `tools/scenes/shadow-state-check.mjs` holds the board to a fresh render of every state.
 - **Shadow work is confined to small canvases.** A full ground-sized canvas per light or prop cost about 6.5 s of
   load under software GL.
-- **A damp sheen was tried and omitted** (`docs/checkpoint-ground-light.md` §4). Do not retry it without more
-  street-level sources.
+- **A damp sheen was tried and omitted** (`docs/checkpoint-ground-light.md` §4). It was a blurred lobe of each
+  light's colour at its mirror point, multiplied by the ground. It had no shape and no surface, and read as haze.
+  What replaced it, at the shop corner only, is below.
 
 See `docs/checkpoint-ground-light.md`.
+
+### Ground reflections (courtyard/groundReflection.ts)
+
+At night on the intersection with materials, the finished shop corner's ground gives back its lights: the
+shopfront's lit windows and neon, the blade sign and the streetlight's lens. It applies only where `storefrontFor`
+finds a storefront (seed 0 has none, and is unchanged). The rules:
+
+- **A reflection is the fixture's own picture,** not a lobe of its colour.
+  - It is the sprite as the street sees it at night (albedo under the ambient, plus its light sprite), flipped
+    about the ground line under it (`mirrorMatrix`).
+  - Only what is brighter than `REFLECTION.floor` is reflected: lit walls give nothing, emitters do.
+  - The lamp reflects its lens alone, never the cone of light in the air under it.
+- **A rough surface stretches it.** The picture is drawn at a range of flip depths (`REFLECTION.stretch`): from
+  near the fixture's foot to past its mirror point.
+- **The surface decides the response, per pixel, from its own texture.** Surfaces are asphalt, paving, hard
+  standing, markings, joints and thresholds (`paintSurfaceClasses`).
+  - A rough share shows the streak dimly, and brightly on proud grains: per surface, the texture's own top 2%.
+  - A grain must stand proud in every direction, and none glints near a joint. Taken as grains, an edge or a
+    slab's chipped rim reads as a dotted line.
+  - Joints and building footprints give nothing. Markings and polished thresholds are smooth. A world-space
+    noise makes a few patches smoother.
+- **Glints are the light that falls there.** Each shop light's incident light (`incidentLight`, with its shadows)
+  shows on the grains it reaches. Outside the lights the street stays dark.
+- **It is added, never multiplied by the albedo,** and eases toward white by its brightest channel (`knee`), so
+  a warm window stays warm.
+- **What stands in front cuts it.** A prop nearer the camera than a fixture hides its reflection by its body
+  flipped below its foot (`flippedBody`), standing or as its wreck.
+- **It follows its source.**
+  - Each fixture's reflection is its own sprite, shown and faded with that fixture's sprite: the shopfront's
+    leaves with its wall in the reveal.
+  - The glints follow only the lights switch.
+  - `reflect=0` in `/scene-review` shows the ground without any of it.
+- **Rendered at load and when a prop that touches a layer is wrecked; never per frame.**
+  - Each layer is cached by the state of the props that touch it, and a source's flipped picture is drawn
+    once.
+  - A cached state is never rendered again, and its texture is uploaded once.
+- **Presentation only.** Nothing here moves a light, a prop, a wall, an entrance or a route.
+
+See `docs/checkpoint-material-pilot.md`; `tools/scenes/material-pilot-evidence.mjs` takes the matched captures
+and `PERF=1` the cost.

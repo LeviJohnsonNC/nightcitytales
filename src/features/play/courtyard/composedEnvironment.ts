@@ -111,13 +111,15 @@ import {
   type GroundLight,
   type NightLighting,
 } from "./nightLighting";
-import { shadowCasters, LAMP_SHADOW } from "./lampShadow";
+import { shadowArea, shadowCasters, lightExtent, LAMP_SHADOW, type Box } from "./lampShadow";
 import {
   GroundShadows,
   lightPassCanvas,
   renderGroundLight,
+  incidentLight,
   type GroundLightSetup,
 } from "./groundShadows";
+import { GroundReflection, SurfaceClass, type MirrorSource } from "./groundReflection";
 
 type Project = (p: Point) => Point;
 
@@ -1425,6 +1427,12 @@ export interface ComposedShadows {
   sync: (destroyed: ReadonlySet<string>, visible: boolean) => void;
 }
 
+/** The shop corner's ground reflections (`groundReflection.ts`). */
+export interface ComposedReflection {
+  layer: GroundReflection;
+  sync: (destroyed: ReadonlySet<string>, visible: boolean) => void;
+}
+
 export interface ComposedEnvironment {
   objects: Phaser.GameObjects.Image[];
   lit: Phaser.GameObjects.Image[];
@@ -1436,7 +1444,106 @@ export interface ComposedEnvironment {
     grade?: Phaser.GameObjects.Image;
     /** The ground's lamp shadows as the street stands (`groundShadows.ts`). */
     shadows?: ComposedShadows;
+    /** The shop corner's reflections in the street (`groundReflection.ts`). */
+    reflection?: ComposedReflection;
   };
+}
+
+/**
+ * What each pixel of an intersection's ground is, for its reflections
+ * (`groundReflection.ts`): the same zones and floors `paintComposedGround` lays its
+ * materials on, as flat class codes in the red channel. Building footprints give
+ * nothing back. Markings and joints are told from the albedo afterwards.
+ */
+/** The blade sign's ground line for its reflection: its foot runs out from the wall. */
+function bladeMirror(
+  a: Point,
+  b: Point,
+  x0: number,
+  y0: number,
+  ends: readonly Point[],
+  pad: number,
+): Omit<MirrorSource, "paint" | "group"> {
+  const x1 = Math.max(...ends.map((p) => p.x)) + pad;
+  const y1 = Math.max(...ends.map((p) => p.y)) + pad;
+  return {
+    a,
+    b,
+    // neon is brighter than its sprite can show
+    gain: 2,
+    extent: [
+      { x: x0, y: y0 },
+      { x: x1, y: y0 },
+      { x: x1, y: y1 },
+      { x: x0, y: y1 },
+    ],
+  };
+}
+
+/** The streetlight's head reflects about the level ground under it. */
+function lampMirror(project: Project, sf: Storefront, ppm: number): Omit<MirrorSource, "group">[] {
+  const lamp = streetLamp(sf);
+  if (!lamp) return [];
+  const foot = project(lamp.head);
+  // the lens alone: its halo is a glow in the air, not a thing a street reflects, and the
+  // pole, lit grey, would reflect as a pale line
+  const lens = foot.y - (lamp.headZ - 0.04) * ppm;
+  const top = lens - 0.3 * ppm;
+  const bottom = lens + 0.25 * ppm;
+  return [
+    {
+      a: foot,
+      b: { x: foot.x + 10, y: foot.y },
+      gain: 5,
+      // the lens as the glow pass lights it, and nothing of the cone it throws: the
+      // street reflects the fixture, not the light in the air under it
+      paint: (ctx) => {
+        ctx.fillStyle = lightColor([1, 0.92, 0.78], 1);
+        ctx.beginPath();
+        ctx.ellipse(foot.x, lens, 0.36 * ppm, 0.1 * ppm, 0, 0, Math.PI * 2);
+        ctx.fill();
+      },
+      extent: [
+        { x: foot.x - 0.75 * ppm, y: top },
+        { x: foot.x + 0.75 * ppm, y: top },
+        { x: foot.x + 0.75 * ppm, y: bottom },
+        { x: foot.x - 0.75 * ppm, y: bottom },
+      ],
+    },
+  ];
+}
+
+export function paintSurfaceClasses(
+  ctx: CanvasRenderingContext2D,
+  arena: Arena,
+  project: Project,
+  /** Doorsteps the saved zones do not mark: the shop's recess under its awning. */
+  thresholds: readonly Rect[] = [],
+) {
+  const { rect } = painter(ctx, project);
+  const code = (k: SurfaceClass) => `rgb(${k},0,0)`;
+  const env = arena.environment!;
+  rect({ x: -20, y: -20, width: 72, height: 72 }, code(SurfaceClass.concrete));
+  for (const z of env.zones) {
+    const k =
+      z.kind === "road" ||
+      z.kind === "intersection" ||
+      z.kind === "crosswalk" ||
+      z.kind === "loading" ||
+      z.kind === "parking" ||
+      z.kind === "alley"
+        ? SurfaceClass.asphalt
+        : z.kind === "sidewalk"
+          ? SurfaceClass.paving
+          : undefined;
+    if (k !== undefined) rect(z.rect, code(k));
+  }
+  for (const z of env.zones.filter((z) => z.floorUse)) {
+    if (z.floorUse === "handling") rect(z.rect, code(SurfaceClass.asphalt));
+    else if (z.floorUse === "entry") rect(z.rect, code(SurfaceClass.threshold));
+  }
+  for (const r of thresholds) rect(r, code(SurfaceClass.threshold));
+  for (const st of env.structures) if (blocksLight(st)) rect(st.rect, code(SurfaceClass.none));
 }
 
 /**
@@ -1571,6 +1678,13 @@ export function createComposedEnvironment(
           night,
           new Set(storefronts.some((sf) => sf.lamp) ? ["shop_lamp_detail_0"] : []),
         ),
+      ]
+    : [];
+  // The shop corner's own lights, for its glints (`groundReflection.ts`).
+  const shopLights = night
+    ? [
+        ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
+        ...returnLights(returns?.faces ?? [], night),
       ]
     : [];
   // The same lights at their fixtures' heights, for the walls they reach (`wallLight.ts`).
@@ -1716,6 +1830,7 @@ export function createComposedEnvironment(
   const paintOne = (c: CanvasRenderingContext2D, light: GroundLight) =>
     paintGroundLights(c, project, env.structures, [light]);
   let shadows: ComposedShadows | undefined;
+  let groundSetup: GroundLightSetup | undefined;
   if (night && lights.length) {
     const setup: GroundLightSetup = {
       base: ground.canvas,
@@ -1727,6 +1842,7 @@ export function createComposedEnvironment(
       paintLight: paintOne,
       gain: night.gain,
     };
+    groundSetup = setup;
     const canvas = renderGroundLight(setup, new Set());
     const texture = scene.textures.addCanvas("composed-ground-light", canvas)!;
     texture.refresh();
@@ -1799,6 +1915,10 @@ export function createComposedEnvironment(
       .setVisible(false);
   }
   const objects: Phaser.GameObjects.Image[] = [];
+  // The shop corner's lit things, for their reflections in the street (`groundReflection.ts`).
+  const mirrorSources: MirrorSource[] = [];
+  const mirrorOwners = new Map<string, Phaser.GameObjects.Image>();
+  const reflects = !!night && materialised;
   const occluders = activityOccluders(arena);
   const activity = activityGroundPoints(arena);
   const add = (
@@ -1810,6 +1930,9 @@ export function createComposedEnvironment(
     scale = 1,
     /** At night: the light this surface catches and gives, as its own sprite. */
     light?: (ctx: CanvasRenderingContext2D, pass: "light" | "glow") => void,
+    /** Ground lines this sprite's lit picture is reflected about (`groundReflection.ts`). */
+    mirrors?: readonly (Omit<MirrorSource, "paint" | "group"> &
+      Partial<Pick<MirrorSource, "paint">>)[],
   ) => {
     const canvas = document.createElement("canvas");
     canvas.width = Math.ceil(bounds.width * scale);
@@ -1824,6 +1947,28 @@ export function createComposedEnvironment(
     paint(ctx);
     ctx.restore();
     const glow = night && light ? lightCanvas(canvas, frame, light) : undefined;
+    if (night && glow && mirrors?.length) {
+      // what the street sees: the art under the night's ambient, and its light added
+      const seen = document.createElement("canvas");
+      seen.width = canvas.width;
+      seen.height = canvas.height;
+      const sctx = seen.getContext("2d")!;
+      sctx.drawImage(canvas, 0, 0);
+      sctx.globalCompositeOperation = "multiply";
+      sctx.fillStyle = lightColor(night.ambient, 1);
+      sctx.fillRect(0, 0, seen.width, seen.height);
+      sctx.globalCompositeOperation = "destination-in";
+      sctx.drawImage(canvas, 0, 0);
+      sctx.globalCompositeOperation = "lighter";
+      sctx.drawImage(glow, 0, 0);
+      for (const m of mirrors)
+        mirrorSources.push({
+          group: key,
+          paint: (c) =>
+            c.drawImage(seen, bounds.x, bounds.y, canvas.width / scale, canvas.height / scale),
+          ...m,
+        });
+    }
     let left = canvas.width,
       right = 0,
       top = canvas.height,
@@ -1884,6 +2029,7 @@ export function createComposedEnvironment(
         .setScale(1 / scale);
     };
     const image = crop(canvas, key).setDepth(depth);
+    if (mirrorSources.some((m) => m.group === key)) mirrorOwners.set(key, image);
     if (glow && lightPixels)
       image.setData(
         "light",
@@ -2020,6 +2166,26 @@ export function createComposedEnvironment(
             face: facePainter(s, h.edge, project, metre),
           }))
         : [];
+      // the shopfront and its composed returns, each face flipped about its own foot
+      const faceMirrors =
+        reflects && front
+          ? [...new Set<Edge>([front.sf.edge, ...composed.map((c) => c.edge)])].map((edge) => {
+              const r = s.rect;
+              const lift = (s.height + 1.5) * metre;
+              const [a, b] =
+                edge === "north"
+                  ? [project({ x: r.x, y: r.y }), project({ x: r.x + r.width, y: r.y })]
+                  : [
+                      project({ x: r.x + r.width, y: r.y }),
+                      project({ x: r.x + r.width, y: r.y + r.height }),
+                    ];
+              return {
+                a: a!,
+                b: b!,
+                extent: [a!, b!, { x: b!.x, y: b!.y - lift }, { x: a!.x, y: a!.y - lift }],
+              };
+            })
+          : undefined;
       const building = add(
         `structure-${s.id}`,
         (ctx) =>
@@ -2066,6 +2232,7 @@ export function createComposedEnvironment(
                 for (const b of boards) paintNeighbourLight(ctx, b, project, metre, night!, pass);
               }
             : undefined,
+        faceMirrors,
       )
         ?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined)
         .setData("sortRect", s.rect);
@@ -2252,6 +2419,19 @@ export function createComposedEnvironment(
             },
             4,
             sign,
+            // the blade stands edge-on across the face: its foot runs out from the wall
+            reflects
+              ? [
+                  bladeMirror(
+                    at(blade.s, BLADE.out0, 0),
+                    at(blade.s, BLADE.out1, 0),
+                    x0,
+                    y0,
+                    ends,
+                    pad,
+                  ),
+                ]
+              : undefined,
           )
             ?.setData("activityLayer", building.getData("activityLayer"))
             .setData("sortRect", f)
@@ -2350,7 +2530,83 @@ export function createComposedEnvironment(
               if (pass === "glow") lampGlow(ctx);
             }
           : undefined,
+      // the streetlight's head reflects about the ground under it
+      shopLamp && reflects ? lampMirror(project, shopLamp, metre) : undefined,
     )?.setData("sortRect", { ...d.position, width: 0, height: 0 });
+  }
+  let reflection: ComposedReflection | undefined;
+  if (reflects && mirrorSources.length) {
+    const layer = new GroundReflection({
+      ground: ground.canvas,
+      origin: { x: gx, y: gy },
+      resolution,
+      project,
+      ppm: metre,
+      sources: mirrorSources,
+      occluders: casters.map((c) => ({
+        id: c.coverId,
+        body: c.body,
+        height: c.height,
+        wreck: c.wreck,
+      })),
+      paintClasses: (ctx) =>
+        paintSurfaceClasses(ctx, arena, project, storefronts.map(awningFootprint)),
+      // the shop's own lights glint where they fall: the lamp, the windows, the door
+      ...(groundSetup
+        ? {
+            incident: (destroyed: ReadonlySet<string>, crop: Box) =>
+              incidentLight(groundSetup!, destroyed, crop, shopLights),
+            reach: shopLights.flatMap((l) => lightExtent(l).map(project)),
+            // the props a shop light can see: their shadows are in the glints
+            glintCasters: casters
+              .filter((c) => shadowArea(shopLights, c, zOf) !== null)
+              .map((c) => c.coverId),
+          }
+        : {}),
+    });
+    // one sprite per reflected fixture, shown and faded with that fixture's own sprite
+    // (the shopfront leaves with its wall in the reveal), and one for the lights' glints
+    const sprite = () =>
+      scene.add
+        .image(layer.box.x + layer.box.width / 2, layer.box.y + layer.box.height / 2, "__DEFAULT")
+        .setBlendMode("ADD")
+        .setDepth(-999.4)
+        .setVisible(false);
+    const pictures = layer.groups.map((group) => ({ group, image: sprite() }));
+    const glints = sprite();
+    let shown: string | undefined;
+    const uploaded = new Map<HTMLCanvasElement, string>();
+    reflection = {
+      layer,
+      sync(destroyed, visible) {
+        const key = layer.key(destroyed);
+        if (visible && key !== shown) {
+          shown = key;
+          const layers = layer.render(destroyed);
+          // a layer no prop changed is the same canvas: its texture is uploaded once
+          const show = (image: Phaser.GameObjects.Image, c: HTMLCanvasElement) => {
+            let textureKey = uploaded.get(c);
+            if (!textureKey) {
+              textureKey = `composed-reflection-${uploaded.size}`;
+              uploaded.set(c, textureKey);
+              scene.textures.addCanvas(textureKey, c)!.refresh();
+            }
+            if (image.texture.key !== textureKey)
+              image.setTexture(textureKey).setDisplaySize(layer.box.width, layer.box.height);
+          };
+          for (const p of pictures) show(p.image, layers.groups.get(p.group)!);
+          show(glints, layers.glints);
+        }
+        const ready = visible && shown !== undefined;
+        for (const p of pictures) {
+          const owner = mirrorOwners.get(p.group);
+          p.image.setVisible(ready && (owner?.visible ?? true)).setAlpha(owner?.alpha ?? 1);
+        }
+        glints.setVisible(ready);
+      },
+    };
+    if (import.meta.env.DEV)
+      (window as unknown as { __groundReflection?: unknown }).__groundReflection = layer;
   }
   return {
     objects,
@@ -2361,6 +2617,7 @@ export function createComposedEnvironment(
             config: night,
             lights,
             ...(shadows ? { shadows } : {}),
+            ...(reflection ? { reflection } : {}),
             ...(grade ? { grade } : {}),
           },
         }
