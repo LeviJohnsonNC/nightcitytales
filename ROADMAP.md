@@ -1838,14 +1838,30 @@ sills/heads, floor bands, low masonry, deterministic room infill and shared clip
 full/revealed facade rendering. Annex keeps existing openings/art. Connected
 Chrome review covers seeds 7/0/8, lights off, reveal, targeting and frozen review
 restore. See `docs/checkpoint-residential-finish.md` and its actual-browser evidence.
-Shop remains primary; broad roof surfaces remain a visual debt. Await Levi's
-visual acceptance rather than equating automated validation with acceptance.
+Shop remains primary. Accepted and merged by Levi as PR #307; the broad roof
+surface debt is addressed by the following roof pass.
 
 ### Residential roof construction (2026-10-07)
 
 Follow-up to accepted PR #307: recessed membrane, substantial coping, quiet lap
 seams/repairs, internal drains and equipment curbs inside the original home/annex
 roof envelope. Reuses existing materials. Normal-play, lights-off and reveal
-review completed in connected Chrome; visual acceptance remains pending. See
+review completed in connected Chrome; accepted and merged by Levi as PR #308. See
 `docs/checkpoint-residential-roofs.md`. Coping and roof rhythm now read at play
 scale; drain/repair detail remains secondary and the broad roof fields stay quiet.
+
+### Street material field (2026-10-07)
+
+Levi accepted and merged residential facade #307 and roof #308. The next pass
+addresses the large uniform ground field: clearer asphalt/paving tones, sparse
+road repairs and fractures, and chipped paving, below road paint and tactical
+marks. Normal-play comparison, lights-off, reveal, alternate layouts, destroyed
+cover and frozen review restore checked in connected Chrome. See
+`docs/checkpoint-street-surface.md`; visual acceptance of this pass is pending.
+
+The next highest-impact art work is the remaining commercial frontage
+composition: substantial bays/recesses, distinct materials and coherent signage.
+Taller, more varied silhouettes and less roof-dominated composition remain a
+separate design gap that surface detail cannot solve; propose those deliberately
+with frozen-layout compatibility. Further tiny roof details and stronger glow
+are lower priority. Reflections stay off by default.

@@ -1,10 +1,39 @@
 import { describe, expect, it } from "vitest";
 import { composeScene } from "@/engine";
-import { oilDrips, slabFinish } from "../courtyard/groundFinish";
+import { oilDrips, roadRepairs, slabFinish } from "../courtyard/groundFinish";
 import { CONTACT, contactAlpha, contactPad } from "../courtyard/contactShade";
 import { interiorPropPoint } from "../courtyard/interiorPropArt";
 
 describe("the street's wear", () => {
+  it("keeps utility repairs on saved roads with a small coverage budget, without changing the arena", () => {
+    for (const seed of [0, 7, 8, 19]) {
+      const arena = composeScene("intersection", seed).layout.arena;
+      const before = JSON.stringify(arena);
+      const env = arena.environment!;
+      const roads = env.zones.filter((z) => z.kind === "road");
+      const repairs = roadRepairs(env);
+      expect(repairs.length).toBeGreaterThan(0);
+      expect(roadRepairs(env)).toEqual(repairs);
+      for (const r of repairs) {
+        expect(r.width).toBeGreaterThan(0);
+        expect(r.height).toBeGreaterThan(0);
+        expect(
+          roads.some(
+            ({ rect: q }) =>
+              r.x >= q.x &&
+              r.y >= q.y &&
+              r.x + r.width <= q.x + q.width &&
+              r.y + r.height <= q.y + q.height,
+          ),
+        ).toBe(true);
+      }
+      const area = repairs.reduce((sum, r) => sum + r.width * r.height, 0);
+      const roadArea = roads.reduce((sum, z) => sum + z.rect.width * z.rect.height, 0);
+      expect(area / roadArea).toBeLessThan(0.12);
+      expect(JSON.stringify(arena)).toBe(before);
+    }
+  });
+
   it("marks few slabs, the same ones every time, and repairs fewer still", () => {
     let marked = 0,
       repairs = 0;
