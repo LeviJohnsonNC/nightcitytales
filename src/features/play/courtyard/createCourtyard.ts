@@ -3,6 +3,7 @@ import { atlasPropRegistration } from "./atlasPropRegistration";
 import { isInteriorProp } from "./interiorPropArt";
 import { sceneryOccludes } from "./sceneryOcclusion";
 import { createComposedEnvironment, type ComposedEnvironment } from "./composedEnvironment";
+import { REFLECTION_MODE_DEFAULT, reflectionView, type ReflectionMode } from "./groundReflection";
 import { applyStreetPropArt, streetPropFiles } from "./streetPropArt";
 import { OVERLAY, type OverlayMode } from "../overlayModel";
 import {
@@ -106,9 +107,9 @@ export type CourtyardModel = {
    * plain light, as painted, with no local lights. Defaults to on where a scene has
    * a night (the intersection); other scenes have none either way. */
   night?: boolean;
-  /** The shop corner's reflections and glints (`groundReflection.ts`). `false` shows the
-   * ground as it was before them, for comparison. Defaults to on. */
-  reflections?: boolean;
+  /** The shop corner's reflections and glints (`groundReflection.ts`): which are shown,
+   * or `hidden`, or `skip` (not built; read once, when the board is made). */
+  reflections?: ReflectionMode;
   playback?: PlaybackFrame | null | undefined;
   aimTargetId?: string | null;
   camera: { x: number; y: number; zoom: number };
@@ -313,6 +314,7 @@ export function createCourtyard(
           materialKeys.length && Object.keys(tiles).length ? tiles : undefined,
           withStorefront && Object.keys(storefrontArt).length ? storefrontArt : undefined,
           withStorefront && Object.keys(architectureArt).length ? architectureArt : undefined,
+          { reflections: (model.reflections ?? REFLECTION_MODE_DEFAULT) !== "skip" },
         );
         performance.measure("courtyard-environment", "courtyard-environment-start");
         structures.push(...built.objects);
@@ -596,7 +598,10 @@ export function createCourtyard(
           .filter((piece) => coverDestroyed(piece, model.live.cover))
           .map((piece) => piece.id),
       );
-      night.reflection.sync(destroyed, lights && model.reflections !== false);
+      night.reflection.sync(
+        destroyed,
+        lights && reflectionView(model.reflections ?? REFLECTION_MODE_DEFAULT),
+      );
     }
     for (const prop of scenery) {
       const r: Rect = prop.getData("sortRect");

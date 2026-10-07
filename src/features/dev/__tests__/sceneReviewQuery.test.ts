@@ -7,6 +7,10 @@ import {
   reviewQuery,
   reviewSeed,
 } from "../sceneReviewQuery";
+import {
+  REFLECTION_MODE_DEFAULT,
+  REFLECTION_MODES,
+} from "@/features/play/courtyard/groundReflection";
 it("reproduces seed, environment and gameplay/structure review settings through a URL", () => {
   const query =
     "?place=office&seed=4294967295&view=structure&actors=1&access=1&adventure=1&damage=destroyed&framing=overview&reveal=0&lights=0";
@@ -29,11 +33,16 @@ it("lights are on unless the URL turns them off", () => {
   expect(readReviewQuery("?place=intersection&seed=7").lights).toBe(true);
   expect(readReviewQuery("?lights=0").lights).toBe(false);
 });
-it("reflections are on unless the URL turns them off, and survive a round trip", () => {
-  expect(readReviewQuery("?place=intersection&seed=7").reflections).toBe(true);
-  const off = readReviewQuery("?place=intersection&seed=7&reflect=0");
-  expect(off.reflections).toBe(false);
-  expect(readReviewQuery(reviewQuery(off)).reflections).toBe(false);
+it("reads every reflection mode from the URL, and keeps it through a round trip", () => {
+  expect(readReviewQuery("?place=intersection&seed=7").reflections).toBe(REFLECTION_MODE_DEFAULT);
+  expect(readReviewQuery("?reflect=0").reflections).toBe("hidden");
+  expect(readReviewQuery("?reflect=1").reflections).toBe("on");
+  expect(readReviewQuery("?reflect=bogus").reflections).toBe(REFLECTION_MODE_DEFAULT);
+  for (const mode of REFLECTION_MODES) {
+    const value = readReviewQuery(`?place=intersection&seed=7&reflect=${mode}`);
+    expect(value.reflections).toBe(mode);
+    expect(readReviewQuery(reviewQuery(value)).reflections).toBe(mode);
+  }
 });
 it("keeps malformed URL/input seeds out of generation", () => {
   for (const input of ["", "-1", "1.5", "NaN", "1e3", "4294967296"])

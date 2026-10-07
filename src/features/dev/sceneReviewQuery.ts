@@ -1,4 +1,9 @@
 import type { SceneEnvironment } from "@/engine";
+import {
+  REFLECTION_MODE_DEFAULT,
+  REFLECTION_MODES,
+  type ReflectionMode,
+} from "@/features/play/courtyard/groundReflection";
 export const REVIEW_KINDS = [
   "intersection",
   "alley",
@@ -19,6 +24,11 @@ function numbers(value: string | null, count: number): number[] | null {
   const parts = value.split(",").map(Number);
   return parts.length === count && parts.every(Number.isFinite) ? parts : null;
 }
+function readReflect(value: string | null): ReflectionMode {
+  if (value === "0") return "hidden";
+  if (value === "1") return "on";
+  return REFLECTION_MODES.find((m) => m === value) ?? REFLECTION_MODE_DEFAULT;
+}
 export function readReviewQuery(search: string) {
   const p = new URLSearchParams(search);
   return {
@@ -32,8 +42,11 @@ export function readReviewQuery(search: string) {
     revealActivity: p.get("reveal") !== "0",
     lights: p.get("lights") !== "0",
     night: p.get("night") !== "0",
-    /** The shop corner's reflections and glints; `reflect=0` shows the ground without them. */
-    reflections: p.get("reflect") !== "0",
+    /**
+     * The shop corner's reflections (`ReflectionMode`): `reflect=0` hides them, `skip`
+     * builds none, `pictures` and `glints` show one part; absent is the default.
+     */
+    reflections: readReflect(p.get("reflect")),
     /** A fixed camera (scene offset x, y and zoom), so a capture can be repeated exactly. */
     camera: ((c) => (c ? { x: c[0]!, y: c[1]!, zoom: c[2]! } : null))(numbers(p.get("cam"), 3)),
     /** Where the review character stands, in metres: a fixture choice, not a rule. */
@@ -56,7 +69,7 @@ export function reviewQuery(value: ReturnType<typeof readReviewQuery>): string {
     reveal: value.revealActivity ? "1" : "0",
     lights: value.lights ? "1" : "0",
     night: value.night ? "1" : "0",
-    reflect: value.reflections ? "1" : "0",
+    reflect: value.reflections,
     framing: value.framing,
     damage: value.damage,
   });
