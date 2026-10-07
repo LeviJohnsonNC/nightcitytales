@@ -73,6 +73,7 @@ import { frameDuration, type PlaybackFrame } from "./combatPlayback";
 import { CourtyardLayer } from "./courtyard/CourtyardLayer";
 import { REFLECTION_MODE_DEFAULT, type ReflectionMode } from "./courtyard/groundReflection";
 import "./combat.css";
+import "./combatLayout.css";
 
 type Props = {
   playerPortrait?: string | null;
@@ -192,6 +193,22 @@ export function CombatBoard({
   // under the feet (or the square): where the card goes when there is no room above
   const calloutFoot = useRef<Point | null>(null);
   const calloutUnder = useBoardAnchor(boardRef, calloutFoot);
+  const [readoutOpen, setReadoutOpen] = useState(() => {
+    // Keep the first-turn initiative recap visible when opponents acted first.
+    const active = live && currentCombatant(live.state);
+    return !!(
+      live?.origin &&
+      live.state.round === 1 &&
+      active?.isPlayer &&
+      live.state.order
+        .slice(0, live.state.order.indexOf(active.id))
+        .some((id) => live.state.combatants[id]?.side === "hostile")
+    );
+  });
+  // A pending roll or opening request must never disappear behind a disclosure.
+  const readoutRequired = !!dice || !!openingRequest;
+  const showReadout = readoutOpen || readoutRequired;
+  const readoutId = useId();
   const [panel, setPanel] = useState<"journal" | "improvise" | null>(null);
   /** The combatant whose dossier is open. Their art is on file; the fight is not. */
   const [dossier, setDossier] = useState<string | null>(null);
@@ -719,6 +736,18 @@ export function CombatBoard({
                 : "Action spent"}
           </span>
         )}
+        <button
+          type="button"
+          className="combat-readout-toggle"
+          aria-expanded={showReadout}
+          aria-controls={readoutId}
+          disabled={readoutRequired}
+          onClick={() => setReadoutOpen(!readoutOpen)}
+        >
+          <Crosshair size={15} />
+          {dice ? "Resolve action" : openingRequest ? "Opening request" : "Tactical readout"}
+          <span>{targets.length}</span>
+        </button>
         <ol className="combat-initiative" aria-label="Initiative order">
           {actors.map(({ actor, data }) => (
             <li
@@ -740,7 +769,7 @@ export function CombatBoard({
           ))}
         </ol>
       </div>
-      <div className="combat-main">
+      <div className={`combat-main ${showReadout ? "has-readout" : ""}`}>
         <div className={`combat-stage tool-${tool}`}>
           {hasScenicArt && artEnabled && (
             <CourtyardLayer
@@ -1606,7 +1635,12 @@ export function CombatBoard({
             )}
           </div>
         </div>
-        <aside className="combat-intel" aria-label="Tactical readout">
+        <aside
+          id={readoutId}
+          className="combat-intel"
+          aria-label="Tactical readout"
+          hidden={!showReadout}
+        >
           {openingRecap}
           <CombatDepartures live={live} />
           {openingRequest && (
