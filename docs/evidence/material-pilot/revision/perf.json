@@ -329,17 +329,13 @@
         {
           "damage": "mixed",
           "kind": "first",
-          "renderMs": [
-            80.2
-          ],
+          "renderMs": [80.2],
           "longestFrameMs": 533
         },
         {
           "damage": "destroyed",
           "kind": "first",
-          "renderMs": [
-            18.9
-          ],
+          "renderMs": [18.9],
           "longestFrameMs": 467
         },
         {
@@ -437,17 +433,13 @@
         {
           "damage": "mixed",
           "kind": "first",
-          "renderMs": [
-            75.1
-          ],
+          "renderMs": [75.1],
           "longestFrameMs": 517
         },
         {
           "damage": "destroyed",
           "kind": "first",
-          "renderMs": [
-            21.3
-          ],
+          "renderMs": [21.3],
           "longestFrameMs": 500
         },
         {
@@ -545,17 +537,13 @@
         {
           "damage": "mixed",
           "kind": "first",
-          "renderMs": [
-            75.8
-          ],
+          "renderMs": [75.8],
           "longestFrameMs": 550
         },
         {
           "damage": "destroyed",
           "kind": "first",
-          "renderMs": [
-            15.8
-          ],
+          "renderMs": [15.8],
           "longestFrameMs": 450
         },
         {
@@ -968,17 +956,13 @@
         {
           "damage": "mixed",
           "kind": "first",
-          "renderMs": [
-            78.7
-          ],
+          "renderMs": [78.7],
           "longestFrameMs": 683
         },
         {
           "damage": "destroyed",
           "kind": "first",
-          "renderMs": [
-            69.9
-          ],
+          "renderMs": [69.9],
           "longestFrameMs": 600
         },
         {
@@ -1081,17 +1065,13 @@
         {
           "damage": "mixed",
           "kind": "first",
-          "renderMs": [
-            68.9
-          ],
+          "renderMs": [68.9],
           "longestFrameMs": 600
         },
         {
           "damage": "destroyed",
           "kind": "first",
-          "renderMs": [
-            59.6
-          ],
+          "renderMs": [59.6],
           "longestFrameMs": 500
         },
         {
@@ -1194,17 +1174,13 @@
         {
           "damage": "mixed",
           "kind": "first",
-          "renderMs": [
-            66.8
-          ],
+          "renderMs": [66.8],
           "longestFrameMs": 600
         },
         {
           "damage": "destroyed",
           "kind": "first",
-          "renderMs": [
-            64.6
-          ],
+          "renderMs": [64.6],
           "longestFrameMs": 550
         },
         {
