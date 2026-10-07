@@ -53,6 +53,7 @@ const COMMITTED_FILES = import.meta.glob<string>(
     "!**/*.md",
     "!**/{asphalt,facade-concrete,painted-metal,roof-membrane,shutter,sidewalk}.png",
     "!**/storefront-*.png",
+    "!**/home-*.png",
   ],
   {
     eager: true,

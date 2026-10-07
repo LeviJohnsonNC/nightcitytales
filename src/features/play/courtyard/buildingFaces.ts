@@ -19,7 +19,8 @@ import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
 import type { MaterialKey, MaterialSet } from "./surfaceMaterials";
 import { SURFACE_MATERIALS, fillMaterial, wallBasis } from "./surfaceMaterials";
 import { edgeFrame, hash, type Edge } from "./frontage";
-import { facadeOpenings } from "./architectureArt";
+import { facadeOpenings, drawOnto } from "./architectureArt";
+import type { ArchitectureArt } from "./architecturePack";
 
 type Project = (p: Point) => Point;
 export type BuildingUse = "residential" | "industrial";
@@ -192,10 +193,11 @@ export function paintHomeWindow(
   face: ReturnType<typeof facePainter>,
   ppm: number,
   o: Opening,
+  art?: ArchitectureArt,
 ) {
   const { at, quad } = face;
   const { s0, s1, z0, z1 } = o;
-  const depth = 0.12;
+  const depth = HOME_DEPTH;
   const frame = 0.05;
   // the reveal: render returning into the opening, and the glass set back in it
   poly(ctx, quad(s0, s1, z0, z1), "#26221e");
@@ -249,6 +251,22 @@ export function paintHomeWindow(
         px(ppm, 0.012),
       );
   }
+  // Upper windows only: the room is registered to 1.3 × 1.1 m of glass.
+  // Ground-floor privacy bays retain their own proportions and procedural cloth.
+  const painted = homeInterior(o, art);
+  if (painted) {
+    ctx.save();
+    poly(ctx, quad(g0, g1, h0, h1, -depth), "#292b2a");
+    ctx.clip();
+    drawOnto(
+      ctx,
+      painted as Parameters<typeof drawOnto>[1],
+      at(g0, -depth, h1),
+      at(g1, -depth, h1),
+      at(g0, -depth, h0),
+    );
+    ctx.restore();
+  }
   // a restrained sky in the glass, across the upper corner
   poly(
     ctx,
@@ -281,18 +299,25 @@ export function paintHomeWindow(
     [1, "rgba(0,0,0,0)"],
   ]);
   // the sill: a stone ledge, proud of the wall, a little wider than the opening
-  const lip = 0.07;
+  // A built stone head, with a shaded underside rather than another thin outline.
+  poly(ctx, quad(s0 - 0.1, s1 + 0.1, z1, z1 + 0.14, 0.06), "#938878");
+  poly(
+    ctx,
+    [at(s0 - 0.1, 0, z1), at(s1 + 0.1, 0, z1), at(s1 + 0.1, 0.06, z1), at(s0 - 0.1, 0.06, z1)],
+    "#494238",
+  );
+  const lip = 0.18;
   poly(
     ctx,
     [at(s0 - 0.06, 0, z0), at(s1 + 0.06, 0, z0), at(s1 + 0.06, lip, z0), at(s0 - 0.06, lip, z0)],
     "#bdb3a1",
   );
-  poly(ctx, quad(s0 - 0.06, s1 + 0.06, z0 - 0.06, z0, lip), "#8c8476");
+  poly(ctx, quad(s0 - 0.06, s1 + 0.06, z0 - 0.14, z0, lip), "#8c8476");
   shade(
     ctx,
-    quad(s0 - 0.06, s1 + 0.06, z0 - 0.32, z0 - 0.06),
-    at(s0, 0, z0 - 0.06),
-    at(s0, 0, z0 - 0.32),
+    quad(s0 - 0.06, s1 + 0.06, z0 - 0.38, z0 - 0.14),
+    at(s0, 0, z0 - 0.14),
+    at(s0, 0, z0 - 0.38),
     [
       [0, "rgba(0,0,0,.26)"],
       [1, "rgba(0,0,0,0)"],
@@ -422,7 +447,59 @@ export function paintShedWall(
   );
 }
 
-/** A home's wall: a rendered plinth and a string course at each floor, nothing more. */
+/** Shared geometry for the albedo and the light behind the glass. */
+export const HOME_DEPTH = 0.22;
+export function homeInterior(o: Opening, art?: ArchitectureArt) {
+  if (o.kind !== "window") return undefined;
+  if (o.occupancy === "blind") return art?.homeBlind;
+  if (o.occupancy === "nets") return art?.homeNets;
+  if (o.occupancy === "curtains" || o.occupancy === "lamp") return art?.homeCurtains;
+  return undefined;
+}
+
+export type FaceClip = { s0: number; s1: number; zMax: number };
+/** All finish stays on its face, including the revealed segment's top and ends. */
+export function clipHomeFace(
+  ctx: CanvasRenderingContext2D,
+  face: ReturnType<typeof facePainter>,
+  clip: FaceClip,
+) {
+  ctx.beginPath();
+  face
+    .quad(clip.s0, clip.s1, 0, clip.zMax)
+    .forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  ctx.closePath();
+  ctx.clip();
+}
+
+/** A low masonry course joins the home and annex without moving an opening. */
+export function paintHomeBase(
+  ctx: CanvasRenderingContext2D,
+  structure: SceneStructure,
+  edge: Edge,
+  project: Project,
+  ppm: number,
+  materials?: MaterialSet,
+) {
+  const face = facePainter(structure, edge, project, ppm);
+  const { at, quad, length } = face;
+  if (
+    !fillMaterial(ctx, materials, quad(0, length, 0, 0.52), {
+      key: "home-masonry",
+      basis: faceBasis(structure, edge, project, ppm, "home-masonry"),
+      target: edge === "north" ? "#514638" : "#403b34",
+      strength: 0.92,
+    })
+  )
+    poly(ctx, quad(0, length, 0, 0.52), "#4b4640");
+  poly(ctx, quad(0, length, 0.52, 0.59, 0.025), "#8a8070");
+  shade(ctx, quad(0, length, 0, 0.18), at(0, 0, 0), at(0, 0, 0.18), [
+    [0, "rgba(15,12,9,.5)"],
+    [1, "rgba(15,12,9,0)"],
+  ]);
+}
+
+/** Projecting string courses articulate the storeys at ordinary play scale. */
 export function paintHomeWall(
   ctx: CanvasRenderingContext2D,
   face: ReturnType<typeof facePainter>,
@@ -430,20 +507,97 @@ export function paintHomeWall(
   height: number,
 ) {
   const { at, quad, length } = face;
-  poly(ctx, quad(0, length, 0, 0.45, 0.02), "#4b4640");
-  stroke(ctx, at(0, 0.02, 0.45), at(length, 0.02, 0.45), "rgba(230,220,200,.2)", px(ppm, 0.025));
-  // the floor lines the storeys are measured from
-  for (let z = 3.4; z < height - 0.6; z += 3)
-    stroke(ctx, at(0, 0, z), at(length, 0, z), "rgba(40,32,26,.28)", px(ppm, 0.03));
-  // a coping where the wall meets the roof
-  poly(ctx, quad(0, length, height - 0.18, height, 0.04), "#8e8475");
+  for (let z = 3.4; z < height - 0.6; z += 3) {
+    shade(ctx, quad(0, length, z - 0.24, z), at(0, 0, z), at(0, 0, z - 0.24), [
+      [0, "rgba(25,20,15,.32)"],
+      [1, "rgba(25,20,15,0)"],
+    ]);
+    poly(ctx, quad(0, length, z, z + 0.15, 0.08), "#7b7162");
+    poly(
+      ctx,
+      [
+        at(0, 0, z + 0.15),
+        at(length, 0, z + 0.15),
+        at(length, 0.08, z + 0.15),
+        at(0, 0.08, z + 0.15),
+      ],
+      "#a29681",
+    );
+  }
+  poly(ctx, quad(0, length, height - 0.22, height, 0.04), "#8e8475");
   stroke(
     ctx,
-    at(0, 0.04, height - 0.18),
-    at(length, 0.04, height - 0.18),
+    at(0, 0.04, height - 0.22),
+    at(length, 0.04, height - 0.22),
     "rgba(0,0,0,.4)",
-    px(ppm, 0.03),
+    px(ppm, 0.035),
   );
+}
+
+/** One elevation painter for full buildings and retained cutaway wall segments. */
+export function paintHomeFace(
+  ctx: CanvasRenderingContext2D,
+  structure: SceneStructure,
+  edge: Edge,
+  project: Project,
+  ppm: number,
+  entrances: SceneEnvironment["entrances"],
+  materials?: MaterialSet,
+  art?: ArchitectureArt,
+  clip?: FaceClip,
+) {
+  const face = facePainter(structure, edge, project, ppm);
+  ctx.save();
+  clipHomeFace(ctx, face, clip ?? { s0: 0, s1: face.length, zMax: structure.height });
+  // Repaint the base as well: full and revealed faces must have identical grading.
+  poly(
+    ctx,
+    face.quad(0, face.length, 0, structure.height),
+    edge === "north" ? "#766957" : "#554f49",
+  );
+  fillMaterial(ctx, materials, face.quad(0, face.length, 0, structure.height), {
+    key: "painted-render",
+    basis: faceBasis(structure, edge, project, ppm, "painted-render"),
+    target: edge === "north" ? "#766957" : "#554f49",
+  });
+  paintHomeBase(ctx, structure, edge, project, ppm, materials);
+  paintHomeWall(ctx, face, ppm, structure.height);
+  for (const o of faceOpenings(structure, edge, entrances)) paintHomeWindow(ctx, face, ppm, o, art);
+  // Saved entrances only, carried into the reveal with the rest of the elevation.
+  for (const c of facadeOpenings(structure, entrances, edge).doors) {
+    const top = Math.min(2.2, structure.height - 0.5);
+    poly(ctx, face.quad(c - 0.8, c + 0.8, 0, top), "#202b2e");
+    poly(ctx, face.quad(c - 0.88, c + 0.88, top, top + 0.18), "#9a8b74");
+    stroke(ctx, face.at(c + 0.55, 0, 0.85), face.at(c + 0.55, 0, 1.05), "#a39a85", px(ppm, 0.045));
+  }
+  ctx.restore();
+}
+
+/** The annex shares the home's plaster/base; its own art still owns the openings. */
+export function paintHomeAnnex(
+  ctx: CanvasRenderingContext2D,
+  structure: SceneStructure,
+  edge: Edge,
+  project: Project,
+  ppm: number,
+  materials?: MaterialSet,
+  clip?: FaceClip,
+) {
+  const face = facePainter(structure, edge, project, ppm);
+  ctx.save();
+  clipHomeFace(ctx, face, clip ?? { s0: 0, s1: face.length, zMax: structure.height });
+  poly(
+    ctx,
+    face.quad(0, face.length, 0, structure.height),
+    edge === "north" ? "#766957" : "#554f49",
+  );
+  fillMaterial(ctx, materials, face.quad(0, face.length, 0, structure.height), {
+    key: "painted-render",
+    basis: faceBasis(structure, edge, project, ppm, "painted-render"),
+    target: edge === "north" ? "#766957" : "#554f49",
+  });
+  paintHomeBase(ctx, structure, edge, project, ppm, materials);
+  ctx.restore();
 }
 
 /**
