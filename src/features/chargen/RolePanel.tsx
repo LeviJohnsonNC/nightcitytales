@@ -34,6 +34,8 @@ import { ArtSlot } from "./ArtSlot";
 import { roleArt, sceneArt } from "./art";
 import { ROLE_FIRST_NIGHT, ROLE_HOOK, ROLE_PLAYS_LIKE } from "./copy";
 import { emphasizeTerms, loreParagraphs } from "./loreFormat";
+import { RoleAbilityModal } from "./RoleAbilityModal";
+import { ROLE_ABILITY_SHOWCASE } from "./roleAbilityShowcase";
 import type { ChargenState } from "./store";
 
 type Role = {
@@ -338,6 +340,7 @@ function InNumbers({ opening }: { opening: RoleOpening }) {
 function RoleSpotlight({ role }: { role: Role }) {
   const [loreOpen, setLoreOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [abilityOpen, setAbilityOpen] = useState(false);
   const plays = playsBody(role.id);
   const paragraphs = loreParagraphs(role.flavorText);
   const emphasisTerms = [`${role.name}s`, role.name, role.roleAbility.name];
@@ -359,12 +362,27 @@ function RoleSpotlight({ role }: { role: Role }) {
 
         <div className="min-w-0 space-y-5 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
           <FirstNight roleId={role.id} unbuilt={opening?.unbuilt === true} />
-          <div className="flex items-baseline justify-between gap-3 border-t border-border pt-4">
-            <Eyebrow>Role Ability</Eyebrow>
-            <span className="font-mono text-base font-bold tracking-tight">
+          <button
+            type="button"
+            onClick={() => setAbilityOpen(true)}
+            className="group relative block w-full overflow-hidden border border-primary/40 bg-primary/5 p-4 text-left transition-[border-color,background-color,box-shadow] duration-300 hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_28px_-10px_var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <span className="flex items-baseline justify-between gap-3">
+              <Eyebrow>Role Ability</Eyebrow>
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary transition-transform duration-300 group-hover:translate-x-0.5">
+                See what it does →
+              </span>
+            </span>
+            <span className="mt-1 block font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
               {role.roleAbility.name}
             </span>
-          </div>
+            {ROLE_ABILITY_SHOWCASE[role.id] && (
+              <span className="mt-1 block text-sm leading-snug text-muted-foreground">
+                {ROLE_ABILITY_SHOWCASE[role.id]!.pitch}
+              </span>
+            )}
+          </button>
+          <RoleAbilityModal role={role} open={abilityOpen} onOpenChange={setAbilityOpen} />
         </div>
       </div>
 
@@ -452,7 +470,7 @@ function ChooseBar({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{role.name}</p>
         {opening && (
-          <p className="hidden truncate text-xs text-muted-foreground sm:block">
+          <p className="hidden text-pretty text-xs text-muted-foreground sm:block">
             {opening.headline}
           </p>
         )}

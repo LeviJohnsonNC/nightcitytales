@@ -3,12 +3,6 @@ import rolesData from "@/data/rules/roles.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  buildSelfDescriptionInput,
-  generateSelfDescription,
-  selfDescriptionMissing,
-} from "./selfDescription";
 import { useChargenStore, type ChargenState } from "./store";
 import { suggestHandles } from "./handleSuggestions";
 import { fixerShortName } from "./interview";
@@ -18,8 +12,6 @@ const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }
 
 export function IdentityPanel({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
-  const [writing, setWriting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [handles, setHandles] = useState<string[]>([]);
   const [naming, setNaming] = useState(false);
@@ -38,23 +30,6 @@ export function IdentityPanel({ state }: { state: ChargenState }) {
       setNamingError(e instanceof Error ? e.message : "Could not think of a name right now.");
     } finally {
       setNaming(false);
-    }
-  }
-
-  const missing = selfDescriptionMissing(state);
-  const canWrite = missing.length === 0;
-
-  async function writeDescription() {
-    setWriting(true);
-    setError(null);
-    try {
-      const roleName = state.roleId ? ROLE_NAMES[state.roleId]?.name : undefined;
-      const text = await generateSelfDescription(buildSelfDescriptionInput(state, roleName));
-      patch({ selfDescription: text });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not write a description right now.");
-    } finally {
-      setWriting(false);
     }
   }
 
@@ -111,39 +86,6 @@ export function IdentityPanel({ state }: { state: ChargenState }) {
             ))}
           </div>
           {namingError && <p className="text-sm text-danger">{namingError}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="chargen-description">One-line self-description (optional)</Label>
-          <Textarea
-            id="chargen-description"
-            value={state.selfDescription}
-            onChange={(e) => patch({ selfDescription: e.target.value })}
-            placeholder="How they read at a glance."
-            rows={3}
-          />
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!canWrite || writing}
-              onClick={writeDescription}
-            >
-              {writing
-                ? "Writing…"
-                : state.selfDescription.trim()
-                  ? "Write another"
-                  : "Write one for me"}
-            </Button>
-            {!canWrite && (
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
-                Needs {missing.join(", ")}
-              </p>
-            )}
-          </div>
-          {error && <p className="text-sm text-danger">{error}</p>}
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
-            Anything written here is yours to edit or replace.
-          </p>
         </div>
       </div>
     </div>

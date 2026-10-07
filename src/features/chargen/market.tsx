@@ -191,7 +191,7 @@ function CartRow({ stack, canAdd, onRemove, onQty }: CartRowProps) {
   return (
     <li className="flex items-center justify-between gap-3 px-4 py-2">
       <div className="min-w-0">
-        <p className="truncate text-sm text-text">
+        <p className="text-pretty text-sm text-text">
           {line.variant ?? itemName(line.kind, line.itemId)}
           {line.variant ? (
             <span className="ml-1 text-text-dim">({itemName(line.kind, line.itemId)})</span>

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { FitText } from "./FitText";
+import { LifepathValue } from "./LifepathValue";
 import {
   choiceOnlyDieSides,
   chooseRoleLifepathEntry,
@@ -43,38 +43,20 @@ export function RoleLifepathTableCard({
   return (
     <article
       className={cn(
-        "min-w-0 border border-hairline bg-surface px-3 py-2.5 transition-colors duration-200",
+        "flex min-w-0 flex-col border border-hairline bg-surface px-3 py-2.5 transition-colors duration-200",
         entry && "border-ember/40 bg-surface-raised",
         table.dependsOn && "border-l-2 border-l-cool",
       )}
     >
-      <div className="flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <FitText
-              as="h3"
-              min={0.65}
-              className="min-w-0 flex-1 font-display text-xs font-bold uppercase tracking-[0.12em] text-text"
-            >
-              {table.label}
-            </FitText>
-            {!(entry && entry.method === "rolled") && (
-              <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-text-dim">
-                {entry ? "chosen" : (table.die ?? "choose")}
-              </span>
-            )}
-          </div>
-          <FitText
-            as="p"
-            min={0.7}
-            className={cn("mt-0.5 text-sm", value ? "text-text" : "text-text-dim")}
-          >
-            {value ?? "Not set"}
-          </FitText>
-          {table.sourceDiscrepancy && (
-            <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-cool">
-              {table.sourceDiscrepancy}
-            </p>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1 pt-1">
+          <h3 className="text-balance font-display text-xs font-bold uppercase leading-snug tracking-[0.12em] text-text">
+            {table.label}
+          </h3>
+          {!(entry && entry.method === "rolled") && (
+            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-text-dim">
+              {entry ? "chosen" : (table.die ?? "choose")}
+            </span>
           )}
         </div>
 
@@ -129,6 +111,13 @@ export function RoleLifepathTableCard({
           )}
         </div>
       </div>
+
+      <LifepathValue value={value} />
+      {table.sourceDiscrepancy && (
+        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-cool">
+          {table.sourceDiscrepancy}
+        </p>
+      )}
 
       {entry && editing && (
         <div className="mt-2">

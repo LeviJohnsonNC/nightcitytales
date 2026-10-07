@@ -120,7 +120,7 @@ export function PeoplePicker({ state }: { state: ChargenState }) {
                     )}
                     <span className="min-w-0 space-y-1 p-3">
                       <span className="block text-sm font-bold leading-tight">{name}</span>
-                      <span className="line-clamp-3 text-xs leading-snug text-text-muted">
+                      <span className="block text-pretty text-xs leading-snug text-text-muted">
                         {firstSentence(npc?.bio)}
                       </span>
                       {selected && (

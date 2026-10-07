@@ -29,6 +29,10 @@ const Facts = z.object({
   weapon: z.string().max(80).nullable().default(null),
   humanity: z.string().max(160).nullable().default(null),
   home: z.string().max(160).nullable().default(null),
+  setting: z
+    .array(z.object({ label: z.string().max(60), value: z.string().max(300) }))
+    .max(8)
+    .default([]),
   selfDescription: z.string().max(400).default(""),
   stream: z.boolean().optional(),
 });

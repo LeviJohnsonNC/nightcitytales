@@ -315,6 +315,206 @@ Painterly cyberpunk illustration for a game UI card, rendered as a digital oil p
 Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human, lived-in and a little playful. Portrait orientation, 2:3. This image sits behind text on a card: put the whole idea, the subject and its action, in the TOP 45% of the frame, and let the bottom half fall away into dark, simple, low-detail ground (wet pavement, deep shadow, a dark tabletop) so text laid over it stays readable. One clear idea, readable at a glance at small size. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but not muddy. No text, no letters, no numbers, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A runner in a dim studio stands at a huge analog mixing desk, one hand pushing a fader up, the other resting on a knob. Instead of a song, the monitor wall above the desk shows a glowing wireframe of a human body, and each fader lights a different part of it: the arms, the eyes, the heart. The runner's face is lit from below by the desk's rows of coloured LEDs. Camera behind and to one side of the runner, the monitor wall filling the top of the frame. The desk's front edge falls away into black.
 ```
 
+### Must-have: the ways to work
+
+The Skills step opens on three cards per Role — "Pick how you work" — and
+each is one picture of that way of working, mid-action. Thirty in all, three
+per Role. A card with no file keeps its plain look, so they can arrive one
+Role at a time.
+
+- **Size:** 1536 × 1024 (landscape, 3:2). The card shows a 16:9 strip of it,
+  with the name over the bottom edge.
+- **Keep the action in the middle band.** The bottom fifth should be darker,
+  simple ground.
+- Save as `way-<role>-<way>.webp` (or .png) in `src/assets/creator/`, exactly
+  as named below. `wayArtName` in `src/features/chargen/SkillWays.tsx` reads them.
+
+Ways wrapper — replace `{subject}`:
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: {subject}
+```
+
+#### `way-rockerboy-headliner.webp` — The Headliner
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A rocker at the lip of a packed club stage, one boot on the monitor wedge, guitar raised overhead, a sea of hands and phone screens reaching up into a single hard white spotlight.
+```
+
+#### `way-rockerboy-street-poet.webp` — The Street Poet
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A poet sitting on the hood of a wrecked car under a flickering overpass, speaking into a cheap handheld mic while a ring of street kids lean in, spray-painted verse glowing on the concrete behind them.
+```
+
+#### `way-rockerboy-riot.webp` — The Riot
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A punk frontman mid-scream, swinging a mic stand like a club as a mosh pit boils over into a brawl, bottles in the air, strobe light freezing the chaos.
+```
+
+#### `way-solo-gunslinger.webp` — The Gunslinger
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A solo in a long coat drawing a heavy pistol faster than the eye can follow in a rain-soaked bar doorway, two silhouettes still reaching for their guns, muzzle flash just beginning.
+```
+
+#### `way-solo-bodyguard.webp` — The Bodyguard
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: An armored bodyguard planted in a narrow hotel corridor, one arm back shielding a frightened client, the other levelling an SMG at the elevator doors as they slide open.
+```
+
+#### `way-solo-blade.webp` — The Blade
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A lean assassin dropping from a ventilation duct behind a corporate guard, monoblade catching a thread of magenta light, the guard's cigarette still falling.
+```
+
+#### `way-netrunner-ghost.webp` — The Ghost
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A netrunner crouched in a dark maintenance closet, cables from their temple into an open wall panel, while in the corridor outside every security camera has quietly turned to face the wall.
+```
+
+#### `way-netrunner-archivist.webp` — The Archivist
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A netrunner in a nest of salvaged monitors at 4 a.m., face lit by cascading scrolling data, one screen frozen on a single damning corporate file.
+```
+
+#### `way-netrunner-tinkerer.webp` — The Tinkerer
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A runner at a cluttered bench rewiring a cyberdeck with a soldering iron, smoke curling up, a reprogrammed drone hovering obediently at their shoulder.
+```
+
+#### `way-tech-bench-genius.webp` — The Bench Genius
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A tech in welding goggles stepping back from the workbench to admire a gleaming custom weapon they built from scrap, sparks still dying in the air, junk piled to the ceiling around it.
+```
+
+#### `way-tech-gearhead.webp` — The Gearhead
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A tech half under a jacked-up armored van in a garage bay, only their legs and a hand holding a glowing diagnostic tool visible, the engine block hanging on a chain hoist above.
+```
+
+#### `way-tech-breaker.webp` — The Breaker
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A tech kneeling at a high-security door with its keypad cover popped off, wires clipped to a handheld bypass box, the lock light flipping from red to green.
+```
+
+#### `way-medtech-trauma-surgeon.webp` — The Trauma Surgeon
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A medtech in a back-alley clinic under one harsh surgical lamp, gloved hands deep in a patient's chest cavity, steady as stone, blood and chrome instruments on the tray.
+```
+
+#### `way-medtech-field-medic.webp` — The Field Medic
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A medic crouched behind a burning car in a firefight, jamming an airhypo into a wounded solo's neck with one hand and returning fire with a pistol in the other.
+```
+
+#### `way-medtech-diagnostician.webp` — The Diagnostician
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A medtech holding a patient's chin and shining a penlight into their cybereye, a holographic scan of the body glowing beside them, already knowing the patient is lying.
+```
+
+#### `way-media-investigator.webp` — The Investigator
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A journalist in a dim apartment in front of a wall of photos, printouts and red string, holding up a single photograph to the window light, the city glowing outside.
+```
+
+#### `way-media-face.webp` — The Face
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A charming journalist leaning across a crowded neon bar toward a nervous corporate type, raising a drink, a tiny recorder hidden in their other palm.
+```
+
+#### `way-media-stringer.webp` — The Stringer
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A media on a rooftop ledge in the rain, camera rig to their eye, capturing a riot police raid in the street far below lit by flares and sirens.
+```
+
+#### `way-exec-dealmaker.webp` — The Dealmaker
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: An executive in a sharp suit across a glass boardroom table from rivals, sliding a single datachip forward, everyone else visibly losing the negotiation.
+```
+
+#### `way-exec-operator.webp` — The Operator
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: An executive in a high office surrounded by floating holographic org charts and contracts, calmly moving one name from one column to another while assistants hurry past.
+```
+
+#### `way-exec-shark.webp` — The Shark
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: An executive in a limousine back seat, briefcase open on their lap revealing a compact pistol beside the contracts, watching the driver in the mirror.
+```
+
+#### `way-lawman-detective.webp` — The Detective
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A detective crouched at a rain-soaked crime scene under police tape, lifting a shell casing with a pen and studying it in the red-and-blue light.
+```
+
+#### `way-lawman-enforcer.webp` — The Enforcer
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A lawman in heavy armor kicking in an apartment door, shotgun up, the doorframe splintering, a squad stacked behind them in the hallway.
+```
+
+#### `way-lawman-tracker.webp` — The Tracker
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A lawman on a motorcycle at the edge of the Badlands at dusk, binoculars raised toward a dust trail on the horizon, a wanted poster flapping on the handlebars.
+```
+
+#### `way-fixer-broker.webp` — The Broker
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A fixer in the back booth of a smoky club, a case of weapons open on one side of the table and a case of eurobucks on the other, two nervous parties on either side.
+```
+
+#### `way-fixer-street-fixer.webp` — The Street Fixer
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A fixer walking down a crowded night market, vendors nodding, a kid handing them a note, a ganger stepping aside to let them pass.
+```
+
+#### `way-fixer-forger.webp` — The Forger
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A forger hunched over a lightbox under a magnifier lamp, peeling a holographic seal onto a fake corporate ID, a row of blank passports fanned out beside them.
+```
+
+#### `way-nomad-road-warrior.webp` — The Road Warrior
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A nomad leaning out of the window of a speeding armored car on a desert highway, shotgun raised at a pursuing gang bike, family faces in the back seat.
+```
+
+#### `way-nomad-scout.webp` — The Scout
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A nomad lying flat on a ridge at dawn in a dust-coloured cloak, scope to their eye, watching a hidden ambush set up along the road below.
+```
+
+#### `way-nomad-trader.webp` — The Trader
+
+```text
+Painterly cyberpunk illustration for a game UI card, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human and lived-in. Landscape, 3:2. The card crops this to a 16:9 strip and lays the name over its bottom edge, so keep the subject and its action in the middle band of the frame and let the bottom fifth fall away into simple, darker ground. One person, one clear action, readable at a glance at small size: this is a picture of HOW somebody works, mid-action, not a portrait. Cinematic neon lighting with bloom, wet reflective surfaces and atmospheric haze, but bright enough to read. No text, no letters, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Subject: A nomad at the open tailgate of a caravan truck in a Badlands trading post, holding up a jar of clean water to a crowd while crates of goods stack behind them.
+```
+
 ## Storefront facade assets (combat scenes)
 
 A fourth look, for surfaces the combat renderer projects onto saved geometry:

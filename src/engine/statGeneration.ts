@@ -5,7 +5,7 @@
  */
 import { d10 } from "./dice";
 import { buildRollResult, type RollResult } from "./rollLog";
-import { CREATION_METHODS, STAT_ORDER, getStatTemplateRow } from "./rulesData";
+import { CREATION_METHODS, STAT_ORDER, getStatTemplateRow, getStatTemplateRows } from "./rulesData";
 import type { RNG, StatBlock, StatKey } from "./types";
 
 const COMPLETE_PACKAGE = CREATION_METHODS.completePackage;
@@ -165,4 +165,26 @@ export function validateCompletePackageStats(allocation: Partial<StatBlock>): St
   }
 
   return { valid: violations.length === 0, pointsSpent, pointsRemaining, violations };
+}
+
+/**
+ * How good a rolled STAT is, for the Role it was rolled on.
+ *
+ * Read against the STAT's own column of that Role's template, because that is
+ * the only range the die could have landed in: a 5 is the best TECH an Exec
+ * can roll and the worst INT a Netrunner can. "best" and "worst" are the top
+ * and bottom of the column; between them a value is "good" above the middle,
+ * "poor" below it and "fair" on it. A column that never varies is always fair.
+ */
+export type StatRollVerdict = "best" | "good" | "fair" | "poor" | "worst";
+
+export function statRollVerdict(roleId: string, stat: StatKey, value: number): StatRollVerdict {
+  const column = Object.values(getStatTemplateRows(roleId)).map((row) => row[stat]!);
+  const min = Math.min(...column);
+  const max = Math.max(...column);
+  if (min === max) return "fair";
+  if (value >= max) return "best";
+  if (value <= min) return "worst";
+  const middle = (min + max) / 2;
+  return value > middle ? "good" : value < middle ? "poor" : "fair";
 }

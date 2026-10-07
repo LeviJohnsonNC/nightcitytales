@@ -6,9 +6,10 @@ import {
   startingCompletePackageStats,
   rollEdgerunnerStats,
   rollStreetratStats,
+  statRollVerdict,
   validateCompletePackageStats,
 } from "../statGeneration";
-import { STAT_ORDER, getStatTemplateRow } from "../rulesData";
+import { STAT_ORDER, getStatTemplateRow, getStatTemplateRows } from "../rulesData";
 import type { StatBlock } from "../types";
 
 /** Eight 6s and two 7s = 62. */
@@ -145,5 +146,45 @@ describe("making an old draft safe for the point-buy controls", () => {
 
   it("leaves a legal allocation exactly as it was", () => {
     expect(normalizeCompletePackageStats(valid62)).toEqual(valid62);
+  });
+});
+
+describe("statRollVerdict", () => {
+  const column = (roleId: string, stat: (typeof STAT_ORDER)[number]) =>
+    Object.values(getStatTemplateRows(roleId)).map((row) => row[stat]!);
+
+  it("calls the top of a Role's column best and the bottom worst", () => {
+    for (const stat of STAT_ORDER) {
+      const values = column("exec", stat);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      if (min === max) continue;
+      expect(statRollVerdict("exec", stat, max)).toBe("best");
+      expect(statRollVerdict("exec", stat, min)).toBe("worst");
+    }
+  });
+
+  it("judges a value against its own Role, not an absolute scale", () => {
+    // The same number can be the best one Role rolls and the worst another does.
+    const verdicts = new Set<string>();
+    for (const roleId of ["exec", "netrunner", "solo", "tech"]) {
+      for (const stat of STAT_ORDER) {
+        const values = column(roleId, stat);
+        if (values.includes(5)) verdicts.add(statRollVerdict(roleId, stat, 5));
+      }
+    }
+    expect(verdicts.size).toBeGreaterThan(1);
+  });
+
+  it("places values between the ends either side of the middle", () => {
+    for (const stat of STAT_ORDER) {
+      const values = column("solo", stat);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      for (let v = min + 1; v < max; v += 1) {
+        const expected = v > (min + max) / 2 ? "good" : v < (min + max) / 2 ? "poor" : "fair";
+        expect(statRollVerdict("solo", stat, v)).toBe(expected);
+      }
+    }
   });
 });
