@@ -1885,3 +1885,13 @@ and cancelling restores the building. Existing manual reveal and all tactical
 rules remain unchanged. See `docs/checkpoint-selective-foreground.md` for browser
 evidence, tests and limits. Next: the planned street/frontage finish pass; reference
 quality is still pending visual acceptance.
+
+### Street frontage finish (2026-10-07)
+
+The intersection shop now has stronger window/entrance joinery, paneled bases,
+a longer lit corner display and a vertical sign sized for its saved height.
+Repair frontage, kerb edges and shop thresholds have distinct material treatment;
+existing streetlamp pools are broader with softer centres. See
+`docs/checkpoint-street-frontage.md` for matched evidence and validation. This is
+a finish improvement, not reference parity. Normal-play roof coverage and the
+amount of screen given to the street remain the next composition questions.

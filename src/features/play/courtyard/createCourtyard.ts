@@ -484,11 +484,15 @@ export function createCourtyard(
                 ? reveal || (auto && role === "floor")
                 : layer === "full"
                   ? !reveal && !auto
-                  : layer === "awning"
+                  : layer === "fixture"
                     ? auto
                       ? retainForegroundSection(s!, prop.getData("sectionRect"), points)
-                      : !reveal || !!prop.getData("revealOk")
-                    : true,
+                      : !reveal || !prop.getData("revealHide")
+                    : layer === "awning"
+                      ? auto
+                        ? retainForegroundSection(s!, prop.getData("sectionRect"), points)
+                        : !reveal || !!prop.getData("revealOk")
+                      : true,
             );
         }
       }

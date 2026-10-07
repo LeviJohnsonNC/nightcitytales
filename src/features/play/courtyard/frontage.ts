@@ -310,7 +310,7 @@ export function hash(...n: number[]) {
 
 const KERB = {
   /** Kerb stone width on the pavement side, and its standing height above the road. */
-  width: 0.25,
+  width: 0.32,
   upstand: 0.12,
   dropped: 0.02,
   stone: 1,
@@ -451,7 +451,7 @@ export function paintStreetscape(
       const b = along(run, e / L, 0);
       const tone = hash(a.x, a.y, 3);
       const top = [a, b, back(b, KERB.width), back(a, KERB.width)].map(project);
-      const v = Math.round(112 + tone * 16);
+      const v = Math.round(144 + tone * 18);
       const stoneTop = `#${[v, v + 2, v - 6].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
       if (
         !fillMaterial(ctx, materials, top, {
@@ -463,10 +463,10 @@ export function paintStreetscape(
       )
         poly(ctx, top, stoneTop);
       // the arris catches light along the road side
-      stroke(ctx, project(a), project(b), "rgba(210,214,202,.32)", 0.8);
+      stroke(ctx, project(a), project(b), "rgba(220,216,197,.5)", 0.8);
       if (face) {
         // the kerb's face, standing above the channel, in the stone's own shade
-        const fv = Math.round(70 + tone * 14);
+        const fv = Math.round(83 + tone * 14);
         const stoneFace = `#${[fv, fv + 2, fv - 2].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
         const facePts = [
           project(a),

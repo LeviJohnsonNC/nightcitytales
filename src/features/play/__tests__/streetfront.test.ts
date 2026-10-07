@@ -31,19 +31,19 @@ describe("the shop's other faces", () => {
     expect(rest).toEqual([]);
     expect(face!.structure.id).toBe("building_0");
     expect(face!.edge).toBe("east");
-    // the two bays nearest the corner the awning is on (s = 20), and nothing else
-    expect(face!.display).toEqual([12.5, 15.5]);
+    // the three bays nearest the corner the awning is on (s = 20), and nothing else
+    expect(face!.display).toEqual([9.5, 12.5, 15.5]);
     expect(face!.grille).toBe(0.5);
-    expect(face!.duct).toBeGreaterThan(9.5 + BAY.width);
-    expect(face!.duct).toBeLessThan(12.5);
+    expect(face!.duct).toBeGreaterThan(6.5 + BAY.width);
+    expect(face!.duct).toBeLessThan(9.5);
   });
 
-  it("seed 7: the shop turns its corner with one display bay", () => {
+  it("seed 7: the shop turns its corner with two display bays", () => {
     const { env } = scene(7);
     const [face] = shopReturns(env);
     expect(face!.edge).toBe("east");
-    expect(face!.display).toEqual([0.5]);
-    expect(face!.store).toEqual([3.5]);
+    expect(face!.display).toEqual([0.5, 3.5]);
+    expect(face!.store).toEqual([]);
     expect(face!.grille).toBeUndefined();
   });
 
