@@ -20,8 +20,10 @@
  *
  * Every channel where the board differs from the fresh render is classified
  * (`comparePixels`). The only allowed difference is a channel where rounding leaves the
- * wreck's render below the standing one: a patch only adds light, so the board keeps the
- * standing value there. The check exits non-zero on any other difference.
+ * wreck's render below the standing one by at most `ROUNDING_MAX` (3/255): a patch only
+ * adds light, so the board keeps the standing value there. Those channels are counted and
+ * reported. The check exits non-zero on any other difference, a larger one below
+ * standing included.
  */
 import { chromium } from "playwright";
 

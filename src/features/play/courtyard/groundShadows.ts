@@ -256,14 +256,18 @@ export function composeGroundLight(
   return canvas;
 }
 
+/** The most a channel may differ from a fresh render as blur rounding, in levels of 255. */
+export const ROUNDING_MAX = 3;
+
 /**
  * How what the board shows compares with a fresh render, channel by channel. `standing`
  * is the base (every caster standing).
  *
  * A patch only adds light. Where rounding in the shadow's blur leaves a wreck's render a
  * level or two below the standing one, the board keeps the standing value. Those
- * channels are counted as `rounding`. Every other difference is `unexplained`, and the
- * checks require none.
+ * channels, up to `ROUNDING_MAX` apart, are counted as `rounding`. Every other
+ * difference, a larger one below standing included, is `unexplained`, and the checks
+ * require none.
  */
 export function comparePixels(
   shown: ArrayLike<number>,
@@ -278,7 +282,11 @@ export function comparePixels(
     for (let c = 0; c < 3; c++) {
       const d = Math.abs(shown[i + c]! - fresh[i + c]!);
       if (!d) continue;
-      if (shown[i + c] === standing[i + c] && fresh[i + c]! < standing[i + c]!) {
+      if (
+        shown[i + c] === standing[i + c] &&
+        fresh[i + c]! < standing[i + c]! &&
+        d <= ROUNDING_MAX
+      ) {
         rounding++;
         roundingMax = Math.max(roundingMax, d);
       } else {

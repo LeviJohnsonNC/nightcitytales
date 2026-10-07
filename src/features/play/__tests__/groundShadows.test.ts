@@ -25,6 +25,24 @@ describe("ground shadows: what the board shows against a fresh render", () => {
     });
   });
 
+  it("does not take a larger drop below standing as rounding", () => {
+    // a wreck's render 4 levels below standing is a shadow the board failed to lift
+    const standing = px([12, 20, 30]);
+    expect(comparePixels(standing, px([8, 20, 30]), standing)).toMatchObject({
+      rounding: 0,
+      unexplained: 1,
+      unexplainedMax: 4,
+    });
+    // the accepted ones are still counted beside it
+    const two = px([12, 0, 0], [11, 0, 0]);
+    expect(comparePixels(two, px([8, 0, 0], [8, 0, 0]), two)).toEqual({
+      rounding: 1,
+      roundingMax: 3,
+      unexplained: 1,
+      unexplainedMax: 4,
+    });
+  });
+
   it("counts every other difference as unexplained", () => {
     // too dark: the overlap #299 left shaded after both props were destroyed
     expect(comparePixels(px([40, 0, 0]), px([46, 0, 0]), px([40, 0, 0])).unexplained).toBe(1);
