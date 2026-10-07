@@ -71,6 +71,7 @@ import { battlefieldProjection } from "./battlefieldProjection";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { frameDuration, type PlaybackFrame } from "./combatPlayback";
 import { CourtyardLayer } from "./courtyard/CourtyardLayer";
+import { REFLECTION_MODE_DEFAULT, type ReflectionMode } from "./courtyard/groundReflection";
 import "./combat.css";
 
 type Props = {
@@ -102,8 +103,8 @@ type Props = {
   lights?: boolean;
   /** The night's ambient; the review harness turns it off to inspect the materials. */
   night?: boolean;
-  /** The shop corner's reflections; the review harness turns them off to compare. */
-  reflections?: boolean;
+  /** The shop corner's reflections; the review harness switches them to compare. */
+  reflections?: ReflectionMode;
   /** Where the camera starts, instead of the scene's preset: a repeatable framing. */
   initialCamera?: { x: number; y: number; zoom: number };
   onRevealActivityChange?: (reveal: boolean) => void;
@@ -748,7 +749,7 @@ export function CombatBoard({
               revealActivity={revealActivity}
               lights={lights !== false}
               night={night !== false}
-              reflections={reflections !== false}
+              reflections={reflections ?? REFLECTION_MODE_DEFAULT}
               playback={playback}
               camera={displayCamera}
               aimTargetId={aimed?.actor.id ?? null}

@@ -1,0 +1,38 @@
+deterministic case: regions [{"ids":["A","B"],"box":{"x":410,"y":235,"width":428,"height":287}}]
+  order A,B: standing                unexplained 0 (max 0); rounding below standing 0 (max 0)
+  order A,B: A destroyed             unexplained 0 (max 0); rounding below standing 0 (max 0)
+  order A,B: both destroyed          unexplained 0 (max 0); rounding below standing 0 (max 0)
+  order B,A: standing                unexplained 0 (max 0); rounding below standing 0 (max 0)
+  order B,A: B destroyed             unexplained 0 (max 0); rounding below standing 3 (max 3)
+  order B,A: both destroyed          unexplained 0 (max 0); rounding below standing 0 (max 0)
+  loaded into standing               unexplained 0 (max 0); rounding below standing 0 (max 0)
+  loaded into A                      unexplained 0 (max 0); rounding below standing 0 (max 0)
+  loaded into B                      unexplained 0 (max 0); rounding below standing 3 (max 3)
+  loaded into both                   unexplained 0 (max 0); rounding below standing 0 (max 0)
+  second light inside the region: 40884 px lit by it
+  #299's per-prop restores, both destroyed: 465 px too dark, worst by 6/255
+seed 7: 18 casters in 4 regions; shared: curb_west_car_engine+housing_entry_mailboxes_cabinet+thorton_car_cabin+thorton_car_engine, broth_cart_cart_cart+broth_cart_stock_body, deliveries_bin_body+deliveries_power_body
+  standing                                                     unexplained 0 (max 0); rounding below standing 0 (max 0)
+  all destroyed                                                unexplained 0 (max 0); rounding below standing 0 (max 0)
+  every other destroyed                                        unexplained 0 (max 0); rounding below standing 0 (max 0)
+  region curb_west_car_engine+housing_entry_mailboxes_cabinet+thorton_car_cabin+thorton_car_engine unexplained 0 (max 0); rounding below standing 0 (max 0)
+  region broth_cart_cart_cart+broth_cart_stock_body            unexplained 0 (max 0); rounding below standing 0 (max 0)
+  region deliveries_bin_body+deliveries_power_body             unexplained 0 (max 0); rounding below standing 0 (max 0)
+seed 0: 18 casters in 4 regions; shared: housing_entry_mailboxes_cabinet+thorton_car_cabin+thorton_car_engine, broth_cart_stock_body+north-west-front_infill_0_planter_box+north-west-front_infill_1_planter_box, deliveries_bin_body+deliveries_power_body
+  standing                                                     unexplained 0 (max 0); rounding below standing 0 (max 0)
+  all destroyed                                                unexplained 0 (max 0); rounding below standing 1 (max 2)
+  every other destroyed                                        unexplained 0 (max 0); rounding below standing 1 (max 2)
+  region housing_entry_mailboxes_cabinet+thorton_car_cabin+thorton_car_engine unexplained 0 (max 0); rounding below standing 1 (max 2)
+  region broth_cart_stock_body+north-west-front_infill_0_planter_box+north-west-front_infill_1_planter_box unexplained 0 (max 0); rounding below standing 0 (max 0)
+  region deliveries_bin_body+deliveries_power_body             unexplained 0 (max 0); rounding below standing 0 (max 0)
+seed 8: 17 casters in 3 regions; shared: broth_cart_stock_body+curb_west_car_engine+housing_entry_mailboxes_cabinet+thorton_car_cabin+thorton_car_engine, curb_north_car_cabin+curb_north_car_engine
+  standing                                                     unexplained 0 (max 0); rounding below standing 0 (max 0)
+  all destroyed                                                unexplained 0 (max 0); rounding below standing 1 (max 3)
+  every other destroyed                                        unexplained 0 (max 0); rounding below standing 1 (max 3)
+  region broth_cart_stock_body+curb_west_car_engine+housing_entry_mailboxes_cabinet+thorton_car_cabin+thorton_car_engine unexplained 0 (max 0); rounding below standing 1 (max 3)
+  region curb_north_car_cabin+curb_north_car_engine            unexplained 0 (max 0); rounding below standing 0 (max 0)
+board, switched live to mixed     against loaded directly: 0 channels differ (max 0)
+board, switched live to destroyed against loaded directly: 0 channels differ (max 0)
+board, switched live to intact    against loaded directly: 0 channels differ (max 0)
+board, switched live to destroyed against loaded directly: 0 channels differ (max 0)
+PASS

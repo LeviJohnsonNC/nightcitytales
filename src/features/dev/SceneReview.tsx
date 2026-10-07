@@ -21,6 +21,7 @@ import { targetCapabilities } from "@/features/play/capabilityModel";
 import { readSceneReview, sceneReviewEncounter } from "./sceneReviewModel";
 import "./sceneReview.css";
 import { adventureSceneProof } from "./adventureSceneProof";
+import type { ReflectionMode } from "@/features/play/courtyard/groundReflection";
 
 const REVIEW_WEAPON = weaponProfile("very_heavy_pistol");
 const STORAGE = "nct-scene-review-v1";
@@ -277,13 +278,18 @@ export function SceneReview() {
               Lights
             </label>
             <label>
-              <input
-                type="checkbox"
-                checked={reflections}
+              Reflections{" "}
+              <select
+                value={reflections}
                 disabled={structureOnly || !night || !lights}
-                onChange={(e) => setReflections(e.target.checked)}
-              />
-              Reflections
+                onChange={(e) => setReflections(e.target.value as ReflectionMode)}
+              >
+                <option value="on">on</option>
+                <option value="pictures">pictures only</option>
+                <option value="glints">glints only</option>
+                <option value="hidden">hidden</option>
+                <option value="skip">not built</option>
+              </select>
             </label>
           </>
         )}
@@ -504,7 +510,7 @@ export function SceneReview() {
       )}
       {actors ? (
         <CombatBoard
-          key={scene.layout.arena.key}
+          key={`${scene.layout.arena.key}:${reflections === "skip"}`}
           live={live}
           capability={capability}
           weaponId={REVIEW_WEAPON.itemId}
@@ -521,7 +527,7 @@ export function SceneReview() {
       ) : (
         <div className="scene-review-canvas">
           <CourtyardLayer
-            key={`${scene.layout.arena.key}:${structureOnly}:${rendererAttempt}`}
+            key={`${scene.layout.arena.key}:${structureOnly}:${rendererAttempt}:${reflections === "skip"}`}
             live={empty}
             structureOnly={structureOnly}
             revealActivity={revealActivity}

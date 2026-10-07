@@ -39,7 +39,7 @@ import {
   type ReturnArt,
   type ReturnFace,
 } from "./streetfront";
-import type { ArchitectureArt } from "./architecturePack";
+import { BAY, type ArchitectureArt } from "./architecturePack";
 import {
   facadeArtCovers,
   facadeOpenings,
@@ -119,7 +119,12 @@ import {
   incidentLight,
   type GroundLightSetup,
 } from "./groundShadows";
-import { GroundReflection, SurfaceClass, type MirrorSource } from "./groundReflection";
+import {
+  GroundReflection,
+  SurfaceClass,
+  type MirrorSource,
+  type ReflectionView,
+} from "./groundReflection";
 
 type Project = (p: Point) => Point;
 
@@ -1430,7 +1435,11 @@ export interface ComposedShadows {
 /** The shop corner's ground reflections (`groundReflection.ts`). */
 export interface ComposedReflection {
   layer: GroundReflection;
-  sync: (destroyed: ReadonlySet<string>, visible: boolean) => void;
+  /**
+   * Show the reflection for this destruction state: the fixtures' pictures, the lights'
+   * glints, both or neither (`false` hides them all, as the lights switch does).
+   */
+  sync: (destroyed: ReadonlySet<string>, show: false | ReflectionView) => void;
 }
 
 export interface ComposedEnvironment {
@@ -1591,6 +1600,8 @@ export function createComposedEnvironment(
   storefrontArt?: StorefrontArt,
   /** The architectural pilot's art (`architecturePack.ts`). Without it, the drawn boxes and bays. */
   architectureArt?: ArchitectureArt,
+  /** `false` builds no reflections at all, for measuring what they cost. */
+  options: { reflections?: boolean } = {},
 ): ComposedEnvironment {
   // Ground must extend with saved continuation geometry, not stop at the old
   // 1100x700 art sheet while building sprites float beyond its edge.
@@ -1918,7 +1929,7 @@ export function createComposedEnvironment(
   // The shop corner's lit things, for their reflections in the street (`groundReflection.ts`).
   const mirrorSources: MirrorSource[] = [];
   const mirrorOwners = new Map<string, Phaser.GameObjects.Image>();
-  const reflects = !!night && materialised;
+  const reflects = !!night && materialised && options.reflections !== false;
   const occluders = activityOccluders(arena);
   const activity = activityGroundPoints(arena);
   const add = (
@@ -1933,6 +1944,11 @@ export function createComposedEnvironment(
     /** Ground lines this sprite's lit picture is reflected about (`groundReflection.ts`). */
     mirrors?: readonly (Omit<MirrorSource, "paint" | "group"> &
       Partial<Pick<MirrorSource, "paint">>)[],
+    /**
+     * What of `light` the sprite emits, if not all of it: the passes it is reflected
+     * from. Light that only falls on it (a wash on a wall) is not a source.
+     */
+    emissive?: (ctx: CanvasRenderingContext2D, pass: "light" | "glow") => void,
   ) => {
     const canvas = document.createElement("canvas");
     canvas.width = Math.ceil(bounds.width * scale);
@@ -1947,20 +1963,10 @@ export function createComposedEnvironment(
     paint(ctx);
     ctx.restore();
     const glow = night && light ? lightCanvas(canvas, frame, light) : undefined;
-    if (night && glow && mirrors?.length) {
-      // what the street sees: the art under the night's ambient, and its light added
-      const seen = document.createElement("canvas");
-      seen.width = canvas.width;
-      seen.height = canvas.height;
-      const sctx = seen.getContext("2d")!;
-      sctx.drawImage(canvas, 0, 0);
-      sctx.globalCompositeOperation = "multiply";
-      sctx.fillStyle = lightColor(night.ambient, 1);
-      sctx.fillRect(0, 0, seen.width, seen.height);
-      sctx.globalCompositeOperation = "destination-in";
-      sctx.drawImage(canvas, 0, 0);
-      sctx.globalCompositeOperation = "lighter";
-      sctx.drawImage(glow, 0, 0);
+    if (night && mirrors?.length && (emissive || glow)) {
+      // what it emits, as the street sees it: its own light and glow passes, never its
+      // art under the ambient
+      const seen = emissive ? lightCanvas(canvas, frame, emissive) : glow!;
       for (const m of mirrors)
         mirrorSources.push({
           group: key,
@@ -2233,6 +2239,46 @@ export function createComposedEnvironment(
               }
             : undefined,
         faceMirrors,
+        // what the shopfront emits: its glow, and its light inside the lit bays only (the
+        // rooms), never the washes on its walls, sills and parapet
+        faceMirrors && front
+          ? (ctx, pass) => {
+              ctx.save();
+              if (pass === "light") {
+                const bays = [
+                  ...storefrontWindows(front.sf).map((w) =>
+                    facePainter(s, front.sf.edge, project, metre).quad(w.s0, w.s1, w.z0, w.z1),
+                  ),
+                  ...composed.flatMap((c) =>
+                    c.display.map((s0) =>
+                      facePainter(s, c.edge, project, metre).quad(
+                        s0,
+                        s0 + BAY.width,
+                        BAY.sill,
+                        BAY.head,
+                      ),
+                    ),
+                  ),
+                ];
+                ctx.beginPath();
+                for (const q of bays)
+                  q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+                ctx.clip();
+              }
+              paintBuilding(
+                ctx,
+                s,
+                project,
+                arena.environment!.entrances,
+                materials,
+                storefrontOf(s, pass),
+                detailOf(structure),
+                architecture,
+              );
+              paintComposedLight(ctx, pass);
+              ctx.restore();
+            }
+          : undefined,
       )
         ?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined)
         .setData("sortRect", s.rect);
@@ -2565,44 +2611,55 @@ export function createComposedEnvironment(
         : {}),
     });
     // one sprite per reflected fixture, shown and faded with that fixture's own sprite
-    // (the shopfront leaves with its wall in the reveal), and one for the lights' glints
+    // (the shopfront leaves with its wall in the reveal), and one for the lights' glints;
+    // each over its own layer's box
     const sprite = () =>
-      scene.add
-        .image(layer.box.x + layer.box.width / 2, layer.box.y + layer.box.height / 2, "__DEFAULT")
-        .setBlendMode("ADD")
-        .setDepth(-999.4)
-        .setVisible(false);
+      scene.add.image(0, 0, "__DEFAULT").setBlendMode("ADD").setDepth(-999.4).setVisible(false);
     const pictures = layer.groups.map((group) => ({ group, image: sprite() }));
     const glints = sprite();
     let shown: string | undefined;
     const uploaded = new Map<HTMLCanvasElement, string>();
     reflection = {
       layer,
-      sync(destroyed, visible) {
+      sync(destroyed, view) {
         const key = layer.key(destroyed);
-        if (visible && key !== shown) {
+        if (view && key !== shown) {
           shown = key;
           const layers = layer.render(destroyed);
           // a layer no prop changed is the same canvas: its texture is uploaded once
-          const show = (image: Phaser.GameObjects.Image, c: HTMLCanvasElement) => {
-            let textureKey = uploaded.get(c);
+          const show = (
+            image: Phaser.GameObjects.Image,
+            l: { canvas: HTMLCanvasElement; box: Box } | undefined,
+          ) => {
+            if (!l) return;
+            let textureKey = uploaded.get(l.canvas);
             if (!textureKey) {
               textureKey = `composed-reflection-${uploaded.size}`;
-              uploaded.set(c, textureKey);
-              scene.textures.addCanvas(textureKey, c)!.refresh();
+              uploaded.set(l.canvas, textureKey);
+              scene.textures.addCanvas(textureKey, l.canvas)!.refresh();
             }
             if (image.texture.key !== textureKey)
-              image.setTexture(textureKey).setDisplaySize(layer.box.width, layer.box.height);
+              image
+                .setTexture(textureKey)
+                .setPosition(l.box.x + l.box.width / 2, l.box.y + l.box.height / 2)
+                .setDisplaySize(l.box.width, l.box.height);
           };
-          for (const p of pictures) show(p.image, layers.groups.get(p.group)!);
+          for (const p of pictures) show(p.image, layers.groups.get(p.group));
           show(glints, layers.glints);
         }
-        const ready = visible && shown !== undefined;
+        const ready = !!view && shown !== undefined;
         for (const p of pictures) {
           const owner = mirrorOwners.get(p.group);
-          p.image.setVisible(ready && (owner?.visible ?? true)).setAlpha(owner?.alpha ?? 1);
+          p.image
+            .setVisible(
+              ready &&
+                view !== "glints" &&
+                p.image.texture.key !== "__DEFAULT" &&
+                (owner?.visible ?? true),
+            )
+            .setAlpha(owner?.alpha ?? 1);
         }
-        glints.setVisible(ready);
+        glints.setVisible(ready && view !== "pictures" && glints.texture.key !== "__DEFAULT");
       },
     };
     if (import.meta.env.DEV)

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  emissive,
   flippedBody,
   inFrontOf,
   mirrorMatrix,
   mirrorPoint,
   REFLECTION,
   response,
+  stretchDepths,
   SurfaceClass,
 } from "../courtyard/groundReflection";
 
@@ -31,8 +33,8 @@ describe("ground reflection: where a picture lands", () => {
 
   it("stretches a rough reflection from near the foot to past the mirror point", () => {
     const top = { x: 200, y: 210 }; // 40 px above the line
-    const near = mirrorPoint(top, a, b, Math.min(...REFLECTION.stretch));
-    const far = mirrorPoint(top, a, b, Math.max(...REFLECTION.stretch));
+    const near = mirrorPoint(top, a, b, Math.min(...stretchDepths()));
+    const far = mirrorPoint(top, a, b, Math.max(...stretchDepths()));
     const mirror = mirrorPoint(top, a, b);
     expect(near.y).toBeGreaterThan(250);
     expect(near.y).toBeLessThan(mirror.y);
@@ -62,25 +64,57 @@ describe("ground reflection: where a picture lands", () => {
   });
 });
 
+describe("ground reflection: what a source gives", () => {
+  it("gives nothing of a dim wall, and keeps a bright window", () => {
+    // a wall at night under the lamp's wash, opaque: below the floor
+    const wall = Math.floor(REFLECTION.floor * 255) - 2;
+    expect(emissive(wall, 255)).toBe(0);
+    expect(emissive(240, 255)).toBeGreaterThan(200);
+  });
+
+  it("floors what is half transparent by what it shows, not by its colour", () => {
+    // a faint glow edge reads at full colour unpremultiplied; premultiplied it is dim
+    expect(emissive(255, Math.floor(REFLECTION.floor * 255) - 2)).toBe(0);
+  });
+
+  it("carries a source's gain past white, and never lifts a dim pixel over the floor", () => {
+    expect(emissive(255, 255, 5)).toBeCloseTo(255 * 5);
+    expect(emissive(20, 255, 5)).toBe(0);
+  });
+
+  it("samples the stretch evenly from its near to its far depth, however many samples", () => {
+    for (const n of [2, 8, 24, 96]) {
+      const d = stretchDepths(n);
+      expect(d).toHaveLength(n);
+      expect(d[0]).toBeCloseTo(REFLECTION.stretch.from);
+      expect(d.at(-1)).toBeCloseTo(REFLECTION.stretch.to);
+    }
+  });
+});
+
 describe("ground reflection: what a surface gives back", () => {
   it("gives nothing from a building's footprint or a paving joint", () => {
-    expect(response(SurfaceClass.none, 1, 1)).toEqual({ smooth: 0, rough: 0 });
-    expect(response(SurfaceClass.joint, 1, 1)).toEqual({ smooth: 0, rough: 0 });
+    expect(response(SurfaceClass.none, 1, 1)).toEqual({ tight: 0, streak: 0, field: 0 });
+    expect(response(SurfaceClass.joint, 1, 1)).toEqual({ tight: 0, streak: 0, field: 0 });
   });
 
-  it("keeps rough asphalt subdued except on its proud grains", () => {
-    const flat = response(SurfaceClass.asphalt, 0, 0);
-    const grain = response(SurfaceClass.asphalt, 0, 1);
-    expect(grain.rough).toBeGreaterThan(flat.rough * 10);
-    expect(flat.smooth).toBeLessThan(0.1);
+  it("keeps dry ground almost dry, whatever its grain", () => {
+    const dry = response(SurfaceClass.asphalt, 0, 1);
+    expect(dry.tight).toBe(0);
+    expect(dry.field).toBe(0);
+    expect(dry.streak).toBeLessThan(0.05);
   });
 
-  it("makes a marking smoother than the asphalt it is painted on, and a patch smoother still", () => {
-    expect(response(SurfaceClass.marking, 0, 0).smooth).toBeGreaterThan(
-      response(SurfaceClass.asphalt, 0, 0).smooth,
-    );
-    expect(response(SurfaceClass.asphalt, 1, 0).smooth).toBeGreaterThan(
-      response(SurfaceClass.asphalt, 0, 0).smooth,
+  it("shows a wet patch's picture whole, and its proud grains brighter", () => {
+    const wet = response(SurfaceClass.asphalt, 1, 0);
+    const grain = response(SurfaceClass.asphalt, 1, 1);
+    expect(wet.tight).toBeGreaterThan(0.3);
+    expect(grain.streak).toBeGreaterThan(wet.streak * 3);
+  });
+
+  it("makes a marking give back more than the asphalt it is painted on", () => {
+    expect(response(SurfaceClass.marking, 1, 0).tight).toBeGreaterThan(
+      response(SurfaceClass.asphalt, 1, 0).tight,
     );
   });
 });

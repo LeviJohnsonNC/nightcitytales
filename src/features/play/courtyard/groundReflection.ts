@@ -5,106 +5,96 @@
  *
  * Two damp treatments were tried and omitted before this (`checkpoint-atmosphere.md` §4,
  * `checkpoint-ground-light.md` §4). Both treated a reflection as a LIGHT: a blurred lobe
- * of colour at each source's mirror point, multiplied by the ground's albedo. That has
- * neither a shape nor a surface, and read as coloured haze. This treats it as an IMAGE
- * seen in a rough surface:
+ * of colour at each source's mirror point, multiplied by the ground's albedo, with no
+ * shape and no surface. This treats it as an IMAGE seen in a partly wet, rough street:
  *
- * 1. **The source is the fixture's own picture.** Each source is painted by the same
- *    glow pass its sprite is lit with (the shopfront's lit room and neon, the blade
- *    sign, the lamp's lens), flipped about the ground line under it. A point at height
- *    z over a ground point shows z·ppm above that point on screen, so its reflection is
- *    z·ppm below it: a flip about the ground line, `mirrorMatrix`. A window reflects as
- *    a window, with its mullions; a pink sign as pink letters.
- * 2. **What stands in front cuts it.** A prop between a source and the camera hides
- *    the source's reflection by its own flipped body (`flippedBody`), standing or as its
- *    wreck. Building footprints take none.
- * 3. **The surface decides the response, per pixel, from its own texture.**
- *    - Every ground pixel is classed asphalt, paving, a joint, a marking or hard
- *      standing (`SurfaceClass`).
- *    - Each class has a specular weight and a share that is smooth.
- *    - The smooth share sees a tight image, rippled by the texture's own slope.
- *    - The rough share sees a long vertical streak of the image, which is dim except
- *      on the grains of the texture that stand proud of their neighbours: `glint`.
- *      So a rough reflection is a few crisp sparkles inside a subdued streak, not a
- *      wash.
- *    - Joints and building footprints give nothing back; markings are the smoothest.
- *    - A few patches are smoother than the rest (a world-space noise, `REFLECTION.patch`).
- * 4. **It is added, not multiplied by the albedo.** A reflection is the source's colour
- *    off the surface's top, not light the surface's pigment absorbed: multiplying it by
- *    dark asphalt is what left the earlier attempts with no colour and no edge.
+ * 1. **The source is the fixture's own emitted picture, extracted once.** Each source
+ *    paints only what gives light (`MirrorSource.paint`: the lit rooms and neon from
+ *    their own light and glow passes, the lamp's lens). That picture is reduced to its
+ *    emitters by `REFLECTION.floor` on its own, before it is flipped, stretched or added
+ *    to anything (`emissive`), so a dim wall can never add up to a reflection however
+ *    many copies of it a stretch would sum.
+ * 2. **The picture lands where a mirror puts it.** A point at height z over a ground
+ *    point shows z·ppm above it on screen, so its reflection is z·ppm below: a flip about
+ *    the ground line (`mirrorMatrix`). A rough surface also reflects it from nearer and
+ *    further than that (`REFLECTION.stretch`), which makes a streak in its shape.
+ * 3. **What stands in front cuts it** (`flippedBody`), standing or as its wreck.
+ * 4. **Where the street is wet decides where anything is seen.** A deterministic mask of
+ *    irregular, connected patches (`REFLECTION.wet`: world-space noise, wetter in the
+ *    gutter) and never the albedo's brightness. Inside a patch the picture is seen whole,
+ *    rippled, over a subdued streak; on the patch's proudest grains, a few sharp
+ *    highlights. Outside, the street is dry and gives back almost nothing.
+ * 5. **Each shop light shows in the wet patches it falls on** (`incident`): a subdued
+ *    sheen bounded by the patch, and the same few highlights.
+ * 6. **Added, not multiplied by the albedo**, easing toward white by its brightest
+ *    channel (`knee`), so a warm window stays warm.
  *
  * Presentation only. Nothing here moves a light, a prop, a wall or a route. It is
- * computed at load and when a prop near the corner is wrecked (cached by state),
+ * computed at load and when a prop that touches a layer is wrecked (cached by state),
  * never per frame.
  */
 import type { Point } from "@/engine";
 import { hash } from "./frontage";
 import type { Box } from "./lampShadow";
 
-/** The numbers, tuned by eye at play zoom on seed 7 and stated here. */
+/** The numbers, tuned by eye at play zoom on seeds 8 and 7, and stated here. */
 export const REFLECTION = {
-  /** Overall strength of the reflection, added over the lit ground. */
-  strength: 2,
-  /** The smooth share's image: blur in metres across and along the view. */
-  tight: { across: 0.04, along: 0.16 },
-  /** The rough share's streak, metres: the blur over the stretched picture below. */
-  rough: { across: 0.16, along: 0.45 },
+  /** Overall strength of the source pictures, added over the lit ground. */
+  strength: 2.4,
   /**
-   * How a rough surface stretches a picture. A facet tilted toward the camera reflects a
-   * source from a ground point nearer its foot than the mirror point, and one tilted away
-   * from beyond it, so the picture is drawn flipped at each of these depths (1 is the
-   * mirror) and the streak runs from near the source's foot to past its mirror point.
+   * What a source must give to be reflected, of full scale, applied to the source's own
+   * extracted picture: a surface shows its own colour for dim things, and reflects the
+   * bright ones.
    */
-  stretch: Array.from({ length: 22 }, (_, i) => 0.3 + (i * 1.05) / 21),
-  /** How far the texture's slope pushes the tight image, in metres, across and along. */
-  ripple: { across: 0.05, along: 0.18 },
+  floor: 0.3,
+  /** The whole picture, as a wet film shows it: blur in metres across and along. */
+  tight: { across: 0.03, along: 0.1 },
+  /** The streak's blur, metres. */
+  rough: { across: 0.12, along: 0.3 },
   /**
-   * The rough share's response: `base` everywhere in the streak, plus `gain` on a grain
-   * that stands proud of its neighbourhood. Which grains are proud is the texture's own:
-   * per surface, those above its `lo` quantile glint, fully from its `hi` quantile, so
-   * asphalt's fine aggregate and a slab's coarser pitting both give about the same few.
+   * How a rough surface stretches a picture: a facet tilted toward the camera reflects a
+   * source from nearer its foot than the mirror point, one tilted away from beyond it.
+   * The picture is sampled at `samples` flip depths from `from` to `to` (1 is the
+   * mirror) and averaged.
    */
-  glint: { base: 0.12, gain: 2.6, lo: 0.982, hi: 0.997 },
+  stretch: { from: 0.3, to: 1.35, samples: 24 },
   /**
-   * Smoother patches: a world-space noise cell (metres) and the band that is smooth. In
-   * one, more of the picture is seen whole (`smooth`) and the streak is less broken
-   * (`sheen` added to the glints' base).
+   * Where the street is wet: noise at these cell sizes (metres) and weights, plus
+   * `gutter` within `gutterReach` metres of a kerb, wet from `lo` to `hi`. Thresholding
+   * a sum of coarse and fine noise gives connected patches with broken edges.
    */
-  patch: { cell: 2.4, lo: 0.62, hi: 0.84, smooth: 0.45, sheen: 0.5, pool: 0.09 },
+  wet: {
+    cells: [2.1, 0.7, 0.22],
+    weights: [0.6, 0.28, 0.12],
+    lo: 0.57,
+    hi: 0.63,
+    gutter: 0.16,
+    gutterReach: 0.7,
+  },
+  /** A wet film's ripple, as world-space noise: cell and push, metres. */
+  ripple: { cell: 0.32, across: 0.035, along: 0.12 },
   /**
-   * Per surface: specular weight, the smooth share outside a patch, and how much its
-   * proud grains glint. A polished doorstep's regular tiles would glint as a grid of
-   * points, so it barely does.
+   * What a wet patch shows of a picture: the whole of it (`tight`) and its streak
+   * (`streak`); and how much of the streak dry ground shows (`dry`).
    */
+  body: { tight: 0.75, streak: 0.4, dry: 0.02 },
+  /**
+   * The few sharp highlights: grains of a wet patch above the `lo` quantile of their
+   * surface's, fully from `hi`, at `gain` times the streak.
+   */
+  highlight: { lo: 0.993, hi: 0.999, gain: 1.6 },
+  /** Per surface: how much it gives back. Joints and footprints give nothing. */
   surfaces: {
-    asphalt: { spec: 0.85, smooth: 0.06, grains: 1 },
-    paving: { spec: 0.55, smooth: 0.18, grains: 1 },
-    marking: { spec: 1.05, smooth: 0.55, grains: 0.5 },
-    concrete: { spec: 0.4, smooth: 0.1, grains: 1 },
-    threshold: { spec: 0.7, smooth: 0.5, grains: 0.08 },
+    asphalt: 0.9,
+    paving: 0.65,
+    concrete: 0.5,
+    marking: 1.15,
+    threshold: 0.85,
   },
-  /**
-   * What a source must give to be reflected, of full scale: a surface reflects the
-   * bright things over it and shows its own colour for the dark ones, so a wall's
-   * night colour adds nothing and only the lit room, the neon and the lens remain.
-   */
-  floor: 0.5,
-  /**
-   * The second response: a light's own glints inside the light it throws. A rough
-   * surface under a lamp shows the lamp in every grain tilted toward the camera, which
-   * reads as crisp points of light over the pool, not as a brighter pool. Per surface:
-   * `sheen` is the whole surface's share (a smooth paint film), `glints` the grains'.
-   * Both are of the incident light, so a shadow, a wreck and the lights switch hold.
-   */
-  field: {
-    asphalt: { sheen: 0, glints: 0.75 },
-    paving: { sheen: 0.03, glints: 0.32 },
-    concrete: { sheen: 0.02, glints: 0.3 },
-    marking: { sheen: 0.22, glints: 0.3 },
-    // a doorstep's regular tiles catch light as a grid of points: polished, it gives
-    // back a sheen instead
-    threshold: { sheen: 0.08, glints: 0.04 },
-  },
+  /** A shop light seen in the wet patches it falls on: a sheen, and the highlights. */
+  field: { sheen: 0.32, highlight: 1.1 },
+  /** A doorstep is polished by feet: it is this wet wherever it is. */
+  threshold: 0.75,
   /** Where a bright reflection starts to ease off rather than clip, of 255. */
   knee: 150,
   /** A marking is asphalt this much brighter (luminance 0..1) than its surroundings. */
@@ -126,9 +116,36 @@ export const SurfaceClass = {
 } as const;
 export type SurfaceClass = (typeof SurfaceClass)[keyof typeof SurfaceClass];
 
+/** Which of the reflection is shown: the review harness's diagnostic views. */
+export type ReflectionView = "both" | "pictures" | "glints";
+
+/**
+ * How a board treats the reflections: shown (`on`), only the fixtures' pictures or only
+ * the lights' glints (diagnostics), built and hidden (`hidden`, the visual toggle), or
+ * not built at all (`skip`, for measuring their whole cost).
+ */
+export type ReflectionMode = "on" | "pictures" | "glints" | "hidden" | "skip";
+export const REFLECTION_MODES: readonly ReflectionMode[] = [
+  "on",
+  "pictures",
+  "glints",
+  "hidden",
+  "skip",
+];
+/**
+ * What a board does when nobody asks: nothing is built. The pilot was not accepted
+ * visually (`docs/checkpoint-material-pilot.md`): at play zoom its wet patches read as
+ * pale stains and its pictures as isolated marks. `/scene-review?reflect=on` shows it.
+ */
+export const REFLECTION_MODE_DEFAULT: ReflectionMode = "skip";
+
+/** What a mode shows, or nothing. */
+export const reflectionView = (mode: ReflectionMode): false | ReflectionView =>
+  mode === "on" ? "both" : mode === "pictures" || mode === "glints" ? mode : false;
+
 /**
  * The canvas transform that flips a picture about the ground line through `a` and `b`
- * (screen points; the line must not be vertical): x' = x, y' = 2·yLine(x) − y.
+ * (screen points; the line must not be vertical): x' = x, y' = yLine + k·(yLine − y).
  */
 export function mirrorMatrix(
   a: Point,
@@ -138,7 +155,6 @@ export function mirrorMatrix(
 ): [number, number, number, number, number, number] {
   const m = (b.y - a.y) / (b.x - a.x);
   const c = a.y - m * a.x;
-  // y' = yLine(x) + k·(yLine(x) − y)
   return [1, (1 + k) * m, 0, -k, 0, (1 + k) * c];
 }
 
@@ -152,9 +168,27 @@ export function mirrorPoint(p: Point, a: Point, b: Point, k = 1): Point {
 export const inFrontOf = (p: Point, a: Point, b: Point) =>
   p.y > a.y + ((b.y - a.y) / (b.x - a.x)) * (p.x - a.x);
 
+/** The flip depths a rough surface reflects from (`REFLECTION.stretch`). */
+export function stretchDepths(samples: number = REFLECTION.stretch.samples): number[] {
+  const { from, to } = REFLECTION.stretch;
+  if (samples <= 1) return [(from + to) / 2];
+  return Array.from({ length: samples }, (_, i) => from + ((to - from) * i) / (samples - 1));
+}
+
+/**
+ * The emitters of a source's picture, one channel at a time: premultiplied by its
+ * alpha, less the floor, rescaled, times the source's `gain`. Dimmer than the floor is
+ * nothing, so nothing dim can add up later.
+ */
+export function emissive(channel: number, alpha: number, gain = 1): number {
+  const v = (channel * alpha) / (255 * 255);
+  const f = REFLECTION.floor;
+  return v <= f ? 0 : ((v - f) / (1 - f)) * 255 * gain;
+}
+
 /** A lit thing to reflect. Every point is in scene pixels. */
 export interface MirrorSource {
-  /** Paints its picture as the street sees it at night, in scene pixels. */
+  /** Paints what it emits, as the street sees it at night, in scene pixels. */
   paint: (ctx: CanvasRenderingContext2D) => void;
   /** The sprite it belongs to: its reflection shows and fades with it. */
   group: string;
@@ -216,32 +250,43 @@ const smoothstep = (lo: number, hi: number, v: number) => {
   return t * t * (3 - 2 * t);
 };
 
-/** One surface's response at one pixel, per unit of source: 0 for nothing back. */
+/** How much a surface gives back at all. */
+export function surfaceSpec(cls: SurfaceClass): number {
+  const S = REFLECTION.surfaces;
+  return cls === SurfaceClass.asphalt
+    ? S.asphalt
+    : cls === SurfaceClass.paving
+      ? S.paving
+      : cls === SurfaceClass.concrete
+        ? S.concrete
+        : cls === SurfaceClass.marking
+          ? S.marking
+          : cls === SurfaceClass.threshold
+            ? S.threshold
+            : 0;
+}
+
+/**
+ * One pixel's response, per unit of source: how much of the whole picture (`tight`) and
+ * of its streak (`streak`) it shows, and how much of the light falling on it (`field`).
+ * Wet ground shows the picture and a few highlights; dry ground almost nothing.
+ */
 export function response(
   cls: SurfaceClass,
-  /** Extra smoothness from a patch, 0..1. */
-  patch: number,
-  /** How proud this grain stands among its surface's, 0..1 (`GroundReflection`). */
-  glint: number,
+  /** How wet the pixel is, 0..1. */
+  wet: number,
+  /** How proud its grain stands among its surface's, 0..1. */
+  highlight: number,
 ) {
-  const s =
-    cls === SurfaceClass.asphalt
-      ? REFLECTION.surfaces.asphalt
-      : cls === SurfaceClass.paving
-        ? REFLECTION.surfaces.paving
-        : cls === SurfaceClass.marking
-          ? REFLECTION.surfaces.marking
-          : cls === SurfaceClass.concrete
-            ? REFLECTION.surfaces.concrete
-            : cls === SurfaceClass.threshold
-              ? REFLECTION.surfaces.threshold
-              : undefined;
-  if (!s) return { smooth: 0, rough: 0 };
-  const smooth = Math.min(0.9, s.smooth + patch * REFLECTION.patch.smooth);
-  const g = REFLECTION.glint;
-  const rough =
-    (1 - smooth) * (g.base + patch * REFLECTION.patch.sheen + g.gain * glint * s.grains);
-  return { smooth: s.spec * smooth, rough: s.spec * rough };
+  const spec = surfaceSpec(cls);
+  if (!spec) return { tight: 0, streak: 0, field: 0 };
+  const B = REFLECTION.body;
+  const hl = wet * highlight;
+  return {
+    tight: spec * wet * B.tight,
+    streak: spec * (wet * B.streak + (1 - wet) * B.dry + hl * REFLECTION.highlight.gain),
+    field: spec * (wet * REFLECTION.field.sheen + hl * REFLECTION.field.highlight),
+  };
 }
 
 /** Everything the reflection is made from. */
@@ -261,12 +306,14 @@ export interface ReflectionSetup {
    * of the ground canvas (`incidentLight`). Without it there are no glints.
    */
   incident?: (destroyed: ReadonlySet<string>, crop: Box) => HTMLCanvasElement;
-  /** More of the ground to cover, in scene pixels: the reach of the lights that glint. */
+  /** The ground the lights that glint can reach, in scene pixels. */
   reach?: readonly Point[];
   /** The props whose shadow from those lights the glints can see change. */
   glintCasters?: readonly string[];
   /** Paints each surface's class (as `rgb(class,0,0)`) in scene pixels, footprints as 0. */
   paintClasses: (ctx: CanvasRenderingContext2D) => void;
+  /** Flip depths for the streak; `REFLECTION.stretch.samples` unless a check sets it. */
+  stretchSamples?: number;
 }
 
 const canvasOf = (w: number, h: number) => {
@@ -276,90 +323,156 @@ const canvasOf = (w: number, h: number) => {
   return c;
 };
 
-/**
- * A picture blurred by `across` pixels across and `along` pixels down the screen.
- * The canvas blur is round, so the picture is squeezed vertically by along/across,
- * blurred round, and stretched back.
- */
-function streak(src: HTMLCanvasElement, across: number, along: number) {
-  const k = Math.max(1, along / Math.max(0.5, across));
-  const h = Math.max(1, Math.round(src.height / k));
-  const small = canvasOf(src.width, h);
-  const s = small.getContext("2d")!;
-  s.filter = `blur(${Math.max(0.5, across).toFixed(2)}px)`;
-  s.drawImage(src, 0, 0, src.width, h);
-  const out = canvasOf(src.width, src.height);
-  const o = out.getContext("2d", { willReadFrequently: true })!;
-  o.imageSmoothingQuality = "high";
-  o.drawImage(small, 0, 0, src.width, src.height);
-  return o.getImageData(0, 0, src.width, src.height).data;
+/** A rectangle of the ground canvas, in its pixels. */
+interface PixelBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
-/** The reflection layer: its box in scene pixels, and its picture for a state. */
+/**
+ * Blur three interleaved channels in place, by `rx` pixels across and `ry` down: three
+ * box passes each way, close to a gaussian. Done on floats, so a lens brighter than
+ * white keeps its brightness through the blur.
+ */
+function blur3(data: Float32Array, w: number, h: number, rx: number, ry: number) {
+  const tmp = new Float32Array(data.length);
+  const pass = (src: Float32Array, dst: Float32Array, r: number, horizontal: boolean) => {
+    const n = horizontal ? w : h;
+    const lines = horizontal ? h : w;
+    const step = horizontal ? 3 : w * 3;
+    const norm = 1 / (2 * r + 1);
+    for (let l = 0; l < lines; l++) {
+      const base = horizontal ? l * w * 3 : l * 3;
+      for (let c = 0; c < 3; c++) {
+        let acc = 0;
+        for (let i = -r; i <= r; i++)
+          acc += src[base + Math.min(n - 1, Math.max(0, i)) * step + c]!;
+        for (let i = 0; i < n; i++) {
+          dst[base + i * step + c] = acc * norm;
+          const add = Math.min(n - 1, i + r + 1);
+          const sub = Math.max(0, i - r);
+          acc += src[base + add * step + c]! - src[base + sub * step + c]!;
+        }
+      }
+    }
+  };
+  // a box of radius r three times is about a gaussian of sigma r
+  const bx = Math.max(0, Math.round(rx));
+  const by = Math.max(0, Math.round(ry));
+  for (let i = 0; i < 3; i++) {
+    if (bx) {
+      pass(data, tmp, bx, true);
+      data.set(tmp);
+    }
+    if (by) {
+      pass(data, tmp, by, false);
+      data.set(tmp);
+    }
+  }
+}
+
+/** One source's picture in the street: whole (`tight`) and stretched, before any cut. */
+interface SourceFlip {
+  /** Its pixels within the main box, as rgb floats. */
+  box: PixelBox;
+  tight: Float32Array;
+  stretched: Float32Array;
+}
+
+/** A layer's pixels and its box in the ground canvas. */
+export interface ReflectionLayer {
+  canvas: HTMLCanvasElement;
+  /** Its box in scene pixels. */
+  box: Box;
+}
+
+/** A state's reflection: each group's picture, and the lights' glints. */
+export interface ReflectionLayers {
+  groups: Map<string, ReflectionLayer>;
+  glints: ReflectionLayer;
+}
+
+/** The reflection layer: its boxes, and its pictures for a state. */
 export class GroundReflection {
+  /** The whole corner it reads, in scene pixels. */
   readonly box: Box;
-  /** Its canvas size, in ground canvas pixels. */
+  /** Its size, in ground canvas pixels. */
   readonly width: number;
   readonly height: number;
+  private readonly px: PixelBox;
   private readonly cls: Uint8Array;
-  private readonly patch: Float32Array;
+  /** How wet each pixel is, 0..1: the mask, never the albedo. */
+  readonly wet: Float32Array;
   /** How proud each grain stands among its surface's, 0..1. */
-  private readonly glint: Float32Array;
-  /** The texture's slope, for the ripple, in pixels. */
+  private readonly highlight: Float32Array;
+  /** The wet film's ripple, in pixels. */
   private readonly dx: Float32Array;
   private readonly dy: Float32Array;
-  /** Each group's pictures and the glints, by the state of the props that touch them. */
-  private readonly cache = new Map<string, HTMLCanvasElement>();
-  /** Each source flipped, before any prop cuts it: drawn once. */
-  private readonly flips = new Map<
-    MirrorSource,
-    { mirror: HTMLCanvasElement; stretched: HTMLCanvasElement }
-  >();
+  /** Each layer's box in the ground canvas: one per group, and the glints'. */
+  private readonly layerBox = new Map<string, PixelBox>();
+  /** Each layer by the state of the props that touch it. */
+  private readonly cache = new Map<string, ReflectionLayer>();
+  /** Each source's emitted picture and flips, before any prop cuts them: made once. */
+  private readonly flips = new Map<MirrorSource, SourceFlip>();
   /** The props that can cut each group's picture: in front of it, and over it. */
   private readonly touching = new Map<string, string[]>();
-  /** How many states have been rendered, and the last one's time, for the checks. */
+  /** How many layers have been rendered, and the last render's time, for the checks. */
   rendered = 0;
   lastMs = 0;
   /** How long reading the surface took, once, at load. */
   buildMs = 0;
-  /** The flipped sources of the last render, before the surface, for the evidence. */
-  lastImage?: HTMLCanvasElement;
 
   constructor(readonly setup: ReflectionSetup) {
     const built = performance.now();
     const { ground, origin, resolution: res, sources, ppm } = setup;
-    // the box: every source's flipped picture, grown by the streak, on ground pixels
-    const depths = [Math.min(...REFLECTION.stretch), Math.max(...REFLECTION.stretch)];
-    const pts = [
-      ...sources.flatMap((s) =>
-        depths.flatMap((k) => s.extent.map((p) => mirrorPoint(p, s.a, s.b, k))),
-      ),
-      ...(setup.reach ?? []),
-    ];
-    const padX = REFLECTION.rough.across * ppm * 3 + 4;
-    const padY = REFLECTION.rough.along * ppm * 3 + 4;
-    const x0 = Math.max(0, Math.floor((Math.min(...pts.map((p) => p.x)) - padX - origin.x) * res));
-    const y0 = Math.max(0, Math.floor((Math.min(...pts.map((p) => p.y)) - padY - origin.y) * res));
-    const x1 = Math.min(
-      ground.width,
-      Math.ceil((Math.max(...pts.map((p) => p.x)) + padX - origin.x) * res),
-    );
-    const y1 = Math.min(
-      ground.height,
-      Math.ceil((Math.max(...pts.map((p) => p.y)) + padY - origin.y) * res),
-    );
-    this.width = Math.max(1, x1 - x0);
-    this.height = Math.max(1, y1 - y0);
-    this.box = {
-      x: origin.x + x0 / res,
-      y: origin.y + y0 / res,
-      width: this.width / res,
-      height: this.height / res,
+    const { from, to } = REFLECTION.stretch;
+    // each layer's box: a group's flipped pictures, grown by the streak's blur, or the
+    // lights' reach for the glints; the main box is all of them
+    const padX = (REFLECTION.rough.across * 3 + 0.1) * ppm;
+    const padY = (REFLECTION.rough.along * 3 + 0.1) * ppm;
+    const toPixels = (pts: readonly Point[], pad: boolean): PixelBox | undefined => {
+      if (!pts.length) return undefined;
+      const x0 = Math.max(
+        0,
+        Math.floor((Math.min(...pts.map((p) => p.x)) - (pad ? padX : 0) - origin.x) * res),
+      );
+      const y0 = Math.max(
+        0,
+        Math.floor((Math.min(...pts.map((p) => p.y)) - (pad ? padY : 0) - origin.y) * res),
+      );
+      const x1 = Math.min(
+        ground.width,
+        Math.ceil((Math.max(...pts.map((p) => p.x)) + (pad ? padX : 0) - origin.x) * res),
+      );
+      const y1 = Math.min(
+        ground.height,
+        Math.ceil((Math.max(...pts.map((p) => p.y)) + (pad ? padY : 0) - origin.y) * res),
+      );
+      return x1 > x0 && y1 > y0 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : undefined;
     };
+    const pictureOf = (s: MirrorSource) =>
+      [from, to].flatMap((k) => s.extent.map((p) => mirrorPoint(p, s.a, s.b, k)));
+    for (const group of this.groups) {
+      const b = toPixels(sources.filter((s) => s.group === group).flatMap(pictureOf), true);
+      if (b) this.layerBox.set(group, b);
+    }
+    const reach = toPixels(setup.reach ?? [], false);
+    if (reach && setup.incident) this.layerBox.set(GLINTS, reach);
+    const all = [...this.layerBox.values()];
+    const x0 = Math.min(...all.map((b) => b.x), ground.width);
+    const y0 = Math.min(...all.map((b) => b.y), ground.height);
+    const x1 = Math.max(...all.map((b) => b.x + b.w), x0 + 1);
+    const y1 = Math.max(...all.map((b) => b.y + b.h), y0 + 1);
+    this.px = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    this.width = this.px.w;
+    this.height = this.px.h;
+    this.box = this.sceneBox(this.px);
     const W = this.width;
     const H = this.height;
     const n = W * H;
-    // the albedo's luminance, and its neighbourhood's at two scales
+    // the albedo's luminance at a few scales: for markings, joints and grains only
     const lum = (blur: number) => {
       const c = canvasOf(W, H);
       const ctx = c.getContext("2d", { willReadFrequently: true })!;
@@ -374,8 +487,7 @@ export class GroundReflection {
     const L = lum(0);
     const near = lum(Math.max(1, 0.06 * ppm * res));
     const wide = lum(Math.max(2, 0.35 * ppm * res));
-    // a grain is the size of a piece of aggregate (a few centimetres), not a pixel: at
-    // play zoom a pixel-sized glint is dust
+    // a grain is a piece of aggregate (a few centimetres), not a pixel
     const stone = lum(Math.max(0.6, 0.025 * ppm * res));
     const bed = lum(Math.max(2, 0.12 * ppm * res));
     // the surface classes, painted in scene pixels
@@ -389,43 +501,12 @@ export class GroundReflection {
     cctx.restore();
     const cd = cctx.getImageData(0, 0, W, H).data;
     this.cls = new Uint8Array(n);
-    const grain = new Float32Array(n);
-    this.glint = new Float32Array(n);
-    this.patch = new Float32Array(n);
+    const grain = new Float32Array(n).fill(-1);
+    this.highlight = new Float32Array(n);
+    this.wet = new Float32Array(n);
     this.dx = new Float32Array(n);
     this.dy = new Float32Array(n);
-    // scene pixels back to world metres, for the patches
-    const o = setup.project({ x: 0, y: 0 });
-    const ex = setup.project({ x: 1, y: 0 });
-    const ey = setup.project({ x: 0, y: 1 });
-    const [a, b, c, d] = [ex.x - o.x, ex.y - o.y, ey.x - o.x, ey.y - o.y];
-    const det = a * d - b * c;
-    const P = REFLECTION.patch;
-    // the noise's lattice is a few dozen cells over the corner: hash each once
-    const lattice = new Map<number, number>();
-    const cell = (wx: number, wy: number) => {
-      const ix = Math.floor(wx / P.cell);
-      const iy = Math.floor(wy / P.cell);
-      const fx = wx / P.cell - ix;
-      const fy = wy / P.cell - iy;
-      const sx = fx * fx * (3 - 2 * fx);
-      const sy = fy * fy * (3 - 2 * fy);
-      const h = (i: number, j: number) => {
-        const key = i * 4096 + j;
-        let v = lattice.get(key);
-        if (v === undefined) lattice.set(key, (v = hash(i, j, 61)));
-        return v;
-      };
-      return (
-        h(ix, iy) * (1 - sx) * (1 - sy) +
-        h(ix + 1, iy) * sx * (1 - sy) +
-        h(ix, iy + 1) * (1 - sx) * sy +
-        h(ix + 1, iy + 1) * sx * sy
-      );
-    };
     const r = Math.max(2, Math.round(0.05 * ppm * res));
-    const rippleX = REFLECTION.ripple.across * ppm * res;
-    const rippleY = REFLECTION.ripple.along * ppm * res;
     for (let y = 0; y < H; y++)
       for (let x = 0; x < W; x++) {
         const i = y * W + x;
@@ -440,9 +521,7 @@ export class GroundReflection {
         )
           k = SurfaceClass.joint;
         this.cls[i] = k;
-        // proud in every direction: a stone, not the bright side of an edge. A kerb's or a
-        // joint's long edge stands above its neighbours across it but not along it, and
-        // taken as grains it reads as a dotted line
+        // proud in every direction: a stone, not the bright side of an edge
         if (x >= r && x < W - r && y >= r && y < H - r) {
           const v = stone[i]!;
           grain[i] = Math.min(
@@ -457,76 +536,124 @@ export class GroundReflection {
             v - stone[i + r * W - r]!,
           );
         }
-        const sx = this.box.x + x / res - o.x;
-        const sy = this.box.y + y / res - o.y;
-        const wx = (d * sx - c * sy) / det;
-        const wy = (a * sy - b * sx) / det;
-        this.patch[i] = smoothstep(P.lo, P.hi, cell(wx, wy));
-        if (x > 0 && x < W - 1 && y > 0 && y < H - 1) {
-          this.dx[i] = (near[i + 1]! - near[i - 1]!) * rippleX * 20;
-          this.dy[i] = (near[i + W]! - near[i - W]!) * rippleY * 20;
-        }
       }
-    // each surface's own proud grains: its quantiles, not a number for all of them
-    // a slab's chipped edge stands proud along every joint: taken as grains, the chips
-    // line up into dotted rows, so nothing within a few centimetres of a joint glints
+    // nothing within a few centimetres of a joint glints: a slab's chipped rims line up
     {
-      const reach = Math.max(2, Math.round(0.06 * ppm * res));
-      const near = new Uint8Array(n);
+      const reachJ = Math.max(2, Math.round(0.06 * ppm * res));
+      const dist = chamfer(this.cls, W, H, (k) => k === SurfaceClass.joint);
+      for (let i = 0; i < n; i++) if (dist[i]! <= reachJ) grain[i] = -1;
+    }
+    // the few sharp highlights: each surface's own proudest grains
+    {
+      const G = REFLECTION.highlight;
+      const BINS = 4096;
+      const SPAN = 0.4;
+      const bin = (v: number) =>
+        Math.max(0, Math.min(BINS - 1, Math.floor(((v + SPAN / 2) / SPAN) * BINS)));
+      for (let k = 1; k <= 6; k++) {
+        if (k === SurfaceClass.joint) continue;
+        const hist = new Uint32Array(BINS);
+        let count = 0;
+        for (let i = 0; i < n; i++)
+          if (this.cls[i] === k && grain[i]! > -1) {
+            hist[bin(grain[i]!)]!++;
+            count++;
+          }
+        if (count < 50) continue;
+        const at = (q: number) => {
+          let seen = 0;
+          for (let b = 0; b < BINS; b++) {
+            seen += hist[b]!;
+            if (seen >= count * q) return ((b + 0.5) / BINS) * SPAN - SPAN / 2;
+          }
+          return SPAN / 2;
+        };
+        const lo = at(G.lo);
+        const hi = Math.max(lo + 1e-4, at(G.hi));
+        for (let i = 0; i < n; i++)
+          if (this.cls[i] === k) this.highlight[i] = smoothstep(lo, hi, grain[i]!);
+      }
+    }
+    // where the street is wet: world-space noise, wetter in the gutter, never the albedo
+    {
+      const o = setup.project({ x: 0, y: 0 });
+      const ex = setup.project({ x: 1, y: 0 });
+      const ey = setup.project({ x: 0, y: 1 });
+      const [a, b, c, d] = [ex.x - o.x, ex.y - o.y, ey.x - o.x, ey.y - o.y];
+      const det = a * d - b * c;
+      const noise = valueNoise();
+      const Wt = REFLECTION.wet;
+      const gutterPx = Wt.gutterReach * ppm * res;
+      const kerb = chamfer(
+        this.cls,
+        W,
+        H,
+        (k) => k === SurfaceClass.paving || k === SurfaceClass.concrete || k === SurfaceClass.joint,
+      );
+      const R = REFLECTION.ripple;
+      // the noise is smooth over a few centimetres: evaluate it on a grid of STEP pixels
+      // and interpolate (the mask is thresholded after, so its edges stay sharp)
+      const STEP = 3;
+      const gw = Math.ceil(W / STEP) + 1;
+      const gh = Math.ceil(H / STEP) + 1;
+      const gv = new Float32Array(gw * gh);
+      const gx = new Float32Array(gw * gh);
+      const gy = new Float32Array(gw * gh);
+      const e = 0.05;
+      for (let j = 0; j < gh; j++)
+        for (let i = 0; i < gw; i++) {
+          const sx = this.box.x + (i * STEP + 0.5) / res - o.x;
+          const sy = this.box.y + (j * STEP + 0.5) / res - o.y;
+          const wx = (d * sx - c * sy) / det;
+          const wy = (a * sy - b * sx) / det;
+          let v = 0;
+          for (let k = 0; k < Wt.cells.length; k++)
+            v += Wt.weights[k]! * noise(wx / Wt.cells[k]!, wy / Wt.cells[k]!, 71 + k);
+          const g = j * gw + i;
+          gv[g] = v;
+          // the film's ripple: the slope of its own noise, not of the albedo
+          gx[g] =
+            noise((wx + e) / R.cell, wy / R.cell, 91) - noise((wx - e) / R.cell, wy / R.cell, 91);
+          gy[g] =
+            noise(wx / R.cell, (wy + e) / R.cell, 91) - noise(wx / R.cell, (wy - e) / R.cell, 91);
+        }
+      const lerp = (grid: Float32Array, x: number, y: number) => {
+        const fx = x / STEP;
+        const fy = y / STEP;
+        const i = Math.floor(fx);
+        const j = Math.floor(fy);
+        const tx = fx - i;
+        const ty = fy - j;
+        const g = j * gw + i;
+        return (
+          grid[g]! * (1 - tx) * (1 - ty) +
+          grid[g + 1]! * tx * (1 - ty) +
+          grid[g + gw]! * (1 - tx) * ty +
+          grid[g + gw + 1]! * tx * ty
+        );
+      };
+      const slope = (R.cell / (2 * e)) * ppm * res;
       for (let y = 0; y < H; y++)
         for (let x = 0; x < W; x++) {
-          if (this.cls[y * W + x] !== SurfaceClass.joint) continue;
-          for (let dy = -reach; dy <= reach; dy++) {
-            const yy = y + dy;
-            if (yy < 0 || yy >= H) continue;
-            for (let dx = -reach; dx <= reach; dx++) {
-              const xx = x + dx;
-              if (xx >= 0 && xx < W) near[yy * W + xx] = 1;
-            }
-          }
+          const i = y * W + x;
+          let v = lerp(gv, x, y);
+          if (this.cls[i] === SurfaceClass.asphalt || this.cls[i] === SurfaceClass.marking)
+            v += Wt.gutter * Math.max(0, 1 - kerb[i]! / gutterPx);
+          let w = smoothstep(Wt.lo, Wt.hi, v);
+          if (this.cls[i] === SurfaceClass.threshold) w = Math.max(w, REFLECTION.threshold);
+          this.wet[i] = w;
+          this.dx[i] = lerp(gx, x, y) * slope * R.across;
+          this.dy[i] = lerp(gy, x, y) * slope * R.along;
         }
-      for (let i = 0; i < n; i++) if (near[i]) grain[i] = -1;
-    }
-    // a histogram, not a sort: a quantile to a ten-thousandth of full scale is plenty
-    const G = REFLECTION.glint;
-    const BINS = 4096;
-    const SPAN = 0.4;
-    const bin = (v: number) =>
-      Math.max(0, Math.min(BINS - 1, Math.floor(((v + SPAN / 2) / SPAN) * BINS)));
-    for (let k = 1; k <= 6; k++) {
-      const hist = new Uint32Array(BINS);
-      let count = 0;
-      for (let i = 0; i < n; i++)
-        if (this.cls[i] === k) {
-          hist[bin(grain[i]!)]!++;
-          count++;
-        }
-      if (count < 20) continue;
-      const at = (q: number) => {
-        let seen = 0;
-        for (let b = 0; b < BINS; b++) {
-          seen += hist[b]!;
-          if (seen >= count * q) return ((b + 0.5) / BINS) * SPAN - SPAN / 2;
-        }
-        return SPAN / 2;
-      };
-      const lo = at(G.lo);
-      const hi = Math.max(lo + 1e-4, at(G.hi));
-      for (let i = 0; i < n; i++)
-        if (this.cls[i] === k) this.glint[i] = smoothstep(lo, hi, grain[i]!);
     }
     // a prop touches a group when it stands in front of one of its sources and its
     // flipped body, standing, reaches that source's picture
     for (const group of this.groups) {
       const ids = new Set<string>();
       for (const source of sources.filter((x) => x.group === group)) {
-        const pic = [Math.min(...REFLECTION.stretch), Math.max(...REFLECTION.stretch)].flatMap(
-          (k) => source.extent.map((p) => mirrorPoint(p, source.a, source.b, k)),
-        );
-        const bb = bounds(pic);
+        const bb = bounds(pictureOf(source));
         for (const o of setup.occluders) {
-          const ground = o.body.map(setup.project);
-          if (!inFrontOf(centreOf(ground), source.a, source.b)) continue;
+          if (!inFrontOf(centreOf(o.body.map(setup.project)), source.a, source.b)) continue;
           const body = bounds(flippedBody(setup.project, o.body, o.height, ppm));
           if (body.x1 >= bb.x0 && body.x0 <= bb.x1 && body.y1 >= bb.y0 && body.y0 <= bb.y1)
             ids.add(o.id);
@@ -536,6 +663,16 @@ export class GroundReflection {
     }
     this.buildMs = performance.now() - built;
     performance.measure("ground-reflection-build", { start: built });
+  }
+
+  private sceneBox(b: PixelBox): Box {
+    const { origin, resolution: res } = this.setup;
+    return {
+      x: origin.x + b.x / res,
+      y: origin.y + b.y / res,
+      width: b.w / res,
+      height: b.h / res,
+    };
   }
 
   /** The state's key: the props that touch the reflection, as wrecked. */
@@ -556,15 +693,14 @@ export class GroundReflection {
   }
 
   /**
-   * The reflection for a destruction state: one canvas over `box` per group of sources
-   * (the picture of each fixture in the street), and `glints` (each light's own glints
-   * where it falls). A layer is rendered only when a prop that touches it changes, and
-   * cached by that state.
+   * The reflection for a destruction state: one layer per group of sources (the picture
+   * of each fixture in the street) and `glints` (each light where it falls). A layer is
+   * rendered only when a prop that touches it changes, and cached by that state.
    */
   render(destroyed: ReadonlySet<string>): ReflectionLayers {
     const started = performance.now();
     let work = false;
-    const cached = (key: string, make: () => HTMLCanvasElement) => {
+    const cached = (key: string, make: () => ReflectionLayer) => {
       let c = this.cache.get(key);
       if (!c) {
         c = make();
@@ -574,204 +710,279 @@ export class GroundReflection {
       return c;
     };
     const stateOf = (ids: readonly string[]) => ids.filter((id) => destroyed.has(id)).join("|");
-    const layers: ReflectionLayers = {
-      groups: new Map(
-        this.groups.map((group) => {
-          const ids = this.touching.get(group) ?? [];
-          return [
-            group,
-            cached(`${group}#${stateOf(ids)}`, () =>
-              this.pictures(
-                this.setup.sources.filter((s) => s.group === group),
-                destroyed,
-                ids,
-              ),
-            ),
-          ];
-        }),
-      ),
-      glints: cached(`glints#${stateOf(this.setup.glintCasters ?? [])}`, () =>
-        this.glints(destroyed),
-      ),
-    };
+    const groups = new Map<string, ReflectionLayer>();
+    for (const group of this.groups) {
+      const ids = this.touching.get(group) ?? [];
+      if (!this.layerBox.has(group)) continue;
+      groups.set(
+        group,
+        cached(`${group}#${stateOf(ids)}`, () => this.pictures(group, destroyed, ids)),
+      );
+    }
+    const glints = cached(`${GLINTS}#${stateOf(this.setup.glintCasters ?? [])}`, () =>
+      this.glints(destroyed),
+    );
     if (work) {
       this.rendered++;
       this.lastMs = performance.now() - started;
       performance.measure("ground-reflection-render", { start: started });
     }
-    return layers;
+    return { groups, glints };
   }
 
-  /** Each light's glints where it falls, from the light as it now falls. */
-  private glints(destroyed: ReadonlySet<string>): HTMLCanvasElement {
-    const { resolution: res } = this.setup;
-    const W = this.width;
-    const H = this.height;
-    const out = canvasOf(W, H);
-    const x0 = Math.round((this.box.x - this.setup.origin.x) * res);
-    const y0 = Math.round((this.box.y - this.setup.origin.y) * res);
+  /** What is kept in memory, for the cost report. */
+  retained() {
+    const layers = [...this.cache.entries()].map(([key, l]) => ({
+      key,
+      width: l.canvas.width,
+      height: l.canvas.height,
+    }));
+    const flips = [...this.flips.values()].map((f) => ({ width: f.box.w, height: f.box.h }));
+    return {
+      main: { width: this.width, height: this.height },
+      boxes: [...this.layerBox.entries()].map(([k, b]) => ({ key: k, width: b.w, height: b.h })),
+      layers,
+      layerBytes: layers.reduce((s, l) => s + l.width * l.height * 4, 0),
+      flipBytes: flips.reduce((s, f) => s + f.width * f.height * 3 * 4 * 2, 0),
+      surfaceBytes: this.width * this.height * (1 + 4 * 4),
+    };
+  }
+
+  /** Each light where it falls on a wet patch, from the light as it now falls. */
+  private glints(destroyed: ReadonlySet<string>): ReflectionLayer {
+    const b = this.layerBox.get(GLINTS) ?? { x: this.px.x, y: this.px.y, w: 1, h: 1 };
+    const out = canvasOf(b.w, b.h);
     const lit = this.setup
-      .incident?.(destroyed, { x: x0, y: y0, width: W, height: H })
+      .incident?.(destroyed, { x: b.x, y: b.y, width: b.w, height: b.h })
       .getContext("2d", { willReadFrequently: true })!
-      .getImageData(0, 0, W, H).data;
-    if (!lit) return out;
-    const ctx = out.getContext("2d")!;
-    const px = ctx.createImageData(W, H);
-    const o = px.data;
-    const F = REFLECTION.field;
-    for (let i = 0; i < W * H; i++) {
-      const cls = this.cls[i]! as SurfaceClass;
-      const f =
-        cls === SurfaceClass.asphalt
-          ? F.asphalt
-          : cls === SurfaceClass.paving
-            ? F.paving
-            : cls === SurfaceClass.marking
-              ? F.marking
-              : cls === SurfaceClass.concrete
-                ? F.concrete
-                : cls === SurfaceClass.threshold
-                  ? F.threshold
-                  : undefined;
-      if (!f) continue;
-      // a smoother patch shows the light it stands in as a soft sheen, not only grains
-      const g = f.sheen + this.patch[i]! * REFLECTION.patch.pool + f.glints * this.glint[i]!;
-      if (g * (lit[i * 4]! + lit[i * 4 + 1]! + lit[i * 4 + 2]!) < 1) continue;
-      knee(o, i * 4, g * lit[i * 4]!, g * lit[i * 4 + 1]!, g * lit[i * 4 + 2]!);
+      .getImageData(0, 0, b.w, b.h).data;
+    if (lit) {
+      const ctx = out.getContext("2d")!;
+      const img = ctx.createImageData(b.w, b.h);
+      const o = img.data;
+      for (let y = 0; y < b.h; y++)
+        for (let x = 0; x < b.w; x++) {
+          const i = (y + b.y - this.px.y) * this.width + (x + b.x - this.px.x);
+          const g = response(this.cls[i]! as SurfaceClass, this.wet[i]!, this.highlight[i]!).field;
+          const q = (y * b.w + x) * 4;
+          if (g > 0) knee(o, q, g * lit[q]!, g * lit[q + 1]!, g * lit[q + 2]!);
+        }
+      ctx.putImageData(img, 0, 0);
     }
-    ctx.putImageData(px, 0, 0);
-    return out;
+    return { canvas: out, box: this.sceneBox(b) };
   }
 
   /**
-   * A source flipped about its own ground line, and at every depth a rough surface
-   * reflects it from, before any prop cuts it. Drawn once.
+   * A source's emitted picture, extracted from what it paints and floored before any
+   * flip, stretch or sum; then its whole and stretched pictures in the street, before
+   * any prop cuts them. Made once per source.
    */
-  private flipsOf(source: MirrorSource) {
+  flipOf(source: MirrorSource): SourceFlip {
     const known = this.flips.get(source);
     if (known) return known;
     const { resolution: res } = this.setup;
-    const draw = (depths: readonly number[]) => {
-      const c = canvasOf(this.width, this.height);
-      const ctx = c.getContext("2d")!;
-      ctx.scale(res, res);
-      ctx.translate(-this.box.x, -this.box.y);
-      ctx.globalCompositeOperation = "lighter";
-      // a sprite's colour stops at 1: a brighter source is drawn over itself
-      const gain = source.gain ?? 1;
-      for (const k of depths)
-        for (let g = gain; g > 0; g--) {
-          ctx.save();
-          ctx.globalAlpha = Math.min(1, g) / depths.length;
-          ctx.transform(...mirrorMatrix(source.a, source.b, k));
-          ctx.beginPath();
-          source.extent.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-          ctx.closePath();
-          ctx.clip();
-          source.paint(ctx);
-          ctx.restore();
-        }
-      return c;
+    // 1. the emitters, in the source's own frame
+    const eb = bounds(source.extent);
+    const ex0 = Math.floor(eb.x0 * res) / res;
+    const ey0 = Math.floor(eb.y0 * res) / res;
+    const ew = Math.max(1, Math.ceil((eb.x1 - ex0) * res));
+    const eh = Math.max(1, Math.ceil((eb.y1 - ey0) * res));
+    const ec = canvasOf(ew, eh);
+    const ectx = ec.getContext("2d", { willReadFrequently: true })!;
+    ectx.scale(res, res);
+    ectx.translate(-ex0, -ey0);
+    ectx.beginPath();
+    source.extent.forEach((p, i) => (i ? ectx.lineTo(p.x, p.y) : ectx.moveTo(p.x, p.y)));
+    ectx.closePath();
+    ectx.clip();
+    source.paint(ectx);
+    const ed = ectx.getImageData(0, 0, ew, eh).data;
+    const E = new Float32Array(ew * eh * 3);
+    const gain = source.gain ?? 1;
+    for (let i = 0; i < ew * eh; i++) {
+      const a = ed[i * 4 + 3]!;
+      for (let c = 0; c < 3; c++) E[i * 3 + c] = emissive(ed[i * 4 + c]!, a, gain);
+    }
+    // 2. sampled where a mirror (and a rough surface) puts it
+    const { from, to } = REFLECTION.stretch;
+    const pic = bounds(
+      [from, to].flatMap((k) => source.extent.map((p) => mirrorPoint(p, source.a, source.b, k))),
+    );
+    const bx0 = Math.max(this.px.x, Math.floor((pic.x0 - this.setup.origin.x) * res));
+    const by0 = Math.max(this.px.y, Math.floor((pic.y0 - this.setup.origin.y) * res));
+    const bx1 = Math.min(this.px.x + this.width, Math.ceil((pic.x1 - this.setup.origin.x) * res));
+    const by1 = Math.min(this.px.y + this.height, Math.ceil((pic.y1 - this.setup.origin.y) * res));
+    const box = { x: bx0, y: by0, w: Math.max(0, bx1 - bx0), h: Math.max(0, by1 - by0) };
+    const tight = new Float32Array(box.w * box.h * 3);
+    const stretched = new Float32Array(box.w * box.h * 3);
+    const depths = stretchDepths(this.setup.stretchSamples);
+    const m = (source.b.y - source.a.y) / (source.b.x - source.a.x);
+    const sample = (xs: number, ys: number, out: Float32Array, o: number, w: number) => {
+      const u = Math.floor((xs - ex0) * res);
+      const v = Math.floor((ys - ey0) * res);
+      if (u < 0 || v < 0 || u >= ew || v >= eh) return;
+      const j = (v * ew + u) * 3;
+      out[o] = out[o]! + E[j]! * w;
+      out[o + 1] = out[o + 1]! + E[j + 1]! * w;
+      out[o + 2] = out[o + 2]! + E[j + 2]! * w;
     };
-    const made = { mirror: draw([1]), stretched: draw(REFLECTION.stretch) };
+    const share = 1 / depths.length;
+    for (let y = 0; y < box.h; y++)
+      for (let x = 0; x < box.w; x++) {
+        const sx = this.setup.origin.x + (box.x + x + 0.5) / res;
+        const sy = this.setup.origin.y + (box.y + y + 0.5) / res;
+        const yl = source.a.y + m * (sx - source.a.x);
+        const d = sy - yl;
+        if (d <= 0) continue;
+        const o = (y * box.w + x) * 3;
+        sample(sx, yl - d, tight, o, 1);
+        for (const k of depths) sample(sx, yl - d / k, stretched, o, share);
+      }
+    const made = { box, tight, stretched };
     this.flips.set(source, made);
     return made;
   }
 
-  /** Some sources' pictures in the street, through this surface. */
+  /** A group's pictures in the street for a state, through this surface. */
   private pictures(
-    sources: readonly MirrorSource[],
+    group: string,
     destroyed: ReadonlySet<string>,
     touching: readonly string[],
-  ): HTMLCanvasElement {
+  ): ReflectionLayer {
     const { resolution: res, project, ppm } = this.setup;
-    const W = this.width;
-    const H = this.height;
+    const b = this.layerBox.get(group)!;
+    const sources = this.setup.sources.filter((s) => s.group === group);
     const occluders = this.setup.occluders.filter((o) => touching.includes(o.id));
-    // every source's flips, cut by what stands in front of it
-    const cut = (which: "mirror" | "stretched", share: number) => {
-      const image = canvasOf(W, H);
-      const ictx = image.getContext("2d", { willReadFrequently: true })!;
-      for (const source of sources) {
-        const one = canvasOf(W, H);
-        const ctx = one.getContext("2d")!;
-        ctx.drawImage(this.flipsOf(source)[which], 0, 0);
-        ctx.save();
-        ctx.scale(res, res);
-        ctx.translate(-this.box.x, -this.box.y);
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.fillStyle = "#000";
-        for (const o of occluders) {
-          if (!inFrontOf(centreOf(o.body.map(project)), source.a, source.b)) continue;
-          const shape = flippedBody(project, o.body, destroyed.has(o.id) ? o.wreck : o.height, ppm);
-          ctx.beginPath();
-          shape.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-          ctx.closePath();
-          ctx.fill();
+    const tight = new Float32Array(b.w * b.h * 3);
+    const stretched = new Float32Array(b.w * b.h * 3);
+    for (const source of sources) {
+      const f = this.flipOf(source);
+      // what stands in front of this source, flipped below its foot, as it now stands
+      const cut = canvasOf(b.w, b.h);
+      const cctx = cut.getContext("2d", { willReadFrequently: true })!;
+      cctx.scale(res, res);
+      cctx.translate(-(this.setup.origin.x + b.x / res), -(this.setup.origin.y + b.y / res));
+      cctx.fillStyle = "#fff";
+      let any = false;
+      for (const o of occluders) {
+        if (!inFrontOf(centreOf(o.body.map(project)), source.a, source.b)) continue;
+        const shape = flippedBody(project, o.body, destroyed.has(o.id) ? o.wreck : o.height, ppm);
+        cctx.beginPath();
+        shape.forEach((p, i) => (i ? cctx.lineTo(p.x, p.y) : cctx.moveTo(p.x, p.y)));
+        cctx.closePath();
+        cctx.fill();
+        any = true;
+      }
+      const mask = any ? cctx.getImageData(0, 0, b.w, b.h).data : undefined;
+      for (let y = 0; y < f.box.h; y++) {
+        const ly = y + f.box.y - b.y;
+        if (ly < 0 || ly >= b.h) continue;
+        for (let x = 0; x < f.box.w; x++) {
+          const lx = x + f.box.x - b.x;
+          if (lx < 0 || lx >= b.w) continue;
+          const li = ly * b.w + lx;
+          const keep = mask ? 1 - mask[li * 4 + 3]! / 255 : 1;
+          if (!keep) continue;
+          const s = (y * f.box.w + x) * 3;
+          for (let c = 0; c < 3; c++) {
+            tight[li * 3 + c] = tight[li * 3 + c]! + f.tight[s + c]! * keep;
+            stretched[li * 3 + c] = stretched[li * 3 + c]! + f.stretched[s + c]! * keep;
+          }
         }
-        ctx.restore();
-        ictx.globalCompositeOperation = "lighter";
-        ictx.drawImage(one, 0, 0);
       }
-      // only what is brighter than the floor is reflected (premultiplied, then kneed);
-      // opaque everywhere, so the blurs below never unpremultiply a faint edge
-      const px = ictx.getImageData(0, 0, W, H);
-      const d = px.data;
-      const f = REFLECTION.floor * 255 * share;
-      for (let i = 0; i < d.length; i += 4) {
-        const a = d[i + 3]! / 255;
-        for (let c = 0; c < 3; c++)
-          d[i + c] = Math.max(0, d[i + c]! * a - f) / (1 - REFLECTION.floor);
-        d[i + 3] = 255;
-      }
-      ictx.putImageData(px, 0, 0);
-      return image;
-    };
-    const mirror = cut("mirror", 1);
-    const stretched = cut("stretched", 1 / REFLECTION.stretch.length);
-    this.lastImage = stretched;
+    }
     const scale = ppm * res;
-    const tight = streak(mirror, REFLECTION.tight.across * scale, REFLECTION.tight.along * scale);
-    const rough = streak(
-      stretched,
-      REFLECTION.rough.across * scale,
-      REFLECTION.rough.along * scale,
-    );
-    const out = canvasOf(W, H);
+    blur3(tight, b.w, b.h, REFLECTION.tight.across * scale, REFLECTION.tight.along * scale);
+    blur3(stretched, b.w, b.h, REFLECTION.rough.across * scale, REFLECTION.rough.along * scale);
+    const out = canvasOf(b.w, b.h);
     const octx = out.getContext("2d")!;
-    const px = octx.createImageData(W, H);
-    const o = px.data;
+    const img = octx.createImageData(b.w, b.h);
+    const o = img.data;
     const k = REFLECTION.strength;
-    for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++) {
-        const i = y * W + x;
-        const q = i * 4;
-        if (
-          !rough[q] &&
-          !rough[q + 1] &&
-          !rough[q + 2] &&
-          !tight[q] &&
-          !tight[q + 1] &&
-          !tight[q + 2]
-        )
-          continue;
-        const r = response(this.cls[i]! as SurfaceClass, this.patch[i]!, this.glint[i]!);
-        if (!r.smooth && !r.rough) continue;
-        // the tight image, sampled where the surface's slope turns the view
-        const tx = Math.max(0, Math.min(W - 1, Math.round(x + this.dx[i]!)));
-        const ty = Math.max(0, Math.min(H - 1, Math.round(y + this.dy[i]!)));
-        const j = (ty * W + tx) * 4;
+    for (let y = 0; y < b.h; y++)
+      for (let x = 0; x < b.w; x++) {
+        const li = y * b.w + x;
+        const mi = (y + b.y - this.px.y) * this.width + (x + b.x - this.px.x);
+        const r = response(this.cls[mi]! as SurfaceClass, this.wet[mi]!, this.highlight[mi]!);
+        if (!r.tight && !r.streak) continue;
+        // the whole picture, sampled where the film's ripple turns the view
+        const tx = Math.max(0, Math.min(b.w - 1, Math.round(x + this.dx[mi]!)));
+        const ty = Math.max(0, Math.min(b.h - 1, Math.round(y + this.dy[mi]!)));
+        const tj = (ty * b.w + tx) * 3;
         knee(
           o,
-          q,
-          k * (r.smooth * tight[j]! + r.rough * rough[q]!),
-          k * (r.smooth * tight[j + 1]! + r.rough * rough[q + 1]!),
-          k * (r.smooth * tight[j + 2]! + r.rough * rough[q + 2]!),
+          li * 4,
+          k * (r.tight * tight[tj]! + r.streak * stretched[li * 3]!),
+          k * (r.tight * tight[tj + 1]! + r.streak * stretched[li * 3 + 1]!),
+          k * (r.tight * tight[tj + 2]! + r.streak * stretched[li * 3 + 2]!),
         );
       }
-    octx.putImageData(px, 0, 0);
-    return out;
+    octx.putImageData(img, 0, 0);
+    return { canvas: out, box: this.sceneBox(b) };
   }
+}
+
+const GLINTS = "glints";
+
+/**
+ * Value noise in [0, 1] on a unit lattice, smoothly interpolated; the lattice is hashed
+ * once per cell. Deterministic: the same world point always gives the same value.
+ */
+function valueNoise() {
+  const lattice = new Map<number, number>();
+  const h = (i: number, j: number, seed: number) => {
+    const key = (seed * 8192 + i + 4096) * 8192 + j + 4096;
+    let v = lattice.get(key);
+    if (v === undefined) lattice.set(key, (v = hash(i, j, seed)));
+    return v;
+  };
+  return (x: number, y: number, seed: number) => {
+    const ix = Math.floor(x);
+    const iy = Math.floor(y);
+    const fx = x - ix;
+    const fy = y - iy;
+    const sx = fx * fx * (3 - 2 * fx);
+    const sy = fy * fy * (3 - 2 * fy);
+    return (
+      h(ix, iy, seed) * (1 - sx) * (1 - sy) +
+      h(ix + 1, iy, seed) * sx * (1 - sy) +
+      h(ix, iy + 1, seed) * (1 - sx) * sy +
+      h(ix + 1, iy + 1, seed) * sx * sy
+    );
+  };
+}
+
+/** Each pixel's distance (chamfer, in pixels) to the nearest pixel of a class. */
+function chamfer(cls: Uint8Array, w: number, h: number, of: (k: number) => boolean) {
+  const INF = 1e9;
+  const d = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) d[i] = of(cls[i]!) ? 0 : INF;
+  const D = Math.SQRT2;
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      let v = d[i]!;
+      if (x > 0) v = Math.min(v, d[i - 1]! + 1);
+      if (y > 0) {
+        v = Math.min(v, d[i - w]! + 1);
+        if (x > 0) v = Math.min(v, d[i - w - 1]! + D);
+        if (x < w - 1) v = Math.min(v, d[i - w + 1]! + D);
+      }
+      d[i] = v;
+    }
+  for (let y = h - 1; y >= 0; y--)
+    for (let x = w - 1; x >= 0; x--) {
+      const i = y * w + x;
+      let v = d[i]!;
+      if (x < w - 1) v = Math.min(v, d[i + 1]! + 1);
+      if (y < h - 1) {
+        v = Math.min(v, d[i + w]! + 1);
+        if (x < w - 1) v = Math.min(v, d[i + w + 1]! + D);
+        if (x > 0) v = Math.min(v, d[i + w - 1]! + D);
+      }
+      d[i] = v;
+    }
+  return d;
 }
 
 const centreOf = (pts: readonly Point[]) => ({
@@ -785,12 +996,6 @@ const bounds = (pts: readonly Point[]) => ({
   y0: Math.min(...pts.map((p) => p.y)),
   y1: Math.max(...pts.map((p) => p.y)),
 });
-
-/** A state's reflection: each group's picture, and the lights' glints. */
-export interface ReflectionLayers {
-  groups: Map<string, HTMLCanvasElement>;
-  glints: HTMLCanvasElement;
-}
 
 /**
  * Write a colour, eased toward white past `REFLECTION.knee` by its brightest channel so
