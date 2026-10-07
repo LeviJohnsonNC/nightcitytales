@@ -587,29 +587,59 @@ export class GroundReflection {
         (k) => k === SurfaceClass.paving || k === SurfaceClass.concrete || k === SurfaceClass.joint,
       );
       const R = REFLECTION.ripple;
-      for (let y = 0; y < H; y++)
-        for (let x = 0; x < W; x++) {
-          const i = y * W + x;
-          const sx = this.box.x + (x + 0.5) / res - o.x;
-          const sy = this.box.y + (y + 0.5) / res - o.y;
+      // the noise is smooth over a few centimetres: evaluate it on a grid of STEP pixels
+      // and interpolate (the mask is thresholded after, so its edges stay sharp)
+      const STEP = 3;
+      const gw = Math.ceil(W / STEP) + 1;
+      const gh = Math.ceil(H / STEP) + 1;
+      const gv = new Float32Array(gw * gh);
+      const gx = new Float32Array(gw * gh);
+      const gy = new Float32Array(gw * gh);
+      const e = 0.05;
+      for (let j = 0; j < gh; j++)
+        for (let i = 0; i < gw; i++) {
+          const sx = this.box.x + (i * STEP + 0.5) / res - o.x;
+          const sy = this.box.y + (j * STEP + 0.5) / res - o.y;
           const wx = (d * sx - c * sy) / det;
           const wy = (a * sy - b * sx) / det;
           let v = 0;
-          for (let j = 0; j < Wt.cells.length; j++)
-            v += Wt.weights[j]! * noise(wx / Wt.cells[j]!, wy / Wt.cells[j]!, 71 + j);
+          for (let k = 0; k < Wt.cells.length; k++)
+            v += Wt.weights[k]! * noise(wx / Wt.cells[k]!, wy / Wt.cells[k]!, 71 + k);
+          const g = j * gw + i;
+          gv[g] = v;
+          // the film's ripple: the slope of its own noise, not of the albedo
+          gx[g] =
+            noise((wx + e) / R.cell, wy / R.cell, 91) - noise((wx - e) / R.cell, wy / R.cell, 91);
+          gy[g] =
+            noise(wx / R.cell, (wy + e) / R.cell, 91) - noise(wx / R.cell, (wy - e) / R.cell, 91);
+        }
+      const lerp = (grid: Float32Array, x: number, y: number) => {
+        const fx = x / STEP;
+        const fy = y / STEP;
+        const i = Math.floor(fx);
+        const j = Math.floor(fy);
+        const tx = fx - i;
+        const ty = fy - j;
+        const g = j * gw + i;
+        return (
+          grid[g]! * (1 - tx) * (1 - ty) +
+          grid[g + 1]! * tx * (1 - ty) +
+          grid[g + gw]! * (1 - tx) * ty +
+          grid[g + gw + 1]! * tx * ty
+        );
+      };
+      const slope = (R.cell / (2 * e)) * ppm * res;
+      for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          let v = lerp(gv, x, y);
           if (this.cls[i] === SurfaceClass.asphalt || this.cls[i] === SurfaceClass.marking)
             v += Wt.gutter * Math.max(0, 1 - kerb[i]! / gutterPx);
           let w = smoothstep(Wt.lo, Wt.hi, v);
           if (this.cls[i] === SurfaceClass.threshold) w = Math.max(w, REFLECTION.threshold);
           this.wet[i] = w;
-          // the film's ripple: the slope of its own noise, not of the albedo
-          const e = 0.05;
-          const nx =
-            noise((wx + e) / R.cell, wy / R.cell, 91) - noise((wx - e) / R.cell, wy / R.cell, 91);
-          const ny =
-            noise(wx / R.cell, (wy + e) / R.cell, 91) - noise(wx / R.cell, (wy - e) / R.cell, 91);
-          this.dx[i] = nx * (R.cell / (2 * e)) * R.across * ppm * res;
-          this.dy[i] = ny * (R.cell / (2 * e)) * R.along * ppm * res;
+          this.dx[i] = lerp(gx, x, y) * slope * R.across;
+          this.dy[i] = lerp(gy, x, y) * slope * R.along;
         }
     }
     // a prop touches a group when it stands in front of one of its sources and its
