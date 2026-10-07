@@ -1875,3 +1875,13 @@ low-strip-mall silhouette gap; it does not claim reference parity. Seed 7 expose
 the tradeoff: taller foreground masses fade more to keep actors readable. Seeds
 0/8 show the stronger facade composition at normal play scale. See
 `docs/checkpoint-urban-frontage.md`; visual acceptance pending.
+
+### Selective foreground visibility (2026-10-07)
+
+Finished intersection buildings remain opaque when their actual geometry clears
+the action. Obstructing roofs open; clear facade sections retain full height and
+obstructing sections become low solid walls. Valid route previews participate,
+and cancelling restores the building. Existing manual reveal and all tactical
+rules remain unchanged. See `docs/checkpoint-selective-foreground.md` for browser
+evidence, tests and limits. Next: the planned street/frontage finish pass; reference
+quality is still pending visual acceptance.

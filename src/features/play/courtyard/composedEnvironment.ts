@@ -662,6 +662,20 @@ export function paintCutawayFloor(
   for (let i = 0; i < 4; i++) line(outline[i]!, outline[(i + 1) % 4]!, "rgba(8,12,14,.5)", 1);
 }
 
+function sectionBounds(r: Rect, height: number, project: Project, ppm: number): Rect {
+  const points = [r.x, r.x + r.width].flatMap((x) =>
+    [r.y, r.y + r.height].map((y) => project({ x, y })),
+  );
+  const x = Math.floor(Math.min(...points.map((p) => p.x))) - 2;
+  const y = Math.floor(Math.min(...points.map((p) => p.y)) - height * ppm) - 2;
+  return {
+    x,
+    y,
+    width: Math.ceil(Math.max(...points.map((p) => p.x))) - x + 2,
+    height: Math.ceil(Math.max(...points.map((p) => p.y))) - y + 2,
+  };
+}
+
 export function paintCutawayWall(
   ctx: CanvasRenderingContext2D,
   structure: SceneStructure,
@@ -2385,10 +2399,14 @@ export function createComposedEnvironment(
           : undefined,
       )
         ?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined)
+        .setData("foregroundStructure", materialised ? s : undefined)
+        .setData("foregroundRole", "building")
         .setData("sortRect", s.rect);
       if (occluders.has(structure.id)) {
         add(`cutaway-${s.id}-ground`, (ctx) => paintCutawayFloor(ctx, s, project), -950, bounds)
           ?.setData("activityLayer", "cutaway")
+          .setData("foregroundStructure", materialised ? s : undefined)
+          .setData("foregroundRole", "floor")
           .setVisible(false);
         for (const [index, part] of cutawayWalls(
           s,
@@ -2458,6 +2476,101 @@ export function createComposedEnvironment(
             .setData("sortRect", r)
             .setData("cutawayHeight", part.height)
             .setVisible(false);
+        }
+      }
+      // Automatic foreground cutaway: cache small wall sections from the exact
+      // finished full-building art. No repainting during movement, and no duplicate
+      // facade implementation that could drop a shopfront or its light.
+      if (materialised && building && occluders.has(s.id)) {
+        const parts = cutawayWalls(s, arena.environment!.entrances);
+        for (const [index, part] of parts.entries()) {
+          const r = part.rect;
+          const north = r.y === s.rect.y;
+          const east = r.x + r.width === s.rect.x + s.rect.width;
+          const high = north || east;
+          const mark = (image: Phaser.GameObjects.Image | undefined, role: string) =>
+            image
+              ?.setData("activityLayer", "automatic")
+              .setData("foregroundStructure", s)
+              .setData("foregroundRole", role)
+              .setData("sectionRect", r)
+              .setData("hasTallSection", high)
+              .setData("sortRect", r)
+              .setVisible(false);
+          const edge = north ? "north" : "east";
+          const face = facePainter(s, edge, project, metre);
+          const s0 = north ? r.x - s.rect.x : r.y - s.rect.y;
+          const s1 = s0 + (north ? r.width : r.height);
+          const draw = (
+            ctx: CanvasRenderingContext2D,
+            image: Phaser.GameObjects.Image,
+            height = s.height,
+          ) => {
+            const polygon = face.quad(s0, s1, 0, height);
+            ctx.save();
+            ctx.beginPath();
+            polygon.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(
+              image.texture.getSourceImage() as CanvasImageSource,
+              image.x - image.displayWidth / 2,
+              image.y - image.displayHeight,
+              image.displayWidth,
+              image.displayHeight,
+            );
+            ctx.restore();
+          };
+          const light = building.getData("light") as Phaser.GameObjects.Image | undefined;
+          const low = { ...part, height: 0.65 };
+          const lowerBounds = sectionBounds(r, 0.65, project, metre);
+          mark(
+            add(
+              `automatic-${s.id}-${index}-low`,
+              (ctx) =>
+                paintCutawayWall(
+                  ctx,
+                  s,
+                  low,
+                  project,
+                  materials,
+                  storefrontOf(s),
+                  buildingUse(s)
+                    ? USE_WALL[buildingUse(s)!]
+                    : detailOf(s)?.role === "neighbour"
+                      ? "painted-render"
+                      : undefined,
+                  annexOf(s),
+                  returns,
+                  { entrances: arena.environment!.entrances, art: architecture },
+                ),
+              project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
+              lowerBounds,
+              clad,
+              high && light
+                ? (ctx, pass) => {
+                    if (pass === "glow") draw(ctx, light, low.height);
+                  }
+                : undefined,
+            ),
+            "low",
+          );
+          if (!high) continue;
+          mark(
+            add(
+              `automatic-${s.id}-${index}-high`,
+              (ctx) => draw(ctx, building),
+              project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
+              sectionBounds(r, s.height, project, metre),
+              clad,
+              light
+                ? (ctx, pass) => {
+                    if (pass === "glow") draw(ctx, light);
+                  }
+                : undefined,
+            ),
+            "high",
+          );
         }
       }
       // The canopy is its own sprite: it sorts by its footprint, fades for actors
@@ -2544,6 +2657,18 @@ export function createComposedEnvironment(
           awning,
         )
           ?.setData("activityLayer", "awning")
+          .setData("foregroundStructure", materialised ? s : undefined)
+          .setData(
+            "sectionRect",
+            sf.edge === "north"
+              ? { x: s.rect.x + offset, y: s.rect.y, width: span, height: 0.24 }
+              : {
+                  x: s.rect.x + s.rect.width - 0.24,
+                  y: s.rect.y + offset,
+                  width: 0.24,
+                  height: span,
+                },
+          )
           .setData("revealOk", kept)
           .setData("sortRect", footprint);
         // The blade sign hangs on the fascia: it shows only while the full building
@@ -2591,6 +2716,7 @@ export function createComposedEnvironment(
               : undefined,
           )
             ?.setData("activityLayer", building.getData("activityLayer"))
+            .setData("foregroundStructure", materialised ? s : undefined)
             .setData("sortRect", f)
             .setData("fadeWith", building);
         }

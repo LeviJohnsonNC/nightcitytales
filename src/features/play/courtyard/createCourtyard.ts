@@ -1,3 +1,9 @@
+import {
+  foregroundObstructs,
+  foregroundRoute,
+  retainForegroundSection,
+} from "./foregroundSections";
+import type { SceneStructure } from "@/engine";
 import { sceneryOrder } from "./sceneryOrder";
 import { atlasPropRegistration } from "./atlasPropRegistration";
 import { isInteriorProp } from "./interiorPropArt";
@@ -185,10 +191,12 @@ export function createCourtyard(
   let night: ComposedEnvironment["night"];
   let tinted: boolean | null = null;
   let orderKey = "";
+  let foregroundKey = "";
+  let automatic = new Set<string>();
   let coverRevision = 0;
   const sortScenery = () => {
     if (!composed) return;
-    const key = `${coverRevision}/${!!model.revealActivity}/${model.structureOnly}/${[...units.values()].map(({ container: u }) => `${u.x},${u.y},${u.visible}`).join(";")}`;
+    const key = `${foregroundKey}/${coverRevision}/${!!model.revealActivity}/${model.structureOnly}/${[...units.values()].map(({ container: u }) => `${u.x},${u.y},${u.visible}`).join(";")}`;
     if (key === orderKey) return;
     orderKey = key;
     const objects = [
@@ -437,23 +445,67 @@ export function createCourtyard(
           12 * unitScale,
         );
       }
-      for (const prop of structures) {
-        const layer = prop.getData("activityLayer");
-        const reveal = !model.structureOnly && !!model.revealActivity;
-        // A canopy hangs from a wall: in the cutaway it shows only where that wall is kept.
-        prop.setVisible(
-          layer === "cutaway"
-            ? reveal
-            : layer === "full"
-              ? !reveal
-              : layer === "awning"
-                ? !reveal || !!prop.getData("revealOk")
-                : true,
-        );
+      const activeUnits = [...units.values()].filter((u) => u.container.visible);
+      const actionPoints = foregroundRoute(model.grid?.route ?? []);
+      if (model.grid?.chosen)
+        actionPoints.push({
+          x: (model.grid.chosen.col + 0.5) * TILE_METRES,
+          y: (model.grid.chosen.row + 0.5) * TILE_METRES,
+        });
+      const points = [
+        ...activeUnits.map((u) => unproject({ x: u.container.x, y: u.container.y })),
+        ...actionPoints,
+      ];
+      const key = `${model.structureOnly}/${model.revealActivity}/${points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(";")}`;
+      if (key !== foregroundKey) {
+        foregroundKey = key;
+        automatic = new Set<string>();
+        if (!model.structureOnly && !model.revealActivity)
+          for (const prop of structures) {
+            const s = prop.getData("foregroundStructure") as SceneStructure | undefined;
+            if (s && prop.getData("activityLayer") === "full" && foregroundObstructs(s, points))
+              automatic.add(s.id);
+          }
+        for (const prop of structures) {
+          const layer = prop.getData("activityLayer");
+          const reveal = !model.structureOnly && !!model.revealActivity;
+          const s = prop.getData("foregroundStructure") as SceneStructure | undefined;
+          const auto = !!s && automatic.has(s.id);
+          const role = prop.getData("foregroundRole");
+          if (layer === "automatic") {
+            const tall =
+              auto &&
+              !!prop.getData("hasTallSection") &&
+              retainForegroundSection(s!, prop.getData("sectionRect"), points);
+            prop.setVisible(auto && (role === "high" ? tall : !tall));
+          } else
+            prop.setVisible(
+              layer === "cutaway"
+                ? reveal || (auto && role === "floor")
+                : layer === "full"
+                  ? !reveal && !auto
+                  : layer === "awning"
+                    ? auto
+                      ? retainForegroundSection(s!, prop.getData("sectionRect"), points)
+                      : !reveal || !!prop.getData("revealOk")
+                    : true,
+            );
+        }
       }
       sortScenery();
       for (const prop of [...scenery, ...structures]) {
-        if (prop.getData("destroyed")) continue;
+        const lowCutaway =
+          prop.getData("activityLayer") === "cutaway" &&
+          (prop.getData("cutawayHeight") ?? 0) <= 0.95;
+        const sectional =
+          prop.getData("foregroundStructure") &&
+          (prop.getData("foregroundRole") === "building" ||
+            ["full", "automatic"].includes(prop.getData("activityLayer")));
+        if (!prop.visible || prop.getData("destroyed")) continue;
+        if (sectional || lowCutaway) {
+          prop.setAlpha(1);
+          continue;
+        }
         const obstructs = [...units.values()].some(({ container: unit }) =>
           sceneryOccludes(
             prop.getData("inkBounds") ?? prop,
@@ -461,10 +513,7 @@ export function createCourtyard(
             composed ? composedUnitMetrics(arena).top : street ? 58 : 88,
           ),
         );
-        const lowCutaway =
-          prop.getData("activityLayer") === "cutaway" &&
-          (prop.getData("cutawayHeight") ?? 0) <= 0.95;
-        prop.setAlpha(lowCutaway ? 1 : obstructs ? 0.4 : 1);
+        prop.setAlpha(obstructs ? 0.4 : 1);
       }
       // A fixture fades with what it hangs from: a sign on a ghosted wall is ghosted too.
       for (const prop of structures) {
