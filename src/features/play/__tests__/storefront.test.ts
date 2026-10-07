@@ -40,11 +40,19 @@ const art: StorefrontArt = {
   kanji: tile(1024, 256),
 };
 
+const sources = new WeakMap<object, unknown[]>();
+const uses = (image: unknown, source: unknown): boolean =>
+  image === source ||
+  (typeof image === "object" &&
+    image !== null &&
+    (sources.get(image)?.some((part) => uses(part, source)) ?? false));
+
 /** A context that records what is drawn and which images were used. */
 function recorder() {
   const log: string[] = [];
   const images: unknown[] = [];
   const target = {
+    getTransform: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }),
     createPattern: () => ({ setTransform: () => undefined }),
     createLinearGradient: () => ({ addColorStop: () => undefined }),
     createRadialGradient: () => ({ addColorStop: () => undefined }),
@@ -123,7 +131,12 @@ describe("storefront: painting", () => {
   beforeAll(() => {
     // the sign's mask is tinted on a scratch canvas; node has none
     vi.stubGlobal("document", {
-      createElement: () => ({ width: 0, height: 0, getContext: () => recorder().ctx }),
+      createElement: () => {
+        const capture = recorder();
+        const canvas = { width: 0, height: 0, getContext: () => capture.ctx };
+        sources.set(canvas, capture.images);
+        return canvas;
+      },
     });
   });
   const base = { sf, project, ppm: pixelsPerMetre, art, pass: "albedo" as const };
@@ -132,8 +145,11 @@ describe("storefront: painting", () => {
   it("paints the whole face, with its sign, only when asked for the whole face", () => {
     const whole = recorder();
     paintStorefrontFace({ ctx: whole.ctx, ...base });
-    expect(whole.images.filter((i) => i === art.window)).toHaveLength(sf.bays.length);
-    expect(whole.images.filter((i) => i === art.wear)).toHaveLength(1);
+    expect(whole.images.filter((i) => uses(i, art.window))).toHaveLength(sf.bays.length);
+    expect(whole.images.filter((i) => uses(i, art.wear))).toHaveLength(1);
+    // No full-resolution source is sampled directly into the small face texture.
+    expect(whole.images).not.toContain(art.window);
+    expect(whole.images).not.toContain(art.wear);
     // the kanji mask is drawn tinted, as dull glass, in the albedo
     expect(whole.images.length).toBe(sf.bays.length + 2);
   });
@@ -141,15 +157,37 @@ describe("storefront: painting", () => {
   it("paints a cutaway piece only with what that piece carries, up to its height", () => {
     const door = recorder();
     paintStorefrontFace({ ctx: door.ctx, ...base, clip: { s0: 0.2, s1: 1.8, zMax: 2.4 } });
-    expect(door.images.filter((i) => i === art.window)).toHaveLength(0);
-    expect(door.images.filter((i) => i === art.wear)).toHaveLength(1);
+    expect(door.images.filter((i) => uses(i, art.window))).toHaveLength(0);
+    expect(door.images.filter((i) => uses(i, art.wear))).toHaveLength(1);
     // the sign and fascia are above a retained piece: not painted into it
     expect(door.log.filter((l) => l === "drawImage")).toHaveLength(1);
 
     const bay = recorder();
     paintStorefrontFace({ ctx: bay.ctx, ...base, clip: { s0: 4, s1: 6, zMax: 2.4 } });
-    expect(bay.images.filter((i) => i === art.window)).toHaveLength(1);
-    expect(bay.images.filter((i) => i === art.wear)).toHaveLength(0);
+    expect(bay.images.filter((i) => uses(i, art.window))).toHaveLength(1);
+    expect(bay.images.filter((i) => uses(i, art.wear))).toHaveLength(0);
+  });
+
+  it("keeps the painted wall in albedo and inside the retained face clip", () => {
+    const wall = tile(384, 512);
+    const frozen = JSON.stringify(env);
+    for (const pass of ["albedo", "light", "glow"] as const) {
+      const face = recorder();
+      paintStorefrontFace({
+        ctx: face.ctx,
+        ...base,
+        art: { ...art, wall },
+        pass,
+        clip: { s0: 4, s1: 6, zMax: 2.4 },
+      });
+      expect(face.images.some((i) => uses(i, wall))).toBe(pass === "albedo");
+      if (pass === "albedo") {
+        // Both the retained wall's clip and the wall field's own bounds apply.
+        expect(face.log.filter((l) => l === "clip()").length).toBeGreaterThanOrEqual(2);
+        expect(face.images).not.toContain(wall);
+      }
+    }
+    expect(JSON.stringify(env)).toBe(frozen);
   });
 
   it("keeps light out of the albedo: every pass draws only its own part", () => {
@@ -169,8 +207,8 @@ describe("storefront: painting", () => {
       expect(lit(face.log)).toBe(false);
       expect(lit(ground.log)).toBe(false);
       // the window art and shutter wear belong to the albedo alone
-      expect(face.images.includes(art.window)).toBe(pass === "albedo");
-      expect(face.images.includes(art.wear)).toBe(pass === "albedo");
+      expect(face.images.some((i) => uses(i, art.window))).toBe(pass === "albedo");
+      expect(face.images.some((i) => uses(i, art.wear))).toBe(pass === "albedo");
     }
     // the sign's tubes are lit only in the glow pass, and only where the fascia is painted
     const glow = recorder();

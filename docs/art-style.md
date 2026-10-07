@@ -800,3 +800,12 @@ Straight-on flat elevation of one shop window for an isometric tactical game, pa
 ```text
 Straight-on flat elevation of a closed steel roller shutter for an isometric tactical game, painted digitally with fine visible brush texture, in the grounded, lived-in late-1980s and 1990s neon-noir cyberpunk look of a matte painting, matching the attached shutter slat material and following the attached wear pattern for where wear goes. Seen exactly face-on: orthographic, no perspective, every slat perfectly horizontal. The attached layout is a measured guide, exactly 1024 x 1536 px: paint ONLY inside its grey shapes and keep everything else one flat, solid #FF00FF magenta with no gradient or noise. Across the top: the front of the shutter's roller housing, 1.84 m wide by 0.3 m tall, a plain folded sheet-steel box face with a small drip edge along its bottom and two end caps. Down each side: a narrow steel guide rail, 8 cm wide, in which the curtain runs. Filling the opening between the rails, 1.6 m wide by 2.2 m tall: the curtain itself, horizontal interlocking galvanised steel slats every 20 cm in faded grey paint, and a heavier bottom bar with a central padlock hasp and a lifting handle, resting exactly on the guide's ground line. Wear concentrated where parts move or meet: bright scuffed metal along the slat ends where they ride in the rails, rust weeping from the rail fixings and along the bottom bar, the lowest 40 cm grimy and rust-blistered from splash, faint scrape marks down the rails. Light softly and evenly, like an overcast day. Do NOT reproduce the guide's flat greys, outlines or text. No shadows cast onto any wall, no light spill or glow, no graffiti, stickers or text, and no wall, door frame, surround, step or pavement: magenta everywhere outside the grey.
 ```
+
+## Shop wall finish (combat scene)
+
+`storefront-wall-finish.png` is a neutral, straight-on field of warm ivory plaster over dark green
+ceramic tile, with the dado one-third of the height above ground. It has no openings or light.
+`docs/finished-corner/wall-layout.png` fixes the 3:4 elevation; `tools/art/shop-finish.ts` produces
+the runtime derivative. `shopFinish.ts` repeats it at 2.0625 × 2.75 m before existing windows and
+doors are painted. Never bake the current camera, neon or openings into this field. Full commission
+and measured dimensions are in `docs/checkpoint-finished-corner.md`.

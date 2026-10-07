@@ -13,6 +13,8 @@
  * Coordinates: `s` is metres along the face from the building's first corner, `out`
  * is metres away from the wall (negative: into the building), `z` is height.
  */
+import { sourceFor } from "./architectureArt";
+import { paintShopFinish, paintShopCornice } from "./shopFinish";
 import { paintDownpipe, paintPlinth, solidSpans, type Downpipe } from "./frontage";
 import type { Point, Rect, SceneAttachment, SceneEnvironment, SceneStructure } from "@/engine";
 import {
@@ -42,6 +44,7 @@ export type Pass = "albedo" | "light" | "glow";
 
 export const STOREFRONT_ART_FILES = {
   window: "/images/storefront/window-interior.webp",
+  wall: "/images/storefront/wall-finish.webp",
   awning: "/images/storefront/awning-fabric.webp",
   wear: "/images/storefront/shutter-wear.webp",
   kanji: "/images/signs/shenye-ichiba.webp",
@@ -356,6 +359,13 @@ function drawOnFace(
   const at = facePoint(o.sf, o.project, o.ppm);
   const origin = at(mirror ? s0 + widthM : s0, out, zTop);
   const along = at((mirror ? s0 + widthM : s0) + (mirror ? -1 : 1), out, zTop);
+  const t = o.ctx.getTransform?.();
+  const scale = t ? Math.hypot(t.a, t.b) : 1;
+  image = sourceFor(
+    image,
+    Math.hypot(along.x - origin.x, along.y - origin.y) * widthM * scale,
+    o.ppm * heightM * scale,
+  );
   const kx = widthM / image.width;
   const ky = heightM / image.height;
   o.ctx.save();
@@ -425,6 +435,8 @@ export function paintStorefrontFace(o: FaceOptions) {
     return;
   }
 
+  paintShopFinish(ctx, at, sf.length, o.art.wall);
+
   // --- the wall's own trim: base shade, pier lines at both corners ------------
   gradientFill(ctx, quad(0, sf.length, 0, 0.5), at(0, 0, 0), at(0, 0, 0.5), [
     [0, "rgba(6,12,16,.34)"],
@@ -449,7 +461,7 @@ export function paintStorefrontFace(o: FaceOptions) {
   }
 
   // --- window bays ---------------------------------------------------------
-  const depth = 0.12;
+  const depth = 0.18;
   const frame = 0.07;
   o.sf.bays.forEach((s0, index) => {
     const s1 = s0 + STOREFRONT_FACE.bayWidth;
@@ -458,9 +470,11 @@ export function paintStorefrontFace(o: FaceOptions) {
     const top = L.glazingTop;
     const bottom = L.riser;
     // stall riser: painted steel panel under the glass, with a kick plate
-    fillPoly(ctx, quad(s0, s1, 0, bottom), "#2c383b");
-    fillPoly(ctx, quad(s0 + 0.08, s1 - 0.08, 0.1, bottom - 0.1), "#344246");
-    strokeLine(ctx, at(s0 + 0.08, 0, bottom - 0.1), at(s1 - 0.08, 0, bottom - 0.1), "#55646a", 1);
+    if (!o.art.wall) {
+      fillPoly(ctx, quad(s0, s1, 0, bottom), "#172f2c");
+      fillPoly(ctx, quad(s0 + 0.08, s1 - 0.08, 0.1, bottom - 0.1), "#264a40");
+      strokeLine(ctx, at(s0 + 0.08, 0, bottom - 0.1), at(s1 - 0.08, 0, bottom - 0.1), "#55646a", 1);
+    }
     fillPoly(ctx, quad(s0, s1, 0, 0.07), "#192226");
     // the opening, and the room behind the glass, set back from the wall
     const opening = quad(s0, s1, bottom, top);
@@ -723,9 +737,17 @@ export function paintStorefrontFace(o: FaceOptions) {
           SURFACE_MATERIALS["facade-concrete"].metres,
           ppm,
         ),
-        target: "#313d43",
+        target: "#493133",
       });
-    if (!done) fillPoly(ctx, fascia, "#313d43");
+    if (!done) fillPoly(ctx, fascia, "#493133");
+    // Enamel panels sit behind a projecting cornice; broad shade, not outline noise.
+    gradientFill(ctx, fascia, at(0, 0, L.fasciaTop), at(0, 0, L.fasciaBottom), [
+      [0, "rgba(3,7,9,.66)"],
+      [0.3, "rgba(3,7,9,.08)"],
+      [1, "rgba(3,7,9,.12)"],
+    ]);
+    for (let s = 3; s < sf.length; s += 3)
+      strokeLine(ctx, at(s, 0, L.fasciaBottom), at(s, 0, L.fasciaTop), "rgba(8,10,12,.6)", 1);
     strokeLine(ctx, at(0, 0, L.fasciaBottom), at(sf.length, 0, L.fasciaBottom), "#0f171c", 2);
     strokeLine(
       ctx,
@@ -787,10 +809,12 @@ export function paintStorefrontFace(o: FaceOptions) {
       drawOnFace(o, tintedMask(o.art.kanji, "#8a3a4a"), g.s, g.zTop, g.width, g.height, 0.06);
     }
     // parapet coping
-    fillPoly(ctx, quad(0, sf.length, L.fasciaTop, L.parapetTop), "#3a464b");
+    fillPoly(ctx, quad(0, sf.length, L.fasciaTop, L.parapetTop), "#6a6558");
     strokeLine(ctx, at(0, 0, L.parapetTop), at(sf.length, 0, L.parapetTop), "#97a3a1", 1.6);
     strokeLine(ctx, at(0, 0, L.fasciaTop), at(sf.length, 0, L.fasciaTop), "#0f171c", 1.4);
   }
+
+  if (o.art.wall) paintShopCornice(ctx, at, sf.length);
 
   // --- the downpipe: last, so it runs over the fascia it is fixed to ------------
   const pipe = o.frontage?.pipe;
@@ -985,6 +1009,13 @@ function drawOnBlade(
   const o = at(s, outA, zTop);
   const u = at(s, outA - 1, zTop);
   const v = at(s, outA, zTop - 1);
+  const t = ctx.getTransform?.();
+  const scale = t ? Math.hypot(t.a, t.b) : 1;
+  image = sourceFor(
+    image,
+    Math.hypot(u.x - o.x, u.y - o.y) * widthM * scale,
+    Math.hypot(v.x - o.x, v.y - o.y) * heightM * scale,
+  );
   const kx = widthM / image.width;
   const ky = heightM / image.height;
   ctx.save();

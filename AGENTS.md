@@ -1321,3 +1321,14 @@ keeps:
   - `tools/scenes/material-pilot-evidence.mjs` takes the matched captures.
   - `REFLECT=on tools/scenes/shadow-state-check.mjs` checks damage switches with it shown.
 - **Presentation only.** Nothing here moves a light, a prop, a wall, an entrance or a route.
+
+### Finished shop material field (courtyard/shopFinish.ts)
+
+The shopfront and its composed returns share a neutral plaster/ceramic field, with burgundy fascia
+and a projecting lintel. `STOREFRONT_ART_FILES.wall` loads its 384 × 512 derivative; the original
+`storefront-wall-finish.png` is excluded from the creator bundle. Regenerate with
+`bun tools/art/shop-finish.ts`. Draw the field in **albedo only, before openings**, through the existing
+cutaway clip, at `SHOP_FINISH`'s world dimensions. Missing art keeps the drawn risers. Cornice depth
+is decorative and stays within the face clip apron. No saved dimensions or collisions are changed.
+Storefront face/blade art and return-face crops must use `sourceFor` at their drawing size; direct
+full-resolution mask reduction broke the sign into dots. See `docs/checkpoint-finished-corner.md`.
