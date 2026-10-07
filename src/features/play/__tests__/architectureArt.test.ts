@@ -122,6 +122,7 @@ describe("painting it", () => {
       "painted-metal",
       "roof-ballast",
       "painted-render",
+      "home-masonry",
       "shutter",
     ].map((k) => [k, { width: 512, height: 512, key: k }]),
   );
@@ -185,6 +186,54 @@ describe("painting it", () => {
   it("draws nothing of it where a scene takes no materials", () => {
     expect(building("building_1", undefined)).toEqual([]);
     expect(building("building_0_middle", undefined)).toEqual([]);
+  });
+
+  it("carries residential interiors onto retained exterior walls, never interior ends", () => {
+    const home = env.structures.find((x) => x.style === "residential")!;
+    const homeArt = Object.fromEntries(
+      ["homeCurtains", "homeBlind", "homeNets"].map((name) => [
+        name,
+        { name, width: 468, height: 396 },
+      ]),
+    );
+    const full = drawn((ctx) =>
+      paintBuilding(
+        ctx,
+        home,
+        project,
+        env.entrances,
+        tiles as never,
+        undefined,
+        undefined,
+        homeArt as never,
+      ),
+    );
+    expect(full.some((name) => name.startsWith("home"))).toBe(true);
+    let finished = 0;
+    for (const part of cutawayWalls(home, env.entrances)) {
+      const images = drawn((ctx) =>
+        paintCutawayWall(
+          ctx,
+          home,
+          part,
+          project,
+          tiles as never,
+          undefined,
+          "painted-render",
+          undefined,
+          undefined,
+          { entrances: env.entrances, art: homeArt as never },
+        ),
+      );
+      const r = home.rect,
+        p = part.rect;
+      if (p.y === r.y || p.x + p.width === r.x + r.width) {
+        // The original face is drawn in original coordinates under the segment clip.
+        expect(images.some((name) => name.startsWith("home"))).toBe(true);
+        finished++;
+      } else expect(images).toEqual([]);
+    }
+    expect(finished).toBeGreaterThan(0);
   });
 
   it("carries the annex's openings onto the cutaway pieces of the faces that have them", () => {

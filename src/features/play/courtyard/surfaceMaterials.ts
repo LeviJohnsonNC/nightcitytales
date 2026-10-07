@@ -24,6 +24,7 @@ export const MATERIAL_KEYS = [
   "painted-metal",
   "roof-ballast",
   "painted-render",
+  "home-masonry",
 ] as const;
 export type MaterialKey = (typeof MATERIAL_KEYS)[number];
 
@@ -54,6 +55,7 @@ export const SURFACE_MATERIALS: Record<MaterialKey, { metres: number; mean: Rgb;
   "painted-metal": { metres: 2, mean: [84, 94, 101], gain: 3 },
   "roof-ballast": { metres: 2, mean: [104, 100, 93], gain: 1 },
   "painted-render": { metres: 4, mean: [134, 124, 111], gain: 2 },
+  "home-masonry": { metres: 2, mean: [86, 72, 62], gain: 1 },
 };
 
 export const materialUrl = (key: MaterialKey) => `/images/materials/${key}.webp`;

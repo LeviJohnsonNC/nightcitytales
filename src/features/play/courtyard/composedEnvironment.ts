@@ -18,8 +18,12 @@ import {
   litHomeWindows,
   faceOpenings,
   facePainter,
-  paintHomeWall,
-  paintHomeWindow,
+  paintHomeFace,
+  paintHomeAnnex,
+  HOME_DEPTH,
+  homeInterior,
+  clipHomeFace,
+  type Opening,
   paintLoadingDoor,
   paintServiceSurround,
   paintShedGlazing,
@@ -41,6 +45,7 @@ import {
 } from "./streetfront";
 import { BAY, type ArchitectureArt } from "./architecturePack";
 import {
+  isAnnex,
   facadeArtCovers,
   facadeOpenings,
   paintShopWall,
@@ -663,6 +668,7 @@ export function paintCutawayWall(
   annex?: ShopFace & { entrances: SceneEnvironment["entrances"] },
   /** The shop's composed return faces (`streetfront.ts`), carried up the piece. */
   returns?: Returns,
+  home?: { entrances: SceneEnvironment["entrances"]; art: ArchitectureArt | undefined },
 ) {
   const { poly, corners } = painter(ctx, project);
   const metre = Math.hypot(
@@ -691,6 +697,18 @@ export function paintCutawayWall(
     side(east, "#35434a", wallBasis(project, "y", r.x + r.width, concrete, metre));
     poly(top, warm ? "#b0a18b" : "#95a4a0", "#293b42");
   }
+  if (home && clad && structure.style === "residential" && !lightPass) {
+    for (const edge of ["north", "east"] as const) {
+      const wall = structure.rect;
+      if (!(edge === "north" ? r.y === wall.y : r.x + r.width === wall.x + wall.width)) continue;
+      const s0 = edge === "north" ? r.x - wall.x : r.y - wall.y;
+      paintHomeFace(ctx, structure, edge, project, metre, home.entrances, clad, home.art, {
+        s0,
+        s1: s0 + (edge === "north" ? r.width : r.height),
+        zMax: part.height,
+      });
+    }
+  }
   // A piece of a face with painted openings carries them up to its height, as the
   // storefront's face does below.
   if (annex && !lightPass) {
@@ -701,6 +719,8 @@ export function paintCutawayWall(
       const s0 = edge === "north" ? r.x - wall.x : r.y - wall.y;
       const s1 = s0 + (edge === "north" ? r.width : r.height);
       const clip = { s0, s1, zMax: part.height };
+      if (isAnnex(structure, annex.entrances))
+        paintHomeAnnex(ctx, structure, edge, project, metre, clad, clip);
       const composed = returns?.faces.find((f) => f.structure === structure && f.edge === edge);
       if (composed)
         paintReturnFace(ctx, composed, project, metre, returns!.art, materials, "wall", clip);
@@ -1070,11 +1090,13 @@ export function paintBuilding(
         faceBasis(structure, edge, project, pixelsPerMetre, "facade-concrete"),
       );
     if (finished && use === "residential")
-      paintHomeWall(ctx, finished, pixelsPerMetre, structure.height);
-    for (const o of finished ? faceOpenings(structure, edge, entrances) : [])
-      if (o.kind === "window" || o.kind === "bay")
-        paintHomeWindow(ctx, finished!, pixelsPerMetre, o);
-      else paintShedGlazing(ctx, finished!, pixelsPerMetre, o);
+      paintHomeFace(ctx, structure, edge, project, pixelsPerMetre, entrances, clad, architecture);
+    if (shopArt && isAnnex(structure, entrances))
+      paintHomeAnnex(ctx, structure, edge, project, pixelsPerMetre, clad);
+    for (const o of finished && use === "industrial"
+      ? faceOpenings(structure, edge, entrances)
+      : [])
+      paintShedGlazing(ctx, finished!, pixelsPerMetre, o);
     // Storeys use world metres. Industrial sheds have a single clerestory,
     // not the same stacked apartment windows regardless of physical height.
     const industrial = structure.style === "workshop" || structure.style === "warehouse";
@@ -1152,7 +1174,7 @@ export function paintBuilding(
     }
     if (!shopArt?.finish && !finished)
       line(at(0, 0.2 * pixelsPerMetre), at(1, 0.2 * pixelsPerMetre), "#73786f", 2);
-    for (const centre of doors) {
+    for (const centre of use === "residential" ? [] : doors) {
       if (covers.doors) continue;
       if (finished && use === "industrial") {
         paintLoadingDoor(
@@ -1710,24 +1732,65 @@ export function createComposedEnvironment(
     ctx: CanvasRenderingContext2D,
     pass: "light" | "glow",
     homes: {
-      opening: { s0: number; s1: number; z0: number; z1: number };
+      opening: Opening;
       face: ReturnType<typeof facePainter>;
     }[],
+    clip?: { s0: number; s1: number; zMax: number },
   ) => {
     if (!night) return;
     const warm = night.home.color;
     for (const { opening: w, face } of homes) {
-      const room = face.quad(w.s0 + 0.05, w.s1 - 0.05, w.z0 + 0.05, w.z1 - 0.05, -0.12);
+      ctx.save();
+      if (clip) clipHomeFace(ctx, face, clip);
+      const x0 = w.s0 + 0.05,
+        x1 = w.s1 - 0.05,
+        y0 = w.z0 + 0.05,
+        y1 = w.z1 - 0.05;
+      const middle = (x0 + x1) / 2;
+      // Light never erases the timber mullion or the frame.
+      ctx.beginPath();
+      for (const [a, b] of [
+        [x0, middle - 0.025],
+        [middle + 0.025, x1],
+      ]) {
+        face
+          .quad(a!, b!, y0, y1, -HOME_DEPTH)
+          .forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.closePath();
+      }
+      ctx.clip();
+      const painted = homeInterior(w, architecture);
+      if (pass === "glow" && painted) {
+        // Registered to the cloth in the imported paintings: blinds conceal the
+        // upper 61%; tied curtains open wider near the bottom. No glowing cloth.
+        const width = x1 - x0,
+          height = y1 - y0;
+        const opening =
+          w.occupancy === "blind"
+            ? face.quad(x0, x1, y0, y0 + height * 0.38, -HOME_DEPTH)
+            : [
+                face.at(x0 + width * 0.29, -HOME_DEPTH, y1),
+                face.at(x0 + width * 0.69, -HOME_DEPTH, y1),
+                face.at(x0 + width * 0.81, -HOME_DEPTH, y0),
+                face.at(x0 + width * 0.18, -HOME_DEPTH, y0),
+              ];
+        ctx.beginPath();
+        opening.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.closePath();
+        ctx.clip();
+      }
+      ctx.fillStyle = lightColor(warm, pass === "light" ? night.home.room : night.home.glass);
+      const room = face.quad(x0, x1, y0, y1, -HOME_DEPTH);
       ctx.beginPath();
       room.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
       ctx.closePath();
+      ctx.fill();
+      ctx.restore();
       if (pass === "light") {
-        ctx.fillStyle = lightColor(warm, night.home.room);
-        ctx.fill();
+        ctx.save();
+        if (clip) clipHomeFace(ctx, face, clip);
         paintWindowSurround(ctx, face.at, w, warm, night.home.surround);
-      } else {
-        ctx.fillStyle = lightColor(warm, night.home.glass);
-        ctx.fill();
+        ctx.restore();
       }
     }
   };
@@ -2310,11 +2373,12 @@ export function createComposedEnvironment(
                     : undefined,
                 annexOf(s),
                 returns,
+                { entrances: arena.environment!.entrances, art: architecture },
               ),
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,
             clad,
-            front || (night && (reachesWall(s) || composed.length))
+            front || (night && (reachesWall(s) || composed.length || homes.length))
               ? (ctx, pass) => {
                   if (front)
                     paintCutawayWall(ctx, s, part, project, materials, storefrontOf(s, pass));
@@ -2332,6 +2396,12 @@ export function createComposedEnvironment(
                     s1: s0 + (edge === "north" ? r.width : r.height),
                     zMax: part.height,
                   };
+                  paintLitHomes(
+                    ctx,
+                    pass,
+                    homes.filter((h) => h.edge === edge),
+                    piece,
+                  );
                   for (const f of composed.filter((c) => c.edge === edge))
                     paintReturnLight(ctx, f, project, metre, returns!.art, night!, pass, piece);
                   if (pass !== "light") return;

@@ -173,7 +173,7 @@ function deviceLength(ctx: CanvasRenderingContext2D, dx: number, dy: number) {
  * Draw an image, or a rectangle of it (`rows` and `cols` as fractions), onto a
  * parallelogram: top-left, top-right, bottom-left.
  */
-function drawOnto(
+export function drawOnto(
   ctx: CanvasRenderingContext2D,
   img: Img,
   p0: Point,

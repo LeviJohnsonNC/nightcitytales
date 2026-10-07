@@ -809,3 +809,39 @@ ceramic tile, with the dado one-third of the height above ground. It has no open
 the runtime derivative. `shopFinish.ts` repeats it at 2.0625 × 2.75 m before existing windows and
 doors are painted. Never bake the current camera, neon or openings into this field. Full commission
 and measured dimensions are in `docs/checkpoint-finished-corner.md`.
+
+## Residential finish (integrated)
+
+Original commission prompts retained below. Returned 1254-square sources live in
+`src/assets/creator`; registration and runtime WebP output are reproducible with
+`bun tools/art/residential-finish.ts`. See `docs/checkpoint-residential-finish.md`.
+
+Four images for the residential block and attached annex. Each prompt is complete.
+Use `docs/residential-finish/guides/home-window-layout.png` for all three windows;
+use `home-masonry-scale.png` only for the masonry. Generate each separately. Keep
+original PNGs; do not generate a contact sheet. The renderer owns architectural
+frames and lighting. See `docs/residential-finish/README.md` for registration.
+
+**`home-window-curtains.png`** — attach `home-window-layout.png`.
+
+```text
+Create one 1024 × 1024 PNG game-art asset, using the attached measured layout. Digitally painted realism with fine brush texture, grounded late-1980s/1990s working-class neon-noir architecture. This is a flat, straight-on residential window INFILL, not an isometric window or a scene. The light-grey rectangle in the guide is exactly the image region to paint: x44, y116, width936, height792 pixels, representing a view 1.3 metres wide and 1.1 metres high. Keep the surrounding margin solid dark grey. Replace the light-grey rectangle completely; do not reproduce guide markings. Show the view through slightly dusty glass into a modest apartment: faded muted olive-grey curtains gathered at both sides, with broad readable folds, leaving the middle third open. Beyond them, a quiet taupe room with only a low cabinet and a few indistinct book shapes, subdued and set back. No people. Keep the glass and interior readable with moderate contrast and restrained colour. Diffuse neutral illumination only: no lit lamps, night-blue grade, neon, bloom, bright reflection, external cast shadow or glowing window. The game adds illumination. No outer frame, central mullion, horizontal glazing bar, sill, wall, lintel, recess or perspective border: the game draws these. No text, logos, watermarks, posters or shop merchandise. Concentrate on believable cloth, dusty glass and depth, not tiny decorative objects. Return this single image only.
+```
+
+**`home-window-blind.png`** — attach `home-window-layout.png`.
+
+```text
+Create one 1024 × 1024 PNG game-art asset, using the attached measured layout. Digitally painted realism with fine brush texture, grounded late-1980s/1990s working-class neon-noir architecture. This is a flat, straight-on residential window INFILL, not an isometric window or a scene. The light-grey rectangle is exactly the region to paint: x44, y116, width936, height792 pixels, representing a view 1.3 metres wide and 1.1 metres high. Keep the surrounding margin solid dark grey. Replace the light-grey rectangle completely; do not reproduce guide markings. Behind slightly dusty glass, an old warm-grey venetian blind hangs from the top and covers the upper 60 percent of the rectangle. Its horizontal slats are straight, approximately 4 cm apart, with restrained material variation; one slat is slightly bent. A narrow pull cord hangs near the right side. Beneath the blind, a subdued grey-brown domestic interior with a distant desk edge, barely visible. No people. Broad readable shapes and moderate contrast. Diffuse neutral illumination only: no lit lamps, night-blue grade, neon, bloom, bright reflection, external cast shadow or glow. The game adds illumination. No outer frame, central mullion, glazing bar, sill, wall, lintel, recess or perspective border: the game draws these. No text, logos, watermarks, posters or shop merchandise. Return this single image only.
+```
+
+**`home-window-nets.png`** — attach `home-window-layout.png`.
+
+```text
+Create one 1024 × 1024 PNG game-art asset, using the attached measured layout. Digitally painted realism with fine brush texture, grounded late-1980s/1990s working-class neon-noir architecture. This is a flat, straight-on residential window INFILL, not an isometric window or a scene. The light-grey rectangle is exactly the region to paint: x44, y116, width936, height792 pixels, representing a view 1.3 metres wide and 1.1 metres high. Keep the surrounding margin solid dark grey. Replace the light-grey rectangle completely; do not reproduce guide markings. Behind slightly dusty glass, two simple aged warm-grey sheer privacy curtains hang from the top to the bottom. They are almost closed, with a narrow uneven opening near the centre. Paint broad soft vertical cloth folds, a subtle woven texture and a slightly heavier bottom hem. Only indistinct room shapes show through the cloth; the room is private and ordinary, with no people. Avoid pure white: use muted flax and grey midtones, quietly darker than a shop display. Diffuse neutral illumination only: no lit lamps, night-blue grade, neon, bloom, bright reflection, external cast shadow or glowing curtain. The game adds illumination. No outer frame, central mullion, glazing bar, sill, wall, lintel, recess or perspective border: the game draws these. No text, logos, watermarks, posters or shop merchandise. Return this single image only.
+```
+
+**`home-masonry.png`** — attach `home-masonry-scale.png`.
+
+```text
+Create one seamless 1024 × 1024 PNG surface texture for an isometric tactical game. Digitally painted realism with fine brush texture, grounded, lived-in late-1980s/1990s urban architecture. Seen exactly straight-on, flat and orthographic. This image covers exactly 2 × 2 metres of a modest apartment building's masonry base. The attached card fixes scale only: eight brick pitches across and twenty-four courses vertically, alternate courses offset by half a brick. Follow that scale but do not reproduce the guide's flat colours or lines. Paint dark muted brown-grey fired brick, with occasional subdued iron-red undertones and narrow weathered grey mortar joints. Bricks have small chips, softened arrises, fine mineral grain and modest tonal variation. Keep the whole field quiet and cohesive: no conspicuously bright individual brick. The tile must repeat seamlessly left/right and top/bottom, including running-bond mortar lines. No wall edge, coping, plinth border, windows, doors, pipes, graffiti, text, logos, objects or ground. No large stains or distinctive damage that advertise repetition. Soft perfectly even neutral illumination, no directional lighting, cast shadows, ambient vignette, night-blue grade, neon, glow, gloss or wet reflections. Restrained shallow mortar shading is acceptable; the game supplies architectural depth and scene lighting. Fill the entire square with masonry, no margin or transparency. Return this single image only.
+```

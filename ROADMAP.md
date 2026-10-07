@@ -1830,3 +1830,13 @@ lighting settings and reflection default stay unchanged. Real-browser comparison
 fixture checks: `docs/checkpoint-finished-corner.md`. The whole intersection is **not** declared at
 reference quality; the next art target is a second complete, contrasting frontage, judged alongside
 the shop at normal play scale.
+
+### Residential block and annex finish (2026-10-07)
+
+Implemented the prepared residential pass with Levi's returned artwork: deeper
+sills/heads, floor bands, low masonry, deterministic room infill and shared clipped
+full/revealed facade rendering. Annex keeps existing openings/art. Connected
+Chrome review covers seeds 7/0/8, lights off, reveal, targeting and frozen review
+restore. See `docs/checkpoint-residential-finish.md` and its actual-browser evidence.
+Shop remains primary; broad roof surfaces remain a visual debt. Await Levi's
+visual acceptance rather than equating automated validation with acceptance.

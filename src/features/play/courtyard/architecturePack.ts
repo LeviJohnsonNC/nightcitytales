@@ -136,6 +136,9 @@ export const ARCHITECTURE_ART_FILES = {
   roofUnit: "/images/architecture/roof-unit.webp",
   window: "/images/architecture/annex-window.webp",
   shutter: "/images/architecture/annex-shutter.webp",
+  homeCurtains: "/images/architecture/home-window-curtains.webp",
+  homeBlind: "/images/architecture/home-window-blind.webp",
+  homeNets: "/images/architecture/home-window-nets.webp",
 } as const;
 export type ArchitectureArtKey = keyof typeof ARCHITECTURE_ART_FILES;
 /** Decoded art; a key that failed to load is absent and its surface keeps its drawing. */
