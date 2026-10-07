@@ -1866,7 +1866,6 @@ separate design gap that surface detail cannot solve; propose those deliberately
 with frozen-layout compatibility. Further tiny roof details and stronger glow
 are lower priority. Reflections stay off by default.
 
-
 ### Stepped commercial frontage (2026-10-07)
 
 Recipe v8 raises the newly generated commercial row to two/three storeys, with
