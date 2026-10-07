@@ -1,3 +1,4 @@
+import { paintCommercialUpper } from "./commercialUpper";
 /** World-building art from the same resolved parcels that constrain play. */
 import { paintResidentialRoof, RESIDENTIAL_ROOF_RECESS } from "./residentialRoof";
 import type Phaser from "phaser";
@@ -778,6 +779,17 @@ export function paintCutawayWall(
       });
     }
   }
+  if (clad && !lightPass)
+    for (const edge of ["north", "east"] as const) {
+      const wall = structure.rect;
+      if (!(edge === "north" ? r.y === wall.y : r.x + r.width === wall.x + wall.width)) continue;
+      const s0 = edge === "north" ? r.x - wall.x : r.y - wall.y;
+      paintCommercialUpper(ctx, structure, edge, project, metre, clad, home?.art, {
+        s0,
+        s1: s0 + (edge === "north" ? r.width : r.height),
+        zMax: part.height,
+      });
+    }
 }
 
 export function paintCutaway(
@@ -1281,6 +1293,9 @@ export function paintBuilding(
       pass: "albedo",
       ...(frontage ? { frontage: frontageOnFace(frontage, structure, storefront.sf.edge) } : {}),
     });
+  if (clad)
+    for (const edge of ["north", "east"] as const)
+      paintCommercialUpper(ctx, structure, edge, project, pixelsPerMetre, clad, architecture);
   surface(
     top,
     palette[2]!,
