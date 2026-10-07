@@ -20,6 +20,7 @@ import { SkillInfo, StatInfoDialog } from "./SheetInfo";
 import { ArtSlot } from "./ArtSlot";
 import { portraitArt, portraitById } from "./art";
 import { PortraitLightbox } from "./PortraitLightbox";
+import { RoleAbilityTrigger } from "./RoleAbilityModal";
 import { usePortraitUrl } from "./usePortraitUrl";
 import { readGeneralLifepath } from "./lifepathState";
 import {
@@ -262,12 +263,13 @@ export function CharacterSheet({
             {build.handle ? `"${build.handle}"` : "no handle"}
           </p>
           {build.roleAbility && (
-            <p
-              className={`${stickyIdentity ? "mt-1" : "mt-3"} font-mono text-xs uppercase tracking-[0.14em] text-text-muted`}
+            <RoleAbilityTrigger
+              roleId={build.roleId}
+              className={`${stickyIdentity ? "mt-1" : "mt-3"} block font-mono text-xs uppercase tracking-[0.14em] text-text-muted`}
             >
               Role Ability — {build.roleAbility.name}{" "}
               <span className="num text-ember">Rank {build.roleAbility.rank}</span>
-            </p>
+            </RoleAbilityTrigger>
           )}
           {build.selfDescription && !stickyIdentity && (
             <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-text-muted">

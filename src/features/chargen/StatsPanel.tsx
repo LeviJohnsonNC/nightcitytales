@@ -20,10 +20,11 @@ import {
   rollEdgerunnerStat,
   rollStreetratStats,
   startingCompletePackageStats,
+  statRollVerdict,
   validateCompletePackageStats,
 } from "@/engine";
-import type { StatBlock, StatKey } from "@/engine";
-import { DiceRoll } from "./DiceRoll";
+import type { StatBlock, StatKey, StatRollVerdict } from "@/engine";
+import { DiceRoll, type DieTone } from "./DiceRoll";
 import { StatTemplateTable } from "./StatTemplateTable";
 import { PointBuyCard } from "./PointBuyCard";
 import { StatCard } from "./StatCard";
@@ -45,19 +46,33 @@ function InfoStatCard({
   stat,
   value,
   roleId,
+  verdict,
   children,
 }: {
   stat: StatKey;
   value: number | undefined;
   roleId: string | null;
+  /** How good the roll was for this Role. Rolled methods only. */
+  verdict?: StatRollVerdict | null;
   children?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const change = useRecentChange(value);
   return (
     <>
-      <StatCard stat={stat} value={value} onInfo={() => setOpen(true)}>
-        {children}
-      </StatCard>
+      {/* The flare plays for the moment after a die lands, and only then: a
+          card read back from a saved draft just sits there. A class rather
+          than a key, so the die inside is not remounted mid-landing. */}
+      <div className={cn("relative", change !== null && verdict && `cg-roll-${verdict}`)}>
+        <StatCard stat={stat} value={value} onInfo={() => setOpen(true)}>
+          {(children || verdict) && (
+            <div className="flex items-center gap-2">
+              {children}
+              {verdict && <VerdictChip verdict={verdict} />}
+            </div>
+          )}
+        </StatCard>
+      </div>
       <StatInfoModal
         stat={stat}
         value={value ?? null}
@@ -82,6 +97,117 @@ function useRecentChange(value: number | undefined): number | null {
     return () => window.clearTimeout(timer);
   }, [value]);
   return change;
+}
+
+/** What each verdict says on its card. */
+const VERDICT_LABEL: Record<StatRollVerdict, string> = {
+  best: "Top roll",
+  good: "Good roll",
+  fair: "Fair",
+  poor: "Low roll",
+  worst: "Floor",
+};
+
+/** How the die lights for each verdict, from the tones it already knows. */
+const VERDICT_TONE: Record<StatRollVerdict, DieTone> = {
+  best: "crit",
+  good: "win",
+  fair: null,
+  poor: "lose",
+  worst: "fumble",
+};
+
+function VerdictChip({ verdict }: { verdict: StatRollVerdict }) {
+  if (verdict === "fair") return null;
+  return (
+    <span
+      className={cn(
+        "relative shrink-0 border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.16em]",
+        verdict === "best" &&
+          "border-success bg-success/20 text-success shadow-[0_0_14px_-4px_var(--color-success)]",
+        verdict === "good" && "border-success/50 text-success",
+        verdict === "poor" && "border-amber/50 text-amber",
+        verdict === "worst" && "border-danger bg-danger/15 text-danger",
+      )}
+    >
+      {VERDICT_LABEL[verdict]}
+    </span>
+  );
+}
+
+/** Every rolled STAT's verdict for this Role. */
+function verdictsFor(
+  roleId: string,
+  stats: Partial<StatBlock>,
+): Partial<Record<StatKey, StatRollVerdict>> {
+  const out: Partial<Record<StatKey, StatRollVerdict>> = {};
+  for (const stat of STAT_ORDER) {
+    const value = stats[stat];
+    if (typeof value === "number") out[stat] = statRollVerdict(roleId, stat, value);
+  }
+  return out;
+}
+
+/**
+ * The rolls, summed up once all ten have landed: how many came up top and how
+ * many hit the floor, and — while a reroll is still unspent — a button that
+ * spends it on the worst one.
+ */
+function RollReport({
+  verdicts,
+  stats,
+  onReroll,
+}: {
+  verdicts: Partial<Record<StatKey, StatRollVerdict>>;
+  stats: Partial<StatBlock>;
+  onReroll: ((stat: StatKey) => void) | null;
+}) {
+  const rolled = STAT_ORDER.filter((s) => verdicts[s]);
+  if (rolled.length < STAT_ORDER.length) return null;
+  const top = rolled.filter((s) => verdicts[s] === "best" || verdicts[s] === "good");
+  const low = rolled.filter((s) => verdicts[s] === "worst" || verdicts[s] === "poor");
+  const rank: Record<StatRollVerdict, number> = { worst: 0, poor: 1, fair: 2, good: 3, best: 4 };
+  const weakest = [...low].sort((a, b) => rank[verdicts[a]!] - rank[verdicts[b]!])[0];
+  const headline =
+    top.length >= low.length + 3
+      ? "Hot dice. The city just dealt you a good hand."
+      : low.length >= top.length + 3
+        ? "Rough night at the table. Make it count."
+        : "A mixed hand, like most people's.";
+  return (
+    <div className="cg-say flex flex-wrap items-center gap-x-6 gap-y-3 border border-border bg-card p-4">
+      <div className="min-w-0 flex-1 space-y-2">
+        <p className="text-base font-semibold">{headline}</p>
+        <p className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-[0.16em]">
+          <span className="text-success">
+            {top.length} above the middle
+            {top.length ? `: ${top.map((s) => s.toUpperCase()).join(" ")}` : ""}
+          </span>
+          <span className="text-danger">
+            {low.length} below{low.length ? `: ${low.map((s) => s.toUpperCase()).join(" ")}` : ""}
+          </span>
+        </p>
+      </div>
+      {onReroll && weakest && (
+        <Button variant="outline" onClick={() => onReroll(weakest)}>
+          Reroll {weakest.toUpperCase()} ({stats[weakest]})
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** The printed table, for somebody who wants to check the die against it. Closed by default. */
+function TableDisclosure({ children }: { children: React.ReactNode }) {
+  return (
+    <details className="group">
+      <summary className="cursor-pointer list-none font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim hover:text-text">
+        <span className="group-open:hidden">Check the rolls against the printed table</span>
+        <span className="hidden group-open:inline">Hide the printed table</span>
+      </summary>
+      <div className="mt-3">{children}</div>
+    </details>
+  );
 }
 
 function DerivedTile({
@@ -194,10 +320,17 @@ function StatReadout({
   rows?: Partial<Record<StatKey, number>>;
   roleId: string | null;
 }) {
+  const verdicts = roleId ? verdictsFor(roleId, stats) : {};
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
       {STAT_ORDER.map((stat) => (
-        <InfoStatCard key={stat} stat={stat} value={stats[stat]} roleId={roleId}>
+        <InfoStatCard
+          key={stat}
+          stat={stat}
+          value={stats[stat]}
+          roleId={roleId}
+          verdict={verdicts[stat] ?? null}
+        >
           {rows?.[stat] !== undefined && (
             <p className="font-mono text-[10px] text-text-dim">row {rows[stat]}</p>
           )}
@@ -239,9 +372,9 @@ function StreetratBranch({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-4">
       <Notice>
-        Streetrat takes the whole row exactly as printed. STATs here cannot be rearranged, swapped,
-        or edited — that is the trade you made for a character in five minutes. The table below is
-        the same one the die reads, so you can check the row yourself.
+        One die, all ten STATs. Streetrat takes the whole row as it lands: nothing rearranged,
+        swapped or edited — that is the trade for a character in five minutes. Green is the best
+        your Role can roll, red the worst.
       </Notice>
       <RerollNote used={state.statRerollsUsed} what="the whole row" />
       <div className="flex items-center gap-4">
@@ -280,7 +413,9 @@ function StreetratBranch({ state }: { state: ChargenState }) {
         </p>
       </div>
       <StatReadout stats={state.stats} roleId={roleId} />
-      <StatTemplateTable roleId={roleId} highlightRow={state.statRolls.row} />
+      <TableDisclosure>
+        <StatTemplateTable roleId={roleId} highlightRow={state.statRolls.row} />
+      </TableDisclosure>
     </div>
   );
 }
@@ -304,6 +439,7 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
     const spends = costOf(stat).spends;
     return {
       face: result.row,
+      tone: VERDICT_TONE[statRollVerdict(roleId, stat, result.value)],
       commit: () => {
         append(`Edgerunner ${stat.toUpperCase()} column (${roleId})`, result.roll);
         const s = useChargenStore.getState();
@@ -317,6 +453,12 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
   }
 
   const unrolled = STAT_ORDER.filter((stat) => state.stats[stat] === undefined);
+  const verdicts = verdictsFor(roleId, state.stats);
+
+  /** Spend the reroll through the STAT's own die, so it tumbles like any other roll. */
+  function rerollViaDie(stat: StatKey) {
+    gridRef.current?.querySelector<HTMLButtonElement>(`button[data-stat-die="${stat}"]`)?.click();
+  }
 
   /** Fire each unrolled card's own die in sequence so they all animate. Never spends a reroll. */
   function rollAll() {
@@ -335,8 +477,9 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
   return (
     <div className="space-y-4">
       <Notice>
-        Ten separate 1d10s, each read against that STAT's own column of the same Role table. Once a
-        STAT lands it stays where it landed — no rearranging, no swapping between STATs.
+        Ten dice, one per STAT. Each lands somewhere between the worst and the best your Role can
+        roll: green is the top of that range, red the floor. Once a STAT lands it stays — no
+        rearranging, no swapping.
       </Notice>
       <RerollNote used={state.statRerollsUsed} what="one STAT" />
       <div className="flex flex-wrap items-center gap-3">
@@ -355,7 +498,13 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
       </div>
       <div ref={gridRef} className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {STAT_ORDER.map((stat) => (
-          <InfoStatCard key={stat} stat={stat} value={state.stats[stat]} roleId={roleId}>
+          <InfoStatCard
+            key={stat}
+            stat={stat}
+            value={state.stats[stat]}
+            roleId={roleId}
+            verdict={verdicts[stat] ?? null}
+          >
             <div className="flex justify-start" data-stat-die-wrap={stat}>
               <DiceRoll
                 sides={10}
@@ -369,13 +518,21 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
                       : `${stat.toUpperCase()} stands`
                 }
                 buttonProps={{ "data-stat-die": stat }}
+                tone={verdicts[stat] ? VERDICT_TONE[verdicts[stat]!] : null}
                 roll={() => rollStat(stat)}
               />
             </div>
           </InfoStatCard>
         ))}
       </div>
-      <StatTemplateTable roleId={roleId} highlightCells={state.statRolls.rows} />
+      <RollReport
+        verdicts={verdicts}
+        stats={state.stats}
+        onReroll={statRerollsLeft(state.statRerollsUsed) > 0 ? rerollViaDie : null}
+      />
+      <TableDisclosure>
+        <StatTemplateTable roleId={roleId} highlightCells={state.statRolls.rows} />
+      </TableDisclosure>
     </div>
   );
 }

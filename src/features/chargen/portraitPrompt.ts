@@ -61,6 +61,12 @@ export type PortraitFacts = {
   humanity: string | null;
   /** Where they live, as a wear-and-tear cue. */
   home: string | null;
+  /**
+   * What makes the backdrop theirs rather than their Role's: the Role
+   * Lifepath answers about where they work, the district they live in, the
+   * thing they would grab in a fire. Empty until those are answered.
+   */
+  setting: { label: string; value: string }[];
   selfDescription: string;
 };
 
@@ -72,6 +78,30 @@ const LOOK_TABLES = [
   "affectation",
   "cultural_origin",
 ];
+
+/**
+ * The Role Lifepath answers that say WHERE this person works — a Netrunner's
+ * workspace, a Solo's territory, an Exec's corp and division — read into the
+ * backdrop so two characters of the same Role are not painted in the same room.
+ * Ids from lifepath-roles.json; a table the Role does not have is skipped.
+ */
+const SETTING_TABLES: Record<string, string[]> = {
+  rockerboy: ["where_do_you_perform", "are_you_in_a_group_or_a_solo_act"],
+  solo: ["what_s_your_operational_territory", "what_kind_of_solo_are_you"],
+  netrunner: ["what_s_your_workspace_like", "what_kind_of_runner_are_you"],
+  tech: ["what_s_your_workspace_like", "what_kind_of_tech_are_you"],
+  medtech: ["what_s_your_workspace_like", "what_kind_of_medtech_are_you"],
+  media: ["how_does_your_work_reach_the_public", "what_types_of_stories_do_you_want_to_tell"],
+  exec: ["what_kind_of_corp_do_you_work_for", "what_division_do_you_work_in"],
+  lawman: ["what_is_your_position_on_the_force", "who_is_your_group_s_major_target"],
+  fixer: ["what_s_your_office_like", "what_kind_of_fixer_are_you"],
+  nomad: [
+    "is_your_pack_based_on_land_air_or_sea",
+    "if_on_land_what_do_they_do",
+    "if_in_air_what_do_they_do",
+    "if_at_sea_what_do_they_do",
+  ],
+};
 
 /** Cyberware categories a stranger on the street could actually see. */
 const VISIBLE_CYBERWARE = new Set([
@@ -159,6 +189,25 @@ export function buildPortraitFacts(state: ChargenState, roleName?: string): Port
     if (entry && label) facts.push({ label, value: displayValue(entry) });
   }
 
+  // Where they are painted: their own answers about where they work, the
+  // district they live in, and the one thing they would never leave behind.
+  const setting: { label: string; value: string }[] = [];
+  if (state.roleId) {
+    const role = readRoleLifepath(state.lifepath.roleSpecific, state.roleId);
+    for (const id of SETTING_TABLES[state.roleId] ?? []) {
+      const entry = role.entries[id];
+      const label = safe(() => getRoleLifepathTable(state.roleId!, id).label);
+      if (entry && label) setting.push({ label, value: displayValue(entry) });
+    }
+  }
+  if (state.lifestyle.location) {
+    setting.push({ label: "Their part of Night City", value: state.lifestyle.location });
+  }
+  const keepsake = general.entries["most_valued_possession"];
+  if (keepsake) {
+    setting.push({ label: "Somewhere in the scene", value: displayValue(keepsake) });
+  }
+
   // The same face at every stage of the picture, and after every reload.
   const face = faceFact(state.castPlan?.seed);
   if (face) facts.push(face);
@@ -228,6 +277,7 @@ export function buildPortraitFacts(state: ChargenState, roleName?: string): Port
     weapon,
     humanity: humanityRead(humanityLoss),
     home,
+    setting,
     selfDescription: state.selfDescription.trim(),
   };
 }
@@ -235,9 +285,9 @@ export function buildPortraitFacts(state: ChargenState, roleName?: string): Port
 const HOUSE_LOOK = [
   "Painterly cyberpunk character portrait, rendered as digital oil painting with visible brush texture and matte-painting finish, not photorealism, not 3D render, not anime cel shading.",
   "Single subject, chest-up, facing the camera, in a tall 2:3 frame. It will be cropped to a square of the top two-thirds, so compose for that: the eyes sit on the upper-third line, there is a hand's width of clear headroom above the hair, and the shoulders and collar are fully in frame by the two-thirds line. Nothing important below it.",
-  "Neon-noir palette: deep navy and cobalt shadow, electric cyan, violet, magenta and hot pink light, with one warm sunset-orange or rose accent.",
-  "Cinematic lighting: strong coloured rim light along the jaw and shoulders, soft neon bloom, screen and signage glow, deep shadow, wet chrome and reflective metal catching coloured light.",
-  "Shallow backdrop directly behind the shoulders, dissolving fast into volumetric haze and fog. The setting is atmosphere, never the subject.",
+  "Neon-noir palette keyed to the setting: deep shadow with the light sources the place actually has — a surgical lamp, a forge, stage lights, headlights, a boardroom's cold glass — rather than the same blue and magenta every time.",
+  "Cinematic lighting: strong coloured rim light along the jaw and shoulders, soft bloom from the setting's own lights, deep shadow, worn metal catching the light.",
+  "The backdrop is the place this person belongs, and it must be recognisable: real, specific objects and light sources behind the shoulders, in soft focus but legible at a glance, so the picture says who they are. Never a generic blurred skyline or empty neon bokeh.",
   "Grounded and lived-in: aging metal, patched infrastructure, grime, worn synthetic fabrics, believable urban wear. Retrofitted onto an old city, not freshly manufactured, not glossy utopian sci-fi.",
   "Spirit of late-1980s and 1990s cyberpunk atmosphere and Blade Runner neon noir, painted as high-end cinematic concept art.",
   "No text, no logos, no watermarks, no captions, no second person, no collage, no weapons aimed at the camera, no wide establishing shot.",
@@ -276,7 +326,13 @@ const DEFAULT_BACKDROP =
 export function buildPortraitPrompt(facts: PortraitFacts): string {
   const lines: string[] = [HOUSE_LOOK, ""];
   const backdrop = (facts.role && ROLE_BACKDROPS[facts.role]) || DEFAULT_BACKDROP;
-  lines.push(`Backdrop: ${backdrop}. Keep it shallow, hazy and out of focus behind the subject.`);
+  lines.push(
+    `Backdrop: ${backdrop}. Soft focus behind the subject, but the props and light sources stay recognisable.`,
+  );
+  if (facts.setting.length) {
+    lines.push("Make the backdrop specifically theirs, from their own file:");
+    for (const s of facts.setting) lines.push(`- ${s.label}: ${s.value}`);
+  }
   lines.push("");
   lines.push("Subject:");
   if (facts.role) lines.push(`- Occupation on The Street: ${facts.role}`);
@@ -298,7 +354,7 @@ export function buildPortraitPrompt(facts: PortraitFacts): string {
   if (facts.weapon) {
     lines.push(`- Carries a ${facts.weapon}, holstered or slung, never pointed at the camera`);
   }
-  if (facts.home) lines.push(`- Lives: ${facts.home} — let it show in the wear, not the backdrop`);
+  if (facts.home) lines.push(`- Lives: ${facts.home} — let it show in the wear`);
   if (facts.selfDescription) lines.push(`- Reads at a glance as: ${facts.selfDescription}`);
   lines.push("");
   lines.push(

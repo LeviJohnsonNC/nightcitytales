@@ -17,6 +17,7 @@ const facts = {
   weapon: null,
   humanity: null,
   home: null,
+  setting: [] as { label: string; value: string }[],
   selfDescription: "",
 };
 
@@ -116,5 +117,54 @@ describe("portrait prompt", () => {
     expect(prompt).toContain("upper-third line");
     expect(prompt).toContain("2:3");
     expect(PORTRAIT_SIZE.height / PORTRAIT_SIZE.width).toBe(1.5);
+  });
+
+  it("paints the backdrop from the character's own file", () => {
+    const prompt = buildPortraitPrompt({
+      ...facts,
+      setting: [{ label: "What's Your Workspace Like?", value: "A messy nest of cables" }],
+    });
+    expect(prompt).toContain("specifically theirs");
+    expect(prompt).toContain("What's Your Workspace Like?: A messy nest of cables");
+    expect(prompt).not.toContain("never the subject");
+  });
+
+  it("reads the setting from the Role Lifepath, the district and the keepsake", () => {
+    const built = buildPortraitFacts({
+      ...baseState,
+      roleId: "exec",
+      lifestyle: { location: "Watson" },
+      lifepath: {
+        general: {
+          entries: {
+            most_valued_possession: {
+              tableId: "most_valued_possession",
+              roll: 1,
+              value: "A weapon",
+              method: "chosen",
+            },
+          },
+        },
+        roleSpecific: {
+          roleId: "exec",
+          entries: {
+            what_kind_of_corp_do_you_work_for: {
+              tableId: "what_kind_of_corp_do_you_work_for",
+              roll: 1,
+              value: "Media and communications",
+              method: "chosen",
+            },
+          },
+        },
+      },
+    } as unknown as ChargenState);
+    const values = built.setting.map((s) => s.value);
+    expect(values).toContain("Watson");
+    expect(values).toContain("Media and communications");
+    expect(values).toContain("A weapon");
+  });
+
+  it("has no setting until the file says something about where they are", () => {
+    expect(buildPortraitFacts(baseState).setting).toEqual([]);
   });
 });

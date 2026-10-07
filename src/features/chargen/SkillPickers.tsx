@@ -52,9 +52,9 @@ function Picker({
           type="button"
           aria-label={label}
           aria-expanded={open}
-          className="flex h-9 w-56 items-center justify-between gap-2 border border-hairline bg-surface-raised px-3 text-left text-sm text-text transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+          className="flex min-h-9 w-56 items-center justify-between gap-2 border border-hairline bg-surface-raised px-3 text-left text-sm text-text transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
         >
-          <span className={cn("truncate", !current && "text-text-dim")}>
+          <span className={cn("py-1.5 leading-snug", !current && "text-text-dim")}>
             {current?.label ?? placeholder}
           </span>
           <ChevronDown aria-hidden className="size-4 shrink-0 text-text-dim" />

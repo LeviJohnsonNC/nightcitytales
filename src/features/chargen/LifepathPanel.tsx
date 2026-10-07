@@ -478,11 +478,11 @@ function CollapsibleSection({
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
-        <span className="flex min-w-0 items-baseline gap-3">
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5">
           <span className="font-display text-sm font-bold uppercase tracking-[0.14em] text-text">
             {title}
           </span>
-          {note && <span className="truncate text-xs text-text-dim">{note}</span>}
+          {note && <span className="text-pretty text-xs text-text-dim">{note}</span>}
         </span>
         <span className="flex shrink-0 items-center gap-2">
           {count !== undefined && (

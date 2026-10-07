@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { FitText } from "./FitText";
+import { LifepathValue } from "./LifepathValue";
 import {
   chooseLifepathEntry,
   getLifepathTable,
@@ -47,33 +47,20 @@ export function LifepathTableCard({
   return (
     <article
       className={cn(
-        "min-w-0 border border-hairline bg-surface px-3 py-2.5 transition-colors duration-200",
+        "flex min-w-0 flex-col border border-hairline bg-surface px-3 py-2.5 transition-colors duration-200",
         entry && "border-ember/40 bg-surface-raised",
       )}
     >
-      <div className="flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <FitText
-              as="h3"
-              min={0.65}
-              className="min-w-0 flex-1 font-display text-xs font-bold uppercase tracking-[0.12em] text-text"
-            >
-              {titleOverride ?? table.label}
-            </FitText>
-            {entry && entry.method !== "rolled" && (
-              <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-text-dim num">
-                chosen
-              </span>
-            )}
-          </div>
-          <FitText
-            as="p"
-            min={0.7}
-            className={cn("mt-0.5 text-sm", value ? "text-text" : "text-text-dim")}
-          >
-            {value ?? "Not set"}
-          </FitText>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1 pt-1">
+          <h3 className="text-balance font-display text-xs font-bold uppercase leading-snug tracking-[0.12em] text-text">
+            {titleOverride ?? table.label}
+          </h3>
+          {entry && entry.method !== "rolled" && (
+            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-text-dim num">
+              chosen
+            </span>
+          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
@@ -117,6 +104,8 @@ export function LifepathTableCard({
           )}
         </div>
       </div>
+
+      <LifepathValue value={value} />
 
       {entry && editing && (
         <div className="mt-2">

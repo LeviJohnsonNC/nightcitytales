@@ -123,18 +123,18 @@ export function CharacterFile({
 
       <div className="mt-5 w-full space-y-2 font-mono">
         {fixer && (
-          <p className="truncate text-[10px] uppercase tracking-[0.22em] text-text-dim">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-text-dim">
             Kept by {fixerShortName(fixer)}
           </p>
         )}
         <div>
           <p
             key={handle}
-            className="cg-glitch truncate font-display text-lg font-bold uppercase tracking-[0.08em]"
+            className="cg-glitch break-words font-display text-lg font-bold uppercase leading-tight tracking-[0.08em]"
           >
             {handle ? `"${handle}"` : "Unknown"}
           </p>
-          <p className="truncate text-xs text-text-muted">
+          <p className="break-words text-xs text-text-muted">
             {[name, role].filter(Boolean).join(" · ") || "No name on file"}
           </p>
         </div>

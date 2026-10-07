@@ -155,7 +155,7 @@ function PickCard({
           {title}
         </h3>
         {meta ? (
-          <p className="truncate font-mono text-[10px] uppercase tracking-[0.15em] text-text-dim">
+          <p className="font-mono text-[10px] uppercase leading-snug tracking-[0.15em] text-text-dim">
             {meta}
           </p>
         ) : null}
@@ -343,7 +343,7 @@ function HomeSpotlight({
             <ul className="mt-2 grid gap-1 sm:grid-cols-3">
               {preview.travel.map((leg) => (
                 <li key={leg.to} className="flex items-baseline justify-between gap-2 text-sm">
-                  <span className="truncate text-text">{leg.name}</span>
+                  <span className="min-w-0 text-pretty text-text">{leg.name}</span>
                   <span className="shrink-0 font-mono tabular-nums text-text-dim">
                     {leg.minutes}m
                   </span>

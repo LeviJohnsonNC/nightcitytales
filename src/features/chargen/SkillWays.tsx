@@ -10,10 +10,20 @@ import {
   type SkillEntry,
 } from "@/engine";
 import { cn } from "@/lib/utils";
+import { uploadedAsset } from "./art";
 import { SKILL_TASKS, taskOdds } from "./skillTasks";
 import { useChargenStore, type ChargenState } from "./store";
 
 type Method = "edgerunner" | "complete_package";
+
+/**
+ * The picture on a way-to-work card, by file name: `way-<role>-<preset>`, e.g.
+ * `way-exec-shark.webp` in src/assets/creator. A card with no file keeps its
+ * plain look. The list of names and what each shows is in docs/art-style.md.
+ */
+export function wayArtName(roleId: string, presetId: string): string {
+  return `way-${roleId}-${presetId.replace(/_/g, "-")}`;
+}
 
 /** How many things the "what you can do" list shows. Enough to see a shape. */
 const SHOWN = 6;
@@ -68,6 +78,12 @@ export function WaysToWork({ state, method }: { state: ChargenState; method: Met
       <div className="grid gap-3 lg:grid-cols-3">
         {presets.map((preset) => {
           const selected = current?.id === preset.id;
+          const art = uploadedAsset(wayArtName(roleId, preset.id));
+          const badge = selected && (
+            <span className="bg-ember px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-background">
+              You
+            </span>
+          );
           return (
             <button
               key={preset.id}
@@ -79,22 +95,43 @@ export function WaysToWork({ state, method }: { state: ChargenState; method: Met
                 })
               }
               className={cn(
-                "flex flex-col gap-2 border p-4 text-left transition-colors",
+                "group flex flex-col gap-2 overflow-hidden border text-left transition-[border-color,background-color,box-shadow] duration-300",
+                art ? "pb-4" : "p-4",
                 selected
-                  ? "border-ember bg-ember/10"
+                  ? "border-ember bg-ember/10 shadow-[0_0_30px_-12px_var(--color-ember)]"
                   : "border-hairline bg-surface hover:border-accent/60",
               )}
             >
-              <span className="flex items-center justify-between gap-2">
-                <span className="text-base font-bold tracking-tight">{preset.name}</span>
-                {selected && (
-                  <span className="bg-ember px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-background">
-                    You
+              {art ? (
+                <span className="relative block aspect-[16/9] overflow-hidden">
+                  <img
+                    src={art}
+                    alt=""
+                    loading="lazy"
+                    className={cn(
+                      "h-full w-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105",
+                      !selected &&
+                        "brightness-[0.8] saturate-[0.85] group-hover:brightness-100 group-hover:saturate-100",
+                    )}
+                  />
+                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent" />
+                  <span className="absolute inset-x-4 bottom-2 flex items-end justify-between gap-2">
+                    <span className="text-xl font-bold tracking-tight [text-shadow:0_1px_6px_rgb(0_0_0/0.8)]">
+                      {preset.name}
+                    </span>
+                    {badge}
                   </span>
-                )}
+                </span>
+              ) : (
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-base font-bold tracking-tight">{preset.name}</span>
+                  {badge}
+                </span>
+              )}
+              <span className={cn("text-sm leading-relaxed text-text-muted", art && "px-4")}>
+                {preset.pitch}
               </span>
-              <span className="text-sm leading-relaxed text-text-muted">{preset.pitch}</span>
-              <span className="mt-auto flex flex-wrap gap-1.5 pt-1">
+              <span className={cn("mt-auto flex flex-wrap gap-1.5 pt-1", art && "px-4")}>
                 {preset.focus.map((name) => (
                   <span
                     key={name}

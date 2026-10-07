@@ -198,3 +198,102 @@
     transform: none;
   }
 }
+
+/*
+ * The Role Ability, opened: the art drifts, the Ranks you start with light up
+ * one after another, and the ladder above them arrives a rung at a time.
+ */
+.cg-ken-burns {
+  animation: cg-ken-burns 14s ease-out both;
+  transform-origin: 50% 30%;
+}
+
+@keyframes cg-ken-burns {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.cg-rank-cell {
+  animation: cg-rank-cell 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  transform-origin: left center;
+}
+
+@keyframes cg-rank-cell {
+  from {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cg-tier {
+  animation: cg-say 650ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/*
+ * A STAT landing. The top of the Role's range flares green, the floor glitches
+ * red; the ones between get a smaller version of the same. Outline and shadow
+ * only, so nothing in the grid moves but the card that rolled.
+ */
+.cg-roll-best,
+.cg-roll-good,
+.cg-roll-poor,
+.cg-roll-worst {
+  --roll-color: var(--color-success, #3f6);
+  animation: cg-roll-flare 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cg-roll-good {
+  animation-duration: 0.9s;
+}
+
+.cg-roll-poor,
+.cg-roll-worst {
+  --roll-color: var(--color-danger, #f44);
+}
+
+.cg-roll-poor {
+  animation-duration: 0.9s;
+}
+
+.cg-roll-worst {
+  animation:
+    cg-roll-flare 1.4s cubic-bezier(0.22, 1, 0.36, 1),
+    cg-roll-shake 420ms steps(2, end);
+}
+
+@keyframes cg-roll-flare {
+  0% {
+    box-shadow:
+      0 0 0 2px var(--roll-color),
+      0 0 40px 4px color-mix(in oklab, var(--roll-color) 70%, transparent);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 transparent,
+      0 0 0 0 transparent;
+  }
+}
+
+@keyframes cg-roll-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}

@@ -53,7 +53,7 @@ export function StepRail({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="truncate text-sm font-semibold tracking-tight">
+                    <span className="text-sm font-semibold leading-snug tracking-tight">
                       {step.title}
                     </span>
                     <span
@@ -61,7 +61,7 @@ export function StepRail({
                       className={cn("size-1.5 shrink-0 rounded-full", STATUS_DOT[status])}
                     />
                   </span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
+                  <span className="block text-pretty text-[11px] leading-snug text-muted-foreground">
                     {status === "has errors" ? "Something here needs an answer" : step.blurb}
                   </span>
                 </span>
