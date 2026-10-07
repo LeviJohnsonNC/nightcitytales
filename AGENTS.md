@@ -1004,7 +1004,7 @@ inventory.
 
 ### Intersection revision 7 and the storefront pack
 
-Non-reference intersections compose as recipe **v7**: v6 plus one saved `lamp`
+Revision **v7** introduced one saved `lamp`
 (cluster `shop_lamp`) beside the corner shop, placed by `addShopLamp` from the
 final geometry so light has a world position to come from. Seeds 1–3 stay v5 and
 snapshots already saved stay v6; `shopLamp.test.ts` holds that nothing else in a
@@ -1342,3 +1342,14 @@ Keep contact shadows on that deck and clipped to the roof. This finish belongs t
 the building sprite and disappears with its roof on reveal; never add it to retained
 wall pieces. Internal drains avoid existing equipment. No recipe or saved geometry
 changes are involved. See `docs/checkpoint-residential-roofs.md`.
+
+### Stepped commercial row (recipe v8)
+
+New non-reference intersections now use v8: the corner shop is 7.2 m, its narrow
+attached neighbour 10.2 m, and the rear shop row 7.8 m. No ground plan changes.
+Seeds 1–3 stay v5; saved v6/v7 scenes retain their stored heights. Never regenerate
+a snapshot to obtain the taller row. `commercialUpper.ts` draws upper rooms,
+piers and courses from any saved tall shop envelope with existing residential
+window artwork; full and revealed elevations share its clipped painter. Upper
+windows add no emission or light sources. No new walkable floors are implied.
+See `docs/checkpoint-urban-frontage.md` for browser evidence and limits.

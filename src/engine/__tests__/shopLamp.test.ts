@@ -63,7 +63,18 @@ const geometryHash = (seed: number, withoutLamp: boolean) => {
   const clusters = withoutLamp ? env.clusters.filter((c) => c.id !== "shop_lamp") : env.clusters;
   const geometry = {
     zones: env.zones,
-    structures: env.structures,
+    structures: env.structures.map((s) => ({
+      ...s,
+      height:
+        env.recipeVersion >= 8
+          ? ((
+              { building_0: 4, building_0_middle: 3.5, building_0_rear: 4 } as Record<
+                string,
+                number
+              >
+            )[s.id] ?? s.height)
+          : s.height,
+    })),
     entrances: env.entrances,
     props: env.props,
     cover: arena.cover,
@@ -91,17 +102,17 @@ describe("recipe revision 7: the shop lamp", () => {
     }
   });
 
-  it("changes nothing but the lamp for every other pinned seed", () => {
+  it("preserves the pinned ground layout, accounting for the v8 commercial heights", () => {
     for (const seed of Object.keys(BEFORE_REVISION_7).map(Number))
       expect(geometryHash(seed, true), `seed ${seed}`).toBe(BEFORE_REVISION_7[seed]);
   });
 
-  it("is v7 with one lamp beside the shop on every other intersection", () => {
+  it("is v8 with one lamp beside the shop on every other intersection", () => {
     for (const seed of SEEDS.filter((s) => !REFERENCE.includes(s))) {
       const arena = composeScene("intersection", seed).layout.arena;
       const env = arena.environment!;
-      expect(env.recipeVersion).toBe(7);
-      expect(arena.key).toContain(":v7:");
+      expect(env.recipeVersion).toBe(8);
+      expect(arena.key).toContain(":v8:");
       const lamps = env.dressing.filter((d) => d.clusterId === "shop_lamp");
       expect(lamps, `seed ${seed}`).toHaveLength(1);
       const lamp = lamps[0]!;

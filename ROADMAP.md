@@ -1857,7 +1857,7 @@ addresses the large uniform ground field: clearer asphalt/paving tones, sparse
 road repairs and fractures, and chipped paving, below road paint and tactical
 marks. Normal-play comparison, lights-off, reveal, alternate layouts, destroyed
 cover and frozen review restore checked in connected Chrome. See
-`docs/checkpoint-street-surface.md`; visual acceptance of this pass is pending.
+`docs/checkpoint-street-surface.md`; accepted and merged by Levi as PR #309.
 
 The next highest-impact art work is the remaining commercial frontage
 composition: substantial bays/recesses, distinct materials and coherent signage.
@@ -1865,3 +1865,14 @@ Taller, more varied silhouettes and less roof-dominated composition remain a
 separate design gap that surface detail cannot solve; propose those deliberately
 with frozen-layout compatibility. Further tiny roof details and stronger glow
 are lower priority. Reflections stay off by default.
+
+
+### Stepped commercial frontage (2026-10-07)
+
+Recipe v8 raises the newly generated commercial row to two/three storeys, with
+warm plaster and cooler render, room windows, projecting sills, masonry piers and
+floor courses. Existing saved geometry is read unchanged. This closes part of the
+low-strip-mall silhouette gap; it does not claim reference parity. Seed 7 exposes
+the tradeoff: taller foreground masses fade more to keep actors readable. Seeds
+0/8 show the stronger facade composition at normal play scale. See
+`docs/checkpoint-urban-frontage.md`; visual acceptance pending.

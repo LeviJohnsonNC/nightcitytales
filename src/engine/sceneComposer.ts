@@ -352,9 +352,9 @@ export function composeScene(
   const selection = compositionSelection(kind, seed, requirements);
   const variant = selection?.family ?? (seed + 2) % 3;
   const refined = !(seed >= 1 && seed <= 3);
-  // Revision 7 adds the saved shop lamp. Seeds 1-3 keep their accepted v5 geometry,
-  // and every v6 snapshot already saved keeps loading as it was.
-  const revision = refined ? (kind === "intersection" ? 7 : 6) : 5;
+  // Revision 8 raises the commercial row into stepped mixed-use buildings.
+  // Seeds 1-3 and all previously saved snapshots keep their original geometry.
+  const revision = refined ? (kind === "intersection" ? 8 : 6) : 5;
   const plan = recipe(kind, variant);
   if (refined && kind === "alley" && variant === 1) {
     // Two opposed service courts turn a pocket shift into a cross-yard organization.
@@ -574,7 +574,18 @@ export function composeScene(
       e.position = swapPoint(e.position);
     });
   }
-  if (revision === 7) addShopLamp(arena, actors);
+  if (revision >= 7) addShopLamp(arena, actors);
+  if (revision >= 8 && kind === "intersection") {
+    // Heights alone change: footprints, doors, cover and circulation remain saved
+    // ground truth. Upper floors are inaccessible, like the existing housing block.
+    const heights: Record<string, number> = {
+      building_0: 7.2,
+      building_0_middle: 10.2,
+      building_0_rear: 7.8,
+    };
+    for (const structure of env.structures)
+      if (heights[structure.id] !== undefined) structure.height = heights[structure.id]!;
+  }
   const reachable = reachableTiles({
     arena,
     cover: {},

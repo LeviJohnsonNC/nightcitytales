@@ -210,13 +210,13 @@ describe("the architectural pilot: the neighbours' own materials", () => {
     return used;
   };
 
-  it("lays ballast and render on a neighbour, and never on the shop", () => {
+  it("keeps ballast on neighbours, with render on the new upper shop storey", () => {
     const neighbour = keysLaid("building_0_middle");
     expect(neighbour.has("roof-ballast")).toBe(true);
     expect(neighbour.has("painted-render")).toBe(true);
     expect(neighbour.has("roof-membrane")).toBe(false);
     const shop = keysLaid("building_0");
     expect(shop.has("roof-ballast")).toBe(false);
-    expect(shop.has("painted-render")).toBe(false);
+    expect(shop.has("painted-render")).toBe(true);
   });
 });

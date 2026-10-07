@@ -26,7 +26,9 @@ describe("storefront art pack", () => {
     expect(awning.span).toBe(STOREFRONT_LEVELS.awningSpan);
     expect(awning.projection).toBe(STOREFRONT_LEVELS.awningProjection);
     expect(awning.height).toBe(STOREFRONT_LEVELS.awningWall);
-    expect(shop.height).toBe(STOREFRONT_LEVELS.parapetTop);
+    // The original shop coping is now the trading-floor cornice below new upper rooms.
+    expect(STOREFRONT_LEVELS.parapetTop).toBe(4);
+    expect(shop.height).toBe(7.2);
   });
 
   it("draws the sign in code: four square glyph cells that fit the panel", () => {
