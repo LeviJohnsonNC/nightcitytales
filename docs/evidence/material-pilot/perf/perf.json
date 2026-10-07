@@ -8,16 +8,12 @@
     "switches": [
       {
         "damage": "mixed",
-        "renderMs": [
-          136
-        ],
+        "renderMs": [136],
         "longestFrameMs": 883
       },
       {
         "damage": "destroyed",
-        "renderMs": [
-          131
-        ],
+        "renderMs": [131],
         "longestFrameMs": 800
       },
       {
@@ -70,16 +66,12 @@
     "switches": [
       {
         "damage": "mixed",
-        "renderMs": [
-          58
-        ],
+        "renderMs": [58],
         "longestFrameMs": 683
       },
       {
         "damage": "destroyed",
-        "renderMs": [
-          15
-        ],
+        "renderMs": [15],
         "longestFrameMs": 633
       },
       {
