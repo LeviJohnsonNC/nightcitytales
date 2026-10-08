@@ -48,6 +48,8 @@ it.each(["intersection", "office"] as const)(
   "preserves %s routes, groups, attachments and exact saves across 64 seeds",
   (kind) => {
     const structural = new Set<string>(),
+      legacyStructural = new Set<string>(),
+      currentStructural = new Set<string>(),
       furnished = new Set<string>();
     for (const seed of [...Array.from({ length: 64 }, (_, i) => i), 0x7fffffff, 0xffffffff]) {
       const scene = composeScene(kind, seed),
@@ -74,6 +76,7 @@ it.each(["intersection", "office"] as const)(
         .sort();
       const signature = JSON.stringify([structures, rooms]);
       structural.add(signature);
+      (env.recipeVersion === 5 ? legacyStructural : currentStructural).add(signature);
       // Only functional work groups contribute to Office furnishing diversity, not detail scatter.
       const work = env.props
         .filter((p) => kind === "intersection" || p.clusterId.startsWith("work_"))
@@ -141,7 +144,13 @@ it.each(["intersection", "office"] as const)(
         for (const id of ["broth_cart", "housing_entry", "utility_waiting", "deliveries"])
           expect(env.clusters.some((c) => c.id === id)).toBe(true);
     }
-    expect(structural.size).toBe(kind === "office" ? 3 : 6);
+    if (kind === "intersection") {
+      // Reference seeds retain three v5 shapes; v9 has six current compositions.
+      // Count separately so preserving old saves is not mistaken for new variety.
+      expect(legacyStructural.size).toBe(3);
+      expect(currentStructural.size).toBe(6);
+      expect(structural.size).toBe(9);
+    } else expect(structural.size).toBe(3);
     expect(furnished.size).toBeGreaterThanOrEqual(6);
   },
 );
