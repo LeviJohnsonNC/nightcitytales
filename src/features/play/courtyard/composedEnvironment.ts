@@ -482,9 +482,15 @@ export function paintComposedGround(
   for (const z of env.zones.filter((z) => z.kind === "road")) {
     const vertical = z.axis === "y",
       length = vertical ? z.rect.height : z.rect.width;
+    // The compact prototype parks on one curb: centre paint on its saved
+    // travel reservation, not the full asphalt including parked cars.
+    const travel =
+      env.recipeVersion === 11 && z.id === "street"
+        ? env.zones.find((o) => o.id === "travel-lane")?.rect
+        : undefined;
     for (let t = 0; t < length; t += 3) {
       const p = {
-        x: z.rect.x + (vertical ? z.rect.width / 2 : t),
+        x: travel ? travel.x + travel.width / 2 : z.rect.x + (vertical ? z.rect.width / 2 : t),
         y: z.rect.y + (vertical ? t : z.rect.height / 2),
       };
       if (

@@ -1,3 +1,5 @@
+import v10 from "./fixtures/intersection-v10.json";
+import type { AuthoredScene } from "../authoredScene";
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { composeScene } from "../sceneComposer";
@@ -54,7 +56,9 @@ const BEFORE_REVISION_7: Record<number, string> = {
 };
 
 const geometryHash = (seed: number, withoutLamp: boolean) => {
-  const scene = composeScene("intersection", seed);
+  // Seed 8 is the v11 geometry prototype; pin its actual v10 save here.
+  const scene =
+    seed === 8 ? (structuredClone(v10) as AuthoredScene) : composeScene("intersection", seed);
   const arena = scene.layout.arena;
   const env = arena.environment!;
   // V10 adds independently tested counters and browsing anchors. Remove only
@@ -129,12 +133,12 @@ describe("recipe revision 7: the shop lamp", () => {
       expect(geometryHash(seed, true), `seed ${seed}`).toBe(BEFORE_REVISION_7[seed]);
   });
 
-  it("is v10 with one lamp beside the shop on every other intersection", () => {
+  it("keeps one lamp beside the shop in current recipes", () => {
     for (const seed of SEEDS.filter((s) => !REFERENCE.includes(s))) {
       const arena = composeScene("intersection", seed).layout.arena;
       const env = arena.environment!;
-      expect(env.recipeVersion).toBe(10);
-      expect(arena.key).toContain(":v10:");
+      expect(env.recipeVersion).toBe(seed === 8 ? 11 : 10);
+      expect(arena.key).toContain(seed === 8 ? ":v11:" : ":v10:");
       const lamps = env.dressing.filter((d) => d.clusterId === "shop_lamp");
       expect(lamps, `seed ${seed}`).toHaveLength(1);
       const lamp = lamps[0]!;

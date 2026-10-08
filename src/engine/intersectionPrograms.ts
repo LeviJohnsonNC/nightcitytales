@@ -3,6 +3,63 @@ import type { SceneActor } from "./authoredScene";
 import type { SceneEnvironment } from "./sceneEnvironment";
 import { placeSceneClusters } from "./sceneClusters";
 
+/** Recipe 11 proof, seed 8 only: remove two empty metres from each street's
+ * centre, translating whole frontages rather than scaling buildings or props.
+ * Consolidate parking on the east curb to retain a four-metre vehicle lane.
+ * This edits a newly composed arena only; snapshot readers never call it. */
+export function compactIntersectionPrototype(arena: Arena, actors: SceneActor[]) {
+  const env = arena.environment!;
+  const junction = env.zones.find((z) => z.id === "junction")!;
+  if (junction.rect.width === 6) return;
+  if (env.seed !== 8 || junction.rect.width !== 8 || junction.rect.height !== 6)
+    throw new Error("Compact intersection prototype requires the seed-8 street plan.");
+  const cut = (v: number, start: number) => (v <= start ? v : v >= start + 2 ? v - 2 : start);
+  const point = (p: Point): Point => ({ x: cut(p.x, 14), y: cut(p.y, 16) });
+  const rect = (r: Rect): Rect => {
+    const a = point(r),
+      b = point({ x: r.x + r.width, y: r.y + r.height });
+    return { ...a, width: b.x - a.x, height: b.y - a.y };
+  };
+  env.zones.forEach((z) => {
+    z.rect = rect(z.rect);
+  });
+  env.structures.forEach((s) => {
+    s.rect = rect(s.rect);
+  });
+  arena.cover!.forEach((c) => {
+    c.rect = rect(c.rect);
+  });
+  env.dressing.forEach((d) => {
+    d.position = point(d.position);
+  });
+  env.entrances!.forEach((e) => {
+    e.position = point(e.position);
+  });
+  actors.forEach((a) => {
+    a.position = point(a.position);
+  });
+  arena.playerStart = point(arena.playerStart);
+  arena.hostileSlots = arena.hostileSlots.map(point);
+
+  for (const [id, dx, dy] of [
+    ["curb_west", 4, 0],
+    ["curb_south", 4, 4],
+  ] as const) {
+    for (const prop of env.props.filter((p) => p.clusterId === id)) {
+      const piece = arena.cover!.find((c) => c.id === prop.coverId)!;
+      piece.rect.x += dx;
+      piece.rect.y += dy;
+    }
+    for (const d of env.dressing.filter((d) => d.clusterId === id)) {
+      d.position.x += dx;
+      d.position.y += dy;
+    }
+  }
+  const lane = env.zones.find((z) => z.id === "travel-lane")!;
+  lane.rect.x = 12;
+  lane.rect.width = 4;
+}
+
 /** Saved street-level market rows, placed through the same collision and access
  * checks as the original vendor. Existing scenes are never regenerated. */
 export function addPavementMarkets(arena: Arena, actors: readonly SceneActor[]) {
