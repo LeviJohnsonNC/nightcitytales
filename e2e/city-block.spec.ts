@@ -110,15 +110,14 @@ for (const seed of [8, 7, 0])
       await page.waitForTimeout(800);
       await page.locator("canvas").screenshot({ path: `${out}/seed8-restored.png` });
     }
-    await page
-      .getByRole("checkbox", { name: "Show characters / targeting", exact: true })
-      .uncheck();
-    await page
-      .getByRole("checkbox", { name: "Reveal activity behind buildings", exact: true })
-      .check();
-    await expect(page.getByText("Loading scenery…", { exact: true })).toBeHidden({
-      timeout: 30_000,
+    // Reveal on the existing combat board. Switching actors off mounts a second
+    // renderer, rebuilding every atlas and surface and changing camera framing.
+    const reveal = page.getByRole("button", {
+      name: "Reveal activity behind buildings",
+      exact: true,
     });
+    await reveal.click();
+    await expect(reveal).toHaveAttribute("aria-pressed", "true");
     await page.waitForTimeout(1500);
     await page.locator("canvas").screenshot({ path: `${out}/seed${seed}-reveal.png` });
     await writeFile(
