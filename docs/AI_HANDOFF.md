@@ -1,47 +1,76 @@
 # Night City Tales — resume here
 
-Updated: 2026-10-08. Active milestone: night-market corner, after merged #321.
+Updated: 2026-10-08. Active vendor-corner follow-up after merged #322.
 
-## Baseline and evidence
+## Current result
 
-- Main/PR #321 merge: `0f1f739ecc91c376267e36804806637f349d1d23`.
-- Lovable get_project verified that exact latest_commit_sha for project
-  `2cad9dff-eecd-46d8-8b1f-749f46c6f3c6`.
-- Verified preview: https://id-preview--2cad9dff-eecd-46d8-8b1f-749f46c6f3c6.lovable.app
-- Preview seed 8 inspected with actors/night/reflections. New drain/manhole details
-  are present; the public published site used in the earlier report was stale.
-- Prior public-site screenshots are not evidence of the new corner implementation.
-- #321 CI run 37818092825 passed 3/3 seeds on both revisions. Its archive download
-  was policy-blocked; do not retry the same blocked route or bypass the restriction.
+- PR #322 (merged, verified through GitHub): https://github.com/LeviJohnsonNC/nightcitytales/pull/322
+- Remote branch: codex/night-market-corner, base main 0f1f739e (merged #321).
+- Tested head: d5134c924bb14f5fba35e12b252389f6924571d8.
+- Full CI run 37824362745 PASSED (lint, format, types, tests, migration replay).
+- Visual run 37824363018 PASSED 3/3 seeds on BOTH revisions.
+  After job 113473231175: 4.4m. Before job 113473231569: 3.6m.
+- Before archive: https://github.com/LeviJohnsonNC/nightcitytales/actions/runs/37824363018/artifacts/11571445097
+- After archive: https://github.com/LeviJohnsonNC/nightcitytales/actions/runs/37824363018/artifacts/11569854981
+- All six seed8 states captured, including damage, restoration and reveal.
+- User-provided ZIPs match both artifact SHA-256 digests; all 22 PNGs inspected.
+- No new blocking visual regression identified. Lighting improvement is modest;
+  display detail is largely hidden behind the awning at play zoom.
+- Accept as an incremental lighting/harness change, NOT the larger visual goal.
+- Existing translucent cart and floating Reveal markers remain in both revisions.
+- Detailed findings recorded in PR #322. Levi already merged the reviewed head; no production publish performed here.
 
-## Work in progress
+## Implementation
 
-- Remote branch: `codex/night-market-corner`, based on main above.
-- Local checkout: `city-block-recovery`, reconstructed history. NEVER push its
-  history. Publish only selected files through the GitHub connector.
-- First edit batch published at `301952cf` on the remote task branch: shopFinish.ts, storefront.ts and nightLighting.ts.
-- Shop windows gain recessed stock, shelf planes, fabric valances and an inset
-  broth menu before glass and recess shadows, inside existing opening/cutaway clips.
-- Investigation corrected the initial sign assumption: seeds 0–19 have NO vendor
-  dressing sign; the composer omits it because the anchor overlaps reserved space.
-  Abandoned freestanding-sign edits and their tests were reverted before publication.
-- No recipe, saved geometry, cover, actor fade or per-frame changes.
-  Existing window emission lights the display; no unrelated cyan fixtures retinted.
-- Shop lamp radius 5→4.2m and intensity .9→.75 reduce the broad facade/pavement
-  wash together. This is provisional tuning until matched screenshots are inspected.
-- Typecheck, targeted ESLint and 14 lighting/fixture tests passed locally.
-- Implementation is NOT visually accepted. Run typecheck, targeted tests and CI;
-  inspect matched seed8 actors-on images before calling the corner complete.
+- shopFinish.ts/storefront.ts: recessed stock, shelves, short fabric valances and
+  inset broth menu, inside existing glazing/cutaway clips before glass/shadows.
+- nightLighting.ts: shop lamp radius 5→4.2m, intensity .9→.75. Existing window and
+  entrance emission retained. No recipe, saved geometry, cover or actor-fade edits.
+- Initial freestanding vendor-sign idea discarded: saved seeds 0–19 omit that sign
+  because its anchor overlaps reserved space. Those edits/tests were reverted.
+- e2e/city-block.spec.ts: seed8 budget 120s for six captures plus save/load/damage;
+  other seeds 90s; suite cap 300s; retries zero. Named steps and capture timings.
+- First run 37823155997: baseline passed; head timed out at 90s after ready in 41.8s.
+  Baseline also took ~88s. Follow-up changed budget, not renderer performance.
+  Passing slower runner screenshots took ~4–8 seconds each.
+- Local targeted lighting/fixture tests 14 passed; typecheck and lint passed.
+  Follow-up spec lint/format and three-test desktop discovery passed.
 
-## Preserved work and limits
+## Verified baseline
 
-- Preserve unrelated cityBlock.ts formatting, untracked cityBlock.test.ts,
-  docs/city-block/, docs/evidence/city-block/ and old recovery checkpoint.
-- sources/ is read-only. No publishing or merge has been performed.
-- Local server previously failed listen EPERM. Do not retry unchanged.
-- Levi reviews/merges PRs. Keep new PR draft until exact-head visual evidence.
+Lovable project 2cad9dff-eecd-46d8-8b1f-749f46c6f3c6 latest_commit_sha matched
+0f1f739ecc91c376267e36804806637f349d1d23. Its preview shows new drain/manhole
+work missing from the earlier public-site review. Preview seed8 baseline screenshot
+is docs/evidence/night-market-corner/seed8-baseline.png (NOT branch evidence).
+Browser viewport override has been reset.
 
-## Next action
+## Local preservation
 
-Open/inspect the draft PR on codex/night-market-corner. CI will capture exact before/after scene images using
-#321's repaired harness. Resolve visual evidence access without bypassing policy.
+Checkout city-block-recovery has reconstructed history; NEVER push its history.
+Publish selected files via GitHub connector only. App/harness work is published
+on the task branch; local snapshots b2f6106 and 9c2f987 preserve work and baseline.
+Preserve unrelated cityBlock.ts formatting, untracked cityBlock.test.ts,
+docs/city-block/, docs/evidence/city-block/ and old recovery checkpoint.
+sources/ is read-only. Local server listen failed EPERM; do not retry unchanged.
+This final handoff update is local so it does not restart passed PR checks.
+
+## Active follow-up
+
+- Base: #322 merge 08ff5c7c4cf7fc7ac1b0bf154b40e6aa8def52c4.
+- Remote branch created: codex/vendor-corner-silhouette.
+- Local batch: cartOcclusion.ts and sceneryOcclusion.ts implement alpha-aware,
+  soft actor-sized cutouts instead of whole-cart fading; source mask cached once,
+  cutout texture refreshed only when actor-window positions change. Solid overlap
+  still reveals actors. Actual seed8 artwork check showed alpha-only was insufficient.
+- propTextures.ts caches a 64x64 mask with existing bounds readback.
+- vendorStock.ts gives only saved vendor cargo a muted finish, fitted cloth and bowl
+  mark. Footprint/material/HP unchanged; damaged holes remain exposed; wreck unchanged.
+- storefront.ts adds boxed canopy ends, diagonal braces and tension ribs within
+  existing awning footprint/hem. Matching side light planes use the same geometry.
+- createCourtyard.ts integrates texture lifecycle and local cutouts.
+- vendorCorner.test.ts: hollow vs solid masks, foreground/hidden actors, mirroring,
+  narrow posts, padding and immutable semantic stock selection across seeds 0/7/8.
+- 22 targeted tests passed; targeted lint and source typecheck passed.
+- Published implementation at 93c700c7; not yet visually inspected. Open draft PR and inspect
+  one exact-head visual CI run. No claim of a large visible gain until images.
+- Preserve unrelated local work above. Do not push reconstructed local history.

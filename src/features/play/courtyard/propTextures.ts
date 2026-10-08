@@ -8,19 +8,34 @@ import { clearMatte } from "./characterTextures";
 export function propInkBounds(canvas: HTMLCanvasElement) {
   const { width, height } = canvas;
   const pixels = canvas.getContext("2d")!.getImageData(0, 0, width, height).data;
+  return propInk(pixels, width, height);
+}
+
+/** Build bounds and a 64×64 silhouette together from one texture readback. */
+export function propInk(pixels: Uint8ClampedArray, width: number, height: number) {
+  const size = 64;
+  const covered = new Uint32Array(size * size);
+  const totals = new Uint32Array(size * size);
   let left = width,
     top = height,
     right = 0,
     bottom = 0;
   for (let y = 0; y < height; y++)
     for (let x = 0; x < width; x++) {
+      const cell = Math.floor((y * size) / height) * size + Math.floor((x * size) / width);
+      totals[cell] = totals[cell]! + 1;
       if (pixels[(y * width + x) * 4 + 3]! < 128) continue;
+      covered[cell] = covered[cell]! + 1;
       left = Math.min(left, x);
       top = Math.min(top, y);
       right = Math.max(right, x);
       bottom = Math.max(bottom, y);
     }
+  const cells = Uint8Array.from(covered, (n, i) => (n > 0 && n / totals[i]! >= 0.35 ? 1 : 0));
+  if (left === width) return { left: 0, top: 0, right: 0, bottom: 0, cells, size };
   return {
+    cells,
+    size,
     left: left / width,
     top: top / height,
     right: (right + 1) / width,
