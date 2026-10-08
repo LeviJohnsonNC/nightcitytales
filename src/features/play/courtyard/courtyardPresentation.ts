@@ -85,3 +85,48 @@ export function routePosition(path: Point[], progress: number): Point | null {
   }
   return path[path.length - 1]!;
 }
+
+/** A street composition fitted to a snapshot of the participants, not a tracking camera. */
+export function intersectionActionCamera(
+  arena: Arena,
+  positions: readonly Point[],
+  viewport: { width: number; height: number },
+) {
+  const fallback = battlefieldCameraPreset(arena);
+  if (
+    arena.environment?.recipe !== "intersection" ||
+    arena.environment.interior ||
+    !positions.length
+  )
+    return fallback;
+  const { width, height } = viewport;
+  if (width <= 48 || height <= 0) return fallback;
+  const { project, pixelsPerMetre: ppm } = battlefieldProjection(
+    arena.extent.width,
+    arena.extent.height,
+  );
+  const projected = positions
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
+    .map(project);
+  if (!projected.length) return fallback;
+  // Include nearby pavement as well as the complete standing figures. The upper
+  // reserve keeps heads below the camera toolbar; the lower reserve clears hints.
+  const apron = 2.5 * ppm;
+  const left = Math.min(...projected.map((p) => p.x)) - apron;
+  const right = Math.max(...projected.map((p) => p.x)) + apron;
+  const top = Math.min(...projected.map((p) => p.y)) - SCENE_PERSON_HEIGHT * ppm - apron;
+  const bottom = Math.max(...projected.map((p) => p.y)) + apron;
+  const baseScale = Math.min(width / 1100, height / 680);
+  const topInset = Math.min(88, height * 0.22),
+    bottomInset = Math.min(48, height * 0.13);
+  const fit = Math.min(
+    (width - 48) / (right - left),
+    (height - topInset - bottomInset) / (bottom - top),
+  );
+  const zoom = Math.min(2.15, fit / baseScale);
+  return {
+    x: (left + right) / 2 - 550,
+    y: (top + bottom) / 2 - 340 - (topInset - bottomInset) / (2 * baseScale * zoom),
+    zoom,
+  };
+}

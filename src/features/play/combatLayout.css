@@ -195,3 +195,20 @@
     max-height: none;
   }
 }
+
+.combat-frame-notice {
+  position: absolute;
+  right: 14px;
+  bottom: 58px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 55%;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #65eee075;
+  background: #0b1b24ed;
+  color: #d3e3e2;
+  font-size: 11px;
+}

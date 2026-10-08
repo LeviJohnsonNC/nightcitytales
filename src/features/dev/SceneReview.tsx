@@ -5,8 +5,11 @@ import {
   reviewSeed,
   COMPOSITION_REVIEW_SEEDS,
 } from "./sceneReviewQuery";
-import { battlefieldCameraPreset } from "@/features/play/courtyard/courtyardPresentation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  battlefieldCameraPreset,
+  intersectionActionCamera,
+} from "@/features/play/courtyard/courtyardPresentation";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   composeScene,
   weaponProfile,
@@ -33,6 +36,18 @@ export function SceneReview() {
   const [seed, setSeed] = useState(initial.seed);
   const [adventure, setAdventure] = useState(initial.adventure);
   const [actors, setActors] = useState(initial.actors);
+  const sceneryHost = useRef<HTMLDivElement>(null);
+  const [scenerySize, setScenerySize] = useState({ width: 1100, height: 680 });
+  useEffect(() => {
+    const element = sceneryHost.current;
+    if (actors || !element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry && entry.contentRect.width && entry.contentRect.height)
+        setScenerySize({ width: entry.contentRect.width, height: entry.contentRect.height });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [actors]);
   const [planVisible, setPlanVisible] = useState(false);
   const [entrances, setEntrances] = useState(initial.entrances);
   const [damage, setDamage] = useState(initial.damage);
@@ -99,6 +114,16 @@ export function SceneReview() {
     );
     return fixture;
   }, [scene, entrances, damage, saved, initial.player, initial.foe]);
+  const sceneryCamera =
+    framing === "overview"
+      ? battlefieldCameraPreset(scene.layout.arena, "overview")
+      : intersectionActionCamera(
+          scene.layout.arena,
+          Object.values(live.state.combatants).flatMap((actor) =>
+            !actor.defeated && live.data[actor.id] ? [live.data[actor.id]!.position] : [],
+          ),
+          scenerySize,
+        );
   const empty = useMemo(
     () => ({ ...live, state: { ...live.state, order: [], combatants: {} }, data: {} }),
     [live],
@@ -325,7 +350,9 @@ export function SceneReview() {
                   setZoom(1);
                 }}
               >
-                <option value="play">Play area</option>
+                <option value="play">
+                  {kind === "intersection" ? "Action area" : "Play area"}
+                </option>
                 <option value="overview">Overview</option>
               </select>
             </label>
@@ -520,12 +547,16 @@ export function SceneReview() {
           lights={lights}
           night={night}
           reflections={reflections}
-          {...(initial.camera ? { initialCamera: initial.camera } : {})}
+          {...(initial.camera
+            ? { initialCamera: initial.camera }
+            : framing === "overview"
+              ? { initialCamera: battlefieldCameraPreset(scene.layout.arena, "overview") }
+              : {})}
           title="Scene readability review"
           objective="Inspect only · no campaign writes"
         />
       ) : (
-        <div className="scene-review-canvas">
+        <div ref={sceneryHost} className="scene-review-canvas">
           <CourtyardLayer
             key={`${scene.layout.arena.key}:${structureOnly}:${rendererAttempt}:${reflections === "skip"}`}
             live={empty}
@@ -536,8 +567,8 @@ export function SceneReview() {
             reflections={reflections}
             camera={
               initial.camera ?? {
-                ...battlefieldCameraPreset(scene.layout.arena, framing),
-                zoom: battlefieldCameraPreset(scene.layout.arena, framing).zoom * zoom,
+                ...sceneryCamera,
+                zoom: sceneryCamera.zoom * zoom,
               }
             }
             onReady={onReady}
