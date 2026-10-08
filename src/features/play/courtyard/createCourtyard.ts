@@ -1,3 +1,5 @@
+import { cartWindows, paintCartWindows } from "./cartOcclusion";
+import { isVendorStock, vendorStockTexture } from "./vendorStock";
 import {
   foregroundObstructs,
   foregroundRoute,
@@ -510,11 +512,43 @@ export function createCourtyard(
           prop.setAlpha(1);
           continue;
         }
+        const cart = prop.getData("cartOcclusion") as
+          | {
+              source: HTMLCanvasElement;
+              texture: Phaser.Textures.CanvasTexture;
+              stamp: string;
+            }
+          | undefined;
+        if (cart) {
+          const windows = cartWindows(
+            prop.getData("inkBounds"),
+            [...units.values()].map((u) => u.container),
+            composed ? composedUnitMetrics(arena).top : 58,
+            prop.getData("occlusionMask"),
+          );
+          const stamp = windows
+            .map((w) => `${Math.round(w.x * 128)},${Math.round(w.y * 128)}`)
+            .join(";");
+          if (stamp !== cart.stamp) {
+            paintCartWindows(
+              cart.texture.context,
+              cart.source,
+              cart.source.width,
+              cart.source.height,
+              windows,
+            );
+            cart.texture.refresh();
+            cart.stamp = stamp;
+          }
+          prop.setAlpha(1);
+          continue;
+        }
         const obstructs = [...units.values()].some(({ container: unit }) =>
           sceneryOccludes(
             prop.getData("inkBounds") ?? prop,
             unit,
             composed ? composedUnitMetrics(arena).top : street ? 58 : 88,
+            prop.getData("occlusionMask"),
           ),
         );
         prop.setAlpha(obstructs ? 0.4 : 1);
@@ -798,7 +832,18 @@ export function createCourtyard(
       // a sedan's paint is its car's (`sedanPaint.ts`): both sections, any damage
       const paint = binding?.clusterId ? carPaints.get(binding.clusterId) : undefined;
       const painted = paint ? paintedTexture(own, paint) : own;
-      const texture = current.textures.exists(painted) ? painted : own;
+      let texture = current.textures.exists(painted) ? painted : own;
+      if (isVendorStock(arena.environment, binding))
+        texture = vendorStockTexture(
+          current,
+          texture,
+          condition,
+          current.textures.exists(storefrontAssetKey("awning"))
+            ? (current.textures
+                .get(storefrontAssetKey("awning"))
+                .getSourceImage() as CanvasImageSource)
+            : undefined,
+        );
       const image = current.textures.get(texture).getSourceImage() as HTMLCanvasElement;
       const registration = procedural
         ? ((current.textures.get(texture).customData as { registration?: PropRegistration })
@@ -820,7 +865,26 @@ export function createCourtyard(
         inkBounds?: ReturnType<typeof propInkBounds>;
       };
       const ink = cached.inkBounds ?? (cached.inkBounds = propInkBounds(image));
+      if (kind === "food-cart" && !status.destroyed) {
+        const key = `cart-occlusion-${status.piece.id}`;
+        if (current.textures.exists(key)) current.textures.remove(key);
+        const cutout = current.textures.createCanvas(key, image.width, image.height)!;
+        cutout.context.drawImage(image, 0, 0);
+        cutout.refresh();
+        prop.setTexture(key);
+        prop.setData("cartOcclusion", { source: image, texture: cutout, stamp: "" });
+      }
       const flip = !procedural && binding?.rotation === 90;
+      if (kind === "food-cart")
+        prop.setData("occlusionMask", {
+          cells: ink.cells,
+          size: ink.size,
+          left: prop.x - prop.originX * width,
+          top: prop.y - prop.originY * height,
+          width,
+          height,
+          flipX: flip,
+        });
       const left = flip ? 1 - ink.right : ink.left,
         right = flip ? 1 - ink.left : ink.right;
       prop.setData("inkBounds", {
