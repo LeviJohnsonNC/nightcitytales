@@ -1,50 +1,50 @@
 # Night City Tales — resume here
 
-Updated: 2026-10-08. PR325 pavement-market revision implemented locally; validation running.
+Updated: 2026-10-08. Compact seed-8 intersection prototype in progress.
 
-## Goal and state
+## Goal and baseline
 
-PR325 https://github.com/LeviJohnsonNC/nightcitytales/pull/325 remains draft.
-Remote branch codex/stepped-repair-row; latest published head 4cc278e43a0d2605ad2910c891d167c54eabfaf3.
-Base merged324 f9d571c70ee5df3c3144fb09f068db972d95d795.
-Prior CI fix and both capture jobs are green. Reviewed all22 prior captures from
-hash-verified ZIPs in ../review-325. No new blocking regression, but composition
-acceptance FAILED: added loft heights mostly fall outside the right edge.
-Full previous review and artifact links are in PR body.
+Levi authorized the next revision after merging PR325. Reduce the broad road field
+and bring existing frontages closer in seed8, preserving access and vehicle room.
+No new artwork or expansion to other seeds until the visual result is reviewed.
+Base: merged PR325 dde30911a32290d851f2d79e70d54df3d46d2c91.
+Remote: LeviJohnsonNC/nightcitytales. Publish branch: codex/compact-junction-prototype.
+Local checkpoint branch: codex/city-block-review.
+Local history is reconstructed: NEVER git push. Publish selected files via connector.
 
-## Current revision
+## Implementation — compact seed-8 prototype, not yet visually accepted
 
-Recipe10 adds three covered counters in review seeds8/0/7, using existing
-shop-display art and real destructible25HP steel cover. Shop row plus repair
-forecourt use shared placeSceneClusters legality/access checks. Up to two counters
-per zone; illegal candidates are skipped. Existing doors, actors, buildings,
-through-walks and crossings remain. Small lamp-base exclusions keep posts clear.
-Counter browsing lanes persist in saves. Recipe5 reference seeds stay unchanged;
-older snapshots load stored geometry rather than regenerating.
-Seed8 shop counter at8,4 is beside the entrance; another at8,0; repair counter24,22.
-Seed0 counters4,8 /2,8 /24,24. Seed7 counters22,12 /22,10 /24,24.
-V9 stepped repair buildings are retained in this revision.
+Recipe11 applies only to newly composed intersection seed8. Main street6m,
+cross street4m, junction24m² instead of48m². Frontages translate by2m per axis;
+buildings, cover dimensions, HP and structural heights remain unchanged.
+All four parked cars consolidate on the east curb, leaving a4m travel lane.
+Existing2m sidewalks and crossing routes remain clear. Saves load authoritative
+stored geometry; an actual pre-change v10 seed8 scene is committed as a fixture.
+Seeds0/7 and other current seeds remainv10; reference1–3 remainv5.
 
-Changed: intersectionPrograms.ts, sceneClusters.ts, sceneComposer.ts,
-sceneEnvironment.ts; new pavementMarkets.test.ts; updated repairLofts,
-shopLamp historical normalization and commercialUpper expected revision.
-Tests preserve prior-layout assertions after removing only added market entries.
+Changed: engine/intersectionPrograms, sceneComposer, sceneEnvironment;
+engine tests compactIntersection, compositionVariation, repairLofts, shopLamp;
+fixtures/intersection-v10.json; play test commercialUpper; composedEnvironment
+lane paint follows the new travel reservation; this handoff.
+Preserve unrelated cityBlock.ts formatting, cityBlock.test.ts and recovery docs.
+Sources are read-only. No production publish or merge.
 
 ## Validation and next action
 
-Local commands became unusually slow. Avoid launching duplicate runners.
-Focused tests and typecheck underway; logs /tmp/pr325-direct-tests.log,
-/tmp/pr325-market-tests.log, /tmp/pr325-market-types.log.
-Need inspect results, targeted lint, then publish selected files atomically via
-GitHub connector onto the existing PR. Capture new visuals; old ZIPs cannot
-validate the counters. Do not mark ready or merge before inspection.
+Focused suite23/24 initially passed. The sole failure was a historical checksum
+using the snapshot reader, which reorders object keys. Hashing the recorded
+fixture directly preserves the original checksum; shopLamp now4/4 passed.
+The separate fixture-load test verifies semantic equality through the reader.
+Compact tests4/4 passed: dimensions, clear parking/crossings, access intact and
+all-destroyed, unchanged cover HP, exact save roundtrip and deterministic output.
+Typecheck and targeted ESLint passed. Full local suite running at checkpoint.
+Publishing these selected files as a draft PR from the merged base. Next: inspect
+CI and matched seed8 screenshots plus control seeds0/7. No visual claim yet.
 
-## Workspace rules
+## Prior visual evidence and access
 
-Local city-block-recovery history is reconstructed: NEVER git push it.
-Publish selected files with connector only; normal local commits are checkpoints.
-Preserve unrelated cityBlock.ts formatting, cityBlock.test.ts and recovery docs.
-Sources are read-only. Levi handles merge. No production publish.
-Existing detached actor rings recur in before/after captures; outside this change.
-Fresh-chat prompt: Read this file, finish validation/publish of PR325 market rows,
-then inspect exact-runtime captures before another composition experiment.
+PR325 all22 PNGs reviewed at3501f5d, CI/captures passed. Qualified improvement;
+wide road/roof fields still dominated. Evidence: ../review-325-market.
+Do not repeat that review. New prototype requires new paired captures.
+Artifact download connector returns URLs whose host local DNS cannot resolve;
+user-provided ZIPs in Downloads work. Ask for new ZIPs only when needed.

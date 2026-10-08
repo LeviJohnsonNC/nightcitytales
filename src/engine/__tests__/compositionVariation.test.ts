@@ -145,11 +145,11 @@ it.each(["intersection", "office"] as const)(
           expect(env.clusters.some((c) => c.id === id)).toBe(true);
     }
     if (kind === "intersection") {
-      // Reference seeds retain three v5 shapes; v9 has six current compositions.
+      // Reference seeds retain three v5 shapes; the compact seed8 proof adds a seventh current composition.
       // Count separately so preserving old saves is not mistaken for new variety.
       expect(legacyStructural.size).toBe(3);
-      expect(currentStructural.size).toBe(6);
-      expect(structural.size).toBe(9);
+      expect(currentStructural.size).toBe(7);
+      expect(structural.size).toBe(10);
     } else expect(structural.size).toBe(3);
     expect(furnished.size).toBeGreaterThanOrEqual(6);
   },

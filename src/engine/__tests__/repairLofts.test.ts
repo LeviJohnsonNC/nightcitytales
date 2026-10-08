@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { composeScene } from "../sceneComposer";
 import { readBattlefieldSnapshot } from "../battlefieldSnapshot";
 import { addRepairLofts } from "../intersectionPrograms";
+import v10 from "./fixtures/intersection-v10.json";
+import { readSceneManifest } from "../persistentScene";
 import v8 from "./fixtures/intersection-v8.json";
 
 describe("repair-row massing revision 9", () => {
@@ -13,8 +15,8 @@ describe("repair-row massing revision 9", () => {
     expect(saved.arena.environment!.structures.some((s) => s.id.includes("_loft_"))).toBe(false);
   });
 
-  it("keeps the seed8 ground footprint, props, entrances and street network", () => {
-    const scene = composeScene("intersection", 8);
+  it("keeps the recorded v10 seed8 ground footprint before the compact prototype", () => {
+    const scene = readSceneManifest({ version: 1, scene: structuredClone(v10) });
     const now = scene.layout.arena.environment!;
     const before = v8.arena.environment!;
     for (const key of ["zones", "entrances", "props", "clusters", "dressing"] as const)
@@ -53,7 +55,7 @@ describe("repair-row massing revision 9", () => {
         expect(lofts).toHaveLength(0);
         continue;
       }
-      expect(env.recipeVersion).toBe(10);
+      expect(env.recipeVersion).toBe(seed === 8 ? 11 : 10);
       expect(lofts.map((s) => s.height)).toEqual([7.2, 10.2]);
       const front = env.structures.find((s) => s.id === "building_3")!;
       const edge = front.attachments!.find((a) => a.id === "retail-header")!.edge;
