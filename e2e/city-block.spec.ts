@@ -3,6 +3,8 @@ import { test, expect } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 test.use({
   viewport: { width: 1800, height: 1100 },
+  // Keep API/network traces without repeatedly copying this image-heavy scene.
+  trace: { mode: "retain-on-failure", screenshots: false, snapshots: false, sources: false },
   launchOptions: {
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   },
@@ -29,7 +31,32 @@ for (const seed of [8, 7, 0])
     page.setDefaultTimeout(15_000);
     page.setDefaultNavigationTimeout(30_000);
     const errors: string[] = [];
-    page.on("pageerror", (e) => errors.push(e.message));
+    const report = (kind: string, detail: string) =>
+      console.log(`[city-block seed=${seed} ${kind}] ${detail}`);
+    page.on("pageerror", (e) => {
+      errors.push(e.message);
+      report("pageerror", e.stack ?? e.message);
+    });
+    page.on("crash", () => report("crash", "Chromium renderer process crashed"));
+    page.on("console", (message) => {
+      if (["error", "warning"].includes(message.type()))
+        report(message.type(), message.text().slice(0, 1200));
+    });
+    page.on("requestfailed", (request) =>
+      report("requestfailed", `${request.url()} ${request.failure()?.errorText}`),
+    );
+    page.on("response", (response) => {
+      if (response.status() >= 400) report("http", `${response.status()} ${response.url()}`);
+    });
+    await page.addInitScript(() => {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries())
+          if (entry.name.startsWith("courtyard-"))
+            console.warn(
+              `[renderer timing] ${entry.name} ${Math.round(entry.startTime)}ms +${Math.round(entry.duration)}ms`,
+            );
+      }).observe({ entryTypes: ["mark", "measure"] });
+    });
     const out = info.outputPath("captures");
     await mkdir(out, { recursive: true });
     const t = Date.now();
@@ -37,7 +64,9 @@ for (const seed of [8, 7, 0])
       `/scene-review?place=intersection&seed=${seed}&adventure=0&actors=1&access=0&night=1&lights=1&reflect=on&reveal=0`,
       { waitUntil: "domcontentloaded" },
     );
+    report("navigation", `${Date.now() - t}ms`);
     await expect(page.locator("canvas")).toBeVisible({ timeout: 60_000 });
+    report("ready", `${Date.now() - t}ms`);
     // Streaming audio can keep networkidle pending; wait for the actual board instead.
     await expect(page.getByText("Establishing feed", { exact: true })).toBeHidden({
       timeout: 30_000,
