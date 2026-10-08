@@ -19,10 +19,13 @@ require reconstructing the whole project again.
   https://github.com/LeviJohnsonNC/nightcitytales/pull/316
 - Its implementation head was `38d3c344cde3a9bd740cf4f20da99f6533b0d2d6`.
   This is NOT a verified current main or merge commit SHA.
-- No open PRs were returned immediately before creating this documentation branch.
+- Continuity PR: https://github.com/LeviJohnsonNC/nightcitytales/pull/317
+- Duplicate PR #318 is superseded by #317; use this handoff as the single index.
 - Workflow branch: `codex/resumable-development`, created from main.
-  Changes here are only this file and the resume section in AGENTS.md.
-- No implementation validation or visual review was performed in this workflow task.
+  Changes here are this file, the resume section in AGENTS.md and
+  `tools/session-status.mjs` (read-only, bounded local status).
+- No game implementation validation or visual review was performed in this workflow task.
+- PR #316 merge SHA confirmed: `1f05e6935095112d2111834a31f8ac908faa0bd2`.
 
 ## Local recovery work to preserve
 
@@ -67,6 +70,11 @@ remote branches or that a new chat inherits them.
   automated browser checks pass or that reference-image quality is achieved.
 - Shell GitHub access failed DNS resolution in this task; the GitHub connector
   successfully read state and wrote this documentation branch.
+
+- Continuity command: actual execution, Node syntax check, targeted Prettier and
+  `git diff --check` passed. The game suite was not rerun for this workflow change.
+- Run `bun tools/session-status.mjs` on resume. It prints HEAD, at most 30 local
+  status lines and at most 120 handoff lines; it never fetches or changes files.
 
 ## Next action — a bounded recovery milestone
 
