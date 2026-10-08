@@ -1,5 +1,111 @@
 import type { Arena, Point, Rect } from "./battlefield";
 import type { SceneActor } from "./authoredScene";
+import type { SceneEnvironment } from "./sceneEnvironment";
+import { placeSceneClusters } from "./sceneClusters";
+
+/** Saved street-level market rows, placed through the same collision and access
+ * checks as the original vendor. Existing scenes are never regenerated. */
+export function addPavementMarkets(arena: Arena, actors: readonly SceneActor[]) {
+  const env = arena.environment!;
+  if (env.clusters.some((c) => c.id.startsWith("street_market_"))) return;
+  const junction = env.zones.find((z) => z.id === "junction")!.rect;
+  const reserved = [
+    ...env.zones.filter((z) => z.kind === "aisle").map((z) => z.rect),
+    ...[
+      ...actors.map((a) => a.position),
+      arena.playerStart,
+      ...(env.entrances ?? []).map((e) => e.position),
+    ].map((p) => ({ x: p.x - 1, y: p.y - 1, width: 2, height: 2 })),
+    ...env.dressing
+      .filter((d) => d.kind === "lamp")
+      .map(({ position: p }) => ({ x: p.x - 0.25, y: p.y - 0.25, width: 0.5, height: 0.5 })),
+  ];
+  for (const zoneId of ["west-walk", "south-east-front"]) {
+    const zone = env.zones.find((z) => z.id === zoneId)!;
+    const candidates: Point[] = [];
+    for (
+      let y = Math.max(0, zone.rect.y);
+      y + 2 <= Math.min(32, zone.rect.y + zone.rect.height);
+      y += 2
+    )
+      for (
+        let x = Math.max(0, zone.rect.x);
+        x + 2 <= Math.min(32, zone.rect.x + zone.rect.width);
+        x += 2
+      )
+        candidates.push({ x, y });
+    const distance = (p: Point) =>
+      Math.hypot(
+        p.x + 1 - (junction.x + junction.width / 2),
+        p.y + 1 - (junction.y + junction.height / 2),
+      );
+    candidates.sort((a, b) => distance(a) - distance(b) || a.y - b.y || a.x - b.x);
+    // The shop walk faces east (or south after transpose); the repair row
+    // uses its forecourt's horizontal axis. Shared browsing space may coincide
+    // with the public lane, but solid counters may never occupy it.
+    for (let i = 0; i < 2; i++) {
+      if (!candidates.length) continue;
+      const reverse =
+        zoneId === "west-walk" &&
+        (zone.axis === "y" ? zone.rect.x > junction.x : zone.rect.y > junction.y);
+      placeSceneClusters(
+        arena,
+        [
+          {
+            id: `street_market_${zoneId}_${i}`,
+            kind: reverse ? "pavement_market_return" : "pavement_market",
+            zone: zoneId,
+            axis: zone.axis,
+            at: candidates[0]!,
+            candidates,
+          },
+        ],
+        reserved,
+        env.seed,
+        false,
+      );
+    }
+  }
+}
+
+/** Revision 9: a low repair frontage with two stepped, occupied blocks behind it.
+ * Partition the existing footprint exactly. No new sidewalk obstacle, entrance or
+ * playable upper floor; the normal facade, lighting and cutaway systems own it.
+ * Called only for newly composed scenes, after their orientation is final.
+ */
+export function addRepairLofts(env: SceneEnvironment) {
+  const front = env.structures.find((s) => s.id === "building_3");
+  if (!front || env.structures.some((s) => s.id === "building_3_loft_a")) return;
+  const edge = front.attachments?.find((a) => a.id === "retail-header")?.edge;
+  if (edge !== "north" && edge !== "west") return;
+  const r = { ...front.rect };
+  const length = edge === "north" ? r.width : r.height;
+  const depth = edge === "north" ? r.height : r.width;
+  if (length < 12 || depth < 8) return;
+  const apron = 4;
+  const split = Math.floor(length / 4) * 2;
+  front.rect = edge === "north" ? { ...r, height: apron } : { ...r, width: apron };
+  for (const [suffix, start, span, height] of [
+    ["a", 0, split, 7.2],
+    ["b", split, length - split, 10.2],
+  ] as const) {
+    env.structures.push({
+      id: `building_3_loft_${suffix}`,
+      label:
+        suffix === "a"
+          ? "Repair-row studios behind the low frontage"
+          : "Stepped repair-row rooms and offices",
+      rect:
+        edge === "north"
+          ? { x: r.x + start, y: r.y + apron, width: span, height: depth - apron }
+          : { x: r.x + apron, y: r.y + start, width: depth - apron, height: span },
+      height,
+      style: "shop",
+      blocksMovement: true,
+      blocksShots: true,
+    });
+  }
+}
 
 /** Exchange the compatible northern frontage parcels as whole arrangements.
  * The workshop/utility parcels stay fixed: this changes adjacency, not camera rotation.
