@@ -44,8 +44,9 @@ export const INTERSECTION_NIGHT = {
     /** Arm length, out from the facade over the pavement. */
     arm: 1.5,
     color: [1, 0.8, 0.56] as Rgb,
-    intensity: 0.9,
-    radius: 5,
+    // Keep the shop pool local; windows and the entrance supply the warmer accents.
+    intensity: 0.75,
+    radius: 4.2,
   },
   /** Spill from each lit shop window onto the pavement in front of it. */
   window: { color: [1, 0.66, 0.36] as Rgb, intensity: 0.85, reach: 3.4, spread: 1 },
