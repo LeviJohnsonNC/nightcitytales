@@ -6,7 +6,14 @@ test.use({
   // Keep API/network traces without repeatedly copying this image-heavy scene.
   trace: { mode: "retain-on-failure", screenshots: false, snapshots: false, sources: false },
   launchOptions: {
-    args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+    // CI has no hardware GPU. Rasterize staging canvases on the CPU to avoid
+    // GPU readback stalls while slicing atlases; the shipping scene still uses WebGL.
+    args: [
+      "--use-gl=angle",
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader",
+      "--disable-accelerated-2d-canvas",
+    ],
   },
 });
 test.setTimeout(90_000);
@@ -38,7 +45,10 @@ for (const seed of [8, 7, 0])
       report("pageerror", e.stack ?? e.message);
     });
     page.on("crash", () => report("crash", "Chromium renderer process crashed"));
+    const warnings = new Set<string>();
     page.on("console", (message) => {
+      if (warnings.has(message.text())) return;
+      warnings.add(message.text());
       if (["error", "warning"].includes(message.type()))
         report(message.type(), message.text().slice(0, 1200));
     });
