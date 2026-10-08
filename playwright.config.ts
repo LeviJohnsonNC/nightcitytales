@@ -27,6 +27,9 @@ export default defineConfig({
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 1 : 0,
   reporter: process.env["CI"] ? [["github"], ["list"]] : "list",
+  // Actions already records the exact revision. Avoid optional Git diff/commit
+  // collection (including network fetches) consuming the bounded capture budget.
+  captureGitInfo: { commit: false, diff: false },
   outputDir: "e2e/.results",
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,

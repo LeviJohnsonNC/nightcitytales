@@ -9,6 +9,7 @@ on:
       - "src/engine/sceneClusters.ts"
       - "public/images/architecture/block-*"
       - "e2e/city-block.spec.ts"
+      - "playwright.config.ts"
       - ".github/workflows/city-block-review.yml"
 permissions:
   contents: read
@@ -28,14 +29,18 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Preserve the shared evidence spec
-        run: cp e2e/city-block.spec.ts /tmp/city-block.spec.ts
+      - name: Preserve the shared evidence harness
+        run: |
+          cp e2e/city-block.spec.ts /tmp/city-block.spec.ts
+          cp playwright.config.ts /tmp/city-block-playwright.config.ts
       - uses: actions/checkout@v5
         if: matrix.revision == 'before'
         with:
           ref: ${{ github.event.pull_request.base.sha }}
-      - name: Use the identical capture spec on both revisions
-        run: cp /tmp/city-block.spec.ts e2e/city-block.spec.ts
+      - name: Use the identical capture harness on both revisions
+        run: |
+          cp /tmp/city-block.spec.ts e2e/city-block.spec.ts
+          cp /tmp/city-block-playwright.config.ts playwright.config.ts
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
