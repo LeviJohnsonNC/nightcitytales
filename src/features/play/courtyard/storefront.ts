@@ -14,7 +14,12 @@
  * is metres away from the wall (negative: into the building), `z` is height.
  */
 import { sourceFor } from "./architectureArt";
-import { paintShopFinish, paintShopCornice, paintRetailFrames } from "./shopFinish";
+import {
+  paintShopFinish,
+  paintShopCornice,
+  paintRetailFrames,
+  paintShopDisplay,
+} from "./shopFinish";
 import { paintDownpipe, paintPlinth, solidSpans, type Downpipe } from "./frontage";
 import type { Point, Rect, SceneAttachment, SceneEnvironment, SceneStructure } from "@/engine";
 import {
@@ -499,6 +504,7 @@ export function paintStorefrontFace(o: FaceOptions) {
     } else {
       fillPoly(ctx, opening, "#1a272c");
     }
+    paintShopDisplay(ctx, at, s0, bottom, top, index);
     // glass: a faint cool tint and one soft diagonal sheen. No reflections.
     fillPoly(ctx, opening, "rgba(52,92,104,.14)");
     gradientFill(ctx, opening, at(s0, 0, top), at(s1, 0, bottom), [
