@@ -16,6 +16,8 @@
 ## Resuming work and keeping sessions bounded
 
 Read `docs/AI_HANDOFF.md` first when starting or resuming implementation.
+Run `bun tools/session-status.mjs` for a bounded, read-only local inventory;
+it does not fetch remote state, edit files or run tests.
 It is the current-work index; PRODUCT.md remains the product authority,
 ROADMAP.md the priority/debt authority, and this guide the architecture authority.
 
