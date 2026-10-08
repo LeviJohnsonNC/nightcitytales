@@ -35,6 +35,10 @@ test.afterEach(async ({ page }, info) => {
 });
 for (const seed of [8, 7, 0])
   test(`city block seed ${seed}`, async ({ page }, info) => {
+    // Seed 8 captures six states plus save/load and damage controls. Its baseline
+    // takes ~88s on the software GPU; the two-state seeds retain the 90s budget.
+    // Keep the workflow's five-minute global cap and zero retries.
+    test.setTimeout(seed === 8 ? 120_000 : 90_000);
     page.setDefaultTimeout(15_000);
     page.setDefaultNavigationTimeout(30_000);
     const errors: string[] = [];
@@ -69,6 +73,14 @@ for (const seed of [8, 7, 0])
     });
     const out = info.outputPath("captures");
     await mkdir(out, { recursive: true });
+    const capture = async (name: string) => {
+      const started = Date.now();
+      report("capture-start", name);
+      await test.step(`capture ${name}`, async () => {
+        await page.locator("canvas").screenshot({ path: `${out}/${name}.png` });
+      });
+      report("capture", `${name} ${Date.now() - started}ms`);
+    };
     const t = Date.now();
     await page.goto(
       `/scene-review?place=intersection&seed=${seed}&adventure=0&actors=1&access=0&night=1&lights=1&reflect=on&reveal=0`,
@@ -83,7 +95,7 @@ for (const seed of [8, 7, 0])
     });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(500);
-    await page.locator("canvas").screenshot({ path: `${out}/seed${seed}-play.png` });
+    await capture(`seed${seed}-play`);
     const measures = await page.evaluate(() =>
       performance.getEntriesByType("measure").map((x) => ({ name: x.name, duration: x.duration })),
     );
@@ -91,15 +103,15 @@ for (const seed of [8, 7, 0])
       await page.getByRole("button", { name: "Save review", exact: true }).click();
       await page.getByRole("checkbox", { name: "Lights", exact: true }).uncheck();
       await page.waitForTimeout(500);
-      await page.locator("canvas").screenshot({ path: `${out}/seed8-lights-off.png` });
+      await capture(`seed8-lights-off`);
       await page.getByRole("checkbox", { name: "Night", exact: true }).uncheck();
       await page.waitForTimeout(500);
-      await page.locator("canvas").screenshot({ path: `${out}/seed8-neutral.png` });
+      await capture(`seed8-neutral`);
       await page.getByRole("checkbox", { name: "Night", exact: true }).check();
       await page.getByRole("checkbox", { name: "Lights", exact: true }).check();
       await page.getByRole("combobox", { name: "Cover", exact: true }).selectOption("destroyed");
       await page.waitForTimeout(800);
-      await page.locator("canvas").screenshot({ path: `${out}/seed8-destroyed.png` });
+      await capture(`seed8-destroyed`);
       await page.getByRole("button", { name: "Load review", exact: true }).click();
       await expect(page.getByRole("combobox", { name: "Cover", exact: true })).toHaveValue(
         "intact",
@@ -108,7 +120,7 @@ for (const seed of [8, 7, 0])
         page.getByText("Restored saved geometry, positions and damage.", { exact: true }),
       ).toBeVisible();
       await page.waitForTimeout(800);
-      await page.locator("canvas").screenshot({ path: `${out}/seed8-restored.png` });
+      await capture(`seed8-restored`);
     }
     // Reveal on the existing combat board. Switching actors off mounts a second
     // renderer, rebuilding every atlas and surface and changing camera framing.
@@ -119,7 +131,7 @@ for (const seed of [8, 7, 0])
     await reveal.click();
     await expect(reveal).toHaveAttribute("aria-pressed", "true");
     await page.waitForTimeout(1500);
-    await page.locator("canvas").screenshot({ path: `${out}/seed${seed}-reveal.png` });
+    await capture(`seed${seed}-reveal`);
     await writeFile(
       `${out}/seed${seed}-metrics.json`,
       JSON.stringify({ seed, totalMs: Date.now() - t, measures, errors }, null, 2),
