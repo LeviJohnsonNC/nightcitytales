@@ -127,3 +127,104 @@ export function paintRetailFrames(
   }
   ctx.restore();
 }
+
+/** Stock sits inside the existing glazing; its shelf and top return establish depth.
+ * Draw before glass and recess shadows, inside the caller's opening/cutaway clip.
+ * These are display goods, not new obstacles or light sources.
+ */
+export function paintShopDisplay(
+  ctx: CanvasRenderingContext2D,
+  at: At,
+  start: number,
+  bottom: number,
+  top: number,
+  variant: number,
+) {
+  const poly = (points: Point[], color: string) => {
+    ctx.beginPath();
+    points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  };
+  const face = (a: number, b: number, lo: number, hi: number, color: string, out = -0.12) =>
+    poly([at(a, out, lo), at(b, out, lo), at(b, out, hi), at(a, out, hi)], color);
+  const end = start + 2.2;
+  ctx.save();
+  // Short fabric valance, split into panels. It covers only the top of the display.
+  for (let i = 0; i < 4; i++) {
+    const a = start + 0.08 + i * 0.52;
+    face(a, a + 0.48, top - 0.31 - (i % 2) * 0.035, top - 0.06, "#703d30");
+    face(a + 0.035, a + 0.055, top - 0.29, top - 0.06, "#a26e49");
+    face(a + 0.17, a + 0.3, top - 0.24, top - 0.12, "#c3ab7c");
+  }
+  // A cream menu card belongs to the display, below the valance and above stock.
+  // Its opaque ink stays in albedo; the existing window owns all emission.
+  if (variant === 0) {
+    const left = start + 1.25,
+      width = 0.72,
+      high = 0.67;
+    const p = at(left, -0.13, top - 0.38);
+    const u = at(left + width, -0.13, top - 0.38);
+    const v = at(left, -0.13, top - 0.38 - high);
+    ctx.save();
+    ctx.transform(
+      (u.x - p.x) / 180,
+      (u.y - p.y) / 180,
+      (v.x - p.x) / 160,
+      (v.y - p.y) / 160,
+      p.x,
+      p.y,
+    );
+    ctx.fillStyle = "#b6a279";
+    ctx.fillRect(0, 0, 180, 160);
+    ctx.fillStyle = "#653a2b";
+    ctx.fillRect(7, 7, 166, 35);
+    ctx.fillStyle = "#e2c79b";
+    ctx.font = "bold 22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("NIGHT MARKET", 90, 32);
+    ctx.fillStyle = "#633b2a";
+    ctx.beginPath();
+    ctx.moveTo(55, 67);
+    ctx.bezierCurveTo(61, 111, 119, 111, 125, 67);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(52, 62, 76, 5);
+    ctx.fillRect(77, 102, 26, 5);
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillText("HOT BROTH", 90, 137);
+    ctx.restore();
+  }
+  const shelf = bottom + 0.35;
+  // Broad tins and paper packets, not noise-sized individual labels.
+  const colors = ["#9c7850", "#52635b", "#a55337", "#b59d6d"];
+  for (let i = 0; i < 5; i++) {
+    const a = start + 0.15 + i * 0.38;
+    const h = [0.3, 0.43, 0.35][(i + variant) % 3]!;
+    face(a, a + 0.27, shelf, shelf + h, colors[(i + variant) % colors.length]!, -0.14);
+    face(a + 0.04, a + 0.23, shelf + 0.07, shelf + 0.16, "#d1be91", -0.13);
+    face(a + 0.23, a + 0.27, shelf, shelf + h, "#3c3b31", -0.13);
+    poly(
+      [
+        at(a, -0.14, shelf + h),
+        at(a + 0.27, -0.14, shelf + h),
+        at(a + 0.27, -0.24, shelf + h),
+        at(a, -0.24, shelf + h),
+      ],
+      "#c3ac80",
+    );
+  }
+  face(start + 0.06, end - 0.06, shelf - 0.09, shelf, "#443b2e", -0.08);
+  poly(
+    [
+      at(start + 0.06, -0.08, shelf),
+      at(end - 0.06, -0.08, shelf),
+      at(end - 0.06, -0.29, shelf),
+      at(start + 0.06, -0.29, shelf),
+    ],
+    "#968a70",
+  );
+  face(start + 0.06, end - 0.06, shelf - 0.035, shelf, "#c1ae86", -0.075);
+  ctx.restore();
+}
