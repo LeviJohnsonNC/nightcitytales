@@ -1,55 +1,44 @@
 # Night City Tales — resume here
 
-Updated: 2026-10-08. Verify live branch/PR state before continuing.
+Updated: 2026-10-08. Verify live PR state before continuing.
 
 ## Active milestone
 
-PR #320: https://github.com/LeviJohnsonNC/nightcitytales/pull/320
-Branch: `codex/occupied-street`, created from remote main.
-Goal: materially improve the intersection's ground and occupied sidewalk edges.
-Status: implementation pushed as a DRAFT; visual acceptance pending.
+PR #320 merged; repair visual-review startup before more visual changes.
+Draft PR #321: https://github.com/LeviJohnsonNC/nightcitytales/pull/321
+Remote branch: `codex/repair-visual-review`, from main `09e435da`.
+Implementation revision: `8c374817` (verify latest PR head/checks).
 
-## Implementation
+## Current experiment
 
-- `src/features/play/courtyard/streetLife.ts`: deterministic flush curb channels,
-  drain slots, iron access covers, service paving and discarded paper/packaging.
-- `groundFinish.ts` invokes this only with enhanced paving in the cached albedo.
-- No new obstacles, collision/route changes, emitted lights or saved state.
-- `streetLife.test.ts` checks placement and preserved geometry across six seeds.
-- Includes recovered browser-spec repair and hidden-artifact upload; 90-second
-  tests, no retries, five-minute global capture budget, ten-minute job ceiling.
-- Broader occupied-corner and lighting ambition is not yet visually accepted.
-
-## Validation
-
-- 10 focused tests passed (streetLife and groundFinish).
-- Typecheck, changed-source lint and production build passed.
-- Local browser server remains blocked by `EPERM`.
-- Offline shipping-renderer preview was built, but browser security policy
-  rejected `file:` URLs. Do not bypass that restriction.
-- Use PR #320's paired Chromium CI captures for visual inspection. Do not
-  claim the new implementation matches the reference without inspecting them.
+- Keep shipping scene settings, including reflections ON.
+- Retain API/network trace without repeated screenshots or DOM snapshots.
+- Print browser errors, failed resources, crashes and renderer timings to CI logs.
+- Stop after the first failed seed; retain 90-second test/five-minute suite limits.
+- Diagnostic run `37816665863` failed both revisions at readiness. Logs show
+  64 repeated canvas readback warnings during atlas setup, no scene-ready mark.
+- Second experiment: `--disable-accelerated-2d-canvas` on the software-GPU runner
+  removes GPU roundtrips for staging canvases; WebGL/game settings stay unchanged.
+- Run `37817414013` reached scene-ready (~44 seconds) and captured lighting,
+  destruction and restored save. Failed only after actors-off rebuilt the renderer.
+- Final change: exercise the combat board's Reveal button in place, assert pressed,
+  retain the same camera and avoid a second full atlas/environment build.
+- Await latest head's paired captures. Deduplicated warnings.
+- Local spec lint/format and desktop discovery (three tests) passed.
+- Local browser retry failed on server listen EPERM; do not retry unchanged.
+- Prior run `37814306896` failed hidden canvas on both base/head. Artifact host
+  was blocked by Chrome. New logs avoid requiring that archive for diagnosis.
 
 ## Preserved work
 
-Local checkout: project workspace's `city-block-recovery`, branch
-`codex/city-block-review`. Its history is reconstructed, not remote main.
-Use the GitHub connector branch for publication; do not push reconstructed history.
-Unrelated recovered atlas, cityBlock regression test, old screenshots and
-unapplied ground experiment remain local. Preserve them.
-Older `recovered-nightcitytales` retains original art and screenshots.
-
-## Prior milestone
-
-PR #316 merged; PR #317 continuity and PR #319 manual review notes merged.
-Manual live review checked seeds 0/7/8, lighting, damage, reveal and targeting.
-See `docs/city-block-visual-review-2026-10-08.md`.
-Those captures predate #320 and DO NOT validate the new street pass.
+Local `city-block-recovery` history is reconstructed; publish through the GitHub
+connector branch, never push its history. Unrelated cityBlock formatting, atlas,
+regression test, old screenshots and ground experiment remain untouched.
+`sources/` is read-only. Standard CI on #320 passed, but no new image was accepted.
+Ground-detail implementation is merged; larger corner/lighting goal remains.
 
 ## Next action
 
-1. Inspect #320 CI status and its paired captures, especially seed 8 at play zoom.
-2. Judge whether the difference is substantial and coherent; revise if too subtle.
-3. Check lights-off, reveal and destroyed states; record exact run/commit evidence.
-4. Keep draft if captures fail or are unavailable. Do not repeat blocked local
-   server/file-URL attempts. Levi reviews and merges the completed PR.
+Read the bounded diagnostic CI result for #321; fix the concrete failure, then
+require successful seed 8/7/0 captures and review evidence before claiming success.
+Levi reviews and merges PRs.
