@@ -26,6 +26,23 @@ export type ClusterDefinition = {
 };
 /** Offsets describe relationships inside a cluster, never arbitrary world positions. */
 export const CLUSTERS: Record<string, ClusterDefinition> = {
+  repair_parts: {
+    zones: ["sidewalk"],
+    reason: "Crated repair parts face a clear handling space beside the workshop",
+    members: [{ key: "freight_crate", id: "stock", x: 0, y: 0, art: ["cargo"] }],
+    access: [{ x: 3, y: 1, label: "Repair parts handling" }],
+    dressing: [],
+  },
+  repair_waiting: {
+    zones: ["sidewalk"],
+    reason: "Workshop power equipment and a low planter frame the service entrance",
+    members: [
+      { key: "service_generator", id: "power", x: 0, y: 0, art: ["generator"] },
+      { key: "planter", id: "edge", x: 2, y: 0, art: ["planter"] },
+    ],
+    access: [{ x: 1, y: 3, label: "Workshop equipment access" }],
+    dressing: [],
+  },
   pavement_market: {
     zones: ["sidewalk"],
     reason: "A covered market counter faces a shared browsing lane beside the crossing",

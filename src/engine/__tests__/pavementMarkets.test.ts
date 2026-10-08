@@ -1,4 +1,6 @@
 import { expect, it } from "vitest";
+import v11 from "./fixtures/intersection-v11.json";
+import { readSceneManifest } from "../persistentScene";
 import { composeScene } from "../sceneComposer";
 import { addPavementMarkets } from "../intersectionPrograms";
 import { readBattlefieldSnapshot } from "../battlefieldSnapshot";
@@ -6,9 +8,12 @@ import { blockedTiles, reachableTiles, tileKey, tileOf } from "../grid";
 import { coverMaxHp } from "../cover";
 import { rectsOverlap } from "../sceneEnvironment";
 
-it("adds visible saved market counters in the three review seeds", () => {
+it("preserves the accepted v11 market arrangement and other review seeds", () => {
   for (const seed of [8, 0, 7]) {
-    const scene = composeScene("intersection", seed);
+    const scene =
+      seed === 8
+        ? readSceneManifest({ version: 1, scene: structuredClone(v11) })
+        : composeScene("intersection", seed);
     const arena = scene.layout.arena,
       env = arena.environment!;
     const props = env.props.filter((p) => p.clusterId.startsWith("street_market_"));

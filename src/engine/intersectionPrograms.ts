@@ -3,6 +3,81 @@ import type { SceneActor } from "./authoredScene";
 import type { SceneEnvironment } from "./sceneEnvironment";
 import { placeSceneClusters } from "./sceneClusters";
 
+/** Recipe 12: open the foreground housing court and give the repair corner
+ * its own working frontage. New seed-8 scenes only; stored scenes are untouched. */
+export function openEntranceCourt(arena: Arena, actors: readonly SceneActor[]) {
+  const env = arena.environment!;
+  if (env.zones.some((z) => z.id === "housing-court")) return;
+  if (env.seed !== 8) throw new Error("Entrance court prototype requires seed 8.");
+  const annex = env.structures.find((s) => s.id === "building_1")!;
+  annex.rect.y += 4;
+  annex.rect.height -= 4;
+  annex.attachments!.find((a) => a.id === "housing-portal")!.offset -= 4;
+  env.zones.push(
+    {
+      id: "housing-court",
+      kind: "frontage",
+      axis: "y",
+      rect: { x: 22, y: 2, width: 4, height: 4 },
+    },
+    {
+      id: "housing-court-access",
+      kind: "aisle",
+      axis: "y",
+      floorUse: "entry",
+      rect: { x: 22, y: 2, width: 2, height: 4 },
+    },
+  );
+  const removed = new Set(["utility_waiting", "street_market_south-east-front_0"]);
+  const removedCover = new Set(
+    env.props.filter((p) => removed.has(p.clusterId)).map((p) => p.coverId),
+  );
+  arena.cover = arena.cover!.filter((c) => !removedCover.has(c.id));
+  env.props = env.props.filter((p) => !removed.has(p.clusterId));
+  env.dressing = env.dressing.filter((d) => !removed.has(d.clusterId));
+  env.clusters = env.clusters.filter((c) => !removed.has(c.id));
+  env.zones = env.zones.filter((z) => ![...removed].some((id) => z.id.startsWith(`${id}_access_`)));
+  const reserved = [
+    ...env.zones.filter((z) => z.kind === "aisle").map((z) => z.rect),
+    ...[
+      ...actors.map((a) => a.position),
+      arena.playerStart,
+      ...env.entrances!.map((e) => e.position),
+    ].map((p) => ({ x: p.x - 1, y: p.y - 1, width: 2, height: 2 })),
+  ];
+  placeSceneClusters(
+    arena,
+    [
+      {
+        id: "repair_parts",
+        kind: "repair_parts",
+        zone: "south-east-front",
+        axis: "y",
+        at: { x: 22, y: 20 },
+        required: true,
+      },
+      {
+        id: "repair_power",
+        kind: "repair_waiting",
+        zone: "south-east-front",
+        axis: "y",
+        at: { x: 26, y: 20 },
+        required: true,
+      },
+      {
+        id: "housing_court_garden",
+        kind: "garden",
+        zone: "housing-court",
+        at: { x: 24, y: 2 },
+        required: true,
+      },
+    ],
+    reserved,
+    env.seed,
+    false,
+  );
+}
+
 /** Recipe 11 proof, seed 8 only: remove two empty metres from each street's
  * centre, translating whole frontages rather than scaling buildings or props.
  * Consolidate parking on the east curb to retain a four-metre vehicle lane.

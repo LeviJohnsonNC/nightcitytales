@@ -137,7 +137,7 @@ for (const seed of [8, 7, 0])
       JSON.stringify({ seed, totalMs: Date.now() - t, measures, errors }, null, 2),
     );
     expect(errors).toEqual([]);
-    if (seed === 7) {
+    if (seed === 7 || seed === 8) {
       await page.setViewportSize({ width: 700, height: 850 });
       await page.waitForTimeout(1000);
       await page.screenshot({ path: `${out}/compact.png` });

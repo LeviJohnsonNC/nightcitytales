@@ -167,7 +167,7 @@ it.each(["office", "intersection"] as const)(
       if (kind === "intersection") {
         expect(areas.filter((z) => z.floorUse === "handling")).toHaveLength(2);
         expect(areas.some((z) => z.floorUse === "forecourt")).toBe(true);
-        for (const id of ["housing_entry", "utility_waiting"])
+        for (const id of ["housing_entry", seed === 8 ? "repair_power" : "utility_waiting"])
           expect(arena.environment!.clusters.some((c) => c.id === id)).toBe(true);
       }
       expect(readBattlefieldSnapshot(JSON.parse(JSON.stringify(snapshot)))).toEqual(snapshot);
@@ -237,7 +237,7 @@ it("separates the shop forecourt from through walking and keeps quiet cues spars
     expect(arena.cover!.some((c) => rectsOverlap(c.rect, forecourt.rect))).toBe(false);
     for (const [id, cue] of [
       ["housing_entry", "mailboxes"],
-      ["utility_waiting", "shop-display"],
+      seed === 8 ? ["repair_power", "generator"] : ["utility_waiting", "shop-display"],
     ]) {
       const props = env.props.filter((p) => p.clusterId === id);
       expect(props).toHaveLength(2);

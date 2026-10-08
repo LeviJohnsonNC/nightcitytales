@@ -1,0 +1,1422 @@
+{
+  "locationKey": "north_heywood",
+  "template": "composed-intersection",
+  "templateVersion": 11,
+  "anchor": "composition-intersection-v11-8",
+  "narration": "At a North Heywood intersection, parked cars line the curb outside shuttered workshops. A broth vendor has set up beside a corner shop, with stools and supplies tucked against the frontage. Across the crossing, a rifleman stands beside an olive-drab cruiser; his lookout watches farther along the curb. Two maintenance workers linger by the vendor.",
+  "layout": {
+    "version": 2,
+    "arena": {
+      "key": "scene:composed-intersection:v11:8",
+      "label": "North Heywood · commercial intersection",
+      "extent": {
+        "width": 32,
+        "height": 32
+      },
+      "playerStart": {
+        "x": 15,
+        "y": 19
+      },
+      "hostileSlots": [
+        {
+          "x": 19,
+          "y": 3
+        },
+        {
+          "x": 19,
+          "y": 25
+        }
+      ],
+      "cover": [
+        {
+          "id": "thorton_car_engine",
+          "label": "Olive-drab Thorton cruiser · the sedan's engine block",
+          "material": "steel",
+          "thickness": "thick",
+          "rect": {
+            "x": 16,
+            "y": 2,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 50
+        },
+        {
+          "id": "thorton_car_cabin",
+          "label": "Olive-drab Thorton cruiser · the sedan's cabin and doors",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 16,
+            "y": 4,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "curb_north_car_engine",
+          "label": "the sedan's engine block",
+          "material": "steel",
+          "thickness": "thick",
+          "rect": {
+            "x": 16,
+            "y": 22,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 50
+        },
+        {
+          "id": "curb_north_car_cabin",
+          "label": "the sedan's cabin and doors",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 16,
+            "y": 24,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "curb_south_car_engine",
+          "label": "the sedan's engine block",
+          "material": "steel",
+          "thickness": "thick",
+          "rect": {
+            "x": 16,
+            "y": 26,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 50
+        },
+        {
+          "id": "curb_south_car_cabin",
+          "label": "the sedan's cabin and doors",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 16,
+            "y": 28,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "curb_west_car_engine",
+          "label": "the sedan's engine block",
+          "material": "steel",
+          "thickness": "thick",
+          "rect": {
+            "x": 16,
+            "y": 6,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 50
+        },
+        {
+          "id": "curb_west_car_cabin",
+          "label": "the sedan's cabin and doors",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 16,
+            "y": 8,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "broth_cart_cart_cart",
+          "label": "Broth cart · a street food cart",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 8,
+            "y": 10,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "broth_cart_stock_body",
+          "label": "Broth cart · freight crate",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 8,
+            "y": 8,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "housing_entry_mailboxes_cabinet",
+          "label": "apartment mailbox bank",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 20,
+            "y": 2,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "housing_entry_south_box",
+          "label": "a concrete planter",
+          "material": "concrete",
+          "thickness": "thick",
+          "rect": {
+            "x": 20,
+            "y": 8,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25,
+          "blocksMovement": false
+        },
+        {
+          "id": "utility_waiting_display_cabinet",
+          "label": "shop merchandise display",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 26,
+            "y": 20,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "utility_waiting_edge_box",
+          "label": "a concrete planter",
+          "material": "concrete",
+          "thickness": "thick",
+          "rect": {
+            "x": 28,
+            "y": 20,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25,
+          "blocksMovement": false
+        },
+        {
+          "id": "deliveries_crate_body",
+          "label": "freight crate",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 2,
+            "y": 22,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "deliveries_pallet_body",
+          "label": "stacked pallets",
+          "material": "wood",
+          "thickness": "thin",
+          "rect": {
+            "x": 2,
+            "y": 26,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 5
+        },
+        {
+          "id": "north-west-front_infill_0_planter_box",
+          "label": "a concrete planter",
+          "material": "concrete",
+          "thickness": "thick",
+          "rect": {
+            "x": 0,
+            "y": 10,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25,
+          "blocksMovement": false
+        },
+        {
+          "id": "north-west-front_infill_1_planter_box",
+          "label": "a concrete planter",
+          "material": "concrete",
+          "thickness": "thick",
+          "rect": {
+            "x": 2,
+            "y": 10,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25,
+          "blocksMovement": false
+        },
+        {
+          "id": "street_market_west-walk_0_counter_cabinet",
+          "label": "covered market counter",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 8,
+            "y": 4,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "street_market_west-walk_1_counter_cabinet",
+          "label": "covered market counter",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 8,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        },
+        {
+          "id": "street_market_south-east-front_0_counter_cabinet",
+          "label": "covered market counter",
+          "material": "steel",
+          "thickness": "thin",
+          "rect": {
+            "x": 22,
+            "y": 20,
+            "width": 2,
+            "height": 2
+          },
+          "maxHp": 25
+        }
+      ],
+      "environment": {
+        "version": 1,
+        "recipe": "intersection",
+        "recipeVersion": 11,
+        "composition": {
+          "version": 1,
+          "family": 0,
+          "program": "shop-west",
+          "activity": "delivery",
+          "rejected": []
+        },
+        "entrances": [
+          {
+            "id": "entrance_0",
+            "structureId": "building_0",
+            "position": {
+              "x": 9,
+              "y": 7
+            },
+            "label": "Corner shop entrance"
+          },
+          {
+            "id": "entrance_1",
+            "structureId": "building_1",
+            "position": {
+              "x": 21,
+              "y": 7
+            },
+            "label": "Apartment entrance"
+          },
+          {
+            "id": "entrance_2",
+            "structureId": "building_2",
+            "position": {
+              "x": 1,
+              "y": 21
+            },
+            "label": "Workshop entrance"
+          },
+          {
+            "id": "entrance_3",
+            "structureId": "building_3",
+            "position": {
+              "x": 25,
+              "y": 23
+            },
+            "label": "Utility entrance"
+          }
+        ],
+        "seed": 8,
+        "zones": [
+          {
+            "id": "street",
+            "kind": "road",
+            "rect": {
+              "x": 12,
+              "y": -16,
+              "width": 6,
+              "height": 62
+            },
+            "axis": "y"
+          },
+          {
+            "id": "cross-street",
+            "kind": "road",
+            "rect": {
+              "x": -16,
+              "y": 14,
+              "width": 62,
+              "height": 4
+            },
+            "axis": "x"
+          },
+          {
+            "id": "junction",
+            "kind": "intersection",
+            "rect": {
+              "x": 12,
+              "y": 14,
+              "width": 6,
+              "height": 4
+            },
+            "axis": "y"
+          },
+          {
+            "id": "west-walk",
+            "kind": "sidewalk",
+            "rect": {
+              "x": 8,
+              "y": -16,
+              "width": 4,
+              "height": 30
+            },
+            "axis": "y"
+          },
+          {
+            "id": "east-walk",
+            "kind": "sidewalk",
+            "rect": {
+              "x": 18,
+              "y": -16,
+              "width": 4,
+              "height": 30
+            },
+            "axis": "y"
+          },
+          {
+            "id": "south-west-walk",
+            "kind": "sidewalk",
+            "rect": {
+              "x": 8,
+              "y": 18,
+              "width": 4,
+              "height": 28
+            },
+            "axis": "y"
+          },
+          {
+            "id": "south-east-walk",
+            "kind": "sidewalk",
+            "rect": {
+              "x": 18,
+              "y": 18,
+              "width": 4,
+              "height": 28
+            },
+            "axis": "y"
+          },
+          {
+            "id": "north-west-front",
+            "kind": "sidewalk",
+            "rect": {
+              "x": -16,
+              "y": 10,
+              "width": 24,
+              "height": 4
+            },
+            "axis": "x"
+          },
+          {
+            "id": "north-east-front",
+            "kind": "sidewalk",
+            "rect": {
+              "x": 22,
+              "y": 10,
+              "width": 24,
+              "height": 4
+            },
+            "axis": "x"
+          },
+          {
+            "id": "south-west-front",
+            "kind": "sidewalk",
+            "rect": {
+              "x": -16,
+              "y": 18,
+              "width": 24,
+              "height": 4
+            },
+            "axis": "x"
+          },
+          {
+            "id": "south-east-front",
+            "kind": "sidewalk",
+            "rect": {
+              "x": 22,
+              "y": 18,
+              "width": 24,
+              "height": 6
+            },
+            "axis": "x"
+          },
+          {
+            "id": "service-court",
+            "kind": "loading",
+            "rect": {
+              "x": 2,
+              "y": 22,
+              "width": 6,
+              "height": 10
+            },
+            "axis": "y"
+          },
+          {
+            "id": "north-crossing",
+            "kind": "crosswalk",
+            "rect": {
+              "x": 12,
+              "y": 12,
+              "width": 6,
+              "height": 2
+            },
+            "axis": "x"
+          },
+          {
+            "id": "south-crossing",
+            "kind": "crosswalk",
+            "rect": {
+              "x": 12,
+              "y": 18,
+              "width": 6,
+              "height": 2
+            },
+            "axis": "x"
+          },
+          {
+            "id": "west-crossing",
+            "kind": "crosswalk",
+            "rect": {
+              "x": 10,
+              "y": 14,
+              "width": 2,
+              "height": 4
+            },
+            "axis": "y"
+          },
+          {
+            "id": "east-crossing",
+            "kind": "crosswalk",
+            "rect": {
+              "x": 18,
+              "y": 14,
+              "width": 2,
+              "height": 4
+            },
+            "axis": "y"
+          },
+          {
+            "id": "walk-west-north",
+            "kind": "aisle",
+            "rect": {
+              "x": 10,
+              "y": -8,
+              "width": 2,
+              "height": 22
+            },
+            "axis": "y"
+          },
+          {
+            "id": "walk-east-north",
+            "kind": "aisle",
+            "rect": {
+              "x": 18,
+              "y": -8,
+              "width": 2,
+              "height": 22
+            },
+            "axis": "y"
+          },
+          {
+            "id": "walk-west-south",
+            "kind": "aisle",
+            "rect": {
+              "x": 10,
+              "y": 18,
+              "width": 2,
+              "height": 20
+            },
+            "axis": "y"
+          },
+          {
+            "id": "walk-east-south",
+            "kind": "aisle",
+            "rect": {
+              "x": 18,
+              "y": 18,
+              "width": 2,
+              "height": 20
+            },
+            "axis": "y"
+          },
+          {
+            "id": "walk-north",
+            "kind": "aisle",
+            "rect": {
+              "x": -8,
+              "y": 12,
+              "width": 46,
+              "height": 2
+            },
+            "axis": "x"
+          },
+          {
+            "id": "walk-south",
+            "kind": "aisle",
+            "rect": {
+              "x": -8,
+              "y": 18,
+              "width": 46,
+              "height": 2
+            },
+            "axis": "x"
+          },
+          {
+            "id": "service-lane",
+            "kind": "alley",
+            "rect": {
+              "x": 6,
+              "y": 32,
+              "width": 2,
+              "height": 14
+            },
+            "axis": "y"
+          },
+          {
+            "id": "service-access",
+            "kind": "aisle",
+            "rect": {
+              "x": 6,
+              "y": 22,
+              "width": 2,
+              "height": 24
+            },
+            "axis": "y"
+          },
+          {
+            "id": "travel-lane",
+            "kind": "aisle",
+            "rect": {
+              "x": 12,
+              "y": -8,
+              "width": 4,
+              "height": 46
+            },
+            "axis": "y"
+          },
+          {
+            "id": "shop-approach",
+            "kind": "aisle",
+            "rect": {
+              "x": 8,
+              "y": 6,
+              "width": 4,
+              "height": 2
+            },
+            "axis": "x"
+          },
+          {
+            "id": "housing-approach",
+            "kind": "aisle",
+            "floorUse": "entry",
+            "rect": {
+              "x": 18,
+              "y": 6,
+              "width": 4,
+              "height": 2
+            },
+            "axis": "x"
+          },
+          {
+            "id": "loading-mouth",
+            "kind": "aisle",
+            "rect": {
+              "x": 2,
+              "y": 20,
+              "width": 6,
+              "height": 2
+            },
+            "axis": "x"
+          },
+          {
+            "id": "workshop-approach",
+            "kind": "aisle",
+            "rect": {
+              "x": 0,
+              "y": 18,
+              "width": 2,
+              "height": 4
+            },
+            "axis": "y"
+          },
+          {
+            "id": "utility-approach",
+            "kind": "aisle",
+            "floorUse": "entry",
+            "rect": {
+              "x": 24,
+              "y": 18,
+              "width": 2,
+              "height": 6
+            },
+            "axis": "y"
+          },
+          {
+            "id": "shop-customers",
+            "kind": "aisle",
+            "floorUse": "forecourt",
+            "rect": {
+              "x": 8,
+              "y": 12,
+              "width": 2,
+              "height": 4
+            },
+            "axis": "y"
+          },
+          {
+            "id": "workshop-handling",
+            "kind": "aisle",
+            "floorUse": "handling",
+            "rect": {
+              "x": 4,
+              "y": 22,
+              "width": 4,
+              "height": 6
+            },
+            "axis": "y"
+          },
+          {
+            "id": "workshop-unloading",
+            "kind": "aisle",
+            "floorUse": "handling",
+            "rect": {
+              "x": 0,
+              "y": 20,
+              "width": 8,
+              "height": 2
+            },
+            "axis": "x"
+          },
+          {
+            "id": "broth_cart_access_0",
+            "kind": "aisle",
+            "rect": {
+              "x": 8,
+              "y": 12,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "y"
+          },
+          {
+            "id": "housing_entry_access_0",
+            "kind": "aisle",
+            "rect": {
+              "x": 20,
+              "y": 6,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "y"
+          },
+          {
+            "id": "utility_waiting_access_0",
+            "kind": "aisle",
+            "rect": {
+              "x": 26,
+              "y": 22,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "y"
+          },
+          {
+            "id": "deliveries_access_0",
+            "kind": "aisle",
+            "rect": {
+              "x": 4,
+              "y": 22,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "y"
+          },
+          {
+            "id": "deliveries_access_1",
+            "kind": "aisle",
+            "rect": {
+              "x": 4,
+              "y": 24,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "y"
+          },
+          {
+            "id": "deliveries_access_2",
+            "kind": "aisle",
+            "rect": {
+              "x": 4,
+              "y": 26,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "y"
+          },
+          {
+            "id": "street_market_west-walk_0_access_0",
+            "kind": "aisle",
+            "rect": {
+              "x": 10,
+              "y": 4,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "y"
+          },
+          {
+            "id": "street_market_west-walk_1_access_0",
+            "kind": "aisle",
+            "rect": {
+              "x": 10,
+              "y": 0,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "y"
+          },
+          {
+            "id": "street_market_south-east-front_0_access_0",
+            "kind": "aisle",
+            "rect": {
+              "x": 22,
+              "y": 22,
+              "width": 2,
+              "height": 2
+            },
+            "axis": "x"
+          }
+        ],
+        "structures": [
+          {
+            "id": "building_0_rear",
+            "label": "Attached shop row continuing off-map",
+            "rect": {
+              "x": -16,
+              "y": -16,
+              "width": 24,
+              "height": 14
+            },
+            "height": 7.8,
+            "style": "shop",
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "building_0_middle",
+            "label": "Narrow attached shop",
+            "rect": {
+              "x": -10,
+              "y": -2,
+              "width": 18,
+              "height": 6
+            },
+            "height": 10.2,
+            "style": "shop",
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "building_0",
+            "label": "Corner shop and vendor frontage",
+            "rect": {
+              "x": -12,
+              "y": 4,
+              "width": 20,
+              "height": 6
+            },
+            "height": 7.2,
+            "style": "shop",
+            "attachments": [
+              {
+                "id": "shop-canopy",
+                "kind": "awning",
+                "edge": "east",
+                "offset": 0,
+                "span": 4,
+                "projection": 1.5,
+                "height": 2.7
+              }
+            ],
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "building_1_block",
+            "label": "Housing block continuing beyond the scene",
+            "rect": {
+              "x": 26,
+              "y": -16,
+              "width": 20,
+              "height": 26
+            },
+            "height": 10,
+            "style": "residential",
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "building_1",
+            "label": "Low mixed-use entrance annex",
+            "rect": {
+              "x": 22,
+              "y": 2,
+              "width": 4,
+              "height": 8
+            },
+            "height": 3,
+            "style": "shop",
+            "attachments": [
+              {
+                "id": "housing-portal",
+                "kind": "entry-surround",
+                "edge": "west",
+                "offset": 4,
+                "span": 2,
+                "projection": 0.2,
+                "height": 2.5
+              }
+            ],
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "building_2",
+            "label": "Workshop beside open service court",
+            "rect": {
+              "x": -16,
+              "y": 22,
+              "width": 18,
+              "height": 24
+            },
+            "height": 3,
+            "style": "workshop",
+            "attachments": [
+              {
+                "id": "workshop-portal",
+                "kind": "service-surround",
+                "edge": "north",
+                "offset": 16,
+                "span": 2,
+                "projection": 0.2,
+                "height": 2.5
+              }
+            ],
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "building_2_rear",
+            "label": "Workshop rear return",
+            "rect": {
+              "x": 2,
+              "y": 32,
+              "width": 4,
+              "height": 14
+            },
+            "height": 3,
+            "style": "warehouse",
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "building_3",
+            "label": "Setback low utility building",
+            "rect": {
+              "x": 24,
+              "y": 24,
+              "width": 22,
+              "height": 4
+            },
+            "height": 2.5,
+            "style": "workshop",
+            "attachments": [
+              {
+                "id": "retail-header",
+                "kind": "retail-fascia",
+                "edge": "north",
+                "offset": 0,
+                "span": 6,
+                "projection": 0.25,
+                "height": 2.2
+              }
+            ],
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "service-court-fence",
+            "label": "Service court mesh fence · movement only, no cover",
+            "rect": {
+              "x": 8.75,
+              "y": 22,
+              "width": 0.5,
+              "height": 10
+            },
+            "height": 2,
+            "style": "mesh-fence",
+            "blocksMovement": true,
+            "blocksShots": false
+          },
+          {
+            "id": "building_3_loft_a",
+            "label": "Repair-row studios behind the low frontage",
+            "rect": {
+              "x": 24,
+              "y": 28,
+              "width": 10,
+              "height": 6
+            },
+            "height": 7.2,
+            "style": "shop",
+            "blocksMovement": true,
+            "blocksShots": true
+          },
+          {
+            "id": "building_3_loft_b",
+            "label": "Stepped repair-row rooms and offices",
+            "rect": {
+              "x": 34,
+              "y": 28,
+              "width": 12,
+              "height": 6
+            },
+            "height": 10.2,
+            "style": "shop",
+            "blocksMovement": true,
+            "blocksShots": true
+          }
+        ],
+        "clusters": [
+          {
+            "id": "thorton",
+            "kind": "parking",
+            "zoneId": "street",
+            "reason": "Vehicles parked in the curb lane outside businesses"
+          },
+          {
+            "id": "curb_north",
+            "kind": "parking",
+            "zoneId": "street",
+            "reason": "Vehicles parked in the curb lane outside businesses"
+          },
+          {
+            "id": "curb_south",
+            "kind": "parking",
+            "zoneId": "street",
+            "reason": "Vehicles parked in the curb lane outside businesses"
+          },
+          {
+            "id": "curb_west",
+            "kind": "parking",
+            "zoneId": "street",
+            "reason": "Vehicles parked in the curb lane outside businesses"
+          },
+          {
+            "id": "broth_cart",
+            "kind": "vendor_stall",
+            "zoneId": "west-walk",
+            "reason": "A shopfront food cart keeps its stock behind it and customer space beside the public route"
+          },
+          {
+            "id": "housing_entry",
+            "kind": "residential_entry",
+            "zoneId": "east-walk",
+            "reason": "Apartment mailboxes identify the residential entrance beside a quiet planted approach"
+          },
+          {
+            "id": "utility_waiting",
+            "kind": "frontage_waiting",
+            "zoneId": "south-east-front",
+            "reason": "A merchandise display identifies the low commercial frontage beside its entrance, away from through traffic"
+          },
+          {
+            "id": "shop_south",
+            "kind": "frontage",
+            "zoneId": "south-east-walk",
+            "reason": "Street furniture follows the building frontage, leaving the walking lane open"
+          },
+          {
+            "id": "deliveries",
+            "kind": "workshop_delivery",
+            "zoneId": "service-court",
+            "reason": "Delivered stock lines the workshop wall beside a reserved handling aisle"
+          },
+          {
+            "id": "north-west-front_infill_0",
+            "kind": "garden",
+            "zoneId": "north-west-front",
+            "reason": "Low planters belong to a residential frontage, clear of the front door"
+          },
+          {
+            "id": "north-west-front_infill_1",
+            "kind": "garden",
+            "zoneId": "north-west-front",
+            "reason": "Low planters belong to a residential frontage, clear of the front door"
+          },
+          {
+            "id": "shop_lamp",
+            "kind": "street_lamp",
+            "zoneId": "west-walk",
+            "reason": "A streetlight stands at the shop's corner, lighting its frontage and the pavement beside it"
+          },
+          {
+            "id": "street_market_west-walk_0",
+            "kind": "pavement_market",
+            "zoneId": "west-walk",
+            "reason": "A covered market counter faces a shared browsing lane beside the crossing"
+          },
+          {
+            "id": "street_market_west-walk_1",
+            "kind": "pavement_market",
+            "zoneId": "west-walk",
+            "reason": "A covered market counter faces a shared browsing lane beside the crossing"
+          },
+          {
+            "id": "street_market_south-east-front_0",
+            "kind": "pavement_market",
+            "zoneId": "south-east-front",
+            "reason": "A covered market counter faces a shared browsing lane beside the crossing"
+          }
+        ],
+        "props": [
+          {
+            "coverId": "thorton_car_engine",
+            "art": "sedan-engine",
+            "rotation": 90,
+            "clusterId": "thorton"
+          },
+          {
+            "coverId": "thorton_car_cabin",
+            "art": "sedan-cabin",
+            "rotation": 90,
+            "clusterId": "thorton"
+          },
+          {
+            "coverId": "curb_north_car_engine",
+            "art": "sedan-engine",
+            "rotation": 90,
+            "clusterId": "curb_north"
+          },
+          {
+            "coverId": "curb_north_car_cabin",
+            "art": "sedan-cabin",
+            "rotation": 90,
+            "clusterId": "curb_north"
+          },
+          {
+            "coverId": "curb_south_car_engine",
+            "art": "sedan-engine",
+            "rotation": 90,
+            "clusterId": "curb_south"
+          },
+          {
+            "coverId": "curb_south_car_cabin",
+            "art": "sedan-cabin",
+            "rotation": 90,
+            "clusterId": "curb_south"
+          },
+          {
+            "coverId": "curb_west_car_engine",
+            "art": "sedan-engine",
+            "rotation": 90,
+            "clusterId": "curb_west"
+          },
+          {
+            "coverId": "curb_west_car_cabin",
+            "art": "sedan-cabin",
+            "rotation": 90,
+            "clusterId": "curb_west"
+          },
+          {
+            "coverId": "broth_cart_cart_cart",
+            "art": "food-cart",
+            "rotation": 0,
+            "clusterId": "broth_cart"
+          },
+          {
+            "coverId": "broth_cart_stock_body",
+            "art": "cargo",
+            "rotation": 0,
+            "clusterId": "broth_cart"
+          },
+          {
+            "coverId": "housing_entry_mailboxes_cabinet",
+            "art": "mailboxes",
+            "rotation": 0,
+            "clusterId": "housing_entry"
+          },
+          {
+            "coverId": "housing_entry_south_box",
+            "art": "planter",
+            "rotation": 0,
+            "clusterId": "housing_entry"
+          },
+          {
+            "coverId": "utility_waiting_display_cabinet",
+            "art": "shop-display",
+            "rotation": 0,
+            "clusterId": "utility_waiting"
+          },
+          {
+            "coverId": "utility_waiting_edge_box",
+            "art": "planter",
+            "rotation": 0,
+            "clusterId": "utility_waiting"
+          },
+          {
+            "coverId": "deliveries_crate_body",
+            "art": "cargo",
+            "rotation": 0,
+            "clusterId": "deliveries"
+          },
+          {
+            "coverId": "deliveries_pallet_body",
+            "art": "pallet",
+            "rotation": 0,
+            "clusterId": "deliveries"
+          },
+          {
+            "coverId": "north-west-front_infill_0_planter_box",
+            "art": "planter",
+            "rotation": 90,
+            "clusterId": "north-west-front_infill_0"
+          },
+          {
+            "coverId": "north-west-front_infill_1_planter_box",
+            "art": "planter",
+            "rotation": 90,
+            "clusterId": "north-west-front_infill_1"
+          },
+          {
+            "coverId": "street_market_west-walk_0_counter_cabinet",
+            "art": "shop-display",
+            "rotation": 0,
+            "clusterId": "street_market_west-walk_0"
+          },
+          {
+            "coverId": "street_market_west-walk_1_counter_cabinet",
+            "art": "shop-display",
+            "rotation": 0,
+            "clusterId": "street_market_west-walk_1"
+          },
+          {
+            "coverId": "street_market_south-east-front_0_counter_cabinet",
+            "art": "shop-display",
+            "rotation": 90,
+            "clusterId": "street_market_south-east-front_0"
+          }
+        ],
+        "dressing": [
+          {
+            "id": "thorton_detail_0",
+            "kind": "drain",
+            "position": {
+              "x": 17.8,
+              "y": 6.6
+            },
+            "clusterId": "thorton"
+          },
+          {
+            "id": "curb_north_detail_0",
+            "kind": "drain",
+            "position": {
+              "x": 17.8,
+              "y": 26.6
+            },
+            "clusterId": "curb_north"
+          },
+          {
+            "id": "curb_south_detail_0",
+            "kind": "drain",
+            "position": {
+              "x": 17.8,
+              "y": 30.6
+            },
+            "clusterId": "curb_south"
+          },
+          {
+            "id": "curb_west_detail_0",
+            "kind": "drain",
+            "position": {
+              "x": 17.8,
+              "y": 10.6
+            },
+            "clusterId": "curb_west"
+          },
+          {
+            "id": "housing_entry_detail_0",
+            "kind": "lamp",
+            "position": {
+              "x": 20.3,
+              "y": 4.5
+            },
+            "clusterId": "housing_entry"
+          },
+          {
+            "id": "shop_south_detail_0",
+            "kind": "lamp",
+            "position": {
+              "x": 20.4,
+              "y": 24.4
+            },
+            "clusterId": "shop_south"
+          },
+          {
+            "id": "shop_south_detail_1",
+            "kind": "sign",
+            "position": {
+              "x": 20.4,
+              "y": 26
+            },
+            "clusterId": "shop_south"
+          },
+          {
+            "id": "shop_south_detail_2",
+            "kind": "litter",
+            "position": {
+              "x": 20.7,
+              "y": 27.2
+            },
+            "clusterId": "shop_south"
+          },
+          {
+            "id": "shop_south_detail_3",
+            "kind": "bollards",
+            "position": {
+              "x": 21.3,
+              "y": 29.2
+            },
+            "clusterId": "shop_south"
+          },
+          {
+            "id": "deliveries_detail_0",
+            "kind": "sign",
+            "position": {
+              "x": 2.3,
+              "y": 24.6
+            },
+            "clusterId": "deliveries"
+          },
+          {
+            "id": "shop_lamp_detail_0",
+            "kind": "lamp",
+            "position": {
+              "x": 8.5,
+              "y": 3.4
+            },
+            "clusterId": "shop_lamp"
+          }
+        ]
+      }
+    }
+  },
+  "actors": [
+    {
+      "id": "rifle_ganger",
+      "name": "6th Street rifleman",
+      "side": "hostile",
+      "profile": {
+        "key": "enforcer",
+        "name": "Enforcer",
+        "role": "lieutenant",
+        "ref": 6,
+        "body": 6,
+        "hp": 35,
+        "sp": 11,
+        "attackSkill": 6,
+        "move": 6,
+        "weaponName": "Assault Rifle",
+        "rangeType": "assault_rifle",
+        "damageDice": 5,
+        "note": "The one giving orders. A rifle changes the shape of a fight: it is the only tier here that shoots comfortably across a street."
+      },
+      "position": {
+        "x": 19,
+        "y": 3
+      }
+    },
+    {
+      "id": "lookout",
+      "name": "6th Street lookout",
+      "side": "hostile",
+      "profile": {
+        "key": "ganger",
+        "name": "Ganger",
+        "role": "mook",
+        "ref": 6,
+        "body": 5,
+        "hp": 25,
+        "sp": 7,
+        "attackSkill": 4,
+        "move": 6,
+        "weaponName": "SMG",
+        "rangeType": "smg",
+        "damageDice": 2,
+        "note": "Colours, a cheap SMG, and something to prove. Combat 10, level with a beat cop."
+      },
+      "position": {
+        "x": 19,
+        "y": 25
+      }
+    },
+    {
+      "id": "worker_one",
+      "name": "Maintenance worker",
+      "side": "neutral",
+      "profile": null,
+      "position": {
+        "x": 9,
+        "y": 13
+      }
+    },
+    {
+      "id": "worker_two",
+      "name": "Worker with a tool bag",
+      "side": "neutral",
+      "profile": null,
+      "position": {
+        "x": 11,
+        "y": 13
+      }
+    }
+  ]
+}
