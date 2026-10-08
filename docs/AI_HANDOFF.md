@@ -1,6 +1,8 @@
 # Night City Tales — resume here
 
-Updated: 2026-10-08. Compact seed-8 intersection prototype in progress.
+Updated: 2026-10-08. Compact seed-8 prototype published as draft PR326.
+https://github.com/LeviJohnsonNC/nightcitytales/pull/326
+Runtime revision: 7902127a03fa365a62efca794148e35f0978c196.
 
 ## Goal and baseline
 
@@ -25,21 +27,25 @@ Seeds0/7 and other current seeds remainv10; reference1–3 remainv5.
 Changed: engine/intersectionPrograms, sceneComposer, sceneEnvironment;
 engine tests compactIntersection, compositionVariation, repairLofts, shopLamp;
 fixtures/intersection-v10.json; play test commercialUpper; composedEnvironment
-lane paint follows the new travel reservation; this handoff.
+lane paint follows the new travel reservation; sedanPaint test sample; this handoff.
 Preserve unrelated cityBlock.ts formatting, cityBlock.test.ts and recovery docs.
 Sources are read-only. No production publish or merge.
 
 ## Validation and next action
 
-Focused suite23/24 initially passed. The sole failure was a historical checksum
-using the snapshot reader, which reorders object keys. Hashing the recorded
-fixture directly preserves the original checksum; shopLamp now4/4 passed.
-The separate fixture-load test verifies semantic equality through the reader.
-Compact tests4/4 passed: dimensions, clear parking/crossings, access intact and
-all-destroyed, unchanged cover HP, exact save roundtrip and deterministic output.
-Typecheck and targeted ESLint passed. Full local suite running at checkpoint.
-Publishing these selected files as a draft PR from the merged base. Next: inspect
-CI and matched seed8 screenshots plus control seeds0/7. No visual claim yet.
+Typecheck, targeted ESLint and diff whitespace checks passed. Full local run:
+4111 passed, one failed (325 files, 58.55s). The remaining test sampled car-paint
+variation using the old three layouts: the shifted seed8 positions now hash to
+the same palette offset as0/7. Expanded that sample to40 current seeds; all9
+sedanPaint tests pass. No runtime paint change or weakened per-street assertion.
+Historical geometry checksum uses the raw v10 fixture to retain JSON key order;
+its separate snapshot-read equality test proves unchanged saved geometry.
+Compact tests4/4 pass: dimensions, clear parking/crossings, access intact and
+all-destroyed, unchanged HP, exact save roundtrip and deterministic output.
+Published runtime at7902127; this follow-up changes only tests and handoff.
+CI/captures pending. Initial runs: CI37851476796, captures37851476756.
+Next: inspect latest CI and matched seed8 screenshots plus controls0/7.
+Keep PR draft until screenshots are reviewed; no visual acceptance yet.
 
 ## Prior visual evidence and access
 
