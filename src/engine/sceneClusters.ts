@@ -26,6 +26,38 @@ export type ClusterDefinition = {
 };
 /** Offsets describe relationships inside a cluster, never arbitrary world positions. */
 export const CLUSTERS: Record<string, ClusterDefinition> = {
+  pavement_market: {
+    zones: ["sidewalk"],
+    reason: "A covered market counter faces a shared browsing lane beside the crossing",
+    members: [
+      {
+        key: "office_storage",
+        id: "counter",
+        label: "covered market counter",
+        x: 0,
+        y: 0,
+        art: ["shop-display"],
+      },
+    ],
+    access: [{ x: 3, y: 1, label: "Market browsing lane" }],
+    dressing: [],
+  },
+  pavement_market_return: {
+    zones: ["sidewalk"],
+    reason: "A covered market counter faces the walking lane on the opposite shop frontage",
+    members: [
+      {
+        key: "office_storage",
+        id: "counter",
+        label: "covered market counter",
+        x: 0,
+        y: 0,
+        art: ["shop-display"],
+      },
+    ],
+    access: [{ x: -1, y: 1, label: "Market browsing lane" }],
+    dressing: [],
+  },
   work_facing: {
     zones: ["workspace"],
     reason: "Opposed desks share a side filing cabinet, with access at both seating sides",

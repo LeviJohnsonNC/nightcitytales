@@ -1,71 +1,50 @@
 # Night City Tales — resume here
 
-Updated: 2026-10-08. Stepped repair-row composition implemented; visual gate open.
+Updated: 2026-10-08. PR325 pavement-market revision implemented locally; validation running.
 
-## Current milestone
+## Goal and state
 
-- Base: merged #324 f9d571c70ee5df3c3144fb09f068db972d95d795 (verified).
-- Remote branch: codex/stepped-repair-row.
-- Goal: change a large roof-dominated corner into a stepped, occupied street wall.
-- Recipe v9 partitions building_3's existing 22x10m parcel into its original 2.5m
-  repair frontage (4m deep), then two rear blocks at 7.2m and 10.2m.
-- Rear blocks use existing shop/commercial-upper facade, materials, room windows,
-  lighting and automatic/manual cutaway rendering. No new renderer or assets.
-- North and transposed west frontages supported. No overlap or new occupied ground.
-- Entrances, sidewalks, props, customer space and the service court stay in place.
-- Upper floors remain inaccessible scenery like the existing commercial row.
-- Only newly composed refined intersections get v9. Reference seeds1/2/3 stay v5;
-  saved v8 layouts load exactly as recorded, without regeneration.
+PR325 https://github.com/LeviJohnsonNC/nightcitytales/pull/325 remains draft.
+Remote branch codex/stepped-repair-row; latest published head 4cc278e43a0d2605ad2910c891d167c54eabfaf3.
+Base merged324 f9d571c70ee5df3c3144fb09f068db972d95d795.
+Prior CI fix and both capture jobs are green. Reviewed all22 prior captures from
+hash-verified ZIPs in ../review-325. No new blocking regression, but composition
+acceptance FAILED: added loft heights mostly fall outside the right edge.
+Full previous review and artifact links are in PR body.
 
-## Changed files and validation
+## Current revision
 
-- src/engine/intersectionPrograms.ts: addRepairLofts, called once after orientation.
-- src/engine/sceneComposer.ts: v9 recipe and composition hook.
-- src/engine/sceneEnvironment.ts: admit recipe9 while retaining old versions.
-- New repairLofts.test.ts and actual pre-change fixtures/intersection-v8.json.
-- shopLamp.test.ts normalizes the new partition back to its old parcel for the
-  historical geometry checksum; separate new tests verify the partition itself.
-- commercialUpper.test.ts expects current recipe9; old-height loading check retained.
-- 30 focused tests passed across six files, including 40-seed partition/orientation,
-  historical layout checksums, pedestrian connectivity, v8 preservation and roundtrip.
-- Targeted lint and final typecheck passed. No visual acceptance yet.
-- Initial test caught north->west transpose; helper now handles actual west frontage.
+Recipe10 adds three covered counters in review seeds8/0/7, using existing
+shop-display art and real destructible25HP steel cover. Shop row plus repair
+forecourt use shared placeSceneClusters legality/access checks. Up to two counters
+per zone; illegal candidates are skipped. Existing doors, actors, buildings,
+through-walks and crossings remain. Small lamp-base exclusions keep posts clear.
+Counter browsing lanes persist in saves. Recipe5 reference seeds stay unchanged;
+older snapshots load stored geometry rather than regenerating.
+Seed8 shop counter at8,4 is beside the entrance; another at8,0; repair counter24,22.
+Seed0 counters4,8 /2,8 /24,24. Seed7 counters22,12 /22,10 /24,24.
+V9 stepped repair buildings are retained in this revision.
 
-## Visual acceptance gate
+Changed: intersectionPrograms.ts, sceneClusters.ts, sceneComposer.ts,
+sceneEnvironment.ts; new pavementMarkets.test.ts; updated repairLofts,
+shopLamp historical normalization and commercialUpper expected revision.
+Tests preserve prior-layout assertions after removing only added market entries.
 
-Draft PR next. Use one exact-head full CI plus before/after visual run, unchanged
-harness and budgets. Inspect seed8 normal play first: rear rooms should visibly
-replace a broad roof field while low repair frontage and the street remain clear.
-Check seed0 rotated frontage, seed7 foreground occlusion, lights-off/neutral,
-destroyed/restored, Reveal and compact. Reject if new tall blocks mask the action,
-float over cutaways, produce blank upper walls, or simply replace one broad field
-with another. Composition gain is a hypothesis until those images are inspected.
-No claim of reference parity or additional ground-level market activity.
+## Validation and next action
 
-## Previous review
+Local commands became unusually slow. Avoid launching duplicate runners.
+Focused tests and typecheck underway; logs /tmp/pr325-direct-tests.log,
+/tmp/pr325-market-tests.log, /tmp/pr325-market-types.log.
+Need inspect results, targeted lint, then publish selected files atomically via
+GitHub connector onto the existing PR. Capture new visuals; old ZIPs cannot
+validate the counters. Do not mark ready or merge before inspection.
 
-#324 all22 PNGs reviewed from hash-verified user ZIPs. Modest sign/frame gain,
-no new blocking regression. Merged by Levi. Broad road/roof fields still dominate.
-PR body has the verdict and ZIP links. Evidence docs/evidence/repair-frontage-324/.
-#323 cart opacity and vendor finish accepted; evidence docs/evidence/vendor-corner-323/.
-Floating actor markers occur in before/after runs; unresolved, not attributed to
-these visual changes. Do not silently mix a marker repair into this milestone.
+## Workspace rules
 
-## Access and preservation
-
-Local checkout city-block-recovery has reconstructed history; NEVER push it.
-Publish selected files via GitHub connector only. Preserve unrelated cityBlock.ts
-formatting, untracked cityBlock.test.ts, docs/city-block/, docs/evidence/city-block/
-and recovery checkpoint. Sources remain reference material.
-Local server previously failed listen EPERM. Artifact downloads were blocked;
-user ZIPs in ~/Downloads resolved access. Validate hashes before extracting.
-PR324 ZIPs have (3), extracted ../review-324/{before,after}; old captures cannot
-validate the new recipe. Keep final CI pointers local to avoid restarting checks.
-
-## Next action
-
-Publish selected files and open draft PR. Record exact head, then check its CI.
-After captures finish, put artifact links directly in the PR body and ask Levi
-for the ZIPs if direct access remains unavailable. No merge or production publish.
-Fresh-chat prompt: Read docs/AI_HANDOFF.md, verify the stepped repair-row PR,
-and finish exact-head visual review before expanding the composition milestone.
+Local city-block-recovery history is reconstructed: NEVER git push it.
+Publish selected files with connector only; normal local commits are checkpoints.
+Preserve unrelated cityBlock.ts formatting, cityBlock.test.ts and recovery docs.
+Sources are read-only. Levi handles merge. No production publish.
+Existing detached actor rings recur in before/after captures; outside this change.
+Fresh-chat prompt: Read this file, finish validation/publish of PR325 market rows,
+then inspect exact-runtime captures before another composition experiment.

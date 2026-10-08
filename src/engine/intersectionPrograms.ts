@@ -1,6 +1,72 @@
 import type { Arena, Point, Rect } from "./battlefield";
 import type { SceneActor } from "./authoredScene";
 import type { SceneEnvironment } from "./sceneEnvironment";
+import { placeSceneClusters } from "./sceneClusters";
+
+/** Saved street-level market rows, placed through the same collision and access
+ * checks as the original vendor. Existing scenes are never regenerated. */
+export function addPavementMarkets(arena: Arena, actors: readonly SceneActor[]) {
+  const env = arena.environment!;
+  if (env.clusters.some((c) => c.id.startsWith("street_market_"))) return;
+  const junction = env.zones.find((z) => z.id === "junction")!.rect;
+  const reserved = [
+    ...env.zones.filter((z) => z.kind === "aisle").map((z) => z.rect),
+    ...[
+      ...actors.map((a) => a.position),
+      arena.playerStart,
+      ...(env.entrances ?? []).map((e) => e.position),
+    ].map((p) => ({ x: p.x - 1, y: p.y - 1, width: 2, height: 2 })),
+    ...env.dressing
+      .filter((d) => d.kind === "lamp")
+      .map(({ position: p }) => ({ x: p.x - 0.25, y: p.y - 0.25, width: 0.5, height: 0.5 })),
+  ];
+  for (const zoneId of ["west-walk", "south-east-front"]) {
+    const zone = env.zones.find((z) => z.id === zoneId)!;
+    const candidates: Point[] = [];
+    for (
+      let y = Math.max(0, zone.rect.y);
+      y + 2 <= Math.min(32, zone.rect.y + zone.rect.height);
+      y += 2
+    )
+      for (
+        let x = Math.max(0, zone.rect.x);
+        x + 2 <= Math.min(32, zone.rect.x + zone.rect.width);
+        x += 2
+      )
+        candidates.push({ x, y });
+    const distance = (p: Point) =>
+      Math.hypot(
+        p.x + 1 - (junction.x + junction.width / 2),
+        p.y + 1 - (junction.y + junction.height / 2),
+      );
+    candidates.sort((a, b) => distance(a) - distance(b) || a.y - b.y || a.x - b.x);
+    // The shop walk faces east (or south after transpose); the repair row
+    // uses its forecourt's horizontal axis. Shared browsing space may coincide
+    // with the public lane, but solid counters may never occupy it.
+    for (let i = 0; i < 2; i++) {
+      if (!candidates.length) continue;
+      const reverse =
+        zoneId === "west-walk" &&
+        (zone.axis === "y" ? zone.rect.x > junction.x : zone.rect.y > junction.y);
+      placeSceneClusters(
+        arena,
+        [
+          {
+            id: `street_market_${zoneId}_${i}`,
+            kind: reverse ? "pavement_market_return" : "pavement_market",
+            zone: zoneId,
+            axis: zone.axis,
+            at: candidates[0]!,
+            candidates,
+          },
+        ],
+        reserved,
+        env.seed,
+        false,
+      );
+    }
+  }
+}
 
 /** Revision 9: a low repair frontage with two stepped, occupied blocks behind it.
  * Partition the existing footprint exactly. No new sidewalk obstacle, entrance or

@@ -18,8 +18,17 @@ describe("repair-row massing revision 9", () => {
     const now = scene.layout.arena.environment!;
     const before = v8.arena.environment!;
     for (const key of ["zones", "entrances", "props", "clusters", "dressing"] as const)
-      expect(now[key]).toEqual(before[key]);
-    expect(scene.layout.arena.cover).toEqual(v8.arena.cover);
+      expect(
+        now[key]!.filter(
+          (item) =>
+            !("id" in item ? item.id : "clusterId" in item ? item.clusterId : "").startsWith(
+              "street_market_",
+            ),
+        ),
+      ).toEqual(before[key]);
+    expect(scene.layout.arena.cover!.filter((c) => !c.id.startsWith("street_market_"))).toEqual(
+      v8.arena.cover,
+    );
     expect(scene.layout.arena.playerStart).toEqual(v8.arena.playerStart);
     expect(scene.layout.arena.hostileSlots).toEqual(v8.arena.hostileSlots);
     const old = before.structures.find((s) => s.id === "building_3")!.rect;
@@ -44,7 +53,7 @@ describe("repair-row massing revision 9", () => {
         expect(lofts).toHaveLength(0);
         continue;
       }
-      expect(env.recipeVersion).toBe(9);
+      expect(env.recipeVersion).toBe(10);
       expect(lofts.map((s) => s.height)).toEqual([7.2, 10.2]);
       const front = env.structures.find((s) => s.id === "building_3")!;
       const edge = front.attachments!.find((a) => a.id === "retail-header")!.edge;
