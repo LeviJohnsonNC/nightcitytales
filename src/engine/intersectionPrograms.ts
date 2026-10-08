@@ -1,5 +1,45 @@
 import type { Arena, Point, Rect } from "./battlefield";
 import type { SceneActor } from "./authoredScene";
+import type { SceneEnvironment } from "./sceneEnvironment";
+
+/** Revision 9: a low repair frontage with two stepped, occupied blocks behind it.
+ * Partition the existing footprint exactly. No new sidewalk obstacle, entrance or
+ * playable upper floor; the normal facade, lighting and cutaway systems own it.
+ * Called only for newly composed scenes, after their orientation is final.
+ */
+export function addRepairLofts(env: SceneEnvironment) {
+  const front = env.structures.find((s) => s.id === "building_3");
+  if (!front || env.structures.some((s) => s.id === "building_3_loft_a")) return;
+  const edge = front.attachments?.find((a) => a.id === "retail-header")?.edge;
+  if (edge !== "north" && edge !== "west") return;
+  const r = { ...front.rect };
+  const length = edge === "north" ? r.width : r.height;
+  const depth = edge === "north" ? r.height : r.width;
+  if (length < 12 || depth < 8) return;
+  const apron = 4;
+  const split = Math.floor(length / 4) * 2;
+  front.rect = edge === "north" ? { ...r, height: apron } : { ...r, width: apron };
+  for (const [suffix, start, span, height] of [
+    ["a", 0, split, 7.2],
+    ["b", split, length - split, 10.2],
+  ] as const) {
+    env.structures.push({
+      id: `building_3_loft_${suffix}`,
+      label:
+        suffix === "a"
+          ? "Repair-row studios behind the low frontage"
+          : "Stepped repair-row rooms and offices",
+      rect:
+        edge === "north"
+          ? { x: r.x + start, y: r.y + apron, width: span, height: depth - apron }
+          : { x: r.x + apron, y: r.y + start, width: depth - apron, height: span },
+      height,
+      style: "shop",
+      blocksMovement: true,
+      blocksShots: true,
+    });
+  }
+}
 
 /** Exchange the compatible northern frontage parcels as whole arrangements.
  * The workshop/utility parcels stay fixed: this changes adjacency, not camera rotation.
