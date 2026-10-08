@@ -13,6 +13,49 @@
 
 # Night City Tales contributor guide
 
+## Resuming work and keeping sessions bounded
+
+Read `docs/AI_HANDOFF.md` first when starting or resuming implementation.
+It is the current-work index; PRODUCT.md remains the product authority,
+ROADMAP.md the priority/debt authority, and this guide the architecture authority.
+
+- Verify the checkout path, remote, branch, HEAD, working-tree changes and relevant
+  PR state before editing. A local reconstructed commit is not proof of the remote
+  baseline. Inspect existing local work before replacing or rebuilding it.
+- Start with the handoff's next action and linked evidence. Read additional
+  architecture sections and source files as required by the task; do not replay
+  every historical checkpoint or dump entire files/logs to reconstruct a session.
+- Work toward one reviewable milestone per chat. Large goals can span several
+  chats. If a milestone grows, checkpoint a coherent partial result before
+  continuing; do not silently expand into another visual experiment.
+- Update the handoff after a meaningful edit batch, before long validation or
+  browser work, when a blocker changes the plan, and before ending the session.
+  During sustained work aim for a checkpoint about every 15–20 minutes.
+  This is an assistant workflow, not a background timer or guaranteed autosave.
+- Keep the handoff under approximately 120 lines. Record timestamp, goal,
+  repo/branch/base, changed paths, what is committed/pushed/local-only, validation
+  evidence and limits, blockers, and the next concrete action. Link detailed
+  evidence instead of copying it. Name the implementation revision checked;
+  do not pretend a document can contain its own final commit hash.
+- Preserve work on the task branch with ordinary commits and, when authorized,
+  push checkpoints or open/update a draft PR before lengthy review. Unverified
+  work must be labelled explicitly. Never push incomplete work to main, rewrite
+  published history, or include unrelated files or secrets. If persistence is
+  blocked, state exactly which work remains local and where.
+- Store verbose test output in files; report the exit code, counts and relevant
+  failures. Fetch small source ranges and targeted diffs. Do not rerun successful
+  checks unless changed code or a required gate makes their evidence stale.
+- After a failure, retry only with a changed hypothesis or environment. If the
+  same blocker survives two attempts, record diagnostics and the smallest next
+  step; switch to independent authorized work or hand off instead of looping.
+- Separate implemented, tested, visually inspected, pushed and merged states.
+  A screenshot is not a passed browser test; a historical suite pass does not
+  validate a new tree. Recheck permissions/capabilities in a new session rather
+  than assuming an old environment failure still applies.
+- End with the result/PR, remaining gate, and a short fresh-chat prompt.
+  Do not promise that project memory alone will recover local files or permissions.
+  User review/merge remains the established workflow.
+
 ## Product
 
 Night City Tales is a solo Cyberpunk RED game with two connected experiences:
