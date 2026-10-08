@@ -21,6 +21,7 @@
  */
 import type { Arena, Point, Rect, SceneEnvironment, SceneStructure } from "@/engine";
 import { hash, type Edge } from "./frontage";
+import { paintStreetLife } from "./streetLife";
 
 type Project = (p: Point) => Point;
 
@@ -519,4 +520,5 @@ export function paintGroundFinish(
   paintWallFeet(ctx, project, env.structures, skip);
   paintThresholdWear(ctx, project, env, skip);
   if (enhancedPaving) paintEntryAprons(ctx, project, env);
+  if (enhancedPaving) paintStreetLife(ctx, arena, project);
 }
