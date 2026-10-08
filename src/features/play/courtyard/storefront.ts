@@ -1187,7 +1187,16 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
     at(offset + span, projection, outer - hem),
     at(offset, projection, outer - hem),
   ];
+  // Boxed fabric ends and metal edging give the canopy a constructed profile.
+  // All planes remain within the saved awning footprint and existing hem height.
+  const cheeks = [offset, offset + span].map((s) => [
+    at(s, 0, wall),
+    at(s, projection, outer),
+    at(s, projection, outer - hem),
+    at(s, 0, wall - 0.45),
+  ]);
   if (o.pass !== "albedo") {
+    if (o.pass === "light") for (const cheek of cheeks) paintAwningLight(o, cheek);
     paintAwningLight(o, [...top.slice(0, 3), valance[2]!, valance[3]!]);
     return;
   }
@@ -1229,12 +1238,31 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
   // arms first: they run under the fabric from the wall to the outer corners
   for (const s of [offset + 0.05, offset + span - 0.05])
     strokeLine(ctx, at(s, 0, wall - 0.55), at(s, projection - 0.05, outer - 0.02), "#222d31", 2.4);
+  cheeks.forEach((cheek, i) => {
+    fillPoly(ctx, cheek, i === 0 ? "#374039" : "#242e2b");
+    strokeLine(ctx, cheek[3]!, cheek[2]!, "#111d20", 2.2);
+    strokeLine(ctx, cheek[0]!, cheek[3]!, "#788274", 1.3);
+    // Diagonal brace is fixed to the cheek rather than hanging in empty space.
+    strokeLine(ctx, cheek[3]!, cheek[1]!, "#69766b", 1.2);
+  });
   paintFabric(top, "rgba(0,0,0,.10)", 0);
   // light is higher at the wall edge and falls off down the slope
   gradientFill(ctx, top, at(offset, 0, wall), at(offset, projection, outer), [
     [0, "rgba(255,255,255,.07)"],
     [1, "rgba(0,0,0,.14)"],
   ]);
+  // Tension ribs separate broad cloth panels at the actual play camera scale.
+  for (let i = 1; i < 4; i++) {
+    const s = offset + (span * i) / 4;
+    strokeLine(ctx, at(s, 0, wall), at(s, projection, outer), "rgba(15,28,28,.48)", 1.4);
+    strokeLine(
+      ctx,
+      at(s + 0.025, 0, wall),
+      at(s + 0.025, projection, outer),
+      "rgba(204,193,153,.3)",
+      0.7,
+    );
+  }
   // the hem folds over the front: the same cloth, darker, with its own stripe phase
   paintFabric(valance, "rgba(0,0,0,.30)", slope);
   strokeLine(ctx, valance[3]!, valance[2]!, "#1b2428", 1.6);
