@@ -1,4 +1,5 @@
 import { paintFaceAsset } from "./afterRainArt";
+import { paintRepairFront, repairFront } from "./repairFront";
 import type { ArchitectureArt } from "./architecturePack";
 /** Built details and entrance lights, aligned to saved facade planes and doors. */
 import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
@@ -66,6 +67,12 @@ export function paintFrontageIdentity(
   ctx.clip();
   if (pass === "albedo") {
     if (workshop) {
+      paintRepairFront(
+        ctx,
+        facePainter(s, edge, project, ppm),
+        repairFront(s, edge, env.entrances),
+        ppm,
+      );
       // A continuous workshop service rail, with repeated fixings and corner conduits.
       fill(quad(0, length, s.height - 0.4, s.height - 0.27, 0.045), "#395d64");
       line(at(0, 0.06, s.height - 0.29), at(length, 0.06, s.height - 0.29), "#91a6a0", 0.032);
