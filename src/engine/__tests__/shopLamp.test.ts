@@ -57,6 +57,22 @@ const geometryHash = (seed: number, withoutLamp: boolean) => {
   const scene = composeScene("intersection", seed);
   const arena = scene.layout.arena;
   const env = arena.environment!;
+  // V9 partitions the utility parcel without changing its occupied ground union.
+  // Rejoin it for the historical ground-layout checksum (new partition tested separately).
+  const lofts = env.structures.filter((s) => s.id.startsWith("building_3_loft_"));
+  if (lofts.length) {
+    const front = env.structures.find((s) => s.id === "building_3")!;
+    const rs = [front, ...lofts].map((s) => s.rect);
+    const x = Math.min(...rs.map((r) => r.x)),
+      y = Math.min(...rs.map((r) => r.y));
+    front.rect = {
+      x,
+      y,
+      width: Math.max(...rs.map((r) => r.x + r.width)) - x,
+      height: Math.max(...rs.map((r) => r.y + r.height)) - y,
+    };
+    env.structures = env.structures.filter((s) => !s.id.startsWith("building_3_loft_"));
+  }
   const dressing = withoutLamp
     ? env.dressing.filter((d) => d.clusterId !== "shop_lamp")
     : env.dressing;
@@ -107,12 +123,12 @@ describe("recipe revision 7: the shop lamp", () => {
       expect(geometryHash(seed, true), `seed ${seed}`).toBe(BEFORE_REVISION_7[seed]);
   });
 
-  it("is v8 with one lamp beside the shop on every other intersection", () => {
+  it("is v9 with one lamp beside the shop on every other intersection", () => {
     for (const seed of SEEDS.filter((s) => !REFERENCE.includes(s))) {
       const arena = composeScene("intersection", seed).layout.arena;
       const env = arena.environment!;
-      expect(env.recipeVersion).toBe(8);
-      expect(arena.key).toContain(":v8:");
+      expect(env.recipeVersion).toBe(9);
+      expect(arena.key).toContain(":v9:");
       const lamps = env.dressing.filter((d) => d.clusterId === "shop_lamp");
       expect(lamps, `seed ${seed}`).toHaveLength(1);
       const lamp = lamps[0]!;
