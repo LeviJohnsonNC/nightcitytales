@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - "src/features/play/courtyard/**"
+      - "src/engine/sceneComposer.ts"
+      - "src/engine/intersectionPrograms.ts"
+      - "src/engine/sceneComposition.ts"
+      - "src/engine/sceneClusters.ts"
       - "public/images/architecture/block-*"
       - "e2e/city-block.spec.ts"
       - ".github/workflows/city-block-review.yml"
