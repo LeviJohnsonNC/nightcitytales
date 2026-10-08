@@ -8,8 +8,9 @@ Verify live GitHub/checkout state on each resume; this file can become stale.
 Finish recovering and reviewing the inhabited After Rain intersection before
 starting the next visual upgrade. Levi wants substantial progress toward the
 reference image, while preserving saved geometry, tactical readability and rules.
-Current task: establish durable checkpoints so a chat interruption does not
-require reconstructing the whole project again.
+Current task: manual visual review completed; publish the missing recovery work
+and close its automated browser gate before another visual upgrade.
+See `docs/city-block-visual-review-2026-10-08.md` for results and limitations.
 
 ## Verified remote state
 
@@ -19,10 +20,14 @@ require reconstructing the whole project again.
   https://github.com/LeviJohnsonNC/nightcitytales/pull/316
 - Its implementation head was `38d3c344cde3a9bd740cf4f20da99f6533b0d2d6`.
   This is NOT a verified current main or merge commit SHA.
-- No open PRs were returned immediately before creating this documentation branch.
-- Workflow branch: `codex/resumable-development`, created from main.
-  Changes here are only this file and the resume section in AGENTS.md.
-- No implementation validation or visual review was performed in this workflow task.
+- PR #317 (continuity guidance) is merged; #318 is a closed duplicate.
+- Current notes branch: `codex/city-block-visual-review-notes`, from main.
+- Manual deployed-site review: seeds 0/7/8 render; lighting, wrecks, reveal,
+  obstructed targeting and firing-position highlights checked. Compact layout
+  fit at measured 560 CSS px. Save/load and automated suite were not exercised.
+- Local server probe still fails with `EPERM`; use CI for the automated gate.
+- Several render rebuilds briefly exceeded browser command deadlines, then recovered.
+- Deployment commit not exposed; no claim of exact-commit visual acceptance.
 
 ## Local recovery work to preserve
 
@@ -35,8 +40,9 @@ remote branches or that a new chat inherits them.
 ### city-block-recovery/
 
 - Local branch: `codex/city-block-review`.
-- Local HEAD: `341692f`, “Reconstruct verified merged city block snapshot for review.”
-  This is a reconstructed local snapshot, not proof of an upstream merge SHA.
+- Reconstructed baseline: `341692f`; continuity checkpoint: `f17129d`.
+  Subsequent local review commits may exist; inspect HEAD, do not push this
+  reconstructed history as current main.
 - Modified: `.github/workflows/city-block-review.yml`,
   `e2e/city-block.spec.ts`, `src/features/play/courtyard/cityBlock.ts`.
 - Untracked: `docs/checkpoint-city-block-recovery.md`, `docs/city-block/`,
@@ -70,12 +76,13 @@ remote branches or that a new chat inherits them.
 
 ## Next action — a bounded recovery milestone
 
-1. Read this file and the applicable contributor rules. Check current main,
+1. Read this file, the visual review report and applicable contributor rules. Check current main,
    open/recent PRs and the dirty recovery checkout; identify the actual baseline.
 2. Compare only the recovery manifest's changed files/assets against that baseline.
    Preserve unrelated files. Publish the missing recovery work on a feature
    branch/draft PR, explicitly marking any unverified checks.
-3. Run the affected checks and repaired before/after browser jobs. Record the
+3. Do not repeat the completed manual visual pass by default. Run the affected
+   checks and repaired before/after browser jobs on an identified commit. Record the
    revision, commands, results and evidence links here before further work.
    If blocked, preserve the branch and exact diagnostic; avoid repeated retries.
 4. Deliver the recovery PR with a clear remaining-gates list. Plan the next
