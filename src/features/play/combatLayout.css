@@ -1,0 +1,197 @@
+/* Battlefield first. Detail is available on demand; the action dock stays live. */
+.combat-screen .combat-header {
+  padding: 8px 18px;
+}
+.combat-screen .combat-brand {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 18px;
+}
+.combat-screen .combat-lockup {
+  grid-row: 1 / 3;
+}
+.combat-screen .combat-brand h1 {
+  font-size: 18px;
+  margin: 0;
+}
+.combat-screen .combat-brand p {
+  margin: 3px 0 0;
+}
+.combat-screen .combat-turn-strip {
+  min-height: 44px;
+  gap: 12px;
+}
+.combat-screen .combat-initiative {
+  min-width: 0;
+  flex: 1;
+  padding: 3px 0;
+}
+.combat-screen .combat-initiative li {
+  padding-right: 9px;
+  font-size: 9px;
+}
+.combat-screen .combat-initiative .combat-portrait {
+  width: 28px;
+  height: 32px;
+}
+.combat-readout-toggle {
+  order: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid #48636b;
+  background: #12262e;
+  color: #d3e3e2;
+  font-size: 11px;
+}
+.combat-readout-toggle span {
+  color: var(--tac-cyan);
+  font: 11px monospace;
+}
+.combat-readout-toggle[aria-expanded="true"] {
+  border-color: var(--tac-cyan);
+}
+.combat-screen .combat-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.combat-screen .combat-main.has-readout {
+  grid-template-columns: minmax(0, 1fr) 260px;
+}
+.combat-screen .combat-intel[hidden] {
+  display: none;
+}
+.combat-screen .combat-command {
+  grid-template-columns: 190px minmax(300px, 1fr) 220px 100px;
+  gap: 12px;
+  padding: 8px 16px max(8px, env(safe-area-inset-bottom));
+}
+.combat-screen .combat-operator > .combat-portrait {
+  width: 42px;
+  height: 56px;
+}
+.combat-screen .combat-operator-info {
+  gap: 3px;
+}
+.combat-screen .combat-operator-info > .combat-eyebrow {
+  display: none;
+}
+.combat-screen .combat-operator-info > strong {
+  font-size: 14px;
+}
+.combat-screen .combat-actions > button {
+  flex-direction: row;
+  padding: 10px 6px;
+  gap: 8px;
+}
+.combat-screen .combat-actions svg {
+  width: 20px;
+  height: 20px;
+}
+.combat-screen .combat-actions span {
+  font-size: 11px;
+}
+.combat-screen .combat-actions small {
+  font-size: 8px;
+}
+.combat-screen .combat-weapon-art {
+  display: none;
+}
+.combat-screen .combat-equipped {
+  padding: 3px 10px;
+}
+.combat-screen .combat-end {
+  padding: 8px;
+}
+@media (max-width: 1100px) {
+  .combat-screen .combat-command {
+    grid-template-columns: 150px minmax(260px, 1fr) 180px 80px;
+    gap: 7px;
+  }
+  .combat-screen .combat-operator > .combat-portrait {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  .combat-screen .combat-header {
+    padding: 7px 12px;
+  }
+  .combat-screen .combat-brand {
+    column-gap: 10px;
+  }
+  .combat-screen .combat-brand h1 {
+    font-size: 14px;
+  }
+  .combat-screen .combat-turn-strip {
+    gap: 8px;
+  }
+  .combat-screen .combat-mobile-budget {
+    flex: 1;
+  }
+  .combat-readout-toggle {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+  .combat-screen .combat-main.has-readout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(140px, 1fr) auto;
+  }
+  .combat-screen .combat-intel {
+    max-height: 30dvh;
+  }
+  .combat-screen .combat-command {
+    grid-template-columns: minmax(0, 1fr) 80px;
+    padding: 6px 10px max(6px, env(safe-area-inset-bottom));
+    gap: 5px;
+  }
+  .combat-screen .combat-equipped {
+    padding: 0 6px;
+  }
+  .combat-screen .combat-operator-info > strong {
+    font-size: 12px;
+  }
+  .combat-screen .combat-actions > button {
+    min-height: 44px;
+    padding: 6px 3px;
+    gap: 5px;
+  }
+  .combat-screen .combat-actions span {
+    font-size: 10px;
+  }
+  .combat-screen .combat-end {
+    min-height: 44px;
+    padding: 5px;
+  }
+}
+@media (max-width: 520px) {
+  .combat-screen .combat-lockup {
+    display: none;
+  }
+  .combat-screen .combat-brand {
+    display: block;
+  }
+  .combat-screen .combat-mobile-budget {
+    display: none;
+  }
+  .combat-readout-toggle {
+    margin-left: auto;
+  }
+  .combat-screen .combat-actions > button {
+    flex-direction: column;
+    gap: 3px;
+  }
+}
+@media (max-width: 900px) and (max-height: 500px) {
+  .combat-screen .combat-main.has-readout {
+    grid-template-columns: minmax(0, 1fr) 240px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .combat-screen .combat-intel {
+    max-height: none;
+  }
+}

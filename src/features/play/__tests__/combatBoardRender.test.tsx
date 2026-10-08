@@ -132,6 +132,13 @@ describe("the board renders", () => {
       objective="Monster Hunt"
     />,
   );
+  it("starts with the detailed readout collapsed while keeping the combat controls", () => {
+    expect(html).toMatch(/<aside[^>]*aria-label="Tactical readout"[^>]*hidden/);
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('aria-label="Weapon"');
+    expect(html).toContain('aria-label="Health"');
+    expect(html).toContain('aria-label="Combat actions"');
+  });
   it("lights the squares a Move reaches, and no more", () => {
     const squares = html.match(/class="combat-square[^"]*"/g) ?? [];
     expect(squares.length).toBeGreaterThan(30);
@@ -314,6 +321,8 @@ it("shows an untargeted opening request without opening the improvisation dialog
       openingRequest={<p>Choose a hostile target for your opening shot.</p>}
     />,
   );
+  expect(output).not.toMatch(/<aside[^>]*hidden/);
+  expect(output).toContain('aria-expanded="true"');
   expect(output).toContain("Choose a hostile target for your opening shot.");
   expect(output).toContain('role="status"');
 });
@@ -344,4 +353,39 @@ it("distinguishes withdrawals, deaths, and unknown removals without requiring pl
   expect(html).toContain('data-disposition="out_of_fight"');
   expect(html).toContain("Out of fight");
   expect(html).not.toContain('data-disposition="dead"');
+});
+
+it("always exposes pending roll controls", () => {
+  const html = renderToStaticMarkup(
+    <CombatBoard
+      live={live}
+      capability={capability}
+      weaponId="very_heavy_pistol"
+      onWeaponId={() => {}}
+      dice={<button>Roll attack</button>}
+    />,
+  );
+  expect(html).not.toMatch(/<aside[^>]*hidden/);
+  expect(html).toContain('aria-expanded="true"');
+  expect(html).toContain("Roll attack");
+});
+
+it("opens the first-turn recap when hostile initiative preceded the player", () => {
+  const opening = {
+    ...live,
+    origin: { version: 1 },
+    state: { ...live.state, round: 1, order: ["h1", "p", "h2"], activeIndex: 1 },
+  } as LiveEncounter;
+  const html = renderToStaticMarkup(
+    <CombatBoard
+      live={opening}
+      capability={capability}
+      weaponId="very_heavy_pistol"
+      onWeaponId={() => {}}
+      openingRecap={<p>Opponent acted first.</p>}
+    />,
+  );
+  expect(html).not.toMatch(/<aside[^>]*hidden/);
+  expect(html).toContain('aria-expanded="true"');
+  expect(html).toContain("Opponent acted first.");
 });

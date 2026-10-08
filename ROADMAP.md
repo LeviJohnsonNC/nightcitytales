@@ -1895,3 +1895,11 @@ existing streetlamp pools are broader with softer centres. See
 `docs/checkpoint-street-frontage.md` for matched evidence and validation. This is
 a finish improvement, not reference parity. Normal-play roof coverage and the
 amount of screen given to the street remain the next composition questions.
+
+### Battlefield-first combat layout (2026-10-07)
+
+The combat screen gives the street the full width by default, with an optional
+readout and a compact header, initiative strip and action dock. The matched
+682 × 704 review gains 79% battlefield height. Pending rolls and opening requests
+remain exposed. See `docs/checkpoint-battlefield-first.md` for evidence and checks.
+Reference parity still needs stronger street-facing silhouettes and lighting.
