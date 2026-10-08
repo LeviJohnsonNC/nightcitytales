@@ -3,7 +3,7 @@ import {
   compositionChoice,
   type CompositionRequirements,
 } from "./sceneComposition";
-import { addShopLamp, exchangeNorthFrontages } from "./intersectionPrograms";
+import { addRepairLofts, addShopLamp, exchangeNorthFrontages } from "./intersectionPrograms";
 /** Bounded cluster placement over semantic parcels. No model calls, free-cell scattering or retries. */
 import type { Arena, Point, Rect } from "./battlefield";
 import { placeSceneClusters, type Slot } from "./sceneClusters";
@@ -352,9 +352,10 @@ export function composeScene(
   const selection = compositionSelection(kind, seed, requirements);
   const variant = selection?.family ?? (seed + 2) % 3;
   const refined = !(seed >= 1 && seed <= 3);
-  // Revision 8 raises the commercial row into stepped mixed-use buildings.
+  // Revision 9 retains the raised commercial row and partitions the repair parcel
+  // into a low frontage with stepped occupied blocks behind it.
   // Seeds 1-3 and all previously saved snapshots keep their original geometry.
-  const revision = refined ? (kind === "intersection" ? 8 : 6) : 5;
+  const revision = refined ? (kind === "intersection" ? 9 : 6) : 5;
   const plan = recipe(kind, variant);
   if (refined && kind === "alley" && variant === 1) {
     // Two opposed service courts turn a pocket shift into a cross-yard organization.
@@ -586,6 +587,7 @@ export function composeScene(
     for (const structure of env.structures)
       if (heights[structure.id] !== undefined) structure.height = heights[structure.id]!;
   }
+  if (revision >= 9 && kind === "intersection") addRepairLofts(env);
   const reachable = reachableTiles({
     arena,
     cover: {},
