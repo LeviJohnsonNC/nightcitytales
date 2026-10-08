@@ -129,9 +129,7 @@ export function paintCityBlockFace(
     );
   const industrial = s.style === "workshop" || s.style === "warehouse";
   ctx.save();
-  path(
-    quad(clip?.s0 ?? 0, clip?.s1 ?? length, 0, Math.min(s.height, clip?.zMax ?? s.height)),
-  );
+  path(quad(clip?.s0 ?? 0, clip?.s1 ?? length, 0, Math.min(s.height, clip?.zMax ?? s.height)));
   ctx.clip();
   // Stone/brick grounding, with courses broken at actual doors.
   if (!shopFace) {
