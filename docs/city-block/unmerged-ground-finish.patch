@@ -1,0 +1,103 @@
+diff --git a/src/features/play/courtyard/groundFinish.ts b/src/features/play/courtyard/groundFinish.ts
+index 0199ee01..700b4f13 100644
+--- a/src/features/play/courtyard/groundFinish.ts
++++ b/src/features/play/courtyard/groundFinish.ts
+@@ -162,7 +162,7 @@ export function paintRoadSurface(
+       points.map(project),
+       hash(r.x, r.y, 74) < 0.6 ? "rgba(113,112,99,.18)" : "rgba(4,11,14,.32)",
+     );
+-    fracture(ctx, project, [...points, points[0]!], 0.055);
++    fracture(ctx, project, [...points, points[0]!], 0.025);
+     fracture(
+       ctx,
+       project,
+@@ -174,6 +174,7 @@ export function paintRoadSurface(
+       0.035,
+     );
+   }
++  paintUtilityLids(ctx, project, env);
+   // A few connected cracks, not a repeated noise layer over the whole street.
+   const left = Math.min(...roads.map((z) => z.rect.x));
+   const top = Math.min(...roads.map((z) => z.rect.y));
+@@ -200,6 +201,73 @@ export function paintRoadSurface(
+   ctx.restore();
+ }
+ 
++/** Flush access lids sit inside existing utility cuts, not new tactical cover. */
++function paintUtilityLids(ctx: CanvasRenderingContext2D, project: Project, env: SceneEnvironment) {
++  for (const [i, r] of roadRepairs(env).entries()) {
++    if (i % 2 !== 0) continue;
++    const cx = r.x + r.width / 2,
++      cy = r.y + r.height / 2;
++    const ring = (radius: number) =>
++      Array.from({ length: 32 }, (_, j) => {
++        const a = (j / 32) * Math.PI * 2;
++        return project({ x: cx + Math.cos(a) * radius, y: cy + Math.sin(a) * radius });
++      });
++    poly(ctx, ring(0.46), "#1b2529");
++    poly(ctx, ring(0.405), "#68706b");
++    poly(ctx, ring(0.36), "#354447");
++    // Cast-iron ribs stay inside the round lid, with two small lifting slots.
++    for (let y = -0.27; y <= 0.28; y += 0.09) {
++      const w = Math.sqrt(0.33 ** 2 - y ** 2);
++      stroke(
++        ctx,
++        project({ x: cx - w, y: cy + y }),
++        project({ x: cx + w, y: cy + y }),
++        "#66706b",
++        0.75,
++      );
++    }
++    for (const x of [-0.2, 0.2])
++      poly(
++        ctx,
++        quad(project, { x: cx + x - 0.035, y: cy - 0.06, width: 0.07, height: 0.12 }),
++        "#101d22",
++      );
++  }
++}
++
++/** Brick service edging gives the pavement a finer scale next to occupied walls. */
++function paintWallEdging(ctx: CanvasRenderingContext2D, project: Project, env: SceneEnvironment) {
++  const sidewalks = env.zones.filter((z) => z.kind === "sidewalk");
++  for (const s of env.structures) {
++    if (s.style === "mesh-fence" || s.style === "interior-wall") continue;
++    for (const edge of ["north", "east"] as const) {
++      const length = edge === "north" ? s.rect.width : s.rect.height;
++      for (let t = 0.1; t < length - 0.4; t += 0.42) {
++        const r =
++          edge === "north"
++            ? { x: s.rect.x + t, y: s.rect.y - 0.42, width: 0.39, height: 0.34 }
++            : { x: s.rect.x + s.rect.width + 0.08, y: s.rect.y + t, width: 0.34, height: 0.39 };
++        const centre = { x: r.x + r.width / 2, y: r.y + r.height / 2 };
++        if (
++          !sidewalks.some(
++            (z) =>
++              inside({ x: r.x, y: r.y }, z.rect) &&
++              inside({ x: r.x + r.width, y: r.y + r.height }, z.rect),
++          )
++        )
++          continue;
++        if (
++          (env.entrances ?? []).some(
++            (e) => Math.hypot(centre.x - e.position.x, centre.y - e.position.y) < 1.2,
++          )
++        )
++          continue;
++        poly(ctx, quad(project, r), hash(r.x, r.y, 91) < 0.35 ? "#5d6259" : "#706d5b");
++      }
++    }
++  }
++}
++
+ /* ------------------------------------------------------------------ paving */
+ 
+ /** Which 1 m slabs of the pavement are off-tone or repaired: by the slab alone. */
+@@ -512,6 +580,7 @@ export function paintGroundFinish(
+ ) {
+   const env = arena.environment!;
+   paintSlabs(ctx, project, env, enhancedPaving);
++  if (enhancedPaving) paintWallEdging(ctx, project, env);
+   paintGutterSilt(ctx, project, env);
+   wearRoadPaint(ctx, project, env);
+   for (const o of oilDrips(arena))
