@@ -15,7 +15,7 @@ jobs:
   capture:
     name: Chromium ${{ matrix.revision }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -38,7 +38,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
       - name: Capture shipping renderer and verify controls
-        run: bunx playwright test e2e/city-block.spec.ts --project=desktop --workers=1
+        run: bunx playwright test e2e/city-block.spec.ts --project=desktop --workers=1 --global-timeout=300000
         env:
           CI: "true"
       - uses: actions/upload-artifact@v4
@@ -47,3 +47,4 @@ jobs:
           name: city-block-${{ matrix.revision }}
           path: e2e/.results
           retention-days: 7
+          include-hidden-files: true
