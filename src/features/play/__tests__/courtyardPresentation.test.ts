@@ -3,6 +3,7 @@ import { composeScene, arenaFor, rectContains, coverStatuses, placeHostiles } fr
 import { battlefieldProjection } from "../battlefieldProjection";
 import {
   battlefieldCameraPreset,
+  intersectionActionCamera,
   composedUnitMetrics,
   courtyardCamera,
   routePosition,
@@ -90,6 +91,66 @@ describe("composed scene scale", () => {
       expect(battlefieldCameraPreset(arena).zoom).toBeGreaterThan(
         battlefieldCameraPreset(arena, "overview").zoom,
       );
+    }
+  });
+});
+
+describe("intersection action composition", () => {
+  it.each([
+    [2036, 839],
+    [682, 498],
+    [390, 640],
+    [844, 196],
+  ])("keeps standing figures and an apron visible at %s × %s", (width, height) => {
+    for (const seed of [0, 7, 8, 19]) {
+      const arena = composeScene("intersection", seed).layout.arena;
+      const positions = [arena.playerStart, ...arena.hostileSlots];
+      const before = JSON.stringify({ arena, positions });
+      const camera = intersectionActionCamera(arena, positions, { width, height });
+      const view = courtyardCamera(width, height, camera);
+      const { project } = battlefieldProjection(arena.extent.width, arena.extent.height);
+      const headHeight = composedUnitMetrics(arena).top;
+      for (const point of positions) {
+        const p = project(point);
+        const x = (p.x - view.x) * view.zoom + width / 2;
+        const feet = (p.y - view.y) * view.zoom + height / 2;
+        expect(x).toBeGreaterThan(24);
+        expect(x).toBeLessThan(width - 24);
+        expect(feet - headHeight * view.zoom).toBeGreaterThan(Math.min(88, height * 0.22));
+        expect(feet).toBeLessThan(height - Math.min(48, height * 0.13));
+      }
+      expect(camera.zoom).toBeLessThanOrEqual(2.15);
+      expect(JSON.stringify({ arena, positions })).toBe(before);
+    }
+  });
+  it("fits widely separated participants rather than cropping to reach a preferred zoom", () => {
+    const arena = composeScene("intersection", 8).layout.arena;
+    const points = [
+      { x: 0, y: 0 },
+      { x: 32, y: 32 },
+      { x: 0, y: 32 },
+      { x: 32, y: 0 },
+    ];
+    const camera = intersectionActionCamera(arena, points, { width: 390, height: 400 });
+    const view = courtyardCamera(390, 400, camera);
+    for (const point of points) {
+      const p = battlefieldProjection(32, 32).project(point);
+      expect(Math.abs((p.x - view.x) * view.zoom)).toBeLessThan(195);
+      expect(Math.abs((p.y - view.y) * view.zoom)).toBeLessThan(200);
+    }
+  });
+  it("preserves other arenas and handles empty or invalid participant lists", () => {
+    for (const kind of ["office", "residential", "intersection"] as const) {
+      const arena = composeScene(kind, 7).layout.arena;
+      const size = { width: 1100, height: 680 };
+      expect(intersectionActionCamera(arena, [], size)).toEqual(battlefieldCameraPreset(arena));
+      expect(intersectionActionCamera(arena, [{ x: NaN, y: 1 }], size)).toEqual(
+        battlefieldCameraPreset(arena),
+      );
+      if (kind !== "intersection")
+        expect(intersectionActionCamera(arena, [arena.playerStart], size)).toEqual(
+          battlefieldCameraPreset(arena),
+        );
     }
   });
 });

@@ -1,4 +1,8 @@
-import { battlefieldCameraPreset, composedUnitMetrics } from "./courtyard/courtyardPresentation";
+import {
+  battlefieldCameraPreset,
+  composedUnitMetrics,
+  intersectionActionCamera,
+} from "./courtyard/courtyardPresentation";
 import { combatantDisposition } from "@/engine";
 import { CombatDepartures } from "./CombatDepartures";
 import { dispositionLabel } from "./combatDisposition";
@@ -123,6 +127,15 @@ const squareCorners = (tile: Tile): Point[] => {
   ];
 };
 
+const framingPoints = (encounter: LiveEncounter | null) =>
+  encounter
+    ? Object.values(encounter.state.combatants).flatMap((actor) =>
+        !actor.defeated && encounter.data[actor.id]
+          ? [{ ...encounter.data[actor.id]!.position }]
+          : [],
+      )
+    : [];
+
 /** The tactical screen owns selection and camera only. Every actionable preview comes from the engine. */
 export function CombatBoard({
   playerPortrait,
@@ -212,19 +225,19 @@ export function CombatBoard({
   const [panel, setPanel] = useState<"journal" | "improvise" | null>(null);
   /** The combatant whose dossier is open. Their art is on file; the fight is not. */
   const [dossier, setDossier] = useState<string | null>(null);
-  const [camera, setCamera] = useState(
-    () =>
-      initialCamera ?? {
-        x: 0,
-        y: 0,
-        zoom:
-          live && battlefieldFor(live).environment
-            ? battlefieldCameraPreset(battlefieldFor(live)).zoom
-            : live && scenicTheme(battlefieldFor(live))
-              ? 1.25
-              : 1,
-      },
+  const [manualCamera, setCamera] = useState<{ x: number; y: number; zoom: number } | null>(
+    initialCamera ?? null,
   );
+  const [actionFrame, setActionFrame] = useState(() => ({
+    id: live?.id,
+    points: framingPoints(live),
+  }));
+  // A new encounter gets a fresh composition. Within it, movement/playback never
+  // chases the camera; only an explicit reset takes another participant snapshot.
+  if (actionFrame.id !== live?.id) {
+    setActionFrame({ id: live?.id, points: framingPoints(live) });
+    setCamera(initialCamera ?? null);
+  }
   const drag = useRef<Point | null>(null);
   const patternId = useId().replaceAll(":", "");
   /** The board's size on screen: actor markers are drawn in screen pixels from it. */
@@ -313,6 +326,11 @@ export function CombatBoard({
   if (!live) return null;
   const arena = battlefieldFor(live);
   const theme = scenicTheme(arena);
+  const camera =
+    manualCamera ??
+    (arena.environment
+      ? intersectionActionCamera(arena, actionFrame.points, boardSize)
+      : { x: 0, y: 0, zoom: theme ? 1.25 : 1 });
   const hasScenicArt = theme !== null;
   const scenicUnitTop =
     theme === "composed" ? composedUnitMetrics(arena).top : theme === "street" ? 58 : 88;
@@ -672,6 +690,19 @@ export function CombatBoard({
           : { hint: waitingWhy }),
     };
   })();
+  const frameAction = () => {
+    setActionFrame({ id: live.id, points: framingPoints(live) });
+    setCamera(null);
+  };
+  const offscreenActors =
+    arena.environment?.recipe === "intersection"
+      ? actors.filter(({ actor, data }) => {
+          if (actor.defeated) return false;
+          const p = toScreen(project(data.position));
+          const head = p.y - scenicUnitTop * pxPerUnit;
+          return p.x < 16 || p.x > boardSize.width - 16 || head < 0 || p.y > boardSize.height - 16;
+        }).length
+      : 0;
   const turnKey = `${live.id}:${live.state.round}:${active?.id}`;
   const dossierNpc = dossier ? findNpcNumbered(dossier) : null;
   return (
@@ -874,13 +905,12 @@ export function CombatBoard({
             <button
               className="combat-icon"
               aria-label="Reset camera"
-              onClick={() =>
-                setCamera(
-                  arena.environment
-                    ? battlefieldCameraPreset(arena)
-                    : { x: 0, y: 0, zoom: hasScenicArt ? 1.25 : 1 },
-                )
+              title={
+                arena.environment?.recipe === "intersection"
+                  ? "Frame the current participants"
+                  : "Reset camera"
               }
+              onClick={frameAction}
             >
               <RotateCcw size={17} />
             </button>
@@ -1614,6 +1644,12 @@ export function CombatBoard({
                 </button>
               )}
             </BattlefieldCallout>
+          )}
+          {offscreenActors > 0 && (
+            <button type="button" className="combat-frame-notice" onClick={frameAction}>
+              <Crosshair size={14} /> Frame {offscreenActors} offscreen{" "}
+              {offscreenActors === 1 ? "participant" : "participants"}
+            </button>
           )}
           <div className={`combat-map-hint ${feedback ? "has-feedback" : ""}`}>
             {feedback && !playback && (

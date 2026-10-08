@@ -1903,3 +1903,13 @@ readout and a compact header, initiative strip and action dock. The matched
 682 × 704 review gains 79% battlefield height. Pending rolls and opening requests
 remain exposed. See `docs/checkpoint-battlefield-first.md` for evidence and checks.
 Reference parity still needs stronger street-facing silhouettes and lighting.
+
+### Intersection action composition (2026-10-07)
+
+The first stage of the reference-quality street milestone fits the starting view
+to the participants with a pavement apron, holds during play, and offers explicit
+recovery when participants go offscreen. Seed 8 reads about 50% larger at the
+matched desktop size. Scenery-only review shares the Action area framing.
+See `docs/checkpoint-intersection-composition.md`. Next: wet ground and lighting,
+then measured assets for distinctive street fixtures/frontages; existing shop
+and prop art is reusable. This is not reference-parity acceptance.
