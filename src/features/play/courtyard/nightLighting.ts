@@ -62,7 +62,7 @@ export const INTERSECTION_NIGHT = {
    * share of the shopfront's, and the light its neon name throws on the render.
    */
   returnDisplay: 0.75,
-  neon: [1, 0.36, 0.48] as Rgb,
+  neon: [1, 0.36, 0.28] as Rgb,
   /** The scene's other saved lamps and signs, which keep their small drawings. */
   streetLamp: { color: [1, 0.78, 0.5] as Rgb, intensity: 0.44, radius: 4.1 },
   sign: { color: [0.32, 0.8, 0.78] as Rgb, intensity: 0.28, radius: 2.6 },

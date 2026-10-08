@@ -1,4 +1,8 @@
-import { paintCommercialUpper } from "./commercialUpper";
+import { fixtureExtent } from "./afterRainArt";
+import { entranceLights, paintFrontageIdentity } from "./frontageIdentity";
+import { createRainSurface, rainField } from "./afterRain";
+import { fixtureLights, paintCityFixture, streetDirection, fixtureLamp } from "./cityFixtures";
+import { paintCommercialUpper, commercialUpperWindows } from "./commercialUpper";
 /** World-building art from the same resolved parcels that constrain play. */
 import { paintResidentialRoof, RESIDENTIAL_ROOF_RECESS } from "./residentialRoof";
 import type Phaser from "phaser";
@@ -118,12 +122,11 @@ import {
   type GroundLight,
   type NightLighting,
 } from "./nightLighting";
-import { shadowArea, shadowCasters, lightExtent, LAMP_SHADOW, type Box } from "./lampShadow";
+import { shadowCasters, LAMP_SHADOW, type Box } from "./lampShadow";
 import {
   GroundShadows,
   lightPassCanvas,
   renderGroundLight,
-  incidentLight,
   type GroundLightSetup,
 } from "./groundShadows";
 import {
@@ -584,9 +587,8 @@ export function dressingLights(
   skip: ReadonlySet<string>,
 ): GroundLight[] {
   return env.dressing.flatMap((d): GroundLight[] => {
-    if (skip.has(d.id) || (d.kind !== "lamp" && d.kind !== "sign")) return [];
-    const light = d.kind === "lamp" ? night.streetLamp : night.sign;
-    return [{ kind: "pool", centre: d.position, ...light }];
+    if (skip.has(d.id) || d.kind !== "lamp") return [];
+    return [{ kind: "pool", centre: fixtureLamp(env, d.position).at, ...night.streetLamp }];
   });
 }
 
@@ -772,6 +774,30 @@ export function paintCutawayWall(
         paintReturnFace(ctx, composed, project, metre, returns!.art, materials, "fittings", clip);
     }
   }
+  if (!lightPass && materials && home?.art)
+    for (const edge of ["north", "east"] as const) {
+      const wall = structure.rect;
+      if (!(edge === "north" ? r.y === wall.y : r.x + r.width === wall.x + wall.width)) continue;
+      const s0 = edge === "north" ? r.x - wall.x : r.y - wall.y;
+      const face = facePainter(structure, edge, project, metre);
+      ctx.save();
+      clipHomeFace(ctx, face, {
+        s0,
+        s1: s0 + (edge === "north" ? r.width : r.height),
+        zMax: part.height,
+      });
+      paintFrontageIdentity(
+        ctx,
+        structure,
+        edge,
+        { entrances: home.entrances, structures: [structure] },
+        project,
+        metre,
+        "albedo",
+        home.art,
+      );
+      ctx.restore();
+    }
   // The repair base belongs to the surviving wall, including low automatic sections.
   if (!lightPass && returns)
     for (const front of returns.neighbours.filter((f) => f.structure === structure)) {
@@ -1030,7 +1056,7 @@ export function paintBuilding(
         : structure.style === "shop"
           ? ["#49474a", "#333941", materials ? "#454947" : "#646360"]
           : structure.style === "workshop"
-            ? ["#4b4940", "#353b3b", "#686356"]
+            ? ["#345b66", "#25414d", "#495657"]
             : ["#3e4a50", "#2c3942", "#56656b"];
   // Commercial frontage takes concrete, a membrane roof, painted rooftop units and
   // shuttered doors; every other building keeps its flat fills for now. Materials
@@ -1314,6 +1340,18 @@ export function paintBuilding(
   };
   face(base[0]!, base[1]!, r.width, "#515658", "north");
   face(base[1]!, base[2]!, r.height, "#353d42", "east");
+  if (materials)
+    for (const edge of ["north", "east"] as const)
+      paintFrontageIdentity(
+        ctx,
+        structure,
+        edge,
+        { entrances, structures: frontage?.structures ?? [structure] },
+        project,
+        pixelsPerMetre,
+        "albedo",
+        architecture,
+      );
   if (storefront)
     paintStorefrontFace({
       ctx,
@@ -1778,18 +1816,13 @@ export function createComposedEnvironment(
     ? [
         ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
         ...returnLights(returns?.faces ?? [], night),
+        ...fixtureLights(env),
+        ...entranceLights(env),
         ...dressingLights(
           env,
           night,
           new Set(storefronts.some((sf) => sf.lamp) ? ["shop_lamp_detail_0"] : []),
         ),
-      ]
-    : [];
-  // The shop corner's own lights, for its glints (`groundReflection.ts`).
-  const shopLights = night
-    ? [
-        ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
-        ...returnLights(returns?.faces ?? [], night),
       ]
     : [];
   // The same lights at their fixtures' heights, for the walls they reach (`wallLight.ts`).
@@ -1959,6 +1992,10 @@ export function createComposedEnvironment(
         }),
     });
   }
+  if (night && materialised) {
+    const wet = createRainSurface(env, project, { x: gx, y: gy, width: gw, height: gh });
+    ground.context.drawImage(wet, gx, gy, gw, gh);
+  }
   ground.context.restore();
   ground.refresh();
   const groundImage = scene.add
@@ -1977,7 +2014,6 @@ export function createComposedEnvironment(
   const paintOne = (c: CanvasRenderingContext2D, light: GroundLight) =>
     paintGroundLights(c, project, env.structures, [light]);
   let shadows: ComposedShadows | undefined;
-  let groundSetup: GroundLightSetup | undefined;
   if (night && lights.length) {
     const setup: GroundLightSetup = {
       base: ground.canvas,
@@ -1989,7 +2025,6 @@ export function createComposedEnvironment(
       paintLight: paintOne,
       gain: night.gain,
     };
-    groundSetup = setup;
     const canvas = renderGroundLight(setup, new Set());
     const texture = scene.textures.addCanvas("composed-ground-light", canvas)!;
     texture.refresh();
@@ -2303,7 +2338,14 @@ export function createComposedEnvironment(
       // the secondary light: a few occupied homes (`litHomeWindows`), each a visible
       // source with its own room, glass, sill and the wall round it
       const homes = night
-        ? litHomeWindows(s, arena.environment!.entrances, env.structures).map((h) => ({
+        ? [
+            ...litHomeWindows(s, arena.environment!.entrances, env.structures),
+            ...(["north", "east"] as const).flatMap((edge) =>
+              commercialUpperWindows(s, edge)
+                .filter((w) => w.occupancy !== "dark")
+                .map((opening) => ({ edge, opening })),
+            ),
+          ].map((h) => ({
             ...h,
             face: facePainter(s, h.edge, project, metre),
           }))
@@ -2358,6 +2400,7 @@ export function createComposedEnvironment(
                 architecture,
               );
               paintComposedLight(ctx, pass);
+              paintLitHomes(ctx, pass, homes);
               if (pass !== "light") return;
               paintWallLights(ctx, s, project, metre, wallLights, env.structures);
               // the lit rooms reach their sills, reveals and the wall round them
@@ -2365,11 +2408,19 @@ export function createComposedEnvironment(
               for (const w of storefrontWindows(front.sf))
                 paintWindowSurround(ctx, at, w, night!.window.color, 0.32);
             }
-          : night && (reachesWall(s) || homes.length || composed.length || boards.length)
+          : night &&
+              (reachesWall(s) ||
+                homes.length ||
+                composed.length ||
+                boards.length ||
+                s.style === "workshop" ||
+                s.style === "residential")
             ? (ctx, pass) => {
                 if (pass === "light")
                   paintWallLights(ctx, s, project, metre, wallLights, env.structures);
                 paintLitHomes(ctx, pass, homes);
+                for (const edge of ["north", "east"] as const)
+                  paintFrontageIdentity(ctx, s, edge, env, project, metre, pass, architecture);
                 paintComposedLight(ctx, pass);
                 for (const b of boards) paintNeighbourLight(ctx, b, project, metre, night!, pass);
               }
@@ -2454,7 +2505,13 @@ export function createComposedEnvironment(
             project({ x: r.x + r.width / 2, y: r.y + r.height / 2 }).y,
             bounds,
             clad,
-            front || (night && (reachesWall(s) || composed.length || homes.length))
+            front ||
+              (night &&
+                (reachesWall(s) ||
+                  composed.length ||
+                  homes.length ||
+                  s.style === "workshop" ||
+                  s.style === "residential"))
               ? (ctx, pass) => {
                   if (front)
                     paintCutawayWall(ctx, s, part, project, materials, storefrontOf(s, pass));
@@ -2478,6 +2535,10 @@ export function createComposedEnvironment(
                     homes.filter((h) => h.edge === edge),
                     piece,
                   );
+                  ctx.save();
+                  clipHomeFace(ctx, facePainter(s, edge, project, metre), piece);
+                  paintFrontageIdentity(ctx, s, edge, env, project, metre, pass, architecture);
+                  ctx.restore();
                   for (const f of composed.filter((c) => c.edge === edge))
                     paintReturnLight(ctx, f, project, metre, returns!.art, night!, pass, piece);
                   if (pass !== "light") return;
@@ -2773,6 +2834,10 @@ export function createComposedEnvironment(
           paintStreetLamp(ctx, project, metre, shopLamp, "albedo");
           return;
         }
+        if (materialised && (d.kind === "lamp" || d.kind === "sign")) {
+          paintCityFixture(ctx, env, d, project, metre, "albedo", architecture);
+          return;
+        }
         ctx.fillStyle = "rgba(0,0,0,.24)";
         ctx.beginPath();
         ctx.ellipse(p.x + 3, p.y, 8, 3, 0, 0, Math.PI * 2);
@@ -2835,17 +2900,49 @@ export function createComposedEnvironment(
             width: 140,
             height: (INTERSECTION_NIGHT.lamp.poleHeight + 1.5) * metre + 20,
           }
-        : undefined,
-      shopLamp ? 3 : 1,
+        : materialised && (d.kind === "lamp" || d.kind === "sign")
+          ? { x: p.x - 100, y: p.y - 130, width: 200, height: 180 }
+          : undefined,
+      shopLamp || materialised ? 3 : 1,
       shopLamp
         ? (ctx, pass) => paintStreetLamp(ctx, project, metre, shopLamp, pass)
-        : d.kind === "lamp"
-          ? (ctx, pass) => {
-              if (pass === "glow") lampGlow(ctx);
-            }
-          : undefined,
+        : materialised && (d.kind === "lamp" || d.kind === "sign")
+          ? (ctx, pass) => paintCityFixture(ctx, env, d, project, metre, pass, architecture)
+          : d.kind === "lamp"
+            ? (ctx, pass) => {
+                if (pass === "glow") lampGlow(ctx);
+              }
+            : undefined,
       // the streetlight's head reflects about the ground under it
-      shopLamp && reflects ? lampMirror(project, shopLamp, metre) : undefined,
+      reflects
+        ? shopLamp
+          ? lampMirror(project, shopLamp, metre).map((m) => ({ ...m, gain: 0.25 }))
+          : materialised && (d.kind === "sign" || d.kind === "lamp")
+            ? (() => {
+                const dir = streetDirection(env, d.position);
+                const a = project({ x: d.position.x - dir.x * 0.5, y: d.position.y - dir.y * 0.5 });
+                const b = project({ x: d.position.x + dir.x * 0.5, y: d.position.y + dir.y * 0.5 });
+                return [
+                  {
+                    a,
+                    b,
+                    extent: fixtureExtent(
+                      d.kind === "lamp"
+                        ? dir.y > 0 || dir.x < 0
+                          ? "signal90"
+                          : "signal0"
+                        : dir.y > 0 || dir.x < 0
+                          ? "transit90"
+                          : "transit0",
+                      p,
+                      metre,
+                      dir.x + dir.y < 0,
+                    ),
+                  },
+                ];
+              })()
+            : undefined
+        : undefined,
     )?.setData("sortRect", { ...d.position, width: 0, height: 0 });
   }
   let reflection: ComposedReflection | undefined;
@@ -2865,18 +2962,7 @@ export function createComposedEnvironment(
       })),
       paintClasses: (ctx) =>
         paintSurfaceClasses(ctx, arena, project, storefronts.map(awningFootprint)),
-      // the shop's own lights glint where they fall: the lamp, the windows, the door
-      ...(groundSetup
-        ? {
-            incident: (destroyed: ReadonlySet<string>, crop: Box) =>
-              incidentLight(groundSetup!, destroyed, crop, shopLights),
-            reach: shopLights.flatMap((l) => lightExtent(l).map(project)),
-            // the props a shop light can see: their shadows are in the glints
-            glintCasters: casters
-              .filter((c) => shadowArea(shopLights, c, zOf) !== null)
-              .map((c) => c.coverId),
-          }
-        : {}),
+      wetness: rainField(env),
     });
     // one sprite per reflected fixture, shown and faded with that fixture's own sprite
     // (the shopfront leaves with its wall in the reveal), and one for the lights' glints;

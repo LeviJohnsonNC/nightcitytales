@@ -1,0 +1,65 @@
+[
+  {
+    "id": "signal-r0",
+    "crop": {
+      "left": 0,
+      "top": 0,
+      "width": 1024,
+      "height": 1536
+    }
+  },
+  {
+    "id": "signal-r90",
+    "crop": {
+      "left": 0,
+      "top": 0,
+      "width": 1024,
+      "height": 1536
+    }
+  },
+  {
+    "id": "transit-r0",
+    "crop": {
+      "left": 0,
+      "top": 0,
+      "width": 1024,
+      "height": 1536
+    }
+  },
+  {
+    "id": "transit-r90",
+    "crop": {
+      "left": 0,
+      "top": 0,
+      "width": 1024,
+      "height": 1536
+    }
+  },
+  {
+    "id": "repair-shutter",
+    "crop": {
+      "left": 62,
+      "top": 184,
+      "width": 900,
+      "height": 1167
+    }
+  },
+  {
+    "id": "residential-door",
+    "crop": {
+      "left": 88,
+      "top": 185,
+      "width": 848,
+      "height": 1164
+    }
+  },
+  {
+    "id": "market-services",
+    "crop": {
+      "left": 221,
+      "top": 106,
+      "width": 581,
+      "height": 1329
+    }
+  }
+]

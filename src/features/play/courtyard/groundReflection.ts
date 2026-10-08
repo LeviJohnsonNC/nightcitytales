@@ -40,13 +40,13 @@ import type { Box } from "./lampShadow";
 /** The numbers, tuned by eye at play zoom on seeds 8 and 7, and stated here. */
 export const REFLECTION = {
   /** Overall strength of the source pictures, added over the lit ground. */
-  strength: 2.4,
+  strength: 1.45,
   /**
    * What a source must give to be reflected, of full scale, applied to the source's own
    * extracted picture: a surface shows its own colour for dim things, and reflects the
    * bright ones.
    */
-  floor: 0.3,
+  floor: 0.18,
   /** The whole picture, as a wet film shows it: blur in metres across and along. */
   tight: { across: 0.03, along: 0.1 },
   /** The streak's blur, metres. */
@@ -57,7 +57,7 @@ export const REFLECTION = {
    * The picture is sampled at `samples` flip depths from `from` to `to` (1 is the
    * mirror) and averaged.
    */
-  stretch: { from: 0.3, to: 1.35, samples: 24 },
+  stretch: { from: 0.12, to: 1.4, samples: 24 },
   /**
    * Where the street is wet: noise at these cell sizes (metres) and weights, plus
    * `gutter` within `gutterReach` metres of a kerb, wet from `lo` to `hi`. Thresholding
@@ -77,7 +77,7 @@ export const REFLECTION = {
    * What a wet patch shows of a picture: the whole of it (`tight`) and its streak
    * (`streak`); and how much of the streak dry ground shows (`dry`).
    */
-  body: { tight: 0.75, streak: 0.4, dry: 0.02 },
+  body: { tight: 0.45, streak: 0.7, dry: 0.025 },
   /**
    * The few sharp highlights: grains of a wet patch above the `lo` quantile of their
    * surface's, fully from `hi`, at `gain` times the streak.
@@ -92,7 +92,7 @@ export const REFLECTION = {
     threshold: 0.85,
   },
   /** A shop light seen in the wet patches it falls on: a sheen, and the highlights. */
-  field: { sheen: 0.32, highlight: 1.1 },
+  field: { sheen: 0, highlight: 0 },
   /** A doorstep is polished by feet: it is this wet wherever it is. */
   threshold: 0.75,
   /** Where a bright reflection starts to ease off rather than clip, of 255. */
@@ -132,12 +132,8 @@ export const REFLECTION_MODES: readonly ReflectionMode[] = [
   "hidden",
   "skip",
 ];
-/**
- * What a board does when nobody asks: nothing is built. The pilot was not accepted
- * visually (`docs/checkpoint-material-pilot.md`): at play zoom its wet patches read as
- * pale stains and its pictures as isolated marks. `/scene-review?reflect=on` shows it.
- */
-export const REFLECTION_MODE_DEFAULT: ReflectionMode = "skip";
+/** Source-image reflections over the shared wet substrate; the rejected incident sheen is disabled. */
+export const REFLECTION_MODE_DEFAULT: ReflectionMode = "on";
 
 /** What a mode shows, or nothing. */
 export const reflectionView = (mode: ReflectionMode): false | ReflectionView =>
@@ -314,6 +310,8 @@ export interface ReflectionSetup {
   paintClasses: (ctx: CanvasRenderingContext2D) => void;
   /** Flip depths for the streak; `REFLECTION.stretch.samples` unless a check sets it. */
   stretchSamples?: number;
+  /** Optional shared substrate wetness in world metres. */
+  wetness?: (x: number, y: number) => number;
 }
 
 const canvasOf = (w: number, h: number) => {
@@ -610,7 +608,7 @@ export class GroundReflection {
           for (let k = 0; k < Wt.cells.length; k++)
             v += Wt.weights[k]! * noise(wx / Wt.cells[k]!, wy / Wt.cells[k]!, 71 + k);
           const g = j * gw + i;
-          gv[g] = v;
+          gv[g] = setup.wetness ? setup.wetness(wx, wy) : v;
           // the film's ripple: the slope of its own noise, not of the albedo
           gx[g] =
             noise((wx + e) / R.cell, wy / R.cell, 91) - noise((wx - e) / R.cell, wy / R.cell, 91);
@@ -639,9 +637,13 @@ export class GroundReflection {
           let v = lerp(gv, x, y);
           if (this.cls[i] === SurfaceClass.asphalt || this.cls[i] === SurfaceClass.marking)
             v += Wt.gutter * Math.max(0, 1 - kerb[i]! / gutterPx);
-          let w = smoothstep(Wt.lo, Wt.hi, v);
+          let w = setup.wetness ? lerp(gv, x, y) : smoothstep(Wt.lo, Wt.hi, v);
           if (this.cls[i] === SurfaceClass.threshold) w = Math.max(w, REFLECTION.threshold);
-          this.wet[i] = w;
+          // Broken horizontal facets are stable in world projection, never screen pixels.
+          const sx = this.box.x + (x + 0.5) / res,
+            sy = this.box.y + (y + 0.5) / res;
+          const ridges = smoothstep(0.27, 0.74, noise(sx / (ppm * 0.38), sy / (ppm * 0.055), 103));
+          this.wet[i] = w * (0.1 + 0.9 * ridges);
           this.dx[i] = lerp(gx, x, y) * slope * R.across;
           this.dy[i] = lerp(gy, x, y) * slope * R.along;
         }
