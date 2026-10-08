@@ -1,93 +1,71 @@
 # Night City Tales — resume here
 
-Updated: 2026-10-08. Repair frontage implemented; exact-head visual review pending.
+Updated: 2026-10-08. Stepped repair-row composition implemented; visual gate open.
 
-## Active milestone
+## Current milestone
 
-- Open, non-draft PR #323: https://github.com/LeviJohnsonNC/nightcitytales/pull/323
-- Remote branch codex/vendor-corner-silhouette.
-- Base #322 merge: 08ff5c7c4cf7fc7ac1b0bf154b40e6aa8def52c4.
-- Head: abe0d9c62e58bb8f0d0f8e2b61560e7e4b25eb95.
-- Full CI run 37827536149 PASSED.
-- Visual run 37827536195: after job 113484135125 PASSED all 3 seeds in 3.5m;
-  before job 113484135518 PASSED all 3 seeds in 4.7m.
-- Before artifact 11572651519 (SHA256 e137d0083f8753782f7a30c84c00d1e7cd148d53ec3fa847734a41b0d72e4747).
-- After artifact 11571444074 (SHA256 2f0c655b13b41871751b4dce91e433f81cabd51de1e71ca36f3c27f395fe0cf1).
-- All six seed8 captures completed; ready ~34.5s; capture durations ~2.7–4.3s.
-- 22 targeted tests, lint and final typecheck passed locally. Local commit 014c7a9.
-- User ZIP hashes match CI artifacts; all 22 PNGs inspected. Accepted vendor change.
-- #323 merged, verified: 71fc4ebee94f068cbef6f94d9baa38a18860e769.
+- Base: merged #324 f9d571c70ee5df3c3144fb09f068db972d95d795 (verified).
+- Remote branch: codex/stepped-repair-row.
+- Goal: change a large roof-dominated corner into a stepped, occupied street wall.
+- Recipe v9 partitions building_3's existing 22x10m parcel into its original 2.5m
+  repair frontage (4m deep), then two rear blocks at 7.2m and 10.2m.
+- Rear blocks use existing shop/commercial-upper facade, materials, room windows,
+  lighting and automatic/manual cutaway rendering. No new renderer or assets.
+- North and transposed west frontages supported. No overlap or new occupied ground.
+- Entrances, sidewalks, props, customer space and the service court stay in place.
+- Upper floors remain inaccessible scenery like the existing commercial row.
+- Only newly composed refined intersections get v9. Reference seeds1/2/3 stay v5;
+  saved v8 layouts load exactly as recorded, without regeneration.
 
-## What changed
+## Changed files and validation
 
-- cartOcclusion.ts/sceneryOcclusion.ts: actual opaque overlap triggers small soft
-  actor-sized cutouts, not whole-cart alpha .4. Empty gaps, narrow posts, foreground
-  actors and invisible actors do not trigger cutouts; mirrored art maps correctly.
-- Actual seed8 artwork sampling showed a worker really overlaps the canopy, so an
-  alpha check alone would not solve the ghost cart. The local window is necessary.
-- propTextures.ts caches 64x64 alpha masks with its existing bounds readback.
-- createCourtyard.ts keeps an independent cutout texture per cart. Refresh only
-  when actor windows change; no readbacks in frame loop. Damage uses original source.
-- vendorStock.ts: only saved vendor_stall cargo gets a muted finish, fitted cloth
-  and bowl mark. Steel footprint/material/HP/registration unchanged. Damaged holes
-  stay exposed; wrecked art unchanged. Existing fabric asset reused.
-- storefront.ts: boxed canopy ends, diagonal braces and tension ribs within its
-  current footprint/hem; light uses the same side planes.
-- vendorCorner.test.ts covers gaps, solids, mirrored cutouts, hidden/front actors,
-  narrow posts, padding and immutable semantic vendor selection in seeds 0/7/8.
-- No saved recipes, pathfinding, shot geometry or combat rules changed.
+- src/engine/intersectionPrograms.ts: addRepairLofts, called once after orientation.
+- src/engine/sceneComposer.ts: v9 recipe and composition hook.
+- src/engine/sceneEnvironment.ts: admit recipe9 while retaining old versions.
+- New repairLofts.test.ts and actual pre-change fixtures/intersection-v8.json.
+- shopLamp.test.ts normalizes the new partition back to its old parcel for the
+  historical geometry checksum; separate new tests verify the partition itself.
+- commercialUpper.test.ts expects current recipe9; old-height loading check retained.
+- 30 focused tests passed across six files, including 40-seed partition/orientation,
+  historical layout checksums, pedestrian connectivity, v8 preservation and roundtrip.
+- Targeted lint and final typecheck passed. No visual acceptance yet.
+- Initial test caught north->west transpose; helper now handles actual west frontage.
+
+## Visual acceptance gate
+
+Draft PR next. Use one exact-head full CI plus before/after visual run, unchanged
+harness and budgets. Inspect seed8 normal play first: rear rooms should visibly
+replace a broad roof field while low repair frontage and the street remain clear.
+Check seed0 rotated frontage, seed7 foreground occlusion, lights-off/neutral,
+destroyed/restored, Reveal and compact. Reject if new tall blocks mask the action,
+float over cutaways, produce blank upper walls, or simply replace one broad field
+with another. Composition gain is a hypothesis until those images are inspected.
+No claim of reference parity or additional ground-level market activity.
 
 ## Previous review
 
-#322 merged. All 22 exact-head PNGs reviewed; no new blocking regression, but only
-modest lighting improvement. Window detail hidden behind awning; large visual goal
-NOT achieved. Existing floating Reveal markers still need separate diagnosis.
-Current goal: visibly solid cart, coherent stock and constructed canopy at play zoom.
-#322 archives matched CI hashes. Original files in /Users/levijohnson/Downloads/
-city-block-before.zip and city-block-after.zip. They are OLD evidence for #323.
-Extracted old images in ../review-322/{before,after}; seed8 copies in
-docs/evidence/night-market-corner/seed8-{before,after}-ci.png.
+#324 all22 PNGs reviewed from hash-verified user ZIPs. Modest sign/frame gain,
+no new blocking regression. Merged by Levi. Broad road/roof fields still dominate.
+PR body has the verdict and ZIP links. Evidence docs/evidence/repair-frontage-324/.
+#323 cart opacity and vendor finish accepted; evidence docs/evidence/vendor-corner-323/.
+Floating actor markers occur in before/after runs; unresolved, not attributed to
+these visual changes. Do not silently mix a marker repair into this milestone.
 
 ## Access and preservation
 
-Local checkout city-block-recovery has reconstructed history. NEVER push it.
-Publish selected files via GitHub connector only. Source branch is already published.
-Preserve unrelated cityBlock.ts formatting, untracked cityBlock.test.ts,
-docs/city-block/, docs/evidence/city-block/ and recovery checkpoint. sources/ read-only.
-Local server listen failed EPERM; shell downloads fail DNS. Do not retry unchanged
-or bypass restrictions. User-provided ZIPs were available in ~/Downloads and could
-be read locally after exact SHA256 validation, resolving the prior review blocker.
-Current handoff update is local to avoid restarting passed PR checks.
+Local checkout city-block-recovery has reconstructed history; NEVER push it.
+Publish selected files via GitHub connector only. Preserve unrelated cityBlock.ts
+formatting, untracked cityBlock.test.ts, docs/city-block/, docs/evidence/city-block/
+and recovery checkpoint. Sources remain reference material.
+Local server previously failed listen EPERM. Artifact downloads were blocked;
+user ZIPs in ~/Downloads resolved access. Validate hashes before extracting.
+PR324 ZIPs have (3), extracted ../review-324/{before,after}; old captures cannot
+validate the new recipe. Keep final CI pointers local to avoid restarting checks.
 
-## Visual review and next action
+## Next action
 
-All 11 before/after pairs inspected: seed8 play/lights-off/neutral/destroyed/restored/
-reveal, seed7 play/reveal/compact, seed0 play/reveal. Cart stays solid around visible
-worker; stock cloth aligns on lid. Awning improvement subtler. No blocking vendor
-regression found; destruction/restoration look intact. Intermediate damaged state
-is not separately captured. Stock silhouette remains bulky; larger visual goal open.
-Floating markers appear in some after captures (seed0 Reveal, seed8 destroyed/Reveal).
-This was previously recorded; static run differences do not establish its cause.
-PR body contains detailed verdict. No code changed or CI rerun during this review.
-Exact seed8 play evidence: docs/evidence/vendor-corner-323/seed8-{before,after}.png.
-All extracted images: ../review-323/{before,after}; source Downloads ZIPs have (1).
-
-## Active repair-frontage milestone
-
-- Base: #323 merge 71fc4ebee94f068cbef6f94d9baa38a18860e769.
-- Remote branch: codex/repair-frontage-identity.
-- repairFront.ts: warm ribbed aprons, framed window bays/door jambs and a broad
-  DENKI / ELECTRIC REPAIR enamel sign fitted to existing solid workshop walls.
-- Saved sheds are only 2.5–3m high: signs sit below glazing, not over windows.
-- frontageIdentity.ts integrates within existing exposed-face and cutaway clips.
-- Cached albedo only; no new light sources, assets, per-frame work or saved geometry.
-- repairFront.test.ts verifies opening/door clearance and bounds across seeds0/7/8/19,
-  short legacy walls, non-workshop exclusion and no saved scene mutation.
-- 25 focused tests, targeted lint and final typecheck passed. No visual acceptance yet.
-- Publish only these three source/test files and this handoff. Keep PR draft until
-  exact-head full CI and before/after screenshots are reviewed.
-- Previous 323 evidence does NOT validate this change. No reference-quality claim.
-- Next: check new PR CI once, inspect matched seed8/7/0 captures and cutaways. Confirm
-  lettering reads, panel repetition is restrained, and walls/windows remain intact.
-  Fresh-chat prompt: Read docs/AI_HANDOFF.md, verify the repair-frontage PR and its
-  exact-head CI, then finish visual review before expanding street-detail work.
+Publish selected files and open draft PR. Record exact head, then check its CI.
+After captures finish, put artifact links directly in the PR body and ask Levi
+for the ZIPs if direct access remains unavailable. No merge or production publish.
+Fresh-chat prompt: Read docs/AI_HANDOFF.md, verify the stepped repair-row PR,
+and finish exact-head visual review before expanding the composition milestone.
