@@ -133,6 +133,18 @@ export const ARCHITECTURE_ART_SIZE = {
 
 /** Where the importer (`tools/art/architecture-pilot.ts`) writes them. */
 export const ARCHITECTURE_ART_FILES = {
+  signal0: "/images/after-rain/signal-r0.webp",
+  signal0Emission: "/images/after-rain/signal-r0-emission.webp",
+  signal90: "/images/after-rain/signal-r90.webp",
+  signal90Emission: "/images/after-rain/signal-r90-emission.webp",
+  transit0: "/images/after-rain/transit-r0.webp",
+  transit0Emission: "/images/after-rain/transit-r0-emission.webp",
+  transit90: "/images/after-rain/transit-r90.webp",
+  transit90Emission: "/images/after-rain/transit-r90-emission.webp",
+  repairShutter: "/images/after-rain/repair-shutter.webp",
+  residentialDoor: "/images/after-rain/residential-door.webp",
+  residentialDoorEmission: "/images/after-rain/residential-door-emission.webp",
+  marketServices: "/images/after-rain/market-services.webp",
   roofUnit: "/images/architecture/roof-unit.webp",
   window: "/images/architecture/annex-window.webp",
   shutter: "/images/architecture/annex-shutter.webp",

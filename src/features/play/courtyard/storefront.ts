@@ -850,12 +850,12 @@ function lightKanji(
   ctx.save();
   ctx.shadowColor = "rgba(255,70,110,.9)";
   ctx.shadowBlur = blur;
-  const halo = tintedMask(mask, "#ff5d7c");
+  const halo = tintedMask(mask, "#ff614b");
   for (const d of offsets)
     drawOnFace(o, halo, g.s + d, g.zTop + (bold ? d : 0), g.width, g.height, out);
   ctx.shadowBlur = 0;
   ctx.globalAlpha = 0.6;
-  const core = tintedMask(mask, "#ffd7df");
+  const core = tintedMask(mask, "#ffe0be");
   for (const d of offsets) drawOnFace(o, core, g.s + d, g.zTop, g.width, g.height, out);
   ctx.restore();
 }
@@ -1105,7 +1105,7 @@ export function paintBladeSign(
           drawOnBlade(
             ctx,
             at,
-            tintedMask(c, "#ff5d7c"),
+            tintedMask(c, "#ff614b"),
             side,
             glyphOut + d,
             glyphZ(i) + d,
@@ -1117,7 +1117,7 @@ export function paintBladeSign(
       ctx.globalAlpha = 0.6;
       cells.forEach((c, i) => {
         for (const d of bold)
-          drawOnBlade(ctx, at, tintedMask(c, "#ffd7df"), side, glyphOut + d, glyphZ(i), cell, cell);
+          drawOnBlade(ctx, at, tintedMask(c, "#ffe0be"), side, glyphOut + d, glyphZ(i), cell, cell);
       });
     }
     ctx.restore();

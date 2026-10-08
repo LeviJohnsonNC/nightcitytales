@@ -700,10 +700,10 @@ export function paintReturnLight(
           S.proud + 0.01,
         );
     };
-    tube("#ff5d7c");
+    tube("#ff614b");
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 0.6;
-    tube("#ffd7df");
+    tube("#ffe0be");
     ctx.restore();
   }
 }

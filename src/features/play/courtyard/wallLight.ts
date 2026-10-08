@@ -1,3 +1,4 @@
+import { CITY_FIXTURES, fixtureLamp } from "./cityFixtures";
 /**
  * Light on walls: the same lights that pool on the pavement, reaching the facades
  * they stand in front of.
@@ -64,10 +65,12 @@ export function pointLights(
   }
   for (const d of env.dressing) {
     if (skip.has(d.id) || (d.kind !== "lamp" && d.kind !== "sign")) continue;
-    const light = d.kind === "lamp" ? night.streetLamp : night.sign;
+    const light =
+      d.kind === "lamp"
+        ? night.streetLamp
+        : { color: CITY_FIXTURES.cyan, intensity: 0.62, radius: 3.7 };
     out.push({
-      at: d.position,
-      z: d.kind === "lamp" ? FIXTURE_HEIGHT.streetLamp : FIXTURE_HEIGHT.sign,
+      ...(d.kind === "lamp" ? fixtureLamp(env, d.position) : { at: d.position, z: 1.95 }),
       ...light,
     });
   }

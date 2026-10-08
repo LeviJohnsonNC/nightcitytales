@@ -1,3 +1,4 @@
+import { paintFaceAsset } from "./afterRainArt";
 /** Upper commercial storeys, derived only from the saved building envelope. */
 import type { Point, SceneStructure } from "@/engine";
 import type { ArchitectureArt } from "./architecturePack";
@@ -107,6 +108,21 @@ export function paintCommercialUpper(
     fill(quad(x + 0.22, x + 0.3, COMMERCIAL_BASE + 0.3, s.height - 0.18), "rgba(13,18,18,.32)");
   }
   for (const w of windows) paintHomeWindow(ctx, face, ppm, w, art);
+  if (art?.marketServices && firstRow.length > 1) {
+    const a = firstRow[0]!.s1,
+      b = firstRow[1]!.s0;
+    if (b - a > 1.04)
+      paintFaceAsset(
+        ctx,
+        art.marketServices,
+        at,
+        (a + b) / 2 - 0.42,
+        (a + b) / 2 + 0.42,
+        4.02,
+        6.12,
+        0.12,
+      );
+  }
   band(s.height - 0.18);
   ctx.restore();
 }
