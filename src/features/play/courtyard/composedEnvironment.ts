@@ -1,3 +1,4 @@
+import { paintCityBlockFace, paintCityRoof, cityRoofUnits } from "./cityBlock";
 import { fixtureExtent } from "./afterRainArt";
 import { entranceLights, paintFrontageIdentity } from "./frontageIdentity";
 import { createRainSurface, rainField } from "./afterRain";
@@ -847,6 +848,18 @@ export function paintCutawayWall(
         s1: s0 + (edge === "north" ? r.width : r.height),
         zMax: part.height,
       });
+      paintCityBlockFace(
+        ctx,
+        structure,
+        edge,
+        home?.entrances ?? annex?.entrances,
+        project,
+        metre,
+        clad,
+        home?.art ?? annex?.art,
+        { s0, s1: s0 + (edge === "north" ? r.width : r.height), zMax: part.height },
+        !!storefront && storefront.sf.edge === edge,
+      );
     }
 }
 
@@ -996,8 +1009,14 @@ export function paintBuilding(
         color: [1, 0.8, 0.56],
         intensity: 0.4,
       };
-      paintRoofUnitLight(ctx, project, top, rooftopUnits(structure), h, unit, (c, lift) =>
-        paintGroundLight(c, project, pool, lift),
+      paintRoofUnitLight(
+        ctx,
+        project,
+        top,
+        materials ? cityRoofUnits(structure) : rooftopUnits(structure),
+        h,
+        unit,
+        (c, lift) => paintGroundLight(c, project, pool, lift),
       );
     } else if (lamp && storefront.pass === "light") {
       ctx.save();
@@ -1366,6 +1385,20 @@ export function paintBuilding(
   if (clad)
     for (const edge of ["north", "east"] as const)
       paintCommercialUpper(ctx, structure, edge, project, pixelsPerMetre, clad, architecture);
+  if (clad)
+    for (const edge of ["north", "east"] as const)
+      paintCityBlockFace(
+        ctx,
+        structure,
+        edge,
+        entrances,
+        project,
+        pixelsPerMetre,
+        clad,
+        architecture,
+        undefined,
+        !!storefront && storefront.sf.edge === edge,
+      );
   surface(
     top,
     palette[2]!,
@@ -1374,7 +1407,8 @@ export function paintBuilding(
     groundBasis(project, h),
   );
   const homeRoof = clad && (use === "residential" || isAnnex(structure, entrances));
-  if (homeRoof) paintResidentialRoof(ctx, project, pixelsPerMetre, structure, clad!);
+  if (homeRoof)
+    paintResidentialRoof(ctx, project, pixelsPerMetre, structure, clad!, cityRoofUnits(structure));
   else {
     // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
     for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
@@ -1395,8 +1429,12 @@ export function paintBuilding(
         paintRoofOutlet(ctx, project, pixelsPerMetre, pipe);
     }
   }
+  if (materials) paintCityRoof(ctx, structure, project, pixelsPerMetre, cityRoofUnits(structure));
   // Rooftop service equipment is dressing on an inaccessible building, not cover.
-  for (const [i, equipment] of rooftopUnits(structure).entries()) {
+  for (const [i, equipment] of (materials
+    ? cityRoofUnits(structure)
+    : rooftopUnits(structure)
+  ).entries()) {
     // the painted unit, in place of the drawn box, on every roof that takes materials
     const unit = materials ? architecture?.roofUnit : undefined;
     if (unit) {

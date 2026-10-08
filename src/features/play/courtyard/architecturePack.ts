@@ -133,6 +133,10 @@ export const ARCHITECTURE_ART_SIZE = {
 
 /** Where the importer (`tools/art/architecture-pilot.ts`) writes them. */
 export const ARCHITECTURE_ART_FILES = {
+  blockMeters: "/images/architecture/block-meters.webp",
+  blockAircon: "/images/architecture/block-aircon.webp",
+  blockNotices: "/images/architecture/block-notices.webp",
+  blockMail: "/images/architecture/block-mail.webp",
   signal0: "/images/after-rain/signal-r0.webp",
   signal0Emission: "/images/after-rain/signal-r0-emission.webp",
   signal90: "/images/after-rain/signal-r90.webp",

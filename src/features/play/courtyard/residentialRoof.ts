@@ -8,7 +8,7 @@ const COPING = 0.3;
 export const RESIDENTIAL_ROOF_RECESS = 0.24;
 
 /** Internal drains, kept clear of the existing equipment and the parapet. */
-export function residentialRoofDrains(s: SceneStructure): Point[] {
+export function residentialRoofDrains(s: SceneStructure, units = rooftopUnits(s)): Point[] {
   const r = s.rect;
   const candidates = [
     { x: r.x + r.width - 0.75, y: r.y + r.height - 0.75 },
@@ -18,7 +18,7 @@ export function residentialRoofDrains(s: SceneStructure): Point[] {
   ];
   return candidates
     .filter((p) =>
-      rooftopUnits(s).every(
+      units.every(
         (u) =>
           p.x < u.x - 0.5 ||
           p.x > u.x + u.width + 0.5 ||
@@ -35,6 +35,7 @@ export function paintResidentialRoof(
   ppm: number,
   s: SceneStructure,
   materials: MaterialSet,
+  units = rooftopUnits(s),
 ) {
   const r = s.rect,
     h = s.height,
@@ -130,7 +131,7 @@ export function paintResidentialRoof(
       )
         continue;
       if (
-        rooftopUnits(s).some(
+        units.some(
           (u) =>
             repair.x < u.x + u.width + 0.3 &&
             repair.x + repair.width > u.x - 0.3 &&
@@ -151,7 +152,7 @@ export function paintResidentialRoof(
 
   // Waterproofing repairs and raised curbs under the EXISTING equipment. The
   // units stay at their original height; the curb meets the recessed membrane.
-  for (const u of rooftopUnits(s)) {
+  for (const u of units) {
     const apron = { x: u.x - 0.16, y: u.y - 0.16, width: u.width + 0.32, height: u.height + 0.32 };
     poly(rect(apron), "rgba(27,31,29,.32)");
     const bottom = rect(u),
@@ -160,7 +161,7 @@ export function paintResidentialRoof(
     poly([bottom[1]!, bottom[2]!, top[2]!, top[1]!], "#2c3333");
     line(top[0]!, top[1]!, "#6f756e", 0.04);
   }
-  for (const d of residentialRoofDrains(s)) {
+  for (const d of residentialRoofDrains(s, units)) {
     // Dry silt collecting at the low point: restrained concentric stains, no glow
     // or reflective puddle. A square strainer is projected on the roof plane.
     for (let n = 5; n >= 1; n--) {
