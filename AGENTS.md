@@ -13,6 +13,26 @@
 
 # Night City Tales contributor guide
 
+## Resuming interrupted work
+
+Read `SESSION.md` first and run `bun tools/session-status.mjs` for a bounded,
+read-only local inventory. Verify the current branch, commit and dirty files
+before editing; a handoff records observations, not live remote state.
+Read only the linked checkpoint and relevant code next, rather than loading all
+historical checkpoints, complete PR diffs or test logs into the conversation.
+
+Keep one concrete deliverable in progress. Update `SESSION.md` after each
+meaningful checkpoint and before a long validation run, recording the next
+action, changed paths, checks actually run, unresolved failures and PR/commit
+references. Keep it under 100 lines; replace stale state instead of appending a
+transcript. Save verbose command output to a local log and report the exit code
+and relevant failure excerpt. Commit completed work in small coherent changes;
+preserve unrelated edits and do not commit secrets or raw logs. Push the working
+branch when authorized; a local commit alone does not survive losing a machine.
+After a tool failure, record the error and try a different supported route once;
+do not loop through the same blocked operation. These practices preserve work,
+but do not diagnose or prevent ChatGPT app failures.
+
 ## Product
 
 Night City Tales is a solo Cyberpunk RED game with two connected experiences:
