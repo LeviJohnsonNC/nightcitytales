@@ -55,7 +55,7 @@ describe("repair-row massing revision 9", () => {
         expect(lofts).toHaveLength(0);
         continue;
       }
-      expect(env.recipeVersion).toBe(seed === 8 ? 11 : 10);
+      expect(env.recipeVersion).toBe(seed === 8 ? 12 : 10);
       expect(lofts.map((s) => s.height)).toEqual([7.2, 10.2]);
       const front = env.structures.find((s) => s.id === "building_3")!;
       const edge = front.attachments!.find((a) => a.id === "retail-header")!.edge;

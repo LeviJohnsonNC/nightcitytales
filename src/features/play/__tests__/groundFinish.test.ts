@@ -49,15 +49,24 @@ describe("the street's wear", () => {
     expect(repairs / 10000).toBeLessThan(0.04);
   });
 
-  it("drips oil only under engines and the generator, not under every car, each its own size", () => {
+  it("drips oil only under engines and the generator, not under every car, with varied car stains", () => {
     for (const seed of [7, 0, 8]) {
       const arena = composeScene("intersection", seed).layout.arena;
       const env = arena.environment!;
       const engines = env.props.filter((p) => p.art === "sedan-engine").length;
       const drips = oilDrips(arena);
       expect(oilDrips(arena)).toEqual(drips);
-      const sizes = new Set(drips.map((d) => d.r.toFixed(3)));
-      expect(sizes.size).toBe(drips.length);
+      // Generator drip radii are deliberately fixed; v12 can have two generators.
+      const generators = env.props
+        .filter((p) => p.art === "generator")
+        .map((p) => arena.cover!.find((c) => c.id === p.coverId)!.rect);
+      const isGenerator = (d: (typeof drips)[number]) =>
+        generators.some((r) => d.at.x === r.x + r.width * 0.5 && d.at.y === r.y + r.height + 0.25);
+      expect(drips.filter(isGenerator)).toHaveLength(generators.length);
+      for (const d of drips.filter(isGenerator)) expect(d.r).toBe(0.45);
+      const carStains = drips.filter((d) => !isGenerator(d));
+      const sizes = new Set(carStains.map((d) => d.r.toFixed(3)));
+      expect(sizes.size).toBe(carStains.length);
       // every drip sits on the piece it comes from
       for (const d of drips) {
         const under = (arena.cover ?? []).some((c) => {

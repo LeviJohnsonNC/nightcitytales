@@ -1,56 +1,52 @@
 # Night City Tales — resume here
 
-Updated: 2026-10-08. Compact seed-8 prototype published as draft PR326.
-https://github.com/LeviJohnsonNC/nightcitytales/pull/326
-Runtime revision: 7902127a03fa365a62efca794148e35f0978c196.
+Updated: 2026-10-08. Entrance-court / repair-corner revision in progress.
 
 ## Goal and baseline
 
-Levi authorized the next revision after merging PR325. Reduce the broad road field
-and bring existing frontages closer in seed8, preserving access and vehicle room.
-No new artwork or expansion to other seeds until the visual result is reviewed.
-Base: merged PR325 dde30911a32290d851f2d79e70d54df3d46d2c91.
-Remote: LeviJohnsonNC/nightcitytales. Publish branch: codex/compact-junction-prototype.
-Local checkpoint branch: codex/city-block-review.
-Local history is reconstructed: NEVER git push. Publish selected files via connector.
+Levi authorized the next revision after PR326. PR326 verified merged at
+base d3d9cb178b4427d7fd63bd20cf96e28fedbcfd76.
+Remote LeviJohnsonNC/nightcitytales; planned branch codex/entrance-court.
+Local city-block-recovery branch codex/city-block-review has reconstructed history:
+NEVER git push. Publish selected files through the GitHub connector.
+Sources read-only. Preserve unrelated cityBlock.ts formatting, cityBlock.test.ts,
+recovery docs. No production deployment or merge; Levi handles merge.
 
-## Implementation — compact seed-8 prototype, not yet visually accepted
+## Current implementation — publishing draft, not visually accepted
 
-Recipe11 applies only to newly composed intersection seed8. Main street6m,
-cross street4m, junction24m² instead of48m². Frontages translate by2m per axis;
-buildings, cover dimensions, HP and structural heights remain unchanged.
-All four parked cars consolidate on the east curb, leaving a4m travel lane.
-Existing2m sidewalks and crossing routes remain clear. Saves load authoritative
-stored geometry; an actual pre-change v10 seed8 scene is committed as a fixture.
-Seeds0/7 and other current seeds remainv10; reference1–3 remainv5.
+Recipe12 for new intersection seed8 only. The foreground roof is the housing
+entrance annex (building_1), NOT the repair workshop. Cut its8m depth to4m;
+retain its existing doorway and shift the attachment offset to fit the shorter wall.
+The freed4x4m area becomes an entrance court with a protected2m approach and planter.
+Replace the two repair-side striped stalls with a parts crate and generator,
+retaining a planter and giving the equipment reserved handling/access positions.
+Two shop-side stalls stay. Shared placement checks fit all new props.
+V11 compact streets/parking remain. Existing saved scenes do not regenerate.
+Actual pre-change v11 seed8 fixture saved before edits; v11 transform unit tests
+now exercise that historical step independently. Current v12 tests cover the new
+architecture/program, exact saves, deterministic/idempotent generation and access
+before/after destruction. Compact viewport capture now includes seed8 as well as7.
 
-Changed: engine/intersectionPrograms, sceneComposer, sceneEnvironment;
-engine tests compactIntersection, compositionVariation, repairLofts, shopLamp;
-fixtures/intersection-v10.json; play test commercialUpper; composedEnvironment
-lane paint follows the new travel reservation; sedanPaint test sample; this handoff.
-Preserve unrelated cityBlock.ts formatting, cityBlock.test.ts and recovery docs.
-Sources are read-only. No production publish or merge.
+Changed: engine/intersectionPrograms, sceneClusters, sceneComposer, sceneEnvironment;
+engine tests entranceCourt, compactIntersection, pavementMarkets, repairLofts,
+shopLamp, activityGroups, compositionVariation; fixtures/intersection-v11.json;
+play commercialUpper and groundFinish tests;
+composedEnvironment lane-paint version guard; e2e/city-block.spec.ts; this handoff.
 
 ## Validation and next action
 
-Typecheck, targeted ESLint and diff whitespace checks passed. Full local run:
-4111 passed, one failed (325 files, 58.55s). The remaining test sampled car-paint
-variation using the old three layouts: the shifted seed8 positions now hash to
-the same palette offset as0/7. Expanded that sample to40 current seeds; all9
-sedanPaint tests pass. No runtime paint change or weakened per-street assertion.
-Historical geometry checksum uses the raw v10 fixture to retain JSON key order;
-its separate snapshot-read equality test proves unchanged saved geometry.
-Compact tests4/4 pass: dimensions, clear parking/crossings, access intact and
-all-destroyed, unchanged HP, exact save roundtrip and deterministic output.
-Published runtime at7902127; this follow-up changes only tests and handoff.
-CI/captures pending. Initial runs: CI37851476796, captures37851476756.
-Next: inspect latest CI and matched seed8 screenshots plus controls0/7.
-Keep PR draft until screenshots are reviewed; no visual acceptance yet.
+Focused9 tests passed. Typecheck and targeted lint passed. Full local suite:
+4111 passed/4 failed across326 files. Failures were historical cluster expectations
+and an oil test assuming only one fixed-size generator stain. Updated expectations
+for repair_power and checked generator stains separately from varied car stains.
+Affected tests now pass (activityGroups, groundFinish, compositionVariation).
+Publish draft PR from the merged base; GitHub CI and paired captures are next.
+No visual improvement claim until the new screenshots are reviewed.
 
-## Prior visual evidence and access
+## Prior review — do not repeat
 
-PR325 all22 PNGs reviewed at3501f5d, CI/captures passed. Qualified improvement;
-wide road/roof fields still dominated. Evidence: ../review-325-market.
-Do not repeat that review. New prototype requires new paired captures.
-Artifact download connector returns URLs whose host local DNS cannot resolve;
-user-provided ZIPs in Downloads work. Ask for new ZIPs only when needed.
+PR326 reviewed head71c5804; runtime7902127. CI37851605031 and captures37851604994
+passed (4110 tests). All22 screenshots from ZIPs(6) verified and inspected in
+../review-326-compact. Accepted narrower seed8 proportions; repeated stalls and
+foreground roof remained weaknesses. Prior compact capture only coveredseed7.
+Artifact URL host fails local DNS; user-provided ZIPs in Downloads work.

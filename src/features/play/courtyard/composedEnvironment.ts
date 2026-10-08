@@ -485,7 +485,7 @@ export function paintComposedGround(
     // The compact prototype parks on one curb: centre paint on its saved
     // travel reservation, not the full asphalt including parked cars.
     const travel =
-      env.recipeVersion === 11 && z.id === "street"
+      env.recipeVersion >= 11 && z.id === "street"
         ? env.zones.find((o) => o.id === "travel-lane")?.rect
         : undefined;
     for (let t = 0; t < length; t += 3) {

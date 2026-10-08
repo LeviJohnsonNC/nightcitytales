@@ -141,7 +141,12 @@ it.each(["intersection", "office"] as const)(
           2,
         );
       else
-        for (const id of ["broth_cart", "housing_entry", "utility_waiting", "deliveries"])
+        for (const id of [
+          "broth_cart",
+          "housing_entry",
+          seed === 8 ? "repair_power" : "utility_waiting",
+          "deliveries",
+        ])
           expect(env.clusters.some((c) => c.id === id)).toBe(true);
     }
     if (kind === "intersection") {
