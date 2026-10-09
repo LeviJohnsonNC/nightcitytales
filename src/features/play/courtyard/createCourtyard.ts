@@ -1,3 +1,4 @@
+import { finishStreetProps } from "./propFinish";
 import { cartWindows, paintCartWindows } from "./cartOcclusion";
 import { isVendorStock, vendorStockTexture } from "./vendorStock";
 import {
@@ -288,6 +289,7 @@ export function createCourtyard(
         // where the board draws contact shade, the kit bakes no flat shadow of its own
         createPropTextures(this, [...new Set(kinds)], !contactShading);
         applyStreetPropArt(this, streetProps);
+        if (contactShading) finishStreetProps(this);
         createCharacterAtlas(this, "mercenary");
         createCharacterAtlas(this, "hostile");
         if (street) createCivilianAtlas(this);

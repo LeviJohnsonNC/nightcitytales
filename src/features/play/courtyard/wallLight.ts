@@ -40,10 +40,10 @@ export interface PointLight {
 /**
  * How a wall takes a light, against the ground under it. A wall faces a lamp beside it
  * where the pavement sees it at a slant, and its render is darker than the paving, so
- * by the ground's own numbers a lit facade barely reads. A wall reaches a little
- * further and is lit a little stronger: tuned by eye at play zoom, stated here.
+ * by the ground's own numbers a lit facade barely reads. A modest reach and restrained gain keep upper-storey washes subordinate to
+ * occupied shop openings. The pavement retains the source's full pool.
  */
-export const WALL = { reach: 1.3, gain: 1.6 } as const;
+export const WALL = { reach: 1.15, gain: 0.92 } as const;
 
 /** Heights of the scene's fixtures, in metres: presentation, not geometry. */
 export const FIXTURE_HEIGHT = { streetLamp: 4.4, sign: 2.6 } as const;

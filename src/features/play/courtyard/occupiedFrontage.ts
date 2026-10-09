@@ -122,9 +122,9 @@ export function paintOccupiedFrontage(
         { a: 3.9, b: length - 0.35, lo: 0.68, hi: 2.55 },
       ];
   if (pass === "light") {
-    wash(0.15, length - 0.15, 0.1, 3.65, "rgba(239,176,100,.3)");
+    wash(0.15, length - 0.15, 0.1, 3.65, "rgba(239,176,100,.22)");
     for (const b of bays)
-      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,209,151,.43)", -0.12);
+      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,209,151,.35)", -0.12);
     return;
   }
   if (pass === "glow") {
@@ -144,7 +144,20 @@ export function paintOccupiedFrontage(
   text("DENKI  /  ELECTRIC", 0.25, length - 0.25, 3.07, 3.51, "#d7c194");
   panel(0.25, length - 0.25, 2.7, 2.93, "#27393b", 0.14);
   text("REPAIR   •   AUDIO   •   PARTS", 0.3, length - 0.3, 2.72, 2.9, "#aaad91");
-  // Shallow workshop display bays: pegboard, bench, repaired electronics and task lights.
+  // A deep cornice caps the trading floor: a broad dark soffit beneath the
+  // brighter ledge, not another thin outline around every panel.
+  fill(
+    [
+      at(0.04, 0, 3.72),
+      at(length - 0.04, 0, 3.72),
+      at(length - 0.04, 0.26, 3.72),
+      at(0.04, 0.26, 3.72),
+    ],
+    "#172c2d",
+  );
+  panel(0.04, length - 0.04, 3.72, 3.84, "#63736b", 0.26);
+  panel(0.04, length - 0.04, 3.58, 3.72, "rgba(9,23,24,.42)", 0.09);
+  // Deep workshop display bays: pegboard, bench, repaired electronics and task lights.
   for (const b of bays) {
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.08, b.hi + 0.08, "#142327");
     const interior = doors.length
@@ -152,16 +165,22 @@ export function paintOccupiedFrontage(
       : b.a < 1
         ? art?.repairBench
         : art?.repairParts;
-    if (interior) paintFaceAsset(ctx, interior, at, b.a, b.b, 0.72, 2.48, -0.12);
+    if (interior) paintFaceAsset(ctx, interior, at, b.a, b.b, 0.72, 2.48, -0.32);
     else paintWorkshopInterior(ctx, face, b.a, b.b, b.a < 1 ? "bench" : "storage");
     // Angled reveals and mullions anchor the interior behind the actual facade.
     fill(
-      [at(b.a, 0.04, b.lo), at(b.a, 0.04, b.hi), at(b.a, -0.13, b.hi), at(b.a, -0.13, b.lo)],
+      [at(b.a, 0.04, b.lo), at(b.a, 0.04, b.hi), at(b.a, -0.32, b.hi), at(b.a, -0.32, b.lo)],
       "#262b28",
     );
     fill(
-      [at(b.a, 0.04, b.hi), at(b.b, 0.04, b.hi), at(b.b, -0.13, b.hi), at(b.a, -0.13, b.hi)],
+      [at(b.a, 0.04, b.hi), at(b.b, 0.04, b.hi), at(b.b, -0.32, b.hi), at(b.a, -0.32, b.hi)],
       "#192623",
+    );
+    // A substantial head reveal separates the warm room from the exterior fascia.
+    panel(b.a, b.b, b.hi - 0.16, b.hi, "rgba(8,19,19,.68)", -0.08);
+    fill(
+      [at(b.a, 0.04, b.lo), at(b.b, 0.04, b.lo), at(b.b, -0.32, b.lo), at(b.a, -0.32, b.lo)],
+      "#6d725f",
     );
     for (const x of [b.a, b.b - 0.035]) panel(x, x + 0.035, b.lo, b.hi, "#89928a", 0.04);
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.09, b.lo, "#9c997f", 0.12);
@@ -243,8 +262,8 @@ export function paintOccupiedCanopy(
     [
       at(0.08, 0, 2.72),
       at(length - 0.08, 0, 2.72),
-      at(length - 0.08, 0.4, 2.57),
-      at(0.08, 0.4, 2.57),
+      at(length - 0.08, 0.85, 2.57),
+      at(0.08, 0.85, 2.57),
     ],
     "#607777",
   );
@@ -253,14 +272,14 @@ export function paintOccupiedCanopy(
     art?.balconyMetal,
     at(0.08, 0, 2.72),
     at(length - 0.08, 0, 2.72),
-    at(0.08, 0.4, 2.57),
+    at(0.08, 0.85, 2.57),
     length - 0.16,
-    0.4,
+    0.85,
   );
-  panel(0.08, length - 0.08, 2.46, 2.57, "#263f43", 0.4);
+  panel(0.08, length - 0.08, 2.46, 2.57, "#263f43", 0.85);
   for (let x = 0.18; x < length - 0.1; x += 0.48)
-    line(at(x, 0.02, 2.73), at(x, 0.39, 2.58), "#89958a", 0.018);
-  for (const x of [0.3, length - 0.3]) line(at(x, 0.02, 2.1), at(x, 0.38, 2.48), "#23373a", 0.05);
+    line(at(x, 0.02, 2.73), at(x, 0.84, 2.58), "#89958a", 0.018);
+  for (const x of [0.3, length - 0.3]) line(at(x, 0.02, 2.1), at(x, 0.82, 2.48), "#23373a", 0.05);
 }
 
 /** A shallow first-floor balcony, attached above head height, within the facade span. */
