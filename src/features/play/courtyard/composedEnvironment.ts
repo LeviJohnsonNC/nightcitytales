@@ -1,3 +1,9 @@
+import {
+  occupiedUse,
+  occupiedLights,
+  paintOccupiedBalcony,
+  paintOccupiedFrontage,
+} from "./occupiedFrontage";
 import { paintCityBlockFace, paintCityRoof, cityRoofUnits } from "./cityBlock";
 import { fixtureExtent } from "./afterRainArt";
 import { entranceLights, paintFrontageIdentity } from "./frontageIdentity";
@@ -866,6 +872,24 @@ export function paintCutawayWall(
         { s0, s1: s0 + (edge === "north" ? r.width : r.height), zMax: part.height },
         !!storefront && storefront.sf.edge === edge,
       );
+      ctx.save();
+      clipHomeFace(ctx, facePainter(structure, edge, project, metre), {
+        s0,
+        s1: s0 + (edge === "north" ? r.width : r.height),
+        zMax: part.height,
+      });
+      paintOccupiedFrontage(
+        ctx,
+        structure,
+        edge,
+        home?.entrances ?? annex?.entrances,
+        project,
+        metre,
+        "albedo",
+        home?.art ?? annex?.art,
+      );
+      paintOccupiedBalcony(ctx, structure, edge, project, metre);
+      ctx.restore();
     }
 }
 
@@ -1405,6 +1429,21 @@ export function paintBuilding(
         undefined,
         !!storefront && storefront.sf.edge === edge,
       );
+  if (clad)
+    for (const edge of ["north", "east"] as const) {
+      // Finish the occupied facade after generic services, so nothing paints over its sign.
+      paintOccupiedFrontage(
+        ctx,
+        structure,
+        edge,
+        entrances,
+        project,
+        pixelsPerMetre,
+        "albedo",
+        architecture,
+      );
+      paintOccupiedBalcony(ctx, structure, edge, project, pixelsPerMetre);
+    }
   surface(
     top,
     palette[2]!,
@@ -1862,6 +1901,7 @@ export function createComposedEnvironment(
         ...returnLights(returns?.faces ?? [], night),
         ...fixtureLights(env),
         ...entranceLights(env),
+        ...occupiedLights(env),
         ...dressingLights(
           env,
           night,
@@ -2396,8 +2436,12 @@ export function createComposedEnvironment(
         : [];
       // the shopfront and its composed returns, each face flipped about its own foot
       const faceMirrors =
-        reflects && front
-          ? [...new Set<Edge>([front.sf.edge, ...composed.map((c) => c.edge)])].map((edge) => {
+        reflects && (front || occupiedUse(s) === "repair")
+          ? [
+              ...new Set<Edge>(
+                front ? [front.sf.edge, ...composed.map((c) => c.edge)] : ["north", "east"],
+              ),
+            ].map((edge) => {
               const r = s.rect;
               const lift = (s.height + 1.5) * metre;
               const [a, b] =
@@ -2457,6 +2501,7 @@ export function createComposedEnvironment(
                 homes.length ||
                 composed.length ||
                 boards.length ||
+                occupiedUse(s) ||
                 s.style === "workshop" ||
                 s.style === "residential")
             ? (ctx, pass) => {
@@ -2509,7 +2554,23 @@ export function createComposedEnvironment(
               paintComposedLight(ctx, pass);
               ctx.restore();
             }
-          : undefined,
+          : faceMirrors && occupiedUse(s) === "repair"
+            ? (ctx, pass) => {
+                // Reflect emitters only; never mirror the wall wash as another light source.
+                if (pass !== "glow") return;
+                for (const edge of ["north", "east"] as const)
+                  paintOccupiedFrontage(
+                    ctx,
+                    s,
+                    edge,
+                    env.entrances,
+                    project,
+                    metre,
+                    "glow",
+                    architecture,
+                  );
+              }
+            : undefined,
       )
         ?.setData("activityLayer", occluders.has(structure.id) ? "full" : undefined)
         .setData("foregroundStructure", materialised ? s : undefined)
@@ -2554,6 +2615,7 @@ export function createComposedEnvironment(
                 (reachesWall(s) ||
                   composed.length ||
                   homes.length ||
+                  occupiedUse(s) ||
                   s.style === "workshop" ||
                   s.style === "residential"))
               ? (ctx, pass) => {
