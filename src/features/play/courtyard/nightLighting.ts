@@ -22,22 +22,22 @@ export type Rgb = readonly [number, number, number];
  * surface under the lamp's centre shows `ambient + intensity` of its painted colour.
  */
 export const INTERSECTION_NIGHT = {
-  ambient: [0.55, 0.6, 0.74] as Rgb,
+  ambient: [0.61, 0.65, 0.74] as Rgb,
   /**
    * Per-material multipliers over the ground, on top of the ambient: asphalt goes a
    * little deeper and cooler, paving a little warmer, so the two stop reading alike.
    * Net of the slightly lighter ambient above, neither is darker than it was.
    */
   grade: {
-    asphalt: [0.84, 0.87, 0.97] as Rgb,
-    paving: [1, 0.98, 0.93] as Rgb,
+    asphalt: [0.83, 0.88, 0.96] as Rgb,
+    paving: [1, 0.97, 0.88] as Rgb,
   },
   /**
    * How far past the art's own colour a lit surface may go. A canvas stores light up
    * to 1, and painted asphalt is dark: at 1 a streetlight barely shows. The light
    * sprites are multiplied by this; the tint on people and props is capped at the art.
    */
-  gain: 2.6,
+  gain: 2.15,
   /** The saved streetlight beside the shop. Heights are presentation, not geometry. */
   lamp: {
     poleHeight: 5.6,

@@ -70,7 +70,7 @@ export function paintCommercialUpper(
   ctx.clip();
   const warm = s.height < 8;
   const wall = quad(0, length, COMMERCIAL_BASE, s.height);
-  const target = edge === "north" ? (warm ? "#84765f" : "#58635d") : warm ? "#605947" : "#3d4946";
+  const target = edge === "north" ? (warm ? "#9b7959" : "#65766b") : warm ? "#705b47" : "#46564f";
   if (
     !fillMaterial(ctx, materials, wall, {
       key: "painted-render",
@@ -83,8 +83,8 @@ export function paintCommercialUpper(
   const windows = commercialUpperWindows(s, edge);
   // A continuous stone frame with a deep spandrel over the trading floor.
   const band = (z: number) => {
-    fill(quad(0, length, z - 0.12, z + 0.16), edge === "north" ? "#998b72" : "#706953");
-    fill(quad(0, length, z - 0.3, z - 0.12), "rgba(12,16,16,.35)");
+    fill(quad(0, length, z - 0.12, z + 0.16), edge === "north" ? "#958975" : "#706953");
+    fill(quad(0, length, z - 0.3, z - 0.12), "rgba(12,16,16,.23)");
     fill(
       [
         at(0, 0, z + 0.16),
@@ -92,7 +92,7 @@ export function paintCommercialUpper(
         at(length, 0.13, z + 0.16),
         at(0, 0.13, z + 0.16),
       ],
-      "#a89b82",
+      "#99937f",
     );
   };
   band(COMMERCIAL_BASE + 0.14);
@@ -104,8 +104,8 @@ export function paintCommercialUpper(
     length - 0.32,
   ];
   for (const x of piers) {
-    fill(quad(x, x + 0.22, COMMERCIAL_BASE + 0.3, s.height - 0.18), warm ? "#8b7e66" : "#737b6b");
-    fill(quad(x + 0.22, x + 0.3, COMMERCIAL_BASE + 0.3, s.height - 0.18), "rgba(13,18,18,.32)");
+    fill(quad(x, x + 0.22, COMMERCIAL_BASE + 0.3, s.height - 0.18), warm ? "#918269" : "#737b6b");
+    fill(quad(x + 0.22, x + 0.3, COMMERCIAL_BASE + 0.3, s.height - 0.18), "rgba(13,18,18,.21)");
   }
   for (const w of windows) paintHomeWindow(ctx, face, ppm, w, art);
   if (art?.marketServices && firstRow.length > 1) {

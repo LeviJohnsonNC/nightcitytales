@@ -503,6 +503,42 @@ function paintGutterSilt(ctx: CanvasRenderingContext2D, project: Project, env: S
 }
 
 /** Everything above, in the order a street collects it. */
+/** Broad worn walking aprons join the block to paving; road markings stay untouched. */
+function paintStreetAprons(ctx: CanvasRenderingContext2D, project: Project, env: SceneEnvironment) {
+  const walks = env.zones.filter((z) => z.kind === "sidewalk");
+  if (!walks.length) return;
+  ctx.save();
+  ctx.beginPath();
+  for (const z of walks) {
+    quad(project, z.rect).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+  }
+  ctx.clip();
+  for (const s of env.structures) {
+    if (s.style === "mesh-fence" || s.style === "interior-wall") continue;
+    for (const edge of ["north", "east"] as const) {
+      const r = s.rect;
+      const at = (d: number, out: number) =>
+        project(
+          edge === "north" ? { x: r.x + d, y: r.y - out } : { x: r.x + r.width + out, y: r.y + d },
+        );
+      for (const [a, b] of openSpans(s, edge, env.structures)) {
+        const depth = 2.2 + hash(r.x, r.y, 501) * 0.8;
+        const foot = at(a, 0),
+          outside = at(a, depth);
+        const g = ctx.createLinearGradient(foot.x, foot.y, outside.x, outside.y);
+        g.addColorStop(0, "rgba(14,26,25,.43)");
+        g.addColorStop(0.12, "rgba(30,42,35,.25)");
+        g.addColorStop(0.38, "rgba(175,158,123,.24)");
+        g.addColorStop(0.72, "rgba(157,146,121,.13)");
+        g.addColorStop(1, "rgba(157,146,121,0)");
+        poly(ctx, [foot, at(b, 0), at(b, depth), outside], g as unknown as string);
+      }
+    }
+  }
+  ctx.restore();
+}
+
 export function paintGroundFinish(
   ctx: CanvasRenderingContext2D,
   arena: Arena,
@@ -512,6 +548,7 @@ export function paintGroundFinish(
   enhancedPaving = false,
 ) {
   const env = arena.environment!;
+  if (enhancedPaving) paintStreetAprons(ctx, project, env);
   paintSlabs(ctx, project, env, enhancedPaving);
   paintGutterSilt(ctx, project, env);
   wearRoadPaint(ctx, project, env);
