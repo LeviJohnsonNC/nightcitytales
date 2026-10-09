@@ -14,15 +14,25 @@ it("retains real v12 saves while replacing only the new seed8 repair architectur
     arena = scene.layout.arena,
     env = arena.environment!,
     old = previous.layout.arena.environment!;
-  expect(env.recipeVersion).toBe(13);
+  expect(env.recipeVersion).toBe(14);
   const front = env.structures.find((s) => s.id === "building_3")!;
+  const market = env.structures.find((s) => s.id === "building_0")!;
+  const previousMarket = old.structures.find((s) => s.id === market.id)!;
+  expect(market.rect).toEqual(previousMarket.rect);
+  expect(market.height).toBe(previousMarket.height);
+  expect(market.attachments![0]).toEqual({
+    ...previousMarket.attachments![0],
+    span: 6,
+    projection: 1.8,
+  });
+  expect(previousMarket.attachments![0]!.span).toBe(4);
   expect(front.rect).toEqual({ x: 22, y: 22, width: 6, height: 6 });
   expect([front.height, front.style]).toEqual([7.2, "shop"]);
   expect(env.structures.find((s) => s.id === "building_3_loft_a")!.height).toBe(10.2);
   expect(env.structures.find((s) => s.id === "building_3_service")!.height).toBe(3.2);
-  expect(env.structures.filter((s) => !s.id.startsWith("building_3"))).toEqual(
-    old.structures.filter((s) => !s.id.startsWith("building_3")),
-  );
+  expect(
+    env.structures.filter((s) => !s.id.startsWith("building_3") && s.id !== "building_0"),
+  ).toEqual(old.structures.filter((s) => !s.id.startsWith("building_3") && s.id !== "building_0"));
   expect(env.props).toEqual(old.props);
   expect(arena.cover).toEqual(previous.layout.arena.cover);
   expect(arena.playerStart).toEqual(previous.layout.arena.playerStart);

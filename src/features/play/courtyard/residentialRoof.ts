@@ -36,6 +36,7 @@ export function paintResidentialRoof(
   s: SceneStructure,
   materials: MaterialSet,
   units = rooftopUnits(s),
+  roofMaterial: "roof-membrane" | "roof-ballast" = "roof-membrane",
 ) {
   const r = s.rect,
     h = s.height,
@@ -85,7 +86,7 @@ export function paintResidentialRoof(
   const surface = rect(r);
   if (
     !fillMaterial(ctx, materials, surface, {
-      key: "roof-membrane",
+      key: roofMaterial,
       basis: groundBasis(project, deck * ppm),
       target: "#4d4c45",
       strength: 0.65,
@@ -95,7 +96,11 @@ export function paintResidentialRoof(
 
   // Lapped membrane strips in metres, with staggered cross-joints, not a grid
   // stretched to the roof. Broad fields remain quiet at ordinary play scale.
-  for (let x = inset.x + 1.2, lane = 0; x < inset.x + inset.width; x += 1.2, lane++) {
+  for (
+    let x = inset.x + 1.2, lane = 0;
+    roofMaterial === "roof-membrane" && x < inset.x + inset.width;
+    x += 1.2, lane++
+  ) {
     if (lane % 2 === 0)
       poly(
         rect({ x: x - 1.2, y: inset.y, width: 1.2, height: inset.height }),
@@ -114,7 +119,7 @@ export function paintResidentialRoof(
 
   // Small repaired lap joints on large roofs; both follow the membrane lanes.
   // Keep the annex quiet instead of scattering decorative rectangles everywhere.
-  if (r.width * r.height > 120) {
+  if (roofMaterial === "roof-membrane" && r.width * r.height > 120) {
     for (const [lane, run] of [
       [4, 6.1],
       [9, 3.4],

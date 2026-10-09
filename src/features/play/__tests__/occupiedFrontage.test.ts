@@ -39,3 +39,40 @@ it("lights the trading threshold and studio passage from their own faces without
     expect(lightAt(lights, env.structures, p)).toEqual([0, 0, 0]);
   expect(JSON.stringify(env)).toBe(saved);
 });
+
+it("removes canopy and balcony silhouettes from additive light without leaking canvas state", async () => {
+  const { paintFrontageIdentity } = await import("../courtyard/frontageIdentity");
+  const env = composeScene("intersection", 8).layout.arena.environment!;
+  const s = env.structures.find((s) => occupiedUse(s) === "repair")!;
+  for (const pass of ["light", "glow", "albedo"] as const) {
+    let mode = "source-over",
+      cuts = 0;
+    const stack: string[] = [];
+    const ctx = new Proxy(
+      {},
+      {
+        get: (_t, key) => {
+          if (key === "save") return () => stack.push(mode);
+          if (key === "restore")
+            return () => {
+              mode = stack.pop()!;
+            };
+          if (key === "createLinearGradient") return () => ({ addColorStop: () => undefined });
+          if (key === "fill" || key === "stroke")
+            return () => {
+              if (mode === "destination-out") cuts++;
+            };
+          return () => undefined;
+        },
+        set: (_t, key, value) => {
+          if (key === "globalCompositeOperation") mode = value;
+          return true;
+        },
+      },
+    ) as unknown as CanvasRenderingContext2D;
+    paintFrontageIdentity(ctx, s, "east", env, (p) => ({ x: p.x * 15, y: p.y * 15 }), 15, pass);
+    expect(cuts > 0).toBe(pass !== "albedo");
+    expect(mode).toBe("source-over");
+    expect(stack).toEqual([]);
+  }
+});

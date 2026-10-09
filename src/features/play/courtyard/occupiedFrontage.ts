@@ -6,6 +6,7 @@ import { paintFaceAsset } from "./afterRainArt";
 import { facePainter } from "./buildingFaces";
 import { facadeOpenings } from "./architectureArt";
 import { edgeFrame, type Edge } from "./frontage";
+import { paintWorkshopInterior } from "./workshopInterior";
 import type { GroundLight } from "./nightLighting";
 
 export function occupiedUse(s: SceneStructure): "repair" | "studios" | undefined {
@@ -52,7 +53,8 @@ export function paintOccupiedFrontage(
 ) {
   const use = occupiedUse(s);
   if (!use) return;
-  const { at, quad, length } = facePainter(s, edge, project, ppm);
+  const face = facePainter(s, edge, project, ppm);
+  const { at, quad, length } = face;
   const fill = (points: Point[], color: string | CanvasGradient) => {
     ctx.beginPath();
     points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -115,11 +117,14 @@ export function paintOccupiedFrontage(
         { a: 0.35, b: 1.8, lo: 0.68, hi: 2.55 },
         { a: 4.2, b: 5.65, lo: 0.68, hi: 2.55 },
       ]
-    : [{ a: 0.5, b: length - 0.5, lo: 0.68, hi: 2.55 }];
+    : [
+        { a: 0.35, b: 3.65, lo: 0.68, hi: 2.55 },
+        { a: 3.9, b: length - 0.35, lo: 0.68, hi: 2.55 },
+      ];
   if (pass === "light") {
     wash(0.15, length - 0.15, 0.1, 3.65, "rgba(239,176,100,.3)");
     for (const b of bays)
-      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,194,116,.18)", -0.12);
+      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,209,151,.43)", -0.12);
     return;
   }
   if (pass === "glow") {
@@ -142,20 +147,13 @@ export function paintOccupiedFrontage(
   // Shallow workshop display bays: pegboard, bench, repaired electronics and task lights.
   for (const b of bays) {
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.08, b.hi + 0.08, "#142327");
-    panel(b.a, b.b, b.lo, b.hi, "#5c5746", -0.13);
-    for (let x = b.a + 0.12; x < b.b - 0.08; x += 0.22)
-      for (let z = 1.28; z < 2.3; z += 0.22) panel(x, x + 0.025, z, z + 0.025, "#3d3e32", -0.12);
-    for (let x = b.a + 0.2; x < b.b - 0.17; x += 0.36) {
-      line(at(x, -0.1, 1.63), at(x + 0.04, -0.1, 2.08), "#303c39", 0.07);
-      line(at(x - 0.055, -0.1, 2.08), at(x + 0.11, -0.1, 2.08), "#b6b6a0", 0.07);
-    }
-    panel(b.a + 0.07, b.b - 0.07, 0.85, 1.05, "#403e31", -0.09);
-    panel(b.a + 0.07, b.b - 0.07, 1.04, 1.11, "#b29b70", -0.06);
-    for (let x = b.a + 0.12; x + 0.4 < b.b; x += 0.78) {
-      panel(x, x + 0.48, 1.11, 1.48, "#293b3d", -0.075);
-      panel(x + 0.045, x + 0.3, 1.18, 1.42, "#657c72", -0.055);
-      panel(x + 0.34, x + 0.4, 1.23, 1.3, "#c8b78b", -0.05);
-    }
+    const interior = doors.length
+      ? art?.repairPartsNarrow
+      : b.a < 1
+        ? art?.repairBench
+        : art?.repairParts;
+    if (interior) paintFaceAsset(ctx, interior, at, b.a, b.b, 0.72, 2.48, -0.12);
+    else paintWorkshopInterior(ctx, face, b.a, b.b, b.a < 1 ? "bench" : "storage");
     // Angled reveals and mullions anchor the interior behind the actual facade.
     fill(
       [at(b.a, 0.04, b.lo), at(b.a, 0.04, b.hi), at(b.a, -0.13, b.hi), at(b.a, -0.13, b.lo)],
@@ -165,12 +163,30 @@ export function paintOccupiedFrontage(
       [at(b.a, 0.04, b.hi), at(b.b, 0.04, b.hi), at(b.b, -0.13, b.hi), at(b.a, -0.13, b.hi)],
       "#192623",
     );
-    for (let x = b.a; x <= b.b; x += 1.6) panel(x, x + 0.035, b.lo, b.hi, "#89928a", 0.04);
+    for (const x of [b.a, b.b - 0.035]) panel(x, x + 0.035, b.lo, b.hi, "#89928a", 0.04);
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.09, b.lo, "#9c997f", 0.12);
     panel(b.a + 0.15, b.b - 0.15, 2.36, 2.4, "#d2c197", -0.12);
   }
   for (const c of doors) {
     panel(c - 0.85, c + 0.85, 0.08, 2.58, "#142326");
+    fill(
+      [
+        at(c - 0.85, 0.06, 0.08),
+        at(c - 0.85, 0.06, 2.58),
+        at(c - 0.62, -0.38, 2.38),
+        at(c - 0.62, -0.38, 0.08),
+      ],
+      "#57645b",
+    );
+    fill(
+      [
+        at(c + 0.85, 0.06, 0.08),
+        at(c + 0.85, 0.06, 2.58),
+        at(c + 0.62, -0.38, 2.38),
+        at(c + 0.62, -0.38, 0.08),
+      ],
+      "#253331",
+    );
     // Keep the saved entrance clear; a deep, lit threshold under a partly raised shutter.
     panel(c - 0.72, c + 0.72, 0.06, 1.85, "#5b5140", -0.16);
     panel(c - 0.6, c + 0.6, 0.3, 1.2, "#343a31", -0.15);
@@ -185,10 +201,66 @@ export function paintOccupiedFrontage(
       "#a28d66",
     );
   }
+  paintOccupiedCanopy(ctx, s, edge, project, ppm, art);
+
   for (const x of [0.12, length - 0.18]) {
     panel(x, x + 0.065, 0.2, 2.68, "#161f22", 0.1);
     line(at(x, 0.13, 0.2), at(x, 0.13, 2.68), "#8b9687", 0.025);
   }
+}
+
+/** Shared silhouette for albedo and occlusion of additive window lighting. */
+export function paintOccupiedCanopy(
+  ctx: CanvasRenderingContext2D,
+  s: SceneStructure,
+  edge: Edge,
+  project: (p: Point) => Point,
+  ppm: number,
+  art?: ArchitectureArt,
+) {
+  if (occupiedUse(s) !== "repair") return;
+  const { at, quad, length } = facePainter(s, edge, project, ppm);
+  const fill = (ps: Point[], color: string) => {
+    ctx.beginPath();
+    ps.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  };
+  const panel = (a: number, b: number, lo: number, hi: number, color: string, out: number) =>
+    fill(quad(a, b, lo, hi, out), color);
+  const line = (a: Point, b: Point, color: string, w: number) => {
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = w * ppm;
+    ctx.stroke();
+  };
+  // Folded metal canopy: a real top plane and fascia break the flat wall silhouette.
+  // It remains above every entrance and below the existing sign.
+  fill(
+    [
+      at(0.08, 0, 2.72),
+      at(length - 0.08, 0, 2.72),
+      at(length - 0.08, 0.4, 2.57),
+      at(0.08, 0.4, 2.57),
+    ],
+    "#607777",
+  );
+  paintMetalPlane(
+    ctx,
+    art?.balconyMetal,
+    at(0.08, 0, 2.72),
+    at(length - 0.08, 0, 2.72),
+    at(0.08, 0.4, 2.57),
+    length - 0.16,
+    0.4,
+  );
+  panel(0.08, length - 0.08, 2.46, 2.57, "#263f43", 0.4);
+  for (let x = 0.18; x < length - 0.1; x += 0.48)
+    line(at(x, 0.02, 2.73), at(x, 0.39, 2.58), "#89958a", 0.018);
+  for (const x of [0.3, length - 0.3]) line(at(x, 0.02, 2.1), at(x, 0.38, 2.48), "#23373a", 0.05);
 }
 
 /** A shallow first-floor balcony, attached above head height, within the facade span. */
@@ -198,9 +270,14 @@ export function paintOccupiedBalcony(
   edge: Edge,
   project: (p: Point) => Point,
   ppm: number,
+  art?: ArchitectureArt,
 ) {
   if (occupiedUse(s) !== "repair" || edge !== "east") return;
-  const { at, quad } = facePainter(s, edge, project, ppm);
+  const face = facePainter(s, edge, project, ppm);
+  // Lift the landing clear of the sign in this oblique camera projection.
+  const at = (x: number, out: number, z: number) => face.at(x, out, z + 0.35);
+  const quad = (a: number, b: number, lo: number, hi: number, out: number) =>
+    face.quad(a, b, lo + 0.35, hi + 0.35, out);
   const fill = (ps: Point[], c: string) => {
     ctx.beginPath();
     ps.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -216,17 +293,74 @@ export function paintOccupiedBalcony(
     ctx.lineWidth = w * ppm;
     ctx.stroke();
   };
-  fill([at(1, 0, 4.25), at(5, 0, 4.25), at(5, 0.5, 4.25), at(1, 0.5, 4.25)], "#777c6c");
-  fill(quad(1, 5, 4.1, 4.25, 0.5), "#354644");
-  for (const x of [1.1, 4.9]) line(at(x, 0, 3.92), at(x, 0.48, 4.15), "#273734", 0.07);
-  for (let x = 1; x <= 5; x += 0.4) line(at(x, 0.5, 4.23), at(x, 0.5, 5.03), "#75857b", 0.035);
-  for (const z of [4.3, 5.03]) line(at(1, 0.5, z), at(5, 0.5, z), "#a0a58f", 0.045);
-  for (const x of [1, 5]) line(at(x, 0, 5.03), at(x, 0.5, 5.03), "#929c8b", 0.045);
+  fill([at(1, 0, 4.25), at(5, 0, 4.25), at(5, 0.85, 4.25), at(1, 0.85, 4.25)], "#777c6c");
+  paintMetalPlane(
+    ctx,
+    art?.balconyMetal,
+    at(1, 0, 4.25),
+    at(5, 0, 4.25),
+    at(1, 0.85, 4.25),
+    4,
+    0.85,
+  );
+  fill(quad(1, 5, 4.05, 4.25, 0.85), "#354644");
+  for (const x of [1.1, 4.9]) line(at(x, 0, 3.92), at(x, 0.8, 4.15), "#273734", 0.07);
+  for (let x = 1; x <= 5; x += 0.4) line(at(x, 0.85, 4.23), at(x, 0.85, 5.2), "#75857b", 0.035);
+  for (const z of [4.4, 5.2]) line(at(1, 0.85, z), at(5, 0.85, z), "#a0a58f", 0.045);
+  for (const x of [1, 5]) line(at(x, 0, 5.2), at(x, 0.85, 5.2), "#929c8b", 0.045);
+  // Privacy screens, drain and canopy make a recognisable occupied outdoor room.
+  fill(quad(1.02, 2.05, 4.35, 4.91, 0.855), "#586b61");
+  for (let x = 1.08; x < 2.05; x += 0.13)
+    line(at(x, 0.865, 4.39), at(x, 0.865, 4.89), "#91a08b", 0.025);
+  for (const x of [1, 5]) line(at(x, 0.85, 4.25), at(x, 0.85, 6.43), "#516960", 0.065);
+  fill(
+    [at(0.86, 0, 6.62), at(5.14, 0, 6.62), at(5.14, 0.98, 6.43), at(0.86, 0.98, 6.43)],
+    "#6a7e72",
+  );
+  paintMetalPlane(
+    ctx,
+    art?.balconyMetal,
+    at(0.86, 0, 6.62),
+    at(5.14, 0, 6.62),
+    at(0.86, 0.98, 6.43),
+    4.28,
+    0.98,
+  );
+  fill(quad(0.86, 5.14, 6.32, 6.43, 0.98), "#2d4747");
+  for (let x = 1; x < 5.1; x += 0.42) line(at(x, 0, 6.63), at(x, 0.98, 6.44), "#95a08b", 0.018);
   // A folded cloth and two modest plant pots supply habitation without a repeated prop row.
-  fill(quad(3.8, 4.45, 4.52, 5.06, 0.515), "#756959");
+  fill(quad(3.8, 4.45, 4.45, 5.24, 0.865), "#756959");
   for (const x of [1.35, 1.9]) {
     fill(quad(x, x + 0.25, 4.25, 4.47, 0.3), "#80654b");
     for (const k of [-0.08, 0.02, 0.13])
       line(at(x + 0.12, 0.3, 4.44), at(x + 0.12 + k, 0.3, 4.72 + Math.abs(k)), "#647758", 0.055);
   }
+}
+
+/** The 256px tile spans two metres on each constructed plane, not the screen. */
+function paintMetalPlane(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource | undefined,
+  o: Point,
+  u: Point,
+  v: Point,
+  width: number,
+  depth: number,
+) {
+  if (!image) return;
+  const pattern = ctx.createPattern(image, "repeat");
+  if (!pattern) return;
+  ctx.save();
+  ctx.transform(
+    (u.x - o.x) / (width * 128),
+    (u.y - o.y) / (width * 128),
+    (v.x - o.x) / (depth * 128),
+    (v.y - o.y) / (depth * 128),
+    o.x,
+    o.y,
+  );
+  ctx.globalAlpha *= 0.65;
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, width * 128, depth * 128);
+  ctx.restore();
 }

@@ -442,3 +442,15 @@ it("scales the sign to tall saved facades while preserving low-building fixtures
   expect(legacy.out1).toBe(BLADE.out1);
   expect(JSON.stringify(sf)).toBe(before);
 });
+
+it("retains the market blade above the full-width seed8 canopy", () => {
+  const env = composeScene("intersection", 8).layout.arena.environment!;
+  const shop = env.structures.find((s) => s.id === "building_0")!;
+  const front = storefrontFor(shop, env)!;
+  const sign = bladeSign(front)!;
+  expect(front.awning.span).toBe(front.length);
+  expect(sign.s).toBeGreaterThan(0);
+  expect(sign.s).toBeLessThan(front.length);
+  expect(sign.z0).toBeGreaterThan(STOREFRONT_LEVELS.awningWall);
+  expect(sign.z1).toBeLessThan(shop.height);
+});

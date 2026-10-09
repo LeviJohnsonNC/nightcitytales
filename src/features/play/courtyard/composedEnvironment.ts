@@ -9,7 +9,8 @@ import { fixtureExtent } from "./afterRainArt";
 import { entranceLights, paintFrontageIdentity } from "./frontageIdentity";
 import { createRainSurface, rainField } from "./afterRain";
 import { fixtureLights, paintCityFixture, streetDirection, fixtureLamp } from "./cityFixtures";
-import { paintCommercialUpper, commercialUpperWindows } from "./commercialUpper";
+import { paintCommercialUpper, commercialUpperWindows, COMMERCIAL_BASE } from "./commercialUpper";
+import { commercialTerrace, paintCommercialTerrace } from "./commercialTerrace";
 /** World-building art from the same resolved parcels that constrain play. */
 import { paintResidentialRoof, RESIDENTIAL_ROOF_RECESS } from "./residentialRoof";
 import type Phaser from "phaser";
@@ -888,7 +889,7 @@ export function paintCutawayWall(
         "albedo",
         home?.art ?? annex?.art,
       );
-      paintOccupiedBalcony(ctx, structure, edge, project, metre);
+      paintOccupiedBalcony(ctx, structure, edge, project, metre, home?.art ?? annex?.art);
       ctx.restore();
     }
 }
@@ -1030,6 +1031,13 @@ export function paintBuilding(
     // the streetlight reaches the roof's near edge, and the units standing on it
     const lamp = streetLamp(storefront.sf);
     const unit = materials ? architecture?.roofUnit : undefined;
+    const upper = materials ? commercialTerrace(structure) : undefined;
+    const roof = upper ? corners(upper.rect, h) : top;
+    const units = upper
+      ? rooftopUnits(upper)
+      : materials
+        ? cityRoofUnits(structure)
+        : rooftopUnits(structure);
     if (lamp && storefront.pass === "light" && unit) {
       // painted units: the pool on each at its own lid, inside its own silhouette
       const pool: GroundLight = {
@@ -1039,19 +1047,13 @@ export function paintBuilding(
         color: [1, 0.8, 0.56],
         intensity: 0.4,
       };
-      paintRoofUnitLight(
-        ctx,
-        project,
-        top,
-        materials ? cityRoofUnits(structure) : rooftopUnits(structure),
-        h,
-        unit,
-        (c, lift) => paintGroundLight(c, project, pool, lift),
+      paintRoofUnitLight(ctx, project, roof, units, h, unit, (c, lift) =>
+        paintGroundLight(c, project, pool, lift),
       );
     } else if (lamp && storefront.pass === "light") {
       ctx.save();
       ctx.beginPath();
-      top.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      roof.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
       ctx.closePath();
       ctx.clip();
       paintGroundLight(
@@ -1133,6 +1135,18 @@ export function paintBuilding(
       fillMaterial(ctx, clad, points, { key, basis, target: flat }) ? null : flat,
       stroke,
     );
+  const terrace = clad ? commercialTerrace(structure) : undefined;
+  if (terrace) {
+    // Retain the complete street floor, then build recessed rooms on its slab.
+    const rim = corners(r, COMMERCIAL_BASE * pixelsPerMetre);
+    ctx.save();
+    ctx.beginPath();
+    [base[0]!, base[1]!, base[2]!, rim[2]!, rim[1]!, rim[0]!].forEach((p, i) =>
+      i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y),
+    );
+    ctx.closePath();
+    ctx.clip();
+  }
   // Two camera-facing walls; windows, shutters, conduits, lintels share their planes.
   // The shop's neighbours are a different building: painted render, not its concrete.
   const wall: MaterialKey = use
@@ -1442,112 +1456,139 @@ export function paintBuilding(
         "albedo",
         architecture,
       );
-      paintOccupiedBalcony(ctx, structure, edge, project, pixelsPerMetre);
+      paintOccupiedBalcony(ctx, structure, edge, project, pixelsPerMetre, architecture);
     }
-  surface(
-    top,
-    palette[2]!,
-    "#6c716b",
-    frontage?.role === "neighbour" ? "roof-ballast" : "roof-membrane",
-    groundBasis(project, h),
-  );
-  const homeRoof = clad && (use === "residential" || isAnnex(structure, entrances));
-  if (homeRoof)
-    paintResidentialRoof(ctx, project, pixelsPerMetre, structure, clad!, cityRoofUnits(structure));
-  else {
-    // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
-    for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
-    // a neighbour's roof is ballasted, not a seamed membrane
-    for (let t = 0.15; frontage?.role !== "neighbour" && t < 1; t += 0.18)
-      line(
-        { x: top[0]!.x + (top[1]!.x - top[0]!.x) * t, y: top[0]!.y + (top[1]!.y - top[0]!.y) * t },
-        { x: top[3]!.x + (top[2]!.x - top[3]!.x) * t, y: top[3]!.y + (top[2]!.y - top[3]!.y) * t },
-        "#323f43",
-        1,
-      );
-    // a finished shop outside the block takes the same precast coping as the shop
-    if (!frontage && shopArt?.finish)
-      paintParapet(ctx, project, pixelsPerMetre, structure, "shop", clad);
-    if (frontage) {
-      paintParapet(ctx, project, pixelsPerMetre, structure, frontage.role, clad);
-      for (const pipe of frontage.pipes.filter((p) => p.structure === structure))
-        paintRoofOutlet(ctx, project, pixelsPerMetre, pipe);
-    }
-  }
-  if (materials) paintCityRoof(ctx, structure, project, pixelsPerMetre, cityRoofUnits(structure));
-  // Rooftop service equipment is dressing on an inaccessible building, not cover.
-  for (const [i, equipment] of (materials
-    ? cityRoofUnits(structure)
-    : rooftopUnits(structure)
-  ).entries()) {
-    // the painted unit, in place of the drawn box, on every roof that takes materials
-    const unit = materials ? architecture?.roofUnit : undefined;
-    if (unit) {
-      if (homeRoof) {
-        ctx.save();
-        ctx.beginPath();
-        top.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-        ctx.closePath();
-        ctx.clip();
-      }
-      paintRoofShade(
+  if (terrace) {
+    ctx.restore();
+    paintCommercialTerrace(
+      ctx,
+      structure,
+      terrace,
+      project,
+      pixelsPerMetre,
+      clad!,
+      architecture,
+      frontage?.role === "neighbour" ? "roof-ballast" : "roof-membrane",
+    );
+  } else {
+    surface(
+      top,
+      palette[2]!,
+      "#6c716b",
+      frontage?.role === "neighbour" ? "roof-ballast" : "roof-membrane",
+      groundBasis(project, h),
+    );
+    const homeRoof = clad && (use === "residential" || isAnnex(structure, entrances));
+    if (homeRoof)
+      paintResidentialRoof(
         ctx,
         project,
         pixelsPerMetre,
-        equipment,
-        h - (homeRoof ? RESIDENTIAL_ROOF_RECESS * pixelsPerMetre : 0),
+        structure,
+        clad!,
+        cityRoofUnits(structure),
       );
-      if (homeRoof) ctx.restore();
-      paintRoofUnitArt(ctx, project, equipment, h, unit);
-      continue;
+    else {
+      // Roof seams and a raised rim give a mass rather than a flat perimeter rectangle.
+      for (let i = 0; i < 4; i++) line(top[i]!, top[(i + 1) % 4]!, "#82837a", 2);
+      // a neighbour's roof is ballasted, not a seamed membrane
+      for (let t = 0.15; frontage?.role !== "neighbour" && t < 1; t += 0.18)
+        line(
+          {
+            x: top[0]!.x + (top[1]!.x - top[0]!.x) * t,
+            y: top[0]!.y + (top[1]!.y - top[0]!.y) * t,
+          },
+          {
+            x: top[3]!.x + (top[2]!.x - top[3]!.x) * t,
+            y: top[3]!.y + (top[2]!.y - top[3]!.y) * t,
+          },
+          "#323f43",
+          1,
+        );
+      // a finished shop outside the block takes the same precast coping as the shop
+      if (!frontage && shopArt?.finish)
+        paintParapet(ctx, project, pixelsPerMetre, structure, "shop", clad);
+      if (frontage) {
+        paintParapet(ctx, project, pixelsPerMetre, structure, frontage.role, clad);
+        for (const pipe of frontage.pipes.filter((p) => p.structure === structure))
+          paintRoofOutlet(ctx, project, pixelsPerMetre, pipe);
+      }
     }
-    const bottom = corners(equipment, h),
-      lid = corners(equipment, h + 8);
-    if (storefront) paintRoofShade(ctx, project, pixelsPerMetre, equipment, h);
-    // Painted sheet metal: a unit sits on the roof, so its tile stands on it.
-    surface(
-      [bottom[0]!, bottom[1]!, lid[1]!, lid[0]!],
-      "#303e45",
-      "#171f26",
-      "painted-metal",
-      wallBasis(project, "x", equipment.y, metres("painted-metal"), pixelsPerMetre, h),
-    );
-    surface(
-      [bottom[1]!, bottom[2]!, lid[2]!, lid[1]!],
-      "#26333b",
-      "#171f26",
-      "painted-metal",
-      wallBasis(
-        project,
-        "y",
-        equipment.x + equipment.width,
-        metres("painted-metal"),
-        pixelsPerMetre,
-        h,
-      ),
-    );
-    surface(lid, "#65706b", "#7e8279", "painted-metal", groundBasis(project, h + 8));
-    if (storefront) {
-      paintRooftopUnit(ctx, project, pixelsPerMetre, equipment, h, 8, i);
-      continue;
+    if (materials) paintCityRoof(ctx, structure, project, pixelsPerMetre, cityRoofUnits(structure));
+    // Rooftop service equipment is dressing on an inaccessible building, not cover.
+    for (const [i, equipment] of (materials
+      ? cityRoofUnits(structure)
+      : rooftopUnits(structure)
+    ).entries()) {
+      // the painted unit, in place of the drawn box, on every roof that takes materials
+      const unit = materials ? architecture?.roofUnit : undefined;
+      if (unit) {
+        if (homeRoof) {
+          ctx.save();
+          ctx.beginPath();
+          top.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+          ctx.closePath();
+          ctx.clip();
+        }
+        paintRoofShade(
+          ctx,
+          project,
+          pixelsPerMetre,
+          equipment,
+          h - (homeRoof ? RESIDENTIAL_ROOF_RECESS * pixelsPerMetre : 0),
+        );
+        if (homeRoof) ctx.restore();
+        paintRoofUnitArt(ctx, project, equipment, h, unit);
+        continue;
+      }
+      const bottom = corners(equipment, h),
+        lid = corners(equipment, h + 8);
+      if (storefront) paintRoofShade(ctx, project, pixelsPerMetre, equipment, h);
+      // Painted sheet metal: a unit sits on the roof, so its tile stands on it.
+      surface(
+        [bottom[0]!, bottom[1]!, lid[1]!, lid[0]!],
+        "#303e45",
+        "#171f26",
+        "painted-metal",
+        wallBasis(project, "x", equipment.y, metres("painted-metal"), pixelsPerMetre, h),
+      );
+      surface(
+        [bottom[1]!, bottom[2]!, lid[2]!, lid[1]!],
+        "#26333b",
+        "#171f26",
+        "painted-metal",
+        wallBasis(
+          project,
+          "y",
+          equipment.x + equipment.width,
+          metres("painted-metal"),
+          pixelsPerMetre,
+          h,
+        ),
+      );
+      surface(lid, "#65706b", "#7e8279", "painted-metal", groundBasis(project, h + 8));
+      if (storefront) {
+        paintRooftopUnit(ctx, project, pixelsPerMetre, equipment, h, 8, i);
+        continue;
+      }
+      const center = project({ x: equipment.x + 1, y: equipment.y + 1 });
+      ctx.beginPath();
+      ctx.ellipse(center.x, center.y - h - 8, 6, 3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#28373c";
+      ctx.fill();
+      line(
+        { x: center.x - 5, y: center.y - h - 8 },
+        { x: center.x + 5, y: center.y - h - 8 },
+        "#909584",
+        0.6,
+      );
+      line(
+        { x: center.x, y: center.y - h - 11 },
+        { x: center.x, y: center.y - h - 5 },
+        "#909584",
+        0.6,
+      );
     }
-    const center = project({ x: equipment.x + 1, y: equipment.y + 1 });
-    ctx.beginPath();
-    ctx.ellipse(center.x, center.y - h - 8, 6, 3, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#28373c";
-    ctx.fill();
-    line(
-      { x: center.x - 5, y: center.y - h - 8 },
-      { x: center.x + 5, y: center.y - h - 8 },
-      "#909584",
-      0.6,
-    );
-    line(
-      { x: center.x, y: center.y - h - 11 },
-      { x: center.x, y: center.y - h - 5 },
-      "#909584",
-      0.6,
-    );
   }
   // Paint with the parent mass: attachments inherit its sorting and actor fading.
   // The fixed isometric camera sees north/east facades, never the rear faces.
@@ -2421,17 +2462,23 @@ export function createComposedEnvironment(
       };
       // the secondary light: a few occupied homes (`litHomeWindows`), each a visible
       // source with its own room, glass, sill and the wall round it
+      const upperRooms = materials ? (commercialTerrace(s) ?? s) : s;
       const homes = night
         ? [
             ...litHomeWindows(s, arena.environment!.entrances, env.structures),
             ...(["north", "east"] as const).flatMap((edge) =>
-              commercialUpperWindows(s, edge)
+              commercialUpperWindows(upperRooms, edge)
                 .filter((w) => w.occupancy !== "dark")
                 .map((opening) => ({ edge, opening })),
             ),
           ].map((h) => ({
             ...h,
-            face: facePainter(s, h.edge, project, metre),
+            face: facePainter(
+              h.opening.z0 >= COMMERCIAL_BASE ? upperRooms : s,
+              h.edge,
+              project,
+              metre,
+            ),
           }))
         : [];
       // the shopfront and its composed returns, each face flipped about its own foot

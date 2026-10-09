@@ -35,10 +35,9 @@ test.afterEach(async ({ page }, info) => {
 });
 for (const seed of [8, 7, 0])
   test(`city block seed ${seed}`, async ({ page }, info) => {
-    // Seed 8 captures six states plus save/load and damage controls. Its baseline
-    // takes ~88s on the software GPU; the two-state seeds retain the 90s budget.
-    // Keep the workflow's five-minute global cap and zero retries.
-    test.setTimeout(seed === 8 ? 120_000 : 90_000);
+    // The eight-capture seed needs headroom beyond software-GPU cold startup.
+    // Keep zero retries; capture operations retain their own short deadlines.
+    test.setTimeout(seed === 8 ? 180_000 : 90_000);
     page.setDefaultTimeout(15_000);
     page.setDefaultNavigationTimeout(30_000);
     const errors: string[] = [];
@@ -62,7 +61,19 @@ for (const seed of [8, 7, 0])
     page.on("response", (response) => {
       if (response.status() >= 400) report("http", `${response.status()} ${response.url()}`);
     });
+    // Visual evidence does not exercise sound. Apply the real mute preferences
+    // before React mounts, suppress autoplay, and fulfil media locally so old
+    // baseline revisions also avoid fetching the unavailable soundtrack.
+    await page.route(/\.(?:mp3|m4a|ogg|wav|aac|flac)(?:\?.*)?$/i, (route) => {
+      // Vite also imports audio URLs as JavaScript modules (?import&url).
+      // An empty response for those scripts prevents the entire route loading.
+      if (route.request().resourceType() !== "media") return route.continue();
+      return route.fulfill({ status: 204, body: "" });
+    });
     await page.addInitScript(() => {
+      localStorage.setItem("nct.music", "off");
+      localStorage.setItem("combat-muted", "true");
+      HTMLMediaElement.prototype.play = () => Promise.resolve();
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries())
           if (entry.name.startsWith("courtyard-"))
@@ -77,7 +88,75 @@ for (const seed of [8, 7, 0])
       const started = Date.now();
       report("capture-start", name);
       await test.step(`capture ${name}`, async () => {
-        await page.locator("canvas").screenshot({ path: `${out}/${name}.png` });
+        const canvas = page.locator("canvas");
+        // Scroll once, without Playwright's animation-stability loop. This is
+        // a continuously rendered scene; retain the DOM checks below instead.
+        await canvas.evaluate((el) =>
+          el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }),
+        );
+        await page.mouse.move(0, 0);
+        await page.evaluate(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+            ),
+        );
+        const overlay = await page.evaluate(() => {
+          const rect = (el: Element) => {
+            const r = el.getBoundingClientRect();
+            return { x: r.x, y: r.y, width: r.width, height: r.height };
+          };
+          return {
+            scroll: { x: scrollX, y: scrollY },
+            canvases: document.querySelectorAll("canvas").length,
+            overlays: document.querySelectorAll("svg.combat-arena").length,
+            canvas: rect(document.querySelector("canvas")!),
+            svg: rect(document.querySelector("svg.combat-arena")!),
+            units: [...document.querySelectorAll("g.combat-unit")].map((el) => ({
+              label: el.getAttribute("aria-label"),
+              transform: el.getAttribute("transform"),
+              rings: [...el.querySelectorAll(":scope > ellipse")].map(rect),
+            })),
+            markers: [...document.querySelectorAll("g.combat-marker")].map((el) => ({
+              transform: el.getAttribute("transform"),
+              bounds: rect(el),
+            })),
+          };
+        });
+        await writeFile(`${out}/${name}-overlay.json`, JSON.stringify(overlay, null, 2));
+        expect(overlay.canvases).toBe(1);
+        expect(overlay.overlays).toBe(1);
+        expect(overlay.units).toHaveLength(5);
+        expect(new Set(overlay.units.map((u) => u.label)).size).toBe(5);
+        for (const unit of overlay.units) expect(unit.rings).toHaveLength(1);
+        // Quiet bystanders omit head markers unless inspected.
+        expect(overlay.markers.length).toBeGreaterThan(0);
+        expect(overlay.markers.length).toBeLessThanOrEqual(overlay.units.length);
+        for (const axis of ["x", "y", "width", "height"] as const)
+          expect(Math.abs(overlay.canvas[axis] - overlay.svg[axis])).toBeLessThan(1);
+        // Viewport capture avoids another implicit element-scroll operation.
+        // page.screenshot (without fullPage) takes a viewport-relative clip.
+        // Adding scroll again cropped away the upper scene and captured the HUD.
+        const box = overlay.canvas;
+        const viewport = page.viewportSize()!;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.y).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+        expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
+        const png = await page.screenshot({
+          path: `${out}/${name}.png`,
+          timeout: 15_000,
+          scale: "css",
+          clip: {
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height,
+          },
+        });
+        // PNG IHDR dimensions catch silent clipping at the viewport boundary.
+        expect(Math.abs(png.readUInt32BE(16) - box.width)).toBeLessThanOrEqual(1);
+        expect(Math.abs(png.readUInt32BE(20) - box.height)).toBeLessThanOrEqual(1);
       });
       report("capture", `${name} ${Date.now() - started}ms`);
     };
