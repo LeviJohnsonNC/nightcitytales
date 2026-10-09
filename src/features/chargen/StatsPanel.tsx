@@ -52,7 +52,7 @@ function InfoStatCard({
   stat: StatKey;
   value: number | undefined;
   roleId: string | null;
-  /** How good the roll was for this Role. Rolled methods only. */
+  /** How good the roll was for this Role: the card flares at the extremes. */
   verdict?: StatRollVerdict | null;
   children?: React.ReactNode;
 }) {
@@ -63,14 +63,14 @@ function InfoStatCard({
       {/* The flare plays for the moment after a die lands, and only then: a
           card read back from a saved draft just sits there. A class rather
           than a key, so the die inside is not remounted mid-landing. */}
-      <div className={cn("relative", change !== null && verdict && `cg-roll-${verdict}`)}>
+      <div
+        className={cn(
+          "relative",
+          change !== null && (verdict === "best" || verdict === "worst") && `cg-roll-${verdict}`,
+        )}
+      >
         <StatCard stat={stat} value={value} onInfo={() => setOpen(true)}>
-          {(children || verdict) && (
-            <div className="flex items-center gap-2">
-              {children}
-              {verdict && <VerdictChip verdict={verdict} />}
-            </div>
-          )}
+          {children && <div className="flex items-center gap-2">{children}</div>}
         </StatCard>
       </div>
       <StatInfoModal
@@ -99,41 +99,17 @@ function useRecentChange(value: number | undefined): number | null {
   return change;
 }
 
-/** What each verdict says on its card. */
-const VERDICT_LABEL: Record<StatRollVerdict, string> = {
-  best: "Top roll",
-  good: "Good roll",
-  fair: "Fair",
-  poor: "Low roll",
-  worst: "Floor",
-};
-
-/** How the die lights for each verdict, from the tones it already knows. */
+/**
+ * How the die lights for each verdict: green for the best this Role can roll,
+ * red for the worst, the die's own pink for everything between.
+ */
 const VERDICT_TONE: Record<StatRollVerdict, DieTone> = {
-  best: "crit",
-  good: "win",
-  fair: null,
-  poor: "lose",
+  best: "top",
+  good: "mid",
+  fair: "mid",
+  poor: "mid",
   worst: "fumble",
 };
-
-function VerdictChip({ verdict }: { verdict: StatRollVerdict }) {
-  if (verdict === "fair") return null;
-  return (
-    <span
-      className={cn(
-        "relative shrink-0 border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.16em]",
-        verdict === "best" &&
-          "border-success bg-success/20 text-success shadow-[0_0_14px_-4px_var(--color-success)]",
-        verdict === "good" && "border-success/50 text-success",
-        verdict === "poor" && "border-amber/50 text-amber",
-        verdict === "worst" && "border-danger bg-danger/15 text-danger",
-      )}
-    >
-      {VERDICT_LABEL[verdict]}
-    </span>
-  );
-}
 
 /** Every rolled STAT's verdict for this Role. */
 function verdictsFor(
@@ -437,8 +413,10 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
   function rollStat(stat: StatKey) {
     const result = rollEdgerunnerStat(roleId, stat, defaultRng);
     const spends = costOf(stat).spends;
+    // The die lands on the STAT itself; the row it was read from stays in the
+    // roll log and the printed table below.
     return {
-      face: result.row,
+      face: result.value,
       tone: VERDICT_TONE[statRollVerdict(roleId, stat, result.value)],
       commit: () => {
         append(`Edgerunner ${stat.toUpperCase()} column (${roleId})`, result.roll);
@@ -508,7 +486,7 @@ function EdgerunnerBranch({ state }: { state: ChargenState }) {
             <div className="flex justify-start" data-stat-die-wrap={stat}>
               <DiceRoll
                 sides={10}
-                value={state.statRolls.rows[stat] ?? null}
+                value={state.stats[stat] ?? null}
                 disabled={!costOf(stat).allowed}
                 label={
                   state.stats[stat] === undefined

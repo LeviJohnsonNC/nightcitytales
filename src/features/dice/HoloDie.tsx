@@ -36,7 +36,12 @@ import {
 import "./dice.css";
 
 /** What the result means, for how the die lands. */
-export type DieTone = "crit" | "fumble" | "win" | "lose" | null;
+/**
+ * "top" and "mid" grade a number rather than a check: the best a STAT can be
+ * (green, celebrated like a crit) and anything short of best or worst (the
+ * crit's pink, landing quietly).
+ */
+export type DieTone = "crit" | "fumble" | "win" | "lose" | "top" | "mid" | null;
 
 /** What a click produces: the face to land on, and how to commit the result. */
 export type DiceRollOutcome = { face: number; commit: () => void; tone?: DieTone };
@@ -99,6 +104,8 @@ const PALETTE: Record<
   fumble: { hue: 352, spread: 18, sat: 90, lift: 2, edge: "#ff4d6a" },
   win: { hue: 180, spread: 60, sat: 95, lift: 8, edge: "#9ffcff" },
   lose: { hue: 250, spread: 30, sat: 30, lift: -4, edge: "#7b72a8" },
+  top: { hue: 135, spread: 40, sat: 90, lift: 10, edge: "#c8ffd8" },
+  mid: { hue: 300, spread: 60, sat: 95, lift: 14, edge: "#ffd6f1" },
 };
 
 export function HoloDie({
@@ -231,7 +238,7 @@ export function HoloDie({
         setRolling(false);
         setLanded(finalTone ?? "plain");
         window.setTimeout(() => setLanded(null), 900);
-        if (finalTone === "crit") {
+        if (finalTone === "crit" || finalTone === "top") {
           playCrit();
           buzz([20, 40, 70]);
         } else if (finalTone === "fumble") {

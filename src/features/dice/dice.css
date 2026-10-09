@@ -25,6 +25,12 @@
 .holo-die.tone-lose {
   --holo-glow: #6d6690;
 }
+.holo-die.tone-top {
+  --holo-glow: #4dff8a;
+}
+.holo-die.tone-mid {
+  --holo-glow: #ff7ad1;
+}
 
 .holo-body {
   --charge: 0;
@@ -61,8 +67,12 @@
   fill: #ffffff;
   filter: drop-shadow(0 0 0.08px var(--holo-glow));
 }
-.holo-die.tone-crit .holo-num.is-front {
+.holo-die.tone-crit .holo-num.is-front,
+.holo-die.tone-mid .holo-num.is-front {
   fill: #ffe3f5;
+}
+.holo-die.tone-top .holo-num.is-front {
+  fill: #e0ffe9;
 }
 .holo-die.tone-fumble .holo-num.is-front {
   fill: #ffd0d6;
@@ -163,14 +173,19 @@
   transform-box: view-box;
   transform-origin: 0 0;
 }
-.holo-die.is-landed.is-crit .holo-flare line {
+.holo-die.is-landed.is-crit .holo-flare line,
+.holo-die.is-landed.is-top .holo-flare line {
   animation: holo-ray 800ms ease-out forwards;
 }
-.holo-die.is-landed.is-crit .holo-flare {
+.holo-die.is-landed.is-crit .holo-flare,
+.holo-die.is-landed.is-top .holo-flare {
   animation: holo-rays 800ms ease-out forwards;
 }
 .holo-die.is-landed.is-crit .holo-svg {
   filter: drop-shadow(0 0 14px #ff7ad1) drop-shadow(0 0 4px #fff);
+}
+.holo-die.is-landed.is-top .holo-svg {
+  filter: drop-shadow(0 0 14px #4dff8a) drop-shadow(0 0 4px #fff);
 }
 @keyframes holo-rays {
   from {
