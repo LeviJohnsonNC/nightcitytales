@@ -1733,8 +1733,8 @@ function bladeMirror(
   return {
     a,
     b,
-    // neon is brighter than its sprite can show
-    gain: 2,
+    // A blade sign is a small emitter; retain its hue without dominating the street.
+    gain: 0.8,
     extent: [
       { x: x0, y: y0 },
       { x: x1, y: y0 },

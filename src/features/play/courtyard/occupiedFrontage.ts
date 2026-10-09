@@ -122,9 +122,9 @@ export function paintOccupiedFrontage(
         { a: 3.9, b: length - 0.35, lo: 0.68, hi: 2.55 },
       ];
   if (pass === "light") {
-    wash(0.15, length - 0.15, 0.1, 3.65, "rgba(239,176,100,.3)");
+    wash(0.15, length - 0.15, 0.1, 3.65, "rgba(239,176,100,.22)");
     for (const b of bays)
-      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,209,151,.43)", -0.12);
+      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,209,151,.35)", -0.12);
     return;
   }
   if (pass === "glow") {
@@ -144,7 +144,7 @@ export function paintOccupiedFrontage(
   text("DENKI  /  ELECTRIC", 0.25, length - 0.25, 3.07, 3.51, "#d7c194");
   panel(0.25, length - 0.25, 2.7, 2.93, "#27393b", 0.14);
   text("REPAIR   •   AUDIO   •   PARTS", 0.3, length - 0.3, 2.72, 2.9, "#aaad91");
-  // Shallow workshop display bays: pegboard, bench, repaired electronics and task lights.
+  // Deep workshop display bays: pegboard, bench, repaired electronics and task lights.
   for (const b of bays) {
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.08, b.hi + 0.08, "#142327");
     const interior = doors.length
@@ -152,16 +152,22 @@ export function paintOccupiedFrontage(
       : b.a < 1
         ? art?.repairBench
         : art?.repairParts;
-    if (interior) paintFaceAsset(ctx, interior, at, b.a, b.b, 0.72, 2.48, -0.12);
+    if (interior) paintFaceAsset(ctx, interior, at, b.a, b.b, 0.72, 2.48, -0.32);
     else paintWorkshopInterior(ctx, face, b.a, b.b, b.a < 1 ? "bench" : "storage");
     // Angled reveals and mullions anchor the interior behind the actual facade.
     fill(
-      [at(b.a, 0.04, b.lo), at(b.a, 0.04, b.hi), at(b.a, -0.13, b.hi), at(b.a, -0.13, b.lo)],
+      [at(b.a, 0.04, b.lo), at(b.a, 0.04, b.hi), at(b.a, -0.32, b.hi), at(b.a, -0.32, b.lo)],
       "#262b28",
     );
     fill(
-      [at(b.a, 0.04, b.hi), at(b.b, 0.04, b.hi), at(b.b, -0.13, b.hi), at(b.a, -0.13, b.hi)],
+      [at(b.a, 0.04, b.hi), at(b.b, 0.04, b.hi), at(b.b, -0.32, b.hi), at(b.a, -0.32, b.hi)],
       "#192623",
+    );
+    // A substantial head reveal separates the warm room from the exterior fascia.
+    panel(b.a, b.b, b.hi - 0.16, b.hi, "rgba(8,19,19,.68)", -0.08);
+    fill(
+      [at(b.a, 0.04, b.lo), at(b.b, 0.04, b.lo), at(b.b, -0.32, b.lo), at(b.a, -0.32, b.lo)],
+      "#6d725f",
     );
     for (const x of [b.a, b.b - 0.035]) panel(x, x + 0.035, b.lo, b.hi, "#89928a", 0.04);
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.09, b.lo, "#9c997f", 0.12);

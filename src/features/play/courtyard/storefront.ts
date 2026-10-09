@@ -423,7 +423,7 @@ export function paintStorefrontFace(o: FaceOptions) {
   if (o.clip) {
     // The piece's front, plus room for what stands proud of the wall or sits behind it.
     const c = o.clip;
-    const corners = [-0.2, 0.3].flatMap((out) => [
+    const corners = [-0.4, 0.3].flatMap((out) => [
       at(c.s0, out, 0),
       at(c.s1, out, 0),
       at(c.s1, out, c.zMax),
@@ -467,7 +467,7 @@ export function paintStorefrontFace(o: FaceOptions) {
   }
 
   // --- window bays ---------------------------------------------------------
-  const depth = 0.18;
+  const depth = 0.34;
   const frame = 0.07;
   o.sf.bays.forEach((s0, index) => {
     const s1 = s0 + STOREFRONT_FACE.bayWidth;
@@ -766,9 +766,9 @@ export function paintStorefrontFace(o: FaceOptions) {
     // the awning's shadow on the wall beneath its wall line, and the shop's lintel shade
     gradientFill(
       ctx,
-      quad(0, sf.awning.span, L.awningWall - 0.6, L.awningWall),
+      quad(sf.awning.offset, sf.awning.offset + sf.awning.span, L.awningWall - 1.15, L.awningWall),
       at(0, 0, L.awningWall),
-      at(0, 0, L.awningWall - 0.6),
+      at(0, 0, L.awningWall - 1.15),
       [
         [0, "rgba(0,0,0,.56)"],
         [1, "rgba(0,0,0,0)"],
@@ -1238,6 +1238,34 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
     }
     fillPoly(ctx, pts, "#527b76");
   };
+  // The continuous underside and front beam give the canopy real weight at play
+  // scale. All supports stop above head height, within its existing saved envelope.
+  fillPoly(
+    ctx,
+    [
+      at(offset, 0, wall - 0.3),
+      at(offset + span, 0, wall - 0.3),
+      at(offset + span, projection, outer - hem),
+      at(offset, projection, outer - hem),
+    ],
+    "#182b29",
+  );
+  for (let s = offset + 0.12; s < offset + span; s += 2.6) {
+    strokeLine(
+      ctx,
+      at(s, 0, wall - 0.65),
+      at(s, projection - 0.08, outer - hem),
+      "#172323",
+      ppm * 0.09,
+    );
+    strokeLine(
+      ctx,
+      at(s, 0, wall - 0.64),
+      at(s, projection - 0.08, outer - hem + 0.03),
+      "#737563",
+      ppm * 0.025,
+    );
+  }
   // arms first: they run under the fabric from the wall to the outer corners
   for (const s of [offset + 0.05, offset + span - 0.05])
     strokeLine(ctx, at(s, 0, wall - 0.55), at(s, projection - 0.05, outer - 0.02), "#222d31", 2.4);
@@ -1267,7 +1295,17 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
     );
   }
   // the hem folds over the front: the same cloth, darker, with its own stripe phase
-  paintFabric(valance, "rgba(0,0,0,.30)", slope);
+  paintFabric(valance, "rgba(0,0,0,.42)", slope);
+  fillPoly(
+    ctx,
+    [
+      at(offset, projection, outer - hem),
+      at(offset + span, projection, outer - hem),
+      at(offset + span, projection - 0.13, outer - hem - 0.08),
+      at(offset, projection - 0.13, outer - hem - 0.08),
+    ],
+    "#172725",
+  );
   strokeLine(ctx, valance[3]!, valance[2]!, "#1b2428", 1.6);
   strokeLine(ctx, top[0]!, top[1]!, "#1b2428", 1.4);
   for (const s of [offset, offset + span]) {

@@ -40,7 +40,7 @@ import type { Box } from "./lampShadow";
 /** The numbers, tuned by eye at play zoom on seeds 8 and 7, and stated here. */
 export const REFLECTION = {
   /** Overall strength of the source pictures, added over the lit ground. */
-  strength: 1.45,
+  strength: 1.05,
   /**
    * What a source must give to be reflected, of full scale, applied to the source's own
    * extracted picture: a surface shows its own colour for dim things, and reflects the
@@ -48,9 +48,9 @@ export const REFLECTION = {
    */
   floor: 0.18,
   /** The whole picture, as a wet film shows it: blur in metres across and along. */
-  tight: { across: 0.03, along: 0.1 },
+  tight: { across: 0.055, along: 0.18 },
   /** The streak's blur, metres. */
-  rough: { across: 0.12, along: 0.3 },
+  rough: { across: 0.2, along: 0.46 },
   /**
    * How a rough surface stretches a picture: a facet tilted toward the camera reflects a
    * source from nearer its foot than the mirror point, one tilted away from beyond it.
@@ -77,18 +77,18 @@ export const REFLECTION = {
    * What a wet patch shows of a picture: the whole of it (`tight`) and its streak
    * (`streak`); and how much of the streak dry ground shows (`dry`).
    */
-  body: { tight: 0.45, streak: 0.7, dry: 0.025 },
+  body: { tight: 0.18, streak: 0.62, dry: 0.008 },
   /**
    * The few sharp highlights: grains of a wet patch above the `lo` quantile of their
    * surface's, fully from `hi`, at `gain` times the streak.
    */
-  highlight: { lo: 0.993, hi: 0.999, gain: 1.6 },
+  highlight: { lo: 0.993, hi: 0.999, gain: 0.55 },
   /** Per surface: how much it gives back. Joints and footprints give nothing. */
   surfaces: {
     asphalt: 0.9,
     paving: 0.65,
     concrete: 0.5,
-    marking: 1.15,
+    marking: 1,
     threshold: 0.85,
   },
   /** A shop light seen in the wet patches it falls on: a sheen, and the highlights. */
@@ -805,6 +805,10 @@ export class GroundReflection {
       const a = ed[i * 4 + 3]!;
       for (let c = 0; c < 3; c++) E[i * 3 + c] = emissive(ed[i * 4 + c]!, a, gain);
     }
+    // Resolve narrow tubes before depth integration. Otherwise each discrete stretch
+    // sample repeats the sharp glyph as a horizontal rung on the street. This filter
+    // is in metres, once per source, and leaves the original sign sprite untouched.
+    blur3(E, ew, eh, 0.045 * this.setup.ppm * res, 0.14 * this.setup.ppm * res);
     // 2. sampled where a mirror (and a rough surface) puts it
     const { from, to } = REFLECTION.stretch;
     const pic = bounds(
@@ -820,13 +824,22 @@ export class GroundReflection {
     const depths = stretchDepths(this.setup.stretchSamples);
     const m = (source.b.y - source.a.y) / (source.b.x - source.a.x);
     const sample = (xs: number, ys: number, out: Float32Array, o: number, w: number) => {
-      const u = Math.floor((xs - ex0) * res);
-      const v = Math.floor((ys - ey0) * res);
-      if (u < 0 || v < 0 || u >= ew || v >= eh) return;
-      const j = (v * ew + u) * 3;
-      out[o] = out[o]! + E[j]! * w;
-      out[o + 1] = out[o + 1]! + E[j + 1]! * w;
-      out[o + 2] = out[o + 2]! + E[j + 2]! * w;
+      const u = (xs - ex0) * res - 0.5;
+      const v = (ys - ey0) * res - 0.5;
+      const x0 = Math.floor(u),
+        y0 = Math.floor(v);
+      const fx = u - x0,
+        fy = v - y0;
+      // Bilinear reconstruction keeps the footprint continuous at play/compact zoom.
+      for (let dy = 0; dy <= 1; dy++)
+        for (let dx = 0; dx <= 1; dx++) {
+          const xx = x0 + dx,
+            yy = y0 + dy;
+          if (xx < 0 || yy < 0 || xx >= ew || yy >= eh) continue;
+          const weight = w * (dx ? fx : 1 - fx) * (dy ? fy : 1 - fy);
+          const j = (yy * ew + xx) * 3;
+          for (let c = 0; c < 3; c++) out[o + c] = out[o + c]! + E[j + c]! * weight;
+        }
     };
     const share = 1 / depths.length;
     for (let y = 0; y < box.h; y++)

@@ -80,6 +80,18 @@ export function paintCommercialUpper(
     })
   )
     fill(wall, target);
+  // Broad eave shadow and quiet upper-storey values establish a hierarchy before
+  // windows/trim are painted. Gradients use world height, shared by cutaway faces.
+  const top = at(0, 0, s.height),
+    foot = at(0, 0, COMMERCIAL_BASE);
+  const shade = ctx.createLinearGradient(top.x, top.y, foot.x, foot.y);
+  shade.addColorStop(0, "rgba(10,23,23,.48)");
+  shade.addColorStop(0.24, "rgba(16,28,27,.19)");
+  shade.addColorStop(0.7, "rgba(16,28,27,.06)");
+  shade.addColorStop(1, "rgba(10,22,21,.3)");
+  path(wall);
+  ctx.fillStyle = shade;
+  ctx.fill();
   const windows = commercialUpperWindows(s, edge);
   // A continuous stone frame with a deep spandrel over the trading floor.
   const band = (z: number) => {
@@ -92,7 +104,7 @@ export function paintCommercialUpper(
         at(length, 0.13, z + 0.16),
         at(0, 0.13, z + 0.16),
       ],
-      "#99937f",
+      "#827e6d",
     );
   };
   band(COMMERCIAL_BASE + 0.14);
@@ -104,7 +116,7 @@ export function paintCommercialUpper(
     length - 0.32,
   ];
   for (const x of piers) {
-    fill(quad(x, x + 0.22, COMMERCIAL_BASE + 0.3, s.height - 0.18), warm ? "#918269" : "#737b6b");
+    fill(quad(x, x + 0.22, COMMERCIAL_BASE + 0.3, s.height - 0.18), warm ? "#82765f" : "#657062");
     fill(quad(x + 0.22, x + 0.3, COMMERCIAL_BASE + 0.3, s.height - 0.18), "rgba(13,18,18,.21)");
   }
   for (const w of windows) paintHomeWindow(ctx, face, ppm, w, art);

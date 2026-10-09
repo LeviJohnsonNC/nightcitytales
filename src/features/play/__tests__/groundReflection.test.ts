@@ -105,11 +105,13 @@ describe("ground reflection: what a surface gives back", () => {
     expect(dry.streak).toBeLessThan(0.05);
   });
 
-  it("shows a wet patch's picture whole, and its proud grains brighter", () => {
+  it("keeps a subdued source image and bounded wet-grain highlights", () => {
     const wet = response(SurfaceClass.asphalt, 1, 0);
     const grain = response(SurfaceClass.asphalt, 1, 1);
-    expect(wet.tight).toBeGreaterThan(0.3);
-    expect(grain.streak).toBeGreaterThan(wet.streak * 3);
+    expect(wet.tight).toBeGreaterThan(0);
+    expect(wet.tight).toBeLessThan(wet.streak);
+    expect(grain.streak).toBeGreaterThan(wet.streak);
+    expect(grain.streak).toBeLessThan(wet.streak * 2);
   });
 
   it("makes a marking give back more than the asphalt it is painted on", () => {
