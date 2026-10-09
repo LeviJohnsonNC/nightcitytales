@@ -823,9 +823,29 @@ export class GroundReflection {
     const stretched = new Float32Array(box.w * box.h * 3);
     const depths = stretchDepths(this.setup.stretchSamples);
     const m = (source.b.y - source.a.y) / (source.b.x - source.a.x);
-    const sample = (xs: number, ys: number, out: Float32Array, o: number, w: number) => {
+    const sample = (
+      xs: number,
+      ys: number,
+      out: Float32Array,
+      o: number,
+      w: number,
+      linear = false,
+    ) => {
       const u = (xs - ex0) * res - 0.5;
       const v = (ys - ey0) * res - 0.5;
+      // The already-prefiltered rough field is averaged over 24 depths and blurred
+      // again at ground scale. Nearest lookup here avoids four reads per depth;
+      // only the tight image needs bilinear reconstruction.
+      if (!linear) {
+        const xx = Math.round(u),
+          yy = Math.round(v);
+        if (xx < 0 || yy < 0 || xx >= ew || yy >= eh) return;
+        const j = (yy * ew + xx) * 3;
+        out[o] = out[o]! + E[j]! * w;
+        out[o + 1] = out[o + 1]! + E[j + 1]! * w;
+        out[o + 2] = out[o + 2]! + E[j + 2]! * w;
+        return;
+      }
       const x0 = Math.floor(u),
         y0 = Math.floor(v);
       const fx = u - x0,
@@ -850,7 +870,7 @@ export class GroundReflection {
         const d = sy - yl;
         if (d <= 0) continue;
         const o = (y * box.w + x) * 3;
-        sample(sx, yl - d, tight, o, 1);
+        sample(sx, yl - d, tight, o, 1, true);
         for (const k of depths) sample(sx, yl - d / k, stretched, o, share);
       }
     const made = { box, tight, stretched };

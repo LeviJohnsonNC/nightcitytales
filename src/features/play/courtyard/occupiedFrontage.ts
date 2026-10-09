@@ -144,6 +144,19 @@ export function paintOccupiedFrontage(
   text("DENKI  /  ELECTRIC", 0.25, length - 0.25, 3.07, 3.51, "#d7c194");
   panel(0.25, length - 0.25, 2.7, 2.93, "#27393b", 0.14);
   text("REPAIR   •   AUDIO   •   PARTS", 0.3, length - 0.3, 2.72, 2.9, "#aaad91");
+  // A deep cornice caps the trading floor: a broad dark soffit beneath the
+  // brighter ledge, not another thin outline around every panel.
+  fill(
+    [
+      at(0.04, 0, 3.72),
+      at(length - 0.04, 0, 3.72),
+      at(length - 0.04, 0.26, 3.72),
+      at(0.04, 0.26, 3.72),
+    ],
+    "#172c2d",
+  );
+  panel(0.04, length - 0.04, 3.72, 3.84, "#63736b", 0.26);
+  panel(0.04, length - 0.04, 3.58, 3.72, "rgba(9,23,24,.42)", 0.09);
   // Deep workshop display bays: pegboard, bench, repaired electronics and task lights.
   for (const b of bays) {
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.08, b.hi + 0.08, "#142327");
@@ -249,8 +262,8 @@ export function paintOccupiedCanopy(
     [
       at(0.08, 0, 2.72),
       at(length - 0.08, 0, 2.72),
-      at(length - 0.08, 0.4, 2.57),
-      at(0.08, 0.4, 2.57),
+      at(length - 0.08, 0.85, 2.57),
+      at(0.08, 0.85, 2.57),
     ],
     "#607777",
   );
@@ -259,14 +272,14 @@ export function paintOccupiedCanopy(
     art?.balconyMetal,
     at(0.08, 0, 2.72),
     at(length - 0.08, 0, 2.72),
-    at(0.08, 0.4, 2.57),
+    at(0.08, 0.85, 2.57),
     length - 0.16,
-    0.4,
+    0.85,
   );
-  panel(0.08, length - 0.08, 2.46, 2.57, "#263f43", 0.4);
+  panel(0.08, length - 0.08, 2.46, 2.57, "#263f43", 0.85);
   for (let x = 0.18; x < length - 0.1; x += 0.48)
-    line(at(x, 0.02, 2.73), at(x, 0.39, 2.58), "#89958a", 0.018);
-  for (const x of [0.3, length - 0.3]) line(at(x, 0.02, 2.1), at(x, 0.38, 2.48), "#23373a", 0.05);
+    line(at(x, 0.02, 2.73), at(x, 0.84, 2.58), "#89958a", 0.018);
+  for (const x of [0.3, length - 0.3]) line(at(x, 0.02, 2.1), at(x, 0.82, 2.48), "#23373a", 0.05);
 }
 
 /** A shallow first-floor balcony, attached above head height, within the facade span. */
