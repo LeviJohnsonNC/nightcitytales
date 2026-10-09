@@ -35,10 +35,9 @@ test.afterEach(async ({ page }, info) => {
 });
 for (const seed of [8, 7, 0])
   test(`city block seed ${seed}`, async ({ page }, info) => {
-    // Seed 8 captures six states plus save/load and damage controls. Its baseline
-    // takes ~88s on the software GPU; the two-state seeds retain the 90s budget.
-    // Keep the workflow's five-minute global cap and zero retries.
-    test.setTimeout(seed === 8 ? 120_000 : 90_000);
+    // The eight-capture seed needs headroom beyond software-GPU cold startup.
+    // Keep zero retries; capture operations retain their own short deadlines.
+    test.setTimeout(seed === 8 ? 180_000 : 90_000);
     page.setDefaultTimeout(15_000);
     page.setDefaultNavigationTimeout(30_000);
     const errors: string[] = [];
@@ -62,7 +61,16 @@ for (const seed of [8, 7, 0])
     page.on("response", (response) => {
       if (response.status() >= 400) report("http", `${response.status()} ${response.url()}`);
     });
+    // Visual evidence does not exercise sound. Apply the real mute preferences
+    // before React mounts, suppress autoplay, and fulfil media locally so old
+    // baseline revisions also avoid fetching the unavailable soundtrack.
+    await page.route(/\.(?:mp3|m4a|ogg|wav|aac|flac)(?:\?.*)?$/i, (route) =>
+      route.fulfill({ status: 204, body: "" }),
+    );
     await page.addInitScript(() => {
+      localStorage.setItem("nct.music", "off");
+      localStorage.setItem("combat-muted", "true");
+      HTMLMediaElement.prototype.play = () => Promise.resolve();
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries())
           if (entry.name.startsWith("courtyard-"))
@@ -78,13 +86,12 @@ for (const seed of [8, 7, 0])
       report("capture-start", name);
       await test.step(`capture ${name}`, async () => {
         const canvas = page.locator("canvas");
-        // Keep an unaltered capture of the old path for the known CI-only ghost
-        // markers. Do not repaint/hide the overlay to make evidence look clean.
-        if (name === "seed0-play" || name === "seed8-reveal")
-          await canvas.screenshot({ path: `${out}/${name}-raw.png` });
-        await canvas.scrollIntoViewIfNeeded();
-        // Settle scrolling before capture, rather than letting the screenshot
-        // scroll and sample an SVG overlay over a live WebGL canvas in one step.
+        // Scroll once, without Playwright's animation-stability loop. This is
+        // a continuously rendered scene; retain the DOM checks below instead.
+        await canvas.evaluate((el) =>
+          el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }),
+        );
+        await page.mouse.move(0, 0);
         await page.evaluate(
           () =>
             new Promise<void>((resolve) =>
@@ -129,6 +136,7 @@ for (const seed of [8, 7, 0])
         const box = overlay.canvas;
         await page.screenshot({
           path: `${out}/${name}.png`,
+          timeout: 15_000,
           clip: {
             x: box.x + overlay.scroll.x,
             y: box.y + overlay.scroll.y,

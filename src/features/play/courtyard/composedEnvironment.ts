@@ -888,7 +888,7 @@ export function paintCutawayWall(
         "albedo",
         home?.art ?? annex?.art,
       );
-      paintOccupiedBalcony(ctx, structure, edge, project, metre);
+      paintOccupiedBalcony(ctx, structure, edge, project, metre, home?.art ?? annex?.art);
       ctx.restore();
     }
 }
@@ -1442,7 +1442,7 @@ export function paintBuilding(
         "albedo",
         architecture,
       );
-      paintOccupiedBalcony(ctx, structure, edge, project, pixelsPerMetre);
+      paintOccupiedBalcony(ctx, structure, edge, project, pixelsPerMetre, architecture);
     }
   surface(
     top,

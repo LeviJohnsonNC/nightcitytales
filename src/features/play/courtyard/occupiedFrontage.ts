@@ -147,7 +147,13 @@ export function paintOccupiedFrontage(
   // Shallow workshop display bays: pegboard, bench, repaired electronics and task lights.
   for (const b of bays) {
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.08, b.hi + 0.08, "#142327");
-    paintWorkshopInterior(ctx, face, b.a, b.b, b.a < 1 ? "bench" : "storage");
+    const interior = doors.length
+      ? art?.repairPartsNarrow
+      : b.a < 1
+        ? art?.repairBench
+        : art?.repairParts;
+    if (interior) paintFaceAsset(ctx, interior, at, b.a, b.b, 0.72, 2.48, -0.12);
+    else paintWorkshopInterior(ctx, face, b.a, b.b, b.a < 1 ? "bench" : "storage");
     // Angled reveals and mullions anchor the interior behind the actual facade.
     fill(
       [at(b.a, 0.04, b.lo), at(b.a, 0.04, b.hi), at(b.a, -0.13, b.hi), at(b.a, -0.13, b.lo)],
@@ -177,7 +183,7 @@ export function paintOccupiedFrontage(
       "#a28d66",
     );
   }
-  paintOccupiedCanopy(ctx, s, edge, project, ppm);
+  paintOccupiedCanopy(ctx, s, edge, project, ppm, art);
 
   for (const x of [0.12, length - 0.18]) {
     panel(x, x + 0.065, 0.2, 2.68, "#161f22", 0.1);
@@ -192,6 +198,7 @@ export function paintOccupiedCanopy(
   edge: Edge,
   project: (p: Point) => Point,
   ppm: number,
+  art?: ArchitectureArt,
 ) {
   if (occupiedUse(s) !== "repair") return;
   const { at, quad, length } = facePainter(s, edge, project, ppm);
@@ -223,6 +230,15 @@ export function paintOccupiedCanopy(
     ],
     "#607777",
   );
+  paintMetalPlane(
+    ctx,
+    art?.balconyMetal,
+    at(0.08, 0, 2.72),
+    at(length - 0.08, 0, 2.72),
+    at(0.08, 0.4, 2.57),
+    length - 0.16,
+    0.4,
+  );
   panel(0.08, length - 0.08, 2.46, 2.57, "#263f43", 0.4);
   for (let x = 0.18; x < length - 0.1; x += 0.48)
     line(at(x, 0.02, 2.73), at(x, 0.39, 2.58), "#89958a", 0.018);
@@ -236,6 +252,7 @@ export function paintOccupiedBalcony(
   edge: Edge,
   project: (p: Point) => Point,
   ppm: number,
+  art?: ArchitectureArt,
 ) {
   if (occupiedUse(s) !== "repair" || edge !== "east") return;
   const face = facePainter(s, edge, project, ppm);
@@ -259,6 +276,15 @@ export function paintOccupiedBalcony(
     ctx.stroke();
   };
   fill([at(1, 0, 4.25), at(5, 0, 4.25), at(5, 0.85, 4.25), at(1, 0.85, 4.25)], "#777c6c");
+  paintMetalPlane(
+    ctx,
+    art?.balconyMetal,
+    at(1, 0, 4.25),
+    at(5, 0, 4.25),
+    at(1, 0.85, 4.25),
+    4,
+    0.85,
+  );
   fill(quad(1, 5, 4.05, 4.25, 0.85), "#354644");
   for (const x of [1.1, 4.9]) line(at(x, 0, 3.92), at(x, 0.8, 4.15), "#273734", 0.07);
   for (let x = 1; x <= 5; x += 0.4) line(at(x, 0.85, 4.23), at(x, 0.85, 5.2), "#75857b", 0.035);
@@ -273,6 +299,15 @@ export function paintOccupiedBalcony(
     [at(0.86, 0, 6.62), at(5.14, 0, 6.62), at(5.14, 0.98, 6.43), at(0.86, 0.98, 6.43)],
     "#6a7e72",
   );
+  paintMetalPlane(
+    ctx,
+    art?.balconyMetal,
+    at(0.86, 0, 6.62),
+    at(5.14, 0, 6.62),
+    at(0.86, 0.98, 6.43),
+    4.28,
+    0.98,
+  );
   fill(quad(0.86, 5.14, 6.32, 6.43, 0.98), "#2d4747");
   for (let x = 1; x < 5.1; x += 0.42) line(at(x, 0, 6.63), at(x, 0.98, 6.44), "#95a08b", 0.018);
   // A folded cloth and two modest plant pots supply habitation without a repeated prop row.
@@ -282,4 +317,32 @@ export function paintOccupiedBalcony(
     for (const k of [-0.08, 0.02, 0.13])
       line(at(x + 0.12, 0.3, 4.44), at(x + 0.12 + k, 0.3, 4.72 + Math.abs(k)), "#647758", 0.055);
   }
+}
+
+/** The 256px tile spans two metres on each constructed plane, not the screen. */
+function paintMetalPlane(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource | undefined,
+  o: Point,
+  u: Point,
+  v: Point,
+  width: number,
+  depth: number,
+) {
+  if (!image) return;
+  const pattern = ctx.createPattern(image, "repeat");
+  if (!pattern) return;
+  ctx.save();
+  ctx.transform(
+    (u.x - o.x) / (width * 128),
+    (u.y - o.y) / (width * 128),
+    (v.x - o.x) / (depth * 128),
+    (v.y - o.y) / (depth * 128),
+    o.x,
+    o.y,
+  );
+  ctx.globalAlpha *= 0.65;
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, width * 128, depth * 128);
+  ctx.restore();
 }

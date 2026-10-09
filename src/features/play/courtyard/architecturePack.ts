@@ -133,6 +133,10 @@ export const ARCHITECTURE_ART_SIZE = {
 
 /** Where the importer (`tools/art/architecture-pilot.ts`) writes them. */
 export const ARCHITECTURE_ART_FILES = {
+  repairBench: "/images/architecture/repair-bench.webp",
+  repairParts: "/images/architecture/repair-parts.webp",
+  repairPartsNarrow: "/images/architecture/repair-parts-narrow.webp",
+  balconyMetal: "/images/architecture/balcony-metal.webp",
   blockMeters: "/images/architecture/block-meters.webp",
   blockAircon: "/images/architecture/block-aircon.webp",
   blockNotices: "/images/architecture/block-notices.webp",
