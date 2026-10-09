@@ -9,6 +9,7 @@ Levi merges. Publish for testing; do not merge. Preserve unrelated dirty
 courtyard/cityBlock.ts, untracked cityBlock.test.ts and recovery directories.
 
 ## Current milestone
+
 User: “Go big, don't hold back, and then we can test it out when changes land.”
 Goal: whole-frame material/colour cohesion, strong occupied market/repair focus,
 grounded buildings and quieter internal texture. Existing creator assets only.
@@ -21,6 +22,7 @@ sidewalk zones. nightLighting.ts reduces blue cast and light amplification, with
 warmer paving grade. No scene recipes, tactical geometry, cover or actor changes.
 
 ## Validation / next
+
 Typecheck and changed-file lint passed. Full suite4125pass/1fail: new recorder test
 compared gradient function identities; normalized recorder output, focused rerun
 passed; production build passed. Test verifies affine/resolution mapping, deterministic finite
@@ -29,6 +31,7 @@ Next publish selected files/newPR; CI and actual screenshot inspection still nee
 Do not call visual improvement accepted until pixels are inspected.
 
 ## Reliable evidence workflow
+
 PR330 final code7fa4f0e; merge32f8570. Prior CI37972650907 and paired visual37972651008
 passed. Ring fix: SVG translateZ(0). Capture fix: viewport-relative clip plus PNG
 size assertion. Preserve all media interception fixes, overlay diagnostics, states,
