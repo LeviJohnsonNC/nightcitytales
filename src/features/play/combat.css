@@ -1076,6 +1076,10 @@
 .combat-arena-overlay {
   position: relative;
   z-index: 1;
+  /* Keep the SVG in one composited surface above the continuously redrawn WebGL
+     canvas. Chromium's software compositor otherwise retains stale ring pixels
+     after page scrolling, despite there being only one ring in the DOM. */
+  transform: translateZ(0);
 }
 /* ---------------------------------------------------------------------------
    Holding the screen while the courtyard renders.
