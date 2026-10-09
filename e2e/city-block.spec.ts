@@ -135,18 +135,28 @@ for (const seed of [8, 7, 0])
         for (const axis of ["x", "y", "width", "height"] as const)
           expect(Math.abs(overlay.canvas[axis] - overlay.svg[axis])).toBeLessThan(1);
         // Viewport capture avoids another implicit element-scroll operation.
-        // Its clip is in document coordinates, whereas DOM bounds are viewport-local.
+        // page.screenshot (without fullPage) takes a viewport-relative clip.
+        // Adding scroll again cropped away the upper scene and captured the HUD.
         const box = overlay.canvas;
-        await page.screenshot({
+        const viewport = page.viewportSize()!;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.y).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+        expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
+        const png = await page.screenshot({
           path: `${out}/${name}.png`,
           timeout: 15_000,
+          scale: "css",
           clip: {
-            x: box.x + overlay.scroll.x,
-            y: box.y + overlay.scroll.y,
+            x: box.x,
+            y: box.y,
             width: box.width,
             height: box.height,
           },
         });
+        // PNG IHDR dimensions catch silent clipping at the viewport boundary.
+        expect(Math.abs(png.readUInt32BE(16) - box.width)).toBeLessThanOrEqual(1);
+        expect(Math.abs(png.readUInt32BE(20) - box.height)).toBeLessThanOrEqual(1);
       });
       report("capture", `${name} ${Date.now() - started}ms`);
     };
