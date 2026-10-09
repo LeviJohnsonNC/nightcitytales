@@ -1103,9 +1103,9 @@ export function paintBuilding(
       ? ["#766957", "#554f49", "#675346"]
       : frontage?.role === "neighbour"
         ? // the shop's neighbours: dark painted render and a paler, cooler roof
-          ["#3e3a36", "#2c2b2a", materials ? "#353b3c" : "#4d5352"]
+          ["#666b60", "#454c46", materials ? "#353b3c" : "#4d5352"]
         : structure.style === "shop"
-          ? ["#49474a", "#333941", materials ? "#454947" : "#646360"]
+          ? ["#66615a", "#454d4b", materials ? "#454947" : "#646360"]
           : structure.style === "workshop"
             ? ["#345b66", "#25414d", "#495657"]
             : ["#3e4a50", "#2c3942", "#56656b"];
@@ -1157,14 +1157,14 @@ export function paintBuilding(
   surface(
     [base[0]!, base[1]!, top[1]!, top[0]!],
     palette[0]!,
-    "#111c25",
+    "#293c38",
     wall,
     wallBasis(project, "x", r.y, metres(wall), pixelsPerMetre),
   );
   surface(
     [base[1]!, base[2]!, top[2]!, top[1]!],
     palette[1]!,
-    "#111c25",
+    "#293c38",
     wall,
     wallBasis(project, "y", r.x + r.width, metres(wall), pixelsPerMetre),
   );
