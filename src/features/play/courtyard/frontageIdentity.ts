@@ -1,4 +1,9 @@
-import { occupiedUse, paintOccupiedFrontage } from "./occupiedFrontage";
+import {
+  occupiedUse,
+  paintOccupiedFrontage,
+  paintOccupiedBalcony,
+  paintOccupiedCanopy,
+} from "./occupiedFrontage";
 import { paintFaceAsset } from "./afterRainArt";
 import { paintRepairFront, repairFront } from "./repairFront";
 import type { ArchitectureArt } from "./architecturePack";
@@ -42,6 +47,15 @@ export function paintFrontageIdentity(
 ) {
   if (occupiedUse(s)) {
     paintOccupiedFrontage(ctx, s, edge, env.entrances, project, ppm, pass, art);
+    if (pass !== "albedo") {
+      // Window emission and wall washes must stay behind projecting opaque fittings.
+      // Use the same silhouettes as albedo, also inside the caller's retained-wall clip.
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-out";
+      paintOccupiedCanopy(ctx, s, edge, project, ppm);
+      paintOccupiedBalcony(ctx, s, edge, project, ppm);
+      ctx.restore();
+    }
     return;
   }
   if (s.style !== "workshop" && s.style !== "residential") return;
