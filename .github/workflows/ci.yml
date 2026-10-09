@@ -63,7 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        # Docker Official Image, served by ECR to avoid Docker Hub runner throttling.
+        # https://gallery.ecr.aws/docker/library/postgres
+        image: public.ecr.aws/docker/library/postgres:16
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
