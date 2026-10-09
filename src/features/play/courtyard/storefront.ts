@@ -985,7 +985,10 @@ export function bladeSign(sf: Storefront) {
   const { offset, span } = sf.awning;
   const after = offset + span + 0.5;
   const before = offset - 0.5;
-  const s = after < sf.length - 0.6 ? after : before > 0.6 ? before : undefined;
+  const beside = after < sf.length - 0.6 ? after : before > 0.6 ? before : undefined;
+  // A full-width canopy still needs the market identity. On tall fronts the
+  // existing sign bottom clears the canopy, so mount it above the end bay.
+  const s = beside ?? (sf.structure.height >= 6 && sf.length >= 2 ? sf.length - 0.5 : undefined);
   if (s === undefined) return undefined;
   const r = sf.structure.rect;
   // A taller saved shop carries a readable vertical identity above its canopy.

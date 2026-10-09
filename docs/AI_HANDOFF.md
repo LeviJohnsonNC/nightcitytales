@@ -3,7 +3,7 @@
 Updated 2026-10-09. PR330 full-block composition follow-up.
 https://github.com/LeviJohnsonNC/nightcitytales/pull/330
 Repo LeviJohnsonNC/nightcitytales; remote branch codex/workshop-depth.
-Last verified open/unmerged/mergeable, head f96db1894f0ef21c2b8be0ba46ea07417ac450c9.
+Last verified open/unmerged/mergeable, head 7db20b054fba7afa60726e9dfc0f9d5453994b3f.
 Main baseline 3ac6137b051c2ca96447308950bcd2c3a642ee18.
 Local history reconstructed: NEVER git push. Publish selected files through
 GitHub tree/commit/update_ref with expected-head lease. Levi merges; keep unmerged
@@ -39,9 +39,21 @@ old snapshots retained. No ground collision, cover, entrance or route changes.
 occupiedFrontage.ts brightens repair interiors and adds recessed doorway reveals.
 Tests cover equipment/room bounds, snapshot immutability and recipe migration.
 Local full suite: 4122 passed, one material regression found (neighbour roof).
-Fixed by retaining ballast; targeted material tests/typecheck/lint/build running.
-Next: publish selected composition files, then download CI captures and inspect
-seed0/7/8 play, seed8 reveal and remaining states before recommending merge.
+Fixed by retaining ballast; all15 targeted material tests, typecheck/lint/build pass.
+Composition published b230f4d, followed by7db20b0 window lighting alignment.
+Local commits23a57e6 and77a1d43; remote trees1de6b6e and949e944 respectively.
+CI37971581606 and visual37971581661 BOTH passed for7db20b0, all three seeds.
+Downloaded exact paired ZIPs verified by SHA256, /tmp/nct-330-composition.
+After artifact11636901324 hash5fed231306ad8aed566b07a333d635caa884b0515a8de8161d5830dabea21089.
+Before artifact11637440410 hash11d38844b3a462a61e96ff255c9a0d785f124b712cdec67714ee0c16ed1bf090.
+Pixels reviewed: all3 play/reveal; seed8 neutral, lights-off, compact-play,
+destroyed/restored. Rings clean throughout these inspected after frames.
+Terraces/canopy read clearly, painted repair bays brighter; still crisp/procedural
+rather than final painterly finish. Baseline seed8play/reveal and seed0play viewed.
+Found full-width canopy removed pink blade sign because placement required space
+beside awning. Current follow-up restores it above canopy end bay on tall fronts;
+22 storefront tests, lint and typecheck pass. Publish follow-up then check
+new exact-head CI/pixels. Keep330 unmerged pending final sign capture review.
 
 ## Environment
 Local Vite listen failed EPERM; use CI for live browser evidence this session.
