@@ -77,7 +77,65 @@ for (const seed of [8, 7, 0])
       const started = Date.now();
       report("capture-start", name);
       await test.step(`capture ${name}`, async () => {
-        await page.locator("canvas").screenshot({ path: `${out}/${name}.png` });
+        const canvas = page.locator("canvas");
+        // Keep an unaltered capture of the old path for the known CI-only ghost
+        // markers. Do not repaint/hide the overlay to make evidence look clean.
+        if (name === "seed0-play" || name === "seed8-reveal")
+          await canvas.screenshot({ path: `${out}/${name}-raw.png` });
+        await canvas.scrollIntoViewIfNeeded();
+        // Settle scrolling before capture, rather than letting the screenshot
+        // scroll and sample an SVG overlay over a live WebGL canvas in one step.
+        await page.evaluate(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+            ),
+        );
+        const overlay = await page.evaluate(() => {
+          const rect = (el: Element) => {
+            const r = el.getBoundingClientRect();
+            return { x: r.x, y: r.y, width: r.width, height: r.height };
+          };
+          return {
+            scroll: { x: scrollX, y: scrollY },
+            canvases: document.querySelectorAll("canvas").length,
+            overlays: document.querySelectorAll("svg.combat-arena").length,
+            canvas: rect(document.querySelector("canvas")!),
+            svg: rect(document.querySelector("svg.combat-arena")!),
+            units: [...document.querySelectorAll("g.combat-unit")].map((el) => ({
+              label: el.getAttribute("aria-label"),
+              transform: el.getAttribute("transform"),
+              rings: [...el.querySelectorAll(":scope > ellipse")].map(rect),
+            })),
+            markers: [...document.querySelectorAll("g.combat-marker")].map((el) => ({
+              transform: el.getAttribute("transform"),
+              bounds: rect(el),
+            })),
+          };
+        });
+        await writeFile(`${out}/${name}-overlay.json`, JSON.stringify(overlay, null, 2));
+        expect(overlay.canvases).toBe(1);
+        expect(overlay.overlays).toBe(1);
+        expect(overlay.units).toHaveLength(5);
+        expect(new Set(overlay.units.map((u) => u.label)).size).toBe(5);
+        for (const unit of overlay.units) expect(unit.rings).toHaveLength(1);
+        // Quiet bystanders omit head markers unless inspected.
+        expect(overlay.markers.length).toBeGreaterThan(0);
+        expect(overlay.markers.length).toBeLessThanOrEqual(overlay.units.length);
+        for (const axis of ["x", "y", "width", "height"] as const)
+          expect(Math.abs(overlay.canvas[axis] - overlay.svg[axis])).toBeLessThan(1);
+        // Viewport capture avoids another implicit element-scroll operation.
+        // Its clip is in document coordinates, whereas DOM bounds are viewport-local.
+        const box = overlay.canvas;
+        await page.screenshot({
+          path: `${out}/${name}.png`,
+          clip: {
+            x: box.x + overlay.scroll.x,
+            y: box.y + overlay.scroll.y,
+            width: box.width,
+            height: box.height,
+          },
+        });
       });
       report("capture", `${name} ${Date.now() - started}ms`);
     };
