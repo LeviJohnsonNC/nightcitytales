@@ -137,8 +137,8 @@ describe("recipe revision 7: the shop lamp", () => {
     for (const seed of SEEDS.filter((s) => !REFERENCE.includes(s))) {
       const arena = composeScene("intersection", seed).layout.arena;
       const env = arena.environment!;
-      expect(env.recipeVersion).toBe(seed === 8 ? 13 : 10);
-      expect(arena.key).toContain(seed === 8 ? ":v13:" : ":v10:");
+      expect(env.recipeVersion).toBe(seed === 8 ? 14 : 10);
+      expect(arena.key).toContain(seed === 8 ? ":v14:" : ":v10:");
       const lamps = env.dressing.filter((d) => d.clusterId === "shop_lamp");
       expect(lamps, `seed ${seed}`).toHaveLength(1);
       const lamp = lamps[0]!;

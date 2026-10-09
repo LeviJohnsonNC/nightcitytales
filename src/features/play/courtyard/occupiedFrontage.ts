@@ -124,7 +124,7 @@ export function paintOccupiedFrontage(
   if (pass === "light") {
     wash(0.15, length - 0.15, 0.1, 3.65, "rgba(239,176,100,.3)");
     for (const b of bays)
-      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,194,116,.18)", -0.12);
+      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,209,151,.43)", -0.12);
     return;
   }
   if (pass === "glow") {
@@ -169,6 +169,24 @@ export function paintOccupiedFrontage(
   }
   for (const c of doors) {
     panel(c - 0.85, c + 0.85, 0.08, 2.58, "#142326");
+    fill(
+      [
+        at(c - 0.85, 0.06, 0.08),
+        at(c - 0.85, 0.06, 2.58),
+        at(c - 0.62, -0.38, 2.38),
+        at(c - 0.62, -0.38, 0.08),
+      ],
+      "#57645b",
+    );
+    fill(
+      [
+        at(c + 0.85, 0.06, 0.08),
+        at(c + 0.85, 0.06, 2.58),
+        at(c + 0.62, -0.38, 2.38),
+        at(c + 0.62, -0.38, 0.08),
+      ],
+      "#253331",
+    );
     // Keep the saved entrance clear; a deep, lit threshold under a partly raised shutter.
     panel(c - 0.72, c + 0.72, 0.06, 1.85, "#5b5140", -0.16);
     panel(c - 0.6, c + 0.6, 0.3, 1.2, "#343a31", -0.15);
