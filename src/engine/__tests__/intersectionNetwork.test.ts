@@ -5,7 +5,7 @@ it("connects every entrance and crossing through pedestrian space over 32 seeds"
   for (let seed = 0; seed < 32; seed++) {
     const arena = composeScene("intersection", seed).layout.arena,
       env = arena.environment!;
-    const pedestrian = env.zones.filter((z) => ["sidewalk", "crosswalk"].includes(z.kind));
+    const pedestrian = env.zones.filter((z) => ["sidewalk", "crosswalk", "aisle"].includes(z.kind));
     const tiles = new Set<string>();
     let roadCells = 0;
     for (let y = 1; y < 32; y += 2)

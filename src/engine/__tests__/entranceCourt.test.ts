@@ -1,16 +1,32 @@
 import { expect, it } from "vitest";
+import v12 from "./fixtures/intersection-v12.json";
 import v11 from "./fixtures/intersection-v11.json";
 import { composeScene } from "../sceneComposer";
 import { readSceneManifest } from "../persistentScene";
 import { openEntranceCourt } from "../intersectionPrograms";
 import { rectsOverlap } from "../sceneEnvironment";
 import { blockedTiles, reachableTiles, tileKey, tileOf } from "../grid";
+import { snapshotBattlefield } from "../battlefieldSnapshot";
 import { coverMaxHp } from "../cover";
+
+// Exercise the historical v12 transform; v13 subsequently rebuilds the corner.
+function composeCourt() {
+  const scene = readSceneManifest({ version: 1, scene: structuredClone(v11) });
+  openEntranceCourt(scene.layout.arena, scene.actors);
+  scene.layout.arena.environment!.recipeVersion = 12;
+  scene.layout.arena.key = v12.layout.arena.key;
+  scene.templateVersion = v12.templateVersion;
+  scene.anchor = v12.anchor;
+  scene.layout = snapshotBattlefield(scene.layout.arena);
+  const normalized = readSceneManifest({ version: 1, scene });
+  expect(normalized).toEqual(v12);
+  return normalized;
+}
 
 it("keeps the actual v11 save intact and opens half the new entrance-annex roof footprint", () => {
   const previous = readSceneManifest({ version: 1, scene: structuredClone(v11) });
   expect(previous).toEqual(v11);
-  const scene = composeScene("intersection", 8),
+  const scene = composeCourt(),
     env = scene.layout.arena.environment!;
   expect(env.recipeVersion).toBe(12);
   const annex = env.structures.find((s) => s.id === "building_1")!;
@@ -27,7 +43,7 @@ it("keeps the actual v11 save intact and opens half the new entrance-annex roof 
 });
 
 it("keeps the food-shop stalls while giving the repair corner parts and power equipment", () => {
-  const arena = composeScene("intersection", 8).layout.arena,
+  const arena = composeCourt().layout.arena,
     env = arena.environment!;
   expect(env.props.filter((p) => p.art === "shop-display").map((p) => p.clusterId)).toEqual([
     "street_market_west-walk_0",
@@ -58,7 +74,7 @@ it("keeps the food-shop stalls while giving the repair corner parts and power eq
 });
 
 it("retains access to the court, actors, doors and workspaces before and after destruction", () => {
-  const scene = composeScene("intersection", 8),
+  const scene = composeCourt(),
     arena = scene.layout.arena,
     env = arena.environment!;
   for (const damage of [{}, Object.fromEntries(arena.cover!.map((c) => [c.id, coverMaxHp(c)]))]) {
@@ -89,5 +105,5 @@ it("retains access to the court, actors, doors and workspaces before and after d
   openEntranceCourt(arena, scene.actors);
   expect(JSON.stringify(scene)).toBe(saved);
   expect(readSceneManifest({ version: 1, scene: JSON.parse(saved) })).toEqual(scene);
-  expect(composeScene("intersection", 8)).toEqual(scene);
+  expect(composeCourt()).toEqual(scene);
 });
