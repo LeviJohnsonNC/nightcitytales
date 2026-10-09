@@ -2462,17 +2462,23 @@ export function createComposedEnvironment(
       };
       // the secondary light: a few occupied homes (`litHomeWindows`), each a visible
       // source with its own room, glass, sill and the wall round it
+      const upperRooms = materials ? (commercialTerrace(s) ?? s) : s;
       const homes = night
         ? [
             ...litHomeWindows(s, arena.environment!.entrances, env.structures),
             ...(["north", "east"] as const).flatMap((edge) =>
-              commercialUpperWindows(s, edge)
+              commercialUpperWindows(upperRooms, edge)
                 .filter((w) => w.occupancy !== "dark")
                 .map((opening) => ({ edge, opening })),
             ),
           ].map((h) => ({
             ...h,
-            face: facePainter(s, h.edge, project, metre),
+            face: facePainter(
+              h.opening.z0 >= COMMERCIAL_BASE ? upperRooms : s,
+              h.edge,
+              project,
+              metre,
+            ),
           }))
         : [];
       // the shopfront and its composed returns, each face flipped about its own foot
