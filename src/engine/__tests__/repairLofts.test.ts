@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { composeScene } from "../sceneComposer";
 import { readBattlefieldSnapshot } from "../battlefieldSnapshot";
 import { addRepairLofts } from "../intersectionPrograms";
+import v12 from "./fixtures/intersection-v12.json";
 import v10 from "./fixtures/intersection-v10.json";
 import { readSceneManifest } from "../persistentScene";
 import v8 from "./fixtures/intersection-v8.json";
@@ -47,7 +48,11 @@ describe("repair-row massing revision 9", () => {
   it("partitions once, without overlapping blocks, in every seeded orientation", () => {
     const edges = new Set<string>();
     for (let seed = 0; seed < 40; seed++) {
-      const scene = composeScene("intersection", seed);
+      // Seed 8 replaces this partition in v13; retain the actual v12 program here.
+      const scene =
+        seed === 8
+          ? readSceneManifest({ version: 1, scene: structuredClone(v12) })
+          : composeScene("intersection", seed);
       const env = scene.layout.arena.environment!;
       const lofts = env.structures.filter((s) => s.id.startsWith("building_3_loft_"));
       if ([1, 2, 3].includes(seed)) {

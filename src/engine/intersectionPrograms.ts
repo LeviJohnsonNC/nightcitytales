@@ -3,6 +3,83 @@ import type { SceneActor } from "./authoredScene";
 import type { SceneEnvironment } from "./sceneEnvironment";
 import { placeSceneClusters } from "./sceneClusters";
 
+/** Recipe 13: an occupied corner row and a connected service passage replace
+ * the broad low repair shed. Applies only after the seed-8 v12 program. */
+export function buildOccupiedCorner(arena: Arena) {
+  const env = arena.environment!;
+  if (env.zones.some((z) => z.id === "repair-passage")) return;
+  if (env.seed !== 8 || !env.zones.some((z) => z.id === "housing-court"))
+    throw new Error("Occupied corner requires the seed-8 entrance-court layout.");
+  const front = env.structures.find((s) => s.id === "building_3")!;
+  front.rect = { x: 22, y: 22, width: 6, height: 6 };
+  front.height = 7.2;
+  front.style = "shop";
+  front.label = "Corner repair shop with occupied rooms above";
+  const rear = env.structures.find((s) => s.id === "building_3_loft_a")!;
+  rear.rect = { x: 22, y: 28, width: 6, height: 6 };
+  rear.height = 10.2;
+  rear.label = "Rear studios reached from the service passage";
+  rear.attachments = [
+    {
+      id: "repair-studios-portal",
+      kind: "entry-surround",
+      edge: "east",
+      offset: 2,
+      span: 2,
+      projection: 0.2,
+      height: 2.5,
+    },
+  ];
+  const far = env.structures.find((s) => s.id === "building_3_loft_b")!;
+  far.rect = { x: 32, y: 28, width: 14, height: 6 };
+  env.structures.push({
+    id: "building_3_service",
+    label: "Low service bays across the passage",
+    rect: { x: 32, y: 24, width: 14, height: 4 },
+    height: 3.2,
+    style: "workshop",
+    blocksMovement: true,
+    blocksShots: true,
+  });
+  const entry = env.entrances!.find((e) => e.structureId === front.id)!;
+  entry.position = { x: 25, y: 21 };
+  entry.label = "Corner repair shop entrance";
+  env.entrances!.push({
+    id: "repair-studios-entry",
+    structureId: rear.id,
+    position: { x: 29, y: 31 },
+    label: "Rear studios entrance from service passage",
+  });
+  env.zones.find((z) => z.id === "south-east-front")!.rect.height = 4;
+  env.zones.find((z) => z.id === "utility-approach")!.rect.height = 4;
+  env.zones.find((z) => z.id === "repair_power_access_0")!.rect = {
+    x: 26,
+    y: 18,
+    width: 2,
+    height: 2,
+  };
+  env.zones.push(
+    {
+      id: "repair-passage",
+      kind: "alley",
+      axis: "y",
+      rect: { x: 28, y: 22, width: 4, height: 12 },
+    },
+    {
+      id: "repair-passage-walk",
+      kind: "aisle",
+      axis: "y",
+      rect: { x: 28, y: 22, width: 4, height: 12 },
+    },
+    {
+      id: "repair-passage-mouth",
+      kind: "aisle",
+      axis: "y",
+      rect: { x: 30, y: 18, width: 2, height: 4 },
+    },
+  );
+}
+
 /** Recipe 12: open the foreground housing court and give the repair corner
  * its own working frontage. New seed-8 scenes only; stored scenes are untouched. */
 export function openEntranceCourt(arena: Arena, actors: readonly SceneActor[]) {

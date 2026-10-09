@@ -141,5 +141,11 @@ for (const seed of [8, 7, 0])
       await page.setViewportSize({ width: 700, height: 850 });
       await page.waitForTimeout(1000);
       await page.screenshot({ path: `${out}/compact.png` });
+      if (seed === 8) {
+        await reveal.click();
+        await expect(reveal).toHaveAttribute("aria-pressed", "false");
+        await page.waitForTimeout(500);
+        await capture("seed8-compact-play");
+      }
     }
   });

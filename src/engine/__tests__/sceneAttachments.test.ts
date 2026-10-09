@@ -7,7 +7,7 @@ it("preserves facade ownership and clear walking space through save/read across 
     const loaded = readBattlefieldSnapshot(JSON.parse(JSON.stringify(scene)));
     expect(loaded).toEqual(scene);
     const env = loaded.arena.environment!;
-    expect(env.structures.flatMap((s) => s.attachments ?? [])).toHaveLength(4);
+    expect(env.structures.flatMap((s) => s.attachments ?? [])).toHaveLength(seed === 8 ? 5 : 4);
     const shop = env.structures.find((s) => s.id === "building_0")!;
     const canopy = shop.attachments![0]!;
     const p = attachmentPoint(shop, canopy, 0),

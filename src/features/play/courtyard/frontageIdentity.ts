@@ -1,3 +1,4 @@
+import { occupiedUse, paintOccupiedFrontage } from "./occupiedFrontage";
 import { paintFaceAsset } from "./afterRainArt";
 import { paintRepairFront, repairFront } from "./repairFront";
 import type { ArchitectureArt } from "./architecturePack";
@@ -39,6 +40,10 @@ export function paintFrontageIdentity(
   pass: "albedo" | "light" | "glow",
   art?: ArchitectureArt,
 ) {
+  if (occupiedUse(s)) {
+    paintOccupiedFrontage(ctx, s, edge, env.entrances, project, ppm, pass, art);
+    return;
+  }
   if (s.style !== "workshop" && s.style !== "residential") return;
   const { at, quad, length } = facePainter(s, edge, project, ppm);
   const fill = (ps: Point[], color: string | CanvasGradient) => {

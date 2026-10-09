@@ -6,6 +6,7 @@ import {
 import {
   compactIntersectionPrototype,
   openEntranceCourt,
+  buildOccupiedCorner,
   addPavementMarkets,
   addRepairLofts,
   addShopLamp,
@@ -359,10 +360,11 @@ export function composeScene(
   const selection = compositionSelection(kind, seed, requirements);
   const variant = selection?.family ?? (seed + 2) % 3;
   const refined = !(seed >= 1 && seed <= 3);
-  // Revision 12 opens the seed-8 housing court; v11 narrows its streets. V10 adds
+  // Revision 13 builds the occupied seed-8 corner and passage; v12 opens its
+  // housing court and v11 narrows its streets. V10 adds
   // market rows; revision 9 partitions the repair parcel into stepped blocks.
   // Seeds 1-3 and all previously saved snapshots keep their original geometry.
-  const revision = refined ? (kind === "intersection" ? (seed === 8 ? 12 : 10) : 6) : 5;
+  const revision = refined ? (kind === "intersection" ? (seed === 8 ? 13 : 10) : 6) : 5;
   const plan = recipe(kind, variant);
   if (refined && kind === "alley" && variant === 1) {
     // Two opposed service courts turn a pocket shift into a cross-yard organization.
@@ -598,6 +600,7 @@ export function composeScene(
   if (revision >= 10 && kind === "intersection") addPavementMarkets(arena, actors);
   if (revision >= 11) compactIntersectionPrototype(arena, actors);
   if (revision >= 12) openEntranceCourt(arena, actors);
+  if (revision >= 13) buildOccupiedCorner(arena);
   const reachable = reachableTiles({
     arena,
     cover: {},

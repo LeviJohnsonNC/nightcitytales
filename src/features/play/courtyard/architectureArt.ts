@@ -44,15 +44,17 @@ export function facadeOpenings(
 }
 
 /**
- * The pilot's representative: the generic shop whose saved entrance carries an entry
- * surround (the annex across the street from the storefront, in every intersection).
- * Only it takes the painted shutter: a corner shop without its finished storefront has
- * an awning, not a surround, and keeps its drawn door (its windows are painted).
+ * The pilot's representative: the generic shop whose saved entrance carries the housing
+ * portal (the annex across the street from the storefront, in every intersection).
+ * Only it takes the painted shutter. Other shop and studio portals keep their drawn
+ * doors, even when they also have an entry surround.
  */
 export const isAnnex = (structure: SceneStructure, entrances: SceneEnvironment["entrances"]) =>
   structure.style === "shop" &&
   (entrances ?? []).some((e) => e.structureId === structure.id) &&
-  (structure.attachments ?? []).some((a) => a.kind === "entry-surround");
+  (structure.attachments ?? []).some(
+    (a) => a.kind === "entry-surround" && a.id === "housing-portal",
+  );
 
 /** What a commercial face takes from the pilot's art. */
 export interface ShopFace {

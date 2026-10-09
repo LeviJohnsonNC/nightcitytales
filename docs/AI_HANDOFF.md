@@ -1,52 +1,53 @@
 # Night City Tales — resume here
 
-Updated: 2026-10-08. Entrance-court / repair-corner revision in progress.
+Updated: 2026-10-09. Occupied-frontage follow-up to open PR328.
+https://github.com/LeviJohnsonNC/nightcitytales/pull/328
+Publication parent eca4f7ccab0428ca5f87f431474bdee5542b282f.
+PR328 verified still open/unmerged; extend it rather than create a dependent PR.
 
-## Goal and baseline
+## Authorization and workflow
 
-Levi authorized the next revision after PR326. PR326 verified merged at
-base d3d9cb178b4427d7fd63bd20cf96e28fedbcfd76.
-Remote LeviJohnsonNC/nightcitytales; planned branch codex/entrance-court.
-Local city-block-recovery branch codex/city-block-review has reconstructed history:
-NEVER git push. Publish selected files through the GitHub connector.
-Sources read-only. Preserve unrelated cityBlock.ts formatting, cityBlock.test.ts,
-recovery docs. No production deployment or merge; Levi handles merge.
+Levi approved the complete repair frontage plan after reviewing the v13 captures:
+workshop, occupied upper floors, visible passage, equipment integration and lights.
+Remote LeviJohnsonNC/nightcitytales; branch codex/occupied-corner.
+Local city-block-recovery has reconstructed history: NEVER git push.
+Publish selected files via GitHub connector. Levi handles merges/deployment.
+Preserve unrelated cityBlock.ts formatting, cityBlock.test.ts and recovery docs.
 
-## Current implementation — publishing draft, not visually accepted
+## Implementation
 
-Recipe12 for new intersection seed8 only. The foreground roof is the housing
-entrance annex (building_1), NOT the repair workshop. Cut its8m depth to4m;
-retain its existing doorway and shift the attachment offset to fit the shorter wall.
-The freed4x4m area becomes an entrance court with a protected2m approach and planter.
-Replace the two repair-side striped stalls with a parts crate and generator,
-retaining a planter and giving the equipment reserved handling/access positions.
-Two shop-side stalls stay. Shared placement checks fit all new props.
-V11 compact streets/parking remain. Existing saved scenes do not regenerate.
-Actual pre-change v11 seed8 fixture saved before edits; v11 transform unit tests
-now exercise that historical step independently. Current v12 tests cover the new
-architecture/program, exact saves, deterministic/idempotent generation and access
-before/after destruction. Compact viewport capture now includes seed8 as well as7.
+V13 geometry from PR328 is unchanged. Occupied uses are selected from existing
+retail-header and repair-studios-portal attachments on tall shop buildings.
+New occupiedFrontage renderer adds DENKI fascia on both faces, shallow workbench
+and tool displays, a partly raised shutter above the saved door, wall lighting,
+first-floor balcony/cloth/plants and a lit studio portal with overhead conduits.
+Workshop lighting reaches the existing equipment and passage. Reflect only the
+emitters, not wall washes. Generic services paint before the new frontage so an
+AC unit cannot obscure its sign. Same painters retain clipping in Reveal views.
+Existing artwork is reused for the studio doorway; no new generated assets.
+Control seeds and older v12 saves retain their treatments. Geometry/cover/rules
+are untouched. Future bespoke workshop art could add richness to the drawn tools.
 
-Changed: engine/intersectionPrograms, sceneClusters, sceneComposer, sceneEnvironment;
-engine tests entranceCourt, compactIntersection, pavementMarkets, repairLofts,
-shopLamp, activityGroups, compositionVariation; fixtures/intersection-v11.json;
-play commercialUpper and groundFinish tests;
-composedEnvironment lane-paint version guard; e2e/city-block.spec.ts; this handoff.
+## Verified and remaining
 
-## Validation and next action
+Full local suite: 4120 tests/328 files passed; includes two untracked tests not
+published. Typecheck and changed-file ESLint passed; focused34 tests passed.
+Live Chrome review completed: normal, neutral, Reveal, compact normal, destroyed
+and restored. No new blocking issue observed. Local screenshots are checkpointed
+under docs/evidence/occupied-frontage; different viewport from CI, not paired proof.
+Playwright local launcher unavailable (bundled browser missing; installed Chrome
+exited at launch). Browser extension preview worked at localhost5174.
+Vite did not refresh cached transforms reliably: restart server after edits.
+Detached/doubled actor rings were NOT reproduced. DOM contained one ellipse per
+actor, with correct world-anchor transforms. No speculative marker code change;
+this issue remains unresolved and must be watched in fresh CI captures.
+Publish this follow-up, record new head/runs, then review exact-head CI artifacts.
+Do not describe old green CI as covering the new head; no merge yet.
 
-Focused9 tests passed. Typecheck and targeted lint passed. Full local suite:
-4111 passed/4 failed across326 files. Failures were historical cluster expectations
-and an oil test assuming only one fixed-size generator stain. Updated expectations
-for repair_power and checked generator stains separately from varied car stains.
-Affected tests now pass (activityGroups, groundFinish, compositionVariation).
-Publish draft PR from the merged base; GitHub CI and paired captures are next.
-No visual improvement claim until the new screenshots are reviewed.
+## Prior evidence
 
-## Prior review — do not repeat
-
-PR326 reviewed head71c5804; runtime7902127. CI37851605031 and captures37851604994
-passed (4110 tests). All22 screenshots from ZIPs(6) verified and inspected in
-../review-326-compact. Accepted narrower seed8 proportions; repeated stalls and
-foreground roof remained weaknesses. Prior compact capture only coveredseed7.
+Original PR328 after ZIP inspected for design only: new massing improved enclosure
+but dark ground floor lost repair identity. PR327 captures used as older baseline.
+PR327 head01b6a526773fe2b45ae536b7b652d5bf90c7ec1e accepted incremental improvement;
+CI37853513719 and captures37853513684 passed. All24 PNGs reviewed previously.
 Artifact URL host fails local DNS; user-provided ZIPs in Downloads work.

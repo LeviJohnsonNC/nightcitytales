@@ -7,7 +7,7 @@ describe("stepped commercial row", () => {
     for (const seed of [0, 7, 8, 12]) {
       const scene = composeScene("intersection", seed);
       const env = scene.layout.arena.environment!;
-      expect(env.recipeVersion).toBe(seed === 8 ? 12 : 10);
+      expect(env.recipeVersion).toBe(seed === 8 ? 13 : 10);
       const heights = Object.fromEntries(env.structures.map((s) => [s.id, s.height]));
       expect([
         heights["building_0"],
