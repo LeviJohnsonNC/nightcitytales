@@ -12,6 +12,7 @@ Preserve unrelated dirty courtyard/cityBlock.ts, untracked cityBlock.test.ts,
 and recovery files. Parent sources/ is read-only.
 
 ## Verified fixes published
+
 67559a81 fixes screenshot clip coordinates (viewport, not document scroll),
 asserts clip fits viewport and PNG size matches canvas. Corrected full framing.
 This alone did NOT fix ghost rings: seed7 still showed detached duplicates.
@@ -27,6 +28,7 @@ Vite JS imports. All visual states/overlay diagnostics, no retries, seed8 180s,
 suite420s. Passing CI alone is not visual acceptance.
 
 ## Composition implementation — not visually accepted yet
+
 Levi approved proceeding with substantial composition after review.
 New commercialTerrace.ts recesses tall commercial upper floors inside saved
 footprints, leaves outdoor podium terraces, steps their silhouettes and relocates
@@ -56,6 +58,7 @@ beside awning. Current follow-up restores it above canopy end bay on tall fronts
 new exact-head CI/pixels. Keep330 unmerged pending final sign capture review.
 
 ## Environment
+
 Local Vite listen failed EPERM; use CI for live browser evidence this session.
 Attachment helper/network ZIP downloads fail, but Chrome UI artifact downloads
 work and /Users/levijohnson/Downloads files are readable. Verify SHA256 against API.
