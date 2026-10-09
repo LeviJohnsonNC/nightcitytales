@@ -64,9 +64,12 @@ for (const seed of [8, 7, 0])
     // Visual evidence does not exercise sound. Apply the real mute preferences
     // before React mounts, suppress autoplay, and fulfil media locally so old
     // baseline revisions also avoid fetching the unavailable soundtrack.
-    await page.route(/\.(?:mp3|m4a|ogg|wav|aac|flac)(?:\?.*)?$/i, (route) =>
-      route.fulfill({ status: 204, body: "" }),
-    );
+    await page.route(/\.(?:mp3|m4a|ogg|wav|aac|flac)(?:\?.*)?$/i, (route) => {
+      // Vite also imports audio URLs as JavaScript modules (?import&url).
+      // An empty response for those scripts prevents the entire route loading.
+      if (route.request().resourceType() !== "media") return route.continue();
+      return route.fulfill({ status: 204, body: "" });
+    });
     await page.addInitScript(() => {
       localStorage.setItem("nct.music", "off");
       localStorage.setItem("combat-muted", "true");
