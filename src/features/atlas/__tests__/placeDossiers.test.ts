@@ -120,13 +120,11 @@ describe("place dossiers", () => {
   });
 
   it("has a picture for every entry", () => {
-    // Text and pictures arrive separately, so this holds the entries still
-    // waiting, by name. The six everyday venues (the bar and noodle counter in
-    // Old Japantown and one each in Heywood Industrial, Downtown, New Westbrook
-    // and South Night City) were written before their pictures were made. The
-    // The list is exact in both directions: an entry added later without a picture
+    // Text and pictures can arrive separately, so an entry waiting for its
+    // picture is named here. Every entry has one today, so the list is empty.
+    // It is exact in both directions: an entry added later without a picture
     // fails here, and so does a picture that lands without its key coming off.
-    const PICTURES_PENDING = ["c6", "h7", "h8", "i9", "p12", "u6"];
+    const PICTURES_PENDING: string[] = [];
     const pending = Object.entries(PLACE_DOSSIERS)
       .filter(([, entry]) => !entry.image)
       .map(([key]) => key)

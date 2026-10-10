@@ -344,6 +344,7 @@ That doesn't make the work clean. Firefighters see what remains after Night City
   },
 
   c6: {
+    image: "the-ledger",
     text: `The Ledger is a hotel-lobby bar with no hotel attached: marble floor, low lamps, deep leather chairs and a bartender in a waistcoat, all on the ground floor of a building that is otherwise offices. It was built for the Chamber of Commerce, the consortium of fixers and execs who carved Downtown out of Little Europe, and it serves them exactly the way they like to be served: discreetly, expensively and without anybody at the next table appearing to listen.
 
 The prices are high on purpose. They keep the room select, and a room where everybody can afford the drinks is a room where everybody can afford to be seen. Deals are not signed here. They are agreed here, over a second glass, and signed somewhere with better lawyers.
@@ -749,6 +750,7 @@ Yet the hotel has customers precisely because it's terrible. No cameras. No ques
   },
 
   h7: {
+    image: "the-paper-lantern",
     text: `The Paper Lantern is a bar the width of a hallway, wedged into a shopfront between the container stacks of the Precipice and the security gates of the Highcourt Plaza. It has a counter, a row of stools, a paper lantern that has not been lit since before the Collapse, and a license from nobody. It stays open because the family heads who elect Old Japantown's city manager have decided it should, and in this district that is the only permit that counts.
 
 The Kimen-Gumi drink here for free and sit nearest the door. Everybody else pays, keeps their voice at the level of the room, and does not ask why the owner never seems to run short of anything. The regulars are container families, off-shift orderlies from Crisis Medical and the occasional Highcourt guest who wanted to see the neighbourhood without leaving the block. It is quiet, it is warm, and on a bad night in a district surrounded by combat zone that is a genuine luxury.
@@ -757,6 +759,7 @@ The Kimen-Gumi drink here for free and sit nearest the door. Everybody else pays
   },
 
   h8: {
+    image: "nakamuras-counter",
     text: `Nakamura's Counter is six stools, one enormous pot and a man who has been stirring it for longer than most of his customers have been alive. The broth has reportedly never been allowed to go cold, which the regulars repeat with the solemnity other districts reserve for founding myths. The noodles are fresh, the portions are honest, and the mushrooms come from Mrs. Suzuki's Bodega, which is the only answer anybody has ever been given about where they come from.
 
 It is not a restaurant. There is no menu, no reservation and nowhere to wait: you stand behind whoever is eating until a stool comes free, and you eat what is in the pot. Shroomers and Kimen-Gumi both eat here and both behave, because Nakamura has fed half the district on credit at one time or another and the other half knows it.
@@ -850,6 +853,7 @@ Naturally, the Bay develops fierce camaraderie. Seven containers is small enough
   },
 
   i9: {
+    image: "the-chapel-steps",
     text: `The Chapel Steps is not a business so much as a treaty. Half a dozen food carts cook on scavenged burners across the broad steps of the Union Chapel Building, each one with its own specialty, its own prices and its own arrangement with whichever gang was collecting last. The smoke rises past the boarded-up doors of a building everybody agrees is abandoned, in theory.
 
 The food is cheap, hot and surprisingly good, because in South Night City a cart that makes people sick does not get a second week. The crowd is everybody: factory workers, Silverhand artists, Zoners, students walking up from the Cargo Bay. City Manager Haakensen's people come by for their cut on no particular schedule, and the carts pay it the way you pay weather.
@@ -1371,6 +1375,7 @@ The strangest thing is how automated much of the complex is. Past the guards, cl
   },
 
   p12: {
+    image: "the-studio-audience",
     text: `The Studio Audience sits across the road from the walls of the fake city where Network 54 films The Combat Zone, and it has made the show its whole personality. Every screen plays the broadcast. The bar keeps a board of live odds on who walks out, chalked up by hand and updated faster than the network's own graphics. On episode nights the place is packed with tent-city locals, off-duty Network 54 crew and tourists who wanted to be close to the action without being in it.
 
 Nobody here is naive about what they are watching. The regulars have seen neighbours go over that wall, and some of them have seen neighbours come back. That is exactly why the betting is so serious: this is the only room in New Westbrook where knowing the contestants personally counts as an edge.
@@ -1705,6 +1710,7 @@ For edgerunners, the MicroVillage is almost perfect social infiltration territor
   },
 
   u6: {
+    image: "the-shift-change",
     text: `The Shift Change occupies a gutted loading bay on the edge of the Heywood Industrial Zone, and it is two businesses depending on the hour. By day it is a canteen: long steel tables, trays of whatever the kitchen bought cheap that morning, and a queue of dock crews, factory hands and Fixie's Couriers eating fast between runs. When the whistle goes at the end of the second shift, somebody pulls the shutters halfway down, the coffee urn becomes a bar, and the same tables fill with the same people for different reasons.
 
 It is neutral ground in the way only a place everyone needs can be. Zhirafa contractors who are not supposed to leave the office park drink next to DeadWoods who are not supposed to be allowed in. Couriers trade gossip about who is shipping what. The owner takes cash, scrip and favours, and remembers which is which.
