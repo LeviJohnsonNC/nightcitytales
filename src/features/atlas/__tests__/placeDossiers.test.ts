@@ -127,24 +127,7 @@ describe("place dossiers", () => {
     // The shops and clinics added for the travel layer are waiting too. The
     // list is exact in both directions: an entry added later without a picture
     // fails here, and so does a picture that lands without its key coming off.
-    const PICTURES_PENDING = [
-      "c6",
-      "h7",
-      "h8",
-      "i9",
-      "n14",
-      "n15",
-      "p12",
-      "q5",
-      "r7",
-      "s5",
-      "u6",
-      "u7",
-      "u8",
-      "v8",
-      "w9",
-      "x6",
-    ];
+    const PICTURES_PENDING = ["c6", "h7", "h8", "i9", "p12", "u6", "u7", "u8", "v8", "w9", "x6"];
     const pending = Object.entries(PLACE_DOSSIERS)
       .filter(([, entry]) => !entry.image)
       .map(([key]) => key)

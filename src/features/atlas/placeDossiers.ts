@@ -2070,6 +2070,7 @@ It is not the cheapest armour in Night City and it is not the best, but it is ve
   },
 
   n14: {
+    image: "hachiman-arms",
     text: `Hachiman Arms is a licensed gunsmith on Industrial Street, between a noodle shop and a shuttered union hall, with a steel shutter that rolls up at the same minute every morning and down at the same minute every night. The window holds a single pistol on a velvet cloth. The door has a buzzer, a camera and a small, polite sign that says, in three languages, that visitors are welcome and that visitors are recorded.
 
 Mr. Hachiman files everything in triplicate, including your face. Every sale is receipted, every serial number logged, every customer photographed in the same flat grey light. This is not a threat. It is a service, in the sense that a buyer with a receipt has a buyer with a story, and Mr. Hachiman believes that a legal gun is the best kind. He is courteous, exacting and quietly suspicious of everybody, himself included.
@@ -2078,6 +2079,7 @@ The NCCS corporations rely on him for sanctioned security work, and the Tyger Cl
   },
 
   n15: {
+    image: "picket-line-clinic",
     text: `Picket Line Clinic opened in the first week of the Watson strike and has never closed. It began as a first-aid table for organisers who were being hurt by the people sent to move them on, and it grew a room, then a back room, then a surgeon. It occupies a former union office on Watson Boulevard, with the old banners still pinned to the walls and a hand-lettered rota by the door that has gone through a great many revisions.
 
 The surgeon is Dr. Beatrix Oyelaran, who charges everybody the same and tells the NCCS exactly where she stands on the matter, usually at length. Lucius Rhyne's organisers pay in favours, in rota hours, in meals carried up from the canteen. The chrome she fits is plain and well made, the waiting room is crowded with people who know each other, and the conversation in it is considerably more political than any ripperdoc's.
@@ -2086,6 +2088,7 @@ The Tyger Claws and the Kanzaki Family both pass through. The corporations would
   },
 
   q5: {
+    image: "ascent-outfitters",
     text: `Ascent Outfitters is a boutique on a Charter Hill street where every shop window is designed to look slightly more expensive than the one beside it. The mannequins wear long coats, structured jackets and well-cut vests in muted colours, each one lined with a weave that you will not see until the salesman turns back the hem. The stock is armour for people who want to look like they are climbing the ladder and survive the fall.
 
 The salesman is attentive, a little too well informed about your career prospects, and fluent in a vocabulary that belongs in a magazine for aspirants. The fitting room has a window onto the wall of the Exec Zone, which is the real sales pitch. You stand in front of it in a coat that stops a bullet, looking at the ceiling you are trying to break, and the price begins to seem reasonable.
@@ -2094,6 +2097,7 @@ Militech keeps the district safe in its fashion. The residents of Charter Hill a
   },
 
   r7: {
+    image: "the-aurelian-suite",
     text: `The Aurelian Suite is the Exec Zone's wellness suite, and it is exactly as exclusive as that sounds. A discreet door in a discreet wall, a reception area with a fountain, and a corridor of treatment rooms behind it. The spa side offers things that cost a fortune and do very little. The other side is staffed by a surgeon on retainer to the Home Owner's Association and, by extension, to your neighbours' secrets.
 
 Nobody is called a patient. Residents are guests, procedures are treatments, and the appointment book is the most closely guarded document in the district. It is kept in a safe, behind a door marked Linen, by an attendant who has never been known to look up from it. Doctor Karen Davies is understood to know the contents. Nobody is sure what she does with them.
@@ -2102,6 +2106,7 @@ Lazarus guards the Zone and the Suite is inside the wall, so the chrome you rece
   },
 
   s5: {
+    image: "berth-nine",
     text: `Berth Nine is a shipping container fitted out as a surgery and bolted to the end of Cargo Way, close enough to the water to hear the lines creak. Inside it has been lined, wired and plumbed with a care that does not match the rust on the outside. There is an operating table, an autoclave, a small refrigerator, and a whiteboard by the door that lists, in marker, who owes what.
 
 Stevedores, sailors and the Skiv Family's people use it, and the clientele is as mixed as the cargo. The surgeon is a laconic person with forearms like hawsers who learned the trade on a freighter and treats the table like a berth: you arrive, you are secured, you are done by the tide. Debts are recorded without comment. The whiteboard is cleaned on the first day of each month, and the people on it know why.
