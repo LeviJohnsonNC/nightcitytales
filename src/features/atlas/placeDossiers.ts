@@ -1710,6 +1710,7 @@ For edgerunners, the MicroVillage is almost perfect social infiltration territor
   },
 
   u6: {
+    image: "the-shift-change",
     text: `The Shift Change occupies a gutted loading bay on the edge of the Heywood Industrial Zone, and it is two businesses depending on the hour. By day it is a canteen: long steel tables, trays of whatever the kitchen bought cheap that morning, and a queue of dock crews, factory hands and Fixie's Couriers eating fast between runs. When the whistle goes at the end of the second shift, somebody pulls the shutters halfway down, the coffee urn becomes a bar, and the same tables fill with the same people for different reasons.
 
 It is neutral ground in the way only a place everyone needs can be. Zhirafa contractors who are not supposed to leave the office park drink next to DeadWoods who are not supposed to be allowed in. Couriers trade gossip about who is shipping what. The owner takes cash, scrip and favours, and remembers which is which.
