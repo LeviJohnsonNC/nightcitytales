@@ -160,8 +160,14 @@ gear the engine can keep its word about, then a store UI overhaul.
   find off a job that crossed an organisation is hot: cheaper, and buying it gets you seen
   by them. Selling at half the printed price; a find you sell sits on that shelf for two
   weeks and can be bought back.
-- **Next:** merchants who know you (pass 4). Watch, Pass, Reveal and Shield capabilities
-  wait for the levers it builds.
+- **Pass 4, merchants who know you (shipped).** Ask the sellers who know you to keep an eye
+  out for something quiet, remote or quick: a matching find is set aside and passed on by
+  word of mouth. One hold citywide with a 20% deposit for a week. Try a gun on the range at
+  Toggle's, the Quartermaster, Hachiman Arms and the Armory. The Sell tab says where each
+  thing came from and what it has been through.
+- **Next:** Levi's store UI overhaul. Still open from the plan: the Watch, Pass, Reveal and
+  Shield capabilities (each needs an engine lever first), repair and restoration terms, and
+  a narrator eval of the finds' packet line.
 
 ## Also shipped: the Tomorrow Test
 

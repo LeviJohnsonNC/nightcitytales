@@ -142,6 +142,8 @@ export type Vendor = {
   backRoom: string[];
   /** This seller's shift on the weekly finds die (engine/gadgets.ts). 0 for an archetype. */
   finds: number;
+  /** True when there is a range here to try a gun on before you buy it. */
+  range: boolean;
 };
 
 export const VENDORS: Vendor[] = [
@@ -157,6 +159,7 @@ export const VENDORS: Vendor[] = [
     signature: [],
     backRoom: [],
     finds: 0,
+    range: false,
   },
   {
     id: "gun_shop",
@@ -170,6 +173,7 @@ export const VENDORS: Vendor[] = [
     signature: [],
     backRoom: [],
     finds: 0,
+    range: false,
   },
   {
     id: "armorer",
@@ -183,6 +187,7 @@ export const VENDORS: Vendor[] = [
     signature: [],
     backRoom: [],
     finds: 0,
+    range: false,
   },
   {
     id: "fixer",
@@ -199,6 +204,7 @@ export const VENDORS: Vendor[] = [
     signature: [],
     backRoom: [],
     finds: 0,
+    range: false,
   },
 ];
 
@@ -217,6 +223,7 @@ type PlaceShop = {
   signature?: string[];
   backRoom?: string[];
   finds?: number;
+  range?: boolean;
 };
 
 export const PLACE_SHOPS_ARE_HOUSE_RULE: boolean = placeShops.houseRule;
@@ -249,6 +256,7 @@ function atPlace(shop: PlaceShop): Vendor {
     signature: shop.signature ?? [],
     backRoom: shop.backRoom ?? [],
     finds: shop.finds ?? 0,
+    range: shop.range ?? false,
   };
 }
 

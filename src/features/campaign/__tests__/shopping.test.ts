@@ -109,6 +109,9 @@ const {
   stockedShelf,
   sell,
   resoldAt,
+  placeHold,
+  shopShelf,
+  wordAround,
 } = await import("../shopping");
 const {
   RESALE_WEEKS,
@@ -735,5 +738,82 @@ describe("selling", () => {
     expect(
       resoldAt([{ ...sold, data: { ...sold.data, itemId: "rope_60m_yd" } }], "street@k3", 5),
     ).toEqual([]);
+  });
+});
+
+describe("a seller who knows you", () => {
+  function rolledIn() {
+    return shopStock({ vendor: GUNS, seed: "c", day: 1, regular: true }).find(
+      (i) => i.layer === "unusual" && i.available,
+    )!;
+  }
+
+  it("holds one thing for a regular against a deposit, and sells it at the held price less it", async () => {
+    flags.set(REGULARS_FLAG, ["gun_shop"]);
+    eurobucks = 10000;
+    const item = rolledIn();
+    const placed = await placeHold({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: item.kind,
+      itemId: item.itemId,
+    });
+    expect(placed.ok).toBe(true);
+    if (!placed.ok) return;
+    expect(eurobucks).toBe(10000 - placed.hold.deposit);
+    const second = await placeHold({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: item.kind,
+      itemId: item.itemId,
+    });
+    expect(second.ok).toBe(false);
+
+    // Weeks later, past this week's roll, it is still there for them.
+    clock = { day: 6, minute: 18 * 60 };
+    const before = eurobucks;
+    const bought = await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: item.kind,
+      itemId: item.itemId,
+      quantity: 1,
+    });
+    expect(bought.ok && bought.spent).toBe(placed.hold.price - placed.hold.deposit);
+    expect(eurobucks).toBe(before - (placed.hold.price - placed.hold.deposit));
+    expect(ledger.some((e) => e.type === "hold_ended")).toBe(true);
+  });
+
+  it("does not hold things for a stranger", async () => {
+    const item = rolledIn();
+    const out = await placeHold({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: item.kind,
+      itemId: item.itemId,
+    });
+    expect(out.ok).toBe(false);
+  });
+
+  it("sets aside a find that answers what you asked for, and passes the word", () => {
+    const swap = getVendor("street@k3");
+    let day = 1;
+    let find = shopStock({ vendor: swap, seed: "c", day }).find((i) => i.layer === "find");
+    while (!find) {
+      day += 7;
+      find = shopStock({ vendor: swap, seed: "c", day }).find((i) => i.layer === "find");
+    }
+    const capability = find.itemId.split(".")[2]!;
+    const context = {
+      events: [{ type: "shop_interests", data: { needs: [capability] } }],
+      flags: [{ flag: REGULARS_FLAG, value: ["street@k3"] }] as unknown as CampaignFlag[],
+      places: {},
+    };
+    const { shelf } = shopShelf({ vendor: swap, campaignId: "c", day, eurobucks: 0, context });
+    expect(shelf.find((i) => i.itemId === find!.itemId)?.forYou).toBe(true);
+    const word = wordAround({ campaignId: "c", day, context });
+    expect(word.map((w) => w.item.itemId)).toContain(find.itemId);
+    // A stranger to that shop hears nothing.
+    expect(wordAround({ campaignId: "c", day, context: { ...context, flags: [] } })).toEqual([]);
   });
 });

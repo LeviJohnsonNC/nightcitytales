@@ -332,6 +332,16 @@ at `sellPrice`: half the printed price, less markup, for kinds the seller deals 
 any find at a fence; ammunition and chrome are not bought back. A sold find stays on that
 shelf for `RESALE_WEEKS` (`resoldAt`, read off `sold` and `purchase` rows in ledger order).
 
+Sellers who know you (`engine/merchantTies.ts`, the `holds` block of `place-shops.json`,
+`houseRule: true`) buy four things, none of them a discount. Interests: up to two needs from
+the finds' capabilities (`shop_interests`, newest list wins); a matching find at a seller who
+knows you is `forYou` and passed on by `wordAround`, and NEVER changes what turns up. One
+hold citywide (`hold_placed` / `hold_ended`, `activeHold`): a regular's seller keeps a non-staple
+thing past the week's roll at the day's price for a deposit, lapsing on its own with no event.
+A shop with `range: true` gives your odds per printed band (`rangeTrial`, off `singleShotDV` and
+`checkPercent`). `itemRecord` says where a thing came from and what it has been through, from
+purchase, `life_action` and `attack` rows; it is computed, never stored.
+
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
 `tools/atlas/tag_places.py`'s `HOUSE_RULE_TAGS` and each with a dossier in
