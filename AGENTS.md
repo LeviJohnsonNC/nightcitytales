@@ -319,6 +319,19 @@ would grant a die, a DV or an outcome does not belong. The gear list's printed b
 Medscanner's +2 First Aid) are `engine/kitBonuses.ts` over `kit-bonuses.json`, and ride in
 `checkSetup`, so the odds chip and the roll carry them alike.
 
+The city stocks the shops (`engine/shopSupply.ts`, data `src/data/atlas/shop-supply.json`,
+`houseRule: true`). A place that gained a salvage flag (`place_changed`) and a job that
+settled at a place (`job_settled`, whose receipt's `standing` lines say who it crossed,
+read by `readJobSettledFactions`) each send things onto the street for a window: the shops
+in that district, and every fence (a shop with `finds`) anywhere, lean their finds die and
+lend the finds where they came from, as a sixth id segment (`s-<place>-<flag>`,
+`h-<place>-<faction>`) that `readProvenance` checks against the atlas and the factions
+every read. A find off a job that crossed somebody is HOT: a step down the ladder, and
+buying it records `seen` against them. Selling is `sell` (`features/campaign/shopping.ts`)
+at `sellPrice`: half the printed price, less markup, for kinds the seller deals in plus
+any find at a fence; ammunition and chrome are not bought back. A sold find stays on that
+shelf for `RESALE_WEEKS` (`resoldAt`, read off `sold` and `purchase` rows in ledger order).
+
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
 `tools/atlas/tag_places.py`'s `HOUSE_RULE_TAGS` and each with a dossier in

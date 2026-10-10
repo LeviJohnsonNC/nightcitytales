@@ -25,6 +25,8 @@ import {
   loadShopContext,
   purchase,
   recordShopSeen,
+  sell,
+  sellOffers,
   shopShelf,
   reloadWeapon,
   reloadableWeapons,
@@ -205,6 +207,22 @@ export function useShop(bundle: LifeBundle | undefined, open = false) {
     onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
   });
 
+  const sellOne = useMutation({
+    mutationFn: async (inventoryId: string) => {
+      if (!bundle) throw new Error("Still loading.");
+      return sell({ campaignId: bundle.campaign.id, vendorId: vendor.id, inventoryId });
+    },
+    onSuccess: (outcome) => {
+      setMessage(
+        outcome.ok
+          ? { tone: "bought", text: `Sold ${outcome.name} for ${outcome.paid}eb.` }
+          : { tone: "refused", text: outcome.reason },
+      );
+      invalidate();
+    },
+    onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
+  });
+
   const reload = useMutation({
     mutationFn: async (weaponRowId: string) => {
       if (!bundle) throw new Error("Still loading.");
@@ -250,7 +268,10 @@ export function useShop(bundle: LifeBundle | undefined, open = false) {
     eurobucks,
     message,
     clearMessage: () => setMessage(null),
-    busy: buy.isPending || reload.isPending || argue.isPending,
+    busy: buy.isPending || reload.isPending || argue.isPending || sellOne.isPending,
+    /** What in the kit this seller would buy, and for how much. */
+    offers: bundle ? sellOffers(vendor, bundle.inventory) : [],
+    sell: (inventoryId: string) => sellOne.mutate(inventoryId),
     buy: (item: StockedItem, quantity: number) => buy.mutate({ item, quantity }),
     reload: (weaponRowId: string) => reload.mutate(weaponRowId),
     reloadable: bundle ? reloadableWeapons(bundle.inventory) : [],

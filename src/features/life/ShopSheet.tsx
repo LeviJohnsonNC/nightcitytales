@@ -140,14 +140,23 @@ function StockBadge({ item }: { item: StockedItem }) {
       tone: "text-muted-foreground",
     },
   };
-  if (item.key === "find") {
+  if (item.key === "find" || item.key === "resold") {
     const gadget = readGadget(item.itemId);
+    const hot = gadget?.provenance?.kind === "hot";
     return (
       <span
-        className="shrink-0 font-mono text-[9px] uppercase tracking-[0.14em] text-accent"
-        title="Strange gear this shop turned up this week. One of it, and gone once bought"
+        className={`shrink-0 font-mono text-[9px] uppercase tracking-[0.14em] ${
+          hot ? "text-destructive" : "text-accent"
+        }`}
+        title={
+          gadget?.origin ??
+          (item.key === "resold"
+            ? "The one you sold them. Still here, at their price"
+            : "Strange gear this shop turned up this week. One of it, and gone once bought")
+        }
       >
-        a find{gadget ? ` · ${gadgetTags(gadget)}` : ""}
+        {item.key === "resold" ? "yours, once" : hot ? "hot" : "a find"}
+        {gadget ? ` · ${gadgetTags(gadget)}` : ""}
       </span>
     );
   }
@@ -314,6 +323,8 @@ export function ShopSheet({
   const [query, setQuery] = useState("");
   /** "What's the strangest thing you've got?" — the shelf narrowed to what is not staple stock. */
   const [unusualOnly, setUnusualOnly] = useState(false);
+  /** Selling rather than buying: what in the kit this seller would take. */
+  const [selling, setSelling] = useState(false);
 
   const kinds = shop.vendor.deals;
   const active = kind && kinds.includes(kind as ItemKind) ? kind : kinds[0]!;
@@ -481,10 +492,11 @@ export function ShopSheet({
             <Button
               key={k}
               size="sm"
-              variant={k === active && !unusualOnly ? "secondary" : "ghost"}
+              variant={k === active && !unusualOnly && !selling ? "secondary" : "ghost"}
               onClick={() => {
                 setKind(k);
                 setUnusualOnly(false);
+                setSelling(false);
               }}
             >
               {KIND_LABELS[k] ?? k}
@@ -492,10 +504,20 @@ export function ShopSheet({
           ))}
           <Button
             size="sm"
-            variant={unusualOnly ? "secondary" : "ghost"}
-            onClick={() => setUnusualOnly(true)}
+            variant={unusualOnly && !selling ? "secondary" : "ghost"}
+            onClick={() => {
+              setUnusualOnly(true);
+              setSelling(false);
+            }}
           >
             What&apos;s unusual?
+          </Button>
+          <Button
+            size="sm"
+            variant={selling ? "secondary" : "ghost"}
+            onClick={() => setSelling(true)}
+          >
+            Sell
           </Button>
         </div>
 
@@ -507,7 +529,41 @@ export function ShopSheet({
         />
 
         <ul className="mt-1 flex-1 overflow-y-auto pr-1">
-          {shop.loading ? (
+          {selling ? (
+            shop.offers.length === 0 ? (
+              <li className="py-6 text-sm text-muted-foreground">
+                Nothing you are carrying is anything they would buy.
+              </li>
+            ) : (
+              shop.offers.map((offer) => (
+                <li
+                  key={offer.row.id}
+                  className="flex items-center gap-2 border-b border-border/60 py-2 last:border-0"
+                >
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {offer.name}
+                    {offer.row.quantity > 1 && (
+                      <span className="text-muted-foreground"> ×{offer.row.quantity}</span>
+                    )}
+                    {offer.row.equipped && (
+                      <span className="ml-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+                        worn
+                      </span>
+                    )}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="num shrink-0"
+                    disabled={shop.busy}
+                    onClick={() => shop.sell(offer.row.id)}
+                  >
+                    Sell · {offer.price}eb
+                  </Button>
+                </li>
+              ))
+            )
+          ) : shop.loading ? (
             <li className="py-6 text-sm text-muted-foreground">Looking over the shelves…</li>
           ) : shown.length === 0 ? (
             <li className="py-6 text-sm text-muted-foreground">

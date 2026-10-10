@@ -27,6 +27,14 @@ import {
   newSinceLastVisit,
   purchaseEventData,
   readPurchaseEventData,
+  readSoldEventData,
+  readGadget,
+  sellPrice,
+  soldEventData,
+  districtOfPlace,
+  itemName,
+  supplyFrom,
+  RESALE_WEEKS,
   readShopSeenEventData,
   shopSeenEventData,
   shopStock,
@@ -42,6 +50,7 @@ import {
   weaponProfile,
   type GameClock,
   type ItemKind,
+  type FactionId,
   type OpposedCheckResult,
   type PlaceState,
   type ShelfStock,
@@ -68,13 +77,26 @@ import {
 import { standingAt } from "./favours";
 import { logOpenOracle } from "./oracles";
 import { loadPlaceStates } from "./placeState";
+import { applyPressure } from "./pressure";
 
 /** The ledger type a purchase is written under. */
 export const PURCHASE_EVENT = LEDGER_EVENTS.purchase;
 /** The ledger type a look at a seller's shelf is written under. */
 export const SHOP_SEEN_EVENT = LEDGER_EVENTS.shopSeen;
 /** Every ledger type a shelf is read back from. */
-export const SHOP_EVENT_TYPES = [PURCHASE_EVENT, SHOP_SEEN_EVENT] as const;
+/** The ledger type a sale is written under. */
+export const SOLD_EVENT = LEDGER_EVENTS.sold;
+/**
+ * Every ledger type a shelf is read back from: what was bought, sold and looked
+ * at, and what happened in the city that sends things onto the street.
+ */
+export const SHOP_EVENT_TYPES = [
+  PURCHASE_EVENT,
+  SHOP_SEEN_EVENT,
+  SOLD_EVENT,
+  LEDGER_EVENTS.placeChanged,
+  LEDGER_EVENTS.jobSettled,
+] as const;
 /** The ledger type a reload is written under. */
 export const RELOAD_EVENT = "reload";
 
@@ -136,6 +158,36 @@ export function lastLookedBefore(
     if (!found || seen.day >= found.day) found = { day: seen.day, backRoom: seen.backRoom };
   }
   return found;
+}
+
+/**
+ * The finds the character sold this seller that are still on the shelf on
+ * `day`: sold within `RESALE_WEEKS` stock weeks and not bought back since.
+ * Ledger order decides "since", so a sale and a buy-back on one day read right.
+ */
+export function resoldAt(
+  events: readonly { type: string; data?: unknown }[],
+  vendorId: string,
+  day: number,
+): string[] {
+  const on = new Map<string, number>();
+  for (const event of events) {
+    if (event.type === SOLD_EVENT) {
+      const sold = readSoldEventData(event.data);
+      if (!sold || sold.vendorId !== vendorId || sold.day === null || sold.day > day) continue;
+      if (!looksLikeGadget(sold.itemId)) continue;
+      on.set(sold.itemId, sold.day);
+    } else if (event.type === PURCHASE_EVENT) {
+      const bought = readPurchaseEventData(event.data);
+      if (bought && bought.vendorId === vendorId && bought.day !== null && bought.day <= day) {
+        on.delete(bought.itemId);
+      }
+    }
+  }
+  const week = stockPeriod(day);
+  return [...on.entries()]
+    .filter(([, soldOn]) => week - stockPeriod(soldOn) < RESALE_WEEKS)
+    .map(([id]) => id);
 }
 
 /** True when the character has already looked at this seller's shelf this stock week. */
@@ -205,6 +257,7 @@ export function shopShelf(input: {
 }): ShopShelf {
   const { vendor, day, context } = input;
   const backRoomOpen = backRoomOpenAt(context.places, vendor);
+  const citySupply = supplyFrom(context.events);
   const base = {
     vendor,
     seed: input.campaignId,
@@ -216,6 +269,8 @@ export function shopShelf(input: {
     day,
     backRoomOpen,
     bought: boughtThisWeek(context.events, vendor.id, day),
+    supply: citySupply,
+    resold: resoldAt(context.events, vendor.id, day),
   });
   const last = lastLookedBefore(context.events, vendor.id, day);
   const fresh = last
@@ -226,6 +281,8 @@ export function shopShelf(input: {
           day: last.day,
           backRoomOpen: last.backRoom,
           bought: boughtThisWeek(context.events, vendor.id, last.day),
+          supply: citySupply,
+          resold: resoldAt(context.events, vendor.id, last.day),
         }),
       )
     : [];
@@ -472,7 +529,95 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
     } as unknown as Json,
   });
 
+  // Hot goods: the people it was taken from hear who bought it. The shelf said
+  // so before the money moved, so this is a price the player chose to pay.
+  const hot = item.layer === "find" ? readGadget(item.itemId)?.provenance : null;
+  if (hot?.kind === "hot") {
+    await applyPressure(
+      input.campaignId,
+      [{ observation: "seen", factionId: hot.factionId as FactionId }],
+      { districtKey: vendor.place ? (districtOfPlace(vendor.place)?.key ?? null) : null },
+    );
+  }
+
   return { ok: true, spent: cost, quantity: allowed, name: item.name, stockKey: stock.key, saved };
+}
+
+// ---------------------------------------------------------------------------
+// Selling.
+// ---------------------------------------------------------------------------
+
+export type SellOffer = {
+  row: CampaignInventoryItem;
+  name: string;
+  /** What this seller pays for one. */
+  price: number;
+};
+
+/** What in the kit this seller would buy, and for how much. Chrome and ammunition never. */
+export function sellOffers(vendor: Vendor, inventory: CampaignInventoryItem[]): SellOffer[] {
+  const out: SellOffer[] = [];
+  for (const row of inventory) {
+    if (row.quantity <= 0) continue;
+    const kind = (row.slot === "weapon" ? "weapon" : row.kind) as ItemKind;
+    const price = sellPrice(vendor, kind, row.item_id);
+    if (price === null) continue;
+    let name = row.item_id;
+    try {
+      name = itemName(kind, row.item_id);
+    } catch {
+      // priced, so the catalog knows it; keep the id if a name is somehow missing
+    }
+    out.push({ row, name, price });
+  }
+  return out.sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
+}
+
+export type SellOutcome = { ok: true; name: string; paid: number } | { ok: false; reason: string };
+
+/**
+ * Sell one of something to the seller the character is standing at.
+ *
+ * Read live, like a purchase: the row and the money are what the database says
+ * now, so a double press cannot sell the same thing twice. Armor comes off when
+ * the last of it goes. A find sold here stays on this shelf for a while
+ * (`resoldAt`); anything else vanishes into the stock.
+ */
+export async function sell(input: {
+  campaignId: string;
+  vendorId: string;
+  inventoryId: string;
+}): Promise<SellOutcome> {
+  const vendor = getVendor(input.vendorId);
+  const full = await getCampaign(input.campaignId);
+  if (!full?.vitals) return { ok: false, reason: "Campaign not found." };
+  if (vendor.place && standingAt(full.campaign) !== vendor.place) {
+    return { ok: false, reason: `You are not at ${vendor.label}.` };
+  }
+  const row = full.inventory.find((r) => r.id === input.inventoryId);
+  if (!row || row.quantity <= 0) return { ok: false, reason: "You are not carrying that." };
+  const offer = sellOffers(vendor, [row])[0];
+  if (!offer) return { ok: false, reason: `${vendor.label} will not buy that.` };
+
+  const left = row.quantity - 1;
+  await setInventoryQuantity(row.id, left);
+  if (left <= 0 && row.equipped) await setInventoryEquipped(row.id, false);
+  await updateCampaignVitals(input.campaignId, { eurobucks: full.vitals.eurobucks + offer.price });
+  const kind = (row.slot === "weapon" ? "weapon" : row.kind) as ItemKind;
+  await appendCampaignEvent({
+    campaign_id: input.campaignId,
+    type: SOLD_EVENT,
+    summary: `Sold ${offer.name} to ${vendor.label.toLowerCase()} for ${offer.price}eb.`,
+    data: soldEventData({
+      vendorId: vendor.id,
+      kind,
+      itemId: row.item_id,
+      quantity: 1,
+      paid: offer.price,
+      day: full.campaign.day ?? 1,
+    }) as unknown as Json,
+  });
+  return { ok: true, name: offer.name, paid: offer.price };
 }
 
 /** The ledger type a haggle is written under. */

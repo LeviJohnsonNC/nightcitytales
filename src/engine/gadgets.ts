@@ -21,7 +21,10 @@
  * Pure: ids and seeds in, plain objects out.
  */
 import catalogData from "@/data/rules/catalog.json";
+import supply from "@/data/atlas/shop-supply.json";
 import data from "@/data/rules/gadgets.json";
+import { getFaction, isFactionId } from "./factions";
+import { getPlace } from "./geography";
 import { rollDie, seededRng } from "./dice";
 import { buildRollResult, type RollResult } from "./rollLog";
 import type { RNG } from "./types";
@@ -87,7 +90,45 @@ export type Gadget = {
   singleUse: boolean;
   /** True when using it rolls for whether it works. */
   unreliable: boolean;
+  /** Where it came from, when the engine recorded it. Null for an ordinary find. */
+  provenance: Provenance | null;
+  /** Where it came from, in a sentence. Null for an ordinary find. */
+  origin: string | null;
 };
+
+/**
+ * Where a find came from, as the engine recorded it: a place that gained a
+ * salvage flag, or a job that settled at a place and crossed an organisation.
+ * Carried in the id's sixth segment (`s-<place>-<flag>`, `h-<place>-<faction>`)
+ * and checked against the atlas and the factions every time it is read.
+ */
+export type Provenance =
+  | { kind: "salvage"; placeKey: string; flag: string }
+  | { kind: "hot"; placeKey: string; factionId: string };
+
+const SALVAGE = supply.salvage as Record<string, string>;
+
+/** The id segment for a provenance. */
+export function provenanceSegment(p: Provenance): string {
+  return p.kind === "salvage" ? `s-${p.placeKey}-${p.flag}` : `h-${p.placeKey}-${p.factionId}`;
+}
+
+/** A provenance segment read back, or null when it names nothing the engine knows. */
+export function readProvenance(segment: string): Provenance | null {
+  const match = /^([sh])-([a-z0-9]+)-([a-z_]+)$/.exec(segment);
+  if (!match) return null;
+  const [, kind, placeKey, what] = match as unknown as [string, string, string, string];
+  if (!getPlace(placeKey)) return null;
+  if (kind === "s") return SALVAGE[what] ? { kind: "salvage", placeKey, flag: what } : null;
+  return isFactionId(what) ? { kind: "hot", placeKey, factionId: what } : null;
+}
+
+function originOf(p: Provenance): string {
+  const place = getPlace(p.placeKey)?.name ?? p.placeKey;
+  if (p.kind === "salvage") return SALVAGE[p.flag]!.replace("{place}", place);
+  const faction = isFactionId(p.factionId) ? getFaction(p.factionId).name : p.factionId;
+  return supply.hot.replace("{place}", place).replace("{faction}", faction);
+}
 
 /** The item id for one find. Throws on a combination the data does not allow. */
 export function gadgetId(base: string, capability: string, limit: string, variant: number): string {
@@ -117,6 +158,12 @@ function priced(cost: number): number {
   return best;
 }
 
+/** One step down the ladder: what a hot thing goes for. */
+function stepDown(cost: number): number {
+  const at = LADDER.indexOf(cost);
+  return at > 0 ? LADDER[at - 1]! : cost;
+}
+
 /**
  * Everything a find is, from its id. Null for anything that is not a gadget the
  * data allows — an id with an unknown base, a capability the base does not
@@ -125,7 +172,9 @@ function priced(cost: number): number {
  */
 export function readGadget(itemId: string): Gadget | null {
   const parts = itemId.split(".");
-  if (parts.length !== 5 || parts[0] !== PREFIX) return null;
+  if ((parts.length !== 5 && parts.length !== 6) || parts[0] !== PREFIX) return null;
+  const provenance = parts.length === 6 ? readProvenance(parts[5]!) : null;
+  if (parts.length === 6 && !provenance) return null;
   const [, baseId, capabilityId, limitId, variantText] = parts as [
     string,
     string,
@@ -155,19 +204,25 @@ export function readGadget(itemId: string): Gadget | null {
     what: base.what,
     contract,
     quirk,
-    cost: priced(base.cost * limit.priceFactor),
+    // A hot thing goes cheap: that is how you know it is hot.
+    cost:
+      provenance?.kind === "hot"
+        ? stepDown(priced(base.cost * limit.priceFactor))
+        : priced(base.cost * limit.priceFactor),
     sellers: base.sellers,
     suppresses: capability.suppresses,
     adds: limit.adds ?? [],
     timeFactor: capability.timeFactor,
     singleUse: limitId === "single_use",
     unreliable: limitId === "unreliable",
+    provenance,
+    origin: provenance ? originOf(provenance) : null,
   };
 }
 
 /** One line for anywhere a find is described: what it is, what it does, its quirk. */
 export function describeGadget(gadget: Gadget): string {
-  return `${gadget.what} ${gadget.contract} ${gadget.quirk}`;
+  return [gadget.what, gadget.contract, gadget.origin, gadget.quirk].filter(Boolean).join(" ");
 }
 
 /** The label a find's capability and limit go by, for a badge: "Quiet · One use". */
@@ -212,6 +267,11 @@ export function gadgetFinds(input: {
   archetype: string;
   period: number;
   lean?: number;
+  /**
+   * Where this week's finds came from, newest first (`provenanceSegment`): the
+   * first find carries the first, and so on. A find past the end is ordinary.
+   */
+  provenance?: readonly string[];
 }): Gadget[] {
   const bases = GADGET_BASES.filter((b) => b.sellers.includes(input.archetype));
   if (!bases.length) return [];
@@ -225,10 +285,11 @@ export function gadgetFinds(input: {
     const capability = pick(base.capabilities, rng);
     const limit = pick(base.limits, rng);
     const variant = Math.floor(rng() * variantsOf(base));
-    const gadget = readGadget(`${PREFIX}.${base.id}.${capability}.${limit}.${variant}`)!;
-    if (taken.has(gadget.base)) continue; // two of one kind in a week is a delivery, not a find
-    taken.add(gadget.base);
-    out.push(gadget);
+    if (taken.has(base.id)) continue; // two of one kind in a week is a delivery, not a find
+    taken.add(base.id);
+    const from = input.provenance?.[out.length];
+    const plain = `${PREFIX}.${base.id}.${capability}.${limit}.${variant}`;
+    out.push((from && readGadget(`${plain}.${from}`)) || readGadget(plain)!);
   }
   return out;
 }

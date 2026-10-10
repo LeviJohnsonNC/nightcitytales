@@ -36,7 +36,8 @@
  */
 import placeShops from "@/data/atlas/place-shops.json";
 import { seededRng } from "./dice";
-import { gadgetFinds } from "./gadgets";
+import { gadgetFinds, readGadget, type Gadget } from "./gadgets";
+import { supplyProvenance, supplyReaching, type SupplyEvent } from "./shopSupply";
 import { rollOracle, type OracleResult } from "./oracle";
 import {
   STOCK,
@@ -80,7 +81,16 @@ export type StockLayer = (typeof STOCK_LAYERS)[number];
  * character has already bought.
  */
 export type StockKey =
-  "ordinary" | "line" | "back_room" | "reach" | "in" | "last_one" | "out" | "sold_out" | "find";
+  | "ordinary"
+  | "line"
+  | "back_room"
+  | "reach"
+  | "in"
+  | "last_one"
+  | "out"
+  | "sold_out"
+  | "find"
+  | "resold";
 
 export type ShelfStock = ShelfItem & {
   layer: StockLayer;
@@ -107,6 +117,10 @@ export type ShopStockInput = {
   backRoomOpen?: boolean;
   /** How many of each item (`kind:itemId`) were bought from this seller this week. */
   bought?: Readonly<Record<string, number>>;
+  /** What happened in the city lately (`shopSupply.ts`); what reaches this seller feeds its finds. */
+  supply?: readonly SupplyEvent[];
+  /** Finds the character sold this seller that are still on the shelf, by item id. */
+  resold?: readonly string[];
 };
 
 /** The key an item is counted under in `bought`. */
@@ -182,15 +196,27 @@ export function shopStock(input: ShopStockInput): ShelfStock[] {
       }
     }
   }
-  // The week's finds: one of each, gone once bought.
+  // The week's finds: one of each, gone once bought. What happened nearby lately
+  // leans the die and lends them where they came from; what the character sold
+  // here sits beside them until somebody buys it.
   const archetype = input.vendor.id.split("@")[0]!;
-  for (const gadget of gadgetFinds({
+  const reaching = supplyReaching({
+    supply: input.supply ?? [],
+    vendor: input.vendor,
+    day: input.day,
+  });
+  const finds = gadgetFinds({
     seed: input.seed,
     vendorId: input.vendor.id,
     archetype,
     period,
-    lean: input.vendor.finds,
-  })) {
+    lean: input.vendor.finds + reaching.length,
+    provenance: supplyProvenance(reaching),
+  });
+  const resold = (input.resold ?? [])
+    .map((id) => readGadget(id))
+    .filter((g): g is Gadget => g !== null && !finds.some((f) => f.id === g.id));
+  for (const gadget of [...finds, ...resold]) {
     const item: ShelfItem = {
       kind: "gear",
       itemId: gadget.id,
@@ -199,10 +225,20 @@ export function shopStock(input: ShopStockInput): ShelfStock[] {
       tier: "unusual",
     };
     const taken = Math.max(0, bought[stockItemKey(item)] ?? 0);
+    const isResold = resold.includes(gadget);
     out.push(
-      taken > 0
+      // A thing sold back is on the shelf until bought; the caller has already
+      // left out one bought back since.
+      taken > 0 && !isResold
         ? { ...item, layer: "find", key: "sold_out", available: false, left: 0, roll: null }
-        : { ...item, layer: "find", key: "find", available: true, left: 1, roll: null },
+        : {
+            ...item,
+            layer: "find",
+            key: isResold ? "resold" : "find",
+            available: true,
+            left: 1,
+            roll: null,
+          },
     );
   }
   return out;

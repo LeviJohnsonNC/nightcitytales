@@ -194,6 +194,7 @@ function LifeEvent({ event, climber }: { event: CampaignEvent; climber?: Climber
         </p>
       );
     case "purchase":
+    case "sold":
     case "reload":
     case "cyberware_installed":
     case "moved_house":
@@ -269,6 +270,7 @@ const LIFE_EVENT_TYPES = new Set([
   // What you bought and what you loaded: short, factual, and the record that
   // the money actually turned into something.
   "purchase",
+  "sold",
   "reload",
   "cyberware_installed",
   // A new home, or a new Lifestyle: the deposit and the new monthly bill.
