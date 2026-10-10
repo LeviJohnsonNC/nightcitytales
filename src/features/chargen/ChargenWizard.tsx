@@ -53,10 +53,14 @@ const VENUE_FOCUS: Record<string, string> = {
   "venue-yuri-pastrana": "55% 50%",
   "venue-kit-mwangi": "60% 28%",
   "scene-shop": "55% 28%",
+  "scene-chrome": "55% 32%",
 };
 
-/** The Night Market's own picture: a used-goods counter, behind the gear step. */
-const SHOP_BANNER = "scene-shop";
+/** The two shops have pictures of their own: a used-goods counter, and the ripperdoc's chair. */
+const STEP_BANNER: Partial<Record<string, string>> = {
+  gear: "scene-shop",
+  cyberware: "scene-chrome",
+};
 
 const SAVE_FAILED = "Save failed";
 
@@ -86,8 +90,9 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const fixer = state.castPlan?.picks.fixer ?? null;
   // The fixer's own place, behind their question, once there is a fixer and an image of it.
   const venue = def.id !== "fixer" ? (fixerVoice(fixer)?.venue ?? null) : null;
-  // The market is its own place, so it takes the shop's picture over the fixer's venue.
-  const banner = def.id === "gear" && uploadedAsset(SHOP_BANNER) ? SHOP_BANNER : venue;
+  // A shop is its own place, so it takes its picture over the fixer's venue.
+  const shop = STEP_BANNER[def.id];
+  const banner = shop && uploadedAsset(shop) ? shop : venue;
   const venueShown = Boolean(banner && uploadedAsset(banner));
   const developing = useDevelopingPortrait(state, userId, saveStatus !== "loading");
   // The meet opens on its own scene, which is the page's heading: no second

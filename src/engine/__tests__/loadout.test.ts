@@ -15,10 +15,11 @@ import {
   loadoutHumanity,
   removeLine,
   startingFunds,
+  startingFundsFor,
   type Loadout,
 } from "../loadout";
 import { choicePoints, unresolvedChoices } from "../gearPackages";
-import { itemCost } from "../catalog";
+import { CYBERWARE, itemCost } from "../catalog";
 
 function buy(
   loadout: Loadout,
@@ -92,6 +93,22 @@ describe("starting funds", () => {
     expect(startingFunds("complete_package")).toBe(gear.limit);
     const free = budgetStates("streetrat", EMPTY_LOADOUT).find((b) => b.id === "free")!;
     expect(startingFunds("streetrat")).toBe(free.limit);
+  });
+});
+
+describe("starting funds for fashionware", () => {
+  it("never judges a piece against a budget that cannot buy it", () => {
+    const gear = startingFunds("complete_package");
+    const fashion = budgetStates("complete_package", EMPTY_LOADOUT).find(
+      (b) => b.id === "fashion",
+    )!;
+    const fashionware = CYBERWARE.find((c) => c.category === "fashionware")!;
+    const implant = CYBERWARE.find((c) => c.category === "cyberlimbs")!;
+    expect(startingFundsFor("complete_package", "cyberware", fashionware.id)).toBe(
+      Math.max(gear, fashion.limit),
+    );
+    expect(startingFundsFor("complete_package", "cyberware", implant.id)).toBe(gear);
+    expect(startingFundsFor("streetrat", "cyberware", implant.id)).toBe(startingFunds("streetrat"));
   });
 });
 
