@@ -1935,6 +1935,7 @@ The irony is exquisite. Where corporate retailers once sold mass-produced goods 
   // pictures are asked for in docs/art-style.md and arrive separately.
 
   a14: {
+    image: "sacred-heart-pharmacy",
     text: `The sign says Sacred Heart Pharmacy and the window still holds a faded plaster saint with a mortar and pestle, which is the last entirely honest thing about the place. Nobody has filled a prescription here in years. The counter is real, the shelves are real, the bell over the door is real, and the stock is a rotating arrangement of cough syrup, vitamins and tins of old-fashioned lozenges that exist to give the front room something to be. The business is in the back.
 
 Imelda Voss was the pharmacist, and she does eye and ear work now with the quiet competence of somebody who spent a long career counting out other people's doses and decided she could do better at the part that matters. The back room is clean to the point of rebuke. Instruments are laid out in the same order every day. She narrates as she works, in a low steady murmur that sounds like a prayer and is mostly a checklist, and when it is over she will tell you exactly which saint to thank.
@@ -1943,6 +1944,7 @@ Holy Angels Church is a short walk away, and the parish knows what happens behin
   },
 
   b14: {
+    image: "ruggels-way-surplus",
     text: `Hollis Ruggels has been selling off the waterfront for longer than the marina has had a name, and the shop on Ruggels Way is what happens when a man with a boat habit and no particular respect for ownership gets a lease. The shelves hold flares, dry bags, coils of rope, rusted shackles, lifejackets, charts of waters that no longer look like that, and crates. Always crates. Nobody is quite sure what is in the crates until somebody opens one, and Hollis is in no hurry to find out.
 
 Every item comes with a story, delivered with the ease of a man who has told it to a hundred customers, and none of the stories match. The same box of signal flares fell off a freighter in a storm, was salvaged from a sinking yacht and was left to him by a grandfather, depending on who is asking and what they look like they can afford. He is not lying so much as improvising, and he has noticed that improvisation moves stock.
@@ -1951,6 +1953,7 @@ Dock crews, marina staff and the odd person who needs to be on a boat tonight an
   },
 
   c7: {
+    image: "the-quiet-room",
     text: `Above The Ledger there is a room that does not appear on the building directory, which is the first thing to understand about it. You reach it by the service lift, with a key somebody you trust has already told you about, and the lift goes only where the key allows. The door opens on a suite that could pass for an expensive hotel room if the bed were not quite so adjustable and the lighting not quite so careful.
 
 Dr. Tamsin Ashcombe runs it, and her list of clients reads like the Chamber of Commerce's private address book. Fixers and executives who cannot be seen in a hospital book it by the hour, through the bar's manager, who has perfected the expression of a man who has never heard of it. The recovery bed has hotel linen. The invoice has a line item for discretion, and it is the biggest line on the page.
@@ -1959,6 +1962,7 @@ Whitewater Security patrols the lobby and sees nothing, which is exactly what it
   },
 
   d5: {
+    image: "dead-reckoning",
     text: `The lobby of Dead Reckoning once belonged to a skyscraper that lost everything above the ninth floor in a bad week and has not been lived in properly since. What is left is a high echoing room with a generator in one corner, a cooler of spare parts in another, and an operating table salvaged from somewhere that used to care about it. The light comes from work lamps on stands. The floor has been swept, which is a statement.
 
 The ripperdoc goes by Doc, because the name she was born with went into the same hole as the Corporate Zone. The work is fast, cheap and, to the surprise of first-time customers, good. Nobody asks what the cooler held last week, and Doc has noticed that most people find this a relief. She talks while she cuts, mostly about the weather in places she has never been.
@@ -1967,6 +1971,7 @@ Maelstrom gives her a grudging protection, because a gang that lives on its own 
   },
 
   e6: {
+    image: "auntie-meis",
     text: `Herbs upstairs, chrome downstairs. Auntie Mei's ground floor is a herbalist's, a narrow shop of glass jars, dried roots, hanging bundles and a brass scale that has weighed more things than anyone has written down. There is always tea on. She will pour you a cup before she asks what is wrong, and she will have decided what is wrong before you finish the cup.
 
 Mei Zhao sells the tea and the advice, and her son does the surgery in a basement that is as clean as any hospital in Night City and considerably quieter. He treats chrome the way his mother treats a cough: carefully, slowly, with an expectation that you will be back to report on it. Customers who skip the follow-up are scolded, and the scolding is more effective than any warranty.

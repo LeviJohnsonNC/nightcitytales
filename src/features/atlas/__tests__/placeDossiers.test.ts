@@ -128,12 +128,7 @@ describe("place dossiers", () => {
     // list is exact in both directions: an entry added later without a picture
     // fails here, and so does a picture that lands without its key coming off.
     const PICTURES_PENDING = [
-      "a14",
-      "b14",
       "c6",
-      "c7",
-      "d5",
-      "e6",
       "e7",
       "f10",
       "f11",
