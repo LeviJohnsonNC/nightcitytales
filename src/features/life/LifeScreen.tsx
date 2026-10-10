@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ShoppingBag } from "lucide-react";
 import {
   clampLuckSpend,
   formatDuration,
@@ -94,7 +94,8 @@ import { SceneHero } from "./SceneHero";
 import type { TurnContext } from "./cityTurnModel";
 import { hauntPeople } from "./lifeModel";
 import { placeHistory } from "@/features/campaign/placeState";
-import { ShopSheet } from "./ShopSheet";
+import { ShopView } from "./shop/ShopView";
+import { DockTile } from "./hud/DockTile";
 import { RipperdocSheet } from "./RipperdocSheet";
 import { WorkshopSheet } from "./WorkshopSheet";
 import { ScreamsheetSheet } from "./ScreamsheetSheet";
@@ -673,6 +674,7 @@ function LifeRail({
   luckMax,
   status,
   intro = true,
+  onOpenShop,
 }: {
   life: ReturnType<typeof useLife>;
   bundle: NonNullable<ReturnType<typeof useLife>["bundle"]>;
@@ -681,6 +683,8 @@ function LifeRail({
   status: StatusView;
   /** False where the screen shows the day-one pointer itself (a phone). */
   intro?: boolean;
+  /** Turn the main column into the shop (the Counter). */
+  onOpenShop: () => void;
 }) {
   const [reachOpen, setReachOpen] = useState(false);
   return (
@@ -721,12 +725,7 @@ function LifeRail({
         <HomeSheet life={life} />
         {/* Renders nothing unless the place you are standing in has taken to you. */}
         <FavoursSheet bundle={bundle} />
-        <ShopSheet
-          bundle={bundle}
-          onTravel={life.travelTo}
-          travelBusy={life.travelBusy}
-          travelMode={life.vehicleRule}
-        />
+        <DockTile icon={<ShoppingBag className="size-6" />} label="Shop" onClick={onOpenShop} />
         <RipperdocSheet
           bundle={bundle}
           narrate={life.narrateFixedResult}
@@ -765,6 +764,24 @@ export function LifeScreen({
   const life = useLife(campaignId);
   const bundle = life.bundle;
   const [mobileReachOpen, setMobileReachOpen] = useState(false);
+  // The Counter: a shop takes the main column, in place of the scene, until the
+  // player leaves it. The phone's status sheet is closed so the shop is what
+  // they see.
+  const [shopOpen, setShopOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const openShop = () => {
+    setStatusOpen(false);
+    setShopOpen(true);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+  };
+  useEffect(() => {
+    if (!shopOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !document.querySelector("[role=dialog]")) setShopOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [shopOpen]);
   // Which job's "Previously" this browser has put away. Read when the screen
   // first draws, so a card already put away never flashes back for a frame; it
   // is a per-viewer convenience held in storage that may be absent or blocked
@@ -1017,7 +1034,12 @@ export function LifeScreen({
   return (
     <TooltipProvider delayDuration={150}>
       <div className="touch-play">
-        <MobileStatusBar title={bundle.character.character.name} chips={chips}>
+        <MobileStatusBar
+          title={bundle.character.character.name}
+          chips={chips}
+          open={statusOpen}
+          onOpenChange={setStatusOpen}
+        >
           <LifeRail
             life={life}
             bundle={bundle}
@@ -1025,6 +1047,7 @@ export function LifeScreen({
             luckMax={luckMax}
             status={status}
             intro={false}
+            onOpenShop={openShop}
           />
         </MobileStatusBar>
         {/* On a phone the rail waits behind the status bar, so the day-one
@@ -1073,139 +1096,154 @@ export function LifeScreen({
               }
             />
 
-            {/* What happened on the job they just finished: the peak, and what it left open. */}
-            {previously && bundle.lastFrame && (
-              <PreviouslyCard
-                frame={previously}
-                onDismiss={() => {
-                  writeDismissed(campaignId, bundle.lastFrame!.settledId);
-                  setDismissedFrame(bundle.lastFrame!.settledId);
-                }}
+            {shopOpen ? (
+              // The Counter, in place of the scene. The input is hidden: a
+              // shop is for shopping, and "Talk to them" goes back to the scene.
+              <ShopView
+                bundle={bundle}
+                onClose={() => setShopOpen(false)}
+                onTravel={life.travelTo}
+                travelBusy={life.travelBusy}
+                travelMode={life.vehicleRule}
+                onTalk={() => setShopOpen(false)}
               />
-            )}
-
-            {/* Coming back after a while: the threads they left open, by name. */}
-            {returning && (
-              <div className="border-l-2 border-accent bg-accent/5 px-3 py-2">
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-                  Where you left off
-                </p>
-                <ul className="mt-1 space-y-0.5 text-sm text-foreground">
-                  {returning.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Where you are, before anything has happened here. */}
-            <SceneHero locationKey={locationKey} opening={!hasLog} />
-
-            {/* What the turn just cost, alongside the current scene. */}
-            <ReceiptBar receipts={receipts} />
-
-            {/* A week of life with no award is a session: judged here, on the
-                playstyle columns, the same table a job is judged on. */}
-            {life.phase === "life" && (life.ipDaysUntil === 0 || life.lifeIpTally) && (
-              <IpTallyCard
-                heading="a week on the street, since the last award"
-                tally={life.lifeIpTally}
-                busy={life.lifeIpBusy}
-                error={life.lifeIpError}
-                defaults={life.ipLastPlaystyles}
-                onTally={life.tallyLifeIp}
-                onDismiss={life.dismissLifeIp}
-              />
-            )}
-
-            {life.actionError && (
-              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {life.actionError.message}
-              </p>
-            )}
-
-            {life.pendingCheck && (
-              <CheckCard
-                key={life.pendingCheck.eventId}
-                pending={life.pendingCheck}
-                roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
-                odds={(luckSpend) => checkOdds(life.pendingCheck!, luckSpend)}
-                onSettled={(rolled) => life.commitCheck(life.pendingCheck!, rolled)}
-                busy={life.checkBusy}
-                luckRemaining={luckLeft}
-              />
-            )}
-
-            <LifeSceneContent
-              narration={
-                life.narration ? (
-                  <section className="space-y-2 border-l-2 border-accent bg-accent/5 p-3">
-                    <Label>{life.narration.title}</Label>
-                    <p className="whitespace-pre-wrap text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
-                      <NpcText text={life.narration.text} />
-                    </p>
-                    <WalkOnStrip walkOns={life.narration.walkOns} defaultOpen />
-                  </section>
-                ) : null
-              }
-              controls={sceneControls}
-              history={
-                hasLog ? (
-                  <LifeLog
-                    autoScroll={!life.narration}
-                    events={bundle.events}
-                    climber={{
-                      roleId: bundle.character.character.role ?? null,
-                      homeDistrictKey: bundle.character.finance?.home_district_key ?? null,
+            ) : (
+              <>
+                {/* What happened on the job they just finished: the peak, and what it left open. */}
+                {previously && bundle.lastFrame && (
+                  <PreviouslyCard
+                    frame={previously}
+                    onDismiss={() => {
+                      writeDismissed(campaignId, bundle.lastFrame!.settledId);
+                      setDismissedFrame(bundle.lastFrame!.settledId);
                     }}
-                    {...(life.narration ? { suppressText: life.narration.text } : {})}
                   />
-                ) : null
-              }
-            />
+                )}
 
-            {/* Options, and only when they were asked for. An ordinary turn
+                {/* Coming back after a while: the threads they left open, by name. */}
+                {returning && (
+                  <div className="border-l-2 border-accent bg-accent/5 px-3 py-2">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+                      Where you left off
+                    </p>
+                    <ul className="mt-1 space-y-0.5 text-sm text-foreground">
+                      {returning.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Where you are, before anything has happened here. */}
+                <SceneHero locationKey={locationKey} opening={!hasLog} />
+
+                {/* What the turn just cost, alongside the current scene. */}
+                <ReceiptBar receipts={receipts} />
+
+                {/* A week of life with no award is a session: judged here, on the
+                playstyle columns, the same table a job is judged on. */}
+                {life.phase === "life" && (life.ipDaysUntil === 0 || life.lifeIpTally) && (
+                  <IpTallyCard
+                    heading="a week on the street, since the last award"
+                    tally={life.lifeIpTally}
+                    busy={life.lifeIpBusy}
+                    error={life.lifeIpError}
+                    defaults={life.ipLastPlaystyles}
+                    onTally={life.tallyLifeIp}
+                    onDismiss={life.dismissLifeIp}
+                  />
+                )}
+
+                {life.actionError && (
+                  <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {life.actionError.message}
+                  </p>
+                )}
+
+                {life.pendingCheck && (
+                  <CheckCard
+                    key={life.pendingCheck.eventId}
+                    pending={life.pendingCheck}
+                    roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
+                    odds={(luckSpend) => checkOdds(life.pendingCheck!, luckSpend)}
+                    onSettled={(rolled) => life.commitCheck(life.pendingCheck!, rolled)}
+                    busy={life.checkBusy}
+                    luckRemaining={luckLeft}
+                  />
+                )}
+
+                <LifeSceneContent
+                  narration={
+                    life.narration ? (
+                      <section className="space-y-2 border-l-2 border-accent bg-accent/5 p-3">
+                        <Label>{life.narration.title}</Label>
+                        <p className="whitespace-pre-wrap text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
+                          <NpcText text={life.narration.text} />
+                        </p>
+                        <WalkOnStrip walkOns={life.narration.walkOns} defaultOpen />
+                      </section>
+                    ) : null
+                  }
+                  controls={sceneControls}
+                  history={
+                    hasLog ? (
+                      <LifeLog
+                        autoScroll={!life.narration}
+                        events={bundle.events}
+                        climber={{
+                          roleId: bundle.character.character.role ?? null,
+                          homeDistrictKey: bundle.character.finance?.home_district_key ?? null,
+                        }}
+                        {...(life.narration ? { suppressText: life.narration.text } : {})}
+                      />
+                    ) : null
+                  }
+                />
+
+                {/* Options, and only when they were asked for. An ordinary turn
                 returns none, so these clear themselves the moment the player acts. */}
-            {!life.pendingCheck && life.actions.length > 0 && (
-              <div className="grid gap-2 sm:grid-cols-3">
-                {life.actions.map((action) => (
-                  <ActionCard
-                    key={action.label}
-                    action={action}
-                    character={bundle.character as never}
-                    context={rollContext}
-                    busy={life.busy}
-                    onPick={() =>
-                      void life.act(cardInput(action), {
-                        // What the card printed is what the turn costs. Both
-                        // kinds of card go through here — the model's and the
-                        // engine's — because a player cannot tell them apart
-                        // and should not have to.
-                        minutes: action.timeMinutes,
-                        ...(action.knownCost
-                          ? { spend: { amount: action.knownCost, reason: action.label } }
-                          : {}),
-                      })
-                    }
-                  />
-                ))}
-              </div>
-            )}
+                {!life.pendingCheck && life.actions.length > 0 && (
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {life.actions.map((action) => (
+                      <ActionCard
+                        key={action.label}
+                        action={action}
+                        character={bundle.character as never}
+                        context={rollContext}
+                        busy={life.busy}
+                        onPick={() =>
+                          void life.act(cardInput(action), {
+                            // What the card printed is what the turn costs. Both
+                            // kinds of card go through here — the model's and the
+                            // engine's — because a player cannot tell them apart
+                            // and should not have to.
+                            minutes: action.timeMinutes,
+                            ...(action.knownCost
+                              ? { spend: { amount: action.knownCost, reason: action.label } }
+                              : {}),
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
 
-            {life.hook && <HookCard life={life} />}
+                {life.hook && <HookCard life={life} />}
 
-            {/* The wait, pinned above the input rather than at the tail of
+                {/* The wait, pinned above the input rather than at the tail of
                 whatever box it used to share — the lowest thing on the
                 screen until the turn actually lands. */}
-            {life.busy && <CityTurns context={turnContext} seed={bundle.events.length} />}
+                {life.busy && <CityTurns context={turnContext} seed={bundle.events.length} />}
 
-            <BottomDock>
-              <InputBar
-                onSend={(text) => life.act(text)}
-                onAskOptions={() => life.askOptions()}
-                busy={life.busy || !!life.pendingCheck}
-              />
-            </BottomDock>
+                <BottomDock>
+                  <InputBar
+                    onSend={(text) => life.act(text)}
+                    onAskOptions={() => life.askOptions()}
+                    busy={life.busy || !!life.pendingCheck}
+                  />
+                </BottomDock>
+              </>
+            )}
           </div>
 
           <aside className="sticky top-6 hidden h-fit space-y-4 self-start lg:block">
@@ -1215,6 +1253,7 @@ export function LifeScreen({
               luckLeft={luckLeft}
               luckMax={luckMax}
               status={status}
+              onOpenShop={openShop}
             />
           </aside>
         </div>

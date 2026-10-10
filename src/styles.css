@@ -261,6 +261,18 @@
   }
 }
 
+/* The Counter: a shop's painting settling in as you walk through the door. */
+@keyframes counter-enter {
+  from {
+    transform: scale(1.08);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* ---- Print: the sheet, laid out like the printed three-page character sheet ---- */
 @media print {
   .no-print,
