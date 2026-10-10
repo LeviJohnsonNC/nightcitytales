@@ -50,6 +50,7 @@ import {
   type CampaignInventoryItem,
   type Json,
 } from "@/lib/backend";
+import { standingAt } from "./favours";
 import { logOpenOracle } from "./oracles";
 
 /** The ledger type a purchase is written under. */
@@ -173,6 +174,11 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
 
   const full = await getCampaign(input.campaignId);
   if (!full?.vitals) return { ok: false, reason: "Campaign not found.", stockKey: "no_campaign" };
+  // A shop is somewhere you are. The sheet only offers the one you are standing
+  // in, and this holds it to that when a stale page or a replay asks otherwise.
+  if (vendor.place && standingAt(full.campaign) !== vendor.place) {
+    return { ok: false, reason: `You are not at ${vendor.label}.`, stockKey: "not_here" };
+  }
   const eurobucks = full.vitals.eurobucks;
 
   // Is it here at all? Ordinary stock never asks; the unusual gets a die the

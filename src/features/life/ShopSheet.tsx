@@ -20,9 +20,12 @@ import {
   getArmor,
   getGear,
   getWeapon,
+  nearestShops,
   stacksInInventory,
   withinReach,
+  DEFAULT_START,
   type ItemKind,
+  type TravelMode,
 } from "@/engine";
 import { ItemInfo, type ItemKindLabel } from "@/features/chargen/ItemInfo";
 import type { StockedItem } from "@/features/campaign/shopping";
@@ -190,7 +193,80 @@ function Row({
   );
 }
 
-export function ShopSheet({ bundle }: { bundle: LifeBundle }) {
+/**
+ * Somewhere that is not a shop: the places that are, nearest first, each a
+ * trip the map will charge for. Going is the same travel the map offers.
+ */
+function NoShopHere({
+  from,
+  mode,
+  busy,
+  onTravel,
+}: {
+  from: string;
+  mode?: TravelMode | undefined;
+  busy: boolean;
+  onTravel: (placeKey: string) => void;
+}) {
+  const near = nearestShops(from, mode);
+  return (
+    <div className="mt-3 border border-border bg-card/50 p-3">
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        Nothing for sale where you are standing
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Your fixer will get you things by phone, for a price. For anything else you have to go to
+        somebody who sells it.
+      </p>
+      <ul className="mt-2 divide-y divide-border/50">
+        {near.map((place) => (
+          <li key={place.placeKey} className="flex items-center justify-between gap-3 py-2">
+            <span className="min-w-0">
+              <span className="block truncate text-sm">{place.name}</span>
+              <span className="block truncate font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                {[
+                  place.districtName,
+                  place.vendors.map((v) => KIND_NOUN[v.id.split("@")[0]!]).join(" · "),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+              disabled={busy}
+              onClick={() => onTravel(place.placeKey)}
+            >
+              {busy ? "On the move…" : `Go · ${place.minutes} min`}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** What a seller does, in a word, for the list of places to go. */
+const KIND_NOUN: Record<string, string> = {
+  street: "ammo & kit",
+  gun_shop: "guns",
+  armorer: "armor",
+};
+
+export function ShopSheet({
+  bundle,
+  onTravel,
+  travelBusy = false,
+  travelMode,
+}: {
+  bundle: LifeBundle;
+  /** Take the character to somewhere that sells, the way the map would. */
+  onTravel?: (placeKey: string) => void;
+  travelBusy?: boolean;
+  travelMode?: TravelMode | undefined;
+}) {
   const shop = useShop(bundle);
   const [kind, setKind] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -222,6 +298,15 @@ export function ShopSheet({ bundle }: { bundle: LifeBundle }) {
           You have <span className="font-bold">{shop.eurobucks}eb</span>
         </p>
 
+        {!shop.atShop && onTravel && (
+          <NoShopHere
+            from={bundle.campaign.location_key ?? DEFAULT_START}
+            mode={travelMode}
+            busy={travelBusy}
+            onTravel={onTravel}
+          />
+        )}
+
         {/* Who you go and see. */}
         <div className="mt-3 flex flex-wrap gap-1.5">
           {shop.vendors.map((v) => (
@@ -241,7 +326,7 @@ export function ShopSheet({ bundle }: { bundle: LifeBundle }) {
         </div>
         <p className="mt-2 text-sm italic text-muted-foreground">{shop.vendor.line}</p>
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          about {shop.vendor.minutes} min there and back
+          about {shop.vendor.minutes} min {shop.vendor.place ? "at the counter" : "there and back"}
           {shop.vendor.markup > 1
             ? ` · +${Math.round((shop.vendor.markup - 1) * 100)}% for reach`
             : ""}

@@ -13,10 +13,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getVendor,
   hagglePercent,
   haggledPrice,
-  VENDORS,
+  FIXER_VENDOR,
+  shopsAt,
   type ItemKind,
   type Vendor,
 } from "@/engine";
@@ -30,6 +30,7 @@ import {
   stockedShelf,
   type StockedItem,
 } from "@/features/campaign/shopping";
+import { standingAt } from "@/features/campaign/favours";
 import { actorFor } from "@/features/play/playModel";
 import { liveRoleAbility, roleCheckModifiers } from "@/features/play/roleAbilityModel";
 import type { LifeBundle } from "./lifeOps";
@@ -38,7 +39,7 @@ export type ShopMessage = { tone: "bought" | "refused"; text: string };
 
 export function useShop(bundle: LifeBundle | undefined) {
   const queryClient = useQueryClient();
-  const [vendorId, setVendorId] = useState<string>(VENDORS[0]!.id);
+  const [vendorId, setVendorId] = useState<string | null>(null);
   const [message, setMessage] = useState<ShopMessage | null>(null);
   /** True once this visit has cost the character part of their evening. */
   const [visitCharged, setVisitCharged] = useState(false);
@@ -56,7 +57,14 @@ export function useShop(bundle: LifeBundle | undefined) {
     percent: number;
   } | null>(null);
 
-  const vendor: Vendor = useMemo(() => getVendor(vendorId), [vendorId]);
+  // Whoever sells where the character is standing, and the fixer, who is a call.
+  // Anywhere that is not a shop that is the fixer alone: the rest is a trip away.
+  const stood = bundle ? standingAt(bundle.campaign) : null;
+  const vendors = useMemo(() => [...shopsAt(stood), FIXER_VENDOR], [stood]);
+  const vendor: Vendor = useMemo(
+    () => vendors.find((v) => v.id === vendorId) ?? vendors[0]!,
+    [vendors, vendorId],
+  );
   const eurobucks = bundle?.vitals.eurobucks ?? 0;
   // The Fixer's Operator, which decides both what a won argument is worth and
   // what the shelf never has to be rolled for. Null for every other Role.
@@ -172,7 +180,9 @@ export function useShop(bundle: LifeBundle | undefined) {
 
   return {
     vendor,
-    vendors: VENDORS,
+    vendors,
+    /** True when the character is standing somewhere that sells. */
+    atShop: vendors.length > 1,
     setVendor: (id: string) => {
       setVendorId(id);
       setMessage(null);

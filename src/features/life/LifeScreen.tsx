@@ -719,7 +719,12 @@ function LifeRail({
         <HomeSheet life={life} />
         {/* Renders nothing unless the place you are standing in has taken to you. */}
         <FavoursSheet bundle={bundle} />
-        <ShopSheet bundle={bundle} />
+        <ShopSheet
+          bundle={bundle}
+          onTravel={life.travelTo}
+          travelBusy={life.travelBusy}
+          travelMode={life.vehicleRule}
+        />
         <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
         {/* Renders nothing at all for a character without Maker. */}
         <WorkshopSheet bundle={bundle} />

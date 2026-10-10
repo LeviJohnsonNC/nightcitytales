@@ -20,8 +20,10 @@
  * Pure TypeScript: catalog in, shelves out. No React, no backend, no dice
  * unless one is injected.
  */
+import placeShops from "@/data/atlas/place-shops.json";
 import { ARMOR, AMMUNITION, GEAR, WEAPONS, itemCost, type ItemKind } from "./catalog";
 import { defaultRng } from "./dice";
+import { districtOfPlace, getPlace, placeKeyOf, travelMinutes, type TravelMode } from "./geography";
 import { priceCategoryContext, priceCategoryForCost } from "./priceCategory";
 import { entryFor, rollOracle, type OracleResult, type OracleTable } from "./oracle";
 import type { RNG } from "./types";
@@ -97,7 +99,8 @@ export const VENDOR_IDS = ["street", "gun_shop", "armorer", "fixer"] as const;
 export type VendorId = (typeof VENDOR_IDS)[number];
 
 export type Vendor = {
-  id: VendorId;
+  /** An archetype's id, or `archetype@place` for one sold at a place in the atlas. */
+  id: string;
   /** What this place is, in the character's own words. */
   label: string;
   /** One line of who they are, shown above the shelf. */
@@ -109,7 +112,9 @@ export type Vendor = {
    * A fixer you know is not a shop; it is a phone call to somebody with a name.
    */
   castRole?: string;
-  /** Minutes it takes to go and deal with them, there and back. */
+  /** The atlas place this seller is at. Absent for an archetype, and for the fixer, who is a call. */
+  place?: string;
+  /** Minutes it takes to go and deal with them, there and back (at the counter, once at a place). */
   minutes: number;
   /**
    * What they add to the printed price. A fixer's Reach costs money; the street
@@ -175,17 +180,112 @@ export const VENDORS: Vendor[] = [
 
 const VENDORS_BY_ID = new Map(VENDORS.map((v) => [v.id, v]));
 
+// ---------------------------------------------------------------------------
+// The places.
+// ---------------------------------------------------------------------------
+
+/** One seller at one place in the atlas, as `place-shops.json` states it. */
+type PlaceShop = {
+  place: string;
+  vendor: VendorId;
+  label: string;
+  line: string;
+};
+
+export const PLACE_SHOPS_ARE_HOUSE_RULE: boolean = placeShops.houseRule;
+export const PLACE_SHOPS = placeShops.shops as PlaceShop[];
+/** What a visit costs once the character is already standing at the counter. */
+export const PLACE_VISIT_MINUTES: number = placeShops.visitMinutes;
+
+/** Separates an archetype from the place it is sold at in a vendor's id. */
+const AT = "@";
+
+/** The id of the seller `vendor` at `place`: what is stored in the ledger and in a regular's flag. */
+export function placeVendorId(vendor: VendorId, place: string): string {
+  return `${vendor}${AT}${place}`;
+}
+
+function placeShopFor(vendor: string, place: string): PlaceShop | undefined {
+  return PLACE_SHOPS.find((s) => s.vendor === vendor && s.place === place);
+}
+
+/** A seller at a place: the archetype's way of selling, under the place's name and in its voice. */
+function atPlace(shop: PlaceShop): Vendor {
+  const base = VENDORS_BY_ID.get(shop.vendor)!;
+  return {
+    ...base,
+    id: placeVendorId(shop.vendor, shop.place),
+    label: shop.label,
+    line: shop.line,
+    place: shop.place,
+    minutes: PLACE_VISIT_MINUTES,
+  };
+}
+
+/**
+ * Everyone who will sell to a character standing at `placeKey`. Empty
+ * anywhere that is not a shop: a character in the street has to go somewhere.
+ */
+export function shopsAt(placeKey: string | null | undefined): Vendor[] {
+  const key = placeKeyOf(placeKey);
+  if (!key) return [];
+  return PLACE_SHOPS.filter((s) => s.place === key).map(atPlace);
+}
+
+/** Your fixer, who is a person and a phone call, and so is the one seller that is not somewhere. */
+export const FIXER_VENDOR: Vendor = VENDORS_BY_ID.get("fixer")!;
+
+export type ShopPlace = {
+  placeKey: string;
+  name: string;
+  districtName: string | undefined;
+  minutes: number;
+  vendors: Vendor[];
+};
+
+/**
+ * The places that sell, nearest first, priced as a trip from where the
+ * character stands. The trip is the atlas's own, in whatever they would travel
+ * by, so what the sheet quotes is what the map will charge.
+ */
+export function nearestShops(
+  from: string | null | undefined,
+  mode?: TravelMode,
+  limit = 4,
+): ShopPlace[] {
+  const places = [...new Set(PLACE_SHOPS.map((s) => s.place))];
+  return places
+    .map((placeKey) => ({
+      placeKey,
+      name: getPlace(placeKey)?.name ?? placeKey,
+      districtName: districtOfPlace(placeKey)?.name,
+      minutes: travelMinutes(from, placeKey, mode),
+      vendors: shopsAt(placeKey),
+    }))
+    .sort((a, b) => a.minutes - b.minutes || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
+
 export function getVendor(id: string): Vendor {
-  const vendor = VENDORS_BY_ID.get(id as VendorId);
-  if (!vendor) throw new Error(`No vendor "${id}".`);
-  return vendor;
+  const [archetype, place] = id.split(AT);
+  const base = VENDORS_BY_ID.get(archetype as VendorId);
+  if (!base) throw new Error(`No vendor "${id}".`);
+  if (place === undefined) return base;
+  const shop = placeShopFor(archetype!, place);
+  if (!shop) throw new Error(`No vendor "${id}".`);
+  return atPlace(shop);
 }
 
-export function isVendorId(value: unknown): value is VendorId {
-  return typeof value === "string" && VENDORS_BY_ID.has(value as VendorId);
+export function isVendorId(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  try {
+    getVendor(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-/** What this vendor charges for one of a thing, after their markup. */
 export function vendorPrice(vendor: Vendor, kind: ItemKind, itemId: string): number {
   return Math.round(itemCost(kind, itemId) * vendor.markup);
 }

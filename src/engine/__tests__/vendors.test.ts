@@ -16,8 +16,16 @@ import {
   stockEntryFor,
   vendorDealsIn,
   vendorPrice,
+  FIXER_VENDOR,
+  PLACE_SHOPS,
+  PLACE_VISIT_MINUTES,
+  nearestShops,
+  placeVendorId,
+  shopsAt,
   type ShelfItem,
 } from "../vendors";
+import { getPlace, travelMinutes } from "../geography";
+import { tagsOf } from "../places";
 import { AMMUNITION, GEAR, WEAPONS, itemCost } from "../catalog";
 import { effectiveSlot, isPackageSlot, resolveItemKind } from "../inventorySlot";
 import { seededRng } from "../dice";
@@ -355,5 +363,70 @@ describe("Operator Reach", () => {
       expect(vendor.haggle.cool, vendor.id).toBeGreaterThan(0);
       expect(vendor.haggle.trading, vendor.id).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe("shops are places", () => {
+  const SELLING_TAGS = ["shop", "market", "fence", "garage"];
+
+  it("only names places that exist in the atlas and are somewhere things are sold", () => {
+    for (const shop of PLACE_SHOPS) {
+      expect(getPlace(shop.place), shop.place).toBeDefined();
+      expect(
+        tagsOf(shop.place).some((t) => SELLING_TAGS.includes(t)),
+        `${shop.place} is not tagged as somewhere that sells`,
+      ).toBe(true);
+      expect(shop.label.trim().length).toBeGreaterThan(3);
+      expect(shop.line.trim().length).toBeGreaterThan(10);
+      expect(
+        VENDORS.some((v) => v.id === shop.vendor && v.id !== "fixer"),
+        shop.place,
+      ).toBe(true);
+    }
+  });
+
+  it("does not list the same seller twice at one place", () => {
+    const ids = PLACE_SHOPS.map((s) => placeVendorId(s.vendor, s.place));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("sells at a shop the way its archetype does, under the place's own name", () => {
+    const [seller] = shopsAt("d3");
+    expect(seller!.place).toBe("d3");
+    expect(seller!.label).toBe("Toggle's Temple");
+    expect(seller!.deals).toEqual(GUNS.deals);
+    expect(seller!.markup).toBe(GUNS.markup);
+    expect(seller!.minutes).toBe(PLACE_VISIT_MINUTES);
+  });
+
+  it("finds a seller again from the id the ledger stored", () => {
+    for (const shop of PLACE_SHOPS) {
+      const id = placeVendorId(shop.vendor, shop.place);
+      expect(getVendor(id).label).toBe(shop.label);
+      expect(isVendorId(id)).toBe(true);
+    }
+    expect(isVendorId("gun_shop@a13")).toBe(false);
+    expect(() => getVendor("gun_shop@nowhere")).toThrow();
+  });
+
+  it("sells nothing in the street, and a place with two sellers lists both", () => {
+    expect(shopsAt(null)).toEqual([]);
+    expect(shopsAt("a1")).toEqual([]);
+    expect(shopsAt("t2").map((v) => v.id.split("@")[0])).toEqual(["gun_shop", "armorer"]);
+  });
+
+  it("keeps the fixer a call: no place, and the wait it always had", () => {
+    expect(FIXER_VENDOR.place).toBeUndefined();
+    expect(FIXER_VENDOR.minutes).toBe(FIXER.minutes);
+  });
+
+  it("lists the nearest shops first, priced as the atlas prices the trip", () => {
+    const near = nearestShops("a1", undefined, 20);
+    expect(near.length).toBe(new Set(PLACE_SHOPS.map((s) => s.place)).size);
+    for (let i = 1; i < near.length; i++) {
+      expect(near[i]!.minutes).toBeGreaterThanOrEqual(near[i - 1]!.minutes);
+    }
+    for (const place of near) expect(place.minutes).toBe(travelMinutes("a1", place.placeKey));
+    expect(nearestShops("a1")).toHaveLength(4);
   });
 });
