@@ -52,7 +52,11 @@ const VENUE_FOCUS: Record<string, string> = {
   "venue-rosalind-achebe": "60% 40%",
   "venue-yuri-pastrana": "55% 50%",
   "venue-kit-mwangi": "60% 28%",
+  "scene-shop": "55% 28%",
 };
+
+/** The Night Market's own picture: a used-goods counter, behind the gear step. */
+const SHOP_BANNER = "scene-shop";
 
 const SAVE_FAILED = "Save failed";
 
@@ -82,7 +86,9 @@ export function ChargenWizard({ userId }: { userId: string }) {
   const fixer = state.castPlan?.picks.fixer ?? null;
   // The fixer's own place, behind their question, once there is a fixer and an image of it.
   const venue = def.id !== "fixer" ? (fixerVoice(fixer)?.venue ?? null) : null;
-  const venueShown = Boolean(venue && uploadedAsset(venue));
+  // The market is its own place, so it takes the shop's picture over the fixer's venue.
+  const banner = def.id === "gear" && uploadedAsset(SHOP_BANNER) ? SHOP_BANNER : venue;
+  const venueShown = Boolean(banner && uploadedAsset(banner));
   const developing = useDevelopingPortrait(state, userId, saveStatus !== "loading");
   // The meet opens on its own scene, which is the page's heading: no second
   // title over it, and no red "missing" line before the player has done anything.
@@ -218,7 +224,7 @@ export function ChargenWizard({ userId }: { userId: string }) {
               venueShown && "flex min-h-[11rem] items-center border border-hairline px-5 pt-5",
             )}
           >
-            <Backdrop name={venue} text="left" focus={venue ? VENUE_FOCUS[venue] : undefined} />
+            <Backdrop name={banner} text="left" focus={banner ? VENUE_FOCUS[banner] : undefined} />
             {/* The step's name is in the bar above and the list beside; the
                 header is the fixer's question, and nothing else unless it is
                 help, or a save that failed. */}

@@ -12,6 +12,7 @@ import {
   ammoTypeOptions,
   ammoUnitFor,
   ammoVariantLabel,
+  startingFunds,
   type AmmoType,
   type ArmorLocation,
 } from "@/engine";
@@ -22,6 +23,10 @@ import type { ChargenState } from "./store";
 
 const matches = (name: string, query: string) =>
   !query.trim() || name.toLowerCase().includes(query.trim().toLowerCase());
+
+/** A row the character could never afford, even with every starting eurobuck, is not shown. */
+const within = (funds: number) => (item: { cost: number }) => item.cost <= funds;
+const fundsOf = (state: ChargenState) => (state.method ? startingFunds(state.method) : Infinity);
 
 /** Market lists read alphabetically so items are easy to find. */
 const byName = <T extends { name: string }>(rows: T[]) =>
@@ -85,7 +90,7 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
   const [variant, setVariant] = useState<Record<string, string>>({});
-  const rows = byName(WEAPONS.filter((w) => matches(w.name, query)));
+  const rows = byName(WEAPONS.filter(within(fundsOf(state))).filter((w) => matches(w.name, query)));
   if (rows.length === 0)
     return (
       <div className="border border-hairline bg-surface">
@@ -174,7 +179,7 @@ function WeaponTable({ state, query }: { state: ChargenState; query: string }) {
 function ArmorTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [locations, setLocations] = useState<Record<string, ArmorLocation>>({});
-  const rows = byName(ARMOR.filter((a) => matches(a.name, query)));
+  const rows = byName(ARMOR.filter(within(fundsOf(state))).filter((a) => matches(a.name, query)));
   if (rows.length === 0)
     return (
       <div className="border border-hairline bg-surface">
@@ -248,7 +253,9 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
   const [type, setType] = useState<Record<string, AmmoType>>({});
-  const rows = byName(AMMUNITION.filter((a) => matches(a.name, query)));
+  const rows = byName(
+    AMMUNITION.filter(within(fundsOf(state))).filter((a) => matches(a.name, query)),
+  );
   if (rows.length === 0)
     return (
       <div className="border border-hairline bg-surface">
@@ -326,7 +333,7 @@ function AmmoTable({ state, query }: { state: ChargenState; query: string }) {
 function GearTable({ state, query }: { state: ChargenState; query: string }) {
   const { buy } = useLoadoutActions();
   const [qty, setQty] = useState<Record<string, number>>({});
-  const rows = byName(GEAR.filter((g) => matches(g.name, query)));
+  const rows = byName(GEAR.filter(within(fundsOf(state))).filter((g) => matches(g.name, query)));
   if (rows.length === 0)
     return (
       <div className="border border-hairline bg-surface">
@@ -430,6 +437,10 @@ export function GearPanel({ state }: { state: ChargenState }) {
           <GearTable state={state} query={query} />
         </TabsContent>
       </Tabs>
+
+      <p className="text-xs text-text-dim">
+        Anything priced above your {eb(fundsOf(state))} starting funds is not on the shelves.
+      </p>
 
       {CATALOG_PENDING.length > 0 && (
         <div className="border border-dashed border-hairline bg-surface/50 p-4">

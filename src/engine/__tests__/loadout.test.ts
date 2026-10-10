@@ -14,6 +14,7 @@ import {
   foundations,
   loadoutHumanity,
   removeLine,
+  startingFunds,
   type Loadout,
 } from "../loadout";
 import { choicePoints, unresolvedChoices } from "../gearPackages";
@@ -82,6 +83,15 @@ describe("budgets", () => {
     });
     expect(check.ok).toBe(false);
     expect(check.reason).toMatch(/left in/);
+  });
+});
+
+describe("starting funds", () => {
+  it("is the gear budget for Complete Package and the free spend for package methods", () => {
+    const gear = budgetStates("complete_package", EMPTY_LOADOUT).find((b) => b.id === "gear")!;
+    expect(startingFunds("complete_package")).toBe(gear.limit);
+    const free = budgetStates("streetrat", EMPTY_LOADOUT).find((b) => b.id === "free")!;
+    expect(startingFunds("streetrat")).toBe(free.limit);
   });
 });
 
