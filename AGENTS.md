@@ -296,7 +296,7 @@ paid when they travelled. Not built yet: per-place stock, prices, owners and qui
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
 `tools/atlas/tag_places.py`'s `HOUSE_RULE_TAGS` and each with a dossier in
-`placeDossiers.ts` (pictures pending, by key, in `placeDossiers.test.ts`).
+`placeDossiers.ts` and a picture (the six everyday venues still waiting for theirs are named in `placeDossiers.test.ts`).
 `placeCoverage.test.ts` holds the shape, not the places: every district has a seller and
 ripperdoc ground, every area has a gun counter, each of our places stands inside its own
 district, and a district whose only ripperdoc ground is a hospital must name it as one that

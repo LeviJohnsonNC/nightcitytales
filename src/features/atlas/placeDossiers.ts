@@ -2115,6 +2115,7 @@ SK Security keeps the Weighbridge a short walk away and does not bother the cont
   },
 
   u7: {
+    image: "the-second-shift",
     text: `The Second Shift is a clinic for people who do not have the time to be ill. It sits behind the canteen of a Heywood Industrial warehouse, in a room with a sliding door, a hand-lettered rota and a clock that runs ten minutes fast to keep everyone honest. It fixes dock crews and factory hands fast enough to make the next shift, and its boast, painted on the wall, is that nobody has ever been late because of it.
 
 The surgeon has strong views on workplace chrome and will share them whether or not you ask. Most of them are about employers who install what they can afford instead of what the worker needs, and she has seen enough botched corporate jobs to deliver a lecture and a quote in the same breath. The work is competent, quick and practical. The waiting room smells of machine oil and tea.
@@ -2123,6 +2124,7 @@ The Arroyo Concern would like her to sign a contract, and she keeps declining. T
   },
 
   u8: {
+    image: "the-tool-crib",
     text: `The Tool Crib is exactly what it sounds like: a caged counter by a loading gate, where the day shift draws kit and the night shift signs it back in. Hard hats hang from hooks. Hi-vis vests are stacked on a rack. Boots, gloves, clamps, lamps and crowbars are lined up behind the mesh, each with a number stencilled on and a card in a rack by the till.
 
 The crib is run by an old stores clerk who has outlasted three management teams and quite a few safety inspections. She keeps a ledger in pencil. Anything that is not signed back in by the end of the week is for sale at a fair price, and she is the only person in Heywood Industrial who considers that a form of recycling. The stock changes with the shift pattern, and so do the gossip and the discounts.
@@ -2131,6 +2133,7 @@ It is not a gun shop and does not want to be. But the Industrial Zone is full of
   },
 
   v8: {
+    image: "lupes-rig",
     text: `Lupe's Rig is a converted camper at the end of Dam Road, parked where the road runs out of rules. It has a canvas awning, a string of coloured lights, a wooden step and a small battered sign that has been repainted in three different decades. Inside it is much bigger than it looks, which is a trick of how it was built and not of any particular magic. The medical equipment is old, scrubbed, and the best kept in the district.
 
 Lupe is a nomad medtech who has stitched most of the families in the camp and mended a fair few of the Aldecaldo Peacekeepers. Travelling families come to be fixed, and they leave with a jar of something she calls honey and everyone else calls medicine. She talks to patients in three languages and to the machines in a fourth. Anyone she likes is told to call her Tía. Anyone she does not like finds the door closed.
@@ -2139,6 +2142,7 @@ The Steel Vaqueros leave her alone and the El Norte Cartel does not. The Aldecal
   },
 
   w9: {
+    image: "funhouse-mirror",
     text: `Behind Playland's costume shop there is a door marked Staff Only, and beyond it a clinic that serves the park's performers. They need to be tireless, tourist-proof and capable of standing in a heavy suit in the summer sun for an entire shift, and the ripperdoc behind the door keeps them that way. The walls are papered with old character sheets. A giant foam head sits on a shelf and watches the procedures with a fixed and sinister grin.
 
 The ripperdoc is a lean, mild-mannered person who still wears the park's badge on a lanyard and treats every customer like a very anxious child. The work is excellent, because the mascots will tolerate nothing less. The recovery room is a changing room with a couch. The anaesthetic is delivered with a little song. It would be ridiculous if the results were not so reliably good.
@@ -2147,6 +2151,7 @@ Out front is the mirror maze, which does a second job: step into it and you find
   },
 
   x6: {
+    image: "doc-moss-greenhouse",
     text: `The greenhouse collapsed years ago, and the Dirty Hippies decided the wreckage was an improvement. Rows of tomato vines climb the twisted frame. Glass has been replaced with plastic sheeting and bottle walls. The whole structure hums with a low hydroponic note, and underneath the hum, in a clearing between two raised beds, there is a surgeon's table under a canopy of salvaged tarp.
 
 Doc Moss installs hobby-grade chrome among the tomato vines, and the work is improvised, cheap and smells inexplicably fresh. Parts come from the commune's workshops, from skips, and from donations nobody has traced. The implants look as if they were assembled from a hobbyist's drawer, because they were, and they work, to the visible irritation of every licensed ripperdoc within a day's travel. The aftercare advice is mostly about watering.
