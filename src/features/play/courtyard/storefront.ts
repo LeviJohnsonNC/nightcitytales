@@ -1230,7 +1230,15 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
     v: { x: (downSlope.x - o0.x) / slope, y: (downSlope.y - o0.y) / slope },
   };
   const paintFabric = (pts: Point[], shade: string, from: number) => {
-    const canopy = o.art.paintedCanopy ?? o.art.awning;
+    const fabric = o.art.paintedCanopy ?? o.art.awning;
+    const transform = ctx.getTransform?.();
+    const deviceSize = (v: Point) =>
+      canvasM *
+      Math.hypot(
+        (transform?.a ?? 1) * v.x + (transform?.c ?? 0) * v.y,
+        (transform?.b ?? 0) * v.x + (transform?.d ?? 1) * v.y,
+      );
+    const canopy = fabric ? sourceFor(fabric, deviceSize(basis.u), deviceSize(basis.v)) : undefined;
     if (canopy) {
       const pattern = ctx.createPattern(canopy, "repeat");
       if (pattern) {
