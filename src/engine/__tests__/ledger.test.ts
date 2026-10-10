@@ -453,3 +453,30 @@ describe("the settlement receipt, as Reputation reads it", () => {
     expect(readJobSettledEventData(null)).toBeNull();
   });
 });
+
+describe("purchase and shop_seen", () => {
+  it("round-trips a purchase, and reads one written before it carried a day as undated", async () => {
+    const { purchaseEventData, readPurchaseEventData } = await import("../ledger");
+    const written = purchaseEventData({
+      vendorId: "gun_shop@d3",
+      kind: "weapon",
+      itemId: "sniper_rifle",
+      quantity: 1,
+      cost: 500,
+      saved: 0,
+      stockKey: "line",
+      day: 9,
+    });
+    expect(readPurchaseEventData(JSON.parse(JSON.stringify(written)))).toEqual(written);
+    const old = readPurchaseEventData({ vendorId: "street", kind: "gear", itemId: "rope_60m_yd" });
+    expect(old?.day).toBeNull();
+    expect(readPurchaseEventData({ kind: "gear" })).toBeNull();
+  });
+
+  it("round-trips a look at a shelf", async () => {
+    const { shopSeenEventData, readShopSeenEventData } = await import("../ledger");
+    const written = shopSeenEventData({ vendorId: "street@o3", day: 4, backRoom: true });
+    expect(readShopSeenEventData(JSON.parse(JSON.stringify(written)))).toEqual(written);
+    expect(readShopSeenEventData({ vendorId: "street@o3" })).toBeNull();
+  });
+});

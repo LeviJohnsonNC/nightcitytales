@@ -137,6 +137,19 @@ The plan, in phases:
 
 ---
 
+## In progress: shopping as discovery
+
+The plan is `docs/shopping-discovery.md`: four passes from honest shelves to strange
+gear the engine can keep its word about, then a store UI overhaul.
+
+- **Pass 1, honest shelves (shipped).** The stock die was rolled every time Buy was
+  pressed and never written down, so "not in stock tonight" meant "press again". Stock is
+  now derived per stock week (`engine/shopStock.ts`): staples, each shop's own line, the
+  week's unusual roll and a back room the place's goodwill opens, with "new since your
+  last visit", "What's unusual?" and a restock countdown.
+- **Next:** item instances and the capability vocabulary (pass 2), the city stocking the
+  shops and selling (pass 3), merchants who know you (pass 4).
+
 ## Also shipped: the Tomorrow Test
 
 The central claim in `PRODUCT.md` is that tomorrow remembers what happened

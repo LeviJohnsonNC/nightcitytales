@@ -1,26 +1,43 @@
 {
   "houseRule": true,
-  "note": "Where the shop is. Cyberpunk RED prints no shops, only the atlas's places and what each one is, so which of them will sell you something, and what kind of seller they are, is a house rule read off the blurbs. A shop is a PLACE you travel to: it sells the way one of the four archetypes in engine/vendors.ts does (street, gun_shop, armorer; the fixer is a person and is reached by phone from anywhere) and carries its own name and line. Nothing here may invent a fact the atlas contradicts; the line says what the blurb already says. Every place must exist in the atlas and be tagged as somewhere things are sold, and a test holds both. Prices, stock and owners are the next layer and are not here yet.",
+  "note": "Where the shop is. Cyberpunk RED prints no shops, only the atlas's places and what each one is, so which of them will sell you something, and what kind of seller they are, is a house rule read off the blurbs. A shop is a PLACE you travel to: it sells the way one of the four archetypes in engine/vendors.ts does (street, gun_shop, armorer; the fixer is a person and is reached by phone from anywhere) and carries its own name and line. Nothing here may invent a fact the atlas contradicts; the line says what the blurb already says. Every place must exist in the atlas and be tagged as somewhere things are sold, and a test holds both. Stock is engine/shopStock.ts: a shop's `signature` is the unusual stock it always carries, a little of each a week; its `backRoom` comes out only for somebody the place has taken to (the `welcome` flag); everything else unusual is rolled once a week per shop on the printed stock die, so a shelf is the same every time you look until the week turns.",
   "visitMinutes": 20,
   "visitNote": "What a visit costs once you are standing at the counter: the trip there is the atlas's own and is paid when you travel, so the archetype's 'there and back' time is not charged a second time. The fixer is a call and keeps its own wait.",
+  "stock": {
+    "periodDays": 7,
+    "in": 3,
+    "line": 2,
+    "backRoom": 1
+  },
+  "stockNote": "A shop restocks once a week (periodDays). What a week's roll put on the shelf is what there is until the next one: `in` is how many of a rolled item a shop has that week, 'one left' is one, a signature item is `line` a week, and the back room keeps `backRoom` of each. Ordinary stock is never counted. House rule; RED prints availability, not quantities.",
   "shops": [
     {
       "place": "o3",
       "vendor": "street",
       "label": "Ganymede Street Market",
-      "line": "Stalls along the street the map is named for, open at every hour the Tyger Claws allow it."
+      "line": "Stalls along the street the map is named for, open at every hour the Tyger Claws allow it.",
+      "signature": ["braindance_viewer", "scrambler_descrambler"],
+      "backRoom": ["smart_glasses"]
     },
     {
       "place": "j1",
       "vendor": "street",
       "label": "Dock 13",
-      "line": "Willy Maze's storefront, and on the right nights his night market, under the dock lights."
+      "line": "Willy Maze's storefront, and on the right nights his night market, under the dock lights.",
+      "signature": [
+        "drum_synthesizer",
+        "electric_guitar_other_instrument",
+        "auto_level_dampening_ear_protectors"
+      ],
+      "backRoom": ["radar_detector"]
     },
     {
       "place": "v7",
       "vendor": "street",
       "label": "Woodchipper's Garage",
-      "line": "Tailgates down in Woodchipper's yard, engines ticking, on the nights she opens it."
+      "line": "Tailgates down in Woodchipper's yard, engines ticking, on the nights she opens it.",
+      "signature": ["tech_bag", "radiation_suit"],
+      "backRoom": ["homing_tracer"]
     },
     {
       "place": "h4",
@@ -32,55 +49,72 @@
       "place": "w1",
       "vendor": "street",
       "label": "Bits'n'Bolts",
-      "line": "A hole-in-the-wall tech shop where every drawer is half something else."
+      "line": "A hole-in-the-wall tech shop where every drawer is half something else.",
+      "signature": ["tech_bag", "techscanner"],
+      "backRoom": ["cyberdeck"]
     },
     {
       "place": "w1",
       "vendor": "gun_shop",
       "label": "Bits’n’Bolts: Faisal’s drawer",
-      "line": "Faisal’s weapons, sold through the tech shop’s back counter. Ask for what is in the drawer, not what is on the shelf."
+      "line": "Faisal’s weapons, sold through the tech shop’s back counter. Ask for what is in the drawer, not what is on the shelf.",
+      "signature": ["microwaver"],
+      "backRoom": ["shrieker"]
     },
     {
       "place": "x5",
       "vendor": "street",
       "label": "Minimallism",
-      "line": "Tables set up in the husk of an old mall, on the side nobody's reclaimed yet."
+      "line": "Tables set up in the husk of an old mall, on the side nobody's reclaimed yet.",
+      "signature": ["smart_glasses", "braindance_viewer"]
     },
     {
       "place": "k3",
       "vendor": "street",
       "label": "The Swap",
-      "line": "Parts on tables, and provenance is not a question anybody working them considers polite."
+      "line": "Parts on tables, and provenance is not a question anybody working them considers polite.",
+      "signature": ["tech_bag"],
+      "backRoom": ["scrambler_descrambler"]
     },
     {
       "place": "t2",
       "vendor": "gun_shop",
       "label": "The Armory: the gun cage",
-      "line": "6th Street's headquarters, behind the old National Guard walls. They sell, and they watch you do it."
+      "line": "6th Street's headquarters, behind the old National Guard walls. They sell, and they watch you do it.",
+      "signature": ["assault_rifle", "shotgun"],
+      "backRoom": ["grenade_launcher", "rocket_launcher"]
     },
     {
       "place": "t2",
       "vendor": "armorer",
       "label": "The Armory: the plate racks",
-      "line": "Racks of plate in a drill hall that was built to hold exactly this."
+      "line": "Racks of plate in a drill hall that was built to hold exactly this.",
+      "signature": ["flak", "heavy_armorjack"],
+      "backRoom": ["metalgear"]
     },
     {
       "place": "d3",
       "vendor": "gun_shop",
       "label": "Toggle's Temple",
-      "line": "A counter beside the firing lanes, run by a man with strong opinions about who is watching."
+      "line": "A counter beside the firing lanes, run by a man with strong opinions about who is watching.",
+      "signature": ["sniper_rifle", "assault_rifle", "smart_ammo"],
+      "backRoom": ["rhinemetall_railgun", "tsunami_helix"]
     },
     {
       "place": "s4",
       "vendor": "gun_shop",
       "label": "Skiv's Counter",
-      "line": "A dockside bar with an office at the back. Both halves of the business are open to anyone."
+      "line": "A dockside bar with an office at the back. Both halves of the business are open to anyone.",
+      "signature": ["shotgun"],
+      "backRoom": ["sniper_rifle"]
     },
     {
       "place": "a13",
       "vendor": "armorer",
       "label": "Torrell and Chiang's",
-      "line": "The best tailors in Night City, who know that good tailoring and good armor are the same job."
+      "line": "The best tailors in Night City, who know that good tailoring and good armor are the same job.",
+      "signature": ["bodyweight_suit"],
+      "backRoom": ["metalgear"]
     },
     {
       "place": "c2",
@@ -92,73 +126,93 @@
       "place": "r2",
       "vendor": "street",
       "label": "Executive Zone Oasis",
-      "line": "Premium brands and rarities, fresh-cut flowers by drone, and an attendant who knows your address before you do."
+      "line": "Premium brands and rarities, fresh-cut flowers by drone, and an attendant who knows your address before you do.",
+      "signature": ["braindance_viewer"]
     },
     {
       "place": "p1",
       "vendor": "street",
       "label": "Canalside Plaza",
-      "line": "A strip mall with a talent agency, a restaurant and a nail salon, and one unit at the end with the lights off at the front and on at the back."
+      "line": "A strip mall with a talent agency, a restaurant and a nail salon, and one unit at the end with the lights off at the front and on at the back.",
+      "signature": ["radar_detector"]
     },
     {
       "place": "b14",
       "vendor": "street",
       "label": "Ruggels Way Surplus",
-      "line": "Flares, dry bags and crates that fell off boats. Hollis Ruggels has a story for every one, and none of them match."
+      "line": "Flares, dry bags and crates that fell off boats. Hollis Ruggels has a story for every one, and none of them match.",
+      "signature": ["homing_tracer"],
+      "backRoom": ["scrambler_descrambler"]
     },
     {
       "place": "e7",
       "vendor": "gun_shop",
       "label": "Dragon’s Tooth Pawn",
-      "line": "Watches and jade in the window. The back shelf holds whatever the Red Chrome Legion pledged against a bad week."
+      "line": "Watches and jade in the window. The back shelf holds whatever the Red Chrome Legion pledged against a bad week.",
+      "backRoom": ["assault_rifle", "battleglove"]
     },
     {
       "place": "f11",
       "vendor": "street",
       "label": "The Co-Op",
-      "line": "Engineering students selling ex-lab kit and the contents of a Biotechnica skip, and haggling like they are defending a thesis."
+      "line": "Engineering students selling ex-lab kit and the contents of a Biotechnica skip, and haggling like they are defending a thesis.",
+      "signature": ["chemical_analyzer", "medscanner"],
+      "backRoom": ["vial_of_biotoxin"]
     },
     {
       "place": "g15",
       "vendor": "armorer",
       "label": "Gentry & Blake",
-      "line": "A showroom for security details: heavy catalogues, serious prices, and a salesman who measures you twice and does not say why."
+      "line": "A showroom for security details: heavy catalogues, serious prices, and a salesman who measures you twice and does not say why.",
+      "signature": ["heavy_armorjack", "flak"],
+      "backRoom": ["metalgear"]
     },
     {
       "place": "i10",
       "vendor": "gun_shop",
       "label": "The Slammer Dock Door",
-      "line": "A folding table in a loading dock, guns by the box. Scythe Security patrols out front and has never once turned its head."
+      "line": "A folding table in a loading dock, guns by the box. Scythe Security patrols out front and has never once turned its head.",
+      "backRoom": ["sniper_rifle", "grenade_launcher"]
     },
     {
       "place": "l5",
       "vendor": "gun_shop",
       "label": "The Quartermaster",
-      "line": "Edgerunners Inc’s supply cage. Dot behind the grille grades customers on a scale that has nothing to do with money."
+      "line": "Edgerunners Inc’s supply cage. Dot behind the grille grades customers on a scale that has nothing to do with money.",
+      "signature": ["assault_rifle", "sniper_rifle", "emp_ammo"],
+      "backRoom": ["kendachi_mono_three"]
     },
     {
       "place": "m6",
       "vendor": "armorer",
       "label": "Gate Surplus",
-      "line": "Vests with last year’s issue numbers, boots, and crates of mixed ammunition nobody has counted, under a tarp outside the wire."
+      "line": "Vests with last year’s issue numbers, boots, and crates of mixed ammunition nobody has counted, under a tarp outside the wire.",
+      "signature": ["flak", "radiation_suit"],
+      "backRoom": ["heavy_armorjack"]
     },
     {
       "place": "n14",
       "vendor": "gun_shop",
       "label": "Hachiman Arms",
-      "line": "Receipted, regulated and politely suspicious. Mr. Hachiman files everything in triplicate, including your face."
+      "line": "Receipted, regulated and politely suspicious. Mr. Hachiman files everything in triplicate, including your face.",
+      "signature": ["sniper_rifle"],
+      "backRoom": ["tsunami_helix"]
     },
     {
       "place": "q5",
       "vendor": "armorer",
       "label": "Ascent Outfitters",
-      "line": "Armour-lined coats for people who want to look like they are climbing, and survive the fall. The fitting room window looks onto the Exec Zone wall."
+      "line": "Armour-lined coats for people who want to look like they are climbing, and survive the fall. The fitting room window looks onto the Exec Zone wall.",
+      "signature": ["heavy_armorjack"],
+      "backRoom": ["bodyweight_suit"]
     },
     {
       "place": "u8",
       "vendor": "street",
       "label": "The Tool Crib",
-      "line": "The day shift draws kit and the night shift signs it back in. Whatever is not signed back in is for sale at a fair price."
+      "line": "The day shift draws kit and the night shift signs it back in. Whatever is not signed back in is for sale at a fair price.",
+      "signature": ["tech_bag"],
+      "backRoom": ["techscanner"]
     }
   ]
 }

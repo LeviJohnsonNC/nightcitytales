@@ -54,6 +54,8 @@ export const LEDGER_EVENTS = {
   milestone: "milestone",
   placeChanged: "place_changed",
   favourCalled: "favour_called",
+  purchase: "purchase",
+  shopSeen: "shop_seen",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -1039,4 +1041,102 @@ export function readSceneAttackIntent(
     targetKey: value["targetKey"],
     weapon: value["weapon"],
   };
+}
+
+// ---------------------------------------------------------------------------
+// purchase — one thing bought from one seller (`features/campaign/shopping.ts`).
+// Read back by the shop's stock (`engine/shopStock.ts`): what was bought this
+// week is what is no longer on the shelf, so the payload carries the in-world
+// `day`. A purchase written before it did reads as undated and takes nothing
+// off any week's shelf, which is the honest reading of a record that never
+// said when.
+// ---------------------------------------------------------------------------
+
+export type PurchaseEventData = {
+  vendorId: string;
+  kind: string;
+  itemId: string;
+  quantity: number;
+  cost: number;
+  saved: number;
+  stockKey: string;
+  day: number | null;
+};
+
+export function purchaseEventData(input: {
+  vendorId: string;
+  kind: string;
+  itemId: string;
+  quantity: number;
+  cost: number;
+  saved: number;
+  stockKey: string;
+  day?: number | undefined;
+}): PurchaseEventData {
+  const whole = (n: number) => Math.max(0, Math.trunc(n));
+  return {
+    vendorId: input.vendorId,
+    kind: input.kind,
+    itemId: input.itemId,
+    quantity: whole(input.quantity),
+    cost: whole(input.cost),
+    saved: whole(input.saved),
+    stockKey: input.stockKey,
+    day: input.day === undefined ? null : whole(input.day),
+  };
+}
+
+export function readPurchaseEventData(raw: unknown): PurchaseEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const vendorId = str(d["vendorId"]);
+  const kind = str(d["kind"]);
+  const itemId = str(d["itemId"]);
+  // A purchase with no seller or no item is not one anything can take off a shelf.
+  if (vendorId === null || kind === null || itemId === null) return null;
+  return {
+    vendorId,
+    kind,
+    itemId,
+    quantity: Math.max(0, Math.trunc(num(d["quantity"]) ?? 0)),
+    cost: Math.max(0, Math.trunc(num(d["cost"]) ?? 0)),
+    saved: Math.max(0, Math.trunc(num(d["saved"]) ?? 0)),
+    stockKey: str(d["stockKey"]) ?? "",
+    day: num(d["day"]),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// shop_seen — the character looked at a seller's shelf. Written once per seller
+// per stock week (`features/life/useShop.ts`), and read back for one question:
+// what is on the shelf now that was not the last time they looked. `backRoom`
+// records whether the back room was open to them then, because what the shelf
+// showed depends on it and the place's goodwill may have moved since.
+// ---------------------------------------------------------------------------
+
+export type ShopSeenEventData = {
+  vendorId: string;
+  day: number;
+  backRoom: boolean;
+};
+
+export function shopSeenEventData(input: {
+  vendorId: string;
+  day: number;
+  backRoom: boolean;
+}): ShopSeenEventData {
+  return {
+    vendorId: input.vendorId,
+    day: Math.max(0, Math.trunc(input.day)),
+    backRoom: input.backRoom === true,
+  };
+}
+
+export function readShopSeenEventData(raw: unknown): ShopSeenEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const vendorId = str(d["vendorId"]);
+  const day = num(d["day"]);
+  if (vendorId === null || day === null) return null;
+  return { vendorId, day: Math.max(0, Math.trunc(day)), backRoom: d["backRoom"] === true };
 }

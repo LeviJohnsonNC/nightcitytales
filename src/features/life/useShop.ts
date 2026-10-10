@@ -10,8 +10,8 @@
  * drawer, so browsing is free and going somewhere is not. Looking through a
  * catalog is not an errand; coming home with something is.
  */
-import { useCallback, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   hagglePercent,
   haggledPrice,
@@ -22,12 +22,14 @@ import {
 } from "@/engine";
 import {
   haggle,
+  loadShopContext,
   purchase,
+  recordShopSeen,
+  shopShelf,
   reloadWeapon,
   reloadableWeapons,
   spendVisit,
   spareRounds,
-  stockedShelf,
   type StockedItem,
 } from "@/features/campaign/shopping";
 import { standingAt } from "@/features/campaign/favours";
@@ -37,8 +39,19 @@ import type { LifeBundle } from "./lifeOps";
 
 export type ShopMessage = { tone: "bought" | "refused"; text: string };
 
-export function useShop(bundle: LifeBundle | undefined) {
+/**
+ * `open` is whether the sheet is showing: a look at a shelf is written down
+ * (for "new since your last visit") only when somebody is actually looking.
+ */
+export function useShop(bundle: LifeBundle | undefined, open = false) {
   const queryClient = useQueryClient();
+  const campaignId = bundle?.campaign.id;
+  // The recent purchases and looks a shelf is read from, and who knows the character.
+  const context = useQuery({
+    queryKey: ["shop", campaignId],
+    queryFn: () => loadShopContext(campaignId!),
+    enabled: !!campaignId,
+  });
   const [vendorId, setVendorId] = useState<string | null>(null);
   const [message, setMessage] = useState<ShopMessage | null>(null);
   /** True once this visit has cost the character part of their evening. */
@@ -73,18 +86,48 @@ export function useShop(bundle: LifeBundle | undefined) {
   const operatorRank = isFixer ? ability.rank : 0;
   /** The discount standing at this vendor right now, if the price was argued down. */
   const discount = haggled?.vendorId === vendor.id && haggled.won ? haggled.percent : 0;
-  const shelf = useMemo(
-    () =>
-      stockedShelf(vendor, eurobucks).map((item) => {
-        const price = haggledPrice(item.price, discount);
+  const day = bundle?.campaign.day ?? 1;
+  const view = useMemo(() => {
+    if (!bundle || !context.data) return null;
+    const read = shopShelf({
+      vendor,
+      campaignId: bundle.campaign.id,
+      day,
+      eurobucks,
+      context: { ...context.data, places: bundle.places },
+      operatorRank,
+    });
+    // A won argument changes the price on everything the shelf shows.
+    const priced = (items: StockedItem[]) =>
+      items.map((item) => {
+        const price = haggledPrice(item.price, item.key === "last_one" ? 0 : discount);
         return { ...item, price, affordable: price <= eurobucks };
-      }),
-    [vendor, eurobucks, discount],
-  );
+      });
+    return { ...read, shelf: priced(read.shelf), fresh: priced(read.fresh) };
+  }, [bundle, context.data, vendor, day, eurobucks, operatorRank, discount]);
+
+  // Write down that this shelf was looked at, once per seller per stock week.
+  const marked = useRef(new Set<string>());
+  useEffect(() => {
+    if (!open || !bundle || !view?.firstLookThisWeek) return;
+    const key = `${vendor.id}#${day}`;
+    if (marked.current.has(key)) return;
+    marked.current.add(key);
+    void recordShopSeen({
+      campaignId: bundle.campaign.id,
+      vendor,
+      day,
+      places: bundle.places,
+    })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["shop", bundle.campaign.id] }))
+      // A look that failed to be written only costs the next visit its "new" strip.
+      .catch(() => marked.current.delete(key));
+  }, [open, bundle, view?.firstLookThisWeek, vendor, day, queryClient]);
 
   const invalidate = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["life", bundle?.campaign.id] });
     void queryClient.invalidateQueries({ queryKey: ["play", bundle?.campaign.id] });
+    void queryClient.invalidateQueries({ queryKey: ["shop", bundle?.campaign.id] });
   }, [queryClient, bundle?.campaign.id]);
 
   const buy = useMutation({
@@ -195,7 +238,15 @@ export function useShop(bundle: LifeBundle | undefined) {
     haggle: () => argue.mutate(),
     /** True when the shelf never has to be rolled for: the Fixer's own Reach. */
     operatorRank,
-    shelf,
+    /** Everything on offer, this week. Empty while the ledger is still loading. */
+    shelf: view?.shelf ?? [],
+    /** What is in that was not the last time the character looked. */
+    fresh: view?.fresh ?? [],
+    /** True when this seller keeps a back room the character is not yet let into. */
+    backRoomClosed: view?.backRoomClosed ?? false,
+    /** Days until the shelf turns over. */
+    restockIn: view?.restockIn ?? null,
+    loading: !view,
     eurobucks,
     message,
     clearMessage: () => setMessage(null),

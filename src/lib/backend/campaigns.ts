@@ -469,6 +469,26 @@ export async function listCampaignEventsOfTypes(
 }
 
 /**
+ * The newest `limit` events of the given types, oldest first. Newest-bounded,
+ * unlike `listCampaignEventsOfTypes`, for a reader that only cares about the
+ * recent ones: a shop's shelf this week, and the last time it was looked at.
+ */
+export async function listLatestCampaignEventsOfTypes(
+  campaignId: string,
+  types: readonly string[],
+  limit = 400,
+): Promise<CampaignEvent[]> {
+  const res = await backendClient
+    .from("campaign_events")
+    .select("*")
+    .eq("campaign_id", campaignId)
+    .in("type", [...types])
+    .order("seq", { ascending: false })
+    .limit(Math.max(1, Math.trunc(limit)));
+  return (unwrap(res) ?? []).reverse();
+}
+
+/**
  * The newest `limit` events after a `seq`, oldest first. `afterSeq` null means
  * from the campaign's start. Newest-bounded, like `listCampaignEvents`, so a
  * long stretch is cut at its old end rather than its recent one.
