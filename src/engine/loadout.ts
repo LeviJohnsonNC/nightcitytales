@@ -125,6 +125,18 @@ export function budgetStates(method: CreationMethod, loadout: Loadout): BudgetSt
   });
 }
 
+/**
+ * What a character starts with to spend in the market: the largest budget that
+ * is not fashion-only. Anything priced above it can never be bought at creation.
+ */
+export function startingFunds(method: CreationMethod): number {
+  return Math.max(
+    ...budgetsForMethod(method)
+      .filter((b) => !b.fashionOnly)
+      .map((b) => b.limit),
+  );
+}
+
 /** Eurobucks the character walks away with. Budgets marked unspentKept:false evaporate. */
 export function eurobucksKept(method: CreationMethod, loadout: Loadout): number {
   return budgetStates(method, loadout)
