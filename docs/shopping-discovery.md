@@ -54,7 +54,7 @@ capability wired to its lever, the item's contract in the narrator packet
 (through `packetBudget.ts`), and the printed gear bonuses (Medscanner,
 Techscanner, Agent…) applied to checks with their names in the odds chip.
 
-**3. The city stocks the shops.** Place flags (`raided`, `burned`…), settled jobs
+**3. The city stocks the shops.** _Shipped: `engine/shopSupply.ts` (salvage flags and settled jobs lean nearby shops' and fences' finds and lend them provenance in the id; hot finds a ladder step cheaper and `seen` against the faction on purchase), selling at half price, sold finds back on the shelf for two weeks._ Originally planned as: Place flags (`raided`, `burned`…), settled jobs
 and their factions weight what turns up where; provenance is a key into what the
 ledger recorded, never prose. Selling at pawn and street shops; a unique item
 sold stays on that shelf for a few weeks. Hot goods carry an observation risk.

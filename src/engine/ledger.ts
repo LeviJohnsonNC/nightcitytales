@@ -56,6 +56,7 @@ export const LEDGER_EVENTS = {
   favourCalled: "favour_called",
   purchase: "purchase",
   shopSeen: "shop_seen",
+  sold: "sold",
 } as const;
 
 export type LedgerEventType = (typeof LEDGER_EVENTS)[keyof typeof LEDGER_EVENTS];
@@ -722,6 +723,25 @@ export type JobSettledMeta = {
   placeKey: string | null;
 };
 
+/**
+ * The organisations a settled job moved standing with: the `standing` lines of
+ * its receipt's pressure. Who the job crossed, read back for the shops — a job
+ * against Arasaka puts Arasaka hardware on the street.
+ */
+export function readJobSettledFactions(raw: unknown): string[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const pressure = (raw as RawPayload)["pressure"];
+  if (!Array.isArray(pressure)) return [];
+  const out: string[] = [];
+  for (const line of pressure) {
+    if (!line || typeof line !== "object") continue;
+    const d = line as RawPayload;
+    const key = str(d["key"]);
+    if (d["kind"] === "standing" && key && !out.includes(key)) out.push(key);
+  }
+  return out;
+}
+
 export function readJobSettledMeta(raw: unknown): JobSettledMeta {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return { day: null, missionId: null, placeKey: null };
@@ -1139,4 +1159,56 @@ export function readShopSeenEventData(raw: unknown): ShopSeenEventData | null {
   const day = num(d["day"]);
   if (vendorId === null || day === null) return null;
   return { vendorId, day: Math.max(0, Math.trunc(day)), backRoom: d["backRoom"] === true };
+}
+
+// ---------------------------------------------------------------------------
+// sold — one thing sold to one seller (`features/campaign/shopping.ts`). Read
+// back for one question: a find you sold sits on that seller's shelf for a
+// while, so you can buy it back. Commodity sales are written for the record and
+// nothing reads them back.
+// ---------------------------------------------------------------------------
+
+export type SoldEventData = {
+  vendorId: string;
+  kind: string;
+  itemId: string;
+  quantity: number;
+  paid: number;
+  day: number | null;
+};
+
+export function soldEventData(input: {
+  vendorId: string;
+  kind: string;
+  itemId: string;
+  quantity: number;
+  paid: number;
+  day?: number | undefined;
+}): SoldEventData {
+  const whole = (n: number) => Math.max(0, Math.trunc(n));
+  return {
+    vendorId: input.vendorId,
+    kind: input.kind,
+    itemId: input.itemId,
+    quantity: whole(input.quantity),
+    paid: whole(input.paid),
+    day: input.day === undefined ? null : whole(input.day),
+  };
+}
+
+export function readSoldEventData(raw: unknown): SoldEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const vendorId = str(d["vendorId"]);
+  const kind = str(d["kind"]);
+  const itemId = str(d["itemId"]);
+  if (vendorId === null || kind === null || itemId === null) return null;
+  return {
+    vendorId,
+    kind,
+    itemId,
+    quantity: Math.max(0, Math.trunc(num(d["quantity"]) ?? 0)),
+    paid: Math.max(0, Math.trunc(num(d["paid"]) ?? 0)),
+    day: num(d["day"]),
+  };
 }

@@ -46,7 +46,7 @@ usually nth(1); extract /tmp then view_image real PNGs. No filename-only reviews
 
 Updated 2026-10-10. Plan of record: docs/shopping-discovery.md (4 passes, then Levi's
 store UI overhaul — keep rules in engine/model modules, sheets thin). Pass 1 merged (#343).
-Pass 2 (engine/gadgets.ts finds, kitBonuses, gadgetTurn in both loops, packet contract
-line) implemented: typecheck, lint, unit suite (334 files) and build pass; not
-browser-inspected; `bun run eval` not run (paid). Next: pass 3 — city events weight finds,
-provenance keys, selling at pawn/street, hot goods.
+Pass 2 (#344: finds, kit bonuses) open when pass 3 began; pass 3 (engine/shopSupply.ts,
+provenance id segment, hot goods, selling, resale) is stacked on it on the same branch.
+Not browser-inspected; `bun run eval` not run (paid). Next: pass 4 — interests, one hold
+with deposit, held finds, trial, item record, repair.

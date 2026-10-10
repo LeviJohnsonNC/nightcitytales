@@ -1,0 +1,20 @@
+{
+  "houseRule": true,
+  "note": "Where the strange things come from. Cyberpunk RED prints no supply chain; this is ours, and it is read off things the engine already recorded, never off prose. A place that GAINED one of the `salvage` flags (place_changed rows) and a job that settled at a place (job_settled receipts) each send stuff onto the street for `windowDays`: shops in that place's district, and every shop that leans in for finds (the fences) wherever it is, turn up one more find a week for each, up to `maxLean`, and each such find carries where it came from. A find off a job that moved standing with an organisation is HOT: one step down the price ladder, and buying it means that organisation hears who did (`seen`, against them). Nothing here is ever stored on the item but its provenance key, and that key is checked against the atlas and the factions every time it is read.",
+  "windowDays": 14,
+  "maxLean": 2,
+  "salvage": {
+    "raided": "Pulled out of {place} after the raid.",
+    "shut": "Cleared out of {place} when it shut.",
+    "power_out": "Walked out of {place} while the power was down.",
+    "locked_down": "Smuggled out of {place} during the lockdown."
+  },
+  "hot": "Came off the job at {place}. {faction} will want it back, and will hear who bought it.",
+  "resaleWeeks": 2,
+  "resaleNote": "A find you sell stays on that seller's shelf for this many stock weeks, at its full price, unless you buy it back first. Commodity sales vanish into the stock.",
+  "sell": {
+    "fraction": 0.5,
+    "kinds": ["weapon", "armor", "gear"],
+    "note": "What a seller pays: half the printed price, divided by their markup (a fixer's cut comes out of yours too). Only kinds they deal in, plus any find at a shop that leans in for finds. Ammunition and chrome are not bought back."
+  }
+}

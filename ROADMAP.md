@@ -154,8 +154,14 @@ gear the engine can keep its word about, then a store UI overhaul.
   bonuses (Agent, Medscanner, Techscanner) finally ride on the roll. The narrator is told
   each carried find's contract. Not run: `bun run eval` (the capability packet line is a
   context-renderer change and wants a paid eval before it is trusted).
-- **Next:** the city stocking the shops and selling (pass 3), merchants who know you (pass
-  4). Watch, Pass, Reveal and Shield capabilities wait for the levers pass 3 and 4 build.
+- **Pass 3, the city stocks the shops (shipped).** Raids, shutdowns, power cuts and
+  lockdowns (`place_changed`) and settled jobs send finds to that district's shops and to
+  the fences for two weeks (`engine/shopSupply.ts`), each find saying where it came from. A
+  find off a job that crossed an organisation is hot: cheaper, and buying it gets you seen
+  by them. Selling at half the printed price; a find you sell sits on that shelf for two
+  weeks and can be bought back.
+- **Next:** merchants who know you (pass 4). Watch, Pass, Reveal and Shield capabilities
+  wait for the levers it builds.
 
 ## Also shipped: the Tomorrow Test
 

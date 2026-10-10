@@ -107,9 +107,19 @@ const {
   spareRounds,
   spendVisit,
   stockedShelf,
+  sell,
+  resoldAt,
 } = await import("../shopping");
-const { getVendor, shelfFor, shopStock, weaponProfile, WEAPONS, AMMUNITION, vendorPrice } =
-  await import("@/engine");
+const {
+  RESALE_WEEKS,
+  getVendor,
+  shelfFor,
+  shopStock,
+  weaponProfile,
+  WEAPONS,
+  AMMUNITION,
+  vendorPrice,
+} = await import("@/engine");
 
 const GUNS = getVendor("gun_shop");
 const STREET = getVendor("street");
@@ -653,5 +663,77 @@ describe("buying a find", () => {
       (i) => i.itemId === "gadget.hush_wrap.quiet.none.1",
     );
     expect(absent.ok).toBe(listed);
+  });
+});
+
+describe("selling", () => {
+  it("pays half the printed price, takes one off the row, and writes the sale", async () => {
+    inventory.push({
+      id: "rifle",
+      kind: "weapon",
+      item_id: "assault_rifle",
+      quantity: 1,
+      slot: "weapon",
+      equipped: false,
+      ammo_loaded: 0,
+    } as unknown as CampaignInventoryItem);
+    eurobucks = 0;
+    const out = await sell({ campaignId: "c", vendorId: "gun_shop", inventoryId: "rifle" });
+    expect(out).toEqual({ ok: true, name: "Assault Rifle", paid: 250 });
+    expect(eurobucks).toBe(250);
+    expect(inventory.find((r) => r.id === "rifle")!.quantity).toBe(0);
+    expect(ledger.find((e) => e.type === "sold")?.data["itemId"]).toBe("assault_rifle");
+    const again = await sell({ campaignId: "c", vendorId: "gun_shop", inventoryId: "rifle" });
+    expect(again.ok).toBe(false);
+  });
+
+  it("refuses what the seller does not buy, and takes nothing", async () => {
+    inventory.push({
+      id: "vest",
+      kind: "armor",
+      item_id: "kevlar",
+      quantity: 1,
+      slot: "body",
+      equipped: true,
+    } as unknown as CampaignInventoryItem);
+    eurobucks = 0;
+    const out = await sell({ campaignId: "c", vendorId: "gun_shop", inventoryId: "vest" });
+    expect(out.ok).toBe(false);
+    expect(eurobucks).toBe(0);
+    expect(inventory.find((r) => r.id === "vest")!.quantity).toBe(1);
+  });
+
+  it("keeps a find you sold on that shelf until you buy it back", () => {
+    const find = "gadget.sound_puck.remote.none.0";
+    const sold = {
+      type: "sold",
+      data: { vendorId: "street@k3", kind: "gear", itemId: find, quantity: 1, paid: 50, day: 3 },
+    };
+    expect(resoldAt([sold], "street@k3", 5)).toEqual([find]);
+    expect(resoldAt([sold], "street@o3", 5)).toEqual([]);
+    expect(resoldAt([sold], "street@k3", 2)).toEqual([]);
+    expect(resoldAt([sold], "street@k3", 3 + 7 * RESALE_WEEKS)).toEqual([]);
+    const boughtBack = {
+      type: "purchase",
+      data: {
+        vendorId: "street@k3",
+        kind: "gear",
+        itemId: find,
+        quantity: 1,
+        cost: 100,
+        saved: 0,
+        stockKey: "resold",
+        day: 4,
+      },
+    };
+    expect(resoldAt([sold, boughtBack], "street@k3", 5)).toEqual([]);
+    // Sold again after buying it back: on the shelf again.
+    expect(
+      resoldAt([sold, boughtBack, { ...sold, data: { ...sold.data, day: 5 } }], "street@k3", 5),
+    ).toEqual([find]);
+    // A commodity sale never comes back.
+    expect(
+      resoldAt([{ ...sold, data: { ...sold.data, itemId: "rope_60m_yd" } }], "street@k3", 5),
+    ).toEqual([]);
   });
 });

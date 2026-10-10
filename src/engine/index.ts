@@ -73,6 +73,7 @@ export * from "./oracle";
 export * from "./vendors";
 export * from "./shopStock";
 export * from "./gadgets";
+export * from "./shopSupply";
 export * from "./kitBonuses";
 export * from "./inventorySlot";
 export * from "./reload";
