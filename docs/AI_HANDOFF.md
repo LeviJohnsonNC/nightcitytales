@@ -44,9 +44,8 @@ usually nth(1); extract /tmp then view_image real PNGs. No filename-only reviews
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 
-Updated 2026-10-10. Plan of record: docs/shopping-discovery.md (4 passes, then Levi's
-store UI overhaul — keep rules in engine/model modules, sheets thin). Pass 1 merged (#343).
-Pass 2 (#344: finds, kit bonuses) open when pass 3 began; pass 3 (engine/shopSupply.ts,
-provenance id segment, hot goods, selling, resale) is stacked on it on the same branch.
-Not browser-inspected; `bun run eval` not run (paid). Next: pass 4 — interests, one hold
-with deposit, held finds, trial, item record, repair.
+Updated 2026-10-10. Plan of record: docs/shopping-discovery.md. Passes 1–3 merged (#343,
+#344, #345). Pass 4 (engine/merchantTies.ts: interests, holds, range trial, item record)
+implemented: typecheck, lint, unit suite (336 files) and build pass; not browser-inspected;
+`bun run eval` never run for the finds' packet line (paid). Next: Levi's store UI overhaul —
+the sheet is deliberately plain; every rule lives in engine/ and features/campaign/shopping.ts.

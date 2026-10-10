@@ -90,7 +90,8 @@ export type StockKey =
   | "out"
   | "sold_out"
   | "find"
-  | "resold";
+  | "resold"
+  | "held";
 
 export type ShelfStock = ShelfItem & {
   layer: StockLayer;
@@ -121,6 +122,12 @@ export type ShopStockInput = {
   supply?: readonly SupplyEvent[];
   /** Finds the character sold this seller that are still on the shelf, by item id. */
   resold?: readonly string[];
+  /**
+   * The thing this seller is holding for the character, if any: kept off
+   * everybody else's shelf and on theirs, whatever the week's roll says, at the
+   * price on the day it was held.
+   */
+  held?: { kind: string; itemId: string; name: string; price: number } | null;
 };
 
 /** The key an item is counted under in `bought`. */
@@ -240,6 +247,24 @@ export function shopStock(input: ShopStockInput): ShelfStock[] {
             roll: null,
           },
     );
+  }
+  const held = input.held;
+  if (held) {
+    const at = out.findIndex((i) => i.kind === held.kind && i.itemId === held.itemId);
+    const layer: StockLayer = at >= 0 ? out[at]!.layer : "find";
+    if (at >= 0) out.splice(at, 1);
+    out.push({
+      kind: held.kind as ShelfItem["kind"],
+      itemId: held.itemId,
+      name: held.name,
+      price: held.price,
+      tier: "unusual",
+      layer,
+      key: "held",
+      available: true,
+      left: 1,
+      roll: null,
+    });
   }
   return out;
 }

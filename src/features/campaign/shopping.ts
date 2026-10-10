@@ -28,6 +28,18 @@ import {
   purchaseEventData,
   readPurchaseEventData,
   readSoldEventData,
+  activeHold,
+  answersInterest,
+  cleanInterests,
+  heldBalance,
+  holdDeposit,
+  holdPlacedEventData,
+  interestLabel,
+  interestsFrom,
+  HOLD_ENDED_EVENT,
+  HOLD_PLACED_EVENT,
+  SHOP_INTERESTS_EVENT,
+  type Hold,
   readGadget,
   sellPrice,
   soldEventData,
@@ -94,6 +106,9 @@ export const SHOP_EVENT_TYPES = [
   PURCHASE_EVENT,
   SHOP_SEEN_EVENT,
   SOLD_EVENT,
+  SHOP_INTERESTS_EVENT,
+  HOLD_PLACED_EVENT,
+  HOLD_ENDED_EVENT,
   LEDGER_EVENTS.placeChanged,
   LEDGER_EVENTS.jobSettled,
 ] as const;
@@ -107,6 +122,8 @@ export const RELOAD_EVENT = "reload";
 export type StockedItem = ShelfStock & {
   /** True when the character can afford one at this vendor's price. */
   affordable: boolean;
+  /** True when a seller who knows them set this aside because it answers what they asked for. */
+  forYou?: boolean;
 };
 
 /**
@@ -218,15 +235,25 @@ export type ShopContext = {
   events: readonly { type: string; data?: unknown }[];
   flags: CampaignFlag[];
   places: Readonly<Record<string, PlaceState>>;
+  /**
+   * Recent uses and attacks, oldest first, for what a thing in the kit has been
+   * through (`itemRecord`). Kept apart from `events` so a busy week of play
+   * cannot push the shop's own rows out of its window.
+   */
+  history?: readonly { type: string; data?: unknown }[];
 };
+
+/** The ledger types a thing's record is read from, besides its purchase. */
+export const KIT_HISTORY_TYPES = ["attack", "life_action"] as const;
 
 /** Everything a shelf is read from that a Life bundle does not already carry. */
 export async function loadShopContext(campaignId: string): Promise<Omit<ShopContext, "places">> {
-  const [events, flags] = await Promise.all([
+  const [events, flags, history] = await Promise.all([
     listLatestCampaignEventsOfTypes(campaignId, SHOP_EVENT_TYPES),
     listCampaignFlags(campaignId),
+    listLatestCampaignEventsOfTypes(campaignId, KIT_HISTORY_TYPES, 600),
   ]);
-  return { events, flags };
+  return { events, flags, history };
 }
 
 export type ShopShelf = {
@@ -240,6 +267,12 @@ export type ShopShelf = {
   restockIn: number;
   /** True when they have not yet looked at this shelf this week. */
   firstLookThisWeek: boolean;
+  /** The one thing held for them anywhere in the city, if any. */
+  hold: Hold | null;
+  /** What they asked sellers who know them to keep an eye out for. */
+  interests: string[];
+  /** True when this seller knows them: they can hold things, and keep an eye out. */
+  knowsYou: boolean;
 };
 
 /**
@@ -257,6 +290,10 @@ export function shopShelf(input: {
 }): ShopShelf {
   const { vendor, day, context } = input;
   const backRoomOpen = backRoomOpenAt(context.places, vendor);
+  const hold = activeHold(context.events, day);
+  const heldHere = hold && hold.vendorId === vendor.id ? hold : null;
+  const interests = interestsFrom(context.events);
+  const knowsYou = isRegularAt(context.flags, vendor.id);
   const citySupply = supplyFrom(context.events);
   const base = {
     vendor,
@@ -271,6 +308,7 @@ export function shopShelf(input: {
     bought: boughtThisWeek(context.events, vendor.id, day),
     supply: citySupply,
     resold: resoldAt(context.events, vendor.id, day),
+    held: heldHere,
   });
   const last = lastLookedBefore(context.events, vendor.id, day);
   const fresh = last
@@ -286,13 +324,159 @@ export function shopShelf(input: {
         }),
       )
     : [];
+  // A seller who knows you sets aside the find that answers what you asked for.
+  const mark = (items: StockedItem[]) =>
+    knowsYou && interests.length
+      ? items.map((i) =>
+          i.layer === "find" && i.available && answersInterest(i.itemId, interests)
+            ? { ...i, forYou: true }
+            : i,
+        )
+      : items;
   return {
-    shelf: stockedShelf(stock, input.eurobucks),
-    fresh: stockedShelf(fresh, input.eurobucks),
+    shelf: mark(stockedShelf(stock, input.eurobucks)),
+    fresh: mark(stockedShelf(fresh, input.eurobucks)),
     backRoomClosed: vendor.backRoom.length > 0 && !backRoomOpen,
     restockIn: daysToRestock(day),
     firstLookThisWeek: !lookedThisWeek(context.events, vendor.id, day),
+    hold,
+    interests,
+    knowsYou,
   };
+}
+
+/**
+ * Word of mouth: every seller who knows the character and has set aside a find
+ * that answers what they asked for this week. Read from the same shelves the
+ * shops would show, so a tip never names a thing that is not there.
+ */
+export function wordAround(input: {
+  campaignId: string;
+  day: number;
+  context: ShopContext;
+  /** The seller already on screen, left out. */
+  except?: string;
+}): { vendor: Vendor; item: StockedItem }[] {
+  const interests = interestsFrom(input.context.events);
+  if (!interests.length) return [];
+  const out: { vendor: Vendor; item: StockedItem }[] = [];
+  for (const vendorId of regularsFrom(input.context.flags)) {
+    if (vendorId === input.except) continue;
+    let vendor: Vendor;
+    try {
+      vendor = getVendor(vendorId);
+    } catch {
+      continue; // a stored seller that no longer exists
+    }
+    if (!vendor.place) continue;
+    const { shelf } = shopShelf({
+      vendor,
+      campaignId: input.campaignId,
+      day: input.day,
+      eurobucks: 0,
+      context: input.context,
+    });
+    for (const item of shelf) if (item.forYou) out.push({ vendor, item });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Interests and holds (engine/merchantTies.ts).
+// ---------------------------------------------------------------------------
+
+/** Tell the sellers who know the character what to keep an eye out for. Replaces the list. */
+export async function setShopInterests(campaignId: string, needs: string[]): Promise<string[]> {
+  const clean = cleanInterests(needs);
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: SHOP_INTERESTS_EVENT,
+    summary: clean.length
+      ? `Asked around for something ${clean.map(interestLabel).join(" or ").toLowerCase()}.`
+      : "Told people to stop keeping an eye out.",
+    data: { needs: clean } as unknown as Json,
+  });
+  return clean;
+}
+
+export type HoldOutcome = { ok: true; hold: Hold } | { ok: false; reason: string };
+
+/**
+ * Ask the seller the character is standing at to hold one thing: one citywide,
+ * only somebody who knows them, only what is on the shelf now and not staple
+ * stock, at today's price, against a deposit read live off the balance.
+ */
+export async function placeHold(input: {
+  campaignId: string;
+  vendorId: string;
+  kind: string;
+  itemId: string;
+}): Promise<HoldOutcome> {
+  const vendor = getVendor(input.vendorId);
+  const full = await getCampaign(input.campaignId);
+  if (!full?.vitals) return { ok: false, reason: "Campaign not found." };
+  if (vendor.place && standingAt(full.campaign) !== vendor.place) {
+    return { ok: false, reason: `You are not at ${vendor.label}.` };
+  }
+  const day = full.campaign.day ?? 1;
+  const [context, places] = await Promise.all([
+    loadShopContext(input.campaignId),
+    loadPlaceStates(input.campaignId),
+  ]);
+  if (!isRegularAt(context.flags, vendor.id)) {
+    return { ok: false, reason: `${vendor.label} does not hold things for strangers.` };
+  }
+  if (activeHold(context.events, day)) {
+    return { ok: false, reason: "Somebody is already holding something for you." };
+  }
+  const { shelf } = shopShelf({
+    vendor,
+    campaignId: input.campaignId,
+    day,
+    eurobucks: full.vitals.eurobucks,
+    context: { ...context, places },
+  });
+  const item = shelf.find((i) => i.kind === input.kind && i.itemId === input.itemId);
+  if (!item || !item.available || item.layer === "staple") {
+    return { ok: false, reason: "That is not something they will put by." };
+  }
+  const deposit = holdDeposit(item.price);
+  if (!canAfford(full.vitals.eurobucks, deposit)) {
+    return {
+      ok: false,
+      reason: `The deposit is ${deposit}eb and you have ${full.vitals.eurobucks}eb.`,
+    };
+  }
+  const hold = holdPlacedEventData({
+    vendorId: vendor.id,
+    vendorLabel: vendor.label,
+    kind: item.kind,
+    itemId: item.itemId,
+    name: item.name,
+    price: item.price,
+    deposit,
+    day,
+  });
+  await updateCampaignVitals(input.campaignId, { eurobucks: full.vitals.eurobucks - deposit });
+  await appendCampaignEvent({
+    campaign_id: input.campaignId,
+    type: HOLD_PLACED_EVENT,
+    summary:
+      `${vendor.label} is holding ${item.name} for you until day ${hold.until}: ` +
+      `${deposit}eb down, ${heldBalance(hold)}eb to pay.`,
+    data: hold as unknown as Json,
+  });
+  return { ok: true, hold };
+}
+
+/** Call off the hold standing. The seller keeps the deposit; that is what a deposit is. */
+export async function callOffHold(campaignId: string, hold: Hold): Promise<void> {
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: HOLD_ENDED_EVENT,
+    summary: `Let ${hold.vendorLabel} put ${hold.name} back on the shelf. They kept the ${hold.deposit}eb.`,
+    data: { vendorId: hold.vendorId, itemId: hold.itemId, reason: "called_off" } as unknown as Json,
+  });
 }
 
 /** Remember that the character looked at this shelf this week, for "new since your last visit". */
@@ -471,8 +655,14 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
           operatorRank: input.operatorRank ?? 0,
         })
       : 0;
-  const list = item.layer === "find" ? item.price : vendorPrice(vendor, item.kind, item.itemId);
-  const unit = haggledPrice(list, percent);
+  // A held thing is sold at the price it was held at, less the deposit already paid.
+  const held = stock.key === "held" ? activeHold(context.events, day) : null;
+  const list = held
+    ? heldBalance(held)
+    : item.layer === "find"
+      ? item.price
+      : vendorPrice(vendor, item.kind, item.itemId);
+  const unit = held ? list : haggledPrice(list, percent);
   const cost = unit * allowed;
   const saved = (list - unit) * allowed;
   if (!canAfford(eurobucks, cost)) {
@@ -528,6 +718,15 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
       slot: slotFor(item.kind, item.itemId),
     } as unknown as Json,
   });
+
+  if (held) {
+    await appendCampaignEvent({
+      campaign_id: input.campaignId,
+      type: HOLD_ENDED_EVENT,
+      summary: `Collected ${held.name} from ${held.vendorLabel}.`,
+      data: { vendorId: held.vendorId, itemId: held.itemId, reason: "bought" } as unknown as Json,
+    });
+  }
 
   // Hot goods: the people it was taken from hear who bought it. The shelf said
   // so before the money moved, so this is a price the player chose to pay.
