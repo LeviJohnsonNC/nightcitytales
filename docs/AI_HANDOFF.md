@@ -49,3 +49,9 @@ Updated 2026-10-10. Plan of record: docs/shopping-discovery.md. Passes 1–3 mer
 implemented: typecheck, lint, unit suite (336 files) and build pass; not browser-inspected;
 `bun run eval` never run for the finds' packet line (paid). Next: Levi's store UI overhaul —
 the sheet is deliberately plain; every rule lives in engine/ and features/campaign/shopping.ts.
+
+## Parallel painted architecture pass
+
+PR #347 (`codex/painted-architecture`) implements the approved painted facade kit.
+See [painted-architecture-handoff.md](painted-architecture-handoff.md) for its isolated
+checkout, asset registration, validation and remaining visual-review gates.
