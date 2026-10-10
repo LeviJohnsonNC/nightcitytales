@@ -466,6 +466,7 @@ export function paintShopWall({
   entrances,
   doors,
   clip,
+  masonry,
 }: {
   ctx: CanvasRenderingContext2D;
   structure: SceneStructure;
@@ -476,6 +477,7 @@ export function paintShopWall({
   /** Whether this wall's doors are painted shutters (their width is the assembly's). */
   doors: boolean;
   clip?: { s0: number; s1: number; zMax: number };
+  masonry?: CanvasImageSource | undefined;
 }) {
   const at = facePoint(structure, edge, project, ppm);
   const { length, bays, doors: centres } = facadeOpenings(structure, entrances, edge);
@@ -497,6 +499,21 @@ export function paintShopWall({
       ),
     );
     ctx.clip();
+  }
+  if (masonry && h <= 4) {
+    ctx.save();
+    path(ctx, [at(0, 0, 0), at(length, 0, 0), at(length, 0, h), at(0, 0, h)]);
+    ctx.clip();
+    for (let z = 0; z < h; z += 1.6)
+      for (let s = 0; s < length; s += 1.6)
+        drawOnto(ctx, masonry as Img, at(s, 0, z + 1.6), at(s + 1.6, 0, z + 1.6), at(s, 0, z));
+    if (edge === "east")
+      fill(
+        ctx,
+        [at(0, 0, 0), at(length, 0, 0), at(length, 0, h), at(0, 0, h)],
+        "rgba(17,27,29,.2)",
+      );
+    ctx.restore();
   }
   // grime washed down from the roof edge, under the coping's drip
   shade(

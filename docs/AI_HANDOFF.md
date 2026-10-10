@@ -1,52 +1,40 @@
-# Night City Tales — painted streetscape
+# Night City Tales — approved painted architecture
 
-Updated2026-10-09. Levi approved the broad streetscape pass after mergingPR330.
-Repo LeviJohnsonNC/nightcitytales; new remote branch codex/painted-streetscape.
-Base main5993a2fbf842e4c9257c052f969a40ab4b898786 (includes merge330 and formatting).
-Local history reconstructed: NEVER git push. Use GitHub tree/commit/update_ref
-with expected-head lease; preserve newer main files outside the selected changes.
-Levi merges. Publish for testing; do not merge. Preserve unrelated dirty
-courtyard/cityBlock.ts, untracked cityBlock.test.ts and recovery directories.
+2026-10-10. Levi approved the generated full-screen paint-over and authorized production integration.
 
-## Current milestone
+## Checkout and publication
 
-User: “Go big, don't hold back, and then we can test it out when changes land.”
-Goal: whole-frame material/colour cohesion, strong occupied market/repair focus,
-grounded buildings and quieter internal texture. Existing creator assets only.
-surfaceCharacter.ts adds world/metre anchored broad colour fields and facade
-splash/runoff beneath openings. surfaceMaterials.ts applies these inside existing
-face clips, reducing asphalt/paving microcontrast. Same field coordinates in Reveal.
-commercialUpper/composedEnvironment palettes give ochre and sage identities.
-groundFinish.ts adds broad worn walking aprons and foundation falloff clipped to
-sidewalk zones. nightLighting.ts reduces blue cast and light amplification, with
-warmer paving grade. No scene recipes, tactical geometry, cover or actor changes.
+- Active isolated checkout: ../city-block-painted; branch codex/painted-architecture.
+- Base main cf9c575616157a021478f7ded621542216105dae, tree 669242aadb09225f964dac4602282b7a055b502a.
+- PR332 verified merged. Base includes shopping PR345. Do not merge on Levi's behalf.
+- Publish using GitHub blob/tree/commit/update_ref with expected-head lease, NEVER git push.
+- Original city-block-recovery checkout and its dirty cityBlock.ts/untracked tests/recovery files untouched.
 
-## Validation / next
+## Implemented
 
-Typecheck and changed-file lint passed. Full suite4125pass/1fail: new recorder test
-compared gradient function identities; normalized recorder output, focused rerun
-passed; production build passed. Test verifies affine/resolution mapping, deterministic finite
-draw commands and balanced canvas state. Existing329testfiles passed.
-Next publish selected files/newPR; CI and actual screenshot inspection still needed.
-Do not call visual improvement accepted until pixels are inspected.
+- Three generated two-panel atlases: market/repair upper bays, trading-floor surrounds, masonry/canopy.
+- Source WebP masters in src/assets/creator/painted-architecture; original PNGs retained locally (ignored).
+- Importer tools/art/painted-architecture.ts builds seven optimized runtime WebPs.
+- paintedArchitecture.ts maps nine image regions to exact existing opening bounds; separate interiors remain clear.
+- Upper commercial elevations now carry painted masonry, joinery and dim rooms; same clipped full/reveal painter.
+- Market front AND return faces use painted surrounds, a stocked interior and solid teal canvas canopy.
+- Repair surrounds retain Levi's bench/parts art. Small service buildings receive measured masonry.
+- Existing footprint/collision, entrance, roof/canopy geometry and actors remain unchanged.
+- Upper-window emission halved for painted kit to keep street shops dominant. Existing restrained reflections retained.
 
-## Reliable evidence workflow
+## Verification
 
-PR330 final code7fa4f0e; merge32f8570. Prior CI37972650907 and paired visual37972651008
-passed. Ring fix: SVG translateZ(0). Capture fix: viewport-relative clip plus PNG
-size assertion. Preserve all media interception fixes, overlay diagnostics, states,
-seed8timeout180s, suite420s, no retries. Passing CI is not visual acceptance.
-Reference baseline evidence locally docs/evidence/pr330-composition/after-seed8-play.png.
-Last Vite listen failed EPERM. Chrome GitHub artifact link downloads worked; helper
-and shell downloads failed. Verify downloaded ZIP SHA256 against artifact API.
-Download via Chrome link named Download city-block-after (opens in a new tab),
-usually nth(1); extract /tmp then view_image real PNGs. No filename-only reviews.
+- Typecheck passed; 49 focused tests initially passed, expanded set underway after return-face integration.
+- Lint passed (13 existing warnings, zero errors); production build passed before last return-face/light refinement.
+- Local Vite on 127.0.0.1:5175 works. Restart after adding public images (Vite cached public-file index).
+- Local Playwright Chromium launch blocked by macOS MachPort permission; no test screenshots from that attempt.
+- Connected Chrome native screenshot confirmed fallback images before restart; not evidence of new kit.
+- Isolated in-app browser tab 1 now shows actual new brick/render/canopy pixels. Seed8 partial play capture inspected.
+- Need final seed8 full/reveal and seed0 pixels; CI and matched visual workflow still required.
+- Do not claim reference parity or automated visual pass until actual captures inspected.
 
-## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
+## Art reference
 
-Updated 2026-10-10. Plan of record: docs/shopping-discovery.md (4 passes, then Levi's
-store UI overhaul — keep rules in engine/model modules, sheets thin). Pass 1 merged (#343).
-Pass 2 (#344: finds, kit bonuses) open when pass 3 began; pass 3 (engine/shopSupply.ts,
-provenance id segment, hot goods, selling, resale) is stacked on it on the same branch.
-Not browser-inspected; `bun run eval` not run (paid). Next: pass 4 — interests, one hold
-with deposit, held finds, trial, item record, repair.
+- Approved concept: ../generated_images/exec-8fe0a16b-631d-449b-b648-48a78e5c7071.png
+- User source reference: ../art-reference/image.png (actual pixels opened).
+- Generated source PNGs and WebP masters are reproducible via importer; runtime art is projection-aware, not a backdrop.

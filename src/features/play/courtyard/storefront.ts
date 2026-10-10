@@ -14,6 +14,7 @@
  * is metres away from the wall (negative: into the building), `z` is height.
  */
 import { sourceFor } from "./architectureArt";
+import { paintArchitecturalBay } from "./paintedArchitecture";
 import {
   paintShopFinish,
   paintShopCornice,
@@ -48,6 +49,9 @@ import {
 export type Pass = "albedo" | "light" | "glow";
 
 export const STOREFRONT_ART_FILES = {
+  paintedFrontage: "/images/architecture/painted/market-frontage.webp",
+  paintedInterior: "/images/architecture/painted/market-interior.webp",
+  paintedCanopy: "/images/architecture/painted/market-canopy.webp",
   window: "/images/storefront/window-interior.webp",
   wall: "/images/storefront/wall-finish.webp",
   awning: "/images/storefront/awning-fabric.webp",
@@ -442,6 +446,16 @@ export function paintStorefrontFace(o: FaceOptions) {
 
   paintShopFinish(ctx, at, sf.length, o.art.wall);
   if (o.art.wall) paintRetailFrames(ctx, at, sf.length, sf.bays, [sf.door], L.riser);
+  for (const start of sf.bays)
+    paintArchitecturalBay(
+      ctx,
+      o.art.paintedFrontage,
+      at,
+      { s0: Math.max(0, start - 0.4), s1: Math.min(sf.length, start + 2.6), z0: 0.07, z1: 2.74 },
+      { s0: start, s1: start + 2.2, z0: L.riser, z1: L.glazingTop },
+      "frontage",
+      true,
+    );
 
   // --- the wall's own trim: base shade, pier lines at both corners ------------
   gradientFill(ctx, quad(0, sf.length, 0, 0.5), at(0, 0, 0), at(0, 0, 0.5), [
@@ -488,10 +502,11 @@ export function paintStorefrontFace(o: FaceOptions) {
     ctx.save();
     path(ctx, opening);
     ctx.clip();
-    if (o.art.window) {
+    const interior = o.art.paintedInterior ?? o.art.window;
+    if (interior) {
       drawOnFace(
         o,
-        o.art.window,
+        interior,
         s0,
         top,
         STOREFRONT_FACE.bayWidth,
@@ -504,7 +519,7 @@ export function paintStorefrontFace(o: FaceOptions) {
     } else {
       fillPoly(ctx, opening, "#1a272c");
     }
-    paintShopDisplay(ctx, at, s0, bottom, top, index);
+    if (!o.art.paintedInterior) paintShopDisplay(ctx, at, s0, bottom, top, index);
     // glass: a faint cool tint and one soft diagonal sheen. No reflections.
     fillPoly(ctx, opening, "rgba(52,92,104,.14)");
     gradientFill(ctx, opening, at(s0, 0, top), at(s1, 0, bottom), [
@@ -1215,14 +1230,15 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
     v: { x: (downSlope.x - o0.x) / slope, y: (downSlope.y - o0.y) / slope },
   };
   const paintFabric = (pts: Point[], shade: string, from: number) => {
-    if (o.art.awning) {
-      const pattern = ctx.createPattern(o.art.awning, "repeat");
+    const canopy = o.art.paintedCanopy ?? o.art.awning;
+    if (canopy) {
+      const pattern = ctx.createPattern(canopy, "repeat");
       if (pattern) {
         pattern.setTransform(
           patternMatrix(
             { ...basis, origin: { x: o0.x + basis.v.x * from, y: o0.y + basis.v.y * from } },
             canvasM,
-            o.art.awning.width,
+            canopy.width,
           ),
         );
         ctx.save();

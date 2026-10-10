@@ -21,6 +21,7 @@
  */
 import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
 import { paintShopFinish, paintShopCornice, paintRetailFrames } from "./shopFinish";
+import { paintArchitecturalBay } from "./paintedArchitecture";
 import { BAY } from "./architecturePack";
 import { facadeOpenings, sourceFor } from "./architectureArt";
 import { edgeFrame, exposedSpans, type Edge } from "./frontage";
@@ -292,6 +293,7 @@ function glyphs(face: ReturnFace) {
 }
 
 export interface ReturnArt {
+  paintedFrontage?: TileSource;
   /** Neutral plaster and ceramic field, shared with the shopfront. */
   wall?: Img;
   /** The storefront's lit interior (`window-interior`). */
@@ -357,6 +359,16 @@ export function paintReturnFace(
   }
   paintShopFinish(ctx, at, length, art.wall);
   if (art.wall) paintRetailFrames(ctx, at, length, [...face.display, ...face.store], []);
+  for (const start of [...face.display, ...face.store])
+    paintArchitecturalBay(
+      ctx,
+      art.paintedFrontage,
+      at,
+      { s0: Math.max(0, start - 0.4), s1: Math.min(length, start + 2.6), z0: 0.07, z1: 2.74 },
+      { s0: start, s1: start + BAY.width, z0: BAY.sill, z1: BAY.head },
+      "frontage",
+      true,
+    );
   // --- the fascia band: render above the string course, to the coping ----------
   const band = quad(0, length, R.courseTop, h);
   if (
