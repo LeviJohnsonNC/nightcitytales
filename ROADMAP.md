@@ -165,7 +165,13 @@ gear the engine can keep its word about, then a store UI overhaul.
   word of mouth. One hold citywide with a 20% deposit for a week. Try a gun on the range at
   Toggle's, the Quartermaster, Hachiman Arms and the Armory. The Sell tab says where each
   thing came from and what it has been through.
-- **Next:** Levi's store UI overhaul. Still open from the plan: the Watch, Pass, Reveal and
+- **The Counter (store UI, part 1, shipped).** The shop opens inline in Life's main column
+  over the place's own painting: this week's finds as cards, the shop's line, the back room,
+  the shelves, selling across the counter, and an item opened in place with what it does
+  set apart from what it is. Part 2 is the item art (`docs/art-style.md`, "the Counter's
+  item pictures").
+- **Then:** the ripperdoc in the same shell, if the Counter holds up in play.
+- **Was next:** Levi's store UI overhaul. Still open from the plan: the Watch, Pass, Reveal and
   Shield capabilities (each needs an engine lever first), repair and restoration terms, and
   a narrator eval of the finds' packet line.
 

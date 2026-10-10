@@ -44,8 +44,10 @@ usually nth(1); extract /tmp then view_image real PNGs. No filename-only reviews
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 
-Updated 2026-10-10. Plan of record: docs/shopping-discovery.md. Passes 1–3 merged (#343,
-#344, #345). Pass 4 (engine/merchantTies.ts: interests, holds, range trial, item record)
-implemented: typecheck, lint, unit suite (336 files) and build pass; not browser-inspected;
-`bun run eval` never run for the finds' packet line (paid). Next: Levi's store UI overhaul —
-the sheet is deliberately plain; every rule lives in engine/ and features/campaign/shopping.ts.
+Updated 2026-10-10. Plan of record: docs/shopping-discovery.md. Passes 1–4 merged
+(#343–#346). Store UI part 1, the Counter (features/life/shop/, inline in LifeScreen,
+/shop-review fixtures): typecheck, lint, unit suite (337 files), build and the
+public-route browser test for /shop-review (desktop + phone, axe) pass; screenshots
+taken from /shop-review only — the signed-in Life screen was not browser-checked.
+Next: Levi generates the 22 item pictures (docs/art-style.md, Object wrapper);
+convert with tools/art/webp.mjs public/images/items and list them in ITEM_ART_READY.

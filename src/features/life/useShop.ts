@@ -69,6 +69,8 @@ export function useShop(bundle: LifeBundle | undefined, open = false) {
   });
   const [vendorId, setVendorId] = useState<string | null>(null);
   const [message, setMessage] = useState<ShopMessage | null>(null);
+  /** True once the player chose to call the fixer from somewhere that sells nothing. */
+  const [fixerChosen, setFixerChosen] = useState(false);
   /** True once this visit has cost the character part of their evening. */
   const [visitCharged, setVisitCharged] = useState(false);
   /**
@@ -355,6 +357,9 @@ export function useShop(bundle: LifeBundle | undefined, open = false) {
     vendors,
     /** True when the character is standing somewhere that sells. */
     atShop: vendors.length > 1,
+    /** True once the player chose to deal with the fixer from somewhere that sells nothing. */
+    fixerChosen,
+    chooseFixer: () => setFixerChosen(true),
     setVendor: (id: string) => {
       setVendorId(id);
       setMessage(null);
@@ -409,9 +414,13 @@ export function useShop(bundle: LifeBundle | undefined, open = false) {
     spareRounds: bundle ? spareRounds(bundle.inventory) : 0,
     /** Reset when the drawer closes, so the next trip out costs its own time. */
     endVisit: () => {
+      setFixerChosen(false);
       setVisitCharged(false);
       setHaggled(null);
       setMessage(null);
     },
   };
 }
+
+/** Everything the shop screen reads and does: what `useShop` hands it. */
+export type ShopController = ReturnType<typeof useShop>;
