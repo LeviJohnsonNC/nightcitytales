@@ -126,7 +126,7 @@ describe("place dossiers", () => {
     // and South Night City) were written before their pictures were made. The
     // The list is exact in both directions: an entry added later without a picture
     // fails here, and so does a picture that lands without its key coming off.
-    const PICTURES_PENDING = ["c6", "h7", "h8", "i9", "p12", "u6"];
+    const PICTURES_PENDING = ["u6"];
     const pending = Object.entries(PLACE_DOSSIERS)
       .filter(([, entry]) => !entry.image)
       .map(([key]) => key)
