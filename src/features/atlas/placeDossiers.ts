@@ -1935,6 +1935,7 @@ The irony is exquisite. Where corporate retailers once sold mass-produced goods 
   // pictures are asked for in docs/art-style.md and arrive separately.
 
   a14: {
+    image: "sacred-heart-pharmacy",
     text: `The sign says Sacred Heart Pharmacy and the window still holds a faded plaster saint with a mortar and pestle, which is the last entirely honest thing about the place. Nobody has filled a prescription here in years. The counter is real, the shelves are real, the bell over the door is real, and the stock is a rotating arrangement of cough syrup, vitamins and tins of old-fashioned lozenges that exist to give the front room something to be. The business is in the back.
 
 Imelda Voss was the pharmacist, and she does eye and ear work now with the quiet competence of somebody who spent a long career counting out other people's doses and decided she could do better at the part that matters. The back room is clean to the point of rebuke. Instruments are laid out in the same order every day. She narrates as she works, in a low steady murmur that sounds like a prayer and is mostly a checklist, and when it is over she will tell you exactly which saint to thank.
@@ -1943,6 +1944,7 @@ Holy Angels Church is a short walk away, and the parish knows what happens behin
   },
 
   b14: {
+    image: "ruggels-way-surplus",
     text: `Hollis Ruggels has been selling off the waterfront for longer than the marina has had a name, and the shop on Ruggels Way is what happens when a man with a boat habit and no particular respect for ownership gets a lease. The shelves hold flares, dry bags, coils of rope, rusted shackles, lifejackets, charts of waters that no longer look like that, and crates. Always crates. Nobody is quite sure what is in the crates until somebody opens one, and Hollis is in no hurry to find out.
 
 Every item comes with a story, delivered with the ease of a man who has told it to a hundred customers, and none of the stories match. The same box of signal flares fell off a freighter in a storm, was salvaged from a sinking yacht and was left to him by a grandfather, depending on who is asking and what they look like they can afford. He is not lying so much as improvising, and he has noticed that improvisation moves stock.
@@ -1951,6 +1953,7 @@ Dock crews, marina staff and the odd person who needs to be on a boat tonight an
   },
 
   c7: {
+    image: "the-quiet-room",
     text: `Above The Ledger there is a room that does not appear on the building directory, which is the first thing to understand about it. You reach it by the service lift, with a key somebody you trust has already told you about, and the lift goes only where the key allows. The door opens on a suite that could pass for an expensive hotel room if the bed were not quite so adjustable and the lighting not quite so careful.
 
 Dr. Tamsin Ashcombe runs it, and her list of clients reads like the Chamber of Commerce's private address book. Fixers and executives who cannot be seen in a hospital book it by the hour, through the bar's manager, who has perfected the expression of a man who has never heard of it. The recovery bed has hotel linen. The invoice has a line item for discretion, and it is the biggest line on the page.
@@ -1959,6 +1962,7 @@ Whitewater Security patrols the lobby and sees nothing, which is exactly what it
   },
 
   d5: {
+    image: "dead-reckoning",
     text: `The lobby of Dead Reckoning once belonged to a skyscraper that lost everything above the ninth floor in a bad week and has not been lived in properly since. What is left is a high echoing room with a generator in one corner, a cooler of spare parts in another, and an operating table salvaged from somewhere that used to care about it. The light comes from work lamps on stands. The floor has been swept, which is a statement.
 
 The ripperdoc goes by Doc, because the name she was born with went into the same hole as the Corporate Zone. The work is fast, cheap and, to the surprise of first-time customers, good. Nobody asks what the cooler held last week, and Doc has noticed that most people find this a relief. She talks while she cuts, mostly about the weather in places she has never been.
@@ -1967,6 +1971,7 @@ Maelstrom gives her a grudging protection, because a gang that lives on its own 
   },
 
   e6: {
+    image: "auntie-meis",
     text: `Herbs upstairs, chrome downstairs. Auntie Mei's ground floor is a herbalist's, a narrow shop of glass jars, dried roots, hanging bundles and a brass scale that has weighed more things than anyone has written down. There is always tea on. She will pour you a cup before she asks what is wrong, and she will have decided what is wrong before you finish the cup.
 
 Mei Zhao sells the tea and the advice, and her son does the surgery in a basement that is as clean as any hospital in Night City and considerably quieter. He treats chrome the way his mother treats a cough: carefully, slowly, with an expectation that you will be back to report on it. Customers who skip the follow-up are scolded, and the scolding is more effective than any warranty.
@@ -1975,6 +1980,7 @@ The Gold Dragons take their cut from both floors and treat it as a municipal fee
   },
 
   e7: {
+    image: "dragons-tooth-pawn",
     text: `The window of Dragon's Tooth Pawn holds watches, jade, old cameras and a single pair of very good boots. The shop does honest business out front, a small fair trade in tickets and interest, and a quieter one at the back, where a shelf behind a curtain holds whatever the Red Chrome Legion pledged against a bad week and could not redeem. The curtain is not a secret. It is just a courtesy.
 
 The owner, a thin patient man called Lau, writes every pledge in a ledger that predates his own father's handwriting. Nothing is ever redeemed on time, and he has a theory about why: the ones who intend to pay never do, and the ones who do not were never going to need the item anyway. The back shelf is where the second kind of pledge ends up. Every piece on it carries a ticket and a history that somebody would like you to forget.
@@ -1983,6 +1989,7 @@ The Gold Dragons look the other way, since the shop pays its tithe as faithfully
   },
 
   f10: {
+    image: "the-annex",
     text: `The Annex was a lecture hall that nobody booked after the department that owned it lost its funding, and a med-school dropout turned it into a surgical theatre in the space between two terms. The tiered seating is still there. The lectern has been replaced by an operating table, and the screens on the wall show something very different from the slides they were installed for. Somebody has left a notice on the door reading Closed for Revision.
 
 Dr. Nkem Okafor is not strictly a doctor, though everybody uses the title, because the correction stopped being worth the breath. A semester short of qualifying, with a head for anatomy and no head for tuition, Okafor works on the student body in the most literal sense and keeps a rate card that treats full-time students kindly. The waiting room is a corridor of NCU undergraduates who would rather not be on the roster.
@@ -1991,6 +1998,7 @@ Campus Security knows. It has decided that the Annex is a student service and do
   },
 
   f11: {
+    image: "the-co-op",
     text: `The Co-Op is the engineering students' own shopfront, and it is run on principles the founders took very seriously and the current members take slightly less so. The shelves hold soldering irons, ex-lab kit, oscilloscopes with dubious calibration, and the contents of a Biotechnica skip that somebody found one rainy night and has been selling off ever since. A hand-written sign by the door says that every sale is final and every item is, in theory, tested.
 
 Prices are set by committee vote, which is the only reason they are ever fair. The students haggle like they are defending a thesis, with footnotes, and a customer who can argue the point is as likely to win a discount as one who can pay. Minutes of the last meeting are pinned beside the till, and they make for better reading than most screamsheets.
@@ -1999,6 +2007,7 @@ It is a good place for gear you cannot find anywhere else and a better place to 
   },
 
   g14: {
+    image: "ardent-and-pryce-consultants",
     text: `Ardent & Pryce, Consultants occupies a high floor in a Glen office tower, behind a reception desk that does not take messages and a waiting room furnished with magazines nobody reads. The nameplate lists a partnership, and the partnership is real. It is just that the two partners are a surgeon and a very good accountant, and the paperwork has been arranged so that nothing the practice does can be said to have happened.
 
 The clients are executives with a dozen reasons to avoid the corporate clinic, most of them to do with the corporate clinic's log. Everything is billed as consultation, including the anaesthetic, and the invoices read like boardroom minutes. The surgical suite is behind a door marked Archive. The surgeon is a quiet, tidy, unhurried person who has never been seen to raise their voice or lose their temper, and who has, on at least two occasions, quietly refused a client.
@@ -2007,6 +2016,7 @@ The Glen runs on information, and Ardent & Pryce sells the oldest kind, which is
   },
 
   g15: {
+    image: "gentry-and-blake",
     text: `Gentry & Blake does not call itself a gun shop and would be offended if you did. It is a private security outfitter, with a showroom on a good street in The Glen, a catalogue the weight of a paving slab and a salesman who greets you by name before you give it. Everything on display is armour, plate and weave, shown on mannequins that have been dressed like a very quiet bodyguard on his way to a funeral.
 
 The prices are serious and nobody comments on them. The salesman measures you twice, once with the tape and once with his eyes, and says nothing about why. Fittings are by appointment, in a side room with a long mirror and a carpet that swallows sound. If you ask what the last client wore it for, the salesman will smile, adjust a strap, and tell you about the weather.
@@ -2015,6 +2025,7 @@ Corporate security directors, private detectives and the occasional politician a
   },
 
   i10: {
+    image: "the-slammer-dock-door",
     text: `Behind the Slammer there is a loading dock, and on the loading dock there is a folding table, and on the table, on a good night, there are guns. The arrangement is not subtle and it is not meant to be. A cousin of the Kanzaki Family sits behind the table with a clipboard that holds nothing, a thermos that holds soup, and a grin that has seen a great many first-time customers decide not to ask about the serial numbers.
 
 Everything is sold by the box. No names, no receipts, no returns, and no haggling beyond a token grumble that the cousin finds funnier than the customer does. The stock shifts with whatever fell off whichever truck, which is part of the appeal and all of the risk. A pistol bought on a Monday may be a cousin of one bought on a Friday, and may share a history with the one you are being shot with.
@@ -2023,6 +2034,7 @@ Scythe Security patrols the street out front and has never once turned its head.
   },
 
   k5: {
+    image: "bay-nine",
     text: `Bay Nine is the last bay at the back of the Yard, past the tram sheds and the stacked axles, with the door open to the weather and a hand-painted number over the frame. The reclamation crews who keep the city's public transport running need people to keep them running, and the medtech who works here fits what the crews call transit-grade prosthetics: heavy, ugly, and guaranteed to outlast the tram they were salvaged from.
 
 The method is simple. A cyberarm comes off a retired actuator, a cyberleg off a drive assembly, and the medtech rebuilds them with a mechanic's patience and a surgeon's steadiness. Nothing is polished. Everything is rated for abuse. Customers leave with a limb that creaks, weighs a little more than it should, and will never need to be replaced, which is not an experience that most chrome has to offer.
@@ -2031,6 +2043,7 @@ Los Perros Guardianes keeps the Yard secure, and the reclaimers consider Bay Nin
   },
 
   l5: {
+    image: "the-quartermaster",
     text: `The Quartermaster is Edgerunners Inc's own supply cage, set into the wall of their headquarters like a bank vault that has been told to be friendly. It is nominally open to anyone who has worked a job for Brick Coleman or can pass for it, and the second condition does most of the filtering. There is a steel grille, a heavy counter, a hatch for passing items through, and behind all of it a woman who does not smile.
 
 Her name is Dot, and she grades customers on a scale that has nothing to do with money. A client who arrives with a straight back and the right kind of silence may find the shelf suddenly better stocked. One who tries to bluff will find the cage short of everything. There is no appeal. People have tried bribery, charm and threats. The only one that has ever worked is turning up reliably.
@@ -2039,6 +2052,7 @@ The stock is what a crew actually needs, laid out by purpose rather than by bran
   },
 
   m5: {
+    image: "pells-trailer",
     text: `Pell's Trailer sits just outside the Main Gate, where the road widens enough for a parking space and the NorCal Military Police have decided not to notice. It is a long, patched, white-roofed trailer with a canvas awning, a folding step and a red cross that has been repainted so many times it is more a memory of one. Inside it is cleaner than the barracks.
 
 Pell left the Estero Bay COG under circumstances nobody explains and nobody is invited to ask about. She was a field surgeon, and she works now like somebody who has been trained to do it fast, under pressure, with very little. The chrome she fits is military grade, the rates are civilian, and the condition is that you never ask about her last unit. She does not repeat the condition. She does not need to.
@@ -2047,6 +2061,7 @@ The Culper Ring watch the trailer, and the base has a few sets of eyes on it tha
   },
 
   m6: {
+    image: "gate-surplus",
     text: `Gate Surplus is a tarp-roofed lot outside the wire, a place the base's cast-offs eventually end up. Vests with last year's issue numbers hang from a rail. Boots are tied together by their laces in bundles. Crates of mixed ammunition, no two the same calibre or the same age, sit stacked at the back, and nobody has counted them in years, including the person who sells them.
 
 The trade is quiet and long established. Quartermasters send the things they have to write off, soldiers sell what they have been issued twice, and the NorCal Military Police look the other way since the surplus keeps the boundary tidy and the troops contented. The seller is a patient, sunburnt person with a ledger, a folding chair and a long habit of not looking at a customer's face.
@@ -2055,6 +2070,7 @@ It is not the cheapest armour in Night City and it is not the best, but it is ve
   },
 
   n14: {
+    image: "hachiman-arms",
     text: `Hachiman Arms is a licensed gunsmith on Industrial Street, between a noodle shop and a shuttered union hall, with a steel shutter that rolls up at the same minute every morning and down at the same minute every night. The window holds a single pistol on a velvet cloth. The door has a buzzer, a camera and a small, polite sign that says, in three languages, that visitors are welcome and that visitors are recorded.
 
 Mr. Hachiman files everything in triplicate, including your face. Every sale is receipted, every serial number logged, every customer photographed in the same flat grey light. This is not a threat. It is a service, in the sense that a buyer with a receipt has a buyer with a story, and Mr. Hachiman believes that a legal gun is the best kind. He is courteous, exacting and quietly suspicious of everybody, himself included.
@@ -2063,6 +2079,7 @@ The NCCS corporations rely on him for sanctioned security work, and the Tyger Cl
   },
 
   n15: {
+    image: "picket-line-clinic",
     text: `Picket Line Clinic opened in the first week of the Watson strike and has never closed. It began as a first-aid table for organisers who were being hurt by the people sent to move them on, and it grew a room, then a back room, then a surgeon. It occupies a former union office on Watson Boulevard, with the old banners still pinned to the walls and a hand-lettered rota by the door that has gone through a great many revisions.
 
 The surgeon is Dr. Beatrix Oyelaran, who charges everybody the same and tells the NCCS exactly where she stands on the matter, usually at length. Lucius Rhyne's organisers pay in favours, in rota hours, in meals carried up from the canteen. The chrome she fits is plain and well made, the waiting room is crowded with people who know each other, and the conversation in it is considerably more political than any ripperdoc's.
@@ -2071,6 +2088,7 @@ The Tyger Claws and the Kanzaki Family both pass through. The corporations would
   },
 
   q5: {
+    image: "ascent-outfitters",
     text: `Ascent Outfitters is a boutique on a Charter Hill street where every shop window is designed to look slightly more expensive than the one beside it. The mannequins wear long coats, structured jackets and well-cut vests in muted colours, each one lined with a weave that you will not see until the salesman turns back the hem. The stock is armour for people who want to look like they are climbing the ladder and survive the fall.
 
 The salesman is attentive, a little too well informed about your career prospects, and fluent in a vocabulary that belongs in a magazine for aspirants. The fitting room has a window onto the wall of the Exec Zone, which is the real sales pitch. You stand in front of it in a coat that stops a bullet, looking at the ceiling you are trying to break, and the price begins to seem reasonable.
@@ -2079,6 +2097,7 @@ Militech keeps the district safe in its fashion. The residents of Charter Hill a
   },
 
   r7: {
+    image: "the-aurelian-suite",
     text: `The Aurelian Suite is the Exec Zone's wellness suite, and it is exactly as exclusive as that sounds. A discreet door in a discreet wall, a reception area with a fountain, and a corridor of treatment rooms behind it. The spa side offers things that cost a fortune and do very little. The other side is staffed by a surgeon on retainer to the Home Owner's Association and, by extension, to your neighbours' secrets.
 
 Nobody is called a patient. Residents are guests, procedures are treatments, and the appointment book is the most closely guarded document in the district. It is kept in a safe, behind a door marked Linen, by an attendant who has never been known to look up from it. Doctor Karen Davies is understood to know the contents. Nobody is sure what she does with them.
@@ -2087,6 +2106,7 @@ Lazarus guards the Zone and the Suite is inside the wall, so the chrome you rece
   },
 
   s5: {
+    image: "berth-nine",
     text: `Berth Nine is a shipping container fitted out as a surgery and bolted to the end of Cargo Way, close enough to the water to hear the lines creak. Inside it has been lined, wired and plumbed with a care that does not match the rust on the outside. There is an operating table, an autoclave, a small refrigerator, and a whiteboard by the door that lists, in marker, who owes what.
 
 Stevedores, sailors and the Skiv Family's people use it, and the clientele is as mixed as the cargo. The surgeon is a laconic person with forearms like hawsers who learned the trade on a freighter and treats the table like a berth: you arrive, you are secured, you are done by the tide. Debts are recorded without comment. The whiteboard is cleaned on the first day of each month, and the people on it know why.
@@ -2095,6 +2115,7 @@ SK Security keeps the Weighbridge a short walk away and does not bother the cont
   },
 
   u7: {
+    image: "the-second-shift",
     text: `The Second Shift is a clinic for people who do not have the time to be ill. It sits behind the canteen of a Heywood Industrial warehouse, in a room with a sliding door, a hand-lettered rota and a clock that runs ten minutes fast to keep everyone honest. It fixes dock crews and factory hands fast enough to make the next shift, and its boast, painted on the wall, is that nobody has ever been late because of it.
 
 The surgeon has strong views on workplace chrome and will share them whether or not you ask. Most of them are about employers who install what they can afford instead of what the worker needs, and she has seen enough botched corporate jobs to deliver a lecture and a quote in the same breath. The work is competent, quick and practical. The waiting room smells of machine oil and tea.
@@ -2103,6 +2124,7 @@ The Arroyo Concern would like her to sign a contract, and she keeps declining. T
   },
 
   u8: {
+    image: "the-tool-crib",
     text: `The Tool Crib is exactly what it sounds like: a caged counter by a loading gate, where the day shift draws kit and the night shift signs it back in. Hard hats hang from hooks. Hi-vis vests are stacked on a rack. Boots, gloves, clamps, lamps and crowbars are lined up behind the mesh, each with a number stencilled on and a card in a rack by the till.
 
 The crib is run by an old stores clerk who has outlasted three management teams and quite a few safety inspections. She keeps a ledger in pencil. Anything that is not signed back in by the end of the week is for sale at a fair price, and she is the only person in Heywood Industrial who considers that a form of recycling. The stock changes with the shift pattern, and so do the gossip and the discounts.
@@ -2111,6 +2133,7 @@ It is not a gun shop and does not want to be. But the Industrial Zone is full of
   },
 
   v8: {
+    image: "lupes-rig",
     text: `Lupe's Rig is a converted camper at the end of Dam Road, parked where the road runs out of rules. It has a canvas awning, a string of coloured lights, a wooden step and a small battered sign that has been repainted in three different decades. Inside it is much bigger than it looks, which is a trick of how it was built and not of any particular magic. The medical equipment is old, scrubbed, and the best kept in the district.
 
 Lupe is a nomad medtech who has stitched most of the families in the camp and mended a fair few of the Aldecaldo Peacekeepers. Travelling families come to be fixed, and they leave with a jar of something she calls honey and everyone else calls medicine. She talks to patients in three languages and to the machines in a fourth. Anyone she likes is told to call her Tía. Anyone she does not like finds the door closed.
@@ -2119,6 +2142,7 @@ The Steel Vaqueros leave her alone and the El Norte Cartel does not. The Aldecal
   },
 
   w9: {
+    image: "funhouse-mirror",
     text: `Behind Playland's costume shop there is a door marked Staff Only, and beyond it a clinic that serves the park's performers. They need to be tireless, tourist-proof and capable of standing in a heavy suit in the summer sun for an entire shift, and the ripperdoc behind the door keeps them that way. The walls are papered with old character sheets. A giant foam head sits on a shelf and watches the procedures with a fixed and sinister grin.
 
 The ripperdoc is a lean, mild-mannered person who still wears the park's badge on a lanyard and treats every customer like a very anxious child. The work is excellent, because the mascots will tolerate nothing less. The recovery room is a changing room with a couch. The anaesthetic is delivered with a little song. It would be ridiculous if the results were not so reliably good.
@@ -2127,6 +2151,7 @@ Out front is the mirror maze, which does a second job: step into it and you find
   },
 
   x6: {
+    image: "doc-moss-greenhouse",
     text: `The greenhouse collapsed years ago, and the Dirty Hippies decided the wreckage was an improvement. Rows of tomato vines climb the twisted frame. Glass has been replaced with plastic sheeting and bottle walls. The whole structure hums with a low hydroponic note, and underneath the hum, in a clearing between two raised beds, there is a surgeon's table under a canopy of salvaged tarp.
 
 Doc Moss installs hobby-grade chrome among the tomato vines, and the work is improvised, cheap and smells inexplicably fresh. Parts come from the commune's workshops, from skips, and from donations nobody has traced. The implants look as if they were assembled from a hobbyist's drawer, because they were, and they work, to the visible irritation of every licensed ripperdoc within a day's travel. The aftercare advice is mostly about watering.
