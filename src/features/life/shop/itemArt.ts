@@ -15,7 +15,13 @@
 import { readGadget, type ItemKind } from "@/engine";
 
 /** Slugs whose pictures exist in public/images/items. Add one when its file lands. */
-export const ITEM_ART_READY: readonly string[] = [];
+export const ITEM_ART_READY: readonly string[] = [
+  "find-sound_puck",
+  "find-hush_wrap",
+  "find-foam_cutters",
+  "find-gel_tube",
+  "find-relay_clip",
+];
 
 /** The category a catalog weapon is shown as. */
 const WEAPON_ART: Record<string, string> = {

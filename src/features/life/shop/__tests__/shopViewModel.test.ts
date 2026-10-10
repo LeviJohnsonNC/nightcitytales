@@ -117,3 +117,15 @@ describe("item pictures", () => {
     );
   });
 });
+
+describe("the item pictures that have landed", () => {
+  it("are all slugs the shop can ask for, each with both cuts on disk", async () => {
+    const { existsSync } = await import("node:fs");
+    const { ITEM_ART_READY } = await import("../itemArt");
+    for (const slug of ITEM_ART_READY) {
+      expect(ITEM_ART_SLUGS).toContain(slug);
+      expect(existsSync(`public/images/items/${slug}.webp`), slug).toBe(true);
+      expect(existsSync(`public/images/items/${slug}-640.webp`), slug).toBe(true);
+    }
+  });
+});

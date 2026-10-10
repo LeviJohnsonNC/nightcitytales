@@ -306,7 +306,7 @@ function FindCardView({ item, onOpen }: { item: StockedItem; onOpen: () => void 
         kind={item.kind}
         itemId={item.itemId}
         hot={card?.hot ?? false}
-        className="aspect-square w-28 shrink-0 sm:aspect-[16/10] sm:w-full"
+        className="aspect-square w-28 shrink-0 self-start sm:aspect-[16/10] sm:w-full sm:self-auto"
       />
       {item.forYou && (
         <span className="absolute right-2 top-2 z-10 hidden rotate-2 bg-amber sm:inline px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-background shadow">
