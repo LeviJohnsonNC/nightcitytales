@@ -9,10 +9,13 @@ import {
   DEFAULT_START,
   formatDuration,
   getCyberware,
+  getPlace,
+  placeKeyOf,
   practicePlaces,
   type TravelMode,
 } from "@/engine";
 import { GoThere } from "./GoThere";
+import { standingAt } from "@/features/campaign/favours";
 import type { LifeBundle } from "./lifeOps";
 import { quoteCyberware, useRipperdoc } from "./useRipperdoc";
 
@@ -42,6 +45,8 @@ export function RipperdocSheet({
     );
   }, [category, query]);
   const selected = selectedId ? getCyberware(selectedId) : null;
+  const standing = placeKeyOf(standingAt(bundle.campaign));
+  const here = standing && clinic.practice.includes(standing) ? getPlace(standing) : undefined;
   const quote = selected ? quoteCyberware(bundle, selected.id) : null;
 
   return (
@@ -71,6 +76,15 @@ export function RipperdocSheet({
               how long you wait, not what the chrome costs.
             </p>
             <p className="num text-sm font-bold">{bundle.vitals.eurobucks}eb on hand</p>
+
+            {clinic.atPractice && here && (
+              <div className="border border-border bg-card/50 p-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  {here.name}
+                </p>
+                <p className="mt-1 text-sm italic text-muted-foreground">{here.blurb}</p>
+              </div>
+            )}
 
             {!clinic.atPractice && onTravel && (
               <div className="border border-border bg-card/50 p-3">

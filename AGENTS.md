@@ -293,6 +293,16 @@ refuses a place seller the character is not standing at, because a stale page sh
 be able to shop from the street. A visit at a place costs `visitMinutes`; the trip was
 paid when they travelled. Not built yet: per-place stock, prices, owners and quirks.
 
+The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
+the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
+`tools/atlas/tag_places.py`'s `HOUSE_RULE_TAGS` and each with a dossier in
+`placeDossiers.ts` (pictures pending, by key, in `placeDossiers.test.ts`).
+`placeCoverage.test.ts` holds the shape, not the places: every district has a seller and
+ripperdoc ground, every area has a gun counter, each of our places stands inside its own
+district, and a district whose only ripperdoc ground is a hospital must name it as one that
+takes a walk-in. Coordinates were found by searching `districtAtPoint` near a thematic
+anchor, never typed by eye. The next pass is personality: stock, prices, owners and quirks.
+
 Chrome is put in at a place too. Your ripperdoc is still the one cast member, but they
 work out of their haunts (`hauntsFor`, via `ripperdocPractice` in `lifeModel.ts`, so the
 clinic the sheet names is the one the map pin shows), and `atPractice` holds the install

@@ -717,6 +717,9 @@
     "r6": {
       "tags": ["flophouse", "housing", "derelict", "crowd"]
     },
+    "r7": {
+      "tags": ["ripperdoc", "secure", "leisure"]
+    },
     "k2": {
       "tags": ["transit", "garage", "repair"]
     },
@@ -725,6 +728,9 @@
     },
     "k4": {
       "tags": ["nomad", "housing", "food"]
+    },
+    "k5": {
+      "tags": ["ripperdoc", "repair"]
     },
     "s2": {
       "tags": ["docks", "water", "warehouse"]
@@ -735,11 +741,20 @@
     "s4": {
       "tags": ["bar", "fence", "gang_turf"]
     },
+    "s5": {
+      "tags": ["ripperdoc", "docks", "warehouse"]
+    },
     "m3": {
       "tags": ["secure", "transit"]
     },
     "m4": {
       "tags": ["garage", "repair", "warehouse"]
+    },
+    "m5": {
+      "tags": ["ripperdoc", "clinic"]
+    },
+    "m6": {
+      "tags": ["shop", "fence"]
     },
     "o3": {
       "tags": ["market", "shop", "crowd", "food"]
@@ -756,14 +771,74 @@
     "u6": {
       "tags": ["bar", "food", "crowd"]
     },
+    "u7": {
+      "tags": ["ripperdoc", "clinic", "factory"]
+    },
+    "u8": {
+      "tags": ["shop", "factory"]
+    },
     "c6": {
       "tags": ["bar"]
+    },
+    "c7": {
+      "tags": ["ripperdoc", "secure"]
     },
     "p12": {
       "tags": ["bar", "crowd"]
     },
     "i9": {
       "tags": ["food", "crowd"]
+    },
+    "i10": {
+      "tags": ["shop", "fence", "gang_turf"]
+    },
+    "a14": {
+      "tags": ["ripperdoc", "clinic"]
+    },
+    "b14": {
+      "tags": ["shop", "docks"]
+    },
+    "d5": {
+      "tags": ["ripperdoc", "gang_turf", "derelict"]
+    },
+    "e6": {
+      "tags": ["ripperdoc", "shop"]
+    },
+    "e7": {
+      "tags": ["shop", "fence"]
+    },
+    "f10": {
+      "tags": ["ripperdoc", "school"]
+    },
+    "f11": {
+      "tags": ["shop", "school", "lab"]
+    },
+    "g14": {
+      "tags": ["ripperdoc", "office", "secure"]
+    },
+    "g15": {
+      "tags": ["shop", "office"]
+    },
+    "l5": {
+      "tags": ["shop", "secure"]
+    },
+    "n14": {
+      "tags": ["shop", "repair"]
+    },
+    "n15": {
+      "tags": ["ripperdoc", "clinic"]
+    },
+    "q5": {
+      "tags": ["shop"]
+    },
+    "v8": {
+      "tags": ["ripperdoc", "nomad", "clinic"]
+    },
+    "w9": {
+      "tags": ["ripperdoc", "leisure"]
+    },
+    "x6": {
+      "tags": ["ripperdoc", "farm", "derelict"]
     }
   }
 }

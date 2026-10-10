@@ -421,7 +421,7 @@ describe("shops are places", () => {
   });
 
   it("lists the nearest shops first, priced as the atlas prices the trip", () => {
-    const near = nearestShops("a1", undefined, 20);
+    const near = nearestShops("a1", undefined, 100);
     expect(near.length).toBe(new Set(PLACE_SHOPS.map((s) => s.place)).size);
     for (let i = 1; i < near.length; i++) {
       expect(near[i]!.minutes).toBeGreaterThanOrEqual(near[i - 1]!.minutes);

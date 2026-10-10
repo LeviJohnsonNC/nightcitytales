@@ -1,6 +1,6 @@
 {
   "houseRule": true,
-  "note": "Locations the atlas does not print. The Night City Atlas gives the Exec Zone no numbered locations at all and four other districts only one or two, which leaves them somewhere the player can be sent and nowhere they can stand: no tags, so no actions, no dials, no beats, and no building for a job to be at. This file is the ground those districts need, and it is a HOUSE RULE for exactly the reason travel time is — night-city.json stays what the publisher printed, and geography.ts appends these to it. A second, smaller set gives a lived-in district its ordinary evening: somewhere to drink and somewhere to eat where the atlas prints neither, because a player asking for a bar in their own neighbourhood should not be told the nearest one is across a district line.",
+  "note": "Locations the atlas does not print. The Night City Atlas gives the Exec Zone no numbered locations at all and four other districts only one or two, which leaves them somewhere the player can be sent and nowhere they can stand: no tags, so no actions, no dials, no beats, and no building for a job to be at. This file is the ground those districts need, and it is a HOUSE RULE for exactly the reason travel time is — night-city.json stays what the publisher printed, and geography.ts appends these to it. A second, smaller set gives a lived-in district its ordinary evening: somewhere to drink and somewhere to eat where the atlas prints neither, because a player asking for a bar in their own neighbourhood should not be told the nearest one is across a district line. A third set, added with the shops and clinics a character can travel to, gives every district somewhere to be cut and, in the districts the atlas leaves bare, somewhere to buy: fifteen clinics, so that each home district has a ripperdoc of its own to keep (the haunt rule puts people near home), and ten shops, so that no district is without a seller and the map has more than three places that sell a gun.",
   "sourceNote": "Nothing here is invented from nothing. Every entry is built out of what the atlas does print about its district: its security provider, its gangs, its city manager, the streets the map labels, and the dossier written from the published description. Codes continue each district's own numbering.",
   "districts": {
     "exec_zone": [
@@ -63,6 +63,16 @@
           "x": 76.25,
           "y": 41.75
         }
+      },
+      {
+        "key": "r7",
+        "code": "R7",
+        "name": "The Aurelian Suite",
+        "blurb": "A wellness suite for residents, staffed by a surgeon on retainer to the Home Owner’s Association and, by extension, to your neighbours’ secrets. The appointment book is the most guarded document in the district.",
+        "map": {
+          "x": 75.08,
+          "y": 41.35
+        }
       }
     ],
     "reclamation_zone": [
@@ -94,6 +104,16 @@
         "map": {
           "x": 36.75,
           "y": 56
+        }
+      },
+      {
+        "key": "k5",
+        "code": "K5",
+        "name": "Bay Nine",
+        "blurb": "A bay at the back of the Yard where a reclaimer medtech fits transit-grade prosthetics: heavy, ugly and guaranteed to outlast the tram they were salvaged from.",
+        "map": {
+          "x": 34.83,
+          "y": 58.85
         }
       }
     ],
@@ -127,6 +147,16 @@
           "x": 70.5,
           "y": 52
         }
+      },
+      {
+        "key": "s5",
+        "code": "S5",
+        "name": "Berth Nine",
+        "blurb": "A shipping container fitted out as a surgery and bolted to the end of Cargo Way. Stevedores, sailors and the Skiv Family’s people use it, and the whiteboard by the door lists who owes what.",
+        "map": {
+          "x": 72.33,
+          "y": 50.1
+        }
       }
     ],
     "norcal_military_base": [
@@ -148,6 +178,26 @@
         "map": {
           "x": 38.75,
           "y": 20.5
+        }
+      },
+      {
+        "key": "m5",
+        "code": "M5",
+        "name": "Pell’s Trailer",
+        "blurb": "A field surgeon who left the Estero Bay COG under circumstances nobody explains, set up in a trailer outside the Main Gate. Military-grade work at civilian rates, provided you never ask about her last unit.",
+        "map": {
+          "x": 33.08,
+          "y": 22.1
+        }
+      },
+      {
+        "key": "m6",
+        "code": "M6",
+        "name": "Gate Surplus",
+        "blurb": "A tarp-roofed lot outside the wire where the base’s cast-offs end up: vests with last year’s issue numbers, boots, and crates of mixed ammunition that nobody has counted.",
+        "map": {
+          "x": 32.24,
+          "y": 22.65
         }
       }
     ],
@@ -205,6 +255,26 @@
           "x": 60.6,
           "y": 60.4
         }
+      },
+      {
+        "key": "u7",
+        "code": "U7",
+        "name": "The Second Shift",
+        "blurb": "A clinic that fixes dock crews and factory hands fast enough to make the next shift. The surgeon has strong views on workplace chrome and will share them whether or not you ask.",
+        "map": {
+          "x": 64.97,
+          "y": 58.12
+        }
+      },
+      {
+        "key": "u8",
+        "code": "U8",
+        "name": "The Tool Crib",
+        "blurb": "The tool crib by a loading gate, where the day shift draws kit and the night shift signs it back in. Anything not signed back in is for sale at a fair price.",
+        "map": {
+          "x": 64.13,
+          "y": 58.67
+        }
       }
     ],
     "downtown": [
@@ -216,6 +286,16 @@
         "map": {
           "x": 31.9,
           "y": 44.2
+        }
+      },
+      {
+        "key": "c7",
+        "code": "C7",
+        "name": "The Quiet Room",
+        "blurb": "A private surgical suite above a hotel-lobby bar, booked by the hour by fixers who cannot be seen at a hospital. The bill has a line item for discretion, and it is the largest one.",
+        "map": {
+          "x": 32.73,
+          "y": 44.55
         }
       }
     ],
@@ -240,6 +320,200 @@
         "map": {
           "x": 35.1,
           "y": 51.6
+        }
+      },
+      {
+        "key": "i10",
+        "code": "I10",
+        "name": "The Slammer Dock Door",
+        "blurb": "A folding table in the loading dock behind the Slammer, where a cousin of the Kanzaki Family sells guns by the box. Scythe Security patrols the street out front and has never once turned its head.",
+        "map": {
+          "x": 35.06,
+          "y": 59.76
+        }
+      }
+    ],
+    "little_europe": [
+      {
+        "key": "a14",
+        "code": "A14",
+        "name": "Sacred Heart Pharmacy",
+        "blurb": "A pharmacy that stopped selling aspirin years ago and kept the sign. Imelda Voss does eye and ear work in the back room and will tell you which saint to thank.",
+        "map": {
+          "x": 34.04,
+          "y": 41.51
+        }
+      }
+    ],
+    "upper_marina": [
+      {
+        "key": "b14",
+        "code": "B14",
+        "name": "Ruggels Way Surplus",
+        "blurb": "Marine surplus on the waterfront: flares, dry bags, rope and crates that fell off boats at convenient moments. Hollis Ruggels has a story about every one, and none of them match.",
+        "map": {
+          "x": 46.37,
+          "y": 39.62
+        }
+      }
+    ],
+    "the_hot_zone": [
+      {
+        "key": "d5",
+        "code": "D5",
+        "name": "Dead Reckoning",
+        "blurb": "A ripperdoc working out of a gutted skyscraper lobby, on a generator, with a cooler of spare parts and Maelstrom’s grudging protection. Fast and cheap, and nobody asks what the cooler held last week.",
+        "map": {
+          "x": 46.7,
+          "y": 42.46
+        }
+      }
+    ],
+    "little_china": [
+      {
+        "key": "e6",
+        "code": "E6",
+        "name": "Auntie Mei’s",
+        "blurb": "Herbs upstairs, chrome downstairs. Mei Zhao sells the tea, her son does the surgery, and the Gold Dragons take their cut from both.",
+        "map": {
+          "x": 60.87,
+          "y": 47.17
+        }
+      },
+      {
+        "key": "e7",
+        "code": "E7",
+        "name": "Dragon’s Tooth Pawn",
+        "blurb": "A pawn shop whose window holds watches and jade and whose back shelf holds whatever the Red Chrome Legion pledged against a bad week. Nothing is ever redeemed on time.",
+        "map": {
+          "x": 58.59,
+          "y": 48.96
+        }
+      }
+    ],
+    "university_district": [
+      {
+        "key": "f10",
+        "code": "F10",
+        "name": "The Annex",
+        "blurb": "A lecture hall nobody has booked in years, turned into a surgical theatre by a med-school dropout. NCU Campus Security calls it a student service and does not ask what it teaches.",
+        "map": {
+          "x": 31.01,
+          "y": 49.25
+        }
+      },
+      {
+        "key": "f11",
+        "code": "F11",
+        "name": "The Co-Op",
+        "blurb": "The engineering students’ own shopfront: soldering irons, ex-lab kit and the contents of a Biotechnica skip, sold by people who haggle like they are defending a thesis.",
+        "map": {
+          "x": 28.23,
+          "y": 48.54
+        }
+      }
+    ],
+    "the_glen": [
+      {
+        "key": "g14",
+        "code": "G14",
+        "name": "Ardent & Pryce, Consultants",
+        "blurb": "A quiet practice on a high floor, patronised by executives with a dozen reasons to avoid the corporate clinic. Everything is billed as consultation, including the anaesthetic.",
+        "map": {
+          "x": 45.45,
+          "y": 54.9
+        }
+      },
+      {
+        "key": "g15",
+        "code": "G15",
+        "name": "Gentry & Blake",
+        "blurb": "A private security outfitter’s showroom: heavy catalogues, serious prices and a salesman who measures you twice and says nothing about why.",
+        "map": {
+          "x": 42.54,
+          "y": 55.04
+        }
+      }
+    ],
+    "old_combat_zone": [
+      {
+        "key": "l5",
+        "code": "L5",
+        "name": "The Quartermaster",
+        "blurb": "Edgerunners Inc’s own supply cage, open to anybody who has worked a job for Brick Coleman or can pass for it. Dot behind the grille grades customers on a scale that has nothing to do with money.",
+        "map": {
+          "x": 54.02,
+          "y": 53.79
+        }
+      }
+    ],
+    "watson_development": [
+      {
+        "key": "n14",
+        "code": "N14",
+        "name": "Hachiman Arms",
+        "blurb": "A licensed gunsmith on Industrial St, receipted, regulated and politely suspicious. Mr. Hachiman files everything in triplicate, including your face.",
+        "map": {
+          "x": 44.72,
+          "y": 29.88
+        }
+      },
+      {
+        "key": "n15",
+        "code": "N15",
+        "name": "Picket Line Clinic",
+        "blurb": "A clinic that opened in the first week of the Watson strike and never closed. Lucius Rhyne’s organisers pay in favours, and the surgeon charges everyone else the same and tells the NCCS exactly where she stands.",
+        "map": {
+          "x": 48.75,
+          "y": 32.68
+        }
+      }
+    ],
+    "charter_hill": [
+      {
+        "key": "q5",
+        "code": "Q5",
+        "name": "Ascent Outfitters",
+        "blurb": "A boutique selling armour-lined coats to people who want to look like they are climbing the ladder and survive the fall. The fitting room has a window onto the Exec Zone wall, which is the real sales pitch.",
+        "map": {
+          "x": 70.37,
+          "y": 41.52
+        }
+      }
+    ],
+    "santo_domingo": [
+      {
+        "key": "v8",
+        "code": "V8",
+        "name": "Lupe’s Rig",
+        "blurb": "A nomad medtech’s converted camper at the end of Dam Road, parked where the road runs out of rules. Travelling families come to be mended and leave with a jar of something she calls honey.",
+        "map": {
+          "x": 71.41,
+          "y": 66.43
+        }
+      }
+    ],
+    "pacifica_playground": [
+      {
+        "key": "w9",
+        "code": "W9",
+        "name": "Funhouse Mirror",
+        "blurb": "Behind Playland’s costume shop, a ripperdoc rewires the park’s performers, who need to be tireless and tourist-proof. The mirror maze out front is a good way to find out if you were followed.",
+        "map": {
+          "x": 25.66,
+          "y": 70.15
+        }
+      }
+    ],
+    "rancho_coronado": [
+      {
+        "key": "x6",
+        "code": "X6",
+        "name": "Doc Moss’s Greenhouse",
+        "blurb": "A collapsed greenhouse the Dirty Hippies share with a surgeon who installs hobby-grade chrome among the tomato vines. Improvised, cheap and smelling inexplicably fresh.",
+        "map": {
+          "x": 56.54,
+          "y": 67.8
         }
       }
     ]
