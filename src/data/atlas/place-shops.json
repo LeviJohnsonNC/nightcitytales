@@ -10,6 +10,12 @@
     "backRoom": 1
   },
   "stockNote": "A shop restocks once a week (periodDays). What a week's roll put on the shelf is what there is until the next one: `in` is how many of a rolled item a shop has that week, 'one left' is one, a signature item is `line` a week, and the back room keeps `backRoom` of each. Ordinary stock is never counted. House rule; RED prints availability, not quantities. `finds` is a shop's shift on the weekly finds die (engine/gadgets.ts): the salvage counters, pawn shops and Mister Amaaaze lean in.",
+  "holds": {
+    "depositFraction": 0.2,
+    "days": 7,
+    "maxInterests": 2
+  },
+  "holdsNote": "House rule. A seller who knows you (you have bought from them before) will hold one thing for you, citywide, against a deposit of depositFraction of the price, for `days` in-world days, at the price on the day. Buy it inside the hold and the deposit comes off; let it lapse, or call it off, and they keep the deposit. You can tell the sellers who know you what you are looking for (up to maxInterests needs, from the finds' capabilities), and a find that matches at one of them is set aside for you and passed on by word of mouth. A shop with `range: true` lets you try a gun before you buy it: your odds at each printed range band, read off the same tables the fight is rolled on.",
   "shops": [
     {
       "place": "o3",
@@ -88,7 +94,8 @@
       "label": "The Armory: the gun cage",
       "line": "6th Street's headquarters, behind the old National Guard walls. They sell, and they watch you do it.",
       "signature": ["assault_rifle", "shotgun"],
-      "backRoom": ["grenade_launcher", "rocket_launcher"]
+      "backRoom": ["grenade_launcher", "rocket_launcher"],
+      "range": true
     },
     {
       "place": "t2",
@@ -104,7 +111,8 @@
       "label": "Toggle's Temple",
       "line": "A counter beside the firing lanes, run by a man with strong opinions about who is watching.",
       "signature": ["sniper_rifle", "assault_rifle", "smart_ammo"],
-      "backRoom": ["rhinemetall_railgun", "tsunami_helix"]
+      "backRoom": ["rhinemetall_railgun", "tsunami_helix"],
+      "range": true
     },
     {
       "place": "s4",
@@ -190,7 +198,8 @@
       "label": "The Quartermaster",
       "line": "Edgerunners Inc’s supply cage. Dot behind the grille grades customers on a scale that has nothing to do with money.",
       "signature": ["assault_rifle", "sniper_rifle", "emp_ammo"],
-      "backRoom": ["kendachi_mono_three"]
+      "backRoom": ["kendachi_mono_three"],
+      "range": true
     },
     {
       "place": "m6",
@@ -206,7 +215,8 @@
       "label": "Hachiman Arms",
       "line": "Receipted, regulated and politely suspicious. Mr. Hachiman files everything in triplicate, including your face.",
       "signature": ["sniper_rifle"],
-      "backRoom": ["tsunami_helix"]
+      "backRoom": ["tsunami_helix"],
+      "range": true
     },
     {
       "place": "q5",

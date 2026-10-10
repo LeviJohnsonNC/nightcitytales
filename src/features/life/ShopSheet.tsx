@@ -23,7 +23,13 @@ import {
   getWeapon,
   nearestShops,
   gadgetTags,
+  holdDeposit,
+  interestLabel,
   readGadget,
+  HOLD_DAYS,
+  MAX_SHOP_INTERESTS,
+  SHOP_INTEREST_IDS,
+  type RangeBand,
   stacksInInventory,
   unusualOnShelf,
   DEFAULT_START,
@@ -140,6 +146,16 @@ function StockBadge({ item }: { item: StockedItem }) {
       tone: "text-muted-foreground",
     },
   };
+  if (item.key === "held") {
+    return (
+      <span
+        className="shrink-0 font-mono text-[9px] uppercase tracking-[0.14em] text-accent"
+        title="Held for you at the price on the day; the deposit comes off at the till"
+      >
+        held for you
+      </span>
+    );
+  }
   if (item.key === "find" || item.key === "resold") {
     const gadget = readGadget(item.itemId);
     const hot = gadget?.provenance?.kind === "hot";
@@ -157,6 +173,7 @@ function StockBadge({ item }: { item: StockedItem }) {
       >
         {item.key === "resold" ? "yours, once" : hot ? "hot" : "a find"}
         {gadget ? ` · ${gadgetTags(gadget)}` : ""}
+        {item.forYou ? " · set aside for you" : ""}
       </span>
     );
   }
@@ -172,19 +189,104 @@ function StockBadge({ item }: { item: StockedItem }) {
   );
 }
 
+/**
+ * What knowing people buys you, in one place: the thing held for you, what you
+ * asked them to keep an eye out for, and the word from sellers who know you.
+ * Renders nothing for a stranger with nothing on hold and nothing asked.
+ */
+function TiesPanel({ shop }: { shop: ReturnType<typeof useShop> }) {
+  const { hold, word, interests } = shop;
+  const toggle = (id: string) => {
+    const next = interests.includes(id)
+      ? interests.filter((i) => i !== id)
+      : [...interests, id].slice(-MAX_SHOP_INTERESTS);
+    shop.setInterests(next);
+  };
+  return (
+    <div className="mt-3 space-y-2">
+      {hold && (
+        <div className="border border-border bg-card/50 p-3 text-sm">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            On hold
+          </p>
+          <p className="mt-1">
+            {hold.name} at {hold.vendorLabel}, until day {hold.until}. {hold.deposit}eb down,{" "}
+            {Math.max(0, hold.price - hold.deposit)}eb to pay.
+          </p>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="mt-1 h-6 px-2 font-mono text-[10px] uppercase tracking-[0.12em]"
+            disabled={shop.busy}
+            onClick={() => shop.callOffHold(hold)}
+          >
+            call it off · they keep the deposit
+          </Button>
+        </div>
+      )}
+      {word.length > 0 && (
+        <div className="border border-accent/50 bg-accent/5 p-3 text-sm">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+            Word from people who know you
+          </p>
+          <ul className="mt-1 space-y-0.5">
+            {word.map(({ vendor, item }) => (
+              <li key={`${vendor.id}:${item.itemId}`}>
+                {vendor.label} put a {item.name} aside for you · {item.price}eb
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Keep an eye out for
+        </span>
+        {SHOP_INTEREST_IDS.map((id) => (
+          <Button
+            key={id}
+            size="sm"
+            variant={interests.includes(id) ? "secondary" : "ghost"}
+            className="h-6 px-2 text-xs"
+            disabled={shop.busy}
+            aria-pressed={interests.includes(id)}
+            title="Sellers who know you set aside a find that fits, and pass the word"
+            onClick={() => toggle(id)}
+          >
+            something {interestLabel(id).toLowerCase()}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Row({
   item,
   busy,
   eurobucks,
   onBuy,
+  shop,
 }: {
   item: StockedItem;
   busy: boolean;
   /** What the character is actually holding, so the button cannot lie. */
   eurobucks: number;
   onBuy: (quantity: number) => void;
+  /** The visit, for what a seller who knows you will also do: hold it, let you try it. */
+  shop?: ReturnType<typeof useShop>;
 }) {
   const [quantity, setQuantity] = useState(1);
+  const [bands, setBands] = useState<RangeBand[] | null>(null);
+  // One hold citywide, only somebody who knows you, never staple stock.
+  const canHold =
+    !!shop &&
+    shop.knowsYou &&
+    !shop.hold &&
+    item.available &&
+    item.layer !== "staple" &&
+    item.key !== "held";
+  const canTry = !!shop && shop.vendor.range && item.kind === "weapon";
   const stackable = stacksInInventory(item.kind);
   const raw = useMemo(() => {
     try {
@@ -201,7 +303,7 @@ function Row({
   const most = item.left ?? Infinity;
 
   return (
-    <li className="flex items-start gap-2 border-b border-border/60 py-2 last:border-0">
+    <li className="flex flex-wrap items-start gap-2 border-b border-border/60 py-2 last:border-0">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className={`truncate text-sm ${item.affordable ? "" : "text-muted-foreground"}`}>
@@ -241,15 +343,46 @@ function Row({
         </div>
       )}
 
-      <Button
-        size="sm"
-        variant="outline"
-        className="num shrink-0"
-        disabled={busy || !item.available || total > eurobucks}
-        onClick={() => onBuy(quantity)}
-      >
-        {item.available ? `${total}eb` : "—"}
-      </Button>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <Button
+          size="sm"
+          variant="outline"
+          className="num"
+          disabled={busy || !item.available || total > eurobucks}
+          onClick={() => onBuy(quantity)}
+        >
+          {item.available ? `${total}eb` : "—"}
+        </Button>
+        {canHold && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 font-mono text-[10px] uppercase tracking-[0.12em]"
+            disabled={busy || holdDeposit(item.price) > eurobucks}
+            title={`They keep it for ${HOLD_DAYS} days at this price. The deposit comes off when you collect; let it lapse and they keep it.`}
+            onClick={() => shop!.placeHold(item)}
+          >
+            hold · {holdDeposit(item.price)}eb down
+          </Button>
+        )}
+        {canTry && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 font-mono text-[10px] uppercase tracking-[0.12em]"
+            onClick={() => setBands(bands ? null : shop!.tryOnRange(item.itemId))}
+          >
+            {bands ? "put it down" : "try it on the range"}
+          </Button>
+        )}
+      </div>
+      {bands && (
+        <p className="basis-full font-mono text-[10px] text-muted-foreground">
+          {bands.length
+            ? bands.map((b) => `≤${b.max} m: ${b.percent}%`).join(" · ")
+            : "Nothing on this range tells you anything about that one."}
+        </p>
+      )}
     </li>
   );
 }
@@ -405,6 +538,8 @@ export function ShopSheet({
           </p>
         )}
 
+        <TiesPanel shop={shop} />
+
         {finds.length > 0 && (
           <div className="mt-3 border border-accent/50 bg-accent/5 p-3">
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
@@ -418,6 +553,7 @@ export function ShopSheet({
                   busy={shop.busy}
                   eurobucks={shop.eurobucks}
                   onBuy={(quantity) => shop.buy(item, quantity)}
+                  shop={shop}
                 />
               ))}
             </ul>
@@ -437,6 +573,7 @@ export function ShopSheet({
                   busy={shop.busy}
                   eurobucks={shop.eurobucks}
                   onBuy={(quantity) => shop.buy(item, quantity)}
+                  shop={shop}
                 />
               ))}
             </ul>
@@ -540,14 +677,21 @@ export function ShopSheet({
                   key={offer.row.id}
                   className="flex items-center gap-2 border-b border-border/60 py-2 last:border-0"
                 >
-                  <span className="min-w-0 flex-1 truncate text-sm">
-                    {offer.name}
-                    {offer.row.quantity > 1 && (
-                      <span className="text-muted-foreground"> ×{offer.row.quantity}</span>
-                    )}
-                    {offer.row.equipped && (
-                      <span className="ml-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
-                        worn
+                  <span className="min-w-0 flex-1 text-sm">
+                    <span className="block truncate">
+                      {offer.name}
+                      {offer.row.quantity > 1 && (
+                        <span className="text-muted-foreground"> ×{offer.row.quantity}</span>
+                      )}
+                      {offer.row.equipped && (
+                        <span className="ml-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+                          worn
+                        </span>
+                      )}
+                    </span>
+                    {shop.recordOf(offer.row, offer.name) && (
+                      <span className="block truncate font-mono text-[10px] text-muted-foreground">
+                        {shop.recordOf(offer.row, offer.name)}
                       </span>
                     )}
                   </span>
@@ -579,6 +723,7 @@ export function ShopSheet({
                 busy={shop.busy}
                 eurobucks={shop.eurobucks}
                 onBuy={(quantity) => shop.buy(item, quantity)}
+                shop={shop}
               />
             ))
           )}

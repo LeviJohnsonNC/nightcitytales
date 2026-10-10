@@ -13,9 +13,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  describeItemRecord,
+  itemRecord,
+  rangeTrial,
+  skillLevelFor,
+  weaponProfile,
+  type Hold,
+  type RangeBand,
+  type StatKey,
   hagglePercent,
   haggledPrice,
   FIXER_VENDOR,
+  getVendor,
   shopsAt,
   type ItemKind,
   type Vendor,
@@ -24,7 +33,11 @@ import {
   haggle,
   loadShopContext,
   purchase,
+  callOffHold,
+  placeHold,
   recordShopSeen,
+  setShopInterests,
+  wordAround,
   sell,
   sellOffers,
   shopShelf,
@@ -207,6 +220,104 @@ export function useShop(bundle: LifeBundle | undefined, open = false) {
     onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
   });
 
+  // Word of mouth: what sellers who know the character have set aside elsewhere.
+  const word = useMemo(
+    () =>
+      bundle && context.data
+        ? wordAround({
+            campaignId: bundle.campaign.id,
+            day,
+            context: { ...context.data, places: bundle.places },
+            except: vendor.id,
+          })
+        : [],
+    [bundle, context.data, day, vendor.id],
+  );
+
+  /** Your odds with a gun on this shop's range, off the tables the fight rolls on. */
+  const tryOnRange = useCallback(
+    (itemId: string): RangeBand[] => {
+      if (!bundle || !vendor.range) return [];
+      try {
+        const profile = weaponProfile(itemId);
+        if (!profile.statKey || !profile.skillId) return [];
+        const actor = actorFor(bundle.character, {
+          vitals: bundle.vitals,
+          inventory: bundle.inventory,
+        });
+        const stat = actor.stats[profile.statKey as StatKey] ?? 0;
+        return rangeTrial(itemId, stat + skillLevelFor(actor, profile.skillId));
+      } catch {
+        return [];
+      }
+    },
+    [bundle, vendor.range],
+  );
+
+  /** What a thing in the kit has been through, from the shop's slice of the ledger. */
+  const recordOf = useCallback(
+    (row: { id: string; item_id: string }, name: string): string | null =>
+      context.data
+        ? describeItemRecord(
+            itemRecord(
+              [...context.data.events, ...(context.data.history ?? [])],
+              { itemId: row.item_id, rowId: row.id, name },
+              (id) => {
+                try {
+                  return getVendor(id).label;
+                } catch {
+                  return id;
+                }
+              },
+            ),
+          )
+        : null,
+    [context.data],
+  );
+
+  const holdOne = useMutation({
+    mutationFn: async (item: StockedItem) => {
+      if (!bundle) throw new Error("Still loading.");
+      return placeHold({
+        campaignId: bundle.campaign.id,
+        vendorId: vendor.id,
+        kind: item.kind,
+        itemId: item.itemId,
+      });
+    },
+    onSuccess: (outcome) => {
+      setMessage(
+        outcome.ok
+          ? {
+              tone: "bought",
+              text: `They will hold ${outcome.hold.name} until day ${outcome.hold.until}. ${outcome.hold.deposit}eb down.`,
+            }
+          : { tone: "refused", text: outcome.reason },
+      );
+      invalidate();
+    },
+    onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
+  });
+
+  const callOff = useMutation({
+    mutationFn: async (hold: Hold) => {
+      if (!bundle) throw new Error("Still loading.");
+      await callOffHold(bundle.campaign.id, hold);
+    },
+    onSuccess: () => {
+      setMessage({ tone: "refused", text: "Back on the shelf. They kept the deposit." });
+      invalidate();
+    },
+  });
+
+  const askAround = useMutation({
+    mutationFn: async (needs: string[]) => {
+      if (!bundle) throw new Error("Still loading.");
+      return setShopInterests(bundle.campaign.id, needs);
+    },
+    onSuccess: () => invalidate(),
+  });
+
   const sellOne = useMutation({
     mutationFn: async (inventoryId: string) => {
       if (!bundle) throw new Error("Still loading.");
@@ -268,7 +379,27 @@ export function useShop(bundle: LifeBundle | undefined, open = false) {
     eurobucks,
     message,
     clearMessage: () => setMessage(null),
-    busy: buy.isPending || reload.isPending || argue.isPending || sellOne.isPending,
+    busy:
+      buy.isPending ||
+      reload.isPending ||
+      argue.isPending ||
+      sellOne.isPending ||
+      holdOne.isPending ||
+      callOff.isPending ||
+      askAround.isPending,
+    /** The one thing held for the character anywhere, if any. */
+    hold: view?.hold ?? null,
+    /** True when this seller knows the character: they will hold things. */
+    knowsYou: view?.knowsYou ?? false,
+    /** What the character asked sellers who know them to keep an eye out for. */
+    interests: view?.interests ?? [],
+    setInterests: (needs: string[]) => askAround.mutate(needs),
+    placeHold: (item: StockedItem) => holdOne.mutate(item),
+    callOffHold: (hold: Hold) => callOff.mutate(hold),
+    /** What sellers who know the character set aside elsewhere this week. */
+    word,
+    tryOnRange,
+    recordOf,
     /** What in the kit this seller would buy, and for how much. */
     offers: bundle ? sellOffers(vendor, bundle.inventory) : [],
     sell: (inventoryId: string) => sellOne.mutate(inventoryId),
