@@ -1988,6 +1988,7 @@ The Gold Dragons look the other way, since the shop pays its tithe as faithfully
   },
 
   f10: {
+    image: "the-annex",
     text: `The Annex was a lecture hall that nobody booked after the department that owned it lost its funding, and a med-school dropout turned it into a surgical theatre in the space between two terms. The tiered seating is still there. The lectern has been replaced by an operating table, and the screens on the wall show something very different from the slides they were installed for. Somebody has left a notice on the door reading Closed for Revision.
 
 Dr. Nkem Okafor is not strictly a doctor, though everybody uses the title, because the correction stopped being worth the breath. A semester short of qualifying, with a head for anatomy and no head for tuition, Okafor works on the student body in the most literal sense and keeps a rate card that treats full-time students kindly. The waiting room is a corridor of NCU undergraduates who would rather not be on the roster.
@@ -1996,6 +1997,7 @@ Campus Security knows. It has decided that the Annex is a student service and do
   },
 
   f11: {
+    image: "the-co-op",
     text: `The Co-Op is the engineering students' own shopfront, and it is run on principles the founders took very seriously and the current members take slightly less so. The shelves hold soldering irons, ex-lab kit, oscilloscopes with dubious calibration, and the contents of a Biotechnica skip that somebody found one rainy night and has been selling off ever since. A hand-written sign by the door says that every sale is final and every item is, in theory, tested.
 
 Prices are set by committee vote, which is the only reason they are ever fair. The students haggle like they are defending a thesis, with footnotes, and a customer who can argue the point is as likely to win a discount as one who can pay. Minutes of the last meeting are pinned beside the till, and they make for better reading than most screamsheets.
@@ -2004,6 +2006,7 @@ It is a good place for gear you cannot find anywhere else and a better place to 
   },
 
   g14: {
+    image: "ardent-and-pryce-consultants",
     text: `Ardent & Pryce, Consultants occupies a high floor in a Glen office tower, behind a reception desk that does not take messages and a waiting room furnished with magazines nobody reads. The nameplate lists a partnership, and the partnership is real. It is just that the two partners are a surgeon and a very good accountant, and the paperwork has been arranged so that nothing the practice does can be said to have happened.
 
 The clients are executives with a dozen reasons to avoid the corporate clinic, most of them to do with the corporate clinic's log. Everything is billed as consultation, including the anaesthetic, and the invoices read like boardroom minutes. The surgical suite is behind a door marked Archive. The surgeon is a quiet, tidy, unhurried person who has never been seen to raise their voice or lose their temper, and who has, on at least two occasions, quietly refused a client.
@@ -2012,6 +2015,7 @@ The Glen runs on information, and Ardent & Pryce sells the oldest kind, which is
   },
 
   g15: {
+    image: "gentry-and-blake",
     text: `Gentry & Blake does not call itself a gun shop and would be offended if you did. It is a private security outfitter, with a showroom on a good street in The Glen, a catalogue the weight of a paving slab and a salesman who greets you by name before you give it. Everything on display is armour, plate and weave, shown on mannequins that have been dressed like a very quiet bodyguard on his way to a funeral.
 
 The prices are serious and nobody comments on them. The salesman measures you twice, once with the tape and once with his eyes, and says nothing about why. Fittings are by appointment, in a side room with a long mirror and a carpet that swallows sound. If you ask what the last client wore it for, the salesman will smile, adjust a strap, and tell you about the weather.

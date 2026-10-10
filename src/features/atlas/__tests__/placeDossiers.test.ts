@@ -130,10 +130,6 @@ describe("place dossiers", () => {
     const PICTURES_PENDING = [
       "c6",
       "e7",
-      "f10",
-      "f11",
-      "g14",
-      "g15",
       "h7",
       "h8",
       "i10",
