@@ -1980,6 +1980,7 @@ The Gold Dragons take their cut from both floors and treat it as a municipal fee
   },
 
   e7: {
+    image: "dragons-tooth-pawn",
     text: `The window of Dragon's Tooth Pawn holds watches, jade, old cameras and a single pair of very good boots. The shop does honest business out front, a small fair trade in tickets and interest, and a quieter one at the back, where a shelf behind a curtain holds whatever the Red Chrome Legion pledged against a bad week and could not redeem. The curtain is not a secret. It is just a courtesy.
 
 The owner, a thin patient man called Lau, writes every pledge in a ledger that predates his own father's handwriting. Nothing is ever redeemed on time, and he has a theory about why: the ones who intend to pay never do, and the ones who do not were never going to need the item anyway. The back shelf is where the second kind of pledge ends up. Every piece on it carries a ticket and a history that somebody would like you to forget.
@@ -2024,6 +2025,7 @@ Corporate security directors, private detectives and the occasional politician a
   },
 
   i10: {
+    image: "the-slammer-dock-door",
     text: `Behind the Slammer there is a loading dock, and on the loading dock there is a folding table, and on the table, on a good night, there are guns. The arrangement is not subtle and it is not meant to be. A cousin of the Kanzaki Family sits behind the table with a clipboard that holds nothing, a thermos that holds soup, and a grin that has seen a great many first-time customers decide not to ask about the serial numbers.
 
 Everything is sold by the box. No names, no receipts, no returns, and no haggling beyond a token grumble that the cousin finds funnier than the customer does. The stock shifts with whatever fell off whichever truck, which is part of the appeal and all of the risk. A pistol bought on a Monday may be a cousin of one bought on a Friday, and may share a history with the one you are being shot with.
@@ -2032,6 +2034,7 @@ Scythe Security patrols the street out front and has never once turned its head.
   },
 
   k5: {
+    image: "bay-nine",
     text: `Bay Nine is the last bay at the back of the Yard, past the tram sheds and the stacked axles, with the door open to the weather and a hand-painted number over the frame. The reclamation crews who keep the city's public transport running need people to keep them running, and the medtech who works here fits what the crews call transit-grade prosthetics: heavy, ugly, and guaranteed to outlast the tram they were salvaged from.
 
 The method is simple. A cyberarm comes off a retired actuator, a cyberleg off a drive assembly, and the medtech rebuilds them with a mechanic's patience and a surgeon's steadiness. Nothing is polished. Everything is rated for abuse. Customers leave with a limb that creaks, weighs a little more than it should, and will never need to be replaced, which is not an experience that most chrome has to offer.
@@ -2040,6 +2043,7 @@ Los Perros Guardianes keeps the Yard secure, and the reclaimers consider Bay Nin
   },
 
   l5: {
+    image: "the-quartermaster",
     text: `The Quartermaster is Edgerunners Inc's own supply cage, set into the wall of their headquarters like a bank vault that has been told to be friendly. It is nominally open to anyone who has worked a job for Brick Coleman or can pass for it, and the second condition does most of the filtering. There is a steel grille, a heavy counter, a hatch for passing items through, and behind all of it a woman who does not smile.
 
 Her name is Dot, and she grades customers on a scale that has nothing to do with money. A client who arrives with a straight back and the right kind of silence may find the shelf suddenly better stocked. One who tries to bluff will find the cage short of everything. There is no appeal. People have tried bribery, charm and threats. The only one that has ever worked is turning up reliably.
@@ -2048,6 +2052,7 @@ The stock is what a crew actually needs, laid out by purpose rather than by bran
   },
 
   m5: {
+    image: "pells-trailer",
     text: `Pell's Trailer sits just outside the Main Gate, where the road widens enough for a parking space and the NorCal Military Police have decided not to notice. It is a long, patched, white-roofed trailer with a canvas awning, a folding step and a red cross that has been repainted so many times it is more a memory of one. Inside it is cleaner than the barracks.
 
 Pell left the Estero Bay COG under circumstances nobody explains and nobody is invited to ask about. She was a field surgeon, and she works now like somebody who has been trained to do it fast, under pressure, with very little. The chrome she fits is military grade, the rates are civilian, and the condition is that you never ask about her last unit. She does not repeat the condition. She does not need to.
@@ -2056,6 +2061,7 @@ The Culper Ring watch the trailer, and the base has a few sets of eyes on it tha
   },
 
   m6: {
+    image: "gate-surplus",
     text: `Gate Surplus is a tarp-roofed lot outside the wire, a place the base's cast-offs eventually end up. Vests with last year's issue numbers hang from a rail. Boots are tied together by their laces in bundles. Crates of mixed ammunition, no two the same calibre or the same age, sit stacked at the back, and nobody has counted them in years, including the person who sells them.
 
 The trade is quiet and long established. Quartermasters send the things they have to write off, soldiers sell what they have been issued twice, and the NorCal Military Police look the other way since the surplus keeps the boundary tidy and the troops contented. The seller is a patient, sunburnt person with a ledger, a folding chair and a long habit of not looking at a customer's face.

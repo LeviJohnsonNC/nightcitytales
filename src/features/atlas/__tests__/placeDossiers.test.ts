@@ -129,15 +129,9 @@ describe("place dossiers", () => {
     // fails here, and so does a picture that lands without its key coming off.
     const PICTURES_PENDING = [
       "c6",
-      "e7",
       "h7",
       "h8",
-      "i10",
       "i9",
-      "k5",
-      "l5",
-      "m5",
-      "m6",
       "n14",
       "n15",
       "p12",
