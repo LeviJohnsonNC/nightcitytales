@@ -172,6 +172,33 @@ HOUSE_RULE_TAGS = {
     "c6": ["bar"],
     "p12": ["bar", "crowd"],
     "i9": ["food", "crowd"],
+    # Shops and clinics to travel to: one ripperdoc ground for every district
+    # that had none, and sellers where the atlas printed few.
+    "a14": ["ripperdoc", "clinic"],
+    "b14": ["shop", "docks"],
+    "c7": ["ripperdoc", "secure"],
+    "d5": ["ripperdoc", "gang_turf", "derelict"],
+    "e6": ["ripperdoc", "shop"],
+    "e7": ["shop", "fence"],
+    "f10": ["ripperdoc", "school"],
+    "f11": ["shop", "school", "lab"],
+    "g14": ["ripperdoc", "office", "secure"],
+    "g15": ["shop", "office"],
+    "i10": ["shop", "fence", "gang_turf"],
+    "k5": ["ripperdoc", "repair"],
+    "l5": ["shop", "secure"],
+    "m5": ["ripperdoc", "clinic"],
+    "m6": ["shop", "fence"],
+    "n14": ["shop", "repair"],
+    "n15": ["ripperdoc", "clinic"],
+    "q5": ["shop"],
+    "r7": ["ripperdoc", "secure", "leisure"],
+    "s5": ["ripperdoc", "docks", "warehouse"],
+    "u7": ["ripperdoc", "clinic", "factory"],
+    "u8": ["shop", "factory"],
+    "v8": ["ripperdoc", "nomad", "clinic"],
+    "w9": ["ripperdoc", "leisure"],
+    "x6": ["ripperdoc", "farm", "derelict"],
 }
 
 

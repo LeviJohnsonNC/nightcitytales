@@ -35,6 +35,12 @@
       "line": "A hole-in-the-wall tech shop where every drawer is half something else."
     },
     {
+      "place": "w1",
+      "vendor": "gun_shop",
+      "label": "Bits’n’Bolts: Faisal’s drawer",
+      "line": "Faisal’s weapons, sold through the tech shop’s back counter. Ask for what is in the drawer, not what is on the shelf."
+    },
+    {
       "place": "x5",
       "vendor": "street",
       "label": "Minimallism",
@@ -75,6 +81,84 @@
       "vendor": "armorer",
       "label": "Torrell and Chiang's",
       "line": "The best tailors in Night City, who know that good tailoring and good armor are the same job."
+    },
+    {
+      "place": "c2",
+      "vendor": "street",
+      "label": "Oasis Megamart",
+      "line": "Aisle after aisle under Continental Brands’ roof, with the ammunition in sporting goods, somewhere past the pet food."
+    },
+    {
+      "place": "r2",
+      "vendor": "street",
+      "label": "Executive Zone Oasis",
+      "line": "Premium brands and rarities, fresh-cut flowers by drone, and an attendant who knows your address before you do."
+    },
+    {
+      "place": "p1",
+      "vendor": "street",
+      "label": "Canalside Plaza",
+      "line": "A strip mall with a talent agency, a restaurant and a nail salon, and one unit at the end with the lights off at the front and on at the back."
+    },
+    {
+      "place": "b14",
+      "vendor": "street",
+      "label": "Ruggels Way Surplus",
+      "line": "Flares, dry bags and crates that fell off boats. Hollis Ruggels has a story for every one, and none of them match."
+    },
+    {
+      "place": "e7",
+      "vendor": "gun_shop",
+      "label": "Dragon’s Tooth Pawn",
+      "line": "Watches and jade in the window. The back shelf holds whatever the Red Chrome Legion pledged against a bad week."
+    },
+    {
+      "place": "f11",
+      "vendor": "street",
+      "label": "The Co-Op",
+      "line": "Engineering students selling ex-lab kit and the contents of a Biotechnica skip, and haggling like they are defending a thesis."
+    },
+    {
+      "place": "g15",
+      "vendor": "armorer",
+      "label": "Gentry & Blake",
+      "line": "A showroom for security details: heavy catalogues, serious prices, and a salesman who measures you twice and does not say why."
+    },
+    {
+      "place": "i10",
+      "vendor": "gun_shop",
+      "label": "The Slammer Dock Door",
+      "line": "A folding table in a loading dock, guns by the box. Scythe Security patrols out front and has never once turned its head."
+    },
+    {
+      "place": "l5",
+      "vendor": "gun_shop",
+      "label": "The Quartermaster",
+      "line": "Edgerunners Inc’s supply cage. Dot behind the grille grades customers on a scale that has nothing to do with money."
+    },
+    {
+      "place": "m6",
+      "vendor": "armorer",
+      "label": "Gate Surplus",
+      "line": "Vests with last year’s issue numbers, boots, and crates of mixed ammunition nobody has counted, under a tarp outside the wire."
+    },
+    {
+      "place": "n14",
+      "vendor": "gun_shop",
+      "label": "Hachiman Arms",
+      "line": "Receipted, regulated and politely suspicious. Mr. Hachiman files everything in triplicate, including your face."
+    },
+    {
+      "place": "q5",
+      "vendor": "armorer",
+      "label": "Ascent Outfitters",
+      "line": "Armour-lined coats for people who want to look like they are climbing, and survive the fall. The fitting room window looks onto the Exec Zone wall."
+    },
+    {
+      "place": "u8",
+      "vendor": "street",
+      "label": "The Tool Crib",
+      "line": "The day shift draws kit and the night shift signs it back in. Whatever is not signed back in is for sale at a fair price."
     }
   ]
 }
