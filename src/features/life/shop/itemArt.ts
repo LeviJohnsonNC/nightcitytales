@@ -21,6 +21,11 @@ export const ITEM_ART_READY: readonly string[] = [
   "find-foam_cutters",
   "find-gel_tube",
   "find-relay_clip",
+  "find-timer_fuse",
+  "find-crawler",
+  "find-pneumatic_driver",
+  "find-tool_roll",
+  "find-lock_gun",
 ];
 
 /** The category a catalog weapon is shown as. */
