@@ -291,8 +291,16 @@ the fixer, who is a phone call and works anywhere; away from a shop it lists the
 (`nearestShops`, priced by `travelMinutes`) and travels the way the map does. `purchase`
 refuses a place seller the character is not standing at, because a stale page should not
 be able to shop from the street. A visit at a place costs `visitMinutes`; the trip was
-paid when they travelled. Not built yet: per-place stock, prices, owners and quirks, and
-the ripperdoc as a place (your ripperdoc is still one cast member, reached from anywhere).
+paid when they travelled. Not built yet: per-place stock, prices, owners and quirks.
+
+Chrome is put in at a place too. Your ripperdoc is still the one cast member, but they
+work out of their haunts (`hauntsFor`, via `ripperdocPractice` in `lifeModel.ts`, so the
+clinic the sheet names is the one the map pin shows), and `atPractice` holds the install
+to a character standing in one: the sheet lets you browse and quotes from anywhere, then
+sends you there (`practicePlaces`, priced by `travelMinutes`) and `prepareRipperdocInstall`
+refuses when asked from elsewhere. An empty practice never locks anybody out. Other
+clinics run by strangers would need a migration, because `install_cyberware` requires the
+campaign's own ripperdoc row, and are not built.
 
 The city is a system in the engine, not a setting in the prose. `geography.ts`
 is the atlas as the publisher printed it and invents nothing; beside it,

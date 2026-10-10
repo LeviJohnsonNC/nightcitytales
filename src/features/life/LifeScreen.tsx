@@ -725,7 +725,13 @@ function LifeRail({
           travelBusy={life.travelBusy}
           travelMode={life.vehicleRule}
         />
-        <RipperdocSheet bundle={bundle} narrate={life.narrateFixedResult} />
+        <RipperdocSheet
+          bundle={bundle}
+          narrate={life.narrateFixedResult}
+          onTravel={life.travelTo}
+          travelBusy={life.travelBusy}
+          travelMode={life.vehicleRule}
+        />
         {/* Renders nothing at all for a character without Maker. */}
         <WorkshopSheet bundle={bundle} />
       </div>

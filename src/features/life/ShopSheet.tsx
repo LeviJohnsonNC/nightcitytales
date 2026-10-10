@@ -13,6 +13,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DockTile } from "./hud/DockTile";
+import { GoThere } from "./GoThere";
 import { ShoppingBag } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -218,32 +219,21 @@ function NoShopHere({
         Your fixer will get you things by phone, for a price. For anything else you have to go to
         somebody who sells it.
       </p>
-      <ul className="mt-2 divide-y divide-border/50">
-        {near.map((place) => (
-          <li key={place.placeKey} className="flex items-center justify-between gap-3 py-2">
-            <span className="min-w-0">
-              <span className="block truncate text-sm">{place.name}</span>
-              <span className="block truncate font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                {[
-                  place.districtName,
-                  place.vendors.map((v) => KIND_NOUN[v.id.split("@")[0]!]).join(" · "),
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </span>
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="shrink-0"
-              disabled={busy}
-              onClick={() => onTravel(place.placeKey)}
-            >
-              {busy ? "On the move…" : `Go · ${place.minutes} min`}
-            </Button>
-          </li>
-        ))}
-      </ul>
+      <GoThere
+        busy={busy}
+        onTravel={onTravel}
+        places={near.map((place) => ({
+          placeKey: place.placeKey,
+          name: place.name,
+          detail: [
+            place.districtName,
+            place.vendors.map((v) => KIND_NOUN[v.id.split("@")[0]!]).join(" · "),
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          minutes: place.minutes,
+        }))}
+      />
     </div>
   );
 }

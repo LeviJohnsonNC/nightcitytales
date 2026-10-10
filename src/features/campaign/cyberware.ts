@@ -4,13 +4,17 @@
  * receipt after this succeeds.
  */
 import {
+  atPractice,
   defaultRng,
+  describePosition,
+  getPlace,
   hasCyberware,
   planCyberwareInstall,
   type CyberwareInstallPlan,
   type GamePhase,
   type RNG,
 } from "@/engine";
+import { standingAt } from "./favours";
 import {
   installCyberware,
   type Campaign,
@@ -28,6 +32,11 @@ export type RipperdocInstallInput = {
   phase: GamePhase;
   hookSituationKey: string | null;
   itemId: string;
+  /**
+   * The places the ripperdoc works out of. The character has to be standing in
+   * one; omitted, the place is not checked (a caller with no atlas to ask).
+   */
+  practice?: string[];
   requestId?: string;
   rng?: RNG;
 };
@@ -109,6 +118,10 @@ export function describeRipperdocResult(plan: CyberwareInstallPlan, ripperdocNam
 
 export function prepareRipperdocInstall(input: RipperdocInstallInput): PreparedRipperdocInstall {
   const requestId = input.requestId ?? crypto.randomUUID();
+  if (input.practice && !atPractice(input.practice, standingAt(input.campaign))) {
+    const where = input.practice.map((key) => getPlace(key)?.name ?? describePosition(key));
+    throw new Error(`${input.ripperdoc.name} works out of ${where.join(" or ")}. Go there.`);
+  }
   const plan = planCyberwareInstall({
     installed: input.cyberware
       .filter((row) => hasCyberware(row.item_id))

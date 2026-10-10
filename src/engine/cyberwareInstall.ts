@@ -6,6 +6,7 @@ import {
   type InstallLevel,
 } from "./catalog";
 import { advanceClock } from "./clock";
+import { districtOfPlace, getPlace, placeKeyOf, travelMinutes, type TravelMode } from "./geography";
 import type { GameClock } from "./campaign";
 import { rollDice } from "./dice";
 import { applyCyberwareHumanityLoss, type HumanityLossResult } from "./humanity";
@@ -255,4 +256,41 @@ export function planCyberwareInstall(input: PlanCyberwareInstallInput): Cyberwar
     clockAfter: advanceClock(input.clock, totalMinutes),
     passesHook: input.phase === "hook",
   };
+}
+
+/**
+ * Chrome is put in at the places your ripperdoc works out of, not wherever you
+ * happen to be standing. `practice` is those places (their haunts, derived by
+ * `hauntsFor`); `standing` is where the character is, as stored. An empty
+ * practice means the atlas found them nowhere, and then nowhere is refused
+ * nothing: a character should never be locked out of the chair by a gap in the
+ * map.
+ */
+export function atPractice(practice: string[], standing: string | null | undefined): boolean {
+  if (practice.length === 0) return true;
+  const here = placeKeyOf(standing);
+  return here !== undefined && practice.includes(here);
+}
+
+export type PracticePlace = {
+  placeKey: string;
+  name: string;
+  districtName: string | undefined;
+  minutes: number;
+};
+
+/** The places the ripperdoc works out of, nearest first, priced as the atlas prices the trip. */
+export function practicePlaces(
+  practice: string[],
+  from: string | null | undefined,
+  mode?: TravelMode,
+): PracticePlace[] {
+  return practice
+    .map((placeKey) => ({
+      placeKey,
+      name: getPlace(placeKey)?.name ?? placeKey,
+      districtName: districtOfPlace(placeKey)?.name,
+      minutes: travelMinutes(from, placeKey, mode),
+    }))
+    .sort((a, b) => a.minutes - b.minutes || a.name.localeCompare(b.name));
 }
