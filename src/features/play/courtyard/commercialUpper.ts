@@ -5,6 +5,8 @@ import type { ArchitectureArt } from "./architecturePack";
 import { faceBasis, facePainter, paintHomeWindow, type Opening } from "./buildingFaces";
 import { hash, type Edge } from "./frontage";
 import { fillMaterial, type MaterialSet } from "./surfaceMaterials";
+import { paintArchitecturalBay } from "./paintedArchitecture";
+import { occupiedUse } from "./occupiedFrontage";
 
 export const COMMERCIAL_BASE = 3.85;
 export const hasCommercialUpper = (s: SceneStructure) => s.style === "shop" && s.height >= 6.8;
@@ -119,7 +121,38 @@ export function paintCommercialUpper(
     fill(quad(x, x + 0.22, COMMERCIAL_BASE + 0.3, s.height - 0.18), warm ? "#82765f" : "#657062");
     fill(quad(x + 0.22, x + 0.3, COMMERCIAL_BASE + 0.3, s.height - 0.18), "rgba(13,18,18,.21)");
   }
-  for (const w of windows) paintHomeWindow(ctx, face, ppm, w, art);
+  const painted = occupiedUse(s) || !warm ? art?.paintedRepairUpper : art?.paintedMarketUpper;
+  for (const w of windows) {
+    const row = windows.filter((candidate) => candidate.z0 === w.z0);
+    const index = row.indexOf(w);
+    const s0 = index === 0 ? 0 : (row[index - 1]!.s1 + w.s0) / 2;
+    const s1 = index === row.length - 1 ? length : (w.s1 + row[index + 1]!.s0) / 2;
+    if (
+      !paintArchitecturalBay(
+        ctx,
+        painted,
+        at,
+        { s0, s1, z0: w.z0 - 0.6, z1: Math.min(s.height, w.z0 + 2.4) },
+        w,
+        "upper",
+      )
+    ) {
+      paintHomeWindow(ctx, face, ppm, w, art);
+      continue;
+    }
+    // The artwork supplies surface character. Real ledges and window reveals
+    // retain a coherent architectural depth at the saved aperture positions.
+    fill(
+      [at(w.s0, 0, w.z0), at(w.s1, 0, w.z0), at(w.s1, 0.16, w.z0), at(w.s0, 0.16, w.z0)],
+      warm ? "#80705b" : "#929180",
+    );
+    fill(quad(w.s0 - 0.08, w.s1 + 0.08, w.z0 - 0.12, w.z0, 0.16), warm ? "#3d322b" : "#51564d");
+    if (w.occupancy === "dark") fill(quad(w.s0, w.s1, w.z0, w.z1), "rgba(13,23,27,.63)");
+    else if (w.occupancy === "blind")
+      fill(quad(w.s0, w.s1, w.z0 + 0.85, w.z1), "rgba(34,36,31,.35)");
+    if (edge === "east")
+      fill(quad(s0, s1, w.z0 - 0.6, Math.min(s.height, w.z0 + 2.4)), "rgba(12,25,28,.18)");
+  }
   if (art?.marketServices && firstRow.length > 1) {
     const a = firstRow[0]!.s1,
       b = firstRow[1]!.s0;

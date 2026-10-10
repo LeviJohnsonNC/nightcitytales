@@ -771,6 +771,7 @@ export function paintCutawayWall(
           entrances: annex.entrances,
           doors: annex.doors,
           clip,
+          masonry: annex.art.paintedServiceMasonry,
         });
       paintFacadeArt({
         ctx,
@@ -1381,6 +1382,7 @@ export function paintBuilding(
         ppm: pixelsPerMetre,
         entrances,
         doors: shopArt.doors,
+        masonry: shopArt.art.paintedServiceMasonry,
       });
     if (shopArt)
       paintFacadeArt({
@@ -1903,6 +1905,10 @@ export function createComposedEnvironment(
           faces: shopReturns(env, pipeAt),
           art: {
             ...(storefrontArt.window ? { interior: storefrontArt.window } : {}),
+            ...(storefrontArt.paintedInterior ? { interior: storefrontArt.paintedInterior } : {}),
+            ...(storefrontArt.paintedFrontage
+              ? { paintedFrontage: storefrontArt.paintedFrontage }
+              : {}),
             ...(storefrontArt.wall ? { wall: storefrontArt.wall } : {}),
             ...(storefrontArt.kanji ? { kanji: storefrontArt.kanji } : {}),
             ...(storefrontArt.service ? { service: storefrontArt.service } : {}),
@@ -2008,7 +2014,13 @@ export function createComposedEnvironment(
         ctx.closePath();
         ctx.clip();
       }
-      ctx.fillStyle = lightColor(warm, pass === "light" ? night.home.room : night.home.glass);
+      // Painted upper rooms remain secondary to the street-level shops. Their
+      // dim interiors must not become identical luminous orange rectangles.
+      const paintedUpper = w.z0 >= COMMERCIAL_BASE && architecture?.paintedMarketUpper;
+      ctx.fillStyle = lightColor(
+        warm,
+        (pass === "light" ? night.home.room : night.home.glass) * (paintedUpper ? 0.5 : 1),
+      );
       const room = face.quad(x0, x1, y0, y1, -HOME_DEPTH);
       ctx.beginPath();
       room.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));

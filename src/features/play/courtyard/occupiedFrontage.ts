@@ -3,6 +3,7 @@
 import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
 import type { ArchitectureArt } from "./architecturePack";
 import { paintFaceAsset } from "./afterRainArt";
+import { paintArchitecturalBay } from "./paintedArchitecture";
 import { facePainter } from "./buildingFaces";
 import { facadeOpenings } from "./architectureArt";
 import { edgeFrame, type Edge } from "./frontage";
@@ -159,6 +160,15 @@ export function paintOccupiedFrontage(
   panel(0.04, length - 0.04, 3.58, 3.72, "rgba(9,23,24,.42)", 0.09);
   // Deep workshop display bays: pegboard, bench, repaired electronics and task lights.
   for (const b of bays) {
+    paintArchitecturalBay(
+      ctx,
+      art?.paintedRepairFrontage,
+      at,
+      { s0: Math.max(0, b.a - 0.2), s1: Math.min(length, b.b + 0.2), z0: 0.08, z1: 2.7 },
+      { s0: b.a, s1: b.b, z0: b.lo, z1: b.hi },
+      "frontage",
+      true,
+    );
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.08, b.hi + 0.08, "#142327");
     const interior = doors.length
       ? art?.repairPartsNarrow

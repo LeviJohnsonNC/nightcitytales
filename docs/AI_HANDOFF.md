@@ -51,3 +51,9 @@ public-route browser test for /shop-review (desktop + phone, axe) pass; screensh
 taken from /shop-review only — the signed-in Life screen was not browser-checked.
 Next: Levi generates the 22 item pictures (docs/art-style.md, Object wrapper);
 convert with tools/art/webp.mjs public/images/items and list them in ITEM_ART_READY.
+
+## Parallel painted architecture pass
+
+PR #347 (`codex/painted-architecture`) implements the approved painted facade kit.
+See [painted-architecture-handoff.md](painted-architecture-handoff.md) for its isolated
+checkout, asset registration, validation and remaining visual-review gates.
