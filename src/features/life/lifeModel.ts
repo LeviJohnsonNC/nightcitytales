@@ -510,3 +510,20 @@ export function hauntPeople(
   }
   return out;
 }
+
+/**
+ * The places the character's ripperdoc works out of: their haunts, derived the
+ * same way the map and the beats derive them, so the clinic the sheet sends
+ * you to is the one the pin shows. Empty when there is no ripperdoc.
+ */
+export function ripperdocPractice(
+  npcs: CampaignNpc[],
+  campaign: Campaign,
+  homeDistrictKey?: string | null,
+  places?: Record<string, PlaceState>,
+): string[] {
+  return (
+    hauntPeople(npcs, campaign, homeDistrictKey, places).find((p) => p.role === "ripperdoc")
+      ?.haunts ?? []
+  );
+}

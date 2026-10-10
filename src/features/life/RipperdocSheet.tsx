@@ -4,16 +4,31 @@ import { Input } from "@/components/ui/input";
 import { DockTile } from "./hud/DockTile";
 import { Cpu } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { CYBERWARE, formatDuration, getCyberware } from "@/engine";
+import {
+  CYBERWARE,
+  DEFAULT_START,
+  formatDuration,
+  getCyberware,
+  practicePlaces,
+  type TravelMode,
+} from "@/engine";
+import { GoThere } from "./GoThere";
 import type { LifeBundle } from "./lifeOps";
 import { quoteCyberware, useRipperdoc } from "./useRipperdoc";
 
 export function RipperdocSheet({
   bundle,
   narrate,
+  onTravel,
+  travelBusy = false,
+  travelMode,
 }: {
   bundle: LifeBundle;
   narrate: (facts: string) => Promise<boolean>;
+  /** Take the character to the clinic, the way the map would. */
+  onTravel?: (placeKey: string) => void;
+  travelBusy?: boolean;
+  travelMode?: TravelMode | undefined;
 }) {
   const clinic = useRipperdoc(bundle, narrate);
   const [query, setQuery] = useState("");
@@ -56,6 +71,32 @@ export function RipperdocSheet({
               how long you wait, not what the chrome costs.
             </p>
             <p className="num text-sm font-bold">{bundle.vitals.eurobucks}eb on hand</p>
+
+            {!clinic.atPractice && onTravel && (
+              <div className="border border-border bg-card/50 p-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Not where {clinic.ripperdoc.name} works
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Chrome goes in at the chair, not over the phone. You can look at what is on offer
+                  from here, but you have to be at one of these to go under.
+                </p>
+                <GoThere
+                  busy={travelBusy}
+                  onTravel={onTravel}
+                  places={practicePlaces(
+                    clinic.practice,
+                    bundle.campaign.location_key ?? DEFAULT_START,
+                    travelMode,
+                  ).map((place) => ({
+                    placeKey: place.placeKey,
+                    name: place.name,
+                    detail: place.districtName,
+                    minutes: place.minutes,
+                  }))}
+                />
+              </div>
+            )}
 
             <Input
               className="mt-2"

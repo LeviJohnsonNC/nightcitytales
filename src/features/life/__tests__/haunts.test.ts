@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_START, districtOfPlace } from "@/engine";
 import type { Campaign, CampaignNpc } from "@/lib/backend";
-import { hauntPeople } from "../lifeModel";
+import { hauntPeople, ripperdocPractice } from "../lifeModel";
+import { tagsOf } from "@/engine";
 
 /**
  * Where the recurring cast keep their bars.
@@ -110,6 +111,26 @@ describe("the character's regular", () => {
   it("changes nothing for a character with no regular", () => {
     expect(hauntPeople([friend], campaign, "little_europe", {})).toEqual(
       hauntPeople([friend], campaign, "little_europe"),
+    );
+  });
+});
+
+describe("where the ripperdoc works", () => {
+  it("is where their haunts are, and only ripperdoc ground", () => {
+    for (const home of ["south_night_city", "north_heywood", "kabuki", null]) {
+      const practice = ripperdocPractice(npcs, campaign, home);
+      expect(practice.length).toBeGreaterThan(0);
+      for (const key of practice) {
+        expect(tagsOf(key).some((t) => ["ripperdoc", "clinic", "hospital"].includes(t))).toBe(true);
+      }
+      const person = hauntPeople(npcs, campaign, home).find((p) => p.role === "ripperdoc")!;
+      expect(practice).toEqual(person.haunts);
+    }
+  });
+
+  it("is nowhere for a campaign with no ripperdoc", () => {
+    expect(ripperdocPractice([npcRow("fixer-1", "Sable", "fixer")], campaign, "kabuki")).toEqual(
+      [],
     );
   });
 });

@@ -3,18 +3,31 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   RIPPERDOC_RULES,
   appointmentDelayDays,
+  atPractice,
   getCyberware,
   hasCyberware,
   installQuantity,
   planCyberwarePlacement,
 } from "@/engine";
 import { castMemberInRole } from "@/features/campaign/castSeeding";
+import { standingAt } from "@/features/campaign/favours";
 import {
   commitRipperdocInstall,
   prepareRipperdocInstall,
   type PreparedRipperdocInstall,
 } from "@/features/campaign/cyberware";
 import type { LifeBundle } from "./lifeOps";
+import { ripperdocPractice } from "./lifeModel";
+
+/** The places this campaign's ripperdoc works out of, derived like every other haunt. */
+export function practiceOf(bundle: LifeBundle): string[] {
+  return ripperdocPractice(
+    bundle.npcs,
+    bundle.campaign,
+    bundle.character.finance?.home_district_key,
+    bundle.places,
+  );
+}
 
 export type RipperdocQuote = {
   cost: number;
@@ -54,6 +67,8 @@ export function quoteCyberware(bundle: LifeBundle, itemId: string): RipperdocQuo
   else if (appointmentDays === null) reason = `${ripperdoc.name} will not put you on the table.`;
   else if (bundle.phase !== "life" && bundle.phase !== "hook")
     reason = "Not while a job is active.";
+  else if (!atPractice(practiceOf(bundle), standingAt(bundle.campaign)))
+    reason = `${ripperdoc.name} does not work from here.`;
   else if (!placement.ok) reason = placement.reason;
   else if (cost > bundle.vitals.eurobucks)
     reason = `${cost}eb, with only ${bundle.vitals.eurobucks}eb on hand.`;
@@ -91,6 +106,7 @@ export function useRipperdoc(bundle: LifeBundle, narrate: (facts: string) => Pro
           phase: bundle.phase,
           hookSituationKey: bundle.hook?.situationKey ?? null,
           itemId,
+          practice: practiceOf(bundle),
         });
       }
       return commitRipperdocInstall(pendingInstall.current);
@@ -112,8 +128,12 @@ export function useRipperdoc(bundle: LifeBundle, narrate: (facts: string) => Pro
     onError: (error: Error) => setMessage(error.message),
   });
 
+  const practice = practiceOf(bundle);
   return {
     ripperdoc,
+    /** The places they work out of, and whether the character is standing in one. */
+    practice,
+    atPractice: atPractice(practice, standingAt(bundle.campaign)),
     message,
     clearMessage: () => setMessage(null),
     busy: mutation.isPending,

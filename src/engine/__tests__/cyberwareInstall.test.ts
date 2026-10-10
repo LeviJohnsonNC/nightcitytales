@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   appointmentDelayDays,
+  atPractice,
+  practicePlaces,
   planCyberwareInstall,
   planCyberwarePlacement,
   rollHumanityLoss,
@@ -77,5 +79,32 @@ describe("cyberware installation", () => {
     expect(plan.recoveryDays).toBe(3);
     expect(plan.clockAfter).toEqual({ day: 7, minute: 840 });
     expect(plan.passesHook).toBe(true);
+  });
+});
+
+describe("where chrome goes in", () => {
+  it("is only at a place the ripperdoc works out of", () => {
+    expect(atPractice(["i3", "j5"], "i3")).toBe(true);
+    expect(atPractice(["i3", "j5"], "a1")).toBe(false);
+    expect(atPractice(["i3"], null)).toBe(false);
+  });
+
+  it("recognises the place when the character is standing at a spot in it", () => {
+    expect(atPractice(["i3"], "i3@12.5,40")).toBe(true);
+  });
+
+  it("never locks anybody out when the atlas found the ripperdoc nowhere", () => {
+    expect(atPractice([], "a1")).toBe(true);
+    expect(atPractice([], null)).toBe(true);
+  });
+
+  it("lists the places nearest first, priced as the atlas prices the trip", () => {
+    const places = practicePlaces(["j5", "i3", "t8"], "i3");
+    expect(places.map((p) => p.placeKey)[0]).toBe("i3");
+    expect(places[0]!.minutes).toBe(0);
+    for (let i = 1; i < places.length; i++) {
+      expect(places[i]!.minutes).toBeGreaterThanOrEqual(places[i - 1]!.minutes);
+    }
+    expect(places.find((p) => p.placeKey === "i3")!.name).toBe("Savage Docs");
   });
 });
