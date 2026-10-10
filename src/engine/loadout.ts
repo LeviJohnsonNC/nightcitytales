@@ -126,9 +126,21 @@ export function budgetStates(method: CreationMethod, loadout: Loadout): BudgetSt
 }
 
 /**
- * What a character starts with to spend in the market: the largest budget that
- * is not fashion-only. Anything priced above it can never be bought at creation.
+ * What a character starts with to spend on one thing: the largest budget that is
+ * allowed to buy it. Fashion money buys only Fashion and Fashionware, so those
+ * can reach a budget the rest cannot. Anything priced above this can never be
+ * bought at creation.
  */
+export function startingFundsFor(method: CreationMethod, kind: ItemKind, itemId: string): number {
+  const fashion = isFashionItem(kind, itemId);
+  return Math.max(
+    ...budgetsForMethod(method)
+      .filter((b) => fashion || !b.fashionOnly)
+      .map((b) => b.limit),
+  );
+}
+
+/** What a character starts with to spend on anything that is not fashion. */
 export function startingFunds(method: CreationMethod): number {
   return Math.max(
     ...budgetsForMethod(method)

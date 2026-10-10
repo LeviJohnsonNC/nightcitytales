@@ -21,7 +21,7 @@ describe("backdrop names", () => {
       expect(venue).toMatch(/^venue-[a-z-]+$/);
       expect(ART_GUIDE, venue).toContain(`${venue}.png`);
     }
-    for (const scene of ["scene-meet", "scene-reveal", "scene-shop"])
+    for (const scene of ["scene-meet", "scene-reveal", "scene-shop", "scene-chrome"])
       expect(ART_GUIDE).toContain(`${scene}.png`);
     for (const c of CHAPTERS) expect(ART_GUIDE).toContain(`chapter-${c}.png`);
   });

@@ -10,6 +10,7 @@ import {
   foundations,
   getCyberware,
   installQuantity,
+  startingFundsFor,
 } from "@/engine";
 import {
   BudgetBars,
@@ -116,7 +117,14 @@ function CyberwareTable({
   category: string;
   query: string;
 }) {
-  const rows = CYBERWARE.filter((c) => c.category === category && matches(c.name, query));
+  // A piece the character could never afford, even with every starting eurobuck, is not shown.
+  const rows = CYBERWARE.filter(
+    (c) =>
+      c.category === category &&
+      (!state.method ||
+        c.cost * installQuantity(c.id) <= startingFundsFor(state.method, "cyberware", c.id)) &&
+      matches(c.name, query),
+  );
   if (rows.length === 0) {
     return (
       <p className="border border-hairline bg-surface p-4 text-sm text-text-muted">
@@ -203,6 +211,10 @@ export function CyberwarePanel({ state }: { state: ChargenState }) {
           </TabsContent>
         ))}
       </Tabs>
+
+      <p className="text-xs text-text-dim">
+        Anything priced above what you start with is not on the shelves.
+      </p>
 
       {installedCount === 0 ? (
         <p className="text-sm text-text-muted">
