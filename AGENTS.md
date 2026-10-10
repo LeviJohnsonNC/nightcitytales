@@ -281,6 +281,19 @@ once-a-day rule is read back from that receipt (`favourCalledOn`, in
 words. A new favour is a row in the data file and, if it needs a new kind of
 effect, a case in both `favoursAt` and `callInFavour`.
 
+Shops are places. `engine/vendors.ts` keeps four archetypes (street, gun shop,
+armorer, fixer) that decide what is sold and how; `src/data/atlas/place-shops.json`
+(`houseRule: true`) says which atlas places sell, as which archetype, under what name
+and in what voice. A seller at a place has the id `archetype@place`, which is what the
+ledger and a regular's flag store, so being known at one gun shop does not carry to
+another. The sheet offers only the sellers where the character stands (`shopsAt`), plus
+the fixer, who is a phone call and works anywhere; away from a shop it lists the nearest
+(`nearestShops`, priced by `travelMinutes`) and travels the way the map does. `purchase`
+refuses a place seller the character is not standing at, because a stale page should not
+be able to shop from the street. A visit at a place costs `visitMinutes`; the trip was
+paid when they travelled. Not built yet: per-place stock, prices, owners and quirks, and
+the ripperdoc as a place (your ripperdoc is still one cast member, reached from anywhere).
+
 The city is a system in the engine, not a setting in the prose. `geography.ts`
 is the atlas as the publisher printed it and invents nothing; beside it,
 `places.ts` (tags, district profiles, arenas), `placeBeats.ts` (what a location

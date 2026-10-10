@@ -1,0 +1,80 @@
+{
+  "houseRule": true,
+  "note": "Where the shop is. Cyberpunk RED prints no shops, only the atlas's places and what each one is, so which of them will sell you something, and what kind of seller they are, is a house rule read off the blurbs. A shop is a PLACE you travel to: it sells the way one of the four archetypes in engine/vendors.ts does (street, gun_shop, armorer; the fixer is a person and is reached by phone from anywhere) and carries its own name and line. Nothing here may invent a fact the atlas contradicts; the line says what the blurb already says. Every place must exist in the atlas and be tagged as somewhere things are sold, and a test holds both. Prices, stock and owners are the next layer and are not here yet.",
+  "visitMinutes": 20,
+  "visitNote": "What a visit costs once you are standing at the counter: the trip there is the atlas's own and is paid when you travel, so the archetype's 'there and back' time is not charged a second time. The fixer is a call and keeps its own wait.",
+  "shops": [
+    {
+      "place": "o3",
+      "vendor": "street",
+      "label": "Ganymede Street Market",
+      "line": "Stalls along the street the map is named for, open at every hour the Tyger Claws allow it."
+    },
+    {
+      "place": "j1",
+      "vendor": "street",
+      "label": "Dock 13",
+      "line": "Willy Maze's storefront, and on the right nights his night market, under the dock lights."
+    },
+    {
+      "place": "v7",
+      "vendor": "street",
+      "label": "Woodchipper's Garage",
+      "line": "Tailgates down in Woodchipper's yard, engines ticking, on the nights she opens it."
+    },
+    {
+      "place": "h4",
+      "vendor": "street",
+      "label": "Mrs. Suzuki's Bodega",
+      "line": "The most stable shelves in Old Japantown, and the only stock you can count on."
+    },
+    {
+      "place": "w1",
+      "vendor": "street",
+      "label": "Bits'n'Bolts",
+      "line": "A hole-in-the-wall tech shop where every drawer is half something else."
+    },
+    {
+      "place": "x5",
+      "vendor": "street",
+      "label": "Minimallism",
+      "line": "Tables set up in the husk of an old mall, on the side nobody's reclaimed yet."
+    },
+    {
+      "place": "k3",
+      "vendor": "street",
+      "label": "The Swap",
+      "line": "Parts on tables, and provenance is not a question anybody working them considers polite."
+    },
+    {
+      "place": "t2",
+      "vendor": "gun_shop",
+      "label": "The Armory: the gun cage",
+      "line": "6th Street's headquarters, behind the old National Guard walls. They sell, and they watch you do it."
+    },
+    {
+      "place": "t2",
+      "vendor": "armorer",
+      "label": "The Armory: the plate racks",
+      "line": "Racks of plate in a drill hall that was built to hold exactly this."
+    },
+    {
+      "place": "d3",
+      "vendor": "gun_shop",
+      "label": "Toggle's Temple",
+      "line": "A counter beside the firing lanes, run by a man with strong opinions about who is watching."
+    },
+    {
+      "place": "s4",
+      "vendor": "gun_shop",
+      "label": "Skiv's Counter",
+      "line": "A dockside bar with an office at the back. Both halves of the business are open to anyone."
+    },
+    {
+      "place": "a13",
+      "vendor": "armorer",
+      "label": "Torrell and Chiang's",
+      "line": "The best tailors in Night City, who know that good tailoring and good armor are the same job."
+    }
+  ]
+}
