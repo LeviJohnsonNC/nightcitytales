@@ -304,6 +304,21 @@ flag. `shopShelf` (`features/campaign/shopping.ts`) is the one question the shee
 your last visit". Never roll stock with an unseeded die: pressing Buy again must not
 change the answer. The plan this is the first pass of is `docs/shopping-discovery.md`.
 
+Strange gear is `engine/gadgets.ts` (data `src/data/rules/gadgets.json`, `houseRule: true`):
+a find is one base object, one capability and at most one limit, and its identity IS its
+item id (`gadget.<base>.<capability>.<limit>.<variant>`), so name, price, contract and quirk
+are derived from the id and nothing is stored or migrated. `getGear` reads a find as a gear
+line, so naming, pricing and describing carried gear needs no special case; `readGadget`
+refuses any id the data does not allow, and an unreadable id is never handed powers. A
+capability is a rule, not prose: `quiet` removes `loud`, `remote` removes `seen`, `quick`
+halves a Life turn's time, `conspicuous` adds `seen`, a temperamental find rolls a d6.
+`gadgetTurn` (`features/campaign/itemUse.ts`) applies them in both loops BEFORE observations
+are priced, and the narrator is told each carried find's contract, capped by
+`PACKET_BUDGET.gadgets`. A new capability must name an engine lever it moves; one that
+would grant a die, a DV or an outcome does not belong. The gear list's printed bonuses (a
+Medscanner's +2 First Aid) are `engine/kitBonuses.ts` over `kit-bonuses.json`, and ride in
+`checkSetup`, so the odds chip and the roll carry them alike.
+
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
 `tools/atlas/tag_places.py`'s `HOUSE_RULE_TAGS` and each with a dossier in

@@ -3,6 +3,8 @@
  * No value here is inferred: every number is read from the file.
  */
 import catalogData from "@/data/rules/catalog.json";
+import { describeGadget, readGadget } from "./gadgets";
+import { priceCategoryForCost } from "./priceCategory";
 
 export type CatalogWeapon = {
   id: string;
@@ -180,9 +182,26 @@ export function hasCyberware(id: string): boolean {
 }
 
 export function getGear(id: string): CatalogGear {
-  const g = GEAR_BY_ID.get(id);
+  const g = GEAR_BY_ID.get(id) ?? gadgetAsGear(id);
   if (!g) throw new Error(`Unknown gear "${id}" (src/data/rules/catalog.json → gear)`);
   return g;
+}
+
+/**
+ * A find (engine/gadgets.ts), read as a gear line, so everything that names,
+ * prices or describes carried gear handles one without knowing finds exist.
+ */
+function gadgetAsGear(id: string): CatalogGear | undefined {
+  const gadget = readGadget(id);
+  if (!gadget) return undefined;
+  return {
+    id,
+    name: gadget.name,
+    cost: gadget.cost,
+    priceCategory: priceCategoryForCost(gadget.cost) ?? "",
+    description: describeGadget(gadget),
+    notes: null,
+  };
 }
 
 export function itemName(kind: ItemKind, id: string): string {

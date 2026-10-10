@@ -41,6 +41,8 @@
 export const PACKET_BUDGET = {
   /** Weapons, kit and chrome. Grows every time they buy anything. */
   capabilities: 24,
+  /** Finds carried, each with its contract. A line apiece, so few. */
+  gadgets: 4,
   /** People in the room, and what the player has worked out about each. */
   npcsPresent: 8,
   npcKnown: 4,

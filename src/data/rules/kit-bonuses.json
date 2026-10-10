@@ -1,0 +1,23 @@
+{
+  "_source": "Cyberpunk RED Core Rulebook, the gear list (pp. 353-355), as transcribed into catalog.json's gear descriptions. The bonuses are printed; this file only says which Skill ids each printed sentence names, so the roll can carry them.",
+  "houseRule": false,
+  "_note": "A carried item adds its printed bonus to a Check with a named Skill. Two of the same item do not stack, and the largest bonus per Skill applies. Conditional bonuses the rules leave to a GM (the Agent's '+2 to Wardrobe and Style under some circumstances') are left out rather than guessed at, because nothing in the engine can say when the circumstance holds.",
+  "_scopeNote": "The Techscanner's printed '+2 to multiple TECH-based Skills' is read as the Tech repair Skills the rules name (Basic Tech, Cybertech, Electronics/Security Tech, Weaponstech, Land/Sea/Air Vehicle Tech) — the same list catalog.json's _rules.repairSkills cites. Confirm against the printed page.",
+  "bonuses": [
+    { "item": "agent", "skills": ["library_search"], "value": 2 },
+    { "item": "medscanner", "skills": ["first_aid", "paramedic"], "value": 2 },
+    {
+      "item": "techscanner",
+      "skills": [
+        "basic_tech",
+        "cybertech",
+        "electronics_security_tech",
+        "weaponstech",
+        "land_vehicle_tech",
+        "sea_vehicle_tech",
+        "air_vehicle_tech"
+      ],
+      "value": 2
+    }
+  ]
+}

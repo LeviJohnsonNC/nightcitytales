@@ -114,6 +114,7 @@ import {
   type ReputationStanding,
   type SkillCheckResult,
   type WoundStateCode,
+  type Observation,
 } from "@/engine";
 import { resolveWalkOns } from "@/features/cast/walkOnMention";
 import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/gmResponse";
@@ -124,7 +125,7 @@ import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { climbNews, milestoneWritten } from "@/features/campaign/climbNews";
 import { saveLiveEncounter, type LiveEncounter } from "@/features/campaign/encounterState";
 import { judgeAndAward, type IpTally } from "@/features/campaign/ipAward";
-import { applyItemUse, planItemUse } from "@/features/campaign/itemUse";
+import { applyItemUse, gadgetTurn, planItemUse } from "@/features/campaign/itemUse";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import {
@@ -611,7 +612,26 @@ export async function narrate(
   // proposed, then the result), and a model describing the same body each time
   // would be charged for it each time. An identical report to the one just
   // recorded is treated as the same event restated, not a second one.
-  const observed = readObservations(gm.observations);
+  // A find used this turn has its say before anything is priced
+  // (engine/gadgets.ts). A Job's turn costs fixed minutes, so a quick find
+  // changes nothing here; quiet and remote ones change what the city noticed.
+  const finds = gadgetTurn({
+    capability,
+    proposed: options.optionsRequested ? [] : gm.proposedActions,
+    reports: readObservations(gm.observations),
+    timed: false,
+    report: (observation) => ({ observation: observation as Observation, factionId: null }),
+  });
+  for (const line of finds.lines) {
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "life_action",
+      summary: line.summary,
+      data: (line.roll ? { roll: line.roll } : {}) as unknown as Json,
+      ...beatFields,
+    });
+  }
+  const observed = finds.reports;
   if (observed.length) {
     await applyPressure(campaignId, observed, {
       beatId,

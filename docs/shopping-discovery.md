@@ -46,7 +46,7 @@ the place's `welcome` flag), "new since your last visit", "What's unusual?" and 
 restock countdown. Each atlas shop has a `signature` and `backRoom` in
 `place-shops.json`.
 
-**2. Strange gear.** Item instances (a `data` jsonb on `campaign_inventory`: the
+**2. Strange gear.** _Shipped: quiet, remote and quick finds (`engine/gadgets.ts`), one of each a week at shops that sell them, the kit bonuses on the roll, and each find's contract in the packet. No migration was needed after all: a find's item id is its whole identity. Watch, Pass, Reveal and Shield wait for the levers later passes build._ Originally planned as: Item instances (a `data` jsonb on `campaign_inventory`: the
 same per-row modification concept the Tech's Upgrade Expertise is blocked on),
 the capability vocabulary as a house-rule data file, authored base objects ×
 capability × limit with deterministic hashed names, finds in shop stock, each

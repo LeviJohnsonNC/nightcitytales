@@ -8,9 +8,15 @@
  * the rows become.
  */
 import { describe, expect, it } from "vitest";
-import { EMPTY_TURN_ECONOMY, judgeAction, type CapabilitySnapshot } from "@/engine";
+import {
+  EMPTY_TURN_ECONOMY,
+  gadgetId,
+  judgeAction,
+  readGadget,
+  type CapabilitySnapshot,
+} from "@/engine";
 import type { CampaignInventoryItem } from "@/lib/backend";
-import { applyItemUse, planItemUse } from "../itemUse";
+import { applyItemUse, gadgetTurn, planItemUse } from "../itemUse";
 
 function row(id: string, itemId: string, quantity: number): CampaignInventoryItem {
   return {
@@ -148,5 +154,44 @@ describe("the gate in front of it", () => {
     const verdict = judgeAction(capability, { kind: "use_item", item: "Glow Paint", quantity: 9 });
     expect(verdict.ok).toBe(false);
     if (!verdict.ok) expect(verdict.reason).toContain("5");
+  });
+});
+
+describe("a find used this turn", () => {
+  const wrapId = gadgetId("hush_wrap", "quiet", "none", 0);
+  const wrap = readGadget(wrapId)!;
+  const carrying = {
+    ...capability,
+    items: [...capability.items, { itemId: wrapId, name: wrap.name, kind: "gear", quantity: 1 }],
+  } as CapabilitySnapshot;
+  const report = (observation: string) => ({ observation, factionId: null });
+
+  it("takes `loud` out of what the city noticed, when it is actually used", () => {
+    const out = gadgetTurn({
+      capability: carrying,
+      proposed: [{ kind: "use_item", item: wrap.name }],
+      reports: [
+        { observation: "loud", factionId: "ncpd" },
+        { observation: "property", factionId: null },
+      ],
+      report,
+    });
+    expect(out.reports.map((r) => r.observation)).toEqual(["property"]);
+    expect(out.lines).toHaveLength(1);
+  });
+
+  it("does nothing for a find the character is not carrying, or did not use", () => {
+    const loud = [{ observation: "loud", factionId: null }];
+    expect(
+      gadgetTurn({
+        capability,
+        proposed: [{ kind: "use_item", item: wrapId }],
+        reports: loud,
+        report,
+      }).reports,
+    ).toEqual(loud);
+    expect(
+      gadgetTurn({ capability: carrying, proposed: [], reports: loud, report }).reports,
+    ).toEqual(loud);
   });
 });

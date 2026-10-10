@@ -20,6 +20,8 @@ import {
   getCyberware,
   itemName,
   luckRemaining,
+  readGadget,
+  type Gadget,
   roleAbilityOf,
   motorpoolFor,
   getVehicle,
@@ -47,6 +49,7 @@ import type {
 } from "@/lib/backend";
 import { liveInventory } from "./liveInventory";
 import { effectiveStatsRecord } from "./playModel";
+import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 
 /** Inventory rows that are ammunition, by campaign slot or catalog id. */
 function isAmmunitionRow(row: CampaignInventoryItem): boolean {
@@ -299,6 +302,20 @@ export function renderCapabilityLines(snapshot: CapabilitySnapshot): string[] {
       ? `Kit on hand: ${items.map((i) => `${i.name}${i.quantity > 1 ? ` x${i.quantity}` : ""}`).join(", ")}`
       : "Kit on hand: nothing but what they are wearing.",
   );
+  // A find's contract is the whole of what it does. The narrator is told it in
+  // so many words, and that the engine applies it, because a model left to
+  // imagine what a "sound puck" can do will have it do the plan's hard part.
+  const finds = withinBudget(
+    items.map((i) => readGadget(i.itemId)).filter((g): g is Gadget => g !== null),
+    PACKET_BUDGET.gadgets,
+  );
+  if (finds.length) {
+    lines.push(
+      `Finds they carry, and all each one does — the engine applies it when they use it ` +
+        `(propose use_item); it does nothing more than this, and whether the plan around it ` +
+        `works is still a check: ${finds.map((g) => `${g.name}: ${g.contract}`).join(" | ")}`,
+    );
+  }
   lines.push(
     snapshot.cyberware.length
       ? `Cyberware installed: ${snapshot.cyberware.map((c) => c.name).join(", ")}`

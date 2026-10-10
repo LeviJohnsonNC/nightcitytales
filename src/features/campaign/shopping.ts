@@ -23,6 +23,7 @@ import {
   haggledPrice,
   hagglePercent,
   hasFlag,
+  looksLikeGadget,
   newSinceLastVisit,
   purchaseEventData,
   readPurchaseEventData,
@@ -345,8 +346,11 @@ export type PurchaseOutcome =
 export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
   const vendor = getVendor(input.vendorId);
   const quantity = Math.max(1, Math.trunc(input.quantity));
-  const item = shelfFor(vendor).find((i) => i.kind === input.kind && i.itemId === input.itemId);
-  if (!item) {
+  // A find is not in the catalog the vendor sells from; whether this week turned
+  // one up is the shelf's question, asked below.
+  const find = input.kind === "gear" && looksLikeGadget(input.itemId);
+  const listed = shelfFor(vendor).find((i) => i.kind === input.kind && i.itemId === input.itemId);
+  if (!listed && !find) {
     return { ok: false, reason: vendor.refusal, stockKey: "not_dealt" };
   }
 
@@ -375,14 +379,17 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
     context: { ...context, places },
     operatorRank: input.isFixer ? (input.operatorRank ?? 0) : 0,
   });
-  const stock = shelf.find((i) => i.kind === item.kind && i.itemId === item.itemId);
+  const stock = shelf.find((i) => i.kind === input.kind && i.itemId === input.itemId);
   if (!stock) {
-    return {
-      ok: false,
-      reason: `${vendor.label} does not bring that out for just anybody.`,
-      stockKey: "back_room",
-    };
+    return find
+      ? { ok: false, reason: `${vendor.label} has nothing like that this week.`, stockKey: "out" }
+      : {
+          ok: false,
+          reason: `${vendor.label} does not bring that out for just anybody.`,
+          stockKey: "back_room",
+        };
   }
+  const item = stock;
   if (stock.roll) await logOpenOracle(input.campaignId, stock.roll);
   if (!stock.available) {
     const when = restockIn === 1 ? "tomorrow" : `in ${restockIn} days`;
@@ -407,7 +414,7 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
           operatorRank: input.operatorRank ?? 0,
         })
       : 0;
-  const list = vendorPrice(vendor, item.kind, item.itemId);
+  const list = item.layer === "find" ? item.price : vendorPrice(vendor, item.kind, item.itemId);
   const unit = haggledPrice(list, percent);
   const cost = unit * allowed;
   const saved = (list - unit) * allowed;

@@ -216,3 +216,40 @@ describe("the odds chip against a person", () => {
     }
   });
 });
+
+describe("what the kit prints", () => {
+  const medscanner = [
+    { id: "r1", item_id: "medscanner", kind: "gear", quantity: 1 },
+  ] as unknown as RollCheckInput["inventory"];
+
+  it("rides a Medscanner's +2 on First Aid, in the chip and in the roll alike", () => {
+    const medtech = character("medtech", 2, [["first_aid", 4]]);
+    const pending = pendingFor("first_aid", medtech, { dv: 15 });
+    const bare = previewPendingCheck(input(medtech, pending, vitals("unwounded"), 0))!;
+    const args = { ...input(medtech, pending, vitals("unwounded"), 0), inventory: medscanner };
+    const kitted = previewPendingCheck(args)!;
+    expect(kitted.base).toBe(bare.base + 2);
+    expect(kitted.modifiers).toContainEqual({ label: "Medscanner", value: 2 });
+    const roll = rollPendingCheck(args);
+    if (roll.kind !== "dv") throw new Error("expected a DV roll");
+    expect(roll.result.modifier).toBe(kitted.base);
+  });
+
+  it("adds nothing to a Skill the item does not name, or once it is used up", () => {
+    const solo = character("solo", 2, [["perception", 4]]);
+    const pending = pendingFor("perception", solo, { dv: 15 });
+    const bare = previewPendingCheck(input(solo, pending, vitals("unwounded"), 0))!;
+    const kitted = previewPendingCheck({
+      ...input(solo, pending, vitals("unwounded"), 0),
+      inventory: medscanner,
+    })!;
+    expect(kitted.base).toBe(bare.base);
+    const medtech = character("medtech", 2, [["first_aid", 4]]);
+    const fa = pendingFor("first_aid", medtech, { dv: 15 });
+    const none = [{ ...medscanner[0]!, quantity: 0 }];
+    expect(
+      previewPendingCheck({ ...input(medtech, fa, vitals("unwounded"), 0), inventory: none })!
+        .modifiers,
+    ).not.toContainEqual({ label: "Medscanner", value: 2 });
+  });
+});

@@ -22,6 +22,8 @@ import {
   getGear,
   getWeapon,
   nearestShops,
+  gadgetTags,
+  readGadget,
   stacksInInventory,
   unusualOnShelf,
   DEFAULT_START,
@@ -138,6 +140,17 @@ function StockBadge({ item }: { item: StockedItem }) {
       tone: "text-muted-foreground",
     },
   };
+  if (item.key === "find") {
+    const gadget = readGadget(item.itemId);
+    return (
+      <span
+        className="shrink-0 font-mono text-[9px] uppercase tracking-[0.14em] text-accent"
+        title="Strange gear this shop turned up this week. One of it, and gone once bought"
+      >
+        a find{gadget ? ` · ${gadgetTags(gadget)}` : ""}
+      </span>
+    );
+  }
   const shown = badge[item.key];
   if (!shown) return null;
   return (
@@ -305,11 +318,15 @@ export function ShopSheet({
   const kinds = shop.vendor.deals;
   const active = kind && kinds.includes(kind as ItemKind) ? kind : kinds[0]!;
 
+  // The week's finds have their own box; the "new" strip is everything else.
+  const finds = useMemo(() => shop.shelf.filter((i) => i.layer === "find"), [shop.shelf]);
+  const fresh = useMemo(() => shop.fresh.filter((i) => i.layer !== "find"), [shop.fresh]);
+
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (unusualOnly) return unusualOnShelf(shop.shelf) as StockedItem[];
     return shop.shelf
-      .filter((i) => i.kind === active)
+      .filter((i) => i.kind === active && i.layer !== "find")
       .filter((i) => !q || i.name.toLowerCase().includes(q));
   }, [shop.shelf, active, query, unusualOnly]);
 
@@ -377,13 +394,32 @@ export function ShopSheet({
           </p>
         )}
 
-        {shop.fresh.length > 0 && (
+        {finds.length > 0 && (
+          <div className="mt-3 border border-accent/50 bg-accent/5 p-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+              Turned up this week
+            </p>
+            <ul className="mt-1">
+              {finds.map((item) => (
+                <Row
+                  key={`find:${item.itemId}`}
+                  item={item}
+                  busy={shop.busy}
+                  eurobucks={shop.eurobucks}
+                  onBuy={(quantity) => shop.buy(item, quantity)}
+                />
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {fresh.length > 0 && (
           <div className="mt-3 border border-accent/50 bg-accent/5 p-3">
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
               New since your last visit
             </p>
             <ul className="mt-1">
-              {shop.fresh.map((item) => (
+              {fresh.map((item) => (
                 <Row
                   key={`fresh:${item.kind}:${item.itemId}`}
                   item={item}

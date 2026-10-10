@@ -29,11 +29,14 @@
  *     a week per shop. Two gun shops are not the same gun shop on the same week.
  *   - THE BACK ROOM: a shop's `backRoom`, kept off the shelf entirely until the
  *     place is glad to see you.
+ *   - FINDS: strange gear (engine/gadgets.ts), usually none, one of each, turned
+ *     up per week on its own seeded die.
  *
  * Pure. No React, no backend, no dice except seeded ones.
  */
 import placeShops from "@/data/atlas/place-shops.json";
 import { seededRng } from "./dice";
+import { gadgetFinds } from "./gadgets";
 import { rollOracle, type OracleResult } from "./oracle";
 import {
   STOCK,
@@ -65,7 +68,7 @@ export function daysToRestock(day: number): number {
   return STOCK_PERIOD_DAYS - ((Math.max(1, Math.trunc(day)) - 1) % STOCK_PERIOD_DAYS);
 }
 
-export const STOCK_LAYERS = ["staple", "line", "unusual", "back_room"] as const;
+export const STOCK_LAYERS = ["staple", "line", "unusual", "back_room", "find"] as const;
 export type StockLayer = (typeof STOCK_LAYERS)[number];
 
 /**
@@ -77,7 +80,7 @@ export type StockLayer = (typeof STOCK_LAYERS)[number];
  * character has already bought.
  */
 export type StockKey =
-  "ordinary" | "line" | "back_room" | "reach" | "in" | "last_one" | "out" | "sold_out";
+  "ordinary" | "line" | "back_room" | "reach" | "in" | "last_one" | "out" | "sold_out" | "find";
 
 export type ShelfStock = ShelfItem & {
   layer: StockLayer;
@@ -179,6 +182,29 @@ export function shopStock(input: ShopStockInput): ShelfStock[] {
       }
     }
   }
+  // The week's finds: one of each, gone once bought.
+  const archetype = input.vendor.id.split("@")[0]!;
+  for (const gadget of gadgetFinds({
+    seed: input.seed,
+    vendorId: input.vendor.id,
+    archetype,
+    period,
+    lean: input.vendor.finds,
+  })) {
+    const item: ShelfItem = {
+      kind: "gear",
+      itemId: gadget.id,
+      name: gadget.name,
+      price: Math.round(gadget.cost * input.vendor.markup),
+      tier: "unusual",
+    };
+    const taken = Math.max(0, bought[stockItemKey(item)] ?? 0);
+    out.push(
+      taken > 0
+        ? { ...item, layer: "find", key: "sold_out", available: false, left: 0, roll: null }
+        : { ...item, layer: "find", key: "find", available: true, left: 1, roll: null },
+    );
+  }
   return out;
 }
 
@@ -197,10 +223,16 @@ export function newSinceLastVisit(now: ShelfStock[], before: ShelfStock[]): Shel
 
 /**
  * The answer to "what's the strangest thing you've got?": what is in that is
- * not staple stock, the back room first and then the dearest.
+ * not staple stock, the finds first, then the back room, then the dearest.
  */
 export function unusualOnShelf(stock: ShelfStock[]): ShelfStock[] {
-  const rank: Record<StockLayer, number> = { back_room: 0, line: 1, unusual: 2, staple: 3 };
+  const rank: Record<StockLayer, number> = {
+    find: 0,
+    back_room: 1,
+    line: 2,
+    unusual: 3,
+    staple: 4,
+  };
   return stock
     .filter((i) => i.layer !== "staple" && i.available)
     .sort((a, b) => rank[a.layer] - rank[b.layer] || b.price - a.price);
