@@ -71,6 +71,7 @@ export * from "./clocks";
 export * from "./opening";
 export * from "./oracle";
 export * from "./vendors";
+export * from "./shopStock";
 export * from "./inventorySlot";
 export * from "./reload";
 export * from "./ledger";

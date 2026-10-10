@@ -75,6 +75,10 @@ vi.mock("@/lib/backend", () => ({
     return row;
   }),
   listCampaignEvents: vi.fn(async () => ledgerEvents),
+  // The shop reads its week back off the same ledger the purchases are written to.
+  listLatestCampaignEventsOfTypes: vi.fn(async (_c: string, types: readonly string[]) =>
+    ledger.filter((e) => types.includes(e.type)).map((e) => ({ type: e.type, data: e.data })),
+  ),
   getCampaign: vi.fn(async () => ({
     campaign: { id: "c", day: clock.day, minute: clock.minute },
     vitals: { eurobucks },
@@ -85,8 +89,12 @@ vi.mock("@/lib/backend", () => ({
     flags.set(flag, value);
     return { flag, value };
   }),
-  listCampaignFlags: vi.fn(async () => []),
+  listCampaignFlags: vi.fn(async () =>
+    [...flags.entries()].map(([flag, value]) => ({ flag, value })),
+  ),
 }));
+
+vi.mock("../placeState", () => ({ loadPlaceStates: vi.fn(async () => ({})) }));
 
 const {
   PURCHASE_EVENT,
@@ -100,7 +108,7 @@ const {
   spendVisit,
   stockedShelf,
 } = await import("../shopping");
-const { getVendor, shelfFor, weaponProfile, WEAPONS, AMMUNITION, vendorPrice } =
+const { getVendor, shelfFor, shopStock, weaponProfile, WEAPONS, AMMUNITION, vendorPrice } =
   await import("@/engine");
 
 const GUNS = getVendor("gun_shop");
@@ -127,14 +135,14 @@ beforeEach(() => {
 
 describe("the shelf as the character sees it", () => {
   it("lists everything, affordable or not", () => {
-    const shelf = stockedShelf(GUNS, 60);
+    const shelf = stockedShelf(shopStock({ vendor: GUNS, seed: "c", day: 1 }), 60);
     expect(shelf.length).toBe(shelfFor(GUNS).length);
     expect(shelf.some((i) => !i.affordable)).toBe(true);
     for (const item of shelf) expect(item.affordable).toBe(item.price <= 60);
   });
 
   it("marks nothing affordable when the character is broke", () => {
-    const shelf = stockedShelf(GUNS, 0);
+    const shelf = stockedShelf(shopStock({ vendor: GUNS, seed: "c", day: 1 }), 0);
     expect(shelf.length).toBeGreaterThan(0);
     expect(shelf.every((i) => !i.affordable)).toBe(true);
   });
@@ -359,27 +367,90 @@ describe("whether it is in stock", () => {
     expect(rolls[0]!.summary).toContain("On the shelf");
   });
 
-  it("takes no money when the shelf comes up empty", async () => {
-    // Force the empty face by exhausting every outcome: over many attempts at
-    // least one must be a refusal, and no refusal may cost anything.
-    let refusals = 0;
-    for (let i = 0; i < 60; i += 1) {
-      inventory.length = 0;
-      eurobucks = 100000;
-      const out = await purchase({
+  /** An unusual weapon this week's roll put at `key` at the gun shop, for campaign "c". */
+  function rolled(key: string) {
+    return shopStock({ vendor: GUNS, seed: "c", day: 1 }).find(
+      (i) => i.layer === "unusual" && i.key === key,
+    );
+  }
+
+  it("takes no money when the shelf comes up empty, and asking again does not reroll it", async () => {
+    const out = rolled("out");
+    expect(out).toBeDefined();
+    eurobucks = 100000;
+    for (let i = 0; i < 20; i += 1) {
+      const result = await purchase({
         campaignId: "c",
         vendorId: "gun_shop",
-        kind: UNUSUAL.kind,
-        itemId: UNUSUAL.itemId,
+        kind: out!.kind,
+        itemId: out!.itemId,
         quantity: 1,
       });
-      if (!out.ok) {
-        refusals += 1;
-        expect(eurobucks).toBe(100000);
-        expect(inventory).toHaveLength(0);
-      }
+      expect(result.ok).toBe(false);
+      expect(result.ok ? null : result.stockKey).toBe("out");
     }
-    expect(refusals).toBeGreaterThan(0);
+    expect(eurobucks).toBe(100000);
+    expect(inventory).toHaveLength(0);
+  });
+
+  it("sells a week's stock and no more: buying it out leaves the shelf bare", async () => {
+    const shelf = shopStock({ vendor: GUNS, seed: "c", day: 1 });
+    const inStock = shelf.find((i) => i.layer === "unusual" && i.key === "in")!;
+    expect(inStock.left).toBeGreaterThan(1);
+    const first = await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: inStock.kind,
+      itemId: inStock.itemId,
+      quantity: 99,
+    });
+    expect(first.ok && first.quantity).toBe(inStock.left);
+    const again = await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: inStock.kind,
+      itemId: inStock.itemId,
+      quantity: 1,
+    });
+    expect(again.ok).toBe(false);
+    expect(again.ok ? null : again.stockKey).toBe("sold_out");
+  });
+
+  it("restocks when the week turns", async () => {
+    const shelf = shopStock({ vendor: GUNS, seed: "c", day: 1 });
+    const inStock = shelf.find((i) => i.layer === "unusual" && i.key === "in")!;
+    await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: inStock.kind,
+      itemId: inStock.itemId,
+      quantity: 99,
+    });
+    // A week on, the shelf is rolled afresh and last week's buying takes nothing off it.
+    clock = { day: 8, minute: 18 * 60 };
+    const later = shopStock({ vendor: GUNS, seed: "c", day: 8 }).find(
+      (i) => i.itemId === inStock.itemId,
+    )!;
+    const result = await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: inStock.kind,
+      itemId: inStock.itemId,
+      quantity: 1,
+    });
+    expect(result.ok).toBe(later.available);
+  });
+
+  it("writes the day into the purchase, which is what takes it off this week's shelf", async () => {
+    clock = { day: 5, minute: 18 * 60 };
+    await purchase({
+      campaignId: "c",
+      vendorId: "gun_shop",
+      kind: ORDINARY.kind,
+      itemId: ORDINARY.itemId,
+      quantity: 1,
+    });
+    expect(ledger.find((e) => e.type === PURCHASE_EVENT)?.data["day"]).toBe(5);
   });
 
   it("knows a regular from stored state, not by scanning the campaign", () => {

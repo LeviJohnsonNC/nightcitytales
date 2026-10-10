@@ -41,3 +41,13 @@ Last Vite listen failed EPERM. Chrome GitHub artifact link downloads worked; hel
 and shell downloads failed. Verify downloaded ZIP SHA256 against artifact API.
 Download via Chrome link named Download city-block-after (opens in a new tab),
 usually nth(1); extract /tmp then view_image real PNGs. No filename-only reviews.
+
+## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
+
+Updated 2026-10-10. Plan of record: docs/shopping-discovery.md (4 passes, then Levi's
+store UI overhaul — keep rules in engine/model modules, sheets thin). Pass 1 (honest
+shelves: engine/shopStock.ts, shop signature/backRoom in place-shops.json, purchase/
+shop_seen ledger payloads, new-since-last-visit) implemented; typecheck, lint, full
+unit suite (333 files) and build pass; not browser-inspected (needs a signed-in session).
+Next: pass 2 — campaign_inventory instance data (migration + replay), capability
+vocabulary, finds, printed gear bonuses applied.

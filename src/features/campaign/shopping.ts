@@ -14,13 +14,24 @@
  * world where you cannot reliably buy bullets is not gritty, it is a chore.
  */
 import {
+  LEDGER_EVENTS,
   advanceClock,
   canAfford,
-  checkStock,
+  daysToRestock,
   describeReload,
   getVendor,
   haggledPrice,
   hagglePercent,
+  hasFlag,
+  newSinceLastVisit,
+  purchaseEventData,
+  readPurchaseEventData,
+  readShopSeenEventData,
+  shopSeenEventData,
+  shopStock,
+  startingState,
+  stockItemKey,
+  stockPeriod,
   opposedCheckForCharacter,
   planReload,
   shelfFor,
@@ -31,14 +42,17 @@ import {
   type GameClock,
   type ItemKind,
   type OpposedCheckResult,
+  type PlaceState,
+  type ShelfStock,
   type SkillCheckActor,
-  type ShelfItem,
   type Vendor,
 } from "@/engine";
 import {
   addInventoryItem,
   appendCampaignEvent,
   getCampaign,
+  listCampaignFlags,
+  listLatestCampaignEventsOfTypes,
   setCampaignFlag,
   setCampaignClock,
   setInventoryAmmo,
@@ -52,9 +66,14 @@ import {
 } from "@/lib/backend";
 import { standingAt } from "./favours";
 import { logOpenOracle } from "./oracles";
+import { loadPlaceStates } from "./placeState";
 
 /** The ledger type a purchase is written under. */
-export const PURCHASE_EVENT = "purchase";
+export const PURCHASE_EVENT = LEDGER_EVENTS.purchase;
+/** The ledger type a look at a seller's shelf is written under. */
+export const SHOP_SEEN_EVENT = LEDGER_EVENTS.shopSeen;
+/** Every ledger type a shelf is read back from. */
+export const SHOP_EVENT_TYPES = [PURCHASE_EVENT, SHOP_SEEN_EVENT] as const;
 /** The ledger type a reload is written under. */
 export const RELOAD_EVENT = "reload";
 
@@ -62,20 +81,179 @@ export const RELOAD_EVENT = "reload";
 // What is on the shelf, and what it costs you.
 // ---------------------------------------------------------------------------
 
-export type StockedItem = ShelfItem & {
+export type StockedItem = ShelfStock & {
   /** True when the character can afford one at this vendor's price. */
   affordable: boolean;
 };
 
 /**
- * The vendor's shelf, priced against what the character is actually holding.
+ * The shelf, priced against what the character is actually holding.
  *
- * Everything is listed, affordable or not: seeing the rifle you cannot afford
- * is the point of walking in, and a list filtered down to your budget quietly
- * tells you your budget is all there is.
+ * Everything on it is listed, affordable or not: seeing the rifle you cannot
+ * afford is the point of walking in, and a list filtered down to your budget
+ * quietly tells you your budget is all there is.
  */
-export function stockedShelf(vendor: Vendor, eurobucks: number): StockedItem[] {
-  return shelfFor(vendor).map((item) => ({ ...item, affordable: item.price <= eurobucks }));
+export function stockedShelf(stock: ShelfStock[], eurobucks: number): StockedItem[] {
+  return stock.map((item) => ({ ...item, affordable: item.price <= eurobucks }));
+}
+
+// ---------------------------------------------------------------------------
+// What is on the shelf this week (engine/shopStock.ts), read off the ledger.
+// ---------------------------------------------------------------------------
+
+/** How many of each item the character bought from this seller in `day`'s stock week. */
+export function boughtThisWeek(
+  events: readonly { type: string; data?: unknown }[],
+  vendorId: string,
+  day: number,
+): Record<string, number> {
+  const week = stockPeriod(day);
+  const out: Record<string, number> = {};
+  for (const event of events) {
+    if (event.type !== PURCHASE_EVENT) continue;
+    const bought = readPurchaseEventData(event.data);
+    if (!bought || bought.vendorId !== vendorId || bought.day === null) continue;
+    if (stockPeriod(bought.day) !== week) continue;
+    const key = stockItemKey(bought);
+    out[key] = (out[key] ?? 0) + bought.quantity;
+  }
+  return out;
+}
+
+/** The last time the character looked at this seller's shelf in an EARLIER week than `day`'s. */
+export function lastLookedBefore(
+  events: readonly { type: string; data?: unknown }[],
+  vendorId: string,
+  day: number,
+): { day: number; backRoom: boolean } | null {
+  const week = stockPeriod(day);
+  let found: { day: number; backRoom: boolean } | null = null;
+  for (const event of events) {
+    if (event.type !== SHOP_SEEN_EVENT) continue;
+    const seen = readShopSeenEventData(event.data);
+    if (!seen || seen.vendorId !== vendorId || stockPeriod(seen.day) >= week) continue;
+    if (!found || seen.day >= found.day) found = { day: seen.day, backRoom: seen.backRoom };
+  }
+  return found;
+}
+
+/** True when the character has already looked at this seller's shelf this stock week. */
+export function lookedThisWeek(
+  events: readonly { type: string; data?: unknown }[],
+  vendorId: string,
+  day: number,
+): boolean {
+  const week = stockPeriod(day);
+  return events.some((event) => {
+    if (event.type !== SHOP_SEEN_EVENT) return false;
+    const seen = readShopSeenEventData(event.data);
+    return !!seen && seen.vendorId === vendorId && stockPeriod(seen.day) === week;
+  });
+}
+
+/** True when the place this seller is at has taken to the character: the back room is open. */
+export function backRoomOpenAt(
+  places: Readonly<Record<string, PlaceState>>,
+  vendor: Vendor,
+): boolean {
+  if (!vendor.place) return false;
+  return hasFlag(places[vendor.place] ?? startingState(vendor.place), "welcome");
+}
+
+export type ShopContext = {
+  /** Recent purchases and looks, oldest first. */
+  events: readonly { type: string; data?: unknown }[];
+  flags: CampaignFlag[];
+  places: Readonly<Record<string, PlaceState>>;
+};
+
+/** Everything a shelf is read from that a Life bundle does not already carry. */
+export async function loadShopContext(campaignId: string): Promise<Omit<ShopContext, "places">> {
+  const [events, flags] = await Promise.all([
+    listLatestCampaignEventsOfTypes(campaignId, SHOP_EVENT_TYPES),
+    listCampaignFlags(campaignId),
+  ]);
+  return { events, flags };
+}
+
+export type ShopShelf = {
+  /** Everything on offer to the character, priced. */
+  shelf: StockedItem[];
+  /** What is in that was not the last time they looked. Empty on a first visit. */
+  fresh: StockedItem[];
+  /** True when there is a back room and it is not open to them. */
+  backRoomClosed: boolean;
+  /** Days until the week turns and the shelf is restocked. */
+  restockIn: number;
+  /** True when they have not yet looked at this shelf this week. */
+  firstLookThisWeek: boolean;
+};
+
+/**
+ * The seller's shelf as the character finds it, the one question both the sheet
+ * and the purchase ask, so the shelf on screen and the stock at the till cannot
+ * disagree.
+ */
+export function shopShelf(input: {
+  vendor: Vendor;
+  campaignId: string;
+  day: number;
+  eurobucks: number;
+  context: ShopContext;
+  operatorRank?: number;
+}): ShopShelf {
+  const { vendor, day, context } = input;
+  const backRoomOpen = backRoomOpenAt(context.places, vendor);
+  const base = {
+    vendor,
+    seed: input.campaignId,
+    regular: isRegularAt(context.flags, vendor.id),
+    operatorRank: input.operatorRank ?? 0,
+  };
+  const stock = shopStock({
+    ...base,
+    day,
+    backRoomOpen,
+    bought: boughtThisWeek(context.events, vendor.id, day),
+  });
+  const last = lastLookedBefore(context.events, vendor.id, day);
+  const fresh = last
+    ? newSinceLastVisit(
+        stock,
+        shopStock({
+          ...base,
+          day: last.day,
+          backRoomOpen: last.backRoom,
+          bought: boughtThisWeek(context.events, vendor.id, last.day),
+        }),
+      )
+    : [];
+  return {
+    shelf: stockedShelf(stock, input.eurobucks),
+    fresh: stockedShelf(fresh, input.eurobucks),
+    backRoomClosed: vendor.backRoom.length > 0 && !backRoomOpen,
+    restockIn: daysToRestock(day),
+    firstLookThisWeek: !lookedThisWeek(context.events, vendor.id, day),
+  };
+}
+
+/** Remember that the character looked at this shelf this week, for "new since your last visit". */
+export async function recordShopSeen(input: {
+  campaignId: string;
+  vendor: Vendor;
+  day: number;
+  places: Readonly<Record<string, PlaceState>>;
+}): Promise<void> {
+  await appendCampaignEvent({
+    campaign_id: input.campaignId,
+    type: SHOP_SEEN_EVENT,
+    summary: `Looked over what ${input.vendor.label} has this week.`,
+    data: shopSeenEventData({
+      vendorId: input.vendor.id,
+      day: input.day,
+      backRoom: backRoomOpenAt(input.places, input.vendor),
+    }) as unknown as Json,
+  });
 }
 
 /** The vendors the character has bought from before. */
@@ -181,23 +359,45 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
   }
   const eurobucks = full.vitals.eurobucks;
 
-  // Is it here at all? Ordinary stock never asks; the unusual gets a die the
-  // player watches, shifted by whether this vendor knows their face.
-  const stock = checkStock(vendor, item, {
-    regular: isRegularAt(full.flags, vendor.id),
+  // Is it here at all? The shelf is this week's (engine/shopStock.ts), read off
+  // the same ledger the sheet read it from, so pressing Buy again cannot reroll
+  // it and the sheet and the till cannot disagree.
+  const day = full.campaign.day ?? 1;
+  const [context, places] = await Promise.all([
+    loadShopContext(input.campaignId),
+    loadPlaceStates(input.campaignId),
+  ]);
+  const { shelf, restockIn } = shopShelf({
+    vendor,
+    campaignId: input.campaignId,
+    day,
+    eurobucks,
+    context: { ...context, places },
     operatorRank: input.isFixer ? (input.operatorRank ?? 0) : 0,
   });
-  if (stock.roll) await logOpenOracle(input.campaignId, stock.roll);
-  if (!stock.available) {
+  const stock = shelf.find((i) => i.kind === item.kind && i.itemId === item.itemId);
+  if (!stock) {
     return {
       ok: false,
-      reason: `${vendor.label}: not in stock tonight.`,
+      reason: `${vendor.label} does not bring that out for just anybody.`,
+      stockKey: "back_room",
+    };
+  }
+  if (stock.roll) await logOpenOracle(input.campaignId, stock.roll);
+  if (!stock.available) {
+    const when = restockIn === 1 ? "tomorrow" : `in ${restockIn} days`;
+    return {
+      ok: false,
+      reason:
+        stock.key === "sold_out"
+          ? `${vendor.label}: you have bought all they had this week. They restock ${when}.`
+          : `${vendor.label}: not in this week. They restock ${when}.`,
       stockKey: stock.key,
     };
   }
 
-  // "One left" means one, whatever the player asked for.
-  const allowed = stock.key === "last_one" ? 1 : quantity;
+  // "One left" means one, and a week's stock is what it is, whatever the player asked for.
+  const allowed = stock.left === null ? quantity : Math.min(quantity, stock.left);
   // "One left, and they know it. The price does not move" — the stock table says
   // so in as many words, so a won argument does not survive that read.
   const percent =
@@ -251,13 +451,16 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
       (saved > 0 ? `, ${saved}eb off the asking price.` : ".") +
       (stock.key === "reach" ? " Sourced on Reach." : ""),
     data: {
-      vendorId: vendor.id,
-      kind: item.kind,
-      itemId: item.itemId,
-      quantity: allowed,
-      cost,
-      saved,
-      stockKey: stock.key,
+      ...purchaseEventData({
+        vendorId: vendor.id,
+        kind: item.kind,
+        itemId: item.itemId,
+        quantity: allowed,
+        cost,
+        saved,
+        stockKey: stock.key,
+        day,
+      }),
       slot: slotFor(item.kind, item.itemId),
     } as unknown as Json,
   });

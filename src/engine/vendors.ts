@@ -130,6 +130,16 @@ export type Vendor = {
    * folding table argues less well than a fixer whose whole living is this.
    */
   haggle: { cool: number; trading: number };
+  /**
+   * Unusual stock this seller always carries, a little of each a week: what the
+   * shop is FOR. Item ids, of kinds the seller deals in. Empty for an archetype.
+   */
+  signature: string[];
+  /**
+   * What comes out of the back only for somebody the place has taken to. Hidden
+   * from the shelf entirely otherwise. Empty for an archetype.
+   */
+  backRoom: string[];
 };
 
 export const VENDORS: Vendor[] = [
@@ -142,6 +152,8 @@ export const VENDORS: Vendor[] = [
     markup: 1,
     refusal: "Nobody out here is selling you a gun in daylight. Ammo and kit, that's the pitch.",
     haggle: { cool: 4, trading: 3 },
+    signature: [],
+    backRoom: [],
   },
   {
     id: "gun_shop",
@@ -152,6 +164,8 @@ export const VENDORS: Vendor[] = [
     markup: 1,
     refusal: "He sells guns and what goes in them. Armor is two doors down and not his problem.",
     haggle: { cool: 5, trading: 4 },
+    signature: [],
+    backRoom: [],
   },
   {
     id: "armorer",
@@ -162,6 +176,8 @@ export const VENDORS: Vendor[] = [
     markup: 1,
     refusal: "Armor and the kit to keep it working. He does not stock weapons and says so often.",
     haggle: { cool: 5, trading: 4 },
+    signature: [],
+    backRoom: [],
   },
   {
     id: "fixer",
@@ -175,6 +191,8 @@ export const VENDORS: Vendor[] = [
     markup: 1.25,
     refusal: "They can get most things. Most is not all, and they will say which.",
     haggle: { cool: 7, trading: 6 },
+    signature: [],
+    backRoom: [],
   },
 ];
 
@@ -190,6 +208,8 @@ type PlaceShop = {
   vendor: VendorId;
   label: string;
   line: string;
+  signature?: string[];
+  backRoom?: string[];
 };
 
 export const PLACE_SHOPS_ARE_HOUSE_RULE: boolean = placeShops.houseRule;
@@ -219,6 +239,8 @@ function atPlace(shop: PlaceShop): Vendor {
     line: shop.line,
     place: shop.place,
     minutes: PLACE_VISIT_MINUTES,
+    signature: shop.signature ?? [],
+    backRoom: shop.backRoom ?? [],
   };
 }
 

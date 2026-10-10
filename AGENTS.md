@@ -291,7 +291,18 @@ the fixer, who is a phone call and works anywhere; away from a shop it lists the
 (`nearestShops`, priced by `travelMinutes`) and travels the way the map does. `purchase`
 refuses a place seller the character is not standing at, because a stale page should not
 be able to shop from the street. A visit at a place costs `visitMinutes`; the trip was
-paid when they travelled. Not built yet: per-place stock, prices, owners and quirks.
+paid when they travelled.
+
+What is on a shelf is DERIVED, never stored and never rolled at the till:
+`engine/shopStock.ts` reads it from the campaign seed, the seller and the stock week,
+minus that week's `purchase` events (which carry the `day`, through
+`purchaseEventData`). Staples are always there; a shop's `signature` is always in, a few
+a week; everything else unusual is the printed stock die, seeded once per item per
+week; its `backRoom` is left off the shelf entirely until the place has the `welcome`
+flag. `shopShelf` (`features/campaign/shopping.ts`) is the one question the sheet and
+`purchase` both ask, so they cannot disagree, and `shop_seen` events give "new since
+your last visit". Never roll stock with an unseeded die: pressing Buy again must not
+change the answer. The plan this is the first pass of is `docs/shopping-discovery.md`.
 
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
