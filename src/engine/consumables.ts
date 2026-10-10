@@ -19,6 +19,7 @@
  */
 import CONSUMABLES from "@/data/rules/consumables.json";
 import { AMMUNITION } from "./catalog";
+import { readGadget } from "./gadgets";
 
 const CONSUMABLE_GEAR = new Set(
   (CONSUMABLES.gear as { id: string }[]).map((entry) => entry.id.trim().toLowerCase()),
@@ -42,6 +43,9 @@ const AMMUNITION_IDS = new Set(AMMUNITION.map((a) => a.id.trim().toLowerCase()))
 export function isConsumable(itemId: string): boolean {
   const id = itemId.trim().toLowerCase();
   if (CONSUMABLE_KINDS.has("ammunition") && AMMUNITION_IDS.has(id)) return true;
+  // A find says for itself whether it is spent: a one-use thing is, nothing else is.
+  const gadget = readGadget(itemId.trim());
+  if (gadget) return gadget.singleUse;
   return CONSUMABLE_GEAR.has(id);
 }
 

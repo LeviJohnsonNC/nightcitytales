@@ -136,7 +136,7 @@ beforeEach(() => {
 describe("the shelf as the character sees it", () => {
   it("lists everything, affordable or not", () => {
     const shelf = stockedShelf(shopStock({ vendor: GUNS, seed: "c", day: 1 }), 60);
-    expect(shelf.length).toBe(shelfFor(GUNS).length);
+    expect(shelf.filter((i) => i.layer !== "find").length).toBe(shelfFor(GUNS).length);
     expect(shelf.some((i) => !i.affordable)).toBe(true);
     for (const item of shelf) expect(item.affordable).toBe(item.price <= 60);
   });
@@ -610,5 +610,48 @@ describe("reloading", () => {
   it("reports what is in each gun, for a UI that has to say so", () => {
     const [only] = reloadableWeapons(kit(2, 40));
     expect(only).toMatchObject({ loaded: 2, magazine: MAG, name: weaponProfile(GUN.id).name });
+  });
+});
+
+describe("buying a find", () => {
+  it("sells the week's find once, as a gear row that names itself, and refuses one that is not there", async () => {
+    let day = 1;
+    let find = shopStock({ vendor: STREET, seed: "c", day }).find((i) => i.layer === "find");
+    while (!find) {
+      day += 7;
+      find = shopStock({ vendor: STREET, seed: "c", day }).find((i) => i.layer === "find");
+    }
+    clock = { day, minute: 18 * 60 };
+    const out = await purchase({
+      campaignId: "c",
+      vendorId: "street",
+      kind: "gear",
+      itemId: find.itemId,
+      quantity: 3,
+    });
+    expect(out.ok && out.quantity).toBe(1);
+    expect(out.ok && out.name).toBe(find.name);
+    expect(inventory.find((r) => r.item_id === find!.itemId)).toBeDefined();
+    const again = await purchase({
+      campaignId: "c",
+      vendorId: "street",
+      kind: "gear",
+      itemId: find.itemId,
+      quantity: 1,
+    });
+    expect(again.ok).toBe(false);
+
+    const absent = await purchase({
+      campaignId: "c",
+      vendorId: "street",
+      kind: "gear",
+      itemId: "gadget.hush_wrap.quiet.none.1",
+      quantity: 1,
+    });
+    // Unless this week happened to turn exactly that one up, it is not for sale.
+    const listed = shopStock({ vendor: STREET, seed: "c", day }).some(
+      (i) => i.itemId === "gadget.hush_wrap.quiet.none.1",
+    );
+    expect(absent.ok).toBe(listed);
   });
 });

@@ -147,8 +147,15 @@ gear the engine can keep its word about, then a store UI overhaul.
   now derived per stock week (`engine/shopStock.ts`): staples, each shop's own line, the
   week's unusual roll and a back room the place's goodwill opens, with "new since your
   last visit", "What's unusual?" and a restock countdown.
-- **Next:** item instances and the capability vocabulary (pass 2), the city stocking the
-  shops and selling (pass 3), merchants who know you (pass 4).
+- **Pass 2, strange gear (shipped).** Finds (`engine/gadgets.ts`): ten base objects, each
+  with a capability the engine enforces (quiet, remote, quick) and at most one limit (one
+  use, temperamental, conspicuous), turned up per shop per week on their own seeded die
+  and sold one of a kind. A find's id is its identity, so no migration. The printed gear
+  bonuses (Agent, Medscanner, Techscanner) finally ride on the roll. The narrator is told
+  each carried find's contract. Not run: `bun run eval` (the capability packet line is a
+  context-renderer change and wants a paid eval before it is trusted).
+- **Next:** the city stocking the shops and selling (pass 3), merchants who know you (pass
+  4). Watch, Pass, Reveal and Shield capabilities wait for the levers pass 3 and 4 build.
 
 ## Also shipped: the Tomorrow Test
 

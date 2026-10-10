@@ -203,11 +203,13 @@ describe("coming back", () => {
     for (const id of TOGGLE.backRoom) expect(fresh).toContain(id);
   });
 
-  it("answers 'what's unusual' with the back room first, then the dearest", () => {
+  it("answers 'what's unusual' with the finds, then the back room, then the dearest", () => {
     const list = unusualOnShelf(
       shopStock({ vendor: TOGGLE, seed: "camp", day: 1, backRoomOpen: true }),
     );
-    expect(list[0]!.layer).toBe("back_room");
+    expect(list.find((i) => i.layer !== "find")!.layer).toBe("back_room");
+    const firstOther = list.findIndex((i) => i.layer !== "find");
+    expect(list.slice(firstOther).some((i) => i.layer === "find")).toBe(false);
     expect(list.every((i) => i.available && i.layer !== "staple")).toBe(true);
   });
 });

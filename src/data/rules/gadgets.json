@@ -1,0 +1,172 @@
+{
+  "houseRule": true,
+  "_note": "Strange gear: the finds a shop turns up that are not in the printed catalog. Cyberpunk RED prints a gear list; it does not print a hush wrap or a sound puck, so everything here is ours. Each find is ONE base object with ONE capability and at most one limit, and a capability is a rule the engine enforces, not a description: `quiet` removes a `loud` observation the turn it is used, `remote` removes `seen`, `quick` halves the in-world time a Life turn's activity takes. Nothing here may grant a die, a DV, damage or an outcome. A find's identity is its item id (gadget.<base>.<capability>.<limit>.<variant>), so its name, price and contract are derived from that id every time and never stored, and an id this file cannot read is not a gadget at all.",
+  "capabilities": {
+    "quiet": {
+      "label": "Quiet",
+      "contract": "Used on something, the act is not heard: the city does not record it as loud.",
+      "suppresses": ["loud"],
+      "timeFactor": 1
+    },
+    "remote": {
+      "label": "Remote",
+      "contract": "It does its work where you left it, so you are not there to be seen doing it: the city does not record you as seen for that act.",
+      "suppresses": ["seen"],
+      "timeFactor": 1
+    },
+    "quick": {
+      "label": "Quick",
+      "contract": "Whatever you use it for takes half the time it otherwise would.",
+      "suppresses": [],
+      "timeFactor": 0.5
+    }
+  },
+  "limits": {
+    "none": {
+      "label": "",
+      "contract": "",
+      "priceFactor": 1
+    },
+    "unreliable": {
+      "label": "Temperamental",
+      "contract": "It does not always work: roll a d6 when you use it, and on a 1 or 2 it does nothing.",
+      "priceFactor": 0.5
+    },
+    "single_use": {
+      "label": "One use",
+      "contract": "It works once and is spent.",
+      "priceFactor": 0.5
+    },
+    "conspicuous": {
+      "label": "Conspicuous",
+      "contract": "Nobody forgets seeing it: using it means you are seen.",
+      "adds": ["seen"],
+      "priceFactor": 0.6
+    }
+  },
+  "reliability": {
+    "die": 6,
+    "failsAtOrBelow": 2
+  },
+  "bases": [
+    {
+      "id": "hush_wrap",
+      "noun": "Hush Wrap",
+      "what": "A roll of dense acoustic foam tape you wind round a tool, a hinge or a latch before you go to work on it.",
+      "capabilities": ["quiet"],
+      "limits": ["none", "single_use"],
+      "cost": 50,
+      "sellers": ["street", "armorer"],
+      "models": ["Hushpuppy", "Mute Swan", "Library", "Tuesday Night", "Lullaby"]
+    },
+    {
+      "id": "foam_cutters",
+      "noun": "Foam-Jaw Cutters",
+      "what": "Bolt cutters with packed, rubber-sleeved jaws that bite through a chain or a padlock shackle with a soft crunch instead of a crack.",
+      "capabilities": ["quiet", "quick"],
+      "limits": ["none", "unreliable", "conspicuous"],
+      "cost": 100,
+      "sellers": ["street", "gun_shop"],
+      "models": ["Soft Snip", "Velvet Bite", "Graveyard Shift", "Quietus"]
+    },
+    {
+      "id": "gel_tube",
+      "noun": "Squeak Gel",
+      "what": "A tube of clear silicone gel that kills the squeak in a hinge, the rattle in a vent cover and the click in a lock.",
+      "capabilities": ["quiet"],
+      "limits": ["single_use"],
+      "cost": 20,
+      "sellers": ["street"],
+      "models": ["Shh!", "Hinge Saint", "Dead Air", "Mouse"]
+    },
+    {
+      "id": "sound_puck",
+      "noun": "Sound Puck",
+      "what": "A coin-sized speaker that sticks to anything and plays one stored sound — a knock, a voice, a phone ringing — when you press the paired fob.",
+      "capabilities": ["remote"],
+      "limits": ["none", "unreliable", "single_use"],
+      "cost": 100,
+      "sellers": ["street"],
+      "models": ["Ghost Knocker", "Poltergeist", "Echo-7", "Doorbell Ditch", "Ventriloquist"]
+    },
+    {
+      "id": "relay_clip",
+      "noun": "Relay Clip",
+      "what": "A spring clip that clamps onto a switch, a latch or a lever and throws it when you send the signal from your Agent.",
+      "capabilities": ["remote"],
+      "limits": ["none", "unreliable"],
+      "cost": 100,
+      "sellers": ["street", "armorer"],
+      "models": ["Long Arm", "Proxy", "Butler", "Second Hand"]
+    },
+    {
+      "id": "timer_fuse",
+      "noun": "Timer Fuse",
+      "what": "A wind-up mechanical timer you wire to whatever you want tripped, so it happens while you are somewhere else entirely.",
+      "capabilities": ["remote"],
+      "limits": ["single_use", "unreliable"],
+      "cost": 50,
+      "sellers": ["street", "gun_shop"],
+      "models": ["Alibi", "Egg Timer", "Later", "Clockwork Friend"]
+    },
+    {
+      "id": "crawler",
+      "noun": "Crawler",
+      "what": "A palm-sized tracked toy drone with a little grabber arm, steered from your Agent, that goes where you would rather not.",
+      "capabilities": ["remote"],
+      "limits": ["none", "unreliable", "conspicuous"],
+      "cost": 500,
+      "sellers": ["street"],
+      "models": ["Beetle", "Little Brother", "Roach Motel", "Scuttler"]
+    },
+    {
+      "id": "pneumatic_driver",
+      "noun": "Air Driver",
+      "what": "A compressed-air multi-driver that runs panel screws, cover plates and bolts out in seconds.",
+      "capabilities": ["quick"],
+      "limits": ["none", "conspicuous"],
+      "cost": 100,
+      "sellers": ["street", "armorer"],
+      "models": ["Pit Stop", "Hurry Up", "Rattler", "Quick Release"]
+    },
+    {
+      "id": "tool_roll",
+      "noun": "Tool Roll",
+      "what": "A fold-out canvas roll that puts every tool exactly where the hand reaches for it.",
+      "capabilities": ["quick"],
+      "limits": ["none"],
+      "cost": 50,
+      "sellers": ["street", "armorer"],
+      "models": ["Surgeon's Habit", "Everything In Its Place", "Mise", "Field Day"]
+    },
+    {
+      "id": "lock_gun",
+      "noun": "Lock Gun",
+      "what": "A pick gun that snaps a cheap pin tumbler lock's pins in one go: the same lock, just faster.",
+      "capabilities": ["quick", "quiet"],
+      "limits": ["none", "unreliable", "conspicuous"],
+      "cost": 500,
+      "sellers": ["gun_shop", "street"],
+      "models": ["Snapper", "Woodpecker", "Housecall", "Skeleton Crew"]
+    }
+  ],
+  "quirks": [
+    "A logo has been taped over, badly.",
+    "Somebody's initials are scratched into it.",
+    "It smells faintly of ozone.",
+    "It still has a corporate inventory tag on it.",
+    "It has been repainted matte black by hand.",
+    "The instructions are printed in Korean.",
+    "There is a sticker of a cartoon cat on it.",
+    "It is newer than anything else on the shelf."
+  ],
+  "finds": {
+    "_note": "How many finds a shop turns up in a stock week: one d6, read on this table, shifted by the shop's own `finds` in place-shops.json (salvage and pawn shops lean in). Most weeks most shops have nothing strange. Finds are sold one at a time.",
+    "die": 6,
+    "table": [
+      { "from": 1, "to": 4, "count": 0 },
+      { "from": 5, "to": 6, "count": 1 },
+      { "from": 7, "to": 99, "count": 2 }
+    ]
+  }
+}

@@ -11,7 +11,18 @@
  * Pure: it returns the writes to make and the line to log, and performs
  * neither. The ops modules own the ordering of their own writes.
  */
-import { findItem, isConsumable, planConsumption, type CapabilitySnapshot } from "@/engine";
+import {
+  findItem,
+  gadgetTurnEffects,
+  isConsumable,
+  planConsumption,
+  readGadget,
+  operateGadget,
+  type CapabilitySnapshot,
+  type GadgetUse,
+  type RNG,
+  type RollResult,
+} from "@/engine";
 import type { CampaignInventoryItem } from "@/lib/backend";
 
 export type ItemUse = {
@@ -93,4 +104,71 @@ export function applyItemUse(
   if (!use.writes.length) return inventory;
   const byId = new Map(use.writes.map((write) => [write.id, write.quantity]));
   return inventory.map((row) => (byId.has(row.id) ? { ...row, quantity: byId.get(row.id)! } : row));
+}
+
+// ---------------------------------------------------------------------------
+// Finds: what a gadget used this turn does to the turn (engine/gadgets.ts).
+// ---------------------------------------------------------------------------
+
+/** What a turn's finds did, for both loops to apply and log the same way. */
+export type GadgetTurn<R extends { observation: string }> = {
+  /** The observations to price, after every working find has had its say. */
+  reports: R[];
+  /** What the turn's in-world time is multiplied by. */
+  timeFactor: number;
+  /** Ledger lines: what changed, and any temperamental thing that did nothing. */
+  lines: { summary: string; roll: RollResult | null }[];
+};
+
+/**
+ * The finds a turn's proposed actions used, and what that did to what the city
+ * noticed. Only finds the character is actually carrying count: a `use_item` of
+ * something they do not have is refused elsewhere and does nothing here.
+ * Observations a working find suppresses are dropped; a conspicuous one adds
+ * `seen` with no faction, which is how any unattributed sighting is priced.
+ */
+export function gadgetTurn<R extends { observation: string; factionId: string | null }>(input: {
+  capability: CapabilitySnapshot;
+  proposed: readonly { kind: string; item?: string }[];
+  reports: readonly R[];
+  rng?: RNG;
+  /** False where a turn's time is fixed (a Job), so a quick find has nothing to shorten. */
+  timed?: boolean;
+  /** Builds the report for an observation a find adds. */
+  report: (observation: string) => R;
+}): GadgetTurn<R> {
+  const uses: GadgetUse[] = [];
+  const seen = new Set<string>();
+  for (const action of input.proposed) {
+    if (action.kind !== "use_item" || !action.item) continue;
+    const carried = findItem(input.capability, action.item);
+    if (!carried || carried.quantity <= 0 || seen.has(carried.itemId)) continue;
+    const gadget = readGadget(carried.itemId);
+    if (!gadget) continue;
+    seen.add(carried.itemId);
+    uses.push(operateGadget(gadget, input.rng));
+  }
+  if (!uses.length) return { reports: [...input.reports], timeFactor: 1, lines: [] };
+
+  const effect = gadgetTurnEffects(
+    uses,
+    input.reports.map((r) => r.observation),
+    { timed: input.timed ?? true },
+  );
+  const kept = input.reports.filter((r) => effect.observations.includes(r.observation));
+  for (const observation of effect.observations) {
+    if (!kept.some((r) => r.observation === observation)) kept.push(input.report(observation));
+  }
+  const rolls = new Map(uses.map((u) => [u.gadget.name, u.roll]));
+  return {
+    reports: kept,
+    timeFactor: effect.timeFactor,
+    lines: effect.lines.map((summary) => {
+      const failed = uses.find((u) => !u.worked && summary.startsWith(`The ${u.gadget.name} `));
+      return {
+        summary: failed?.roll ? `${summary} (${failed.roll.formula})` : summary,
+        roll: failed ? (rolls.get(failed.gadget.name) ?? null) : null,
+      };
+    }),
+  };
 }

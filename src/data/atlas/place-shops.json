@@ -9,7 +9,7 @@
     "line": 2,
     "backRoom": 1
   },
-  "stockNote": "A shop restocks once a week (periodDays). What a week's roll put on the shelf is what there is until the next one: `in` is how many of a rolled item a shop has that week, 'one left' is one, a signature item is `line` a week, and the back room keeps `backRoom` of each. Ordinary stock is never counted. House rule; RED prints availability, not quantities.",
+  "stockNote": "A shop restocks once a week (periodDays). What a week's roll put on the shelf is what there is until the next one: `in` is how many of a rolled item a shop has that week, 'one left' is one, a signature item is `line` a week, and the back room keeps `backRoom` of each. Ordinary stock is never counted. House rule; RED prints availability, not quantities. `finds` is a shop's shift on the weekly finds die (engine/gadgets.ts): the salvage counters, pawn shops and Mister Amaaaze lean in.",
   "shops": [
     {
       "place": "o3",
@@ -17,7 +17,8 @@
       "label": "Ganymede Street Market",
       "line": "Stalls along the street the map is named for, open at every hour the Tyger Claws allow it.",
       "signature": ["braindance_viewer", "scrambler_descrambler"],
-      "backRoom": ["smart_glasses"]
+      "backRoom": ["smart_glasses"],
+      "finds": 1
     },
     {
       "place": "j1",
@@ -29,7 +30,8 @@
         "electric_guitar_other_instrument",
         "auto_level_dampening_ear_protectors"
       ],
-      "backRoom": ["radar_detector"]
+      "backRoom": ["radar_detector"],
+      "finds": 2
     },
     {
       "place": "v7",
@@ -37,7 +39,8 @@
       "label": "Woodchipper's Garage",
       "line": "Tailgates down in Woodchipper's yard, engines ticking, on the nights she opens it.",
       "signature": ["tech_bag", "radiation_suit"],
-      "backRoom": ["homing_tracer"]
+      "backRoom": ["homing_tracer"],
+      "finds": 1
     },
     {
       "place": "h4",
@@ -51,7 +54,8 @@
       "label": "Bits'n'Bolts",
       "line": "A hole-in-the-wall tech shop where every drawer is half something else.",
       "signature": ["tech_bag", "techscanner"],
-      "backRoom": ["cyberdeck"]
+      "backRoom": ["cyberdeck"],
+      "finds": 2
     },
     {
       "place": "w1",
@@ -66,7 +70,8 @@
       "vendor": "street",
       "label": "Minimallism",
       "line": "Tables set up in the husk of an old mall, on the side nobody's reclaimed yet.",
-      "signature": ["smart_glasses", "braindance_viewer"]
+      "signature": ["smart_glasses", "braindance_viewer"],
+      "finds": 1
     },
     {
       "place": "k3",
@@ -74,7 +79,8 @@
       "label": "The Swap",
       "line": "Parts on tables, and provenance is not a question anybody working them considers polite.",
       "signature": ["tech_bag"],
-      "backRoom": ["scrambler_descrambler"]
+      "backRoom": ["scrambler_descrambler"],
+      "finds": 2
     },
     {
       "place": "t2",
@@ -142,14 +148,16 @@
       "label": "Ruggels Way Surplus",
       "line": "Flares, dry bags and crates that fell off boats. Hollis Ruggels has a story for every one, and none of them match.",
       "signature": ["homing_tracer"],
-      "backRoom": ["scrambler_descrambler"]
+      "backRoom": ["scrambler_descrambler"],
+      "finds": 1
     },
     {
       "place": "e7",
       "vendor": "gun_shop",
       "label": "Dragon’s Tooth Pawn",
       "line": "Watches and jade in the window. The back shelf holds whatever the Red Chrome Legion pledged against a bad week.",
-      "backRoom": ["assault_rifle", "battleglove"]
+      "backRoom": ["assault_rifle", "battleglove"],
+      "finds": 1
     },
     {
       "place": "f11",
@@ -157,7 +165,8 @@
       "label": "The Co-Op",
       "line": "Engineering students selling ex-lab kit and the contents of a Biotechnica skip, and haggling like they are defending a thesis.",
       "signature": ["chemical_analyzer", "medscanner"],
-      "backRoom": ["vial_of_biotoxin"]
+      "backRoom": ["vial_of_biotoxin"],
+      "finds": 1
     },
     {
       "place": "g15",
@@ -172,7 +181,8 @@
       "vendor": "gun_shop",
       "label": "The Slammer Dock Door",
       "line": "A folding table in a loading dock, guns by the box. Scythe Security patrols out front and has never once turned its head.",
-      "backRoom": ["sniper_rifle", "grenade_launcher"]
+      "backRoom": ["sniper_rifle", "grenade_launcher"],
+      "finds": 1
     },
     {
       "place": "l5",
@@ -212,7 +222,8 @@
       "label": "The Tool Crib",
       "line": "The day shift draws kit and the night shift signs it back in. Whatever is not signed back in is for sale at a fair price.",
       "signature": ["tech_bag"],
-      "backRoom": ["techscanner"]
+      "backRoom": ["techscanner"],
+      "finds": 1
     }
   ]
 }

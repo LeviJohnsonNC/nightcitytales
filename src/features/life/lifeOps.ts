@@ -101,7 +101,7 @@ import {
   type Json,
 } from "@/lib/backend";
 import { latestClosingFrame, type LatestFrame } from "@/features/campaign/previously";
-import { planItemUse } from "@/features/campaign/itemUse";
+import { gadgetTurn, planItemUse } from "@/features/campaign/itemUse";
 import { saveMissionRuntime } from "@/features/campaign/missionState";
 import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
 import { characterSummary, localExpertIn, statsRecord } from "@/features/play/playModel";
@@ -194,6 +194,7 @@ import {
   truthsAt,
   whoIsAt,
   comesOver,
+  type Observation,
   type PlaceState,
   getDistrict,
   getPlace,
@@ -1448,8 +1449,28 @@ async function applyResponse(
   // The model reported what the fiction noticed; the engine decides what each
   // observation costs, moves the dials, and hands back anything that has come
   // due. Skipped on an options turn, which did not happen.
+  // A find used this turn has its say first (engine/gadgets.ts): a working hush
+  // wrap means the city did not hear it, a sound puck that you were not there
+  // to be seen. Applied here, before anything is priced, and logged as what the
+  // sheet actually did.
+  let timeFactor = 1;
   if (!turn.options) {
-    const reports = readObservations(response.observations);
+    const finds = gadgetTurn({
+      capability,
+      proposed,
+      reports: readObservations(response.observations),
+      report: (observation) => ({ observation: observation as Observation, factionId: null }),
+    });
+    timeFactor = finds.timeFactor;
+    for (const line of finds.lines) {
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: "life_action",
+        summary: line.summary,
+        data: (line.roll ? { roll: line.roll } : {}) as unknown as Json,
+      });
+    }
+    const reports = finds.reports;
     if (reports.length) {
       // The same reports, read a second way: what this did to the character's
       // standing with the city, and what it did to THIS ADDRESS.
@@ -1499,7 +1520,7 @@ async function applyResponse(
     await updateCampaignVitals(campaignId, { eurobucks });
   }
 
-  clock = advanceClock(clock, spent);
+  clock = advanceClock(clock, Math.round(spent * timeFactor));
   if (clock.day !== bundle.clock.day || clock.minute !== bundle.clock.minute) {
     await setCampaignClock(campaignId, clock);
   }

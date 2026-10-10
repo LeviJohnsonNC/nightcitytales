@@ -16,6 +16,7 @@ import {
   checkPercent,
   clampLuckSpend,
   facedown,
+  kitBonuses,
   luckModifier,
   luckRemaining,
   opposedCheckForCharacter,
@@ -51,11 +52,13 @@ type CheckSetup = {
   personal: { label: string; value: number }[];
   /** What the Role brings to this particular Skill; a Facedown has none. */
   role: { label: string; value: number }[];
+  /** What the carried kit prints for this Skill (a Medscanner on First Aid); a Facedown has none. */
+  kit: { label: string; value: number }[];
 };
 
 /**
  * Everything beyond STAT + Skill that rides on one check: the Luck dedicated,
- * the wound tax, and what the Role brings to the Skill.
+ * the wound tax, what the Role brings to the Skill, and what the kit prints for it.
  *
  * Rolling and previewing both read it, so the chance the card shows is made of
  * the very modifiers the die is rolled with. They used to be assembled apart:
@@ -83,6 +86,10 @@ function checkSetup(input: RollCheckInput): CheckSetup {
       ...(wounds !== 0 ? [{ label: "Wounds", value: wounds }] : []),
     ],
     role: roleCheckModifiers({ campaign, character, skillId: pending.skillId }),
+    kit: kitBonuses(
+      input.inventory.filter((row) => row.quantity > 0).map((row) => row.item_id),
+      pending.skillId,
+    ),
   };
 }
 
@@ -107,7 +114,7 @@ export function previewPendingCheck(input: RollCheckInput): CheckPreview | null 
   const { pending } = input;
   const setup = checkSetup(input);
   const isFacedown = pending.skillId === FACEDOWN_CHECK_ID && pending.opposition;
-  const modifiers = isFacedown ? setup.personal : [...setup.personal, ...setup.role];
+  const modifiers = isFacedown ? setup.personal : [...setup.personal, ...setup.role, ...setup.kit];
   // STAT + Skill is read from the actor the roll will use, by the lookups the
   // roll uses, rather than from the number the card was drawn with: a card can
   // be a few turns old, and the roll is made from what is true now.
@@ -142,9 +149,9 @@ function rollingActor(input: RollCheckInput) {
 export function rollPendingCheck(input: RollCheckInput): CheckRoll {
   const { character, pending } = input;
   const actor = rollingActor(input);
-  const { luckSpent, personal, role } = checkSetup(input);
-  // What the Role brings to this particular check rides after Luck and wounds.
-  const situational = [...personal, ...role];
+  const { luckSpent, personal, role, kit } = checkSetup(input);
+  // What the Role and the kit bring to this particular check ride after Luck and wounds.
+  const situational = [...personal, ...role, ...kit];
   const modifiers = situational.length > 0 ? { modifiers: situational } : {};
 
   // A Facedown is COOL + Reputation on both sides. Luck and wounds ride on it as
