@@ -26,6 +26,45 @@ export type ClusterDefinition = {
 };
 /** Offsets describe relationships inside a cluster, never arbitrary world positions. */
 export const CLUSTERS: Record<string, ClusterDefinition> = {
+  market_restock: {
+    zones: ["sidewalk"],
+    reason: "A delivery pallet supplies the market counters from their shared browsing lane",
+    members: [
+      {
+        key: "freight_pallet",
+        id: "stock",
+        label: "market restock pallet",
+        x: 0,
+        y: 0,
+        art: ["pallet"],
+      },
+    ],
+    access: [{ x: 3, y: 1, label: "Market restocking access" }],
+    dressing: [],
+  },
+  repair_workbench: {
+    zones: ["sidewalk"],
+    reason: "A pavement workbench gives the repair shop a place to sort incoming parts",
+    members: [
+      {
+        key: "office_storage",
+        id: "bench",
+        label: "repair parts workbench",
+        x: 0,
+        y: 0,
+        art: ["workbench"],
+      },
+    ],
+    access: [{ x: 1, y: -1, label: "Repair workbench access" }],
+    dressing: [],
+  },
+  service_collection: {
+    zones: ["loading"],
+    reason: "A collection bin sits beside the freight court with a clear handling space",
+    members: [{ key: "service_dumpster", id: "bin", x: 0, y: 0, art: ["dumpster"] }],
+    access: [{ x: 1, y: -1, label: "Waste collection access" }],
+    dressing: [],
+  },
   repair_parts: {
     zones: ["sidewalk"],
     reason: "Crated repair parts face a clear handling space beside the workshop",

@@ -1,24 +1,26 @@
-## Active clipping / neon pass — 2026-10-11
+## Active solid street / object pass — 2026-10-11
 
 Checkout: /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/street-neon-clipping; base origin/main 978baf35 (merged PR351/352).
-Normal fetched Git history, not the reconstructed checkouts mentioned below.
-Original dirty checkout and old session files remain untouched. Levi reviews/merges.
+Branch codex/solid-street-objects; base origin/main e77fa705 (PR353 merged).
+Normal fetched Git history. Original dirty checkout remains untouched. Levi merges.
+User approved clipping fixes, calmer crate art, and purposeful object clusters.
 
-Separated repair canopy/balcony into attached sorted sprites; removed clipped copies
-in reveal. Magenta market blade now casts ground/wall light at its actual height;
-cyan repair lettering; sharper/stronger source reflections. Passage/parking now use
-asphalt material and wetness, eliminating the flat blue patch. No gameplay edits.
+Local implementation: optional elevation ordering for overlapping footprints;
+measured canopy/prop/actor volumes; expanded repair-fitting bounds retain shade.
+Versioned cargo-states-v2.webp generated from the original atlas, same 2172x724
+three-cell registration and alpha, lossless WebP. Original retained.
+Recipe15 seed8 adds canonical pallet, workbench and collection bin with reserved
+handling spaces. Frozen v14 fixture protects saved scenes; other seeds unchanged.
 
-Validation: 4,246 tests pass, typecheck/build pass, lint zero errors/15 existing
-warnings. First Chromium run passes 3 seeds. Final refined run in progress.
-Actual final seed8 play, destruction and compact screenshots opened and inspected.
-Reflection still less rich than reference; do not claim total clipping elimination.
-Source-height regression added; wet-response test now bounds combined response
-instead of freezing the old artistic preference for blur over source shape.
-
-Next: finish final 3-seed screenshot review, publish review PR, check remote CI.
-Evidence currently e2e/.results; retain selected captures before another run.
+Validation: typecheck/build pass, lint zero errors/15 existing warnings. First
+full suite:4261 pass/2 fail; caught pallet/lamp collision and a broad test ID
+prefix. Moved pallet to the market return (4,10), reserved lamp clearance and
+gave it a distinct ID. All 8 affected engine tests now pass. First Chromium
+run passes 3 seeds; inspected seed8 play/reveal/destruction. Crate reads cleaner;
+workbench correctly fades behind the actor. Earlier captures predate pallet move.
+Checkpoint implementation now; final full suite and seed8 captures still required.
+Not pushed. Next: final validation/screenshots, then review PR and remote checks.
+Do not claim all clipping eliminated or visual acceptance before pixel inspection.
 
 ## Active architecture depth pass — 2026-10-11 UTC
 

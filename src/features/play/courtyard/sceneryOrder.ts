@@ -3,6 +3,8 @@ import type { Rect } from "@/engine";
 export interface SpatialArt {
   rect: Rect;
   groundY: number;
+  /** Metres above the ground; omitted for art without a measured volume. */
+  elevation?: { bottom: number; top: number };
 }
 
 /** Camera looks along (+x, -y). Disjoint footprint intervals establish actual
@@ -17,8 +19,24 @@ export function sceneryOrder(items: readonly SpatialArt[]) {
     for (let b = a + 1; b < items.length; b++) {
       const p = items[a]!.rect,
         q = items[b]!.rect;
-      const before = p.x + p.width <= q.x + 1e-6 || p.y >= q.y + q.height - 1e-6;
-      const after = q.x + q.width <= p.x + 1e-6 || q.y >= p.y + p.height - 1e-6;
+      let before = p.x + p.width <= q.x + 1e-6 || p.y >= q.y + q.height - 1e-6;
+      let after = q.x + q.width <= p.x + 1e-6 || q.y >= p.y + p.height - 1e-6;
+      // A low prop (or actor) beneath a canopy must paint first, even when
+      // its ground centre is nearer the camera. Only overlapping footprints
+      // qualify: elevation must not reverse a car standing in front of a wall.
+      const pz = items[a]!.elevation,
+        qz = items[b]!.elevation;
+      const overlap =
+        p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height;
+      if (overlap && pz && qz) {
+        if (pz.top <= qz.bottom) {
+          before = true;
+          after = false;
+        } else if (qz.top <= pz.bottom) {
+          before = false;
+          after = true;
+        }
+      }
       if (before === after) continue;
       const from = before ? a : b,
         to = before ? b : a;

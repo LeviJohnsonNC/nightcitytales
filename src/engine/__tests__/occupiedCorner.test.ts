@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import v14 from "./fixtures/intersection-v14.json";
 import v12 from "./fixtures/intersection-v12.json";
 import { composeScene } from "../sceneComposer";
 import { readSceneManifest } from "../persistentScene";
@@ -10,7 +11,7 @@ import { coverMaxHp } from "../cover";
 it("retains real v12 saves while replacing only the new seed8 repair architecture", () => {
   const previous = readSceneManifest({ version: 1, scene: structuredClone(v12) });
   expect(previous).toEqual(v12);
-  const scene = composeScene("intersection", 8),
+  const scene = readSceneManifest({ version: 1, scene: structuredClone(v14) }),
     arena = scene.layout.arena,
     env = arena.environment!,
     old = previous.layout.arena.environment!;

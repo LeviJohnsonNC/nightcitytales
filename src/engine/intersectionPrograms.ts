@@ -488,3 +488,54 @@ export function addShopLamp(arena: Arena, actors: readonly SceneActor[]): boolea
   }
   return false;
 }
+
+/** Recipe 15: three occupied work spaces, using canonical cover and access checks. */
+export function addStreetWorkClusters(arena: Arena, actors: readonly SceneActor[]) {
+  const env = arena.environment!;
+  if (env.clusters.some((c) => c.id === "market_restock")) return;
+  if (env.seed !== 8 || !env.zones.some((z) => z.id === "repair-passage"))
+    throw new Error("Street work clusters require the occupied seed-8 corner.");
+  const reserved = [
+    ...env.zones.filter((z) => z.kind === "aisle").map((z) => z.rect),
+    ...env.dressing
+      .filter((d) => d.kind === "lamp")
+      .map((d) => ({ x: d.position.x - 0.35, y: d.position.y - 0.35, width: 0.7, height: 0.7 })),
+    ...[
+      arena.playerStart,
+      ...actors.map((a) => a.position),
+      ...env.entrances!.map((e) => e.position),
+    ].map((p) => ({ x: p.x - 1, y: p.y - 1, width: 2, height: 2 })),
+  ];
+  placeSceneClusters(
+    arena,
+    [
+      {
+        id: "market_restock",
+        kind: "market_restock",
+        zone: "north-west-front",
+        axis: "y",
+        at: { x: 4, y: 10 },
+        required: true,
+      },
+      {
+        id: "street_repair_workbench",
+        kind: "repair_workbench",
+        zone: "south-east-walk",
+        axis: "y",
+        at: { x: 20, y: 22 },
+        required: true,
+      },
+      {
+        id: "street_service_collection",
+        kind: "service_collection",
+        zone: "service-court",
+        axis: "y",
+        at: { x: 4, y: 28 },
+        required: true,
+      },
+    ],
+    reserved,
+    env.seed,
+    false,
+  );
+}
