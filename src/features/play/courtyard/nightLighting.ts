@@ -71,11 +71,11 @@ export const INTERSECTION_NIGHT = {
 } as const;
 export type NightLighting = typeof INTERSECTION_NIGHT;
 
-/** Finished streets and the warehouse share source-based lighting. */
+/** Finished streets and industrial interiors share source-based lighting. */
 export function nightFor(env: Pick<SceneEnvironment, "recipe" | "interior"> | undefined) {
   return env &&
     ((["intersection", "alley"].includes(env.recipe) && !env.interior) ||
-      (env.recipe === "warehouse" && !!env.interior))
+      (["warehouse", "garage"].includes(env.recipe) && !!env.interior))
     ? INTERSECTION_NIGHT
     : undefined;
 }

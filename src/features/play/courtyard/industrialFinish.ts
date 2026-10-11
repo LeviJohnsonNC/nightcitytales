@@ -1,4 +1,4 @@
-/** Warehouse finish follows saved room bounds; it never creates cover or routes. */
+/** Industrial finish follows saved room bounds; it never creates cover or routes. */
 import type { Point, Rect, SceneEnvironment } from "@/engine";
 import { fillMaterial, groundBasis, type MaterialSet } from "./surfaceMaterials";
 import type { PoolLight } from "./nightLighting";
@@ -10,14 +10,24 @@ const corners = (r: Rect) => [
   { x: r.x + r.width, y: r.y + r.height },
   { x: r.x, y: r.y + r.height },
 ];
-export function paintWarehouseFloor(
+export function paintIndustrialFloor(
   ctx: CanvasRenderingContext2D,
   project: Project,
   r: Rect,
   kind: string,
   materials: MaterialSet,
+  garage = false,
 ) {
-  const color = kind === "reception" ? "#777466" : kind === "service" ? "#626b68" : "#62676a";
+  const color =
+    kind === "reception"
+      ? "#777466"
+      : garage
+        ? kind === "service"
+          ? "#596761"
+          : "#555f60"
+        : kind === "service"
+          ? "#626b68"
+          : "#62676a";
   const polygon = corners(r).map(project);
   if (
     !fillMaterial(ctx, materials, polygon, {
@@ -67,16 +77,19 @@ export function paintWarehouseFloor(
   ctx.restore();
 }
 
-export interface WarehouseLight extends PoolLight {
+export interface IndustrialLight extends PoolLight {
   id: string;
   bounds: Rect;
 }
 /** Suspended industrial strips remain in the ceiling cutaway. Pools and actors
  * share these bounds, so a task light cannot shine through a closed partition. */
-export function warehouseLights(env: SceneEnvironment): WarehouseLight[] {
-  if (env.recipe !== "warehouse" || !env.interior) return [];
+export function industrialLights(env: SceneEnvironment): IndustrialLight[] {
+  if (!["warehouse", "garage"].includes(env.recipe) || !env.interior) return [];
   return env.zones
-    .filter((z) => ["storage", "service", "reception", "staging"].includes(z.kind) && !z.floorUse)
+    .filter(
+      (z) =>
+        ["storage", "service", "reception", "staging", "workbay"].includes(z.kind) && !z.floorUse,
+    )
     .flatMap((z, room) => {
       const r = z.rect;
       const alongY = r.height > r.width;
@@ -84,7 +97,7 @@ export function warehouseLights(env: SceneEnvironment): WarehouseLight[] {
       const count = Math.max(1, Math.ceil(length / 8));
       const warm = z.kind === "service" || z.kind === "reception";
       return Array.from({ length: count }, (_, i) => ({
-        id: `warehouse-strip-${room}-${i}`,
+        id: `${env.recipe}-strip-${room}-${i}`,
         kind: "pool" as const,
         centre: alongY
           ? { x: r.x + r.width * 0.48, y: r.y + (length * (i + 0.5)) / count }
@@ -93,16 +106,16 @@ export function warehouseLights(env: SceneEnvironment): WarehouseLight[] {
         sourceZ: 3.8,
         bounds: r,
         color: warm ? ([1, 0.79, 0.52] as const) : ([0.8, 0.88, 0.94] as const),
-        intensity: warm ? 0.29 : 0.24,
+        intensity: warm ? 0.29 : z.kind === "workbay" ? 0.29 : 0.24,
       }));
     });
 }
 /** Suspended strip body, drawn high and narrow so sightlines remain usable. */
-export function paintWarehouseFixture(
+export function paintIndustrialFixture(
   ctx: CanvasRenderingContext2D,
   project: Project,
   ppm: number,
-  light: WarehouseLight,
+  light: IndustrialLight,
   glow = false,
 ) {
   const p = project(light.centre);
