@@ -228,7 +228,7 @@ gear the engine can keep its word about, then a store UI overhaul.
 - **Next:**
   - convert the 26 keeper portraits and list them;
   - put the ripperdoc in the same shell, if the Counter holds up in play.
-  Still open from the plan:
+    Still open from the plan:
   - the Watch, Pass, Reveal and Shield capabilities (each needs an engine lever first);
   - repair and restoration terms;
   - a narrator eval of the finds' packet line.
