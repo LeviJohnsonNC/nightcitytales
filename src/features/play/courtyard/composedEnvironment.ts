@@ -1,4 +1,5 @@
-import { paintWarehouseFloor, warehouseLights, paintWarehouseFixture } from "./warehouseFinish";
+import { paintGarageWear } from "./garageFinish";
+import { paintIndustrialFloor, industrialLights, paintIndustrialFixture } from "./industrialFinish";
 import { hasServiceFrontage } from "./serviceFrontage";
 import { marketReturnCanopies } from "./marketCanopy";
 import { architecturalCasters } from "./architecturalShadows";
@@ -214,8 +215,15 @@ export function paintComposedGround(
   const ground = groundBasis(project);
   if (env.interior) {
     rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
-    if (env.recipe === "warehouse" && materials)
-      paintWarehouseFloor(ctx, project, { x: 0, y: 0, ...arena.extent }, "corridor", materials);
+    if (["warehouse", "garage"].includes(env.recipe) && materials)
+      paintIndustrialFloor(
+        ctx,
+        project,
+        { x: 0, y: 0, ...arena.extent },
+        "corridor",
+        materials,
+        env.recipe === "garage",
+      );
   }
   if (!env.interior) {
     const all = { x: -20, y: -20, width: 72, height: 72 };
@@ -269,8 +277,8 @@ export function paintComposedGround(
   for (const z of env.zones) {
     if (z.kind === "aisle") continue;
     if (env.interior) {
-      if (env.recipe === "warehouse" && materials) {
-        paintWarehouseFloor(ctx, project, z.rect, z.kind, materials);
+      if (["warehouse", "garage"].includes(env.recipe) && materials) {
+        paintIndustrialFloor(ctx, project, z.rect, z.kind, materials, env.recipe === "garage");
         continue;
       }
       const color = floors[z.kind] ?? "#3b464c";
@@ -384,8 +392,8 @@ export function paintComposedGround(
       if (z.floorUse === "entry")
         for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "rgba(170,168,156,.35)", 1.2);
       else for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, colors[1]!, 1.2);
-    } else if (env.recipe === "warehouse" && materials) {
-      paintWarehouseFloor(ctx, project, z.rect, z.kind, materials);
+    } else if (["warehouse", "garage"].includes(env.recipe) && materials) {
+      paintIndustrialFloor(ctx, project, z.rect, z.kind, materials, env.recipe === "garage");
       rect(z.rect, null, colors[1]!);
     } else rect(z.rect, colors[0]!, colors[1]!);
     if (z.floorUse === "forecourt") {
@@ -570,6 +578,7 @@ export function paintComposedGround(
       2,
     );
   }
+  if (env.recipe === "garage" && materials) paintGarageWear(ctx, project, arena);
   let seed = env.seed + 417;
   const random = () => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
@@ -1932,7 +1941,7 @@ export function createComposedEnvironment(
     project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
   );
   const materialised =
-    ["intersection", "alley", "warehouse"].includes(arena.environment!.recipe) &&
+    ["intersection", "alley", "warehouse", "garage"].includes(arena.environment!.recipe) &&
     tiles !== undefined;
   const resolution = materialised
     ? Math.max(1, Math.min(MATERIAL_SUPERSAMPLE, MAX_TEXTURE_PIXELS / Math.max(gw, gh)))
@@ -2000,7 +2009,7 @@ export function createComposedEnvironment(
   const night = nightFor(env);
   const lights = night
     ? [
-        ...warehouseLights(env),
+        ...industrialLights(env),
         ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
         ...returnLights(returns?.faces ?? [], night),
         ...fixtureLights(env),
@@ -2420,16 +2429,16 @@ export function createComposedEnvironment(
     lit.push(image);
     return image;
   };
-  for (const light of warehouseLights(env)) {
+  for (const light of industrialLights(env)) {
     const p = project(light.centre);
     const lift = light.sourceZ! * metre;
     const fixture = add(
       light.id,
-      (ctx) => paintWarehouseFixture(ctx, project, metre, light),
+      (ctx) => paintIndustrialFixture(ctx, project, metre, light),
       p.y + 0.4,
       { x: p.x - metre * 1.8, y: p.y - lift - metre, width: metre * 3.6, height: metre * 2 },
       2,
-      (ctx) => paintWarehouseFixture(ctx, project, metre, light, true),
+      (ctx) => paintIndustrialFixture(ctx, project, metre, light, true),
     );
     // Hanging fixtures sort above their ground position without acting as cover.
     fixture

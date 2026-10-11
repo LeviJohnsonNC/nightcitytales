@@ -28,6 +28,10 @@ The warehouse material pass adds dry concrete, stocked steel racks, room-bounded
 industrial lighting and damage-aware contact/cast shadows to saved layouts.
 Seeds 4, 5 and 7 are the in-app review set; visual acceptance remains the next gate.
 
+The garage now shares those material and shadow systems, with painted vehicle
+art, cooler workbay lights and tyre/grease wear registered to saved car footprints.
+Its three-layout in-app review is next; warehouse visual review was approved.
+
 Phase 1 implementation now includes three spatial layouts per recipe, reserved
 and validated exterior entrances, a character-free `/scene-review`, silhouette
 occlusion and permanent-wall targeting feedback. Six rendered examples and the

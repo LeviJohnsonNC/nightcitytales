@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { composeScene } from "@/engine";
-import { warehouseLights } from "../courtyard/warehouseFinish";
+import { industrialLights } from "../courtyard/industrialFinish";
 import { lightAmount, lightAt } from "../courtyard/nightLighting";
 
-describe("warehouse room lighting", () => {
+describe.each(["warehouse", "garage"] as const)("%s room lighting", (recipe) => {
   it.each([1, 4, 5, 7, 11, 23])("lights saved rooms without changing seed %i geometry", (seed) => {
-    const env = composeScene("warehouse", seed).layout.arena.environment!;
+    const env = composeScene(recipe, seed).layout.arena.environment!;
     const saved = JSON.stringify(env);
-    const lights = warehouseLights(env);
+    const lights = industrialLights(env);
     expect(lights.length).toBeGreaterThan(2);
     expect(new Set(lights.map((l) => l.id)).size).toBe(lights.length);
     expect(lights.some((l) => l.color[0] > l.color[2])).toBe(true);
@@ -25,6 +25,6 @@ describe("warehouse room lighting", () => {
   });
   it("does not supply indoor fixtures to other environments", () => {
     for (const kind of ["intersection", "alley", "office", "nightclub"] as const)
-      expect(warehouseLights(composeScene(kind, 4).layout.arena.environment!)).toEqual([]);
+      expect(industrialLights(composeScene(kind, 4).layout.arena.environment!)).toEqual([]);
   });
 });

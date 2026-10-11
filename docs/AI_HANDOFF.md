@@ -1,28 +1,19 @@
-# Active warehouse material pass — 2026-10-11
+# Active garage material pass — 2026-10-11
 
-User approved warehouse after alley PR362 merged; one focused pass then in-app review.
+Warehouse PR364 approved and merged. User authorized the next environment; garage chosen.
 Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/warehouse-material-pass; base origin/main 549417c2 (PR363).
-Original dirty checkout untouched. Prior final alley handoff /tmp/nct362-final-handoff.md.
+Branch codex/garage-material-pass, base origin/main 764a4854.
+Original dirty checkout untouched. Previous final handoff /tmp/nct364-final-handoff.md.
 
-Implementation fccc1d36 committed/pushed in draft PR364:
-https://github.com/LeviJohnsonNC/nightcitytales/pull/364
-Warehouse materials/contact shadows, room-clipped lighting, concrete floors and cutaway walls,
-material-bearing stocked racks and workbenches. Suspended lights use footprint/elevation sorting.
-No engine geometry or saved recipe changes. Warehouse dry; no outdoor rain/reflections applied.
-
-Local verification of fccc1d36: 4290 tests /346 files pass; typecheck/build pass;
-lint 0 errors /15 existing warnings. Final Chromium 3 seeds pass (1.1min).
-Inspected play seeds4/5/7, seed4 destroyed and compact. Initial brightness/grain reduced.
-No detached actor rings seen. No exterior Reveal control exists indoors; actor occlusion automatic.
-Baseline captures /tmp/nct-warehouse-before-captures; baseline harness corrected for absent reveal.
-Final evidence: /Users/levijohnson/.codex/visualizations/2026/10/11/01a12b66-843f-7a70-86c1-77681c3d2c1f/warehouse-evidence.
-
-Remote CI still running: matched warehouse, alley and intersection Chromium + main checks.
-Next: verify remote checks, open local /scene-review?place=warehouse&seed=4 for Levi.
-Review seeds4 (receiving/rack hall),5 (side office/loading),7 (cross-aisle stockrooms).
-User in-app review/merge remains the acceptance gate. Do not advance to another environment.
-Fresh chat: read this handoff, check PR364 and respond to Levi's warehouse visual feedback.
+Local implementation: share warehouse finishes as industrialFinish, enable garage materials,
+painted vehicles/workbenches, room-bounded lighting and contact/cast shadows.
+Garage floor wear follows saved vehicle footprints; no geometry changes or extra obstacles.
+Baseline Chromium seeds4/5/7 pass; seed4 play inspected, captures /tmp/nct-garage-before-captures.
+Local typecheck and 20 focused lighting tests pass. First Chromium seeds4/5/7 pass;
+play images inspected. Seeds4/7 repeat the same layout, so final review set is4/5/9.
+Baseline and initial captures cover two layouts; final seed9 and matched CI add the third.
+Implementation ready for checkpoint. Next: full tests/lint/build, final Chromium and CI.
+User in-app acceptance remains the gate before another environment.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 
