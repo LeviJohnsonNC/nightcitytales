@@ -2,6 +2,7 @@
  * The workshop is a shallow display recess, never an extra traversable interior. */
 import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
 import type { ArchitectureArt } from "./architecturePack";
+import { architecturalDepth } from "./architecturalDepth";
 import { paintFaceAsset } from "./afterRainArt";
 import { paintArchitecturalBay } from "./paintedArchitecture";
 import { facePainter } from "./buildingFaces";
@@ -195,6 +196,7 @@ export function paintOccupiedFrontage(
     for (const x of [b.a, b.b - 0.035]) panel(x, x + 0.035, b.lo, b.hi, "#89928a", 0.04);
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.09, b.lo, "#9c997f", 0.12);
     panel(b.a + 0.15, b.b - 0.15, 2.36, 2.4, "#d2c197", -0.12);
+    architecturalDepth(ctx, at, false).bay({ s0: b.a, s1: b.b, z0: b.lo, z1: b.hi }, 0.22);
   }
   for (const c of doors) {
     panel(c - 0.85, c + 0.85, 0.08, 2.58, "#142326");
@@ -266,30 +268,41 @@ export function paintOccupiedCanopy(
     ctx.lineWidth = w * ppm;
     ctx.stroke();
   };
+  const depth = architecturalDepth(ctx, at, false);
+  depth.shade(0.08, length - 0.08, 2.97, 0.72, 0.65);
+  fill(
+    [
+      at(0.08, 0, 2.91),
+      at(length - 0.08, 0, 2.91),
+      at(length - 0.08, 0.72, 2.77),
+      at(0.08, 0.72, 2.77),
+    ],
+    "#172a2c",
+  );
   // Folded metal canopy: a real top plane and fascia break the flat wall silhouette.
   // It remains above every entrance and below the existing sign.
   fill(
     [
-      at(0.08, 0, 2.72),
-      at(length - 0.08, 0, 2.72),
-      at(length - 0.08, 0.85, 2.57),
-      at(0.08, 0.85, 2.57),
+      at(0.08, 0, 3.03),
+      at(length - 0.08, 0, 3.03),
+      at(length - 0.08, 0.72, 2.89),
+      at(0.08, 0.72, 2.89),
     ],
     "#607777",
   );
   paintMetalPlane(
     ctx,
     art?.balconyMetal,
-    at(0.08, 0, 2.72),
-    at(length - 0.08, 0, 2.72),
-    at(0.08, 0.85, 2.57),
+    at(0.08, 0, 3.03),
+    at(length - 0.08, 0, 3.03),
+    at(0.08, 0.72, 2.89),
     length - 0.16,
-    0.85,
+    0.72,
   );
-  panel(0.08, length - 0.08, 2.46, 2.57, "#263f43", 0.85);
+  panel(0.08, length - 0.08, 2.77, 2.89, "#263f43", 0.72);
   for (let x = 0.18; x < length - 0.1; x += 0.48)
-    line(at(x, 0.02, 2.73), at(x, 0.84, 2.58), "#89958a", 0.018);
-  for (const x of [0.3, length - 0.3]) line(at(x, 0.02, 2.1), at(x, 0.82, 2.48), "#23373a", 0.05);
+    line(at(x, 0.02, 3.04), at(x, 0.71, 2.9), "#89958a", 0.018);
+  for (const x of [0.3, length - 0.3]) line(at(x, 0.02, 2.45), at(x, 0.7, 2.79), "#23373a", 0.05);
 }
 
 /** A shallow first-floor balcony, attached above head height, within the facade span. */
@@ -322,6 +335,10 @@ export function paintOccupiedBalcony(
     ctx.lineWidth = w * ppm;
     ctx.stroke();
   };
+  const depth = architecturalDepth(ctx, at, false);
+  depth.shade(1, 5, 4.05, 0.7, 0.62);
+  depth.shade(0.86, 5.14, 6.32, 0.65, 0.6);
+  fill([at(1, 0, 4.05), at(5, 0, 4.05), at(5, 0.85, 4.05), at(1, 0.85, 4.05)], "#182b2c");
   fill([at(1, 0, 4.25), at(5, 0, 4.25), at(5, 0.85, 4.25), at(1, 0.85, 4.25)], "#777c6c");
   paintMetalPlane(
     ctx,
@@ -330,7 +347,7 @@ export function paintOccupiedBalcony(
     at(5, 0, 4.25),
     at(1, 0.85, 4.25),
     4,
-    0.85,
+    0.72,
   );
   fill(quad(1, 5, 4.05, 4.25, 0.85), "#354644");
   for (const x of [1.1, 4.9]) line(at(x, 0, 3.92), at(x, 0.8, 4.15), "#273734", 0.07);

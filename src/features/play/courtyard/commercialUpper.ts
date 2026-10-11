@@ -6,6 +6,7 @@ import { faceBasis, facePainter, paintHomeWindow, type Opening } from "./buildin
 import { hash, type Edge } from "./frontage";
 import { fillMaterial, type MaterialSet } from "./surfaceMaterials";
 import { paintArchitecturalBay } from "./paintedArchitecture";
+import { architecturalDepth } from "./architecturalDepth";
 import { occupiedUse } from "./occupiedFrontage";
 
 export const COMMERCIAL_BASE = 3.85;
@@ -168,6 +169,13 @@ export function paintCommercialUpper(
         0.12,
       );
   }
-  band(s.height - 0.18);
+  // Structural members are painted AFTER the broad artwork so they remain real
+  // volumes instead of disappearing underneath repeated facade tiles.
+  const depth = architecturalDepth(ctx, at, warm, materials);
+  for (const w of windows) depth.bay(w, warm ? 0.38 : 0.32);
+  for (const x of piers) depth.pier(x, x + 0.22, COMMERCIAL_BASE + 0.3, s.height - 0.3);
+  depth.course(length, COMMERCIAL_BASE + 0.14, 0.48);
+  for (let z = 7; z < s.height - 0.6; z += 3) depth.course(length, z, 0.4);
+  depth.course(length, s.height - 0.16, 0.5);
   ctx.restore();
 }

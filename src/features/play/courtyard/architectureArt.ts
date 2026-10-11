@@ -1,3 +1,4 @@
+import { architecturalDepth } from "./architecturalDepth";
 /**
  * The architectural pilot's painted art, placed by code (`architecturePack.ts` says
  * why each is the format it is). Presentation only: nothing here reads or moves a
@@ -634,6 +635,14 @@ export function paintFacadeArt({
     for (const start of bays.filter((b) => !skip?.includes(b)))
       paintBay(ctx, at, start, windowVariant(windowArt, variantOf(structure.id, edge, start)));
   if (shutterArt) for (const centre of centres) paintShutter(ctx, at, edge, centre, shutterArt);
+  if (structure.style === "shop" && structure.height < 6.8) {
+    const depth = architecturalDepth(ctx, at, true);
+    const length = edge === "north" ? structure.rect.width : structure.rect.height;
+    for (const start of bays.filter((b) => !skip?.includes(b)))
+      depth.bay({ s0: start, s1: start + BAY.width, z0: BAY.sill, z1: BAY.head }, 0.18);
+    for (const a of [0.06, length - 0.26]) depth.pier(a, a + 0.2, 0.12, structure.height - 0.3);
+    depth.course(length, structure.height - 0.16, 0.28);
+  }
   ctx.restore();
 }
 

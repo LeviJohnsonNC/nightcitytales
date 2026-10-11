@@ -1,3 +1,5 @@
+import { marketReturnCanopies } from "./marketCanopy";
+import { architecturalCasters } from "./architecturalShadows";
 import {
   occupiedUse,
   occupiedLights,
@@ -1922,6 +1924,8 @@ export function createComposedEnvironment(
           ),
         }
       : undefined;
+  const returnCanopies = marketReturnCanopies(storefronts, env);
+  const allCanopies = [...storefronts, ...returnCanopies];
   const returnsOf = (s: SceneStructure) => returns?.faces.filter((f) => f.structure === s) ?? [];
   const storefrontOf = (s: SceneStructure, pass: Pass = "albedo") => {
     const sf = storefronts.find((f) => f.structure.id === s.id);
@@ -2143,7 +2147,10 @@ export function createComposedEnvironment(
   lit.push(groundImage);
   // Lamp shadows (`lampShadow.ts`): each prop near a light takes that light's share
   // off the ground behind it, on the intersection with materials.
-  const casters = night && materialised ? shadowCasters(arena) : [];
+  const casters =
+    night && materialised
+      ? [...shadowCasters(arena), ...architecturalCasters(env, allCanopies)]
+      : [];
   const zOf = (light: GroundLight) =>
     light.kind === "pool"
       ? (wallLights.find((l) => Math.hypot(l.at.x - light.centre.x, l.at.y - light.centre.y) < 0.3)
@@ -2822,165 +2829,169 @@ export function createComposedEnvironment(
       }
       // The canopy is its own sprite: it sorts by its footprint, fades for actors
       // under it, and in the cutaway shows only while the wall it hangs from is kept.
-      if (front) {
-        const sf = front.sf;
-        const at = facePoint(sf, project, metre);
-        const { offset, span, projection } = sf.awning;
-        const L = STOREFRONT_LEVELS;
-        const edges = [
-          at(offset, 0, L.awningWall - 0.7),
-          at(offset + span, 0, L.awningWall - 0.7),
-          at(offset + span, projection, L.awningOuter - 0.4),
-          at(offset, projection, L.awningOuter - 0.4),
-          at(offset, 0, L.awningWall),
-          at(offset + span, 0, L.awningWall),
-        ];
-        const awningBounds = {
-          x: Math.floor(Math.min(...edges.map((p) => p.x))) - 10,
-          y: Math.floor(Math.min(...edges.map((p) => p.y))) - 10,
-          width:
-            Math.ceil(Math.max(...edges.map((p) => p.x)) - Math.min(...edges.map((p) => p.x))) + 20,
-          height:
-            Math.ceil(Math.max(...edges.map((p) => p.y)) - Math.min(...edges.map((p) => p.y))) + 20,
-        };
-        const wall = s.rect;
-        const kept = !occluders.has(s.id)
-          ? true
-          : cutawayWalls(s, arena.environment!.entrances, activity)
-              .filter((p) =>
-                sf.edge === "north"
-                  ? p.rect.y === wall.y &&
-                    p.rect.x < wall.x + offset + span &&
-                    p.rect.x + p.rect.width > wall.x + offset
-                  : p.rect.x + p.rect.width === wall.x + wall.width &&
-                    p.rect.y < wall.y + offset + span &&
-                    p.rect.y + p.rect.height > wall.y + offset,
-              )
-              .every((p) => p.height >= STOREFRONT_LEVELS.housingTop - 1e-9);
-        const footprint = awningFootprint(sf);
-        const lamp = streetLamp(sf);
-        const awning = (ctx: CanvasRenderingContext2D, pass: Pass) => {
-          paintAwning({ ctx, sf, project, ppm: metre, art: front.art, materials, pass });
-          // the streetlight's pool lands on the canvas before the pavement under it:
-          // the same pool, laid on the awning's top at its height, clipped to it
-          if (pass !== "light" || !lamp || !night) return;
+      if (storefrontArt)
+        for (const sf of [
+          ...(front ? [front.sf] : []),
+          ...returnCanopies.filter((c) => c.structure === s),
+        ]) {
+          const at = facePoint(sf, project, metre);
+          const { offset, span, projection } = sf.awning;
           const L = STOREFRONT_LEVELS;
-          ctx.save();
-          ctx.beginPath();
-          [
+          const edges = [
+            at(offset, 0, L.awningWall - 0.7),
+            at(offset + span, 0, L.awningWall - 0.7),
+            at(offset + span, projection, L.awningOuter - 0.4),
+            at(offset, projection, L.awningOuter - 0.4),
             at(offset, 0, L.awningWall),
             at(offset + span, 0, L.awningWall),
-            at(offset + span, projection, L.awningOuter),
-            at(offset, projection, L.awningOuter),
-          ].forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-          ctx.closePath();
-          ctx.clip();
-          paintGroundLight(
-            ctx,
-            project,
-            {
-              kind: "pool",
-              centre: lamp.head,
-              radius: night.lamp.radius,
-              color: night.lamp.color,
-              intensity: night.lamp.intensity,
-            },
-            ((L.awningWall + L.awningOuter) / 2) * metre,
-          );
-          ctx.restore();
-        };
-        add(
-          `awning-${s.id}`,
-          (ctx) => awning(ctx, "albedo"),
-          Math.max(
-            ...[
-              { x: footprint.x, y: footprint.y },
-              { x: footprint.x + footprint.width, y: footprint.y + footprint.height },
-            ].map((p) => project(p).y),
-          ),
-          awningBounds,
-          // small, and carrying the valance sign: drawn at four pixels per scene pixel
-          4,
-          awning,
-        )
-          ?.setData("activityLayer", "awning")
-          .setData("foregroundStructure", materialised ? s : undefined)
-          .setData(
-            "sectionRect",
+          ];
+          const awningBounds = {
+            x: Math.floor(Math.min(...edges.map((p) => p.x))) - 10,
+            y: Math.floor(Math.min(...edges.map((p) => p.y))) - 10,
+            width:
+              Math.ceil(Math.max(...edges.map((p) => p.x)) - Math.min(...edges.map((p) => p.x))) +
+              20,
+            height:
+              Math.ceil(Math.max(...edges.map((p) => p.y)) - Math.min(...edges.map((p) => p.y))) +
+              20,
+          };
+          const wall = s.rect;
+          const supports = cutawayWalls(s, arena.environment!.entrances, activity).filter((p) =>
             sf.edge === "north"
-              ? { x: s.rect.x + offset, y: s.rect.y, width: span, height: 0.24 }
-              : {
-                  x: s.rect.x + s.rect.width - 0.24,
-                  y: s.rect.y + offset,
-                  width: 0.24,
-                  height: span,
-                },
-          )
-          .setData("revealOk", kept)
-          .setData("sortRect", footprint);
-        // The blade sign hangs on the fascia: it shows only while the full building
-        // does, and never stays brighter or more solid than the wall it hangs from.
-        const blade = bladeSign(sf);
-        if (blade && building) {
-          const t = BLADE.thickness;
-          const ends = [blade.out0, blade.out1].flatMap((out) =>
-            [blade.z0 - 0.3, blade.z1 + 0.1].flatMap((z) => [
-              at(blade.s - t, out, z),
-              at(blade.s + t, out, z),
-              at(blade.s, 0, z),
-            ]),
+              ? p.rect.y === wall.y &&
+                p.rect.x < wall.x + offset + span &&
+                p.rect.x + p.rect.width > wall.x + offset
+              : p.rect.x + p.rect.width === wall.x + wall.width &&
+                p.rect.y < wall.y + offset + span &&
+                p.rect.y + p.rect.height > wall.y + offset,
           );
-          const pad = 0.6 * metre;
-          const x0 = Math.min(...ends.map((p) => p.x)) - pad;
-          const y0 = Math.min(...ends.map((p) => p.y)) - pad;
-          const sign = (ctx: CanvasRenderingContext2D, pass: Pass) =>
-            paintBladeSign(ctx, project, metre, sf, front.art, pass);
-          const f = blade.footprint;
+          const kept =
+            !occluders.has(s.id) ||
+            (supports.length > 0 && supports.every((p) => p.height >= L.awningWall - 1e-9));
+          const footprint = awningFootprint(sf);
+          const lamp = streetLamp(sf);
+          const awning = (ctx: CanvasRenderingContext2D, pass: Pass) => {
+            paintAwning({ ctx, sf, project, ppm: metre, art: storefrontArt, materials, pass });
+            // the streetlight's pool lands on the canvas before the pavement under it:
+            // the same pool, laid on the awning's top at its height, clipped to it
+            if (pass !== "light" || !lamp || !night) return;
+            const L = STOREFRONT_LEVELS;
+            ctx.save();
+            ctx.beginPath();
+            [
+              at(offset, 0, L.awningWall),
+              at(offset + span, 0, L.awningWall),
+              at(offset + span, projection, L.awningOuter),
+              at(offset, projection, L.awningOuter),
+            ].forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+            ctx.closePath();
+            ctx.clip();
+            paintGroundLight(
+              ctx,
+              project,
+              {
+                kind: "pool",
+                centre: lamp.head,
+                radius: night.lamp.radius,
+                color: night.lamp.color,
+                intensity: night.lamp.intensity,
+              },
+              ((L.awningWall + L.awningOuter) / 2) * metre,
+            );
+            ctx.restore();
+          };
           add(
-            `blade-${s.id}`,
-            (ctx) => sign(ctx, "albedo"),
-            project({ x: f.x + f.width / 2, y: f.y + f.height / 2 }).y,
-            {
-              x: Math.floor(x0),
-              y: Math.floor(y0),
-              width: Math.ceil(Math.max(...ends.map((p) => p.x)) + pad - x0),
-              height: Math.ceil(Math.max(...ends.map((p) => p.y)) + pad - y0),
-            },
+            `awning-${s.id}-${sf.edge}`,
+            (ctx) => awning(ctx, "albedo"),
+            Math.max(
+              ...[
+                { x: footprint.x, y: footprint.y },
+                { x: footprint.x + footprint.width, y: footprint.y + footprint.height },
+              ].map((p) => project(p).y),
+            ),
+            awningBounds,
+            // small, and carrying the valance sign: drawn at four pixels per scene pixel
             4,
-            sign,
-            // the blade stands edge-on across the face: its foot runs out from the wall
-            reflects
-              ? [
-                  bladeMirror(
-                    at(blade.s, blade.out0, 0),
-                    at(blade.s, blade.out1, 0),
-                    x0,
-                    y0,
-                    ends,
-                    pad,
-                  ),
-                ]
-              : undefined,
+            awning,
           )
-            ?.setData("activityLayer", "fixture")
-            .setData("revealHide", occluders.has(s.id))
+            ?.setData("activityLayer", "awning")
             .setData("foregroundStructure", materialised ? s : undefined)
             .setData(
               "sectionRect",
-              cutawayWalls(s, arena.environment!.entrances).find(({ rect: r }) =>
-                sf.edge === "north"
-                  ? r.y === s.rect.y &&
-                    s.rect.x + blade.s >= r.x &&
-                    s.rect.x + blade.s < r.x + r.width
-                  : r.x + r.width === s.rect.x + s.rect.width &&
-                    s.rect.y + blade.s >= r.y &&
-                    s.rect.y + blade.s < r.y + r.height,
-              )?.rect ?? s.rect,
+              sf.edge === "north"
+                ? { x: s.rect.x + offset, y: s.rect.y, width: span, height: 0.24 }
+                : {
+                    x: s.rect.x + s.rect.width - 0.24,
+                    y: s.rect.y + offset,
+                    width: 0.24,
+                    height: span,
+                  },
             )
-            .setData("sortRect", f)
-            .setData("fadeWith", building);
+            .setData("revealOk", kept)
+            .setData("sortRect", footprint);
+          // The blade sign hangs on the fascia: it shows only while the full building
+          // does, and never stays brighter or more solid than the wall it hangs from.
+          const blade = sf === front?.sf ? bladeSign(sf) : undefined;
+          if (blade && building && front) {
+            const t = BLADE.thickness;
+            const ends = [blade.out0, blade.out1].flatMap((out) =>
+              [blade.z0 - 0.3, blade.z1 + 0.1].flatMap((z) => [
+                at(blade.s - t, out, z),
+                at(blade.s + t, out, z),
+                at(blade.s, 0, z),
+              ]),
+            );
+            const pad = 0.6 * metre;
+            const x0 = Math.min(...ends.map((p) => p.x)) - pad;
+            const y0 = Math.min(...ends.map((p) => p.y)) - pad;
+            const sign = (ctx: CanvasRenderingContext2D, pass: Pass) =>
+              paintBladeSign(ctx, project, metre, sf, front.art, pass);
+            const f = blade.footprint;
+            add(
+              `blade-${s.id}`,
+              (ctx) => sign(ctx, "albedo"),
+              project({ x: f.x + f.width / 2, y: f.y + f.height / 2 }).y,
+              {
+                x: Math.floor(x0),
+                y: Math.floor(y0),
+                width: Math.ceil(Math.max(...ends.map((p) => p.x)) + pad - x0),
+                height: Math.ceil(Math.max(...ends.map((p) => p.y)) + pad - y0),
+              },
+              4,
+              sign,
+              // the blade stands edge-on across the face: its foot runs out from the wall
+              reflects
+                ? [
+                    bladeMirror(
+                      at(blade.s, blade.out0, 0),
+                      at(blade.s, blade.out1, 0),
+                      x0,
+                      y0,
+                      ends,
+                      pad,
+                    ),
+                  ]
+                : undefined,
+            )
+              ?.setData("activityLayer", "fixture")
+              .setData("revealHide", occluders.has(s.id))
+              .setData("foregroundStructure", materialised ? s : undefined)
+              .setData(
+                "sectionRect",
+                cutawayWalls(s, arena.environment!.entrances).find(({ rect: r }) =>
+                  sf.edge === "north"
+                    ? r.y === s.rect.y &&
+                      s.rect.x + blade.s >= r.x &&
+                      s.rect.x + blade.s < r.x + r.width
+                    : r.x + r.width === s.rect.x + s.rect.width &&
+                      s.rect.y + blade.s >= r.y &&
+                      s.rect.y + blade.s < r.y + r.height,
+                )?.rect ?? s.rect,
+              )
+              .setData("sortRect", f)
+              .setData("fadeWith", building);
+          }
         }
-      }
     }
   }
   for (const d of arena.environment!.dressing) {
@@ -3122,14 +3133,16 @@ export function createComposedEnvironment(
       project,
       ppm: metre,
       sources: mirrorSources,
-      occluders: casters.map((c) => ({
-        id: c.coverId,
-        body: c.body,
-        height: c.height,
-        wreck: c.wreck,
-      })),
+      occluders: casters
+        .filter((c) => !c.bottom)
+        .map((c) => ({
+          id: c.coverId,
+          body: c.body,
+          height: c.height,
+          wreck: c.wreck,
+        })),
       paintClasses: (ctx) =>
-        paintSurfaceClasses(ctx, arena, project, storefronts.map(awningFootprint)),
+        paintSurfaceClasses(ctx, arena, project, allCanopies.map(awningFootprint)),
       wetness: rainField(env),
       // Only broken wet-grain highlights: no uniform incident sheen. Use the
       // same occluded light and complete wreck state as the diffuse ground.

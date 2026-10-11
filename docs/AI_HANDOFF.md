@@ -1,3 +1,10 @@
+## Active architecture depth pass — 2026-10-11 UTC
+
+PR350 merged. Working in isolated ../city-block-depth, branch codex/architecture-depth.
+Read [checkpoint-architecture-depth.md](checkpoint-architecture-depth.md).
+Levi approved the architecture/shadow revision. Local implementation and review in
+progress; no publication or visual acceptance yet. Never git push; Levi merges.
+
 ## Active visual pass — 2026-10-11 UTC
 
 PR347 merged; isolated checkout `../city-block-ground-light`, branch

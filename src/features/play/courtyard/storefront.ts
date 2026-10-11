@@ -13,6 +13,7 @@
  * Coordinates: `s` is metres along the face from the building's first corner, `out`
  * is metres away from the wall (negative: into the building), `z` is height.
  */
+import { architecturalDepth } from "./architecturalDepth";
 import { sourceFor } from "./architectureArt";
 import { paintArchitecturalBay } from "./paintedArchitecture";
 import {
@@ -515,7 +516,7 @@ export function paintStorefrontFace(o: FaceOptions) {
         index % 2 === 1,
       );
       // dim the room so it reads as interior, not as a second facade
-      fillPoly(ctx, opening, "rgba(8,16,20,.34)");
+      fillPoly(ctx, opening, "rgba(8,16,20,.16)");
     } else {
       fillPoly(ctx, opening, "#1a272c");
     }
@@ -556,6 +557,7 @@ export function paintStorefrontFace(o: FaceOptions) {
       "#6b7878",
     );
     strokeLine(ctx, at(s0, 0, bottom), at(s1, 0, bottom), "#a2afad", 1.2);
+    architecturalDepth(ctx, at, true, o.materials).bay({ s0, s1, z0: bottom, z1: top }, 0.25);
     // aluminium frame at the wall plane: head, sill, jambs, mullion
     const bar = "#1b252a";
     fillPoly(ctx, quad(s0, s1, top - frame, top), bar);
@@ -1337,7 +1339,7 @@ export function paintAwning(o: Omit<FaceOptions, "clip">) {
     strokeLine(ctx, at(s, projection, outer), at(s, projection, outer - hem), "#1b2428", 1.1);
   }
   // the shop's name, small, in neon tubes on the valance: the one sign the cutaway keeps
-  if (o.art.kanji) {
+  if (o.art.kanji && sf.awning.id !== "market-return-canopy") {
     // a dark lightbox strip on the valance, and the tubes on it, unlit
     const g = valanceGlyphs(sf);
     fillPoly(
@@ -1395,7 +1397,7 @@ function paintAwningLight(o: Omit<FaceOptions, "clip">, outline: Point[]) {
     ctx.fill();
     return;
   }
-  if (o.art.kanji) {
+  if (o.art.kanji && sf.awning.id !== "market-return-canopy") {
     const g = valanceGlyphs(sf);
     lightKanji(o, o.art.kanji, g, g.out, 3 * Math.max(1, ppm / 12), 0.012);
   }
