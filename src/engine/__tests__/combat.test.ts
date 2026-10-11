@@ -162,6 +162,16 @@ describe("applyDamage", () => {
     expect(r.criticalInjury).toBe(false);
     expect(r.bonusDamage).toBe(0);
   });
+
+  it("Rubber ammo that exactly empties a target still leaves them on 1 HP", () => {
+    const r = applyDamage({ hpBefore: 5, damage: 5, sp: 0, rubber: true });
+    expect(r.hpAfter).toBe(1);
+    expect(r.totalHpLoss).toBe(4);
+  });
+
+  it("Rubber ammo does not save somebody already on 1 HP", () => {
+    expect(applyDamage({ hpBefore: 1, damage: 5, sp: 0, rubber: true }).hpAfter).toBeLessThan(1);
+  });
 });
 
 describe("wound penalties (CP:R pg. 186)", () => {

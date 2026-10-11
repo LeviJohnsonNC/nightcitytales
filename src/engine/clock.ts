@@ -54,7 +54,10 @@ export function clampActionMinutes(minutes: number): number {
 
 /** Advance the clock, rolling minutes into whole days. */
 export function advanceClock(clock: GameClock, minutes: number): GameClock {
-  const total = clock.day * MINUTES_PER_DAY + clock.minute + Math.max(0, Math.round(minutes));
+  // A duration that is not a number moves nothing: NaN here once meant a NaN
+  // clock written to the campaign, and a day nothing could read again.
+  const step = Number.isFinite(minutes) ? Math.max(0, Math.round(minutes)) : 0;
+  const total = clock.day * MINUTES_PER_DAY + clock.minute + step;
   return {
     day: Math.floor(total / MINUTES_PER_DAY),
     minute: total % MINUTES_PER_DAY,

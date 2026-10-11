@@ -28,18 +28,30 @@ function totalsOf(base: number): Map<number, number> {
   return totals;
 }
 
-/** Probability, 0 to 1, that `base` + the check die meets `dv`. */
-export function checkOdds(base: number, dv: number): number {
+/**
+ * Probability, 0 to 1, that `base` + the check die meets `dv`.
+ *
+ * `tie` is who a total equal to the DV belongs to, and must be the same answer
+ * the roll it previews gives. A Skill Check meets its DV (`meetsDV`); an attack
+ * is rolled with `tieGoesTo: "defender"` (`resolveAttack`) and has to beat it.
+ * The Counter's range card once quoted a shot at the Skill Check's odds, ten
+ * points too kind whenever a face could land on the DV.
+ */
+export function checkOdds(base: number, dv: number, tie: "actor" | "defender" = "actor"): number {
   let hits = 0;
   for (const [total, weight] of totalsOf(base)) {
-    if (meetsDV(total, dv)) hits += weight;
+    if (tie === "actor" ? meetsDV(total, dv) : total > dv) hits += weight;
   }
   return hits / 100;
 }
 
 /** The same chance as a whole percentage, for display. */
-export function checkPercent(base: number, dv: number): number {
-  return Math.round(checkOdds(base, dv) * 100);
+export function checkPercent(
+  base: number,
+  dv: number,
+  tie: "actor" | "defender" = "actor",
+): number {
+  return Math.round(checkOdds(base, dv, tie) * 100);
 }
 
 /**

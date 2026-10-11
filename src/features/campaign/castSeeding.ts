@@ -282,13 +282,15 @@ export async function raiseNpcSuspicion(
   npc: CampaignNpc,
   add: number,
   today: number,
-): Promise<void> {
-  if (add <= 0) return;
+): Promise<CampaignNpc> {
+  if (add <= 0) return npc;
   const data = (npc.data ?? {}) as Record<string, unknown>;
   const next = raiseSuspicion({ state: suspicionOf(npc), add, today });
-  await saveCampaignNpc(campaignId, npc.npc_id ?? npc.name, {
-    data: { ...data, suspicion: next } as unknown as Json,
-  });
+  const written = { ...data, suspicion: next } as unknown as Json;
+  await saveCampaignNpc(campaignId, npc.npc_id ?? npc.name, { data: written });
+  // The row as written. `data` is replaced whole on save, so a second write
+  // built from the row this one was handed would put the suspicion back.
+  return { ...npc, data: written };
 }
 
 /**
@@ -313,17 +315,20 @@ export async function revealFact(
   return { fact, text: revealText(member, fact) };
 }
 
-/** Record that the character has actually dealt with someone today. */
+/**
+ * Record that the character has actually dealt with someone today. Hands back
+ * the row as written, for the next write to build on (see raiseNpcSuspicion).
+ */
 export async function markDealtWith(
   campaignId: string,
   npc: CampaignNpc,
   day: number,
-): Promise<void> {
+): Promise<CampaignNpc> {
   const data = (npc.data ?? {}) as Record<string, unknown>;
-  if (data["lastSeenDay"] === day) return;
-  await saveCampaignNpc(campaignId, npc.npc_id ?? npc.name, {
-    data: { ...data, lastSeenDay: day } as unknown as Json,
-  });
+  if (data["lastSeenDay"] === day) return npc;
+  const written = { ...data, lastSeenDay: day } as unknown as Json;
+  await saveCampaignNpc(campaignId, npc.npc_id ?? npc.name, { data: written });
+  return { ...npc, data: written };
 }
 
 /** Who the character is on sight (sex, age), read off the saved character. */

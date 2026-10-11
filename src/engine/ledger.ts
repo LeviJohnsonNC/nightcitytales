@@ -57,6 +57,7 @@ export const LEDGER_EVENTS = {
   purchase: "purchase",
   shopSeen: "shop_seen",
   shopBrowsed: "shop_browsed",
+  haggle: "haggle",
   sold: "sold",
 } as const;
 
@@ -1189,6 +1190,85 @@ export function readShopBrowsedEventData(raw: unknown): ShopBrowsedEventData | n
   const day = num(d["day"]);
   if (vendorId === null || day === null) return null;
   return { vendorId, day: Math.max(0, Math.trunc(day)) };
+}
+
+// ---------------------------------------------------------------------------
+// haggle — one argument over the price at one seller
+// (`features/campaign/shopping.ts`). Read back for the printed "one Fixer deal
+// per transaction": a seller argues once a day, and a won argument holds for
+// the rest of that day. The shop used to keep this in React state, so closing
+// and reopening the Counter bought a fresh roll.
+// ---------------------------------------------------------------------------
+
+export type HaggleEventData = {
+  vendorId: string;
+  won: boolean;
+  /** Off every price there today when won; 0 when lost. */
+  percent: number;
+  /** The in-world day it was argued. Null on a row written before days were kept. */
+  day: number | null;
+  actorTotal: number;
+  opponentTotal: number;
+  approachId: string | null;
+};
+
+export function haggleEventData(input: {
+  vendorId: string;
+  won: boolean;
+  percent: number;
+  day: number;
+  actorTotal: number;
+  opponentTotal: number;
+  approachId?: string | null;
+}): HaggleEventData {
+  return {
+    vendorId: input.vendorId,
+    won: input.won,
+    percent: input.won ? Math.max(0, Math.trunc(input.percent)) : 0,
+    day: Math.max(0, Math.trunc(input.day)),
+    actorTotal: input.actorTotal,
+    opponentTotal: input.opponentTotal,
+    approachId: input.approachId ?? null,
+  };
+}
+
+export function readHaggleEventData(raw: unknown): HaggleEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const vendorId = str(d["vendorId"]);
+  if (vendorId === null || typeof d["won"] !== "boolean") return null;
+  const won = d["won"];
+  const day = num(d["day"]);
+  return {
+    vendorId,
+    won,
+    percent: won ? Math.max(0, Math.trunc(num(d["percent"]) ?? 0)) : 0,
+    day: day === null ? null : Math.max(0, Math.trunc(day)),
+    actorTotal: num(d["actorTotal"]) ?? 0,
+    opponentTotal: num(d["opponentTotal"]) ?? 0,
+    approachId: str(d["approachId"]),
+  };
+}
+
+/**
+ * How the argument at this seller went today, or null if there has not been
+ * one. The newest row wins. An undated row (written before days were kept)
+ * is no day's, so it never blocks an argument.
+ */
+export function haggleOn(
+  events: readonly { type: string; data?: unknown }[],
+  vendorId: string,
+  day: number,
+): { won: boolean; percent: number } | null {
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i]!;
+    if (event.type !== LEDGER_EVENTS.haggle) continue;
+    const data = readHaggleEventData(event.data);
+    if (data && data.vendorId === vendorId && data.day === day) {
+      return { won: data.won, percent: data.percent };
+    }
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------

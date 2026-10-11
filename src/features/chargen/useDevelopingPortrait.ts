@@ -8,7 +8,7 @@ import {
   portraitIsStale,
   type PortraitStage,
 } from "./portraitStages";
-import { useChargenStore, type ChargenState } from "./store";
+import { chargenResets, useChargenStore, type ChargenState } from "./store";
 
 const ROLE_NAMES = rolesData.roles as unknown as Record<string, { name: string }>;
 
@@ -80,12 +80,16 @@ export function useDevelopingPortrait(
     const attemptKey = `${next}:${basis}`;
     const roleName = state.roleId ? ROLE_NAMES[state.roleId]?.name : undefined;
     let finalFrame: string | null = null;
+    const startedFor = chargenResets();
     generatePortrait(buildPortraitFacts(state, roleName), userId, state.draftId, (url, isFinal) => {
       frames.current += 1;
       if (isFinal) finalFrame = url;
       setPreview({ key: `frame:${frames.current}`, src: url });
     })
       .then((path) => {
+        // Filed (and the wizard reset) while it drew: this picture is of
+        // somebody who is no longer on the page, and its spend is not theirs.
+        if (chargenResets() !== startedFor) return;
         const now = useChargenStore.getState();
         patch({
           portraitPath: path,

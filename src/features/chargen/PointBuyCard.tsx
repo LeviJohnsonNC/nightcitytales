@@ -42,6 +42,12 @@ function StepButton({
     window.clearInterval(repeat.current);
   };
   useEffect(() => stop, []);
+  // A held press that runs the budget out disables the button, and a disabled
+  // button may never hear its pointerup: the repeat would keep going and spend
+  // the next point freed anywhere else on this STAT. Stop it here.
+  useEffect(() => {
+    if (disabled) stop();
+  }, [disabled]);
   return (
     <button
       type="button"

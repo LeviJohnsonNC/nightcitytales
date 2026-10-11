@@ -134,7 +134,7 @@ import {
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
 import {
-  answerPendingQuestion,
+  pendingAnswer,
   askOracle,
   revealComplication,
   secretComplicationFor,
@@ -146,7 +146,7 @@ import {
   pressureFrom,
   pressureLines,
   readObservations,
-  spendFiredClock,
+  firedClockDue,
   standingLines,
   type LivePressure,
 } from "@/features/campaign/pressure";
@@ -413,15 +413,18 @@ export async function narrate(
   // tension, it is two encounters wearing one coat, and the engine has no way
   // to fold the newcomers into an initiative order that is already turning.
   const fightRunning = bundle.encounter?.state.status === "active";
-  const arrived =
-    fightRunning || options.fixedResult ? null : await spendFiredClock(campaignId, { beatId });
+  //
+  // Read now and SPENT only once the narrator has answered (below): spent
+  // first, a failed model call took the threat and the answer with it.
+  const due =
+    fightRunning || options.fixedResult ? null : await firedClockDue(campaignId, { beatId });
+  const arrived = due?.arrived ?? null;
 
   // Whatever the GM asked last turn, answered by dice it never saw. Skipped on
   // an options turn: the player is thinking, and nobody lived through anything.
-  const answered =
-    options.optionsRequested || options.fixedResult
-      ? null
-      : await answerPendingQuestion(campaignId);
+  const pending =
+    options.optionsRequested || options.fixedResult ? null : await pendingAnswer(campaignId);
+  const answered = pending?.answer ?? null;
 
   const jobPosition = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START);
   const jobDistrict = jobPosition ? getDistrict(jobPosition.districtKey) : undefined;
@@ -553,6 +556,9 @@ export async function narrate(
   });
 
   const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
+  // The narrator has what arrived and what the dice answered: now they happened.
+  await due?.commit();
+  await pending?.commit();
 
   if (
     !options.fixedResult &&

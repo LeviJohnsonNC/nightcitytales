@@ -117,7 +117,8 @@ export function holdPlacedEventData(input: Omit<Hold, "until"> & { until?: numbe
   };
 }
 
-function readHold(raw: unknown): Hold | null {
+/** Read a hold back off its `hold_placed` row. The only place its field names are read. */
+export function readHold(raw: unknown): Hold | null {
   const d = payloadOf({ data: raw });
   const str = (k: string) => (typeof d[k] === "string" ? (d[k] as string) : null);
   const num = (k: string) =>
@@ -189,7 +190,8 @@ export function rangeTrial(itemId: string, base: number): RangeBand[] {
   for (const max of RANGE_BAND_MAX) {
     const dv = singleShotDV(profile.rangeType, max);
     if (dv === null) continue;
-    out.push({ max, dv, percent: checkPercent(base, dv) });
+    // A shot has to beat its DV (`resolveAttack`), so a tie is a miss here.
+    out.push({ max, dv, percent: checkPercent(base, dv, "defender") });
   }
   return out;
 }

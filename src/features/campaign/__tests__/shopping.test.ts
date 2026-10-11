@@ -112,6 +112,8 @@ const {
   placeHold,
   shopShelf,
   wordAround,
+  recordHaggle,
+  rollHaggle,
 } = await import("../shopping");
 const {
   RESALE_WEEKS,
@@ -815,5 +817,56 @@ describe("a seller who knows you", () => {
     expect(word.map((w) => w.item.itemId)).toContain(find.itemId);
     // A stranger to that shop hears nothing.
     expect(wordAround({ campaignId: "c", day, context: { ...context, flags: [] } })).toEqual([]);
+  });
+});
+
+describe("arguing over the price", () => {
+  // A haggle rolled with a die that always lands high, then a die that always
+  // lands low for the seller: a win, written the way the Counter writes it.
+  const won = () => {
+    let n = 0;
+    // Actor rolls first; the seller's die follows.
+    const rng = () => (n++ === 0 ? 0.85 : 0.05);
+    return rollHaggle(
+      {
+        vendorId: "gun_shop",
+        actor: { stats: { cool: 8 }, skills: [{ skillId: "trading", level: 6 }] },
+        actorName: "V",
+        isFixer: false,
+        operatorRank: 0,
+      },
+      rng,
+    );
+  };
+
+  it("is argued once a day at each seller, read off the ledger", async () => {
+    const outcome = won();
+    await recordHaggle({ campaignId: "c", vendorId: "gun_shop", outcome, day: 1 });
+    await expect(
+      recordHaggle({ campaignId: "c", vendorId: "gun_shop", outcome, day: 1 }),
+    ).rejects.toThrow(/already argued/);
+    // Another seller, or tomorrow, is another argument.
+    await recordHaggle({ campaignId: "c", vendorId: "street", outcome, day: 1 });
+    await recordHaggle({ campaignId: "c", vendorId: "gun_shop", outcome, day: 2 });
+    expect(ledger.filter((e) => e.type === "haggle")).toHaveLength(3);
+  });
+
+  it("takes the discount off at the till only when the ledger says it was won", async () => {
+    const full = async () =>
+      purchase({
+        campaignId: "c",
+        vendorId: "gun_shop",
+        kind: ORDINARY.kind,
+        itemId: ORDINARY.itemId,
+        quantity: 1,
+      });
+    const before = await full();
+    expect(before.ok && before.saved).toBe(0);
+
+    const outcome = won();
+    expect(outcome.won).toBe(true);
+    await recordHaggle({ campaignId: "c", vendorId: "gun_shop", outcome, day: clock.day });
+    const after = await full();
+    expect(after.ok && after.saved).toBeGreaterThan(0);
   });
 });

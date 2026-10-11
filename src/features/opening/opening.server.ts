@@ -10,6 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MAX_TURN_PROMPT_CHARS, meterTurn } from "@/lib/aiMeter";
 import { OPENING_SYSTEM_PROMPT } from "./openingPrompt";
 import { OpeningWireSchema, normalizeOpening, type Opening } from "./openingResponse";
 
@@ -17,7 +18,7 @@ const DEFAULT_OPENING_MODEL = "google/gemini-3.7-flash";
 
 const OpeningInput = z.object({
   /** The rendered fact slice (see renderOpeningPrompt). */
-  userPrompt: z.string().min(1),
+  userPrompt: z.string().min(1).max(MAX_TURN_PROMPT_CHARS),
 });
 
 function openingError(error: unknown, model: string): Error {
@@ -37,9 +38,10 @@ function openingError(error: unknown, model: string): Error {
 export const openingFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => OpeningInput.parse(input))
-  .handler(async ({ data }): Promise<Opening> => {
+  .handler(async ({ data, context }): Promise<Opening> => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI is not configured for this app.");
+    await meterTurn("opening", context.userId);
 
     const model = process.env["OPENING_MODEL"] ?? process.env["GM_MODEL"] ?? DEFAULT_OPENING_MODEL;
     const { generateObject } = await import("ai");

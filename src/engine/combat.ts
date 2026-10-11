@@ -203,7 +203,8 @@ export function applyDamage(input: ApplyDamageInput): ApplyDamageResult {
 
   let totalHpLoss = through + bonus;
   let hpAfter = input.hpBefore - totalHpLoss;
-  if (rubber && input.hpBefore > 1 && hpAfter < 0) {
+  // Never below 1 HP: damage that exactly empties them leaves them on 0 too.
+  if (rubber && input.hpBefore > 1 && hpAfter < 1) {
     hpAfter = 1;
     totalHpLoss = input.hpBefore - 1;
   }

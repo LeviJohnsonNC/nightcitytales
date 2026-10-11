@@ -97,3 +97,33 @@ describe("opposedOdds", () => {
     expect(opposedPercent(3, 60)).toBe(0);
   });
 });
+
+describe("attack odds, where a tie is a miss", () => {
+  it("is the chance resolveAttack hits, for every base and DV", async () => {
+    const { resolveAttack } = await import("../combat");
+    for (let base = 0; base <= 20; base += 1) {
+      for (let dv = 9; dv <= 30; dv += 1) {
+        let hits = 0;
+        for (const { faces, weight } of outcomes()) {
+          const shot = resolveAttack(
+            {
+              dv,
+              statLabel: "REF",
+              statValue: base,
+              skillLabel: "Handgun",
+              skillValue: 0,
+            } as Parameters<typeof resolveAttack>[0],
+            scripted(faces),
+          );
+          if (shot.hit) hits += weight;
+        }
+        expect(checkPercent(base, dv, "defender"), `base ${base} vs DV ${dv}`).toBe(hits);
+      }
+    }
+  });
+
+  it("is ten points under a Skill Check's odds when a plain face can land on the DV", () => {
+    expect(checkPercent(10, 15)).toBe(60);
+    expect(checkPercent(10, 15, "defender")).toBe(50);
+  });
+});

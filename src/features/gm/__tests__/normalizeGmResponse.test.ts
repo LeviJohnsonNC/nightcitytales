@@ -534,3 +534,26 @@ it("refuses unsupported explicit scene facts instead of silently dropping them",
     ),
   ).toThrow("Unsupported scene ingredient");
 });
+
+describe("a hostile list the scene can stage", () => {
+  const start = (enemies: Record<string, unknown>[]) =>
+    normalizeGmResponse(
+      wire([{ kind: "start_encounter", name: "Ambush", arena: "alley", enemies }]),
+      quiet,
+    ).proposedActions[0] as { enemies: { key: string }[] };
+
+  it("gives two hostiles the model keyed alike keys of their own", () => {
+    const out = start([
+      { key: "guard", name: "Guard" },
+      { key: "guard", name: "Guard" },
+      { key: "guard", name: "Guard" },
+    ]);
+    expect(out.enemies.map((e) => e.key)).toEqual(["guard", "guard-2", "guard-3"]);
+  });
+
+  it("stages no more than a scene holds", async () => {
+    const { ADVENTURE_MAX_ENEMIES } = await import("@/engine");
+    const many = Array.from({ length: 40 }, (_, i) => ({ key: `g${i}`, name: "Ganger" }));
+    expect(start(many).enemies).toHaveLength(ADVENTURE_MAX_ENEMIES);
+  });
+});

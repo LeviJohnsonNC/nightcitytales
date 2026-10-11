@@ -482,6 +482,14 @@ async function runTheTurnOver(
   // is what advances the Round.
   const inbound = pendingBackup(bundle.campaign);
   if (inbound && live.state.status === "active" && live.state.round >= inbound.arrivesOnRound) {
+    // The call is answered BEFORE the group is added. Cleared after, a failure
+    // anywhere in the arrival (a combatant row, the save, the log) left the call
+    // pending, and the next handover added the whole group again. A group that
+    // fails to arrive is one the player has to call again; a group that arrives
+    // twice is a fight the engine never priced.
+    await updateCampaign(campaignId, {
+      role_state: withAbilityState(bundle.campaign, "backup", {}) as Json,
+    });
     const tier = BACKUP_TIERS.find((t) => t.name === inbound.tierName) ?? null;
     if (tier) {
       const arrival = await arriveBackup({
@@ -494,9 +502,6 @@ async function runTheTurnOver(
       live = arrival.live;
       lines.push(arrival.line);
     }
-    await updateCampaign(campaignId, {
-      role_state: withAbilityState(bundle.campaign, "backup", {}) as Json,
-    });
   }
 
   // The fight's ending, and the Death Save a Mortally Wounded player owes

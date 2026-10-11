@@ -297,38 +297,67 @@ export async function spendFiredClock(
   campaignId: string,
   options: { beatId?: string | null } = {},
 ): Promise<ArrivedPressure | null> {
+  const due = await firedClockDue(campaignId, options);
+  if (!due) return null;
+  await due.commit();
+  return due.arrived;
+}
+
+/**
+ * The pressure that has come due, and the write that spends it, held apart.
+ *
+ * A Job turn tells the narrator what arrived and only then spends the clock:
+ * spent first, a failed model call (a 429, a dropped connection) took the
+ * threat with it, and the retry found the clock empty and nothing coming.
+ * Read live, like spendFiredClock, and `commit` re-reads before it writes, so
+ * two passes of one turn cannot both spend it.
+ */
+export async function firedClockDue(
+  campaignId: string,
+  options: { beatId?: string | null } = {},
+): Promise<{ arrived: ArrivedPressure; commit: () => Promise<void> } | null> {
   // Read live rather than trusting a caller's snapshot. One player turn can
   // narrate several times (an action, then the check it proposed, then the
   // result), and each pass would otherwise spend the same full clock again off
   // the same stale copy.
+  const found = await dueClock(campaignId);
+  if (!found) return null;
+  const arrived = { definition: found.definition, payoff: found.definition.payoff };
+  const commit = async () => {
+    const still = await dueClock(campaignId);
+    if (!still || still.definition.key !== found.definition.key) return;
+    await upsertClock(campaignId, {
+      clockKey: still.definition.key,
+      label: still.definition.label,
+      filled: 0,
+      segments: still.definition.segments,
+      hidden: still.definition.hidden,
+      data: {
+        kind: still.definition.kind,
+        factionId: still.definition.factionId,
+      } as unknown as Json,
+    });
+
+    await appendCampaignEvent({
+      campaign_id: campaignId,
+      type: "pressure_arrived",
+      summary: still.definition.payoff,
+      data: {
+        clockKey: still.definition.key,
+        kind: still.definition.kind,
+        factionId: still.definition.factionId,
+      } as unknown as Json,
+      ...(options.beatId ? { beat_id: options.beatId } : {}),
+    });
+  };
+  return { arrived, commit };
+}
+
+async function dueClock(campaignId: string) {
   const pressure = pressureFrom(await listClocks(campaignId));
   const due = fired(pressure.map((p) => p.clock))[0];
   if (!due) return null;
-  const hit = pressure.find((p) => p.clock.key === due.key);
-  if (!hit) return null;
-
-  await upsertClock(campaignId, {
-    clockKey: hit.definition.key,
-    label: hit.definition.label,
-    filled: 0,
-    segments: hit.definition.segments,
-    hidden: hit.definition.hidden,
-    data: { kind: hit.definition.kind, factionId: hit.definition.factionId } as unknown as Json,
-  });
-
-  await appendCampaignEvent({
-    campaign_id: campaignId,
-    type: "pressure_arrived",
-    summary: hit.definition.payoff,
-    data: {
-      clockKey: hit.definition.key,
-      kind: hit.definition.kind,
-      factionId: hit.definition.factionId,
-    } as unknown as Json,
-    ...(options.beatId ? { beat_id: options.beatId } : {}),
-  });
-
-  return { definition: hit.definition, payoff: hit.definition.payoff };
+  return pressure.find((p) => p.clock.key === due.key) ?? null;
 }
 
 // ---------------------------------------------------------------------------

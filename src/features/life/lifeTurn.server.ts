@@ -14,6 +14,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MAX_TURN_PROMPT_CHARS, meterTurn } from "@/lib/aiMeter";
 import { type TurnProvenance } from "@/engine";
 import { LIFE_SYSTEM_PROMPT, LIFE_PROMPT_VERSION } from "./lifeSystemPrompt";
 import { LifeWireResponseSchema, normalizeLifeResponse, type LifeResponse } from "./lifeResponse";
@@ -33,7 +34,7 @@ function lifeProvenance(model: string, servedModel: string | null): TurnProvenan
 
 const LifeTurnInput = z.object({
   /** The rendered context slice + player input (see renderLifeUserPrompt). */
-  userPrompt: z.string().min(1),
+  userPrompt: z.string().min(1).max(MAX_TURN_PROMPT_CHARS),
 });
 
 /** Turn a raw gateway failure into something a player can act on. */
@@ -54,9 +55,10 @@ function lifeError(error: unknown, model: string): Error {
 export const lifeTurnFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => LifeTurnInput.parse(input))
-  .handler(async ({ data }): Promise<LifeTurnResult> => {
+  .handler(async ({ data, context }): Promise<LifeTurnResult> => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI is not configured for this app.");
+    await meterTurn("life", context.userId);
 
     const model = process.env["LIFE_MODEL"] ?? process.env["GM_MODEL"] ?? DEFAULT_LIFE_MODEL;
     const { generateObject } = await import("ai");

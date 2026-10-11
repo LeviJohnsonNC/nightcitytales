@@ -48,14 +48,20 @@ export function useReceipts<T>(
     // screen has not just spent anything.
     if (!before) return;
     const change = diff(before, next);
-    if (change.length === 0) return;
-    setReceipts(change);
-    const timer = setTimeout(() => setReceipts([]), RECEIPT_LIFETIME_MS);
-    return () => clearTimeout(timer);
+    if (change.length > 0) setReceipts(change);
     // `diff` is a module-level pure function at every call site; keying on it
     // would only re-fire on an identity change that never happens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fingerprint]);
+
+  // The receipts' own lifetime, kept apart from the diff. It used to be the
+  // diff effect's cleanup, so a second refetch inside the lifetime that changed
+  // nothing cancelled the timer and left the receipts up for good.
+  useEffect(() => {
+    if (receipts.length === 0) return;
+    const timer = setTimeout(() => setReceipts([]), RECEIPT_LIFETIME_MS);
+    return () => clearTimeout(timer);
+  }, [receipts]);
 
   return receipts;
 }

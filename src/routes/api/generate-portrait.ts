@@ -44,6 +44,15 @@ const MODEL = "openai/gpt-image-1-mini";
  * hours, so a generous burst is the honest shape. See rate-limit.server.ts for
  * what this does and does not promise.
  */
+/** What a player is told when the image gateway refuses. */
+function portraitFailure(status: number): string {
+  if (status === 402) return "Out of AI credits for portraits. Top up to keep developing.";
+  if (status === 429) return "The darkroom is busy. Try again in a moment.";
+  if (status === 401 || status === 403) return "Portraits are not configured for this app.";
+  if (status >= 500) return "The darkroom stumbled upstream. Try again.";
+  return `Portrait generation failed (${status}).`;
+}
+
 const PORTRAIT_LIMIT = { limit: 12, windowMs: 5 * 60_000 };
 
 export const Route = createFileRoute("/api/generate-portrait")({
@@ -75,25 +84,41 @@ export const Route = createFileRoute("/api/generate-portrait")({
           });
         }
 
-        const parsed = Facts.safeParse(await request.json());
+        let body: unknown;
+        try {
+          body = await request.json();
+        } catch {
+          return new Response("Invalid portrait request.", { status: 400 });
+        }
+        const parsed = Facts.safeParse(body);
         if (!parsed.success) return new Response("Invalid portrait request.", { status: 400 });
         const { stream = true, ...facts } = parsed.data;
 
-        const upstream = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: MODEL,
-            prompt: buildPortraitPrompt(facts),
-            size: `${PORTRAIT_SIZE.width}x${PORTRAIT_SIZE.height}`,
-            quality: "low",
-            n: 1,
-            ...(stream ? { stream: true, partial_images: 1 } : {}),
-          }),
-        });
+        let upstream: Response;
+        try {
+          upstream = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: MODEL,
+              prompt: buildPortraitPrompt(facts),
+              size: `${PORTRAIT_SIZE.width}x${PORTRAIT_SIZE.height}`,
+              quality: "low",
+              n: 1,
+              ...(stream ? { stream: true, partial_images: 1 } : {}),
+            }),
+          });
+        } catch {
+          return new Response("The darkroom is unreachable. Try again.", { status: 502 });
+        }
 
         if (!upstream.ok || !upstream.body) {
-          return new Response(await upstream.text(), { status: upstream.status });
+          // The gateway's own body can carry account and billing detail meant
+          // for the operator, so the player gets a sentence instead.
+          await upstream.body?.cancel().catch(() => undefined);
+          return new Response(portraitFailure(upstream.status), {
+            status: upstream.status >= 500 ? 502 : upstream.status,
+          });
         }
         if (!stream) {
           return new Response(upstream.body, { headers: { "Content-Type": "application/json" } });

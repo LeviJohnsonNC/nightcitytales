@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MAX_TURN_PROMPT_CHARS, meterTurn } from "@/lib/aiMeter";
 import {
   IP_JUDGEMENT_SYSTEM_PROMPT,
   IpJudgementWireSchema,
@@ -12,15 +13,16 @@ import {
   type IpJudgement,
 } from "./ipJudgement";
 
-const IpJudgementInput = z.object({ userPrompt: z.string().min(1) });
+const IpJudgementInput = z.object({ userPrompt: z.string().min(1).max(MAX_TURN_PROMPT_CHARS) });
 
 export const ipJudgementFn = createServerFn({ method: "POST" })
   // Spends AI credits — see gmTurn.server.ts.
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => IpJudgementInput.parse(input))
-  .handler(async ({ data }): Promise<IpJudgement> => {
+  .handler(async ({ data, context }): Promise<IpJudgement> => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI is not configured for this app.");
+    await meterTurn("ip", context.userId);
     const model = process.env["GM_MODEL"] ?? "google/gemini-3.7-flash";
     const { generateObject } = await import("ai");
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");

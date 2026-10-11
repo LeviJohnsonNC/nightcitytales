@@ -382,16 +382,36 @@ export async function answerPendingQuestion(
   campaignId: string,
   rng?: RNG,
 ): Promise<OracleAnswer | null> {
+  const pending = await pendingAnswer(campaignId, rng);
+  if (!pending) return null;
+  await pending.commit();
+  return pending.answer;
+}
+
+/**
+ * The outstanding question answered, and the write that clears it, held apart.
+ *
+ * The Job turn hands the narrator the answer and clears the question only once
+ * the narrator has replied: cleared first, a failed model call lost the
+ * question, and the answer nobody ever read. An unwritten roll is rolled again
+ * on the retry, which is fair: nobody met the first one.
+ */
+export async function pendingAnswer(
+  campaignId: string,
+  rng?: RNG,
+): Promise<{ answer: OracleAnswer; commit: () => Promise<void> } | null> {
   const question = pendingQuestionFrom(await listCampaignFlags(campaignId));
   if (!question) return null;
-  // Cleared, not nulled: campaign_flags.value is NOT NULL, and pendingQuestionFrom
-  // already treats anything that isn't a parseable question string as "none" — so
-  // the same bare-flag sentinel setCampaignFlag defaults to elsewhere reads back
-  // as cleared without writing a value the column can't hold.
-  await setCampaignFlag(campaignId, PENDING_QUESTION_FLAG);
   const result = rollOracle(OPEN_QUESTION, rng);
-  await logSecretOracle(campaignId, result);
-  return { question, answer: result.text, key: result.key };
+  const commit = async () => {
+    // Cleared, not nulled: campaign_flags.value is NOT NULL, and pendingQuestionFrom
+    // already treats anything that isn't a parseable question string as "none" — so
+    // the same bare-flag sentinel setCampaignFlag defaults to elsewhere reads back
+    // as cleared without writing a value the column can't hold.
+    await setCampaignFlag(campaignId, PENDING_QUESTION_FLAG);
+    await logSecretOracle(campaignId, result);
+  };
+  return { answer: { question, answer: result.text, key: result.key }, commit };
 }
 
 /** Re-exported so callers do not have to reach past this module for one predicate. */
