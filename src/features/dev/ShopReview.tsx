@@ -191,6 +191,14 @@ export function ShopReview() {
         onClose={() => say("Left.")}
         onTravel={(key) => say(`Travelled to ${key}.`)}
         onTalk={() => say("Back to the scene.")}
+        talk={{
+          onSay: (text) => say(`You said: ${text}`),
+          busy: false,
+          last:
+            "The vendor flicks ash into an empty bean tin and nods at the case. 'Looking to scrap, build, or just browsing the bench?'",
+          waitingOnRoll: false,
+          onScene: () => say("Back to the scene."),
+        }}
       />
     </main>
   );

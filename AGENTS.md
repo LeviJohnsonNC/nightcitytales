@@ -353,6 +353,11 @@ The story opens it too: the Life narrator is told who sells where the character 
 `browseIntent.ts` picks the seller, or a trip to the named or nearest shop first; the turn
 writes a `shop_browsed` row, and the screen opens the Counter on the newest one it has not
 already seen. A catalog line shows its own picture (the art manifest's) before its category's.
+A seller's `scene` (two short paragraphs in `place-shops.json`, no number in either) and a
+`shopGreeting` line read from the engine sit under the storefront. `ModeSwitch` is the one
+switch between the Counter and the scene, shown above both while a seller is underfoot, and
+the Counter's talk box sends an ordinary Life turn without leaving it. An item opens in a
+dialog (Escape or the X goes back to the counter, not out of the shop).
 
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in

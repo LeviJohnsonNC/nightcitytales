@@ -144,6 +144,11 @@ export type Vendor = {
   finds: number;
   /** True when there is a range here to try a gun on before you buy it. */
   range: boolean;
+  /**
+   * What it is like to walk up to them: two short paragraphs, shown under the
+   * storefront. Atmosphere only: no price, stock or number is ever in it.
+   */
+  scene: string[];
 };
 
 export const VENDORS: Vendor[] = [
@@ -160,6 +165,10 @@ export const VENDORS: Vendor[] = [
     backRoom: [],
     finds: 0,
     range: false,
+    scene: [
+      "Tarps, folding tables and a crowd that moves slower than the street around it.",
+      "Whoever is working the pitch tonight has already seen you coming.",
+    ],
   },
   {
     id: "gun_shop",
@@ -174,6 +183,10 @@ export const VENDORS: Vendor[] = [
     backRoom: [],
     finds: 0,
     range: false,
+    scene: [
+      "A steel door, a buzzer and a camera that follows you to the counter.",
+      "The man behind it watches your hands the whole time you are talking.",
+    ],
   },
   {
     id: "armorer",
@@ -188,6 +201,10 @@ export const VENDORS: Vendor[] = [
     backRoom: [],
     finds: 0,
     range: false,
+    scene: [
+      "A back room that smells of solvent, with plate hanging on hooks along the wall.",
+      "Somebody looks up from a half-stitched vest and waits for you to say what you need.",
+    ],
   },
   {
     id: "fixer",
@@ -205,6 +222,10 @@ export const VENDORS: Vendor[] = [
     backRoom: [],
     finds: 0,
     range: false,
+    scene: [
+      "You make the call. It rings twice, and then the voice you know picks up as if it has been waiting.",
+      "There is no shelf here, only what they can find and how long it will take. Ask, and they will tell you what it costs to make it appear.",
+    ],
   },
 ];
 
@@ -224,6 +245,7 @@ type PlaceShop = {
   backRoom?: string[];
   finds?: number;
   range?: boolean;
+  scene?: string[];
 };
 
 export const PLACE_SHOPS_ARE_HOUSE_RULE: boolean = placeShops.houseRule;
@@ -257,7 +279,19 @@ function atPlace(shop: PlaceShop): Vendor {
     backRoom: shop.backRoom ?? [],
     finds: shop.finds ?? 0,
     range: shop.range ?? false,
+    scene: shop.scene ?? base.scene,
   };
+}
+
+/**
+ * The line under a seller's scene: how the place is with this character. Read
+ * from what the engine already knows — whether they have bought here, and
+ * whether the place has opened its back room to them — never from prose.
+ */
+export function shopGreeting(input: { knowsYou: boolean; backRoomOpen: boolean }): string {
+  const g = placeShops.greetings;
+  if (input.backRoomOpen) return g.backRoom;
+  return input.knowsYou ? g.known : g.stranger;
 }
 
 /**

@@ -130,8 +130,13 @@ export function itemArtUrl(
   return `/images/items/${slug}${small ? "-640" : ""}.webp`;
 }
 
-/** A picture to draw for a row: where it is and which part of it to keep in a crop. */
-export type ItemPicture = { url: string; focus: string };
+/**
+ * A picture to draw for a row: where it is, which part of it to keep, and how
+ * it fills the frame. The Counter's own art is painted square to be cropped;
+ * the catalog's art comes in every shape from a tall 2:3 to a wide 2.4:1, so
+ * it is shown whole (`contain`) over a blurred copy of itself.
+ */
+export type ItemPicture = { url: string; focus: string; fit: "cover" | "contain" };
 
 /**
  * The pictures to try for one shelf item, best first: the item's own picture,
@@ -147,10 +152,11 @@ export function itemPictures(kind: ItemKind | string, itemId: string, small = tr
       pictures.push({
         url: small && local ? `${own.src.slice(0, -".webp".length)}-512.webp` : own.src,
         focus: `${x * 100}% ${y * 100}%`,
+        fit: "contain",
       });
     }
   }
   const category = itemArtUrl(kind, itemId, small);
-  if (category) pictures.push({ url: category, focus: "50% 50%" });
+  if (category) pictures.push({ url: category, focus: "50% 50%", fit: "cover" });
   return pictures;
 }
