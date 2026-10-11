@@ -1,3 +1,25 @@
+## Active clipping / neon pass — 2026-10-11
+
+Checkout: /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
+Branch codex/street-neon-clipping; base origin/main 978baf35 (merged PR351/352).
+Normal fetched Git history, not the reconstructed checkouts mentioned below.
+Original dirty checkout and old session files remain untouched. Levi reviews/merges.
+
+Separated repair canopy/balcony into attached sorted sprites; removed clipped copies
+in reveal. Magenta market blade now casts ground/wall light at its actual height;
+cyan repair lettering; sharper/stronger source reflections. Passage/parking now use
+asphalt material and wetness, eliminating the flat blue patch. No gameplay edits.
+
+Validation: 4,246 tests pass, typecheck/build pass, lint zero errors/15 existing
+warnings. First Chromium run passes 3 seeds. Final refined run in progress.
+Actual final seed8 play, destruction and compact screenshots opened and inspected.
+Reflection still less rich than reference; do not claim total clipping elimination.
+Source-height regression added; wet-response test now bounds combined response
+instead of freezing the old artistic preference for blur over source shape.
+
+Next: finish final 3-seed screenshot review, publish review PR, check remote CI.
+Evidence currently e2e/.results; retain selected captures before another run.
+
 ## Active architecture depth pass — 2026-10-11 UTC
 
 PR350 merged. Working in isolated ../city-block-depth, branch codex/architecture-depth.

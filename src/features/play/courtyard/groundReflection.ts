@@ -40,7 +40,7 @@ import type { Box } from "./lampShadow";
 /** The numbers, tuned by eye at play zoom on seeds 8 and 7, and stated here. */
 export const REFLECTION = {
   /** Overall strength of the source pictures, added over the lit ground. */
-  strength: 1.05,
+  strength: 1.45,
   /**
    * What a source must give to be reflected, of full scale, applied to the source's own
    * extracted picture: a surface shows its own colour for dim things, and reflects the
@@ -48,9 +48,9 @@ export const REFLECTION = {
    */
   floor: 0.18,
   /** The whole picture, as a wet film shows it: blur in metres across and along. */
-  tight: { across: 0.055, along: 0.18 },
+  tight: { across: 0.035, along: 0.09 },
   /** The streak's blur, metres. */
-  rough: { across: 0.2, along: 0.46 },
+  rough: { across: 0.12, along: 0.3 },
   /**
    * How a rough surface stretches a picture: a facet tilted toward the camera reflects a
    * source from nearer its foot than the mirror point, one tilted away from beyond it.
@@ -77,7 +77,7 @@ export const REFLECTION = {
    * What a wet patch shows of a picture: the whole of it (`tight`) and its streak
    * (`streak`); and how much of the streak dry ground shows (`dry`).
    */
-  body: { tight: 0.3, streak: 0.46, dry: 0.004 },
+  body: { tight: 0.58, streak: 0.42, dry: 0.004 },
   /**
    * Broken microfacet highlights: a projected world field from `lo` to `hi`,
    * at `gain` times the source streak. Joints and dry ground give none.

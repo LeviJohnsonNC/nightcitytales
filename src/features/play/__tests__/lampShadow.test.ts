@@ -169,3 +169,9 @@ describe("raised architectural slabs", () => {
     expect(sourceFor(pool(0, 0.8), canopy, 1.5)).toBeNull();
   });
 });
+
+it("casts neon shadows from the sign height rather than the lamp default", () => {
+  const neon = { ...pool(0, 0.8), sourceZ: 2.4 };
+  expect(sourceFor(neon, caster(3, 0), 5.45)?.z).toBe(2.4);
+  expect(sourceFor(neon, { ...caster(3, 0, 3, 3), bottom: 2.7 }, 5.45)).toBeNull();
+});

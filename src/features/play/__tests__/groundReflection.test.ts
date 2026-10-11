@@ -105,11 +105,11 @@ describe("ground reflection: what a surface gives back", () => {
     expect(dry.streak).toBeLessThan(0.05);
   });
 
-  it("keeps a subdued source image and bounded wet-grain highlights", () => {
+  it("keeps recognizable source images and bounded wet-grain highlights", () => {
     const wet = response(SurfaceClass.asphalt, 1, 0);
     const grain = response(SurfaceClass.asphalt, 1, 1);
     expect(wet.tight).toBeGreaterThan(0);
-    expect(wet.tight).toBeLessThan(wet.streak);
+    expect(wet.tight + wet.streak).toBeLessThanOrEqual(1);
     expect(grain.streak).toBeGreaterThan(wet.streak);
     expect(grain.streak).toBeLessThan(wet.streak * 2);
   });

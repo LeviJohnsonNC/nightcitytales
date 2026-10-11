@@ -1116,10 +1116,10 @@ export function paintBladeSign(
   if (pass === "glow") {
     // a neon border tube and the four glyphs, the colour that reads at play zoom
     ctx.save();
-    ctx.shadowColor = "rgba(255,70,110,.85)";
+    ctx.shadowColor = "rgba(255,24,122,.95)";
     ctx.shadowBlur = Math.max(3, ppm * 0.35);
     path(ctx, tube);
-    ctx.strokeStyle = "rgba(255,93,124,.95)";
+    ctx.strokeStyle = "rgba(255,60,155,1)";
     ctx.lineWidth = Math.max(1, ppm * 0.07);
     ctx.stroke();
     if (art.kanji) {
@@ -1131,7 +1131,7 @@ export function paintBladeSign(
           drawOnBlade(
             ctx,
             at,
-            tintedMask(c, "#ff614b"),
+            tintedMask(c, "#ff389d"),
             side,
             glyphOut + d,
             glyphZ(i) + d,
@@ -1469,6 +1469,14 @@ export function storefrontLights(sf: Storefront, night: NightLighting): GroundLi
     color: night.entrance.color,
     intensity: night.entrance.intensity,
   });
+  const blade = bladeSign(sf);
+  if (blade)
+    lights.push({
+      kind: "pool",
+      centre: faceWorld(sf, blade.s, (blade.out0 + blade.out1) / 2),
+      sourceZ: (blade.z0 + blade.z1) / 2,
+      ...night.blade,
+    });
   const lamp = streetLamp(sf);
   if (lamp)
     lights.push({
