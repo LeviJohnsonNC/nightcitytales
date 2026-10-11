@@ -152,7 +152,7 @@ export function sourceFor(
     : 0;
   if (!reaches(light, c, LAMP_SHADOW.margin + extent)) return null;
   let source: ShadowSource;
-  if (light.kind === "pool") source = { at: light.centre, z: poolZ };
+  if (light.kind === "pool") source = { at: light.centre, z: light.sourceZ ?? poolZ };
   else {
     const dx = c.x - light.origin.x;
     const dy = c.y - light.origin.y;

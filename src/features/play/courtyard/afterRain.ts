@@ -99,7 +99,7 @@ export function createRainSurface(
     d = v.y - o.y,
     det = a * d - b * c;
   const zones = env.zones.filter((z) =>
-    ["road", "intersection", "crosswalk", "sidewalk"].includes(z.kind),
+    ["road", "intersection", "crosswalk", "sidewalk", "alley", "parking"].includes(z.kind),
   );
   const walls = env.structures.filter(
     (s) => s.style !== "mesh-fence" && s.style !== "interior-wall",

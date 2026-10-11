@@ -23,7 +23,7 @@ import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
 import type { NightLighting, Rgb } from "./nightLighting";
 import { blocksLight, lightColor, poolFalloff } from "./nightLighting";
 import type { Edge } from "./frontage";
-import { streetLamp, type Storefront } from "./storefront";
+import { streetLamp, storefrontLights, type Storefront } from "./storefront";
 import { STOREFRONT_LEVELS, STOREFRONT_FACE } from "./storefrontPack";
 
 type Project = (p: Point) => Point;
@@ -57,6 +57,15 @@ export function pointLights(
   const out: PointLight[] = [];
   const skip = new Set<string>();
   for (const sf of storefronts) {
+    for (const light of storefrontLights(sf, night))
+      if (light.kind === "pool" && light.sourceZ !== undefined)
+        out.push({
+          at: light.centre,
+          z: light.sourceZ,
+          color: light.color,
+          intensity: light.intensity,
+          radius: light.radius,
+        });
     const lamp = streetLamp(sf, night);
     if (lamp) {
       out.push({ at: lamp.head, z: lamp.headZ, ...night.lamp });

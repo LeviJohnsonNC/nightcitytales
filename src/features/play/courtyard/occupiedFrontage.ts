@@ -36,7 +36,7 @@ export function occupiedLights(env: SceneEnvironment): GroundLight[] {
         s1: c + (use === "repair" ? 1.9 : 0.7),
         reach: use === "repair" ? 3.8 : 3.4,
         spread: 0.45,
-        color: use === "repair" ? ([0.66, 0.82, 1] as const) : ([0.46, 0.79, 1] as const),
+        color: use === "repair" ? ([0.18, 0.85, 1] as const) : ([0.46, 0.79, 1] as const),
         intensity: use === "repair" ? 0.78 : 0.5,
       }));
     });
@@ -130,8 +130,8 @@ export function paintOccupiedFrontage(
     return;
   }
   if (pass === "glow") {
-    text("DENKI  /  ELECTRIC", 0.25, length - 0.25, 3.07, 3.51, "#f4c687");
-    panel(0.35, length - 0.35, 2.81, 2.86, "#d9edff", 0.15);
+    text("DENKI  /  ELECTRIC", 0.25, length - 0.25, 3.07, 3.51, "#52e7ff");
+    panel(0.35, length - 0.35, 2.81, 2.86, "#62edff", 0.15);
     for (const b of bays) panel(b.a + 0.15, b.b - 0.15, 2.36, 2.4, "#d4ebff", -0.12);
     return;
   }
@@ -232,7 +232,6 @@ export function paintOccupiedFrontage(
       "#a28d66",
     );
   }
-  paintOccupiedCanopy(ctx, s, edge, project, ppm, art);
 
   for (const x of [0.12, length - 0.18]) {
     panel(x, x + 0.065, 0.2, 2.68, "#161f22", 0.1);

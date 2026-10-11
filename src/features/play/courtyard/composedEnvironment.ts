@@ -4,6 +4,7 @@ import {
   occupiedUse,
   occupiedLights,
   paintOccupiedBalcony,
+  paintOccupiedCanopy,
   paintOccupiedFrontage,
 } from "./occupiedFrontage";
 import { paintCityBlockFace, paintCityRoof, cityRoofUnits } from "./cityBlock";
@@ -298,7 +299,9 @@ export function paintComposedGround(
       z.kind === "road" ||
       z.kind === "intersection" ||
       z.kind === "crosswalk" ||
-      z.kind === "loading"
+      z.kind === "loading" ||
+      z.kind === "alley" ||
+      z.kind === "parking"
         ? "asphalt"
         : z.kind === "sidewalk"
           ? "sidewalk"
@@ -893,7 +896,6 @@ export function paintCutawayWall(
         "albedo",
         home?.art ?? annex?.art,
       );
-      paintOccupiedBalcony(ctx, structure, edge, project, metre, home?.art ?? annex?.art);
       ctx.restore();
     }
 }
@@ -1461,7 +1463,6 @@ export function paintBuilding(
         "albedo",
         architecture,
       );
-      paintOccupiedBalcony(ctx, structure, edge, project, pixelsPerMetre, architecture);
     }
   if (terrace) {
     ctx.restore();
@@ -1739,7 +1740,7 @@ function bladeMirror(
     a,
     b,
     // A blade sign is a small emitter; retain its hue without dominating the street.
-    gain: 0.8,
+    gain: 2.1,
     extent: [
       { x: x0, y: y0 },
       { x: x1, y: y0 },
@@ -2825,6 +2826,76 @@ export function createComposedEnvironment(
             ),
             "high",
           );
+        }
+      }
+      // Projecting repair fittings are independent volumes. Baking them into the
+      // wall made a foreground prop win against the whole balcony, and clipping
+      // that image to a revealed wall sliced the canopy in half.
+      if (materialised && occupiedUse(s) === "repair") {
+        for (const edge of ["north", "east"] as const) {
+          const face = facePainter(s, edge, project, metre);
+          for (const balcony of edge === "east" ? [false, true] : [false]) {
+            const a = balcony ? 0.86 : 0.08;
+            const b = balcony ? Math.min(5.14, face.length - 0.08) : face.length - 0.08;
+            const reach = balcony ? 0.98 : 0.72;
+            const low = balcony ? 4.27 : 2.45;
+            const high = balcony ? 6.98 : 3.05;
+            const points = [a, b].flatMap((x) =>
+              [0, reach].flatMap((out) => [low, high].map((z) => face.at(x, out, z))),
+            );
+            const x = Math.min(...points.map((p) => p.x)) - 5;
+            const y = Math.min(...points.map((p) => p.y)) - 5;
+            const footprint =
+              edge === "north"
+                ? { x: s.rect.x + a, y: s.rect.y - reach, width: b - a, height: reach }
+                : { x: s.rect.x + s.rect.width, y: s.rect.y + a, width: reach, height: b - a };
+            const section =
+              edge === "north"
+                ? { x: s.rect.x + a, y: s.rect.y, width: b - a, height: 0.24 }
+                : {
+                    x: s.rect.x + s.rect.width - 0.24,
+                    y: s.rect.y + a,
+                    width: 0.24,
+                    height: b - a,
+                  };
+            const supports = cutawayWalls(s, env.entrances, activity).filter(
+              (p) =>
+                p.rect.x < section.x + section.width &&
+                p.rect.x + p.rect.width > section.x &&
+                p.rect.y < section.y + section.height &&
+                p.rect.y + p.rect.height > section.y,
+            );
+            add(
+              `repair-${balcony ? "balcony" : "canopy"}-${s.id}-${edge}`,
+              (ctx) =>
+                (balcony ? paintOccupiedBalcony : paintOccupiedCanopy)(
+                  ctx,
+                  s,
+                  edge,
+                  project,
+                  metre,
+                  architecture,
+                ),
+              Math.max(...points.map((p) => p.y)) + low * metre,
+              {
+                x,
+                y,
+                width: Math.max(...points.map((p) => p.x)) - x + 5,
+                height: Math.max(...points.map((p) => p.y)) - y + 5,
+              },
+              clad,
+            )
+              ?.setData("activityLayer", "awning")
+              .setData("foregroundStructure", s)
+              .setData("sectionRect", section)
+              .setData(
+                "revealOk",
+                !occluders.has(s.id) ||
+                  (supports.length > 0 && supports.every((p) => p.height >= high)),
+              )
+              .setData("sortRect", footprint)
+              .setData("fadeWith", building);
+          }
         }
       }
       // The canopy is its own sprite: it sorts by its footprint, fades for actors

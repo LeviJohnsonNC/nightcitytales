@@ -63,7 +63,8 @@ export const INTERSECTION_NIGHT = {
    * share of the shopfront's, and the light its neon name throws on the render.
    */
   returnDisplay: 0.85,
-  neon: [1, 0.36, 0.28] as Rgb,
+  neon: [1, 0.12, 0.48] as Rgb,
+  blade: { color: [1, 0.08, 0.42] as Rgb, intensity: 0.4, radius: 4.6 },
   /** The scene's other saved lamps and signs, which keep their small drawings. */
   streetLamp: { color: [1, 0.78, 0.5] as Rgb, intensity: 0.64, radius: 4.6 },
   sign: { color: [0.32, 0.8, 0.78] as Rgb, intensity: 0.28, radius: 2.6 },
@@ -77,6 +78,8 @@ export function nightFor(env: Pick<SceneEnvironment, "recipe" | "interior"> | un
 
 /** A round pool on the ground: a light overhead. */
 export interface PoolLight {
+  /** Height of the visible emitter, when different from a street lamp. */
+  sourceZ?: number;
   kind: "pool";
   centre: Point;
   radius: number;
