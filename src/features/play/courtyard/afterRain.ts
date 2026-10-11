@@ -24,33 +24,59 @@ function noise(x: number, y: number) {
 /** Continuous in world space; gutter pooling is independent of camera and light. */
 export function rainWetness(x: number, y: number, gutter = 0) {
   return smooth(
-    (noise(x * 0.58, y * 0.58) * 0.6 +
+    (noise(x * 0.4, y * 0.4) * 0.6 +
       noise(x * 1.9, y * 1.9) * 0.3 +
       noise(x * 6, y * 6) * 0.1 +
       0.17 * gutter -
-      0.38) *
-      4.4,
+      0.44) *
+      6.4,
   );
 }
-/** The same field drives the substrate and the source-image reflections. */
+/** Exposed edges of the carriageway union. Crosswalks and overlapping road zones
+ * must not create fictitious gutters across the middle of the intersection. */
+export function roadEdges(env: SceneEnvironment): { a: Point; b: Point }[] {
+  const roads = env.zones
+    .filter((z) => ["road", "intersection", "crosswalk"].includes(z.kind))
+    .map((z) => z.rect);
+  const edges: { a: Point; b: Point }[] = [];
+  for (const r of roads) {
+    for (const horizontal of [true, false]) {
+      const start = horizontal ? r.x : r.y;
+      const end = start + (horizontal ? r.width : r.height);
+      for (const far of [false, true]) {
+        const fixed = horizontal ? r.y + (far ? r.height : 0) : r.x + (far ? r.width : 0);
+        const cuts = [
+          ...new Set([
+            start,
+            end,
+            ...roads
+              .flatMap((q) => (horizontal ? [q.x, q.x + q.width] : [q.y, q.y + q.height]))
+              .filter((v) => v > start && v < end),
+          ]),
+        ].sort((a, b) => a - b);
+        const point = (t: number, offset = 0) =>
+          horizontal ? { x: t, y: fixed + offset } : { x: fixed + offset, y: t };
+        for (let i = 1; i < cuts.length; i++) {
+          const probe = point((cuts[i - 1]! + cuts[i]!) / 2, far ? 0.01 : -0.01);
+          if (roads.some((q) => inside(probe.x, probe.y, q))) continue;
+          edges.push({ a: point(cuts[i - 1]!), b: point(cuts[i]!) });
+        }
+      }
+    }
+  }
+  return edges;
+}
+/** The same world field drives dark substrate and source-image reflections. */
 export function rainField(env: SceneEnvironment) {
-  const roads = env.zones.filter(
-    (z) => z.kind === "road" || z.kind === "intersection" || z.kind === "crosswalk",
-  );
+  const edges = roadEdges(env);
   return (x: number, y: number) => {
-    const road = roads.find((z) => inside(x, y, z.rect));
-    const gutter = road
-      ? 1 -
-        smooth(
-          Math.min(
-            x - road.rect.x,
-            road.rect.x + road.rect.width - x,
-            y - road.rect.y,
-            road.rect.y + road.rect.height - y,
-          ) / 1.1,
-        )
-      : 0.2;
-    return rainWetness(x, y, gutter);
+    let distance = 1.1;
+    for (const { a, b } of edges) {
+      const px = Math.max(Math.min(a.x, b.x), Math.min(Math.max(a.x, b.x), x));
+      const py = Math.max(Math.min(a.y, b.y), Math.min(Math.max(a.y, b.y), y));
+      distance = Math.min(distance, Math.hypot(x - px, y - py));
+    }
+    return rainWetness(x, y, 1 - smooth(distance / 1.1));
   };
 }
 /** One cached albedo film, with existing paint and cracks visible underneath. */
@@ -90,10 +116,10 @@ export function createRainSurface(
       const road = zone.kind !== "sidewalk",
         w = wet(x, y),
         k = (j * canvas.width + i) * 4;
-      pixels.data[k] = 6;
-      pixels.data[k + 1] = 13;
-      pixels.data[k + 2] = 20;
-      pixels.data[k + 3] = Math.round((road ? 15 : 6) + w * (road ? 48 : 24));
+      pixels.data[k] = road ? 7 : 22;
+      pixels.data[k + 1] = road ? 15 : 25;
+      pixels.data[k + 2] = road ? 23 : 27;
+      pixels.data[k + 3] = Math.round(w * (road ? 88 : 55));
     }
   ctx.putImageData(pixels, 0, 0);
   return canvas;

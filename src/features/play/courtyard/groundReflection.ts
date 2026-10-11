@@ -77,12 +77,12 @@ export const REFLECTION = {
    * What a wet patch shows of a picture: the whole of it (`tight`) and its streak
    * (`streak`); and how much of the streak dry ground shows (`dry`).
    */
-  body: { tight: 0.18, streak: 0.62, dry: 0.008 },
+  body: { tight: 0.3, streak: 0.46, dry: 0.004 },
   /**
-   * The few sharp highlights: grains of a wet patch above the `lo` quantile of their
-   * surface's, fully from `hi`, at `gain` times the streak.
+   * Broken microfacet highlights: a projected world field from `lo` to `hi`,
+   * at `gain` times the source streak. Joints and dry ground give none.
    */
-  highlight: { lo: 0.993, hi: 0.999, gain: 0.55 },
+  highlight: { lo: 0.57, hi: 0.83, gain: 0.35 },
   /** Per surface: how much it gives back. Joints and footprints give nothing. */
   surfaces: {
     asphalt: 0.9,
@@ -92,7 +92,7 @@ export const REFLECTION = {
     threshold: 0.85,
   },
   /** A shop light seen in the wet patches it falls on: a sheen, and the highlights. */
-  field: { sheen: 0, highlight: 0 },
+  field: { sheen: 0, highlight: 0.48 },
   /** A doorstep is polished by feet: it is this wet wherever it is. */
   threshold: 0.75,
   /** Where a bright reflection starts to ease off rather than clip, of 255. */
@@ -485,9 +485,6 @@ export class GroundReflection {
     const L = lum(0);
     const near = lum(Math.max(1, 0.06 * ppm * res));
     const wide = lum(Math.max(2, 0.35 * ppm * res));
-    // a grain is a piece of aggregate (a few centimetres), not a pixel
-    const stone = lum(Math.max(0.6, 0.025 * ppm * res));
-    const bed = lum(Math.max(2, 0.12 * ppm * res));
     // the surface classes, painted in scene pixels
     const classes = canvasOf(W, H);
     const cctx = classes.getContext("2d", { willReadFrequently: true })!;
@@ -499,12 +496,10 @@ export class GroundReflection {
     cctx.restore();
     const cd = cctx.getImageData(0, 0, W, H).data;
     this.cls = new Uint8Array(n);
-    const grain = new Float32Array(n).fill(-1);
     this.highlight = new Float32Array(n);
     this.wet = new Float32Array(n);
     this.dx = new Float32Array(n);
     this.dy = new Float32Array(n);
-    const r = Math.max(2, Math.round(0.05 * ppm * res));
     for (let y = 0; y < H; y++)
       for (let x = 0; x < W; x++) {
         const i = y * W + x;
@@ -519,59 +514,7 @@ export class GroundReflection {
         )
           k = SurfaceClass.joint;
         this.cls[i] = k;
-        // proud in every direction: a stone, not the bright side of an edge
-        if (x >= r && x < W - r && y >= r && y < H - r) {
-          const v = stone[i]!;
-          grain[i] = Math.min(
-            v - bed[i]!,
-            v - stone[i - r]!,
-            v - stone[i + r]!,
-            v - stone[i - r * W]!,
-            v - stone[i + r * W]!,
-            v - stone[i - r * W - r]!,
-            v - stone[i + r * W + r]!,
-            v - stone[i - r * W + r]!,
-            v - stone[i + r * W - r]!,
-          );
-        }
       }
-    // nothing within a few centimetres of a joint glints: a slab's chipped rims line up
-    {
-      const reachJ = Math.max(2, Math.round(0.06 * ppm * res));
-      const dist = chamfer(this.cls, W, H, (k) => k === SurfaceClass.joint);
-      for (let i = 0; i < n; i++) if (dist[i]! <= reachJ) grain[i] = -1;
-    }
-    // the few sharp highlights: each surface's own proudest grains
-    {
-      const G = REFLECTION.highlight;
-      const BINS = 4096;
-      const SPAN = 0.4;
-      const bin = (v: number) =>
-        Math.max(0, Math.min(BINS - 1, Math.floor(((v + SPAN / 2) / SPAN) * BINS)));
-      for (let k = 1; k <= 6; k++) {
-        if (k === SurfaceClass.joint) continue;
-        const hist = new Uint32Array(BINS);
-        let count = 0;
-        for (let i = 0; i < n; i++)
-          if (this.cls[i] === k && grain[i]! > -1) {
-            hist[bin(grain[i]!)]!++;
-            count++;
-          }
-        if (count < 50) continue;
-        const at = (q: number) => {
-          let seen = 0;
-          for (let b = 0; b < BINS; b++) {
-            seen += hist[b]!;
-            if (seen >= count * q) return ((b + 0.5) / BINS) * SPAN - SPAN / 2;
-          }
-          return SPAN / 2;
-        };
-        const lo = at(G.lo);
-        const hi = Math.max(lo + 1e-4, at(G.hi));
-        for (let i = 0; i < n; i++)
-          if (this.cls[i] === k) this.highlight[i] = smoothstep(lo, hi, grain[i]!);
-      }
-    }
     // where the street is wet: world-space noise, wetter in the gutter, never the albedo
     {
       const o = setup.project({ x: 0, y: 0 });
@@ -644,6 +587,13 @@ export class GroundReflection {
             sy = this.box.y + (y + 0.5) / res;
           const ridges = smoothstep(0.27, 0.74, noise(sx / (ppm * 0.38), sy / (ppm * 0.055), 103));
           this.wet[i] = w * (0.1 + 0.9 * ridges);
+          // Broad, broken microfacets read as wet brush strokes at play zoom.
+          // Raw aggregate peaks alone produced distracting isolated glitter dots.
+          this.highlight[i] = smoothstep(
+            REFLECTION.highlight.lo,
+            REFLECTION.highlight.hi,
+            noise(sx / (ppm * 0.44), sy / (ppm * 0.1), 113),
+          );
           this.dx[i] = lerp(gx, x, y) * slope * R.across;
           this.dy[i] = lerp(gy, x, y) * slope * R.along;
         }

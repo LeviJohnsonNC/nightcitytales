@@ -48,8 +48,8 @@ type Rgb = readonly [number, number, number];
  *   the rest  4 m: grain that is only ever read as tone at play zoom.
  */
 export const SURFACE_MATERIALS: Record<MaterialKey, { metres: number; mean: Rgb; gain: number }> = {
-  asphalt: { metres: 4, mean: [64, 64, 62], gain: 1.7 },
-  sidewalk: { metres: 4, mean: [121, 117, 110], gain: 0.75 },
+  asphalt: { metres: 4, mean: [86, 84, 82], gain: 1.25 },
+  sidewalk: { metres: 4, mean: [142, 133, 121], gain: 1.05 },
   "facade-concrete": { metres: 4, mean: [156, 154, 150], gain: 2.4 },
   "roof-membrane": { metres: 4, mean: [63, 63, 61], gain: 1.6 },
   shutter: { metres: 3.6, mean: [91, 90, 88], gain: 1 },

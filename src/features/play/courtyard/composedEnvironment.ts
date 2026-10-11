@@ -133,6 +133,7 @@ import {
 import { shadowCasters, LAMP_SHADOW, type Box } from "./lampShadow";
 import {
   GroundShadows,
+  incidentLight,
   lightPassCanvas,
   renderGroundLight,
   type GroundLightSetup,
@@ -300,7 +301,7 @@ export function paintComposedGround(
         : z.kind === "sidewalk"
           ? "sidewalk"
           : undefined;
-    const target = surface === "asphalt" ? "#343b3d" : surface === "sidewalk" ? "#53574f" : flat;
+    const target = surface === "asphalt" ? "#424b50" : surface === "sidewalk" ? "#66665b" : flat;
     const laid =
       surface !== undefined &&
       fillMaterial(ctx, textured, zoneCorners(z.rect), {
@@ -2151,6 +2152,7 @@ export function createComposedEnvironment(
   const paintOne = (c: CanvasRenderingContext2D, light: GroundLight) =>
     paintGroundLights(c, project, env.structures, [light]);
   let shadows: ComposedShadows | undefined;
+  let groundLightSetup: GroundLightSetup | undefined;
   if (night && lights.length) {
     const setup: GroundLightSetup = {
       base: ground.canvas,
@@ -2162,6 +2164,7 @@ export function createComposedEnvironment(
       paintLight: paintOne,
       gain: night.gain,
     };
+    groundLightSetup = setup;
     const canvas = renderGroundLight(setup, new Set());
     const texture = scene.textures.addCanvas("composed-ground-light", canvas)!;
     texture.refresh();
@@ -3081,7 +3084,7 @@ export function createComposedEnvironment(
       // the streetlight's head reflects about the ground under it
       reflects
         ? shopLamp
-          ? lampMirror(project, shopLamp, metre).map((m) => ({ ...m, gain: 0.25 }))
+          ? lampMirror(project, shopLamp, metre).map((m) => ({ ...m, gain: 1.2 }))
           : materialised && (d.kind === "sign" || d.kind === "lamp")
             ? (() => {
                 const dir = streetDirection(env, d.position);
@@ -3128,6 +3131,31 @@ export function createComposedEnvironment(
       paintClasses: (ctx) =>
         paintSurfaceClasses(ctx, arena, project, storefronts.map(awningFootprint)),
       wetness: rainField(env),
+      // Only broken wet-grain highlights: no uniform incident sheen. Use the
+      // same occluded light and complete wreck state as the diffuse ground.
+      ...(groundLightSetup
+        ? {
+            incident: (destroyed: ReadonlySet<string>, crop: Box) =>
+              incidentLight(groundLightSetup!, destroyed, crop),
+          }
+        : {}),
+      reach: lights.flatMap((light) => {
+        const centre =
+          light.kind === "pool"
+            ? light.centre
+            : {
+                x: light.origin.x + (light.along.x * (light.s0 + light.s1)) / 2,
+                y: light.origin.y + (light.along.y * (light.s0 + light.s1)) / 2,
+              };
+        const radius =
+          light.kind === "pool"
+            ? light.radius
+            : light.reach + Math.abs(light.s1 - light.s0) / 2 + light.spread;
+        return [-1, 1].flatMap((x) =>
+          [-1, 1].map((y) => project({ x: centre.x + x * radius, y: centre.y + y * radius })),
+        );
+      }),
+      glintCasters: casters.map((c) => c.coverId),
     });
     // one sprite per reflected fixture, shown and faded with that fixture's own sprite
     // (the shopfront leaves with its wall in the reveal), and one for the lights' glints;
