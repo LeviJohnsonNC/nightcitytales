@@ -24,12 +24,12 @@ function noise(x: number, y: number) {
 /** Continuous in world space; gutter pooling is independent of camera and light. */
 export function rainWetness(x: number, y: number, gutter = 0) {
   return smooth(
-    (noise(x * 0.4, y * 0.4) * 0.6 +
-      noise(x * 1.9, y * 1.9) * 0.3 +
+    (noise(x * 0.65, y * 0.65) * 0.6 +
+      noise(x * 3.2, y * 3.2) * 0.3 +
       noise(x * 6, y * 6) * 0.1 +
       0.17 * gutter -
       0.44) *
-      6.4,
+      12,
   );
 }
 /** Exposed edges of the carriageway union. Crosswalks and overlapping road zones
@@ -117,9 +117,9 @@ export function createRainSurface(
         w = wet(x, y),
         k = (j * canvas.width + i) * 4;
       pixels.data[k] = road ? 7 : 22;
-      pixels.data[k + 1] = road ? 15 : 25;
-      pixels.data[k + 2] = road ? 23 : 27;
-      pixels.data[k + 3] = Math.round(w * (road ? 88 : 55));
+      pixels.data[k + 1] = road ? 10 : 25;
+      pixels.data[k + 2] = road ? 13 : 27;
+      pixels.data[k + 3] = Math.round(w * (road ? 58 : 44));
     }
   ctx.putImageData(pixels, 0, 0);
   return canvas;

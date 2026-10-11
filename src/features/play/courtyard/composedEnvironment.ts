@@ -308,7 +308,7 @@ export function paintComposedGround(
         key: surface,
         basis: ground,
         target,
-        strength: surface === "asphalt" ? 0.75 : 0.8,
+        strength: surface === "asphalt" ? 0.98 : 0.92,
       });
     if (!laid) rect(z.rect, flat);
     if (!road && z.kind !== "crosswalk" && z.kind !== "garden" && z.kind !== "loading") {
