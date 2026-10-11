@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { itemArtSlug, itemArtUrl } from "./itemArt";
+import { itemArtSlug, itemPictures } from "./itemArt";
 
 const ICONS: Record<string, LucideIcon> = {
   pistol: Crosshair,
@@ -67,8 +67,11 @@ export function ItemThumb({
   large?: boolean;
   hot?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
-  const url = failed ? null : itemArtUrl(kind, itemId, !large);
+  // How many of this item's pictures have failed to load: each falls back to
+  // the next. Kept against the id, so a thumb reused for another item starts over.
+  const [failed, setFailed] = useState({ itemId, count: 0 });
+  const count = failed.itemId === itemId ? failed.count : 0;
+  const picture = itemPictures(kind, itemId, !large)[count] ?? null;
   const Icon = ICONS[itemArtSlug(kind, itemId)] ?? Package;
   return (
     <div
@@ -79,13 +82,15 @@ export function ItemThumb({
         className,
       )}
     >
-      {url ? (
+      {picture ? (
         <img
-          src={url}
+          key={picture.url}
+          src={picture.url}
           alt=""
           loading="lazy"
           className="absolute inset-0 h-full w-full object-cover"
-          onError={() => setFailed(true)}
+          style={{ objectPosition: picture.focus }}
+          onError={() => setFailed({ itemId, count: count + 1 })}
         />
       ) : (
         <Icon

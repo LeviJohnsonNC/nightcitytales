@@ -9,7 +9,7 @@ import {
   shopStock,
 } from "@/engine";
 import { stockedShelf } from "@/features/campaign/shopping";
-import { ITEM_ART_SLUGS, itemArtSlug, itemArtUrl } from "../itemArt";
+import { ITEM_ART_SLUGS, itemArtSlug, itemArtUrl, itemPictures } from "../itemArt";
 import { counterSections, findCard, restockLine, stockMark } from "../shopViewModel";
 
 const TOGGLE = getVendor(placeVendorId("gun_shop", "d3"));
@@ -127,5 +127,29 @@ describe("the item pictures that have landed", () => {
       expect(existsSync(`public/images/items/${slug}.webp`), slug).toBe(true);
       expect(existsSync(`public/images/items/${slug}-640.webp`), slug).toBe(true);
     }
+  });
+});
+
+describe("itemPictures", () => {
+  it("shows a catalog item's own picture, the one its detail shows, before its category", () => {
+    const [own, category] = itemPictures("weapon", "heavy_pistol");
+    expect(own!.url).toBe("/images/weapons/heavy_pistol-512.webp");
+    expect(category!.url).toBe("/images/items/pistol-640.webp");
+    expect(itemPictures("weapon", "heavy_pistol", false)[0]!.url).toBe(
+      "/images/weapons/heavy_pistol.webp",
+    );
+  });
+
+  it("has a picture of its own for every catalog line a shop can sell", () => {
+    for (const w of WEAPONS)
+      expect(itemPictures("weapon", w.id)[0]!.url).toContain("/images/weapons/");
+    for (const a of ARMOR) expect(itemPictures("armor", a.id)[0]!.url).toContain("/images/armor/");
+    expect(itemPictures("ammunition", "basic_ammo")[0]!.url).toContain("/images/ammunition/");
+    expect(itemPictures("gear", "agent")[0]!.url).toContain("/images/gear/");
+  });
+
+  it("shows a find as its base object, never as a catalog line", () => {
+    const pictures = itemPictures("gear", gadgetId("crawler", "remote", "none", 0));
+    expect(pictures.map((p) => p.url)).toEqual(["/images/items/find-crawler-640.webp"]);
   });
 });
