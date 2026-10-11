@@ -1970,7 +1970,6 @@ compact captures inspected; full review gates tracked in `docs/AI_HANDOFF.md`.
 Next visual priority: architectural variety and whole-frame reference comparison;
 this lighting pass does not establish reference parity.
 
-
 ### Open shopfronts and connected wet pavement (2026-10-11)
 
 Repair displays now fit the solid spans around saved entrances with distinct
