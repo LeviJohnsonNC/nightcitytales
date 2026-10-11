@@ -10,7 +10,8 @@ ceiling panel lights clipped to saved rooms, contact/cast shadows. No geometry c
 Baseline Chromium seeds4/5/8 pass; seed4 play inspected; /tmp/nct-office-before-captures.
 First implementation typecheck,13focused tests and Chromium all3seeds pass.
 Seed4 play inspected: distinct floors/furniture work, panels too bright/walls industrial.
-Local follow-up softens panel emission and gives office walls plaster; needs final validation.
+Local follow-up softens panels and adds plaster walls. Final damage capture exposed
+green office chairs reverting to purple wrecks; corrected office wreck palette.
 Next: checkpoint PR, full tests/lint/typecheck/build and final Chromium screenshots.
 Levi reviews before further environment work.
 

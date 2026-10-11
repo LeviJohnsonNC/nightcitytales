@@ -153,7 +153,9 @@ export function createInteriorPropTextures(
         : timber
           ? ["#68513c", "#40382f", "#967958"]
           : upholstery
-            ? ["#543444", "#332936", "#88566b"]
+            ? office
+              ? ["#40554b", "#293d36", "#687967"]
+              : ["#543444", "#332936", "#88566b"]
             : ["#48565a", "#2a353b", "#708080"];
       if (car) {
         slab(
