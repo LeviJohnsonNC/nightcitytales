@@ -130,6 +130,7 @@ import { logBeatAdvanced } from "@/features/campaign/missionLog";
 import { loadMissionRuntime, saveMissionRuntime } from "@/features/campaign/missionState";
 import {
   oppositionProfileOf,
+  reconcileFacedown,
   reconcileOpposition,
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
@@ -730,7 +731,18 @@ export async function narrate(
       }
       if (postedSkillIds.has(FACEDOWN_CHECK_ID)) continue;
       postedSkillIds.add(FACEDOWN_CHECK_ID);
-      const prompt = facedownPrompt(action);
+      // Somebody the campaign has measured stares back with their own COOL and
+      // Reputation, not with what the model said tonight.
+      const known = reconcileFacedown(
+        { cool: action.opposingCool, reputation: action.opposingReputation },
+        oppositionProfileOf(findNpcByKey(bundle.npcs, action.npcKey, action.npcName)),
+      );
+      const prompt = facedownPrompt({
+        ...action,
+        opposingCool: known.cool,
+        opposingReputation: known.reputation,
+        remembered: known.remembered,
+      });
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "check_prompt",

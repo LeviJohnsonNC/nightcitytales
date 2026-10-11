@@ -44,6 +44,8 @@ export type Db = {
   events: CampaignEvent[];
   /** Model replies, consumed one per `lifeTurnFn` call. */
   replies: LifeWireResponse[];
+  /** Something that happens while the model is thinking (a purchase, a favour). */
+  duringCall?: () => void;
   /** Every user prompt the model was shown. */
   prompts: string[];
   /** Every write to `campaign_npcs.data`, in order, as the patch was sent. */

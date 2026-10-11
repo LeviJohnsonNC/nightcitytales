@@ -18,6 +18,7 @@ import { trySceneAttack } from "@/features/scenes/sceneOps";
  */
 import { checkResolvedLine } from "./checkResult";
 import {
+  FACEDOWN_CHECK_ID,
   advanceClock,
   ageSituations,
   canAsk,
@@ -104,7 +105,12 @@ import { latestClosingFrame, type LatestFrame } from "@/features/campaign/previo
 import { gadgetTurn, planItemUse } from "@/features/campaign/itemUse";
 import { saveMissionRuntime } from "@/features/campaign/missionState";
 import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
-import { characterSummary, localExpertIn, statsRecord } from "@/features/play/playModel";
+import {
+  characterSummary,
+  findNpcByKey,
+  localExpertIn,
+  statsRecord,
+} from "@/features/play/playModel";
 import { gmSkillList } from "@/features/play/playModel";
 import {
   dvBandName,
@@ -160,6 +166,7 @@ import {
 } from "./hookOffer";
 import {
   oppositionProfileOf,
+  reconcileFacedown,
   reconcileOpposition,
   rememberOpposition,
 } from "@/features/campaign/npcOpposition";
@@ -1401,7 +1408,34 @@ async function applyResponse(
         await rest(await downtimeBundle(), daysCrossed, { advanceCalendar: false });
       }
     } else if (action.kind === "facedown") {
-      const prompt = facedownPrompt(action);
+      // A person the campaign knows stares back with their own numbers, and the
+      // first stare-down writes them down (only for somebody already on file:
+      // a row is never filed from a key the model supplied).
+      const npc = findNpcByKey(bundle.npcs, action.npcKey, action.npcName);
+      const known = reconcileFacedown(
+        { cool: action.opposingCool, reputation: action.opposingReputation },
+        oppositionProfileOf(npc),
+      );
+      if (npc) {
+        await rememberOpposition({
+          campaignId,
+          npcKey: action.npcKey,
+          npcName: npc.name,
+          npc,
+          opposition: {
+            name: npc.name,
+            skillId: FACEDOWN_CHECK_ID,
+            skillLevel: known.reputation,
+            statValue: known.cool,
+          },
+        });
+      }
+      const prompt = facedownPrompt({
+        ...action,
+        opposingCool: known.cool,
+        opposingReputation: known.reputation,
+        remembered: known.remembered,
+      });
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "check_prompt",
@@ -1738,6 +1772,31 @@ async function consultOracles(
   return oracle;
 }
 
+/**
+ * The bundle with the campaign as it stands NOW: clock, money, kit, place and
+ * people.
+ *
+ * A turn is built from a snapshot and then waits seconds on the model. Anything
+ * that landed meanwhile (a purchase at the Counter, a favour, a second tab) was
+ * written back over: the turn wrote the clock and the balance as absolute
+ * values from the snapshot, so the purchase was refunded and its time rewound.
+ * Applying the reply to the live state shrinks that window from the model call
+ * to the few writes of one turn. Nothing the turn writes before the call moves
+ * the clock, the money or the kit, so nothing of its own is lost here.
+ */
+async function onLiveState(bundle: LifeBundle): Promise<LifeBundle> {
+  const live = await getCampaign(bundle.campaign.id);
+  if (!live?.vitals) return bundle;
+  return {
+    ...bundle,
+    campaign: live.campaign,
+    vitals: live.vitals,
+    clock: { day: live.campaign.day, minute: live.campaign.minute },
+    inventory: live.inventory,
+    npcs: live.npcs,
+  };
+}
+
 /** One Life turn: the player says something, the world answers. */
 export async function liveTurn(
   bundle: LifeBundle,
@@ -1781,6 +1840,7 @@ export async function liveTurn(
         ),
       }
     : answered;
+  bundle = await onLiveState(bundle);
   const outcome = await applyResponse(bundle, response, asked);
 
   // Somebody came over, because the engine said so before the turn ran. It is

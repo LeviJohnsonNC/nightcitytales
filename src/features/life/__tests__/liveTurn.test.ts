@@ -50,6 +50,8 @@ vi.mock("../lifeTurn.server", async () => {
       db.prompts.push(data.userPrompt);
       const wire = db.replies.shift();
       if (!wire) throw new Error("The model was asked for a turn the test did not script.");
+      db.duringCall?.();
+      delete db.duringCall;
       return {
         ...normalizeLifeResponse(wire, { onWarn: () => {} }),
         provenance: {
@@ -458,6 +460,90 @@ describe("a check the model proposes", () => {
     await liveTurn(await loadLife(CAMPAIGN_ID), "I move the cup with my mind.");
 
     expect(ofType("check_prompt")).toHaveLength(0);
+  });
+});
+
+describe("something that lands while the model is thinking", () => {
+  it("is kept: the turn adds to the live clock and balance, not to its snapshot", async () => {
+    setup({ eurobucks: 1000 });
+    const bundle = await loadLife(CAMPAIGN_ID);
+    const start = clockOf();
+    // A purchase at the Counter mid-call: 100eb and half an hour.
+    db.duringCall = () => {
+      db.vitals.eurobucks -= 100;
+      db.campaign.minute += 30;
+    };
+    db.replies.push(
+      reply({ timeSpent: 20, proposedActions: [{ kind: "spend", amount: 50, reason: "a drink" }] }),
+    );
+    await liveTurn(bundle, "I buy a drink.");
+
+    expect(db.vitals.eurobucks).toBe(1000 - 100 - 50);
+    expect(clockOf()).toEqual({ day: start.day, minute: start.minute + 30 + 20 });
+  });
+
+  it("decides what the character can afford from what they hold now", async () => {
+    setup({ eurobucks: 100 });
+    const bundle = await loadLife(CAMPAIGN_ID);
+    db.duringCall = () => {
+      db.vitals.eurobucks = 30;
+    };
+    db.replies.push(reply({ proposedActions: [{ kind: "spend", amount: 50, reason: "a drink" }] }));
+    await liveTurn(bundle, "I buy a drink.");
+
+    expect(db.vitals.eurobucks).toBe(30);
+    expect(ofType("action_refused")).toHaveLength(1);
+  });
+});
+
+describe("a Facedown", () => {
+  it("is stared back with a known person's own numbers, whatever the model says", async () => {
+    const npc = db.npcs[0]!;
+    const stare = (cool: number, rep: number) =>
+      reply({
+        proposedActions: [
+          {
+            kind: "facedown",
+            npcKey: npc.npc_id,
+            npcName: npc.name,
+            opposingCool: cool,
+            opposingReputation: rep,
+            intent: "Make them blink first",
+          },
+        ],
+      });
+    const opposition = () =>
+      (ofType("check_prompt").at(-1)!.data as { opposition: Record<string, unknown> }).opposition;
+
+    db.replies.push(stare(8, 6));
+    await liveTurn(await loadLife(CAMPAIGN_ID), `I stare ${npc.name} down.`);
+    expect(opposition()).toMatchObject({ statValue: 8, skillLevel: 6 });
+    // The first stare-down wrote them down, alongside everything else on the row.
+    const row = db.npcs.find((n) => n.npc_id === npc.npc_id)!;
+    expect((row.data as { opposition?: unknown }).opposition).toMatchObject({
+      stats: { cool: 8 },
+      reputation: 6,
+    });
+    expect((row.data as { dossier?: unknown }).dossier).toBeTruthy();
+
+    // Tonight the model calls them a nobody. They are not.
+    db.replies.push(stare(2, 0));
+    await liveTurn(await loadLife(CAMPAIGN_ID), `I stare ${npc.name} down again.`);
+    expect(opposition()).toMatchObject({ statValue: 8, skillLevel: 6, remembered: true });
+  });
+
+  it("files no row for a stranger the model named", async () => {
+    const before = db.npcs.length;
+    db.replies.push(
+      reply({
+        proposedActions: [
+          { kind: "facedown", npcKey: "bouncer", npcName: "A bouncer", opposingCool: 6 },
+        ],
+      }),
+    );
+    await liveTurn(await loadLife(CAMPAIGN_ID), "I stare the bouncer down.");
+    expect(db.npcs).toHaveLength(before);
+    expect(ofType("check_prompt")).toHaveLength(1);
   });
 });
 
