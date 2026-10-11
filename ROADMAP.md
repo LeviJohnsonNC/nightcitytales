@@ -9,6 +9,12 @@ current state of the code.
 
 ---
 
+The [environment consistency review](docs/environment-consistency.md) follows the
+seven approved material passes. It fixes compact map-header overlap, missing
+waiting-seat light shadows and residential driveway/planting paint order. Final
+browser verification and user review are the current gate; furniture/facade art
+variety and a real campaign persistence playthrough remain next.
+
 ## Combat composition — Phase 1 proof
 
 The opt-in `/combat` fixtures now include a composed commercial intersection and

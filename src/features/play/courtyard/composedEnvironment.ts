@@ -1,4 +1,4 @@
-import { residentialPalette, residentialGround } from "./residentialFinish";
+import { residentialPalette, residentialGround, groundSurfaceZones } from "./residentialFinish";
 import { paintNightclubFloor, nightclubLights } from "./nightclubFinish";
 import { paintOfficeFloor, officeLights, paintOfficeFixture } from "./officeFinish";
 import { paintGarageWear } from "./garageFinish";
@@ -283,7 +283,7 @@ export function paintComposedGround(
         );
     }
   };
-  for (const z of env.zones) {
+  for (const z of groundSurfaceZones(env)) {
     if (z.kind === "aisle") continue;
     if (env.interior) {
       if (env.recipe === "nightclub" && materials) {
@@ -1885,22 +1885,24 @@ export function paintSurfaceClasses(
   const code = (k: SurfaceClass) => `rgb(${k},0,0)`;
   const env = arena.environment!;
   rect({ x: -20, y: -20, width: 72, height: 72 }, code(SurfaceClass.concrete));
-  for (const z of env.zones) {
+  for (const z of groundSurfaceZones(env)) {
     const k =
       env.recipe === "residential" && residentialGround(z.kind)?.planted
         ? SurfaceClass.none
-        : env.recipe === "alley" && z.kind === "loading"
+        : env.recipe === "residential" && z.kind === "driveway"
           ? SurfaceClass.concrete
-          : z.kind === "road" ||
-              z.kind === "intersection" ||
-              z.kind === "crosswalk" ||
-              z.kind === "loading" ||
-              z.kind === "parking" ||
-              z.kind === "alley"
-            ? SurfaceClass.asphalt
-            : z.kind === "sidewalk"
-              ? SurfaceClass.paving
-              : undefined;
+          : env.recipe === "alley" && z.kind === "loading"
+            ? SurfaceClass.concrete
+            : z.kind === "road" ||
+                z.kind === "intersection" ||
+                z.kind === "crosswalk" ||
+                z.kind === "loading" ||
+                z.kind === "parking" ||
+                z.kind === "alley"
+              ? SurfaceClass.asphalt
+              : z.kind === "sidewalk"
+                ? SurfaceClass.paving
+                : undefined;
     if (k !== undefined) rect(z.rect, code(k));
   }
   for (const z of env.zones.filter((z) => z.floorUse)) {
