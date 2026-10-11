@@ -45,6 +45,16 @@ export const CASTER_HEIGHT: Record<string, { height: number; wreck: number; inse
   "lounge-table": { height: 0.58, wreck: 0.22 },
   seat: { height: 1.24, wreck: 0.22 },
   "seat-reverse": { height: 1.24, wreck: 0.22 },
+  "waiting-seat": {
+    height: 1.24,
+    wreck: 0.22,
+    inset: { x: 0.1, y: 0.2, width: 1.2, height: 1.59 },
+  },
+  "waiting-seat-reverse": {
+    height: 1.24,
+    wreck: 0.22,
+    inset: { x: 0.7, y: 0.21, width: 1.2, height: 1.59 },
+  },
   desk: { height: 1.22, wreck: 0.22 },
   "desk-reverse": { height: 1.22, wreck: 0.22 },
   "conference-table": { height: 0.94, wreck: 0.22 },

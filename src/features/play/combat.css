@@ -2225,3 +2225,49 @@ button.combat-callout-act:hover {
   stroke-dasharray: 4 8;
   vector-effect: non-scaling-stroke;
 }
+
+/* Share space rather than letting a long location label sit under camera buttons. */
+.combat-map-chrome {
+  position: absolute;
+  top: 18px;
+  left: 30px;
+  right: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+.combat-map-chrome > .combat-map-caption {
+  position: static;
+  min-width: 0;
+  max-width: 100%;
+}
+.combat-map-chrome .combat-eyebrow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.combat-map-chrome > .combat-camera {
+  position: static;
+  flex-shrink: 0;
+  margin-left: auto;
+  pointer-events: auto;
+}
+@media (max-width: 900px) {
+  .combat-map-chrome {
+    top: 10px;
+    left: 14px;
+    right: 10px;
+    gap: 8px;
+  }
+}
+@media (max-width: 600px) {
+  .combat-map-chrome {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .combat-map-chrome > .combat-map-caption {
+    align-self: flex-start;
+  }
+}

@@ -175,3 +175,30 @@ it("casts neon shadows from the sign height rather than the lamp default", () =>
   expect(sourceFor(neon, caster(3, 0), 5.45)?.z).toBe(2.4);
   expect(sourceFor(neon, { ...caster(3, 0, 3, 3), bottom: 2.7 }, 5.45)).toBeNull();
 });
+
+it.each(["waiting-seat", "waiting-seat-reverse"] as const)(
+  "%s casts from its narrow seat body and reduces to a low wreck",
+  (art) => {
+    for (const rotation of [0, 90] as const) {
+      const arena = composeScene("office", 4).layout.arena;
+      const prop = arena.environment!.props.find((p) => p.art === "waiting-seat")!;
+      prop.art = art;
+      prop.rotation = rotation;
+      const c = shadowCasters(arena).find((c) => c.coverId === prop.coverId);
+      expect(c).toBeDefined();
+      const body = c!.body;
+      const rect = arena.cover!.find((p) => p.id === prop.coverId)!.rect;
+      expect(area(body)).toBeLessThan(rect.width * rect.height);
+      for (const p of body) {
+        expect(p.x).toBeGreaterThanOrEqual(rect.x);
+        expect(p.x).toBeLessThanOrEqual(rect.x + rect.width);
+        expect(p.y).toBeGreaterThanOrEqual(rect.y);
+        expect(p.y).toBeLessThanOrEqual(rect.y + rect.height);
+      }
+      const source = { at: { x: rect.x - 2, y: rect.y - 1 }, z: 2.9 };
+      expect(area(boxShadow(body, c!.wreck, source))).toBeLessThan(
+        area(boxShadow(body, c!.height, source)),
+      );
+    }
+  },
+);

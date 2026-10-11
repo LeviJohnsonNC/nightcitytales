@@ -848,82 +848,84 @@ export function CombatBoard({
               </span>
             </div>
           )}
-          <div className="combat-map-caption">
-            <span className="combat-eyebrow">{arena.label}</span>
-            <span>
-              {arena.extent.width} × {arena.extent.height} m
-            </span>
-          </div>
-          <div className="combat-camera" aria-label="Camera controls">
-            {hasScenicArt && artEnabled && arena.environment && !arena.environment.interior && (
+          <div className="combat-map-chrome">
+            <div className="combat-map-caption">
+              <span className="combat-eyebrow">{arena.label}</span>
+              <span>
+                {arena.extent.width} × {arena.extent.height} m
+              </span>
+            </div>
+            <div className="combat-camera" aria-label="Camera controls">
+              {hasScenicArt && artEnabled && arena.environment && !arena.environment.interior && (
+                <button
+                  className="combat-icon"
+                  aria-label="Reveal activity behind buildings"
+                  title="Reveal activity behind buildings (walls still block movement and shots)"
+                  aria-pressed={revealActivity}
+                  onClick={() => setRevealActivity(!revealActivity)}
+                >
+                  <Eye size={17} />
+                </button>
+              )}
+              {hasScenicArt && (
+                <button
+                  className="combat-view-toggle"
+                  onClick={() => {
+                    setArtEnabled(!artEnabled);
+                    setArtReady(false);
+                  }}
+                  aria-pressed={artEnabled}
+                >
+                  {artEnabled ? "Diagram view" : "Scenic view"}
+                </button>
+              )}
               <button
                 className="combat-icon"
-                aria-label="Reveal activity behind buildings"
-                title="Reveal activity behind buildings (walls still block movement and shots)"
-                aria-pressed={revealActivity}
-                onClick={() => setRevealActivity(!revealActivity)}
+                aria-label="Zoom in"
+                disabled={camera.zoom >= 2.5}
+                onClick={() => setCamera({ ...camera, zoom: Math.min(2.5, camera.zoom + 0.25) })}
               >
-                <Eye size={17} />
+                <Plus size={17} />
               </button>
-            )}
-            {hasScenicArt && (
-              <button
-                className="combat-view-toggle"
-                onClick={() => {
-                  setArtEnabled(!artEnabled);
-                  setArtReady(false);
-                }}
-                aria-pressed={artEnabled}
-              >
-                {artEnabled ? "Diagram view" : "Scenic view"}
-              </button>
-            )}
-            <button
-              className="combat-icon"
-              aria-label="Zoom in"
-              disabled={camera.zoom >= 2.5}
-              onClick={() => setCamera({ ...camera, zoom: Math.min(2.5, camera.zoom + 0.25) })}
-            >
-              <Plus size={17} />
-            </button>
-            <button
-              className="combat-icon"
-              aria-label="Zoom out"
-              disabled={camera.zoom <= 0.75}
-              onClick={() => setCamera({ ...camera, zoom: Math.max(0.75, camera.zoom - 0.25) })}
-            >
-              <Minus size={17} />
-            </button>
-            <button
-              className={`combat-icon ${tool === "pan" ? "is-selected" : ""}`}
-              aria-label="Pan battlefield"
-              aria-pressed={tool === "pan"}
-              onClick={() => setTool(tool === "pan" ? "select" : "pan")}
-            >
-              <Hand size={17} />
-            </button>
-            <button
-              className="combat-icon"
-              aria-label="Reset camera"
-              title={
-                arena.environment?.recipe === "intersection"
-                  ? "Frame the current participants"
-                  : "Reset camera"
-              }
-              onClick={frameAction}
-            >
-              <RotateCcw size={17} />
-            </button>
-            {arena.environment && (
               <button
                 className="combat-icon"
-                aria-label="Overview"
-                title="Overview"
-                onClick={() => setCamera(battlefieldCameraPreset(arena, "overview"))}
+                aria-label="Zoom out"
+                disabled={camera.zoom <= 0.75}
+                onClick={() => setCamera({ ...camera, zoom: Math.max(0.75, camera.zoom - 0.25) })}
               >
-                <Maximize size={17} />
+                <Minus size={17} />
               </button>
-            )}
+              <button
+                className={`combat-icon ${tool === "pan" ? "is-selected" : ""}`}
+                aria-label="Pan battlefield"
+                aria-pressed={tool === "pan"}
+                onClick={() => setTool(tool === "pan" ? "select" : "pan")}
+              >
+                <Hand size={17} />
+              </button>
+              <button
+                className="combat-icon"
+                aria-label="Reset camera"
+                title={
+                  arena.environment?.recipe === "intersection"
+                    ? "Frame the current participants"
+                    : "Reset camera"
+                }
+                onClick={frameAction}
+              >
+                <RotateCcw size={17} />
+              </button>
+              {arena.environment && (
+                <button
+                  className="combat-icon"
+                  aria-label="Overview"
+                  title="Overview"
+                  onClick={() => setCamera(battlefieldCameraPreset(arena, "overview"))}
+                >
+                  <Maximize size={17} />
+                </button>
+              )}
+            </div>
           </div>
           <span className="sr-only" id={`${patternId}-keyboard`}>
             Arrow keys preview a destination one square at a time. Enter or Space confirms the

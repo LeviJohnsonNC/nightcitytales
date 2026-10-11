@@ -88,6 +88,23 @@ for (const seed of [4, 5, 6, 8])
       const started = Date.now();
       report("capture-start", name);
       await test.step(`capture ${name}`, async () => {
+        // Baseline revisions predate the shared header. On the new renderer,
+        // verify labels and every camera control fit without covering one another.
+        if (await page.locator(".combat-map-chrome").count()) {
+          const caption = (await page.locator(".combat-map-caption").boundingBox())!;
+          const controls = (await page.locator(".combat-camera").boundingBox())!;
+          expect(
+            caption.x + caption.width <= controls.x + 1 ||
+              caption.y >= controls.y + controls.height - 1,
+          ).toBe(true);
+          const vp = page.viewportSize()!;
+          for (const button of await page.locator(".combat-camera button").all()) {
+            const b = (await button.boundingBox())!;
+            expect(b.x).toBeGreaterThanOrEqual(0);
+            expect(b.x + b.width).toBeLessThanOrEqual(vp.width);
+            expect(b.y + b.height).toBeLessThanOrEqual(vp.height);
+          }
+        }
         const canvas = page.locator("canvas");
         // Scroll once, without Playwright's animation-stability loop. This is
         // a continuously rendered scene; retain the DOM checks below instead.
@@ -230,5 +247,10 @@ for (const seed of [4, 5, 6, 8])
         await page.waitForTimeout(500);
         await capture("seed4-compact-play");
       }
+    }
+    if (seed === 4) {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.waitForTimeout(1000);
+      await capture(`seed${seed}-phone-play`);
     }
   });

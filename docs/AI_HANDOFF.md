@@ -1,26 +1,21 @@
-# Active residential material pass — 2026-10-11
+# Active environment consistency pass — 2026-10-11
 
-Nightclub PR367 approved by Levi and merged. User authorized residential next.
+All seven first material passes approved; residential PR368 merged.
+User authorized consistency audit and highest-impact fixes, will test later.
 Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/residential-material-pass; base origin/main 61ffecd4.
-Original dirty checkout untouched; prior final handoff /tmp/nct367-final-handoff.md.
+Branch codex/environment-consistency; base origin/main db1373f4.
+Original dirty checkout untouched; prior handoff /tmp/nct368-final-handoff.md.
 
-Local implementation: residential uses existing street material/art, night light,
-reflection and contact-shadow pipeline; deterministic domestic facade palettes,
-concrete drives, muted planting strips excluded from wet reflections. Saved
-geometry and routes unchanged. Existing door/window/roof detail reused.
-Baseline Chromium seeds4/5/6 pass after correcting harness to five residential
-actors (initial copied interior harness expected four). Baseline screenshot4
-inspected; evidence /tmp/nct-residential-before-captures.
-Typecheck and 27 focused lighting/window/roof/reflection tests pass. First after
-seed4 play inspected: warm entrances, calm domestic materials, readable street.
-Implementation pushed as548995c8 in PR368:
-https://github.com/LeviJohnsonNC/nightcitytales/pull/368.
-After Chromium4/5/6 pass (1.3m); all play, reveal4, destroyed4 and compact4
-visually inspected. Evidence saved to /Users/levijohnson/.codex/visualizations/2026/10/11/01a12b66-843f-7a70-86c1-77681c3d2c1f/residential-evidence.
-Adding seed7 for setback-home topology (5/6 share offset-driveway layout).
-Full tests/lint/typecheck/build running; remote checks next. Levi reviews before
-merge or further scope.
+Baseline9 Chromium tests pass (3.9m): intersection8, all others4, extra office8
+and nightclub8. Play captures inspected across all seven; additional damage,
+reveal and compact inspected for the changed cases. Baseline evidence:
+/tmp/nct-consistency-before-captures; audit details docs/environment-consistency.md.
+Local changes: shared responsive map heading/controls; missing waiting-seat
+shadow casters; residential drives render over planting in floor and wet mask.
+Driveway regression reproduced before fix; initial17tests and typecheck pass.
+Added phone captures and header-fit checks to all7existing browser harnesses.
+Next: checkpoint PR, focused/full checks and fresh screenshots. No campaign writes
+or merge; user tests later.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 
