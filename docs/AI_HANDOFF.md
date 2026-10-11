@@ -5,18 +5,24 @@ Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales
 Branch codex/warehouse-material-pass; base origin/main 549417c2 (PR363).
 Original dirty checkout untouched. Prior final alley handoff /tmp/nct362-final-handoff.md.
 
-Local-only implementation ready for checkpoint: warehouse materials/contact shadows, room-clipped lighting,
-concrete floors and cutaway walls, material-bearing stocked racks and workbenches.
+Implementation fccc1d36 committed/pushed in draft PR364:
+https://github.com/LeviJohnsonNC/nightcitytales/pull/364
+Warehouse materials/contact shadows, room-clipped lighting, concrete floors and cutaway walls,
+material-bearing stocked racks and workbenches. Suspended lights use footprint/elevation sorting.
 No engine geometry or saved recipe changes. Warehouse dry; no outdoor rain/reflections applied.
-Baseline captures /tmp/nct-warehouse-before-captures (seed4 play inspected).
-Baseline browser run captured all3seeds but failed absent exterior-only Reveal button;
-warehouse harness now tolerates that control's absence (interiors use automatic occlusion).
-Local typecheck and 13 focused tests passed before final fixture sorting correction.
-Chromium 3 seeds passed; inspected all3 play images. Brightness/grain reduced after first captures.
-Fixture footprint/elevation now registered to shared sorter; needs final browser verification.
-Next: checkpoint draftPR, full tests/lint/typecheck/build and final captures.
-Review seeds4/5/7 cover distinct layouts. No exterior Reveal control exists indoors;
-actor occlusion remains automatic. User review/merge is the remaining acceptance gate.
+
+Local verification of fccc1d36: 4290 tests /346 files pass; typecheck/build pass;
+lint 0 errors /15 existing warnings. Final Chromium 3 seeds pass (1.1min).
+Inspected play seeds4/5/7, seed4 destroyed and compact. Initial brightness/grain reduced.
+No detached actor rings seen. No exterior Reveal control exists indoors; actor occlusion automatic.
+Baseline captures /tmp/nct-warehouse-before-captures; baseline harness corrected for absent reveal.
+Final evidence: /Users/levijohnson/.codex/visualizations/2026/10/11/01a12b66-843f-7a70-86c1-77681c3d2c1f/warehouse-evidence.
+
+Remote CI still running: matched warehouse, alley and intersection Chromium + main checks.
+Next: verify remote checks, open local /scene-review?place=warehouse&seed=4 for Levi.
+Review seeds4 (receiving/rack hall),5 (side office/loading),7 (cross-aisle stockrooms).
+User in-app review/merge remains the acceptance gate. Do not advance to another environment.
+Fresh chat: read this handoff, check PR364 and respond to Levi's warehouse visual feedback.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 
