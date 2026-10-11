@@ -355,7 +355,9 @@ export function paintComposedGround(
     // laid at world scale under their marks; the flat fill is the fallback.
     const apron: MaterialKey | undefined =
       textured && z.floorUse === "handling"
-        ? "asphalt"
+        ? env.recipe === "alley"
+          ? "facade-concrete"
+          : "asphalt"
         : textured && z.floorUse === "entry"
           ? "sidewalk"
           : undefined;

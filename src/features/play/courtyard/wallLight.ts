@@ -1,5 +1,5 @@
 import { occupiedLights } from "./occupiedFrontage";
-import { CITY_FIXTURES, fixtureLamp } from "./cityFixtures";
+import { fixtureIndicator, fixtureLamp } from "./cityFixtures";
 /**
  * Light on walls: the same lights that pool on the pavement, reaching the facades
  * they stand in front of.
@@ -84,10 +84,7 @@ export function pointLights(
   }
   for (const d of env.dressing) {
     if (skip.has(d.id) || (d.kind !== "lamp" && d.kind !== "sign")) continue;
-    const light =
-      d.kind === "lamp"
-        ? night.streetLamp
-        : { color: CITY_FIXTURES.cyan, intensity: 0.62, radius: 3.7 };
+    const light = d.kind === "lamp" ? night.streetLamp : fixtureIndicator(env);
     out.push({
       ...(d.kind === "lamp" ? fixtureLamp(env, d.position) : { at: d.position, z: 1.95 }),
       ...light,

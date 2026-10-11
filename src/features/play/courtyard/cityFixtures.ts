@@ -44,15 +44,21 @@ export function fixtureLamp(env: SceneEnvironment, position: Point) {
     z: alley ? 4.1 : CITY_FIXTURES.lampHeight,
   };
 }
+/** Loading indicators illuminate a small work area; street kiosks have a larger panel. */
+export function fixtureIndicator(env: SceneEnvironment) {
+  return {
+    color: CITY_FIXTURES.cyan,
+    intensity: env.recipe === "alley" ? 0.3 : 0.62,
+    radius: env.recipe === "alley" ? 2.6 : 3.7,
+  };
+}
 export function fixtureLights(env: SceneEnvironment): GroundLight[] {
   return env.dressing
     .filter((d) => d.kind === "sign")
     .map((d) => ({
       kind: "pool",
       centre: d.position,
-      radius: 3.7,
-      color: CITY_FIXTURES.cyan,
-      intensity: 0.62,
+      ...fixtureIndicator(env),
     }));
 }
 
