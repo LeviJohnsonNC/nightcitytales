@@ -324,15 +324,24 @@ export function createCourtyard(
               .getSourceImage() as CanvasImageSource;
         // timed for `tools/scenes/scene-perf.mjs`: the composed scene's build, apart from loading
         performance.mark("courtyard-environment-start");
-        const built = createComposedEnvironment(
-          this,
-          visibleArena,
-          project,
-          materialKeys.length && Object.keys(tiles).length ? tiles : undefined,
-          withStorefront && Object.keys(storefrontArt).length ? storefrontArt : undefined,
-          withStorefront && Object.keys(architectureArt).length ? architectureArt : undefined,
-          { reflections: (model.reflections ?? REFLECTION_MODE_DEFAULT) !== "skip" },
-        );
+        let built: ReturnType<typeof createComposedEnvironment>;
+        try {
+          built = createComposedEnvironment(
+            this,
+            visibleArena,
+            project,
+            materialKeys.length && Object.keys(tiles).length ? tiles : undefined,
+            withStorefront && Object.keys(storefrontArt).length ? storefrontArt : undefined,
+            withStorefront && Object.keys(architectureArt).length ? architectureArt : undefined,
+            { reflections: (model.reflections ?? REFLECTION_MODE_DEFAULT) !== "skip" },
+          );
+        } catch {
+          // Thousands of lines of canvas work. A throw here once left the board
+          // with no art and no fallback; the board's art-failure path is the
+          // same one a missing texture takes.
+          onFailure();
+          return;
+        }
         performance.measure("courtyard-environment", "courtyard-environment-start");
         structures.push(...built.objects);
         lit = built.lit;

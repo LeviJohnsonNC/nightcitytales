@@ -1,6 +1,7 @@
 /** Vendor finish on the existing steel stock case. No cover or registration changes. */
 import type Phaser from "phaser";
 import type { SceneEnvironment } from "@/engine";
+import { sourceFor } from "./architectureArt";
 import type { PropCondition } from "./propPresentation";
 
 export function isVendorStock(
@@ -66,7 +67,15 @@ export function vendorStockTexture(
       ctx.save();
       ctx.clip();
       // The existing fabric spans the lid; no new asset request or network load.
-      const size = fabric as CanvasImageSource & { width: number; height: number };
+      // Prefiltered to about the lid's size first (`sourceFor`): one bare
+      // drawImage of the full 512px file into a ~90px lid bakes aliasing in,
+      // the bug class the shutter's ripple was.
+      const lid = Math.hypot(0.36, 0.22);
+      const size = sourceFor(
+        fabric as CanvasImageSource & { width: number; height: number },
+        lid * image.width,
+        lid * image.height,
+      );
       ctx.transform(
         0.36 / size.width,
         -0.22 / size.width,
@@ -75,7 +84,7 @@ export function vendorStockTexture(
         0.14,
         0.34,
       );
-      ctx.drawImage(fabric, 0, 0);
+      ctx.drawImage(size, 0, 0);
       ctx.restore();
       poly(top, "rgba(45,36,20,.25)");
     }

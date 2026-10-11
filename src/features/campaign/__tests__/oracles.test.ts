@@ -377,6 +377,19 @@ describe("questions", () => {
     }
   });
 
+  it("writes nothing until the answer is committed, which the Job turn does after the model replies", async () => {
+    const { pendingAnswer } = await import("../oracles");
+    await askOracle("c", "Is the side door already unlocked?");
+    const pending = await pendingAnswer("c", face(10, 10));
+    expect(pending?.answer.key).toBe("yes_and");
+    // A failed model call here leaves the question standing and no roll logged.
+    expect(ledger).toHaveLength(0);
+    expect(pendingQuestionFrom(rows())).toBe("Is the side door already unlocked?");
+    await pending!.commit();
+    expect(ledger.map((e) => e.type)).toEqual(["oracle_secret"]);
+    expect(pendingQuestionFrom(rows())).toBeNull();
+  });
+
   it("answers each question once", async () => {
     await askOracle("c", "Is the side door already unlocked?");
     await answerPendingQuestion("c", face(10, 10));

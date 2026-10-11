@@ -1,3 +1,4 @@
+import { pauseDraftSync, resumeDraftSync } from "./useDraftSync";
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,8 @@ export function ReviewPanel({ state }: { state: ChargenState }) {
     // mounts, so the seconds the campaign takes to start are part of it.
     if (then === "city") armDescent();
     try {
+      // No autosave may land after the draft is filed: it would bring it back.
+      await pauseDraftSync();
       const id = await saveCharacterFromState(state, build, sheet);
       if (then === "city") {
         const adventure = await startAdventure({
@@ -56,6 +59,7 @@ export function ReviewPanel({ state }: { state: ChargenState }) {
       reset();
       await navigate({ to: "/character/$id", params: { id } });
     } catch (e) {
+      resumeDraftSync();
       disarmDescent();
       setError(e instanceof Error ? e.message : "Saving failed.");
       setSaving(null);

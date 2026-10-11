@@ -1152,6 +1152,16 @@ async function applyResponse(
   // --- what the engine, not the model, applies -----------------------------
   let clock = bundle.clock;
   let eurobucks = bundle.vitals.eurobucks;
+  // What the database holds. The downtime operations below price against the
+  // live balance, so what this turn has already spent is written first:
+  // otherwise "spend 80, then pay 50 of bills" from 100 passed the bills check
+  // and the turn wrote back -30.
+  let written = eurobucks;
+  const settleBalance = async () => {
+    if (eurobucks === written) return;
+    await updateCampaignVitals(campaignId, { eurobucks });
+    written = eurobucks;
+  };
 
   // The same gate the job loop runs. Life is not a hole in the wall: money the
   // character does not have and kit they are not carrying are refused here,
@@ -1282,8 +1292,10 @@ async function applyResponse(
     } else if (action.kind === "pay_bills") {
       // One implementation of rent: the Downtime operation, priced by the engine.
       try {
+        await settleBalance();
         const paid = await payBills(await downtimeBundle());
         if (paid.total > 0) eurobucks -= paid.total;
+        written = eurobucks;
       } catch (error) {
         await refuse((error as Error).message, "resource_unavailable");
       }
@@ -1294,8 +1306,10 @@ async function applyResponse(
         await refuse("Nothing in the kit needs patching.", "impossible");
       } else {
         try {
+          await settleBalance();
           const done = await repair(bundleForOps, piece);
           eurobucks -= done.cost;
+          written = eurobucks;
         } catch (error) {
           await refuse((error as Error).message, "resource_unavailable");
         }
@@ -1589,9 +1603,7 @@ async function applyResponse(
     ]);
   }
 
-  if (eurobucks !== bundle.vitals.eurobucks) {
-    await updateCampaignVitals(campaignId, { eurobucks });
-  }
+  await settleBalance();
 
   clock = advanceClock(clock, Math.round(spent * timeFactor));
   if (clock.day !== bundle.clock.day || clock.minute !== bundle.clock.minute) {

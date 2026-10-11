@@ -105,6 +105,17 @@ export type ChargenActions = {
   reset: () => void;
 };
 
+/**
+ * How many times the wizard has been reset to a blank character. Work that
+ * finishes after it started (a portrait still developing when the character
+ * was filed) compares this before writing, so it never lands on the next one.
+ * Not part of the draft: it means nothing outside this page load.
+ */
+let resets = 0;
+export function chargenResets(): number {
+  return resets;
+}
+
 const initialState: ChargenState = {
   draftId: null,
   step: "fixer",
@@ -206,7 +217,10 @@ export const useChargenStore = create<ChargenState & ChargenActions>((set, get) 
         visited: (next.visited ?? []).map(normalizeStep).filter((v, i, a) => a.indexOf(v) === i),
       };
     }),
-  reset: () => set({ ...initialState }),
+  reset: () => {
+    resets += 1;
+    set({ ...initialState });
+  },
 }));
 
 /** The exact object persisted to chargen_drafts. */

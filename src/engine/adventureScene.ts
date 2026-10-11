@@ -18,6 +18,9 @@ export type AdventureSceneInput = {
   enemies: { key: string; name: string; profile: string }[];
 };
 
+/** The most hostiles one adventure scene stages. The GM normalizer caps a list to it. */
+export const ADVENTURE_MAX_ENEMIES = 16;
+
 export function sceneRecipeForArena(arena?: string): SceneFacts["locationType"] {
   return (
     {
@@ -51,7 +54,12 @@ export function composeAdventureScene(input: AdventureSceneInput): AuthoredScene
     return null;
   }
   facts.locationType = kind;
-  if (!input.identity || !input.locationKey || !input.enemies.length || input.enemies.length > 16)
+  if (
+    !input.identity ||
+    !input.locationKey ||
+    !input.enemies.length ||
+    input.enemies.length > ADVENTURE_MAX_ENEMIES
+  )
     throw new Error("Invalid adventure scene identity or opposition.");
   const enemyIds = new Set<string>();
   for (const e of input.enemies) {

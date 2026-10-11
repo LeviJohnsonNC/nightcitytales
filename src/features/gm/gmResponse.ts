@@ -16,6 +16,7 @@ import {
   isAnswerableQuestion,
   isArenaKey,
   isThreatKey,
+  ADVENTURE_MAX_ENEMIES,
 } from "@/engine";
 import { normalizeWalkOnMentions, WalkOnMentionSchema } from "@/features/cast/walkOnMention";
 import { snapDv, isLowStakes, wireObject } from "@/features/narration/narratorRules";
@@ -386,8 +387,15 @@ function normalizeEnemies(raw: unknown): GmEnemy[] {
     // would still let it pick where inside the range a fight sits, which is the
     // whole of the authorship problem this replaced.
     const named = str(e["profile"]) ?? str(e["type"]) ?? str(e["threat"]);
+    // Keys must be unique and the list no longer than a scene stages: the
+    // scene composer throws on either, and by then the turn has been paid for.
+    // Two hostiles the model both called "guard" are two guards.
+    if (out.length >= ADVENTURE_MAX_ENEMIES) return;
+    const asked = str(e["key"]) ?? str(e["id"]) ?? `${name}-${index}`;
+    let key = asked;
+    for (let n = 2; out.some((o) => o.key === key); n += 1) key = `${asked}-${n}`;
     out.push({
-      key: str(e["key"]) ?? str(e["id"]) ?? `${name}-${index}`,
+      key,
       name,
       profile: isThreatKey(named) ? named : DEFAULT_THREAT_KEY,
     });

@@ -126,7 +126,7 @@ export function usePlay(campaignId: string) {
       if (!query.data) throw new Error("Still loading.");
       return narrate(query.data, "(What are my options here?)", { optionsRequested: true });
     },
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
 
   const choose = useMutation({
@@ -134,12 +134,12 @@ export function usePlay(campaignId: string) {
       if (!query.data) throw new Error("Still loading.");
       return takeExit(query.data, exit);
     },
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
 
   const open = useMutation({
     mutationFn: (bundle: PlayBundle) => openScene(bundle),
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
 
   const check = useMutation({
@@ -147,7 +147,10 @@ export function usePlay(campaignId: string) {
       if (!query.data) throw new Error("Still loading.");
       return commitCheck(query.data, pending, roll);
     },
-    onSuccess: invalidate,
+    // Settled, not success: a check saves the spent Action (and bumps the
+    // encounter version) before it narrates, so a failure after that save
+    // must still re-read, or every later combat write refuses as stale.
+    onSettled: invalidate,
   });
 
   /**
