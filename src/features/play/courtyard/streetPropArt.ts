@@ -12,6 +12,7 @@
  */
 import type Phaser from "phaser";
 import { propTexture, type PropCondition, type PropKind } from "./propPresentation";
+import { atlasPropRegistration } from "./atlasPropRegistration";
 import { propArtRegistration } from "./streetPropPack";
 import { paintedTexture, SEDAN_PAINT_ORDER } from "./sedanPaint";
 
@@ -29,6 +30,8 @@ const COVERAGE: Record<string, readonly (0 | 90)[]> = {
   planter: [0, 90],
   mailboxes: [0, 90],
   "shop-display": [0, 90],
+  // The repair workbench has one authored orientation; other rotations retain the kit.
+  workbench: [0],
 };
 
 export interface StreetPropFile {
@@ -39,6 +42,9 @@ export interface StreetPropFile {
   kind: PropKind;
   /** The texture keys this file replaces. */
   textures: string[];
+  /** Equal-width cell in a horizontal three-state atlas, when supplied. */
+  atlasCell?: number;
+  condition?: PropCondition;
 }
 
 /** The files a scene with these prop kinds can use. */
@@ -58,7 +64,11 @@ export function streetPropFiles(kinds: readonly PropKind[]): StreetPropFile[] {
         files.push({
           kind,
           key: `streetprop-${name}`,
-          url: `/images/street-props/${name}.webp`,
+          url:
+            kind === "workbench"
+              ? "/images/street-props/workbench-states-v1.webp"
+              : `/images/street-props/${name}.webp`,
+          ...(kind === "workbench" ? { atlasCell: CONDITIONS.indexOf(condition), condition } : {}),
           textures,
         });
         // the sedan's other paints (`sedanPaint.ts`), baked from this file; a wreck is
@@ -90,14 +100,25 @@ export function applyStreetPropArt(scene: Phaser.Scene, files: readonly StreetPr
       width: number;
       height: number;
     };
+    const sx = file.atlasCell === undefined ? 0 : Math.round((image.width * file.atlasCell) / 3);
+    const width =
+      file.atlasCell === undefined
+        ? image.width
+        : Math.round((image.width * (file.atlasCell + 1)) / 3) - sx;
     for (const key of file.textures) {
       if (scene.textures.exists(key)) scene.textures.remove(key);
-      const texture = scene.textures.createCanvas(key, image.width, image.height)!;
+      const texture = scene.textures.createCanvas(key, width, image.height)!;
       const ctx = texture.context;
-      ctx.drawImage(image, 0, 0);
+      ctx.drawImage(image, sx, 0, width, image.height, 0, 0, width, image.height);
       texture.refresh();
       // where the 2 m frame sits in padded art: the board reads this to place it
-      texture.customData = { ...texture.customData, registration: propArtRegistration(file.kind) };
+      texture.customData = {
+        ...texture.customData,
+        registration:
+          file.atlasCell === undefined
+            ? propArtRegistration(file.kind)
+            : atlasPropRegistration(file.kind, file.condition!),
+      };
     }
     scene.textures.remove(file.key);
   }

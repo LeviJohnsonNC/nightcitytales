@@ -44,6 +44,8 @@ export const CASTER_HEIGHT: Record<string, { height: number; wreck: number; inse
   "shop-display": { height: 1.31, wreck: 0.45 },
   "food-cart": { height: 1.4, wreck: 0.4 },
   cargo: { height: 1.1, wreck: 0.4 },
+  pallet: { height: 0.75, wreck: 0.2 },
+  workbench: { height: 1.2, wreck: 0.3 },
   dumpster: { height: 1.3, wreck: 0.4 },
   generator: { height: 1.1, wreck: 0.4 },
 };

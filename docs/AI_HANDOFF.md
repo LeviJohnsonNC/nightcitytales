@@ -1,24 +1,32 @@
-## Active clipping / neon pass — 2026-10-11
+## Active solid street / object pass — 2026-10-11
 
 Checkout: /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/street-neon-clipping; base origin/main 978baf35 (merged PR351/352).
-Normal fetched Git history, not the reconstructed checkouts mentioned below.
-Original dirty checkout and old session files remain untouched. Levi reviews/merges.
+Branch codex/solid-street-objects; base origin/main e77fa705 (PR353 merged).
+Normal fetched Git history. Original dirty checkout remains untouched. Levi merges.
+User approved clipping fixes, calmer crate art, and purposeful object clusters.
 
-Separated repair canopy/balcony into attached sorted sprites; removed clipped copies
-in reveal. Magenta market blade now casts ground/wall light at its actual height;
-cyan repair lettering; sharper/stronger source reflections. Passage/parking now use
-asphalt material and wetness, eliminating the flat blue patch. No gameplay edits.
+Local implementation: optional elevation ordering for overlapping footprints;
+measured canopy/prop/actor volumes; expanded repair-fitting bounds retain shade.
+Versioned cargo-states-v2.webp generated from the original atlas, same 2172x724
+three-cell registration and alpha, lossless WebP. Original retained.
+Recipe15 seed8 adds canonical pallet, workbench and collection bin with reserved
+handling spaces. Frozen v14 fixture protects saved scenes; other seeds unchanged.
 
-Validation: 4,246 tests pass, typecheck/build pass, lint zero errors/15 existing
-warnings. First Chromium run passes 3 seeds. Final refined run in progress.
-Actual final seed8 play, destruction and compact screenshots opened and inspected.
-Reflection still less rich than reference; do not claim total clipping elimination.
-Source-height regression added; wet-response test now bounds combined response
-instead of freezing the old artistic preference for blur over source shape.
+Implementation d9cedf98 plus the next ordinary refinement commit. PR356 draft:
+https://github.com/LeviJohnsonNC/nightcitytales/pull/356
+Refinement: painted workbench at(20,20) with measured atlas registration; bin in
+utility court(24,4); market pallet at(4,10), visible around the return/in reveal.
+Intact/damaged/wreck art and original crate atlas are retained/versioned.
 
-Next: finish final 3-seed screenshot review, publish review PR, check remote CI.
-Evidence currently e2e/.results; retain selected captures before another run.
+Validation: typecheck/build pass, lint zero errors/15 existing warnings. Full suite
+4,263pass/1 asset-inventory assertion; extended it for the new atlas and all9 asset
+tests pass. Earlier full tree d9cedf98 had4,263pass; final remote suite pending.
+Local Chromium3seed pass at d9cedf98, final refined seed8 pass. Actually inspected
+final play/reveal/destruction/compact: bench and bin visible, no detached rings,
+crate calmer, routes readable. Other seeds unchanged geometrically.
+Next: push refinement, await remote CI and both Chromium jobs, inspect final
+remote captures, then mark PR356 ready. Levi reviews/merges.
+Do not claim all clipping eliminated or visual acceptance before pixel inspection.
 
 ## Active architecture depth pass — 2026-10-11 UTC
 

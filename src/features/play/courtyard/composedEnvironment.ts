@@ -2838,7 +2838,7 @@ export function createComposedEnvironment(
             const a = balcony ? 0.86 : 0.08;
             const b = balcony ? Math.min(5.14, face.length - 0.08) : face.length - 0.08;
             const reach = balcony ? 0.98 : 0.72;
-            const low = balcony ? 4.27 : 2.45;
+            const low = balcony ? 3.65 : 2.25; // Include the shade below the projecting fitting.
             const high = balcony ? 6.98 : 3.05;
             const points = [a, b].flatMap((x) =>
               [0, reach].flatMap((out) => [low, high].map((z) => face.at(x, out, z))),
@@ -2894,6 +2894,7 @@ export function createComposedEnvironment(
                   (supports.length > 0 && supports.every((p) => p.height >= high)),
               )
               .setData("sortRect", footprint)
+              .setData("elevation", { bottom: balcony ? 4.27 : 2.45, top: high })
               .setData("fadeWith", building);
           }
         }
@@ -2999,7 +3000,8 @@ export function createComposedEnvironment(
                   },
             )
             .setData("revealOk", kept)
-            .setData("sortRect", footprint);
+            .setData("sortRect", footprint)
+            .setData("elevation", { bottom: L.awningOuter - 0.4, top: L.awningWall });
           // The blade sign hangs on the fascia: it shows only while the full building
           // does, and never stays brighter or more solid than the wall it hangs from.
           const blade = sf === front?.sf ? bladeSign(sf) : undefined;

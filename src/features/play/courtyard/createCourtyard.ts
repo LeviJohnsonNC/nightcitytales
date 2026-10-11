@@ -7,6 +7,8 @@ import {
   retainForegroundSection,
 } from "./foregroundSections";
 import type { SceneStructure } from "@/engine";
+import { CASTER_HEIGHT } from "./lampShadow";
+import { SCENE_PERSON_HEIGHT } from "./sceneArtMetrics";
 import { sceneryOrder } from "./sceneryOrder";
 import { atlasPropRegistration } from "./atlasPropRegistration";
 import { isInteriorProp } from "./interiorPropArt";
@@ -205,13 +207,16 @@ export function createCourtyard(
     const objects = [
       ...structures,
       ...scenery,
-      ...[...units.values()].map((u) => u.container),
+      ...[...units.values()].map((u) =>
+        u.container.setData("elevation", { bottom: 0, top: SCENE_PERSON_HEIGHT }),
+      ),
     ].filter((o) => o.visible && o.depth > -500 && !o.getData("destroyed"));
     const items = objects.map((o) => {
       const p = unproject({ x: o.x, y: o.getData("groundY") ?? o.y });
       const rect: Rect = o.getData("sortRect") ?? { x: p.x, y: p.y, width: 0, height: 0 };
       return {
         rect,
+        elevation: o.getData("elevation"),
         groundY: project({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }).y,
       };
     });
@@ -253,7 +258,7 @@ export function createCourtyard(
           `source-${key}`,
           `/images/combat/${
             key === "street-props" || key === "workers" ? "north-heywood" : "night-shift"
-          }/${key}.webp`,
+          }/${key === "cargo-states" ? "cargo-states-v2" : key}.webp`,
         );
       // Surface materials are presentation: a tile that fails to load leaves its
       // surface flat, and never fails the scene the way a missing atlas does.
@@ -863,6 +868,9 @@ export function createCourtyard(
         .setDisplaySize(width, height)
         .setDepth(placement.depth);
       prop.setData("destroyed", status.destroyed).setData("sortRect", status.piece.rect);
+      const body = CASTER_HEIGHT[kind];
+      if (body)
+        prop.setData("elevation", { bottom: 0, top: status.destroyed ? body.wreck : body.height });
       const cached = current.textures.get(texture).customData as {
         inkBounds?: ReturnType<typeof propInkBounds>;
       };
