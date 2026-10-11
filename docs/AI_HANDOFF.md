@@ -19,8 +19,11 @@ refine irregular strokes, align bay light with recessed art. Door uses new room.
 No saved geometry, rules or new entrances. No visual acceptance yet.
 Second capture inspected: open workshop interior visible; reduced paving glints retain
 texture. Final refinement lowers cyan pool and raises only shop source-picture gain.
-Next: targeted tests and final three-seed browser capture; inspect actual pixels before broad
-checks, review PR, paired CI screenshots. Previous handoff preserved /tmp/nct357-final-handoff.md.
+Implementation586db45d and documentation353d2414 pushed. Draft PR359 open.
+Local final Chromium3seeds pass; seed8 play/reveal/destruction inspected. Build,
+typecheck pass; lint0errors/15warnings. Full suite4271pass/2 failures: old storefront
+image-count expectations omitted the newly open door. Updated those assertions;
+focused and full reruns next. Remaining gate: final CI and paired screenshots. Previous handoff preserved /tmp/nct357-final-handoff.md.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 

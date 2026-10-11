@@ -145,22 +145,23 @@ describe("storefront: painting", () => {
   it("paints the whole face, with its sign, only when asked for the whole face", () => {
     const whole = recorder();
     paintStorefrontFace({ ctx: whole.ctx, ...base });
-    expect(whole.images.filter((i) => uses(i, art.window))).toHaveLength(sf.bays.length);
+    // The open doorway carries one additional interior, beneath its raised curtain.
+    expect(whole.images.filter((i) => uses(i, art.window))).toHaveLength(sf.bays.length + 1);
     expect(whole.images.filter((i) => uses(i, art.wear))).toHaveLength(1);
     // No full-resolution source is sampled directly into the small face texture.
     expect(whole.images).not.toContain(art.window);
     expect(whole.images).not.toContain(art.wear);
     // the kanji mask is drawn tinted, as dull glass, in the albedo
-    expect(whole.images.length).toBe(sf.bays.length + 2);
+    expect(whole.images.length).toBe(sf.bays.length + 3);
   });
 
   it("paints a cutaway piece only with what that piece carries, up to its height", () => {
     const door = recorder();
     paintStorefrontFace({ ctx: door.ctx, ...base, clip: { s0: 0.2, s1: 1.8, zMax: 2.4 } });
-    expect(door.images.filter((i) => uses(i, art.window))).toHaveLength(0);
+    expect(door.images.filter((i) => uses(i, art.window))).toHaveLength(1);
     expect(door.images.filter((i) => uses(i, art.wear))).toHaveLength(1);
     // the sign and fascia are above a retained piece: not painted into it
-    expect(door.log.filter((l) => l === "drawImage")).toHaveLength(1);
+    expect(door.log.filter((l) => l === "drawImage")).toHaveLength(2);
 
     const bay = recorder();
     paintStorefrontFace({ ctx: bay.ctx, ...base, clip: { s0: 4, s1: 6, zMax: 2.4 } });
