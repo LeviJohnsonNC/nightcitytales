@@ -255,7 +255,7 @@ function Roll({
             success={rolled.won}
             margin={rolled.tie ? null : rolled.margin}
             tie={rolled.tie}
-            words={{ success: "They come down", failure: "They hold" }}
+            words={{ success: "Beat them", failure: "They hold" }}
             delay={theirCrit !== null ? 1100 : 450}
           />
           <p className="border-l-2 border-accent/60 pl-3 text-[15px] leading-relaxed">

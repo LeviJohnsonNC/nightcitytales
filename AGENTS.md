@@ -361,9 +361,13 @@ dialog (Escape or the X goes back to the counter, not out of the shop).
 Every place seller has a `keeper` (name and one line): the Counter shows their face
 (`shop/keeperArt.ts`, initials until a portrait is listed in `KEEPER_ART_READY`), the
 narrator's "Selling here" line names them, and the fixer is the campaign's own cast member.
-Haggling is a short scene (`HaggleScene.tsx`): three ways to pitch it and the seller's reply
-are presentation (`haggle` in `place-shops.json`); the roll is the printed Haggle either way,
-and the odds shown are `opposedPercent` over the same actor the roll uses. What was bought,
+Haggling is a short scene (`HaggleScene.tsx`) rolled with the game's own dice: you roll
+yours, then turn theirs over, and the roll is recorded the moment it is made (`rollHaggle` is
+pure, `recordHaggle` writes). Each keeper warms to one of three pitches (+`modifier`), is put
+off by another and shrugs at the third (`haggle` and `keeper.warms`/`cools` in
+`place-shops.json`, house rule); the pitch rides on the printed Haggle as a named modifier
+(`hagglePitchModifier`) and nothing else changes. Human Perception at `read.one` reads the
+pitch they warm to, at `read.all` both (`haggleRead`). What was bought,
 sold or argued over since the narrator last spoke reaches the next Life turn as
 `counterNews` lines (who and what, never a price), capped by `PACKET_BUDGET.counter`.
 
