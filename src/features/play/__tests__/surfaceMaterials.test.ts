@@ -143,7 +143,7 @@ describe("surface materials: painting", () => {
     expect(calls).toEqual([]);
   });
 
-  it("lays road repairs beneath crossings and leaves missing-asphalt and other recipes alone", () => {
+  it("lays road repairs beneath crossings and leaves missing-asphalt scenes alone", () => {
     const intersection = composeScene("intersection", 7).layout.arena;
     const record = (
       arena: typeof intersection,
@@ -166,7 +166,7 @@ describe("surface materials: painting", () => {
     );
   });
 
-  it("paints only the intersection with materials: its shops, homes and sheds", () => {
+  it("paints finished exterior streets with materials", () => {
     const set = prepareMaterials({ asphalt: tile, sidewalk: tile }, 30, fakeCanvas);
     expect(Object.keys(set)).toHaveLength(2);
 
@@ -179,7 +179,7 @@ describe("surface materials: painting", () => {
     };
     expect(used(intersection)).toBe(0);
     expect(used(intersection, set)).toBeGreaterThan(0);
-    expect(used(alley, set)).toBe(0);
+    expect(used(alley, set)).toBeGreaterThan(0);
 
     const structures = intersection.environment!.structures;
     const painted = (style: string) => {

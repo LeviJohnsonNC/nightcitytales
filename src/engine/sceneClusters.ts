@@ -332,6 +332,22 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     ],
     access: [{ x: 1, y: 3, label: "Food stall customer space" }],
   },
+  alley_bench: {
+    zones: ["loading"],
+    reason: "A parts cabinet serves the receiving court beside its clear handling lane",
+    members: [
+      {
+        key: "office_storage",
+        id: "cabinet",
+        label: "receiving parts cabinet",
+        x: 0,
+        y: 0,
+        art: ["mailboxes"],
+      },
+    ],
+    access: [{ x: 1, y: -1, label: "Receiving cabinet access" }],
+    dressing: [{ kind: "supplies", x: 0.2, y: 0.3 }],
+  },
   workshop_delivery: {
     zones: ["loading"],
     reason: "Delivered stock lines the workshop wall beside a reserved handling aisle",

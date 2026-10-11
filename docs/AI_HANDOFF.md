@@ -1,29 +1,33 @@
-# Active open shops / wet street pass — 2026-10-11
+# Active service alley pass — 2026-10-11
 
+User approved one alley pass, then in-app review before warehouse. Intersection PR359 merged;
+user rates it B-ish and explicitly chose to move on. Do not work on warehouse yet.
 Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/open-shops-wet-street; base origin/main6ed14c22 includes PR357/358.
-Original dirty checkout preserved. Normal fetched history; Levi reviews/merges.
-User approved one coordinated pass: deeper varied storefront openings, substantially
-better appropriate ground reflections; finish intersection before next environment.
+Branch codex/service-alley-pass; base origin/main a0936a35 (PR361).
+Original dirty checkout untouched; previous final handoff preserved /tmp/nct359-merged-handoff.md.
 
-Local first iteration: repair display spans fit around saved doors; asymmetric
-counter/parts bays reuse existing painted art in deeper clipped recesses. Repair
-entrance shows shelving, aisle and tiled threshold beneath raised shutter. Market
-entrance is open beneath its curtain. Room emission follows these actual openings.
-Repair ground spills use opening spans. Wetness has larger connected depressions;
-stronger broken facet highlights use shadowed incident light, no uniform sheen.
-New asset: repair-open-room-v1.webp, generated straight-on interior,512x768;
-source retained in generated_images/01a12b66.../exec-2d217725...png. Existing art kept.
-First capture: diffuse-bright pavement overexposed; reduce paving facet response,
-refine irregular strokes, align bay light with recessed art. Door uses new room.
-No saved geometry, rules or new entrances. No visual acceptance yet.
-Second capture inspected: open workshop interior visible; reduced paving glints retain
-texture. Final refinement lowers cyan pool and raises only shop source-picture gain.
-Implementation586db45d and documentation353d2414 pushed. Draft PR359 open.
-Local final Chromium3seeds pass; seed8 play/reveal/destruction inspected. Build,
-typecheck pass; lint0errors/15warnings. Full suite4271pass/2 failures: old storefront
-image-count expectations omitted the newly open door. Updated those assertions;
-focused and full reruns next. Remaining gate: final CI and paired screenshots. Previous handoff preserved /tmp/nct357-final-handoff.md.
+Implementation ready to commit/push: material/night/contact/reflection treatment enabled for alley;
+new recipe v7 turns low east frontage toward lane, preserves reference seeds1–3 and old snapshots;
+saved service surrounds choose one warm open workshop, cooler receiving doors; existing interior art.
+Receiving parts cabinet, drain cluster, concrete handling strips drier than exposed asphalt.
+Utility lamps and compact loading indicators replace intersection traffic/ad fixtures in alley.
+Relevant files: sceneComposer/sceneClusters, courtyard serviceFrontage, cityFixtures, afterRain,
+composedEnvironment, createCourtyard, frontageIdentity/occupiedFrontage/nightLighting; scene-review controls.
+New e2e/service-alley.spec.ts exercises seeds4/11/5 with save/restore, reveal, destruction, compact.
+
+Baseline captures /tmp/nct-alley-before-captures: seed4play inspected; old baseline lacks lighting
+controls so first browser run failed that assertion; harness now tolerates absent baseline controls.
+First implementation exposed missing cluster reference/duplicate attachment IDs; fixed. 64 seeds compose.
+Full suite second run 4278pass/2fail: outdated surround-ID lookup and road-repair assumption; corrected.
+First visual seed11 inspected: significant material improvement; lamp and cabinet corrections made.
+Final local verification: 4280tests/345files pass; lint0errors15existingwarnings;
+typecheck and production build pass. Chromium all3seeds pass (1.4min).
+Visually inspected seed4 play/reveal/destruction/compact, seed11play and rotatedseed5play.
+No detached rings or unexplained actor/prop intersections observed in these captures.
+Evidence: /Users/levijohnson/.codex/visualizations/2026/10/11/01a12b66-843f-7a70-86c1-77681c3d2c1f/service-alley-evidence.
+Next: push draftPR, waitCI (including matched alley baseline and intersection regression);
+then open local seed4 review. User reviews/merges; warehouse remains deferred.
+Fresh chat: read this handoff and use Levi's alley review feedback before any warehouse work.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 

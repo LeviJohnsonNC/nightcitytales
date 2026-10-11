@@ -1,3 +1,4 @@
+import { serviceDoors, hasServiceFrontage, paintServiceFrontage } from "./serviceFrontage";
 import {
   occupiedUse,
   paintOccupiedFrontage,
@@ -16,7 +17,7 @@ import type { GroundLight } from "./nightLighting";
 
 export function entranceLights(env: SceneEnvironment): GroundLight[] {
   return env.structures.flatMap((s) => {
-    if (s.style !== "workshop" && s.style !== "residential") return [];
+    if (s.style !== "workshop" && s.style !== "residential" && !hasServiceFrontage(s)) return [];
     return (["north", "east"] as const).flatMap((edge) => {
       const f = edgeFrame(s.rect, edge);
       return facadeOpenings(s, env.entrances, edge).doors.map((c) => ({
@@ -28,7 +29,11 @@ export function entranceLights(env: SceneEnvironment): GroundLight[] {
         s1: c + 0.8,
         reach: s.style === "workshop" ? 4 : 2.6,
         spread: 0.7,
-        color: s.style === "workshop" ? ([0.28, 0.77, 1] as const) : ([1, 0.62, 0.28] as const),
+        color: serviceDoors(s, edge, env.entrances).find((d) => d.c === c)?.warm
+          ? ([1, 0.66, 0.32] as const)
+          : s.style === "workshop"
+            ? ([0.28, 0.77, 1] as const)
+            : ([1, 0.62, 0.28] as const),
         intensity: s.style === "workshop" ? 0.8 : 0.68,
       }));
     });
@@ -45,6 +50,10 @@ export function paintFrontageIdentity(
   pass: "albedo" | "light" | "glow",
   art?: ArchitectureArt,
 ) {
+  if (hasServiceFrontage(s)) {
+    paintServiceFrontage(ctx, s, edge, env.entrances, project, ppm, pass, art);
+    return;
+  }
   if (occupiedUse(s)) {
     paintOccupiedFrontage(ctx, s, edge, env.entrances, project, ppm, pass, art);
     if (pass !== "albedo") {

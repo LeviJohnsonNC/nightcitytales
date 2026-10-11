@@ -1982,3 +1982,13 @@ with restrained highlights on already bright paving. See
 `docs/checkpoint-open-shops.md` for scope and evidence. Review gates remain in
 `docs/AI_HANDOFF.md`; reference parity is still a visual judgment before moving to
 another environment.
+
+### Service alley visual transfer — 2026-10-11
+
+The alley now shares the intersection's material, contact-shadow and wet-reflection
+rendering. New v7 compositions put low workshop wings along both sides of the lane,
+with a warm open service room, cool receiving doors, utility fixtures and a parts
+cabinet beside the handling court. Concrete loading aprons stay drier than asphalt;
+drains collect localized wet patches. Reference seeds and stored geometry remain
+unchanged. Review seeds 4, 11 and 5 in-app before starting the warehouse pass.
+See `docs/checkpoint-service-alley.md`.

@@ -19,7 +19,10 @@ it.each(["alley", "residential"] as const)(
       expect(readBattlefieldSnapshot(JSON.parse(JSON.stringify(layout)))).toEqual(layout);
       for (const entry of env.entrances!) {
         const host = env.structures.find((s) => s.id === entry.structureId)!;
-        const surround = host.attachments!.find((a) => a.id === `${entry.id}_surround`)!;
+        const surround = host.attachments!.find((a) => {
+          const p = attachmentPoint(host, a, a.span / 2, 1);
+          return p.x === entry.position.x && p.y === entry.position.y;
+        })!;
         expect(attachmentPoint(host, surround, 1, 1)).toEqual(entry.position);
       }
       for (const destroyed of [false, true]) {

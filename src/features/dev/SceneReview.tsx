@@ -282,7 +282,7 @@ export function SceneReview() {
             Room/access plan
           </label>
         )}
-        {scene.layout.arena.environment?.recipe === "intersection" && (
+        {["intersection", "alley"].includes(scene.layout.arena.environment?.recipe ?? "") && (
           <>
             <label>
               <input

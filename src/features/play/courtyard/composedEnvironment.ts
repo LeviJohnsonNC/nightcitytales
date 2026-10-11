@@ -1,3 +1,4 @@
+import { hasServiceFrontage } from "./serviceFrontage";
 import { marketReturnCanopies } from "./marketCanopy";
 import { architecturalCasters } from "./architecturalShadows";
 import {
@@ -207,7 +208,8 @@ export function paintComposedGround(
   const { rect, line, glow, corners: zoneCorners } = painter(ctx, project);
   // Roads and walks of an intersection take real materials; everything else
   // keeps its flat fill until its own pass.
-  const textured = !env.interior && env.recipe === "intersection" ? materials : undefined;
+  const textured =
+    !env.interior && ["intersection", "alley"].includes(env.recipe) ? materials : undefined;
   const ground = groundBasis(project);
   if (env.interior) rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
   if (!env.interior) {
@@ -296,16 +298,18 @@ export function paintComposedGround(
     // A crosswalk is laid across the carriageway, so it sits on asphalt.
     // A loading court is surfaced like the road it opens on.
     const surface: MaterialKey | undefined =
-      z.kind === "road" ||
-      z.kind === "intersection" ||
-      z.kind === "crosswalk" ||
-      z.kind === "loading" ||
-      z.kind === "alley" ||
-      z.kind === "parking"
-        ? "asphalt"
-        : z.kind === "sidewalk"
-          ? "sidewalk"
-          : undefined;
+      env.recipe === "alley" && z.kind === "loading"
+        ? "facade-concrete"
+        : z.kind === "road" ||
+            z.kind === "intersection" ||
+            z.kind === "crosswalk" ||
+            z.kind === "loading" ||
+            z.kind === "alley" ||
+            z.kind === "parking"
+          ? "asphalt"
+          : z.kind === "sidewalk"
+            ? "sidewalk"
+            : undefined;
     const target = surface === "asphalt" ? "#424b50" : surface === "sidewalk" ? "#66665b" : flat;
     const laid =
       surface !== undefined &&
@@ -1796,20 +1800,23 @@ export function paintSurfaceClasses(
   rect({ x: -20, y: -20, width: 72, height: 72 }, code(SurfaceClass.concrete));
   for (const z of env.zones) {
     const k =
-      z.kind === "road" ||
-      z.kind === "intersection" ||
-      z.kind === "crosswalk" ||
-      z.kind === "loading" ||
-      z.kind === "parking" ||
-      z.kind === "alley"
-        ? SurfaceClass.asphalt
-        : z.kind === "sidewalk"
-          ? SurfaceClass.paving
-          : undefined;
+      env.recipe === "alley" && z.kind === "loading"
+        ? SurfaceClass.concrete
+        : z.kind === "road" ||
+            z.kind === "intersection" ||
+            z.kind === "crosswalk" ||
+            z.kind === "loading" ||
+            z.kind === "parking" ||
+            z.kind === "alley"
+          ? SurfaceClass.asphalt
+          : z.kind === "sidewalk"
+            ? SurfaceClass.paving
+            : undefined;
     if (k !== undefined) rect(z.rect, code(k));
   }
   for (const z of env.zones.filter((z) => z.floorUse)) {
-    if (z.floorUse === "handling") rect(z.rect, code(SurfaceClass.asphalt));
+    if (z.floorUse === "handling")
+      rect(z.rect, code(env.recipe === "alley" ? SurfaceClass.concrete : SurfaceClass.asphalt));
     else if (z.floorUse === "entry") rect(z.rect, code(SurfaceClass.threshold));
   }
   for (const r of thresholds) rect(r, code(SurfaceClass.threshold));
@@ -1883,7 +1890,8 @@ export function createComposedEnvironment(
     project({ x: 1, y: 0 }).x - project({ x: 0, y: 0 }).x,
     project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
   );
-  const materialised = arena.environment!.recipe === "intersection" && tiles !== undefined;
+  const materialised =
+    ["intersection", "alley"].includes(arena.environment!.recipe) && tiles !== undefined;
   const resolution = materialised
     ? Math.max(1, Math.min(MATERIAL_SUPERSAMPLE, MAX_TEXTURE_PIXELS / Math.max(gw, gh)))
     : 1;
@@ -2506,7 +2514,7 @@ export function createComposedEnvironment(
         : [];
       // the shopfront and its composed returns, each face flipped about its own foot
       const faceMirrors =
-        reflects && (front || occupiedUse(s) === "repair")
+        reflects && (front || occupiedUse(s) === "repair" || hasServiceFrontage(s))
           ? [
               ...new Set<Edge>(
                 front ? [front.sf.edge, ...composed.map((c) => c.edge)] : ["north", "east"],
@@ -2573,6 +2581,7 @@ export function createComposedEnvironment(
                 composed.length ||
                 boards.length ||
                 occupiedUse(s) ||
+                hasServiceFrontage(s) ||
                 s.style === "workshop" ||
                 s.style === "residential")
             ? (ctx, pass) => {
@@ -2631,7 +2640,7 @@ export function createComposedEnvironment(
               paintComposedLight(ctx, pass);
               ctx.restore();
             }
-          : faceMirrors && occupiedUse(s) === "repair"
+          : faceMirrors && (occupiedUse(s) === "repair" || hasServiceFrontage(s))
             ? (ctx, pass) => {
                 // Reflect emitters only; never mirror the wall wash as another light source.
                 for (const edge of ["north", "east"] as const)
@@ -2693,6 +2702,7 @@ export function createComposedEnvironment(
                   composed.length ||
                   homes.length ||
                   occupiedUse(s) ||
+                  hasServiceFrontage(s) ||
                   s.style === "workshop" ||
                   s.style === "residential"))
               ? (ctx, pass) => {

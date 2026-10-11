@@ -365,7 +365,7 @@ export function composeScene(
   // housing court and v11 narrows its streets. V10 adds
   // market rows; revision 9 partitions the repair parcel into stepped blocks.
   // Seeds 1-3 and all previously saved snapshots keep their original geometry.
-  const revision = refined ? (kind === "intersection" ? (seed === 8 ? 15 : 10) : 6) : 5;
+  const revision = refined ? (kind === "intersection" ? (seed === 8 ? 15 : 10) : 7) : 5;
   const plan = recipe(kind, variant);
   if (refined && kind === "alley" && variant === 1) {
     // Two opposed service courts turn a pocket shift into a cross-yard organization.
@@ -395,6 +395,15 @@ export function composeScene(
   if (selection.program === "east-delivery") {
     plan.slots.find((s) => s.id === "delivery_north")!.kind = "workshop_service";
     plan.slots.find((s) => s.id === "service_east")!.kind = "workshop_delivery";
+  }
+  if (kind === "alley" && refined) {
+    const court = plan.zones.find((z) => z.id === "service-court")!.rect;
+    plan.slots.push({
+      id: "receiving_bench",
+      kind: "alley_bench",
+      zone: "service-court",
+      at: { x: court.x + court.width - 2, y: court.y + 4 },
+    });
   }
   const cast = [
     {
@@ -441,10 +450,13 @@ export function composeScene(
             // entrance frontage while varying its architectural mass.
             const wing = 4 + 2 * ((seed + i) % 2);
             const split = Math.max(4, Math.floor(r.height / 4) * 2);
+            // Lower frontage faces the lane on BOTH sides; tall blocks sit behind it.
+            const east = refined && r.x >= 16;
+            const rearX = east ? r.x + wing : r.x;
             const pieces = [
-              rect(r.x + r.width - wing, r.y, wing, r.height),
-              rect(r.x, r.y, r.width - wing, split),
-              rect(r.x, r.y + split, r.width - wing, r.height - split),
+              rect(east ? r.x : r.x + r.width - wing, r.y, wing, r.height),
+              rect(rearX, r.y, r.width - wing, split),
+              rect(rearX, r.y + split, r.width - wing, r.height - split),
             ];
             const entrance = plan.entrances.find(
               (e) => e.structureId === `building_${i}`,
@@ -505,6 +517,22 @@ export function composeScene(
     };
     env.entrances!.push(entry);
     addEntranceSurrounds(env, "service-surround");
+    if (refined) {
+      const lane = env.zones.find((z) => z.id === "passage")!.rect;
+      env.clusters.push({
+        id: "alley-drainage",
+        kind: "drainage",
+        zoneId: "passage",
+        reason: "Drain grates collect runoff beside the service strip",
+      });
+      for (const y of [7, 25])
+        env.dressing.push({
+          id: `alley-drain-${y}`,
+          clusterId: "alley-drainage",
+          kind: "drain",
+          position: { x: lane.x + 0.35, y },
+        });
+    }
   }
   const arena: Arena = {
     key: `scene:composed-${kind}:v${revision}:${seed}`,
@@ -585,7 +613,20 @@ export function composeScene(
       e.position = swapPoint(e.position);
     });
   }
-  if (revision >= 7) addShopLamp(arena, actors);
+  if (kind === "alley" && refined) {
+    // Saved entrance identities select presentation; no new door or traversable room.
+    const visible = env.entrances!.filter((e) => {
+      const r = env.structures.find((s) => s.id === e.structureId)!.rect;
+      return e.position.y === r.y - 1 || e.position.x === r.x + r.width + 1;
+    });
+    visible.forEach((e, i) => {
+      const host = env.structures.find((s) => s.id === e.structureId)!;
+      const surround = host.attachments!.find((a) => a.id === `${e.id}_surround`)!;
+      surround.id = i === 0 ? "alley-workroom" : `alley-receiving-${e.id}`;
+      e.label = i === 0 ? "Workshop service entrance" : "Receiving entrance";
+    });
+  }
+  if (revision >= 7 && kind === "intersection") addShopLamp(arena, actors);
   if (revision >= 8 && kind === "intersection") {
     // Heights alone change: footprints, doors, cover and circulation remain saved
     // ground truth. Upper floors are inaccessible, like the existing housing block.
