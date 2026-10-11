@@ -1,3 +1,4 @@
+import { paintOfficeFloor, officeLights, paintOfficeFixture } from "./officeFinish";
 import { paintGarageWear } from "./garageFinish";
 import { paintIndustrialFloor, industrialLights, paintIndustrialFixture } from "./industrialFinish";
 import { hasServiceFrontage } from "./serviceFrontage";
@@ -215,6 +216,8 @@ export function paintComposedGround(
   const ground = groundBasis(project);
   if (env.interior) {
     rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
+    if (env.recipe === "office" && materials)
+      paintOfficeFloor(ctx, project, { x: 0, y: 0, ...arena.extent }, "corridor", materials);
     if (["warehouse", "garage"].includes(env.recipe) && materials)
       paintIndustrialFloor(
         ctx,
@@ -277,6 +280,10 @@ export function paintComposedGround(
   for (const z of env.zones) {
     if (z.kind === "aisle") continue;
     if (env.interior) {
+      if (env.recipe === "office" && materials) {
+        paintOfficeFloor(ctx, project, z.rect, z.kind, materials);
+        continue;
+      }
       if (["warehouse", "garage"].includes(env.recipe) && materials) {
         paintIndustrialFloor(ctx, project, z.rect, z.kind, materials, env.recipe === "garage");
         continue;
@@ -392,6 +399,9 @@ export function paintComposedGround(
       if (z.floorUse === "entry")
         for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "rgba(170,168,156,.35)", 1.2);
       else for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, colors[1]!, 1.2);
+    } else if (env.recipe === "office" && materials) {
+      paintOfficeFloor(ctx, project, z.rect, "reception", materials);
+      rect(z.rect, null, colors[1]!);
     } else if (["warehouse", "garage"].includes(env.recipe) && materials) {
       paintIndustrialFloor(ctx, project, z.rect, z.kind, materials, env.recipe === "garage");
       rect(z.rect, null, colors[1]!);
@@ -1041,6 +1051,7 @@ export function paintBuilding(
   architecture?: ArchitectureArt,
   /** The shop's composed return faces (`streetfront.ts`). */
   returns?: Returns,
+  office = false,
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -1125,20 +1136,25 @@ export function paintBuilding(
   }
   if (structure.style === "interior-wall") {
     for (const [face, color, axis, at] of [
-      [[base[0]!, base[1]!, top[1]!, top[0]!], materials ? "#7c8178" : "#687875", "x", r.y],
+      [
+        [base[0]!, base[1]!, top[1]!, top[0]!],
+        materials ? (office ? "#9b998b" : "#7c8178") : "#687875",
+        "x",
+        r.y,
+      ],
       [
         [base[1]!, base[2]!, top[2]!, top[1]!],
-        materials ? "#505e61" : "#384951",
+        materials ? (office ? "#737970" : "#505e61") : "#384951",
         "y",
         r.x + r.width,
       ],
     ] as const) {
       if (
         !fillMaterial(ctx, materials, face, {
-          key: "facade-concrete",
+          key: office ? "painted-render" : "facade-concrete",
           basis: wallBasis(project, axis, at, 4, pixelsPerMetre),
           target: color,
-          strength: 0.92,
+          strength: office ? 0.5 : 0.92,
         })
       )
         poly([...face], color, "#24353b");
@@ -1149,11 +1165,11 @@ export function paintBuilding(
           { x: face[1].x, y: face[1].y - pixelsPerMetre * 0.48 },
           { x: face[0].x, y: face[0].y - pixelsPerMetre * 0.48 },
         ];
-        poly(lower, "#384e52", "#273c40");
+        poly(lower, office ? "#414f4d" : "#384e52", "#273c40");
         line(lower[2]!, lower[3]!, "#c0ac76", 0.7);
       }
     }
-    poly(top, "#94a19a");
+    poly(top, office ? "#a7aa9b" : "#94a19a");
     line(base[0]!, base[1]!, "#192f3a", 2);
     line(base[1]!, base[2]!, "#192f3a", 2);
     return;
@@ -1941,8 +1957,9 @@ export function createComposedEnvironment(
     project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
   );
   const materialised =
-    ["intersection", "alley", "warehouse", "garage"].includes(arena.environment!.recipe) &&
-    tiles !== undefined;
+    ["intersection", "alley", "warehouse", "garage", "office"].includes(
+      arena.environment!.recipe,
+    ) && tiles !== undefined;
   const resolution = materialised
     ? Math.max(1, Math.min(MATERIAL_SUPERSAMPLE, MAX_TEXTURE_PIXELS / Math.max(gw, gh)))
     : 1;
@@ -2010,6 +2027,7 @@ export function createComposedEnvironment(
   const lights = night
     ? [
         ...industrialLights(env),
+        ...officeLights(env),
         ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
         ...returnLights(returns?.faces ?? [], night),
         ...fixtureLights(env),
@@ -2429,25 +2447,26 @@ export function createComposedEnvironment(
     lit.push(image);
     return image;
   };
-  for (const light of industrialLights(env)) {
+  for (const light of [...industrialLights(env), ...officeLights(env)]) {
+    const paintFixture = env.recipe === "office" ? paintOfficeFixture : paintIndustrialFixture;
     const p = project(light.centre);
     const lift = light.sourceZ! * metre;
     const fixture = add(
       light.id,
-      (ctx) => paintIndustrialFixture(ctx, project, metre, light),
+      (ctx) => paintFixture(ctx, project, metre, light),
       p.y + 0.4,
       { x: p.x - metre * 1.8, y: p.y - lift - metre, width: metre * 3.6, height: metre * 2 },
       2,
-      (ctx) => paintIndustrialFixture(ctx, project, metre, light, true),
+      (ctx) => paintFixture(ctx, project, metre, light, true),
     );
     // Hanging fixtures sort above their ground position without acting as cover.
     fixture
       ?.setData("groundY", p.y)
       .setData("sortRect", {
         x: light.centre.x - 0.65,
-        y: light.centre.y - 0.09,
+        y: light.centre.y - (env.recipe === "office" ? 0.25 : 0.09),
         width: 1.3,
-        height: 0.18,
+        height: env.recipe === "office" ? 0.5 : 0.18,
       })
       .setData("elevation", { bottom: light.sourceZ! - 0.1, top: light.sourceZ! + 0.48 });
   }
@@ -2626,6 +2645,7 @@ export function createComposedEnvironment(
             detailOf(structure),
             architecture,
             returns,
+            env.recipe === "office",
           ),
         depth,
         bounds,
