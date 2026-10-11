@@ -144,7 +144,7 @@ The plan, in phases:
 
 ---
 
-## In progress: shopping as discovery
+## Shipped: shopping as discovery
 
 The plan is `docs/shopping-discovery.md`: four passes from honest shelves to strange
 gear the engine can keep its word about, then a store UI overhaul.
@@ -172,15 +172,40 @@ gear the engine can keep its word about, then a store UI overhaul.
   word of mouth. One hold citywide with a 20% deposit for a week. Try a gun on the range at
   Toggle's, the Quartermaster, Hachiman Arms and the Armory. The Sell tab says where each
   thing came from and what it has been through.
-- **The Counter (store UI, part 1, shipped).** The shop opens inline in Life's main column
+- **The Counter (store UI, shipped).** The shop opens inline in Life's main column
   over the place's own painting: this week's finds as cards, the shop's line, the back room,
-  the shelves, selling across the counter, and an item opened in place with what it does
-  set apart from what it is. Part 2 is the item art (`docs/art-style.md`, "the Counter's
-  item pictures").
-- **Then:** the ripperdoc in the same shell, if the Counter holds up in play.
-- **Was next:** Levi's store UI overhaul. Still open from the plan: the Watch, Pass, Reveal and
-  Shield capabilities (each needs an engine lever first), repair and restoration terms, and
-  a narrator eval of the finds' packet line.
+  the shelves, and Buy/Sell tabs. An item opens in a dialog that separates what it does
+  from what it is. Each of the 22 categories has a picture, and an item with its own
+  catalog art shows that instead (`itemArt.ts`). A sold-out line shows when it restocks.
+- **The story opens the shop (shipped).** The Life narrator is told who sells where the
+  character stands, by name and kind, never stock. It proposes `browse` when the player
+  asks what is for sale. `browseIntent.ts` picks the seller, or a trip to the named or
+  nearest shop first, and the screen opens the Counter on the `shop_browsed` row. One
+  switch (`ModeSwitch`) moves between the Counter and the scene, and the Counter's talk
+  box sends an ordinary Life turn. Eval: 10 of 10 runs opened the counter, and 1 in 10
+  slipped a scenery word.
+- **People behind the counters (shipped, pictures pending).** Every place seller has a
+  keeper with a name, a line, and a two-paragraph scene. There is a greeting that knows
+  whether you are a regular. A collapsible "Your dealings" row holds the hold, the word
+  from sellers and what you asked them to look out for. The 26 portrait prompts are in
+  `docs/art-style.md`. Until a slug is listed in `KEEPER_ART_READY`, the face is the
+  keeper's initials.
+- **Haggling as a scene (shipped).** It is the printed Haggle, rolled with the game's own
+  dice: you roll yours, then turn theirs over. It is recorded on the first die, so
+  closing the scene cannot buy a retry. Each keeper warms to one of three pitches (+2),
+  is put off by another (−2) and shrugs at the third. Human Perception 4 reads which
+  pitch they warm to, and 6 reads both.
+- **The narrator hears the till (shipped).** Purchases, sales, haggles and holds since
+  the narrator last spoke reach the next Life turn as `counterNews` lines: who and what,
+  never a price. They are capped by `PACKET_BUDGET.counter`. Not run: a paid eval of
+  keeper names and counter news (prompt 2.25.0).
+- **Next:**
+  - convert the 26 keeper portraits and list them;
+  - put the ripperdoc in the same shell, if the Counter holds up in play.
+  Still open from the plan:
+  - the Watch, Pass, Reveal and Shield capabilities (each needs an engine lever first);
+  - repair and restoration terms;
+  - a narrator eval of the finds' packet line.
 
 ## Also shipped: the Tomorrow Test
 
