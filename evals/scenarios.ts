@@ -20,6 +20,7 @@ import {
   placeActions,
   reachableDestinations,
   resolvePosition,
+  shopsAt,
 } from "@/engine";
 import {
   buildGmContext,
@@ -929,6 +930,74 @@ SCENARIOS.push(
       squaresUp: true,
       strangerUnheard: true,
       wordBudget: 260,
+    },
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Shopping
+//
+// The transcript: at Ganymede Street Market, "just browsing, what do you
+// have?" was answered with a stall of re-flashed Kiroshi modules and smartlink
+// converters the shelf never carried and nobody could buy. The counter is the
+// answer: propose browse, greet, and stock nothing.
+// ---------------------------------------------------------------------------
+
+const MARKET = "o3";
+
+/** The market as play shows it, with its sellers line. */
+const atMarket: LifeContext = {
+  ...quietEvening,
+  place: {
+    ...placeAt(MARKET),
+    sellers: shopsAt(MARKET).map((v) => `${v.label} (deals in ${v.deals.join(", ")})`),
+  },
+  recentEvents: [
+    "The vendor taps a yellowed fingernail on a diagnostic multimeter. 'Looking to scrap, build, or just browsing the bench?'",
+  ],
+};
+
+/** Words that would mean the narrator put goods on a shelf it was never shown. */
+const STOCK_TELLS = [
+  "kiroshi",
+  "smartlink",
+  "optical",
+  "cyberdeck",
+  "harness",
+  "for sale:",
+  "under the glass",
+  "eb each",
+];
+
+SCENARIOS.push(
+  {
+    id: "life-browses-the-stall",
+    narrator: "life",
+    about: '"what do you have?" at a stall opens the counter instead of inventing stock',
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(atMarket, "just browsing, what do you have?"),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      opensCounter: { stockTells: STOCK_TELLS },
+    },
+  },
+  {
+    id: "life-wants-to-buy",
+    narrator: "life",
+    about: '"I want to buy a jacket" at a stall opens the counter too',
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(atMarket, "I need a decent armored jacket. What can you sell me?"),
+    expect: {
+      optionsRequested: false,
+      knownNpcKeys: [],
+      withheldTruths: [],
+      mustStayQuiet: false,
+      riskyIntent: false,
+      opensCounter: { stockTells: STOCK_TELLS },
     },
   },
 );

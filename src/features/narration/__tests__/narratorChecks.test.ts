@@ -7,6 +7,7 @@ import {
   endsOnTheWorld,
   finishesTheRequest,
   goesWhereAsked,
+  opensTheCounter,
   knownNpcKeysOnly,
   namesNoWayIn,
   noUnsourcedNumber,
@@ -611,5 +612,22 @@ describe("unheardStaysUnheard", () => {
 
   it("does not apply when the die said they had heard", () => {
     expect(unheardStaysUnheard.applies?.(ctx({}))).toBe(false);
+  });
+});
+
+describe("shopping: the counter, not a stall the narrator made up", () => {
+  const asked = ctx({ opensCounter: { stockTells: ["Kiroshi", "smartlink"] } });
+
+  it("passes a turn that opens the counter and only greets", () => {
+    const greets = turn({ browses: true, narration: "The old man looks up from his rag." });
+    expect(opensTheCounter.run(greets, asked)).toEqual([]);
+  });
+
+  it("catches the transcript: a stall of invented optics and no counter", () => {
+    const invents = turn({
+      narration: "Re-flashed Kiroshi modules and three smartlink converters sit under the glass.",
+    });
+    const quotes = opensTheCounter.run(invents, asked).map((f) => f.quote);
+    expect(quotes).toEqual(["no browse", "Kiroshi", "smartlink"]);
   });
 });

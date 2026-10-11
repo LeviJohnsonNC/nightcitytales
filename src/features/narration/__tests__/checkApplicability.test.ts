@@ -60,6 +60,7 @@ describe("check applicability", () => {
       "quiet-stays-quiet": { mustStayQuiet: true },
       "offers-the-wire": { wireJob: true },
       "goes-where-asked": { tripToKind: "bar" },
+      "opens-the-counter": { opensCounter: { stockTells: ["kiroshi"] } },
       "comes-over-on-cue": { comesOver: "Kiro Tanaka" },
     };
     for (const [id, over] of Object.entries(asks)) {

@@ -89,6 +89,8 @@ export type CheckableTurn = {
   offersWork?: boolean;
   /** How many Facedowns it proposed. */
   facedowns?: number;
+  /** True when it asked the engine to open a seller's counter. Life only. */
+  browses?: boolean;
 };
 
 /** What the model was given, and what the scenario says about this turn. */
@@ -155,6 +157,12 @@ export type CheckContext = {
   resolved?: { skillId: string; contradicts: string[] };
   /** A WORK ON THE WIRE block is in the packet: the job must be offered this turn. */
   wireJob?: boolean;
+  /**
+   * The player asked to see what a seller has. The counter is the answer, so
+   * the turn must propose `browse` — and the scenario's `stockTells` are words
+   * that would mean the narrator stocked the shelf itself.
+   */
+  opensCounter?: { stockTells: string[] };
 };
 
 export type Check = {
@@ -685,6 +693,34 @@ export const goesWhereAsked: Check = {
 };
 
 /**
+ * Asked what a seller has, it opened the counter instead of inventing one.
+ *
+ * Two findings in one rule because they are one failure: a narrator that does
+ * not hand the shelf to the engine fills it with goods nobody can buy.
+ */
+export const opensTheCounter: Check = {
+  id: "opens-the-counter",
+  applies: (ctx) => ctx.opensCounter !== undefined,
+  title: "opened the seller's counter and stocked nothing itself",
+  source:
+    'Life prompt: "Never list goods, brands or prices in your prose: you are not shown the shelf."',
+  run(turn, ctx) {
+    const asked = ctx.opensCounter;
+    if (!asked) return [];
+    const findings: Finding[] = [];
+    if (!turn.browses)
+      findings.push({ quote: "no browse", note: "the player asked to see the stock" });
+    const prose = turn.narration.toLowerCase();
+    for (const tell of asked.stockTells) {
+      if (prose.includes(tell.toLowerCase())) {
+        findings.push({ quote: tell, note: "named stock the narrator was never shown" });
+      }
+    }
+    return findings;
+  },
+};
+
+/**
  * With the first half resolved, it did the second half too.
  *
  * Scenario-driven: only the scenario knows what "sat down and ordered" looks
@@ -903,6 +939,7 @@ export const ALL_CHECKS: Check[] = [
   standoffIsAFacedown,
   unheardStaysUnheard,
   goesWhereAsked,
+  opensTheCounter,
   finishesTheRequest,
   staysPutOnRefusal,
   directionsAreReal,
