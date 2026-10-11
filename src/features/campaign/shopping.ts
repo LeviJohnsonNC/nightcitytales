@@ -22,6 +22,9 @@ import {
   getVendor,
   haggledPrice,
   hagglePercent,
+  HAGGLE_APPROACHES,
+  hagglePitchModifier,
+  type RNG,
   hasFlag,
   looksLikeGadget,
   newSinceLastVisit,
@@ -842,8 +845,7 @@ export type HaggleOutcome = {
  * The check is rolled here and the result is written to the ledger win or lose,
  * because a failed argument is a thing that happened.
  */
-export async function haggle(input: {
-  campaignId: string;
+export type HaggleInput = {
   vendorId: string;
   /** Built by the caller, which is the layer that knows the live sheet. */
   actor: SkillCheckActor;
@@ -852,8 +854,25 @@ export async function haggle(input: {
   operatorRank: number;
   /** Role and situational modifiers the caller has already worked out. */
   modifiers?: { label: string; value: number }[];
-}): Promise<HaggleOutcome> {
+  /** How the pitch was put (`HAGGLE_APPROACHES`); the seller's lean prices it. */
+  approachId?: string;
+};
+
+/**
+ * Roll the printed Haggle: the character's Trading against the seller's
+ * Trading plus COOL, with what the pitch is worth to this seller on top.
+ *
+ * Pure, so the screen can roll it the way every other check is rolled, die in
+ * hand, and only then record it. Nothing is written here; `recordHaggle` does.
+ */
+export function rollHaggle(input: HaggleInput, rng?: RNG): HaggleOutcome {
   const vendor = getVendor(input.vendorId);
+  const pitch = input.approachId ? hagglePitchModifier(vendor, input.approachId) : 0;
+  const approach = HAGGLE_APPROACHES.find((a) => a.id === input.approachId);
+  const modifiers = [
+    ...(input.modifiers ?? []),
+    ...(approach && pitch !== 0 ? [{ label: approach.label, value: pitch }] : []),
+  ];
   const result = opposedCheckForCharacter(
     input.actor,
     "trading",
@@ -863,28 +882,49 @@ export async function haggle(input: {
       skillLevel: vendor.haggle.trading,
       statValue: vendor.haggle.cool,
     },
-    undefined,
-    {
-      actorName: input.actorName,
-      ...(input.modifiers?.length ? { modifiers: input.modifiers } : {}),
-    },
+    rng,
+    { actorName: input.actorName, ...(modifiers.length ? { modifiers } : {}) },
   );
   const percent = hagglePercent({ isFixer: input.isFixer, operatorRank: input.operatorRank });
+  return { result, won: result.success, percent };
+}
+
+/** Write a haggle already rolled: the once-a-visit receipt the shop reads back. */
+export async function recordHaggle(input: {
+  campaignId: string;
+  vendorId: string;
+  outcome: HaggleOutcome;
+  approachId?: string;
+}): Promise<void> {
+  const vendor = getVendor(input.vendorId);
+  const { result, won, percent } = input.outcome;
   await appendCampaignEvent({
     campaign_id: input.campaignId,
     type: HAGGLE_EVENT,
-    summary: result.success
+    summary: won
       ? `Talked ${vendor.label.toLowerCase()} down ${percent}%.`
       : `${vendor.label} would not move on the price.`,
     data: {
       vendorId: vendor.id,
-      won: result.success,
-      percent: result.success ? percent : 0,
+      won,
+      percent: won ? percent : 0,
       actorTotal: result.actor.total,
       opponentTotal: result.opponent.total,
+      ...(input.approachId ? { approachId: input.approachId } : {}),
     } as unknown as Json,
   });
-  return { result, won: result.success, percent };
+}
+
+/** Roll and record in one step, for callers with no die to show. */
+export async function haggle(input: HaggleInput & { campaignId: string }): Promise<HaggleOutcome> {
+  const outcome = rollHaggle(input);
+  await recordHaggle({
+    campaignId: input.campaignId,
+    vendorId: input.vendorId,
+    outcome,
+    ...(input.approachId ? { approachId: input.approachId } : {}),
+  });
+  return outcome;
 }
 
 /**

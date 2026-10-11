@@ -19,7 +19,12 @@ import {
   shopsAt,
   shopStock,
   type Hold,
+  HAGGLE_PITCH_MODIFIER,
+  haggleRead,
+  opposedPercent,
+  type SkillCheckActor,
 } from "@/engine";
+import { rollHaggle } from "@/features/campaign/shopping";
 import type { StockedItem } from "@/features/campaign/shopping";
 import { CounterView } from "@/features/life/shop/CounterView";
 import { placeImage, placeThumb } from "@/features/life/shop/ShopView";
@@ -27,6 +32,12 @@ import type { HaggleScene, ShopController, ShopMessage } from "@/features/life/u
 import type { CampaignInventoryItem } from "@/lib/backend";
 
 const SEED = "shop-review";
+
+/** A made-up sheet for the review's haggle: COOL 5, Trading 4 (base 9). */
+const REVIEW_ACTOR: SkillCheckActor = {
+  stats: { cool: 5 },
+  skills: [{ skillId: "trading", level: 4 }],
+};
 const DAY = 9;
 
 function query(): URLSearchParams {
@@ -130,16 +141,45 @@ export function ShopReview() {
     hagglePercent: 5,
     haggleSpent: haggleDone !== null,
     haggleDiscount: 0,
-    haggle: () =>
-      setHaggleDone({
+    // The real roll, on the review's own made-up sheet: Trading 4, COOL 5.
+    rollHaggle: (approachId: string) => {
+      const outcome = rollHaggle({
         vendorId: vendor.id,
-        won: true,
-        percent: 5,
-        tie: false,
-        yours: { total: 17, die: 8, formula: "1d10(8) + COOL(5) + Trading(4) = 17" },
-        theirs: { total: 12, die: 4, formula: "1d10(4) + COOL(4) + Trading(4) = 12" },
-      }),
-    haggleOdds: 58,
+        actor: REVIEW_ACTOR,
+        actorName: "You",
+        isFixer: false,
+        operatorRank: 0,
+        approachId,
+      });
+      const side = (r: typeof outcome.result.actor) => ({
+        total: r.total,
+        rolls: r.rolls,
+        critical: r.critical,
+        formula: r.formula,
+        modifiers: r.modifiers,
+      });
+      const scene: HaggleScene = {
+        vendorId: vendor.id,
+        approachId,
+        won: outcome.won,
+        percent: outcome.percent,
+        tie: outcome.result.tie,
+        margin: outcome.result.margin,
+        yours: side(outcome.result.actor),
+        theirs: side(outcome.result.opponent),
+      };
+      setHaggleDone(scene);
+      return scene;
+    },
+    haggleSetup: {
+      base: 9,
+      against: vendor.haggle.cool + vendor.haggle.trading,
+      pitch: HAGGLE_PITCH_MODIFIER,
+      readSkill: "Human Perception",
+      readLevel: known ? 6 : 2,
+      ...haggleRead(vendor, known ? 6 : 2),
+    },
+    haggleOdds: opposedPercent(9, vendor.haggle.cool + vendor.haggle.trading),
     lastHaggle: haggleDone,
     keeper: vendor.keeper ? { ...vendor.keeper, image: null } : null,
     operatorRank: 0,

@@ -158,7 +158,13 @@ export type Vendor = {
   keeper?: ShopKeeper;
 };
 
-export type ShopKeeper = { name: string; who: string };
+export type ShopKeeper = {
+  name: string;
+  who: string;
+  /** The pitch they warm to and the one that puts them off (`HAGGLE_APPROACHES` ids). */
+  warms?: string;
+  cools?: string;
+};
 
 export const VENDORS: Vendor[] = [
   {
@@ -298,6 +304,56 @@ function atPlace(shop: PlaceShop): Vendor {
 export type HaggleApproach = { id: string; label: string; line: string };
 
 export const HAGGLE_APPROACHES: HaggleApproach[] = placeShops.haggle.approaches;
+
+/** How much a pitch a keeper warms to is worth on the roll, and costs when it puts them off. */
+export const HAGGLE_PITCH_MODIFIER: number = placeShops.haggle.modifier;
+
+/** Which pitch a seller warms to and which puts them off. The fixer's is the house rule's. */
+export function haggleLean(vendor: Vendor): { warms: string; cools: string } {
+  const lean =
+    vendor.keeper?.warms && vendor.keeper.cools ? vendor.keeper : placeShops.haggle.fixer;
+  return { warms: lean.warms!, cools: lean.cools! };
+}
+
+/**
+ * What a pitch adds to the haggle roll at this seller: + the house modifier for
+ * the one they warm to, − it for the one that puts them off, 0 otherwise. An
+ * unknown pitch is refused rather than read as neutral, so the number on the
+ * roll can only ever be one the data allows.
+ */
+export function hagglePitchModifier(vendor: Vendor, approachId: string): number {
+  if (!HAGGLE_APPROACHES.some((a) => a.id === approachId)) {
+    throw new Error(`No haggle pitch "${approachId}".`);
+  }
+  const lean = haggleLean(vendor);
+  if (approachId === lean.warms) return HAGGLE_PITCH_MODIFIER;
+  if (approachId === lean.cools) return -HAGGLE_PITCH_MODIFIER;
+  return 0;
+}
+
+/** The Skill that reads a seller before you pitch, and the Levels that read one lean or both. */
+export const HAGGLE_READ: { skill: string; one: number; all: number } = placeShops.haggle.read;
+
+/**
+ * What the character can tell about a seller before pitching: nothing, the
+ * pitch they warm to, or both leans. Read off the character's Level in the
+ * reading Skill, so it is a thing their sheet earns.
+ */
+export function haggleRead(
+  vendor: Vendor,
+  readLevel: number,
+): { warms: string | null; cools: string | null } {
+  const lean = haggleLean(vendor);
+  return {
+    warms: readLevel >= HAGGLE_READ.one ? lean.warms : null,
+    cools: readLevel >= HAGGLE_READ.all ? lean.cools : null,
+  };
+}
+
+/** The line a read shows on a pitch, in the keeper's name. */
+export function haggleHint(kind: "warms" | "cools", name: string): string {
+  return placeShops.haggle.hints[kind].replaceAll("{name}", name);
+}
 
 /**
  * What the seller says back, chosen by the dice already rolled and a seed, so
