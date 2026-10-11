@@ -19,10 +19,15 @@ export function MobileStatusBar({
   title,
   chips,
   children,
+  open,
+  onOpenChange,
 }: {
   title: string;
   chips: StatChip[];
   children: ReactNode;
+  /** Controlled, for a screen that must close it (a dock tile that changes the view). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   // The desktop has the player in the campaign header; this bar is the phone's.
   const desktop = useMinWidth(DESKTOP_PX);
@@ -31,7 +36,7 @@ export function MobileStatusBar({
       className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur lg:hidden"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <Sheet>
+      <Sheet {...(open !== undefined ? { open } : {})} {...(onOpenChange ? { onOpenChange } : {})}>
         <div className="flex items-center">
           <SheetTrigger asChild>
             <button

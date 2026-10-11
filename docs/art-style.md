@@ -49,6 +49,16 @@ and `{place}` with the place.
 Painterly cyberpunk environment backdrop for a game UI, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human, and lived-in. This image is shown large, behind interface text, and will be cropped to a wide strip, so keep every important detail inside the middle horizontal band of the frame and let the top and bottom edges stay quiet. There are no people or figures anywhere in the scene: the place itself is the subject, and it should feel like somebody just left or is about to arrive. Keep the {calm} of the frame calmer, a little darker and low in detail so text laid over it stays readable, and put the visual interest on the other side. Use cinematic lighting with soft neon bloom, screen and signage glow, wet surfaces, reflective metal and atmospheric haze, with a clear mood but without crushed blacks or muddy contrast. Favor an intimate, eye-level view of one specific place over a huge establishing shot unless the place asked for is the skyline itself. The overall tone should feel dangerous, intimate, human, and grounded rather than exaggerated or overly flashy. No text, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Landscape format. Place: {place}
 ```
 
+## Object wrapper
+
+For pictures of single items on the shop's counter (`public/images/items`). Replace
+`[fill in]` with the item. Square, because the Counter shows them square on a phone
+and as a wide 16:10 crop on a desktop: keep the whole object inside the middle band.
+
+```text
+Painterly cyberpunk item illustration for a game shop UI, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not a product photo, not anime cel shading. High-end cinematic concept art quality, late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, grounded, used and lived-in. A single object is the whole subject, shown as if it has just been set down on a scuffed shop counter or workbench, three-quarter view from slightly above, filling the middle of the frame with a little breathing room on every side. Keep the entire object inside the middle horizontal band of the frame, because the image will also be cropped to a wide strip. The background is a dark, softly out-of-focus shop interior with one or two coloured neon glows (magenta, violet or cyan) and a warm work light on the object, so its silhouette reads instantly at thumbnail size. Show wear, repairs, tape, scratches and stickers where they make sense: this thing has had owners. No hands, no people, no text, no readable labels, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Square format. Item: [fill in]
+```
+
 ## Requested images
 
 Each prompt below is complete. Copy one block, paste it, and save the result
@@ -91,6 +101,41 @@ Painterly cyberpunk environment backdrop for a game UI, rendered as a digital oi
 ```text
 Painterly cyberpunk environment backdrop for a game UI, rendered as a digital oil painting with visible brush texture and a matte-painting finish. Not photorealistic, not a 3D render, not anime cel shading. High-end cinematic concept art quality, with the spirit of late-1980s and 1990s cyberpunk and Blade Runner-style neon noir, but grounded, human, and lived-in. This image is shown large, behind interface text, and will be cropped to a wide strip, so keep every important detail inside the middle horizontal band of the frame and let the top and bottom edges stay quiet. There are no people or figures anywhere in the scene: the place itself is the subject, and it should feel like somebody just left or is about to arrive. Keep the left third of the frame calmer, a little darker and low in detail so text laid over it stays readable, and put the visual interest on the other side. Use cinematic lighting with soft neon bloom, screen and signage glow, wet surfaces, reflective metal and atmospheric haze, with a clear mood but without crushed blacks or muddy contrast. Favor an intimate, eye-level view of one specific place over a huge establishing shot unless the place asked for is the skyline itself. The overall tone should feel dangerous, intimate, human, and grounded rather than exaggerated or overly flashy. No text, no readable signage, no logos, no watermarks, no captions, no collage. DO NOT let previous images influence the composition of this one. Landscape format. Place: A cramped noodle-bar privacy booth: steam rising from a half-eaten bowl on the far side of the table, paper lanterns, a wall of small screens scrolling data, rain on the window beside the booth. Busy, bright, fast.
 ```
+
+### Must-have: the Counter's item pictures
+
+Twenty-two square images for the shop (`features/life/shop/itemArt.ts`). Use the
+**Object wrapper**. Save each as `<name>.png`, put them in `public/images/items/`, and
+run `node tools/art/webp.mjs public/images/items`; then add the name to
+`ITEM_ART_READY` in `itemArt.ts`. Until a picture lands the Counter draws an icon.
+
+**Finds** (one per base object in `src/data/rules/gadgets.json`):
+
+- `find-sound_puck.png`: a coin-sized black speaker puck with an adhesive back, a tiny mesh grille and one blinking LED, beside its small matching key-fob remote; a strip of tape on the side with something scribbled on it.
+- `find-hush_wrap.png`: a fat roll of dense grey acoustic foam tape, half unrolled, wound once around the jaws of a pair of pliers to show what it is for.
+- `find-foam_cutters.png`: heavy bolt cutters whose jaws are packed in thick black rubber and foam sleeves, a snipped length of chain lying beside them.
+- `find-gel_tube.png`: a small squeezed aluminium tube of clear silicone gel with a long thin nozzle, a bead of gel glistening on a brass door hinge next to it.
+- `find-relay_clip.png`: a spring-loaded metal clip with a small servo and an antenna wire, clamped onto an old industrial toggle switch on a scrap of panel.
+- `find-timer_fuse.png`: a wind-up mechanical kitchen-style timer bolted to a little circuit board, with two crocodile-clip leads trailing off it.
+- `find-crawler.png`: a palm-sized tracked toy drone with a tiny grabber arm and a single camera eye, scuffed paint, a cartoon sticker half peeled off.
+- `find-pneumatic_driver.png`: a compact air-powered driver with a coiled orange air hose and a spread of hex bits beside it.
+- `find-tool_roll.png`: a worn canvas tool roll unfurled to show neatly slotted screwdrivers, picks, spudgers and a small torch, each in its own pocket.
+- `find-lock_gun.png`: a pistol-grip snap pick gun with a long thin needle and a thumb tension wheel, next to an old brass padlock.
+
+**Catalog categories** (one picture stands for every catalog item of that kind):
+
+- `pistol.png`: a heavy semi-automatic handgun, matte black with a worn grip, a spare magazine beside it.
+- `smg.png`: a compact submachine gun with a folding stock and a long box magazine.
+- `rifle.png`: a scoped assault rifle lying across the counter, worn paint at every edge it is held by.
+- `shotgun.png`: a pump-action combat shotgun with a short barrel and a few red shells loose beside it.
+- `heavy.png`: a shoulder-fired grenade launcher, bulky and olive-drab, a military inventory stencil half scraped off.
+- `exotic.png`: a strange prototype energy pistol with an exposed coil, glowing capacitor cells and cooling fins.
+- `melee.png`: a combat knife and a short heavy machete crossed on the counter, wrapped grips, nicked edges.
+- `armor-light.png`: a black armoured jacket with a high collar, folded over the counter, the weave of kevlar showing at a torn cuff.
+- `armor-heavy.png`: a heavy ballistic plate vest with ceramic plates and buckled straps, scarred by an old impact.
+- `shield.png`: a transparent riot-style bulletproof shield with a cracked spiderweb where a round stopped.
+- `ammo.png`: an open steel ammunition can spilling brass cartridges and a couple of loaded magazines.
+- `gear.png`: a jumble of everyday street kit: a phone-like Agent, a flashlight, a coil of rope and a roll of duct tape.
 
 ### Must-have: two wide scenes
 

@@ -6,7 +6,7 @@
  * there, that nothing makes a phone scroll sideways, and that what a screen
  * reader is told about it is true (an axe scan against WCAG 2 A and AA).
  *
- * Each of the four needs no account. The signed-in game does, and is not here.
+ * Each of the five needs no account. The signed-in game does, and is not here.
  */
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
@@ -16,6 +16,7 @@ const ROUTES = [
   { path: "/login", name: "sign in" },
   { path: "/style", name: "visual system" },
   { path: "/scene-review", name: "scene review" },
+  { path: "/shop-review", name: "shop review" },
 ] as const;
 
 /**

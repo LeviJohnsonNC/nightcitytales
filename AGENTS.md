@@ -342,6 +342,13 @@ A shop with `range: true` gives your odds per printed band (`rangeTrial`, off `s
 `checkPercent`). `itemRecord` says where a thing came from and what it has been through, from
 purchase, `life_action` and `attack` rows; it is computed, never stored.
 
+The shop is the Counter (`features/life/shop/`): opened from the dock, it replaces the
+scene in Life's main column (the input is hidden; "Talk to them" goes back). `CounterView`
+is presentational and reads everything off `useShop` (`ShopController`); `shopViewModel.ts`
+lays the shelf out (counter, line, back room, shelves) and words each row's stock. Item
+pictures come from `itemArt.ts` and are drawn only once listed in `ITEM_ART_READY`;
+`/shop-review` renders the shipping view from fixtures for screenshots and the browser test.
+
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
 `tools/atlas/tag_places.py`'s `HOUSE_RULE_TAGS` and each with a dossier in
@@ -601,6 +608,7 @@ Public routes:
 - `/login`
 - `/style`
 - `/scene-review` — static composition/targeting review; no auth data or campaign writes
+- `/shop-review` — the shop's Counter from fixtures; no auth data or campaign writes
 - `/api/generate-portrait` (server HTTP route)
 
 Routes under `src/routes/_authenticated/` require a Supabase user session:
