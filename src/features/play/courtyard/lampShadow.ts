@@ -38,6 +38,10 @@ export const CASTER_HEIGHT: Record<string, { height: number; wreck: number; inse
     inset: { x: 0.12, y: 0.2, width: 1.88, height: 1.6 },
   },
   "sedan-cabin": { height: 1.45, wreck: 0.55, inset: { x: 0, y: 0.2, width: 1.86, height: 1.6 } },
+  shelf: { height: 1.9, wreck: 0.28, inset: { x: 0.1, y: 0.2, width: 1.8, height: 1.5 } },
+  stock: { height: 0.8, wreck: 0.22 },
+  cabinet: { height: 1.55, wreck: 0.28 },
+  reception: { height: 1.05, wreck: 0.28 },
   planter: { height: 0.95, wreck: 0.35 },
   // the cabinet is 0.9 m deep (`CABINET`): local y 0.4-1.3
   mailboxes: { height: 1.52, wreck: 0.5, inset: { x: 0.12, y: 0.4, width: 1.76, height: 0.9 } },

@@ -1,33 +1,28 @@
-# Active service alley pass — 2026-10-11
+# Active warehouse material pass — 2026-10-11
 
-User approved one alley pass, then in-app review before warehouse. Intersection PR359 merged;
-user rates it B-ish and explicitly chose to move on. Do not work on warehouse yet.
+User approved warehouse after alley PR362 merged; one focused pass then in-app review.
 Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/service-alley-pass; base origin/main a0936a35 (PR361).
-Original dirty checkout untouched; previous final handoff preserved /tmp/nct359-merged-handoff.md.
+Branch codex/warehouse-material-pass; base origin/main 549417c2 (PR363).
+Original dirty checkout untouched. Prior final alley handoff /tmp/nct362-final-handoff.md.
 
-Implementation ready to commit/push: material/night/contact/reflection treatment enabled for alley;
-new recipe v7 turns low east frontage toward lane, preserves reference seeds1–3 and old snapshots;
-saved service surrounds choose one warm open workshop, cooler receiving doors; existing interior art.
-Receiving parts cabinet, drain cluster, concrete handling strips drier than exposed asphalt.
-Utility lamps and compact loading indicators replace intersection traffic/ad fixtures in alley.
-Relevant files: sceneComposer/sceneClusters, courtyard serviceFrontage, cityFixtures, afterRain,
-composedEnvironment, createCourtyard, frontageIdentity/occupiedFrontage/nightLighting; scene-review controls.
-New e2e/service-alley.spec.ts exercises seeds4/11/5 with save/restore, reveal, destruction, compact.
+Implementation fccc1d36 committed/pushed in draft PR364:
+https://github.com/LeviJohnsonNC/nightcitytales/pull/364
+Warehouse materials/contact shadows, room-clipped lighting, concrete floors and cutaway walls,
+material-bearing stocked racks and workbenches. Suspended lights use footprint/elevation sorting.
+No engine geometry or saved recipe changes. Warehouse dry; no outdoor rain/reflections applied.
 
-Baseline captures /tmp/nct-alley-before-captures: seed4play inspected; old baseline lacks lighting
-controls so first browser run failed that assertion; harness now tolerates absent baseline controls.
-First implementation exposed missing cluster reference/duplicate attachment IDs; fixed. 64 seeds compose.
-Full suite second run 4278pass/2fail: outdated surround-ID lookup and road-repair assumption; corrected.
-First visual seed11 inspected: significant material improvement; lamp and cabinet corrections made.
-Final local verification: 4280tests/345files pass; lint0errors15existingwarnings;
-typecheck and production build pass. Chromium all3seeds pass (1.4min).
-Visually inspected seed4 play/reveal/destruction/compact, seed11play and rotatedseed5play.
-No detached rings or unexplained actor/prop intersections observed in these captures.
-Evidence: /Users/levijohnson/.codex/visualizations/2026/10/11/01a12b66-843f-7a70-86c1-77681c3d2c1f/service-alley-evidence.
-Next: push draftPR, waitCI (including matched alley baseline and intersection regression);
-then open local seed4 review. User reviews/merges; warehouse remains deferred.
-Fresh chat: read this handoff and use Levi's alley review feedback before any warehouse work.
+Local verification of fccc1d36: 4290 tests /346 files pass; typecheck/build pass;
+lint 0 errors /15 existing warnings. Final Chromium 3 seeds pass (1.1min).
+Inspected play seeds4/5/7, seed4 destroyed and compact. Initial brightness/grain reduced.
+No detached actor rings seen. No exterior Reveal control exists indoors; actor occlusion automatic.
+Baseline captures /tmp/nct-warehouse-before-captures; baseline harness corrected for absent reveal.
+Final evidence: /Users/levijohnson/.codex/visualizations/2026/10/11/01a12b66-843f-7a70-86c1-77681c3d2c1f/warehouse-evidence.
+
+Remote CI still running: matched warehouse, alley and intersection Chromium + main checks.
+Next: verify remote checks, open local /scene-review?place=warehouse&seed=4 for Levi.
+Review seeds4 (receiving/rack hall),5 (side office/loading),7 (cross-aisle stockrooms).
+User in-app review/merge remains the acceptance gate. Do not advance to another environment.
+Fresh chat: read this handoff, check PR364 and respond to Levi's warehouse visual feedback.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 

@@ -1,3 +1,4 @@
+import { fillMaterial, type MaterialSet } from "./surfaceMaterials";
 /** Small reusable furniture kit. Geometry is registered to one canonical 2m section. */
 import type Phaser from "phaser";
 import { propTexture, type PropKind, type PropCondition } from "./propPresentation";
@@ -46,6 +47,7 @@ export function createInteriorPropTextures(
   rotation: 0 | 90 = 0,
   /** The flat footprint shadow under the prop; off where the board draws contact shade. */
   bakedShadow = true,
+  materials?: MaterialSet,
 ) {
   for (const condition of ["intact", "damaged", "wrecked"] as PropCondition[]) {
     const height = PROP_CANVAS.height;
@@ -64,7 +66,7 @@ export function createInteriorPropTextures(
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = stroke;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = materials ? 0.7 : 2;
       ctx.stroke();
     };
     const slab = (
@@ -92,9 +94,39 @@ export function createInteriorPropTextures(
             ];
       const [a, b, c] = footprint.map(([u, v]) => point(u!, v!, bottom));
       const [A, B, C, D] = footprint.map(([u, v]) => point(u!, v!, top));
-      poly([a!, b!, B!, A!], colors[0]!);
-      poly([b!, c!, C!, B!], colors[1]!);
-      poly([A!, B!, C!, D!], colors[2]!);
+      const face = (
+        points: ReturnType<typeof point>[],
+        color: string,
+        width: number,
+        depth: number,
+      ) => {
+        poly(points, color);
+        if (!materials) return;
+        const origin = points[0]!,
+          u = points[1]!,
+          v = points[3]!;
+        fillMaterial(ctx, materials, points, {
+          key: "painted-metal",
+          target: color,
+          strength: 0.35,
+          basis: {
+            origin,
+            u: { x: (u.x - origin.x) / width, y: (u.y - origin.y) / width },
+            v: { x: (v.x - origin.x) / depth, y: (v.y - origin.y) / depth },
+          },
+        });
+        // A restrained worn edge gives the small parts thickness at play zoom.
+        ctx.strokeStyle = "rgba(203,208,184,.26)";
+        ctx.lineWidth = 0.65;
+        ctx.beginPath();
+        ctx.moveTo(points[2]!.x, points[2]!.y);
+        ctx.lineTo(points[3]!.x, points[3]!.y);
+        ctx.stroke();
+      };
+      const h = propHeightMetres(kind, top - bottom);
+      face([a!, b!, B!, A!], colors[0]!, rotation === 90 ? d : w, h);
+      face([b!, c!, C!, B!], colors[1]!, rotation === 90 ? w : d, h);
+      face([A!, B!, C!, D!], colors[2]!, rotation === 90 ? d : w, rotation === 90 ? w : d);
     };
     if (bakedShadow)
       poly(
@@ -162,6 +194,49 @@ export function createInteriorPropTextures(
     const metal = ["#4f626a", "#283c48", "#73878a"],
       wood = ["#766656", "#493f39", "#ac9270"],
       velvet = ["#624052", "#38293e", "#a56883"];
+    const carton = (
+      x: number,
+      y: number,
+      w: number,
+      d: number,
+      z: number,
+      h: number,
+      shade = wood,
+    ) => {
+      slab(x, y, w, d, z, z + h, shade);
+      // Packing tape on the lid, shipping labels on both visible orientations.
+      poly(
+        [
+          point(x + w * 0.43, y, z + h + 0.1),
+          point(x + w * 0.55, y, z + h + 0.1),
+          point(x + w * 0.55, y + d, z + h + 0.1),
+          point(x + w * 0.43, y + d, z + h + 0.1),
+        ],
+        "#ac9970",
+        "transparent",
+      );
+      const label = (side: "x" | "y", lo: number, hi: number) => {
+        const at = (t: number, height: number) =>
+          side === "x" ? point(x + t, y - 0.005, height) : point(x + w + 0.005, y + t, height);
+        poly(
+          [at(lo, z + h * 0.35), at(hi, z + h * 0.35), at(hi, z + h * 0.7), at(lo, z + h * 0.7)],
+          "#c4bea2",
+          "transparent",
+        );
+        for (let i = 0; i < 4; i++) {
+          const a = at(lo + (hi - lo) * (0.15 + i * 0.17), z + h * 0.41),
+            b = at(lo + (hi - lo) * (0.15 + i * 0.17), z + h * 0.63);
+          ctx.strokeStyle = "#515548";
+          ctx.lineWidth = 0.65;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      };
+      label("x", w * 0.2, w * 0.53);
+      label("y", d * 0.25, d * 0.63);
+    };
     if (kind === "sedan-engine" || kind === "sedan-cabin") {
       const engine = kind === "sedan-engine";
       const body = ["#74644b", "#493f32", "#a38c62"];
@@ -303,7 +378,8 @@ export function createInteriorPropTextures(
       for (let i = 0; i < 4; i++) {
         const x = 0.15 + (i % 2) * 0.85,
           y = 0.15 + Math.floor(i / 2) * 0.85;
-        slab(x, y, 0.75, 0.75, 0, 20 + (i % 3) * 10, wood);
+        if (materials) carton(x, y, 0.75, 0.75, 0, 20 + (i % 3) * 10);
+        else slab(x, y, 0.75, 0.75, 0, 20 + (i % 3) * 10, wood);
       }
     } else if (kind === "desk" || kind === "desk-reverse") {
       const deskSlab: typeof slab = (x, y, w, d, bottom, top, colors) =>
@@ -339,10 +415,55 @@ export function createInteriorPropTextures(
       slab(0, 0.55, 2, 0.9, 34, 40, wood);
       slab(0.7, 0.85, 0.45, 0.35, 40, 42, ["#adb8b9", "#73888d", "#d0d5ce"]);
     } else if (kind === "shelf") {
-      for (const x of [0.1, 1.8]) for (const y of [0.2, 1.6]) slab(x, y, 0.1, 0.1, 0, 94, metal);
-      for (const z of [12, 45, 78]) {
-        slab(0.1, 0.2, 1.8, 1.5, z, z + 3, metal);
-        for (let i = 0; i < 2; i++) slab(0.25 + i * 0.8, 0.45, 0.6, 1, z + 3, z + 23, wood);
+      if (materials) {
+        const upright = ["#526c70", "#2f474e", "#8f9e94"];
+        const beam = ["#997344", "#664a32", "#b89864"];
+        // Back uprights first; near uprights last, so boxes cannot erase them.
+        const posts = [
+          [0.1, 1.6],
+          [1.8, 1.6],
+          [0.1, 0.2],
+          [1.8, 0.2],
+        ];
+        const near = ([x, y]: number[]) => (rotation === 0 ? y! < 1 || x! > 1 : y! < 1 || x! < 1);
+        for (const p of posts.filter((p) => !near(p)))
+          slab(p[0]!, p[1]!, 0.09, 0.09, 0, 94, upright);
+        for (const [level, z] of [12, 45, 78].entries()) {
+          slab(0.1, 0.2, 1.8, 1.5, z, z + 3, beam);
+          if (level === 1) {
+            for (let i = 0; i < 3; i++) {
+              const x = 0.24 + i * 0.51;
+              slab(x, 0.48, 0.43, 0.88, z + 3, z + 18, ["#4d7776", "#315357", "#74918b"]);
+              slab(x + 0.07, 0.475, 0.24, 0.025, z + 8, z + 12, ["#b3b49a", "#8a937f", "#b3b49a"]);
+            }
+          } else {
+            carton(0.23, 0.39, 0.69, 1.08, z + 3, level === 0 ? 25 : 19);
+            carton(1.02, 0.59, 0.64, 0.8, z + 3, level === 0 ? 18 : 14, [
+              "#82735b",
+              "#594f40",
+              "#a89572",
+            ]);
+            if (level === 2) carton(1.08, 0.62, 0.48, 0.68, z + 17, 6);
+          }
+          // Beam and small bin label sit in front of the goods.
+          slab(0.13, 0.19, 1.74, 0.055, z, z + 3, beam);
+          slab(0.74, 0.185, 0.32, 0.009, z + 0.2, z + 2.6, ["#ccc4a0", "#ccc4a0", "#ccc4a0"]);
+        }
+        for (const p of posts.filter(near)) {
+          slab(p[0]!, p[1]!, 0.09, 0.09, 0, 94, upright);
+          slab(p[0]! - 0.02, p[1]! - 0.02, 0.14, 0.14, 0, 3, metal);
+          for (let z = 18; z < 94; z += 13) {
+            const a = point(p[0]! + 0.045, p[1]! - 0.008, z);
+            ctx.fillStyle = "#182c32";
+            ctx.fillRect(a.x - 0.5, a.y - 1, 1, 2);
+          }
+        }
+      } else {
+        for (const x of [0.1, 1.8]) for (const y of [0.2, 1.6]) slab(x, y, 0.1, 0.1, 0, 94, metal);
+        for (const z of [12, 45, 78]) {
+          slab(0.1, 0.2, 1.8, 1.5, z, z + 3, metal);
+          for (let i = 0; i < 2; i++) slab(0.25 + i * 0.8, 0.45, 0.6, 1, z + 3, z + 23, wood);
+        }
       }
     } else if (kind === "server" || kind === "partition") {
       const tall = kind === "partition" ? 65 : 92;
@@ -411,6 +532,20 @@ export function createInteriorPropTextures(
           ctx.stroke();
         }
         slab(0.3, 0.45, 0.6, 0.5, top, top + 8, metal);
+        if (materials) {
+          slab(1.2, 0.5, 0.5, 0.45, top, top + 12, ["#885640", "#503f36", "#b38458"]);
+          slab(1.29, 0.59, 0.28, 0.23, top + 12, top + 14, metal);
+          poly(
+            [
+              point(0.4, 1, top + 0.1),
+              point(0.9, 1, top + 0.1),
+              point(0.9, 1.35, top + 0.1),
+              point(0.4, 1.35, top + 0.1),
+            ],
+            "#bcb798",
+            "transparent",
+          );
+        }
       }
       if (kind === "bar")
         for (let i = 0; i < 3; i++)

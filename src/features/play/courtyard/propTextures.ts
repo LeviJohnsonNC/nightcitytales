@@ -1,3 +1,4 @@
+import type { MaterialSet } from "./surfaceMaterials";
 import { isInteriorProp, createInteriorPropTextures } from "./interiorPropArt";
 import type Phaser from "phaser";
 import type { PropKind, PropCondition } from "./propPresentation";
@@ -55,11 +56,12 @@ export function createPropTextures(
   kinds: PropKind[],
   /** False where the board draws each prop's contact shade (`contactShade.ts`). */
   bakedShadow = true,
+  materials?: MaterialSet,
 ) {
   for (const kind of kinds) {
     if (isInteriorProp(kind)) {
-      createInteriorPropTextures(scene, kind, 0, bakedShadow);
-      createInteriorPropTextures(scene, kind, 90, bakedShadow);
+      createInteriorPropTextures(scene, kind, 0, bakedShadow, materials);
+      createInteriorPropTextures(scene, kind, 90, bakedShadow, materials);
       continue;
     }
     const source = scene.textures
