@@ -9,6 +9,7 @@ import {
   gridExtent,
   pathTo,
   reachableTiles,
+  freeTileNear,
   snapToOpenTile,
   tileKey,
   tileOf,
@@ -60,6 +61,23 @@ describe("the battlemat lattice", () => {
     expect(
       blockedTiles({ ...arena, cover: [{ ...arena.cover![0]!, blocksMovement: false }] }, {}).size,
     ).toBe(0);
+  });
+  it("finds somebody arriving the nearest square that is open and nobody's", () => {
+    // On the crate: the nearest open square instead.
+    expect(freeTileNear(arena, {}, { x: 9, y: 9 }, new Set())).toEqual({ x: 9, y: 7 });
+    // That one taken: the next nearest, never a shared one.
+    const taken = new Set([tileKey(tileOf(arena, { x: 9, y: 7 }))]);
+    const next = freeTileNear(arena, {}, { x: 9, y: 9 }, taken)!;
+    expect(taken.has(tileKey(tileOf(arena, next)))).toBe(false);
+    expect(next.x % 2 === 1 && next.y % 2 === 1).toBe(true);
+    // Off the board, or between squares: onto the lattice.
+    expect(freeTileNear(arena, {}, { x: 0, y: 0 }, new Set())).toEqual({ x: 1, y: 1 });
+    // A board with every square taken has no room.
+    const all = new Set<string>();
+    const { cols, rows } = gridExtent(arena);
+    for (let col = 0; col < cols; col += 1)
+      for (let row = 0; row < rows; row += 1) all.add(tileKey({ col, row }));
+    expect(freeTileNear(arena, {}, { x: 5, y: 5 }, all)).toBeNull();
   });
   it("never leaves a body standing inside cover", () => {
     // The centre of the crate's own square is not somewhere to put anybody.
