@@ -126,7 +126,7 @@ function fracture(ctx: CanvasRenderingContext2D, project: Project, points: Point
         { x: b.x - ox, y: b.y - oy },
         { x: a.x - ox, y: a.y - oy },
       ].map(project),
-      "rgba(6,10,12,.65)",
+      "rgba(6,10,12,.28)",
     );
   }
 }

@@ -22,22 +22,22 @@ export type Rgb = readonly [number, number, number];
  * surface under the lamp's centre shows `ambient + intensity` of its painted colour.
  */
 export const INTERSECTION_NIGHT = {
-  ambient: [0.61, 0.65, 0.74] as Rgb,
+  ambient: [0.53, 0.57, 0.64] as Rgb,
   /**
    * Per-material multipliers over the ground, on top of the ambient: asphalt goes a
    * little deeper and cooler, paving a little warmer, so the two stop reading alike.
-   * Net of the slightly lighter ambient above, neither is darker than it was.
+   * Cool ambient recesses frame warm occupied frontages; overlays keep their own colours.
    */
   grade: {
-    asphalt: [0.83, 0.88, 0.96] as Rgb,
-    paving: [1, 0.97, 0.88] as Rgb,
+    asphalt: [0.86, 0.9, 0.95] as Rgb,
+    paving: [1, 0.96, 0.86] as Rgb,
   },
   /**
    * How far past the art's own colour a lit surface may go. A canvas stores light up
    * to 1, and painted asphalt is dark: at 1 a streetlight barely shows. The light
    * sprites are multiplied by this; the tint on people and props is capped at the art.
    */
-  gain: 2.15,
+  gain: 2.5,
   /** The saved streetlight beside the shop. Heights are presentation, not geometry. */
   lamp: {
     poleHeight: 5.6,
@@ -45,27 +45,27 @@ export const INTERSECTION_NIGHT = {
     arm: 1.5,
     color: [1, 0.8, 0.56] as Rgb,
     // Keep the shop pool local; windows and the entrance supply the warmer accents.
-    intensity: 0.75,
-    radius: 4.2,
+    intensity: 0.92,
+    radius: 5.8,
   },
   /** Spill from each lit shop window onto the pavement in front of it. */
-  window: { color: [1, 0.66, 0.36] as Rgb, intensity: 0.85, reach: 3.4, spread: 1 },
+  window: { color: [1, 0.66, 0.36] as Rgb, intensity: 1.08, reach: 5.8, spread: 0.85 },
   /** The downlight under the shutter housing. */
-  entrance: { color: [1, 0.74, 0.46] as Rgb, intensity: 0.75, radius: 2.4, out: 0.9 },
+  entrance: { color: [1, 0.74, 0.46] as Rgb, intensity: 0.95, radius: 2.8, out: 0.9 },
   /**
    * The secondary source: a few occupied homes (`litHomeWindows`). Dimmer and warmer
    * than the shop, so the shop stays the focal point: the room as lit through its
    * curtains, the glass's own faint glow, and the light on the sill and wall round it.
    */
-  home: { color: [1, 0.7, 0.42] as Rgb, room: 0.42, glass: 0.07, surround: 0.22 },
+  home: { color: [1, 0.7, 0.42] as Rgb, room: 0.34, glass: 0.055, surround: 0.18 },
   /**
    * The shop's display round the corner (`streetfront.ts`): its window spill, as a
    * share of the shopfront's, and the light its neon name throws on the render.
    */
-  returnDisplay: 0.75,
+  returnDisplay: 0.85,
   neon: [1, 0.36, 0.28] as Rgb,
   /** The scene's other saved lamps and signs, which keep their small drawings. */
-  streetLamp: { color: [1, 0.78, 0.5] as Rgb, intensity: 0.44, radius: 4.1 },
+  streetLamp: { color: [1, 0.78, 0.5] as Rgb, intensity: 0.64, radius: 4.6 },
   sign: { color: [0.32, 0.8, 0.78] as Rgb, intensity: 0.28, radius: 2.6 },
 } as const;
 export type NightLighting = typeof INTERSECTION_NIGHT;

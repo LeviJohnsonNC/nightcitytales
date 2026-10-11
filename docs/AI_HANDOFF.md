@@ -1,3 +1,11 @@
+## Active visual pass — 2026-10-11 UTC
+
+PR347 merged; isolated checkout `../city-block-ground-light`, branch
+`codex/painted-ground-light`, base main `eda4f4cf35b2963109ca322a6afdecc6a97acc01`.
+Read [checkpoint-painted-ground-light.md](checkpoint-painted-ground-light.md).
+Levi authorized ground + lighting together. Preserve recovery dirty work; never git push
+reconstructed history; GitHub tree/commit/ref publication only. Levi merges.
+
 # Night City Tales — painted streetscape
 
 Updated2026-10-09. Levi approved the broad streetscape pass after mergingPR330.
