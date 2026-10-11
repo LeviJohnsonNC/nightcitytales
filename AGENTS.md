@@ -358,6 +358,14 @@ A seller's `scene` (two short paragraphs in `place-shops.json`, no number in eit
 switch between the Counter and the scene, shown above both while a seller is underfoot, and
 the Counter's talk box sends an ordinary Life turn without leaving it. An item opens in a
 dialog (Escape or the X goes back to the counter, not out of the shop).
+Every place seller has a `keeper` (name and one line): the Counter shows their face
+(`shop/keeperArt.ts`, initials until a portrait is listed in `KEEPER_ART_READY`), the
+narrator's "Selling here" line names them, and the fixer is the campaign's own cast member.
+Haggling is a short scene (`HaggleScene.tsx`): three ways to pitch it and the seller's reply
+are presentation (`haggle` in `place-shops.json`); the roll is the printed Haggle either way,
+and the odds shown are `opposedPercent` over the same actor the roll uses. What was bought,
+sold or argued over since the narrator last spoke reaches the next Life turn as
+`counterNews` lines (who and what, never a price), capped by `PACKET_BUDGET.counter`.
 
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
