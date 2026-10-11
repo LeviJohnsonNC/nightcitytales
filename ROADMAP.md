@@ -37,7 +37,7 @@ stone reception surfaces and ceiling-panel lighting bounded to saved rooms.
 Office and garage visual reviews were approved by Levi.
 
 The nightclub pass adds dark dance-floor finishes, carpet lounge areas, warm bar
-materials and room-bounded magenta/cyan and amber lighting. Seeds4/5/8 are the
+materials and room-bounded magenta/cyan and amber lighting. Seeds4/5/6 are the
 next visual gate; approved room geometry and circulation remain frozen.
 
 Phase 1 implementation now includes three spatial layouts per recipe, reserved
