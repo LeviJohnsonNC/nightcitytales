@@ -1,33 +1,22 @@
-# Active service alley pass — 2026-10-11
+# Active warehouse material pass — 2026-10-11
 
-User approved one alley pass, then in-app review before warehouse. Intersection PR359 merged;
-user rates it B-ish and explicitly chose to move on. Do not work on warehouse yet.
+User approved warehouse after alley PR362 merged; one focused pass then in-app review.
 Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/service-alley-pass; base origin/main a0936a35 (PR361).
-Original dirty checkout untouched; previous final handoff preserved /tmp/nct359-merged-handoff.md.
+Branch codex/warehouse-material-pass; base origin/main 549417c2 (PR363).
+Original dirty checkout untouched. Prior final alley handoff /tmp/nct362-final-handoff.md.
 
-Implementation ready to commit/push: material/night/contact/reflection treatment enabled for alley;
-new recipe v7 turns low east frontage toward lane, preserves reference seeds1–3 and old snapshots;
-saved service surrounds choose one warm open workshop, cooler receiving doors; existing interior art.
-Receiving parts cabinet, drain cluster, concrete handling strips drier than exposed asphalt.
-Utility lamps and compact loading indicators replace intersection traffic/ad fixtures in alley.
-Relevant files: sceneComposer/sceneClusters, courtyard serviceFrontage, cityFixtures, afterRain,
-composedEnvironment, createCourtyard, frontageIdentity/occupiedFrontage/nightLighting; scene-review controls.
-New e2e/service-alley.spec.ts exercises seeds4/11/5 with save/restore, reveal, destruction, compact.
-
-Baseline captures /tmp/nct-alley-before-captures: seed4play inspected; old baseline lacks lighting
-controls so first browser run failed that assertion; harness now tolerates absent baseline controls.
-First implementation exposed missing cluster reference/duplicate attachment IDs; fixed. 64 seeds compose.
-Full suite second run 4278pass/2fail: outdated surround-ID lookup and road-repair assumption; corrected.
-First visual seed11 inspected: significant material improvement; lamp and cabinet corrections made.
-Final local verification: 4280tests/345files pass; lint0errors15existingwarnings;
-typecheck and production build pass. Chromium all3seeds pass (1.4min).
-Visually inspected seed4 play/reveal/destruction/compact, seed11play and rotatedseed5play.
-No detached rings or unexplained actor/prop intersections observed in these captures.
-Evidence: /Users/levijohnson/.codex/visualizations/2026/10/11/01a12b66-843f-7a70-86c1-77681c3d2c1f/service-alley-evidence.
-Next: push draftPR, waitCI (including matched alley baseline and intersection regression);
-then open local seed4 review. User reviews/merges; warehouse remains deferred.
-Fresh chat: read this handoff and use Levi's alley review feedback before any warehouse work.
+Local-only implementation ready for checkpoint: warehouse materials/contact shadows, room-clipped lighting,
+concrete floors and cutaway walls, material-bearing stocked racks and workbenches.
+No engine geometry or saved recipe changes. Warehouse dry; no outdoor rain/reflections applied.
+Baseline captures /tmp/nct-warehouse-before-captures (seed4 play inspected).
+Baseline browser run captured all3seeds but failed absent exterior-only Reveal button;
+warehouse harness now tolerates that control's absence (interiors use automatic occlusion).
+Local typecheck and 13 focused tests passed before final fixture sorting correction.
+Chromium 3 seeds passed; inspected all3 play images. Brightness/grain reduced after first captures.
+Fixture footprint/elevation now registered to shared sorter; needs final browser verification.
+Next: checkpoint draftPR, full tests/lint/typecheck/build and final captures.
+Review seeds4/5/7 cover distinct layouts. No exterior Reveal control exists indoors;
+actor occlusion remains automatic. User review/merge is the remaining acceptance gate.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 

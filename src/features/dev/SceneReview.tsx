@@ -282,7 +282,9 @@ export function SceneReview() {
             Room/access plan
           </label>
         )}
-        {["intersection", "alley"].includes(scene.layout.arena.environment?.recipe ?? "") && (
+        {["intersection", "alley", "warehouse"].includes(
+          scene.layout.arena.environment?.recipe ?? "",
+        ) && (
           <>
             <label>
               <input
@@ -302,20 +304,22 @@ export function SceneReview() {
               />
               Lights
             </label>
-            <label>
-              Reflections{" "}
-              <select
-                value={reflections}
-                disabled={structureOnly || !night || !lights}
-                onChange={(e) => setReflections(e.target.value as ReflectionMode)}
-              >
-                <option value="on">on</option>
-                <option value="pictures">pictures only</option>
-                <option value="glints">glints only</option>
-                <option value="hidden">hidden</option>
-                <option value="skip">not built</option>
-              </select>
-            </label>
+            {!scene.layout.arena.environment?.interior && (
+              <label>
+                Reflections{" "}
+                <select
+                  value={reflections}
+                  disabled={structureOnly || !night || !lights}
+                  onChange={(e) => setReflections(e.target.value as ReflectionMode)}
+                >
+                  <option value="on">on</option>
+                  <option value="pictures">pictures only</option>
+                  <option value="glints">glints only</option>
+                  <option value="hidden">hidden</option>
+                  <option value="skip">not built</option>
+                </select>
+              </label>
+            )}
           </>
         )}
         {!actors && (

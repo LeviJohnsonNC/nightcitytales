@@ -24,6 +24,10 @@ the crate atlas now has a calmer material finish, with matching painted workbenc
 art. Local play/reveal/destruction captures pass visual review; deployed playtesting
 remains the rollout gate.
 
+The warehouse material pass adds dry concrete, stocked steel racks, room-bounded
+industrial lighting and damage-aware contact/cast shadows to saved layouts.
+Seeds 4, 5 and 7 are the in-app review set; visual acceptance remains the next gate.
+
 Phase 1 implementation now includes three spatial layouts per recipe, reserved
 and validated exterior entrances, a character-free `/scene-review`, silhouette
 occlusion and permanent-wall targeting feedback. Six rendered examples and the

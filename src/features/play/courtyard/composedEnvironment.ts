@@ -1,3 +1,4 @@
+import { paintWarehouseFloor, warehouseLights, paintWarehouseFixture } from "./warehouseFinish";
 import { hasServiceFrontage } from "./serviceFrontage";
 import { marketReturnCanopies } from "./marketCanopy";
 import { architecturalCasters } from "./architecturalShadows";
@@ -177,7 +178,7 @@ function painter(ctx: CanvasRenderingContext2D, project: Project) {
       const q = project(p);
       return { x: q.x, y: q.y - z };
     });
-  const rect = (r: Rect, color: string, stroke?: string) => poly(corners(r), color, stroke);
+  const rect = (r: Rect, color: string | null, stroke?: string) => poly(corners(r), color, stroke);
   const line = (a: Point, b: Point, color: string, width = 1) => {
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
@@ -211,7 +212,11 @@ export function paintComposedGround(
   const textured =
     !env.interior && ["intersection", "alley"].includes(env.recipe) ? materials : undefined;
   const ground = groundBasis(project);
-  if (env.interior) rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
+  if (env.interior) {
+    rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
+    if (env.recipe === "warehouse" && materials)
+      paintWarehouseFloor(ctx, project, { x: 0, y: 0, ...arena.extent }, "corridor", materials);
+  }
   if (!env.interior) {
     const all = { x: -20, y: -20, width: 72, height: 72 };
     // Ground no zone claims (between a building and the walk) is old concrete hard
@@ -264,6 +269,10 @@ export function paintComposedGround(
   for (const z of env.zones) {
     if (z.kind === "aisle") continue;
     if (env.interior) {
+      if (env.recipe === "warehouse" && materials) {
+        paintWarehouseFloor(ctx, project, z.rect, z.kind, materials);
+        continue;
+      }
       const color = floors[z.kind] ?? "#3b464c";
       rect(z.rect, color, "#19262f");
       for (let x = z.rect.x; x < z.rect.x + z.rect.width; x += 2)
@@ -375,6 +384,9 @@ export function paintComposedGround(
       if (z.floorUse === "entry")
         for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "rgba(170,168,156,.35)", 1.2);
       else for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, colors[1]!, 1.2);
+    } else if (env.recipe === "warehouse" && materials) {
+      paintWarehouseFloor(ctx, project, z.rect, z.kind, materials);
+      rect(z.rect, null, colors[1]!);
     } else rect(z.rect, colors[0]!, colors[1]!);
     if (z.floorUse === "forecourt") {
       // A warm paved customer apron reads separately from the grey through-walk.
@@ -1103,8 +1115,35 @@ export function paintBuilding(
     return;
   }
   if (structure.style === "interior-wall") {
-    poly([base[0]!, base[1]!, top[1]!, top[0]!], "#687875", "#24353b");
-    poly([base[1]!, base[2]!, top[2]!, top[1]!], "#384951", "#24353b");
+    for (const [face, color, axis, at] of [
+      [[base[0]!, base[1]!, top[1]!, top[0]!], materials ? "#7c8178" : "#687875", "x", r.y],
+      [
+        [base[1]!, base[2]!, top[2]!, top[1]!],
+        materials ? "#505e61" : "#384951",
+        "y",
+        r.x + r.width,
+      ],
+    ] as const) {
+      if (
+        !fillMaterial(ctx, materials, face, {
+          key: "facade-concrete",
+          basis: wallBasis(project, axis, at, 4, pixelsPerMetre),
+          target: color,
+          strength: 0.92,
+        })
+      )
+        poly([...face], color, "#24353b");
+      if (materials) {
+        const lower = [
+          face[0],
+          face[1],
+          { x: face[1].x, y: face[1].y - pixelsPerMetre * 0.48 },
+          { x: face[0].x, y: face[0].y - pixelsPerMetre * 0.48 },
+        ];
+        poly(lower, "#384e52", "#273c40");
+        line(lower[2]!, lower[3]!, "#c0ac76", 0.7);
+      }
+    }
     poly(top, "#94a19a");
     line(base[0]!, base[1]!, "#192f3a", 2);
     line(base[1]!, base[2]!, "#192f3a", 2);
@@ -1893,7 +1932,8 @@ export function createComposedEnvironment(
     project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
   );
   const materialised =
-    ["intersection", "alley"].includes(arena.environment!.recipe) && tiles !== undefined;
+    ["intersection", "alley", "warehouse"].includes(arena.environment!.recipe) &&
+    tiles !== undefined;
   const resolution = materialised
     ? Math.max(1, Math.min(MATERIAL_SUPERSAMPLE, MAX_TEXTURE_PIXELS / Math.max(gw, gh)))
     : 1;
@@ -1960,6 +2000,7 @@ export function createComposedEnvironment(
   const night = nightFor(env);
   const lights = night
     ? [
+        ...warehouseLights(env),
         ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
         ...returnLights(returns?.faces ?? [], night),
         ...fixtureLights(env),
@@ -2145,7 +2186,7 @@ export function createComposedEnvironment(
         }),
     });
   }
-  if (night && materialised) {
+  if (night && materialised && !env.interior) {
     const wet = createRainSurface(env, project, { x: gx, y: gy, width: gw, height: gh });
     ground.context.drawImage(wet, gx, gy, gw, gh);
   }
@@ -2164,8 +2205,10 @@ export function createComposedEnvironment(
       : [];
   const zOf = (light: GroundLight) =>
     light.kind === "pool"
-      ? (wallLights.find((l) => Math.hypot(l.at.x - light.centre.x, l.at.y - light.centre.y) < 0.3)
-          ?.z ?? LAMP_SHADOW.poolZ)
+      ? (light.sourceZ ??
+        wallLights.find((l) => Math.hypot(l.at.x - light.centre.x, l.at.y - light.centre.y) < 0.3)
+          ?.z ??
+        LAMP_SHADOW.poolZ)
       : LAMP_SHADOW.windowZ;
   const paintOne = (c: CanvasRenderingContext2D, light: GroundLight) =>
     paintGroundLights(c, project, env.structures, [light]);
@@ -2258,7 +2301,7 @@ export function createComposedEnvironment(
   // The shop corner's lit things, for their reflections in the street (`groundReflection.ts`).
   const mirrorSources: MirrorSource[] = [];
   const mirrorOwners = new Map<string, Phaser.GameObjects.Image>();
-  const reflects = !!night && materialised && options.reflections !== false;
+  const reflects = !!night && materialised && !env.interior && options.reflections !== false;
   const occluders = activityOccluders(arena);
   const activity = activityGroundPoints(arena);
   const add = (
@@ -2377,6 +2420,28 @@ export function createComposedEnvironment(
     lit.push(image);
     return image;
   };
+  for (const light of warehouseLights(env)) {
+    const p = project(light.centre);
+    const lift = light.sourceZ! * metre;
+    const fixture = add(
+      light.id,
+      (ctx) => paintWarehouseFixture(ctx, project, metre, light),
+      p.y + 0.4,
+      { x: p.x - metre * 1.8, y: p.y - lift - metre, width: metre * 3.6, height: metre * 2 },
+      2,
+      (ctx) => paintWarehouseFixture(ctx, project, metre, light, true),
+    );
+    // Hanging fixtures sort above their ground position without acting as cover.
+    fixture
+      ?.setData("groundY", p.y)
+      .setData("sortRect", {
+        x: light.centre.x - 0.65,
+        y: light.centre.y - 0.09,
+        width: 1.3,
+        height: 0.18,
+      })
+      .setData("elevation", { bottom: light.sourceZ! - 0.1, top: light.sourceZ! + 0.48 });
+  }
   // Narrow jambs sit at opening boundaries. Each has its own depth so actors
   // remain correctly sorted; these are trim, not new collision objects.
   for (const threshold of interiorThresholds(arena)) {

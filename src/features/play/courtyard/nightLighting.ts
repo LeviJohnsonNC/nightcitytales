@@ -71,15 +71,19 @@ export const INTERSECTION_NIGHT = {
 } as const;
 export type NightLighting = typeof INTERSECTION_NIGHT;
 
-/** The two finished exterior streets share the same source-based lighting. */
+/** Finished streets and the warehouse share source-based lighting. */
 export function nightFor(env: Pick<SceneEnvironment, "recipe" | "interior"> | undefined) {
-  return env && ["intersection", "alley"].includes(env.recipe) && !env.interior
+  return env &&
+    ((["intersection", "alley"].includes(env.recipe) && !env.interior) ||
+      (env.recipe === "warehouse" && !!env.interior))
     ? INTERSECTION_NIGHT
     : undefined;
 }
 
 /** A round pool on the ground: a light overhead. */
 export interface PoolLight {
+  /** Interior room clipping, shared by surface light and actor tint. */
+  bounds?: Rect;
   /** Height of the visible emitter, when different from a street lamp. */
   sourceZ?: number;
   kind: "pool";
@@ -113,11 +117,13 @@ export const spillFalloff = (t: number) => (t >= 1 || t < 0 ? 0 : (1 - t) ** 1.6
 
 /** How much of a light reaches a ground point, before colour. */
 export function lightAmount(light: GroundLight, p: Point): number {
-  if (light.kind === "pool")
+  if (light.kind === "pool") {
+    if (light.bounds && !inside(p, light.bounds)) return 0;
     return (
       light.intensity *
       poolFalloff(Math.hypot(p.x - light.centre.x, p.y - light.centre.y) / light.radius)
     );
+  }
   const dx = p.x - light.origin.x;
   const dy = p.y - light.origin.y;
   const s = dx * light.along.x + dy * light.along.y;
@@ -187,6 +193,12 @@ export function paintGroundLight(
   // world metres -> screen, the same affine map everything else is drawn with
   ctx.transform(ex.x - o.x, ex.y - o.y, ey.x - o.x, ey.y - o.y, o.x, o.y - lift);
   if (light.kind === "pool") {
+    if (light.bounds) {
+      const r = light.bounds;
+      ctx.beginPath();
+      ctx.rect(r.x, r.y, r.width, r.height);
+      ctx.clip();
+    }
     const { x, y } = light.centre;
     const g = ctx.createRadialGradient(x, y, 0, x, y, light.radius);
     for (let i = 0; i <= STOPS; i++) {

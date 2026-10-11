@@ -32,6 +32,7 @@ import {
 } from "./storefront";
 import {
   MATERIAL_KEYS,
+  prepareMaterials,
   materialAssetKey,
   materialUrl,
   type MaterialKey,
@@ -174,9 +175,11 @@ export function createCourtyard(
   ];
   // Finished exterior streets share materials, art and contact shade.
   const materialKeys: readonly MaterialKey[] =
-    composed && ["intersection", "alley"].includes(arena.environment!.recipe) ? MATERIAL_KEYS : [];
+    composed && ["intersection", "alley", "warehouse"].includes(arena.environment!.recipe)
+      ? MATERIAL_KEYS
+      : [];
   const storefrontKeys = Object.keys(STOREFRONT_ART_FILES) as StorefrontArtKey[];
-  const withStorefront = materialKeys.length > 0;
+  const withStorefront = materialKeys.length > 0 && !arena.environment?.interior;
   const architectureKeys = Object.keys(ARCHITECTURE_ART_FILES) as ArchitectureArtKey[];
   // The painted street props, like the materials, belong to the intersection so far.
   const streetProps = materialKeys.length > 0 ? streetPropFiles(kinds) : [];
@@ -292,7 +295,19 @@ export function createCourtyard(
       }
       try {
         // where the board draws contact shade, the kit bakes no flat shadow of its own
-        createPropTextures(this, [...new Set(kinds)], !contactShading);
+        const propTiles: Partial<Record<MaterialKey, TileSource>> = {};
+        if (arena.environment?.recipe === "warehouse")
+          for (const key of materialKeys)
+            if (this.textures.exists(materialAssetKey(key)))
+              propTiles[key] = this.textures
+                .get(materialAssetKey(key))
+                .getSourceImage() as TileSource;
+        createPropTextures(
+          this,
+          [...new Set(kinds)],
+          !contactShading,
+          arena.environment?.recipe === "warehouse" ? prepareMaterials(propTiles, 74) : undefined,
+        );
         applyStreetPropArt(this, streetProps);
         if (contactShading) finishStreetProps(this);
         createCharacterAtlas(this, "mercenary");
