@@ -348,6 +348,11 @@ is presentational and reads everything off `useShop` (`ShopController`); `shopVi
 lays the shelf out (counter, line, back room, shelves) and words each row's stock. Item
 pictures come from `itemArt.ts` and are drawn only once listed in `ITEM_ART_READY`;
 `/shop-review` renders the shipping view from fixtures for screenshots and the browser test.
+The story opens it too: the Life narrator is told who sells where the character stands
+(names and kinds, never stock) and proposes `browse` when the player asks what is for sale.
+`browseIntent.ts` picks the seller, or a trip to the named or nearest shop first; the turn
+writes a `shop_browsed` row, and the screen opens the Counter on the newest one it has not
+already seen. A catalog line shows its own picture (the art manifest's) before its category's.
 
 The map is stocked to match. `places.houserule.json` carries fifteen clinics and ten shops
 the atlas does not print (a third set, after the Exec Zone's and the bars), tagged in
