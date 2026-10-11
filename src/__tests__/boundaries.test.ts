@@ -240,17 +240,31 @@ describe("turn operations are free of React", () => {
   it("finds the ops modules", () => {
     expect(opsModules.map(shortName).sort()).toEqual([
       "features/downtime/downtimeOps.ts",
+      "features/life/lifeApplyOps.ts",
+      "features/life/lifeBundleOps.ts",
+      "features/life/lifeContextOps.ts",
+      "features/life/lifeHookOps.ts",
       "features/life/lifeOps.ts",
+      "features/life/lifeOracleOps.ts",
+      "features/life/lifeTurnOps.ts",
       "features/opening/openingOps.ts",
       "features/play/combatOps.ts",
+      "features/play/playBundleOps.ts",
       "features/play/playOps.ts",
+      "features/play/playRoleOps.ts",
+      "features/play/playSceneOps.ts",
+      "features/play/playSettleOps.ts",
+      "features/play/playTruthOps.ts",
+      "features/play/playTurnOps.ts",
       "features/scenes/sceneOps.ts",
     ]);
   });
 
   it("keeps shared combat independent of Job operations and narration", () => {
     const specs = importsOf(readFileSync(join(SRC, "features/play/combatOps.ts"), "utf8"));
-    expect(specs.filter((spec) => /playOps|gmTurn|missionState|gmContext/.test(spec))).toEqual([]);
+    expect(specs.filter((spec) => /play\w*Ops|gmTurn|missionState|gmContext/.test(spec))).toEqual(
+      [],
+    );
   });
 
   it("never imports React or the query client", () => {

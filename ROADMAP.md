@@ -1167,7 +1167,7 @@ with the same people, objects and consequences.
 Phase 1 foundation:
 
 - Shared `combatOps.ts` loading/actions now require no mission. Job-specific
-  mission failure remains in `playOps.ts`; routine death saves report engine
+  mission failure remains in `playSettleOps.ts`; routine death saves report engine
   results without a model call.
 - Enemy goals, threat roles and spent morale checks survive reload.
 - Death saves persist the round resolved, cannot repeat in that round, and
