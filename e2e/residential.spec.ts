@@ -33,7 +33,7 @@ test.afterEach(async ({ page }, info) => {
     ),
   );
 });
-for (const seed of [4, 5, 6])
+for (const seed of [4, 5, 6, 7])
   test(`residential seed ${seed}`, async ({ page }, info) => {
     // The eight-capture seed needs headroom beyond software-GPU cold startup.
     // Keep zero retries; capture operations retain their own short deadlines.

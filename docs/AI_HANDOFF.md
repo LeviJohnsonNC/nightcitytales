@@ -14,8 +14,13 @@ actors (initial copied interior harness expected four). Baseline screenshot4
 inspected; evidence /tmp/nct-residential-before-captures.
 Typecheck and 27 focused lighting/window/roof/reflection tests pass. First after
 seed4 play inspected: warm entrances, calm domestic materials, readable street.
-Checkpoint prepared; remaining after captures and full validation/remote checks
-next. Levi reviews before merge or further scope.
+Implementation pushed as548995c8 in PR368:
+https://github.com/LeviJohnsonNC/nightcitytales/pull/368.
+After Chromium4/5/6 pass (1.3m); all play, reveal4, destroyed4 and compact4
+visually inspected. Evidence saved to /Users/levijohnson/.codex/visualizations/2026/10/11/01a12b66-843f-7a70-86c1-77681c3d2c1f/residential-evidence.
+Adding seed7 for setback-home topology (5/6 share offset-driveway layout).
+Full tests/lint/typecheck/build running; remote checks next. Levi reviews before
+merge or further scope.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 

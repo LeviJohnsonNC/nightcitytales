@@ -41,7 +41,7 @@ materials and room-bounded magenta/cyan and amber lighting. Approved by Levi; ro
 
 Residential now takes the shared street materials, painted cars, detailed domestic
 windows/doors/roofs and source-based nighttime lighting. Varied facade finishes,
-concrete driveways and dry planting strips distinguish the homes. Seeds4/5/6
+concrete driveways and dry planting strips distinguish the homes. Seeds4/5/7
 are the next in-app review gate.
 
 Phase 1 implementation now includes three spatial layouts per recipe, reserved
