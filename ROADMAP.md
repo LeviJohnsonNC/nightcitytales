@@ -1959,7 +1959,6 @@ See `docs/checkpoint-intersection-composition.md`. Next: wet ground and lighting
 then measured assets for distinctive street fixtures/frontages; existing shop
 and prop art is reusable. This is not reference-parity acceptance.
 
-
 ### Wet neon lighting follow-through (2026-10-11)
 
 Following the merged solid-street/object pass, the market blade casts magenta onto
