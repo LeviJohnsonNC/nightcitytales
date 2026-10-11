@@ -31,6 +31,11 @@ export const ITEM_ART_READY: readonly string[] = [
   "rifle",
   "shotgun",
   "heavy",
+  "exotic",
+  "melee",
+  "armor-light",
+  "armor-heavy",
+  "shield",
 ];
 
 /** The category a catalog weapon is shown as. */
