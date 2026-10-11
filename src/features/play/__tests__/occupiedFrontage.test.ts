@@ -1,6 +1,11 @@
 import { expect, it } from "vitest";
 import { composeScene } from "@/engine";
-import { occupiedUse, occupiedLights, paintOccupiedFrontage } from "../courtyard/occupiedFrontage";
+import {
+  occupiedUse,
+  occupiedLights,
+  paintOccupiedFrontage,
+  repairBays,
+} from "../courtyard/occupiedFrontage";
 import { lightAt } from "../courtyard/nightLighting";
 import v12 from "@/engine/__tests__/fixtures/intersection-v12.json";
 import { readSceneManifest } from "@/engine/persistentScene";
@@ -24,7 +29,7 @@ it("lights the trading threshold and studio passage from their own faces without
   const env = composeScene("intersection", 8).layout.arena.environment!;
   const saved = JSON.stringify(env),
     lights = occupiedLights(env);
-  expect(lights).toHaveLength(5);
+  expect(lights).toHaveLength(8);
   for (const p of [
     { x: 25, y: 21 },
     { x: 29, y: 25 },
@@ -139,4 +144,38 @@ it("gives the repair sign the same source position and colour on pavement and wa
   }
   for (const l of occupiedLights(env).filter((l) => l.kind === "spill" && l.color[0] === 1))
     expect(l.color[0]).toBeGreaterThan(l.color[2]);
+});
+
+it("fits distinct repair displays around moved saved doors without changing the entrance", async () => {
+  const { facadeOpenings } = await import("../courtyard/architectureArt");
+  const env = composeScene("intersection", 8).layout.arena.environment!;
+  const s = env.structures.find((s) => occupiedUse(s) === "repair")!;
+  const entrance = env.entrances!.find((e) => e.structureId === s.id)!;
+  for (const edge of ["north", "east"] as const) {
+    const length = edge === "north" ? s.rect.width : s.rect.height;
+    for (const c of [1, length / 2, length - 1]) {
+      const entrances = [
+        {
+          ...entrance,
+          position:
+            edge === "north"
+              ? { x: s.rect.x + c, y: s.rect.y - 1 }
+              : { x: s.rect.x + s.rect.width + 1, y: s.rect.y + c },
+        },
+      ];
+      const saved = JSON.stringify(entrances);
+      const bays = repairBays(s, edge, entrances);
+      expect(bays.length).toBeGreaterThan(0);
+      for (const b of bays) {
+        expect(b.a).toBeGreaterThanOrEqual(0);
+        expect(b.b).toBeLessThanOrEqual(length);
+        expect(b.b - b.a).toBeGreaterThan(0.7);
+        expect(b.b <= c - 1.04 || b.a >= c + 1.04).toBe(true);
+      }
+      expect(facadeOpenings(s, entrances, edge).doors).toEqual([c]);
+      expect(JSON.stringify(entrances)).toBe(saved);
+    }
+    const displays = repairBays(s, edge, []);
+    expect(new Set(displays.map((b) => b.lo)).size).toBe(2);
+  }
 });

@@ -82,7 +82,7 @@ export const REFLECTION = {
    * Broken microfacet highlights: a projected world field from `lo` to `hi`,
    * at `gain` times the source streak. Joints and dry ground give none.
    */
-  highlight: { lo: 0.57, hi: 0.83, gain: 0.35 },
+  highlight: { lo: 0.42, hi: 0.8, gain: 0.42 },
   /** Per surface: how much it gives back. Joints and footprints give nothing. */
   surfaces: {
     asphalt: 0.9,
@@ -92,7 +92,7 @@ export const REFLECTION = {
     threshold: 0.85,
   },
   /** A shop light seen in the wet patches it falls on: a sheen, and the highlights. */
-  field: { sheen: 0, highlight: 0.48 },
+  field: { sheen: 0, highlight: 1.35 },
   /** A doorstep is polished by feet: it is this wet wherever it is. */
   threshold: 0.75,
   /** Where a bright reflection starts to ease off rather than clip, of 255. */
@@ -281,7 +281,11 @@ export function response(
   return {
     tight: spec * wet * B.tight,
     streak: spec * (wet * B.streak + (1 - wet) * B.dry + hl * REFLECTION.highlight.gain),
-    field: spec * (wet * REFLECTION.field.sheen + hl * REFLECTION.field.highlight),
+    // Paving already takes strong diffuse light; its wet facets retain headroom.
+    field:
+      spec *
+      (cls === SurfaceClass.paving || cls === SurfaceClass.threshold ? 0.42 : 1) *
+      (wet * REFLECTION.field.sheen + hl * REFLECTION.field.highlight),
   };
 }
 
@@ -586,13 +590,17 @@ export class GroundReflection {
           const sx = this.box.x + (x + 0.5) / res,
             sy = this.box.y + (y + 0.5) / res;
           const ridges = smoothstep(0.27, 0.74, noise(sx / (ppm * 0.38), sy / (ppm * 0.055), 103));
-          this.wet[i] = w * (0.3 + 0.7 * ridges);
+          this.wet[i] = w * (0.48 + 0.52 * ridges);
           // Broad, broken microfacets read as wet brush strokes at play zoom.
           // Raw aggregate peaks alone produced distracting isolated glitter dots.
           this.highlight[i] = smoothstep(
             REFLECTION.highlight.lo,
             REFLECTION.highlight.hi,
-            noise(sx / (ppm * 0.44), sy / (ppm * 0.1), 113),
+            noise(
+              sx / (ppm * 0.5) + noise(sx / (ppm * 1.8), sy / (ppm * 0.7), 127),
+              sy / (ppm * 0.075),
+              113,
+            ),
           );
           this.dx[i] = lerp(gx, x, y) * slope * R.across;
           this.dy[i] = lerp(gy, x, y) * slope * R.along;

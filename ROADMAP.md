@@ -1969,3 +1969,16 @@ geometry and tactical rules are unchanged. Local seed8 play/reveal/destruction a
 compact captures inspected; full review gates tracked in `docs/AI_HANDOFF.md`.
 Next visual priority: architectural variety and whole-frame reference comparison;
 this lighting pass does not establish reference parity.
+
+
+### Open shopfronts and connected wet pavement (2026-10-11)
+
+Repair displays now fit the solid spans around saved entrances with distinct
+counter and parts-bay proportions. A painted workshop interior, recessed jambs and
+threshold make the existing repair entrance visibly open; the market entrance
+opens beneath its raised shutter. Source light follows those openings. Larger wet
+depressions and broken, source-coloured facets connect the pavement reflections,
+with restrained highlights on already bright paving. See
+`docs/checkpoint-open-shops.md` for scope and evidence. Review gates remain in
+`docs/AI_HANDOFF.md`; reference parity is still a visual judgment before moving to
+another environment.

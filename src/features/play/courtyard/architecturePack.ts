@@ -137,6 +137,7 @@ export const ARCHITECTURE_ART_FILES = {
   paintedRepairUpper: "/images/architecture/painted/repair-upper.webp",
   paintedRepairFrontage: "/images/architecture/painted/repair-frontage.webp",
   paintedServiceMasonry: "/images/architecture/painted/service-masonry.webp",
+  repairOpenRoom: "/images/architecture/repair-open-room-v1.webp",
   repairBench: "/images/architecture/repair-bench.webp",
   repairParts: "/images/architecture/repair-parts.webp",
   repairPartsNarrow: "/images/architecture/repair-parts-narrow.webp",

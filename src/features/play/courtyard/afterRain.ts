@@ -24,12 +24,12 @@ function noise(x: number, y: number) {
 /** Continuous in world space; gutter pooling is independent of camera and light. */
 export function rainWetness(x: number, y: number, gutter = 0) {
   return smooth(
-    (noise(x * 0.65, y * 0.65) * 0.6 +
-      noise(x * 3.2, y * 3.2) * 0.3 +
-      noise(x * 6, y * 6) * 0.1 +
-      0.17 * gutter -
-      0.41) *
-      12,
+    (noise(x * 0.42, y * 0.42) * 0.72 +
+      noise(x * 2.3, y * 2.3) * 0.2 +
+      noise(x * 6, y * 6) * 0.08 +
+      0.22 * gutter -
+      0.43) *
+      10,
   );
 }
 /** Exposed edges of the carriageway union. Crosswalks and overlapping road zones

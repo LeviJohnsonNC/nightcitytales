@@ -18,6 +18,39 @@ export function occupiedUse(s: SceneStructure): "repair" | "studios" | undefined
   return undefined;
 }
 
+/** Display recesses fit the solid spans beside saved entrances. No new doorway. */
+export function repairBays(
+  s: SceneStructure,
+  edge: Edge,
+  entrances: SceneEnvironment["entrances"],
+) {
+  const { length, doors } = facadeOpenings(s, entrances, edge);
+  if (length < 1.3) return [];
+  let spans: [number, number][] = [[0.3, length - 0.3]];
+  for (const c of doors)
+    spans = spans.flatMap(([a, b]) =>
+      c + 1.04 <= a || c - 1.04 >= b
+        ? [[a, b]]
+        : ([
+            [a, Math.min(b, c - 1.04)],
+            [Math.max(a, c + 1.04), b],
+          ].filter(([x, y]) => y! - x! > 0.7) as [number, number][]),
+    );
+  if (!doors.length && length > 4.8)
+    spans = [
+      [0.3, length * 0.56],
+      [length * 0.56 + 0.38, length - 0.3],
+    ];
+  return spans.map(([a, b], i) => ({
+    a,
+    b,
+    lo: i === 0 ? 0.78 : 0.38,
+    hi: i === 0 ? 2.62 : 2.38,
+    depth: i === 0 ? 0.52 : 0.34,
+    kind: i === 0 ? ("bench" as const) : ("parts" as const),
+  }));
+}
+
 export function occupiedLights(env: SceneEnvironment): GroundLight[] {
   return env.structures.flatMap((s) => {
     const use = occupiedUse(s);
@@ -25,19 +58,24 @@ export function occupiedLights(env: SceneEnvironment): GroundLight[] {
     return (["north", "east"] as const).flatMap((edge) => {
       const f = edgeFrame(s.rect, edge);
       const doors = facadeOpenings(s, env.entrances, edge).doors;
-      const centres =
-        use === "repair" ? [(edge === "north" ? s.rect.width : s.rect.height) / 2] : doors;
-      const spills: GroundLight[] = centres.map((c) => ({
+      const spans =
+        use === "repair"
+          ? [
+              ...repairBays(s, edge, env.entrances).map((b) => [b.a, b.b] as const),
+              ...doors.map((c) => [c - 0.72, c + 0.72] as const),
+            ]
+          : doors.map((c) => [c - 0.7, c + 0.7] as const);
+      const spills: GroundLight[] = spans.map(([a, b]) => ({
         kind: "spill" as const,
         origin: f.world(0, 0),
         along: edge === "north" ? { x: 1, y: 0 } : { x: 0, y: 1 },
         out: edge === "north" ? { x: 0, y: -1 } : { x: 1, y: 0 },
-        s0: c - (use === "repair" ? 1.9 : 0.7),
-        s1: c + (use === "repair" ? 1.9 : 0.7),
-        reach: use === "repair" ? 3.8 : 3.4,
+        s0: a,
+        s1: b,
+        reach: use === "repair" ? 4.6 : 3.4,
         spread: 0.45,
         color: use === "repair" ? ([1, 0.64, 0.3] as const) : ([0.46, 0.79, 1] as const),
-        intensity: use === "repair" ? 0.72 : 0.5,
+        intensity: use === "repair" ? 0.68 : 0.5,
       }));
       // The cyan header and warm workbench are separate, visible emitters.
       if (use === "repair")
@@ -46,7 +84,7 @@ export function occupiedLights(env: SceneEnvironment): GroundLight[] {
           centre: f.world(f.length / 2, 0.18),
           sourceZ: 3.25,
           color: [0.12, 0.85, 1],
-          intensity: 0.42,
+          intensity: 0.26,
           radius: 3.4,
         });
       return spills;
@@ -126,25 +164,28 @@ export function paintOccupiedFrontage(
     }
     return;
   }
-  const bays = doors.length
-    ? [
-        { a: 0.35, b: 1.8, lo: 0.68, hi: 2.55 },
-        { a: 4.2, b: 5.65, lo: 0.68, hi: 2.55 },
-      ]
-    : [
-        { a: 0.35, b: 3.65, lo: 0.68, hi: 2.55 },
-        { a: 3.9, b: length - 0.35, lo: 0.68, hi: 2.55 },
-      ];
+  const bays = repairBays(s, edge, entrances);
   if (pass === "light") {
     if (!emissionOnly) wash(0.15, length - 0.15, 0.1, 3.65, "rgba(80,194,226,.24)");
-    for (const b of bays)
-      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,184,99,.64)", -0.12);
+    for (const b of bays) {
+      ctx.save();
+      ctx.beginPath();
+      quad(b.a, b.b, b.lo, b.hi).forEach((p, i) =>
+        i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y),
+      );
+      ctx.closePath();
+      ctx.clip();
+      panel(b.a, b.b, b.lo, b.hi, "rgba(255,198,125,.48)", -b.depth);
+      ctx.restore();
+    }
+    for (const c of doors) panel(c - 0.72, c + 0.72, 0.08, 2.3, "rgba(255,198,125,.4)", -0.08);
     return;
   }
   if (pass === "glow") {
+    for (const c of doors) panel(c - 0.66, c + 0.66, 2.22, 2.27, "#ffdfa0", -0.18);
     text("DENKI  /  ELECTRIC", 0.25, length - 0.25, 3.07, 3.51, "#52e7ff");
-    panel(0.35, length - 0.35, 2.81, 2.86, "#62edff", 0.15);
-    for (const b of bays) panel(b.a + 0.15, b.b - 0.15, 2.36, 2.4, "#ffe2a5", -0.12);
+    panel(0.35, length - 0.35, 2.81, 2.86, "#f6ca85", 0.15);
+    for (const b of bays) panel(b.a + 0.15, b.b - 0.15, b.hi - 0.19, b.hi - 0.15, "#ffe2a5", -0.12);
     return;
   }
   // A continuous dark enamel trading floor under the existing apartment string course.
@@ -183,66 +224,81 @@ export function paintOccupiedFrontage(
       true,
     );
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.08, b.hi + 0.08, "#142327");
-    const interior = doors.length
-      ? art?.repairPartsNarrow
-      : b.a < 1
-        ? art?.repairBench
-        : art?.repairParts;
-    if (interior) paintFaceAsset(ctx, interior, at, b.a, b.b, 0.72, 2.48, -0.32);
-    else paintWorkshopInterior(ctx, face, b.a, b.b, b.a < 1 ? "bench" : "storage");
+    const interior =
+      b.b - b.a < 2
+        ? art?.repairPartsNarrow
+        : b.kind === "bench"
+          ? art?.repairBench
+          : art?.repairParts;
+    ctx.save();
+    ctx.beginPath();
+    quad(b.a, b.b, b.lo, b.hi).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+    ctx.clip();
+    if (interior) paintFaceAsset(ctx, interior, at, b.a, b.b, b.lo, b.hi, -b.depth);
+    else paintWorkshopInterior(ctx, face, b.a, b.b, b.kind === "bench" ? "bench" : "storage");
+    ctx.restore();
     // Angled reveals and mullions anchor the interior behind the actual facade.
     fill(
-      [at(b.a, 0.04, b.lo), at(b.a, 0.04, b.hi), at(b.a, -0.32, b.hi), at(b.a, -0.32, b.lo)],
+      [at(b.a, 0.04, b.lo), at(b.a, 0.04, b.hi), at(b.a, -b.depth, b.hi), at(b.a, -b.depth, b.lo)],
       "#262b28",
     );
     fill(
-      [at(b.a, 0.04, b.hi), at(b.b, 0.04, b.hi), at(b.b, -0.32, b.hi), at(b.a, -0.32, b.hi)],
+      [at(b.a, 0.04, b.hi), at(b.b, 0.04, b.hi), at(b.b, -b.depth, b.hi), at(b.a, -b.depth, b.hi)],
       "#192623",
     );
     // A substantial head reveal separates the warm room from the exterior fascia.
     panel(b.a, b.b, b.hi - 0.16, b.hi, "rgba(8,19,19,.68)", -0.08);
     fill(
-      [at(b.a, 0.04, b.lo), at(b.b, 0.04, b.lo), at(b.b, -0.32, b.lo), at(b.a, -0.32, b.lo)],
+      [at(b.a, 0.04, b.lo), at(b.b, 0.04, b.lo), at(b.b, -b.depth, b.lo), at(b.a, -b.depth, b.lo)],
       "#6d725f",
     );
     for (const x of [b.a, b.b - 0.035]) panel(x, x + 0.035, b.lo, b.hi, "#89928a", 0.04);
     panel(b.a - 0.08, b.b + 0.08, b.lo - 0.09, b.lo, "#9c997f", 0.12);
-    panel(b.a + 0.15, b.b - 0.15, 2.36, 2.4, "#d2c197", -0.12);
+    panel(b.a + 0.15, b.b - 0.15, b.hi - 0.19, b.hi - 0.15, "#d2c197", -0.12);
+    if (b.kind === "bench") {
+      fill(
+        [
+          at(b.a - 0.06, -0.3, b.lo),
+          at(b.b + 0.06, -0.3, b.lo),
+          at(b.b + 0.06, 0.2, b.lo),
+          at(b.a - 0.06, 0.2, b.lo),
+        ],
+        "#a18a62",
+      );
+      panel(b.a - 0.06, b.b + 0.06, b.lo - 0.1, b.lo, "#544637", 0.2);
+    }
     architecturalDepth(ctx, at, false).bay({ s0: b.a, s1: b.b, z0: b.lo, z1: b.hi }, 0.22);
   }
   for (const c of doors) {
-    panel(c - 0.85, c + 0.85, 0.08, 2.58, "#142326");
-    fill(
-      [
-        at(c - 0.85, 0.06, 0.08),
-        at(c - 0.85, 0.06, 2.58),
-        at(c - 0.62, -0.38, 2.38),
-        at(c - 0.62, -0.38, 0.08),
-      ],
-      "#57645b",
-    );
-    fill(
-      [
-        at(c + 0.85, 0.06, 0.08),
-        at(c + 0.85, 0.06, 2.58),
-        at(c + 0.62, -0.38, 2.38),
-        at(c + 0.62, -0.38, 0.08),
-      ],
-      "#253331",
-    );
-    // Keep the saved entrance clear; a deep, lit threshold under a partly raised shutter.
-    panel(c - 0.72, c + 0.72, 0.06, 1.85, "#5b5140", -0.16);
-    panel(c - 0.6, c + 0.6, 0.3, 1.2, "#343a31", -0.15);
-    panel(c - 0.65, c + 0.65, 1.18, 1.3, "#8e8261", -0.14);
-    for (let z = 1.9; z < 2.54; z += 0.085) {
-      panel(c - 0.75, c + 0.75, z, z + 0.075, "#6d7770", 0.035);
-      line(at(c - 0.75, 0.05, z), at(c + 0.75, 0.05, z), "#242f30", 0.018);
+    const a = c - 0.78,
+      b = c + 0.78,
+      top = 2.35,
+      back = art?.repairOpenRoom ? -0.24 : -0.6;
+    panel(a - 0.1, b + 0.1, 0.02, 2.65, "#172522");
+    ctx.save();
+    ctx.beginPath();
+    quad(a, b, 0.04, top).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+    ctx.clip();
+    if (art?.repairOpenRoom) paintFaceAsset(ctx, art.repairOpenRoom, at, a, b, 0.04, top, -0.06);
+    else {
+      panel(a, b, 0.04, top, "#594c35", back);
+      paintFaceAsset(ctx, art?.repairPartsNarrow, at, a + 0.25, b + 0.1, 0.2, 2.3, back);
+      panel(a, a + 0.25, 0.1, 2.24, "#202d29", back);
     }
-    for (const x of [c - 0.85, c + 0.78]) panel(x, x + 0.075, 0.05, 2.65, "#a29c81", 0.1);
-    fill(
-      [at(c - 0.8, -0.17, 0), at(c + 0.8, -0.17, 0), at(c + 0.8, 0.17, 0), at(c - 0.8, 0.17, 0)],
-      "#a28d66",
-    );
+    fill([at(a, 0, 0.06), at(b, 0, 0.06), at(b, back, 0.06), at(a, back, 0.06)], "#b19a70");
+    for (const z of [-0.25, -0.5]) line(at(a, z, 0.065), at(b, z, 0.065), "#6e644d", 0.018);
+    fill([at(a, 0, 0.04), at(a, 0, top), at(a, back, top), at(a, back, 0.04)], "#736c50");
+    fill([at(b, 0, 0.04), at(b, 0, top), at(b, back, top), at(b, back, 0.04)], "#303e34");
+    fill([at(a, 0, top), at(b, 0, top), at(b, back, top), at(a, back, top)], "#1a2927");
+    ctx.restore();
+    // Raised curtain stays above the walk-through opening, with substantial jambs.
+    for (let z = 2.36; z < 2.61; z += 0.075) panel(a, b, z, z + 0.058, "#798076", 0.06);
+    for (const x of [a - 0.07, b]) panel(x, x + 0.07, 0.02, 2.65, "#a39a79", 0.09);
+    panel(a, b, 2.3, 2.36, "#c0ab79", 0.06);
+    panel(a, b, 0.02, 0.07, "#cab080", 0.15);
+    panel(a + 0.12, b - 0.12, 2.22, 2.27, "#cdb68a", -0.18);
   }
 
   for (const x of [0.12, length - 0.18]) {
