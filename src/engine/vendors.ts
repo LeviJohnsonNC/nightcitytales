@@ -149,7 +149,16 @@ export type Vendor = {
    * storefront. Atmosphere only: no price, stock or number is ever in it.
    */
   scene: string[];
+  /**
+   * Who is behind the counter, by name, for a seller at a place. The same name
+   * reaches the narrator, so the face on the Counter and the person in the
+   * prose are one person. Absent for an archetype and for the fixer, who is a
+   * member of the campaign's own cast.
+   */
+  keeper?: ShopKeeper;
 };
+
+export type ShopKeeper = { name: string; who: string };
 
 export const VENDORS: Vendor[] = [
   {
@@ -246,6 +255,7 @@ type PlaceShop = {
   finds?: number;
   range?: boolean;
   scene?: string[];
+  keeper?: ShopKeeper;
 };
 
 export const PLACE_SHOPS_ARE_HOUSE_RULE: boolean = placeShops.houseRule;
@@ -280,7 +290,23 @@ function atPlace(shop: PlaceShop): Vendor {
     finds: shop.finds ?? 0,
     range: shop.range ?? false,
     scene: shop.scene ?? base.scene,
+    ...(shop.keeper ? { keeper: shop.keeper } : {}),
   };
+}
+
+/** One way of putting a haggle. Presentation only: the roll is the printed Haggle either way. */
+export type HaggleApproach = { id: string; label: string; line: string };
+
+export const HAGGLE_APPROACHES: HaggleApproach[] = placeShops.haggle.approaches;
+
+/**
+ * What the seller says back, chosen by the dice already rolled and a seed, so
+ * it reads the same if the screen redraws. `{name}` is who is behind the counter.
+ */
+export function haggleReply(input: { won: boolean; seed: number; name: string }): string {
+  const lines = input.won ? placeShops.haggle.won : placeShops.haggle.lost;
+  const line = lines[Math.abs(Math.trunc(input.seed)) % lines.length]!;
+  return line.replaceAll("{name}", input.name);
 }
 
 /**

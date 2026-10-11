@@ -11,7 +11,16 @@
  * price or consequence. `/shop-review` renders it from fixtures.
  */
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowLeft, DoorClosed, MapPin, MessageSquare, Phone, Store, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  DoorClosed,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Store,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +44,8 @@ import { cn } from "@/lib/utils";
 import type { ShopController } from "../useShop";
 import { ItemThumb } from "./ItemThumb";
 import { ModeSwitch } from "./ModeSwitch";
+import { HaggleScene } from "./HaggleScene";
+import { KeeperFace } from "./KeeperFace";
 import {
   SHELF_LABELS,
   counterSections,
@@ -207,6 +218,18 @@ function Storefront({
             </span>
           )}
         </div>
+        {shop.keeper && (
+          <div className="flex items-center gap-3 pt-2">
+            <KeeperFace keeper={shop.keeper} fallback={v.label} className="size-16 sm:size-20" />
+            <div className="min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+                Behind the counter
+              </p>
+              <p className="font-display text-lg font-bold leading-tight">{shop.keeper.name}</p>
+              <p className="text-sm text-text-muted">{shop.keeper.who}</p>
+            </div>
+          </div>
+        )}
         {v.scene.length > 0 && (
           <div className="max-w-prose space-y-2 pt-2 text-[15px] leading-relaxed text-text sm:text-sm">
             {v.scene.map((paragraph) => (
@@ -309,81 +332,116 @@ function TalkAcross({ talk, seller }: { talk: CounterTalk; seller: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Your tab: the hold, what you asked for, and the word from people who know you.
+// Your dealings: the hold, what you asked for, and the word from people who know you.
 // ---------------------------------------------------------------------------
 
-function YourTab({ shop }: { shop: ShopController }) {
+function YourDealings({ shop }: { shop: ShopController }) {
   const { hold, word, interests } = shop;
+  const [open, setOpen] = useState(false);
   const toggle = (id: string) => {
     const next = interests.includes(id)
       ? interests.filter((i) => i !== id)
       : [...interests, id].slice(-MAX_SHOP_INTERESTS);
     shop.setInterests(next);
   };
+  // One line that says what is going on, so the row is worth reading closed.
+  const summary = [
+    hold ? `${hold.name} held` : null,
+    word.length ? `${word.length} set aside for you` : null,
+    interests.length
+      ? `looking for something ${interests.map((i) => interestLabel(i).toLowerCase()).join(" or ")}`
+      : "not looking for anything",
+  ].filter(Boolean);
   return (
-    <section className="space-y-2">
-      {hold && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-l-4 border-dashed border-success/70 bg-success/5 px-3 py-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-success">
-            Held
-          </span>
-          <span className="text-sm">
-            <b>{hold.name}</b> at {hold.vendorLabel} · until day {hold.until} ·{" "}
-            <span className="num">{hold.deposit}eb</span> down,{" "}
-            <span className="num">{Math.max(0, hold.price - hold.deposit)}eb</span> to pay
-          </span>
-          <button
-            type="button"
-            className="ml-auto font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted hover:text-danger"
-            disabled={shop.busy}
-            onClick={() => shop.callOffHold(hold)}
-          >
-            call it off · they keep the deposit
-          </button>
+    <section className="border border-hairline bg-surface/40">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-accent/5"
+      >
+        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] text-text-muted">
+          Your dealings
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm">
+          {(hold || word.length > 0) && (
+            <span className="mr-1.5 inline-block size-2 rounded-full bg-amber align-middle" />
+          )}
+          {summary.join(" · ")}
+        </span>
+        <ChevronDown
+          aria-hidden
+          className={cn(
+            "size-4 shrink-0 text-text-muted transition-transform",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-hairline px-3 py-3">
+          {hold && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-l-4 border-dashed border-success/70 bg-success/5 px-3 py-2">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-success">
+                Held
+              </span>
+              <span className="text-sm">
+                <b>{hold.name}</b> at {hold.vendorLabel} · until day {hold.until} ·{" "}
+                <span className="num">{hold.deposit}eb</span> down,{" "}
+                <span className="num">{Math.max(0, hold.price - hold.deposit)}eb</span> to pay
+              </span>
+              <button
+                type="button"
+                className="ml-auto font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted hover:text-danger"
+                disabled={shop.busy}
+                onClick={() => shop.callOffHold(hold)}
+              >
+                call it off · they keep the deposit
+              </button>
+            </div>
+          )}
+          {word.length > 0 && (
+            <div>
+              <Label className="text-accent">Word from people who know you</Label>
+              <ul className="mt-1 space-y-0.5 text-sm">
+                {word.map(({ vendor, item }) => (
+                  <li key={`${vendor.id}:${item.itemId}`}>
+                    <b>{vendor.label}</b> put a {item.name} aside for you ·{" "}
+                    <span className="num">{item.price}eb</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Label>Ask sellers to look out for</Label>
+            {SHOP_INTEREST_IDS.map((id) => {
+              const on = interests.includes(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={on}
+                  disabled={shop.busy}
+                  onClick={() => toggle(id)}
+                  className={cn(
+                    "border px-2 py-0.5 text-xs transition-colors",
+                    on
+                      ? "border-accent bg-accent/15 text-foreground"
+                      : "border-hairline text-text-muted hover:border-accent/50",
+                  )}
+                >
+                  something {interestLabel(id).toLowerCase()}
+                </button>
+              );
+            })}
+            <p className="basis-full text-xs text-text-muted">
+              {shop.knowsYou
+                ? "Pick up to two. When a find like that turns up at any seller who knows you, they set it aside and send word."
+                : "Pick up to two. Sellers you have bought from set aside finds like that and send word; buy something here and this one will too."}
+            </p>
+          </div>
         </div>
       )}
-      {word.length > 0 && (
-        <div className="border border-accent/40 bg-accent/5 px-3 py-2">
-          <Label className="text-accent">Word from people who know you</Label>
-          <ul className="mt-1 space-y-0.5 text-sm">
-            {word.map(({ vendor, item }) => (
-              <li key={`${vendor.id}:${item.itemId}`}>
-                <b>{vendor.label}</b> put a {item.name} aside for you ·{" "}
-                <span className="num">{item.price}eb</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Label>Ask sellers to look out for</Label>
-        {SHOP_INTEREST_IDS.map((id) => {
-          const on = interests.includes(id);
-          return (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={on}
-              disabled={shop.busy}
-              title="Sellers who know you set aside a find that fits, and pass the word"
-              onClick={() => toggle(id)}
-              className={cn(
-                "border px-2 py-0.5 text-xs transition-colors",
-                on
-                  ? "border-accent bg-accent/15 text-foreground"
-                  : "border-hairline text-text-muted hover:border-accent/50",
-              )}
-            >
-              something {interestLabel(id).toLowerCase()}
-            </button>
-          );
-        })}
-        <p className="basis-full text-xs text-text-muted">
-          {shop.knowsYou
-            ? "Pick up to two. When a find like that turns up at any seller who knows you, they set it aside and send word."
-            : "Pick up to two. Sellers you have bought from set aside finds like that and send word; buy something here and this one will too."}
-        </p>
-      </div>
     </section>
   );
 }
@@ -968,6 +1026,7 @@ export function CounterView({
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<"buy" | "sell">("buy");
+  const [haggling, setHaggling] = useState(false);
   const sections = useMemo(
     () => counterSections(shop.shelf, shop.vendor.deals),
     [shop.shelf, shop.vendor.deals],
@@ -997,7 +1056,7 @@ export function CounterView({
             onTravel={onTravel}
             onCallFixer={() => shop.chooseFixer()}
           />
-          <YourTab shop={shop} />
+          <YourDealings shop={shop} />
         </>
       ) : (
         <>
@@ -1048,7 +1107,7 @@ export function CounterView({
             </p>
           )}
 
-          <YourTab shop={shop} />
+          <YourDealings shop={shop} />
 
           <div className="flex flex-wrap items-center gap-3 border-b border-hairline">
             {(["buy", "sell"] as const).map((t) => (
@@ -1082,7 +1141,7 @@ export function CounterView({
                   variant="ghost"
                   className="h-7 px-2 text-xs"
                   disabled={shop.busy}
-                  onClick={() => shop.haggle()}
+                  onClick={() => setHaggling(true)}
                 >
                   Talk the price down · {shop.hagglePercent}%
                 </Button>
@@ -1115,6 +1174,8 @@ export function CounterView({
               <Shelves sections={sections.shelves} onOpen={(i) => setOpen(itemKey(i))} />
             </>
           )}
+
+          <HaggleScene shop={shop} open={haggling} onOpenChange={setHaggling} />
 
           <Dialog open={!!opened} onOpenChange={(o) => !o && setOpen(null)}>
             <DialogContent className="max-h-[92vh] max-w-3xl gap-0 overflow-y-auto border-accent/40 bg-surface p-0 sm:rounded-none">

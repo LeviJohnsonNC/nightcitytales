@@ -115,6 +115,12 @@ export type LifeContext = {
   chronicle?: string[];
   people: LifePersonSummary[];
   recentEvents: string[];
+  /**
+   * What they bought, sold or argued over at a counter since the narrator last
+   * spoke: who and what, never a price. Buying is not a turn, so without this
+   * the next turn's prose did not know they were carrying anything new.
+   */
+  counter?: string[];
   capabilities?: string[];
   /** What the engine already resolved, when this turn is a follow-up. */
   resolved?: string;
@@ -458,7 +464,8 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
         "When the player asks what is for sale, wants to browse, or asks for something to buy, " +
           'propose {"kind":"browse"} and the engine opens that seller\'s counter. Write the seller ' +
           "noticing them and nothing more: you have not seen the shelf, so never name an item, a " +
-          "brand or a price that is for sale here.",
+          "brand or a price that is for sale here. The person named as running it IS the " +
+          "person behind the counter: use that name, and do not invent somebody else.",
       );
     }
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
@@ -650,6 +657,15 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
   if (context.recentEvents.length) {
     parts.push("", "== RECENT ==");
     for (const e of context.recentEvents) parts.push(`- ${e}`);
+  }
+  if (context.counter?.length) {
+    parts.push("", "== AT THE COUNTER, SINCE YOU LAST SPOKE ==");
+    for (const e of withinBudget(context.counter, PACKET_BUDGET.counter)) parts.push(`- ${e}`);
+    parts.push(
+      "That happened, at the engine's prices. Let it show in a line where it fits — the seller " +
+        "wrapping it, the weight of it in a pocket, the new jacket on their shoulders — and then " +
+        "go on with what the player said. Never state a price, a discount or how many.",
+    );
   }
 
   if (context.wire) {

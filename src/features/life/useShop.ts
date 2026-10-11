@@ -17,6 +17,8 @@ import {
   itemRecord,
   rangeTrial,
   skillLevelFor,
+  getSkill,
+  opposedPercent,
   weaponProfile,
   type Hold,
   type RangeBand,
@@ -50,9 +52,25 @@ import {
 import { standingAt } from "@/features/campaign/favours";
 import { actorFor } from "@/features/play/playModel";
 import { liveRoleAbility, roleCheckModifiers } from "@/features/play/roleAbilityModel";
+import { castMemberInRole } from "@/features/campaign/castSeeding";
+import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
+import { keeperImage } from "./shop/keeperArt";
 import type { LifeBundle } from "./lifeOps";
 
 export type ShopMessage = { tone: "bought" | "refused"; text: string };
+
+/** Who is behind the counter, for the face on the Counter and the haggle scene. */
+export type CounterKeeper = { name: string; who: string; image: string | null };
+
+/** One argument over the price, settled: both rolls, so the scene can show them. */
+export type HaggleScene = {
+  vendorId: string;
+  won: boolean;
+  percent: number;
+  tie: boolean;
+  yours: { total: number; die: number; formula: string };
+  theirs: { total: number; die: number; formula: string };
+};
 
 /**
  * `open` is whether the sheet is showing: a look at a shelf is written down
@@ -74,6 +92,8 @@ export function useShop(
   });
   const [vendorId, setVendorId] = useState<string | null>(initialVendorId);
   const [message, setMessage] = useState<ShopMessage | null>(null);
+  /** The last argument over the price, with both rolls, for the haggle scene. */
+  const [lastHaggle, setLastHaggle] = useState<HaggleScene | null>(null);
   /** True once the player chose to call the fixer from somewhere that sells nothing. */
   const [fixerChosen, setFixerChosen] = useState(initialVendorId === FIXER_VENDOR.id);
   /** True once this visit has cost the character part of their evening. */
@@ -217,6 +237,22 @@ export function useShop(
     },
     onSuccess: (outcome) => {
       setHaggled({ vendorId: vendor.id, won: outcome.won, percent: outcome.percent });
+      setLastHaggle({
+        vendorId: vendor.id,
+        won: outcome.won,
+        percent: outcome.percent,
+        tie: outcome.result.tie,
+        yours: {
+          total: outcome.result.actor.total,
+          die: outcome.result.actor.rolls[0] ?? 0,
+          formula: outcome.result.actor.formula,
+        },
+        theirs: {
+          total: outcome.result.opponent.total,
+          die: outcome.result.opponent.rolls[0] ?? 0,
+          formula: outcome.result.opponent.formula,
+        },
+      });
       setMessage(
         outcome.won
           ? { tone: "bought", text: `They come down ${outcome.percent}%. Prices below are theirs.` }
@@ -357,9 +393,52 @@ export function useShop(
     onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
   });
 
+  // Who is behind the counter. A seller at a place names its own keeper; the
+  // fixer is the campaign's own fixer, with the face the cast already has.
+  const keeper: CounterKeeper | null = useMemo(() => {
+    if (vendor.keeper) {
+      return { ...vendor.keeper, image: keeperImage(vendor.id) };
+    }
+    if (vendor.castRole === "fixer" && bundle) {
+      const member = castMemberInRole(bundle.npcs, "fixer");
+      if (!member) return null;
+      const npc = findNpc(member.name);
+      return {
+        name: member.name,
+        who: member.standing,
+        image: npc ? npcArtwork(npc).src : null,
+      };
+    }
+    return null;
+  }, [vendor, bundle]);
+
+  // Your chance at the haggle: the printed opposed roll, counted exactly, from
+  // the same actor and modifiers the roll itself uses.
+  const haggleOdds = useMemo(() => {
+    if (!bundle) return null;
+    const actor = actorFor(bundle.character, {
+      vitals: bundle.vitals,
+      inventory: bundle.inventory,
+    });
+    const stat = actor.stats[getSkill("trading").stat as StatKey];
+    if (typeof stat !== "number") return null;
+    const extra = roleCheckModifiers({
+      campaign: bundle.campaign,
+      character: bundle.character,
+      skillId: "trading",
+    }).reduce((sum, m) => sum + m.value, 0);
+    return opposedPercent(
+      stat + skillLevelFor(actor, "trading") + extra,
+      vendor.haggle.cool + vendor.haggle.trading,
+    );
+  }, [bundle, vendor]);
+
   return {
     vendor,
     vendors,
+    keeper,
+    haggleOdds,
+    lastHaggle: lastHaggle?.vendorId === vendor.id ? lastHaggle : null,
     /** True when the character is standing somewhere that sells. */
     atShop: vendors.length > 1,
     /** True once the player chose to deal with the fixer from somewhere that sells nothing. */

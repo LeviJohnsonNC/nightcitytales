@@ -23,7 +23,7 @@ import {
 import type { StockedItem } from "@/features/campaign/shopping";
 import { CounterView } from "@/features/life/shop/CounterView";
 import { placeImage, placeThumb } from "@/features/life/shop/ShopView";
-import type { ShopController, ShopMessage } from "@/features/life/useShop";
+import type { HaggleScene, ShopController, ShopMessage } from "@/features/life/useShop";
 import type { CampaignInventoryItem } from "@/lib/backend";
 
 const SEED = "shop-review";
@@ -86,6 +86,7 @@ export function ShopReview() {
   const [message, setMessage] = useState<ShopMessage | null>(null);
   const [interests, setInterests] = useState<string[]>(known ? ["quiet"] : []);
   const [fixerChosen, setFixerChosen] = useState(false);
+  const [haggleDone, setHaggleDone] = useState<HaggleScene | null>(null);
   const vendor = vendors.find((v) => v.id === vendorId) ?? vendors[0]!;
   const eurobucks = 1840;
 
@@ -127,9 +128,20 @@ export function ShopReview() {
     chooseFixer: () => setFixerChosen(true),
     setVendor: (id: string) => setVendorId(id),
     hagglePercent: 5,
-    haggleSpent: false,
+    haggleSpent: haggleDone !== null,
     haggleDiscount: 0,
-    haggle: () => say("They come down 5%."),
+    haggle: () =>
+      setHaggleDone({
+        vendorId: vendor.id,
+        won: true,
+        percent: 5,
+        tie: false,
+        yours: { total: 17, die: 8, formula: "1d10(8) + COOL(5) + Trading(4) = 17" },
+        theirs: { total: 12, die: 4, formula: "1d10(4) + COOL(4) + Trading(4) = 12" },
+      }),
+    haggleOdds: 58,
+    lastHaggle: haggleDone,
+    keeper: vendor.keeper ? { ...vendor.keeper, image: null } : null,
     operatorRank: 0,
     shelf,
     fresh: [],

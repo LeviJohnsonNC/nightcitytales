@@ -132,6 +132,7 @@ import { lifeTurnFn, type LifeTurnResult } from "./lifeTurn.server";
 import type { LifeActionCard } from "./lifeResponse";
 import { MAX_LIFE_OPTIONS, mergeOptions, venueOptions } from "./lifeOptions";
 import { planBrowse } from "./browseIntent";
+import { counterNews } from "./counterNews";
 
 /** What a seller's kinds are called in the narrator's packet. */
 const SELLER_DEALS: Record<string, string> = {
@@ -964,7 +965,9 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           // the Counter rather than by a stall the narrator made up. Names and
           // what they deal in only: what is on the shelf is never sent.
           sellers: shopsAt(position?.placeKey).map(
-            (v) => `${v.label} (deals in ${v.deals.map((k) => SELLER_DEALS[k] ?? k).join(", ")})`,
+            (v) =>
+              `${v.label} (deals in ${v.deals.map((k) => SELLER_DEALS[k] ?? k).join(", ")})` +
+              (v.keeper ? `, run by ${v.keeper.name}: ${v.keeper.who}` : ""),
           ),
           business: placeActions({
             districtKey: positionDistrict.key,
@@ -1042,6 +1045,7 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
     }),
     people: lifePeople(bundle.npcs, bundle.clock.day),
     recentEvents: recentLifeLines(bundle.events),
+    counter: counterNews(bundle.events),
     capabilities: renderCapabilityLines(capability),
     ...(turn.resolved ? { resolved: turn.resolved } : {}),
     ...(turn.resolved && turn.said ? { said: turn.said } : {}),

@@ -43,6 +43,8 @@ export const PACKET_BUDGET = {
   capabilities: 24,
   /** Finds carried, each with its contract. A line apiece, so few. */
   gadgets: 4,
+  /** What they bought, sold or argued over at a counter since the narrator last spoke. */
+  counter: 4,
   /** People in the room, and what the player has worked out about each. */
   npcsPresent: 8,
   npcKnown: 4,
