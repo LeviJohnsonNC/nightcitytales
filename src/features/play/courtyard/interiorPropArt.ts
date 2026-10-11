@@ -48,6 +48,7 @@ export function createInteriorPropTextures(
   /** The flat footprint shadow under the prop; off where the board draws contact shade. */
   bakedShadow = true,
   materials?: MaterialSet,
+  office = false,
 ) {
   for (const condition of ["intact", "damaged", "wrecked"] as PropCondition[]) {
     const height = PROP_CANVAS.height;
@@ -191,9 +192,9 @@ export function createInteriorPropTextures(
       texture.refresh();
       continue;
     }
-    const metal = ["#4f626a", "#283c48", "#73878a"],
-      wood = ["#766656", "#493f39", "#ac9270"],
-      velvet = ["#624052", "#38293e", "#a56883"];
+    const metal = office ? ["#56605c", "#323f40", "#8c9387"] : ["#4f626a", "#283c48", "#73878a"],
+      wood = office ? ["#795c42", "#4e3c30", "#b18d62"] : ["#766656", "#493f39", "#ac9270"],
+      velvet = office ? ["#486359", "#2d423e", "#6e8775"] : ["#624052", "#38293e", "#a56883"];
     const carton = (
       x: number,
       y: number,
@@ -398,6 +399,15 @@ export function createInteriorPropTextures(
       deskSlab(0.05, 0.8, 1.9, 1.1, 32, 38, wood);
       deskSlab(0.65, 1.6, 0.75, 0.15, 38, 61, metal);
       deskSlab(0.65, 1.57, 0.7, 0.03, 42, 57, ["#62b4bd", "#62b4bd", "#62b4bd"]);
+      if (office) {
+        deskSlab(0.68, 1.545, 0.64, 0.012, 43, 56, ["#233e47", "#233e47", "#233e47"]);
+        for (const z of [46, 50, 54])
+          deskSlab(0.72, 1.53, z === 50 ? 0.31 : 0.5, 0.008, z, z + 0.8, [
+            "#7ca4a4",
+            "#7ca4a4",
+            "#7ca4a4",
+          ]);
+      }
       deskSlab(0.65, 1.05, 0.7, 0.3, 38, 40, metal);
       deskSlab(0.15, 1.1, 0.3, 0.45, 38, 41, ["#b2b8ae", "#929c92", "#e2d8ba"]);
       deskSlab(0.65, 0.12, 0.7, 0.6, 0, 19, metal);

@@ -57,11 +57,12 @@ export function createPropTextures(
   /** False where the board draws each prop's contact shade (`contactShade.ts`). */
   bakedShadow = true,
   materials?: MaterialSet,
+  office = false,
 ) {
   for (const kind of kinds) {
     if (isInteriorProp(kind)) {
-      createInteriorPropTextures(scene, kind, 0, bakedShadow, materials);
-      createInteriorPropTextures(scene, kind, 90, bakedShadow, materials);
+      createInteriorPropTextures(scene, kind, 0, bakedShadow, materials, office);
+      createInteriorPropTextures(scene, kind, 90, bakedShadow, materials, office);
       continue;
     }
     const source = scene.textures

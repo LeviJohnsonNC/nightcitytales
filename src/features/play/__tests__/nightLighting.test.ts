@@ -12,11 +12,15 @@ import {
 import { REVIEW_KINDS } from "@/features/dev/sceneReviewQuery";
 
 describe("night lighting", () => {
-  it("applies to the finished streets and industrial interiors", () => {
+  it("applies to the finished streets, industrial interiors and offices", () => {
     for (const kind of REVIEW_KINDS) {
       const env = composeScene(kind as SceneEnvironment["recipe"], 7).layout.arena.environment!;
       expect(nightFor(env) !== undefined).toBe(
-        kind === "intersection" || kind === "alley" || kind === "warehouse" || kind === "garage",
+        kind === "intersection" ||
+          kind === "alley" ||
+          kind === "warehouse" ||
+          kind === "garage" ||
+          kind === "office",
       );
     }
   });

@@ -32,6 +32,10 @@ The garage now shares those material and shadow systems, with painted vehicle
 art, cooler workbay lights and tyre/grease wear registered to saved car footprints.
 Its three-layout in-app review is next; warehouse visual review was approved.
 
+The office finish adds carpet work areas, warmer meeting-room floors and furniture,
+stone reception surfaces and ceiling-panel lighting bounded to saved rooms.
+Review seeds4/5/8 are the next visual gate; garage visual review was approved.
+
 Phase 1 implementation now includes three spatial layouts per recipe, reserved
 and validated exterior entrances, a character-free `/scene-review`, silhouette
 occlusion and permanent-wall targeting feedback. Six rendered examples and the

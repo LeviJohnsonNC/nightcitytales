@@ -1,19 +1,18 @@
-# Active garage material pass — 2026-10-11
+# Active office material pass — 2026-10-11
 
-Warehouse PR364 approved and merged. User authorized the next environment; garage chosen.
+Garage PR365 approved and merged. User authorized next environment; office chosen.
 Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/garage-material-pass, base origin/main 764a4854.
-Original dirty checkout untouched. Previous final handoff /tmp/nct364-final-handoff.md.
+Branch codex/office-material-pass; base origin/main 6c0f0500.
+Original dirty checkout untouched. Prior final handoff /tmp/nct365-final-handoff.md.
 
-Local implementation: share warehouse finishes as industrialFinish, enable garage materials,
-painted vehicles/workbenches, room-bounded lighting and contact/cast shadows.
-Garage floor wear follows saved vehicle footprints; no geometry changes or extra obstacles.
-Baseline Chromium seeds4/5/7 pass; seed4 play inspected, captures /tmp/nct-garage-before-captures.
-Local typecheck and 20 focused lighting tests pass. First Chromium seeds4/5/7 pass;
-play images inspected. Seeds4/7 repeat the same layout, so final review set is4/5/9.
-Baseline and initial captures cover two layouts; final seed9 and matched CI add the third.
-Implementation ready for checkpoint. Next: full tests/lint/build, final Chromium and CI.
-User in-app acceptance remains the gate before another environment.
+Local implementation underway: office carpet/stone/timber floors, warmer furniture,
+ceiling panel lights clipped to saved rooms, contact/cast shadows. No geometry changes.
+Baseline Chromium seeds4/5/8 pass; seed4 play inspected; /tmp/nct-office-before-captures.
+First implementation typecheck,13focused tests and Chromium all3seeds pass.
+Seed4 play inspected: distinct floors/furniture work, panels too bright/walls industrial.
+Local follow-up softens panel emission and gives office walls plaster; needs final validation.
+Next: checkpoint PR, full tests/lint/typecheck/build and final Chromium screenshots.
+Levi reviews before further environment work.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 
