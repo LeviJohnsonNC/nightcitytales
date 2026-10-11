@@ -20,7 +20,9 @@ retain their original geometry. See [the implementation and playtest notes](docs
 New seed-8 intersections use recipe15: market restocking, a repair workbench and
 service collection have canonical cover and clear handling spaces. Saved v14
 geometry remains frozen. Overhead fittings sort above lower overlapping props;
-the crate atlas now has a calmer material finish. Visual review remains a gate.
+the crate atlas now has a calmer material finish, with matching painted workbench
+art. Local play/reveal/destruction captures pass visual review; deployed playtesting
+remains the rollout gate.
 
 Phase 1 implementation now includes three spatial layouts per recipe, reserved
 and validated exterior entrances, a character-free `/scene-review`, silhouette

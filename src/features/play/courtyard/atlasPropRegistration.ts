@@ -7,6 +7,7 @@ import type { PropKind, PropCondition } from "./propPresentation";
 const CONTACTS: Partial<
   Record<PropKind, { width: number; x: number; feet: [number, number, number] }>
 > = {
+  workbench: { width: 0.88, x: 0.425, feet: [0.9, 0.9, 0.9] },
   cargo: { width: 0.88, x: 0.51, feet: [0.94, 0.94, 0.94] },
   pallet: { width: 0.92, x: 0.5, feet: [0.71, 0.71, 0.705] },
   dumpster: { width: 0.8, x: 0.49, feet: [0.94, 0.94, 0.94] },

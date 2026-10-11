@@ -59,10 +59,10 @@ export const CLUSTERS: Record<string, ClusterDefinition> = {
     dressing: [],
   },
   service_collection: {
-    zones: ["loading"],
-    reason: "A collection bin sits beside the freight court with a clear handling space",
+    zones: ["frontage"],
+    reason: "A collection bin serves the utility court beside its clear entrance approach",
     members: [{ key: "service_dumpster", id: "bin", x: 0, y: 0, art: ["dumpster"] }],
-    access: [{ x: 1, y: -1, label: "Waste collection access" }],
+    access: [{ x: -1, y: 1, label: "Waste collection access" }],
     dressing: [],
   },
   repair_parts: {

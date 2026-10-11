@@ -12,14 +12,20 @@ three-cell registration and alpha, lossless WebP. Original retained.
 Recipe15 seed8 adds canonical pallet, workbench and collection bin with reserved
 handling spaces. Frozen v14 fixture protects saved scenes; other seeds unchanged.
 
-Validation: typecheck/build pass, lint zero errors/15 existing warnings. First
-full suite:4261 pass/2 fail; caught pallet/lamp collision and a broad test ID
-prefix. Moved pallet to the market return (4,10), reserved lamp clearance and
-gave it a distinct ID. All 8 affected engine tests now pass. First Chromium
-run passes 3 seeds; inspected seed8 play/reveal/destruction. Crate reads cleaner;
-workbench correctly fades behind the actor. Earlier captures predate pallet move.
-Checkpoint implementation now; final full suite and seed8 captures still required.
-Not pushed. Next: final validation/screenshots, then review PR and remote checks.
+Implementation d9cedf98 plus the next ordinary refinement commit. PR356 draft:
+https://github.com/LeviJohnsonNC/nightcitytales/pull/356
+Refinement: painted workbench at(20,20) with measured atlas registration; bin in
+utility court(24,4); market pallet at(4,10), visible around the return/in reveal.
+Intact/damaged/wreck art and original crate atlas are retained/versioned.
+
+Validation: typecheck/build pass, lint zero errors/15 existing warnings. Full suite
+4,263pass/1 asset-inventory assertion; extended it for the new atlas and all9 asset
+tests pass. Earlier full tree d9cedf98 had4,263pass; final remote suite pending.
+Local Chromium3seed pass at d9cedf98, final refined seed8 pass. Actually inspected
+final play/reveal/destruction/compact: bench and bin visible, no detached rings,
+crate calmer, routes readable. Other seeds unchanged geometrically.
+Next: push refinement, await remote CI and both Chromium jobs, inspect final
+remote captures, then mark PR356 ready. Levi reviews/merges.
 Do not claim all clipping eliminated or visual acceptance before pixel inspection.
 
 ## Active architecture depth pass — 2026-10-11 UTC

@@ -24,13 +24,29 @@ import {
 
 type Point = { x: number; y: number };
 const DIR = join(process.cwd(), "public/images/street-props");
-const KINDS = ["sedan-engine", "sedan-cabin", "planter", "mailboxes", "shop-display"] as const;
+const KINDS = [
+  "sedan-engine",
+  "sedan-cabin",
+  "planter",
+  "mailboxes",
+  "shop-display",
+  "workbench",
+] as const;
 
-/** Width, height and alpha flag of an extended (VP8X) WebP. */
+/** Width, height and alpha flag of an extended or lossless WebP. */
 function webpHeader(file: string) {
   const b = readFileSync(file);
   expect(b.toString("ascii", 0, 4)).toBe("RIFF");
   expect(b.toString("ascii", 8, 12)).toBe("WEBP");
+  if (b.toString("ascii", 12, 16) === "VP8L") {
+    expect(b[20]).toBe(0x2f);
+    const bits = b.readUInt32LE(21);
+    return {
+      width: (bits & 0x3fff) + 1,
+      height: ((bits >>> 14) & 0x3fff) + 1,
+      alpha: !!(bits & (1 << 28)),
+    };
+  }
   expect(b.toString("ascii", 12, 16), file).toBe("VP8X");
   const u24 = (o: number) => b[o]! | (b[o + 1]! << 8) | (b[o + 2]! << 16);
   return { width: u24(24) + 1, height: u24(27) + 1, alpha: (b[20]! & 0x10) !== 0 };
@@ -74,7 +90,7 @@ describe("street prop art: the files the board loads", () => {
     expect(
       Object.keys(map).filter((n) => n.includes("wrecked-") && /burgundy|charcoal/.test(n)),
     ).toEqual([]);
-    expect(files).toHaveLength(12 + 3 + 6 + 6 + 2 * 2 * 2 * 2);
+    expect(files).toHaveLength(12 + 3 + 6 + 6 + 3 + 2 * 2 * 2 * 2);
     expect(new Set(files.map((f) => f.key)).size).toBe(files.length);
   });
 
@@ -82,16 +98,20 @@ describe("street prop art: the files the board loads", () => {
     expect(streetPropFiles(["crates", "barrier"] as never)).toEqual([]);
   });
 
-  it("ships every file it names, at twice the procedural frame plus its padding, with alpha", () => {
+  it("ships every named frame or three-state atlas at its registered dimensions with alpha", () => {
     const files = streetPropFiles(KINDS);
     const names = files.map((f) => f.url.split("/").pop()!);
-    expect(readdirSync(DIR).sort()).toEqual([...names].sort());
+    expect(readdirSync(DIR).sort()).toEqual([...new Set(names)].sort());
     for (const file of files) {
       const name = file.url.split("/").pop()!;
       const sedan = file.kind.startsWith("sedan-");
       expect(webpHeader(join(DIR, name)), name).toEqual({
-        width: 2 * (FRAME.width + (sedan ? 2 * SEDAN_ART_PAD.side : 0)),
-        height: 2 * (FRAME.height + (sedan ? SEDAN_ART_PAD.top : 0)),
+        width:
+          file.atlasCell === undefined
+            ? 2 * (FRAME.width + (sedan ? 2 * SEDAN_ART_PAD.side : 0))
+            : 2171,
+        height:
+          file.atlasCell === undefined ? 2 * (FRAME.height + (sedan ? SEDAN_ART_PAD.top : 0)) : 724,
         alpha: true,
       });
     }
@@ -200,4 +220,15 @@ describe("street prop art: the wreck volume", () => {
       expect(inside(debris[0]!.hull, at(-0.2, 1, 0))).toBe(false);
     }
   });
+});
+
+it("loads all three registered workbench states and retains the kit for an unauthored rotation", () => {
+  const files = streetPropFiles(["workbench"]);
+  expect(files.map((f) => f.atlasCell)).toEqual([0, 1, 2]);
+  expect(files.map((f) => f.textures)).toEqual([
+    ["prop-workbench-intact"],
+    ["prop-workbench-damaged"],
+    ["prop-workbench-wrecked"],
+  ]);
+  expect(files.every((f) => f.url === "/images/street-props/workbench-states-v1.webp")).toBe(true);
 });
