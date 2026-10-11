@@ -1,6 +1,6 @@
 import { LifeSceneContent } from "./LifeSceneContent";
 import type { ReactNode } from "react";
-import { readSceneCombatEnd } from "@/engine";
+import { FIXER_VENDOR, readSceneCombatEnd, shopsAt } from "@/engine";
 /**
  * LIFE — the screen between jobs. One situation at a time, a free-text box, and
  * a clock that costs something to spend.
@@ -96,6 +96,7 @@ import { hauntPeople } from "./lifeModel";
 import { placeHistory } from "@/features/campaign/placeState";
 import { ShopView } from "./shop/ShopView";
 import { browseLinkFor, newestBrowse } from "./browseIntent";
+import { ModeSwitch } from "./shop/ModeSwitch";
 import { standingAt } from "@/features/campaign/favours";
 import { DockTile } from "./hud/DockTile";
 import { RipperdocSheet } from "./RipperdocSheet";
@@ -826,6 +827,17 @@ export function LifeScreen({
     setShopOpen(true);
     if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   };
+  // Who sells where the character stands, for the switch above the scene. A
+  // trip away from the shop closes the Counter: it belongs to where they were.
+  const standing = bundle ? standingAt(bundle.campaign) : null;
+  const sellerHere = standing ? (shopsAt(standing)[0] ?? null) : null;
+  const lastStanding = useRef(standing);
+  useEffect(() => {
+    if (lastStanding.current !== standing && shopOpen && shopVendor !== FIXER_VENDOR.id) {
+      setShopOpen(false);
+    }
+    lastStanding.current = standing;
+  }, [standing, shopOpen, shopVendor]);
   // "What have you got?" opens the Counter on its own. The turn writes a
   // shop_browsed row when the engine found a seller to show; the newest one
   // seen when the screen first loaded is remembered, so a reload never
@@ -1173,6 +1185,13 @@ export function LifeScreen({
                 key={shopVendor ?? "shop"}
                 bundle={bundle}
                 vendorId={shopVendor}
+                talk={{
+                  onSay: (text) => life.act(text),
+                  busy: life.busy,
+                  last: life.narration?.text ?? null,
+                  waitingOnRoll: !!life.pendingCheck,
+                  onScene: () => setShopOpen(false),
+                }}
                 onClose={() => setShopOpen(false)}
                 onTravel={life.travelTo}
                 travelBusy={life.travelBusy}
@@ -1181,6 +1200,15 @@ export function LifeScreen({
               />
             ) : (
               <>
+                {/* Standing somewhere that sells: the same switch the Counter shows. */}
+                {sellerHere && (
+                  <ModeSwitch
+                    mode="scene"
+                    seller={sellerHere.label}
+                    onCounter={() => openShop(sellerHere.id)}
+                    onScene={() => {}}
+                  />
+                )}
                 {/* What happened on the job they just finished: the peak, and what it left open. */}
                 {previously && bundle.lastFrame && (
                   <PreviouslyCard

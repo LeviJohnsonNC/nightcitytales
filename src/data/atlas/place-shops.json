@@ -24,7 +24,11 @@
       "line": "Stalls along the street the map is named for, open at every hour the Tyger Claws allow it.",
       "signature": ["braindance_viewer", "scrambler_descrambler"],
       "backRoom": ["smart_glasses"],
-      "finds": 1
+      "finds": 1,
+      "scene": [
+        "Tarps snap overhead and the grills hiss under them. Three blocks of folding tables run nose to tail along Ganymede Street, each with somebody behind it who has already priced your coat.",
+        "The Tyger Claws walk the line in pairs and nobody looks at them directly. The stall in front of you has a hand-lettered sign, a cracked display case and a woman who has not stopped talking since the morning."
+      ]
     },
     {
       "place": "j1",
@@ -37,7 +41,11 @@
         "auto_level_dampening_ear_protectors"
       ],
       "backRoom": ["radar_detector"],
-      "finds": 2
+      "finds": 2,
+      "scene": [
+        "Dock lights turn the wet concrete orange. Willy Maze's storefront is a shipping container with its doors chained open and a string of bulbs over the threshold.",
+        "Crates stand in for shelves and the price tags are written in grease pencil. Somebody down the dock is testing a speaker, the same three notes, over and over."
+      ]
     },
     {
       "place": "v7",
@@ -46,13 +54,21 @@
       "line": "Tailgates down in Woodchipper's yard, engines ticking, on the nights she opens it.",
       "signature": ["tech_bag", "radiation_suit"],
       "backRoom": ["homing_tracer"],
-      "finds": 1
+      "finds": 1,
+      "scene": [
+        "The yard smells of hot oil and cut grass that nobody planted. Tailgates are down in a ragged circle and the engines tick as they cool.",
+        "Woodchipper herself sits on the hood of a pickup with a mug in both hands, watching who comes in through the gate. Everything for sale is laid out on blankets, as if it might have to leave in a hurry."
+      ]
     },
     {
       "place": "h4",
       "vendor": "street",
       "label": "Mrs. Suzuki's Bodega",
-      "line": "The most stable shelves in Old Japantown, and the only stock you can count on."
+      "line": "The most stable shelves in Old Japantown, and the only stock you can count on.",
+      "scene": [
+        "A bell over the door, a fan that turns but does not cool, and shelves stacked to the ceiling in an order only one person understands.",
+        "Mrs. Suzuki watches you from behind the register with her reading glasses pushed up into her hair. The radio is on low. It is always on low."
+      ]
     },
     {
       "place": "w1",
@@ -61,7 +77,11 @@
       "line": "A hole-in-the-wall tech shop where every drawer is half something else.",
       "signature": ["tech_bag", "techscanner"],
       "backRoom": ["cyberdeck"],
-      "finds": 2
+      "finds": 2,
+      "scene": [
+        "The shop is a hallway with ambitions. Drawers line both walls, labelled in three hands and two languages, and half of them do not hold what they say.",
+        "A soldering iron rests in its stand, still warm. Somewhere in the back a printer chatters out a receipt nobody asked for."
+      ]
     },
     {
       "place": "w1",
@@ -69,7 +89,11 @@
       "label": "Bits’n’Bolts: Faisal’s drawer",
       "line": "Faisal’s weapons, sold through the tech shop’s back counter. Ask for what is in the drawer, not what is on the shelf.",
       "signature": ["microwaver"],
-      "backRoom": ["shrieker"]
+      "backRoom": ["shrieker"],
+      "scene": [
+        "Past the tech counter, behind a curtain that used to be a shower curtain, there is a second, smaller counter and a steel drawer with a combination lock.",
+        "Faisal does not stand up when you come in. He looks at your hands, then your face, then your hands again, and only then asks what you are after."
+      ]
     },
     {
       "place": "x5",
@@ -77,7 +101,11 @@
       "label": "Minimallism",
       "line": "Tables set up in the husk of an old mall, on the side nobody's reclaimed yet.",
       "signature": ["smart_glasses", "braindance_viewer"],
-      "finds": 1
+      "finds": 1,
+      "scene": [
+        "The mall's skylights are mostly gone, so the rain comes in where the fountain used to be. Tables are set up between dead storefronts, each lit by its own lamp.",
+        "Shoppers move slowly here, the way people do in a place that was built to be walked through. A kid on a skateboard loops the old food court and nobody tells him to stop."
+      ]
     },
     {
       "place": "k3",
@@ -86,7 +114,11 @@
       "line": "Parts on tables, and provenance is not a question anybody working them considers polite.",
       "signature": ["tech_bag"],
       "backRoom": ["scrambler_descrambler"],
-      "finds": 2
+      "finds": 2,
+      "scene": [
+        "Parts on tables, parts in buckets, parts in a shopping trolley with a wheel missing. The Swap does not have a front so much as an edge where the stalls start.",
+        "Nobody asks where anything came from. A woman two tables down is unscrewing the casing of something that is still, very faintly, beeping."
+      ]
     },
     {
       "place": "t2",
@@ -95,7 +127,11 @@
       "line": "6th Street's headquarters, behind the old National Guard walls. They sell, and they watch you do it.",
       "signature": ["assault_rifle", "shotgun"],
       "backRoom": ["grenade_launcher", "rocket_launcher"],
-      "range": true
+      "range": true,
+      "scene": [
+        "The old National Guard walls still stand, topped with new wire. Inside the gate, the gun cage is lit like an operating theatre and staffed like a checkpoint.",
+        "Sixth Street members in matching jackets lean against the counter. They sell to you politely and they remember everything you look at."
+      ]
     },
     {
       "place": "t2",
@@ -103,7 +139,11 @@
       "label": "The Armory: the plate racks",
       "line": "Racks of plate in a drill hall that was built to hold exactly this.",
       "signature": ["flak", "heavy_armorjack"],
-      "backRoom": ["metalgear"]
+      "backRoom": ["metalgear"],
+      "scene": [
+        "The drill hall's ceiling is lost in the dark above the lights. Plate hangs from the racks in rows, sorted by weight, and the floor still has the old parade markings.",
+        "A quartermaster with a clipboard walks the aisle. He sizes you up by eye before you say a word and is usually right."
+      ]
     },
     {
       "place": "d3",
@@ -112,7 +152,11 @@
       "line": "A counter beside the firing lanes, run by a man with strong opinions about who is watching.",
       "signature": ["sniper_rifle", "assault_rifle", "smart_ammo"],
       "backRoom": ["rhinemetall_railgun", "tsunami_helix"],
-      "range": true
+      "range": true,
+      "scene": [
+        "Gunfire comes through the wall in short, patient bursts. The counter sits beside the firing lanes, behind glass that has been replaced more than once.",
+        "Toggle wears ear defenders around his neck and a pistol on his hip, and he talks about surveillance the way other men talk about the weather. Everything here is clean, oiled and labelled."
+      ]
     },
     {
       "place": "s4",
@@ -120,7 +164,11 @@
       "label": "Skiv's Counter",
       "line": "A dockside bar with an office at the back. Both halves of the business are open to anyone.",
       "signature": ["shotgun"],
-      "backRoom": ["sniper_rifle"]
+      "backRoom": ["sniper_rifle"],
+      "scene": [
+        "The front is a bar: low light, sticky floor, dockworkers nursing the end of a shift. Skiv's office is at the back, past the toilets, through a door that is never quite closed.",
+        "Inside, guns lie on a pool table under a green lamp. Skiv takes your measure without getting up and pours two drinks without asking."
+      ]
     },
     {
       "place": "a13",
@@ -128,27 +176,43 @@
       "label": "Torrell and Chiang's",
       "line": "The best tailors in Night City, who know that good tailoring and good armor are the same job.",
       "signature": ["bodyweight_suit"],
-      "backRoom": ["metalgear"]
+      "backRoom": ["metalgear"],
+      "scene": [
+        "A bell rings as the door closes behind you. Bolts of cloth line one wall and mannequins stand in the window, wearing coats that would stop a pistol round and look good doing it.",
+        "Mr. Torrell measures. Ms. Chiang decides. Neither of them says what anything is lined with unless you ask, and both of them notice where your jacket pulls."
+      ]
     },
     {
       "place": "c2",
       "vendor": "street",
       "label": "Oasis Megamart",
-      "line": "Aisle after aisle under Continental Brands’ roof, with the ammunition in sporting goods, somewhere past the pet food."
+      "line": "Aisle after aisle under Continental Brands’ roof, with the ammunition in sporting goods, somewhere past the pet food.",
+      "scene": [
+        "Aisle after aisle under hard white light, piped music, the hum of the freezers. Shoppers push trolleys past displays of things nobody needs at prices nobody questions.",
+        "Sporting goods is at the far end, past the pet food. The clerk behind that counter has the tired look of somebody who checks IDs all day and believes none of them."
+      ]
     },
     {
       "place": "r2",
       "vendor": "street",
       "label": "Executive Zone Oasis",
       "line": "Premium brands and rarities, fresh-cut flowers by drone, and an attendant who knows your address before you do.",
-      "signature": ["braindance_viewer"]
+      "signature": ["braindance_viewer"],
+      "scene": [
+        "Glass doors part before you reach them. Inside, the air is cool, the floor is pale stone and fresh flowers arrive by drone every few minutes.",
+        "An attendant appears at your elbow, already smiling, already knowing your name. Everything on the shelves is beautiful and none of it has a price tag."
+      ]
     },
     {
       "place": "p1",
       "vendor": "street",
       "label": "Canalside Plaza",
       "line": "A strip mall with a talent agency, a restaurant and a nail salon, and one unit at the end with the lights off at the front and on at the back.",
-      "signature": ["radar_detector"]
+      "signature": ["radar_detector"],
+      "scene": [
+        "The strip mall's units are a talent agency, a noodle restaurant and a nail salon, all bright and busy. The one at the end has its front lights off.",
+        "The back lights are on. A woman sitting on an upturned crate by the door nods you through without getting up, and the smell of solder follows you in."
+      ]
     },
     {
       "place": "b14",
@@ -157,7 +221,11 @@
       "line": "Flares, dry bags and crates that fell off boats. Hollis Ruggels has a story for every one, and none of them match.",
       "signature": ["homing_tracer"],
       "backRoom": ["scrambler_descrambler"],
-      "finds": 1
+      "finds": 1,
+      "scene": [
+        "Flares, dry bags and coils of rope hang from the rafters. Crates are stacked along the walls with the original shipping marks scraped off, mostly.",
+        "Hollis Ruggels has a story for everything in the place. The story for whatever you pick up will be good, and it will not match the one he told yesterday."
+      ]
     },
     {
       "place": "e7",
@@ -165,7 +233,11 @@
       "label": "Dragon’s Tooth Pawn",
       "line": "Watches and jade in the window. The back shelf holds whatever the Red Chrome Legion pledged against a bad week.",
       "backRoom": ["assault_rifle", "battleglove"],
-      "finds": 1
+      "finds": 1,
+      "scene": [
+        "Watches and jade sit in the window under small yellow lamps. The glass counter is spotless and the old man behind it is polishing it again anyway.",
+        "The back shelf is behind a bead curtain. What is on it was pledged against a bad week by people from the Red Chrome Legion, and nobody here expects them back for it."
+      ]
     },
     {
       "place": "f11",
@@ -174,7 +246,11 @@
       "line": "Engineering students selling ex-lab kit and the contents of a Biotechnica skip, and haggling like they are defending a thesis.",
       "signature": ["chemical_analyzer", "medscanner"],
       "backRoom": ["vial_of_biotoxin"],
-      "finds": 1
+      "finds": 1,
+      "scene": [
+        "Folding tables in a car park behind the faculty building, under a banner for a club that does not exist. Lab kit, half-used reagents and things with Biotechnica asset tags.",
+        "The students running the stalls argue with each other about everything except the prices, which they defend as if their grades depend on it."
+      ]
     },
     {
       "place": "g15",
@@ -182,7 +258,11 @@
       "label": "Gentry & Blake",
       "line": "A showroom for security details: heavy catalogues, serious prices, and a salesman who measures you twice and does not say why.",
       "signature": ["heavy_armorjack", "flak"],
-      "backRoom": ["metalgear"]
+      "backRoom": ["metalgear"],
+      "scene": [
+        "A showroom with carpet thick enough to lose a shoe in. Catalogues the size of tombstones sit on lecterns, and the armour on display is lit like jewellery.",
+        "A salesman in a grey suit measures you twice, writes something down and does not tell you what. Coffee arrives without anybody ordering it."
+      ]
     },
     {
       "place": "i10",
@@ -190,7 +270,11 @@
       "label": "The Slammer Dock Door",
       "line": "A folding table in a loading dock, guns by the box. Scythe Security patrols out front and has never once turned its head.",
       "backRoom": ["sniper_rifle", "grenade_launcher"],
-      "finds": 1
+      "finds": 1,
+      "scene": [
+        "A loading dock with one roller door half up. Behind it, a folding table, a strip light and boxes of guns stacked by calibre.",
+        "Scythe Security patrols the street out front. They have walked past this door a thousand times and have never once turned their heads."
+      ]
     },
     {
       "place": "l5",
@@ -199,7 +283,11 @@
       "line": "Edgerunners Inc’s supply cage. Dot behind the grille grades customers on a scale that has nothing to do with money.",
       "signature": ["assault_rifle", "sniper_rifle", "emp_ammo"],
       "backRoom": ["kendachi_mono_three"],
-      "range": true
+      "range": true,
+      "scene": [
+        "The Edgerunners Inc supply cage is a chain-link pen at the back of a warehouse. A grille, a counter and a sign that says the cage keeps its own hours.",
+        "Dot sits behind the grille with her feet up. She grades every customer on a scale nobody else can see, and how she grades you has nothing to do with money."
+      ]
     },
     {
       "place": "m6",
@@ -207,7 +295,11 @@
       "label": "Gate Surplus",
       "line": "Vests with last year’s issue numbers, boots, and crates of mixed ammunition nobody has counted, under a tarp outside the wire.",
       "signature": ["flak", "radiation_suit"],
-      "backRoom": ["heavy_armorjack"]
+      "backRoom": ["heavy_armorjack"],
+      "scene": [
+        "Under a tarp outside the wire, a surplus stall built out of pallets. Vests hang on a rail with last year's issue numbers still stencilled on the back.",
+        "Boots stand in pairs on the ground and crates of mixed ammunition sit beside them, uncounted. The man running it keeps one eye on the gate the whole time you are there."
+      ]
     },
     {
       "place": "n14",
@@ -216,7 +308,11 @@
       "line": "Receipted, regulated and politely suspicious. Mr. Hachiman files everything in triplicate, including your face.",
       "signature": ["sniper_rifle"],
       "backRoom": ["tsunami_helix"],
-      "range": true
+      "range": true,
+      "scene": [
+        "Bright, clean and quiet, like a bank. The guns are behind glass, each with a card in neat handwriting, and there is a ticket machine by the door.",
+        "Mr. Hachiman bows slightly when you reach the counter. He files everything in triplicate, including, you suspect, your face."
+      ]
     },
     {
       "place": "q5",
@@ -224,7 +320,11 @@
       "label": "Ascent Outfitters",
       "line": "Armour-lined coats for people who want to look like they are climbing, and survive the fall. The fitting room window looks onto the Exec Zone wall.",
       "signature": ["heavy_armorjack"],
-      "backRoom": ["bodyweight_suit"]
+      "backRoom": ["bodyweight_suit"],
+      "scene": [
+        "Climbing ropes and carabiners hang in the window as decoration. The coats are on the racks inside, armour-lined, cut for people who want to look like they climb things.",
+        "The fitting-room window looks straight at the Exec Zone wall. The assistant seems to think this is a selling point."
+      ]
     },
     {
       "place": "u8",
@@ -233,7 +333,17 @@
       "line": "The day shift draws kit and the night shift signs it back in. Whatever is not signed back in is for sale at a fair price.",
       "signature": ["tech_bag"],
       "backRoom": ["techscanner"],
-      "finds": 1
+      "finds": 1,
+      "scene": [
+        "A hatch in a breeze-block wall with a counter in front of it. Inside, tools hang on pegboard in painted outlines, and every outline has a name and a shift beside it.",
+        "The day shift draws kit out and the night shift signs it back in. Whatever does not get signed back in sits on the counter, and the woman behind it will sell it to you at a fair price."
+      ]
     }
-  ]
+  ],
+  "greetings": {
+    "stranger": "Nobody here knows you yet. They are polite the way a locked door is polite.",
+    "known": "They know your face here, and the conversation starts a little further along.",
+    "backRoom": "They know you well enough now that the back room is open to you."
+  },
+  "greetingsNote": "House rule. One line under a shop's scene, chosen by whether the seller knows the character (has sold to them before) and whether the place has opened its back room to them."
 }

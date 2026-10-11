@@ -83,15 +83,30 @@ export function ItemThumb({
       )}
     >
       {picture ? (
-        <img
-          key={picture.url}
-          src={picture.url}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition: picture.focus }}
-          onError={() => setFailed({ itemId, count: count + 1 })}
-        />
+        <>
+          {picture.fit === "contain" && (
+            // The same picture, blurred to fill the frame behind the whole one.
+            <img
+              src={picture.url}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-md"
+            />
+          )}
+          <img
+            key={picture.url}
+            src={picture.url}
+            alt=""
+            loading="lazy"
+            className={cn(
+              "absolute inset-0 h-full w-full",
+              picture.fit === "contain" ? "object-contain p-[4%]" : "object-cover",
+            )}
+            style={picture.fit === "cover" ? { objectPosition: picture.focus } : undefined}
+            onError={() => setFailed({ itemId, count: count + 1 })}
+          />
+        </>
       ) : (
         <Icon
           aria-hidden

@@ -11,8 +11,10 @@
  * price or consequence. `/shop-review` renders it from fixtures.
  */
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowLeft, DoorClosed, MapPin, Phone, Store, X } from "lucide-react";
+import { ArrowLeft, DoorClosed, MapPin, MessageSquare, Phone, Store, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import {
   HOLD_DAYS,
   MAX_SHOP_INTERESTS,
@@ -23,6 +25,7 @@ import {
   getWeapon,
   holdDeposit,
   interestLabel,
+  shopGreeting,
   stacksInInventory,
   type RangeBand,
   type ShopPlace,
@@ -31,6 +34,7 @@ import type { StockedItem } from "@/features/campaign/shopping";
 import { cn } from "@/lib/utils";
 import type { ShopController } from "../useShop";
 import { ItemThumb } from "./ItemThumb";
+import { ModeSwitch } from "./ModeSwitch";
 import {
   SHELF_LABELS,
   counterSections,
@@ -203,8 +207,104 @@ function Storefront({
             </span>
           )}
         </div>
+        {v.scene.length > 0 && (
+          <div className="max-w-prose space-y-2 pt-2 text-[15px] leading-relaxed text-text sm:text-sm">
+            {v.scene.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+            <p className="italic text-text-muted">
+              {shopGreeting({
+                knowsYou: shop.knowsYou,
+                backRoomOpen: shop.knowsYou && !shop.backRoomClosed && v.backRoom.length > 0,
+              })}
+            </p>
+          </div>
+        )}
       </div>
     </header>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Talking across the counter, without leaving it.
+// ---------------------------------------------------------------------------
+
+/** What the Counter needs to let the player say something without leaving it. */
+export type CounterTalk = {
+  /** Send what they said as an ordinary turn. False keeps the text in the box. */
+  onSay: (text: string) => Promise<boolean> | void;
+  busy: boolean;
+  /** The latest narration, which is what they said back. */
+  last: string | null;
+  /** The turn called for dice, which are rolled in the scene. */
+  waitingOnRoll: boolean;
+  onScene: () => void;
+};
+
+function TalkAcross({ talk, seller }: { talk: CounterTalk; seller: string }) {
+  const [text, setText] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const send = async () => {
+    const said = text.trim();
+    if (!said || talk.busy) return;
+    const result = await talk.onSay(said);
+    if (result !== false) setText("");
+  };
+  return (
+    <section className="space-y-2 border border-hairline bg-surface/60 p-3">
+      {talk.last && (
+        <div>
+          <p
+            className={cn(
+              "whitespace-pre-wrap text-sm leading-relaxed text-text",
+              !expanded && "line-clamp-4",
+            )}
+          >
+            {talk.last}
+          </p>
+          {talk.last.length > 320 && (
+            <button
+              type="button"
+              className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted hover:text-foreground"
+              onClick={() => setExpanded((e) => !e)}
+            >
+              {expanded ? "Less" : "More"}
+            </button>
+          )}
+        </div>
+      )}
+      {talk.waitingOnRoll ? (
+        <button
+          type="button"
+          onClick={talk.onScene}
+          className="flex w-full items-center gap-2 border border-amber/50 bg-amber/10 px-3 py-2 text-left text-sm hover:bg-amber/15"
+        >
+          <MessageSquare aria-hidden className="size-4 text-amber" />
+          That calls for a roll. Make it in the scene.
+        </button>
+      ) : (
+        <div className="flex gap-2">
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+            placeholder={`Say something to ${seller}…`}
+            aria-label="Say something across the counter"
+            rows={1}
+            className="min-h-9 flex-1 resize-none"
+            disabled={talk.busy}
+          />
+          <Button onClick={() => void send()} disabled={talk.busy || !text.trim()}>
+            {talk.busy ? "…" : "Say"}
+          </Button>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -256,7 +356,7 @@ function YourTab({ shop }: { shop: ShopController }) {
         </div>
       )}
       <div className="flex flex-wrap items-center gap-1.5">
-        <Label>Keep an eye out for</Label>
+        <Label>Ask sellers to look out for</Label>
         {SHOP_INTEREST_IDS.map((id) => {
           const on = interests.includes(id);
           return (
@@ -278,6 +378,11 @@ function YourTab({ shop }: { shop: ShopController }) {
             </button>
           );
         })}
+        <p className="basis-full text-xs text-text-muted">
+          {shop.knowsYou
+            ? "Pick up to two. When a find like that turns up at any seller who knows you, they set it aside and send word."
+            : "Pick up to two. Sellers you have bought from set aside finds like that and send word; buy something here and this one will too."}
+        </p>
       </div>
     </section>
   );
@@ -532,9 +637,11 @@ function SellCounter({ shop }: { shop: ShopController }) {
                   </span>
                 )}
               </span>
-              <span className="block truncate font-mono text-[10px] text-text-muted">
-                {record ?? "No history worth telling."}
-              </span>
+              {record && (
+                <span className="block truncate font-mono text-[10px] text-text-muted">
+                  {record}
+                </span>
+              )}
             </span>
             <Button
               size="sm"
@@ -609,16 +716,10 @@ function ItemDetail({
     shop.knowsYou && !shop.hold && item.available && item.layer !== "staple" && item.key !== "held";
   const printed = card ? null : printedText(item.kind, item.itemId);
 
+  const restock = restockLine(shop.restockIn);
   return (
-    <section className="border border-accent/40 bg-surface">
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-1 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted hover:text-foreground"
-      >
-        <ArrowLeft className="size-3" /> Back to the counter
-      </button>
-      <div className="grid gap-4 p-3 pt-0 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+    <section>
+      <div className="grid gap-4 p-4 pr-10 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:p-5 sm:pr-12">
         <ItemThumb
           kind={item.kind}
           itemId={item.itemId}
@@ -629,10 +730,12 @@ function ItemDetail({
         <div className="space-y-3">
           <div>
             <div className="flex flex-wrap gap-1.5">{mark && <Stamp mark={mark} />}</div>
-            <h3 className="mt-1 font-display text-2xl font-extrabold leading-tight">{item.name}</h3>
-            <p className="font-mono text-[11px] text-text-muted">
+            <DialogTitle className="mt-1 font-display text-2xl font-extrabold leading-tight">
+              {item.name}
+            </DialogTitle>
+            <DialogDescription className="font-mono text-[11px] text-text-muted">
               {card?.tags ?? summarize(item.kind, item.itemId)}
-            </p>
+            </DialogDescription>
           </div>
 
           <div className="border border-cool/40 bg-cool/5 p-2.5">
@@ -695,13 +798,19 @@ function ItemDetail({
                 </Button>
               </div>
             )}
-            <Button
-              className="num"
-              disabled={shop.busy || !item.available || total > shop.eurobucks}
-              onClick={() => shop.buy(item, quantity)}
-            >
-              {item.available ? `Buy · ${total}eb` : "Not this week"}
-            </Button>
+            {item.available ? (
+              <Button
+                className="num"
+                disabled={shop.busy || total > shop.eurobucks}
+                onClick={() => shop.buy(item, quantity)}
+              >
+                Buy · {total}eb
+              </Button>
+            ) : (
+              <span className="border border-dashed border-hairline px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+                None left{restock ? ` · ${restock}` : ""}
+              </span>
+            )}
             {canHold && (
               <Button
                 variant="outline"
@@ -712,8 +821,29 @@ function ItemDetail({
                 Hold · {holdDeposit(item.price)}eb down
               </Button>
             )}
+            {item.available && (
+              <p
+                className={cn(
+                  "num basis-full text-xs",
+                  total > shop.eurobucks ? "text-danger" : "text-text-muted",
+                )}
+              >
+                {total > shop.eurobucks
+                  ? `You have ${shop.eurobucks}eb: ${total - shop.eurobucks}eb short.`
+                  : `You have ${shop.eurobucks}eb · ${shop.eurobucks - total}eb after.`}
+              </p>
+            )}
           </div>
         </div>
+      </div>
+      <div className="flex justify-start border-t border-hairline px-4 py-2 sm:px-5">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" /> Back to the counter
+        </button>
       </div>
     </section>
   );
@@ -820,6 +950,7 @@ export function CounterView({
   onTravel,
   travelBusy = false,
   onTalk,
+  talk,
 }: {
   shop: ShopController;
   /** The painting of where this seller is, or null to draw the stand-in. */
@@ -830,8 +961,10 @@ export function CounterView({
   onClose: () => void;
   onTravel?: ((placeKey: string) => void) | undefined;
   travelBusy?: boolean;
-  /** Leave the counter to say something to whoever is behind it. */
+  /** Leave the counter for the scene. */
   onTalk?: (() => void) | undefined;
+  /** Talk across the counter without leaving it. Absent in the review page. */
+  talk?: CounterTalk | undefined;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<"buy" | "sell">("buy");
@@ -868,7 +1001,16 @@ export function CounterView({
         </>
       ) : (
         <>
+          {onTalk && (
+            <ModeSwitch
+              mode="counter"
+              seller={shop.vendor.place ? shop.vendor.label : "Your fixer"}
+              onCounter={() => {}}
+              onScene={onTalk}
+            />
+          )}
           <Storefront shop={shop} image={image} onClose={onClose} />
+          {talk && <TalkAcross talk={talk} seller={shop.vendor.place ? "them" : "your fixer"} />}
 
           {shop.vendors.length > 1 && (
             <nav className="-mt-2 flex flex-wrap gap-1.5" aria-label="Who you deal with">
@@ -924,7 +1066,7 @@ export function CounterView({
                     : "border-transparent text-text-muted hover:text-foreground",
                 )}
               >
-                {t === "buy" ? "Buying" : "Across the counter"}
+                {t === "buy" ? "Buy" : "Sell"}
               </button>
             ))}
             <span className="ml-auto flex items-center gap-2 pb-1">
@@ -945,11 +1087,6 @@ export function CounterView({
                   Talk the price down · {shop.hagglePercent}%
                 </Button>
               )}
-              {onTalk && (
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onTalk}>
-                  Talk to them
-                </Button>
-              )}
             </span>
           </div>
 
@@ -957,8 +1094,6 @@ export function CounterView({
             <p className="py-6 text-sm text-text-muted">Looking over the shelves…</p>
           ) : tab === "sell" ? (
             <SellCounter shop={shop} />
-          ) : opened ? (
-            <ItemDetail shop={shop} item={opened} onBack={() => setOpen(null)} />
           ) : (
             <>
               <Counter items={sections.counter} onOpen={(i) => setOpen(itemKey(i))} />
@@ -981,7 +1116,13 @@ export function CounterView({
             </>
           )}
 
-          {shop.reloadable.length > 0 && tab === "buy" && !opened && (
+          <Dialog open={!!opened} onOpenChange={(o) => !o && setOpen(null)}>
+            <DialogContent className="max-h-[92vh] max-w-3xl gap-0 overflow-y-auto border-accent/40 bg-surface p-0 sm:rounded-none">
+              {opened && <ItemDetail shop={shop} item={opened} onBack={() => setOpen(null)} />}
+            </DialogContent>
+          </Dialog>
+
+          {shop.reloadable.length > 0 && tab === "buy" && (
             <section className="border border-hairline p-3">
               <Label>Load up · {shop.spareRounds} spare rounds</Label>
               <ul className="mt-1 space-y-1">

@@ -10,7 +10,7 @@ import { uploadedAsset } from "@/features/chargen/art";
 import { PLACE_DOSSIERS } from "@/features/atlas/placeDossiers";
 import type { LifeBundle } from "../lifeOps";
 import { useShop } from "../useShop";
-import { CounterView } from "./CounterView";
+import { CounterView, type CounterTalk } from "./CounterView";
 
 /** A place's painting, the wide cut, or null when it has none. */
 export function placeImage(placeKey: string): string | null {
@@ -31,11 +31,14 @@ export function ShopView({
   travelBusy = false,
   travelMode,
   onTalk,
+  talk,
   vendorId = null,
 }: {
   bundle: LifeBundle;
   /** The seller to open on, when the story asked for one. */
   vendorId?: string | null;
+  /** Talk across the counter without leaving it. */
+  talk?: CounterTalk | undefined;
   onClose: () => void;
   onTravel?: ((placeKey: string) => void) | undefined;
   travelBusy?: boolean;
@@ -62,6 +65,7 @@ export function ShopView({
       onClose={close}
       onTravel={onTravel}
       travelBusy={travelBusy}
+      talk={talk}
       onTalk={
         onTalk
           ? () => {
