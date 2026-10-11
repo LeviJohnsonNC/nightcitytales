@@ -176,7 +176,7 @@ export function createCourtyard(
   // Finished exterior streets share materials, art and contact shade.
   const materialKeys: readonly MaterialKey[] =
     composed &&
-    ["intersection", "alley", "warehouse", "garage", "office", "nightclub"].includes(
+    ["intersection", "alley", "warehouse", "garage", "office", "nightclub", "residential"].includes(
       arena.environment!.recipe,
     )
       ? MATERIAL_KEYS
@@ -300,7 +300,9 @@ export function createCourtyard(
         // where the board draws contact shade, the kit bakes no flat shadow of its own
         const propTiles: Partial<Record<MaterialKey, TileSource>> = {};
         if (
-          ["warehouse", "garage", "office", "nightclub"].includes(arena.environment?.recipe ?? "")
+          ["warehouse", "garage", "office", "nightclub", "residential"].includes(
+            arena.environment?.recipe ?? "",
+          )
         )
           for (const key of materialKeys)
             if (this.textures.exists(materialAssetKey(key)))
@@ -311,7 +313,9 @@ export function createCourtyard(
           this,
           [...new Set(kinds)],
           !contactShading,
-          ["warehouse", "garage", "office", "nightclub"].includes(arena.environment?.recipe ?? "")
+          ["warehouse", "garage", "office", "nightclub", "residential"].includes(
+            arena.environment?.recipe ?? "",
+          )
             ? prepareMaterials(propTiles, 74)
             : undefined,
           arena.environment?.recipe === "office",

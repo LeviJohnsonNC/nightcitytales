@@ -1,3 +1,4 @@
+import { residentialPalette, residentialGround } from "./residentialFinish";
 import { paintNightclubFloor, nightclubLights } from "./nightclubFinish";
 import { paintOfficeFloor, officeLights, paintOfficeFixture } from "./officeFinish";
 import { paintGarageWear } from "./garageFinish";
@@ -213,7 +214,9 @@ export function paintComposedGround(
   // Roads and walks of an intersection take real materials; everything else
   // keeps its flat fill until its own pass.
   const textured =
-    !env.interior && ["intersection", "alley"].includes(env.recipe) ? materials : undefined;
+    !env.interior && ["intersection", "alley", "residential"].includes(env.recipe)
+      ? materials
+      : undefined;
   const ground = groundBasis(project);
   if (env.interior) {
     rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
@@ -328,8 +331,10 @@ export function paintComposedGround(
     // The old fill remains the fallback; loaded street materials retain more midtone detail.
     // A crosswalk is laid across the carriageway, so it sits on asphalt.
     // A loading court is surfaced like the road it opens on.
+    const domestic = env.recipe === "residential" ? residentialGround(z.kind) : undefined;
     const surface: MaterialKey | undefined =
-      env.recipe === "alley" && z.kind === "loading"
+      domestic?.key ??
+      (env.recipe === "alley" && z.kind === "loading"
         ? "facade-concrete"
         : z.kind === "road" ||
             z.kind === "intersection" ||
@@ -340,8 +345,10 @@ export function paintComposedGround(
           ? "asphalt"
           : z.kind === "sidewalk"
             ? "sidewalk"
-            : undefined;
-    const target = surface === "asphalt" ? "#424b50" : surface === "sidewalk" ? "#66665b" : flat;
+            : undefined);
+    const target =
+      domestic?.target ??
+      (surface === "asphalt" ? "#424b50" : surface === "sidewalk" ? "#66665b" : flat);
     const laid =
       surface !== undefined &&
       fillMaterial(ctx, textured, zoneCorners(z.rect), {
@@ -354,7 +361,7 @@ export function paintComposedGround(
     if (!road && z.kind !== "crosswalk" && z.kind !== "garden" && z.kind !== "loading") {
       // A laid sidewalk has its own slab joints; the drawn metre grid is for
       // the flat fallback. The kerb line stays either way.
-      if (!(laid && z.kind === "sidewalk"))
+      if (!(laid && (z.kind === "sidewalk" || domestic)))
         for (let x = z.rect.x; x < z.rect.x + z.rect.width; x += 1)
           for (let y = z.rect.y; y < z.rect.y + z.rect.height; y += 1)
             rect(
@@ -1063,6 +1070,7 @@ export function paintBuilding(
   returns?: Returns,
   office = false,
   nightclub = false,
+  residentialStreet = false,
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -1187,7 +1195,9 @@ export function paintBuilding(
   }
   const palette =
     structure.style === "residential"
-      ? ["#766957", "#554f49", "#675346"]
+      ? residentialStreet
+        ? residentialPalette(structure)
+        : ["#766957", "#554f49", "#675346"]
       : frontage?.role === "neighbour"
         ? // the shop's neighbours: dark painted render and a paler, cooler roof
           ["#666b60", "#454c46", materials ? "#353b3c" : "#4d5352"]
@@ -1877,18 +1887,20 @@ export function paintSurfaceClasses(
   rect({ x: -20, y: -20, width: 72, height: 72 }, code(SurfaceClass.concrete));
   for (const z of env.zones) {
     const k =
-      env.recipe === "alley" && z.kind === "loading"
-        ? SurfaceClass.concrete
-        : z.kind === "road" ||
-            z.kind === "intersection" ||
-            z.kind === "crosswalk" ||
-            z.kind === "loading" ||
-            z.kind === "parking" ||
-            z.kind === "alley"
-          ? SurfaceClass.asphalt
-          : z.kind === "sidewalk"
-            ? SurfaceClass.paving
-            : undefined;
+      env.recipe === "residential" && residentialGround(z.kind)?.planted
+        ? SurfaceClass.none
+        : env.recipe === "alley" && z.kind === "loading"
+          ? SurfaceClass.concrete
+          : z.kind === "road" ||
+              z.kind === "intersection" ||
+              z.kind === "crosswalk" ||
+              z.kind === "loading" ||
+              z.kind === "parking" ||
+              z.kind === "alley"
+            ? SurfaceClass.asphalt
+            : z.kind === "sidewalk"
+              ? SurfaceClass.paving
+              : undefined;
     if (k !== undefined) rect(z.rect, code(k));
   }
   for (const z of env.zones.filter((z) => z.floorUse)) {
@@ -1968,7 +1980,7 @@ export function createComposedEnvironment(
     project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
   );
   const materialised =
-    ["intersection", "alley", "warehouse", "garage", "office", "nightclub"].includes(
+    ["intersection", "alley", "warehouse", "garage", "office", "nightclub", "residential"].includes(
       arena.environment!.recipe,
     ) && tiles !== undefined;
   const resolution = materialised
@@ -2659,6 +2671,7 @@ export function createComposedEnvironment(
             returns,
             env.recipe === "office",
             env.recipe === "nightclub",
+            env.recipe === "residential",
           ),
         depth,
         bounds,

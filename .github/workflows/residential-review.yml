@@ -1,0 +1,60 @@
+name: Residential visual review
+on:
+  pull_request:
+    paths:
+      - "src/features/play/courtyard/**"
+      - "src/engine/sceneComposer.ts"
+      - "src/engine/industrialRecipes.ts"
+      - "src/engine/interiorRecipes.ts"
+      - "src/engine/sceneComposition.ts"
+      - "src/engine/sceneClusters.ts"
+      - "public/images/architecture/block-*"
+      - "e2e/residential.spec.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/residential-review.yml"
+permissions:
+  contents: read
+concurrency:
+  group: residential-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  capture:
+    name: Chromium ${{ matrix.revision }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        revision: [before, after]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Preserve the shared evidence harness
+        run: |
+          cp e2e/residential.spec.ts /tmp/residential.spec.ts
+          cp playwright.config.ts /tmp/residential-playwright.config.ts
+      - uses: actions/checkout@v5
+        if: matrix.revision == 'before'
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+      - name: Use the identical capture harness on both revisions
+        run: |
+          cp /tmp/residential.spec.ts e2e/residential.spec.ts
+          cp /tmp/residential-playwright.config.ts playwright.config.ts
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - name: Capture shipping renderer and verify controls
+        run: bunx playwright test e2e/residential.spec.ts --project=desktop --workers=1 --global-timeout=420000
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: residential-${{ matrix.revision }}
+          path: e2e/.results
+          retention-days: 7
+          include-hidden-files: true
