@@ -19,6 +19,9 @@ import {
   skillLevelFor,
   getSkill,
   opposedPercent,
+  HAGGLE_PITCH_MODIFIER,
+  HAGGLE_READ,
+  haggleRead,
   weaponProfile,
   type Hold,
   type RangeBand,
@@ -32,7 +35,9 @@ import {
   type Vendor,
 } from "@/engine";
 import {
-  haggle,
+  rollHaggle,
+  recordHaggle,
+  type HaggleOutcome,
   loadShopContext,
   purchase,
   callOffHold,
@@ -63,13 +68,39 @@ export type ShopMessage = { tone: "bought" | "refused"; text: string };
 export type CounterKeeper = { name: string; who: string; image: string | null };
 
 /** One argument over the price, settled: both rolls, so the scene can show them. */
+export type HaggleSide = {
+  total: number;
+  /** Every die face: the d10, then its critical die when there was one. */
+  rolls: number[];
+  critical: "success" | "failure" | null;
+  formula: string;
+  modifiers: { label: string; value: number }[];
+};
+
+/** One argument over the price, settled: both rolls, so the scene can show them. */
 export type HaggleScene = {
   vendorId: string;
+  approachId: string;
   won: boolean;
   percent: number;
   tie: boolean;
-  yours: { total: number; die: number; formula: string };
-  theirs: { total: number; die: number; formula: string };
+  margin: number;
+  yours: HaggleSide;
+  theirs: HaggleSide;
+};
+
+/** What the character knows before pitching: the odds, and what they read in the keeper. */
+export type HaggleSetup = {
+  /** Their roll's base before the pitch, and the seller's. */
+  base: number;
+  against: number;
+  /** What a pitch the keeper warms to adds, and one that puts them off costs. */
+  pitch: number;
+  /** The reading Skill, and what it told them: an approach id, or null. */
+  readSkill: string;
+  readLevel: number;
+  warms: string | null;
+  cools: string | null;
 };
 
 /**
@@ -212,56 +243,81 @@ export function useShop(
     onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
   });
 
-  const argue = useMutation({
-    mutationFn: async () => {
+  // A haggle is rolled on screen, die in hand, like every other check, and
+  // written the moment it is rolled: the visit's one try is spent by rolling,
+  // not by watching the second die land, so closing the scene cannot retry it.
+  const recordArgument = useMutation({
+    mutationFn: async (input: { outcome: HaggleOutcome; approachId: string }) => {
       if (!bundle) throw new Error("Still loading.");
-      return haggle({
+      await recordHaggle({
         campaignId: bundle.campaign.id,
         vendorId: vendor.id,
-        actor: actorFor(bundle.character, {
-          vitals: bundle.vitals,
-          inventory: bundle.inventory,
-        }),
+        outcome: input.outcome,
+        approachId: input.approachId,
+      });
+    },
+    onSuccess: () => invalidate(),
+    onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
+  });
+
+  const haggleActor = useCallback(() => {
+    if (!bundle) throw new Error("Still loading.");
+    return {
+      actor: actorFor(bundle.character, { vitals: bundle.vitals, inventory: bundle.inventory }),
+      // The Operator Rank rides on the roll itself, per the printed Haggle
+      // formula. Taken from the same helper every other check uses, so the
+      // shop and the job screen cannot disagree about what a Fixer adds.
+      modifiers: roleCheckModifiers({
+        campaign: bundle.campaign,
+        character: bundle.character,
+        skillId: "trading",
+      }),
+    };
+  }, [bundle]);
+
+  const rollTheHaggle = useCallback(
+    (approachId: string): HaggleScene => {
+      if (!bundle) throw new Error("Still loading.");
+      if (haggled?.vendorId === vendor.id) throw new Error("You have already argued the price.");
+      const { actor, modifiers } = haggleActor();
+      const outcome = rollHaggle({
+        vendorId: vendor.id,
+        actor,
         actorName: bundle.character.character.name,
         isFixer,
         operatorRank,
-        // The Operator Rank rides on the roll itself, per the printed Haggle
-        // formula. Taken from the same helper every other check uses, so the
-        // shop and the job screen cannot disagree about what a Fixer adds.
-        modifiers: roleCheckModifiers({
-          campaign: bundle.campaign,
-          character: bundle.character,
-          skillId: "trading",
-        }),
+        modifiers,
+        approachId,
       });
-    },
-    onSuccess: (outcome) => {
-      setHaggled({ vendorId: vendor.id, won: outcome.won, percent: outcome.percent });
-      setLastHaggle({
+      const side = (r: HaggleOutcome["result"]["actor"]): HaggleSide => ({
+        total: r.total,
+        rolls: r.rolls,
+        critical: r.critical,
+        formula: r.formula,
+        modifiers: r.modifiers,
+      });
+      const scene: HaggleScene = {
         vendorId: vendor.id,
+        approachId,
         won: outcome.won,
         percent: outcome.percent,
         tie: outcome.result.tie,
-        yours: {
-          total: outcome.result.actor.total,
-          die: outcome.result.actor.rolls[0] ?? 0,
-          formula: outcome.result.actor.formula,
-        },
-        theirs: {
-          total: outcome.result.opponent.total,
-          die: outcome.result.opponent.rolls[0] ?? 0,
-          formula: outcome.result.opponent.formula,
-        },
-      });
+        margin: outcome.result.margin,
+        yours: side(outcome.result.actor),
+        theirs: side(outcome.result.opponent),
+      };
+      setHaggled({ vendorId: vendor.id, won: outcome.won, percent: outcome.percent });
+      setLastHaggle(scene);
       setMessage(
         outcome.won
           ? { tone: "bought", text: `They come down ${outcome.percent}%. Prices below are theirs.` }
           : { tone: "refused", text: "They do not move. That was your one run at it tonight." },
       );
-      invalidate();
+      recordArgument.mutate({ outcome, approachId });
+      return scene;
     },
-    onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
-  });
+    [bundle, vendor.id, haggled, haggleActor, isFixer, operatorRank, recordArgument],
+  );
 
   // Word of mouth: what sellers who know the character have set aside elsewhere.
   const word = useMemo(
@@ -412,32 +468,32 @@ export function useShop(
     return null;
   }, [vendor, bundle]);
 
-  // Your chance at the haggle: the printed opposed roll, counted exactly, from
-  // the same actor and modifiers the roll itself uses.
-  const haggleOdds = useMemo(() => {
+  // What the character knows before pitching: their base and the seller's,
+  // counted from the same actor and modifiers the roll uses, and what their
+  // reading Skill tells them about this keeper.
+  const haggleSetup: HaggleSetup | null = useMemo(() => {
     if (!bundle) return null;
-    const actor = actorFor(bundle.character, {
-      vitals: bundle.vitals,
-      inventory: bundle.inventory,
-    });
+    const { actor, modifiers } = haggleActor();
     const stat = actor.stats[getSkill("trading").stat as StatKey];
     if (typeof stat !== "number") return null;
-    const extra = roleCheckModifiers({
-      campaign: bundle.campaign,
-      character: bundle.character,
-      skillId: "trading",
-    }).reduce((sum, m) => sum + m.value, 0);
-    return opposedPercent(
-      stat + skillLevelFor(actor, "trading") + extra,
-      vendor.haggle.cool + vendor.haggle.trading,
-    );
-  }, [bundle, vendor]);
+    const readLevel = skillLevelFor(actor, HAGGLE_READ.skill);
+    const read = haggleRead(vendor, readLevel);
+    return {
+      base: stat + skillLevelFor(actor, "trading") + modifiers.reduce((sum, m) => sum + m.value, 0),
+      against: vendor.haggle.cool + vendor.haggle.trading,
+      pitch: HAGGLE_PITCH_MODIFIER,
+      readSkill: getSkill(HAGGLE_READ.skill).name,
+      readLevel,
+      ...read,
+    };
+  }, [bundle, vendor, haggleActor]);
 
   return {
     vendor,
     vendors,
     keeper,
-    haggleOdds,
+    haggleSetup,
+    haggleOdds: haggleSetup ? opposedPercent(haggleSetup.base, haggleSetup.against) : null,
     lastHaggle: lastHaggle?.vendorId === vendor.id ? lastHaggle : null,
     /** True when the character is standing somewhere that sells. */
     atShop: vendors.length > 1,
@@ -453,7 +509,7 @@ export function useShop(
     /** True once the price has been argued at this vendor this visit, win or lose. */
     haggleSpent: haggled?.vendorId === vendor.id,
     haggleDiscount: discount,
-    haggle: () => argue.mutate(),
+    rollHaggle: rollTheHaggle,
     /** True when the shelf never has to be rolled for: the Fixer's own Reach. */
     operatorRank,
     /** Everything on offer, this week. Empty while the ledger is still loading. */
@@ -471,7 +527,7 @@ export function useShop(
     busy:
       buy.isPending ||
       reload.isPending ||
-      argue.isPending ||
+      recordArgument.isPending ||
       sellOne.isPending ||
       holdOne.isPending ||
       callOff.isPending ||

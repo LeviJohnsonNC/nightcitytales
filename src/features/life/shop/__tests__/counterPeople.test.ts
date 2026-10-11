@@ -6,11 +6,18 @@ import {
   PLACE_SHOPS,
   getVendor,
   haggleReply,
+  HAGGLE_PITCH_MODIFIER,
+  HAGGLE_READ,
+  haggleHint,
+  haggleLean,
+  hagglePitchModifier,
+  haggleRead,
   placeVendorId,
   purchaseEventData,
   soldEventData,
 } from "@/engine";
 import { counterNews } from "../../counterNews";
+import { rollHaggle } from "@/features/campaign/shopping";
 import { KEEPER_ART_READY, initials, keeperImage, keeperSlug } from "../keeperArt";
 
 describe("the face behind the counter", () => {
@@ -95,5 +102,40 @@ describe("what the narrator hears about the counter", () => {
       "Sold their Heavy Pistol to Mama Ishii at Ganymede Street Market.",
     ]);
     expect(counterNews([{ type: "life_narration" }])).toEqual([]);
+  });
+});
+
+describe("the pitch, priced by the keeper", () => {
+  const toggle = getVendor("gun_shop@d3");
+
+  it("gives every keeper one pitch they warm to, one that puts them off, and one neutral", () => {
+    for (const shop of PLACE_SHOPS) {
+      const v = getVendor(placeVendorId(shop.vendor, shop.place));
+      const mods = HAGGLE_APPROACHES.map((a) => hagglePitchModifier(v, a.id)).sort();
+      expect(mods, v.label).toEqual([-HAGGLE_PITCH_MODIFIER, 0, HAGGLE_PITCH_MODIFIER].sort());
+    }
+    const fixer = HAGGLE_APPROACHES.map((a) => hagglePitchModifier(FIXER_VENDOR, a.id)).sort();
+    expect(fixer).toEqual([-HAGGLE_PITCH_MODIFIER, 0, HAGGLE_PITCH_MODIFIER].sort());
+    expect(() => hagglePitchModifier(toggle, "bribe")).toThrow();
+  });
+
+  it("is read only by a good enough eye for people", () => {
+    const lean = haggleLean(toggle);
+    expect(haggleRead(toggle, HAGGLE_READ.one - 1)).toEqual({ warms: null, cools: null });
+    expect(haggleRead(toggle, HAGGLE_READ.one)).toEqual({ warms: lean.warms, cools: null });
+    expect(haggleRead(toggle, HAGGLE_READ.all)).toEqual(lean);
+    expect(haggleHint("warms", "Toggle")).toContain("Toggle");
+  });
+
+  it("rides on the printed Haggle roll as a named modifier, and nothing else changes", () => {
+    const actor = { stats: { cool: 5 }, skills: [{ skillId: "trading", level: 4 }] };
+    const fixed = () => 0.5;
+    const base = { vendorId: toggle.id, actor, actorName: "You", isFixer: false, operatorRank: 0 };
+    const plain = rollHaggle(base, fixed);
+    const warm = rollHaggle({ ...base, approachId: haggleLean(toggle).warms }, fixed);
+    const cold = rollHaggle({ ...base, approachId: haggleLean(toggle).cools }, fixed);
+    expect(warm.result.actor.total - plain.result.actor.total).toBe(HAGGLE_PITCH_MODIFIER);
+    expect(cold.result.actor.total - plain.result.actor.total).toBe(-HAGGLE_PITCH_MODIFIER);
+    expect(warm.result.opponent.total).toBe(plain.result.opponent.total);
   });
 });
