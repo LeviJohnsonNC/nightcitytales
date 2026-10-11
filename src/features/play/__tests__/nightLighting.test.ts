@@ -20,7 +20,8 @@ describe("night lighting", () => {
           kind === "alley" ||
           kind === "warehouse" ||
           kind === "garage" ||
-          kind === "office",
+          kind === "office" ||
+          kind === "nightclub",
       );
     }
   });

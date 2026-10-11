@@ -1,3 +1,4 @@
+import { paintNightclubFloor, nightclubLights } from "./nightclubFinish";
 import { paintOfficeFloor, officeLights, paintOfficeFixture } from "./officeFinish";
 import { paintGarageWear } from "./garageFinish";
 import { paintIndustrialFloor, industrialLights, paintIndustrialFixture } from "./industrialFinish";
@@ -216,6 +217,8 @@ export function paintComposedGround(
   const ground = groundBasis(project);
   if (env.interior) {
     rect({ x: 0, y: 0, ...arena.extent }, "#3b464c");
+    if (env.recipe === "nightclub" && materials)
+      paintNightclubFloor(ctx, project, { x: 0, y: 0, ...arena.extent }, "corridor", materials);
     if (env.recipe === "office" && materials)
       paintOfficeFloor(ctx, project, { x: 0, y: 0, ...arena.extent }, "corridor", materials);
     if (["warehouse", "garage"].includes(env.recipe) && materials)
@@ -280,6 +283,10 @@ export function paintComposedGround(
   for (const z of env.zones) {
     if (z.kind === "aisle") continue;
     if (env.interior) {
+      if (env.recipe === "nightclub" && materials) {
+        paintNightclubFloor(ctx, project, z.rect, z.kind, materials);
+        continue;
+      }
       if (env.recipe === "office" && materials) {
         paintOfficeFloor(ctx, project, z.rect, z.kind, materials);
         continue;
@@ -399,6 +406,9 @@ export function paintComposedGround(
       if (z.floorUse === "entry")
         for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, "rgba(170,168,156,.35)", 1.2);
       else for (let i = 0; i < 4; i++) line(c[i]!, c[(i + 1) % 4]!, colors[1]!, 1.2);
+    } else if (env.recipe === "nightclub" && materials) {
+      paintNightclubFloor(ctx, project, z.rect, "service", materials);
+      rect(z.rect, null, colors[1]!);
     } else if (env.recipe === "office" && materials) {
       paintOfficeFloor(ctx, project, z.rect, "reception", materials);
       rect(z.rect, null, colors[1]!);
@@ -1052,6 +1062,7 @@ export function paintBuilding(
   /** The shop's composed return faces (`streetfront.ts`). */
   returns?: Returns,
   office = false,
+  nightclub = false,
 ) {
   const { poly, corners, line, glow } = painter(ctx, project);
   const r = structure.rect;
@@ -1138,23 +1149,23 @@ export function paintBuilding(
     for (const [face, color, axis, at] of [
       [
         [base[0]!, base[1]!, top[1]!, top[0]!],
-        materials ? (office ? "#9b998b" : "#7c8178") : "#687875",
+        materials ? (nightclub ? "#60575e" : office ? "#9b998b" : "#7c8178") : "#687875",
         "x",
         r.y,
       ],
       [
         [base[1]!, base[2]!, top[2]!, top[1]!],
-        materials ? (office ? "#737970" : "#505e61") : "#384951",
+        materials ? (nightclub ? "#45434d" : office ? "#737970" : "#505e61") : "#384951",
         "y",
         r.x + r.width,
       ],
     ] as const) {
       if (
         !fillMaterial(ctx, materials, face, {
-          key: office ? "painted-render" : "facade-concrete",
+          key: office || nightclub ? "painted-render" : "facade-concrete",
           basis: wallBasis(project, axis, at, 4, pixelsPerMetre),
           target: color,
-          strength: office ? 0.5 : 0.92,
+          strength: office || nightclub ? 0.5 : 0.92,
         })
       )
         poly([...face], color, "#24353b");
@@ -1165,11 +1176,11 @@ export function paintBuilding(
           { x: face[1].x, y: face[1].y - pixelsPerMetre * 0.48 },
           { x: face[0].x, y: face[0].y - pixelsPerMetre * 0.48 },
         ];
-        poly(lower, office ? "#414f4d" : "#384e52", "#273c40");
+        poly(lower, nightclub ? "#352d3a" : office ? "#414f4d" : "#384e52", "#273c40");
         line(lower[2]!, lower[3]!, "#c0ac76", 0.7);
       }
     }
-    poly(top, office ? "#a7aa9b" : "#94a19a");
+    poly(top, nightclub ? "#7a7277" : office ? "#a7aa9b" : "#94a19a");
     line(base[0]!, base[1]!, "#192f3a", 2);
     line(base[1]!, base[2]!, "#192f3a", 2);
     return;
@@ -1957,7 +1968,7 @@ export function createComposedEnvironment(
     project({ x: 1, y: 0 }).y - project({ x: 0, y: 0 }).y,
   );
   const materialised =
-    ["intersection", "alley", "warehouse", "garage", "office"].includes(
+    ["intersection", "alley", "warehouse", "garage", "office", "nightclub"].includes(
       arena.environment!.recipe,
     ) && tiles !== undefined;
   const resolution = materialised
@@ -2028,6 +2039,7 @@ export function createComposedEnvironment(
     ? [
         ...industrialLights(env),
         ...officeLights(env),
+        ...nightclubLights(env),
         ...storefronts.flatMap((sf) => storefrontLights(sf, night)),
         ...returnLights(returns?.faces ?? [], night),
         ...fixtureLights(env),
@@ -2447,7 +2459,7 @@ export function createComposedEnvironment(
     lit.push(image);
     return image;
   };
-  for (const light of [...industrialLights(env), ...officeLights(env)]) {
+  for (const light of [...industrialLights(env), ...officeLights(env), ...nightclubLights(env)]) {
     const paintFixture = env.recipe === "office" ? paintOfficeFixture : paintIndustrialFixture;
     const p = project(light.centre);
     const lift = light.sourceZ! * metre;
@@ -2646,6 +2658,7 @@ export function createComposedEnvironment(
             architecture,
             returns,
             env.recipe === "office",
+            env.recipe === "nightclub",
           ),
         depth,
         bounds,

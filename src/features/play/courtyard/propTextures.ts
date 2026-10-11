@@ -58,11 +58,12 @@ export function createPropTextures(
   bakedShadow = true,
   materials?: MaterialSet,
   office = false,
+  nightclub = false,
 ) {
   for (const kind of kinds) {
     if (isInteriorProp(kind)) {
-      createInteriorPropTextures(scene, kind, 0, bakedShadow, materials, office);
-      createInteriorPropTextures(scene, kind, 90, bakedShadow, materials, office);
+      createInteriorPropTextures(scene, kind, 0, bakedShadow, materials, office, nightclub);
+      createInteriorPropTextures(scene, kind, 90, bakedShadow, materials, office, nightclub);
       continue;
     }
     const source = scene.textures

@@ -34,7 +34,11 @@ Its three-layout in-app review is next; warehouse visual review was approved.
 
 The office finish adds carpet work areas, warmer meeting-room floors and furniture,
 stone reception surfaces and ceiling-panel lighting bounded to saved rooms.
-Review seeds4/5/8 are the next visual gate; garage visual review was approved.
+Office and garage visual reviews were approved by Levi.
+
+The nightclub pass adds dark dance-floor finishes, carpet lounge areas, warm bar
+materials and room-bounded magenta/cyan and amber lighting. Seeds4/5/8 are the
+next visual gate; approved room geometry and circulation remain frozen.
 
 Phase 1 implementation now includes three spatial layouts per recipe, reserved
 and validated exterior entrances, a character-free `/scene-review`, silhouette
