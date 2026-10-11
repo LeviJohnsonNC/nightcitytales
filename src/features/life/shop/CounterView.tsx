@@ -174,9 +174,9 @@ function Storefront({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-2 top-2 flex items-center gap-1 border border-hairline bg-background/80 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground backdrop-blur hover:text-foreground"
+          className="absolute right-3 top-3 flex items-center gap-2 border-2 border-accent bg-background/90 px-4 py-2 font-mono text-sm font-bold uppercase tracking-[0.14em] text-foreground shadow-[0_0_18px_-4px_var(--color-accent)] backdrop-blur transition-colors hover:bg-accent hover:text-background focus-visible:outline-2 focus-visible:outline-accent"
         >
-          <X className="size-3" /> Leave
+          <X className="size-4" strokeWidth={2.5} /> Leave the shop
         </button>
         <div className="num absolute left-2 top-2 border border-hairline bg-background/80 px-2 py-1 text-sm font-bold backdrop-blur">
           {shop.eurobucks}eb
@@ -186,7 +186,7 @@ function Storefront({
         <h2 className="font-display text-3xl font-extrabold leading-none tracking-tight text-text drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)] sm:text-4xl">
           {v.label}
         </h2>
-        <p className="max-w-prose text-sm italic text-text-muted">{v.line}</p>
+        <p className="text-sm italic text-text-muted">{v.line}</p>
         <div className="flex flex-wrap gap-1.5">
           {shop.knowsYou && (
             <Stamp
@@ -231,7 +231,7 @@ function Storefront({
           </div>
         )}
         {v.scene.length > 0 && (
-          <div className="max-w-prose space-y-2 pt-2 text-[15px] leading-relaxed text-text sm:text-sm">
+          <div className="space-y-2 pt-2 text-[15px] leading-relaxed text-text sm:text-sm">
             {v.scene.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>
             ))}
