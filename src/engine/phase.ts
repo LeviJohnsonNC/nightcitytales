@@ -32,7 +32,9 @@ const TRANSITIONS: Record<PhaseTrigger, { from: GamePhase[]; to: GamePhase }> = 
   decline_hook: { from: ["hook"], to: "life" },
   accept_hook: { from: ["hook"], to: "job" },
   end_job: { from: ["job"], to: "aftermath" },
-  close_out: { from: ["aftermath", "job"], to: "life" },
+  // Aftermath only: from a job this would skip settlement, which is the one
+  // route to payment and the `job_settled` receipt.
+  close_out: { from: ["aftermath"], to: "life" },
 };
 
 export function isGamePhase(value: unknown): value is GamePhase {

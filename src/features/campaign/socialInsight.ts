@@ -48,7 +48,10 @@ export async function applyInsight(args: {
 
   // Paid before anything is learned, and on a failed check too: they noticed
   // being worked whether or not it worked.
-  if (cost > 0) await raiseNpcSuspicion(args.campaignId, npc, cost, args.today);
+  // The row it hands back is what the reveal below must build on: `data` is
+  // replaced whole on save, and writing `known` over the row read before the
+  // cost was paid would quietly take the suspicion back off.
+  const charged = cost > 0 ? await raiseNpcSuspicion(args.campaignId, npc, cost, args.today) : npc;
 
   if (!args.success) return null;
   const read = socialRead({
@@ -85,7 +88,7 @@ export async function applyInsight(args: {
     return null;
   }
 
-  const learned = await revealFact(args.campaignId, npc, read.fact);
+  const learned = await revealFact(args.campaignId, charged, read.fact);
   if (!learned) return null;
   await appendCampaignEvent({
     campaign_id: args.campaignId,

@@ -56,9 +56,13 @@ export function ShopView({
     shop.endVisit();
     onClose();
   };
+  // While a talk turn is with the narrator, the till waits. The turn was read
+  // off a snapshot and writes the clock and balance back from it, so a
+  // purchase landing in between would be refunded and its visit rewound.
+  const counter = talk?.busy ? { ...shop, busy: true } : shop;
   return (
     <CounterView
-      shop={shop}
+      shop={counter}
       image={image}
       near={near}
       imageOf={placeThumb}

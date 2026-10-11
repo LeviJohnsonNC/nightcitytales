@@ -125,7 +125,17 @@ export function useRipperdoc(bundle: LifeBundle, narrate: (facts: string) => Pro
       // only and never turns this successful mutation into a retryable install.
       await narrate(outcome.narrationFacts);
     },
-    onError: (error: Error) => setMessage(error.message),
+    onError: (error: Error) => {
+      // The plan is kept on a failure so a retry reuses its request id and
+      // cannot install twice. But a plan the transaction refused as stale will
+      // be refused every time it is sent, so that one is dropped and the
+      // bundle refreshed for the next one to be priced against.
+      if (/plan the installation again/i.test(error.message)) {
+        pendingInstall.current = null;
+        void queryClient.invalidateQueries({ queryKey: ["life", bundle.campaign.id] });
+      }
+      setMessage(error.message);
+    },
   });
 
   const practice = practiceOf(bundle);

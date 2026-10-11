@@ -480,3 +480,39 @@ describe("purchase and shop_seen", () => {
     expect(readShopSeenEventData({ vendorId: "street@o3" })).toBeNull();
   });
 });
+
+describe("haggle", () => {
+  it("round-trips, and a lost argument carries no discount", async () => {
+    const { haggleEventData, readHaggleEventData } = await import("../ledger");
+    const won = haggleEventData({
+      vendorId: "gun_shop@d3",
+      won: true,
+      percent: 10,
+      day: 4,
+      actorTotal: 17,
+      opponentTotal: 12,
+      approachId: "flaws",
+    });
+    expect(readHaggleEventData(JSON.parse(JSON.stringify(won)))).toEqual(won);
+    const lost = haggleEventData({ ...won, day: 4, won: false });
+    expect(lost.percent).toBe(0);
+    expect(readHaggleEventData({ vendorId: "x" })).toBeNull();
+  });
+
+  it("answers for one seller on one day, and an undated row answers for none", async () => {
+    const { haggleEventData, haggleOn } = await import("../ledger");
+    const row = (vendorId: string, day: number, won: boolean) => ({
+      type: "haggle",
+      data: haggleEventData({ vendorId, won, percent: 10, day, actorTotal: 0, opponentTotal: 0 }),
+    });
+    const events = [
+      row("a", 1, false),
+      row("a", 2, true),
+      { type: "haggle", data: { vendorId: "b", won: true, percent: 10 } },
+    ];
+    expect(haggleOn(events, "a", 1)).toEqual({ won: false, percent: 0 });
+    expect(haggleOn(events, "a", 2)).toEqual({ won: true, percent: 10 });
+    expect(haggleOn(events, "a", 3)).toBeNull();
+    expect(haggleOn(events, "b", 1)).toBeNull();
+  });
+});

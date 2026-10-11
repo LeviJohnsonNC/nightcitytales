@@ -128,21 +128,34 @@ export async function rest(
   return { days: plan.days, hpHealed: plan.hpHealed };
 }
 
+/**
+ * What the character holds right now, read live rather than off the bundle.
+ *
+ * A bundle is a snapshot from the last render, and the panel's invalidate is
+ * not awaited before the next press: two quick purchases both priced against
+ * the same balance, and each wrote an absolute figure, so the first one was
+ * free. `purchase` (campaign/shopping.ts) fixed the same bug the same way.
+ */
+async function liveBalance(campaignId: string): Promise<number> {
+  const full = await getCampaign(campaignId);
+  if (!full?.vitals) throw new Error("Campaign not found.");
+  return full.vitals.eurobucks;
+}
+
 /** Settle what the landlord and the food are owed. */
 export async function payBills(bundle: DowntimeBundle): Promise<{ total: number }> {
   const view = downtimeView({ ...bundle, restDays: 0 });
   const bills = view.bills;
   if (bills.total <= 0) return { total: 0 };
-  if (!canAfford(view.eurobucks, bills.total)) {
+  const held = await liveBalance(bundle.campaign.id);
+  if (!canAfford(held, bills.total)) {
     throw new Error(
-      `That is ${bills.total}eb and you have ${view.eurobucks}eb. ` +
+      `That is ${bills.total}eb and you have ${held}eb. ` +
         "Unpaid Lifestyle is its own kind of trouble in Night City.",
     );
   }
 
-  await updateCampaignVitals(bundle.campaign.id, {
-    eurobucks: view.eurobucks - bills.total,
-  });
+  await updateCampaignVitals(bundle.campaign.id, { eurobucks: held - bills.total });
   await updateCampaign(bundle.campaign.id, { bills_paid_through_day: bills.paidThroughDay });
   await appendCampaignEvent({
     campaign_id: bundle.campaign.id,
@@ -166,8 +179,8 @@ export async function buy(
   purchase: { kind: ItemKind; itemId: string; quantity: number },
 ): Promise<void> {
   const cost = purchaseCost(purchase.kind, purchase.itemId, purchase.quantity);
-  const held = bundle.vitals.eurobucks;
   if (purchase.quantity <= 0) return;
+  const held = await liveBalance(bundle.campaign.id);
   if (!canAfford(held, cost)) {
     throw new Error(`That is ${cost}eb and you have ${held}eb.`);
   }
@@ -193,8 +206,8 @@ export async function repair(
   bundle: DowntimeBundle,
   piece: RepairableArmor,
 ): Promise<{ cost: number }> {
-  const held = bundle.vitals.eurobucks;
   if (piece.missingSp <= 0) return { cost: 0 };
+  const held = await liveBalance(bundle.campaign.id);
   if (!canAfford(held, piece.cost)) {
     throw new Error(`Patching the ${piece.name} is ${piece.cost}eb and you have ${held}eb.`);
   }

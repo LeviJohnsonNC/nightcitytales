@@ -15,6 +15,8 @@
  */
 import {
   LEDGER_EVENTS,
+  haggleEventData,
+  haggleOn,
   advanceClock,
   canAfford,
   daysToRestock,
@@ -112,6 +114,8 @@ export const SHOP_EVENT_TYPES = [
   SHOP_INTERESTS_EVENT,
   HOLD_PLACED_EVENT,
   HOLD_ENDED_EVENT,
+  // Read back for "one argument a day at each seller" (`haggleOn`).
+  LEDGER_EVENTS.haggle,
   LEDGER_EVENTS.placeChanged,
   LEDGER_EVENTS.jobSettled,
 ] as const;
@@ -552,13 +556,9 @@ export type PurchaseInput = {
    */
   operatorRank?: number;
   isFixer?: boolean;
-  /**
-   * True when the price has already been argued down at this vendor.
-   *
-   * The percentage is NOT passed in — it is worked out here from the Role and
-   * the Rank, so a caller cannot name its own discount.
-   */
-  haggleWon?: boolean;
+  // There is no "haggle won" flag: whether the price was argued down is read
+  // off the ledger (`haggleOn`), and the percentage from the Role and the Rank,
+  // so a caller can name neither its own discount nor its own argument.
 };
 
 export type PurchaseOutcome =
@@ -652,7 +652,10 @@ export async function purchase(input: PurchaseInput): Promise<PurchaseOutcome> {
   // "One left, and they know it. The price does not move" — the stock table says
   // so in as many words, so a won argument does not survive that read.
   const percent =
-    input.haggleWon === true && stock.key !== "last_one"
+    // Whether the price was argued down is the ledger's to say, never the
+    // page's: a stale or hand-made request claiming a won argument gets the
+    // list price.
+    haggleOn(context.events, vendor.id, day)?.won === true && stock.key !== "last_one"
       ? hagglePercent({
           isFixer: input.isFixer === true,
           operatorRank: input.operatorRank ?? 0,
@@ -823,7 +826,7 @@ export async function sell(input: {
 }
 
 /** The ledger type a haggle is written under. */
-export const HAGGLE_EVENT = "haggle";
+export const HAGGLE_EVENT = LEDGER_EVENTS.haggle;
 
 export type HaggleOutcome = {
   result: OpposedCheckResult;
@@ -889,42 +892,40 @@ export function rollHaggle(input: HaggleInput, rng?: RNG): HaggleOutcome {
   return { result, won: result.success, percent };
 }
 
-/** Write a haggle already rolled: the once-a-visit receipt the shop reads back. */
+/**
+ * Write a haggle already rolled: the once-a-day receipt the shop and the till
+ * read back (`haggleOn`). Refuses a second argument at the same seller on the
+ * same day, read off the ledger, so a reopened Counter cannot roll again.
+ */
 export async function recordHaggle(input: {
   campaignId: string;
   vendorId: string;
   outcome: HaggleOutcome;
+  day: number;
   approachId?: string;
 }): Promise<void> {
   const vendor = getVendor(input.vendorId);
   const { result, won, percent } = input.outcome;
+  const recent = await listLatestCampaignEventsOfTypes(input.campaignId, [HAGGLE_EVENT], 50);
+  if (haggleOn(recent, vendor.id, input.day)) {
+    throw new Error("You have already argued the price here today.");
+  }
   await appendCampaignEvent({
     campaign_id: input.campaignId,
     type: HAGGLE_EVENT,
     summary: won
       ? `Talked ${vendor.label.toLowerCase()} down ${percent}%.`
       : `${vendor.label} would not move on the price.`,
-    data: {
+    data: haggleEventData({
       vendorId: vendor.id,
       won,
-      percent: won ? percent : 0,
+      percent,
+      day: input.day,
       actorTotal: result.actor.total,
       opponentTotal: result.opponent.total,
-      ...(input.approachId ? { approachId: input.approachId } : {}),
-    } as unknown as Json,
+      approachId: input.approachId ?? null,
+    }) as unknown as Json,
   });
-}
-
-/** Roll and record in one step, for callers with no die to show. */
-export async function haggle(input: HaggleInput & { campaignId: string }): Promise<HaggleOutcome> {
-  const outcome = rollHaggle(input);
-  await recordHaggle({
-    campaignId: input.campaignId,
-    vendorId: input.vendorId,
-    outcome,
-    ...(input.approachId ? { approachId: input.approachId } : {}),
-  });
-  return outcome;
 }
 
 /**

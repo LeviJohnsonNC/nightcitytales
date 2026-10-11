@@ -1814,8 +1814,10 @@ export async function liveTurn(
   // options are, is not the same as picking up the phone.
   const npcKey = bundle.current?.npcKey;
   if (npcKey && input.trim() && !turn.options) {
-    const npc = bundle.npcs.find((n) => n.npc_id === npcKey);
-    if (npc) await markDealtWith(bundle.campaign.id, npc, bundle.clock.day);
+    const seen = bundle.npcs.find((n) => n.npc_id === npcKey);
+    // The row as written: the arc write below replaces `data` whole, and
+    // building it from the row read before would drop `lastSeenDay`.
+    const npc = seen ? await markDealtWith(bundle.campaign.id, seen, bundle.clock.day) : undefined;
     // A move the world made is answered by dealing with the person who made it.
     // Unlike the derived `person_` situations, a move is written rather than
     // re-derived, so nothing else would ever take it off the board.

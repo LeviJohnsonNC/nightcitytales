@@ -85,7 +85,8 @@ describe("the range", () => {
     expect(bands.length).toBeGreaterThan(0);
     for (const b of bands) {
       expect(b.dv).toBe(singleShotDV(profile.rangeType!, b.max));
-      expect(b.percent).toBe(checkPercent(14, b.dv));
+      // A shot has to beat its DV, so the odds are the defender-wins-ties ones.
+      expect(b.percent).toBe(checkPercent(14, b.dv, "defender"));
     }
   });
 

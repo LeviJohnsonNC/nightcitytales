@@ -13,6 +13,8 @@ import {
   LEDGER_EVENTS,
   catalogItem,
   getVendor,
+  readHaggleEventData,
+  readHold,
   readPurchaseEventData,
   readSoldEventData,
   type ItemKind,
@@ -21,7 +23,6 @@ import {
 
 /** The rows that end "since they last spoke": a narration the player read. */
 const SPOKE = new Set(["life_narration", "life_options"]);
-const HAGGLE = "haggle";
 
 function vendorOf(id: string): Vendor | null {
   try {
@@ -62,18 +63,18 @@ export function counterNews(
       const s = readSoldEventData(e.data);
       if (!s) continue;
       out.push(`Sold their ${nameOf(s.kind, s.itemId)} to ${whom(vendorOf(s.vendorId))}.`);
-    } else if (e.type === HAGGLE) {
-      const d = (e.data ?? {}) as { vendorId?: unknown; won?: unknown };
-      const who = whom(typeof d.vendorId === "string" ? vendorOf(d.vendorId) : null);
+    } else if (e.type === LEDGER_EVENTS.haggle) {
+      const d = readHaggleEventData(e.data);
+      if (!d) continue;
+      const who = whom(vendorOf(d.vendorId));
       out.push(
-        d.won === true
+        d.won
           ? `Talked ${who} down on the price.`
           : `Tried to talk ${who} down on the price and got nowhere.`,
       );
     } else if (e.type === HOLD_PLACED_EVENT) {
-      const d = (e.data ?? {}) as { vendorId?: unknown; name?: unknown };
-      const who = whom(typeof d.vendorId === "string" ? vendorOf(d.vendorId) : null);
-      if (typeof d.name === "string") out.push(`Asked ${who} to hold ${d.name} for them.`);
+      const hold = readHold(e.data);
+      if (hold) out.push(`Asked ${whom(vendorOf(hold.vendorId))} to hold ${hold.name} for them.`);
     }
   }
   return out;

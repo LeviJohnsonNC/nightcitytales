@@ -14,6 +14,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MAX_TURN_PROMPT_CHARS, meterTurn } from "@/lib/aiMeter";
 import { type TurnProvenance } from "@/engine";
 import { GM_SYSTEM_PROMPT, GM_PROMPT_VERSION } from "./gmSystemPrompt";
 import {
@@ -46,7 +47,7 @@ function gmProvenance(model: string, servedModel: string | null): TurnProvenance
 
 const GmTurnInput = z.object({
   /** The rendered context slice + player input (see renderGmUserPrompt). */
-  userPrompt: z.string().min(1),
+  userPrompt: z.string().min(1).max(MAX_TURN_PROMPT_CHARS),
 });
 
 /** Turn a raw gateway failure into something a player can act on. */
@@ -82,9 +83,10 @@ export const gmTurnFn = createServerFn({ method: "POST" })
   // nothing else; this is what stops a stranger with curl.
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => GmTurnInput.parse(input))
-  .handler(async ({ data }): Promise<GmTurnResult> => {
+  .handler(async ({ data, context }): Promise<GmTurnResult> => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("AI is not configured for this app.");
+    await meterTurn("gm", context.userId);
 
     const model = process.env["GM_MODEL"] ?? DEFAULT_GM_MODEL;
     const { generateObject } = await import("ai");

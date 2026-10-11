@@ -28,6 +28,7 @@ import {
   type StatKey,
   hagglePercent,
   haggledPrice,
+  haggleOn,
   FIXER_VENDOR,
   getVendor,
   shopsAt,
@@ -130,14 +131,14 @@ export function useShop(
   /** True once this visit has cost the character part of their evening. */
   const [visitCharged, setVisitCharged] = useState(false);
   /**
-   * How the argument over the price went at this vendor, this visit.
+   * The argument just rolled here, until the ledger has caught up with it.
    *
-   * One per visit, which is the printed "only one Fixer deal per transaction"
-   * and is also the only thing stopping a player rerolling until they win. A
-   * lost argument stays lost until they go somewhere else or come back another
-   * day, so asking is a real decision rather than a free button.
+   * The rule itself — one argument a day at each seller, the printed "only one
+   * Fixer deal per transaction" — is the ledger's (`haggleOn`), read below.
+   * This used to be the whole rule, so closing and reopening the Counter
+   * bought a fresh roll, and a won discount vanished with the drawer.
    */
-  const [haggled, setHaggled] = useState<{
+  const [justHaggled, setHaggled] = useState<{
     vendorId: string;
     won: boolean;
     percent: number;
@@ -157,9 +158,17 @@ export function useShop(
   const ability = bundle ? liveRoleAbility(bundle.character) : null;
   const isFixer = ability?.info.abilityId === "operator";
   const operatorRank = isFixer ? ability.rank : 0;
-  /** The discount standing at this vendor right now, if the price was argued down. */
-  const discount = haggled?.vendorId === vendor.id && haggled.won ? haggled.percent : 0;
   const day = bundle?.campaign.day ?? 1;
+  /** How today's argument at this seller went, if there has been one. */
+  const haggled = useMemo(
+    () =>
+      justHaggled?.vendorId === vendor.id
+        ? justHaggled
+        : haggleOn(context.data?.events ?? [], vendor.id, day),
+    [justHaggled, vendor.id, context.data?.events, day],
+  );
+  /** The discount standing at this vendor right now, if the price was argued down. */
+  const discount = haggled?.won ? haggled.percent : 0;
   const view = useMemo(() => {
     if (!bundle || !context.data) return null;
     const read = shopShelf({
@@ -214,7 +223,6 @@ export function useShop(
         quantity,
         isFixer,
         operatorRank,
-        haggleWon: discount > 0,
       });
       // The evening goes whether you buy one box of rounds or six, so the time
       // is charged once — and only once something actually happened.
@@ -240,7 +248,12 @@ export function useShop(
       );
       invalidate();
     },
-    onError: (error: Error) => setMessage({ tone: "refused", text: error.message }),
+    // The purchase may have committed before the visit's time failed to, so a
+    // failure still refreshes: a stale balance would say nothing was bought.
+    onError: (error: Error) => {
+      setMessage({ tone: "refused", text: error.message });
+      invalidate();
+    },
   });
 
   // A haggle is rolled on screen, die in hand, like every other check, and
@@ -253,6 +266,7 @@ export function useShop(
         campaignId: bundle.campaign.id,
         vendorId: vendor.id,
         outcome: input.outcome,
+        day,
         approachId: input.approachId,
       });
     },
@@ -278,7 +292,7 @@ export function useShop(
   const rollTheHaggle = useCallback(
     (approachId: string): HaggleScene => {
       if (!bundle) throw new Error("Still loading.");
-      if (haggled?.vendorId === vendor.id) throw new Error("You have already argued the price.");
+      if (haggled) throw new Error("You have already argued the price here today.");
       const { actor, modifiers } = haggleActor();
       const outcome = rollHaggle({
         vendorId: vendor.id,
@@ -507,7 +521,7 @@ export function useShop(
     /** What a won argument would be worth here, for the button that offers it. */
     hagglePercent: hagglePercent({ isFixer, operatorRank }),
     /** True once the price has been argued at this vendor this visit, win or lose. */
-    haggleSpent: haggled?.vendorId === vendor.id,
+    haggleSpent: haggled !== null,
     haggleDiscount: discount,
     rollHaggle: rollTheHaggle,
     /** True when the shelf never has to be rolled for: the Fixer's own Reach. */
