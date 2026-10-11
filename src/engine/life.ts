@@ -58,19 +58,10 @@ export type LifeClock = {
   hidden: boolean;
 };
 
-export function clockFull(clock: LifeClock): boolean {
-  return clock.filled >= clock.segments;
-}
-
 /** Fill (or empty, with a negative delta) segments, clamped to the dial. */
 export function tickClock(clock: LifeClock, delta: number): LifeClock {
   const filled = Math.max(0, Math.min(clock.segments, clock.filled + Math.round(delta)));
   return { ...clock, filled };
-}
-
-/** "Arasaka Investigation: 2/6" */
-export function formatClockLabel(clock: LifeClock): string {
-  return `${clock.label}: ${clock.filled}/${clock.segments}`;
 }
 
 // ---------------------------------------------------------------------------

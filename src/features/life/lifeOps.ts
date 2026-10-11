@@ -1105,11 +1105,14 @@ async function applyResponse(
   // A trip or a night's sleep charges its own duration where it is applied,
   // so it wins even over minutes a card printed: charging both counted the
   // same walk twice.
-  const spent = carriesOwnTime
-    ? 0
-    : turn.minutes !== undefined
-      ? clampActionMinutes(turn.minutes)
-      : clampActionMinutes(response.timeSpent);
+  // Asking what the options are passes no time, whatever the model claims:
+  // this held only because the screen passed `minutes: 0`.
+  const spent =
+    carriesOwnTime || turn.options
+      ? 0
+      : turn.minutes !== undefined
+        ? clampActionMinutes(turn.minutes)
+        : clampActionMinutes(response.timeSpent);
 
   await appendCampaignEvent({
     campaign_id: campaignId,
@@ -1195,8 +1198,13 @@ async function applyResponse(
 
   // What the option card printed, charged before anything the model proposed.
   // The card said this is what it costs, so this is what it costs.
+  // Judged against what is left NOW, not what the turn started with: the
+  // snapshot was taken once, so a second spend (or one after the bills) passed
+  // and was then quietly cut down to the balance — "Paid 20eb — a hat" for a
+  // 50eb hat.
+  const holding = () => ({ ...capability, eurobucks });
   if (turn.spend && turn.spend.amount > 0 && !turn.options) {
-    const legal = judgeAction(capability, {
+    const legal = judgeAction(holding(), {
       kind: "spend",
       resource: "eurobucks",
       amount: turn.spend.amount,
@@ -1241,7 +1249,7 @@ async function applyResponse(
 
   for (const action of proposed) {
     if (action.kind === "spend") {
-      const legal = judgeAction(capability, {
+      const legal = judgeAction(holding(), {
         kind: "spend",
         resource: "eurobucks",
         amount: action.amount,

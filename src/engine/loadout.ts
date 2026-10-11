@@ -4,9 +4,7 @@
  * ./gearPackages — nothing is hardcoded here.
  */
 import {
-  ARMOR,
   COMPLETE_PACKAGE_BUDGETS,
-  NON_FOUNDATIONAL_CATEGORY_SLOT_CAP,
   catalogItem,
   foundationRule,
   getArmor,
@@ -96,11 +94,6 @@ export function isFashionItem(kind: ItemKind, itemId: string): boolean {
   return kind === "cyberware" && getCyberware(itemId).category === "fashionware";
 }
 
-/** The fashion pieces bought so far, as cart lines. */
-export function fashionLines(loadout: Loadout): CartLine[] {
-  return loadout.lines.filter((l) => l.kind === "fashion");
-}
-
 export function lineCost(line: CartLine): number {
   return catalogItem(line.kind, line.itemId).cost * line.qty;
 }
@@ -170,12 +163,6 @@ export function wornArmor(loadout: Loadout): Partial<Record<ArmorLocation, CartL
   }
   return out;
 }
-
-export function armorLocations(itemId: string): ArmorLocation[] {
-  return getArmor(itemId).locations;
-}
-
-export const ARMOR_ITEMS = ARMOR;
 
 /* ------------------------------------------------------- cyberware installs */
 

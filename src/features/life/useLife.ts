@@ -19,6 +19,7 @@ import {
   truthsAt,
 } from "@/engine";
 import { travelTo } from "@/features/atlas/travel";
+import { getCampaign } from "@/lib/backend";
 import {
   goalKey,
   reachList,
@@ -140,11 +141,16 @@ export function useLife(campaignId: string) {
   });
 
   const travel = useMutation({
-    mutationFn: (to: string) => {
+    mutationFn: async (to: string) => {
       if (!bundle) throw new Error("Still loading.");
+      // The campaign as it stands now, not as the screen last rendered it: a
+      // purchase or a turn since then moved the clock, and travelling from the
+      // snapshot wrote that time back off and dropped places just visited.
+      const live = await getCampaign(bundle.campaign.id);
+      const campaign = live?.campaign ?? bundle.campaign;
       return travelTo({
-        campaign: bundle.campaign,
-        clock: bundle.clock,
+        campaign,
+        clock: { day: campaign.day, minute: campaign.minute },
         to,
         // The map's own Travel button rides whatever is out of the Family
         // Motorpool, the same as a trip the narrator proposes. Undefined for

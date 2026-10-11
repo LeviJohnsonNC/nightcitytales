@@ -53,8 +53,6 @@ export const BATTLEFIELD_PROPS: BattlefieldProp[] = (
   propData.props as unknown as BattlefieldProp[]
 ).map((prop) => ({ ...prop, sections: prop.sections.map((section) => ({ ...section })) }));
 
-export const PROP_KEYS: string[] = BATTLEFIELD_PROPS.map((prop) => prop.key);
-
 /** The named prop, or undefined. Authoring is in-repo, so a typo is a test failure. */
 export function battlefieldProp(key: string): BattlefieldProp | undefined {
   return BATTLEFIELD_PROPS.find((prop) => prop.key === key);

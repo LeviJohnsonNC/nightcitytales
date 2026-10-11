@@ -65,39 +65,3 @@ export function StatBandIndicator({
     </span>
   );
 }
-
-export function StatLegend({ className }: { className?: string }) {
-  const entries = [
-    { value: 2, range: "2" },
-    { value: 3, range: "3" },
-    { value: 4, range: "4–5" },
-    { value: 6, range: "6" },
-    { value: 7, range: "7–8" },
-  ];
-
-  return (
-    <div
-      className={cn("flex flex-wrap gap-x-3 gap-y-1", className)}
-      aria-label="STAT strength legend"
-    >
-      {entries.map(({ value, range }) => {
-        const band = statBand(value);
-        const Icon = band.Icon;
-        return (
-          <span
-            key={range}
-            className={cn(
-              "inline-flex items-center gap-1 font-mono text-[9px] font-semibold uppercase",
-              band.textClass,
-            )}
-            title={band.description}
-          >
-            <Icon aria-hidden="true" className="size-3" strokeWidth={2.5} />
-            <span>{range}</span>
-            <span className="text-text-dim">{band.shortLabel}</span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}

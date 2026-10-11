@@ -12,13 +12,7 @@
  * docs/progression-and-first-play-plan.md.
  */
 import { z } from "zod";
-import {
-  OPENING_CHOICES,
-  OPENING_FALLBACK,
-  isOpeningChoice,
-  openingChoiceList,
-  type OpeningChoice,
-} from "@/engine";
+import { OPENING_FALLBACK, isOpeningChoice, openingChoiceList, type OpeningChoice } from "@/engine";
 
 export const OpeningWireSchema = z.object({
   title: z.string(),
@@ -102,6 +96,3 @@ export function normalizeOpening(wire: OpeningWire): Opening {
     doors,
   };
 }
-
-/** Every door the engine knows, for a caller that wants them without a model. */
-export const ALL_DOORS: OpeningChoice[] = [...OPENING_CHOICES];

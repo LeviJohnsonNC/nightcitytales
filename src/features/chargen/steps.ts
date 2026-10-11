@@ -119,14 +119,6 @@ export function stepIndex(step: ChargenStep): number {
 }
 
 /**
- * Which later steps a change to an earlier step invalidates.
- */
-export const DEPENDENTS: Record<string, ChargenStep[]> = {
-  role: ["lifepath", "skills", "package", "gear", "cyberware"],
-  method: ["stats", "skills", "package", "gear", "cyberware"],
-};
-
-/**
  * The parts of the draft a change of method clears: only what the method
  * decides how to make. Who the character is — Role, Lifepath, name, face, home
  * and the people they met — survives it.

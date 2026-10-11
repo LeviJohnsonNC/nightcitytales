@@ -954,23 +954,6 @@ export function paintCutawayWall(
     }
 }
 
-export function paintCutaway(
-  ctx: CanvasRenderingContext2D,
-  structure: SceneStructure,
-  project: Project,
-  entrances: SceneEnvironment["entrances"] = [],
-  materials?: MaterialSet,
-) {
-  paintCutawayFloor(ctx, structure, project);
-  const parts = cutawayWalls(structure, entrances);
-  parts.sort(
-    (a, b) =>
-      project({ x: a.rect.x + a.rect.width / 2, y: a.rect.y + a.rect.height / 2 }).y -
-      project({ x: b.rect.x + b.rect.width / 2, y: b.rect.y + b.rect.height / 2 }).y,
-  );
-  for (const part of parts) paintCutawayWall(ctx, structure, part, project, materials);
-}
-
 /** The shop's composed return faces and the art they show (`streetfront.ts`). */
 export interface Returns {
   faces: readonly ReturnFace[];

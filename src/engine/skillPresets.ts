@@ -49,10 +49,6 @@ export function presetsFor(roleId: string | null | undefined): SkillPreset[] {
   return roleId ? (FILE.roles[roleId] ?? []) : [];
 }
 
-export function getPreset(roleId: string, presetId: string): SkillPreset | undefined {
-  return presetsFor(roleId).find((p) => p.id === presetId);
-}
-
 /** Every Role the presets cover. For tests. */
 export const PRESET_ROLES: string[] = Object.keys(FILE.roles);
 

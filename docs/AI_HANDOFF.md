@@ -17,15 +17,14 @@ Added phone captures and header-fit checks to all7existing browser harnesses.
 Next: checkpoint PR, focused/full checks and fresh screenshots. No campaign writes
 or merge; user tests later.
 
-## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
+## Parallel stream — shopping, then the audit (Claude, branch claude/shady-goods-store-art-i8grnn)
 
-Updated 2026-10-10. Plan of record: docs/shopping-discovery.md. Passes 1–4 merged
-(#343–#346). Store UI part 1, the Counter (features/life/shop/, inline in LifeScreen,
-/shop-review fixtures): typecheck, lint, unit suite (337 files), build and the
-public-route browser test for /shop-review (desktop + phone, axe) pass; screenshots
-taken from /shop-review only — the signed-in Life screen was not browser-checked.
-Next: Levi generates the 22 item pictures (docs/art-style.md, Object wrapper);
-convert with tools/art/webp.mjs public/images/items and list them in ITEM_ART_READY.
+Updated 2026-10-11.
+
+- **Shopping:** PRs #343–#363 are merged: the Counter, browse-from-story, keepers, the haggle scene and counterNews. Levi is generating the 26 keeper portraits (prompts are in docs/art-style.md). To add them, run `tools/art/webp.mjs public/images/keepers --widths=1024,512` and list each slug in `KEEPER_ART_READY`.
+- **Audit:** the fixes and tests are on draft PR #369. See ROADMAP.md, "Audit — 2026-10-11", and debts 20–26.
+- **Validation:** typecheck, lint and the unit suite pass locally; the signed-in game was not browser-checked.
+- **Next:** CI on #369. After that, the improvement list Levi is approving.
 
 ## Parallel painted architecture pass
 

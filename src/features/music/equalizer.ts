@@ -23,8 +23,6 @@ export type EqSettings = {
   bands: number[];
 };
 
-export const FLAT_EQ: EqSettings = { on: true, preamp: 0, bands: EQ_BANDS.map(() => 0) };
-
 /** The presets, in dB per band. Values follow the classic set by ear, not by copying a file. */
 export const EQ_PRESETS: Record<string, number[]> = {
   Flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

@@ -71,11 +71,6 @@ for (const [path, url] of Object.entries(COMMITTED_FILES)) {
   COMMITTED.set(file.replace(/\.[^.]+$/, ""), url);
 }
 
-/** Every pointer name the registry knows, for the art audit in the style guide. */
-export function registeredPointers(): string[] {
-  return [...new Set(POINTERS.values())];
-}
-
 function pointerUrl(pointer: string | null | undefined): string | null {
   if (!pointer) return null;
   return POINTERS.get(pointer) ?? null;
@@ -140,8 +135,6 @@ type Manifest = {
 };
 
 const manifest = (manifestJson ?? {}) as unknown as Manifest;
-
-export const MANIFEST_PRESENT = Boolean(manifest.roleArt || manifest.portraits);
 
 /**
  * The narrow width every local image is also encoded at, by tools/art/webp.mjs.
@@ -240,5 +233,3 @@ export function portraitArt(entry: PortraitEntry): ResolvedArt {
 export function portraitById(id: string): PortraitEntry | undefined {
   return portraits().find((p) => p.id === id);
 }
-
-export const PRESENTATIONS: Presentation[] = ["masc", "femme", "androgynous"];

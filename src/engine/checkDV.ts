@@ -19,14 +19,6 @@ export function getDV(name: string): number {
   return entry.dv;
 }
 
-export function getDifficulty(name: string): DifficultyValue {
-  const entry = DIFFICULTY_VALUES.find((d) => d.name.toLowerCase() === name.toLowerCase());
-  if (!entry) {
-    throw new Error(`Unknown Difficulty Value "${name}" (src/data/rules/dv-table.json)`);
-  }
-  return entry;
-}
-
 /** The published difficulty band a numeric DV corresponds to, if any. */
 export function describeDV(dv: number): DifficultyValue | null {
   return DIFFICULTY_VALUES.find((d) => d.dv === dv) ?? null;
@@ -34,11 +26,6 @@ export function describeDV(dv: number): DifficultyValue | null {
 
 export function meetsDV(total: number, dv: number): boolean {
   return total >= dv;
-}
-
-/** Positive when the check beats the DV, negative when it misses. */
-export function dvMargin(total: number, dv: number): number {
-  return total - dv;
 }
 
 /**
