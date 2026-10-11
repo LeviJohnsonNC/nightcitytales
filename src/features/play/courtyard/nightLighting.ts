@@ -75,7 +75,7 @@ export type NightLighting = typeof INTERSECTION_NIGHT;
 export function nightFor(env: Pick<SceneEnvironment, "recipe" | "interior"> | undefined) {
   return env &&
     ((["intersection", "alley"].includes(env.recipe) && !env.interior) ||
-      (["warehouse", "garage", "office"].includes(env.recipe) && !!env.interior))
+      (["warehouse", "garage", "office", "nightclub"].includes(env.recipe) && !!env.interior))
     ? INTERSECTION_NIGHT
     : undefined;
 }

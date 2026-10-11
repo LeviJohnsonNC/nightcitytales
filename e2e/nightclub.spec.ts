@@ -1,0 +1,234 @@
+/** Matched evidence from the shipping scene-review route. Never creates a campaign. */
+import { test, expect } from "@playwright/test";
+import { mkdir, writeFile } from "node:fs/promises";
+test.use({
+  viewport: { width: 1800, height: 1100 },
+  // Keep API/network traces without repeatedly copying this image-heavy scene.
+  trace: { mode: "retain-on-failure", screenshots: false, snapshots: false, sources: false },
+  launchOptions: {
+    // CI has no hardware GPU. Rasterize staging canvases on the CPU to avoid
+    // GPU readback stalls while slicing atlases; the shipping scene still uses WebGL.
+    args: [
+      "--use-gl=angle",
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader",
+      "--disable-accelerated-2d-canvas",
+    ],
+  },
+});
+test.setTimeout(90_000);
+test.describe.configure({ retries: 0 });
+test.afterEach(async ({ page }, info) => {
+  await mkdir(info.outputDir, { recursive: true });
+  // Keep diagnostics even when navigation/readiness fails before the first capture.
+  await writeFile(
+    info.outputPath("diagnostics.json"),
+    JSON.stringify(
+      {
+        url: page.url(),
+        errors: info.errors.map((e) => e.message),
+      },
+      null,
+      2,
+    ),
+  );
+});
+for (const seed of [4, 5, 6, 8])
+  test(`nightclub seed ${seed}`, async ({ page }, info) => {
+    // The eight-capture seed needs headroom beyond software-GPU cold startup.
+    // Keep zero retries; capture operations retain their own short deadlines.
+    test.setTimeout(seed === 4 ? 180_000 : 90_000);
+    page.setDefaultTimeout(15_000);
+    page.setDefaultNavigationTimeout(30_000);
+    const errors: string[] = [];
+    const report = (kind: string, detail: string) =>
+      console.log(`[nightclub seed=${seed} ${kind}] ${detail}`);
+    page.on("pageerror", (e) => {
+      errors.push(e.message);
+      report("pageerror", e.stack ?? e.message);
+    });
+    page.on("crash", () => report("crash", "Chromium renderer process crashed"));
+    const warnings = new Set<string>();
+    page.on("console", (message) => {
+      if (warnings.has(message.text())) return;
+      warnings.add(message.text());
+      if (["error", "warning"].includes(message.type()))
+        report(message.type(), message.text().slice(0, 1200));
+    });
+    page.on("requestfailed", (request) =>
+      report("requestfailed", `${request.url()} ${request.failure()?.errorText}`),
+    );
+    page.on("response", (response) => {
+      if (response.status() >= 400) report("http", `${response.status()} ${response.url()}`);
+    });
+    // Visual evidence does not exercise sound. Apply the real mute preferences
+    // before React mounts, suppress autoplay, and fulfil media locally so old
+    // baseline revisions also avoid fetching the unavailable soundtrack.
+    await page.route(/\.(?:mp3|m4a|ogg|wav|aac|flac)(?:\?.*)?$/i, (route) => {
+      // Vite also imports audio URLs as JavaScript modules (?import&url).
+      // An empty response for those scripts prevents the entire route loading.
+      if (route.request().resourceType() !== "media") return route.continue();
+      return route.fulfill({ status: 204, body: "" });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem("nct.music", "off");
+      localStorage.setItem("combat-muted", "true");
+      HTMLMediaElement.prototype.play = () => Promise.resolve();
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries())
+          if (entry.name.startsWith("courtyard-"))
+            console.warn(
+              `[renderer timing] ${entry.name} ${Math.round(entry.startTime)}ms +${Math.round(entry.duration)}ms`,
+            );
+      }).observe({ entryTypes: ["mark", "measure"] });
+    });
+    const out = info.outputPath("captures");
+    await mkdir(out, { recursive: true });
+    const capture = async (name: string) => {
+      const started = Date.now();
+      report("capture-start", name);
+      await test.step(`capture ${name}`, async () => {
+        const canvas = page.locator("canvas");
+        // Scroll once, without Playwright's animation-stability loop. This is
+        // a continuously rendered scene; retain the DOM checks below instead.
+        await canvas.evaluate((el) =>
+          el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }),
+        );
+        await page.mouse.move(0, 0);
+        await page.evaluate(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+            ),
+        );
+        const overlay = await page.evaluate(() => {
+          const rect = (el: Element) => {
+            const r = el.getBoundingClientRect();
+            return { x: r.x, y: r.y, width: r.width, height: r.height };
+          };
+          return {
+            scroll: { x: scrollX, y: scrollY },
+            canvases: document.querySelectorAll("canvas").length,
+            overlays: document.querySelectorAll("svg.combat-arena").length,
+            canvas: rect(document.querySelector("canvas")!),
+            svg: rect(document.querySelector("svg.combat-arena")!),
+            units: [...document.querySelectorAll("g.combat-unit")].map((el) => ({
+              label: el.getAttribute("aria-label"),
+              transform: el.getAttribute("transform"),
+              rings: [...el.querySelectorAll(":scope > ellipse")].map(rect),
+            })),
+            markers: [...document.querySelectorAll("g.combat-marker")].map((el) => ({
+              transform: el.getAttribute("transform"),
+              bounds: rect(el),
+            })),
+          };
+        });
+        await writeFile(`${out}/${name}-overlay.json`, JSON.stringify(overlay, null, 2));
+        expect(overlay.canvases).toBe(1);
+        expect(overlay.overlays).toBe(1);
+        expect(overlay.units).toHaveLength(4);
+        expect(new Set(overlay.units.map((u) => u.label)).size).toBe(4);
+        for (const unit of overlay.units) expect(unit.rings).toHaveLength(1);
+        // Quiet bystanders omit head markers unless inspected.
+        expect(overlay.markers.length).toBeGreaterThan(0);
+        expect(overlay.markers.length).toBeLessThanOrEqual(overlay.units.length);
+        for (const axis of ["x", "y", "width", "height"] as const)
+          expect(Math.abs(overlay.canvas[axis] - overlay.svg[axis])).toBeLessThan(1);
+        // Viewport capture avoids another implicit element-scroll operation.
+        // page.screenshot (without fullPage) takes a viewport-relative clip.
+        // Adding scroll again cropped away the upper scene and captured the HUD.
+        const box = overlay.canvas;
+        const viewport = page.viewportSize()!;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.y).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+        expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
+        const png = await page.screenshot({
+          path: `${out}/${name}.png`,
+          timeout: 15_000,
+          scale: "css",
+          clip: {
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height,
+          },
+        });
+        // PNG IHDR dimensions catch silent clipping at the viewport boundary.
+        expect(Math.abs(png.readUInt32BE(16) - box.width)).toBeLessThanOrEqual(1);
+        expect(Math.abs(png.readUInt32BE(20) - box.height)).toBeLessThanOrEqual(1);
+      });
+      report("capture", `${name} ${Date.now() - started}ms`);
+    };
+    const t = Date.now();
+    await page.goto(
+      `/scene-review?place=nightclub&seed=${seed}&adventure=0&actors=1&access=0&night=1&lights=1&reflect=on&reveal=0`,
+      { waitUntil: "domcontentloaded" },
+    );
+    report("navigation", `${Date.now() - t}ms`);
+    await expect(page.locator("canvas")).toBeVisible({ timeout: 60_000 });
+    report("ready", `${Date.now() - t}ms`);
+    // Streaming audio can keep networkidle pending; wait for the actual board instead.
+    await expect(page.getByText("Establishing feed", { exact: true })).toBeHidden({
+      timeout: 30_000,
+    });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(500);
+    await capture(`seed${seed}-play`);
+    const measures = await page.evaluate(() =>
+      performance.getEntriesByType("measure").map((x) => ({ name: x.name, duration: x.duration })),
+    );
+    if (seed === 4) {
+      await page.getByRole("button", { name: "Save review", exact: true }).click();
+      // Baseline nightclub did not expose lighting controls.
+      if (await page.getByRole("checkbox", { name: "Lights", exact: true }).count()) {
+        await page.getByRole("checkbox", { name: "Lights", exact: true }).uncheck();
+        await page.waitForTimeout(500);
+        await capture(`seed4-lights-off`);
+        await page.getByRole("checkbox", { name: "Night", exact: true }).uncheck();
+        await page.waitForTimeout(500);
+        await capture(`seed4-neutral`);
+        await page.getByRole("checkbox", { name: "Night", exact: true }).check();
+        await page.getByRole("checkbox", { name: "Lights", exact: true }).check();
+      }
+      await page.getByRole("combobox", { name: "Cover", exact: true }).selectOption("destroyed");
+      await page.waitForTimeout(800);
+      await capture(`seed4-destroyed`);
+      await page.getByRole("button", { name: "Load review", exact: true }).click();
+      await expect(page.getByRole("combobox", { name: "Cover", exact: true })).toHaveValue(
+        "intact",
+      );
+      await expect(
+        page.getByText("Restored saved geometry, positions and damage.", { exact: true }),
+      ).toBeVisible();
+      await page.waitForTimeout(800);
+      await capture(`seed4-restored`);
+    }
+    // Reveal on the existing combat board. Switching actors off mounts a second
+    // renderer, rebuilding every atlas and surface and changing camera framing.
+    const reveal = page.getByRole("button", {
+      name: "Reveal activity behind buildings",
+      exact: true,
+    });
+    if (await reveal.count()) await reveal.click();
+    if (await reveal.count()) await expect(reveal).toHaveAttribute("aria-pressed", "true");
+    await page.waitForTimeout(1500);
+    // Interior cutaways have automatic actor occlusion, no exterior reveal toggle.
+    if (await reveal.count()) await capture(`seed${seed}-reveal`);
+    await writeFile(
+      `${out}/seed${seed}-metrics.json`,
+      JSON.stringify({ seed, totalMs: Date.now() - t, measures, errors }, null, 2),
+    );
+    expect(errors).toEqual([]);
+    if (seed === 5 || seed === 4) {
+      await page.setViewportSize({ width: 700, height: 850 });
+      await page.waitForTimeout(1000);
+      await page.screenshot({ path: `${out}/compact.png` });
+      if (seed === 4) {
+        if (await reveal.count()) await reveal.click();
+        if (await reveal.count()) await expect(reveal).toHaveAttribute("aria-pressed", "false");
+        await page.waitForTimeout(500);
+        await capture("seed4-compact-play");
+      }
+    }
+  });

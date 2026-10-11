@@ -49,6 +49,7 @@ export function createInteriorPropTextures(
   bakedShadow = true,
   materials?: MaterialSet,
   office = false,
+  nightclub = false,
 ) {
   for (const condition of ["intact", "damaged", "wrecked"] as PropCondition[]) {
     const height = PROP_CANVAS.height;
@@ -194,9 +195,21 @@ export function createInteriorPropTextures(
       texture.refresh();
       continue;
     }
-    const metal = office ? ["#56605c", "#323f40", "#8c9387"] : ["#4f626a", "#283c48", "#73878a"],
-      wood = office ? ["#795c42", "#4e3c30", "#b18d62"] : ["#766656", "#493f39", "#ac9270"],
-      velvet = office ? ["#486359", "#2d423e", "#6e8775"] : ["#624052", "#38293e", "#a56883"];
+    const metal = nightclub
+        ? ["#3d444b", "#222b35", "#687079"]
+        : office
+          ? ["#56605c", "#323f40", "#8c9387"]
+          : ["#4f626a", "#283c48", "#73878a"],
+      wood = nightclub
+        ? ["#644437", "#392d2b", "#96735a"]
+        : office
+          ? ["#795c42", "#4e3c30", "#b18d62"]
+          : ["#766656", "#493f39", "#ac9270"],
+      velvet = nightclub
+        ? ["#62364d", "#342638", "#8a536d"]
+        : office
+          ? ["#486359", "#2d423e", "#6e8775"]
+          : ["#624052", "#38293e", "#a56883"];
     const carton = (
       x: number,
       y: number,
@@ -371,7 +384,17 @@ export function createInteriorPropTextures(
       for (const z of [48, 70]) {
         slab(0, 0.4, 2, 1.4, z - 4, z, wood);
         for (let i = 0; i < 5; i++)
-          slab(0.18 + i * 0.35, 0.55, 0.16, 0.2, z, z + 13, ["#43837c", "#275554", "#78aaa1"]);
+          slab(
+            0.18 + i * 0.35,
+            0.55,
+            0.16,
+            0.2,
+            z,
+            z + (nightclub ? 10 + (i % 3) * 2 : 13),
+            nightclub && i % 2
+              ? ["#927249", "#584731", "#c9a36a"]
+              : ["#43837c", "#275554", "#78aaa1"],
+          );
       }
     } else if (kind === "lounge-table") {
       slab(0.8, 0.8, 0.4, 0.4, 0, 24, metal);
@@ -572,6 +595,13 @@ export function createInteriorPropTextures(
       }
       if (kind === "dj") {
         slab(0.2, 0.35, 1.6, 1.2, top, top + 7, metal);
+        if (nightclub)
+          for (let i = 0; i < 5; i++)
+            slab(0.9, 0.45 + i * 0.13, 0.09, 0.05, top + 7, top + 8, [
+              "#57a5aa",
+              "#2d6d7d",
+              i % 2 ? "#72bec5" : "#c570a3",
+            ]);
         for (const x of [0.65, 1.4]) {
           const p = point(x, 0.9, top + 8);
           ctx.fillStyle = "#101a2a";

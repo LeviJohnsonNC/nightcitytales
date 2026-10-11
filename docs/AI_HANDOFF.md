@@ -1,19 +1,21 @@
-# Active office material pass — 2026-10-11
+# Active nightclub material pass — 2026-10-11
 
-Garage PR365 approved and merged. User authorized next environment; office chosen.
+Office PR366 approved by Levi and merged. User authorized next environment.
 Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/office-material-pass; base origin/main 6c0f0500.
-Original dirty checkout untouched. Prior final handoff /tmp/nct365-final-handoff.md.
+Branch codex/nightclub-material-pass; base origin/main 61d7e07d.
+Original dirty checkout untouched; office final handoff /tmp/nct366-final-handoff.md.
 
-Local implementation underway: office carpet/stone/timber floors, warmer furniture,
-ceiling panel lights clipped to saved rooms, contact/cast shadows. No geometry changes.
-Baseline Chromium seeds4/5/8 pass; seed4 play inspected; /tmp/nct-office-before-captures.
-First implementation typecheck,13focused tests and Chromium all3seeds pass.
-Seed4 play inspected: distinct floors/furniture work, panels too bright/walls industrial.
-Local follow-up softens panels and adds plaster walls. Final damage capture exposed
-green office chairs reverting to purple wrecks; corrected office wreck palette.
-Next: checkpoint PR, full tests/lint/typecheck/build and final Chromium screenshots.
-Levi reviews before further environment work.
+Implementation pushed in PR367 (https://github.com/LeviJohnsonNC/nightcitytales/pull/367): dark fine-jointed dance floor, carpet lounge,
+timber performance floor, restrained plaster walls, warmer bar/booth materials,
+room-clipped cyan/magenta dance lights and amber hospitality lights. Existing
+industrial strip fixture painter reused; no geometry or engine changes.
+Baseline Chromium seeds4/5/8 passed (35.2s), seed4 play visually inspected.
+Evidence /tmp/nct-nightclub-before-captures. Initial typecheck passes.
+Implementation 89d9c7aa: 4311 tests/348 files pass; local Chromium4/5/8 pass
+(41.7s). All play captures, compact4 and destroyed4 visually inspected.
+Seeds4/8 share long-room topology; adding seed6 to cover central-floor topology.
+Next: browser seed6, lint/typecheck/build and remote checks. Levi reviews before
+merge. No generated bitmap assets or new gameplay systems.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 
