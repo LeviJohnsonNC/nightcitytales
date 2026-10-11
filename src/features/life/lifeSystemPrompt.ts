@@ -19,7 +19,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.24.0";
+export const LIFE_PROMPT_VERSION = "2.25.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -120,6 +120,7 @@ Return a structured JSON object:
   - {"kind":"rest","hours":<integer>}
   - {"kind":"pay_bills"} — settling rent and Lifestyle. Never state the amount yourself; the engine reads it and pays it.
   - {"kind":"repair_armor"} — having chewed armor patched. The engine picks the piece and the printed cost.
+  - {"kind":"browse","seller":"<which seller, in the player's words>"(optional)} — the player wants to see what a seller has: "what have you got?", "I'm browsing", "I want to buy a jacket", "let's see the stock". The engine opens that seller's counter, where they see the real shelf with real prices; when nobody sells where they stand, it takes them to the one they named, or the nearest, first. Set "seller" only when they named one ("the market", "my fixer", "Ganymede"). Never list goods, brands or prices in your prose: you are not shown the shelf, so anything you put on it is a lie the counter will contradict. Write the seller noticing them, and stop. Set "timeSpent" to 0: looking is free, and buying is charged at the counter.
   - {"kind":"hook_offer"} — put the WORK ON THE WIRE job on the table. No other fields: the job, the broker and the fee are already decided.
   - {"kind":"none"}
   Return [] when nothing mechanical happened. You may NOT start a fight, run a mission beat, or accept a job.

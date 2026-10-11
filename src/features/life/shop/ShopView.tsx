@@ -31,15 +31,18 @@ export function ShopView({
   travelBusy = false,
   travelMode,
   onTalk,
+  vendorId = null,
 }: {
   bundle: LifeBundle;
+  /** The seller to open on, when the story asked for one. */
+  vendorId?: string | null;
   onClose: () => void;
   onTravel?: ((placeKey: string) => void) | undefined;
   travelBusy?: boolean;
   travelMode?: TravelMode | undefined;
   onTalk?: (() => void) | undefined;
 }) {
-  const shop = useShop(bundle, true);
+  const shop = useShop(bundle, true, vendorId);
   const from = bundle.campaign.location_key ?? DEFAULT_START;
   const near = useMemo(() => nearestShops(from, travelMode), [from, travelMode]);
   // A seller at a place shows that place; the fixer and an unpictured place

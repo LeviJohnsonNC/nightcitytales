@@ -95,6 +95,8 @@ import type { TurnContext } from "./cityTurnModel";
 import { hauntPeople } from "./lifeModel";
 import { placeHistory } from "@/features/campaign/placeState";
 import { ShopView } from "./shop/ShopView";
+import { browseLinkFor, newestBrowse } from "./browseIntent";
+import { standingAt } from "@/features/campaign/favours";
 import { DockTile } from "./hud/DockTile";
 import { RipperdocSheet } from "./RipperdocSheet";
 import { WorkshopSheet } from "./WorkshopSheet";
@@ -119,9 +121,36 @@ function Label({ children }: { children: React.ReactNode }) {
 type Climber = { roleId: string | null; homeDistrictKey: string | null };
 const NO_CLIMBER: Climber = { roleId: null, homeDistrictKey: null };
 
-function LifeEvent({ event, climber }: { event: CampaignEvent; climber?: Climber }) {
+function LifeEvent({
+  event,
+  climber,
+  here = null,
+  onBrowse,
+}: {
+  event: CampaignEvent;
+  climber?: Climber;
+  /** The atlas place the character is standing in, for the lines that offer a counter. */
+  here?: string | null;
+  onBrowse?: ((vendorId: string) => void) | undefined;
+}) {
   const text = event.summary ?? "";
   if (!text) return null;
+  // An arrival somewhere that sells, or a look at a counter, offers the counter
+  // again while they are still standing there.
+  const seller = onBrowse ? browseLinkFor(event, here) : null;
+  const browse = seller ? (
+    <>
+      {" "}
+      <button
+        type="button"
+        onClick={() => onBrowse?.(seller)}
+        className="ml-1 inline-flex items-center gap-1 border border-accent/50 px-1.5 py-0.5 align-middle font-mono text-[10px] uppercase tracking-[0.18em] text-accent hover:bg-accent/10"
+      >
+        <ShoppingBag aria-hidden className="size-3" />
+        {event.type === "travelled" ? "Browse" : "Back to the counter"}
+      </button>
+    </>
+  ) : null;
   switch (event.type) {
     case "player_input":
       return (
@@ -229,6 +258,14 @@ function LifeEvent({ event, climber }: { event: CampaignEvent; climber?: Climber
       return (
         <p className="font-mono text-xs text-accent">
           <span className="text-accent">➜</span> <NpcText text={text} />
+          {browse}
+        </p>
+      );
+    case "shop_browsed":
+      return (
+        <p className="font-mono text-xs text-muted-foreground">
+          <span className="text-accent">◆</span> {text}
+          {browse}
         </p>
       );
     // Something the character tried and could not do. Shown for the same reason
@@ -253,6 +290,8 @@ const LIFE_EVENT_TYPES = new Set([
   "player_input",
   "travelled",
   "action_refused",
+  // They asked to see what a seller has; the counter opened on it.
+  "shop_browsed",
 
   "life_narration",
   "life_action",
@@ -328,11 +367,15 @@ function LifeLog({
   suppressText,
   climber,
   autoScroll = true,
+  here = null,
+  onBrowse,
 }: {
   events: CampaignEvent[];
   autoScroll?: boolean;
   suppressText?: string;
   climber?: Climber;
+  here?: string | null;
+  onBrowse?: ((vendorId: string) => void) | undefined;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -349,7 +392,13 @@ function LifeLog({
   return (
     <div className="space-y-3 border border-border bg-card/40 p-4 lg:flex-1 lg:overflow-y-auto">
       {shown.map((e) => (
-        <LifeEvent key={e.id} event={e} {...(climber ? { climber } : {})} />
+        <LifeEvent
+          key={e.id}
+          event={e}
+          here={here}
+          onBrowse={onBrowse}
+          {...(climber ? { climber } : {})}
+        />
       ))}
       <div ref={endRef} />
     </div>
@@ -768,12 +817,33 @@ export function LifeScreen({
   // player leaves it. The phone's status sheet is closed so the shop is what
   // they see.
   const [shopOpen, setShopOpen] = useState(false);
+  /** The seller the Counter opens on, when the story or a log line chose one. */
+  const [shopVendor, setShopVendor] = useState<string | null>(null);
   const [statusOpen, setStatusOpen] = useState(false);
-  const openShop = () => {
+  const openShop = (vendorId: string | null = null) => {
     setStatusOpen(false);
+    setShopVendor(vendorId);
     setShopOpen(true);
     if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   };
+  // "What have you got?" opens the Counter on its own. The turn writes a
+  // shop_browsed row when the engine found a seller to show; the newest one
+  // seen when the screen first loaded is remembered, so a reload never
+  // reopens an old visit and only a turn taken here opens the shop.
+  const browsed = bundle ? newestBrowse(bundle.events) : null;
+  const seenBrowse = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (!bundle) return;
+    if (seenBrowse.current === undefined) {
+      seenBrowse.current = browsed?.eventId ?? null;
+      return;
+    }
+    if (browsed && browsed.eventId !== seenBrowse.current) {
+      seenBrowse.current = browsed.eventId;
+      openShop(browsed.vendorId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bundle, browsed?.eventId]);
   useEffect(() => {
     if (!shopOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -1047,7 +1117,7 @@ export function LifeScreen({
             luckMax={luckMax}
             status={status}
             intro={false}
-            onOpenShop={openShop}
+            onOpenShop={() => openShop()}
           />
         </MobileStatusBar>
         {/* On a phone the rail waits behind the status bar, so the day-one
@@ -1100,7 +1170,9 @@ export function LifeScreen({
               // The Counter, in place of the scene. The input is hidden: a
               // shop is for shopping, and "Talk to them" goes back to the scene.
               <ShopView
+                key={shopVendor ?? "shop"}
                 bundle={bundle}
+                vendorId={shopVendor}
                 onClose={() => setShopOpen(false)}
                 onTravel={life.travelTo}
                 travelBusy={life.travelBusy}
@@ -1190,6 +1262,8 @@ export function LifeScreen({
                       <LifeLog
                         autoScroll={!life.narration}
                         events={bundle.events}
+                        here={standingAt(bundle.campaign)}
+                        onBrowse={openShop}
                         climber={{
                           roleId: bundle.character.character.role ?? null,
                           homeDistrictKey: bundle.character.finance?.home_district_key ?? null,
@@ -1253,7 +1327,7 @@ export function LifeScreen({
               luckLeft={luckLeft}
               luckMax={luckMax}
               status={status}
-              onOpenShop={openShop}
+              onOpenShop={() => openShop()}
             />
           </aside>
         </div>

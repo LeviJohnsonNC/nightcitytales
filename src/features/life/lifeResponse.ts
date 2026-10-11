@@ -20,6 +20,7 @@ export const LIFE_ACTION_KINDS = [
   "pay_bills",
   "repair_armor",
   "hook_offer",
+  "browse",
   "none",
 ] as const;
 
@@ -95,6 +96,14 @@ export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
   // restate the title, the patron or the fee is exactly how the offer and the
   // job it starts drift apart.
   z.object({ kind: z.literal("hook_offer") }),
+  /**
+   * The player wants to see what a seller has. It names at most WHICH seller,
+   * in the player's own words ("the market", "my fixer"); it never carries an
+   * item or a price, because what is on a shelf is the engine's to say. The
+   * engine opens the Counter on a seller where the character stands, or the
+   * fixer, who is a call.
+   */
+  z.object({ kind: z.literal("browse"), seller: z.string().optional() }),
   z.object({ kind: z.literal("none") }),
 ]);
 export type LifeProposedAction = z.infer<typeof LifeProposedActionSchema>;
@@ -255,6 +264,17 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
       // Any title, patron or fee the model attached is discarded rather than
       // merged: the offer is read off the mission the engine already generated.
       out.push({ kind: "hook_offer" });
+      continue;
+    }
+    if (
+      kindRaw === "browse" ||
+      kindRaw === "shop" ||
+      kindRaw === "open_shop" ||
+      kindRaw === "browse_shop"
+    ) {
+      // Anything the model listed for sale is dropped: only which seller survives.
+      const seller = str(a["seller"]) ?? str(a["vendor"]) ?? str(a["shop"]);
+      out.push({ kind: "browse", ...(seller ? { seller } : {}) });
       continue;
     }
     // Bills and repairs are named jobs the engine prices itself, so they are

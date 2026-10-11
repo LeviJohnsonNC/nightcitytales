@@ -56,6 +56,7 @@ export const LEDGER_EVENTS = {
   favourCalled: "favour_called",
   purchase: "purchase",
   shopSeen: "shop_seen",
+  shopBrowsed: "shop_browsed",
   sold: "sold",
 } as const;
 
@@ -1159,6 +1160,35 @@ export function readShopSeenEventData(raw: unknown): ShopSeenEventData | null {
   const day = num(d["day"]);
   if (vendorId === null || day === null) return null;
   return { vendorId, day: Math.max(0, Math.trunc(day)), backRoom: d["backRoom"] === true };
+}
+
+// ---------------------------------------------------------------------------
+// shop_browsed — the player asked, in the story, to see what a seller has, and
+// the engine found a seller to show them (`features/life/lifeOps.ts`). The Life
+// screen reads the newest one to open the Counter on that seller, so the shop
+// comes up from the words "what have you got?" and not only from its button.
+// It is a request to look, not a visit: nothing is charged or seen by writing it.
+// ---------------------------------------------------------------------------
+
+export type ShopBrowsedEventData = {
+  vendorId: string;
+  day: number;
+};
+
+export function shopBrowsedEventData(input: {
+  vendorId: string;
+  day: number;
+}): ShopBrowsedEventData {
+  return { vendorId: input.vendorId, day: Math.max(0, Math.trunc(input.day)) };
+}
+
+export function readShopBrowsedEventData(raw: unknown): ShopBrowsedEventData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const d = raw as RawPayload;
+  const vendorId = str(d["vendorId"]);
+  const day = num(d["day"]);
+  if (vendorId === null || day === null) return null;
+  return { vendorId, day: Math.max(0, Math.trunc(day)) };
 }
 
 // ---------------------------------------------------------------------------

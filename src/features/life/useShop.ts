@@ -58,7 +58,12 @@ export type ShopMessage = { tone: "bought" | "refused"; text: string };
  * `open` is whether the sheet is showing: a look at a shelf is written down
  * (for "new since your last visit") only when somebody is actually looking.
  */
-export function useShop(bundle: LifeBundle | undefined, open = false) {
+export function useShop(
+  bundle: LifeBundle | undefined,
+  open = false,
+  /** The seller to open on, when the story asked for one ("what have you got?"). */
+  initialVendorId: string | null = null,
+) {
   const queryClient = useQueryClient();
   const campaignId = bundle?.campaign.id;
   // The recent purchases and looks a shelf is read from, and who knows the character.
@@ -67,10 +72,10 @@ export function useShop(bundle: LifeBundle | undefined, open = false) {
     queryFn: () => loadShopContext(campaignId!),
     enabled: !!campaignId,
   });
-  const [vendorId, setVendorId] = useState<string | null>(null);
+  const [vendorId, setVendorId] = useState<string | null>(initialVendorId);
   const [message, setMessage] = useState<ShopMessage | null>(null);
   /** True once the player chose to call the fixer from somewhere that sells nothing. */
-  const [fixerChosen, setFixerChosen] = useState(false);
+  const [fixerChosen, setFixerChosen] = useState(initialVendorId === FIXER_VENDOR.id);
   /** True once this visit has cost the character part of their evening. */
   const [visitCharged, setVisitCharged] = useState(false);
   /**
