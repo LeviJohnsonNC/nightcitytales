@@ -26,6 +26,18 @@ export const ITEM_ART_READY: readonly string[] = [
   "find-pneumatic_driver",
   "find-tool_roll",
   "find-lock_gun",
+  "pistol",
+  "smg",
+  "rifle",
+  "shotgun",
+  "heavy",
+  "exotic",
+  "melee",
+  "armor-light",
+  "armor-heavy",
+  "shield",
+  "ammo",
+  "gear",
 ];
 
 /** The category a catalog weapon is shown as. */
