@@ -153,3 +153,19 @@ describe("lamp shadows: regions of the ground that depend on their own casters",
     expect(casters[1]!.height).toBe(1.2);
   });
 });
+
+describe("raised architectural slabs", () => {
+  it("projects both slab faces and leaves the space below open", () => {
+    const source = { at: { x: 0, y: 0 }, z: 6 };
+    const raised = boxShadow(square(2, 0, 1), 3, source, 2.5);
+    expect(Math.min(...raised.map((p) => p.x))).toBeCloseTo((2 * 6) / 3.5);
+    expect(Math.max(...raised.map((p) => p.x))).toBeCloseTo(6);
+    expect(boxShadow(square(2, 0), 3, { at: { x: 0, y: 0 }, z: 2 }, 2.5)).toEqual([]);
+  });
+  it("lets a shop light under its canopy reach the pavement, but blocks overhead lamps", () => {
+    const canopy = { ...caster(3, 0, 3, 3), bottom: 2.7 };
+    expect(sourceFor(pool(3.8, 0.8), canopy, 2.6)).toBeNull();
+    expect(sourceFor(pool(3.8, 0.8), canopy, 5.45)).not.toBeNull();
+    expect(sourceFor(pool(0, 0.8), canopy, 1.5)).toBeNull();
+  });
+});

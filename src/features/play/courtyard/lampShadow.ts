@@ -71,6 +71,8 @@ export interface ShadowCaster {
   /** Ground footprint of the body, world metres. */
   body: Point[];
   height: number;
+  /** Raised architecture has air below it; ground props start at zero. */
+  bottom?: number;
   wreck: number;
 }
 
@@ -145,7 +147,10 @@ export function sourceFor(
   poolZ: number = LAMP_SHADOW.poolZ,
 ): ShadowSource | null {
   const c = centreOf(caster.body);
-  if (!reaches(light, c, LAMP_SHADOW.margin)) return null;
+  const extent = caster.bottom
+    ? Math.max(...caster.body.map((p) => Math.hypot(p.x - c.x, p.y - c.y)))
+    : 0;
+  if (!reaches(light, c, LAMP_SHADOW.margin + extent)) return null;
   let source: ShadowSource;
   if (light.kind === "pool") source = { at: light.centre, z: poolZ };
   else {
@@ -157,7 +162,8 @@ export function sourceFor(
       z: LAMP_SHADOW.windowZ,
     };
   }
-  if (insidePolygon(source.at, caster.body)) return null;
+  if (source.z <= (caster.bottom ?? 0)) return null;
+  if (!caster.bottom && insidePolygon(source.at, caster.body)) return null;
   return source;
 }
 
@@ -196,15 +202,25 @@ export function hull(points: readonly Point[]): Point[] {
  * hull of its footprint and its top corners projected along the rays from the source
  * to the ground. In world metres.
  */
-export function boxShadow(body: readonly Point[], h: number, source: ShadowSource): Point[] {
-  if (h <= 0) return [];
+export function boxShadow(
+  body: readonly Point[],
+  h: number,
+  source: ShadowSource,
+  bottom = 0,
+): Point[] {
+  if (h <= 0 || source.z <= bottom) return [];
   const k =
     source.z > h ? Math.min(source.z / (source.z - h), LAMP_SHADOW.stretch) : LAMP_SHADOW.stretch;
   const tops = body.map((p) => ({
     x: source.at.x + (p.x - source.at.x) * k,
     y: source.at.y + (p.y - source.at.y) * k,
   }));
-  return hull([...body, ...tops]);
+  const baseK = source.z / (source.z - bottom);
+  const base = body.map((p) => ({
+    x: source.at.x + (p.x - source.at.x) * Math.min(baseK, LAMP_SHADOW.stretch),
+    y: source.at.y + (p.y - source.at.y) * Math.min(baseK, LAMP_SHADOW.stretch),
+  }));
+  return hull([...base, ...tops]);
 }
 
 type Project = (p: Point) => Point;
@@ -352,7 +368,7 @@ export function paintShadowedLights(
     paint(layer, light);
     const shadows = casters.flatMap((c) => {
       const s = sourceFor(light, c, zOf(light));
-      return s ? [boxShadow(c.body, c.height, s)] : [];
+      return s ? [boxShadow(c.body, c.height, s, c.bottom)] : [];
     });
     if (shadows.length) {
       layer.globalCompositeOperation = "destination-out";
@@ -377,7 +393,7 @@ export function shadowArea(
 ): Point[] | null {
   const pts = lights.flatMap((light) => {
     const source = sourceFor(light, caster, zOf(light));
-    return source ? boxShadow(caster.body, caster.height, source) : [];
+    return source ? boxShadow(caster.body, caster.height, source, caster.bottom) : [];
   });
   return pts.length ? pts : null;
 }
