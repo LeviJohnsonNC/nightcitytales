@@ -15,7 +15,9 @@ export const CITY_FIXTURES = {
 
 /** Point an overhead arm into the nearest saved carriageway; never invent a base. */
 export function streetDirection(env: SceneEnvironment, p: Point): Point {
-  const roads = env.zones.filter((z) => z.kind === "road" || z.kind === "intersection");
+  const roads = env.zones.filter(
+    (z) => z.kind === "road" || z.kind === "intersection" || z.kind === "alley",
+  );
   const nearest = roads
     .map((z) => ({
       x: Math.max(z.rect.x, Math.min(p.x, z.rect.x + z.rect.width)),
@@ -33,12 +35,21 @@ export function streetDirection(env: SceneEnvironment, p: Point): Point {
 /** Ground pool and wall/shadow source share the lamp head's location. */
 export function fixtureLamp(env: SceneEnvironment, position: Point) {
   const d = streetDirection(env, position);
+  const alley = env.recipe === "alley";
   return {
     at: {
-      x: position.x + d.x * CITY_FIXTURES.lampOffset,
-      y: position.y + d.y * CITY_FIXTURES.lampOffset,
+      x: position.x + d.x * (alley ? 0.65 : CITY_FIXTURES.lampOffset),
+      y: position.y + d.y * (alley ? 0.65 : CITY_FIXTURES.lampOffset),
     },
-    z: CITY_FIXTURES.lampHeight,
+    z: alley ? 4.1 : CITY_FIXTURES.lampHeight,
+  };
+}
+/** Loading indicators illuminate a small work area; street kiosks have a larger panel. */
+export function fixtureIndicator(env: SceneEnvironment) {
+  return {
+    color: CITY_FIXTURES.cyan,
+    intensity: env.recipe === "alley" ? 0.3 : 0.62,
+    radius: env.recipe === "alley" ? 2.6 : 3.7,
   };
 }
 export function fixtureLights(env: SceneEnvironment): GroundLight[] {
@@ -47,9 +58,7 @@ export function fixtureLights(env: SceneEnvironment): GroundLight[] {
     .map((d) => ({
       kind: "pool",
       centre: d.position,
-      radius: 3.7,
-      color: CITY_FIXTURES.cyan,
-      intensity: 0.62,
+      ...fixtureIndicator(env),
     }));
 }
 
@@ -68,7 +77,10 @@ export function paintCityFixture(
   const ninety = dir.y > 0 || dir.x < 0;
   const key =
     d.kind === "lamp" ? (ninety ? "signal90" : "signal0") : ninety ? "transit90" : "transit0";
-  if (paintFixtureArt(ctx, art, key, project(d.position), ppm, dir.x + dir.y < 0, pass === "glow"))
+  if (
+    env.recipe !== "alley" &&
+    paintFixtureArt(ctx, art, key, project(d.position), ppm, dir.x + dir.y < 0, pass === "glow")
+  )
     return;
   const at = (s: number, z: number, side = 0) => {
     const p = project({
@@ -94,6 +106,28 @@ export function paintCityFixture(
   };
   const plate = (a: number, b: number, lo: number, hi: number, c: string, side = 0) =>
     poly([at(a, lo, side), at(b, lo, side), at(b, hi, side), at(a, hi, side)], c);
+  if (env.recipe === "alley") {
+    if (d.kind === "lamp") {
+      if (pass === "albedo") {
+        line(at(0, 0), at(0, 4.22), "#18282c", 0.16);
+        line(at(-0.03, 0.2), at(-0.03, 4.22), "#87928b", 0.035);
+        line(at(0, 0.03), at(0, 0.2), "#3c4948", 0.3);
+        line(at(0, 4.22), at(0.65, 4.22), "#7a8780", 0.09);
+        plate(0.4, 0.9, 4.1, 4.27, "#4d5b58");
+        plate(0.4, 0.9, 4.24, 4.28, "#9ba398");
+      } else plate(0.44, 0.86, 4.1, 4.14, "#ffdfaa");
+    } else if (d.kind === "sign") {
+      if (pass === "albedo") {
+        line(at(0, 0), at(0, 2.3), "#556965", 0.09);
+        plate(-0.35, 0.35, 1.65, 2.3, "#243e45");
+        plate(-0.32, 0.32, 2.26, 2.31, "#90a59d");
+      }
+      // Small illuminated loading indicator, not the street's full advertising kiosk.
+      plate(-0.26, 0.26, 2.07, 2.13, pass === "glow" ? "#85cfdd" : "#769b9b");
+      for (const z of [1.84, 1.94]) plate(-0.23, 0.16, z, z + 0.025, "#718d8b");
+    }
+    return;
+  }
   if (d.kind === "lamp") {
     const H = CITY_FIXTURES.mast,
       A = CITY_FIXTURES.arm;

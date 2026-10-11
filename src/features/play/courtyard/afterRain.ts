@@ -36,7 +36,7 @@ export function rainWetness(x: number, y: number, gutter = 0) {
  * must not create fictitious gutters across the middle of the intersection. */
 export function roadEdges(env: SceneEnvironment): { a: Point; b: Point }[] {
   const roads = env.zones
-    .filter((z) => ["road", "intersection", "crosswalk"].includes(z.kind))
+    .filter((z) => ["road", "intersection", "crosswalk", "alley"].includes(z.kind))
     .map((z) => z.rect);
   const edges: { a: Point; b: Point }[] = [];
   for (const r of roads) {
@@ -69,6 +69,8 @@ export function roadEdges(env: SceneEnvironment): { a: Point; b: Point }[] {
 /** The same world field drives dark substrate and source-image reflections. */
 export function rainField(env: SceneEnvironment) {
   const edges = roadEdges(env);
+  const drains = env.recipe === "alley" ? env.dressing.filter((d) => d.kind === "drain") : [];
+  const aprons = env.recipe === "alley" ? env.zones.filter((z) => z.kind === "loading") : [];
   return (x: number, y: number) => {
     let distance = 1.1;
     for (const { a, b } of edges) {
@@ -76,7 +78,13 @@ export function rainField(env: SceneEnvironment) {
       const py = Math.max(Math.min(a.y, b.y), Math.min(Math.max(a.y, b.y), y));
       distance = Math.min(distance, Math.hypot(x - px, y - py));
     }
-    return rainWetness(x, y, 1 - smooth(distance / 1.1));
+    const drain = drains.reduce(
+      (wet, d) => Math.max(wet, 1 - smooth(Math.hypot(x - d.position.x, y - d.position.y) / 1.8)),
+      0,
+    );
+    const wet = rainWetness(x, y, Math.max(drain, 1 - smooth(distance / 1.1)));
+    // Handling aprons dry more quickly than the worn lane; pools remain at drains.
+    return wet * (aprons.some((z) => inside(x, y, z.rect)) ? 0.38 + drain * 0.62 : 1);
   };
 }
 /** One cached albedo film, with existing paint and cracks visible underneath. */
@@ -99,7 +107,9 @@ export function createRainSurface(
     d = v.y - o.y,
     det = a * d - b * c;
   const zones = env.zones.filter((z) =>
-    ["road", "intersection", "crosswalk", "sidewalk", "alley", "parking"].includes(z.kind),
+    ["road", "intersection", "crosswalk", "sidewalk", "alley", "parking", "loading"].includes(
+      z.kind,
+    ),
   );
   const walls = env.structures.filter(
     (s) => s.style !== "mesh-fence" && s.style !== "interior-wall",

@@ -1,3 +1,4 @@
+import { paintServiceFrontage, hasServiceFrontage } from "./serviceFrontage";
 /** Occupied repair premises: saved shop/portal attachments select presentation only.
  * The workshop is a shallow display recess, never an extra traversable interior. */
 import type { Point, SceneEnvironment, SceneStructure } from "@/engine";
@@ -103,6 +104,10 @@ export function paintOccupiedFrontage(
   art?: ArchitectureArt,
   emissionOnly = false,
 ) {
+  if (hasServiceFrontage(s)) {
+    paintServiceFrontage(ctx, s, edge, entrances, project, ppm, pass, art);
+    return;
+  }
   const use = occupiedUse(s);
   if (!use) return;
   const face = facePainter(s, edge, project, ppm);

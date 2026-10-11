@@ -71,9 +71,11 @@ export const INTERSECTION_NIGHT = {
 } as const;
 export type NightLighting = typeof INTERSECTION_NIGHT;
 
-/** Night applies to the composed intersection only; every other scene is unchanged. */
+/** The two finished exterior streets share the same source-based lighting. */
 export function nightFor(env: Pick<SceneEnvironment, "recipe" | "interior"> | undefined) {
-  return env && env.recipe === "intersection" && !env.interior ? INTERSECTION_NIGHT : undefined;
+  return env && ["intersection", "alley"].includes(env.recipe) && !env.interior
+    ? INTERSECTION_NIGHT
+    : undefined;
 }
 
 /** A round pool on the ground: a light overhead. */

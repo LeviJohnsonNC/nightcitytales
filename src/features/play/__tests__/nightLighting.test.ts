@@ -12,10 +12,10 @@ import {
 import { REVIEW_KINDS } from "@/features/dev/sceneReviewQuery";
 
 describe("night lighting", () => {
-  it("applies to the intersection only: every other scene keeps its look", () => {
+  it("applies to the finished exterior streets only", () => {
     for (const kind of REVIEW_KINDS) {
       const env = composeScene(kind as SceneEnvironment["recipe"], 7).layout.arena.environment!;
-      expect(nightFor(env) !== undefined).toBe(kind === "intersection");
+      expect(nightFor(env) !== undefined).toBe(kind === "intersection" || kind === "alley");
     }
   });
 

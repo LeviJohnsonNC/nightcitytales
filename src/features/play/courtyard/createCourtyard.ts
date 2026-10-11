@@ -172,9 +172,9 @@ export function createCourtyard(
     "hostile-animation",
     ...new Set(kinds.map(propSource).filter((source) => source !== "procedural-interior")),
   ];
-  // Only the intersection recipe takes materials so far.
+  // Finished exterior streets share materials, art and contact shade.
   const materialKeys: readonly MaterialKey[] =
-    composed && arena.environment?.recipe === "intersection" ? MATERIAL_KEYS : [];
+    composed && ["intersection", "alley"].includes(arena.environment!.recipe) ? MATERIAL_KEYS : [];
   const storefrontKeys = Object.keys(STOREFRONT_ART_FILES) as StorefrontArtKey[];
   const withStorefront = materialKeys.length > 0;
   const architectureKeys = Object.keys(ARCHITECTURE_ART_FILES) as ArchitectureArtKey[];
