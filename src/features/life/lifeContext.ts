@@ -215,6 +215,12 @@ export type LifeContext = {
      */
     business?: string[];
     /**
+     * The sellers at this exact place, by name and what they deal in. Never
+     * their stock: that is on the Counter, which the engine opens when the
+     * player asks to see it.
+     */
+    sellers?: string[];
+    /**
      * Somebody the character knows, who happens to be here. At most one — you
      * run into a person, you do not walk into a room containing your whole
      * address book. Presence only: they are here, they want nothing, and
@@ -444,6 +450,15 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       parts.push(
         "That is what these places support, not a list of what the player may do. They can try " +
           "anything; those are simply the things the engine already knows are possible here.",
+      );
+    }
+    if (p.sellers?.length) {
+      parts.push(line("Selling here", p.sellers.join("; ")));
+      parts.push(
+        "When the player asks what is for sale, wants to browse, or asks for something to buy, " +
+          'propose {"kind":"browse"} and the engine opens that seller\'s counter. Write the seller ' +
+          "noticing them and nothing more: you have not seen the shelf, so never name an item, a " +
+          "brand or a price that is for sale here.",
       );
     }
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));

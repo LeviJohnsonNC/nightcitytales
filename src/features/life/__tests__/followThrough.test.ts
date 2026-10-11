@@ -231,6 +231,17 @@ describe("the packet frames a scene in progress, and a friend coming over", () =
     expect(packet).toContain("CURRENT SITUATION (what arrives now");
   });
 
+  it("names who sells here and sends them to the counter, never the stock", () => {
+    const packet = renderLifeUserPrompt(
+      { ...BASE, place: { ...place, sellers: ["Ganymede Street Market (deals in gear)"] } },
+      "what have you got?",
+    );
+    expect(packet).toContain("Selling here: Ganymede Street Market (deals in gear)");
+    expect(packet).toContain('{"kind":"browse"}');
+    expect(packet).toMatch(/never name an item, a brand or a price/);
+    expect(renderLifeUserPrompt({ ...BASE, place }, "x")).not.toContain("Selling here");
+  });
+
   it("tells the narrator somebody is coming over, only when the engine said so", () => {
     const coming = renderLifeUserPrompt(
       { ...BASE, place: { ...place, whoIsHere: { name: "Kiro", key: "kiro", comingOver: true } } },

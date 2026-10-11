@@ -131,6 +131,17 @@ import { renderLifeUserPrompt, type LifeContext, type LifeWireOffer } from "./li
 import { lifeTurnFn, type LifeTurnResult } from "./lifeTurn.server";
 import type { LifeActionCard } from "./lifeResponse";
 import { MAX_LIFE_OPTIONS, mergeOptions, venueOptions } from "./lifeOptions";
+import { planBrowse } from "./browseIntent";
+
+/** What a seller's kinds are called in the narrator's packet. */
+const SELLER_DEALS: Record<string, string> = {
+  weapon: "weapons",
+  armor: "armor",
+  ammunition: "ammunition",
+  gear: "gear",
+  cyberware: "cyberware",
+};
+import { standingAt } from "@/features/campaign/favours";
 import {
   askTagFrom,
   hookFromSituation,
@@ -203,6 +214,7 @@ import {
   reachableDestinations,
   canTravel,
   nearestWithTag,
+  shopsAt,
   regularOf,
   tagsOf,
   type NearbyPlace,
@@ -210,6 +222,7 @@ import {
   daysUntilLifeAward,
   goalsPinnedEventData,
   LEDGER_EVENTS,
+  shopBrowsedEventData,
   MAX_PINNED_GOALS,
   readGoalsPinnedEventData,
   screamsheet,
@@ -947,6 +960,12 @@ function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
           // player; the narrator has no use for being told the player has a
           // search button, and letting them into this list would cost the
           // ground two of the things it actually offers.
+          // Who sells where they stand, so "what have you got?" is answered by
+          // the Counter rather than by a stall the narrator made up. Names and
+          // what they deal in only: what is on the shelf is never sent.
+          sellers: shopsAt(position?.placeKey).map(
+            (v) => `${v.label} (deals in ${v.deals.map((k) => SELLER_DEALS[k] ?? k).join(", ")})`,
+          ),
           business: placeActions({
             districtKey: positionDistrict.key,
             placeKey: position?.placeKey,
@@ -1074,7 +1093,11 @@ async function applyResponse(
   // where it is applied; anything else costs what the model reports the action
   // took, clamped to something a single Life turn is allowed to eat.
   const carriesOwnTime =
-    !turn.options && response.proposedActions.some((a) => a.kind === "travel" || a.kind === "rest");
+    !turn.options &&
+    response.proposedActions.some(
+      // Looking over a counter is free: a visit is charged on the first purchase.
+      (a) => a.kind === "travel" || a.kind === "rest" || a.kind === "browse",
+    );
   // A trip or a night's sleep charges its own duration where it is applied,
   // so it wins even over minutes a card printed: charging both counted the
   // same walk twice.
@@ -1182,7 +1205,25 @@ async function applyResponse(
 
   // Asking what you could do is not doing it. Nothing mechanical is applied on
   // an options turn, whatever the model attached to it.
-  const proposed = turn.options ? [] : response.proposedActions;
+  const asked = turn.options ? [] : response.proposedActions;
+  // "What have you got?" somewhere that sells nothing is a trip first. The
+  // engine picks the shop (the one they named, else the nearest) and the trip
+  // goes through the ordinary travel branch below, so it is priced, committed
+  // and narrated like any other; the Counter opens once they are there.
+  const browse = asked.find((a) => a.kind === "browse");
+  const vehicle = liveVehicleRule(bundle.campaign, bundle.character);
+  const browsePlanFrom = () =>
+    planBrowse({
+      placeKey: standingAt(bundle.campaign),
+      from: bundle.campaign.location_key ?? DEFAULT_START,
+      seller: browse?.kind === "browse" ? browse.seller : undefined,
+      ...(vehicle ? { mode: vehicle } : {}),
+    });
+  const tripToShop = browse && !asked.some((a) => a.kind === "travel") ? browsePlanFrom() : null;
+  const proposed: typeof asked =
+    tripToShop?.kind === "go"
+      ? [{ kind: "travel", destination: tripToShop.name, minutes: 0 }, ...asked]
+      : asked;
 
   for (const action of proposed) {
     if (action.kind === "spend") {
@@ -1422,6 +1463,34 @@ async function applyResponse(
       await spendWire(campaignId, clock.day);
       const to = nextPhase(bundle.phase, "offer_hook");
       if (to) await setCampaignPhase(campaignId, to);
+    }
+  }
+
+  // The Counter is opened by the screen, which reads this row; written only
+  // when there is somebody to show them, and once per thing they said. The
+  // arrival after a trip is a continuation of the same words and may propose
+  // it a second time; its bundle is fresh, so it can see the first.
+  if (browse) {
+    const plan = browsePlanFrom();
+    let already = false;
+    if (turn.continuation) {
+      for (let i = bundle.events.length - 1; i >= 0; i--) {
+        const type = bundle.events[i]!.type;
+        if (type === "player_input") break;
+        if (type === LEDGER_EVENTS.shopBrowsed) already = true;
+      }
+    }
+    if (plan.kind === "open" && !already) {
+      await appendCampaignEvent({
+        campaign_id: campaignId,
+        type: LEDGER_EVENTS.shopBrowsed,
+        summary: `Looking over what ${plan.vendor.label} has.`,
+        data: shopBrowsedEventData({
+          vendorId: plan.vendor.id,
+          day: clock.day,
+        }) as unknown as Json,
+      });
+      outcome.browsing = plan.vendor.label;
     }
   }
 

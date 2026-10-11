@@ -400,6 +400,8 @@ export type TurnOutcome = {
     bridges?: string[];
   };
   travelRefused?: string;
+  /** The seller whose Counter the engine opened this turn, by their label. */
+  browsing?: string;
 };
 
 /** What to tell the narrator about a move the engine has already committed. */
@@ -443,7 +445,12 @@ export function describeTravelOutcome(outcome: TurnOutcome): string | undefined 
     `${crossing} That destination, that heading and how they got there are facts — the engine ` +
     "chose them, not you. Narrate the arrival in two or three sentences: where they are standing " +
     "now, what is in front of them. Do not name a different place, do not contradict the " +
-    "heading, and do not send them anywhere else."
+    "heading, and do not send them anywhere else." +
+    (outcome.browsing
+      ? ` They came here to shop, and the engine is opening ${outcome.browsing}'s counter for ` +
+        "them: end on the seller noticing them, in a line. Never name an item or a price — what " +
+        "is for sale is on the counter, and you have not seen it."
+      : "")
   );
 }
 
