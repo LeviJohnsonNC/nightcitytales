@@ -178,9 +178,3 @@ export async function commitRipperdocInstall(
   await installCyberware(prepared.payload);
   return prepared.outcome;
 }
-
-export async function installAtRipperdoc(
-  input: RipperdocInstallInput,
-): Promise<RipperdocInstallOutcome> {
-  return commitRipperdocInstall(prepareRipperdocInstall(input));
-}

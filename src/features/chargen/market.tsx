@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  ARMOR,
   addPurchase,
   budgetStates,
   canChangeQty,
@@ -21,7 +20,6 @@ import {
   loadoutHumanity,
   removeLine,
   type BudgetId,
-  type CartLine,
   type ItemKind,
   type Loadout,
   type PurchaseRequest,
@@ -434,9 +432,4 @@ export function defaultBudgetFor(kind: ItemKind, itemId: string, state: ChargenS
   return fashion && fashion.remaining >= cost ? "fashion" : "gear";
 }
 
-export function armorLineFor(loadout: Loadout, itemId: string): CartLine | undefined {
-  return loadout.lines.find((l) => l.kind === "armor" && l.itemId === itemId);
-}
-
-export const ARMOR_ROWS = ARMOR;
 export { getCyberware };

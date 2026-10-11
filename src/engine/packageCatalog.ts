@@ -144,7 +144,3 @@ export function variantOptionsFor(label: string): string[] {
     { variants?: string[] } | undefined;
   return weapon?.variants ?? [];
 }
-
-export function requiresVariant(label: string): boolean {
-  return variantOptionsFor(label).length > 0;
-}

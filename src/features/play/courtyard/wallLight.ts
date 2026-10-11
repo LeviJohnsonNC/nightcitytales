@@ -46,9 +46,6 @@ export interface PointLight {
  */
 export const WALL = { reach: 1.15, gain: 0.92 } as const;
 
-/** Heights of the scene's fixtures, in metres: presentation, not geometry. */
-export const FIXTURE_HEIGHT = { streetLamp: 4.4, sign: 2.6 } as const;
-
 /** Every light that can reach a wall, from the same sources as the ground's pools. */
 export function pointLights(
   env: SceneEnvironment,

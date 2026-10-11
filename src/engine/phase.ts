@@ -55,8 +55,3 @@ export function nextPhase(from: GamePhase, trigger: PhaseTrigger): GamePhase | n
   if (!canTransition(from, trigger)) return null;
   return TRANSITIONS[trigger].to;
 }
-
-/** True while the existing job machinery (beats, encounters) owns the screen. */
-export function isJobPhase(phase: GamePhase): boolean {
-  return phase === "job";
-}

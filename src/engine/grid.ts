@@ -71,6 +71,37 @@ export function snapToGrid(arena: Arena, point: Point): Point {
 }
 
 /**
+ * The nearest square nobody is standing on and nothing blocks, to `point`.
+ *
+ * For somebody arriving mid-fight (called Backup): the arrival point is a wish,
+ * not a square. Clamping it to the arena alone put people off the lattice, on
+ * top of each other and on cover, and a scene-backed fight refuses to load a
+ * saved position like that, so a fight Backup joined could not be reopened.
+ * Null when the board is full.
+ */
+export function freeTileNear(
+  arena: Arena,
+  damage: CoverDamage,
+  point: Point,
+  taken: ReadonlySet<TileKey>,
+): Point | null {
+  const blocked = blockedTiles(arena, damage);
+  let best: Point | null = null;
+  let bestGap = Infinity;
+  for (const tile of tilesFor(arena)) {
+    const key = tileKey(tile);
+    if (blocked.has(key) || taken.has(key)) continue;
+    const centre = centreOf(tile);
+    const gap = (centre.x - point.x) ** 2 + (centre.y - point.y) ** 2;
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = centre;
+    }
+  }
+  return best;
+}
+
+/**
  * The nearest square a body can actually occupy.
  *
  * snapToGrid alone can put somebody inside a crate — a legacy position, or an

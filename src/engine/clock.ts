@@ -64,11 +64,6 @@ export function advanceClock(clock: GameClock, minutes: number): GameClock {
   };
 }
 
-/** Whole days between two clocks (never negative). */
-export function daysBetween(from: GameClock, to: GameClock): number {
-  return Math.max(0, to.day - from.day);
-}
-
 /** "8:40 PM" */
 export function formatTimeOfDay(minute: number): string {
   const m = ((Math.round(minute) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;

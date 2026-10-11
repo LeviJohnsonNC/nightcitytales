@@ -14,6 +14,10 @@ import { battlefieldFor } from "@/engine";
  */
 import {
   clampToArena,
+  freeTileNear,
+  tileKey,
+  tileOf,
+  type TileKey,
   joinEncounter,
   type BackupCall,
   type BackupTier,
@@ -110,12 +114,28 @@ export async function arriveBackup(input: {
   const player = Object.values(input.live.state.combatants).find((c) => c.isPlayer);
   const rally = (player ? data[player.id]?.position : null) ?? arena.playerStart;
 
+  // Squares already stood on, by anyone still in the fight. Each arrival takes
+  // the free square nearest where they would have stood, so nobody lands on
+  // somebody, on cover, or between squares: a scene-backed fight refuses to
+  // load a position like that, and the fight could not be reopened.
+  const taken = new Set<TileKey>();
+  for (const [id, c] of Object.entries(input.live.state.combatants)) {
+    const at = data[id]?.position;
+    if (!c.defeated && at) taken.add(tileKey(tileOf(arena, at)));
+  }
+
+  let arrived = 0;
   for (let index = 0; index < members; index += 1) {
     const id = crypto.randomUUID();
-    const spot = clampToArena(arena, {
+    const wish = clampToArena(arena, {
       x: rally.x + (index % 2 === 0 ? 1 : -1) * (Math.floor(index / 2) + 1) * 2,
       y: rally.y,
     });
+    const spot = freeTileNear(arena, input.live.cover, wish, taken);
+    // A board with no free square left has no room for them: they do not come.
+    if (!spot) break;
+    taken.add(tileKey(tileOf(arena, spot)));
+    arrived += 1;
     const built = backupCombatant(input.tier, index, id, spot);
     state = joinEncounter(state, built.combatant);
     data[id] = built.data;
@@ -140,13 +160,13 @@ export async function arriveBackup(input: {
   const live = await saveLiveEncounter({ ...input.live, state, data });
 
   const line =
-    `${input.tier.name} arrives — ${members} of them, ` +
+    `${input.tier.name} arrives — ${arrived} of them, ` +
     `Combat ${input.tier.combat}, SP ${input.tier.sp}, HP ${input.tier.hp}. ${input.tier.note}`;
   await appendCampaignEvent({
     campaign_id: input.campaignId,
     type: "backup_arrived",
     summary: line,
-    data: { tier: input.tier.name, members } as unknown as Json,
+    data: { tier: input.tier.name, members: arrived } as unknown as Json,
     ...(input.beatId ? { beat_id: input.beatId } : {}),
   });
 

@@ -12,13 +12,7 @@
  * campaign whose home write fails is still a playable campaign at the default
  * start rather than a failed creation.
  */
-import {
-  startCampaign,
-  updateCampaign,
-  upsertCampaignPlace,
-  type Character,
-  type FullCharacter,
-} from "@/lib/backend";
+import { startCampaign, updateCampaign, upsertCampaignPlace, type Character } from "@/lib/backend";
 import { getPlace, recordVisit, startingState } from "@/engine";
 
 /** "<handle or name> in Night City". */
@@ -75,11 +69,6 @@ async function moveIn(campaignId: string, homePlaceKey: string): Promise<void> {
     firstVisitDay: state.firstVisitDay,
     lastVisitDay: state.lastVisitDay,
   });
-}
-
-/** The home a saved character's sheet names, if it named one. */
-export function homeOf(character: Pick<FullCharacter, "finance">): string | null {
-  return character.finance?.home_place_key ?? null;
 }
 
 /** Begin a playthrough for a saved character. Returns the new campaign id. */

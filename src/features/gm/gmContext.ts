@@ -497,10 +497,3 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
   parts.push("", "== PLAYER INPUT ==", playerInput);
   return parts.join("\n");
 }
-
-export function objectiveFor(
-  objectives: MissionObjective[],
-  id: string,
-): MissionObjective | undefined {
-  return objectives.find((o) => o.id === id);
-}

@@ -26,7 +26,6 @@ import {
   buildForce,
   forceFor,
   runtimeAtBeat,
-  threatFor,
   woundStateFor,
   type ForceSize,
   type ThreatMember,
@@ -238,6 +237,3 @@ function arenaKeyOr(key: string): string {
 export function previewForce(key: string, size: ForceSize): ThreatMember[] {
   return buildForce(forceFor(key), size);
 }
-
-/** The profile behind a key, for showing what a force is made of. */
-export const profileFor = threatFor;

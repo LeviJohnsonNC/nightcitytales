@@ -78,8 +78,3 @@ export function buildRollResult(input: RollResultInput): RollResult {
     timestamp: clock().toISOString(),
   };
 }
-
-/** Margin of success (positive) or failure (negative). Null when there is no DV. */
-export function rollMargin(result: RollResult): number | null {
-  return result.dv === null ? null : result.total - result.dv;
-}
