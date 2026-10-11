@@ -11,8 +11,7 @@ import {
   soldEventData,
 } from "@/engine";
 import { counterNews } from "../../counterNews";
-import { KEEPER_ART_READY, keeperImage, keeperSlug } from "../keeperArt";
-import { initials } from "../KeeperFace";
+import { KEEPER_ART_READY, initials, keeperImage, keeperSlug } from "../keeperArt";
 
 describe("the face behind the counter", () => {
   it("names a different keeper at every shop in the atlas", () => {

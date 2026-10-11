@@ -5,16 +5,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { CounterKeeper } from "../useShop";
-
-/** Two letters for the stand-in: "Mama Ishii" → MI, "Dot" → DO. */
-export function initials(name: string): string {
-  const words = name.split(/[\s&]+/).filter((w) => /[a-z]/i.test(w));
-  if (words.length === 1) return words[0]!.slice(0, 2).toUpperCase();
-  return words
-    .slice(0, 2)
-    .map((w) => w.replace(/[^a-z]/gi, "")[0]!.toUpperCase())
-    .join("");
-}
+import { initials } from "./keeperArt";
 
 export function KeeperFace({
   keeper,

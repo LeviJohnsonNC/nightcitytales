@@ -24,3 +24,13 @@ export function keeperImage(
   const slug = keeperSlug(vendorId);
   return ready.includes(slug) ? `/images/keepers/${slug}-512.webp` : null;
 }
+
+/** Two letters for the stand-in: "Mama Ishii" → MI, "Dot" → DO. */
+export function initials(name: string): string {
+  const words = name.split(/[\s&]+/).filter((w) => /[a-z]/i.test(w));
+  if (words.length === 1) return words[0]!.slice(0, 2).toUpperCase();
+  return words
+    .slice(0, 2)
+    .map((w) => w.replace(/[^a-z]/gi, "")[0]!.toUpperCase())
+    .join("");
+}
