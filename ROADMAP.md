@@ -37,8 +37,12 @@ stone reception surfaces and ceiling-panel lighting bounded to saved rooms.
 Office and garage visual reviews were approved by Levi.
 
 The nightclub pass adds dark dance-floor finishes, carpet lounge areas, warm bar
-materials and room-bounded magenta/cyan and amber lighting. Seeds4/5/6 are the
-next visual gate; approved room geometry and circulation remain frozen.
+materials and room-bounded magenta/cyan and amber lighting. Approved by Levi; room geometry and circulation remain frozen.
+
+Residential now takes the shared street materials, painted cars, detailed domestic
+windows/doors/roofs and source-based nighttime lighting. Varied facade finishes,
+concrete driveways and dry planting strips distinguish the homes. Seeds4/5/6
+are the next in-app review gate.
 
 Phase 1 implementation now includes three spatial layouts per recipe, reserved
 and validated exterior entrances, a character-free `/scene-review`, silhouette

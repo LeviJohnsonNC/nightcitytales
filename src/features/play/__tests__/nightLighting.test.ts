@@ -18,6 +18,7 @@ describe("night lighting", () => {
       expect(nightFor(env) !== undefined).toBe(
         kind === "intersection" ||
           kind === "alley" ||
+          kind === "residential" ||
           kind === "warehouse" ||
           kind === "garage" ||
           kind === "office" ||

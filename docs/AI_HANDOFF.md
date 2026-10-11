@@ -1,21 +1,21 @@
-# Active nightclub material pass — 2026-10-11
+# Active residential material pass — 2026-10-11
 
-Office PR366 approved by Levi and merged. User authorized next environment.
+Nightclub PR367 approved by Levi and merged. User authorized residential next.
 Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/nightclub-material-pass; base origin/main 61d7e07d.
-Original dirty checkout untouched; office final handoff /tmp/nct366-final-handoff.md.
+Branch codex/residential-material-pass; base origin/main 61ffecd4.
+Original dirty checkout untouched; prior final handoff /tmp/nct367-final-handoff.md.
 
-Implementation pushed in PR367 (https://github.com/LeviJohnsonNC/nightcitytales/pull/367): dark fine-jointed dance floor, carpet lounge,
-timber performance floor, restrained plaster walls, warmer bar/booth materials,
-room-clipped cyan/magenta dance lights and amber hospitality lights. Existing
-industrial strip fixture painter reused; no geometry or engine changes.
-Baseline Chromium seeds4/5/8 passed (35.2s), seed4 play visually inspected.
-Evidence /tmp/nct-nightclub-before-captures. Initial typecheck passes.
-Implementation 89d9c7aa: 4311 tests/348 files pass; local Chromium4/5/8 pass
-(41.7s). All play captures, compact4 and destroyed4 visually inspected.
-Seeds4/8 share long-room topology; adding seed6 to cover central-floor topology.
-Next: browser seed6, lint/typecheck/build and remote checks. Levi reviews before
-merge. No generated bitmap assets or new gameplay systems.
+Local implementation: residential uses existing street material/art, night light,
+reflection and contact-shadow pipeline; deterministic domestic facade palettes,
+concrete drives, muted planting strips excluded from wet reflections. Saved
+geometry and routes unchanged. Existing door/window/roof detail reused.
+Baseline Chromium seeds4/5/6 pass after correcting harness to five residential
+actors (initial copied interior harness expected four). Baseline screenshot4
+inspected; evidence /tmp/nct-residential-before-captures.
+Typecheck and 27 focused lighting/window/roof/reflection tests pass. First after
+seed4 play inspected: warm entrances, calm domestic materials, readable street.
+Checkpoint prepared; remaining after captures and full validation/remote checks
+next. Levi reviews before merge or further scope.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 

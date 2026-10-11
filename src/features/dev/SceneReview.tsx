@@ -282,9 +282,15 @@ export function SceneReview() {
             Room/access plan
           </label>
         )}
-        {["intersection", "alley", "warehouse", "garage", "office", "nightclub"].includes(
-          scene.layout.arena.environment?.recipe ?? "",
-        ) && (
+        {[
+          "intersection",
+          "alley",
+          "warehouse",
+          "garage",
+          "office",
+          "nightclub",
+          "residential",
+        ].includes(scene.layout.arena.environment?.recipe ?? "") && (
           <>
             <label>
               <input
