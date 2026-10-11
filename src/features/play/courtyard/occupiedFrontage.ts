@@ -27,7 +27,7 @@ export function occupiedLights(env: SceneEnvironment): GroundLight[] {
       const doors = facadeOpenings(s, env.entrances, edge).doors;
       const centres =
         use === "repair" ? [(edge === "north" ? s.rect.width : s.rect.height) / 2] : doors;
-      return centres.map((c) => ({
+      const spills: GroundLight[] = centres.map((c) => ({
         kind: "spill" as const,
         origin: f.world(0, 0),
         along: edge === "north" ? { x: 1, y: 0 } : { x: 0, y: 1 },
@@ -36,9 +36,20 @@ export function occupiedLights(env: SceneEnvironment): GroundLight[] {
         s1: c + (use === "repair" ? 1.9 : 0.7),
         reach: use === "repair" ? 3.8 : 3.4,
         spread: 0.45,
-        color: use === "repair" ? ([0.18, 0.85, 1] as const) : ([0.46, 0.79, 1] as const),
-        intensity: use === "repair" ? 0.78 : 0.5,
+        color: use === "repair" ? ([1, 0.64, 0.3] as const) : ([0.46, 0.79, 1] as const),
+        intensity: use === "repair" ? 0.72 : 0.5,
       }));
+      // The cyan header and warm workbench are separate, visible emitters.
+      if (use === "repair")
+        spills.push({
+          kind: "pool",
+          centre: f.world(f.length / 2, 0.18),
+          sourceZ: 3.25,
+          color: [0.12, 0.85, 1],
+          intensity: 0.42,
+          radius: 3.4,
+        });
+      return spills;
     });
   });
 }
@@ -52,6 +63,7 @@ export function paintOccupiedFrontage(
   ppm: number,
   pass: "albedo" | "light" | "glow",
   art?: ArchitectureArt,
+  emissionOnly = false,
 ) {
   const use = occupiedUse(s);
   if (!use) return;
@@ -124,15 +136,15 @@ export function paintOccupiedFrontage(
         { a: 3.9, b: length - 0.35, lo: 0.68, hi: 2.55 },
       ];
   if (pass === "light") {
-    wash(0.15, length - 0.15, 0.1, 3.65, "rgba(154,195,235,.30)");
+    if (!emissionOnly) wash(0.15, length - 0.15, 0.1, 3.65, "rgba(80,194,226,.24)");
     for (const b of bays)
-      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(185,221,255,.42)", -0.12);
+      panel(b.a + 0.1, b.b - 0.1, b.lo + 0.1, b.hi - 0.1, "rgba(255,184,99,.64)", -0.12);
     return;
   }
   if (pass === "glow") {
     text("DENKI  /  ELECTRIC", 0.25, length - 0.25, 3.07, 3.51, "#52e7ff");
     panel(0.35, length - 0.35, 2.81, 2.86, "#62edff", 0.15);
-    for (const b of bays) panel(b.a + 0.15, b.b - 0.15, 2.36, 2.4, "#d4ebff", -0.12);
+    for (const b of bays) panel(b.a + 0.15, b.b - 0.15, 2.36, 2.4, "#ffe2a5", -0.12);
     return;
   }
   // A continuous dark enamel trading floor under the existing apartment string course.

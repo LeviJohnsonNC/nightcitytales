@@ -28,7 +28,7 @@ export function rainWetness(x: number, y: number, gutter = 0) {
       noise(x * 3.2, y * 3.2) * 0.3 +
       noise(x * 6, y * 6) * 0.1 +
       0.17 * gutter -
-      0.44) *
+      0.41) *
       12,
   );
 }

@@ -1958,3 +1958,15 @@ matched desktop size. Scenery-only review shares the Action area framing.
 See `docs/checkpoint-intersection-composition.md`. Next: wet ground and lighting,
 then measured assets for distinctive street fixtures/frontages; existing shop
 and prop art is reusable. This is not reference-parity acceptance.
+
+
+### Wet neon lighting follow-through (2026-10-11)
+
+Following the merged solid-street/object pass, the market blade casts magenta onto
+its canopy; repair windows use warm task light beneath the cyan sign. Both repair
+emitters feed the existing ground response, with facade washes excluded from the
+reflected source. Wet patches carry longer, softer broken colour trails. Saved
+geometry and tactical rules are unchanged. Local seed8 play/reveal/destruction and
+compact captures inspected; full review gates tracked in `docs/AI_HANDOFF.md`.
+Next visual priority: architectural variety and whole-frame reference comparison;
+this lighting pass does not establish reference parity.
