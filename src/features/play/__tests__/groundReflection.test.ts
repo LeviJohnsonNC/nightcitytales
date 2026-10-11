@@ -120,3 +120,11 @@ describe("ground reflection: what a surface gives back", () => {
     );
   });
 });
+
+it("keeps wet paving highlights below road highlights without suppressing its source picture", () => {
+  const road = response(SurfaceClass.asphalt, 1, 1);
+  const paving = response(SurfaceClass.paving, 1, 1);
+  expect(paving.field).toBeLessThan(road.field * 0.5);
+  expect(paving.tight).toBeGreaterThan(0);
+  expect(response(SurfaceClass.paving, 0, 1).field).toBe(0);
+});

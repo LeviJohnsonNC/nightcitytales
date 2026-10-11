@@ -1,23 +1,26 @@
-# Active wet neon pass — 2026-10-11
+# Active open shops / wet street pass — 2026-10-11
 
-Checkout: /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/wet-neon-street, base bc47717c (merged PR356).
-Normal fetched Git history. Original dirty checkout remains untouched. Levi merges.
-User approved stronger market magenta, cyan repair sign, warm interiors and broken
-source-linked wet reflections. No geometry, rules or scene recipe changes.
+Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
+Branch codex/open-shops-wet-street; base origin/main6ed14c22 includes PR357/358.
+Original dirty checkout preserved. Normal fetched history; Levi reviews/merges.
+User approved one coordinated pass: deeper varied storefront openings, substantially
+better appropriate ground reflections; finish intersection before next environment.
 
-Local implementation: warmer repair task bays feed the existing emitter-only
-reflection callback, excluding the facade wash. Cyan header has a matching pool
-and wall light. Market blade catches the canopy. Rough reflection stretch is longer
-with more continuity inside wet patches; source extraction/floor and dry response
-remain intact. Local seed8 play/reveal/destruction/compact inspected.
-Reflection refinement: broader rough streak, slightly more connected shared wet
-field, restrained source-specific blade gain. Unit suite4268pass/342files; lint
-0errors/15 existing warnings; typecheck pass. Seed8 Chromium passed.
-Evidence: visualization folder wet-neon-evidence/local-seed8.
-Next: production build, three-seed browser check, draft PR and remote CI/captures. Do not claim success
-from tests alone. PR356 CI and both Chromium jobs passed before Levi merged it.
-Prior evidence: visualization folder solid-street-evidence/ci-after.
+Local first iteration: repair display spans fit around saved doors; asymmetric
+counter/parts bays reuse existing painted art in deeper clipped recesses. Repair
+entrance shows shelving, aisle and tiled threshold beneath raised shutter. Market
+entrance is open beneath its curtain. Room emission follows these actual openings.
+Repair ground spills use opening spans. Wetness has larger connected depressions;
+stronger broken facet highlights use shadowed incident light, no uniform sheen.
+New asset: repair-open-room-v1.webp, generated straight-on interior,512x768;
+source retained in generated_images/01a12b66.../exec-2d217725...png. Existing art kept.
+First capture: diffuse-bright pavement overexposed; reduce paving facet response,
+refine irregular strokes, align bay light with recessed art. Door uses new room.
+No saved geometry, rules or new entrances. No visual acceptance yet.
+Second capture inspected: open workshop interior visible; reduced paving glints retain
+texture. Final refinement lowers cyan pool and raises only shop source-picture gain.
+Next: targeted tests and final three-seed browser capture; inspect actual pixels before broad
+checks, review PR, paired CI screenshots. Previous handoff preserved /tmp/nct357-final-handoff.md.
 
 ## Parallel stream — shopping as discovery (Claude, branch claude/shady-goods-store-art-i8grnn)
 

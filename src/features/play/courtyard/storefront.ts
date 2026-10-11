@@ -702,8 +702,32 @@ export function paintStorefrontFace(o: FaceOptions) {
       [1, "rgba(0,0,0,0)"],
     ]);
     ctx.restore();
-    // bottom bar and the two guide rails, standing 4 cm proud
-    fillPoly(ctx, quad(s0, s1, 0, 0.06, 0.04), "#1c262a");
+    // Open market doorway: recessed goods, a clear tiled threshold, curtain overhead.
+    ctx.save();
+    path(ctx, quad(s0, s1, 0.04, 1.88));
+    ctx.clip();
+    fillPoly(ctx, quad(s0, s1, 0.04, 1.88), "#2d3429");
+    const goods = o.art.paintedInterior ?? o.art.window;
+    if (goods) drawOnFace(o, goods, s0, 1.84, s1 - s0, 1.55, -0.42);
+    fillPoly(
+      ctx,
+      [at(s0, 0, 0.04), at(s1, 0, 0.04), at(s1, -0.42, 0.04), at(s0, -0.42, 0.04)],
+      "#9b8962",
+    );
+    fillPoly(
+      ctx,
+      [at(s0, 0, 0.04), at(s0, 0, 1.88), at(s0, -0.42, 1.88), at(s0, -0.42, 0.04)],
+      "#6d6850",
+    );
+    fillPoly(
+      ctx,
+      [at(s1, 0, 0.04), at(s1, 0, 1.88), at(s1, -0.42, 1.88), at(s1, -0.42, 0.04)],
+      "#313c31",
+    );
+    ctx.restore();
+    fillPoly(ctx, quad(s0, s1, 1.84, 1.9, 0.04), "#6c7973");
+    // The guide rails still reach the pavement.
+
     for (const [a, b] of [
       [s0 - 0.08, s0],
       [s1, s1 + 0.08],
@@ -905,6 +929,8 @@ function paintFaceLight(
   const door1 = sf.door + STOREFRONT_FACE.doorWidth / 2;
   const housing = { s0: door0 - 0.12, s1: door1 + 0.12, z: L.doorHeight, proud: 0.15 };
   if (o.pass === "light") {
+    if (reaches(door0, door1))
+      fillPoly(ctx, quad(door0, door1, 0.05, 1.84), lightColor(warm, 0.64));
     // the room behind each window is lit: its interior art shows warm, brightest low
     for (const s0 of sf.litBays) {
       const s1 = s0 + STOREFRONT_FACE.bayWidth;

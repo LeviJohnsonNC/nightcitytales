@@ -2524,6 +2524,7 @@ export function createComposedEnvironment(
               return {
                 a: a!,
                 b: b!,
+                gain: front ? 1.6 : 2,
                 extent: [a!, b!, { x: b!.x, y: b!.y - lift }, { x: a!.x, y: a!.y - lift }],
               };
             })
@@ -2592,6 +2593,12 @@ export function createComposedEnvironment(
               ctx.save();
               if (pass === "light") {
                 const bays = [
+                  facePainter(s, front.sf.edge, project, metre).quad(
+                    front.sf.door - 0.8,
+                    front.sf.door + 0.8,
+                    0.05,
+                    1.84,
+                  ),
                   ...storefrontWindows(front.sf).map((w) =>
                     facePainter(s, front.sf.edge, project, metre).quad(w.s0, w.s1, w.z0, w.z1),
                   ),
