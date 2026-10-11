@@ -1,3 +1,4 @@
+import { occupiedLights } from "./occupiedFrontage";
 import { CITY_FIXTURES, fixtureLamp } from "./cityFixtures";
 /**
  * Light on walls: the same lights that pool on the pavement, reaching the facades
@@ -56,6 +57,15 @@ export function pointLights(
 ): PointLight[] {
   const out: PointLight[] = [];
   const skip = new Set<string>();
+  for (const light of occupiedLights(env))
+    if (light.kind === "pool" && light.sourceZ !== undefined)
+      out.push({
+        at: light.centre,
+        z: light.sourceZ,
+        color: light.color,
+        intensity: light.intensity,
+        radius: light.radius,
+      });
   for (const sf of storefronts) {
     for (const light of storefrontLights(sf, night))
       if (light.kind === "pool" && light.sourceZ !== undefined)

@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { composeScene } from "@/engine";
-import { occupiedUse, occupiedLights } from "../courtyard/occupiedFrontage";
+import { occupiedUse, occupiedLights, paintOccupiedFrontage } from "../courtyard/occupiedFrontage";
 import { lightAt } from "../courtyard/nightLighting";
 import v12 from "@/engine/__tests__/fixtures/intersection-v12.json";
 import { readSceneManifest } from "@/engine/persistentScene";
@@ -24,7 +24,7 @@ it("lights the trading threshold and studio passage from their own faces without
   const env = composeScene("intersection", 8).layout.arena.environment!;
   const saved = JSON.stringify(env),
     lights = occupiedLights(env);
-  expect(lights).toHaveLength(3);
+  expect(lights).toHaveLength(5);
   for (const p of [
     { x: 25, y: 21 },
     { x: 29, y: 25 },
@@ -75,4 +75,68 @@ it("removes canopy and balcony silhouettes from additive light without leaking c
     expect(mode).toBe("source-over");
     expect(stack).toEqual([]);
   }
+});
+
+it("reflects the lit repair bays but excludes the cyan facade wash", () => {
+  const env = composeScene("intersection", 8).layout.arena.environment!;
+  const s = env.structures.find((s) => occupiedUse(s) === "repair")!;
+  const draw = (emissionOnly: boolean) => {
+    const fills: unknown[] = [];
+    let style: unknown;
+    const ctx = new Proxy(
+      {},
+      {
+        get: (_t, key) => {
+          if (key === "createLinearGradient") return () => ({ addColorStop() {} });
+          if (key === "fill") return () => fills.push(style);
+          return () => undefined;
+        },
+        set: (_t, key, value) => {
+          if (key === "fillStyle") style = value;
+          return true;
+        },
+      },
+    ) as unknown as CanvasRenderingContext2D;
+    paintOccupiedFrontage(
+      ctx,
+      s,
+      "east",
+      env.entrances,
+      (p) => p,
+      15,
+      "light",
+      undefined,
+      emissionOnly,
+    );
+    return fills;
+  };
+  const visible = draw(false),
+    reflected = draw(true);
+  // Every reflected patch is also visible, but no gradient falling on masonry is a source.
+  expect(reflected.length).toBeGreaterThan(0);
+  expect(reflected.every((v) => typeof v === "string" && visible.includes(v))).toBe(true);
+  expect(visible.filter((v) => typeof v !== "string")).toHaveLength(1);
+  expect(visible.length).toBe(reflected.length + 1);
+});
+
+it("gives the repair sign the same source position and colour on pavement and walls", async () => {
+  const { pointLights } = await import("../courtyard/wallLight");
+  const { INTERSECTION_NIGHT } = await import("../courtyard/nightLighting");
+  const env = composeScene("intersection", 8).layout.arena.environment!;
+  const pools = occupiedLights(env).filter((l) => l.kind === "pool");
+  const walls = pointLights(env, [], INTERSECTION_NIGHT);
+  expect(pools).toHaveLength(2);
+  for (const l of pools) {
+    if (l.kind !== "pool") continue;
+    expect(walls).toContainEqual({
+      at: l.centre,
+      z: l.sourceZ,
+      color: l.color,
+      intensity: l.intensity,
+      radius: l.radius,
+    });
+    expect(l.color[2]).toBeGreaterThan(l.color[0]);
+  }
+  for (const l of occupiedLights(env).filter((l) => l.kind === "spill" && l.color[0] === 1))
+    expect(l.color[0]).toBeGreaterThan(l.color[2]);
 });

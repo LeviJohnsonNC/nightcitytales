@@ -64,7 +64,7 @@ export const INTERSECTION_NIGHT = {
    */
   returnDisplay: 0.85,
   neon: [1, 0.12, 0.48] as Rgb,
-  blade: { color: [1, 0.08, 0.42] as Rgb, intensity: 0.4, radius: 4.6 },
+  blade: { color: [1, 0.08, 0.42] as Rgb, intensity: 0.58, radius: 5.1 },
   /** The scene's other saved lamps and signs, which keep their small drawings. */
   streetLamp: { color: [1, 0.78, 0.5] as Rgb, intensity: 0.64, radius: 4.6 },
   sign: { color: [0.32, 0.8, 0.78] as Rgb, intensity: 0.28, radius: 2.6 },

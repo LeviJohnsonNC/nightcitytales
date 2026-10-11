@@ -1740,7 +1740,7 @@ function bladeMirror(
     a,
     b,
     // A blade sign is a small emitter; retain its hue without dominating the street.
-    gain: 2.1,
+    gain: 3.1,
     extent: [
       { x: x0, y: y0 },
       { x: x1, y: y0 },
@@ -2627,7 +2627,6 @@ export function createComposedEnvironment(
           : faceMirrors && occupiedUse(s) === "repair"
             ? (ctx, pass) => {
                 // Reflect emitters only; never mirror the wall wash as another light source.
-                if (pass !== "glow") return;
                 for (const edge of ["north", "east"] as const)
                   paintOccupiedFrontage(
                     ctx,
@@ -2636,8 +2635,9 @@ export function createComposedEnvironment(
                     env.entrances,
                     project,
                     metre,
-                    "glow",
+                    pass,
                     architecture,
+                    true,
                   );
               }
             : undefined,
@@ -2946,7 +2946,7 @@ export function createComposedEnvironment(
             paintAwning({ ctx, sf, project, ppm: metre, art: storefrontArt, materials, pass });
             // the streetlight's pool lands on the canvas before the pavement under it:
             // the same pool, laid on the awning's top at its height, clipped to it
-            if (pass !== "light" || !lamp || !night) return;
+            if (pass !== "light" || !night) return;
             const L = STOREFRONT_LEVELS;
             ctx.save();
             ctx.beginPath();
@@ -2958,18 +2958,22 @@ export function createComposedEnvironment(
             ].forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
             ctx.closePath();
             ctx.clip();
-            paintGroundLight(
-              ctx,
-              project,
-              {
-                kind: "pool",
-                centre: lamp.head,
-                radius: night.lamp.radius,
-                color: night.lamp.color,
-                intensity: night.lamp.intensity,
-              },
-              ((L.awningWall + L.awningOuter) / 2) * metre,
-            );
+            if (lamp)
+              paintGroundLight(
+                ctx,
+                project,
+                {
+                  kind: "pool",
+                  centre: lamp.head,
+                  radius: night.lamp.radius,
+                  color: night.lamp.color,
+                  intensity: night.lamp.intensity,
+                },
+                ((L.awningWall + L.awningOuter) / 2) * metre,
+              );
+            for (const light of storefrontLights(sf, night))
+              if (light.kind === "pool" && light.sourceZ !== undefined)
+                paintGroundLight(ctx, project, light, ((L.awningWall + L.awningOuter) / 2) * metre);
             ctx.restore();
           };
           add(

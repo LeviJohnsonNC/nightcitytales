@@ -40,7 +40,7 @@ import type { Box } from "./lampShadow";
 /** The numbers, tuned by eye at play zoom on seeds 8 and 7, and stated here. */
 export const REFLECTION = {
   /** Overall strength of the source pictures, added over the lit ground. */
-  strength: 1.45,
+  strength: 1.6,
   /**
    * What a source must give to be reflected, of full scale, applied to the source's own
    * extracted picture: a surface shows its own colour for dim things, and reflects the
@@ -50,14 +50,14 @@ export const REFLECTION = {
   /** The whole picture, as a wet film shows it: blur in metres across and along. */
   tight: { across: 0.035, along: 0.09 },
   /** The streak's blur, metres. */
-  rough: { across: 0.12, along: 0.3 },
+  rough: { across: 0.2, along: 0.22 },
   /**
    * How a rough surface stretches a picture: a facet tilted toward the camera reflects a
    * source from nearer its foot than the mirror point, one tilted away from beyond it.
    * The picture is sampled at `samples` flip depths from `from` to `to` (1 is the
    * mirror) and averaged.
    */
-  stretch: { from: 0.12, to: 1.4, samples: 24 },
+  stretch: { from: 0.12, to: 2.0, samples: 32 },
   /**
    * Where the street is wet: noise at these cell sizes (metres) and weights, plus
    * `gutter` within `gutterReach` metres of a kerb, wet from `lo` to `hi`. Thresholding
@@ -77,7 +77,7 @@ export const REFLECTION = {
    * What a wet patch shows of a picture: the whole of it (`tight`) and its streak
    * (`streak`); and how much of the streak dry ground shows (`dry`).
    */
-  body: { tight: 0.58, streak: 0.42, dry: 0.004 },
+  body: { tight: 0.44, streak: 0.56, dry: 0.004 },
   /**
    * Broken microfacet highlights: a projected world field from `lo` to `hi`,
    * at `gain` times the source streak. Joints and dry ground give none.
@@ -586,7 +586,7 @@ export class GroundReflection {
           const sx = this.box.x + (x + 0.5) / res,
             sy = this.box.y + (y + 0.5) / res;
           const ridges = smoothstep(0.27, 0.74, noise(sx / (ppm * 0.38), sy / (ppm * 0.055), 103));
-          this.wet[i] = w * (0.1 + 0.9 * ridges);
+          this.wet[i] = w * (0.3 + 0.7 * ridges);
           // Broad, broken microfacets read as wet brush strokes at play zoom.
           // Raw aggregate peaks alone produced distracting isolated glitter dots.
           this.highlight[i] = smoothstep(
