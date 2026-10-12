@@ -1,206 +1,493 @@
 {
-  "_note": "Stock art for walk-on roles the GM might name in passing — a bartender, a beat cop — who are not part of the standing cast in cast-content.json and get no dossier of their own, just a face. Looked up by features/cast/flavorArt.ts via `subject` (and optionally `gender`); `id` is the file's slug under public/images/flavor/, encoded at the same two WebP widths as cast art (tools/art/webp.mjs --widths=1024,512).",
+  "_note": "Stock art for walk-on roles the GM might name in passing — a bartender, a beat cop — who are not part of the standing cast in cast-content.json and get no dossier of their own, just a face. Each entry also records how old the person looks and where the face is in the frame, so the interface can show the face rather than the whole scene. Looked up by features/cast/flavorArt.ts via `subject` (and optionally `gender`); `id` is the file's slug under public/images/flavor/, encoded at the same two WebP widths as cast art (tools/art/webp.mjs --widths=1024,512).",
   "_schema": {
     "id": "string — file slug under public/images/flavor/, no extension or width suffix",
     "type": "\"person\" for now — reserved for a future non-person tier of static flavor art",
     "subject": "string — stable kebab-case role slug a caller looks up by, shared across every gender variant of the same role",
-    "gender": "\"male\" | \"female\""
+    "gender": "\"male\" | \"female\"",
+    "age": "number — how old the person in the picture looks. Read through engine/identity.ts ageBand() for the narrator, so the band is a fact of the picture rather than a thing the model guesses.",
+    "face": "{x, y, size} — the square, in the 1024x683 source, that holds the head and shoulders. tools/art/flavor-faces.mjs cuts it to public/images/flavor/<id>-face.webp, the picture the interface shows beside a line of narration."
   },
   "entries": [
     {
       "id": "auto-mechanic-female",
       "type": "person",
       "subject": "auto-mechanic",
-      "gender": "female"
+      "gender": "female",
+      "age": 30,
+      "face": {
+        "x": 385,
+        "y": 0,
+        "size": 320
+      }
     },
-    { "id": "auto-mechanic-male", "type": "person", "subject": "auto-mechanic", "gender": "male" },
+    {
+      "id": "auto-mechanic-male",
+      "type": "person",
+      "subject": "auto-mechanic",
+      "gender": "male",
+      "age": 40,
+      "face": {
+        "x": 355,
+        "y": 10,
+        "size": 320
+      }
+    },
     {
       "id": "av-cab-driver-female",
       "type": "person",
       "subject": "av-cab-driver",
-      "gender": "female"
+      "gender": "female",
+      "age": 28,
+      "face": {
+        "x": 180,
+        "y": 0,
+        "size": 330
+      }
     },
-    { "id": "av-cab-driver-male", "type": "person", "subject": "av-cab-driver", "gender": "male" },
+    {
+      "id": "av-cab-driver-male",
+      "type": "person",
+      "subject": "av-cab-driver",
+      "gender": "male",
+      "age": 45,
+      "face": {
+        "x": 300,
+        "y": 40,
+        "size": 300
+      }
+    },
     {
       "id": "bail-bondsman-female",
       "type": "person",
       "subject": "bail-bondsman",
-      "gender": "female"
+      "gender": "female",
+      "age": 58,
+      "face": {
+        "x": 310,
+        "y": 0,
+        "size": 340
+      }
     },
-    { "id": "bail-bondsman-male", "type": "person", "subject": "bail-bondsman", "gender": "male" },
+    {
+      "id": "bail-bondsman-male",
+      "type": "person",
+      "subject": "bail-bondsman",
+      "gender": "male",
+      "age": 55,
+      "face": {
+        "x": 190,
+        "y": 0,
+        "size": 340
+      }
+    },
     {
       "id": "braindance-parlor-host-female",
       "type": "person",
       "subject": "braindance-parlor-host",
-      "gender": "female"
+      "gender": "female",
+      "age": 30,
+      "face": {
+        "x": 400,
+        "y": 0,
+        "size": 330
+      }
     },
     {
       "id": "braindance-parlor-host-male",
       "type": "person",
       "subject": "braindance-parlor-host",
-      "gender": "male"
+      "gender": "male",
+      "age": 42,
+      "face": {
+        "x": 340,
+        "y": 20,
+        "size": 320
+      }
     },
     {
       "id": "clinic-nurse-female",
       "type": "person",
       "subject": "clinic-nurse",
-      "gender": "female"
+      "gender": "female",
+      "age": 30,
+      "face": {
+        "x": 240,
+        "y": 0,
+        "size": 320
+      }
     },
-    { "id": "clinic-nurse-male", "type": "person", "subject": "clinic-nurse", "gender": "male" },
+    {
+      "id": "clinic-nurse-male",
+      "type": "person",
+      "subject": "clinic-nurse",
+      "gender": "male",
+      "age": 42,
+      "face": {
+        "x": 390,
+        "y": 0,
+        "size": 320
+      }
+    },
     {
       "id": "club-bouncer-female",
       "type": "person",
       "subject": "club-bouncer",
-      "gender": "female"
+      "gender": "female",
+      "age": 32,
+      "face": {
+        "x": 225,
+        "y": 0,
+        "size": 320
+      }
     },
-    { "id": "club-bouncer-male", "type": "person", "subject": "club-bouncer", "gender": "male" },
+    {
+      "id": "club-bouncer-male",
+      "type": "person",
+      "subject": "club-bouncer",
+      "gender": "male",
+      "age": 42,
+      "face": {
+        "x": 250,
+        "y": 0,
+        "size": 320
+      }
+    },
     {
       "id": "convenience-clerk-female",
       "type": "person",
       "subject": "convenience-clerk",
-      "gender": "female"
+      "gender": "female",
+      "age": 24,
+      "face": {
+        "x": 385,
+        "y": 70,
+        "size": 290
+      }
     },
     {
       "id": "convenience-clerk-male",
       "type": "person",
       "subject": "convenience-clerk",
-      "gender": "male"
+      "gender": "male",
+      "age": 35,
+      "face": {
+        "x": 355,
+        "y": 100,
+        "size": 290
+      }
     },
     {
       "id": "corpo-lobby-receptionist-female",
       "type": "person",
       "subject": "corpo-lobby-receptionist",
-      "gender": "female"
+      "gender": "female",
+      "age": 32,
+      "face": {
+        "x": 410,
+        "y": 10,
+        "size": 300
+      }
     },
     {
       "id": "corpo-lobby-receptionist-male",
       "type": "person",
       "subject": "corpo-lobby-receptionist",
-      "gender": "male"
+      "gender": "male",
+      "age": 30,
+      "face": {
+        "x": 420,
+        "y": 60,
+        "size": 300
+      }
     },
     {
       "id": "corpo-mid-manager-female",
       "type": "person",
       "subject": "corpo-mid-manager",
-      "gender": "female"
+      "gender": "female",
+      "age": 42,
+      "face": {
+        "x": 440,
+        "y": 0,
+        "size": 320
+      }
     },
     {
       "id": "corpo-mid-manager-male",
       "type": "person",
       "subject": "corpo-mid-manager",
-      "gender": "male"
+      "gender": "male",
+      "age": 48,
+      "face": {
+        "x": 320,
+        "y": 0,
+        "size": 320
+      }
     },
     {
       "id": "dive-bar-tender-female",
       "type": "person",
       "subject": "dive-bar-tender",
-      "gender": "female"
+      "gender": "female",
+      "age": 58,
+      "face": {
+        "x": 250,
+        "y": 10,
+        "size": 320
+      }
     },
     {
       "id": "dive-bar-tender-male",
       "type": "person",
       "subject": "dive-bar-tender",
-      "gender": "male"
+      "gender": "male",
+      "age": 58,
+      "face": {
+        "x": 370,
+        "y": 0,
+        "size": 320
+      }
     },
-    { "id": "gym-trainer-female", "type": "person", "subject": "gym-trainer", "gender": "female" },
-    { "id": "gym-trainer-male", "type": "person", "subject": "gym-trainer", "gender": "male" },
+    {
+      "id": "gym-trainer-female",
+      "type": "person",
+      "subject": "gym-trainer",
+      "gender": "female",
+      "age": 32,
+      "face": {
+        "x": 300,
+        "y": 0,
+        "size": 320
+      }
+    },
+    {
+      "id": "gym-trainer-male",
+      "type": "person",
+      "subject": "gym-trainer",
+      "gender": "male",
+      "age": 42,
+      "face": {
+        "x": 315,
+        "y": 0,
+        "size": 320
+      }
+    },
     {
       "id": "junk-shop-fence-female",
       "type": "person",
       "subject": "junk-shop-fence",
-      "gender": "female"
+      "gender": "female",
+      "age": 30,
+      "face": {
+        "x": 290,
+        "y": 30,
+        "size": 320
+      }
     },
     {
       "id": "junk-shop-fence-male",
       "type": "person",
       "subject": "junk-shop-fence",
-      "gender": "male"
+      "gender": "male",
+      "age": 52,
+      "face": {
+        "x": 330,
+        "y": 10,
+        "size": 320
+      }
     },
     {
       "id": "media-stringer-female",
       "type": "person",
       "subject": "media-stringer",
-      "gender": "female"
+      "gender": "female",
+      "age": 27,
+      "face": {
+        "x": 390,
+        "y": 0,
+        "size": 320
+      }
     },
     {
       "id": "media-stringer-male",
       "type": "person",
       "subject": "media-stringer",
-      "gender": "male"
+      "gender": "male",
+      "age": 32,
+      "face": {
+        "x": 345,
+        "y": 0,
+        "size": 320
+      }
     },
     {
       "id": "motel-desk-clerk-female",
       "type": "person",
       "subject": "motel-desk-clerk",
-      "gender": "female"
+      "gender": "female",
+      "age": 62,
+      "face": {
+        "x": 265,
+        "y": 50,
+        "size": 320
+      }
     },
     {
       "id": "motel-desk-clerk-male",
       "type": "person",
       "subject": "motel-desk-clerk",
-      "gender": "male"
+      "gender": "male",
+      "age": 52,
+      "face": {
+        "x": 350,
+        "y": 70,
+        "size": 330
+      }
     },
     {
       "id": "ncpd-beat-cop-female",
       "type": "person",
       "subject": "ncpd-beat-cop",
-      "gender": "female"
+      "gender": "female",
+      "age": 32,
+      "face": {
+        "x": 415,
+        "y": 0,
+        "size": 320
+      }
     },
-    { "id": "ncpd-beat-cop-male", "type": "person", "subject": "ncpd-beat-cop", "gender": "male" },
+    {
+      "id": "ncpd-beat-cop-male",
+      "type": "person",
+      "subject": "ncpd-beat-cop",
+      "gender": "male",
+      "age": 42,
+      "face": {
+        "x": 255,
+        "y": 0,
+        "size": 320
+      }
+    },
     {
       "id": "net-cafe-operator-female",
       "type": "person",
       "subject": "net-cafe-operator",
-      "gender": "female"
+      "gender": "female",
+      "age": 24,
+      "face": {
+        "x": 290,
+        "y": 40,
+        "size": 320
+      }
     },
     {
       "id": "net-cafe-operator-male",
       "type": "person",
       "subject": "net-cafe-operator",
-      "gender": "male"
+      "gender": "male",
+      "age": 40,
+      "face": {
+        "x": 390,
+        "y": 50,
+        "size": 320
+      }
     },
     {
       "id": "noodle-bar-cook-female",
       "type": "person",
       "subject": "noodle-bar-cook",
-      "gender": "female"
+      "gender": "female",
+      "age": 38,
+      "face": {
+        "x": 415,
+        "y": 0,
+        "size": 320
+      }
     },
     {
       "id": "noodle-bar-cook-male",
       "type": "person",
       "subject": "noodle-bar-cook",
-      "gender": "male"
+      "gender": "male",
+      "age": 48,
+      "face": {
+        "x": 305,
+        "y": 0,
+        "size": 320
+      }
     },
     {
       "id": "pawn-shop-owner-female",
       "type": "person",
       "subject": "pawn-shop-owner",
-      "gender": "female"
+      "gender": "female",
+      "age": 33,
+      "face": {
+        "x": 340,
+        "y": 40,
+        "size": 320
+      }
     },
     {
       "id": "pawn-shop-owner-male",
       "type": "person",
       "subject": "pawn-shop-owner",
-      "gender": "male"
+      "gender": "male",
+      "age": 48,
+      "face": {
+        "x": 325,
+        "y": 50,
+        "size": 330
+      }
     },
     {
       "id": "street-vendor-female",
       "type": "person",
       "subject": "street-vendor",
-      "gender": "female"
+      "gender": "female",
+      "age": 32,
+      "face": {
+        "x": 355,
+        "y": 20,
+        "size": 320
+      }
     },
-    { "id": "street-vendor-male", "type": "person", "subject": "street-vendor", "gender": "male" },
+    {
+      "id": "street-vendor-male",
+      "type": "person",
+      "subject": "street-vendor",
+      "gender": "male",
+      "age": 42,
+      "face": {
+        "x": 245,
+        "y": 0,
+        "size": 320
+      }
+    },
     {
       "id": "tattoo-piercing-artist-female",
       "type": "person",
       "subject": "tattoo-piercing-artist",
-      "gender": "female"
+      "gender": "female",
+      "age": 30,
+      "face": {
+        "x": 480,
+        "y": 0,
+        "size": 330
+      }
     },
     {
       "id": "tattoo-piercing-artist-male",
       "type": "person",
       "subject": "tattoo-piercing-artist",
-      "gender": "male"
+      "gender": "male",
+      "age": 42,
+      "face": {
+        "x": 330,
+        "y": 10,
+        "size": 320
+      }
     }
   ]
 }

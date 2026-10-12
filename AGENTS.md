@@ -263,6 +263,25 @@ the person's row (`campaign_npcs.data.arc`), a beat takes the world tick's one
 move for its day, and a stage's `reveal` is never sent to the model — it
 reaches the player only through involvement, beside their dossier facts.
 
+A face the player can see is a fact the narrator may not contradict, so it is told
+to the narrator BEFORE it writes, never chosen after. `cast-looks.json` records what
+each of the 49 portraits of a person shows (sex, age, `houseRule: true`; null sex where
+the picture and the dossier both leave it open), `place-shops.json` does the same for
+the keepers, and `engine/identity.ts` `seenAsLine` words it as a band, never a number,
+reaching the packet as a person's "Seen as" line and a seller's bracket
+(`features/cast/npcLooks.ts`). Walk-ons are inverted the same way: `ambientPeople.ts`
+reads a place's tags through `walkon-places.json`, picks at most two roles (the place's
+first tag first) and which face each is from the campaign and the place alone, and the
+Life packet says so ("Also here"); `resolveWalkOns` then ignores a gender the narrator
+asks for on a role it was told about. A named keeper staffs their own counter, so the
+seller roles are left out there. Walk-on art records `age` and a `face` square;
+`tools/art/flavor-faces.mjs` cuts the 256px faces the strip shows, and the scene stays
+for the dialog. `seenAsPronounsHold` (narratorChecks) holds the prose to all of it by
+reading the packet back, and is deliberately conservative. A new portrait needs a row
+in `cast-looks.json` (`npcLooks.test.ts` fails without one and checks it against the
+dossier's pronouns); a new walk-on role needs tags, nouns and a face square. The Job
+packet carries "Seen as" but not yet "Also here".
+
 Goodwill can be spent. `engine/favours.ts` (data `src/data/atlas/favours.json`,
 `houseRule: true`) lets a place that has set `welcome` do one favour a day for
 whoever is standing in it: a day of rest's healing in two hours, or two segments

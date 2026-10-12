@@ -15,6 +15,7 @@ import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { seenAsLine } from "@/engine";
 import { flavorArt, flavorSubjectLabel, type FlavorGender } from "./flavorArt";
 
 export type WalkOn = { subject: string; gender: FlavorGender };
@@ -22,26 +23,37 @@ export type WalkOn = { subject: string; gender: FlavorGender };
 function WalkOnPortrait({ subject, gender }: WalkOn) {
   const art = flavorArt(subject, gender);
   const [open, setOpen] = useState(false);
+  const [faceFailed, setFaceFailed] = useState(false);
   // The catalog and the files on disk can drift (a JSON entry with no WebP
   // yet); rendering nothing is the honest answer, the same rule SceneHero
   // follows for a place with no picture.
   if (!art) return null;
   const label = flavorSubjectLabel(subject);
+  const look = seenAsLine(art.look);
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="aspect-[3/2] h-20 shrink-0 overflow-hidden rounded-md border border-hairline/70 transition-opacity hover:opacity-80"
+        className="group flex w-[5.5rem] shrink-0 flex-col gap-1 text-left"
         aria-label={`Open image of ${label}`}
       >
-        <img
-          src={art.src}
-          srcSet={art.srcSet}
-          sizes="120px"
-          alt={label}
-          className="h-full w-full object-cover object-top"
-        />
+        {/* The head and shoulders, cut from the scene (tools/art/flavor-faces.mjs):
+            the whole 3:2 painting at this size was a few pixels of face and a lot of neon. */}
+        <span className="block size-[5.5rem] overflow-hidden border border-hairline/70 transition-opacity group-hover:opacity-80">
+          <img
+            src={faceFailed ? art.src : art.faceSrc}
+            alt={look ? `${label}, ${look}` : label}
+            width={256}
+            height={256}
+            className="h-full w-full object-cover object-top"
+            onError={() => setFaceFailed(true)}
+          />
+        </span>
+        <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
+          {label}
+        </span>
+        {look && <span className="text-[10px] leading-tight text-muted-foreground/70">{look}</span>}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[92vw] border border-hairline bg-surface p-0 sm:max-w-[64rem]">
@@ -84,7 +96,7 @@ export function WalkOnStrip({
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-3">
           {walkOns.map((w, i) => (
             <WalkOnPortrait key={`${w.subject}-${i}`} subject={w.subject} gender={w.gender} />
           ))}

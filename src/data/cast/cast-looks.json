@@ -1,0 +1,201 @@
+{
+  "_about": "How each person with a portrait READS ON SIGHT: the sex and age the picture shows, which is what a stranger would see and what the narrator is told. The portraits are fixed and the dossiers were written without saying either, so this file is where they are made to agree. House rule, no book behind it. Read through engine/identity.ts (identityLine) so the narrator is given a band ('woman, older'), never the number. `sex` is null where the picture and the dossier both leave it open (the dossier never uses a pronoun for them): the narrator is then told to go by the name and to use neither 'he' nor 'she'. `age` is null for somebody never seen (the Quartermaster, a masked voice). Add a row here when a portrait is added to npcDirectory.ts; npcLooks.test.ts holds the two together and holds the dossier's own pronouns to the row.",
+  "people": {
+    "ilsa-braun": {
+      "sex": "female",
+      "age": 52
+    },
+    "marcus-tally-oyelaran": {
+      "sex": "male",
+      "age": 45
+    },
+    "dinh-bao-tran": {
+      "sex": "male",
+      "age": 65
+    },
+    "rosalind-achebe": {
+      "sex": "female",
+      "age": 45
+    },
+    "yuri-pastrana": {
+      "sex": "male",
+      "age": 30
+    },
+    "kit-mwangi": {
+      "sex": null,
+      "age": 26
+    },
+    "dr-ana-srenson": {
+      "sex": "female",
+      "age": 52
+    },
+    "boro-two-thumbs-kalinic": {
+      "sex": "male",
+      "age": 52
+    },
+    "meiling-zhou": {
+      "sex": "female",
+      "age": 28
+    },
+    "reg-amankwah": {
+      "sex": "male",
+      "age": 42
+    },
+    "dr-halvor-ness": {
+      "sex": "male",
+      "age": 62
+    },
+    "priya-raghunathan": {
+      "sex": "female",
+      "age": 35
+    },
+    "odalys-kimura": {
+      "sex": "female",
+      "age": 62
+    },
+    "bern-halloran": {
+      "sex": "male",
+      "age": 62
+    },
+    "ma-tsatsu": {
+      "sex": "female",
+      "age": 75
+    },
+    "emeka-duarte": {
+      "sex": "male",
+      "age": 38
+    },
+    "verity-nakashima": {
+      "sex": "female",
+      "age": 45
+    },
+    "sal-ozturk": {
+      "sex": "male",
+      "age": 50
+    },
+    "teodora-teo-vasquez": {
+      "sex": "female",
+      "age": 28
+    },
+    "nnamdi-cole": {
+      "sex": "male",
+      "age": 35
+    },
+    "sasha-bright-ito": {
+      "sex": "female",
+      "age": 27
+    },
+    "wren-kovalenko": {
+      "sex": null,
+      "age": 24
+    },
+    "beniamino-benny-sarto": {
+      "sex": "male",
+      "age": 50
+    },
+    "halima-osei": {
+      "sex": "female",
+      "age": 38
+    },
+    "corrado-razor-villanueva": {
+      "sex": "male",
+      "age": 45
+    },
+    "song-ha-eun": {
+      "sex": "female",
+      "age": 30
+    },
+    "deacon-ferris": {
+      "sex": "male",
+      "age": 52
+    },
+    "mirela-ionescu": {
+      "sex": "female",
+      "age": 38
+    },
+    "tobias-kanu": {
+      "sex": "male",
+      "age": 30
+    },
+    "lark-ferreira": {
+      "sex": null,
+      "age": 24
+    },
+    "juno-adeyemi": {
+      "sex": "female",
+      "age": 38
+    },
+    "kasimir-wolde": {
+      "sex": "male",
+      "age": 50
+    },
+    "nadia-sirko": {
+      "sex": "female",
+      "age": 33
+    },
+    "emil-onobrakpeya": {
+      "sex": "male",
+      "age": 40
+    },
+    "sunny-okafor": {
+      "sex": null,
+      "age": 26
+    },
+    "vero-lindqvist": {
+      "sex": "female",
+      "age": 45
+    },
+    "rogue-amendiares": {
+      "sex": "female",
+      "age": 60
+    },
+    "wakako-okada": {
+      "sex": "female",
+      "age": 62
+    },
+    "sebastian-padre-ibarra": {
+      "sex": "male",
+      "age": 66
+    },
+    "dakota-smith": {
+      "sex": "female",
+      "age": 58
+    },
+    "regina-jones": {
+      "sex": "female",
+      "age": 48
+    },
+    "guadalupe-mama-welles": {
+      "sex": "female",
+      "age": 62
+    },
+    "adele-voss": {
+      "sex": "female",
+      "age": 42
+    },
+    "emil-kovac": {
+      "sex": "male",
+      "age": 48
+    },
+    "dr-priya-raman": {
+      "sex": "female",
+      "age": 42
+    },
+    "the-quartermaster": {
+      "sex": null,
+      "age": null
+    },
+    "odalys-ferrer": {
+      "sex": "female",
+      "age": 40
+    },
+    "toshiro-bell": {
+      "sex": "male",
+      "age": 55
+    },
+    "cira-nwosu": {
+      "sex": "female",
+      "age": 35
+    }
+  }
+}

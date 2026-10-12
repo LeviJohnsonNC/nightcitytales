@@ -46,6 +46,8 @@ export type GmNpcSummary = {
   notes?: string;
   /** One public line on who this person is to the character. */
   standing?: string;
+  /** How they read on sight (what their portrait shows). The narrator may not contradict it. */
+  seenAs?: string;
   /** What the character's own Lifepath said about them, quoted. */
   tie?: string;
   /**
@@ -411,6 +413,7 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       parts.push(
         `- ${npc.name}${key} (disposition ${npc.disposition}, ${npc.status})${npc.notes ? ` — ${npc.notes}` : ""}`,
       );
+      if (npc.seenAs) parts.push(`    Seen as: ${npc.seenAs}`);
       if (npc.standing) parts.push(`    ${npc.standing}`);
       if (npc.tie) parts.push(`    From their history together: ${npc.tie}`);
       for (const fact of withinBudget(npc.known ?? [], PACKET_BUDGET.npcKnown)) {

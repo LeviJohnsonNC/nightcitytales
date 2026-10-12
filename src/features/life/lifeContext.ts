@@ -26,6 +26,11 @@ export type LifePersonSummary = {
   role?: string;
   /** One public line on who this person is to the character. */
   standing?: string;
+  /**
+   * How they read on sight: what their portrait shows, which the player can see
+   * and so the narrator may not contradict ("woman, older").
+   */
+  seenAs?: string;
   /** What the character's own Lifepath said about them, quoted. */
   tie?: string;
   /**
@@ -226,6 +231,12 @@ export type LifeContext = {
      * player asks to see it.
      */
     sellers?: string[];
+    /**
+     * Walk-on roles already in the room, each with the face the player will be
+     * shown ("\"dive-bar-tender\" (Dive Bar Tender): woman, older"). Decided by
+     * the engine before the narrator writes, so the picture follows the words.
+     */
+    alsoHere?: string[];
     /**
      * Somebody the character knows, who happens to be here. At most one — you
      * run into a person, you do not walk into a room containing your whole
@@ -458,6 +469,15 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
           "anything; those are simply the things the engine already knows are possible here.",
       );
     }
+    if (p.alsoHere?.length) {
+      parts.push(line("Also here", p.alsoHere.join("; ")));
+      parts.push(
+        "These are the staff and regulars of this place, and the player is shown each one's face. " +
+          "Write them as listed: the same sex for every pronoun and the same stage of life, never " +
+          "the other. Give them a first name only if the scene needs one. Tag whoever you narrate " +
+          'in "walkOns" by the id in quotes. Nobody else has a face on offer here.',
+      );
+    }
     if (p.sellers?.length) {
       parts.push(line("Selling here", p.sellers.join("; ")));
       parts.push(
@@ -628,6 +648,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
       parts.push(
         `- ${p.name} [${p.key}] (${role}disposition ${p.disposition}, ${p.status}${seen})`,
       );
+      if (p.seenAs) parts.push(`    Seen as: ${p.seenAs}`);
       if (p.standing) parts.push(`    ${p.standing}`);
       if (p.tie) parts.push(`    From their history together: ${p.tie}`);
       for (const fact of withinBudget(p.known ?? [], PACKET_BUDGET.npcKnown)) {

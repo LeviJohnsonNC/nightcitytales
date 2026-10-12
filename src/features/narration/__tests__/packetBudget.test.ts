@@ -64,6 +64,8 @@ function worstCaseGmPacket(): string {
         disposition: 0,
         status: "alive",
         notes: "Something about them that runs on for a while, as notes do",
+        // The longest a look line gets: the one that has to say the sex is open.
+        seenAs: "young, no he or she has been fixed for them, go by the name",
         known: Array.from({ length: 10 }, (_, k) => `A fact the player worked out, ${k}`),
       })),
       recentEvents: Array.from({ length: 8 }, (_, i) => `Something that happened, ${i}`),
@@ -119,11 +121,31 @@ function worstCaseLifePacket(): string {
       disposition: 0,
       status: "alive",
       notes: "Something about them that runs on for a while, as notes do",
+      seenAs: "young, no he or she has been fixed for them, go by the name",
       known: Array.from({ length: 10 }, (_, k) => `A fact the player worked out, ${k}`),
     })),
     recentEvents: Array.from({ length: 6 }, (_, i) => `Something that happened, ${i}`),
     chronicle: Array.from({ length: 16 }, (_, i) => `Campaign memory, line ${i}.`),
     capabilities: Array.from({ length: 60 }, (_, i) => `A weapon or a piece of kit, ${i}`),
+    // Who is standing here and who sells here, which is where the faces are
+    // announced. Two of each is as many as a place has (MAX_ALSO_HERE, and the
+    // one counter a place can have), so this is the largest those lines get.
+    place: {
+      where: "Mister Rice Guy",
+      district: "Rancho Coronado",
+      area: "Heywood",
+      security: "NCPD (in theory)",
+      gangs: [],
+      combatZone: false,
+      nearby: [],
+      alsoHere: [
+        '"corpo-lobby-receptionist" (Corpo Lobby Receptionist): woman, in their prime',
+        '"braindance-parlor-host" (Braindance Parlor Host): man, middle-aged',
+      ],
+      sellers: [
+        "Torrell and Chiang's (deals in armor, gear), run by Torrell and Chiang (a man and a woman, both older): He measures, she decides.",
+      ],
+    },
     // A follow-up that carries the player's words: the largest shape a Life
     // turn takes, since the carry-through instruction rides on the result.
     resolved: "The character has ARRIVED. They travelled from one place to another on foot.",
@@ -147,9 +169,17 @@ describe("the packet has a ceiling", () => {
    * Life moved from 7,600 on purpose: a follow-up turn now carries the player's
    * own words and the instruction to finish them, about 960 characters, because
    * without it "walk to the bar and sit down at the counter" stopped at the door.
+   *
+   * Both moved again for the faces. Every portrait is fixed, so the narrator is
+   * now told what each one shows: a "Seen as" line under each person, at most 73
+   * characters. A Job turn goes 12,450 to 13,034 (eight people present, 584). A
+   * Life turn goes 8,073 to 10,190: 730 for ten people, 492 for the "Also here"
+   * block and its rule, which only Life has, and 895 for a place, which the Life
+   * fixture never had and so never measured sellers or that block. The 895 is
+   * not new weight on the packet; the 1,222 beside it is, about 300 tokens.
    */
-  const GM_CEILING = 13_000;
-  const LIFE_CEILING = 8_600;
+  const GM_CEILING = 13_600;
+  const LIFE_CEILING = 10_600;
 
   it("holds for a Job turn with every list past its cap", () => {
     const packet = worstCaseGmPacket();

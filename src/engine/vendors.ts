@@ -24,6 +24,7 @@ import placeShops from "@/data/atlas/place-shops.json";
 import { ARMOR, AMMUNITION, GEAR, WEAPONS, itemCost, type ItemKind } from "./catalog";
 import { defaultRng } from "./dice";
 import { districtOfPlace, getPlace, placeKeyOf, travelMinutes, type TravelMode } from "./geography";
+import type { Sex } from "./identity";
 import { priceCategoryContext, priceCategoryForCost } from "./priceCategory";
 import { entryFor, rollOracle, type OracleResult, type OracleTable } from "./oracle";
 import type { RNG } from "./types";
@@ -161,6 +162,11 @@ export type Vendor = {
 export type ShopKeeper = {
   name: string;
   who: string;
+  /** What their portrait shows, so the narrator does not have to guess a pronoun. */
+  sex?: Sex | null;
+  age?: number | null;
+  /** Said in words for a keeper who is not one person ("a man and a woman, both older"). */
+  appears?: string;
   /** The pitch they warm to and the one that puts them off (`HAGGLE_APPROACHES` ids). */
   warms?: string;
   cools?: string;

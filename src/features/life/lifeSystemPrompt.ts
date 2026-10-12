@@ -19,7 +19,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.25.0";
+export const LIFE_PROMPT_VERSION = "2.26.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -89,7 +89,7 @@ The city acts while the character is not looking. When a situation says somebody
 - You are told WHAT they did. You are NOT told why, and you do not know. Voice them wanting something without stating what; let them be evasive, or blunt, or halfway through the ask when the scene opens. Never have them explain their motive, and never invent one and state it as fact — these people have interiors you have not been shown.
 - Do not soften it, do not delay it to a better moment, and do not have them turn out to be joking. If it says they came looking, they are here.
 
-${walkOnFacesSection({ excludeHostiles: false })}
+${walkOnFacesSection({ excludeHostiles: false, alsoHere: true })}
 
 # NIGHT CITY KEEPS MOVING
 - Prefer people the player already knows over inventing new faces. Relationships should deepen through repetition; the same fixer, ripperdoc, neighbour and enemy keep their names, voices and grudges.

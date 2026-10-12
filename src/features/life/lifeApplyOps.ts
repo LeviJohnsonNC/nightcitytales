@@ -33,6 +33,7 @@ import {
   FACEDOWN_CHECK_ID,
 } from "@/engine";
 import { resolveWalkOns } from "@/features/cast/walkOnMention";
+import { alsoHereAt } from "./alsoHere";
 import {
   appendCampaignEvent,
   setInventoryQuantity,
@@ -154,10 +155,10 @@ export async function applyResponse(
       // Resolved HERE, once, with the campaign+place seed the response schema
       // never sees — never re-picked on a later render, so a walk-on's face
       // stays the same face across scrollback and reload.
-      walkOns: resolveWalkOns(
-        response.walkOns,
-        `${campaignId}:${bundle.campaign.location_key ?? DEFAULT_START}`,
-      ),
+      walkOns: (() => {
+        const here = alsoHereAt(campaignId, bundle.campaign.location_key ?? DEFAULT_START);
+        return resolveWalkOns(response.walkOns, here.seed, here.subjects);
+      })(),
       // Which prompt, at which version, asked which model — and who answered.
       // Built here rather than spelled out, per ledger.ts.
       ...turnProvenanceDataIfAny(response.provenance),

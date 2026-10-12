@@ -29,6 +29,8 @@ import {
 } from "@/features/gm/gmContext";
 import { checkResolvedInput } from "@/features/gm/checkResult";
 import { GM_SYSTEM_PROMPT } from "@/features/gm/gmSystemPrompt";
+import { seenAsFor } from "@/features/cast/npcLooks";
+import { alsoHereAt } from "@/features/life/alsoHere";
 import { checkResolvedLine } from "@/features/life/checkResult";
 import { carryOnLine } from "@/features/narration/narratorRules";
 import { renderLifeUserPrompt, type LifeContext } from "@/features/life/lifeContext";
@@ -999,5 +1001,92 @@ SCENARIOS.push(
       riskyIntent: false,
       opensCounter: { stockTells: STOCK_TELLS },
     },
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Faces that are already fixed
+// ---------------------------------------------------------------------------
+
+/** A standing-cast member as the packet carries them, with the look their portrait shows. */
+function personWithFace(name: string, key: string, role: string, standing: string) {
+  return {
+    key,
+    name,
+    disposition: 1,
+    status: "alive",
+    role,
+    standing,
+    seenAs: seenAsFor(name)!,
+  };
+}
+
+const faceExpect = (knownNpcKeys: string[]): ScenarioExpectation => ({
+  optionsRequested: false,
+  knownNpcKeys,
+  withheldTruths: [],
+  mustStayQuiet: false,
+  riskyIntent: false,
+  wordBudget: 180,
+});
+
+SCENARIOS.push(
+  {
+    id: "life-walk-on-as-told",
+    narrator: "life",
+    about:
+      "the bartender is written as the engine said she is, because the player is shown her face",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...atTheBar,
+        place: { ...atTheBar.place!, alsoHere: alsoHereAt("eval-campaign", BAR.key).lines },
+      },
+      "I ask the bartender what's good tonight.",
+    ),
+    expect: faceExpect([]),
+  },
+  {
+    id: "life-cast-face-fixed",
+    narrator: "life",
+    about: "a fixer the packet says is a woman keeps her pronouns for the whole scene",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...quietEvening,
+        people: [
+          personWithFace(
+            "Ilsa Bräun",
+            "ilsa-braun",
+            "fixer",
+            "The fixer who moves things that should not be moved.",
+          ),
+        ],
+      },
+      "I call Ilsa Bräun and ask whether there is any work.",
+    ),
+    expect: faceExpect(["ilsa-braun"]),
+  },
+  {
+    id: "life-cast-face-open",
+    narrator: "life",
+    about:
+      "somebody whose portrait leaves the sex open is written by name, not given a he or a she",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...quietEvening,
+        people: [
+          personWithFace(
+            "Kit Mwangi",
+            "kit-mwangi",
+            "fixer",
+            "The fixer who knows what the delivery drivers saw.",
+          ),
+        ],
+      },
+      "I message Kit Mwangi to ask if anyone has seen anything strange on my street.",
+    ),
+    expect: faceExpect(["kit-mwangi"]),
   },
 );

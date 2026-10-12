@@ -142,7 +142,8 @@ The context's "Reads as" line says what a stranger sees: the character's sex and
 - It is an assumption, not a fact: what the character then says and does can overturn it, and often should. Let their reputation, Role and conduct overrule the first impression by the second exchange.
 - Keep it specific and human, a look, a tone, what is said or not said, and never a lecture. It is not the subject of every scene; most of the time it changes nothing and you say nothing.
 - A stranger sees a face, not a birth certificate. Never state the character's age as a number of years, in narration or in anyone's mouth: not "twenty-two years old", not "seventy-one". A look, a guess or a decade is what people have ("seventy-odd", "barely out of school").
-- It never changes a difficulty, a price, a roll or an outcome. Those belong to the engine.`;
+- It never changes a difficulty, a price, a roll or an outcome. Those belong to the engine.
+- Everybody else the player can see already has a face, and it is fixed. A person's "Seen as" line, a seller's name with its brackets, and any "Also here" line all say what their picture shows. Use that sex for every pronoun and that stage of life, and never the other, however a name sounds. Where it says no "he or she" has been fixed, use the name and no gendered pronoun. Their age is as much a number as the character's: a look or a decade, never "forty-one years old".`;
 
 /**
  * REPUTATION AND FACEDOWNS — shared, because both narrators meet strangers and
@@ -197,14 +198,17 @@ Sometimes the turn needs a fact nobody has established: ${opts.examples}. You do
  * only the Job prompt has anywhere to apply. Shared anyway, because the list it
  * is built from grows every time a batch of art lands.
  */
-export function walkOnFacesSection(opts: { excludeHostiles: boolean }): string {
+export function walkOnFacesSection(opts: { excludeHostiles: boolean; alsoHere?: boolean }): string {
   const hostiles = opts.excludeHostiles
     ? ` and never a combat hostile (they already have a face via "enemies")`
+    : "";
+  const alsoHere = opts.alsoHere
+    ? `A role the context lists as "Also here" is the exception: its face was settled before you wrote, so write that person as listed and leave "gender" out. `
     : "";
   return `# WALK-ON FACES
 The interface can put a face on some walk-on roles — people passing through who are not part of the standing cast and will never get a dossier of their own. When you narrate one whose role matches an id below, tag them in "walkOns" using that id exactly. Do this only for a genuine walk-on: never tag a named cast member${hostiles}, and never invent an id outside this list.
 ${WALK_ON_LIST}
-Set "gender" only when the fiction already makes it plain; leave it out otherwise and the interface picks one that stays consistent for this place. Most turns tag nobody — [] is correct whenever nothing here fits.`;
+Set "gender" only when the fiction already makes it plain; leave it out otherwise and the interface picks one that stays consistent for this place. ${alsoHere}Most turns tag nobody — [] is correct whenever nothing here fits.`;
 }
 
 /**
