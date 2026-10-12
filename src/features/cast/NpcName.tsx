@@ -2,17 +2,13 @@
  * A name you can click. Opens the dossier: the portrait, what they are to the
  * character, and the background text once it exists.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { findNpc, npcArtwork, type NpcEntry, type NpcKind } from "./npcDirectory";
-
-/**
- * Which kinds get a face in running prose. Factions and hostile archetypes are
- * groups or repeatable crowd-fill rather than a specific person the text is
- * about, and a thumbnail on every mention of "gangers" or "Tyger Claws" would
- * read as noise rather than a face worth knowing.
- */
-const INLINE_PORTRAIT_KINDS = new Set<NpcKind>(["cast", "broker", "patron", "target"]);
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { FacePlate } from "./FacePlate";
+import { findNpc, isPerson, npcArtwork, type NpcEntry } from "./npcDirectory";
+import { seenAsFor } from "./npcLooks";
 
 export function NpcDossier({
   npc,
@@ -75,48 +71,148 @@ export function NpcDossier({
 }
 
 /**
- * Inline clickable name. Falls back to plain text when we have no such person.
- *
- * `portrait` additionally puts a small face in front of the name — for prose
- * (NpcText), where a name is a passing mention worth a glance, not for the
- * compact People rail, which truncates a whole line to one and has no room
- * to spare.
+ * A face on a card, for the "who is here" row: the same plate the walk-ons get,
+ * with the name and role under it, opening the dossier on tap.
  */
-export function NpcName({
-  name,
-  children,
-  portrait = false,
+export function NpcFace({
+  npc,
+  ringClass,
+  relation,
 }: {
-  name: string;
-  children?: React.ReactNode;
-  portrait?: boolean;
+  npc: NpcEntry;
+  ringClass?: string | undefined;
+  relation?: React.ReactNode;
 }) {
-  const npc = findNpc(name);
   const [open, setOpen] = useState(false);
-  const [thumbFailed, setThumbFailed] = useState(false);
-  if (!npc) return <>{children ?? name}</>;
-  const showThumb = portrait && INLINE_PORTRAIT_KINDS.has(npc.kind) && !thumbFailed;
-  const thumb = showThumb ? npcArtwork(npc) : null;
+  const art = npcArtwork(npc);
+  const look = seenAsFor(npc.name);
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="cursor-pointer border-b border-dotted border-accent/60 text-accent transition-colors hover:border-accent hover:text-ember"
+        className="group flex w-[5.5rem] shrink-0 flex-col gap-1 text-left"
         aria-label={`Open dossier for ${npc.name}`}
       >
-        {thumb && (
-          <img
-            src={thumb.src}
-            srcSet={thumb.srcSet}
-            sizes="20px"
-            alt=""
-            className="mr-1 inline-block h-[1.15em] w-[1.15em] -translate-y-[1px] rounded-full border border-hairline/70 align-middle object-cover"
-            onError={() => setThumbFailed(true)}
-          />
-        )}
-        {children ?? name}
+        <FacePlate
+          src={art.src}
+          srcSet={art.srcSet}
+          sizes="88px"
+          name={npc.name}
+          alt={look ? `${npc.name}, ${look}` : npc.name}
+          ringClass={ringClass}
+          className="size-[5.5rem] transition-opacity group-hover:opacity-80"
+        />
+        <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
+          {npc.name}
+        </span>
+        <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
+          {npc.role}
+        </span>
       </button>
+      <NpcDossier npc={npc} open={open} onOpenChange={setOpen} relation={relation} />
+    </>
+  );
+}
+
+/** The little card over a name: who it is, at a glance. */
+function NameCard({ npc }: { npc: NpcEntry }) {
+  const art = npcArtwork(npc);
+  const look = seenAsFor(npc.name);
+  return (
+    <div className="flex items-center gap-3">
+      <FacePlate
+        src={art.src}
+        srcSet={art.srcSet}
+        sizes="64px"
+        name={npc.name}
+        className="size-16"
+      />
+      <div className="min-w-0">
+        <p className="text-sm font-semibold leading-tight text-foreground">{npc.name}</p>
+        <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          {npc.role}
+        </p>
+        {look && <p className="mt-0.5 text-xs text-muted-foreground/80">{look}</p>}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Inline clickable name. Falls back to plain text when we have no such person.
+ *
+ * `card` puts a small card with the person's face over the name while a mouse
+ * rests on it, for prose (NpcText) where a name is a passing mention worth a
+ * glance. It used to put a thumbnail in front of every mention instead, which
+ * turned a paragraph into a row of tiny circles; the scene's "who is here" row
+ * now carries the faces and the text stays text. A tap still opens the dossier,
+ * since a touch screen has no hover.
+ */
+export function NpcName({
+  name,
+  children,
+  card = false,
+}: {
+  name: string;
+  children?: React.ReactNode;
+  card?: boolean;
+}) {
+  const npc = findNpc(name);
+  const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  if (!npc) return <>{children ?? name}</>;
+  const showCard = card && isPerson(npc);
+  // A short delay either way, so a mouse crossing the text does not flash cards
+  // and a mouse travelling from the name to the card does not lose it.
+  const enter = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setHover(true), 220);
+  };
+  const leave = () => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setHover(false), 120);
+  };
+  const button = (
+    <button
+      type="button"
+      onClick={() => {
+        setHover(false);
+        setOpen(true);
+      }}
+      onPointerEnter={showCard ? enter : undefined}
+      onPointerLeave={showCard ? leave : undefined}
+      onFocus={showCard ? () => setHover(true) : undefined}
+      onBlur={showCard ? () => setHover(false) : undefined}
+      className={cn(
+        "cursor-pointer border-b border-dotted border-accent/60 text-accent transition-colors hover:border-accent hover:text-ember",
+      )}
+      aria-label={`Open dossier for ${npc.name}`}
+    >
+      {children ?? name}
+    </button>
+  );
+  return (
+    <>
+      {showCard ? (
+        <Popover open={hover} onOpenChange={setHover}>
+          <PopoverAnchor asChild>{button}</PopoverAnchor>
+          <PopoverContent
+            side="top"
+            align="start"
+            className="w-64 p-3"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onPointerEnter={() => clearTimeout(timer.current)}
+            onPointerLeave={leave}
+          >
+            <NameCard npc={npc} />
+          </PopoverContent>
+        </Popover>
+      ) : (
+        button
+      )}
       <NpcDossier npc={npc} open={open} onOpenChange={setOpen} />
     </>
   );

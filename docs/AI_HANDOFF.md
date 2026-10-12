@@ -54,3 +54,19 @@ Life's text were bolted on and sometimes wrong (sex, age). Review first, then ph
   faces per role (older/younger), "Also here" in the Job packet. ROADMAP debts 27 and 28.
 - **Needs Levi:** a look over the 49 sex/age readings, which were read from the pictures. The seven left open at first are decided (follow-up PR: Kit, Lark, Wren, Sunny and Cutter female, Marrow male, Adair left androgynous).
 - **Next:** review the PR, then decide the layout pass and which faces to generate.
+
+## Parallel stream — faces layout pass (Claude, branch claude/face-layout)
+
+Updated 2026-10-12. Base origin/main c01abb0 (#374 and #375 merged). Goal: make the faces
+belong on the page, not only be true.
+
+- **Done (in the PR once it is pushed):** one "Here" row per scene (`sceneFaces.ts`,
+  `SceneFaces.tsx`), one `FacePlate` for keeper, person and walk-on, the People rail's
+  ring on known faces, names as text with a hover card (`NpcName`), `npcMentions.ts` as
+  the one name matcher. Life's current turn lost its strip; scrollback and Job keep it.
+- **Validation:** lint, typecheck and unit suite pass. Chromium screenshots (900 and
+  390 px) and a hover/focus/Escape/click script on a scratch route that was not committed.
+  The signed-in game was NOT browser-checked: that is the remaining gate
+  (`docs/checkpoint-faces-layout.md`). No prompt or packet text changed, so no eval run.
+- **Not done:** more faces per role (debt 27), "Also here" in the Job packet.
+- **Next:** play a real Life turn and look at the row; then decide which faces to generate.

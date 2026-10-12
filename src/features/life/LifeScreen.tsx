@@ -57,6 +57,9 @@ import {
 
 import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
+import { alsoHereAt } from "./alsoHere";
+import { SceneFaces } from "./SceneFaces";
+import { sceneFaces } from "./sceneFaces";
 import { JOB_TIERS, readWalkOnsEventData } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
 import { PreviouslyCard } from "@/features/play/ClosingFrameCard";
@@ -1009,6 +1012,14 @@ export function LifeScreen({
   };
 
   const locationKey = bundle.campaign.location_key ?? DEFAULT_START;
+  // Who is in the scene, as faces: the people this passage names, the walk-ons
+  // it tagged, and the people the engine put in the room before it was written.
+  const faces = sceneFaces({
+    text: life.narration?.text ?? "",
+    walkOns: life.narration?.walkOns ?? [],
+    ambient: alsoHereAt(bundle.campaign.id, locationKey).people,
+    people: life.people,
+  });
   const hasLog = shownLifeEvents(bundle.events, life.narration?.text).length > 0;
 
   /**
@@ -1237,6 +1248,9 @@ export function LifeScreen({
                 {/* Where you are, before anything has happened here. */}
                 <SceneHero locationKey={locationKey} opening={!hasLog} />
 
+                {/* Who is here, once, instead of a strip under every paragraph. */}
+                <SceneFaces faces={faces} />
+
                 {/* What the turn just cost, alongside the current scene. */}
                 <ReceiptBar receipts={receipts} />
 
@@ -1280,7 +1294,6 @@ export function LifeScreen({
                         <p className="whitespace-pre-wrap text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
                           <NpcText text={life.narration.text} />
                         </p>
-                        <WalkOnStrip walkOns={life.narration.walkOns} defaultOpen />
                       </section>
                     ) : null
                   }
