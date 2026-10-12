@@ -10,7 +10,34 @@
  */
 
 /** Keeper portraits that exist in public/images/keepers. Add one when its file lands. */
-export const KEEPER_ART_READY: readonly string[] = [];
+export const KEEPER_ART_READY: readonly string[] = [
+  "armorer-a13",
+  "armorer-g15",
+  "armorer-m6",
+  "armorer-q5",
+  "armorer-t2",
+  "gun_shop-d3",
+  "gun_shop-e7",
+  "gun_shop-i10",
+  "gun_shop-l5",
+  "gun_shop-n14",
+  "gun_shop-s4",
+  "gun_shop-t2",
+  "gun_shop-w1",
+  "street-b14",
+  "street-c2",
+  "street-f11",
+  "street-h4",
+  "street-j1",
+  "street-k3",
+  "street-o3",
+  "street-p1",
+  "street-r2",
+  "street-u8",
+  "street-v7",
+  "street-w1",
+  "street-x5",
+];
 
 /** The file a seller's keeper portrait is saved as: `gun_shop@d3` → `gun_shop-d3`. */
 export function keeperSlug(vendorId: string): string {

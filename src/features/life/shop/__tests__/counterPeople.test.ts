@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   FIXER_VENDOR,
@@ -137,5 +138,20 @@ describe("the pitch, priced by the keeper", () => {
     expect(warm.result.actor.total - plain.result.actor.total).toBe(HAGGLE_PITCH_MODIFIER);
     expect(cold.result.actor.total - plain.result.actor.total).toBe(-HAGGLE_PITCH_MODIFIER);
     expect(warm.result.opponent.total).toBe(plain.result.opponent.total);
+  });
+});
+
+describe("the keepers' portraits", () => {
+  it("has a picture for every seller who stands behind a counter, and none for anybody else", () => {
+    const sellers = PLACE_SHOPS.map((s) => keeperSlug(placeVendorId(s.vendor, s.place)));
+    expect([...KEEPER_ART_READY].sort()).toEqual(sellers.sort());
+  });
+
+  it("is listed only once its two files exist", () => {
+    for (const slug of KEEPER_ART_READY) {
+      for (const file of [`${slug}.webp`, `${slug}-512.webp`]) {
+        expect(existsSync(`public/images/keepers/${file}`), file).toBe(true);
+      }
+    }
   });
 });

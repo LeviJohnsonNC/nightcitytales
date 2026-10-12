@@ -238,12 +238,12 @@ gear the engine can keep its word about, then a store UI overhaul.
   switch (`ModeSwitch`) moves between the Counter and the scene, and the Counter's talk
   box sends an ordinary Life turn. Eval: 10 of 10 runs opened the counter, and 1 in 10
   slipped a scenery word.
-- **People behind the counters (shipped, pictures pending).** Every place seller has a
+- **People behind the counters (shipped).** Every place seller has a
   keeper with a name, a line, and a two-paragraph scene. There is a greeting that knows
   whether you are a regular. A collapsible "Your dealings" row holds the hold, the word
-  from sellers and what you asked them to look out for. The 26 portrait prompts are in
-  `docs/art-style.md`. Until a slug is listed in `KEEPER_ART_READY`, the face is the
-  keeper's initials.
+  from sellers and what you asked them to look out for. All 26 keepers have a portrait
+  (`public/images/keepers`, listed in `KEEPER_ART_READY`; the prompts are in
+  `docs/art-style.md`). A keeper not listed there shows their initials.
 - **Haggling as a scene (shipped).** It is the printed Haggle, rolled with the game's own
   dice: you roll yours, then turn theirs over. It is recorded on the first die, so
   closing the scene cannot buy a retry. Each keeper warms to one of three pitches (+2),
@@ -254,7 +254,6 @@ gear the engine can keep its word about, then a store UI overhaul.
   never a price. They are capped by `PACKET_BUDGET.counter`. Not run: a paid eval of
   keeper names and counter news (prompt 2.25.0).
 - **Next:**
-  - convert the 26 keeper portraits and list them;
   - put the ripperdoc in the same shell, if the Counter holds up in play.
     Still open from the plan:
   - the Watch, Pass, Reveal and Shield capabilities (each needs an engine lever first);

@@ -7,6 +7,7 @@
  * shop: buying here changes nothing but a message. `?shop=d3|k3|t2`,
  * `&known=0` for a stranger, `&away=1` for somewhere that sells nothing.
  */
+import { keeperImage } from "@/features/life/shop/keeperArt";
 import { useMemo, useState } from "react";
 import {
   FIXER_VENDOR,
@@ -181,7 +182,7 @@ export function ShopReview() {
     },
     haggleOdds: opposedPercent(9, vendor.haggle.cool + vendor.haggle.trading),
     lastHaggle: haggleDone,
-    keeper: vendor.keeper ? { ...vendor.keeper, image: null } : null,
+    keeper: vendor.keeper ? { ...vendor.keeper, image: keeperImage(vendor.id) } : null,
     operatorRank: 0,
     shelf,
     fresh: [],

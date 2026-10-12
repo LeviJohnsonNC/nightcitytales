@@ -21,10 +21,10 @@ or merge; user tests later.
 
 Updated 2026-10-11.
 
-- **Shopping:** PRs #343–#363 are merged: the Counter, browse-from-story, keepers, the haggle scene and counterNews. Levi is generating the 26 keeper portraits (prompts are in docs/art-style.md). To add them, run `tools/art/webp.mjs public/images/keepers --widths=1024,512` and list each slug in `KEEPER_ART_READY`.
-- **Audit:** the fixes and tests are on draft PR #369. See ROADMAP.md, "Audit — 2026-10-11", and debts 20–26.
+- **Shopping:** PRs #343–#363 are merged: the Counter, browse-from-story, keepers, the haggle scene and counterNews. All 26 keeper portraits are in (originals in src/assets/creator, WebP in public/images/keepers, listed in `KEEPER_ART_READY`).
+- **Audit:** merged (#369, #371, #372). See ROADMAP.md, "Audit — 2026-10-11", and the debts it lists.
 - **Validation:** typecheck, lint and the unit suite pass locally; the signed-in game was not browser-checked.
-- **Next:** CI on #369. After that, the improvement list Levi is approving.
+- **Next:** the audit improvements not yet approved (3, 4, 6–8, 11–17 in the list sent to Levi).
 
 ## Parallel painted architecture pass
 

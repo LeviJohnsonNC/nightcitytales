@@ -143,9 +143,11 @@ Every shop in `place-shops.json` names its keeper, and the Counter shows their f
 storefront and in the haggle scene. Until a file lands the Counter shows their initials.
 
 - **Size:** 1024 × 1024 (square). Shown at 64–80 CSS px, so the face must read small.
-- **Save as** `public/images/keepers/<file>.png`, then run
-  `node tools/art/webp.mjs public/images/keepers --widths=1024,512` and add the file name (without
-  extension) to `KEEPER_ART_READY` in `src/features/life/shop/keeperArt.ts`.
+- **Save as** `<file>.png` in `src/assets/creator` (the source; `chargen/art.ts` keeps it out of the
+  bundle). Copy it to a scratch folder, run `node tools/art/webp.mjs <folder> --widths=1024,512` and move the
+  two `.webp` files into `public/images/keepers/`, then add the file name (without extension) to
+  `KEEPER_ART_READY` in `src/features/life/shop/keeperArt.ts`. A test holds that list to the shops and to the
+  files on disk.
 
 Shopkeeper portrait wrapper — replace `{subject}`:
 
