@@ -1,5 +1,11 @@
 /**
- * Who a character is on sight: their sex and their age.
+ * Who a character is on sight: their gender and their age.
+ *
+ * The field is still called `sex`, because that is the key already saved in every
+ * character's Lifepath and in the cast's look files, and a rename would be a
+ * migration for no gain. It holds a gender: male, female or nonbinary (they/them).
+ * What it is for has not changed: how somebody reads, so a stranger's first
+ * assumption and the narrator's pronouns are the ones the picture shows.
  *
  * The book prints neither as a mechanic, and this does not make them one. It is
  * a small record the narrator is handed, so that the first thing a stranger
@@ -13,10 +19,10 @@
  */
 import data from "@/data/rules/identity.json";
 
-export type Sex = "male" | "female";
+export type Sex = "male" | "female" | "nonbinary";
 export type Identity = { sex: Sex | null; age: number | null };
 
-export const SEXES: Sex[] = ["male", "female"];
+export const SEXES: Sex[] = ["male", "female", "nonbinary"];
 export const AGE_MIN: number = data.age.min;
 export const AGE_MAX: number = data.age.max;
 
@@ -44,23 +50,29 @@ export function sexLabel(sex: Sex): string {
   return data.sex[sex].label;
 }
 
-/** "he/him" or "she/her": the only pronouns the file now carries. */
+/** "he/him", "she/her" or "they/them": the pronouns that follow from the gender chosen. */
 export function pronounsFor(sex: Sex): string {
   return data.sex[sex].pronouns;
 }
 
-/** Sex as it was, from pronouns a draft saved before the file asked for it. */
+/** The gender those pronouns mean, for a draft saved before the file asked for one. */
 export function sexFromPronouns(pronouns: string | null | undefined): Sex | null {
   const p = (pronouns ?? "").trim().toLowerCase().replace(/\s+/g, "");
   if (p === "she/her") return "female";
   if (p === "he/him") return "male";
+  if (p === "they/them") return "nonbinary";
   return null;
+}
+
+/** True for a stored value that is one of the genders the file knows. */
+export function isSex(value: unknown): value is Sex {
+  return typeof value === "string" && (SEXES as string[]).includes(value);
 }
 
 /** Read a stored identity back, or an empty one when there is none. */
 export function readIdentity(value: unknown): Identity {
   const v = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-  const sex = v["sex"] === "male" || v["sex"] === "female" ? v["sex"] : null;
+  const sex = isSex(v["sex"]) ? v["sex"] : null;
   return { sex, age: validAge(v["age"]) };
 }
 

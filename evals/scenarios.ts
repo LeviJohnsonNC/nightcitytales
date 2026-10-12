@@ -1023,7 +1023,7 @@ function personWithFace(name: string, key: string, role: string, standing: strin
   };
 }
 
-/** Executive Zone Oasis: Adair keeps the counter, and is the one keeper left androgynous. */
+/** Executive Zone Oasis: Adair keeps the counter, and is the one nonbinary keeper. */
 const ADAIR_PLACE = "r2";
 
 const faceExpect = (knownNpcKeys: string[]): ScenarioExpectation => ({
@@ -1073,9 +1073,9 @@ SCENARIOS.push(
     expect: faceExpect(["ilsa-braun"]),
   },
   {
-    id: "life-keeper-face-open",
+    id: "life-keeper-nonbinary",
     narrator: "life",
-    about: "a keeper left androgynous is written by name, not given a he or a she",
+    about: "a nonbinary keeper is written with they, and never given a he or a she",
     system: LIFE_SYSTEM_PROMPT,
     packet: renderLifeUserPrompt(
       {

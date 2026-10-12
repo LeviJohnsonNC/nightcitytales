@@ -318,7 +318,7 @@
       "keeper": {
         "name": "Adair",
         "who": "An attendant who knows your name before you give it and your budget before you think of it. Never stops smiling.",
-        "sex": null,
+        "sex": "nonbinary",
         "age": 30,
         "warms": "bulk",
         "cools": "flaws"
@@ -599,5 +599,5 @@
     }
   },
   "haggleNote": "House rule. How the pitch is put, how the seller answers, and which pitch each keeper warms to (+modifier) or is put off by (-modifier); the third is neutral. The roll is otherwise the printed Haggle: the character's Trading against the seller's Trading plus COOL, once per visit. A character whose `read.skill` is at `read.one` or more is told which pitch the keeper warms to; at `read.all` or more, both.",
-  "_keeperLooks": "A keeper's `sex` and `age` are what their portrait shows, written down because the dossier line (`who`) does not always say and the narrator was left to guess a pronoun. Read through engine/identity.ts seenAsLine into the narrator's 'Selling here' line. `sex` is null only for Adair, who Levi chose to leave androgynous: the narrator is then told to go by the name. `appears` replaces both for somebody who is not one person."
+  "_keeperLooks": "A keeper's `sex` and `age` are what their portrait shows, written down because the dossier line (`who`) does not always say and the narrator was left to guess a pronoun. Read through engine/identity.ts seenAsLine into the narrator's 'Selling here' line. Adair is nonbinary (they/them): Levi chose it from the portrait, and the narrator is told so. `sex` is null only for somebody the picture and the file leave open, when the narrator is told to go by the name. `appears` replaces both for somebody who is not one person."
 }

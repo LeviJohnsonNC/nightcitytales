@@ -88,10 +88,14 @@ describe("keepers' looks", () => {
     }
   });
 
-  it("tells the narrator when a keeper is left open, instead of saying nothing", () => {
+  it("says Adair is nonbinary, with their pronouns, so the narrator does not have to guess", () => {
     const adair = PLACE_SHOPS.find((s) => s.keeper?.name === "Adair")!.keeper!;
-    expect(adair.sex).toBeNull();
-    expect(keeperNamed(adair)).toMatch(/^Adair \(.*no he or she/);
+    expect(adair.sex).toBe("nonbinary");
+    expect(keeperNamed(adair)).toBe("Adair (nonbinary person, they/them, in their prime)");
+  });
+
+  it("still tells the narrator when somebody is left open, instead of saying nothing", () => {
+    expect(keeperNamed({ name: "Marrow", sex: null, age: 50 })).toMatch(/^Marrow \(.*no he or she/);
   });
 
   it("sets Marrow and Cutter", () => {

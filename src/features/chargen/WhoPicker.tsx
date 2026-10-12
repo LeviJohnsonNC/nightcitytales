@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils";
 import { useChargenStore, type ChargenState } from "./store";
 
 /**
- * Mars and Venus drawn as strokes rather than typed as glyphs, so they can carry
- * a neon glow and stay crisp at any size. Cyan for one, magenta for the other:
- * the two neon hues the rest of the file already lives in.
+ * Mars and Venus, and a third mark for nonbinary, drawn as strokes rather than
+ * typed as glyphs, so they can carry a neon glow and stay crisp at any size. Cyan,
+ * magenta and violet: the neon hues the rest of the file already lives in. The
+ * third is a circle on a stem that ends in a cross, Venus's stem with its arms
+ * turned a quarter: neither of the other two, and not a flag.
  */
 const GLYPH: Record<Sex, { paths: string[]; tone: string; on: string; off: string }> = {
   male: {
@@ -25,6 +27,17 @@ const GLYPH: Record<Sex, { paths: string[]; tone: string; on: string; off: strin
     tone: "text-neon-pink",
     on: "border-neon-pink bg-neon-pink/10 shadow-[0_0_16px_-3px_var(--color-neon-pink),inset_0_0_12px_-6px_var(--color-neon-pink)]",
     off: "hover:border-neon-pink/60 hover:shadow-[0_0_12px_-5px_var(--color-neon-pink)]",
+  },
+  nonbinary: {
+    paths: [
+      "M12 8m-5.5 0a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0",
+      "M12 13.5v4",
+      "M9.5 17.5l5 5",
+      "M14.5 17.5l-5 5",
+    ],
+    tone: "text-neon-purple",
+    on: "border-neon-purple bg-neon-purple/10 shadow-[0_0_16px_-3px_var(--color-neon-purple),inset_0_0_12px_-6px_var(--color-neon-purple)]",
+    off: "hover:border-neon-purple/60 hover:shadow-[0_0_12px_-5px_var(--color-neon-purple)]",
   },
 };
 
@@ -51,9 +64,9 @@ function SexGlyph({ sex, lit }: { sex: Sex; lit: boolean }) {
 }
 
 /**
- * Who a stranger sees: sex and age. Asked with who you are, because the first
+ * Who a stranger sees: gender and age. Asked with who you are, because the first
  * picture on the file needs both and because the people you meet read both
- * before they read anything else. Pronouns follow from the sex chosen.
+ * before they read anything else. Pronouns follow from the gender chosen.
  */
 export function WhoPicker({ state }: { state: ChargenState }) {
   const patch = useChargenStore((s) => s.patch);
@@ -69,7 +82,7 @@ export function WhoPicker({ state }: { state: ChargenState }) {
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border border-hairline bg-surface p-3">
       <div className="flex items-center gap-2">
         <span className="mr-1 font-display text-xs font-bold uppercase tracking-[0.12em] text-text">
-          Sex
+          Gender
         </span>
         {SEXES.map((sex) => (
           <button

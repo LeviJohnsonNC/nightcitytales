@@ -19,7 +19,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.26.0";
+export const LIFE_PROMPT_VERSION = "2.27.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
