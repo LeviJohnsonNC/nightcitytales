@@ -45,6 +45,7 @@ import type {
   FullCharacter,
 } from "@/lib/backend";
 import type { SituationUpsert } from "@/lib/backend";
+import { seenAsFor } from "@/features/cast/npcLooks";
 import type { LifePersonSummary } from "./lifeContext";
 
 /** Read a persisted situation row back into the engine's shape. */
@@ -126,6 +127,7 @@ export function lifePeople(npcs: CampaignNpc[], today: number): LifePersonSummar
         ...(seen !== undefined ? { lastSeenDay: seen } : {}),
         ...(n.notes ? { notes: n.notes } : {}),
         ...(guarded ? { guarded: true } : {}),
+        ...(seenAsFor(n.name) ? { seenAs: seenAsFor(n.name)! } : {}),
         ...(view
           ? {
               role: view.role,

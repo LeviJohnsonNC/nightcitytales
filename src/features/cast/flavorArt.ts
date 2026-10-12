@@ -7,6 +7,7 @@
  * one directory over (public/images/flavor instead of public/images/cast).
  */
 import FLAVOR_ART from "@/data/cast/flavor-art.json";
+import type { Look } from "@/engine";
 
 export type FlavorGender = "male" | "female";
 
@@ -15,6 +16,10 @@ interface FlavorArtEntry {
   type: "person";
   subject: string;
   gender: FlavorGender;
+  /** How old the person in the picture looks. Read through `ageBand` for the narrator. */
+  age: number;
+  /** The square (in the 1024x683 scene) that holds the head and shoulders. */
+  face: { x: number; y: number; size: number };
 }
 
 const ENTRIES = FLAVOR_ART.entries as FlavorArtEntry[];
@@ -26,6 +31,10 @@ export interface FlavorArtwork {
   src: string;
   srcSet: string;
   alt: string;
+  /** The 256px square cut from `face` (tools/art/flavor-faces.mjs): what sits beside a line of narration. */
+  faceSrc: string;
+  /** What the picture shows, for the caption: sex and the band of age. */
+  look: Look;
 }
 
 function artworkFor(entry: FlavorArtEntry): FlavorArtwork {
@@ -34,6 +43,8 @@ function artworkFor(entry: FlavorArtEntry): FlavorArtwork {
     src: `${base}.webp`,
     srcSet: `${base}-${NARROW_WIDTH}.webp ${NARROW_WIDTH}w, ${base}.webp 1024w`,
     alt: entry.subject.replace(/-/g, " "),
+    faceSrc: `${base}-face.webp`,
+    look: { sex: entry.gender, age: entry.age },
   };
 }
 

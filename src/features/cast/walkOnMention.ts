@@ -60,13 +60,20 @@ export function normalizeWalkOnMentions(raw: unknown): WalkOnMention[] {
 export function resolveWalkOns(
   mentions: WalkOnMention[] | undefined,
   seed: string,
+  /**
+   * Roles the narrator was TOLD are here (`ambientSubjectsAt`). Their face was
+   * settled before it wrote, so a gender it asks for on one of them is ignored:
+   * the picture is the one it was given, not the one it prefers.
+   */
+  told: ReadonlySet<string> | readonly string[] = [],
 ): ResolvedWalkOn[] {
   if (!Array.isArray(mentions)) return [];
+  const settled = new Set(told);
   const out: ResolvedWalkOn[] = [];
   for (const mention of mentions) {
     const gender = resolveFlavorGender(
       mention.subject,
-      mention.gender,
+      settled.has(mention.subject) ? undefined : mention.gender,
       `${seed}:${mention.subject}`,
     );
     if (gender) out.push({ subject: mention.subject, gender });

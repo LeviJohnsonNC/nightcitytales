@@ -80,3 +80,33 @@ export function identityLine(identity: Identity): string | null {
   if (identity.age !== null) parts.push(ageBand(identity.age).label);
   return parts.length ? parts.join(", ") : null;
 }
+
+/** How somebody with a fixed face reads on sight: the picture's sex and age, where it has them. */
+export type Look = {
+  sex: Sex | null;
+  age: number | null;
+  /** In words, for somebody who is not one person. */ appears?: string;
+};
+
+/**
+ * The line the narrator reads about somebody it did not make up: "woman, older".
+ *
+ * `identityLine` says it for the player's own character, who always has both.
+ * A person the game has a picture of is different, because the picture is fixed
+ * and the dossier was written without ever saying who it shows, so the narrator
+ * had to guess and the player could see it guess wrong. Where the picture and
+ * the dossier both leave the sex open the line says so, rather than staying
+ * silent: silence is what let the narrator choose.
+ *
+ * Still the band and never the number (see `identityLine`). Null when there is
+ * nothing to say, a masked voice for instance.
+ */
+export function seenAsLine(look: Look): string | null {
+  if (look.appears) return look.appears;
+  const parts: string[] = [];
+  if (look.sex) parts.push(data.sex[look.sex].noun);
+  if (look.age !== null) parts.push(ageBand(look.age).label);
+  if (!look.sex && look.age !== null)
+    parts.push("no he or she has been fixed for them, go by the name");
+  return parts.length ? parts.join(", ") : null;
+}

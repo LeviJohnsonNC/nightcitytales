@@ -17,6 +17,7 @@ import {
   optionsOnlyWhenAsked,
   quietStaysQuiet,
   riskGetsDice,
+  seenAsPronounsHold,
   smallChecksRollThemselves,
   standoffIsAFacedown,
   staysInTheScene,
@@ -547,6 +548,73 @@ describe("states-no-exact-age", () => {
   it("only applies when the packet carries the line", () => {
     expect(statesNoExactAge.applies?.(withLine)).toBe(true);
     expect(statesNoExactAge.applies?.(ctx({}))).toBe(false);
+  });
+});
+
+describe("seen-as-pronouns-hold", () => {
+  const packet = [
+    "== PEOPLE THEY KNOW ==",
+    "- Ilsa Bräun [ilsa-braun] (fixer, disposition 1, active, not seen yet)",
+    "    Seen as: woman, middle-aged",
+    "- Kit Mwangi [kit-mwangi] (fixer, disposition 0, active, not seen yet)",
+    "    Seen as: young, no he or she has been fixed for them, go by the name",
+    "- Tally [marcus-tally-oyelaran] (fixer, disposition 0, active, not seen yet)",
+    "    Seen as: man, middle-aged",
+    "Selling here: Skiv's Counter (deals in guns), run by Dot (woman, older): grades every customer",
+  ].join("\n");
+  const withPeople = ctx({ packet });
+  const said = (narration: string) => seenAsPronounsHold.run(turn({ narration }), withPeople);
+
+  it("catches the wrong pronoun on somebody whose face is fixed", () => {
+    expect(said("Ilsa slides the manifest across and he does not look up.")).toHaveLength(1);
+    expect(said("Tally laughs. She keeps the ledger open on the bar.")).toHaveLength(1);
+    expect(said("Dot grades you with one look and puts his feet up.")).toHaveLength(1);
+  });
+
+  it("catches a pronoun for somebody the file leaves open", () => {
+    const found = said("Kit turns the screen toward you. She has already read it.");
+    expect(found).toHaveLength(1);
+    expect(found[0]!.note).toMatch(/no he or she fixed/);
+  });
+
+  it("lets the right pronoun, the name, and a continued sentence through", () => {
+    expect(said("Ilsa slides the manifest across. She does not look up.")).toEqual([]);
+    expect(said("Tally laughs and keeps his ledger open on the bar.")).toEqual([]);
+    expect(said("Kit turns the screen toward you. Kit has already read it.")).toEqual([]);
+    expect(said("Dot grades you with one look and puts her feet up.")).toEqual([]);
+  });
+
+  it("does not hold a person to what somebody else is called, or to quoted speech", () => {
+    // Two people in one sentence: the pronoun could be either.
+    expect(said("Tally nods at Ilsa and hands him the keys.")).toEqual([]);
+    // A third party the sentence introduces.
+    expect(said("Ilsa watches a man cross the street and wonders what he wants.")).toEqual([]);
+    // What a person says about somebody else is not narration about them.
+    expect(said('Ilsa says, "Tell him I said hello."')).toEqual([]);
+  });
+
+  it("holds a walk-on the engine put in the room to the same standard", () => {
+    const here = ctx({
+      packet:
+        'Also here: "dive-bar-tender" (Dive Bar Tender): woman, older; "club-bouncer" (Club Bouncer): man, middle-aged\n',
+    });
+    const walkOn = (narration: string) => seenAsPronounsHold.run(turn({ narration }), here);
+    expect(walkOn("The bartender slides a glass over. He does not meet your eye.")).toHaveLength(1);
+    expect(walkOn("The bouncer looks you over and rolls her shoulders.")).toHaveLength(1);
+    expect(walkOn("The bartender slides a glass over. She does not meet your eye.")).toEqual([]);
+    expect(walkOn("The bouncer looks you over and rolls his shoulders.")).toEqual([]);
+    // Two of them in one sentence: the pronoun could be either.
+    expect(walkOn("The bartender nods at the bouncer and he nods back.")).toEqual([]);
+  });
+
+  it("only applies when the packet fixes a face, and says nothing without one", () => {
+    expect(seenAsPronounsHold.applies?.(withPeople)).toBe(true);
+    expect(seenAsPronounsHold.applies?.(ctx({}))).toBe(false);
+    expect(seenAsPronounsHold.run(turn({ narration: "Ilsa. He." }), ctx({}))).toEqual([]);
+  });
+
+  it("is part of the sweep", () => {
+    expect(ALL_CHECKS).toContain(seenAsPronounsHold);
   });
 });
 

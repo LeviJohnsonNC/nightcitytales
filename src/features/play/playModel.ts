@@ -35,6 +35,7 @@ import type {
   CampaignVitals,
   FullCharacter,
 } from "@/lib/backend";
+import { seenAsFor } from "@/features/cast/npcLooks";
 import { liveInventory } from "./liveInventory";
 
 export type CurrentStatsContext = {
@@ -281,6 +282,7 @@ export function npcSummaries(npcs: CampaignNpc[], today: number): GmNpcSummary[]
       ...(npc.npc_id ? { key: npc.npc_id } : {}),
       ...(npc.location ? { notes: `at ${npc.location}` } : {}),
       ...(guarded ? { guarded: true } : {}),
+      ...(seenAsFor(npc.name) ? { seenAs: seenAsFor(npc.name)! } : {}),
       ...(view
         ? {
             standing: view.standing,

@@ -32,6 +32,8 @@
       "keeper": {
         "name": "Mama Ishii",
         "who": "Runs the stall with the cracked display case and has not stopped talking since the morning. Remembers every face that ever haggled with her.",
+        "sex": "female",
+        "age": 70,
         "warms": "bulk",
         "cools": "walk"
       }
@@ -55,6 +57,8 @@
       "keeper": {
         "name": "Willy Maze",
         "who": "Owns the container, the dock lights and most of the stories told under them. Prices in grease pencil, changes them by mood.",
+        "sex": "male",
+        "age": 50,
         "warms": "walk",
         "cools": "flaws"
       }
@@ -74,6 +78,8 @@
       "keeper": {
         "name": "Woodchipper",
         "who": "Watches the gate from the hood of her pickup with a mug in both hands. Opens the yard when she feels like it, closes it the second she smells trouble.",
+        "sex": "female",
+        "age": 50,
         "warms": "walk",
         "cools": "bulk"
       }
@@ -90,6 +96,8 @@
       "keeper": {
         "name": "Mrs. Suzuki",
         "who": "Has run the bodega for thirty years and the neighbourhood for most of them. Reading glasses in her hair, ledger in her head.",
+        "sex": "female",
+        "age": 75,
         "warms": "bulk",
         "cools": "flaws"
       }
@@ -109,6 +117,8 @@
       "keeper": {
         "name": "Lenny Ostrowski",
         "who": "Fixes what you bring in and sells what nobody came back for. Talks to his soldering iron more than to customers.",
+        "sex": "male",
+        "age": 28,
         "warms": "flaws",
         "cools": "walk"
       }
@@ -127,6 +137,8 @@
       "keeper": {
         "name": "Faisal",
         "who": "Sells guns out of a locked drawer behind a shower curtain. Looks at your hands first, your face second, your money last.",
+        "sex": "male",
+        "age": 45,
         "warms": "bulk",
         "cools": "flaws"
       }
@@ -145,6 +157,8 @@
       "keeper": {
         "name": "Pilar Ochoa",
         "who": "Rents out the tables in the dead mall and keeps the peace between them. Knows which seller is lying and lets you find out yourself.",
+        "sex": "female",
+        "age": 45,
         "warms": "flaws",
         "cools": "bulk"
       }
@@ -164,6 +178,8 @@
       "keeper": {
         "name": "Marrow",
         "who": "Works the biggest table at the Swap and asks no questions, on principle. Can tell you what a part is worth by the sound it makes.",
+        "sex": null,
+        "age": 50,
         "warms": "flaws",
         "cools": "bulk"
       }
@@ -183,6 +199,8 @@
       "keeper": {
         "name": "Sergeant Doyle Haskins",
         "who": "Sixth Street to the bone and polite about it. Sells you a rifle and writes your name in a book you never see.",
+        "sex": "male",
+        "age": 52,
         "warms": "bulk",
         "cools": "walk"
       }
@@ -201,6 +219,8 @@
       "keeper": {
         "name": "Quartermaster Inés Ruiz",
         "who": "Walks the plate racks with a clipboard and sizes you by eye before you speak. She is usually right, and says so.",
+        "sex": "female",
+        "age": 42,
         "warms": "flaws",
         "cools": "walk"
       }
@@ -220,6 +240,8 @@
       "keeper": {
         "name": "Toggle",
         "who": "Ear defenders round his neck, a pistol on his hip and a theory about who is listening. Keeps the cleanest guns in the district.",
+        "sex": "male",
+        "age": 50,
         "warms": "bulk",
         "cools": "flaws"
       }
@@ -238,6 +260,8 @@
       "keeper": {
         "name": "Skiv",
         "who": "Runs a dockside bar out front and a gun counter out back. Pours two drinks before you sit down and expects you to finish yours.",
+        "sex": "male",
+        "age": 60,
         "warms": "walk",
         "cools": "flaws"
       }
@@ -256,6 +280,9 @@
       "keeper": {
         "name": "Torrell and Chiang",
         "who": "He measures, she decides. Between them they have dressed half the city's bodyguards and never once said what the lining is made of.",
+        "sex": null,
+        "age": 60,
+        "appears": "a man and a woman, both older",
         "warms": "bulk",
         "cools": "walk"
       }
@@ -272,6 +299,8 @@
       "keeper": {
         "name": "Marisol Vega",
         "who": "The sporting-goods clerk at the far end of the store. Checks IDs all day, believes none of them, sells to you anyway.",
+        "sex": "female",
+        "age": 30,
         "warms": "walk",
         "cools": "bulk"
       }
@@ -289,6 +318,8 @@
       "keeper": {
         "name": "Adair",
         "who": "An attendant who knows your name before you give it and your budget before you think of it. Never stops smiling.",
+        "sex": null,
+        "age": 30,
         "warms": "bulk",
         "cools": "flaws"
       }
@@ -306,6 +337,8 @@
       "keeper": {
         "name": "Juno Reyes",
         "who": "Sits on a crate by the back door of the unit with the lights off at the front. Nods you in or doesn't; there is no appeal.",
+        "sex": "female",
+        "age": 30,
         "warms": "walk",
         "cools": "bulk"
       }
@@ -325,6 +358,8 @@
       "keeper": {
         "name": "Hollis Ruggels",
         "who": "Has a story for every crate in the place. The stories are better than the goods, and the goods are better than you would think.",
+        "sex": "male",
+        "age": 62,
         "warms": "bulk",
         "cools": "flaws"
       }
@@ -343,6 +378,8 @@
       "keeper": {
         "name": "Mr. Leung",
         "who": "Polishes a spotless counter and keeps what the Red Chrome Legion pawned behind a bead curtain. Never asks why you need it.",
+        "sex": "male",
+        "age": 72,
         "warms": "flaws",
         "cools": "walk"
       }
@@ -362,6 +399,8 @@
       "keeper": {
         "name": "Theo Vance",
         "who": "Treasurer of a student club that does not exist. Haggles like he is defending a thesis and usually wins the argument.",
+        "sex": "male",
+        "age": 22,
         "warms": "flaws",
         "cools": "walk"
       }
@@ -380,6 +419,8 @@
       "keeper": {
         "name": "Mr. Blake",
         "who": "The Blake of Gentry & Blake. Measures you twice, writes something down, and will not tell you what.",
+        "sex": "male",
+        "age": 58,
         "warms": "bulk",
         "cools": "walk"
       }
@@ -398,6 +439,8 @@
       "keeper": {
         "name": "Cutter",
         "who": "Sells guns by the box off a folding table in a loading dock. Has an arrangement with the patrol out front that nobody describes.",
+        "sex": null,
+        "age": 32,
         "warms": "walk",
         "cools": "bulk"
       }
@@ -417,6 +460,8 @@
       "keeper": {
         "name": "Dot",
         "who": "Sits behind the supply cage's grille with her feet up. Grades every customer on a scale nobody else can see.",
+        "sex": "female",
+        "age": 55,
         "warms": "walk",
         "cools": "flaws"
       }
@@ -435,6 +480,8 @@
       "keeper": {
         "name": "Sarge Okafor",
         "who": "Ex-army, still stencils his stock with issue numbers. Keeps one eye on the gate the whole time you are buying.",
+        "sex": "male",
+        "age": 55,
         "warms": "flaws",
         "cools": "bulk"
       }
@@ -454,6 +501,8 @@
       "keeper": {
         "name": "Mr. Hachiman",
         "who": "Bows slightly, files everything in triplicate and remembers every customer's face. The most polite man ever to sell you a shotgun.",
+        "sex": "male",
+        "age": 62,
         "warms": "bulk",
         "cools": "walk"
       }
@@ -472,6 +521,8 @@
       "keeper": {
         "name": "Wren",
         "who": "The fitting-room assistant who thinks the view of the Exec Zone wall is a selling point. Very good with a tape measure.",
+        "sex": "female",
+        "age": 26,
         "warms": "bulk",
         "cools": "flaws"
       }
@@ -491,6 +542,8 @@
       "keeper": {
         "name": "Bea Kowalczyk",
         "who": "Runs the tool crib hatch on the night shift. Whatever the day shift does not sign back in, she sells at a fair price and forgets.",
+        "sex": "female",
+        "age": 42,
         "warms": "walk",
         "cools": "flaws"
       }
@@ -545,5 +598,6 @@
       "cools": "This would put {name} off."
     }
   },
-  "haggleNote": "House rule. How the pitch is put, how the seller answers, and which pitch each keeper warms to (+modifier) or is put off by (-modifier); the third is neutral. The roll is otherwise the printed Haggle: the character's Trading against the seller's Trading plus COOL, once per visit. A character whose `read.skill` is at `read.one` or more is told which pitch the keeper warms to; at `read.all` or more, both."
+  "haggleNote": "House rule. How the pitch is put, how the seller answers, and which pitch each keeper warms to (+modifier) or is put off by (-modifier); the third is neutral. The roll is otherwise the printed Haggle: the character's Trading against the seller's Trading plus COOL, once per visit. A character whose `read.skill` is at `read.one` or more is told which pitch the keeper warms to; at `read.all` or more, both.",
+  "_keeperLooks": "A keeper's `sex` and `age` are what their portrait shows, written down because the dossier line (`who`) does not always say and the narrator was left to guess a pronoun. Read through engine/identity.ts seenAsLine into the narrator's 'Selling here' line. `sex` is null where the picture leaves it open: the narrator is then told to go by the name. `appears` replaces both for somebody who is not one person."
 }

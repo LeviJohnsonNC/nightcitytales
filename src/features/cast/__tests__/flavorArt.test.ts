@@ -20,6 +20,16 @@ describe("flavor art catalog", () => {
     expect(existsSync(resolve(PUBLIC_DIR, `${id}-512.webp`))).toBe(true);
   });
 
+  it.each(FLAVOR_ART.entries)("$id has its face cut from the scene", ({ id, face, age }) => {
+    expect(existsSync(resolve(PUBLIC_DIR, `${id}-face.webp`))).toBe(true);
+    // The square must sit inside the 1024x683 scene the cut is made from.
+    expect(face.x).toBeGreaterThanOrEqual(0);
+    expect(face.y).toBeGreaterThanOrEqual(0);
+    expect(face.x + face.size).toBeLessThanOrEqual(1024);
+    expect(face.y + face.size).toBeLessThanOrEqual(683);
+    expect(age).toBeGreaterThanOrEqual(16);
+  });
+
   it("has no duplicate ids", () => {
     const ids = FLAVOR_ART.entries.map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);

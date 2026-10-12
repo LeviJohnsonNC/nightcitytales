@@ -19,6 +19,7 @@
  * to neither is a taste argument, and this file is not where those are settled.
  */
 import { OBSERVATIONS, hasTag, resolveDestination, resolvePosition, tagNamed } from "@/engine";
+import WALK_ON_PLACES from "@/data/cast/walkon-places.json";
 import { FLAVOR_SUBJECTS } from "@/features/cast/flavorArt";
 
 /**
@@ -373,6 +374,143 @@ export const statesNoExactAge: Check = {
           note: "an exact age in years",
         });
       }
+    }
+    return findings;
+  },
+};
+
+// ---------------------------------------------------------------------------
+// People with a face
+// ---------------------------------------------------------------------------
+
+type SeenAs = {
+  name: string;
+  sex: "male" | "female" | "open";
+  /** What else a sentence calls them, when a name is not what it uses (a walk-on's role). */
+  aliases?: string[];
+};
+
+/**
+ * Who the packet fixed a face for, read back off the packet itself.
+ *
+ * Two shapes carry it: a person's "Seen as:" line under their name, and a
+ * seller's name followed by their look in brackets. Reading the packet rather
+ * than a second input means the check can only ever hold the model to what it
+ * was actually told, which is the whole claim it makes.
+ */
+function peopleSeenAs(packet: string): SeenAs[] {
+  const out: SeenAs[] = [];
+  const sexOf = (look: string): SeenAs["sex"] | null => {
+    const l = look.trim().toLowerCase();
+    if (l.startsWith("woman")) return "female";
+    if (l.startsWith("man")) return "male";
+    if (l.includes("no he or she")) return "open";
+    return null;
+  };
+  const lines = packet.split("\n");
+  let current: string | null = null;
+  for (const line of lines) {
+    const person = line.match(/^- (.+?) \[[^\]]+\]/);
+    if (person) current = person[1]!.trim();
+    const seen = line.match(/^\s+Seen as: (.+)$/);
+    if (seen && current) {
+      const sex = sexOf(seen[1]!);
+      if (sex) out.push({ name: current, sex });
+    }
+  }
+  // The walk-ons the engine put in the room: `"dive-bar-tender" (Dive Bar Tender): woman, older`.
+  for (const m of packet.matchAll(/"([a-z-]+)" \([^)]*\): ([^;\n]+)/g)) {
+    const sex = sexOf(m[2]!);
+    const nouns = (WALK_ON_PLACES.nouns as Record<string, string[]>)[m[1]!];
+    if (sex && nouns) out.push({ name: m[1]!, sex, aliases: nouns });
+  }
+  for (const m of packet.matchAll(/run by ([^(:;]+?) \(([^)]+)\)/g)) {
+    const sex = sexOf(m[2]!);
+    if (sex) out.push({ name: m[1]!.trim(), sex });
+  }
+  return out;
+}
+
+/** The ways a sentence can name somebody: the whole name, and a first or last name that is not a title. */
+const TITLES = new Set(["dr", "mr", "mrs", "ms", "sergeant", "sarge", "quartermaster", "the"]);
+function nameKeys(name: string): string[] {
+  const words = name
+    .replace(/["“”]/g, "")
+    .split(/\s+/)
+    .map((w) => w.replace(/\.$/, ""))
+    .filter((w) => w.length >= 3 && !TITLES.has(w.toLowerCase()));
+  return [...new Set([name.replace(/["“”]/g, ""), ...words])];
+}
+
+/** A name as a whole-word pattern. */
+function wholeWord(word: string): RegExp {
+  return new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+}
+
+const FEMALE_PRONOUN = /\b(?:she|her|hers|herself)\b/i;
+const MALE_PRONOUN = /\b(?:he|him|his|himself)\b/i;
+/** Somebody else a pronoun in the same sentence could be about. */
+const SOMEBODY_ELSE =
+  /\b(?:a|the|another|some)\s+(?:man|woman|guy|girl|boy|kid|stranger|bouncer|bartender|clerk|cop|officer|guard|driver|ganger|thug|doc|tech)\b/i;
+
+function sentencesOf(text: string): string[] {
+  return text.match(/[^.!?]+[.!?]*/g)?.map((x) => x.trim()) ?? [];
+}
+
+/**
+ * Nobody the packet fixed a face for was given the wrong pronoun.
+ *
+ * APPEARANCE_RULE: a "Seen as" line says what the portrait shows, which the
+ * player can see, so the narrator may not contradict it. Deliberately
+ * conservative, because a detector that fires on every "he" in a crowded
+ * paragraph is one nobody reads: quoted speech is dropped (people talk about
+ * others), a sentence that also names another person is skipped, and only the
+ * sentence that names them and a next sentence that opens on a pronoun count.
+ */
+export const seenAsPronounsHold: Check = {
+  id: "seen-as-pronouns-hold",
+  applies: (ctx) =>
+    /Seen as:|Also here:|run by [^(:;]+ \((?:man|woman|[^)]*no he or she)/.test(ctx.packet),
+  title: "used the pronouns the packet's 'Seen as' lines fix",
+  source:
+    'Both prompts: "Everybody else the player can see already has a face, and it is fixed." (APPEARANCE_RULE)',
+  run(turn, ctx) {
+    const people = peopleSeenAs(ctx.packet);
+    if (!people.length) return [];
+    const prose = turn.narration.replace(/"[^"]*"|“[^”]*”/g, " ");
+    const sentences = sentencesOf(prose);
+    const findings: Finding[] = [];
+    for (const person of people) {
+      const keysOf = (p: SeenAs) => p.aliases ?? nameKeys(p.name);
+      const keys = keysOf(person).map(wholeWord);
+      const others = people.filter((p) => p.name !== person.name).flatMap(keysOf);
+      sentences.forEach((sentence, i) => {
+        const hit = keys.map((re) => re.exec(sentence)).find((m) => m);
+        if (!hit) return;
+        if (others.some((o) => wholeWord(o).test(sentence))) return;
+        // Somebody else, apart from the person this sentence is about: "the
+        // bartender" is the subject of her own sentence, not a second person in it.
+        const start = hit.index ?? 0;
+        const rest = `${sentence.slice(0, start)} ${sentence.slice(start + hit[0].length)}`;
+        if (SOMEBODY_ELSE.test(rest)) return;
+        const after = sentence.slice(start + hit[0].length);
+        const next = sentences[i + 1] ?? "";
+        const continued = /^\W*(?:she|he|her|his)\b/i.test(next) && !SOMEBODY_ELSE.test(next);
+        const span = continued ? `${after} ${next}` : after;
+        const female = FEMALE_PRONOUN.exec(span);
+        const male = MALE_PRONOUN.exec(span);
+        const wrong =
+          person.sex === "male" ? female : person.sex === "female" ? male : (female ?? male);
+        if (wrong) {
+          findings.push({
+            quote: quoteAround(prose, prose.indexOf(sentence), sentence.length),
+            note:
+              person.sex === "open"
+                ? `${person.name} has no he or she fixed; "${wrong[0]}" chose one`
+                : `${person.name} is seen as a ${person.sex === "male" ? "man" : "woman"}; "${wrong[0]}" contradicts it`,
+          });
+        }
+      });
     }
     return findings;
   },
@@ -953,6 +1091,7 @@ export const ALL_CHECKS: Check[] = [
   opensOnSomething,
   withinProseBudget,
   statesNoExactAge,
+  seenAsPronounsHold,
 ];
 
 // ---------------------------------------------------------------------------
