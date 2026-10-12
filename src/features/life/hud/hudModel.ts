@@ -92,3 +92,19 @@ export function changeDirection(prev: number | undefined, next: number): "up" | 
   if (prev === undefined || prev === next) return null;
   return next > prev ? "up" : "down";
 }
+
+/** The ring a face wears for how they feel about the character; the scene's faces wear it too. */
+export const RING: Record<PersonTone, string> = {
+  hostile: "border-destructive shadow-[0_0_8px_-1px_var(--color-destructive)]",
+  cold: "border-amber-500",
+  neutral: "border-hairline",
+  warm: "border-neon-cyan shadow-[0_0_8px_-2px_var(--color-neon-cyan)]",
+};
+
+/** The word colour for the same bands. */
+export const WORD: Record<PersonTone, string> = {
+  hostile: "text-destructive",
+  cold: "text-amber-500",
+  neutral: "text-text-dim",
+  warm: "text-neon-cyan",
+};

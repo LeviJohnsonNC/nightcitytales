@@ -15,7 +15,7 @@ import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import { NpcDossier, NpcName } from "@/features/cast/NpcName";
 import { getFaction, isHostile, standingBand, type FactionStanding } from "@/engine";
 import { cn } from "@/lib/utils";
-import { dispositionBand, relevantPeople, type PersonTone } from "./hudModel";
+import { RING, WORD, dispositionBand, relevantPeople } from "./hudModel";
 
 export type HudPerson = {
   key: string;
@@ -24,20 +24,6 @@ export type HudPerson = {
   standing?: string | undefined;
   known?: readonly string[] | undefined;
   lastSeenDay?: number | undefined;
-};
-
-const RING: Record<PersonTone, string> = {
-  hostile: "border-destructive shadow-[0_0_8px_-1px_var(--color-destructive)]",
-  cold: "border-amber-500",
-  neutral: "border-hairline",
-  warm: "border-neon-cyan shadow-[0_0_8px_-2px_var(--color-neon-cyan)]",
-};
-
-const WORD: Record<PersonTone, string> = {
-  hostile: "text-destructive",
-  cold: "text-amber-500",
-  neutral: "text-text-dim",
-  warm: "text-neon-cyan",
 };
 
 function Face({ person, size }: { person: HudPerson; size: "md" | "sm" }) {

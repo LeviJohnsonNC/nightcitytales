@@ -206,6 +206,17 @@ export function npcArtwork(npc: NpcEntry): { src: string; srcSet: string } {
   };
 }
 
+/**
+ * True for somebody who is one person with one face: the standing cast, the
+ * brokers, the patrons and the named target. Factions and hostile archetypes are
+ * crowds and repeatable crowd-fill, not somebody a line of text is about.
+ */
+export function isPerson(npc: NpcEntry): boolean {
+  return (
+    npc.kind === "cast" || npc.kind === "broker" || npc.kind === "patron" || npc.kind === "target"
+  );
+}
+
 /** Numbered variants of one archetype, in order: "Street Thug 1", "Street Thug 2". */
 const VARIANTS = new Map<string, NpcEntry[]>();
 for (const npc of NPC_DIRECTORY) {

@@ -9,6 +9,10 @@
  * current turn (`defaultOpen`): the same face recurring across a scrollback
  * of visits to one bar was turning into a wall of portraits, one per turn,
  * for a person the player already has a mental picture of.
+ *
+ * Life's CURRENT scene no longer uses the strip: its faces are one "Here" row
+ * above the prose (`life/SceneFaces.tsx`), built from the same `WalkOnFace`. The
+ * strip remains for Life's scrollback and for a Job turn, which has no row.
  */
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -16,14 +20,15 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { seenAsLine } from "@/engine";
+import { FacePlate } from "./FacePlate";
 import { flavorArt, flavorSubjectLabel, type FlavorGender } from "./flavorArt";
 
 export type WalkOn = { subject: string; gender: FlavorGender };
 
-function WalkOnPortrait({ subject, gender }: WalkOn) {
+/** One walk-on as a face with its role and how it reads; the whole scene is a tap away. */
+export function WalkOnFace({ subject, gender }: WalkOn) {
   const art = flavorArt(subject, gender);
   const [open, setOpen] = useState(false);
-  const [faceFailed, setFaceFailed] = useState(false);
   // The catalog and the files on disk can drift (a JSON entry with no WebP
   // yet); rendering nothing is the honest answer, the same rule SceneHero
   // follows for a place with no picture.
@@ -40,16 +45,12 @@ function WalkOnPortrait({ subject, gender }: WalkOn) {
       >
         {/* The head and shoulders, cut from the scene (tools/art/flavor-faces.mjs):
             the whole 3:2 painting at this size was a few pixels of face and a lot of neon. */}
-        <span className="block size-[5.5rem] overflow-hidden border border-hairline/70 transition-opacity group-hover:opacity-80">
-          <img
-            src={faceFailed ? art.src : art.faceSrc}
-            alt={look ? `${label}, ${look}` : label}
-            width={256}
-            height={256}
-            className="h-full w-full object-cover object-top"
-            onError={() => setFaceFailed(true)}
-          />
-        </span>
+        <FacePlate
+          src={art.faceSrc}
+          name={label}
+          alt={look ? `${label}, ${look}` : label}
+          className="size-[5.5rem] transition-opacity group-hover:opacity-80"
+        />
         <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
           {label}
         </span>
@@ -98,7 +99,7 @@ export function WalkOnStrip({
       <CollapsibleContent>
         <div className="mt-2 flex flex-wrap gap-3">
           {walkOns.map((w, i) => (
-            <WalkOnPortrait key={`${w.subject}-${i}`} subject={w.subject} gender={w.gender} />
+            <WalkOnFace key={`${w.subject}-${i}`} subject={w.subject} gender={w.gender} />
           ))}
         </div>
       </CollapsibleContent>

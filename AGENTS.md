@@ -282,6 +282,15 @@ in `cast-looks.json` (`npcLooks.test.ts` fails without one and checks it against
 dossier's pronouns); a new walk-on role needs tags, nouns and a face square. The Job
 packet carries "Seen as" but not yet "Also here".
 
+Faces sit on the page in one place. `life/sceneFaces.ts` decides who is in a scene (the people
+the passage names, the walk-ons tagged this turn, the people the engine put in the room;
+each once, six at most) and `life/SceneFaces.tsx` lays them out as one "Here" row above the
+prose, replacing a strip under each paragraph. Every face is `cast/FacePlate.tsx`, so a
+keeper, a person and a walk-on look like one cast, and a known person wears the People
+rail's disposition ring (`hudModel.ts` `RING`). `NpcName` is text with a hover card on a
+person's name; never put a thumbnail in front of a mention. `npcMentions.ts` is the one
+place that decides what counts as a name. See `docs/checkpoint-faces-layout.md`.
+
 Goodwill can be spent. `engine/favours.ts` (data `src/data/atlas/favours.json`,
 `houseRule: true`) lets a place that has set `welcome` do one favour a day for
 whoever is standing in it: a day of rest's healing in two hours, or two segments
