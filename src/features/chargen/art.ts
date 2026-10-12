@@ -54,6 +54,10 @@ const COMMITTED_FILES = import.meta.glob<string>(
     "!**/{asphalt,facade-concrete,painted-metal,roof-membrane,shutter,sidewalk}.png",
     "!**/storefront-*.png",
     "!**/home-*.png",
+    // The shopkeepers' portraits: served as WebP from public/images/keepers
+    // (tools/art/webp.mjs), so the 2.5MB originals stay out of the bundle.
+    "!**/{armorer,gun_shop}-*.png",
+    "!**/street-[a-z][0-9]*.png",
   ],
   {
     eager: true,
