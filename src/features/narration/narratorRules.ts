@@ -212,6 +212,28 @@ Set "gender" only when the fiction already makes it plain; leave it out otherwis
 }
 
 /**
+ * The note under an "Also here" line: who these people are and what the
+ * narrator may do with them.
+ *
+ * Shared because the rule is the same in both modes (write them as listed, tag
+ * them by id, nobody else has a face on offer) and different in one place that
+ * matters. In Life the people are simply in the room. On a Job the BEAT decides
+ * who is in a scene, so the list is faces on file for the place and must not
+ * become a reason to put a receptionist in a heist that has no room for one.
+ */
+export function alsoHereNote(mode: "life" | "job"): string {
+  const framing =
+    mode === "life"
+      ? "These are the staff and regulars of this place, and the player is shown each one's face. Write them as listed: "
+      : "These are the staff and regulars this place has, and the player is shown each one's face. Whether any of them is in the scene is the beat's to say, not this list's: never add one to a scene that has no room for them. When the scene does put one in front of the character, write them as listed: ";
+  return (
+    framing +
+    "the same sex for every pronoun and the same stage of life, never the other. Give them a first name only if the scene needs one. Tag whoever you narrate " +
+    'in "walkOns" by the id in quotes. Nobody else has a face on offer here.'
+  );
+}
+
+/**
  * When a check is small enough to roll itself.
  *
  * The narrator's half of engine/autoRoll.ts. It can only ever make a check

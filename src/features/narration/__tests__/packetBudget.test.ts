@@ -79,6 +79,12 @@ function worstCaseGmPacket(): string {
         security: "NCPD (in theory)",
         blurb: "A conveyor-belt sushi place with a virtual mascot.",
         dossier: clipDossier(longest.text),
+        // The staff and regulars the place has: as many as a place can name
+        // (MAX_ALSO_HERE), so the largest this block gets.
+        alsoHere: [
+          '"corpo-lobby-receptionist" (Corpo Lobby Receptionist): woman, in their prime',
+          '"braindance-parlor-host" (Braindance Parlor Host): man, middle-aged',
+        ],
         gangs: ["6th Street"],
         combatZone: false,
         nearby: Array.from({ length: 20 }, (_, i) => `Nearby place ${i}`),
@@ -174,11 +180,15 @@ describe("the packet has a ceiling", () => {
    * now told what each one shows: a "Seen as" line under each person, at most 73
    * characters. A Job turn goes 12,450 to 13,034 (eight people present, 584). A
    * Life turn goes 8,073 to 10,190: 730 for ten people, 492 for the "Also here"
-   * block and its rule, which only Life has, and 895 for a place, which the Life
+   * block and its rule, which only Life had at that point, and 895 for a place, which the Life
    * fixture never had and so never measured sellers or that block. The 895 is
    * not new weight on the packet; the 1,222 beside it is, about 300 tokens.
+   *
+   * The Job packet then took the "Also here" block too (a place's staff, with the
+   * note that the beat decides whether any are in the scene): 13,034 to 13,709, so
+   * 675 characters, about 170 tokens, with its two lines at their cap.
    */
-  const GM_CEILING = 13_600;
+  const GM_CEILING = 14_300;
   const LIFE_CEILING = 10_600;
 
   it("holds for a Job turn with every list past its cap", () => {

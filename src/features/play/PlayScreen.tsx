@@ -44,6 +44,8 @@ import { settlementFrom, wasShorted } from "./settlementReport";
 import { climbNews } from "@/features/campaign/climbNews";
 import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
+import { SceneFaces } from "@/features/life/SceneFaces";
+import { sceneFaces } from "@/features/life/sceneFaces";
 import { readWalkOnsEventData } from "@/engine";
 import { usePlay } from "./usePlay";
 import type { PlayBundle } from "./playOps";
@@ -69,7 +71,9 @@ function EventBlock({
           <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
             <NpcText text={text} />
           </p>
-          <WalkOnStrip walkOns={readWalkOnsEventData(event.data)} defaultOpen={isCurrentTurn} />
+          {/* The pinned latest turn shows its faces as one "Here" row above (see
+              NarrativeLog); the journal keeps a collapsed strip under each paragraph. */}
+          {!isCurrentTurn && <WalkOnStrip walkOns={readWalkOnsEventData(event.data)} />}
         </div>
       );
 
@@ -116,17 +120,38 @@ function EventBlock({
   }
 }
 
+/**
+ * The faces for the pinned latest turn: the people its narration names and the
+ * walk-ons it tagged. Not the roles the place has standing in it: on a Job the
+ * beat decides who is in a scene, so only people the narration actually put there.
+ */
+function currentFaces(
+  events: CampaignEvent[],
+  people: readonly { name: string; disposition: number }[],
+) {
+  const latest = [...events].reverse().find((e) => e.type === "gm_narration");
+  return sceneFaces({
+    text: latest?.summary ?? "",
+    walkOns: latest ? readWalkOnsEventData(latest.data) : [],
+    ambient: [],
+    people,
+  });
+}
+
 function NarrativeLog({
   events,
   readAloud,
   busy,
   isCurrentTurn = false,
+  people = [],
 }: {
   events: CampaignEvent[];
   readAloud?: string | undefined;
   busy: boolean;
   /** This list IS the pinned "latest result" view, not the scrolling journal. */
   isCurrentTurn?: boolean;
+  /** Who the character knows, for the ring on a face. */
+  people?: readonly { name: string; disposition: number }[];
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -145,6 +170,7 @@ function NarrativeLog({
           {readAloud}
         </blockquote>
       )}
+      {isCurrentTurn && <SceneFaces faces={currentFaces(events, people)} />}
       {events.length === 0 && !readAloud ? (
         <p className="text-sm text-muted-foreground">Night City holds its breath…</p>
       ) : (
@@ -924,6 +950,7 @@ export function PlayScreen({
                 <NarrativeLog
                   events={bundle.events.filter((event) => event.type === "gm_narration").slice(-1)}
                   busy={play.busy || play.opening}
+                  people={bundle.npcs.map((n) => ({ name: n.name, disposition: n.disposition }))}
                   isCurrentTurn
                 />
               </div>

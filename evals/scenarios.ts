@@ -21,6 +21,7 @@ import {
   reachableDestinations,
   resolvePosition,
   shopsAt,
+  tagsOf,
 } from "@/engine";
 import {
   buildGmContext,
@@ -29,6 +30,7 @@ import {
 } from "@/features/gm/gmContext";
 import { checkResolvedInput } from "@/features/gm/checkResult";
 import { GM_SYSTEM_PROMPT } from "@/features/gm/gmSystemPrompt";
+import placesGameplay from "@/data/atlas/places.gameplay.json";
 import { keeperNamed, seenAsFor } from "@/features/cast/npcLooks";
 import { alsoHereAt } from "@/features/life/alsoHere";
 import { checkResolvedLine } from "@/features/life/checkResult";
@@ -1093,3 +1095,41 @@ SCENARIOS.push(
     expect: faceExpect([]),
   },
 );
+
+// A Job turn at a place that has staff: the packet says who they are before the
+// narrator writes, and the beat still decides whether they are in the scene.
+const FRONT_DESK = Object.keys(placesGameplay.places).find(
+  (k) => tagsOf(k).includes("corp_hq") && tagsOf(k).includes("office") && shopsAt(k).length === 0,
+)!;
+
+SCENARIOS.push({
+  id: "job-staff-as-told",
+  narrator: "gm",
+  about: "the receptionist is written as the engine said she is, on a Job turn too",
+  system: GM_SYSTEM_PROMPT,
+  packet: renderGmUserPrompt(
+    buildGmContext({
+      ...office,
+      sceneSet: true,
+      place: {
+        where: "the lobby",
+        district: "Westbrook",
+        area: "Westbrook",
+        security: "NCPD",
+        gangs: [],
+        combatZone: false,
+        nearby: [],
+        alsoHere: alsoHereAt("eval-campaign", FRONT_DESK).lines,
+      },
+    }),
+    "I stop at the front desk and ask the receptionist where Dr. Huntver's office is.",
+  ),
+  expect: {
+    optionsRequested: false,
+    knownNpcKeys: [],
+    withheldTruths: officeWithheld,
+    mustStayQuiet: false,
+    riskyIntent: false,
+    wordBudget: 260,
+  },
+});
