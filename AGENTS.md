@@ -265,8 +265,8 @@ reaches the player only through involvement, beside their dossier facts.
 
 A face the player can see is a fact the narrator may not contradict, so it is told
 to the narrator BEFORE it writes, never chosen after. `cast-looks.json` records what
-each of the 49 portraits of a person shows (sex, age, `houseRule: true`; null sex where
-the picture and the dossier both leave it open), `place-shops.json` does the same for
+each of the 49 portraits of a person shows (sex, age, `houseRule: true`; null sex only
+where it was chosen open, today Adair), `place-shops.json` does the same for
 the keepers, and `engine/identity.ts` `seenAsLine` words it as a band, never a number,
 reaching the packet as a person's "Seen as" line and a seller's bracket
 (`features/cast/npcLooks.ts`). Walk-ons are inverted the same way: `ambientPeople.ts`

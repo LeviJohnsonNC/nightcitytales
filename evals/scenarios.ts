@@ -29,7 +29,7 @@ import {
 } from "@/features/gm/gmContext";
 import { checkResolvedInput } from "@/features/gm/checkResult";
 import { GM_SYSTEM_PROMPT } from "@/features/gm/gmSystemPrompt";
-import { seenAsFor } from "@/features/cast/npcLooks";
+import { keeperNamed, seenAsFor } from "@/features/cast/npcLooks";
 import { alsoHereAt } from "@/features/life/alsoHere";
 import { checkResolvedLine } from "@/features/life/checkResult";
 import { carryOnLine } from "@/features/narration/narratorRules";
@@ -1021,6 +1021,9 @@ function personWithFace(name: string, key: string, role: string, standing: strin
   };
 }
 
+/** Executive Zone Oasis: Adair keeps the counter, and is the one keeper left androgynous. */
+const ADAIR_PLACE = "r2";
+
 const faceExpect = (knownNpcKeys: string[]): ScenarioExpectation => ({
   optionsRequested: false,
   knownNpcKeys,
@@ -1068,25 +1071,25 @@ SCENARIOS.push(
     expect: faceExpect(["ilsa-braun"]),
   },
   {
-    id: "life-cast-face-open",
+    id: "life-keeper-face-open",
     narrator: "life",
-    about:
-      "somebody whose portrait leaves the sex open is written by name, not given a he or a she",
+    about: "a keeper left androgynous is written by name, not given a he or a she",
     system: LIFE_SYSTEM_PROMPT,
     packet: renderLifeUserPrompt(
       {
         ...quietEvening,
-        people: [
-          personWithFace(
-            "Kit Mwangi",
-            "kit-mwangi",
-            "fixer",
-            "The fixer who knows what the delivery drivers saw.",
+        place: {
+          ...placeAt(ADAIR_PLACE),
+          // The line the Life turn builds (lifeContextOps): the seller, then who runs it.
+          sellers: shopsAt(ADAIR_PLACE).map(
+            (v) =>
+              `${v.label} (deals in ${v.deals.join(", ")})` +
+              (v.keeper ? `, run by ${keeperNamed(v.keeper)}: ${v.keeper.who}` : ""),
           ),
-        ],
+        },
       },
-      "I message Kit Mwangi to ask if anyone has seen anything strange on my street.",
+      "I ask the attendant what is on offer.",
     ),
-    expect: faceExpect(["kit-mwangi"]),
+    expect: faceExpect([]),
   },
 );

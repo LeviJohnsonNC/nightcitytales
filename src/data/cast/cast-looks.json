@@ -1,5 +1,5 @@
 {
-  "_about": "How each person with a portrait READS ON SIGHT: the sex and age the picture shows, which is what a stranger would see and what the narrator is told. The portraits are fixed and the dossiers were written without saying either, so this file is where they are made to agree. House rule, no book behind it. Read through engine/identity.ts (identityLine) so the narrator is given a band ('woman, older'), never the number. `sex` is null where the picture and the dossier both leave it open (the dossier never uses a pronoun for them): the narrator is then told to go by the name and to use neither 'he' nor 'she'. `age` is null for somebody never seen (the Quartermaster, a masked voice). Add a row here when a portrait is added to npcDirectory.ts; npcLooks.test.ts holds the two together and holds the dossier's own pronouns to the row.",
+  "_about": "How each person with a portrait READS ON SIGHT: the sex and age the picture shows, which is what a stranger would see and what the narrator is told. The portraits are fixed and the dossiers were written without saying either, so this file is where they are made to agree. House rule, no book behind it. Read through engine/identity.ts (identityLine) so the narrator is given a band ('woman, older'), never the number. `sex` is null only where nothing has been decided; the narrator is then told to go by the name and to use neither 'he' nor 'she'. Levi set Kit, Lark, Wren and Sunny to female from their portraits, though their dossiers use no pronoun. `age` is null for somebody never seen (the Quartermaster, a masked voice). Add a row here when a portrait is added to npcDirectory.ts; npcLooks.test.ts holds the two together and holds the dossier's own pronouns to the row.",
   "people": {
     "ilsa-braun": {
       "sex": "female",
@@ -22,7 +22,7 @@
       "age": 30
     },
     "kit-mwangi": {
-      "sex": null,
+      "sex": "female",
       "age": 26
     },
     "dr-ana-srenson": {
@@ -86,7 +86,7 @@
       "age": 27
     },
     "wren-kovalenko": {
-      "sex": null,
+      "sex": "female",
       "age": 24
     },
     "beniamino-benny-sarto": {
@@ -118,7 +118,7 @@
       "age": 30
     },
     "lark-ferreira": {
-      "sex": null,
+      "sex": "female",
       "age": 24
     },
     "juno-adeyemi": {
@@ -138,7 +138,7 @@
       "age": 40
     },
     "sunny-okafor": {
-      "sex": null,
+      "sex": "female",
       "age": 26
     },
     "vero-lindqvist": {
