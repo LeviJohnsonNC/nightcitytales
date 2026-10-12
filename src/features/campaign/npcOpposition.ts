@@ -11,7 +11,7 @@
  * Nothing here rolls anything. It reads and writes the ledger's memory of a
  * person; the engine owns the dice.
  */
-import { getSkill, type Opposition } from "@/engine";
+import { FACEDOWN_CHECK_ID, getSkill, type Opposition } from "@/engine";
 import { saveCampaignNpc, type CampaignNpc, type Json } from "@/lib/backend";
 
 /** The remembered STATs and Skill Levels an NPC opposes checks with. */
@@ -20,6 +20,13 @@ export type OppositionProfile = {
   stats: Record<string, number>;
   /** Printed skill id → Level. */
   skills: Record<string, number>;
+  /**
+   * The Reputation they stared the character down with, once they have. A
+   * Facedown is COOL + Reputation (pg. 140), and the model used to name both
+   * afresh every turn, so the same person was Reputation 0 one night and 10
+   * the next.
+   */
+  reputation?: number;
 };
 
 const EMPTY: OppositionProfile = { stats: {}, skills: {} };
@@ -37,8 +44,36 @@ function numberRecord(raw: unknown): Record<string, number> {
 export function oppositionProfileOf(npc: CampaignNpc | null | undefined): OppositionProfile {
   if (!npc) return EMPTY;
   const data = (npc.data ?? {}) as { opposition?: unknown };
-  const opposition = (data.opposition ?? {}) as { stats?: unknown; skills?: unknown };
-  return { stats: numberRecord(opposition.stats), skills: numberRecord(opposition.skills) };
+  const opposition = (data.opposition ?? {}) as {
+    stats?: unknown;
+    skills?: unknown;
+    reputation?: unknown;
+  };
+  const reputation = opposition.reputation;
+  return {
+    stats: numberRecord(opposition.stats),
+    skills: numberRecord(opposition.skills),
+    ...(typeof reputation === "number" && Number.isFinite(reputation) ? { reputation } : {}),
+  };
+}
+
+/**
+ * A Facedown's numbers, the same bargain as `reconcileOpposition`: what the
+ * campaign knows about this person wins, and the model's proposal fills only
+ * what has never been measured. COOL is the same COOL any check of theirs was
+ * rolled with.
+ */
+export function reconcileFacedown(
+  proposed: { cool: number; reputation: number },
+  profile: OppositionProfile,
+): { cool: number; reputation: number; remembered: boolean } {
+  const knownCool = profile.stats["cool"];
+  const knownRep = profile.reputation;
+  return {
+    cool: knownCool ?? proposed.cool,
+    reputation: knownRep ?? proposed.reputation,
+    remembered: knownCool !== undefined || knownRep !== undefined,
+  };
 }
 
 /**
@@ -68,6 +103,16 @@ export function reconcileOpposition(
 
 /** The profile to persist after a check: what was known, plus what was just used. */
 export function profileWith(profile: OppositionProfile, opposition: Opposition): OppositionProfile {
+  // A Facedown is not a Skill: its "Level" is their Reputation and its STAT is
+  // COOL. Reading it as a Skill threw after the roll was on the ledger, so a
+  // Job's Facedown was never narrated.
+  if (opposition.skillId === FACEDOWN_CHECK_ID) {
+    return {
+      ...profile,
+      stats: { ...profile.stats, cool: opposition.statValue },
+      reputation: opposition.skillLevel,
+    };
+  }
   const statKey = getSkill(opposition.skillId).stat;
   return {
     stats: { ...profile.stats, [statKey]: opposition.statValue },

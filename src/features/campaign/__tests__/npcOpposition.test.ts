@@ -6,7 +6,12 @@
 import { describe, expect, it } from "vitest";
 import type { Opposition } from "@/engine";
 import type { CampaignNpc } from "@/lib/backend";
-import { oppositionProfileOf, profileWith, reconcileOpposition } from "../npcOpposition";
+import {
+  oppositionProfileOf,
+  profileWith,
+  reconcileFacedown,
+  reconcileOpposition,
+} from "../npcOpposition";
 
 const npc = (data: unknown): CampaignNpc =>
   ({ id: "n1", campaign_id: "c1", npc_id: "trace", name: "Trace Santiago", data }) as CampaignNpc;
@@ -88,5 +93,41 @@ describe("profileWith", () => {
     );
     expect(profile.stats).toEqual({ cool: 8, will: 4 });
     expect(profile.skills).toEqual({ persuasion: 6, concentration: 2 });
+  });
+});
+
+describe("a Facedown's numbers", () => {
+  const stare: Opposition = { name: "Rogue", skillId: "facedown", skillLevel: 6, statValue: 8 };
+
+  it("is remembered without being read as a Skill, which used to throw after the roll", () => {
+    const profile = profileWith({ stats: {}, skills: {} }, stare);
+    expect(profile).toEqual({ stats: { cool: 8 }, skills: {}, reputation: 6 });
+  });
+
+  it("stares back with the person's own COOL and Reputation once they are on file", () => {
+    const npc = {
+      npc_id: "fixer",
+      name: "Rogue",
+      data: { opposition: { stats: { cool: 8 }, skills: {}, reputation: 6 } },
+    } as unknown as CampaignNpc;
+    const profile = oppositionProfileOf(npc);
+    // The model says Reputation 0 tonight; she is still Rogue.
+    expect(reconcileFacedown({ cool: 3, reputation: 0 }, profile)).toEqual({
+      cool: 8,
+      reputation: 6,
+      remembered: true,
+    });
+  });
+
+  it("takes the proposal for a stranger, and shares COOL with their other checks", () => {
+    expect(reconcileFacedown({ cool: 5, reputation: 2 }, { stats: {}, skills: {} })).toEqual({
+      cool: 5,
+      reputation: 2,
+      remembered: false,
+    });
+    // COOL measured on a Persuasion check is the COOL they stare with.
+    expect(
+      reconcileFacedown({ cool: 2, reputation: 1 }, { stats: { cool: 7 }, skills: {} }),
+    ).toMatchObject({ cool: 7, reputation: 1, remembered: true });
   });
 });

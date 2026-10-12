@@ -136,3 +136,8 @@ these tables must tolerate their absence until the line moves up to Applied.
 - `20261003160000_adventure_scene_context.sql` — pending deployment. Adds guarded
   Job-scene staging and entry RPCs. Apply before deploying Phase 3; old servers
   refuse automatic composition rather than silently dropping its facts.
+
+- `20261011120000_portraits_bucket.sql` — pending. Creates the private
+  `portraits` bucket the 20260822203710 policies are written against. The
+  deployed project already has it (made by hand), so applying it there changes
+  nothing; a fresh database needs it before a portrait can be saved.

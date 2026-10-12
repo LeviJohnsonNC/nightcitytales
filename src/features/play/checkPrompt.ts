@@ -548,6 +548,8 @@ export function facedownPrompt(action: {
   opposingCool: number;
   opposingReputation: number;
   intent: string;
+  /** True when the numbers are the person's own, read off their row. */
+  remembered?: boolean;
 }): { summary: string; data: Record<string, unknown> } {
   return {
     summary: `Facedown — ${action.npcName}`,
@@ -561,6 +563,7 @@ export function facedownPrompt(action: {
         skillId: FACEDOWN_CHECK_ID,
         skillLevel: action.opposingReputation,
         statValue: action.opposingCool,
+        ...(action.remembered ? { remembered: true } : {}),
       },
     },
   };

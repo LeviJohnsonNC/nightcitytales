@@ -425,15 +425,18 @@ not in the JSON, or the next run will drop them. Re-running it should leave
 - `src/features/play/` owns campaign loading and the player-facing turn loop.
   `playOps.ts` is what a turn DOES — load, ask the model, validate, resolve in
   the engine, sequence the writes — and `usePlay.ts` is the thin half that binds
-  it to TanStack Query.
+  it to TanStack Query. `playOps.ts` re-exports the `play*Ops.ts` modules beside
+  it (bundle, turn, role, truth, settle, scene), which hold the code.
 - `src/features/play/combatOps.ts` owns shared combat loading, board actions,
   turn handover and death-save persistence. It accepts `CombatBundle`, which
-  requires no mission or narrator. `playOps.ts` handles the Job-specific
-  consequence of death; active encounters can overlay Life/Hook without changing their phase.
+  requires no mission or narrator. `commitDeathSave` in `playSettleOps.ts` handles
+  the Job-specific consequence of death; active encounters can overlay Life/Hook without changing their phase.
 - `src/features/life/` owns the Life phase: its screen, its own system prompt and
   response schema, the situation funnel, and the shop, ripperdoc and record
   sheets. Life's schema deliberately cannot express a job transition. Split the
   same way as play: `lifeOps.ts` is the turn, `useLife.ts` binds it to React.
+  `lifeOps.ts` re-exports the `life*Ops.ts` modules beside it (bundle, context,
+  oracle, apply, turn, hook), which hold the code.
 - `src/features/gm/` owns the AI GM prompt, context, response schema, and model
   call for Jobs. Life and Job run from separate prompts on purpose.
 - `src/features/narration/` owns the prompt text those two prompts SHARE.
@@ -710,7 +713,7 @@ Every narration turn records its own provenance in the ledger: which narrator,
 at which prompt version, asked which model, and which model the gateway says
 replied. Build it with `turnProvenanceData` and read it with
 `readTurnProvenance` (`src/engine/ledger.ts`); the server functions supply it,
-and `playOps.ts`/`lifeOps.ts` write it beside `walkOns`. The prompt versions
+and `playTurnOps.ts`/`lifeApplyOps.ts` write it beside `walkOns`. The prompt versions
 were dead exports before this — bumped about nineteen times between the two
 prompts and read by nothing — which made "did that revision make the GM worse"
 an unanswerable question rather than a hard one. A silently swapped model is the
@@ -910,7 +913,7 @@ contributor needs to know while editing the code next to one.
 
 - **`campaign_npcs` has no `(campaign_id, npc_id)` uniqueness constraint.** Look
   a person up by key before writing them, and never create one from a key the
-  model supplied — `playOps.ts` and `lifeOps.ts` both ignore an unknown key
+  model supplied — `playTurnOps.ts` and `lifeApplyOps.ts` both ignore an unknown key
   rather than filing a row for it.
 - **The ledger is auditable, not tamper-proof.** An authenticated user can
   insert arbitrary event types into a campaign they own. It is a record, not a
@@ -1166,10 +1169,10 @@ scene moved. The storefront's art is specified in `courtyard/storefrontPack.ts`
 images); the kanji sign is a mask rasterised by `tools/art/kanji-sign.mjs` and
 drawn in code, never generated. See `docs/checkpoint-storefront-pack.md`.
 
-### The storefront (courtyard/storefront.ts)
+### The storefront (courtyard/storefront.ts, parts in courtyard/storefront/)
 
 The corner shop's detail is painted by one routine over the saved structure, entrance, awning and lamp:
-`paintStorefrontFace` is used for the whole building AND, clipped to each piece's height, for every cutaway
+`paintStorefrontFace` (`storefront/face.ts`) is used for the whole building AND, clipped to each piece's height, for every cutaway
 wall piece on that face, so revealing the street never changes the wall; the awning is its own sprite
 (`activityLayer: "awning"`, shown in the cutaway only while the wall it hangs from is kept). Returned art is
 validated and made by `tools/art/storefront-assets.ts`, judged by the numbers in `storefrontPack.ts`. See
@@ -1224,7 +1227,7 @@ detailed as built things, on intersection scenes with materials only. The rules:
 - **Wear.** Grime and wear go where use puts it: wall feet, pipe shoes, the shop door, the vendor's stall. Never as an
   all-over noise layer.
 - **Presentation only.** Nothing here adds collision, moves a wall, entrance or route, or changes sorting.
-- **The handover.** `frontagePilot` (`composedEnvironment.ts`) is the one place the walls, roofs and ground learn the
+- **The handover.** `frontagePilot` (`composedBuilding.ts`) is the one place the walls, roofs and ground learn the
   block. `tools/scenes/corner-plan.ts` draws the saved plan over a capture. See
   `docs/checkpoint-architecture-pilot.md` and `docs/architecture-pack.md`.
 
