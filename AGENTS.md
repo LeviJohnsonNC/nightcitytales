@@ -1227,7 +1227,7 @@ detailed as built things, on intersection scenes with materials only. The rules:
 - **Wear.** Grime and wear go where use puts it: wall feet, pipe shoes, the shop door, the vendor's stall. Never as an
   all-over noise layer.
 - **Presentation only.** Nothing here adds collision, moves a wall, entrance or route, or changes sorting.
-- **The handover.** `frontagePilot` (`composedEnvironment.ts`) is the one place the walls, roofs and ground learn the
+- **The handover.** `frontagePilot` (`composedBuilding.ts`) is the one place the walls, roofs and ground learn the
   block. `tools/scenes/corner-plan.ts` draws the saved plan over a capture. See
   `docs/checkpoint-architecture-pilot.md` and `docs/architecture-pack.md`.
 
