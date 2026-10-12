@@ -27,6 +27,7 @@ import {
 import {
   appendCampaignEvent,
   findCampaignNpc,
+  getCampaign,
   listCampaignEvents,
   recordTruthDiscovery,
   setNpcDisposition,
@@ -54,6 +55,31 @@ import { type LifeBundle, type TurnOptions, loadLife } from "./lifeBundleOps";
 import { buildContext } from "./lifeContextOps";
 import { applyResponse } from "./lifeApplyOps";
 import { consultOracles } from "./lifeOracleOps";
+
+/**
+ * The bundle with the campaign as it stands NOW: clock, money, kit, place and
+ * people.
+ *
+ * A turn is built from a snapshot and then waits seconds on the model. Anything
+ * that landed meanwhile (a purchase at the Counter, a favour, a second tab) was
+ * written back over: the turn wrote the clock and the balance as absolute
+ * values from the snapshot, so the purchase was refunded and its time rewound.
+ * Applying the reply to the live state shrinks that window from the model call
+ * to the few writes of one turn. Nothing the turn writes before the call moves
+ * the clock, the money or the kit, so nothing of its own is lost here.
+ */
+async function onLiveState(bundle: LifeBundle): Promise<LifeBundle> {
+  const live = await getCampaign(bundle.campaign.id);
+  if (!live?.vitals) return bundle;
+  return {
+    ...bundle,
+    campaign: live.campaign,
+    vitals: live.vitals,
+    clock: { day: live.campaign.day, minute: live.campaign.minute },
+    inventory: live.inventory,
+    npcs: live.npcs,
+  };
+}
 
 /** One Life turn: the player says something, the world answers. */
 export async function liveTurn(
@@ -98,6 +124,7 @@ export async function liveTurn(
         ),
       }
     : answered;
+  bundle = await onLiveState(bundle);
   const outcome = await applyResponse(bundle, response, asked);
 
   // Somebody came over, because the engine said so before the turn ran. It is

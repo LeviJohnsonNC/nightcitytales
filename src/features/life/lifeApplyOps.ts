@@ -30,6 +30,7 @@ import {
   type PlaceTag,
   LEDGER_EVENTS,
   shopBrowsedEventData,
+  FACEDOWN_CHECK_ID,
 } from "@/engine";
 import { resolveWalkOns } from "@/features/cast/walkOnMention";
 import {
@@ -46,6 +47,12 @@ import {
 import { gadgetTurn, planItemUse } from "@/features/campaign/itemUse";
 import { dvBandName, facedownPrompt, snapToPublishedDv } from "@/features/play/checkPrompt";
 import { buildCapabilitySnapshot } from "@/features/play/capabilityModel";
+import { findNpcByKey } from "@/features/play/playModel";
+import {
+  oppositionProfileOf,
+  reconcileFacedown,
+  rememberOpposition,
+} from "@/features/campaign/npcOpposition";
 import { liveVehicleRule } from "@/features/play/roleAbilityModel";
 import {
   loadDowntime,
@@ -417,7 +424,34 @@ export async function applyResponse(
         await rest(await downtimeBundle(), daysCrossed, { advanceCalendar: false });
       }
     } else if (action.kind === "facedown") {
-      const prompt = facedownPrompt(action);
+      // A person the campaign knows stares back with their own numbers, and the
+      // first stare-down writes them down (only for somebody already on file:
+      // a row is never filed from a key the model supplied).
+      const npc = findNpcByKey(bundle.npcs, action.npcKey, action.npcName);
+      const known = reconcileFacedown(
+        { cool: action.opposingCool, reputation: action.opposingReputation },
+        oppositionProfileOf(npc),
+      );
+      if (npc) {
+        await rememberOpposition({
+          campaignId,
+          npcKey: action.npcKey,
+          npcName: npc.name,
+          npc,
+          opposition: {
+            name: npc.name,
+            skillId: FACEDOWN_CHECK_ID,
+            skillLevel: known.reputation,
+            statValue: known.cool,
+          },
+        });
+      }
+      const prompt = facedownPrompt({
+        ...action,
+        opposingCool: known.cool,
+        opposingReputation: known.reputation,
+        remembered: known.remembered,
+      });
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "check_prompt",
