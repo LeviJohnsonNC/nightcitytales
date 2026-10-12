@@ -52,6 +52,5 @@ Life's text were bolted on and sometimes wrong (sex, age). Review first, then ph
   evidence, not a verdict, and no run of the old prompt for comparison.
 - **Not done:** layout pass (one "who is here" row, shared face plate, hover card), more
   faces per role (older/younger), "Also here" in the Job packet. ROADMAP debts 27 and 28.
-- **Needs Levi:** seven portraits left with no sex (Kit, Lark, Wren, Sunny, keepers Marrow,
-  Adair, Cutter), and a look over the 49 sex/age readings, which were read from the pictures.
+- **Needs Levi:** a look over the 49 sex/age readings, which were read from the pictures. The seven left open at first are decided (follow-up PR: Kit, Lark, Wren, Sunny and Cutter female, Marrow male, Adair left androgynous).
 - **Next:** review the PR, then decide the layout pass and which faces to generate.

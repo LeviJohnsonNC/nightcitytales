@@ -178,7 +178,7 @@
       "keeper": {
         "name": "Marrow",
         "who": "Works the biggest table at the Swap and asks no questions, on principle. Can tell you what a part is worth by the sound it makes.",
-        "sex": null,
+        "sex": "male",
         "age": 50,
         "warms": "flaws",
         "cools": "bulk"
@@ -439,7 +439,7 @@
       "keeper": {
         "name": "Cutter",
         "who": "Sells guns by the box off a folding table in a loading dock. Has an arrangement with the patrol out front that nobody describes.",
-        "sex": null,
+        "sex": "female",
         "age": 32,
         "warms": "walk",
         "cools": "bulk"
@@ -599,5 +599,5 @@
     }
   },
   "haggleNote": "House rule. How the pitch is put, how the seller answers, and which pitch each keeper warms to (+modifier) or is put off by (-modifier); the third is neutral. The roll is otherwise the printed Haggle: the character's Trading against the seller's Trading plus COOL, once per visit. A character whose `read.skill` is at `read.one` or more is told which pitch the keeper warms to; at `read.all` or more, both.",
-  "_keeperLooks": "A keeper's `sex` and `age` are what their portrait shows, written down because the dossier line (`who`) does not always say and the narrator was left to guess a pronoun. Read through engine/identity.ts seenAsLine into the narrator's 'Selling here' line. `sex` is null where the picture leaves it open: the narrator is then told to go by the name. `appears` replaces both for somebody who is not one person."
+  "_keeperLooks": "A keeper's `sex` and `age` are what their portrait shows, written down because the dossier line (`who`) does not always say and the narrator was left to guess a pronoun. Read through engine/identity.ts seenAsLine into the narrator's 'Selling here' line. `sex` is null only for Adair, who Levi chose to leave androgynous: the narrator is then told to go by the name. `appears` replaces both for somebody who is not one person."
 }

@@ -58,8 +58,12 @@ describe("cast-looks.json", () => {
     expect(seenAsFor("Ilsa Bräun")).not.toMatch(/\d/);
   });
 
-  it("tells the narrator when the picture leaves the sex open, instead of saying nothing", () => {
-    expect(seenAsFor("Kit Mwangi")).toMatch(/no he or she/);
+  it("reads the four set from their portraits as women", () => {
+    for (const name of ["Kit Mwangi", "Lark Ferreira", "Wren Kovalenko", "Sunny Okafor"])
+      expect(seenAsFor(name), name).toMatch(/^woman, /);
+  });
+
+  it("says nothing for somebody never seen, or not on file", () => {
     expect(seenAsFor("The Quartermaster")).toBeNull();
     expect(seenAsFor("Nobody At All")).toBeNull();
   });
@@ -82,6 +86,18 @@ describe("keepers' looks", () => {
       if (k.sex === "male") expect(female, `${k.name}`).toBeLessThanOrEqual(male);
       if (k.sex === "female") expect(male, `${k.name}`).toBeLessThanOrEqual(female);
     }
+  });
+
+  it("tells the narrator when a keeper is left open, instead of saying nothing", () => {
+    const adair = PLACE_SHOPS.find((s) => s.keeper?.name === "Adair")!.keeper!;
+    expect(adair.sex).toBeNull();
+    expect(keeperNamed(adair)).toMatch(/^Adair \(.*no he or she/);
+  });
+
+  it("sets Marrow and Cutter", () => {
+    const sexOf = (name: string) => PLACE_SHOPS.find((s) => s.keeper?.name === name)!.keeper!.sex;
+    expect(sexOf("Marrow")).toBe("male");
+    expect(sexOf("Cutter")).toBe("female");
   });
 
   it("names a keeper with how they read", () => {
