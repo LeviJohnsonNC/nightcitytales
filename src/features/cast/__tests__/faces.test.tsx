@@ -28,11 +28,11 @@ it("makes initials from the first and last word, and survives a name with no let
   expect(initialsOf("")).toBe("?");
 });
 
-it("shows a person's face with their name and role, and says how they read to a screen reader", () => {
+it("shows a person's face with their name only, and says how they read to a screen reader", () => {
   const html = renderToStaticMarkup(<NpcFace npc={findNpc("Ilsa Bräun")!} />);
   expect(html).toContain("/images/cast/ilsa-braun");
   expect(html).toContain("Ilsa Bräun");
-  expect(html).toContain("Fixer");
+  expect(html).not.toContain("Fixer");
   expect(html).toContain('alt="Ilsa Bräun, woman, middle-aged"');
 });
 
@@ -54,13 +54,14 @@ it("lays the scene's faces out as a labelled row, and draws nothing for an empty
   const faces = sceneFaces({
     text: "Ilsa Bräun is here.",
     walkOns: [{ subject: "dive-bar-tender", gender: "female" }],
-    ambient: [],
     people: [],
   });
   const html = renderToStaticMarkup(<SceneFaces faces={faces} />);
   expect(html).toContain('aria-label="Who is here"');
   expect(html).toContain("Ilsa Bräun");
   expect(html).toContain("Dive Bar Tender");
+  // The caption is the role alone; how they read stays in the alt text.
+  expect(html).not.toContain(">woman, older<");
   expect(html).toContain("woman, older");
   expect(renderToStaticMarkup(<SceneFaces faces={[]} />)).toBe("");
 });

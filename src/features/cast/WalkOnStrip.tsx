@@ -54,7 +54,6 @@ export function WalkOnFace({ subject, gender }: WalkOn) {
         <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
           {label}
         </span>
-        {look && <span className="text-[10px] leading-tight text-muted-foreground/70">{look}</span>}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[92vw] border border-hairline bg-surface p-0 sm:max-w-[64rem]">

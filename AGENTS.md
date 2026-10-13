@@ -286,8 +286,9 @@ the BEAT decides who is in a scene, so the Job note says the list is faces on fi
 the narrator never to add somebody to a scene with no room for them.
 
 Faces sit on the page in one place. `life/sceneFaces.ts` decides who is in a scene (the people
-the passage names, the walk-ons tagged this turn, the people the engine put in the room;
-each once, six at most) and `life/SceneFaces.tsx` lays them out as one "Here" row above the
+the passage names AND the engine has at this place (`castHere`), the walk-ons tagged this
+turn; a role the place merely has but the passage never brings in is not shown; each once,
+six at most; captions are the name, or the role for a walk-on, never how they read) and `life/SceneFaces.tsx` lays them out as one "Here" row above the
 prose, replacing a strip under each paragraph. Every face is `cast/FacePlate.tsx`, so a
 keeper, a person and a walk-on look like one cast, and a known person wears the People
 rail's disposition ring (`hudModel.ts` `RING`). A Job's pinned latest turn gets the same row,

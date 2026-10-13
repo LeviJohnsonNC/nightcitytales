@@ -3,22 +3,15 @@
  * the decision: who is in it, in what order, once each, and never invented.
  */
 import { describe, expect, it } from "vitest";
-import GAMEPLAY from "@/data/atlas/places.gameplay.json";
-import { shopsAt, tagsOf } from "@/engine";
-import { ambientPeople } from "@/features/cast/ambientPeople";
 import { MAX_SCENE_FACES, sceneFaces } from "../sceneFaces";
 
-const barKey = Object.keys(GAMEPLAY.places).find(
-  (k) => tagsOf(k).includes("bar") && shopsAt(k).length === 0,
-)!;
-const ambient = ambientPeople(barKey, `c1:${barKey}`, false);
-const none = { walkOns: [], ambient: [], people: [] };
+const none = { walkOns: [], people: [] };
 
 describe("sceneFaces", () => {
   it("puts the people a passage names first, in the order it names them", () => {
     const faces = sceneFaces({
       ...none,
-      ambient,
+      walkOns: [{ subject: "dive-bar-tender", gender: "male" }],
       text: "Kit Mwangi has not answered, and Ilsa Bräun's message is still open.",
     });
     expect(faces.slice(0, 2).map((f) => f.kind === "person" && f.npc.name)).toEqual([
@@ -38,17 +31,18 @@ describe("sceneFaces", () => {
     expect(faces).toEqual([]);
   });
 
-  it("shows the room's people even when the passage never mentions them", () => {
-    const faces = sceneFaces({ ...none, ambient, text: "" });
-    expect(faces.map((f) => f.kind === "walkon" && f.subject)).toContain("dive-bar-tender");
+  it("does not show a role the place merely has: only who the passage brings in", () => {
+    // A bar has a tender; a passage that never mentions one gets no tender.
+    expect(sceneFaces({ ...none, text: "The bar hums." })).toEqual([]);
   });
 
-  it("shows a role once when the narrator tagged somebody the engine had already put there", () => {
-    const told = ambient.find((p) => p.subject === "dive-bar-tender")!;
+  it("shows a walk-on the narrator tagged, once", () => {
     const faces = sceneFaces({
       ...none,
-      ambient,
-      walkOns: [{ subject: "dive-bar-tender", gender: told.gender }],
+      walkOns: [
+        { subject: "dive-bar-tender", gender: "male" },
+        { subject: "dive-bar-tender", gender: "male" },
+      ],
       text: "",
     });
     expect(
@@ -56,10 +50,16 @@ describe("sceneFaces", () => {
     ).toHaveLength(1);
   });
 
-  it("reads each walk-on as a band, never a number", () => {
-    const faces = sceneFaces({ ...none, ambient, text: "" });
-    for (const f of faces)
-      if (f.kind === "walkon") expect(f.look).toMatch(/^(man|woman), [a-z -]+$/);
+  it("shows a named person only when the engine has them at this place", () => {
+    const text = "Nadia Sirko leans on a rail, and Kit Mwangi is only mentioned.";
+    const names = (present?: string[]) =>
+      sceneFaces({ ...none, text, ...(present ? { present } : {}) }).map(
+        (f) => f.kind === "person" && f.npc.name,
+      );
+    expect(names(["Nadia Sirko"])).toEqual(["Nadia Sirko"]);
+    expect(names([])).toEqual([]);
+    // Where there is no answer to ask (a Job's beat decides), the passage's names stand.
+    expect(names()).toEqual(["Nadia Sirko", "Kit Mwangi"]);
   });
 
   it("drops a role with no picture on file rather than drawing a blank", () => {
@@ -88,7 +88,7 @@ describe("sceneFaces", () => {
   it("is a room, not a roll call", () => {
     const text =
       "Ilsa Bräun, Kit Mwangi, Rosalind Achebe, Yuri Pastrana, Reg Amankwah, Meiling Zhou, Wren Kovalenko.";
-    expect(sceneFaces({ ...none, ambient, text })).toHaveLength(MAX_SCENE_FACES);
+    expect(sceneFaces({ ...none, text })).toHaveLength(MAX_SCENE_FACES);
   });
 
   it("is empty for a scene with nobody in it", () => {
