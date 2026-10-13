@@ -1297,3 +1297,12 @@ Create one 1024 × 1024 PNG game-art asset, using the attached measured layout. 
 ```text
 Create one seamless 1024 × 1024 PNG surface texture for an isometric tactical game. Digitally painted realism with fine brush texture, grounded, lived-in late-1980s/1990s urban architecture. Seen exactly straight-on, flat and orthographic. This image covers exactly 2 × 2 metres of a modest apartment building's masonry base. The attached card fixes scale only: eight brick pitches across and twenty-four courses vertically, alternate courses offset by half a brick. Follow that scale but do not reproduce the guide's flat colours or lines. Paint dark muted brown-grey fired brick, with occasional subdued iron-red undertones and narrow weathered grey mortar joints. Bricks have small chips, softened arrises, fine mineral grain and modest tonal variation. Keep the whole field quiet and cohesive: no conspicuously bright individual brick. The tile must repeat seamlessly left/right and top/bottom, including running-bond mortar lines. No wall edge, coping, plinth border, windows, doors, pipes, graffiti, text, logos, objects or ground. No large stains or distinctive damage that advertise repetition. Soft perfectly even neutral illumination, no directional lighting, cast shadows, ambient vignette, night-blue grade, neon, glow, gloss or wet reflections. Restrained shallow mortar shading is acceptable; the game supplies architectural depth and scene lighting. Fill the entire square with masonry, no margin or transparency. Return this single image only.
 ```
+
+### Walk-on faces, second batch
+
+Older and younger faces for the walk-on roles (ROADMAP debt 27): 67 pictures in three
+batches, a young (about 20) and an older (about 62) face per role and sex wherever a role
+does not already have one. They use the Vignette wrapper above with the subject filled in, so
+the look is the existing walk-on art's. The prompts, the file names (`<role>-<sex>-<band>.png`),
+the framing rules the face crop needs and the order to do them in are in
+[walkon-faces-batch-2.md](walkon-faces-batch-2.md).
