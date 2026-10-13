@@ -110,8 +110,12 @@ describe("a walk-on's name", () => {
 
   it("is kept by resolveWalkOns only against the passage, and never given a role's gender by it", () => {
     const mentions = [{ subject: "dive-bar-tender", name: "Mara Ketter" }];
-    expect(resolveWalkOns(mentions, "c1:p", [], "Mara Ketter pours.")[0]?.name).toBe("Mara Ketter");
-    expect(resolveWalkOns(mentions, "c1:p", [], "The tender pours.")[0]).not.toHaveProperty("name");
+    expect(resolveWalkOns(mentions, "c1:p", [], { text: "Mara Ketter pours." })[0]?.name).toBe(
+      "Mara Ketter",
+    );
+    expect(
+      resolveWalkOns(mentions, "c1:p", [], { text: "The tender pours." })[0],
+    ).not.toHaveProperty("name");
     // No passage handed in, no name: it cannot be checked, so it is not trusted.
     expect(resolveWalkOns(mentions, "c1:p")[0]).not.toHaveProperty("name");
   });

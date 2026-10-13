@@ -203,7 +203,7 @@ export function walkOnFacesSection(opts: { excludeHostiles: boolean; alsoHere?: 
     ? ` and never a combat hostile (they already have a face via "enemies")`
     : "";
   const alsoHere = opts.alsoHere
-    ? `A role the context lists as "Also here" is the exception: its face was settled before you wrote, so write that person as listed and leave "gender" out. `
+    ? `A role the context lists as "Also here" is the exception: its face was settled before you wrote, so write that person as listed and leave "gender" out. If the line also says the character knows them as a name, that name is settled too: use it when you name them, and never give them another. `
     : "";
   return `# WALK-ON FACES
 The interface can put a face on some walk-on roles — people passing through who are not part of the standing cast and will never get a dossier of their own. When you narrate one whose role matches an id below, tag them in "walkOns" using that id exactly. Do this only for a genuine walk-on: never tag a named cast member${hostiles}, and never invent an id outside this list.

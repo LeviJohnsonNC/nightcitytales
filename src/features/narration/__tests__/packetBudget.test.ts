@@ -82,8 +82,8 @@ function worstCaseGmPacket(): string {
         // The staff and regulars the place has: as many as a place can name
         // (MAX_ALSO_HERE), so the largest this block gets.
         alsoHere: [
-          '"corpo-lobby-receptionist" (Corpo Lobby Receptionist): woman, in their prime',
-          '"braindance-parlor-host" (Braindance Parlor Host): man, middle-aged',
+          '"corpo-lobby-receptionist" (Corpo Lobby Receptionist): woman, in their prime; the character knows them as Marguerite Oyelaran-Bright',
+          '"braindance-parlor-host" (Braindance Parlor Host): man, middle-aged; the character knows them as Bartholomew Nakamura-Reyes',
         ],
         gangs: ["6th Street"],
         combatZone: false,
@@ -145,8 +145,8 @@ function worstCaseLifePacket(): string {
       combatZone: false,
       nearby: [],
       alsoHere: [
-        '"corpo-lobby-receptionist" (Corpo Lobby Receptionist): woman, in their prime',
-        '"braindance-parlor-host" (Braindance Parlor Host): man, middle-aged',
+        '"corpo-lobby-receptionist" (Corpo Lobby Receptionist): woman, in their prime; the character knows them as Marguerite Oyelaran-Bright',
+        '"braindance-parlor-host" (Braindance Parlor Host): man, middle-aged; the character knows them as Bartholomew Nakamura-Reyes',
       ],
       sellers: [
         "Torrell and Chiang's (deals in armor, gear), run by Torrell and Chiang (a man and a woman, both older): He measures, she decides.",
@@ -187,6 +187,12 @@ describe("the packet has a ceiling", () => {
    * The Job packet then took the "Also here" block too (a place's staff, with the
    * note that the beat decides whether any are in the scene): 13,034 to 13,709, so
    * 675 characters, about 170 tokens, with its two lines at their cap.
+   *
+   * A walk-on the character has learned the name of says so on its line ("; the
+   * character knows them as <name>"), so the narrator keeps using it. The fixtures'
+   * two lines carry a name at the longest the wire accepts (40 characters is the
+   * cap, these are 26 each), 56 characters each: Job 13,709 to 13,821 and Life
+   * 10,190 to 10,302, inside both ceilings without moving them.
    */
   const GM_CEILING = 14_300;
   const LIFE_CEILING = 10_600;

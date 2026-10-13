@@ -43,8 +43,9 @@ That is the remaining gate.
 
 A walk-on the passage names wears the name over their role, in the cast's own type.
 `name` rides on the `walkOns` tag; `resolveWalkOns` keeps it only if the passage says it
-(`nameTheyLearned`) and `cleanWalkOnName` accepts it. Nothing is remembered between turns: a
-later turn that tags the same role keeps the name only if that passage says it again.
+(`nameTheyLearned`) and `cleanWalkOnName` accepts it. The name lasts: it is a role at a place, the
+earliest name learned there is read back off the ledger (`knownWalkOnNames`), carried onto every later
+turn that tags that role there, and told to the narrator on the "Also here" line.
 
 ## Limits
 

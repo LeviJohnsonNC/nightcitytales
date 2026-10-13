@@ -298,8 +298,12 @@ standing roles. A walk-on's name is the one thing the model supplies about them:
 `walkOns` tag, kept by `resolveWalkOns` only if `nameTheyLearned` finds it in the passage the player
 reads (the whole name, else the first word the passage says), and only if it is a short run of letters
 that belongs to nobody in the directory (`cleanWalkOnName`). It is stored on the narration's
-`walkOns` (`readWalkOnsEventData`), has no identity beyond that turn, and the engine never reads it.
-`walkOnNameIsSaid` measures whether the prompt is followed. `NpcName` is text with a hover card on a
+`walkOns` (`readWalkOnsEventData`) and nothing else reads it. A walk-on is a role at a place, so a
+name learned there lasts: `knownWalkOnNames` (`cast/walkOnNames.ts`) reads the earliest name for each
+role off the narrations written at that place (`at`, read by `readNarrationPlace`; a Job turn now
+records it too), `resolveWalkOns` puts it on every later turn that tags the role there, and the "Also
+here" line tells the narrator "the character knows them as X" so the prose keeps it. Nothing is stored
+beside the ledger. `walkOnNameIsSaid` and `walkOnKeepsKnownName` measure whether the prompts are followed. `NpcName` is text with a hover card on a
 person's name; never put a thumbnail in front of a mention. `npcMentions.ts` is the one
 place that decides what counts as a name. See `docs/checkpoint-faces-layout.md`.
 

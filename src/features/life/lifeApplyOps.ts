@@ -33,6 +33,7 @@ import {
   FACEDOWN_CHECK_ID,
 } from "@/engine";
 import { resolveWalkOns } from "@/features/cast/walkOnMention";
+import { knownWalkOnNames } from "@/features/cast/walkOnNames";
 import { alsoHereAt } from "./alsoHere";
 import {
   appendCampaignEvent,
@@ -157,12 +158,10 @@ export async function applyResponse(
       // stays the same face across scrollback and reload.
       walkOns: (() => {
         const here = alsoHereAt(campaignId, bundle.campaign.location_key ?? DEFAULT_START);
-        return resolveWalkOns(
-          response.walkOns,
-          here.seed,
-          here.subjects,
-          response.resolution ?? response.situation.description,
-        );
+        return resolveWalkOns(response.walkOns, here.seed, here.subjects, {
+          text: response.resolution ?? response.situation.description,
+          known: knownWalkOnNames(bundle.events, bundle.campaign.location_key ?? DEFAULT_START),
+        });
       })(),
       // Which prompt, at which version, asked which model — and who answered.
       // Built here rather than spelled out, per ledger.ts.

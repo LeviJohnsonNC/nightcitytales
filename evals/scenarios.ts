@@ -1066,6 +1066,28 @@ SCENARIOS.push(
     expect: faceExpect([]),
   },
   {
+    id: "life-walk-on-known-name",
+    narrator: "life",
+    about:
+      "the character already knows the bartender's name, so the narrator keeps it and does not rename her",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...atTheBar,
+        place: {
+          ...atTheBar.place!,
+          alsoHere: alsoHereAt(
+            "eval-campaign",
+            BAR.key,
+            new Map([["dive-bar-tender", "Mara Ketter"]]),
+          ).lines,
+        },
+      },
+      "I ask the bartender for another and what she has heard lately.",
+    ),
+    expect: faceExpect([]),
+  },
+  {
     id: "life-cast-face-fixed",
     narrator: "life",
     about: "a fixer the packet says is a woman keeps her pronouns for the whole scene",

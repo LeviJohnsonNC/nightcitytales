@@ -837,6 +837,17 @@ export function readWalkOnsEventData(raw: unknown): WalkOnEventData {
   return out;
 }
 
+/**
+ * Where a narration was written (`at`, a location key), or null when it carries
+ * none. Life records it; a Job turn records it as of the walk-on names. A walk-on
+ * is somebody at a place, so this is what lets a name learned there be found again.
+ */
+export function readNarrationPlace(raw: unknown): string | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const at = str((raw as RawPayload)["at"]);
+  return at && at.length > 0 ? at : null;
+}
+
 // ---------------------------------------------------------------------------
 // provenance — like walkOns, a field riding on life_narration/gm_narration
 // rather than an event of its own.

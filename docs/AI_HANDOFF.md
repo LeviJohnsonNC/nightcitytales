@@ -98,14 +98,20 @@ Updated 2026-10-12. Goal: nonbinary characters, starting with the keeper Adair, 
   every run. A nonbinary PLAYER character's third-person references are not measured.
 - **Next:** none required; faces art (older/younger) remains debt 27.
 
-## Parallel stream — walk-on names (Claude, branch claude/walkon-names)
+## Parallel stream — walk-on names (Claude, merged #381)
 
-Updated 2026-10-13. Goal: a walk-on the passage names wears that name over their role in the Here row.
+Updated 2026-10-13. A walk-on the passage names wears the name over their role in the Here row: `name` on
+the `walkOns` tag, kept only if the passage says it and it is not a cast name (`walkOnMention.ts`), check
+`walk-on-name-is-said`. Eval: asked her name, the bartender was named 3/3 and the prose said it every time.
 
-- **Done (in the PR once pushed):** `name` on the `walkOns` tag (both prompts, Life 2.28.0, Job 2.21.0);
-  kept only if the passage says it and it is not a cast name (`walkOnMention.ts`); stored on the narration
-  and read back (`ledger.ts`); `WalkOnFace` shows it over the role; check `walk-on-name-is-said`.
-- **Validation:** typecheck, lint, unit suite pass. Eval (3 runs): new scenario `life-walk-on-named` gave a
-  name every run and the prose said it every time; `life-walk-on-as-told` gave none, correctly; the one
-  failing check was the known "unsourced number" noise on `job-staff-as-told`. Not seen in a signed-in browser.
-- **Not done:** names are not remembered across turns.
+## Parallel stream — walk-on names persist (Claude, branch claude/walkon-names-persist)
+
+Updated 2026-10-13. A name learned for a role at a place is kept for good and shown every time.
+
+- **Done (in the PR once pushed):** `knownWalkOnNames` reads it off the ledger by place; `resolveWalkOns`
+  carries it; the Job narration now records `at`; the "Also here" line says who the character knows;
+  prompts Life 2.29.0, Job 2.22.0; check `walk-on-keeps-known-name`; packet fixtures carry names (+112 chars,
+  inside both ceilings).
+- **Validation:** typecheck, lint, unit suite pass. Eval: `life-walk-on-known-name` first leaked the name into
+  an npcKey (2/5 and then 3/5 runs failed `knownNpcKeysOnly`), fixed by one Life prompt sentence, then 0/5 over
+  5 runs; the other face scenarios still pass 3/3. Not seen in a signed-in browser.

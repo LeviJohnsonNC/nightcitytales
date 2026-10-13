@@ -12,6 +12,7 @@ import {
   readBackupCalledEventData,
   readDeathSaveEventData,
   readSkillCheckEventData,
+  readNarrationPlace,
   readWalkOnsEventData,
   readTurnProvenance,
   turnProvenanceData,
@@ -243,6 +244,17 @@ describe("the read-only payloads", () => {
     expect(readBackupCalledEventData({ responded: false })).toEqual({ responded: false });
     // A call with no answer recorded is not a call that was answered.
     expect(readBackupCalledEventData({})).toBeNull();
+  });
+});
+
+describe("readNarrationPlace", () => {
+  it("reads where a narration was written, and nothing from a payload without one", () => {
+    expect(readNarrationPlace({ at: "r2", walkOns: [] })).toBe("r2");
+    expect(readNarrationPlace({ at: "" })).toBeNull();
+    expect(readNarrationPlace({ at: 7 })).toBeNull();
+    expect(readNarrationPlace({})).toBeNull();
+    expect(readNarrationPlace(null)).toBeNull();
+    expect(readNarrationPlace([1])).toBeNull();
   });
 });
 

@@ -85,7 +85,20 @@ export function ambientPeople(placeKey: string, seed: string, hasKeeper: boolean
   return out;
 }
 
-/** One packet line apiece: `"dive-bar-tender" (Dive Bar Tender): woman, older`. */
-export function alsoHereLines(people: readonly AmbientPerson[]): string[] {
-  return people.map((p) => `"${p.subject}" (${flavorSubjectLabel(p.subject)}): ${p.seenAs}`);
+/**
+ * One packet line apiece: `"dive-bar-tender" (Dive Bar Tender): woman, older`. A
+ * person the character has already learned the name of says so, so the narrator keeps
+ * calling them that rather than making up another.
+ */
+export function alsoHereLines(
+  people: readonly AmbientPerson[],
+  known: ReadonlyMap<string, string> = new Map(),
+): string[] {
+  return people.map((p) => {
+    const name = known.get(p.subject);
+    return (
+      `"${p.subject}" (${flavorSubjectLabel(p.subject)}): ${p.seenAs}` +
+      (name ? `; the character knows them as ${name}` : "")
+    );
+  });
 }

@@ -19,7 +19,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.28.0";
+export const LIFE_PROMPT_VERSION = "2.29.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -105,7 +105,7 @@ Return a structured JSON object:
 - Travel is settled AFTER you write. You propose it; the engine decides where the trip ends and then asks you to narrate the arrival with the destination and heading fixed. So while proposing, do not write the character arriving anywhere, and do not name the place you expect them to reach — describe them setting off. Whatever else they said ("and sit down at the counter", "and order a drink") is NOT lost: you are shown their words again with the arrival, and you carry out the rest of it then.
 - "proposedActions": what the engine should resolve, using EXACTLY these shapes:
   - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"...","stakes":"low"(optional, see CHECKS)}
-    When the check is aimed AT A PERSON and nobody is resisting it — watching somebody for a tell, reading the room, listening to how they answer, sizing up a stranger — also set "npcKey" and "npcName" (the key exactly as PEOPLE THEY KNOW prints it, when they are one of them). The engine decides what paying that much attention to somebody tells the character, and it cannot do that for a check that names nobody. Leave both out for a check against the world.
+    When the check is aimed AT A PERSON and nobody is resisting it — watching somebody for a tell, reading the room, listening to how they answer, sizing up a stranger — also set "npcKey" and "npcName" (the key exactly as PEOPLE THEY KNOW prints it, when they are one of them). The engine decides what paying that much attention to somebody tells the character, and it cannot do that for a check that names nobody. Leave both out for a check against the world, and for a walk-on (an "Also here" role, named or not), who is not in PEOPLE THEY KNOW.
   - {"kind":"opposed_check","skillId":"<id>","npcKey":"<stable key>","npcName":"...","opposingSkillId":"<id>","opposingSkillLevel":0-10,"opposingStatValue":1-10,"intent":"..."}
   - {"kind":"facedown","npcKey":"<stable key>","npcName":"...","opposingCool":1-10,"opposingReputation":0-10,"intent":"..."} — see REPUTATION AND FACEDOWNS
   - {"kind":"spend","amount":<eurobucks>,"reason":"..."}
