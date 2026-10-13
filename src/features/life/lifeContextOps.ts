@@ -20,6 +20,7 @@ import {
   truthsAt,
   whoIsAt,
   comesOver,
+  type HauntPerson,
   type PlaceState,
   getDistrict,
   getPlace,
@@ -161,6 +162,29 @@ function placeBlurb(placeKey: string): { blurb?: string } {
   return blurb ? { blurb } : {};
 }
 
+/**
+ * The one member of the standing cast the engine puts where the character is
+ * standing, or nobody. The context asks it before the narrator writes and the
+ * screen asks it again to decide whose face belongs in "Here", so a face is
+ * only ever shown for somebody the engine says is in the room.
+ */
+export function castHere(bundle: LifeBundle): HauntPerson | null {
+  const placeKey = resolvePosition(bundle.campaign.location_key ?? DEFAULT_START)?.placeKey;
+  if (!placeKey) return null;
+  return whoIsAt({
+    placeKey,
+    people: hauntPeople(
+      bundle.npcs,
+      bundle.campaign,
+      bundle.character.finance?.home_district_key,
+      bundle.places,
+    ),
+    day: bundle.clock.day,
+    minute: bundle.clock.minute,
+    seed: bundle.campaign.id,
+  });
+}
+
 export function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeContext {
   // Resolved before the character summary, because a place-scoped Skill is only
   // worth its Level in one neighbourhood and the summary has to say which.
@@ -247,18 +271,7 @@ export function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeCo
           // is not somewhere you run into somebody.
           ...(position?.placeKey
             ? (() => {
-                const met = whoIsAt({
-                  placeKey: position.placeKey,
-                  people: hauntPeople(
-                    bundle.npcs,
-                    bundle.campaign,
-                    bundle.character.finance?.home_district_key,
-                    bundle.places,
-                  ),
-                  day: bundle.clock.day,
-                  minute: bundle.clock.minute,
-                  seed: bundle.campaign.id,
-                });
+                const met = castHere(bundle);
                 if (!met) return {};
                 // Whether they come over is the engine's roll, once an evening:
                 // after they have, the next turn is told they already did.

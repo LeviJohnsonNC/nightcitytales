@@ -133,7 +133,6 @@ function currentFaces(
   return sceneFaces({
     text: latest?.summary ?? "",
     walkOns: latest ? readWalkOnsEventData(latest.data) : [],
-    ambient: [],
     people,
   });
 }

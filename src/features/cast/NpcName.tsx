@@ -106,9 +106,6 @@ export function NpcFace({
         <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
           {npc.name}
         </span>
-        <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
-          {npc.role}
-        </span>
       </button>
       <NpcDossier npc={npc} open={open} onOpenChange={setOpen} relation={relation} />
     </>

@@ -57,7 +57,7 @@ import {
 
 import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
-import { alsoHereAt } from "./alsoHere";
+import { castHere } from "./lifeContextOps";
 import { SceneFaces } from "./SceneFaces";
 import { sceneFaces } from "./sceneFaces";
 import { JOB_TIERS, readWalkOnsEventData } from "@/engine";
@@ -1012,12 +1012,13 @@ export function LifeScreen({
   };
 
   const locationKey = bundle.campaign.location_key ?? DEFAULT_START;
-  // Who is in the scene, as faces: the people this passage names, the walk-ons
-  // it tagged, and the people the engine put in the room before it was written.
+  // Who is in the scene, as faces: the people this passage names (when the
+  // engine has them here) and the walk-ons it tagged. A place's usual roles
+  // that the passage never brings in are not shown.
   const faces = sceneFaces({
     text: life.narration?.text ?? "",
     walkOns: life.narration?.walkOns ?? [],
-    ambient: alsoHereAt(bundle.campaign.id, locationKey).people,
+    present: castHere(bundle) ? [castHere(bundle)!.name] : [],
     people: life.people,
   });
   const hasLog = shownLifeEvents(bundle.events, life.narration?.text).length > 0;
@@ -1245,48 +1246,51 @@ export function LifeScreen({
                   </div>
                 )}
 
-                {/* Where you are, before anything has happened here. */}
-                <SceneHero locationKey={locationKey} opening={!hasLog} />
-
-                {/* Who is here, once, instead of a strip under every paragraph. */}
-                <SceneFaces faces={faces} />
-
-                {/* What the turn just cost, alongside the current scene. */}
-                <ReceiptBar receipts={receipts} />
-
-                {/* A week of life with no award is a session: judged here, on the
-                playstyle columns, the same table a job is judged on. */}
-                {life.phase === "life" && (life.ipDaysUntil === 0 || life.lifeIpTally) && (
-                  <IpTallyCard
-                    heading="a week on the street, since the last award"
-                    tally={life.lifeIpTally}
-                    busy={life.lifeIpBusy}
-                    error={life.lifeIpError}
-                    defaults={life.ipLastPlaystyles}
-                    onTally={life.tallyLifeIp}
-                    onDismiss={life.dismissLifeIp}
-                  />
-                )}
-
-                {life.actionError && (
-                  <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                    {life.actionError.message}
-                  </p>
-                )}
-
-                {life.pendingCheck && (
-                  <CheckCard
-                    key={life.pendingCheck.eventId}
-                    pending={life.pendingCheck}
-                    roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
-                    odds={(luckSpend) => checkOdds(life.pendingCheck!, luckSpend)}
-                    onSettled={(rolled) => life.commitCheck(life.pendingCheck!, rolled)}
-                    busy={life.checkBusy}
-                    luckRemaining={luckLeft}
-                  />
-                )}
-
                 <LifeSceneContent
+                  lead={
+                    <>
+                      {/* Where you are, before anything has happened here. */}
+                      <SceneHero locationKey={locationKey} opening={!hasLog} />
+
+                      {/* Who is here, once, instead of a strip under every paragraph. */}
+                      <SceneFaces faces={faces} />
+
+                      {/* What the turn just cost, alongside the current scene. */}
+                      <ReceiptBar receipts={receipts} />
+
+                      {/* A week of life with no award is a session: judged here, on the
+                      playstyle columns, the same table a job is judged on. */}
+                      {life.phase === "life" && (life.ipDaysUntil === 0 || life.lifeIpTally) && (
+                        <IpTallyCard
+                          heading="a week on the street, since the last award"
+                          tally={life.lifeIpTally}
+                          busy={life.lifeIpBusy}
+                          error={life.lifeIpError}
+                          defaults={life.ipLastPlaystyles}
+                          onTally={life.tallyLifeIp}
+                          onDismiss={life.dismissLifeIp}
+                        />
+                      )}
+
+                      {life.actionError && (
+                        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                          {life.actionError.message}
+                        </p>
+                      )}
+
+                      {life.pendingCheck && (
+                        <CheckCard
+                          key={life.pendingCheck.eventId}
+                          pending={life.pendingCheck}
+                          roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
+                          odds={(luckSpend) => checkOdds(life.pendingCheck!, luckSpend)}
+                          onSettled={(rolled) => life.commitCheck(life.pendingCheck!, rolled)}
+                          busy={life.checkBusy}
+                          luckRemaining={luckLeft}
+                        />
+                      )}
+                    </>
+                  }
                   narration={
                     life.narration ? (
                       <section className="space-y-2 border-l-2 border-accent bg-accent/5 p-3">

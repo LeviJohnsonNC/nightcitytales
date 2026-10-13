@@ -30,3 +30,14 @@ it("does not hide the only available narration while a current block is absent",
   expect(html).toContain("Opening");
   expect(html).not.toContain("<details");
 });
+it("keeps the lead (picture and faces) under the earlier bar and over the prose", () => {
+  const html = renderToStaticMarkup(
+    <LifeSceneContent
+      lead={<p>Here: Nadia Sirko</p>}
+      narration={<p>The noodle bar steams.</p>}
+      history={<p>Earlier container home</p>}
+    />,
+  );
+  expect(html.indexOf("<details")).toBeLessThan(html.indexOf("Here: Nadia Sirko"));
+  expect(html.indexOf("Here: Nadia Sirko")).toBeLessThan(html.indexOf("The noodle bar steams."));
+});
