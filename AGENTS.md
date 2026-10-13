@@ -832,10 +832,19 @@ last (`CharacterFile`), and `polaroidCrop.ts` holds how the near-square print
 window crops a 2:3 portrait — anchored high, because the prompt composes the
 head at the top.
 
-Who a character is on sight — sex (male or female) and age — is asked with the
+Who a character is on sight — gender (male, female or nonbinary) and age — is asked with the
 Lifepath's "Who you are" chapter and kept in `engine/identity.ts`, with its
-limits and age bands in `data/rules/identity.json` (`houseRule: true`). Pronouns
-follow from the sex chosen, so the draft still carries them. The save writes
+limits and age bands in `data/rules/identity.json` (`houseRule: true`). The field is
+still called `sex`, because that is the key every saved Lifepath and every look file already
+carries and a rename would be a migration for nothing; the picker says "Gender". Pronouns
+follow from the gender chosen (`they/them` for nonbinary), so the draft still carries them,
+and a nonbinary person's noun in the narrator's line carries their pronouns ("nonbinary
+person, they/them, middle-aged") because "person" alone would leave the narrator to pick
+one. The same value serves the cast and the keepers (`cast-looks.json`, `place-shops.json`),
+so `seenAsPronounsHold` holds the prose to "they" for a nonbinary person too. Walk-on art is
+still male and female only; a walk-on's gender is the picture's. A nonbinary player
+character's own pronouns are not measured: the narrator speaks to them as "you", and no
+check reads the character's own third-person references. The save writes
 `{ sex, age }` into the general Lifepath under `IDENTITY_KEY`, beside the cast
 plan, so no migration is needed; `identityFrom` reads it back and the narrators
 get one "Reads as" line (`appearsAsProp`), which is a band ("man, elderly") and

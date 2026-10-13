@@ -59,7 +59,7 @@ export function validateStep(step: ChargenStep, state: ChargenState): StepValida
       if (untouched) return { violations: ["No Lifepath tables answered yet."], untouched };
       return {
         violations: [
-          ...(state.sex ? [] : ["Choose male or female."]),
+          ...(state.sex ? [] : ["Choose a gender."]),
           ...(validAge(state.age) === null ? [`Enter your age (${AGE_MIN}–${AGE_MAX}).`] : []),
           ...generalLifepathComplete(general),
           ...roleLifepathComplete(role),

@@ -571,6 +571,26 @@ describe("seen-as-pronouns-hold", () => {
     expect(said("Dot grades you with one look and puts his feet up.")).toHaveLength(1);
   });
 
+  it("holds a nonbinary person to 'they', and lets 'they' through", () => {
+    const nb = ctx({
+      packet: [
+        "== PEOPLE THEY KNOW ==",
+        "- Quill Marsh [quill-marsh] (fixer, disposition 0, active, not seen yet)",
+        "    Seen as: nonbinary person, they/them, in their prime",
+        "Selling here: The Oasis (deals in gear), run by Adair (nonbinary person, they/them, in their prime): smiles",
+      ].join("\n"),
+    });
+    const said = (narration: string) => seenAsPronounsHold.run(turn({ narration }), nb);
+    expect(seenAsPronounsHold.applies?.(nb)).toBe(true);
+    // The person under "Seen as", and the keeper in the seller's bracket: both are held to it.
+    const wrong = said("Quill slides the card across. She does not look up.");
+    expect(wrong).toHaveLength(1);
+    expect(wrong[0]!.note).toMatch(/nonbinary \(they\/them\)/);
+    expect(said("Adair watches you and gives him a nod.")).toHaveLength(1);
+    expect(said("Quill slides the card across. They do not look up.")).toEqual([]);
+    expect(said("Adair smiles and puts their hand on the counter.")).toEqual([]);
+  });
+
   it("catches a pronoun for somebody the file leaves open", () => {
     const found = said("Kit turns the screen toward you. She has already read it.");
     expect(found).toHaveLength(1);

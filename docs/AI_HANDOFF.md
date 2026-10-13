@@ -85,3 +85,15 @@ narrator who a place has standing in it, as Life does.
   "opens on smells" in job-opens-a-room 2/5 here vs 1/5 on main over a 5-run recheck, which is
   not distinguishable from chance. The Job screen row was not browser-checked.
 - **Next:** nonbinary support (identity, creation, portraits, narrator, checks) as its own PR.
+
+## Parallel stream — nonbinary support (Claude, branch claude/nonbinary, stacked on claude/job-also-here)
+
+Updated 2026-10-12. Goal: nonbinary characters, starting with the keeper Adair, then players.
+
+- **Done (in the PR once pushed):** `Sex` gains `nonbinary` (they/them) in `engine/identity.ts` and
+  `identity.json`; the picker says "Gender" with a third option; Adair is nonbinary; the narrator's
+  appearance rule and `seenAsPronounsHold` hold "they"; prompts Life 2.27.0, Job 2.20.0.
+- **Validation:** lint, typecheck, unit suite pass. The picker was exercised in Chromium on a scratch
+  route (each option sets the right pronouns and line). Eval: nonbinary keeper scenario 3 runs, "they"
+  every run. A nonbinary PLAYER character's third-person references are not measured.
+- **Next:** none required; faces art (older/younger) remains debt 27.
