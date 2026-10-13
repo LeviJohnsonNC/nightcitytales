@@ -24,6 +24,7 @@ import {
   staysPutOnRefusal,
   statesNoExactAge,
   unheardStaysUnheard,
+  walkOnKeepsKnownName,
   walkOnNameIsSaid,
   walkOnsFromCatalog,
   withheldStaysWithheld,
@@ -245,6 +246,17 @@ describe("closed vocabularies", () => {
     expect(walkOnNameIsSaid.run(said, CTX)).toEqual([]);
     expect(walkOnNameIsSaid.run(unsaid, CTX)).toHaveLength(1);
     expect(walkOnNameIsSaid.run(turn({ narration: "Quiet." }), CTX)).toEqual([]);
+  });
+
+  it("catches a different name for somebody the packet says the character already knows", () => {
+    const ctxKnown = {
+      ...CTX,
+      packet:
+        'Also here: "dive-bar-tender" (Dive Bar Tender): woman, older; the character knows them as Mara Ketter',
+    };
+    expect(walkOnKeepsKnownName.run(turn({ walkOnNames: ["Mara Ketter"] }), ctxKnown)).toEqual([]);
+    expect(walkOnKeepsKnownName.run(turn({ walkOnNames: ["Kenji"] }), ctxKnown)).toHaveLength(1);
+    expect(walkOnKeepsKnownName.run(turn({}), ctxKnown)).toEqual([]);
   });
 });
 

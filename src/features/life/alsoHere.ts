@@ -20,7 +20,12 @@ export type AlsoHere = {
   lines: string[];
 };
 
-export function alsoHereAt(campaignId: string, locationKey: string): AlsoHere {
+export function alsoHereAt(
+  campaignId: string,
+  locationKey: string,
+  /** Names the character has learned here (`knownWalkOnNames`), told to the narrator with each line. */
+  known?: ReadonlyMap<string, string>,
+): AlsoHere {
   const seed = `${campaignId}:${locationKey}`;
   // A named keeper already staffs the counter; a second clerk would be invented.
   const hasKeeper = shopsAt(locationKey).some((shop) => shop.keeper);
@@ -29,6 +34,6 @@ export function alsoHereAt(campaignId: string, locationKey: string): AlsoHere {
     seed,
     people,
     subjects: ambientSubjectsAt(locationKey, seed, hasKeeper),
-    lines: alsoHereLines(people),
+    lines: alsoHereLines(people, known),
   };
 }

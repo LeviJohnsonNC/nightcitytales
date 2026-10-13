@@ -40,6 +40,7 @@ import type { LifeContext } from "./lifeContext";
 import { counterNews } from "./counterNews";
 import { keeperNamed } from "@/features/cast/npcLooks";
 import { alsoHereAt } from "./alsoHere";
+import { knownWalkOnNames } from "@/features/cast/walkOnNames";
 import { appearsAsProp } from "@/features/campaign/castSeeding";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { arcTellFor } from "@/features/campaign/arcs";
@@ -313,8 +314,11 @@ export function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeCo
           // Who sells where they stand, so "what have you got?" is answered by
           // the Counter rather than by a stall the narrator made up. Names and
           // what they deal in only: what is on the shelf is never sent.
-          alsoHere: alsoHereAt(bundle.campaign.id, bundle.campaign.location_key ?? DEFAULT_START)
-            .lines,
+          alsoHere: alsoHereAt(
+            bundle.campaign.id,
+            bundle.campaign.location_key ?? DEFAULT_START,
+            knownWalkOnNames(bundle.events, bundle.campaign.location_key ?? DEFAULT_START),
+          ).lines,
           sellers: shopsAt(position?.placeKey).map(
             (v) =>
               `${v.label} (deals in ${v.deals.map((k) => SELLER_DEALS[k] ?? k).join(", ")})` +

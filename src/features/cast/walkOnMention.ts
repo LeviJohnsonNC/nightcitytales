@@ -108,8 +108,12 @@ export function resolveWalkOns(
    * the picture is the one it was given, not the one it prefers.
    */
   told: ReadonlySet<string> | readonly string[] = [],
-  /** The passage the player reads: a name is kept only if it says it (`nameTheyLearned`). */
-  text = "",
+  naming: {
+    /** The passage the player reads: a new name is kept only if it says it (`nameTheyLearned`). */
+    text?: string;
+    /** Who the character already knows at this place (`knownWalkOnNames`): that name stays theirs. */
+    known?: ReadonlyMap<string, string>;
+  } = {},
 ): ResolvedWalkOn[] {
   if (!Array.isArray(mentions)) return [];
   const settled = new Set(told);
@@ -121,7 +125,8 @@ export function resolveWalkOns(
       `${seed}:${mention.subject}`,
     );
     if (!gender) continue;
-    const name = nameTheyLearned(mention.name, text);
+    const name =
+      naming.known?.get(mention.subject) ?? nameTheyLearned(mention.name, naming.text ?? "");
     out.push({ subject: mention.subject, gender, ...(name ? { name } : {}) });
   }
   return out;

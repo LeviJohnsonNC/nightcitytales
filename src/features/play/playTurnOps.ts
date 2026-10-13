@@ -54,6 +54,7 @@ import {
   type Observation,
 } from "@/engine";
 import { resolveWalkOns } from "@/features/cast/walkOnMention";
+import { knownWalkOnNames } from "@/features/cast/walkOnNames";
 import { alsoHereAt } from "@/features/life/alsoHere";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { saveLiveEncounter } from "@/features/campaign/encounterState";
@@ -278,9 +279,11 @@ export async function narrate(
             // Who the place has standing in it, with the face the player will be
             // shown, so the picture follows the words (see features/cast/ambientPeople.ts).
             ...(() => {
+              const place = bundle.campaign.location_key ?? DEFAULT_START;
               const here = alsoHereAt(
                 campaignId,
-                bundle.campaign.location_key ?? DEFAULT_START,
+                place,
+                knownWalkOnNames(bundle.events, place),
               ).lines;
               return here.length ? { alsoHere: here } : {};
             })(),
@@ -388,8 +391,13 @@ export async function narrate(
       // stays the same face across scrollback and reload.
       walkOns: (() => {
         const here = alsoHereAt(campaignId, bundle.campaign.location_key ?? DEFAULT_START);
-        return resolveWalkOns(gm.walkOns, here.seed, here.subjects, gm.narration);
+        return resolveWalkOns(gm.walkOns, here.seed, here.subjects, {
+          text: gm.narration,
+          known: knownWalkOnNames(bundle.events, bundle.campaign.location_key ?? DEFAULT_START),
+        });
       })(),
+      // Where this was written, which is how a name learned here is found again.
+      at: bundle.campaign.location_key ?? DEFAULT_START,
       // Which prompt, at which version, asked which model — and who answered.
       // Built here rather than spelled out, per ledger.ts.
       ...turnProvenanceDataIfAny(gm.provenance),

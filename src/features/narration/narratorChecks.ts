@@ -639,6 +639,29 @@ export const walkOnNameIsSaid: Check = {
   },
 };
 
+/** The names the packet says the character already knows somebody by. */
+function namesTheCharacterKnows(packet: string): string[] {
+  return [...packet.matchAll(/the character knows them as ([^\n;]+)/g)].map((m) => m[1]!.trim());
+}
+
+export const walkOnKeepsKnownName: Check = {
+  id: "walk-on-keeps-known-name",
+  applies: (ctx) => /the character knows them as /.test(ctx.packet),
+  title: "kept the name the character already has for a walk-on",
+  source:
+    'Both prompts: WALK-ON FACES, and the packet line "the character knows them as <name>". ' +
+    "The interface keeps the first name learned, so a different one would show beside prose that says another.",
+  run(turn, ctx) {
+    const known = namesTheCharacterKnows(ctx.packet);
+    return (turn.walkOnNames ?? [])
+      .filter((name) => !known.includes(name))
+      .map((name) => ({
+        quote: name,
+        note: `the packet says they are known as ${known.join(" / ")}`,
+      }));
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Withheld knowledge
 // ---------------------------------------------------------------------------
@@ -1093,6 +1116,7 @@ export const ALL_CHECKS: Check[] = [
   closedObservationWords,
   walkOnsFromCatalog,
   walkOnNameIsSaid,
+  walkOnKeepsKnownName,
   namesNoWayIn,
   optionsOnlyWhenAsked,
   riskGetsDice,

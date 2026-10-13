@@ -62,6 +62,9 @@ describe("check applicability", () => {
       "goes-where-asked": { tripToKind: "bar" },
       "opens-the-counter": { opensCounter: { stockTells: ["kiroshi"] } },
       "comes-over-on-cue": { comesOver: "Kiro Tanaka" },
+      "walk-on-keeps-known-name": {
+        packet: "Also here: x; the character knows them as Mara Ketter",
+      },
     };
     for (const [id, over] of Object.entries(asks)) {
       const check = ALL_CHECKS.find((c) => c.id === id)!;
