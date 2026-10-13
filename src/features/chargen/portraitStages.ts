@@ -36,7 +36,7 @@ export const LOOK_ANSWERS = ["clothing_style", "hairstyle", "affectation"] as co
 export function firstPictureNeeds(state: ChargenState): string[] {
   const needs: string[] = [];
   if (!state.roleId) needs.push("what you do");
-  if (!state.sex || validAge(state.age) === null) needs.push("your sex and age");
+  if (!state.sex || validAge(state.age) === null) needs.push("your gender and age");
   const entries = readGeneralLifepath(state.lifepath.general).entries;
   if (LOOK_ANSWERS.some((id) => !entries[id])) needs.push("how you look");
   return needs;

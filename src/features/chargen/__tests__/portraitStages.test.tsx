@@ -62,7 +62,11 @@ function draft(over: Partial<ChargenState> = {}): ChargenState {
 
 describe("when the picture can develop", () => {
   it("waits for the Role, sex and age, and how they look", () => {
-    expect(firstPictureNeeds(draft())).toEqual(["what you do", "your sex and age", "how you look"]);
+    expect(firstPictureNeeds(draft())).toEqual([
+      "what you do",
+      "your gender and age",
+      "how you look",
+    ]);
     expect(portraitStageReady(draft())).toBe(0);
     const looked = draft({
       roleId: "solo",

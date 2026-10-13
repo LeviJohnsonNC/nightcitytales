@@ -385,7 +385,7 @@ export const statesNoExactAge: Check = {
 
 type SeenAs = {
   name: string;
-  sex: "male" | "female" | "open";
+  sex: "male" | "female" | "nonbinary" | "open";
   /** What else a sentence calls them, when a name is not what it uses (a walk-on's role). */
   aliases?: string[];
 };
@@ -404,6 +404,7 @@ function peopleSeenAs(packet: string): SeenAs[] {
     const l = look.trim().toLowerCase();
     if (l.startsWith("woman")) return "female";
     if (l.startsWith("man")) return "male";
+    if (l.startsWith("nonbinary")) return "nonbinary";
     if (l.includes("no he or she")) return "open";
     return null;
   };
@@ -470,7 +471,9 @@ function sentencesOf(text: string): string[] {
 export const seenAsPronounsHold: Check = {
   id: "seen-as-pronouns-hold",
   applies: (ctx) =>
-    /Seen as:|Also here:|run by [^(:;]+ \((?:man|woman|[^)]*no he or she)/.test(ctx.packet),
+    /Seen as:|Also here:|run by [^(:;]+ \((?:man|woman|nonbinary|[^)]*no he or she)/.test(
+      ctx.packet,
+    ),
   title: "used the pronouns the packet's 'Seen as' lines fix",
   source:
     'Both prompts: "Everybody else the player can see already has a face, and it is fixed." (APPEARANCE_RULE)',
@@ -507,7 +510,9 @@ export const seenAsPronounsHold: Check = {
             note:
               person.sex === "open"
                 ? `${person.name} has no he or she fixed; "${wrong[0]}" chose one`
-                : `${person.name} is seen as a ${person.sex === "male" ? "man" : "woman"}; "${wrong[0]}" contradicts it`,
+                : person.sex === "nonbinary"
+                  ? `${person.name} is nonbinary (they/them); "${wrong[0]}" contradicts it`
+                  : `${person.name} is seen as a ${person.sex === "male" ? "man" : "woman"}; "${wrong[0]}" contradicts it`,
           });
         }
       });

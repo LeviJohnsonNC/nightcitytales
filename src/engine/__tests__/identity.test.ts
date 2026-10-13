@@ -4,6 +4,7 @@ import {
   AGE_MIN,
   ageBand,
   identityLine,
+  isSex,
   pronounsFor,
   readIdentity,
   sexFromPronouns,
@@ -48,9 +49,30 @@ describe("identity", () => {
     expect(identityLine({ sex: null, age: null })).toBeNull();
   });
 
-  it("carries the old pronouns over, and only the two it still offers", () => {
+  it("carries the pronouns over for all three genders, and nothing else", () => {
     expect(pronounsFor("female")).toBe("she/her");
+    expect(pronounsFor("male")).toBe("he/him");
+    expect(pronounsFor("nonbinary")).toBe("they/them");
     expect(sexFromPronouns("he/him")).toBe("male");
-    expect(sexFromPronouns("They/Them")).toBeNull();
+    expect(sexFromPronouns("She / Her")).toBe("female");
+    expect(sexFromPronouns("They/Them")).toBe("nonbinary");
+    expect(sexFromPronouns("xe/xem")).toBeNull();
+    expect(sexFromPronouns("")).toBeNull();
+  });
+
+  it("knows a nonbinary character, and writes their pronouns into the line", () => {
+    expect(isSex("nonbinary")).toBe(true);
+    expect(isSex("other")).toBe(false);
+    expect(readIdentity({ sex: "nonbinary", age: 40 })).toEqual({ sex: "nonbinary", age: 40 });
+    expect(identityLine({ sex: "nonbinary", age: 40 })).toBe(
+      "nonbinary person, they/them, middle-aged",
+    );
+    expect(identityLine({ sex: "nonbinary", age: null })).toBe("nonbinary person, they/them");
+  });
+
+  it("never says a nonbinary character's age as a number either", () => {
+    for (let age = 16; age <= 90; age += 1) {
+      expect(identityLine({ sex: "nonbinary", age })).not.toMatch(/\d/);
+    }
   });
 });
