@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { FLAVOR_SUBJECTS } from "../flavorArt";
-import { normalizeWalkOnMentions, resolveWalkOns } from "../walkOnMention";
+import {
+  cleanWalkOnName,
+  nameTheyLearned,
+  normalizeWalkOnMentions,
+  resolveWalkOns,
+} from "../walkOnMention";
 
 const KNOWN_SUBJECT = FLAVOR_SUBJECTS[0]!;
 
@@ -67,5 +72,47 @@ describe("resolveWalkOns()", () => {
     // thrown, matching normalizeWalkOnMentions' own drop-don't-throw rule.
     const out = resolveWalkOns([{ subject: "not-a-real-subject" }], "seed");
     expect(out).toEqual([]);
+  });
+});
+
+describe("a walk-on's name", () => {
+  it("is a short run of letters and never a cast member's", () => {
+    expect(cleanWalkOnName("  Mara   Ketter ")).toBe("Mara Ketter");
+    expect(cleanWalkOnName("Dae-ho O'Neill")).toBe("Dae-ho O'Neill");
+    expect(cleanWalkOnName("Ilsa Bräun")).toBeUndefined();
+    expect(cleanWalkOnName("Kit Mwangi")).toBeUndefined();
+    expect(cleanWalkOnName("R2D2")).toBeUndefined();
+    expect(cleanWalkOnName('"Boss"')).toBeUndefined();
+    expect(cleanWalkOnName("A")).toBeUndefined();
+    expect(cleanWalkOnName("x".repeat(41))).toBeUndefined();
+    expect(cleanWalkOnName(7)).toBeUndefined();
+  });
+
+  it("rides on the mention the model tagged", () => {
+    expect(normalizeWalkOnMentions([{ subject: "dive-bar-tender", name: "Mara Ketter" }])).toEqual([
+      { subject: "dive-bar-tender", name: "Mara Ketter" },
+    ]);
+    expect(normalizeWalkOnMentions([{ subject: "dive-bar-tender", name: "Ilsa Bräun" }])).toEqual([
+      { subject: "dive-bar-tender" },
+    ]);
+  });
+
+  it("is the player's to know only when the passage says it", () => {
+    const text = "Mara Ketter wipes the counter. Mara nods.";
+    expect(nameTheyLearned("Mara Ketter", text)).toBe("Mara Ketter");
+    // Only the first name was said: that is all they have learned.
+    expect(nameTheyLearned("Mara Ketter", "Mara nods at you.")).toBe("Mara");
+    expect(nameTheyLearned("Mara Ketter", "The tender nods at you.")).toBeUndefined();
+    // Whole words only: a name inside another word is not said.
+    expect(nameTheyLearned("Ann", "A bad channel hums.")).toBeUndefined();
+    expect(nameTheyLearned(undefined, text)).toBeUndefined();
+  });
+
+  it("is kept by resolveWalkOns only against the passage, and never given a role's gender by it", () => {
+    const mentions = [{ subject: "dive-bar-tender", name: "Mara Ketter" }];
+    expect(resolveWalkOns(mentions, "c1:p", [], "Mara Ketter pours.")[0]?.name).toBe("Mara Ketter");
+    expect(resolveWalkOns(mentions, "c1:p", [], "The tender pours.")[0]).not.toHaveProperty("name");
+    // No passage handed in, no name: it cannot be checked, so it is not trusted.
+    expect(resolveWalkOns(mentions, "c1:p")[0]).not.toHaveProperty("name");
   });
 });

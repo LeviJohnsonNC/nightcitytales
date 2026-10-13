@@ -157,7 +157,12 @@ export async function applyResponse(
       // stays the same face across scrollback and reload.
       walkOns: (() => {
         const here = alsoHereAt(campaignId, bundle.campaign.location_key ?? DEFAULT_START);
-        return resolveWalkOns(response.walkOns, here.seed, here.subjects);
+        return resolveWalkOns(
+          response.walkOns,
+          here.seed,
+          here.subjects,
+          response.resolution ?? response.situation.description,
+        );
       })(),
       // Which prompt, at which version, asked which model — and who answered.
       // Built here rather than spelled out, per ledger.ts.

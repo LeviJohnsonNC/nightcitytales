@@ -23,17 +23,20 @@ import { seenAsLine } from "@/engine";
 import { FacePlate } from "./FacePlate";
 import { flavorArt, flavorSubjectLabel, type FlavorGender } from "./flavorArt";
 
-export type WalkOn = { subject: string; gender: FlavorGender };
+export type WalkOn = { subject: string; gender: FlavorGender; name?: string | undefined };
 
 /** One walk-on as a face with its role and how it reads; the whole scene is a tap away. */
-export function WalkOnFace({ subject, gender }: WalkOn) {
+export function WalkOnFace({ subject, gender, name }: WalkOn) {
   const art = flavorArt(subject, gender);
   const [open, setOpen] = useState(false);
   // The catalog and the files on disk can drift (a JSON entry with no WebP
   // yet); rendering nothing is the honest answer, the same rule SceneHero
   // follows for a place with no picture.
   if (!art) return null;
-  const label = flavorSubjectLabel(subject);
+  const role = flavorSubjectLabel(subject);
+  // Once the passage has given them a name they read like the cast: the name
+  // first, the role under it. Until then the role is all the player knows.
+  const label = name ?? role;
   const look = seenAsLine(art.look);
   return (
     <>
@@ -48,11 +51,16 @@ export function WalkOnFace({ subject, gender }: WalkOn) {
         <FacePlate
           src={art.faceSrc}
           name={label}
-          alt={look ? `${label}, ${look}` : label}
+          alt={[name, role, look].filter(Boolean).join(", ")}
           className="size-[5.5rem] transition-opacity group-hover:opacity-80"
         />
+        {name && (
+          <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
+            {name}
+          </span>
+        )}
         <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
-          {label}
+          {role}
         </span>
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -98,7 +106,12 @@ export function WalkOnStrip({
       <CollapsibleContent>
         <div className="mt-2 flex flex-wrap gap-3">
           {walkOns.map((w, i) => (
-            <WalkOnFace key={`${w.subject}-${i}`} subject={w.subject} gender={w.gender} />
+            <WalkOnFace
+              key={`${w.subject}-${i}`}
+              subject={w.subject}
+              gender={w.gender}
+              name={w.name}
+            />
           ))}
         </div>
       </CollapsibleContent>

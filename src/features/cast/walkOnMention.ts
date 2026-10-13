@@ -16,15 +16,56 @@
  */
 import { z } from "zod";
 import { FLAVOR_SUBJECTS, resolveFlavorGender, type FlavorGender } from "./flavorArt";
+import { npcsNamedIn } from "./npcMentions";
 
 export const WalkOnMentionSchema = z.object({
   subject: z.string(),
   gender: z.enum(["male", "female"]).optional(),
+  /** What the character has learned to call them, in the words the passage uses. */
+  name: z.string().optional(),
 });
 
 export type WalkOnMention = z.infer<typeof WalkOnMentionSchema>;
 
-export type ResolvedWalkOn = { subject: string; gender: FlavorGender };
+export type ResolvedWalkOn = { subject: string; gender: FlavorGender; name?: string };
+
+const MAX_NAME = 40;
+/** Letters, spaces and the punctuation names carry; no digits, no quotation, no stray symbols. */
+const NAME_SHAPE = /^\p{L}[\p{L}'’.\- ]*$/u;
+
+/**
+ * A walk-on's name as the wire may carry it: a short run of letters, and never
+ * the name of somebody in the directory. A walk-on is not a cast member, so a
+ * name that belongs to one is refused rather than lending the walk-on their face.
+ */
+export function cleanWalkOnName(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const name = raw.trim().replace(/\s+/g, " ");
+  if (name.length < 2 || name.length > MAX_NAME || !NAME_SHAPE.test(name)) return undefined;
+  if (npcsNamedIn(name).length > 0) return undefined;
+  return name;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function passageSays(text: string, name: string): boolean {
+  return new RegExp(`(?<![\\p{L}])${escapeRegExp(name)}(?![\\p{L}])`, "iu").test(text);
+}
+
+/**
+ * The name the PLAYER was actually given: the whole of it if the passage says it,
+ * else its first word if the passage only says that ("Mara" after "Mara Ketter"),
+ * else nothing. The model supplies a name; the passage is what makes it known, so a
+ * name the player never read is never shown beside a face.
+ */
+export function nameTheyLearned(name: string | undefined, text: string): string | undefined {
+  if (!name || !text) return undefined;
+  if (passageSays(text, name)) return name;
+  const first = name.split(" ")[0]!;
+  return first.length >= 2 && first !== name && passageSays(text, first) ? first : undefined;
+}
 
 /** A turn narrates at most this many walk-ons. Plenty for a scene, and bounded. */
 const MAX_WALK_ONS = 3;
@@ -44,7 +85,8 @@ export function normalizeWalkOnMentions(raw: unknown): WalkOnMention[] {
     if (!subject || !SUBJECTS.has(subject)) continue;
     const genderRaw = typeof w["gender"] === "string" ? w["gender"].trim().toLowerCase() : "";
     const gender = genderRaw === "male" || genderRaw === "female" ? genderRaw : undefined;
-    out.push({ subject, ...(gender ? { gender } : {}) });
+    const name = cleanWalkOnName(w["name"]);
+    out.push({ subject, ...(gender ? { gender } : {}), ...(name ? { name } : {}) });
     if (out.length === MAX_WALK_ONS) break;
   }
   return out;
@@ -66,6 +108,8 @@ export function resolveWalkOns(
    * the picture is the one it was given, not the one it prefers.
    */
   told: ReadonlySet<string> | readonly string[] = [],
+  /** The passage the player reads: a name is kept only if it says it (`nameTheyLearned`). */
+  text = "",
 ): ResolvedWalkOn[] {
   if (!Array.isArray(mentions)) return [];
   const settled = new Set(told);
@@ -76,7 +120,9 @@ export function resolveWalkOns(
       settled.has(mention.subject) ? undefined : mention.gender,
       `${seed}:${mention.subject}`,
     );
-    if (gender) out.push({ subject: mention.subject, gender });
+    if (!gender) continue;
+    const name = nameTheyLearned(mention.name, text);
+    out.push({ subject: mention.subject, gender, ...(name ? { name } : {}) });
   }
   return out;
 }

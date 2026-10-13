@@ -19,7 +19,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.27.0";
+export const LIFE_PROMPT_VERSION = "2.28.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -127,5 +127,5 @@ Return a structured JSON object:
 - "deltas": world changes to record: {"kind":"set_flag","flag":"..."} | {"kind":"npc_disposition","npcKey":"...","delta":-3..3} | {"kind":"note","text":"..."}
 - "observations": [] on a quiet turn. Otherwise what the city noticed, using ONLY the words above: [{"observation":"killed","factionId":"tyger_claws"},{"observation":"loud","factionId":null}]. You are reporting, not pricing: the engine decides what each one is worth.
 - "question": null, or ONE yes/no question about the world you needed answered and could not answer yourself, per the rules above. The answer comes back next turn.
-- "walkOns": [] on most turns. Otherwise the walk-on characters you named this turn, per WALK-ON FACES above: [{"subject":"<id>","gender":"male"|"female"}] (gender optional).
+- "walkOns": [] on most turns. Otherwise the walk-on characters you named this turn, per WALK-ON FACES above: [{"subject":"<id>","gender":"male"|"female","name":"<their name, only if this passage says it>"}] (gender and name optional).
 - "newSituation": at most ONE new persistent situation this turn, or null: { "key": stable snake_case id, "category": "need"|"people"|"opportunity"|"pressure", "title": "...", "summary": "...", "npcKey": "..."|null, "severity": 1-5, "dueDay": <in-world day it comes due>|null }`;

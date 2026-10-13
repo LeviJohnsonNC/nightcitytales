@@ -266,7 +266,8 @@ export const GmWireResponseSchema = z.object({
       "Walk-on characters you named this turn who are NOT part of the standing cast — a " +
         "bartender, a beat cop, a shopkeep. Tag one only when their role matches a subject in " +
         "the WALK-ON FACES list, using its id exactly. Each item is " +
-        '{"subject":"<id from the WALK-ON FACES list>","gender":"male"|"female"} (gender optional). ' +
+        '{"subject":"<id from the WALK-ON FACES list>","gender":"male"|"female","name":"<their name>"} ' +
+        "(gender and name optional; give a name only when your narration says it). " +
         "Never invent a subject outside that list, and never tag a named cast member this way. " +
         "Use [] when nobody walk-on-shaped was named, which is most turns.",
     )

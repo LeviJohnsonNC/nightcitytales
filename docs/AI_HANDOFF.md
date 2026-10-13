@@ -97,3 +97,15 @@ Updated 2026-10-12. Goal: nonbinary characters, starting with the keeper Adair, 
   route (each option sets the right pronouns and line). Eval: nonbinary keeper scenario 3 runs, "they"
   every run. A nonbinary PLAYER character's third-person references are not measured.
 - **Next:** none required; faces art (older/younger) remains debt 27.
+
+## Parallel stream — walk-on names (Claude, branch claude/walkon-names)
+
+Updated 2026-10-13. Goal: a walk-on the passage names wears that name over their role in the Here row.
+
+- **Done (in the PR once pushed):** `name` on the `walkOns` tag (both prompts, Life 2.28.0, Job 2.21.0);
+  kept only if the passage says it and it is not a cast name (`walkOnMention.ts`); stored on the narration
+  and read back (`ledger.ts`); `WalkOnFace` shows it over the role; check `walk-on-name-is-said`.
+- **Validation:** typecheck, lint, unit suite pass. Eval (3 runs): new scenario `life-walk-on-named` gave a
+  name every run and the prose said it every time; `life-walk-on-as-told` gave none, correctly; the one
+  failing check was the known "unsourced number" noise on `job-staff-as-told`. Not seen in a signed-in browser.
+- **Not done:** names are not remembered across turns.

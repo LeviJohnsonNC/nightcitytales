@@ -159,6 +159,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
         npcKeys: gm.proposedActions.flatMap((a) => ("npcKey" in a && a.npcKey ? [a.npcKey] : [])),
         observations: gm.observations.map((o) => o.observation),
         walkOns: gm.walkOns.map((w) => w.subject),
+        walkOnNames: gm.walkOns.flatMap((w) => (w.name ? [w.name] : [])),
         proposedActionCount: gm.proposedActions.length,
         checks: gm.proposedActions.flatMap((a) =>
           a.kind === "skill_check"
@@ -201,6 +202,7 @@ export async function runTurn(scenario: Scenario, model: string): Promise<TurnRe
       npcKeys: life.proposedActions.flatMap((a) => ("npcKey" in a && a.npcKey ? [a.npcKey] : [])),
       observations: life.observations.map((o) => o.observation),
       walkOns: life.walkOns.map((w) => w.subject),
+      walkOnNames: life.walkOns.flatMap((w) => (w.name ? [w.name] : [])),
       proposedActionCount: life.proposedActions.filter((a) => a.kind !== "none").length,
       trips: life.proposedActions.flatMap((a) =>
         a.kind === "travel"

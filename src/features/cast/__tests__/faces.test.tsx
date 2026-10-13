@@ -65,3 +65,17 @@ it("lays the scene's faces out as a labelled row, and draws nothing for an empty
   expect(html).toContain("woman, older");
   expect(renderToStaticMarkup(<SceneFaces faces={[]} />)).toBe("");
 });
+
+it("puts a learned name over a walk-on's role, in the cast's own type, and says both to a screen reader", () => {
+  const faces = sceneFaces({
+    text: "",
+    walkOns: [{ subject: "dive-bar-tender", gender: "female", name: "Mara Ketter" }],
+    people: [],
+  });
+  const html = renderToStaticMarkup(<SceneFaces faces={faces} />);
+  expect(html).toContain("Mara Ketter");
+  expect(html).toContain("Dive Bar Tender");
+  expect(html.indexOf("Mara Ketter")).toBeLessThan(html.indexOf("Dive Bar Tender"));
+  expect(html).toContain("font-semibold");
+  expect(html).toContain("Mara Ketter, Dive Bar Tender");
+});
