@@ -54,6 +54,7 @@ import {
   type Observation,
 } from "@/engine";
 import { resolveWalkOns } from "@/features/cast/walkOnMention";
+import { alsoHereAt } from "@/features/life/alsoHere";
 import { chronicleFor } from "@/features/campaign/chronicleModel";
 import { saveLiveEncounter } from "@/features/campaign/encounterState";
 import { applyItemUse, gadgetTurn, planItemUse } from "@/features/campaign/itemUse";
@@ -274,6 +275,15 @@ export async function narrate(
                   : {}),
               };
             })(),
+            // Who the place has standing in it, with the face the player will be
+            // shown, so the picture follows the words (see features/cast/ambientPeople.ts).
+            ...(() => {
+              const here = alsoHereAt(
+                campaignId,
+                bundle.campaign.location_key ?? DEFAULT_START,
+              ).lines;
+              return here.length ? { alsoHere: here } : {};
+            })(),
             gangs: jobDistrict.gangs,
             combatZone: isCombatZone(jobDistrict.key),
             nearby: withinBudget(jobDistrict.locations, PACKET_BUDGET.nearby).map((l) => l.name),
@@ -376,10 +386,10 @@ export async function narrate(
       // Resolved HERE, once, with the campaign+place seed the response schema
       // never sees — never re-picked on a later render, so a walk-on's face
       // stays the same face across scrollback and reload.
-      walkOns: resolveWalkOns(
-        gm.walkOns,
-        `${campaignId}:${bundle.campaign.location_key ?? DEFAULT_START}`,
-      ),
+      walkOns: (() => {
+        const here = alsoHereAt(campaignId, bundle.campaign.location_key ?? DEFAULT_START);
+        return resolveWalkOns(gm.walkOns, here.seed, here.subjects);
+      })(),
       // Which prompt, at which version, asked which model — and who answered.
       // Built here rather than spelled out, per ledger.ts.
       ...turnProvenanceDataIfAny(gm.provenance),

@@ -279,15 +279,20 @@ seller roles are left out there. Walk-on art records `age` and a `face` square;
 for the dialog. `seenAsPronounsHold` (narratorChecks) holds the prose to all of it by
 reading the packet back, and is deliberately conservative. A new portrait needs a row
 in `cast-looks.json` (`npcLooks.test.ts` fails without one and checks it against the
-dossier's pronouns); a new walk-on role needs tags, nouns and a face square. The Job
-packet carries "Seen as" but not yet "Also here".
+dossier's pronouns); a new walk-on role needs tags, nouns and a face square. Both packets
+carry "Seen as" and "Also here" (`alsoHereNote` in `narratorRules.ts` is the one note under it).
+They differ in one place that matters: in Life the people are simply in the room; on a Job
+the BEAT decides who is in a scene, so the Job note says the list is faces on file and tells
+the narrator never to add somebody to a scene with no room for them.
 
 Faces sit on the page in one place. `life/sceneFaces.ts` decides who is in a scene (the people
 the passage names, the walk-ons tagged this turn, the people the engine put in the room;
 each once, six at most) and `life/SceneFaces.tsx` lays them out as one "Here" row above the
 prose, replacing a strip under each paragraph. Every face is `cast/FacePlate.tsx`, so a
 keeper, a person and a walk-on look like one cast, and a known person wears the People
-rail's disposition ring (`hudModel.ts` `RING`). `NpcName` is text with a hover card on a
+rail's disposition ring (`hudModel.ts` `RING`). A Job's pinned latest turn gets the same row,
+built from the people its narration names and the walk-ons it tagged, never from the place's
+standing roles. `NpcName` is text with a hover card on a
 person's name; never put a thumbnail in front of a mention. `npcMentions.ts` is the one
 place that decides what counts as a name. See `docs/checkpoint-faces-layout.md`.
 

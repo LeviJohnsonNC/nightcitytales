@@ -5,7 +5,7 @@
  * summary of recent events — never the whole transcript. That bounded slice is
  * what keeps a long campaign from drifting.
  */
-import { ALREADY_HERE_LINE } from "@/features/narration/narratorRules";
+import { ALREADY_HERE_LINE, alsoHereNote } from "@/features/narration/narratorRules";
 import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 import { renderRoleAffordanceLines } from "@/engine";
 import type { Beat, BeatExit, Mission, MissionObjective } from "@/engine";
@@ -117,6 +117,12 @@ export type GmContextInput = {
     blurb?: string;
     /** What has been written about where the character is standing. */
     dossier?: string;
+    /**
+     * The staff and regulars this place has, each with the face the player will
+     * be shown ("\"dive-bar-tender\" (Dive Bar Tender): woman, older"). Faces on
+     * file, not a promise they are in the scene: on a Job the beat decides who is.
+     */
+    alsoHere?: string[];
     /**
      * How often the character has been here, and what to do about it. The same
      * place is written three different ways depending on this.
@@ -334,6 +340,10 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
         "These facts stay true on every visit. They do not get DESCRIBED on every visit: how " +
           "much of this the player is told is set by how well they know the place, above.",
       );
+    }
+    if (p.alsoHere?.length) {
+      parts.push(line("Also here", p.alsoHere.join("; ")));
+      parts.push(alsoHereNote("job"));
     }
     if (p.gangs.length) parts.push(line("Gangs", p.gangs.join(", ")));
     if (p.combatZone) parts.push(line("Note", "Combat Zone. Nobody is coming when it goes loud."));

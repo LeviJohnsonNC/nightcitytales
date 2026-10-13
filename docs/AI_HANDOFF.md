@@ -70,3 +70,18 @@ belong on the page, not only be true.
   (`docs/checkpoint-faces-layout.md`). No prompt or packet text changed, so no eval run.
 - **Not done:** more faces per role (debt 27), "Also here" in the Job packet.
 - **Next:** play a real Life turn and look at the row; then decide which faces to generate.
+
+## Parallel stream — Job packet "Also here" (Claude, branch claude/job-also-here)
+
+Updated 2026-10-12. Base origin/main d66f547 (#376 merged). Goal: the Job packet tells the
+narrator who a place has standing in it, as Life does.
+
+- **Done (in the PR once pushed):** `place.alsoHere` in the Job context, the shared
+  `alsoHereNote("life"|"job")`, Job prompt 2.19.0, `resolveWalkOns` told-set in the Job turn,
+  and the same "Here" row on the Job's pinned latest turn (people named and walk-ons tagged;
+  not the place's roles). Job note says the beat decides who is in a scene.
+- **Validation:** lint, typecheck, unit suite pass. Eval (3 runs, one model): all eight Job
+  scenarios; the unsourced-number class failed at similar rates on main (2.18.0) and here;
+  "opens on smells" in job-opens-a-room 2/5 here vs 1/5 on main over a 5-run recheck, which is
+  not distinguishable from chance. The Job screen row was not browser-checked.
+- **Next:** nonbinary support (identity, creation, portraits, narrator, checks) as its own PR.

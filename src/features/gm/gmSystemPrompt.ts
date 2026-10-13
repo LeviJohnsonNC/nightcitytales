@@ -43,7 +43,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.18.0";
+export const GM_PROMPT_VERSION = "2.19.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -128,7 +128,7 @@ On EVERY other turn "suggestedActions" is []. An empty list is the normal and co
 
 ${cityNoticedSection({ quietTurn: "Most turns notice nothing, and [] is the correct answer." })}
 
-${walkOnFacesSection({ excludeHostiles: true })}
+${walkOnFacesSection({ excludeHostiles: true, alsoHere: true })}
 
 # TONE & VOICE
 - The house voice above governs. These are the parts specific to running a job.

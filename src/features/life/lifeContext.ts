@@ -5,7 +5,7 @@
  * matter, and what the character can actually do. Nothing else.
  */
 import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
-import { ALREADY_HERE_LINE, carryOnLine } from "@/features/narration/narratorRules";
+import { ALREADY_HERE_LINE, alsoHereNote, carryOnLine } from "@/features/narration/narratorRules";
 import {
   formatLifeClock,
   formatDuration,
@@ -471,12 +471,7 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
     }
     if (p.alsoHere?.length) {
       parts.push(line("Also here", p.alsoHere.join("; ")));
-      parts.push(
-        "These are the staff and regulars of this place, and the player is shown each one's face. " +
-          "Write them as listed: the same sex for every pronoun and the same stage of life, never " +
-          "the other. Give them a first name only if the scene needs one. Tag whoever you narrate " +
-          'in "walkOns" by the id in quotes. Nobody else has a face on offer here.',
-      );
+      parts.push(alsoHereNote("life"));
     }
     if (p.sellers?.length) {
       parts.push(line("Selling here", p.sellers.join("; ")));

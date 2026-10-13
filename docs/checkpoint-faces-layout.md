@@ -21,7 +21,9 @@ in a room before the narrator writes. This makes them BELONG on the page.
   mention. A mouse resting on a person's name raises a small card (face, role, how
   they read); a tap still opens the dossier, because a touch screen has no hover.
 - **Life's current turn has no strip under the paragraph.** The row replaced it.
-  Scrollback and Job turns keep `WalkOnStrip`, now built from the same pieces.
+  Scrollback keeps `WalkOnStrip`, now built from the same pieces. A Job's pinned latest
+  turn has the same row (people its narration names, walk-ons it tagged; not the place's
+  standing roles, because the beat decides who is in a scene); the Job journal keeps strips.
 
 ## Checked, and not checked
 
