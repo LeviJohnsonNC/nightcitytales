@@ -94,4 +94,19 @@ describe("sceneFaces", () => {
   it("is empty for a scene with nobody in it", () => {
     expect(sceneFaces({ ...none, text: "Rain on the glass." })).toEqual([]);
   });
+
+  it("carries the name the passage gave a walk-on, and nothing when it gave none", () => {
+    const faces = sceneFaces({
+      ...none,
+      walkOns: [
+        { subject: "dive-bar-tender", gender: "female", name: "Mara Ketter" },
+        { subject: "ncpd-beat-cop", gender: "male" },
+      ],
+      text: "",
+    });
+    const named = faces.find((f) => f.kind === "walkon" && f.subject === "dive-bar-tender");
+    const plain = faces.find((f) => f.kind === "walkon" && f.subject === "ncpd-beat-cop");
+    expect(named?.kind === "walkon" && named.name).toBe("Mara Ketter");
+    expect(plain).not.toHaveProperty("name");
+  });
 });

@@ -255,6 +255,22 @@ describe("readWalkOnsEventData", () => {
     expect(readWalkOnsEventData({ walkOns })).toEqual(walkOns);
   });
 
+  it("reads a name back when there is one, and ignores one that is not a short string", () => {
+    expect(
+      readWalkOnsEventData({
+        walkOns: [
+          { subject: "dive-bar-tender", gender: "female", name: "Mara Ketter" },
+          { subject: "ncpd-beat-cop", gender: "male", name: 7 },
+          { subject: "street-vendor", gender: "male", name: "x".repeat(41) },
+        ],
+      }),
+    ).toEqual([
+      { subject: "dive-bar-tender", gender: "female", name: "Mara Ketter" },
+      { subject: "ncpd-beat-cop", gender: "male" },
+      { subject: "street-vendor", gender: "male" },
+    ]);
+  });
+
   it("drops an item missing a subject or carrying an unrecognized gender", () => {
     expect(
       readWalkOnsEventData({

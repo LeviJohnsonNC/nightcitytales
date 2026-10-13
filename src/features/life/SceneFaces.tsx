@@ -24,7 +24,7 @@ export function SceneFaces({ faces }: { faces: readonly SceneFace[] }) {
             {face.kind === "person" ? (
               <NpcFace npc={face.npc} ringClass={face.tone ? RING[face.tone] : undefined} />
             ) : (
-              <WalkOnFace subject={face.subject} gender={face.gender} />
+              <WalkOnFace subject={face.subject} gender={face.gender} name={face.name} />
             )}
           </li>
         ))}

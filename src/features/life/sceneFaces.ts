@@ -41,13 +41,15 @@ export type SceneFace =
       subject: string;
       gender: FlavorGender;
       label: string;
+      /** What the passage called them, when it did; shown over the role. */
+      name?: string;
     };
 
 export function sceneFaces(input: {
   /** The passage the player is reading, or "" when there is none. */
   text: string;
   /** Walk-ons the narrator tagged this turn, already resolved to a face. */
-  walkOns: readonly { subject: string; gender: FlavorGender }[];
+  walkOns: readonly { subject: string; gender: FlavorGender; name?: string }[];
   /**
    * Names of the standing cast the engine has at this place. A person the passage
    * names is shown only when they are in it; omitted where there is no such
@@ -80,6 +82,7 @@ export function sceneFaces(input: {
       subject: w.subject,
       gender: w.gender,
       label: flavorSubjectLabel(w.subject),
+      ...(w.name ? { name: w.name } : {}),
     });
   }
   return out.slice(0, input.max ?? MAX_SCENE_FACES);

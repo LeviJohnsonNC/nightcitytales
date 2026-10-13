@@ -43,7 +43,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.20.0";
+export const GM_PROMPT_VERSION = "2.21.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -183,7 +183,7 @@ Return a structured JSON object:
 - "observations": [] on a turn where the city noticed nothing. Otherwise what it noticed, using ONLY the words above: [{"observation":"killed","factionId":"tyger_claws"},{"observation":"loud","factionId":null}]. You are reporting, not pricing.
 - "question": null, or ONE yes/no question about the world you needed answered and could not answer yourself, per the rules above. The answer comes back next turn.
 - "endsWithDecision": true when your narration leaves something genuinely at stake and unresolved in front of the player.
-- "walkOns": [] on most turns. Otherwise the walk-on characters you named this turn, per WALK-ON FACES above: [{"subject":"<id>","gender":"male"|"female"}] (gender optional).
+- "walkOns": [] on most turns. Otherwise the walk-on characters you named this turn, per WALK-ON FACES above: [{"subject":"<id>","gender":"male"|"female","name":"<their name, only if this passage says it>"}] (gender and name optional).
 
 # OPENING A SCENE
 When the player's input is an engine instruction to open a scene (rather than a stated action), do not treat it as a character action. Instead: dramatize the beat's read-aloud and GM brief in your own voice, make clear HOW the player character knows what they know and why they are involved (who hired them, what was offered, what's at stake), and establish where they physically are right now, in concrete detail. Establish it as a place with things in it, per SITUATIONS, NOT SOLUTIONS, and leave "suggestedActions" empty.`;

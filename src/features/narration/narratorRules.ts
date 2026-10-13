@@ -208,7 +208,7 @@ export function walkOnFacesSection(opts: { excludeHostiles: boolean; alsoHere?: 
   return `# WALK-ON FACES
 The interface can put a face on some walk-on roles — people passing through who are not part of the standing cast and will never get a dossier of their own. When you narrate one whose role matches an id below, tag them in "walkOns" using that id exactly. Do this only for a genuine walk-on: never tag a named cast member${hostiles}, and never invent an id outside this list.
 ${WALK_ON_LIST}
-Set "gender" only when the fiction already makes it plain; leave it out otherwise and the interface picks one that stays consistent for this place. ${alsoHere}Most turns tag nobody — [] is correct whenever nothing here fits.`;
+Set "gender" only when the fiction already makes it plain; leave it out otherwise and the interface picks one that stays consistent for this place. If the passage gives one of them a name the character has learned, add "name" with exactly the words the passage uses and the interface shows it over their role; never a name the passage does not say, never a cast member's name, and leave it out for somebody nobody has named. ${alsoHere}Most turns tag nobody — [] is correct whenever nothing here fits.`;
 }
 
 /**

@@ -1052,6 +1052,20 @@ SCENARIOS.push(
     expect: faceExpect([]),
   },
   {
+    id: "life-walk-on-named",
+    narrator: "life",
+    about: "asked her name, the bartender gives one; it is tagged only in the words the prose says",
+    system: LIFE_SYSTEM_PROMPT,
+    packet: renderLifeUserPrompt(
+      {
+        ...atTheBar,
+        place: { ...atTheBar.place!, alsoHere: alsoHereAt("eval-campaign", BAR.key).lines },
+      },
+      "I ask the bartender her name.",
+    ),
+    expect: faceExpect([]),
+  },
+  {
     id: "life-cast-face-fixed",
     narrator: "life",
     about: "a fixer the packet says is a woman keeps her pronouns for the whole scene",

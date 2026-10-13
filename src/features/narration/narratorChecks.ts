@@ -21,6 +21,7 @@
 import { OBSERVATIONS, hasTag, resolveDestination, resolvePosition, tagNamed } from "@/engine";
 import WALK_ON_PLACES from "@/data/cast/walkon-places.json";
 import { FLAVOR_SUBJECTS } from "@/features/cast/flavorArt";
+import { nameTheyLearned } from "@/features/cast/walkOnMention";
 
 /**
  * A fact being withheld, and the words that would give it away.
@@ -68,6 +69,8 @@ export type CheckableTurn = {
   observations: string[];
   /** Walk-on subjects the turn tagged. */
   walkOns: string[];
+  /** The names it gave those walk-ons, as it wrote them. */
+  walkOnNames?: string[];
   /** How many mechanical actions it proposed. */
   proposedActionCount: number;
   /**
@@ -623,6 +626,19 @@ export const walkOnsFromCatalog: Check = {
   },
 };
 
+export const walkOnNameIsSaid: Check = {
+  id: "walk-on-name-is-said",
+  title: "named a walk-on only in words the passage says",
+  source:
+    'Both prompts: WALK-ON FACES, "never a name the passage does not say". The interface drops ' +
+    "an unsaid name, so this measures whether the prompt is being followed, not a harm done.",
+  run(turn) {
+    return (turn.walkOnNames ?? [])
+      .filter((name) => !nameTheyLearned(name, turn.narration))
+      .map((name) => ({ quote: name, note: "tagged as a name but the passage never says it" }));
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Withheld knowledge
 // ---------------------------------------------------------------------------
@@ -1076,6 +1092,7 @@ export const ALL_CHECKS: Check[] = [
   knownNpcKeysOnly,
   closedObservationWords,
   walkOnsFromCatalog,
+  walkOnNameIsSaid,
   namesNoWayIn,
   optionsOnlyWhenAsked,
   riskGetsDice,

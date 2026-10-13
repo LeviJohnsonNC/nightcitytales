@@ -808,13 +808,16 @@ export function readGoalsPinnedEventData(raw: unknown): Goal[] {
 // events above rather than being read ad hoc where it is rendered.
 // ---------------------------------------------------------------------------
 
-/** A walk-on the turn named, already resolved to a concrete gender. */
-export type WalkOnEventData = { subject: string; gender: "male" | "female" }[];
+/**
+ * A walk-on the turn named, already resolved to a concrete gender. `name` is
+ * there only when the passage itself gave one (`nameTheyLearned`).
+ */
+export type WalkOnEventData = { subject: string; gender: "male" | "female"; name?: string }[];
 
 /**
  * No builder function: the value written IS this shape already —
  * `resolveWalkOns` in features/cast/walkOnMention.ts produces exactly
- * `{ subject, gender }[]`, validated against the flavor-art catalog before it
+ * `{ subject, gender, name? }[]`, validated against the flavor-art catalog before it
  * ever reaches here. Only the read side needs to distrust the jsonb column.
  */
 export function readWalkOnsEventData(raw: unknown): WalkOnEventData {
@@ -827,7 +830,9 @@ export function readWalkOnsEventData(raw: unknown): WalkOnEventData {
     const w = item as RawPayload;
     const subject = str(w["subject"]);
     const gender = str(w["gender"]);
-    if (subject && (gender === "male" || gender === "female")) out.push({ subject, gender });
+    const name = str(w["name"]);
+    if (subject && (gender === "male" || gender === "female"))
+      out.push({ subject, gender, ...(name && name.length <= 40 ? { name } : {}) });
   }
   return out;
 }

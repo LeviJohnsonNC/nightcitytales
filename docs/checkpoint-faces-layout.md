@@ -39,6 +39,13 @@ NOT checked: the signed-in game. `LifeScreen` needs a Supabase session, so the r
 has not been seen in a real campaign, on a real turn, over a real scene picture.
 That is the remaining gate.
 
+## Walk-on names
+
+A walk-on the passage names wears the name over their role, in the cast's own type.
+`name` rides on the `walkOns` tag; `resolveWalkOns` keeps it only if the passage says it
+(`nameTheyLearned`) and `cleanWalkOnName` accepts it. Nothing is remembered between turns: a
+later turn that tags the same role keeps the name only if that passage says it again.
+
 ## Limits
 
 - The row is derived on every render from the current narration; after a reload with

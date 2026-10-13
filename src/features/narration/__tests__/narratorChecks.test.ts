@@ -24,6 +24,7 @@ import {
   staysPutOnRefusal,
   statesNoExactAge,
   unheardStaysUnheard,
+  walkOnNameIsSaid,
   walkOnsFromCatalog,
   withheldStaysWithheld,
   withinProseBudget,
@@ -233,6 +234,17 @@ describe("closed vocabularies", () => {
 
   it("catches a walk-on the art catalog does not have", () => {
     expect(walkOnsFromCatalog.run(turn({ walkOns: ["astronaut"] }), CTX)).not.toEqual([]);
+  });
+
+  it("catches a walk-on named in the tag but not in the prose, and lets a said name through", () => {
+    const said = turn({
+      narration: "Mara Ketter pours. Mara smiles.",
+      walkOnNames: ["Mara Ketter"],
+    });
+    const unsaid = turn({ narration: "The tender pours.", walkOnNames: ["Mara Ketter"] });
+    expect(walkOnNameIsSaid.run(said, CTX)).toEqual([]);
+    expect(walkOnNameIsSaid.run(unsaid, CTX)).toHaveLength(1);
+    expect(walkOnNameIsSaid.run(turn({ narration: "Quiet." }), CTX)).toEqual([]);
   });
 });
 
