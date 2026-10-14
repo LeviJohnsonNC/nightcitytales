@@ -13,7 +13,13 @@ Baseline Mac module casing collision fixed in separate commit b9a53622: renamed
 sceneFaces.ts to sceneFaceModel.ts with imports; no behavior change.
 Next: checkpoint art, inspect office/nightclub/residential4 captures running in
 /tmp/nct-art-browser.log; finish typecheck/lint/tests/build and remote checks.
-Art not yet visually inspected or pushed; initial typecheck blocked only by casing. User review/merge gate remains.
+PR385: https://github.com/LeviJohnsonNC/nightcitytales/pull/385 (draft), pushed33a3591d.
+On33a3591d: typecheck,4764tests/376files,lint0errors/10warnings,build pass;
+3browser tests pass (office4/nightclub4/residential4). Actual play/destroyed and
+residential lights-off screenshots inspected. Low wreck debris lowered after review;
+security-door spill reduced to match its small glass. These refinements need validation.
+Next: push refinement, rerun targeted screenshots plus additional residential layout,
+finish remote checks, preserve evidence. No real campaign writes. User review/merge gate remains.
 
 ## Parallel stream — shopping, then the audit (Claude, branch claude/shady-goods-store-art-i8grnn)
 

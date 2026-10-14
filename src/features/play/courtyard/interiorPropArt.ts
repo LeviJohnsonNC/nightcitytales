@@ -253,7 +253,7 @@ export function createInteriorPropTextures(
         const x = 0.15 + (i % 3) * 0.52,
           y = 0.15 + Math.floor(i / 3) * 1.1;
         poly(
-          [point(x, y, 15), point(x + 0.3, y + 0.05, 15), point(x + 0.16, y + 0.3, 15)],
+          [point(x, y, 0.5), point(x + 0.3, y + 0.05, 0.5), point(x + 0.16, y + 0.3, 0.5)],
           "#171f24",
           "#333b3c",
         );

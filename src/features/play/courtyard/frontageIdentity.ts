@@ -28,14 +28,24 @@ export function entranceLights(env: SceneEnvironment): GroundLight[] {
         out: edge === "north" ? { x: 0, y: -1 } : { x: 1, y: 0 },
         s0: c - 0.8,
         s1: c + 0.8,
-        reach: s.style === "workshop" ? 4 : 2.6,
+        reach:
+          s.style === "workshop"
+            ? 4
+            : residentialEntranceStyle(s, edge, c) === "security"
+              ? 1.6
+              : 2.6,
         spread: 0.7,
         color: serviceDoors(s, edge, env.entrances).find((d) => d.c === c)?.warm
           ? ([1, 0.66, 0.32] as const)
           : s.style === "workshop"
             ? ([0.28, 0.77, 1] as const)
             : ([1, 0.62, 0.28] as const),
-        intensity: s.style === "workshop" ? 0.8 : 0.68,
+        intensity:
+          s.style === "workshop"
+            ? 0.8
+            : residentialEntranceStyle(s, edge, c) === "security"
+              ? 0.4
+              : 0.68,
       }));
     });
   });
