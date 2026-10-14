@@ -3,7 +3,7 @@
  * the decision: who is in it, in what order, once each, and never invented.
  */
 import { describe, expect, it } from "vitest";
-import { MAX_SCENE_FACES, sceneFaces } from "../sceneFaces";
+import { MAX_SCENE_FACES, sceneFaces } from "../sceneFaceModel";
 
 const none = { walkOns: [], people: [] };
 

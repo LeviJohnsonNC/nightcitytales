@@ -11,7 +11,7 @@
 import { NpcFace } from "@/features/cast/NpcName";
 import { WalkOnFace } from "@/features/cast/WalkOnStrip";
 import { RING } from "./hud/hudModel";
-import type { SceneFace } from "./sceneFaces";
+import type { SceneFace } from "./sceneFaceModel";
 
 export function SceneFaces({ faces }: { faces: readonly SceneFace[] }) {
   if (faces.length === 0) return null;

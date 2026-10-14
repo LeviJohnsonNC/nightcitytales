@@ -59,7 +59,7 @@ import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
 import { castHere } from "./lifeContextOps";
 import { SceneFaces } from "./SceneFaces";
-import { sceneFaces } from "./sceneFaces";
+import { sceneFaces } from "./sceneFaceModel";
 import { JOB_TIERS, readWalkOnsEventData } from "@/engine";
 import { CheckCard } from "@/features/play/CheckCard";
 import { PreviouslyCard } from "@/features/play/ClosingFrameCard";

@@ -171,10 +171,76 @@ export function createInteriorPropTextures(
         slab(0.35, 0.45, 1.15, 0.95, 9, 13, ["#282e32", "#19252d", "#454d50"]);
         for (const y of [0.08, 1.7])
           slab(0.55, y, 0.5, 0.2, 0, 10, ["#181e23", "#10191f", "#303a40"]);
-      } else if (timber || upholstery) {
-        slab(0.12, 0.25, 1.65, 1.35, 0, 6, remains);
-        slab(0.25, 0.35, 0.65, 0.9, 6, 11, remains);
-        slab(1.02, 0.55, 0.55, 1.15, 6, 9, remains);
+      } else if (upholstery) {
+        // Torn cushions beside a collapsed frame, rather than a solid crate.
+        slab(0.16, 0.3, 1.6, 0.12, 0, 5, remains);
+        slab(0.22, 1.48, 1.45, 0.12, 0, 6, remains);
+        slab(0.2, 0.4, 0.63, 0.85, 0, 10, remains);
+        slab(1.02, 0.64, 0.7, 0.75, 0, 7, remains);
+        poly(
+          [point(0.32, 0.62, 10.2), point(0.66, 0.72, 10.2), point(0.48, 0.97, 10.2)],
+          "#b2a27c",
+        );
+        slab(0.4, 1.62, 1.14, 0.18, 0, 12, remains);
+      } else if (timber || kind === "bar" || kind === "reception" || kind === "workbench") {
+        const boards = ["#70523b", "#44372e", "#a08560"];
+        // Broken top leaves a gap through the original counter/table footprint.
+        poly(
+          [
+            point(0.08, 0.25, 5),
+            point(1.0, 0.25, 8),
+            point(0.82, 0.88, 7),
+            point(1.08, 1.28, 6),
+            point(0.08, 1.65, 3),
+          ],
+          boards[2]!,
+        );
+        poly(
+          [
+            point(1.2, 0.32, 4),
+            point(1.89, 0.25, 4),
+            point(1.89, 1.6, 8),
+            point(1.03, 1.56, 8),
+            point(1.28, 0.92, 5),
+          ],
+          boards[0]!,
+        );
+        for (const x of [0.28, 1.5]) slab(x, 0.48, 0.12, 0.95, 0, 4, remains);
+        if (kind === "bar") {
+          for (const x of [0.22, 0.62, 1.25])
+            slab(x, 0.2, 0.16, 0.42, 0, 4, ["#355d56", "#203b3b", "#719284"]);
+          slab(0.15, 1.6, 1.65, 0.12, 0, 8, boards);
+        } else if (["desk", "desk-reverse", "reception"].includes(kind)) {
+          slab(0.7, 0.65, 0.76, 0.6, 7, 10, ["#24343a", "#18252a", "#3e5156"]);
+          poly(
+            [
+              point(0.76, 0.71, 10.2),
+              point(1.39, 0.71, 10.2),
+              point(1.39, 1.18, 10.2),
+              point(0.76, 1.18, 10.2),
+            ],
+            "#172b31",
+          );
+        }
+      } else if (["cabinet", "server", "backbar", "shelf", "mailboxes"].includes(kind)) {
+        // Open carcass, exposed shelves and a loose panel retain storage identity.
+        slab(0.18, 0.32, 1.55, 1.25, 0, 3, remains);
+        for (const x of [0.2, 1.6]) slab(x, 0.35, 0.1, 1.2, 3, 13, remains);
+        for (const y of [0.55, 0.98, 1.45]) slab(0.3, y, 1.3, 0.07, 3, 10, remains);
+        slab(0.48, 0.08, 1.2, 0.35, 0, 5, remains);
+      } else if (kind === "speaker" || kind === "dj") {
+        slab(0.25, 0.38, 1.45, 1.2, 0, 9, ["#282c32", "#151e25", "#41454a"]);
+        for (const x of [0.62, 1.3]) {
+          poly(
+            [
+              point(x - 0.26, 0.7, 10),
+              point(x + 0.26, 0.7, 10),
+              point(x + 0.26, 1.25, 10),
+              point(x - 0.26, 1.25, 10),
+            ],
+            "#0c151c",
+          );
+        }
       } else if (kind === "planter") {
         slab(0.12, 0.12, 1.76, 1.76, 0, 5, ["#665f51", "#393b32", "#4b5140"]);
         for (const x of [0.18, 1.3]) slab(x, 0.28, 0.45, 1.4, 5, 10, remains);
@@ -187,7 +253,7 @@ export function createInteriorPropTextures(
         const x = 0.15 + (i % 3) * 0.52,
           y = 0.15 + Math.floor(i / 3) * 1.1;
         poly(
-          [point(x, y, 15), point(x + 0.3, y + 0.05, 15), point(x + 0.16, y + 0.3, 15)],
+          [point(x, y, 0.5), point(x + 0.3, y + 0.05, 0.5), point(x + 0.16, y + 0.3, 0.5)],
           "#171f24",
           "#333b3c",
         );
@@ -523,10 +589,19 @@ export function createInteriorPropTextures(
       const seatSlab: typeof slab = (x, y, w, d, bottom, top, colors) =>
         slab(reverse ? 2 - x - w : x, reverse ? 2 - y - d : y, w, d, bottom, top, colors);
       const width = waiting ? 1.2 : 1.8;
-      seatSlab(0.1, 0.2, width, 1.5, 0, 19, metal);
-      seatSlab(0.12, 0.2, width - 0.04, 1.5, 19, 32, velvet);
-      seatSlab(0.12, 1.55, width - 0.04, 0.24, 30, 62, velvet);
-      for (const x of [0.15, width - 0.15]) seatSlab(x, 0.25, 0.2, 1.4, 24, 43, velvet);
+      for (const x of [0.18, width - 0.1])
+        for (const y of [0.3, 1.5]) seatSlab(x, y, 0.09, 0.1, 0, 17, metal);
+      seatSlab(0.1, 0.2, width, 1.5, 14, 21, metal);
+      const cushions = waiting ? 1 : 2;
+      const cushionWidth = (width - 0.34) / cushions;
+      for (let i = 0; i < cushions; i++) {
+        const x = 0.27 + i * cushionWidth;
+        seatSlab(x, 0.25, cushionWidth - 0.035, 1.25, 21, 32, velvet);
+        seatSlab(x, 1.53, cushionWidth - 0.035, 0.24, 30, 60, velvet);
+        // Separate piping and a back seam stay readable without oversized wear.
+        seatSlab(x + 0.025, 0.24, cushionWidth - 0.085, 0.025, 29, 30, metal);
+      }
+      for (const x of [0.13, width - 0.1]) seatSlab(x, 0.25, 0.16, 1.4, 22, 43, velvet);
       if (waiting) {
         seatSlab(1.48, 0.5, 0.4, 0.8, 0, 24, wood);
         seatSlab(1.51, 0.62, 0.28, 0.45, 24, 27, ["#778e95", "#586e78", "#cad5ce"]);
@@ -582,9 +657,19 @@ export function createInteriorPropTextures(
           );
         }
       }
-      if (kind === "bar")
+      if (kind === "bar") {
+        // Timber ribs and a brass kick rail distinguish it from reception cabinetry.
+        for (let i = 0; i < 8; i++) slab(0.12 + i * 0.24, 0.12, 0.075, 0.045, 9, 45, wood);
+        slab(0.08, 0.08, 1.84, 0.08, 8, 11, ["#90734a", "#594a35", "#c0a375"]);
         for (let i = 0; i < 3; i++)
           slab(0.35 + i * 0.43, 1.3, 0.13, 0.15, top, top + 12, ["#43837c", "#275554", "#78aaa1"]);
+        slab(1.42, 0.55, 0.32, 0.4, top, top + 2, metal);
+      }
+      if (kind === "reception") {
+        slab(0.2, 0.11, 1.6, 0.025, 12, 43, wood);
+        for (const x of [0.68, 1.22]) slab(x, 0.095, 0.015, 0.02, 12, 43, metal);
+        slab(0.2, 0.08, 1.6, 0.035, 9, 11, metal);
+      }
       if (kind === "meeting-table") {
         slab(0.4, 0.7, 0.4, 0.5, top, top + 2, ["#687c88", "#465869", "#b3c3c7"]);
         const p = point(1.3, 0.7, top + 2);

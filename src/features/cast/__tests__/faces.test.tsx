@@ -11,7 +11,7 @@ import { initialsOf } from "../faceInitials";
 import { NpcFace, NpcName } from "../NpcName";
 import { findNpc } from "../npcDirectory";
 import { SceneFaces } from "@/features/life/SceneFaces";
-import { sceneFaces } from "@/features/life/sceneFaces";
+import { sceneFaces } from "@/features/life/sceneFaceModel";
 
 it("draws a picture when it has one, and initials when it has none", () => {
   expect(renderToStaticMarkup(<FacePlate src="/a.webp" name="Ilsa Bräun" />)).toContain(

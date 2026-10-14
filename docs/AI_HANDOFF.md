@@ -1,21 +1,25 @@
-# Active environment consistency pass — 2026-10-11
+# Active environment art variety — 2026-10-13
 
-All seven first material passes approved; residential PR368 merged.
-User authorized consistency audit and highest-impact fixes, will test later.
-Checkout /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/environment-consistency; base origin/main db1373f4.
-Original dirty checkout untouched; prior handoff /tmp/nct368-final-handoff.md.
-
-Baseline9 Chromium tests pass (3.9m): intersection8, all others4, extra office8
-and nightclub8. Play captures inspected across all seven; additional damage,
-reveal and compact inspected for the changed cases. Baseline evidence:
-/tmp/nct-consistency-before-captures; audit details docs/environment-consistency.md.
-Local changes: shared responsive map heading/controls; missing waiting-seat
-shadow casters; residential drives render over planting in floor and wet mask.
-Driveway regression reproduced before fix; initial17tests and typecheck pass.
-Added phone captures and header-fit checks to all7existing browser harnesses.
-Next: checkpoint PR, focused/full checks and fresh screenshots. No campaign writes
-or merge; user tests later.
+PR370 approved and merged. User authorized furniture, wrecks and residential entrances.
+Checkout: /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
+Branch codex/environment-art-variety; base origin/main ea28638e.
+Original checkout untouched. Prior final PR370 docs saved in named git stash.
+Milestone: distinct furniture construction, recognizable low wrecks, three saved-door
+finishes with matching emission. Existing canvas art pipeline; no new geometry/state.
+Implemented separate cushions/legs, ribbed bar and paneled reception fronts, family-specific
+low wrecks and three deterministic entrance treatments with matched glass emission.
+Files: interiorPropArt.ts, residentialEntrance.ts, frontageIdentity.ts.
+Baseline Mac module casing collision fixed in separate commit b9a53622: renamed
+sceneFaces.ts to sceneFaceModel.ts with imports; no behavior change.
+Next: checkpoint art, inspect office/nightclub/residential4 captures running in
+/tmp/nct-art-browser.log; finish typecheck/lint/tests/build and remote checks.
+PR385: https://github.com/LeviJohnsonNC/nightcitytales/pull/385 (draft), pushed33a3591d.
+On33a3591d: typecheck,4764tests/376files,lint0errors/10warnings,build pass;
+3browser tests pass (office4/nightclub4/residential4). Actual play/destroyed and
+residential lights-off screenshots inspected. Low wreck debris lowered after review;
+security-door spill reduced to match its small glass. These refinements need validation.
+Next: push refinement, rerun targeted screenshots plus additional residential layout,
+finish remote checks, preserve evidence. No real campaign writes. User review/merge gate remains.
 
 ## Parallel stream — shopping, then the audit (Claude, branch claude/shady-goods-store-art-i8grnn)
 

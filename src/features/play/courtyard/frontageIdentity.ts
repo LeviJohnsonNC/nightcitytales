@@ -1,3 +1,4 @@
+import { residentialEntranceStyle, paintResidentialEntrance } from "./residentialEntrance";
 import { serviceDoors, hasServiceFrontage, paintServiceFrontage } from "./serviceFrontage";
 import {
   occupiedUse,
@@ -27,14 +28,24 @@ export function entranceLights(env: SceneEnvironment): GroundLight[] {
         out: edge === "north" ? { x: 0, y: -1 } : { x: 1, y: 0 },
         s0: c - 0.8,
         s1: c + 0.8,
-        reach: s.style === "workshop" ? 4 : 2.6,
+        reach:
+          s.style === "workshop"
+            ? 4
+            : residentialEntranceStyle(s, edge, c) === "security"
+              ? 1.6
+              : 2.6,
         spread: 0.7,
         color: serviceDoors(s, edge, env.entrances).find((d) => d.c === c)?.warm
           ? ([1, 0.66, 0.32] as const)
           : s.style === "workshop"
             ? ([0.28, 0.77, 1] as const)
             : ([1, 0.62, 0.28] as const),
-        intensity: s.style === "workshop" ? 0.8 : 0.68,
+        intensity:
+          s.style === "workshop"
+            ? 0.8
+            : residentialEntranceStyle(s, edge, c) === "security"
+              ? 0.4
+              : 0.68,
       }));
     });
   });
@@ -122,6 +133,8 @@ export function paintFrontageIdentity(
         0,
         doorTop + 0.3,
       );
+      if (!workshop)
+        paintResidentialEntrance(ctx, facePainter(s, edge, project, ppm), s, edge, c, "albedo");
       const z = Math.min(2.48, s.height - 0.45);
       // Tube casing (repair) / a bronze hood (home), above the saved entrance.
       fill(quad(c - 0.89, c + 0.89, z, z + 0.14, 0.12), workshop ? "#173443" : "#392f21");
@@ -147,7 +160,7 @@ export function paintFrontageIdentity(
     }
   } else
     for (const c of doors) {
-      if (!workshop && pass === "glow")
+      if (!workshop && pass === "glow" && residentialEntranceStyle(s, edge, c) === "glazed")
         paintFaceAsset(
           ctx,
           art?.residentialDoorEmission,
@@ -157,6 +170,8 @@ export function paintFrontageIdentity(
           0,
           Math.min(2.2, s.height - 0.5) + 0.3,
         );
+      if (!workshop && pass === "glow")
+        paintResidentialEntrance(ctx, facePainter(s, edge, project, ppm), s, edge, c, "glow");
       const z = Math.min(2.48, s.height - 0.45);
       if (pass === "glow")
         fill(
