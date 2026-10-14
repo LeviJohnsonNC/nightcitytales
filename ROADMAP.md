@@ -11,9 +11,9 @@ current state of the code.
 
 The [environment consistency review](docs/environment-consistency.md) follows the
 seven approved material passes. It fixes compact map-header overlap, missing
-waiting-seat light shadows and residential driveway/planting paint order. Final
-browser verification and user review are the current gate; furniture/facade art
-variety and a real campaign persistence playthrough remain next.
+waiting-seat light shadows and residential driveway/planting paint order. PR370 is approved and merged. The current art variety pass separates furniture
+construction and wreck silhouettes, and varies residential saved-door finishes.
+Visual review is the next gate; a real campaign persistence playthrough remains separate.
 
 ## Audit — 2026-10-11
 

@@ -1,3 +1,4 @@
+import { residentialEntranceStyle, paintResidentialEntrance } from "./residentialEntrance";
 import { serviceDoors, hasServiceFrontage, paintServiceFrontage } from "./serviceFrontage";
 import {
   occupiedUse,
@@ -122,6 +123,8 @@ export function paintFrontageIdentity(
         0,
         doorTop + 0.3,
       );
+      if (!workshop)
+        paintResidentialEntrance(ctx, facePainter(s, edge, project, ppm), s, edge, c, "albedo");
       const z = Math.min(2.48, s.height - 0.45);
       // Tube casing (repair) / a bronze hood (home), above the saved entrance.
       fill(quad(c - 0.89, c + 0.89, z, z + 0.14, 0.12), workshop ? "#173443" : "#392f21");
@@ -147,7 +150,7 @@ export function paintFrontageIdentity(
     }
   } else
     for (const c of doors) {
-      if (!workshop && pass === "glow")
+      if (!workshop && pass === "glow" && residentialEntranceStyle(s, edge, c) === "glazed")
         paintFaceAsset(
           ctx,
           art?.residentialDoorEmission,
@@ -157,6 +160,8 @@ export function paintFrontageIdentity(
           0,
           Math.min(2.2, s.height - 0.5) + 0.3,
         );
+      if (!workshop && pass === "glow")
+        paintResidentialEntrance(ctx, facePainter(s, edge, project, ppm), s, edge, c, "glow");
       const z = Math.min(2.48, s.height - 0.45);
       if (pass === "glow")
         fill(
