@@ -45,7 +45,7 @@ import { climbNews } from "@/features/campaign/climbNews";
 import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
 import { SceneFaces } from "@/features/life/SceneFaces";
-import { sceneFaces } from "@/features/life/sceneFaces";
+import { sceneFaces } from "@/features/life/sceneFaceModel";
 import { readWalkOnsEventData } from "@/engine";
 import { usePlay } from "./usePlay";
 import type { PlayBundle } from "./playOps";
