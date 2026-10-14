@@ -5,9 +5,9 @@
 import { describe, expect, it } from "vitest";
 import PLACES from "@/data/cast/walkon-places.json";
 import GAMEPLAY from "@/data/atlas/places.gameplay.json";
-import { shopsAt, tagsOf } from "@/engine";
+import { seenAsLine, shopsAt, tagsOf } from "@/engine";
 import { MAX_ALSO_HERE, alsoHereLines, ambientPeople, ambientSubjectsAt } from "../ambientPeople";
-import { FLAVOR_SUBJECTS, flavorGenders } from "../flavorArt";
+import { FLAVOR_SUBJECTS, flavorArt, flavorGenders } from "../flavorArt";
 import { resolveWalkOns } from "../walkOnMention";
 
 const SELLERS = new Set<string>(PLACES.sellers);
@@ -87,16 +87,36 @@ describe("resolveWalkOns with a face already told", () => {
 
   it("ignores the gender the narrator asked for on somebody it was told about", () => {
     const out = resolveWalkOns([{ subject: "dive-bar-tender", gender: other }], seed, told);
-    expect(out).toEqual([{ subject: "dive-bar-tender", gender: bartender.gender }]);
+    expect(out).toMatchObject([{ subject: "dive-bar-tender", gender: bartender.gender }]);
+    // And the face it is given is the one the packet described.
+    expect(out[0]?.face).toBe(bartender.face);
   });
 
   it("still honours a request for a role nobody told it about", () => {
     const out = resolveWalkOns([{ subject: "av-cab-driver", gender: "female" }], seed, told);
-    expect(out).toEqual([{ subject: "av-cab-driver", gender: "female" }]);
+    expect(out).toMatchObject([{ subject: "av-cab-driver", gender: "female" }]);
   });
 
   it("is unchanged when nothing was told", () => {
     const out = resolveWalkOns([{ subject: "dive-bar-tender", gender: "female" }], seed);
-    expect(out).toEqual([{ subject: "dive-bar-tender", gender: "female" }]);
+    expect(out).toMatchObject([{ subject: "dive-bar-tender", gender: "female" }]);
+  });
+});
+
+describe("the face the narrator is told about is the face the player is shown", () => {
+  it("is one of the role's faces, the same at the same place and read as that face's age", () => {
+    for (const key of placeKeys.slice(0, 40)) {
+      const seed = `c:${key}`;
+      for (const p of ambientPeople(key, seed, false)) {
+        expect(p.face, key).toBeDefined();
+        const art = flavorArt(p.subject, p.gender, p.face);
+        expect(art?.id).toBe(p.face);
+        expect(p.seenAs).toBe(seenAsLine(art!.look));
+        // resolveWalkOns reaches for the same face from the same seed.
+        const [resolved] = resolveWalkOns([{ subject: p.subject }], seed, [p.subject]);
+        expect(resolved?.face).toBe(p.face);
+        expect(resolved?.gender).toBe(p.gender);
+      }
+    }
   });
 });

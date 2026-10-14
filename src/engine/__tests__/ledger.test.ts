@@ -267,6 +267,22 @@ describe("readWalkOnsEventData", () => {
     expect(readWalkOnsEventData({ walkOns })).toEqual(walkOns);
   });
 
+  it("reads the face a walk-on was given, and ignores one that is not an id", () => {
+    expect(
+      readWalkOnsEventData({
+        walkOns: [
+          { subject: "dive-bar-tender", gender: "female", face: "dive-bar-tender-female-young" },
+          { subject: "ncpd-beat-cop", gender: "male", face: "../../etc/passwd" },
+          { subject: "street-vendor", gender: "male", face: 7 },
+        ],
+      }),
+    ).toEqual([
+      { subject: "dive-bar-tender", gender: "female", face: "dive-bar-tender-female-young" },
+      { subject: "ncpd-beat-cop", gender: "male" },
+      { subject: "street-vendor", gender: "male" },
+    ]);
+  });
+
   it("reads a name back when there is one, and ignores one that is not a short string", () => {
     expect(
       readWalkOnsEventData({

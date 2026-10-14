@@ -43,13 +43,15 @@ export type SceneFace =
       label: string;
       /** What the passage called them, when it did; shown over the role. */
       name?: string;
+      /** Which of the role's faces (the catalog id); absent for a walk-on stored before there were several. */
+      face?: string;
     };
 
 export function sceneFaces(input: {
   /** The passage the player is reading, or "" when there is none. */
   text: string;
   /** Walk-ons the narrator tagged this turn, already resolved to a face. */
-  walkOns: readonly { subject: string; gender: FlavorGender; name?: string }[];
+  walkOns: readonly { subject: string; gender: FlavorGender; face?: string; name?: string }[];
   /**
    * Names of the standing cast the engine has at this place. A person the passage
    * names is shown only when they are in it; omitted where there is no such
@@ -72,7 +74,7 @@ export function sceneFaces(input: {
   const subjects = new Set<string>();
   for (const w of input.walkOns) {
     if (subjects.has(w.subject)) continue;
-    const art = flavorArt(w.subject, w.gender);
+    const art = flavorArt(w.subject, w.gender, w.face);
     // A subject with no picture on file is left out, the same rule the strip follows.
     if (!art) continue;
     subjects.add(w.subject);
@@ -82,6 +84,7 @@ export function sceneFaces(input: {
       subject: w.subject,
       gender: w.gender,
       label: flavorSubjectLabel(w.subject),
+      ...(w.face ? { face: w.face } : {}),
       ...(w.name ? { name: w.name } : {}),
     });
   }

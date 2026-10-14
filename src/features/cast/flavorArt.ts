@@ -28,6 +28,8 @@ const ENTRIES = FLAVOR_ART.entries as FlavorArtEntry[];
 const NARROW_WIDTH = 512;
 
 export interface FlavorArtwork {
+  /** The catalog id of this variant: what a stored walk-on remembers its face by. */
+  id: string;
   src: string;
   srcSet: string;
   alt: string;
@@ -40,6 +42,7 @@ export interface FlavorArtwork {
 function artworkFor(entry: FlavorArtEntry): FlavorArtwork {
   const base = `/images/flavor/${entry.id}`;
   return {
+    id: entry.id,
     src: `${base}.webp`,
     srcSet: `${base}-${NARROW_WIDTH}.webp ${NARROW_WIDTH}w, ${base}.webp 1024w`,
     alt: entry.subject.replace(/-/g, " "),
@@ -51,18 +54,26 @@ function artworkFor(entry: FlavorArtEntry): FlavorArtwork {
 /**
  * The art for a walk-on subject, keyed by its stable slug (e.g. "dive-bar-tender").
  *
- * `gender` narrows to a specific variant. Left out, or asking for one this
- * subject does not have on file, picks uniformly at random among whatever
- * variants DO exist — a caller that does not know or care which gender still
- * gets a face rather than nothing, and a subject with only one variant always
- * returns that one.
+ * A subject can have several faces for one gender: the original, then a young and
+ * an older one. `face` is the id of the one wanted, which a walk-on remembers; a
+ * face that does not exist, or is the other gender, is ignored. `gender` narrows
+ * to a gender, and left out (or asking for one this subject does not have) it falls
+ * back to whatever exists. With neither, or when nothing is named, the answer is
+ * the first variant on file, which is the original: never a die, so a face a
+ * legacy walk-on was stored without is the same face on every render.
  */
-export function flavorArt(subject: string, gender?: FlavorGender): FlavorArtwork | undefined {
+export function flavorArt(
+  subject: string,
+  gender?: FlavorGender,
+  face?: string,
+): FlavorArtwork | undefined {
   const variants = ENTRIES.filter((e) => e.subject === subject);
   if (variants.length === 0) return undefined;
+  const named = face ? variants.find((e) => e.id === face) : undefined;
+  if (named && (!gender || named.gender === gender)) return artworkFor(named);
   const matching = gender ? variants.filter((e) => e.gender === gender) : [];
   const pool = matching.length > 0 ? matching : variants;
-  return artworkFor(pool[Math.floor(Math.random() * pool.length)]!);
+  return artworkFor(pool[0]!);
 }
 
 /** Every subject slug with at least one variant on file, for content tooling. */
@@ -86,9 +97,26 @@ function hash(value: string): number {
   return h >>> 0;
 }
 
-/** Every gender this subject has a variant for, in file order. */
+/** Every gender this subject has a variant for, in file order, each once. */
 export function flavorGenders(subject: string): FlavorGender[] {
-  return ENTRIES.filter((e) => e.subject === subject).map((e) => e.gender);
+  return [...new Set(ENTRIES.filter((e) => e.subject === subject).map((e) => e.gender))];
+}
+
+/**
+ * Which of a subject's faces (for one gender) a walk-on gets, deterministically.
+ *
+ * The same seed always gives the same face, so "the bartender at this place" is the
+ * same woman on every visit, and the narrator's "Seen as" line, written before the
+ * turn, is about the face the player is then shown. Undefined only when the subject
+ * has no art for that gender.
+ */
+export function pickFlavorFace(
+  subject: string,
+  gender: FlavorGender,
+  seed: string,
+): string | undefined {
+  const ids = ENTRIES.filter((e) => e.subject === subject && e.gender === gender).map((e) => e.id);
+  return ids.length > 0 ? ids[hash(seed) % ids.length] : undefined;
 }
 
 /**

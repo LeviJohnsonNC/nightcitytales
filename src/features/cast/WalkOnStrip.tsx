@@ -23,11 +23,16 @@ import { seenAsLine } from "@/engine";
 import { FacePlate } from "./FacePlate";
 import { flavorArt, flavorSubjectLabel, type FlavorGender } from "./flavorArt";
 
-export type WalkOn = { subject: string; gender: FlavorGender; name?: string | undefined };
+export type WalkOn = {
+  subject: string;
+  gender: FlavorGender;
+  face?: string | undefined;
+  name?: string | undefined;
+};
 
 /** One walk-on as a face with its role and how it reads; the whole scene is a tap away. */
-export function WalkOnFace({ subject, gender, name }: WalkOn) {
-  const art = flavorArt(subject, gender);
+export function WalkOnFace({ subject, gender, face, name }: WalkOn) {
+  const art = flavorArt(subject, gender, face);
   const [open, setOpen] = useState(false);
   // The catalog and the files on disk can drift (a JSON entry with no WebP
   // yet); rendering nothing is the honest answer, the same rule SceneHero
@@ -110,6 +115,7 @@ export function WalkOnStrip({
               key={`${w.subject}-${i}`}
               subject={w.subject}
               gender={w.gender}
+              face={w.face}
               name={w.name}
             />
           ))}

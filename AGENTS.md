@@ -274,7 +274,7 @@ reads a place's tags through `walkon-places.json`, picks at most two roles (the 
 first tag first) and which face each is from the campaign and the place alone, and the
 Life packet says so ("Also here"); `resolveWalkOns` then ignores a gender the narrator
 asks for on a role it was told about. A named keeper staffs their own counter, so the
-seller roles are left out there. Walk-on art records `age` and a `face` square;
+seller roles are left out there. Walk-on art records `age` and a `face` square, and a role has up to three faces per sex (the original, then a young and an older one): `pickFlavorFace` picks one from the campaign and the place, `ambientPeople` tells the narrator its age band, and `resolveWalkOns` stores its id on the narration's `walkOns` (`face`) so the player is shown the face described, a walk-on stored without one being the original;
 `tools/art/flavor-faces.mjs` cuts the 256px faces the strip shows, and the scene stays
 for the dialog. `seenAsPronounsHold` (narratorChecks) holds the prose to all of it by
 reading the packet back, and is deliberately conservative. A new portrait needs a row
