@@ -2,6 +2,8 @@
 
 Prompts for ROADMAP debt 27: every walk-on role has one face per sex, nearly all aged 25 to 45, so every bar has the same bartender and nobody reads as young or old. This batch adds a **young** (about 20) and an **older** (about 62) face where a role does not already have one, for both sexes. Nothing else changes: the same scenes, the same painting look.
 
+**Status: all 67 pictures were made, imported and are in the game** (`public/images/flavor/`, catalog `src/data/cast/flavor-art.json`). This file is kept as the record of the prompts.
+
 ## How to use it
 
 - Each block below is a complete prompt: the Vignette wrapper from [art-style.md](art-style.md) with the subject filled in. Paste **one block per conversation turn**, never several, so no earlier image steers the next.

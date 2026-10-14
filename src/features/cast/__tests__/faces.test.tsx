@@ -79,3 +79,19 @@ it("puts a learned name over a walk-on's role, in the cast's own type, and says 
   expect(html).toContain("font-semibold");
   expect(html).toContain("Mara Ketter, Dive Bar Tender");
 });
+
+it("draws the face a walk-on was given, and the original when it was stored without one", () => {
+  const faces = sceneFaces({
+    text: "",
+    walkOns: [
+      { subject: "dive-bar-tender", gender: "female", face: "dive-bar-tender-female-young" },
+      { subject: "ncpd-beat-cop", gender: "male" },
+    ],
+    people: [],
+  });
+  const html = renderToStaticMarkup(<SceneFaces faces={faces} />);
+  expect(html).toContain("/images/flavor/dive-bar-tender-female-young-face.webp");
+  expect(html).not.toContain("/images/flavor/dive-bar-tender-female-face.webp");
+  expect(html).toContain("/images/flavor/ncpd-beat-cop-male-face.webp");
+  expect(html).toContain("woman, young");
+});

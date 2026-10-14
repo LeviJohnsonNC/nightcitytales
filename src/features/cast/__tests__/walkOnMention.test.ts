@@ -51,7 +51,7 @@ describe("resolveWalkOns()", () => {
 
   it("keeps a requested gender that this subject actually has", () => {
     const out = resolveWalkOns([{ subject: KNOWN_SUBJECT, gender: "male" }], "seed");
-    expect(out).toEqual([{ subject: KNOWN_SUBJECT, gender: "male" }]);
+    expect(out).toMatchObject([{ subject: KNOWN_SUBJECT, gender: "male" }]);
   });
 
   it("is stable for the same seed and subject across calls", () => {

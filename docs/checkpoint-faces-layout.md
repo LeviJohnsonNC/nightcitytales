@@ -53,4 +53,4 @@ turn that tags that role there, and told to the narrator on the "Also here" line
   no current narration it shows nothing.
 - Faces from earlier scenes are not kept in the scrollback beyond the collapsed strip.
 - Hover cards are mouse only. Touch gets the dossier on tap.
-- Each walk-on role still has two faces (debt 27).
+- Each walk-on role has up to three faces per sex (the original, a young and an older one). Nobody 70 or older, and no nonbinary walk-on art (debt 27).

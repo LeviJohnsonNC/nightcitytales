@@ -10,7 +10,15 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import FLAVOR_ART from "@/data/cast/flavor-art.json";
-import { flavorArt, flavorSubjectLabel, resolveFlavorGender, FLAVOR_SUBJECTS } from "../flavorArt";
+import {
+  flavorArt,
+  flavorGenders,
+  flavorSubjectLabel,
+  pickFlavorFace,
+  resolveFlavorGender,
+  FLAVOR_SUBJECTS,
+} from "../flavorArt";
+import { ageBand } from "@/engine";
 
 const PUBLIC_DIR = resolve(import.meta.dirname, "../../../../public/images/flavor");
 
@@ -111,5 +119,63 @@ describe("resolveFlavorGender()", () => {
     const first = resolveFlavorGender("dive-bar-tender", "unspecified" as never, seed);
     expect(["male", "female"]).toContain(first);
     expect(resolveFlavorGender("dive-bar-tender", "unspecified" as never, seed)).toBe(first);
+  });
+});
+
+describe("a role with several faces", () => {
+  const ids = (subject: string, gender: string) =>
+    FLAVOR_ART.entries.filter((e) => e.subject === subject && e.gender === gender).map((e) => e.id);
+
+  it("keeps the original first, so a walk-on stored without a face is the face it always was", () => {
+    expect(flavorArt("dive-bar-tender", "female")?.id).toBe("dive-bar-tender-female");
+    expect(flavorArt("dive-bar-tender")?.id).toBe(
+      FLAVOR_ART.entries.find((e) => e.subject === "dive-bar-tender")!.id,
+    );
+  });
+
+  it("gives the face asked for, and ignores one that is another role's or another gender's", () => {
+    expect(flavorArt("dive-bar-tender", "female", "dive-bar-tender-female-young")?.id).toBe(
+      "dive-bar-tender-female-young",
+    );
+    expect(flavorArt("dive-bar-tender", "male", "dive-bar-tender-female-young")?.id).toBe(
+      "dive-bar-tender-male",
+    );
+    expect(flavorArt("dive-bar-tender", "female", "street-vendor-female-young")?.id).toBe(
+      "dive-bar-tender-female",
+    );
+    expect(flavorArt("dive-bar-tender", "female", "no-such-face")?.id).toBe(
+      "dive-bar-tender-female",
+    );
+  });
+
+  it("is chosen from a seed, and always one of that gender's faces", () => {
+    for (const subject of FLAVOR_SUBJECTS) {
+      for (const gender of flavorGenders(subject)) {
+        const own = ids(subject, gender);
+        const first = pickFlavorFace(subject, gender, "c1:place");
+        expect(own, `${subject} ${gender}`).toContain(first);
+        for (let i = 0; i < 5; i += 1)
+          expect(pickFlavorFace(subject, gender, "c1:place")).toBe(first);
+      }
+    }
+    expect(pickFlavorFace("nonexistent-subject", "male", "seed")).toBeUndefined();
+  });
+
+  it("uses every face over enough places, so nobody has the same bartender everywhere", () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 60; i += 1)
+      seen.add(pickFlavorFace("dive-bar-tender", "female", `c:${i}`)!);
+    expect([...seen].sort()).toEqual(ids("dive-bar-tender", "female").sort());
+  });
+
+  it("lists each gender once however many faces it has", () => {
+    expect(flavorGenders("dive-bar-tender").sort()).toEqual(["female", "male"]);
+  });
+
+  it("has a young and an older face for most roles, read by the same bands the narrator is told", () => {
+    const band = (id: string) => ageBand(FLAVOR_ART.entries.find((e) => e.id === id)!.age).id;
+    expect(band("dive-bar-tender-female-young")).toBe("young");
+    expect(band("dive-bar-tender-female")).toBe("older");
+    expect(band("noodle-bar-cook-male-older")).toBe("older");
   });
 });

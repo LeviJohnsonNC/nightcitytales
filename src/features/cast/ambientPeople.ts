@@ -19,7 +19,13 @@
  */
 import PLACES from "@/data/cast/walkon-places.json";
 import { seenAsLine, tagsOf } from "@/engine";
-import { flavorArt, flavorSubjectLabel, resolveFlavorGender, type FlavorGender } from "./flavorArt";
+import {
+  flavorArt,
+  flavorSubjectLabel,
+  pickFlavorFace,
+  resolveFlavorGender,
+  type FlavorGender,
+} from "./flavorArt";
 
 /** The most people the narrator is told are here. A room, not a roll call. */
 export const MAX_ALSO_HERE = 2;
@@ -31,6 +37,8 @@ export type AmbientPerson = {
   /** The walk-on id the narrator tags them with. */
   subject: string;
   gender: FlavorGender;
+  /** Which of the role's faces: the catalog id `resolveWalkOns` and the picture agree on. */
+  face?: string;
   /** "woman, older": how they read, from the picture. */
   seenAs: string;
 };
@@ -78,9 +86,10 @@ export function ambientPeople(placeKey: string, seed: string, hasKeeper: boolean
   for (const subject of ambientSubjectsAt(placeKey, seed, hasKeeper)) {
     const gender = resolveFlavorGender(subject, undefined, `${seed}:${subject}`);
     if (!gender) continue;
-    const art = flavorArt(subject, gender);
+    const face = pickFlavorFace(subject, gender, `${seed}:${subject}:face`);
+    const art = flavorArt(subject, gender, face);
     const seenAs = art ? seenAsLine(art.look) : null;
-    if (seenAs) out.push({ subject, gender, seenAs });
+    if (seenAs) out.push({ subject, gender, ...(face ? { face } : {}), seenAs });
   }
   return out;
 }

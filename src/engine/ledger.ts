@@ -812,7 +812,13 @@ export function readGoalsPinnedEventData(raw: unknown): Goal[] {
  * A walk-on the turn named, already resolved to a concrete gender. `name` is
  * there only when the passage itself gave one (`nameTheyLearned`).
  */
-export type WalkOnEventData = { subject: string; gender: "male" | "female"; name?: string }[];
+export type WalkOnEventData = {
+  subject: string;
+  gender: "male" | "female";
+  /** The catalog id of the face they were given; a walk-on stored before there were several has none. */
+  face?: string;
+  name?: string;
+}[];
 
 /**
  * No builder function: the value written IS this shape already —
@@ -831,8 +837,14 @@ export function readWalkOnsEventData(raw: unknown): WalkOnEventData {
     const subject = str(w["subject"]);
     const gender = str(w["gender"]);
     const name = str(w["name"]);
+    const face = str(w["face"]);
     if (subject && (gender === "male" || gender === "female"))
-      out.push({ subject, gender, ...(name && name.length <= 40 ? { name } : {}) });
+      out.push({
+        subject,
+        gender,
+        ...(face && /^[a-z0-9-]{1,80}$/.test(face) ? { face } : {}),
+        ...(name && name.length <= 40 ? { name } : {}),
+      });
   }
   return out;
 }

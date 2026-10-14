@@ -98,12 +98,6 @@ Updated 2026-10-12. Goal: nonbinary characters, starting with the keeper Adair, 
   every run. A nonbinary PLAYER character's third-person references are not measured.
 - **Next:** none required; faces art (older/younger) remains debt 27.
 
-## Parallel stream — walk-on names (Claude, merged #381)
-
-Updated 2026-10-13. A walk-on the passage names wears the name over their role in the Here row: `name` on
-the `walkOns` tag, kept only if the passage says it and it is not a cast name (`walkOnMention.ts`), check
-`walk-on-name-is-said`. Eval: asked her name, the bartender was named 3/3 and the prose said it every time.
-
 ## Parallel stream — walk-on names persist (Claude, branch claude/walkon-names-persist)
 
 Updated 2026-10-13. A name learned for a role at a place is kept for good and shown every time.
@@ -115,3 +109,14 @@ Updated 2026-10-13. A name learned for a role at a place is kept for good and sh
 - **Validation:** typecheck, lint, unit suite pass. Eval: `life-walk-on-known-name` first leaked the name into
   an npcKey (2/5 and then 3/5 runs failed `knownNpcKeysOnly`), fixed by one Life prompt sentence, then 0/5 over
   5 runs; the other face scenarios still pass 3/3. Not seen in a signed-in browser.
+
+## Parallel stream — walk-on faces, second batch (Claude, branch claude/walkon-faces-batch2)
+
+Updated 2026-10-14. The 67 young and older walk-on pictures are imported and used.
+
+- **Done (in the PR once pushed):** PNGs converted to WebP at 1024/512 (`tools/art/webp.mjs`), 67 catalog entries
+  (age 20 or 62, face squares set by eye from a gridded contact sheet), faces cut (`tools/art/flavor-faces.mjs`);
+  `pickFlavorFace` chooses one per role and place, the packet's "Also here" line describes it, and the id is stored
+  on the narration's `walkOns` (`face`) so the player sees the face described.
+- **Validation:** typecheck, lint, unit suite (4,764) and build pass; eval 5 face scenarios x 3 runs, all checks clean.
+  Not seen in a signed-in browser.

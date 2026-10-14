@@ -15,7 +15,12 @@
  *    never re-rolled by a later render.
  */
 import { z } from "zod";
-import { FLAVOR_SUBJECTS, resolveFlavorGender, type FlavorGender } from "./flavorArt";
+import {
+  FLAVOR_SUBJECTS,
+  pickFlavorFace,
+  resolveFlavorGender,
+  type FlavorGender,
+} from "./flavorArt";
 import { npcsNamedIn } from "./npcMentions";
 
 export const WalkOnMentionSchema = z.object({
@@ -27,7 +32,13 @@ export const WalkOnMentionSchema = z.object({
 
 export type WalkOnMention = z.infer<typeof WalkOnMentionSchema>;
 
-export type ResolvedWalkOn = { subject: string; gender: FlavorGender; name?: string };
+export type ResolvedWalkOn = {
+  subject: string;
+  gender: FlavorGender;
+  /** Which of the role's faces they have, chosen from the seed once and then remembered. */
+  face?: string;
+  name?: string;
+};
 
 const MAX_NAME = 40;
 /** Letters, spaces and the punctuation names carry; no digits, no quotation, no stray symbols. */
@@ -127,7 +138,13 @@ export function resolveWalkOns(
     if (!gender) continue;
     const name =
       naming.known?.get(mention.subject) ?? nameTheyLearned(mention.name, naming.text ?? "");
-    out.push({ subject: mention.subject, gender, ...(name ? { name } : {}) });
+    const face = pickFlavorFace(mention.subject, gender, `${seed}:${mention.subject}:face`);
+    out.push({
+      subject: mention.subject,
+      gender,
+      ...(face ? { face } : {}),
+      ...(name ? { name } : {}),
+    });
   }
   return out;
 }
