@@ -133,7 +133,7 @@ export function LifeCheckCard({
         {pending.reads && (
           <p>
             {pending.reads.label}. {pending.reads.blurb}{" "}
-            {pending.reads.costsTrust && "This may cost trust."}
+            {pending.reads.costsTrust && "They will be more guarded, win or lose."}
           </p>
         )}
         {opposition && (
