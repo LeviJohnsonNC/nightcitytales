@@ -4,6 +4,7 @@
  * makes job behaviour unexpressible: there is no start_encounter, no attack,
  * no advance_beat, and no way to accept a job.
  */
+import type { AgentCallSignal } from "./lifeAgentCall";
 import { z } from "zod";
 import { clampDispositionDelta, isAnswerableQuestion, isPlaceTag, tagNamed } from "@/engine";
 import { normalizeWalkOnMentions, type WalkOnMention } from "@/features/cast/walkOnMention";
@@ -180,6 +181,7 @@ export type LifeResponse = {
    * lifeOps.ts, where the campaign and place seed live.
    */
   walkOns: WalkOnMention[];
+  agentCall?: AgentCallSignal;
 };
 
 /**
@@ -198,6 +200,7 @@ export const LifeWireResponseSchema = z.object({
   newSituation: z.unknown().nullish(),
   question: z.unknown().nullish(),
   walkOns: z.array(z.unknown()).nullish(),
+  agentCall: z.unknown().nullish(),
 });
 export type LifeWireResponse = z.infer<typeof LifeWireResponseSchema>;
 
@@ -505,6 +508,22 @@ function normalizeNewSituation(raw: unknown): LifeNewSituation | null {
   };
 }
 
+function normalizeAgentCall(raw: unknown): AgentCallSignal | undefined {
+  const call = wireObject(raw);
+  if (call?.["state"] === "ended") return { state: "ended" };
+  const contact = str(call?.["contact"]);
+  const direction = call?.["direction"];
+  if (
+    call?.["state"] === "connected" &&
+    contact &&
+    contact.length <= 120 &&
+    (direction === "incoming" || direction === "outgoing")
+  ) {
+    return { state: "connected", contact, direction };
+  }
+  return undefined;
+}
+
 export type NormalizeLifeOptions = { onWarn?: (message: string) => void };
 
 export function normalizeLifeResponse(
@@ -512,6 +531,7 @@ export function normalizeLifeResponse(
   options: NormalizeLifeOptions = {},
 ): LifeResponse {
   const warn = options.onWarn ?? ((m: string) => console.warn(m));
+  const agentCall = normalizeAgentCall(wire.agentCall);
   return {
     situation: {
       title: str(wire.situation?.title) ?? "Night City, and you in it",
@@ -531,5 +551,6 @@ export function normalizeLifeResponse(
     // here rather than handed a yes/no that means nothing.
     question: normalizeQuestion(wire.question),
     walkOns: normalizeWalkOnMentions(wire.walkOns),
+    ...(agentCall ? { agentCall } : {}),
   };
 }

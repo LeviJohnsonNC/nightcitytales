@@ -35,5 +35,5 @@ export {
   type TurnOptions,
 } from "./lifeBundleOps";
 export { sinceWords } from "./lifeContextOps";
-export { commitLifeCheck, liveTurn } from "./lifeTurnOps";
+export { commitLifeCheck, endAgentCall, liveTurn } from "./lifeTurnOps";
 export { acceptHook, declineHook, pushHook } from "./lifeHookOps";

@@ -11,6 +11,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  AGENT_CALL_ENDED,
   LEDGER_EVENTS,
   MAX_ACTION_MINUTES,
   generateCast,
@@ -24,6 +25,7 @@ import {
 import type { CampaignNpc, Json } from "@/lib/backend";
 import { downtimeView } from "@/features/downtime/downtimeModel";
 import { DV_BANDS, pendingCheckFrom } from "@/features/play/checkPrompt";
+import { currentAgentCall } from "../lifeAgentCall";
 import { currentLifeRoll, lifeRollOutcome } from "../lifeCheckView";
 import { rollPendingCheck } from "@/features/play/rollCheck";
 import { CAMPAIGN_ID, fakeBackend, freshDb, reply, type Db } from "./lifeTurnHarness";
@@ -682,4 +684,36 @@ describe("a Life roll that reaches the ledger", () => {
     });
     expect(currentLifeRoll(db.events)).toBeNull();
   });
+});
+
+it("keeps the Agent call on the ledger through a reply and hangs up without spending a turn", async () => {
+  setup({ location: "p4" });
+  db.npcs.push({
+    npc_id: "yuri",
+    name: "Yuri Pastrana",
+    status: "alive",
+    disposition: 0,
+    data: {},
+  } as CampaignNpc);
+  const { endAgentCall, loadLife, liveTurn } = await import("../lifeOps");
+  db.replies.push(
+    reply({
+      situation: { title: "A Line to Yuri", description: "Yuri answers over the hum of traffic." },
+      agentCall: { state: "connected", contact: "yuri", direction: "outgoing" },
+      timeSpent: 0,
+    }),
+  );
+  await liveTurn(await loadLife(CAMPAIGN_ID), "I call Yuri.");
+  expect(currentAgentCall(db.events)).toMatchObject({ contactKey: "yuri", direction: "outgoing" });
+  expect(db.campaign.location_key).toBe("p4");
+  db.replies.push(reply({ timeSpent: 0 }));
+  await liveTurn(await loadLife(CAMPAIGN_ID), "Who else knows?");
+  expect(db.prompts.at(-1)).toContain("Yuri Pastrana [yuri] is connected on an outgoing call");
+  expect(currentAgentCall(db.events)?.name).toBe("Yuri Pastrana");
+  const before = [db.prompts.length, db.campaign.minute, db.vitals.eurobucks];
+  await endAgentCall(CAMPAIGN_ID, "yuri");
+  await endAgentCall(CAMPAIGN_ID, "yuri");
+  expect(currentAgentCall(db.events)).toBeNull();
+  expect(ofType(AGENT_CALL_ENDED)).toHaveLength(1);
+  expect([db.prompts.length, db.campaign.minute, db.vitals.eurobucks]).toEqual(before);
 });

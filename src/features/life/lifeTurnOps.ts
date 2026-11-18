@@ -8,8 +8,11 @@
  */
 
 import { trySceneAttack } from "@/features/scenes/sceneOps";
+import { currentAgentCall, resolveAgentCall } from "./lifeAgentCall";
 import { checkResolvedLine } from "./checkResult";
 import {
+  AGENT_CALL_ENDED,
+  agentCallEventData,
   clampDisposition,
   hookAskSpec,
   settleHookAsk,
@@ -82,6 +85,18 @@ async function onLiveState(bundle: LifeBundle): Promise<LifeBundle> {
   };
 }
 
+/** Commit the hang-up directly. Closing the line costs no narrative turn. */
+export async function endAgentCall(campaignId: string, contactKey: string): Promise<void> {
+  const call = currentAgentCall(await listCampaignEvents(campaignId));
+  if (call?.contactKey !== contactKey) return;
+  await appendCampaignEvent({
+    campaign_id: campaignId,
+    type: AGENT_CALL_ENDED,
+    summary: `Call ended with ${call.name}.`,
+    data: agentCallEventData(call),
+  });
+}
+
 /** One Life turn: the player says something, the world answers. */
 export async function liveTurn(
   bundle: LifeBundle,
@@ -126,7 +141,13 @@ export async function liveTurn(
       }
     : answered;
   bundle = await onLiveState(bundle);
-  const outcome = await applyResponse(bundle, response, asked);
+  let agentCall = resolveAgentCall(response.agentCall, context, asked.said ?? input);
+  // A reply may arrive after a hang-up or travel in another tab.
+  if (agentCall && agentCall.contactKey === context.agentCall?.contactKey) {
+    const liveCall = currentAgentCall(await listCampaignEvents(bundle.campaign.id));
+    if (liveCall?.contactKey !== agentCall.contactKey) agentCall = null;
+  }
+  const outcome = await applyResponse(bundle, response, asked, agentCall);
 
   // Somebody came over, because the engine said so before the turn ran. It is
   // written down so it happens once an evening, not once a turn.

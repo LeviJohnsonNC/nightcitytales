@@ -152,6 +152,9 @@ try {
   if (rollMode) {
     const { captureRoll } = await import("./capture-roll.mjs");
     await captureRoll(browser, url, out);
+  } else if (process.argv.includes("--call")) {
+    const { captureCall } = await import("./capture-call.mjs");
+    await captureCall(browser, url, out);
   } else {
     for (const [place, slug, draft] of [
       ["o3", "market", "I ask Mama Ishii what came in today."],

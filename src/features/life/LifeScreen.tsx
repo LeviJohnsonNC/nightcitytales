@@ -2,11 +2,18 @@ import { NeighborhoodCard } from "./NeighborhoodCard";
 import { neighborhoodContext } from "./neighborhoodOps";
 import { clinicDescription, CLINIC_PLACE } from "@/engine/neighborhood";
 import { LifeSceneContent } from "./LifeSceneContent";
+import { AgentCallStrip } from "./AgentCallStrip";
 import { LifeComposer } from "./LifeComposer";
 import { sceneArt } from "./sceneArt";
 import { NCAmp } from "@/features/music/ncamp/NCAmp";
 import type { ReactNode } from "react";
-import { FIXER_VENDOR, readSceneCombatEnd, shopsAt } from "@/engine";
+import {
+  AGENT_CALL_ENDED,
+  FIXER_VENDOR,
+  readAgentCallEventData,
+  readSceneCombatEnd,
+  shopsAt,
+} from "@/engine";
 /**
  * LIFE — the screen between jobs. One situation at a time, a free-text box, and
  * a clock that costs something to spend.
@@ -299,6 +306,7 @@ function LifeEvent({
 }
 
 const LIFE_EVENT_TYPES = new Set([
+  AGENT_CALL_ENDED,
   "neighborhood_action",
   "encounter_ended",
   "player_input",
@@ -761,6 +769,19 @@ function CampaignLife({
       setSubmitted("");
     }
   };
+  const call = life.agentCall;
+  const hangUp = async (keyboard: boolean) => {
+    if (!call || sending.current || life.busy) return;
+    sending.current = true;
+    try {
+      await life.hangUp(call.contactKey);
+      if (keyboard) document.getElementById("life-intent")?.focus();
+    } catch {
+      // useLife displays the save error and keeps the call available for retry.
+    } finally {
+      sending.current = false;
+    }
+  };
   // The Counter: a shop takes the main column, in place of the scene, until the
   // player leaves it. The phone's status sheet is closed so the shop is what
   // they see.
@@ -987,10 +1008,12 @@ function CampaignLife({
   // Who is in the scene, as faces: the people this passage names (when the
   // engine has them here) and the walk-ons it tagged. A place's usual roles
   // that the passage never brings in are not shown.
+  const speaker = call?.name ?? readAgentCallEventData(life.narration?.event.data)?.name;
+  const localPerson = castHere(bundle);
   const faces = sceneFaces({
     text: life.narration?.text ?? "",
-    walkOns: life.narration?.walkOns ?? [],
-    present: castHere(bundle) ? [castHere(bundle)!.name] : [],
+    walkOns: life.narration?.walkOns.filter((person) => person.name !== speaker || !speaker) ?? [],
+    present: localPerson && localPerson.name !== speaker ? [localPerson.name] : [],
     people: life.people,
   });
   const latestRoll = currentLifeRoll(bundle.events);
@@ -1043,6 +1066,7 @@ function CampaignLife({
           ? "Roll saved. The scene outcome is unavailable."
           : null;
   const lastEvent = bundle.events.at(-1);
+  const callEnded = lastEvent?.type === AGENT_CALL_ENDED ? lastEvent.summary : null;
   const visibleEvents = shownLifeEvents(bundle.events);
 
   /**
@@ -1330,23 +1354,31 @@ function CampaignLife({
                       </>
                     }
                     narration={
-                      passage ? (
-                        <article className="life-passage">
-                          {passage.title &&
-                            passage.title.trim().toLowerCase() !==
-                              sceneTitle.trim().toLowerCase() && <h2>{passage.title}</h2>}
-                          <div>
-                            <NpcText text={passage.text} />
+                      <>
+                        <p role="status" className={callEnded ? "life-agent-ended" : "sr-only"}>
+                          {call
+                            ? `${call.direction === "incoming" ? "Incoming" : "Outgoing"} voice call connected with ${call.name}.`
+                            : callEnded}
+                        </p>
+                        {call && <AgentCallStrip player={bundle.character.character} call={call} />}
+                        {passage ? (
+                          <article className="life-passage">
+                            {passage.title &&
+                              passage.title.trim().toLowerCase() !==
+                                sceneTitle.trim().toLowerCase() && <h2>{passage.title}</h2>}
+                            <div>
+                              <NpcText text={passage.text} />
+                            </div>
+                          </article>
+                        ) : !checkResult &&
+                          !life.atNeighborhoodScene &&
+                          latest &&
+                          latest.type !== "neighborhood_action" ? (
+                          <div className="life-passage">
+                            <LifeEvent event={latest} here={standing} onBrowse={openShop} />
                           </div>
-                        </article>
-                      ) : !checkResult &&
-                        !life.atNeighborhoodScene &&
-                        latest &&
-                        latest.type !== "neighborhood_action" ? (
-                        <div className="life-passage">
-                          <LifeEvent event={latest} here={standing} onBrowse={openShop} />
-                        </div>
-                      ) : null
+                        ) : null}
+                      </>
                     }
                     outcome={
                       !outcome && !life.checkBusy ? <ReceiptBar receipts={receipts} /> : null
@@ -1383,7 +1415,7 @@ function CampaignLife({
                         {life.actionError.message}
                       </p>
                     )}
-                    {waiting && !life.checkBusy && (
+                    {waiting && !life.checkBusy && !life.endingCall && (
                       <div className="life-wait" role="status">
                         {submitted && <p>{submitted}</p>}
                         <span className="sr-only">Resolving your turn.</span>
@@ -1449,6 +1481,7 @@ function CampaignLife({
                         busy={waiting}
                         onAct={() => void send(draft.trim())}
                         onSuggest={life.askOptions}
+                        onHangUp={call ? (keyboard) => void hangUp(keyboard) : undefined}
                         suggestions={
                           life.actions.length > 0 && (
                             <div className="life-suggestions" aria-label="Suggested actions">

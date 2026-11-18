@@ -1,3 +1,4 @@
+import { currentAgentCall } from "./lifeAgentCall";
 import { newestBrowse } from "./browseIntent";
 import { neighborhoodContext, takeNeighborhoodAction } from "./neighborhoodOps";
 import { neighborhoodMoment } from "@/engine/neighborhood";
@@ -42,6 +43,7 @@ import {
   acceptHook,
   commitLifeCheck,
   declineHook,
+  endAgentCall,
   liveTurn,
   loadLife,
   pushHook,
@@ -71,6 +73,7 @@ export function useLife(campaignId: string) {
       if (!bundle) throw new Error("Still loading.");
       return liveTurn(bundle, input, rest);
     },
+    onMutate: () => hangUp.reset(),
     onSettled: invalidate,
   });
 
@@ -86,6 +89,11 @@ export function useLife(campaignId: string) {
         ),
       );
     },
+  });
+
+  const hangUp = useMutation({
+    mutationFn: (contactKey: string) => endAgentCall(campaignId, contactKey),
+    onSettled: invalidate,
   });
 
   const check = useMutation({
@@ -339,6 +347,9 @@ export function useLife(campaignId: string) {
     standings: bundle?.standings ?? [],
     hook: bundle?.hook ?? null,
     narration: latestNarration,
+    agentCall: bundle ? currentAgentCall(bundle.events) : null,
+    endingCall: hangUp.isPending,
+    hangUp: (contactKey: string) => hangUp.mutateAsync(contactKey),
     atNeighborhoodScene,
     actions,
     pendingCheck,
@@ -347,6 +358,7 @@ export function useLife(campaignId: string) {
     busy:
       neighborhood.isPending ||
       turn.isPending ||
+      hangUp.isPending ||
       check.isPending ||
       accept.isPending ||
       decline.isPending ||
@@ -356,6 +368,7 @@ export function useLife(campaignId: string) {
     actionError:
       ((neighborhood.error ??
         turn.error ??
+        hangUp.error ??
         accept.error ??
         decline.error ??
         push.error ??

@@ -19,7 +19,7 @@ import {
   walkOnFacesSection,
 } from "@/features/narration/narratorRules";
 
-export const LIFE_PROMPT_VERSION = "2.29.0";
+export const LIFE_PROMPT_VERSION = "2.30.0";
 
 export const LIFE_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -103,6 +103,7 @@ Return a structured JSON object:
 - "actions": [] on an ordinary turn; 3-4 objects ONLY when the context says they asked for options: { "label": under ~6 words, "description": one short line of what it means, "timeMinutes": integer minutes, "knownCost": eurobucks the character knows up front or null, "skillId": the skill id from the SKILLS list or null }
 - "resolution": null, unless the context reports a RESOLVED action (a roll, a trip, a purchase). Then it is the prose the player reads this turn, and the ONLY prose they see: the whole turn, written per every rule above, present tense, ending on something live. It is not a summary or a log line of what the engine did; the interface already shows that. Put the scene in it, and keep "situation.description" to a line.
 - Travel is settled AFTER you write. You propose it; the engine decides where the trip ends and then asks you to narrate the arrival with the destination and heading fixed. So while proposing, do not write the character arriving anywhere, and do not name the place you expect them to reach — describe them setting off. Whatever else they said ("and sit down at the counter", "and order a drink") is NOT lost: you are shown their words again with the arrival, and you carry out the rest of it then.
+- "agentCall": omit unless there is a live Agent voice conversation or the line just closed. When a call actually connects, set {"state":"connected","contact":"<exact NPC key from PEOPLE THEY KNOW or the broker key>","direction":"incoming|outgoing"} and narrate the voice on the line. An outgoing call answers what the player attempted. An incoming call dresses someone already reaching out from WORK ON THE WIRE, the current situation, or an offer on the table. Never invent a ring or add this field for texts, missed calls, memories, or people speaking in the room. If a call is already connected, keep the same person until someone hangs up or the scene moves away from the conversation. Close it with {"state":"ended"}, including when a whole call ends in one turn. A call does not move the player or cause a check by itself.
 - "proposedActions": what the engine should resolve, using EXACTLY these shapes:
   - {"kind":"skill_check","skillId":"<id from SKILLS>","dv":9|13|15|17|21|24|29,"intent":"...","stakes":"low"(optional, see CHECKS)}
     When the check is aimed AT A PERSON and nobody is resisting it — watching somebody for a tell, reading the room, listening to how they answer, sizing up a stranger — also set "npcKey" and "npcName" (the key exactly as PEOPLE THEY KNOW prints it, when they are one of them). The engine decides what paying that much attention to somebody tells the character, and it cannot do that for a check that names nobody. Leave both out for a check against the world, and for a walk-on (an "Also here" role, named or not), who is not in PEOPLE THEY KNOW.

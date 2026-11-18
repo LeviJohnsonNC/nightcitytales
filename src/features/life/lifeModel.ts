@@ -3,6 +3,7 @@
  * network, no React: everything here is a translation or a derivation, so the
  * Life loop can be reasoned about (and tested) without a campaign in the cloud.
  */
+import { AGENT_CALL_ENDED } from "@/engine";
 import {
   DEFAULT_START,
   clampSeverity,
@@ -251,6 +252,7 @@ export function recentLifeLines(
   playerLimit: number = PACKET_BUDGET.playerLines,
 ): string[] {
   const interesting = new Set([
+    AGENT_CALL_ENDED,
     "life_narration",
     "life_action",
     "neighborhood_action",

@@ -1,4 +1,6 @@
 // Local rendering fixture. Only the capture runner resolves game reads to this module.
+import { AGENT_CALL_ENDED, agentCallEventData, type AgentCall } from "@/engine";
+import { currentAgentCall } from "@/features/life/lifeAgentCall";
 import type { Json } from "@/lib/backend";
 import type { CheckRoll, PendingCheck } from "@/features/play/checkPrompt";
 import { opposedCheckEvent, skillCheckEvent } from "@/features/campaign/skillCheckLog";
@@ -7,6 +9,7 @@ import { freshDb } from "@/features/life/__tests__/lifeTurnHarness";
 const params = new URLSearchParams(location.search);
 const apartment = params.get("place") === "p4";
 const rollFixture = params.get("roll");
+const callFixture = params.get("call");
 const db = freshDb({ location: apartment ? "p4" : "o3", day: 1 });
 Object.assign(db.campaign, {
   name: "Fixer in Night City",
@@ -32,7 +35,7 @@ if (rollFixture) {
   db.character.skills.find((skill) => skill.skill_id === "persuasion")!.level = 6;
   db.vitals.luck_current = rollFixture === "empty" ? 0 : 5;
 }
-const clock = { day: 1, minute: 1092 };
+const clock = { day: 1, minute: callFixture ? 1194 : 1092 };
 const walkOns = apartment
   ? [{ subject: "motel-desk-clerk", gender: "female" }]
   : [{ subject: "noodle-bar-cook", gender: "male", face: "noodle-bar-cook-male-older" }];
@@ -78,6 +81,32 @@ event(
   rollFixture ? "A scrap alternator lies on the workbench, its copper winding exposed." : passage,
   { title, walkOns },
 );
+if (callFixture === "incoming") writeCall("incoming");
+
+function writeCall(direction: AgentCall["direction"], answer?: string) {
+  const call: AgentCall = {
+    contactKey: "fixture-fixer",
+    name: "Yuri Pastrana",
+    role: "Fixer",
+    direction,
+  };
+  event(
+    "life_narration",
+    answer ??
+      (direction === "outgoing"
+        ? "Traffic hums over the line. An espresso machine shrieks in the background.\n\n“Copper wire? Ren, you’re calling a fixer to broker raw scrap.”"
+        : "Yuri’s voice comes over the Agent. “Ren. The market’s about to close. Still looking for someone to take your scrap?”"),
+    { title: "A Line to Yuri", ...agentCallEventData(call) },
+  );
+}
+
+export async function endAgentCall(_campaignId: string, contactKey: string) {
+  const call = currentAgentCall(bundle.events);
+  if (call?.contactKey === contactKey) {
+    event(AGENT_CALL_ENDED, `Call ended with ${call.name}.`, agentCallEventData(call));
+  }
+}
+
 if (rollFixture) {
   const opposed = rollFixture.startsWith("opposed");
   const intent = opposed
@@ -110,6 +139,16 @@ export async function liveTurn(
   input: string,
   turn: { options?: boolean; minutes?: number; spend?: { amount: number } },
 ) {
+  if (callFixture && !turn.options) {
+    const connected = currentAgentCall(bundle.events);
+    event("player_input", input, {});
+    if (connected)
+      writeCall(connected.direction, "“Ask at the hardware counter. Tell them I sent you.”");
+    else if (input.startsWith("I call")) writeCall("outgoing");
+    else
+      event("life_narration", "You send Yuri a message on your Agent.", { title: "On the Agent" });
+    return;
+  }
   if (turn.options) {
     event("life_options", "", {
       actions: [
