@@ -100,7 +100,7 @@ export function LifeCheckCard({
   const opponentReady = reveal?.stage === "opponent-ready";
 
   const start = () => {
-    if (busy || locked.current) return;
+    if (busy || rolling || locked.current) return;
     locked.current = true;
     if (opponentReady) setReveal({ ...reveal, stage: "opponent" });
     else if (!reveal) setReveal({ stage: "actor", roll: roll(luck) });
