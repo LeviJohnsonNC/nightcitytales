@@ -10,7 +10,10 @@ care. Life, the narrator and the atlas read the same flag.
 - Chromium exercised both funding paths on a temporary PostgreSQL campaign
   at 390 and 1280 px. The harness uses the game components and RPC, with a local
   travel adapter. The hosted campaign has not been touched.
-- Next gate is PR verification and owner review.
+- 4,787 tests passed on `4199473`. Follow-up `47cdf52` carries each receipt
+  into the narrator’s memory and retires the previous room’s options.
+- The [draft PR](https://github.com/LeviJohnsonNC/nightcitytales/pull/387)
+  tracks final verification. Next is owner review and the migration at rollout.
 
 ## Earlier work
 
