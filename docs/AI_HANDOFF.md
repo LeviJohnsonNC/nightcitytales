@@ -1,3 +1,10 @@
+# Generated investigation endings — 2026-11-17
+
+Branch `codex/investigation-endings`, base `c0ef006b`. Investigations now have
+a player decision with three outcomes. Apply the pending settlement migration
+before deploying the client. Other jobs use the existing settlement. Validation
+covers the player choice, old saves, the Life callback and database retries.
+
 # Active environment art variety — 2026-10-13
 
 PR370 approved and merged. User authorized furniture, wrecks and residential entrances.

@@ -14,6 +14,7 @@
  * writing for this project — unlike the authored missions, it cites no book,
  * because there is none behind it.
  */
+import { investigationEndings } from "./investigation";
 import content from "@/data/missions/job-content.json";
 import { seededRng } from "../dice";
 import { getDistrict, getPlace } from "../geography";
@@ -64,6 +65,7 @@ type Archetype = {
 };
 
 type JobContent = {
+  investigationSources: string[];
   fixers: { name: string; line: string }[];
   patrons: { name: string; org: string; style: string; tell: string }[];
   districts: { key: string; name: string; colour: string }[];
@@ -175,6 +177,14 @@ export function generateJob(seed: number): Mission {
   // also names the building now.
   const placeKey = pickPlaceIn(district.key, rng);
 
+  const investigation =
+    archetype.id === "investigation"
+      ? {
+          source: pick(CONTENT.investigationSources, rng, "investigationSources"),
+          subject: target.the,
+        }
+      : undefined;
+
   const slots: Slots = {
     patron: patron.name,
     org: patron.org,
@@ -255,7 +265,9 @@ export function generateJob(seed: number): Mission {
       id: "complication",
       type: "cliff",
       title: "It Goes Sideways",
-      gmBrief: fill(archetype.complicationBrief),
+      gmBrief: investigation
+        ? `${fill(archetype.complicationBrief)} ${investigation.source} calls from dispatch. They kept the original transfer order and can tell the runner where to find it.`
+        : fill(archetype.complicationBrief),
       ...truthsFor("complication"),
       checks: archetype.complicationChecks.map((c) => checkFrom(c, `${archetype.id}.complication`)),
       opposition: [`${opposition.name} — ${opposition.flavour}`],
@@ -268,8 +280,11 @@ export function generateJob(seed: number): Mission {
       gmBrief: fill(archetype.climaxBrief),
       opposition: [`${opposition.name} — ${opposition.flavour}`],
       encounter: true,
-      exits: [{ to: "resolution", label: "Finish it", completes: [JOB_OBJECTIVE] }],
+      exits: investigation
+        ? [{ to: "evidence", label: "Secure the signed evidence", completes: [JOB_OBJECTIVE] }]
+        : [{ to: "resolution", label: "Finish it", completes: [JOB_OBJECTIVE] }],
     },
+    ...(investigation ? investigationEndings(investigation, patron.name) : []),
     {
       id: "resolution",
       type: "resolution",
@@ -289,6 +304,7 @@ export function generateJob(seed: number): Mission {
     id: jobIdForSeed(seed),
     title: fill(archetype.title),
     subtitle: `${patron.name} — ${district.name}`,
+    ...(investigation ? { investigation } : {}),
     source: "Procedurally generated job",
     patron: `${patron.name} (${patron.org}), through ${fixer.name} — ${fixer.line}`,
     // The offer is READ off the same draws the beats are built from, so what is

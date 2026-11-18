@@ -12,6 +12,7 @@ import { jobFromId } from "./generator";
 
 export { NIGHT_AT_THE_OPERA };
 export * from "./generator";
+export * from "./investigation";
 
 export const MISSIONS: Record<string, Mission> = {
   [NIGHT_AT_THE_OPERA.id]: NIGHT_AT_THE_OPERA,

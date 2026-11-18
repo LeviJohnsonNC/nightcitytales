@@ -72,6 +72,8 @@ export type Beat = {
    * render in the UI. Anything secret belongs in gmBrief only.
    */
   playerBrief?: string;
+  /** Only the player can take an exit from this beat. */
+  evidenceDecision?: boolean;
   /**
    * What this beat puts on the board. A bare string is identified by its
    * position (`beatId.0`); the keyed form names itself, which is what an exit's
@@ -165,6 +167,7 @@ export type Mission = {
   source: string;
   patron?: string;
   reward?: MissionReward;
+  investigation?: import("./missions/investigation").Investigation;
   /**
    * How this job reaches a player who has not taken it yet. Optional because an
    * authored mission may be started directly rather than offered.
@@ -433,6 +436,11 @@ export function missionPayout(mission: Mission, crewSize = 1): MissionPayout | n
 }
 
 // ---------------------------------------------------------------------------
+
+/** The floor is the printed fee even when a campaign negotiated a different figure. */
+export function agreedMissionFee(mission: Mission, negotiated: number | null): number {
+  return Math.max(missionPayout(mission)?.total ?? 0, negotiated ?? 0);
+}
 
 /**
  * Structural problems with a beat graph, as human-readable lines. Empty means

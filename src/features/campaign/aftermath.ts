@@ -20,6 +20,10 @@ import {
   readSettlement,
   reportsFrom,
   rollPayment,
+  investigationPayment,
+  stableKey,
+  type EvidenceEnding,
+  type Investigation,
   survivorsFrom,
   tickClock,
   type ClosingFrame,
@@ -52,6 +56,7 @@ export type AftermathInput = {
   playerName: string;
   agreed: number;
   messy: boolean;
+  evidence?: { ending: EvidenceEnding; inquiry: Investigation };
   factionId: FactionId | null;
   completion: { summary: string; beatId: string | null; data: Json };
 };
@@ -73,6 +78,7 @@ export type NpcReceipt = {
 
 export type AftermathReport = {
   findings: SettlementFinding[];
+  evidenceEnding?: EvidenceEnding;
   payment: PaymentOutcome;
   mechanical: JobMechanicalCost;
   survivors: string[];
@@ -164,7 +170,10 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
 
   const findings = readSettlement({ events: live, playerName: input.playerName });
   const mechanical = readMechanicalCost({ events: live, playerName: input.playerName });
-  const payment = rollPayment({ agreed: input.agreed, messy: input.messy });
+  const evidence = input.evidence;
+  const payment = evidence
+    ? investigationPayment(input.agreed, evidence.ending)
+    : rollPayment({ agreed: input.agreed, messy: input.messy });
   const survivors = survivorsFrom({ events: live, playerName: input.playerName }).map(
     (s) => s.name,
   );
@@ -271,17 +280,50 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
     });
   }
 
-  const situations = scarsFor(full.campaign.day, survivors);
+  const situations: SettleJobPayload["situations"] = scarsFor(full.campaign.day, survivors);
+  if (evidence?.ending === "buried") {
+    const name = evidence.inquiry.source;
+    const key = stableKey(name);
+    const existing = full.npcs.find((npc) => npc.npc_id === key);
+    if (existing?.status !== "dead") {
+      const before = npcPlans.get(key)?.disposition ?? existing?.disposition ?? 0;
+      const after = clampDisposition(before + 1);
+      npcPlans.set(key, {
+        ...(existing ? { id: existing.id } : { data: { lastSeenDay: full.campaign.day } }),
+        npc_key: key,
+        name,
+        disposition: after,
+      });
+      const person = people.find((change) => change.key === key);
+      if (person) person.after = after;
+      else people.push({ key, name, before: existing?.disposition ?? null, after });
+      const day = full.campaign.day + 7;
+      situations.push({
+        situation_key: `evidence_call_${jobStart.id}`,
+        category: "people",
+        npc_key: key,
+        severity: 4,
+        due_day: null,
+        title: `${name} left a number`,
+        summary: `A message from ${name}: “You kept my signature off that file about ${evidence.inquiry.subject}. I'm on a safe line now. Call me.”`,
+        data: { availableFromDay: day },
+      });
+    }
+  }
   const tally = nextTally(
     tallyFrom(full.flags),
     findings.find((finding) => finding.observation === "killed")?.count ?? 0,
   );
   const receipt: AftermathReport = {
     findings,
+    ...(evidence ? { evidenceEnding: evidence.ending } : {}),
     payment,
     mechanical,
     survivors,
-    scars: situations.map((situation) => ({ title: situation.title, dueDay: situation.due_day })),
+    scars: situations.map((situation) => ({
+      title: situation.title,
+      dueDay: situation.due_day ?? null,
+    })),
     brokerKey,
     pressure,
     people,
@@ -299,25 +341,28 @@ export async function settleAftermath(input: AftermathInput): Promise<AftermathR
     }),
   };
 
-  const result = await settleJob({
-    campaign_id: input.campaignId,
-    job_event_id: jobStart.id,
-    mission_id: input.missionId,
-    summary: `${describePayment(payment)} ${describeSettlement(findings)}`,
-    roll: payment.roll.roll as unknown as Json,
-    receipt: receipt as unknown as Json,
-    completion: {
-      summary: input.completion.summary,
-      beat_id: input.completion.beatId,
-      data: input.completion.data,
+  const result = await settleJob(
+    {
+      campaign_id: input.campaignId,
+      job_event_id: jobStart.id,
+      mission_id: input.missionId,
+      summary: `${describePayment(payment)} ${describeSettlement(findings)}`,
+      roll: (payment.roll?.roll ?? null) as unknown as Json,
+      receipt: receipt as unknown as Json,
+      completion: {
+        summary: input.completion.summary,
+        beat_id: input.completion.beatId,
+        data: input.completion.data,
+      },
+      payment: { agreed: payment.agreed, paid: payment.paid },
+      npcs: [...npcPlans.values()],
+      situations,
+      clocks,
+      factions,
+      tally: tally as unknown as Json,
     },
-    payment: { agreed: payment.agreed, paid: payment.paid },
-    npcs: [...npcPlans.values()],
-    situations,
-    clocks,
-    factions,
-    tally: tally as unknown as Json,
-  });
+    evidence ? "settle_investigation" : "settle_job",
+  );
   if (result.alreadySettled) return null;
 
   // The job happened somewhere, and that somewhere remembers it. Applied AFTER
