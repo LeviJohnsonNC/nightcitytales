@@ -4,6 +4,7 @@
  * playOps.ts, which re-exports it. No React and no TanStack Query in here.
  */
 
+import { readNeighborhood, type Neighborhood } from "@/engine/neighborhood";
 import { loadCombat } from "./combatOps";
 import { loadPlaceStates } from "@/features/campaign/placeState";
 import {
@@ -47,6 +48,7 @@ import {
 } from "@/lib/backend";
 
 export type PlayBundle = {
+  neighborhood: Neighborhood;
   campaign: Campaign;
   vitals: CampaignVitals;
   character: FullCharacter;
@@ -147,6 +149,7 @@ export async function loadPlay(campaignId: string): Promise<PlayBundle> {
     inventory: full.inventory,
     cyberware: full.cyberware,
     encounter,
+    neighborhood: readNeighborhood(full.flags),
     agreedPayout: agreedPayoutFrom(full.flags),
     pressure: pressureFrom(await listClocks(campaignId)),
     standings: standingLines(notableFrom(full.factions)),

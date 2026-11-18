@@ -145,3 +145,7 @@ these tables must tolerate their absence until the line moves up to Applied.
 - `20261117010000_settle_investigation.sql` — pending. Apply before releasing
   investigation endings. Commits the final beat and its existing job settlement
   together. An older server leaves the evidence decision available to retry.
+
+- `20261118010000_neighborhood_actions.sql` — pending. Apply before releasing
+  the Old Japantown scenes and Stackside Clinic. The RPC commits a choice,
+  its time and payment, the campaign flag and its ledger receipt together.

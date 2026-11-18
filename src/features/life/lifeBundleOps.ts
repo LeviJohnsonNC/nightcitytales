@@ -5,6 +5,7 @@
  * what other modules use. No React and no TanStack Query in here.
  */
 
+import { readNeighborhood, type Neighborhood } from "@/engine/neighborhood";
 import {
   ageSituations,
   getMission,
@@ -93,6 +94,7 @@ import { campaignPhase, derivedSituations, situationFromRow, situationToUpsert }
 export type { LifeHook };
 
 export type LifeBundle = {
+  neighborhood: Neighborhood;
   campaign: Campaign;
   vitals: CampaignVitals;
   character: FullCharacter;
@@ -300,6 +302,7 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
     hook,
     wire: hook ? null : wire,
     wireMissionId: hook ? null : wireMissionId,
+    neighborhood: readNeighborhood(full.flags),
     tally: tallyFrom(full.flags),
     places,
     discoveredTruths: truths.rows.map((row) => row.truth_key),

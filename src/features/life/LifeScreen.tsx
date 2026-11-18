@@ -1,3 +1,6 @@
+import { NeighborhoodCard } from "./NeighborhoodCard";
+import { neighborhoodContext } from "./neighborhoodOps";
+import { clinicDescription, CLINIC_PLACE, neighborhoodMoment } from "@/engine/neighborhood";
 import { LifeSceneContent } from "./LifeSceneContent";
 import type { ReactNode } from "react";
 import { FIXER_VENDOR, readSceneCombatEnd, shopsAt } from "@/engine";
@@ -290,6 +293,7 @@ function LifeEvent({
 }
 
 const LIFE_EVENT_TYPES = new Set([
+  "neighborhood_action",
   "encounter_ended",
   "player_input",
   "travelled",
@@ -956,6 +960,11 @@ export function LifeScreen({
   useEffect(() => {
     if (!bundle || life.busy || life.actionError) return;
     if (life.narration || life.pendingCheck) return;
+    if (
+      bundle.phase === "life" &&
+      neighborhoodMoment(bundle.neighborhood, neighborhoodContext(bundle))
+    )
+      return;
     const key = `${bundle.campaign.id}:${bundle.clock.day}`;
     if (opened.current === key) return;
     opened.current = key;
@@ -1021,6 +1030,7 @@ export function LifeScreen({
     present: castHere(bundle) ? [castHere(bundle)!.name] : [],
     people: life.people,
   });
+  const lastEvent = bundle.events.at(-1);
   const hasLog = shownLifeEvents(bundle.events, life.narration?.text).length > 0;
 
   /**
@@ -1107,7 +1117,12 @@ export function LifeScreen({
       : [];
     const since = state?.lastVisitDay != null ? bundle.clock.day - state.lastVisitDay : null;
     return {
-      conditions: (state?.flags ?? []).map((flag) => flagMeaning(flag) ?? flag),
+      conditions: [
+        ...(state?.flags ?? []).map((flag) => flagMeaning(flag) ?? flag),
+        ...(key === CLINIC_PLACE && bundle.neighborhood.lease
+          ? [clinicDescription(bundle.neighborhood)]
+          : []),
+      ],
       people: met ? [met.name] : [],
       business,
       history: placeHistory(bundle.events, key),
@@ -1180,6 +1195,7 @@ export function LifeScreen({
                     {...(life.vehicleRule ? { travelMode: life.vehicleRule } : {})}
                     signals={signals}
                     placeHere={placeHere}
+                    clinicOpen={!!bundle.neighborhood.lease}
                   />
                   <SheetDrawer
                     character={bundle.character}
@@ -1257,6 +1273,20 @@ export function LifeScreen({
 
                       {/* What the turn just cost, alongside the current scene. */}
                       <ReceiptBar receipts={receipts} />
+                      {life.phase === "life" && (
+                        <NeighborhoodCard
+                          state={bundle.neighborhood}
+                          context={neighborhoodContext(bundle)}
+                          location={locationKey}
+                          receipt={
+                            lastEvent?.type === "neighborhood_action" ? lastEvent.summary : null
+                          }
+                          travelMode={life.vehicleRule}
+                          busy={life.busy || !!life.pendingCheck}
+                          act={life.takeNeighborhoodAction}
+                          travel={life.travelTo}
+                        />
+                      )}
 
                       {/* A week of life with no award is a session: judged here, on the
                       playstyle columns, the same table a job is judged on. */}

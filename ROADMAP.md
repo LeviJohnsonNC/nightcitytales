@@ -15,6 +15,14 @@ waiting-seat light shadows and residential driveway/planting paint order. PR370 
 construction and wreck silhouettes, and varies residential saved-door finishes.
 Visual review is the next gate; a real campaign persistence playthrough remains separate.
 
+## Old Japantown between jobs
+
+Nakamura’s Counter and the Paper Lantern each have a short authored scene. Help
+reopen Stackside Clinic at The Precipice over as many visits as you want. A
+delivery or benefit changes the price of opening. The lease determines who
+gets the first cot on every future visit. An open clinic appears on the map.
+Rollout requires `20261118010000_neighborhood_actions.sql`.
+
 ## Generated investigations — evidence endings
 
 After securing the file, the player decides who gets it. Delivery pays the agreed

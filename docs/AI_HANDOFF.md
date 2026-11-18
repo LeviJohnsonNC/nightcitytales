@@ -1,32 +1,22 @@
-# Generated investigation endings — 2026-11-17
+# Old Japantown scenes and Stackside Clinic — 2026-11-18
 
-Branch `codex/investigation-endings`, base `c0ef006b`. Investigations now have
-a player decision with three outcomes. Apply the pending settlement migration
-before deploying the client. Other jobs use the existing settlement. Validation
-covers the player choice, old saves, the Life callback and database retries.
+Branch `codex/neighborhood-clinic` from `4194ffc6`. All ten roles have an
+approach at Nakamura’s Counter or the Paper Lantern. The neighborhood flag
+persists every choice. At The Precipice the lease determines the queue for
+care. Life, the narrator and the atlas read the same flag.
 
-# Active environment art variety — 2026-10-13
+- Rollout requires `20261118010000_neighborhood_actions.sql` before the client.
+- Local migration replay and retry, ownership, spending and healing cases pass.
+- Chromium exercised both funding paths on a temporary PostgreSQL campaign
+  at 390 and 1280 px. The harness uses the game components and RPC, with a local
+  travel adapter. The hosted campaign has not been touched.
+- Next gate is PR verification and owner review.
 
-PR370 approved and merged. User authorized furniture, wrecks and residential entrances.
-Checkout: /Users/levijohnson/.codex/worktrees/street-neon-clipping/nightcitytales.
-Branch codex/environment-art-variety; base origin/main ea28638e.
-Original checkout untouched. Prior final PR370 docs saved in named git stash.
-Milestone: distinct furniture construction, recognizable low wrecks, three saved-door
-finishes with matching emission. Existing canvas art pipeline; no new geometry/state.
-Implemented separate cushions/legs, ribbed bar and paneled reception fronts, family-specific
-low wrecks and three deterministic entrance treatments with matched glass emission.
-Files: interiorPropArt.ts, residentialEntrance.ts, frontageIdentity.ts.
-Baseline Mac module casing collision fixed in separate commit b9a53622: renamed
-sceneFaces.ts to sceneFaceModel.ts with imports; no behavior change.
-Next: checkpoint art, inspect office/nightclub/residential4 captures running in
-/tmp/nct-art-browser.log; finish typecheck/lint/tests/build and remote checks.
-PR385: https://github.com/LeviJohnsonNC/nightcitytales/pull/385 (draft), pushed33a3591d.
-On33a3591d: typecheck,4764tests/376files,lint0errors/10warnings,build pass;
-3browser tests pass (office4/nightclub4/residential4). Actual play/destroyed and
-residential lights-off screenshots inspected. Low wreck debris lowered after review;
-security-door spill reduced to match its small glass. These refinements need validation.
-Next: push refinement, rerun targeted screenshots plus additional residential layout,
-finish remote checks, preserve evidence. No real campaign writes. User review/merge gate remains.
+## Earlier work
+
+Investigation endings merged in PR #386. Environment art variety landed in
+PR #385. The [previous handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/4194ffc6/docs/AI_HANDOFF.md)
+retains their validation and environment notes.
 
 ## Parallel stream — shopping, then the audit (Claude, branch claude/shady-goods-store-art-i8grnn)
 

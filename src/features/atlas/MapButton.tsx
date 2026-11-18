@@ -26,6 +26,7 @@ export function MapButton({
   travelMode,
   signals,
   placeHere,
+  clinicOpen = false,
   open: openProp,
   onOpenChange,
 }: {
@@ -37,6 +38,7 @@ export function MapButton({
   /** What they would make the trip in, so the quoted minutes are the real ones. */
   travelMode?: TravelMode | undefined;
   signals?: PlaceSignal[] | undefined;
+  clinicOpen?: boolean | undefined;
   placeHere?: ((key: string) => PlaceHere | undefined) | undefined;
   /**
    * The map is opened from this pin. A screen that needs to open it itself can
@@ -80,6 +82,7 @@ export function MapButton({
             travelMode={travelMode}
             signals={signals}
             placeHere={placeHere}
+            clinicOpen={clinicOpen}
           />
         </Suspense>
       ) : null}

@@ -1,3 +1,4 @@
+import { takeNeighborhoodAction } from "./neighborhoodOps";
 import { readSceneCombatEnd } from "@/engine";
 /**
  * The Life loop, bound to React.
@@ -68,6 +69,20 @@ export function useLife(campaignId: string) {
       return liveTurn(bundle, input, rest);
     },
     onSettled: invalidate,
+  });
+
+  const neighborhood = useMutation({
+    mutationFn: ({ id, requestId }: { id: string; requestId: string }) => {
+      if (!bundle) throw new Error("Still loading.");
+      return takeNeighborhoodAction(bundle, id, requestId);
+    },
+    onSettled: async () => {
+      await Promise.all(
+        ["life", "play", "downtime", "scene"].map((key) =>
+          queryClient.invalidateQueries({ queryKey: [key, campaignId] }),
+        ),
+      );
+    },
   });
 
   const check = useMutation({
@@ -280,7 +295,10 @@ export function useLife(campaignId: string) {
     narration: latestNarration,
     actions,
     pendingCheck,
+    takeNeighborhoodAction: (id: string) =>
+      neighborhood.mutate({ id, requestId: crypto.randomUUID() }),
     busy:
+      neighborhood.isPending ||
       turn.isPending ||
       check.isPending ||
       accept.isPending ||
@@ -289,7 +307,8 @@ export function useLife(campaignId: string) {
       travel.isPending ||
       fixedNarration.isPending,
     actionError:
-      ((turn.error ??
+      ((neighborhood.error ??
+        turn.error ??
         check.error ??
         accept.error ??
         decline.error ??

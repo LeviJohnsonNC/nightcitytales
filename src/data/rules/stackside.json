@@ -1,0 +1,18 @@
+{
+  "houseRule": true,
+  "_source": "Authored Life scenes in Old Japantown. Stackside is a residents’ first-aid room in The Precipice.",
+  "lookMinutes": 10,
+  "specialistMinutes": 5,
+  "sceneMinutes": 15,
+  "volunteerMinutes": 15,
+  "recruitMinutes": 30,
+  "pickupMinutes": 15,
+  "barterMinutes": 90,
+  "kitPrice": 100,
+  "leasePrice": 150,
+  "benefitLeasePrice": 75,
+  "openingMinutes": 45,
+  "careHp": 4,
+  "careMinutes": 30,
+  "gangCareMinutes": 75
+}

@@ -1,3 +1,4 @@
+import { clinicDescription, CLINIC_PLACE } from "@/engine/neighborhood";
 import type { ReactNode } from "react";
 import { EvidenceDecision } from "./EvidenceDecision";
 import { CombatOpeningRecap } from "./CombatOpeningRecap";
@@ -1051,6 +1052,12 @@ export function PlayScreen({
             actions={
               <>
                 <MapButton
+                  clinicOpen={!!bundle.neighborhood.lease}
+                  placeHere={(key) =>
+                    key === CLINIC_PLACE && bundle.neighborhood.lease
+                      ? { conditions: [clinicDescription(bundle.neighborhood)] }
+                      : undefined
+                  }
                   locationKey={bundle.campaign.location_key ?? DEFAULT_START}
                   knownPlaces={
                     Array.isArray(bundle.campaign.known_places)
