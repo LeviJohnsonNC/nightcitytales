@@ -128,7 +128,10 @@ export async function captureRoll(browser, url, out) {
       await page.getByRole("button", { name: "Roll Nao’s d10" }).click();
     }
     await result(page).getByText(scenario.verdict, { exact: true }).waitFor();
-    if (scenario.critical) assert.ok(await result(page).getByText(scenario.critical).isVisible());
+    if (scenario.critical) {
+      assert.ok(await result(page).getByText(scenario.critical).isVisible());
+      assert.equal(await result(page).locator(".holo-die").count(), 2);
+    }
     if (scenario.luck) {
       await result(page).locator("summary").click();
       assert.match(await result(page).locator("details").innerText(), /Luck\s+\+1/);

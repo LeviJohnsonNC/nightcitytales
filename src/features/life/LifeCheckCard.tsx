@@ -21,7 +21,7 @@ function Die({
     side.critical === "success" ? "crit" : side.critical === "failure" ? "fumble" : null;
   return (
     <div className="life-check-dice">
-      <div inert aria-hidden="true">
+      <div className="life-check-faces" inert aria-hidden="true">
         <HoloDie
           key={animate ? "rolling" : "landed"}
           sides={10}
@@ -31,6 +31,9 @@ function Die({
           {...(animate ? { autoRoll: "mount" as const, delay: 0 } : {})}
           {...(onLanded ? { onSettled: onLanded } : {})}
         />
+        {!animate && side.rolls[1] !== undefined && (
+          <HoloDie sides={10} value={side.rolls[1]} size={38} tone={tone} />
+        )}
       </div>
       {!animate && side.rolls[1] !== undefined && (
         <span className="life-check-critical">

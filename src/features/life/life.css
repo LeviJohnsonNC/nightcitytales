@@ -550,6 +550,10 @@
   display: grid;
   justify-items: center;
 }
+.life-check-faces {
+  display: flex;
+  align-items: center;
+}
 .life-check-critical {
   color: #f3aee9;
 }
